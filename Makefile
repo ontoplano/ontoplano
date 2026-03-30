@@ -3,7 +3,7 @@
 # ─── Development ──────────────────────────────────────────────────────────────
 
 dev:
-	yarn dev
+	yarn dev --port 1493
 
 build:
 	yarn build

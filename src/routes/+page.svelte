@@ -5,6 +5,7 @@
 	let { data }: { data: PageServerData } = $props();
 
 	let selectedIndex = $state(0);
+	let editingTimeId: number | null = $state(null);
 
 	const statusOptions = [
 		{ value: 'completed', label: 'Done', key: 'c' },
@@ -56,7 +57,12 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
-		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+		if (
+			e.target instanceof HTMLInputElement ||
+			e.target instanceof HTMLTextAreaElement ||
+			e.target instanceof HTMLSelectElement
+		)
+			return;
 
 		const tasks = data.tasks;
 		if (!tasks.length) return;
@@ -69,6 +75,14 @@
 			case 'k':
 				e.preventDefault();
 				selectedIndex = Math.max(selectedIndex - 1, 0);
+				break;
+			case 't':
+				e.preventDefault();
+				editingTimeId = tasks[selectedIndex].id;
+				break;
+			case 'Escape':
+				e.preventDefault();
+				editingTimeId = null;
 				break;
 			case 'c':
 			case 'd':
@@ -112,6 +126,16 @@
 		);
 	}
 
+	function categoryTotals(): { name: string; minutes: number }[] {
+		const totals: Record<string, number> = {};
+		for (const task of data.tasks) {
+			const cat = task.categoryName;
+			if (!cat) continue;
+			totals[cat] = (totals[cat] || 0) + (task.slotDuration ?? 60);
+		}
+		return Object.entries(totals).map(([name, minutes]) => ({ name, minutes }));
+	}
+
 	$effect(() => {
 		if (selectedIndex >= data.tasks.length && data.tasks.length > 0) {
 			selectedIndex = data.tasks.length - 1;
@@ -138,7 +162,8 @@
 		<kbd class="border border-gray-300 bg-gray-50 px-1">d</kbd> delayed
 		<kbd class="border border-gray-300 bg-gray-50 px-1">e</kbd> early
 		<kbd class="border border-gray-300 bg-gray-50 px-1">s</kbd> skip
-		<kbd class="border border-gray-300 bg-gray-50 px-1">r</kbd> reset
+		<kbd class="border border-gray-300 bg-gray-50 px-1">r</kbd> reset &middot;
+		<kbd class="border border-gray-300 bg-gray-50 px-1">t</kbd> edit time
 	</div>
 
 	{#if data.tasks.length === 0}
@@ -157,15 +182,54 @@
 						? 'ring-2 ring-gray-900 ring-inset'
 						: ''} {future ? 'opacity-50' : ''}"
 				>
-					<div
-						class="w-24 shrink-0 font-mono text-sm text-gray-500"
-						title={formatDuration(task.slotDuration ?? 60)}
-					>
-						{formatTime(task.scheduledAt)} - {computeEndTime(
-							task.slotStartTime,
-							task.slotDuration ?? 60
-						)}
-					</div>
+					{#if editingTimeId === task.id}
+						<form
+							method="post"
+							action="?/updateScheduledAt"
+							use:enhance={() => {
+								return async ({ update }) => {
+									await update();
+									editingTimeId = null;
+								};
+							}}
+							class="w-24 shrink-0"
+						>
+							<input type="hidden" name="id" value={task.id} />
+							<input
+								name="time"
+								type="time"
+								value={formatTime(task.scheduledAt)}
+								class="w-full border border-gray-300 px-1 py-0.5 font-mono text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								onblur={(e) => {
+									const form = (e.currentTarget as HTMLInputElement).closest('form');
+									if (form instanceof HTMLFormElement) form.requestSubmit();
+								}}
+								onkeydown={(e) => {
+									if (e.key === 'Enter') {
+										e.preventDefault();
+										const form = (e.currentTarget as HTMLInputElement).closest('form');
+										if (form instanceof HTMLFormElement) form.requestSubmit();
+									}
+									if (e.key === 'Escape') {
+										e.preventDefault();
+										editingTimeId = null;
+									}
+								}}
+							/>
+						</form>
+					{:else}
+						<button
+							type="button"
+							onclick={() => (editingTimeId = task.id)}
+							class="w-24 shrink-0 text-left font-mono text-sm text-gray-500 hover:text-gray-900"
+							title="{formatDuration(task.slotDuration ?? 60)} — click to edit time"
+						>
+							{formatTime(task.scheduledAt)} - {computeEndTime(
+								formatTime(task.scheduledAt),
+								task.slotDuration ?? 60
+							)}
+						</button>
+					{/if}
 
 					<div class="min-w-0 flex-1">
 						<div class="flex items-center gap-2">
@@ -236,5 +300,21 @@
 				</div>
 			{/each}
 		</div>
+
+		{@const totals = categoryTotals()}
+		{#if totals.length > 0}
+			<div class="flex gap-4 border border-gray-200 bg-white px-4 py-3 shadow-sm">
+				{#each totals as { name, minutes }}
+					<div class="flex items-center gap-2">
+						<span
+							class="h-3 w-3 border-l-4 {categoryColors[name]?.split(' ')[0] ??
+								'border-l-gray-300'}"
+						></span>
+						<span class="text-sm font-medium text-gray-700">{name}</span>
+						<span class="text-sm text-gray-500">{formatDuration(minutes)}</span>
+					</div>
+				{/each}
+			</div>
+		{/if}
 	{/if}
 </div>

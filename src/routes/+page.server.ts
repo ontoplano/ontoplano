@@ -78,10 +78,26 @@ export const actions: Actions = {
 			? toLocalISOString(new Date())
 			: null;
 
-		db.update(taskInstances)
-			.set({ status: status as (typeof validStatuses)[number], completedAt })
-			.where(eq(taskInstances.id, id))
-			.run();
+		const updateData: Record<string, unknown> = {
+			status: status as (typeof validStatuses)[number],
+			completedAt
+		};
+
+		// Clear resolved activity when resetting or skipping a category-mode task
+		if (status === 'pending' || status === 'skipped') {
+			const task = db
+				.select({ slotMode: weeklySlots.mode })
+				.from(taskInstances)
+				.innerJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
+				.where(eq(taskInstances.id, id))
+				.get();
+
+			if (task?.slotMode === 'category') {
+				updateData.resolvedActivityId = null;
+			}
+		}
+
+		db.update(taskInstances).set(updateData).where(eq(taskInstances.id, id)).run();
 
 		return { success: true };
 	},
@@ -95,6 +111,28 @@ export const actions: Actions = {
 
 		db.update(taskInstances)
 			.set({ resolvedActivityId: activityId })
+			.where(eq(taskInstances.id, id))
+			.run();
+
+		return { success: true };
+	},
+
+	updateScheduledAt: async ({ request }) => {
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const time = formData.get('time')?.toString()?.trim();
+
+		if (!id) return fail(400, { message: 'Missing task id' });
+		if (!time || !/^\d{2}:\d{2}$/.test(time)) return fail(400, { message: 'Invalid time format' });
+
+		const task = db.select().from(taskInstances).where(eq(taskInstances.id, id)).get();
+		if (!task) return fail(404, { message: 'Task not found' });
+
+		const datePart = task.scheduledAt.slice(0, 10);
+		const newScheduledAt = `${datePart}T${time}:00`;
+
+		db.update(taskInstances)
+			.set({ scheduledAt: newScheduledAt })
 			.where(eq(taskInstances.id, id))
 			.run();
 

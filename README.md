@@ -48,6 +48,7 @@ Copy `.env.example` to `.env` and set `ORIGIN` and `BETTER_AUTH_SECRET`.
 | ---------- | ------------------- | ------------------------------------------ |
 | Dashboard  | `j`/`k`             | Navigate tasks                             |
 | Dashboard  | `c` `d` `e` `s` `r` | Done, delayed, early, skip, reset          |
+| Dashboard  | `t`                 | Edit scheduled time                        |
 | Activities | `j`/`k`             | Navigate list                              |
 | Activities | `n`                 | New activity                               |
 | Planner    | `h`/`l`             | Switch day                                 |
