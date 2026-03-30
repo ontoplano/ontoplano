@@ -2,6 +2,24 @@ import { db } from './db/index.js';
 import { weeklySlots, taskInstances } from './db/schema.js';
 import { eq, and, gte, lt } from 'drizzle-orm';
 
+/** Format a Date as 'YYYY-MM-DDTHH:MM:SS' in local time (no UTC conversion). */
+export function toLocalISOString(d: Date): string {
+	const pad = (n: number) => String(n).padStart(2, '0');
+	return (
+		d.getFullYear() +
+		'-' +
+		pad(d.getMonth() + 1) +
+		'-' +
+		pad(d.getDate()) +
+		'T' +
+		pad(d.getHours()) +
+		':' +
+		pad(d.getMinutes()) +
+		':' +
+		pad(d.getSeconds())
+	);
+}
+
 function getMonday(date: Date): Date {
 	const d = new Date(date);
 	const day = d.getDay();
@@ -21,7 +39,7 @@ function formatDatetime(date: Date, time: string): string {
 	const [hours, minutes] = time.split(':').map(Number);
 	const d = new Date(date);
 	d.setHours(hours, minutes, 0, 0);
-	return d.toISOString().replace('Z', '').slice(0, 19);
+	return toLocalISOString(d);
 }
 
 /**
@@ -32,8 +50,8 @@ export function generateWeekInstances(weekStart: Date): number {
 	const monday = getMonday(weekStart);
 	const nextMonday = addDays(monday, 7);
 
-	const mondayStr = monday.toISOString().slice(0, 19);
-	const nextMondayStr = nextMonday.toISOString().slice(0, 19);
+	const mondayStr = toLocalISOString(monday);
+	const nextMondayStr = toLocalISOString(nextMonday);
 
 	const slots = db.select().from(weeklySlots).where(eq(weeklySlots.active, true)).all();
 

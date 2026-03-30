@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { weeklySlots, activities, categories, taskInstances } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import { toLocalISOString } from '$lib/server/week-generator';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -84,7 +85,7 @@ export const actions: Actions = {
 				categoryId,
 				activityId,
 				label,
-				updatedAt: new Date().toISOString().slice(0, 19)
+				updatedAt: toLocalISOString(new Date())
 			})
 			.where(eq(weeklySlots.id, id))
 			.run();
@@ -100,7 +101,7 @@ export const actions: Actions = {
 		if (!id) return fail(400, { message: 'Missing id' });
 
 		db.update(weeklySlots)
-			.set({ active: !active, updatedAt: new Date().toISOString().slice(0, 19) })
+			.set({ active: !active, updatedAt: toLocalISOString(new Date()) })
 			.where(eq(weeklySlots.id, id))
 			.run();
 

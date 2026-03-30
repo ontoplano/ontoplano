@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { activities, categories } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import { toLocalISOString } from '$lib/server/week-generator';
 
 export const load: PageServerLoad = async () => {
 	const allCategories = db.select().from(categories).all();
@@ -54,7 +55,7 @@ export const actions: Actions = {
 				name,
 				categoryId,
 				description,
-				updatedAt: new Date().toISOString().slice(0, 19)
+				updatedAt: toLocalISOString(new Date())
 			})
 			.where(eq(activities.id, id))
 			.run();
@@ -70,7 +71,7 @@ export const actions: Actions = {
 		if (!id) return fail(400, { message: 'Missing id' });
 
 		db.update(activities)
-			.set({ active: !active, updatedAt: new Date().toISOString().slice(0, 19) })
+			.set({ active: !active, updatedAt: toLocalISOString(new Date()) })
 			.where(eq(activities.id, id))
 			.run();
 

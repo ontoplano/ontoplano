@@ -3,7 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { taskInstances, weeklySlots, activities, categories } from '$lib/server/db/schema';
 import { eq, and, gte, lt } from 'drizzle-orm';
-import { generateCurrentWeek } from '$lib/server/week-generator';
+import { generateCurrentWeek, toLocalISOString } from '$lib/server/week-generator';
 
 function todayRange(): { start: string; end: string } {
 	const now = new Date();
@@ -11,8 +11,8 @@ function todayRange(): { start: string; end: string } {
 	const end = new Date(start);
 	end.setDate(end.getDate() + 1);
 	return {
-		start: start.toISOString().slice(0, 19),
-		end: end.toISOString().slice(0, 19)
+		start: toLocalISOString(start),
+		end: toLocalISOString(end)
 	};
 }
 
@@ -47,7 +47,7 @@ export const load: PageServerLoad = async () => {
 		.orderBy(taskInstances.scheduledAt)
 		.all();
 
-	return { tasks, now: new Date().toISOString().slice(0, 19) };
+	return { tasks, now: toLocalISOString(new Date()) };
 };
 
 export const actions: Actions = {
@@ -64,7 +64,7 @@ export const actions: Actions = {
 		}
 
 		const completedAt = ['completed', 'delayed', 'early'].includes(status)
-			? new Date().toISOString().slice(0, 19)
+			? toLocalISOString(new Date())
 			: null;
 
 		db.update(taskInstances)
