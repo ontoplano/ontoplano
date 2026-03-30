@@ -6,6 +6,7 @@
 
 	let selectedIndex = $state(0);
 	let editingTimeId: number | null = $state(null);
+	let editingDurationId: number | null = $state(null);
 
 	const statusOptions = [
 		{ value: 'completed', label: 'Done', key: 'c' },
@@ -80,9 +81,20 @@
 				e.preventDefault();
 				editingTimeId = tasks[selectedIndex].id;
 				break;
+			case 'D':
+				e.preventDefault();
+				editingDurationId = tasks[selectedIndex].id;
+				break;
+			case 'x': {
+				e.preventDefault();
+				const deleteForm = document.getElementById(`delete-form-${tasks[selectedIndex].id}`);
+				if (deleteForm instanceof HTMLFormElement) deleteForm.requestSubmit();
+				break;
+			}
 			case 'Escape':
 				e.preventDefault();
 				editingTimeId = null;
+				editingDurationId = null;
 				break;
 			case 'c':
 			case 'd':
@@ -126,12 +138,16 @@
 		);
 	}
 
+	function effectiveDuration(task: (typeof data.tasks)[number]): number {
+		return task.durationOverride ?? task.slotDuration ?? 60;
+	}
+
 	function categoryTotals(): { name: string; minutes: number }[] {
 		const totals: Record<string, number> = {};
 		for (const task of data.tasks) {
 			const cat = task.categoryName;
 			if (!cat) continue;
-			totals[cat] = (totals[cat] || 0) + (task.slotDuration ?? 60);
+			totals[cat] = (totals[cat] || 0) + effectiveDuration(task);
 		}
 		return Object.entries(totals).map(([name, minutes]) => ({ name, minutes }));
 	}
@@ -164,6 +180,8 @@
 		<kbd class="border border-gray-300 bg-gray-50 px-1">s</kbd> skip
 		<kbd class="border border-gray-300 bg-gray-50 px-1">r</kbd> reset &middot;
 		<kbd class="border border-gray-300 bg-gray-50 px-1">t</kbd> edit time
+		<kbd class="border border-gray-300 bg-gray-50 px-1">D</kbd> edit duration
+		<kbd class="border border-gray-300 bg-gray-50 px-1">x</kbd> delete
 	</div>
 
 	{#if data.tasks.length === 0}
@@ -222,12 +240,60 @@
 							type="button"
 							onclick={() => (editingTimeId = task.id)}
 							class="w-24 shrink-0 text-left font-mono text-sm text-gray-500 hover:text-gray-900"
-							title="{formatDuration(task.slotDuration ?? 60)} — click to edit time"
+							title="click to edit time"
 						>
 							{formatTime(task.scheduledAt)} - {computeEndTime(
 								formatTime(task.scheduledAt),
-								task.slotDuration ?? 60
+								effectiveDuration(task)
 							)}
+						</button>
+					{/if}
+
+					{#if editingDurationId === task.id}
+						<form
+							method="post"
+							action="?/updateDuration"
+							use:enhance={() => {
+								return async ({ update }) => {
+									await update();
+									editingDurationId = null;
+								};
+							}}
+							class="w-16 shrink-0"
+						>
+							<input type="hidden" name="id" value={task.id} />
+							<input
+								name="minutes"
+								type="number"
+								min="0"
+								step="5"
+								value={effectiveDuration(task)}
+								class="w-full border border-gray-300 px-1 py-0.5 font-mono text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								onblur={(e) => {
+									const form = (e.currentTarget as HTMLInputElement).closest('form');
+									if (form instanceof HTMLFormElement) form.requestSubmit();
+								}}
+								onkeydown={(e) => {
+									if (e.key === 'Enter') {
+										e.preventDefault();
+										const form = (e.currentTarget as HTMLInputElement).closest('form');
+										if (form instanceof HTMLFormElement) form.requestSubmit();
+									}
+									if (e.key === 'Escape') {
+										e.preventDefault();
+										editingDurationId = null;
+									}
+								}}
+							/>
+						</form>
+					{:else}
+						<button
+							type="button"
+							onclick={() => (editingDurationId = task.id)}
+							class="shrink-0 font-mono text-xs text-gray-400 hover:text-gray-700"
+							title="click to edit duration"
+						>
+							{formatDuration(effectiveDuration(task))}{#if task.durationOverride !== null}*{/if}
 						</button>
 					{/if}
 
@@ -296,6 +362,21 @@
 								{opt.label}
 							</button>
 						{/each}
+					</form>
+
+					<form
+						id="delete-form-{task.id}"
+						method="post"
+						action="?/deleteTask"
+						use:enhance
+						class="shrink-0"
+					>
+						<input type="hidden" name="id" value={task.id} />
+						<button
+							type="submit"
+							class="px-1 py-0.5 text-xs text-gray-300 transition hover:text-red-600"
+							title="Delete task (x)">×</button
+						>
 					</form>
 				</div>
 			{/each}

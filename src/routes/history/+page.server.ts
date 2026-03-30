@@ -1,7 +1,8 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { taskInstances, weeklySlots, activities, categories } from '$lib/server/db/schema';
-import { eq, and, gte, lt } from 'drizzle-orm';
+import { eq, and, gte, lt, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/sqlite-core';
 import {
 	toLocalISOString,
 	getMonday,
@@ -48,6 +49,9 @@ export const load: PageServerLoad = async ({ url }) => {
 	const mondayStr = toLocalISOString(monday);
 	const nextMondayStr = toLocalISOString(nextMonday);
 
+	const slotActivities = alias(activities, 'slot_activities');
+	const activityCategories = alias(categories, 'activity_categories');
+
 	const instances = db
 		.select({
 			id: taskInstances.id,
@@ -60,14 +64,20 @@ export const load: PageServerLoad = async ({ url }) => {
 			slotLabel: weeklySlots.label,
 			slotStartTime: weeklySlots.startTime,
 			slotDuration: weeklySlots.durationMinutes,
-			categoryId: weeklySlots.categoryId,
-			categoryName: categories.name,
+			categoryId: sql<number>`coalesce(${weeklySlots.categoryId}, ${slotActivities.categoryId})`.as(
+				'effective_category_id'
+			),
+			categoryName: sql<string>`coalesce(${categories.name}, ${activityCategories.name})`.as(
+				'effective_category_name'
+			),
 			activityId: taskInstances.resolvedActivityId,
 			activityName: activities.name
 		})
 		.from(taskInstances)
 		.innerJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
 		.leftJoin(categories, eq(weeklySlots.categoryId, categories.id))
+		.leftJoin(slotActivities, eq(weeklySlots.activityId, slotActivities.id))
+		.leftJoin(activityCategories, eq(slotActivities.categoryId, activityCategories.id))
 		.leftJoin(activities, eq(taskInstances.resolvedActivityId, activities.id))
 		.where(
 			and(gte(taskInstances.scheduledAt, mondayStr), lt(taskInstances.scheduledAt, nextMondayStr))

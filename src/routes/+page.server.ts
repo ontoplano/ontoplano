@@ -2,7 +2,8 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { taskInstances, weeklySlots, activities, categories } from '$lib/server/db/schema';
-import { eq, and, gte, lt } from 'drizzle-orm';
+import { eq, and, gte, lt, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/sqlite-core';
 import { generateCurrentWeek, toLocalISOString } from '$lib/server/week-generator';
 
 function todayRange(): { start: string; end: string } {
@@ -21,6 +22,9 @@ export const load: PageServerLoad = async () => {
 
 	const { start, end } = todayRange();
 
+	const slotActivities = alias(activities, 'slot_activities');
+	const activityCategories = alias(categories, 'activity_categories');
+
 	const tasks = db
 		.select({
 			id: taskInstances.id,
@@ -33,8 +37,13 @@ export const load: PageServerLoad = async () => {
 			slotLabel: weeklySlots.label,
 			slotStartTime: weeklySlots.startTime,
 			slotDuration: weeklySlots.durationMinutes,
-			categoryId: weeklySlots.categoryId,
-			categoryName: categories.name,
+			durationOverride: taskInstances.durationOverride,
+			categoryId: sql<number>`coalesce(${weeklySlots.categoryId}, ${slotActivities.categoryId})`.as(
+				'effective_category_id'
+			),
+			categoryName: sql<string>`coalesce(${categories.name}, ${activityCategories.name})`.as(
+				'effective_category_name'
+			),
 			activityId: taskInstances.resolvedActivityId,
 			activityName: activities.name,
 			activityColor: activities.color
@@ -42,6 +51,8 @@ export const load: PageServerLoad = async () => {
 		.from(taskInstances)
 		.innerJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
 		.leftJoin(categories, eq(weeklySlots.categoryId, categories.id))
+		.leftJoin(slotActivities, eq(weeklySlots.activityId, slotActivities.id))
+		.leftJoin(activityCategories, eq(slotActivities.categoryId, activityCategories.id))
 		.leftJoin(activities, eq(taskInstances.resolvedActivityId, activities.id))
 		.where(and(gte(taskInstances.scheduledAt, start), lt(taskInstances.scheduledAt, end)))
 		.orderBy(taskInstances.scheduledAt)
@@ -135,6 +146,33 @@ export const actions: Actions = {
 			.set({ scheduledAt: newScheduledAt })
 			.where(eq(taskInstances.id, id))
 			.run();
+
+		return { success: true };
+	},
+
+	updateDuration: async ({ request }) => {
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const minutes = formData.get('minutes')?.toString()?.trim();
+
+		if (!id) return fail(400, { message: 'Missing task id' });
+		if (!minutes || isNaN(Number(minutes)) || Number(minutes) < 0) {
+			return fail(400, { message: 'Invalid duration' });
+		}
+
+		const value = Number(minutes) === 0 ? null : Number(minutes);
+		db.update(taskInstances).set({ durationOverride: value }).where(eq(taskInstances.id, id)).run();
+
+		return { success: true };
+	},
+
+	deleteTask: async ({ request }) => {
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+
+		if (!id) return fail(400, { message: 'Missing task id' });
+
+		db.delete(taskInstances).where(eq(taskInstances.id, id)).run();
 
 		return { success: true };
 	}

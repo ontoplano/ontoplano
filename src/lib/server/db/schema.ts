@@ -82,6 +82,7 @@ export const taskInstances = sqliteTable(
 		completedAt: text('completed_at'),
 		notes: text('notes').default(''),
 		resolvedActivityId: integer('resolved_activity_id').references(() => activities.id),
+		durationOverride: integer('duration_override'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
