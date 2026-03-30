@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  semotina:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: semotina
+    restart: unless-stopped
+    ports:
+      - '${PORT:-3000}:3000'
+    volumes:
+      - semotina-data:/data
+    environment:
+      - DATABASE_URL=/data/semotina.db
+      - ORIGIN=${ORIGIN:-http://localhost:3000}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}
+      - HOST=0.0.0.0
+      - PORT=3000
+
+volumes:
+  semotina-data:
+    driver: local
