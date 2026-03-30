@@ -139,6 +139,9 @@
 								<span class="text-xs text-gray-400">{task.categoryName}</span>
 							{/if}
 						</div>
+						{#if task.slotLabel && taskLabel(task) !== task.slotLabel}
+							<p class="truncate text-xs text-gray-500">{task.slotLabel}</p>
+						{/if}
 						{#if task.slotDuration && task.slotDuration !== 60}
 							<span class="text-xs text-gray-400">{task.slotDuration}min</span>
 						{/if}

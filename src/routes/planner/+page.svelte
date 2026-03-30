@@ -248,6 +248,9 @@
 						{#if slot.durationMinutes !== 60}
 							<span class="ml-1 text-xs text-gray-400">{slot.durationMinutes}min</span>
 						{/if}
+						{#if slot.label && slotLabel(slot) !== slot.label}
+							<p class="truncate text-xs text-gray-500">{slot.label}</p>
+						{/if}
 					</div>
 					<div class="flex shrink-0 items-center gap-2">
 						<button
