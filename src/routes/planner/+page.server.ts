@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { weeklySlots, activities, categories } from '$lib/server/db/schema';
+import { weeklySlots, activities, categories, taskInstances } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -113,6 +113,7 @@ export const actions: Actions = {
 
 		if (!id) return fail(400, { message: 'Missing id' });
 
+		db.delete(taskInstances).where(eq(taskInstances.slotId, id)).run();
 		db.delete(weeklySlots).where(eq(weeklySlots.id, id)).run();
 
 		return { success: true };
