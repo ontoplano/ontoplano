@@ -1,4 +1,4 @@
-.PHONY: dev build preview start stop clean install-service uninstall-service db-push db-seed db-generate db-migrate db-studio lint format test docker-build docker-up docker-down
+.PHONY: dev build preview start stop clean install-service uninstall-service db-push db-seed db-generate db-migrate db-studio db lint format test docker-build docker-up docker-down logs
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -31,6 +31,9 @@ db-migrate:
 db-studio:
 	yarn db:studio
 
+db:
+	sqlite3 ~/.local/share/semotina/semotina.db
+
 db-setup: db-push db-seed
 
 # ─── Code Quality ────────────────────────────────────────────────────────────
@@ -54,6 +57,9 @@ docker-up:
 
 docker-down:
 	docker compose down
+
+logs:
+	docker compose logs -f semotina
 
 # ─── Systemd ─────────────────────────────────────────────────────────────────
 
