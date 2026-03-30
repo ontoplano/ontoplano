@@ -2,7 +2,7 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { weeklySlots, activities, categories, taskInstances } from '$lib/server/db/schema';
-import { eq, and, gte, lt } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import {
 	toLocalISOString,
 	getMonday,
@@ -17,7 +17,10 @@ function parseWeekParam(param: string | null): Date {
 	if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
 		const parsed = new Date(param + 'T00:00:00');
 		if (!isNaN(parsed.getTime())) {
-			return getMonday(parsed);
+			const monday = getMonday(parsed);
+			const currentMonday = getMonday(new Date());
+			if (monday < currentMonday) return currentMonday;
+			return monday;
 		}
 	}
 	return getMonday(new Date());
@@ -37,16 +40,13 @@ export const load: PageServerLoad = async ({ url }) => {
 	const weekNumber = getISOWeekNumber(monday);
 	const weekYear = getISOWeekYear(monday);
 	const isCurrent = formatDate(monday) === formatDate(currentMonday);
-	const isPast = monday < currentMonday && !isCurrent;
 
 	const weekMeta = {
 		monday: formatDate(monday),
 		sunday: formatDate(sunday),
 		weekNumber,
 		weekYear,
-		isPast,
 		isCurrent,
-		prevWeek: formatDate(addDays(monday, -7)),
 		nextWeek: formatDate(nextMonday)
 	};
 
@@ -57,57 +57,6 @@ export const load: PageServerLoad = async ({ url }) => {
 		.where(eq(activities.active, true))
 		.orderBy(activities.name)
 		.all();
-
-	if (isPast) {
-		const mondayStr = toLocalISOString(monday);
-		const nextMondayStr = toLocalISOString(nextMonday);
-
-		const instances = db
-			.select({
-				id: taskInstances.id,
-				scheduledAt: taskInstances.scheduledAt,
-				status: taskInstances.status,
-				completedAt: taskInstances.completedAt,
-				notes: taskInstances.notes,
-				slotId: taskInstances.slotId,
-				slotMode: weeklySlots.mode,
-				slotLabel: weeklySlots.label,
-				slotStartTime: weeklySlots.startTime,
-				slotDuration: weeklySlots.durationMinutes,
-				categoryId: weeklySlots.categoryId,
-				categoryName: categories.name,
-				activityId: taskInstances.resolvedActivityId,
-				activityName: activities.name
-			})
-			.from(taskInstances)
-			.innerJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
-			.leftJoin(categories, eq(weeklySlots.categoryId, categories.id))
-			.leftJoin(activities, eq(taskInstances.resolvedActivityId, activities.id))
-			.where(
-				and(gte(taskInstances.scheduledAt, mondayStr), lt(taskInstances.scheduledAt, nextMondayStr))
-			)
-			.orderBy(taskInstances.scheduledAt)
-			.all();
-
-		const instancesByDay: Record<number, typeof instances> = {};
-		for (const inst of instances) {
-			const d = new Date(inst.scheduledAt);
-			const dayOfWeek = d.getDay();
-			const weekdayIdx = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-			if (!instancesByDay[weekdayIdx]) instancesByDay[weekdayIdx] = [];
-			instancesByDay[weekdayIdx].push(inst);
-		}
-
-		return {
-			mode: 'history' as const,
-			instancesByDay,
-			weekMeta,
-			categories: allCategories,
-			activities: allActivities,
-			weekdays: WEEKDAYS,
-			slots: []
-		};
-	}
 
 	const slots = db
 		.select({
@@ -130,13 +79,11 @@ export const load: PageServerLoad = async ({ url }) => {
 		.all();
 
 	return {
-		mode: 'template' as const,
 		slots,
 		weekMeta,
 		categories: allCategories,
 		activities: allActivities,
-		weekdays: WEEKDAYS,
-		instancesByDay: {}
+		weekdays: WEEKDAYS
 	};
 };
 
@@ -217,6 +164,63 @@ export const actions: Actions = {
 
 		db.delete(taskInstances).where(eq(taskInstances.slotId, id)).run();
 		db.delete(weeklySlots).where(eq(weeklySlots.id, id)).run();
+
+		return { success: true };
+	},
+
+	bulkDelete: async ({ request }) => {
+		const formData = await request.formData();
+		const idsStr = formData.get('ids')?.toString() ?? '';
+		const ids = idsStr
+			.split(',')
+			.map(Number)
+			.filter((n) => n > 0);
+
+		if (ids.length === 0) return fail(400, { message: 'No slots selected' });
+
+		for (const id of ids) {
+			db.delete(taskInstances).where(eq(taskInstances.slotId, id)).run();
+		}
+		db.delete(weeklySlots).where(inArray(weeklySlots.id, ids)).run();
+
+		return { success: true };
+	},
+
+	copyToWeekdays: async ({ request }) => {
+		const formData = await request.formData();
+		const idsStr = formData.get('ids')?.toString() ?? '';
+		const targetDaysStr = formData.get('targetDays')?.toString() ?? '';
+		const ids = idsStr
+			.split(',')
+			.map(Number)
+			.filter((n) => n > 0);
+		const targetDays = targetDaysStr
+			.split(',')
+			.map(Number)
+			.filter((n) => n >= 0 && n <= 6);
+
+		if (ids.length === 0) return fail(400, { message: 'No slots selected' });
+		if (targetDays.length === 0) return fail(400, { message: 'No target days selected' });
+
+		const sourceSlots = db.select().from(weeklySlots).where(inArray(weeklySlots.id, ids)).all();
+
+		for (const slot of sourceSlots) {
+			for (const day of targetDays) {
+				if (day === slot.weekday) continue;
+				db.insert(weeklySlots)
+					.values({
+						weekday: day,
+						startTime: slot.startTime,
+						durationMinutes: slot.durationMinutes,
+						mode: slot.mode,
+						categoryId: slot.categoryId,
+						activityId: slot.activityId,
+						label: slot.label,
+						active: slot.active
+					})
+					.run();
+			}
+		}
 
 		return { success: true };
 	}

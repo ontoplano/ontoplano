@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
-	import type { PageServerData, ActionData } from './$types';
+	import { tick } from 'svelte';
+	import type { PageServerData, ActionData } from './$types.js';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -11,26 +12,26 @@
 	let selectedDay: number = $state(new Date().getDay() === 0 ? 6 : new Date().getDay() - 1);
 	let selectedIndex: number = $state(0);
 
+	// Multiselect state
+	let selectedIds: Set<number> = $state(new Set());
+	let multiselect = $state(false);
+	let showCopyPanel = $state(false);
+	let copyTargetDays: Set<number> = $state(new Set());
+
+	// Time input ref for auto-focus
+	let timeInput: HTMLInputElement | undefined = $state(undefined);
+
+	// Slot type alias
+	type Slot = (typeof data.slots)[number];
+
 	const categoryColors: Record<string, string> = {
 		duty: 'border-l-duty',
 		skill: 'border-l-skill',
 		money: 'border-l-money'
 	};
 
-	const statusBadgeClass: Record<string, string> = {
-		pending: 'bg-gray-100 text-gray-600',
-		completed: 'bg-green-100 text-green-700',
-		delayed: 'bg-yellow-100 text-yellow-700',
-		early: 'bg-blue-100 text-blue-700',
-		skipped: 'bg-red-100 text-red-700'
-	};
-
-	function slotsForDay(day: number) {
-		return data.slots.filter((s) => s.weekday === day);
-	}
-
-	function instancesForDay(day: number) {
-		return data.instancesByDay[day] ?? [];
+	function slotsForDay(day: number): Slot[] {
+		return data.slots.filter((s: Slot) => s.weekday === day);
 	}
 
 	function slotLabel(slot: (typeof data.slots)[number]): string {
@@ -38,18 +39,6 @@
 		if (slot.label) return slot.label;
 		if (slot.categoryName) return slot.categoryName;
 		return 'Slot';
-	}
-
-	function instanceLabel(inst: {
-		slotMode: string | null;
-		activityName: string | null;
-		slotLabel: string | null;
-		categoryName: string | null;
-	}): string {
-		if (inst.slotMode === 'activity' && inst.activityName) return inst.activityName;
-		if (inst.slotLabel) return inst.slotLabel;
-		if (inst.categoryName) return inst.categoryName;
-		return 'Task';
 	}
 
 	function computeEndTime(startTime: string, durationMinutes: number): string {
@@ -77,15 +66,29 @@
 		editingId = slot.id;
 		slotMode = slot.mode as 'category' | 'activity';
 		showForm = true;
+		tick().then(() => timeInput?.focus());
 	}
 
-	function navigateWeek(direction: 'prev' | 'next') {
-		const target = direction === 'prev' ? data.weekMeta.prevWeek : data.weekMeta.nextWeek;
-		goto(`/planner?week=${target}`);
+	function startNew() {
+		showForm = true;
+		editingId = null;
+		tick().then(() => timeInput?.focus());
+	}
+
+	function goToNextWeek() {
+		goto(`/planner?week=${data.weekMeta.nextWeek}`);
 	}
 
 	function goToCurrentWeek() {
 		goto('/planner');
+	}
+
+	function toggleSlotSelection(id: number) {
+		if (selectedIds.has(id)) {
+			selectedIds = new Set([...selectedIds].filter((x) => x !== id));
+		} else {
+			selectedIds = new Set([...selectedIds, id]);
+		}
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -96,48 +99,86 @@
 		)
 			return;
 
-		if (e.key === '[') {
-			e.preventDefault();
-			navigateWeek('prev');
-			return;
-		}
-		if (e.key === ']') {
-			e.preventDefault();
-			navigateWeek('next');
+		if (showCopyPanel) {
+			if (e.key === 'Escape') {
+				e.preventDefault();
+				showCopyPanel = false;
+			}
 			return;
 		}
 
-		if (data.mode === 'history') {
-			const items = instancesForDay(selectedDay);
+		if (multiselect) {
+			const slots = slotsForDay(selectedDay);
 			switch (e.key) {
+				case 'v':
+					e.preventDefault();
+					multiselect = false;
+					selectedIds = new Set();
+					return;
+				case ' ':
+					e.preventDefault();
+					if (slots.length > 0 && slots[selectedIndex]) {
+						toggleSlotSelection(slots[selectedIndex].id);
+					}
+					return;
+				case 'x':
+					e.preventDefault();
+					if (selectedIds.size > 0) {
+						const form = document.getElementById('bulk-delete-form');
+						if (form instanceof HTMLFormElement) form.requestSubmit();
+					}
+					return;
+				case 'p':
+					e.preventDefault();
+					if (selectedIds.size > 0) {
+						showCopyPanel = true;
+						copyTargetDays = new Set();
+					}
+					return;
+				case 'Escape':
+					e.preventDefault();
+					multiselect = false;
+					selectedIds = new Set();
+					return;
 				case 'h':
 					e.preventDefault();
 					selectedDay = Math.max(selectedDay - 1, 0);
 					selectedIndex = 0;
-					break;
+					return;
 				case 'l':
 					e.preventDefault();
 					selectedDay = Math.min(selectedDay + 1, 6);
 					selectedIndex = 0;
-					break;
+					return;
 				case 'j':
 					e.preventDefault();
-					if (items.length > 0) selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
-					break;
+					if (slots.length > 0) {
+						selectedIndex = Math.min(selectedIndex + 1, slots.length - 1);
+					}
+					return;
 				case 'k':
 					e.preventDefault();
-					if (items.length > 0) selectedIndex = Math.max(selectedIndex - 1, 0);
-					break;
-				case 'Escape':
-					e.preventDefault();
-					break;
+					if (slots.length > 0) {
+						selectedIndex = Math.max(selectedIndex - 1, 0);
+					}
+					return;
 			}
+			return;
+		}
+
+		if (e.key === ']') {
+			e.preventDefault();
+			goToNextWeek();
 			return;
 		}
 
 		const slots = slotsForDay(selectedDay);
 
 		switch (e.key) {
+			case 'v':
+				e.preventDefault();
+				multiselect = true;
+				break;
 			case 'h':
 				e.preventDefault();
 				selectedDay = Math.max(selectedDay - 1, 0);
@@ -182,8 +223,7 @@
 				break;
 			case 'n':
 				e.preventDefault();
-				showForm = true;
-				editingId = null;
+				startNew();
 				break;
 			case 'Escape':
 				e.preventDefault();
@@ -193,8 +233,8 @@
 		}
 	}
 
-	function editingSlot() {
-		return editingId ? data.slots.find((s) => s.id === editingId) : null;
+	function editingSlot(): Slot | null {
+		return editingId ? (data.slots.find((s: Slot) => s.id === editingId) ?? null) : null;
 	}
 </script>
 
@@ -205,11 +245,6 @@
 		<h1 class="text-lg font-bold text-gray-900">Weekly Planner</h1>
 		<div class="flex items-center gap-2">
 			<button
-				onclick={() => navigateWeek('prev')}
-				class="border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-				title="Previous week ([)">&larr;</button
-			>
-			<button
 				onclick={goToCurrentWeek}
 				class="border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
 				class:border-gray-900={data.weekMeta.isCurrent}
@@ -218,29 +253,28 @@
 				W{data.weekMeta.weekNumber}, {data.weekMeta.weekYear}
 			</button>
 			<button
-				onclick={() => navigateWeek('next')}
+				onclick={goToNextWeek}
 				class="border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
 				title="Next week (])">&rarr;</button
 			>
 		</div>
-		{#if data.mode === 'template'}
-			<button
-				onclick={() => {
-					showForm = !showForm;
+		<button
+			onclick={() => {
+				if (showForm) {
+					showForm = false;
 					editingId = null;
-				}}
-				class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-			>
-				{showForm ? 'Cancel' : 'New Slot'}
-			</button>
-		{/if}
+				} else {
+					startNew();
+				}
+			}}
+			class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+		>
+			{showForm ? 'Cancel' : 'New Slot'}
+		</button>
 	</div>
 
 	<div class="text-center text-sm text-gray-500">
 		{formatWeekDate(data.weekMeta.monday)} &mdash; {formatWeekDate(data.weekMeta.sunday)}
-		{#if data.weekMeta.isPast}
-			<span class="ml-2 border border-gray-300 px-1.5 py-0.5 text-xs text-gray-400">read-only</span>
-		{/if}
 	</div>
 
 	<div class="text-xs text-gray-400">
@@ -252,19 +286,20 @@
 			class="border border-gray-300 bg-gray-50 px-1">k</kbd
 		>
 		navigate &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">[</kbd>/<kbd
-			class="border border-gray-300 bg-gray-50 px-1">]</kbd
-		>
-		prev/next week
-		{#if data.mode === 'template'}
-			&middot;
-			<kbd class="border border-gray-300 bg-gray-50 px-1">e</kbd> edit &middot;
-			<kbd class="border border-gray-300 bg-gray-50 px-1">d</kbd> disable &middot;
-			<kbd class="border border-gray-300 bg-gray-50 px-1">D</kbd> delete &middot;
-			<kbd class="border border-gray-300 bg-gray-50 px-1">n</kbd> new
-		{/if}
-		&middot;
+		<kbd class="border border-gray-300 bg-gray-50 px-1">]</kbd> next week &middot;
+		<kbd class="border border-gray-300 bg-gray-50 px-1">e</kbd> edit &middot;
+		<kbd class="border border-gray-300 bg-gray-50 px-1">d</kbd> disable &middot;
+		<kbd class="border border-gray-300 bg-gray-50 px-1">D</kbd> delete &middot;
+		<kbd class="border border-gray-300 bg-gray-50 px-1">n</kbd> new &middot;
 		<kbd class="border border-gray-300 bg-gray-50 px-1">Esc</kbd> close form
+		{#if !multiselect}
+			&middot; <kbd class="border border-gray-300 bg-gray-50 px-1">v</kbd> multiselect
+		{:else}
+			&middot; <kbd class="border border-gray-300 bg-gray-50 px-1">Space</kbd> select &middot;
+			<kbd class="border border-gray-300 bg-gray-50 px-1">x</kbd> delete &middot;
+			<kbd class="border border-gray-300 bg-gray-50 px-1">p</kbd> copy &middot;
+			<kbd class="border border-gray-300 bg-gray-50 px-1">Esc</kbd> cancel
+		{/if}
 	</div>
 
 	{#if form?.message}
@@ -273,7 +308,109 @@
 		</div>
 	{/if}
 
-	{#if showForm && data.mode === 'template'}
+	{#if showCopyPanel}
+		<div class="border border-gray-200 bg-white p-4 shadow-sm">
+			<h3 class="mb-3 text-sm font-medium text-gray-900">Copy to days</h3>
+			<form
+				method="post"
+				action="?/copyToWeekdays"
+				use:enhance={() => {
+					return async ({ update }) => {
+						await update();
+						showCopyPanel = false;
+						multiselect = false;
+						selectedIds = new Set();
+					};
+				}}
+			>
+				<input type="hidden" name="ids" value={[...selectedIds].join(',')} />
+				<input type="hidden" name="targetDays" value={[...copyTargetDays].join(',')} />
+				<div class="mb-3 flex flex-wrap gap-2">
+					{#each data.weekdays as day, i (i)}
+						<label
+							class="flex items-center gap-1.5 px-2 py-1 text-sm {selectedDay === i
+								? 'cursor-not-allowed text-gray-400'
+								: 'cursor-pointer text-gray-700 hover:bg-gray-50'}"
+						>
+							<input
+								type="checkbox"
+								checked={copyTargetDays.has(i)}
+								disabled={selectedDay === i}
+								onchange={() => {
+									if (copyTargetDays.has(i)) {
+										copyTargetDays = new Set([...copyTargetDays].filter((x) => x !== i));
+									} else {
+										copyTargetDays = new Set([...copyTargetDays, i]);
+									}
+								}}
+								class="sr-only"
+							/>
+							<span
+								class="inline-block h-4 w-4 border border-gray-400 {copyTargetDays.has(i)
+									? 'bg-gray-900'
+									: 'bg-white'}"
+							></span>
+							{day}
+						</label>
+					{/each}
+				</div>
+				<div class="flex gap-2">
+					<button
+						type="submit"
+						class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-50"
+						disabled={copyTargetDays.size === 0}
+					>
+						Copy
+					</button>
+					<button
+						type="button"
+						onclick={() => (showCopyPanel = false)}
+						class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50"
+					>
+						Cancel
+					</button>
+				</div>
+			</form>
+		</div>
+	{/if}
+
+	{#if multiselect && selectedIds.size > 0}
+		<div class="border border-blue-200 bg-blue-50 px-4 py-2">
+			<div class="flex items-center justify-between">
+				<span class="text-sm font-medium text-blue-900">{selectedIds.size} selected</span>
+				<div class="flex gap-2">
+					<form
+						id="bulk-delete-form"
+						method="post"
+						action="?/bulkDelete"
+						use:enhance={() => {
+							return async ({ update }) => {
+								await update();
+								multiselect = false;
+								selectedIds = new Set();
+							};
+						}}
+					>
+						<input type="hidden" name="ids" value={[...selectedIds].join(',')} />
+						<button
+							type="submit"
+							class="border border-red-200 bg-white px-3 py-1 text-sm text-red-600 transition hover:bg-red-50"
+						>
+							Delete selected
+						</button>
+					</form>
+					<button
+						onclick={() => (showCopyPanel = true)}
+						class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-50"
+					>
+						Copy to...
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	{#if showForm}
 		{@const editing = editingSlot()}
 		<form
 			method="post"
@@ -308,6 +445,7 @@
 				<label class="w-28">
 					<span class="text-sm font-medium text-gray-700">Time</span>
 					<input
+						bind:this={timeInput}
 						name="startTime"
 						type="time"
 						required
@@ -399,111 +537,84 @@
 		{/each}
 	</div>
 
-	{#if data.mode === 'template'}
-		{#if slotsForDay(selectedDay).length === 0}
-			<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-				No slots for {data.weekdays[selectedDay]}.
-			</div>
-		{:else}
-			<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
-				{#each slotsForDay(selectedDay) as slot, i (slot.id)}
-					{@const colorClass = categoryColors[slot.categoryName ?? ''] ?? 'border-l-gray-300'}
-					<div
-						class="flex items-center gap-4 border-l-4 px-4 py-3 {colorClass} {!slot.active
-							? 'opacity-50'
-							: ''} {selectedIndex === i ? 'bg-gray-100' : ''}"
-					>
-						<div
-							class="w-24 shrink-0 font-mono text-sm text-gray-500"
-							title={formatDuration(slot.durationMinutes)}
-						>
-							{slot.startTime} - {computeEndTime(slot.startTime, slot.durationMinutes)}
-						</div>
-						<div class="min-w-0 flex-1">
-							<span class="text-sm font-medium text-gray-900">{slotLabel(slot)}</span>
-							{#if slot.mode === 'activity' && slot.categoryName}
-								<span class="ml-1 text-xs text-gray-400">{slot.categoryName}</span>
-							{/if}
-							{#if slot.label && slotLabel(slot) !== slot.label}
-								<p class="truncate text-xs text-gray-500">{slot.label}</p>
-							{/if}
-						</div>
-						<div class="flex shrink-0 items-center gap-2">
-							<button
-								onclick={() => startEdit(slot)}
-								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-							>
-								Edit
-							</button>
-							<form id="toggle-form-{slot.id}" method="post" action="?/toggleActive" use:enhance>
-								<input type="hidden" name="id" value={slot.id} />
-								<input type="hidden" name="active" value={String(slot.active)} />
-								<button
-									type="submit"
-									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-								>
-									{slot.active ? 'Disable' : 'Enable'}
-								</button>
-							</form>
-							<form id="delete-form-{slot.id}" method="post" action="?/delete" use:enhance>
-								<input type="hidden" name="id" value={slot.id} />
-								<button
-									type="submit"
-									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
-								>
-									Delete
-								</button>
-							</form>
-						</div>
-					</div>
-				{/each}
-			</div>
-		{/if}
+	{#if slotsForDay(selectedDay).length === 0}
+		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
+			No slots for {data.weekdays[selectedDay]}.
+		</div>
 	{:else}
-		{@const items = instancesForDay(selectedDay)}
-		{#if items.length === 0}
-			<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-				No tasks recorded for {data.weekdays[selectedDay]}.
-			</div>
-		{:else}
-			<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
-				{#each items as inst, i (inst.id)}
-					{@const colorClass = categoryColors[inst.categoryName ?? ''] ?? 'border-l-gray-300'}
+		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
+			{#each slotsForDay(selectedDay) as slot, i (slot.id)}
+				{@const colorClass = categoryColors[slot.categoryName ?? ''] ?? 'border-l-gray-300'}
+				{@const isSelected = selectedIds.has(slot.id)}
+				<div
+					class="flex items-center gap-4 border-l-4 px-4 py-3 {colorClass} {!slot.active
+						? 'opacity-50'
+						: ''} {selectedIndex === i ? 'bg-gray-100' : ''} {isSelected ? 'bg-blue-50' : ''}"
+				>
+					{#if multiselect}
+						<button
+							type="button"
+							onclick={() => toggleSlotSelection(slot.id)}
+							class="h-5 w-5 shrink-0 border {isSelected
+								? 'border-blue-500 bg-blue-500'
+								: 'border-gray-400 bg-white'}"
+							aria-label={isSelected ? 'Deselect' : 'Select'}
+						>
+							{#if isSelected}
+								<svg class="h-full w-full text-white" viewBox="0 0 20 20" fill="currentColor">
+									<path
+										fill-rule="evenodd"
+										d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+										clip-rule="evenodd"
+									/>
+								</svg>
+							{/if}
+						</button>
+					{/if}
 					<div
-						class="flex items-center gap-4 border-l-4 px-4 py-3 {colorClass} {selectedIndex === i
-							? 'bg-gray-100'
-							: ''}"
+						class="w-24 shrink-0 font-mono text-sm text-gray-500"
+						title={formatDuration(slot.durationMinutes)}
 					>
-						<div
-							class="w-24 shrink-0 font-mono text-sm text-gray-500"
-							title={formatDuration(inst.slotDuration ?? 60)}
-						>
-							{inst.slotStartTime} - {computeEndTime(
-								inst.slotStartTime ?? '00:00',
-								inst.slotDuration ?? 60
-							)}
-						</div>
-						<div class="min-w-0 flex-1">
-							<span class="text-sm font-medium text-gray-900">{instanceLabel(inst)}</span>
-							{#if inst.slotMode === 'activity' && inst.categoryName}
-								<span class="ml-1 text-xs text-gray-400">{inst.categoryName}</span>
-							{/if}
-							{#if inst.slotLabel && instanceLabel(inst) !== inst.slotLabel}
-								<p class="truncate text-xs text-gray-500">{inst.slotLabel}</p>
-							{/if}
-						</div>
-						<span
-							class="shrink-0 px-2 py-0.5 text-xs font-medium {statusBadgeClass[inst.status] ??
-								'bg-gray-100 text-gray-600'}"
-						>
-							{inst.status}
-						</span>
-						{#if inst.slotMode === 'category' && inst.activityName}
-							<span class="shrink-0 text-xs text-gray-500">({inst.activityName})</span>
+						{slot.startTime} - {computeEndTime(slot.startTime, slot.durationMinutes)}
+					</div>
+					<div class="min-w-0 flex-1">
+						<span class="text-sm font-medium text-gray-900">{slotLabel(slot)}</span>
+						{#if slot.mode === 'activity' && slot.categoryName}
+							<span class="ml-1 text-xs text-gray-400">{slot.categoryName}</span>
+						{/if}
+						{#if slot.label && slotLabel(slot) !== slot.label}
+							<p class="truncate text-xs text-gray-500">{slot.label}</p>
 						{/if}
 					</div>
-				{/each}
-			</div>
-		{/if}
+					<div class="flex shrink-0 items-center gap-2">
+						<button
+							onclick={() => startEdit(slot)}
+							class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+						>
+							Edit
+						</button>
+						<form id="toggle-form-{slot.id}" method="post" action="?/toggleActive" use:enhance>
+							<input type="hidden" name="id" value={slot.id} />
+							<input type="hidden" name="active" value={String(slot.active)} />
+							<button
+								type="submit"
+								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+							>
+								{slot.active ? 'Disable' : 'Enable'}
+							</button>
+						</form>
+						<form id="delete-form-{slot.id}" method="post" action="?/delete" use:enhance>
+							<input type="hidden" name="id" value={slot.id} />
+							<button
+								type="submit"
+								class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+							>
+								Delete
+							</button>
+						</form>
+					</div>
+				</div>
+			{/each}
+		</div>
 	{/if}
 </div>
