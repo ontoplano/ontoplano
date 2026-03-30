@@ -39,7 +39,7 @@ function parseToml(content: string): Record<string, Record<string, string>> {
 
 const DEFAULT_CONFIG = `[server]
 host = "0.0.0.0"
-port = "3000"
+port = "1493"
 
 [database]
 
@@ -87,7 +87,7 @@ export function loadConfig(): SemotinaConfig {
 	return {
 		server: {
 			host: server.host || '0.0.0.0',
-			port: parseInt(server.port || '3000', 10)
+			port: parseInt(server.port || '1493', 10)
 		},
 		database: {
 			path: database.path || DB_PATH

@@ -8,15 +8,15 @@ services:
     container_name: semotina
     restart: unless-stopped
     ports:
-      - '${PORT:-3000}:3000'
+      - '${PORT:-1493}:1493'
     volumes:
       - semotina-data:/data
     environment:
       - DATABASE_URL=/data/semotina.db
-      - ORIGIN=${ORIGIN:-http://localhost:3000}
+      - ORIGIN=${ORIGIN:-http://localhost:1493}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}
       - HOST=0.0.0.0
-      - PORT=3000
+      - PORT=1493
 
 volumes:
   semotina-data:
