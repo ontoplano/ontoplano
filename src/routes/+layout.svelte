@@ -2,6 +2,7 @@
 	import './layout.css';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import type { LayoutServerData } from './$types';
 
 	let { children, data }: { children: any; data: LayoutServerData } = $props();
@@ -11,7 +12,26 @@
 		{ href: '/activities', label: 'Activities' },
 		{ href: '/planner', label: 'Planner' }
 	];
+
+	function handleGlobalKeydown(e: KeyboardEvent) {
+		if (
+			e.target instanceof HTMLInputElement ||
+			e.target instanceof HTMLTextAreaElement ||
+			e.target instanceof HTMLSelectElement
+		)
+			return;
+
+		if (e.key === 'J' || e.key === 'K') {
+			e.preventDefault();
+			const currentIdx = nav.findIndex((item) => item.href === page.url.pathname);
+			const idx = currentIdx === -1 ? 0 : currentIdx;
+			const next = e.key === 'J' ? (idx + 1) % nav.length : (idx - 1 + nav.length) % nav.length;
+			goto(nav[next].href);
+		}
+	}
 </script>
+
+<svelte:window onkeydown={handleGlobalKeydown} />
 
 {#if data.user}
 	<div class="flex min-h-screen flex-col bg-gray-50">
