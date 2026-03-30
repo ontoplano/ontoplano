@@ -10,7 +10,8 @@
 	const nav = [
 		{ href: '/', label: 'Dashboard' },
 		{ href: '/activities', label: 'Activities' },
-		{ href: '/planner', label: 'Planner' }
+		{ href: '/planner', label: 'Planner' },
+		{ href: '/history', label: 'History' }
 	];
 
 	function handleGlobalKeydown(e: KeyboardEvent) {

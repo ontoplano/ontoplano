@@ -51,7 +51,16 @@ Copy `.env.example` to `.env` and set `ORIGIN` and `BETTER_AUTH_SECRET`.
 | Activities | `j`/`k`             | Navigate list                     |
 | Activities | `n`                 | New activity                      |
 | Planner    | `h`/`l`             | Switch day                        |
+| Planner    | `j`/`k`             | Navigate slots                    |
+| Planner    | `e`                 | Edit selected slot                |
+| Planner    | `d`                 | Disable/enable selected slot      |
+| Planner    | `D`                 | Delete selected slot              |
 | Planner    | `n`                 | New slot                          |
+| Planner    | `[`/`]`             | Previous/next week                |
+| History    | `h`/`l`             | Switch day                        |
+| History    | `j`/`k`             | Navigate tasks                    |
+| History    | `[`/`]`             | Previous/next week                |
+| All        | `J`/`K`             | Navigate between pages            |
 | All        | `Esc`               | Close form                        |
 
 ## Commands
