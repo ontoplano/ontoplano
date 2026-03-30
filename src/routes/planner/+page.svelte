@@ -8,6 +8,7 @@
 	let editingId: number | null = $state(null);
 	let slotMode: 'category' | 'activity' = $state('activity');
 	let selectedDay: number = $state(new Date().getDay() === 0 ? 6 : new Date().getDay() - 1);
+	let selectedIndex: number = $state(0);
 
 	const categoryColors: Record<string, string> = {
 		duty: 'border-l-duty',
@@ -40,14 +41,50 @@
 		)
 			return;
 
+		const slots = slotsForDay(selectedDay);
+
 		switch (e.key) {
 			case 'h':
 				e.preventDefault();
 				selectedDay = Math.max(selectedDay - 1, 0);
+				selectedIndex = 0;
 				break;
 			case 'l':
 				e.preventDefault();
 				selectedDay = Math.min(selectedDay + 1, 6);
+				selectedIndex = 0;
+				break;
+			case 'j':
+				e.preventDefault();
+				if (slots.length > 0) {
+					selectedIndex = Math.min(selectedIndex + 1, slots.length - 1);
+				}
+				break;
+			case 'k':
+				e.preventDefault();
+				if (slots.length > 0) {
+					selectedIndex = Math.max(selectedIndex - 1, 0);
+				}
+				break;
+			case 'e':
+				e.preventDefault();
+				if (slots.length > 0 && slots[selectedIndex]) {
+					startEdit(slots[selectedIndex]);
+				}
+				break;
+			case 'd':
+				e.preventDefault();
+				if (slots.length > 0 && slots[selectedIndex]) {
+					const form = document.getElementById(`toggle-form-${slots[selectedIndex].id}`);
+					if (form instanceof HTMLFormElement) form.requestSubmit();
+				}
+				break;
+			case 'D':
+				e.preventDefault();
+				if (slots.length > 0 && slots[selectedIndex]) {
+					const form = document.getElementById(`delete-form-${slots[selectedIndex].id}`);
+					if (form instanceof HTMLFormElement) form.requestSubmit();
+				}
 				break;
 			case 'n':
 				e.preventDefault();
@@ -88,6 +125,13 @@
 			class="border border-gray-300 bg-gray-50 px-1">l</kbd
 		>
 		switch day &middot;
+		<kbd class="border border-gray-300 bg-gray-50 px-1">j</kbd>/<kbd
+			class="border border-gray-300 bg-gray-50 px-1">k</kbd
+		>
+		navigate &middot;
+		<kbd class="border border-gray-300 bg-gray-50 px-1">e</kbd> edit &middot;
+		<kbd class="border border-gray-300 bg-gray-50 px-1">d</kbd> disable &middot;
+		<kbd class="border border-gray-300 bg-gray-50 px-1">D</kbd> delete &middot;
 		<kbd class="border border-gray-300 bg-gray-50 px-1">n</kbd> new &middot;
 		<kbd class="border border-gray-300 bg-gray-50 px-1">Esc</kbd> close form
 	</div>
@@ -230,12 +274,12 @@
 		</div>
 	{:else}
 		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
-			{#each slotsForDay(selectedDay) as slot}
+			{#each slotsForDay(selectedDay) as slot, i}
 				{@const colorClass = categoryColors[slot.categoryName ?? ''] ?? 'border-l-gray-300'}
 				<div
 					class="flex items-center gap-4 border-l-4 px-4 py-3 {colorClass} {!slot.active
 						? 'opacity-50'
-						: ''}"
+						: ''} {selectedIndex === i ? 'bg-gray-100' : ''}"
 				>
 					<div class="w-12 shrink-0 font-mono text-sm text-gray-500">
 						{slot.startTime}
@@ -259,7 +303,7 @@
 						>
 							Edit
 						</button>
-						<form method="post" action="?/toggleActive" use:enhance>
+						<form id="toggle-form-{slot.id}" method="post" action="?/toggleActive" use:enhance>
 							<input type="hidden" name="id" value={slot.id} />
 							<input type="hidden" name="active" value={String(slot.active)} />
 							<button
@@ -269,7 +313,7 @@
 								{slot.active ? 'Disable' : 'Enable'}
 							</button>
 						</form>
-						<form method="post" action="?/delete" use:enhance>
+						<form id="delete-form-{slot.id}" method="post" action="?/delete" use:enhance>
 							<input type="hidden" name="id" value={slot.id} />
 							<button
 								type="submit"
