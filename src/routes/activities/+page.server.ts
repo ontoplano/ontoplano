@@ -1,8 +1,8 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { activities, categories } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { activities, categories, weeklySlots, taskInstances } from '$lib/server/db/schema';
+import { eq, count } from 'drizzle-orm';
 import { toLocalISOString } from '$lib/server/week-generator';
 
 export const load: PageServerLoad = async () => {
@@ -23,7 +23,24 @@ export const load: PageServerLoad = async () => {
 		.orderBy(activities.name)
 		.all();
 
-	return { activities: allActivities, categories: allCategories };
+	const activitiesWithRefs = allActivities.map((a) => {
+		const slotRefs = db
+			.select({ cnt: count() })
+			.from(weeklySlots)
+			.where(eq(weeklySlots.activityId, a.id))
+			.get();
+		const instanceRefs = db
+			.select({ cnt: count() })
+			.from(taskInstances)
+			.where(eq(taskInstances.resolvedActivityId, a.id))
+			.get();
+		return {
+			...a,
+			hasReferences: (slotRefs?.cnt ?? 0) > 0 || (instanceRefs?.cnt ?? 0) > 0
+		};
+	});
+
+	return { activities: activitiesWithRefs, categories: allCategories };
 };
 
 export const actions: Actions = {
@@ -83,6 +100,23 @@ export const actions: Actions = {
 		const id = Number(formData.get('id'));
 
 		if (!id) return fail(400, { message: 'Missing id' });
+
+		const slotRefs = db
+			.select({ cnt: count() })
+			.from(weeklySlots)
+			.where(eq(weeklySlots.activityId, id))
+			.get();
+		const instanceRefs = db
+			.select({ cnt: count() })
+			.from(taskInstances)
+			.where(eq(taskInstances.resolvedActivityId, id))
+			.get();
+
+		if ((slotRefs?.cnt ?? 0) > 0 || (instanceRefs?.cnt ?? 0) > 0) {
+			return fail(400, {
+				message: 'Cannot delete: activity is referenced by planner slots or task history'
+			});
+		}
 
 		db.delete(activities).where(eq(activities.id, id)).run();
 

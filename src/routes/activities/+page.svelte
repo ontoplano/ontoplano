@@ -192,7 +192,13 @@
 							<input type="hidden" name="id" value={activity.id} />
 							<button
 								type="submit"
-								class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+								disabled={activity.hasReferences}
+								class="border px-2 py-1 text-xs transition {activity.hasReferences
+									? 'cursor-not-allowed border-gray-100 text-gray-300'
+									: 'border-red-200 bg-white text-red-600 hover:bg-red-50'}"
+								title={activity.hasReferences
+									? 'Cannot delete: referenced by planner or history'
+									: 'Delete activity'}
 							>
 								Delete
 							</button>
