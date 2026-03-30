@@ -75,6 +75,12 @@
 		tick().then(() => timeInput?.focus());
 	}
 
+	function goToPrevWeek() {
+		if (data.weekMeta.prevWeek) {
+			goto(`/planner?week=${data.weekMeta.prevWeek}`);
+		}
+	}
+
 	function goToNextWeek() {
 		goto(`/planner?week=${data.weekMeta.nextWeek}`);
 	}
@@ -166,6 +172,11 @@
 			return;
 		}
 
+		if (e.key === '[') {
+			e.preventDefault();
+			goToPrevWeek();
+			return;
+		}
 		if (e.key === ']') {
 			e.preventDefault();
 			goToNextWeek();
@@ -245,6 +256,12 @@
 		<h1 class="text-lg font-bold text-gray-900">Weekly Planner</h1>
 		<div class="flex items-center gap-2">
 			<button
+				onclick={goToPrevWeek}
+				disabled={!data.weekMeta.prevWeek}
+				class="border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+				title="Previous week ([)">&larr;</button
+			>
+			<button
 				onclick={goToCurrentWeek}
 				class="border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
 				class:border-gray-900={data.weekMeta.isCurrent}
@@ -286,7 +303,10 @@
 			class="border border-gray-300 bg-gray-50 px-1">k</kbd
 		>
 		navigate &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">]</kbd> next week &middot;
+		<kbd class="border border-gray-300 bg-gray-50 px-1">[</kbd>/<kbd
+			class="border border-gray-300 bg-gray-50 px-1">]</kbd
+		>
+		prev/next week &middot;
 		<kbd class="border border-gray-300 bg-gray-50 px-1">e</kbd> edit &middot;
 		<kbd class="border border-gray-300 bg-gray-50 px-1">d</kbd> disable &middot;
 		<kbd class="border border-gray-300 bg-gray-50 px-1">D</kbd> delete &middot;

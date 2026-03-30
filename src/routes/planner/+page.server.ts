@@ -47,6 +47,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		weekNumber,
 		weekYear,
 		isCurrent,
+		prevWeek: isCurrent ? null : formatDate(addDays(monday, -7)),
 		nextWeek: formatDate(nextMonday)
 	};
 
