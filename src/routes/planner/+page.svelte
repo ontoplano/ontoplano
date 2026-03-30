@@ -27,6 +27,22 @@
 		return 'Slot';
 	}
 
+	function computeEndTime(startTime: string, durationMinutes: number): string {
+		const [h, m] = startTime.split(':').map(Number);
+		const total = h * 60 + m + durationMinutes;
+		const eh = Math.floor(total / 60) % 24;
+		const em = total % 60;
+		return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+	}
+
+	function formatDuration(minutes: number): string {
+		const h = Math.floor(minutes / 60);
+		const m = minutes % 60;
+		if (h === 0) return `${m}min`;
+		if (m === 0) return `${h}h`;
+		return `${h}h ${m}min`;
+	}
+
 	function startEdit(slot: (typeof data.slots)[number]) {
 		editingId = slot.id;
 		slotMode = slot.mode as 'category' | 'activity';
@@ -281,16 +297,16 @@
 						? 'opacity-50'
 						: ''} {selectedIndex === i ? 'bg-gray-100' : ''}"
 				>
-					<div class="w-12 shrink-0 font-mono text-sm text-gray-500">
-						{slot.startTime}
+					<div
+						class="w-24 shrink-0 font-mono text-sm text-gray-500"
+						title={formatDuration(slot.durationMinutes)}
+					>
+						{slot.startTime} - {computeEndTime(slot.startTime, slot.durationMinutes)}
 					</div>
 					<div class="min-w-0 flex-1">
 						<span class="text-sm font-medium text-gray-900">{slotLabel(slot)}</span>
 						{#if slot.mode === 'activity' && slot.categoryName}
 							<span class="ml-1 text-xs text-gray-400">{slot.categoryName}</span>
-						{/if}
-						{#if slot.durationMinutes !== 60}
-							<span class="ml-1 text-xs text-gray-400">{slot.durationMinutes}min</span>
 						{/if}
 						{#if slot.label && slotLabel(slot) !== slot.label}
 							<p class="truncate text-xs text-gray-500">{slot.label}</p>

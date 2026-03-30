@@ -39,6 +39,22 @@
 		return scheduledAt.slice(11, 16);
 	}
 
+	function computeEndTime(startTime: string, durationMinutes: number): string {
+		const [h, m] = startTime.split(':').map(Number);
+		const total = h * 60 + m + durationMinutes;
+		const eh = Math.floor(total / 60) % 24;
+		const em = total % 60;
+		return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+	}
+
+	function formatDuration(minutes: number): string {
+		const h = Math.floor(minutes / 60);
+		const m = minutes % 60;
+		if (h === 0) return `${m}min`;
+		if (m === 0) return `${h}h`;
+		return `${h}h ${m}min`;
+	}
+
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
@@ -128,8 +144,14 @@
 						? 'ring-2 ring-gray-900 ring-inset'
 						: ''} {future ? 'opacity-50' : ''}"
 				>
-					<div class="w-12 shrink-0 font-mono text-sm text-gray-500">
-						{formatTime(task.scheduledAt)}
+					<div
+						class="w-24 shrink-0 font-mono text-sm text-gray-500"
+						title={formatDuration(task.slotDuration ?? 60)}
+					>
+						{formatTime(task.scheduledAt)} - {computeEndTime(
+							task.slotStartTime,
+							task.slotDuration ?? 60
+						)}
 					</div>
 
 					<div class="min-w-0 flex-1">
@@ -141,9 +163,6 @@
 						</div>
 						{#if task.slotLabel && taskLabel(task) !== task.slotLabel}
 							<p class="truncate text-xs text-gray-500">{task.slotLabel}</p>
-						{/if}
-						{#if task.slotDuration && task.slotDuration !== 60}
-							<span class="text-xs text-gray-400">{task.slotDuration}min</span>
 						{/if}
 					</div>
 
