@@ -20,7 +20,25 @@ export function toLocalISOString(d: Date): string {
 	);
 }
 
-function getMonday(date: Date): Date {
+/** Get ISO 8601 week number for a date. */
+export function getISOWeekNumber(date: Date): number {
+	const d = new Date(date);
+	d.setHours(0, 0, 0, 0);
+	d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+	const jan4 = new Date(d.getFullYear(), 0, 4);
+	return (
+		1 + Math.round(((d.getTime() - jan4.getTime()) / 86400000 - 3 + ((jan4.getDay() + 6) % 7)) / 7)
+	);
+}
+
+/** Get the ISO week year (may differ from calendar year at year boundaries). */
+export function getISOWeekYear(date: Date): number {
+	const d = new Date(date);
+	d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+	return d.getFullYear();
+}
+
+export function getMonday(date: Date): Date {
 	const d = new Date(date);
 	const day = d.getDay();
 	const diff = d.getDate() - day + (day === 0 ? -6 : 1);
@@ -29,7 +47,7 @@ function getMonday(date: Date): Date {
 	return d;
 }
 
-function addDays(date: Date, days: number): Date {
+export function addDays(date: Date, days: number): Date {
 	const d = new Date(date);
 	d.setDate(d.getDate() + days);
 	return d;
