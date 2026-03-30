@@ -44,24 +44,28 @@ Copy `.env.example` to `.env` and set `ORIGIN` and `BETTER_AUTH_SECRET`.
 
 ### Keyboard shortcuts
 
-| Page       | Keys                | Action                            |
-| ---------- | ------------------- | --------------------------------- |
-| Dashboard  | `j`/`k`             | Navigate tasks                    |
-| Dashboard  | `c` `d` `e` `s` `r` | Done, delayed, early, skip, reset |
-| Activities | `j`/`k`             | Navigate list                     |
-| Activities | `n`                 | New activity                      |
-| Planner    | `h`/`l`             | Switch day                        |
-| Planner    | `j`/`k`             | Navigate slots                    |
-| Planner    | `e`                 | Edit selected slot                |
-| Planner    | `d`                 | Disable/enable selected slot      |
-| Planner    | `D`                 | Delete selected slot              |
-| Planner    | `n`                 | New slot                          |
-| Planner    | `[`/`]`             | Previous/next week                |
-| History    | `h`/`l`             | Switch day                        |
-| History    | `j`/`k`             | Navigate tasks                    |
-| History    | `[`/`]`             | Previous/next week                |
-| All        | `J`/`K`             | Navigate between pages            |
-| All        | `Esc`               | Close form                        |
+| Page       | Keys                | Action                                  |
+| ---------- | ------------------- | --------------------------------------- |
+| Dashboard  | `j`/`k`             | Navigate tasks                          |
+| Dashboard  | `c` `d` `e` `s` `r` | Done, delayed, early, skip, reset       |
+| Activities | `j`/`k`             | Navigate list                           |
+| Activities | `n`                 | New activity                            |
+| Planner    | `h`/`l`             | Switch day                              |
+| Planner    | `j`/`k`             | Navigate slots                          |
+| Planner    | `e`                 | Edit selected slot                      |
+| Planner    | `d`                 | Disable/enable selected slot            |
+| Planner    | `D`                 | Delete selected slot                    |
+| Planner    | `n`                 | New slot (focuses time input)           |
+| Planner    | `]`                 | Next week                               |
+| Planner    | `v`                 | Toggle multiselect mode                 |
+| Planner    | `Space`             | Toggle slot selection (multiselect)     |
+| Planner    | `x`                 | Delete selected slots (multiselect)     |
+| Planner    | `p`                 | Copy selected to weekdays (multiselect) |
+| History    | `h`/`l`             | Switch day                              |
+| History    | `j`/`k`             | Navigate tasks                          |
+| History    | `[`/`]`             | Previous/next week                      |
+| All        | `J`/`K`             | Navigate between pages                  |
+| All        | `Esc`               | Close form                              |
 
 ## Commands
 
