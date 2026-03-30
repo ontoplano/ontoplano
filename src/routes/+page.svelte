@@ -99,6 +99,19 @@
 		return 'Task';
 	}
 
+	function activitiesForCategory(categoryId: number | null) {
+		if (!categoryId) return [];
+		return data.activities.filter((a) => a.categoryId === categoryId);
+	}
+
+	function needsResolution(task: (typeof data.tasks)[number]): boolean {
+		return (
+			task.slotMode === 'category' &&
+			['completed', 'delayed', 'early'].includes(task.status) &&
+			!task.activityId
+		);
+	}
+
 	$effect(() => {
 		if (selectedIndex >= data.tasks.length && data.tasks.length > 0) {
 			selectedIndex = data.tasks.length - 1;
@@ -169,6 +182,32 @@
 					<span class="shrink-0 px-2 py-0.5 text-xs font-medium {statusBadgeClass(task.status)}">
 						{task.status}
 					</span>
+
+					{#if task.slotMode === 'category' && task.activityId && task.activityName}
+						<span class="shrink-0 text-xs text-gray-500">({task.activityName})</span>
+					{/if}
+
+					{#if needsResolution(task)}
+						{@const catActivities = activitiesForCategory(task.categoryId)}
+						{#if catActivities.length > 0}
+							<form method="post" action="?/resolveActivity" use:enhance class="shrink-0">
+								<input type="hidden" name="id" value={task.id} />
+								<select
+									name="activityId"
+									onchange={(e) => {
+										const form = (e.currentTarget as HTMLSelectElement).closest('form');
+										if (form instanceof HTMLFormElement) form.requestSubmit();
+									}}
+									class="border border-amber-300 bg-amber-50 px-1 py-0.5 text-xs text-gray-700 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								>
+									<option value="">which?</option>
+									{#each catActivities as act}
+										<option value={act.id}>{act.name}</option>
+									{/each}
+								</select>
+							</form>
+						{/if}
+					{/if}
 
 					<form
 						id="status-form-{task.id}"

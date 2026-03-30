@@ -47,7 +47,18 @@ export const load: PageServerLoad = async () => {
 		.orderBy(taskInstances.scheduledAt)
 		.all();
 
-	return { tasks, now: toLocalISOString(new Date()) };
+	const allActivities = db
+		.select({
+			id: activities.id,
+			name: activities.name,
+			categoryId: activities.categoryId
+		})
+		.from(activities)
+		.where(eq(activities.active, true))
+		.orderBy(activities.name)
+		.all();
+
+	return { tasks, activities: allActivities, now: toLocalISOString(new Date()) };
 };
 
 export const actions: Actions = {
@@ -69,6 +80,21 @@ export const actions: Actions = {
 
 		db.update(taskInstances)
 			.set({ status: status as (typeof validStatuses)[number], completedAt })
+			.where(eq(taskInstances.id, id))
+			.run();
+
+		return { success: true };
+	},
+
+	resolveActivity: async ({ request }) => {
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const activityId = formData.get('activityId') ? Number(formData.get('activityId')) : null;
+
+		if (!id) return fail(400, { message: 'Missing task id' });
+
+		db.update(taskInstances)
+			.set({ resolvedActivityId: activityId })
 			.where(eq(taskInstances.id, id))
 			.run();
 
