@@ -34,7 +34,12 @@
 <svelte:window onkeydown={handleGlobalKeydown} />
 
 {#if data.user}
-	<div class="flex min-h-screen flex-col bg-gray-50">
+	<div
+		class="flex min-h-screen flex-col bg-gray-50"
+		style="--color-duty:{data.colors.duty};--color-skill:{data.colors.skill};--color-money:{data
+			.colors.money};--color-duty-light:{data.colors.dutyLight};--color-skill-light:{data.colors
+			.skillLight};--color-money-light:{data.colors.moneyLight}"
+	>
 		<header class="border-b border-gray-200 bg-white shadow-sm">
 			<div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
 				<div class="flex items-center gap-6">
