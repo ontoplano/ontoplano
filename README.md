@@ -1,65 +1,82 @@
-# Svelte library
+# semotina
 
-Everything you need to build a Svelte library, powered by [`sv`](https://npmjs.com/package/sv).
+A weekly routine dashboard for tracking daily activities across three domains: **duty**, **skill**, and **money**.
 
-Read more about creating a library [in the docs](https://svelte.dev/docs/kit/packaging).
-
-## Creating a project
-
-If you're seeing this, you've probably already done this step. Congrats!
+## Setup
 
 ```sh
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
+yarn
+yarn db:push
+npx tsx src/lib/server/db/seed.ts
+yarn dev
 ```
 
-To recreate this project with the same configuration:
+Config and data directories are created automatically on first run:
+
+- Config: `~/.config/semotina/config.toml`
+- Data: `~/.local/share/semotina/`
+
+## Configuration
+
+Edit `~/.config/semotina/config.toml`:
+
+```toml
+[server]
+host = "0.0.0.0"
+port = "3000"
+
+[database]
+# path = "/custom/path/to/semotina.db"
+
+[week]
+first_day = "0"
+generate_day = "6"
+```
+
+Copy `.env.example` to `.env` and set `ORIGIN` and `BETTER_AUTH_SECRET`.
+
+## Usage
+
+1. Register at `/login`
+2. Create activities at `/activities`
+3. Plan your week at `/planner`
+4. Track daily execution on `/`
+
+### Keyboard shortcuts
+
+| Page       | Keys                | Action                            |
+| ---------- | ------------------- | --------------------------------- |
+| Dashboard  | `j`/`k`             | Navigate tasks                    |
+| Dashboard  | `c` `d` `e` `s` `r` | Done, delayed, early, skip, reset |
+| Activities | `j`/`k`             | Navigate list                     |
+| Activities | `n`                 | New activity                      |
+| Planner    | `h`/`l`             | Switch day                        |
+| Planner    | `n`                 | New slot                          |
+| All        | `Esc`               | Close form                        |
+
+## Commands
 
 ```sh
-# recreate this project
-npx sv@0.13.0 create --template library --types ts --add prettier eslint playwright tailwindcss="plugins:typography,forms" sveltekit-adapter="adapter:node" drizzle="database:sqlite+sqlite:better-sqlite3" better-auth="demo:password" mdsvex mcp="ide:opencode" --install yarn ./
+yarn dev              # Dev server
+yarn build            # Production build
+yarn preview          # Preview build
+yarn db:push          # Push schema
+yarn db:generate      # Generate migrations
+yarn db:migrate       # Apply migrations
+yarn db:studio        # Drizzle Studio
+yarn test:e2e         # Playwright tests
+yarn lint             # Check formatting + linting
+yarn format           # Auto-format
 ```
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## Deployment
 
 ```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+make build            # Docker image
+make dev              # Docker dev
+make install-service  # systemd user service
 ```
 
-Everything inside `src/lib` is part of your library, everything inside `src/routes` can be used as a showcase or preview app.
+## Stack
 
-## Building
-
-To build your library:
-
-```sh
-npm pack
-```
-
-To create a production version of your showcase app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
-
-## Publishing
-
-Go into the `package.json` and give your package the desired name through the `"name"` option. Also consider adding a `"license"` field and point it to a `LICENSE` file which you can create from a template (one popular option is the [MIT license](https://opensource.org/license/mit/)).
-
-To publish your library to [npm](https://www.npmjs.com):
-
-```sh
-npm publish
-```
+SvelteKit · Svelte 5 · SQLite · Drizzle ORM · better-auth · Tailwind CSS v4 · adapter-node
