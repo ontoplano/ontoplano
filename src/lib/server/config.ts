@@ -84,6 +84,30 @@ export function ensureConfig(): void {
 	}
 }
 
+function toToml(config: SemotinaConfig): string {
+	return `[server]
+host = "${config.server.host}"
+port = "${config.server.port}"
+
+[database]
+${config.database.path !== DB_PATH ? `path = "${config.database.path}"` : ''}
+
+[week]
+first_day = "${config.week.firstDay}"
+generate_day = "${config.week.generateDay}"
+
+[colors]
+duty = "${config.colors.duty}"
+skill = "${config.colors.skill}"
+money = "${config.colors.money}"
+`;
+}
+
+export function saveConfig(config: SemotinaConfig): void {
+	ensureDirectories();
+	writeFileSync(CONFIG_FILE, toToml(config), 'utf-8');
+}
+
 export function loadConfig(): SemotinaConfig {
 	ensureConfig();
 

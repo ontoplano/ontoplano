@@ -6,6 +6,7 @@
 	import type { LayoutServerData } from './$types';
 
 	let { children, data }: { children: any; data: LayoutServerData } = $props();
+	let menuOpen = $state(false);
 
 	const nav = [
 		{ href: '/', label: 'Dashboard' },
@@ -30,9 +31,18 @@
 			goto(nav[next].href);
 		}
 	}
+
+	function handleClickOutside(e: MouseEvent) {
+		if (menuOpen) {
+			const target = e.target as HTMLElement;
+			if (!target.closest('.menu-container')) {
+				menuOpen = false;
+			}
+		}
+	}
 </script>
 
-<svelte:window onkeydown={handleGlobalKeydown} />
+<svelte:window onkeydown={handleGlobalKeydown} onclick={handleClickOutside} />
 
 {#if data.user}
 	<div
@@ -58,15 +68,43 @@
 						{/each}
 					</nav>
 				</div>
-				<div class="flex items-center gap-3">
+				<div class="menu-container relative flex items-center gap-3">
 					<span class="text-sm text-gray-500">{data.user.name}</span>
-					<form method="post" action="/login?/signOut" use:enhance>
-						<button
-							class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+					<button
+						onclick={() => (menuOpen = !menuOpen)}
+						class="flex h-8 w-8 items-center justify-center border border-gray-300 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50"
+						aria-label="Menu"
+					>
+						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path
+								stroke-linecap="square"
+								stroke-linejoin="miter"
+								stroke-width="2"
+								d="M4 6h16M4 12h16M4 18h16"
+							/>
+						</svg>
+					</button>
+					{#if menuOpen}
+						<div
+							class="absolute top-full right-0 mt-1 w-40 border border-gray-200 bg-white shadow-sm"
 						>
-							Sign out
-						</button>
-					</form>
+							<a
+								href="/config"
+								onclick={() => (menuOpen = false)}
+								class="block px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+							>
+								Config
+							</a>
+							<form method="post" action="/login?/signOut" use:enhance>
+								<button
+									type="submit"
+									class="w-full px-4 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-50"
+								>
+									Sign out
+								</button>
+							</form>
+						</div>
+					{/if}
 				</div>
 			</div>
 		</header>
