@@ -5,13 +5,13 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=${HOME}/codes/semotina
-ExecStartPre=/usr/bin/env yarn build
-ExecStart=/usr/bin/env node build/index.js
+ExecStartPre=/usr/bin/yarn build
+ExecStart=/usr/bin/node build/index.js
 Restart=on-failure
 RestartSec=5
 Environment=NODE_ENV=production
 Environment=HOST=0.0.0.0
-Environment=PORT=3000
+Environment=PORT=1493
 EnvironmentFile=%h/.config/semotina/env
 
 [Install]

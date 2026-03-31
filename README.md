@@ -88,10 +88,37 @@ yarn format           # Auto-format
 
 ## Deployment
 
+### systemd user service
+
+1. Create the production env file at `~/.config/semotina/env`:
+
+```sh
+# App origin URL
+# LAN:      http://<your-lan-ip>:1493
+# External: https://semotina.example.com
+ORIGIN=http://192.168.1.50:1493
+
+# Better Auth secret — generate with: openssl rand -hex 16
+BETTER_AUTH_SECRET=your-secret-here
+```
+
+2. Install and start the service:
+
+```sh
+make install-service
+```
+
+To switch from LAN to an external domain later, edit `~/.config/semotina/env`, set `ORIGIN=https://semotina.yourdomain.com`, then restart:
+
+```sh
+systemctl --user restart semotina
+```
+
+### Docker
+
 ```sh
 make build            # Docker image
 make dev              # Docker dev
-make install-service  # systemd user service
 ```
 
 ## Stack

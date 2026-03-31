@@ -22,8 +22,8 @@ COPY --from=build /app/build ./build
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
-ENV PORT=3000
+ENV PORT=1493
 
-EXPOSE 3000
+EXPOSE 1493
 
 CMD ["node", "build/index.js"]
