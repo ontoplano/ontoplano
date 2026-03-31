@@ -53,6 +53,7 @@ Copy `.env.example` to `.env` and set `ORIGIN` and `BETTER_AUTH_SECRET`.
 | Dashboard  | `x`                 | Delete task instance                       |
 | Activities | `j`/`k`             | Navigate list                              |
 | Activities | `n`                 | New activity                               |
+| Activities | `1` `2` `3`         | Toggle filter duty/skill/money             |
 | Planner    | `h`/`l`             | Switch day                                 |
 | Planner    | `j`/`k`             | Navigate slots                             |
 | Planner    | `e`                 | Edit selected slot                         |

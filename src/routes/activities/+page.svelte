@@ -8,12 +8,32 @@
 	let showForm = $state(false);
 	let editingId: number | null = $state(null);
 	let selectedIndex = $state(0);
+	let activeFilters: Set<string> = $state(new Set());
 
 	const categoryColors: Record<string, string> = {
 		duty: 'text-duty',
 		skill: 'text-skill',
 		money: 'text-money'
 	};
+
+	const categoryBorderColors: Record<string, string> = {
+		duty: 'border-duty',
+		skill: 'border-skill',
+		money: 'border-money'
+	};
+
+	function filteredActivities() {
+		if (activeFilters.size === 0) return data.activities;
+		return data.activities.filter((a) => a.categoryName && activeFilters.has(a.categoryName));
+	}
+
+	function toggleFilter(name: string) {
+		const next = new Set(activeFilters);
+		if (next.has(name)) next.delete(name);
+		else next.add(name);
+		activeFilters = next;
+		selectedIndex = 0;
+	}
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (
@@ -23,14 +43,28 @@
 		)
 			return;
 
+		const items = filteredActivities();
+
 		switch (e.key) {
 			case 'j':
 				e.preventDefault();
-				selectedIndex = Math.min(selectedIndex + 1, data.activities.length - 1);
+				selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
 				break;
 			case 'k':
 				e.preventDefault();
 				selectedIndex = Math.max(selectedIndex - 1, 0);
+				break;
+			case '1':
+				e.preventDefault();
+				toggleFilter('duty');
+				break;
+			case '2':
+				e.preventDefault();
+				toggleFilter('skill');
+				break;
+			case '3':
+				e.preventDefault();
+				toggleFilter('money');
 				break;
 			case 'n':
 				e.preventDefault();
@@ -71,12 +105,39 @@
 		</button>
 	</div>
 
+	<div class="flex gap-2">
+		{#each data.categories as cat}
+			<button
+				onclick={() => toggleFilter(cat.name)}
+				class="border px-2 py-1 text-xs font-medium transition {activeFilters.has(cat.name)
+					? `border-2 ${categoryBorderColors[cat.name] ?? 'border-gray-300'} ${categoryColors[cat.name] ?? 'text-gray-700'} bg-white`
+					: 'border-gray-200 bg-white text-gray-400 hover:text-gray-600'}"
+			>
+				{cat.name}
+			</button>
+		{/each}
+		{#if activeFilters.size > 0}
+			<button
+				onclick={() => {
+					activeFilters = new Set();
+					selectedIndex = 0;
+				}}
+				class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-400 transition hover:text-gray-600"
+			>
+				clear
+			</button>
+		{/if}
+	</div>
+
 	<div class="text-xs text-gray-400">
 		<kbd class="border border-gray-300 bg-gray-50 px-1">j</kbd>/<kbd
 			class="border border-gray-300 bg-gray-50 px-1">k</kbd
 		>
 		navigate &middot;
 		<kbd class="border border-gray-300 bg-gray-50 px-1">n</kbd> new &middot;
+		<kbd class="border border-gray-300 bg-gray-50 px-1">1</kbd>
+		<kbd class="border border-gray-300 bg-gray-50 px-1">2</kbd>
+		<kbd class="border border-gray-300 bg-gray-50 px-1">3</kbd> filter duty/skill/money &middot;
 		<kbd class="border border-gray-300 bg-gray-50 px-1">Esc</kbd> close form
 	</div>
 
@@ -153,13 +214,17 @@
 		</form>
 	{/if}
 
-	{#if data.activities.length === 0}
+	{#if filteredActivities().length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-			No activities yet. Create one to get started.
+			{#if activeFilters.size > 0}
+				No activities match the selected filters.
+			{:else}
+				No activities yet. Create one to get started.
+			{/if}
 		</div>
 	{:else}
 		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
-			{#each data.activities as activity, i}
+			{#each filteredActivities() as activity, i}
 				<div
 					class="flex items-center gap-4 px-4 py-3 transition-colors {i === selectedIndex
 						? 'ring-2 ring-gray-900 ring-inset'
