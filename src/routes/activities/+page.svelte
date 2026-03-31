@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -35,6 +36,10 @@
 				e.preventDefault();
 				showForm = true;
 				editingId = null;
+				tick().then(() => {
+					const nameInput = document.querySelector<HTMLInputElement>('input[name="name"]');
+					nameInput?.focus();
+				});
 				break;
 			case 'Escape':
 				e.preventDefault();
@@ -54,6 +59,11 @@
 			onclick={() => {
 				showForm = !showForm;
 				editingId = null;
+				if (!showForm) return;
+				tick().then(() => {
+					const nameInput = document.querySelector<HTMLInputElement>('input[name="name"]');
+					nameInput?.focus();
+				});
 			}}
 			class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
 		>
@@ -173,6 +183,10 @@
 							onclick={() => {
 								editingId = activity.id;
 								showForm = true;
+								tick().then(() => {
+									const nameInput = document.querySelector<HTMLInputElement>('input[name="name"]');
+									nameInput?.focus();
+								});
 							}}
 							class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
 						>
