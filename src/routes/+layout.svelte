@@ -12,7 +12,9 @@
 		{ href: '/', label: 'Dashboard' },
 		{ href: '/activities', label: 'Activities' },
 		{ href: '/planner', label: 'Planner' },
-		{ href: '/history', label: 'History' }
+		{ href: '/history', label: 'History' },
+		{ href: '/diary', label: 'Diary' },
+		{ href: '/habits', label: 'Habits' }
 	];
 
 	function handleGlobalKeydown(e: KeyboardEvent) {
