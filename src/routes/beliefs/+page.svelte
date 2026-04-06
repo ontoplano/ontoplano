@@ -12,6 +12,7 @@
 	let confirmingDeleteId: number | null = $state(null);
 
 	let linkBeliefSelect: Record<number, number | null> = $state({});
+	let linkBeliefFlipped: Record<number, boolean> = $state({});
 	let linkEvidenceSelect: Record<number, number | null> = $state({});
 	let newEvidenceContent: Record<number, string> = $state({});
 	let linkHabitSelect: Record<number, number | null> = $state({});
@@ -44,6 +45,20 @@
 	function latestIntensity(beliefId: number) {
 		const intensities = data.beliefs.find((b) => b.id === beliefId)?.intensities ?? [];
 		return intensities.length > 0 ? intensities[0].value : null;
+	}
+
+	function selectedBeliefContent(beliefId: number): string {
+		const selectedId = linkBeliefSelect[beliefId];
+		if (!selectedId) return '...';
+		const found = data.beliefs.find((b: { id: number }) => b.id === selectedId);
+		return found ? found.content : '...';
+	}
+
+	function selectedEvidenceContent(beliefId: number): string {
+		const selectedId = linkEvidenceSelect[beliefId];
+		if (!selectedId) return '...';
+		const found = data.allEvidence.find((e: { id: number }) => e.id === selectedId);
+		return found ? found.content : '...';
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -376,37 +391,73 @@
 									</div>
 								{/if}
 								{#if unlinkedBeliefs(belief.id).length > 0}
-									<form
-										method="post"
-										action="?/addRelation"
-										use:enhance
-										class="flex flex-wrap gap-2"
-									>
-										<input type="hidden" name="sourceBeliefId" value={belief.id} />
-										<select
+									{@const flipped = linkBeliefFlipped[belief.id] ?? false}
+									<form method="post" action="?/addRelation" use:enhance class="space-y-2">
+										<input
+											type="hidden"
+											name="sourceBeliefId"
+											value={flipped ? (linkBeliefSelect[belief.id] ?? '') : belief.id}
+										/>
+										<input
+											type="hidden"
 											name="targetBeliefId"
-											bind:value={linkBeliefSelect[belief.id]}
-											class="border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-										>
-											<option value={null}>Select belief...</option>
-											{#each unlinkedBeliefs(belief.id) as b (b.id)}
-												<option value={b.id}>{b.content}</option>
-											{/each}
-										</select>
-										<select
-											name="type"
-											class="border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-										>
-											<option value="supports">supports</option>
-											<option value="contradicts">contradicts</option>
-										</select>
-										<button
-											type="submit"
-											disabled={!linkBeliefSelect[belief.id]}
-											class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
-										>
-											Link
-										</button>
+											value={flipped ? belief.id : (linkBeliefSelect[belief.id] ?? '')}
+										/>
+										<div class="flex items-center gap-1.5 text-xs text-gray-500">
+											{#if !flipped}
+												<span class="font-medium text-gray-700">this</span>
+											{:else}
+												<span
+													class="max-w-[200px] truncate font-medium text-gray-700"
+													title={selectedBeliefContent(belief.id)}
+													>{selectedBeliefContent(belief.id)}</span
+												>
+											{/if}
+											<select
+												name="type"
+												class="border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+											>
+												<option value="supports">supports</option>
+												<option value="contradicts">contradicts</option>
+											</select>
+											{#if !flipped}
+												<span
+													class="max-w-[200px] truncate font-medium text-gray-700"
+													title={selectedBeliefContent(belief.id)}
+													>{selectedBeliefContent(belief.id)}</span
+												>
+											{:else}
+												<span class="font-medium text-gray-700">this</span>
+											{/if}
+											<button
+												type="button"
+												onclick={() => {
+													linkBeliefFlipped[belief.id] = !flipped;
+												}}
+												class="border border-gray-300 bg-white px-1.5 py-0.5 text-xs text-gray-600 transition hover:bg-gray-100"
+												title="Flip direction"
+											>
+												⇄
+											</button>
+										</div>
+										<div class="flex gap-2">
+											<select
+												bind:value={linkBeliefSelect[belief.id]}
+												class="flex-1 border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+											>
+												<option value={null}>Select belief...</option>
+												{#each unlinkedBeliefs(belief.id) as b (b.id)}
+													<option value={b.id}>{b.content}</option>
+												{/each}
+											</select>
+											<button
+												type="submit"
+												disabled={!linkBeliefSelect[belief.id]}
+												class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
+											>
+												Link
+											</button>
+										</div>
 									</form>
 								{/if}
 							</div>
@@ -419,7 +470,8 @@
 									<div class="mb-3 space-y-2">
 										{#each belief.linkedEvidence as ev (ev.linkId)}
 											<div class="flex items-center justify-between gap-2">
-												<div class="flex items-center gap-2">
+												<div class="flex items-center gap-1.5">
+													<span class="text-sm text-gray-700">{ev.evidenceContent}</span>
 													<span
 														class="{ev.type === 'supports'
 															? 'border border-green-200 bg-green-50 text-green-700'
@@ -427,7 +479,7 @@
 													>
 														{ev.type}
 													</span>
-													<span class="text-sm text-gray-700">{ev.evidenceContent}</span>
+													<span class="text-xs text-gray-400">this</span>
 												</div>
 												<div class="flex items-center gap-2">
 													<form method="post" action="?/deleteEvidence" use:enhance>
@@ -456,37 +508,42 @@
 								{/if}
 								<div class="space-y-2">
 									{#if unlinkedEvidence(belief.id).length > 0}
-										<form
-											method="post"
-											action="?/linkEvidence"
-											use:enhance
-											class="flex flex-wrap gap-2"
-										>
+										<form method="post" action="?/linkEvidence" use:enhance class="space-y-2">
 											<input type="hidden" name="beliefId" value={belief.id} />
-											<select
-												name="evidenceId"
-												bind:value={linkEvidenceSelect[belief.id]}
-												class="border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-											>
-												<option value={null}>Link existing evidence...</option>
-												{#each unlinkedEvidence(belief.id) as ev (ev.id)}
-													<option value={ev.id}>{ev.content}</option>
-												{/each}
-											</select>
-											<select
-												name="type"
-												class="border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-											>
-												<option value="supports">supports</option>
-												<option value="contradicts">contradicts</option>
-											</select>
-											<button
-												type="submit"
-												disabled={!linkEvidenceSelect[belief.id]}
-												class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
-											>
-												Link
-											</button>
+											<div class="flex items-center gap-1.5 text-xs text-gray-500">
+												<span
+													class="max-w-[200px] truncate font-medium text-gray-700"
+													title={selectedEvidenceContent(belief.id)}
+													>{selectedEvidenceContent(belief.id)}</span
+												>
+												<select
+													name="type"
+													class="border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+												>
+													<option value="supports">supports</option>
+													<option value="contradicts">contradicts</option>
+												</select>
+												<span class="font-medium text-gray-700">this</span>
+											</div>
+											<div class="flex gap-2">
+												<select
+													name="evidenceId"
+													bind:value={linkEvidenceSelect[belief.id]}
+													class="flex-1 border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+												>
+													<option value={null}>Select evidence...</option>
+													{#each unlinkedEvidence(belief.id) as ev (ev.id)}
+														<option value={ev.id}>{ev.content}</option>
+													{/each}
+												</select>
+												<button
+													type="submit"
+													disabled={!linkEvidenceSelect[belief.id]}
+													class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
+												>
+													Link
+												</button>
+											</div>
 										</form>
 									{/if}
 									<form
@@ -498,30 +555,38 @@
 												newEvidenceContent[belief.id] = '';
 											};
 										}}
-										class="flex flex-wrap gap-2"
+										class="space-y-2"
 									>
 										<input type="hidden" name="beliefId" value={belief.id} />
-										<input
-											name="content"
-											type="text"
-											placeholder="new evidence..."
-											bind:value={newEvidenceContent[belief.id]}
-											class="flex-1 border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-										/>
-										<select
-											name="type"
-											class="border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-										>
-											<option value="supports">supports</option>
-											<option value="contradicts">contradicts</option>
-										</select>
-										<button
-											type="submit"
-											disabled={!newEvidenceContent[belief.id]?.trim()}
-											class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
-										>
-											Create
-										</button>
+										<div class="flex items-center gap-1.5 text-xs text-gray-500">
+											<span class="font-medium text-gray-700"
+												>{newEvidenceContent[belief.id]?.trim() || '(new evidence)'}</span
+											>
+											<select
+												name="type"
+												class="border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+											>
+												<option value="supports">supports</option>
+												<option value="contradicts">contradicts</option>
+											</select>
+											<span class="font-medium text-gray-700">this</span>
+										</div>
+										<div class="flex gap-2">
+											<input
+												name="content"
+												type="text"
+												placeholder="new evidence..."
+												bind:value={newEvidenceContent[belief.id]}
+												class="flex-1 border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+											/>
+											<button
+												type="submit"
+												disabled={!newEvidenceContent[belief.id]?.trim()}
+												class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
+											>
+												Create
+											</button>
+										</div>
 									</form>
 								</div>
 							</div>
