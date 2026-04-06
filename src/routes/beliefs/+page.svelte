@@ -415,7 +415,7 @@
 											{/if}
 											<select
 												name="type"
-												class="border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+												class="border border-gray-300 py-1 pr-6 pl-2 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 											>
 												<option value="supports">supports</option>
 												<option value="contradicts">contradicts</option>
@@ -440,10 +440,10 @@
 												⇄
 											</button>
 										</div>
-										<div class="flex gap-2">
+										<div class="flex min-w-0 gap-2">
 											<select
 												bind:value={linkBeliefSelect[belief.id]}
-												class="flex-1 border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+												class="min-w-0 flex-1 border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 											>
 												<option value={null}>Select belief...</option>
 												{#each unlinkedBeliefs(belief.id) as b (b.id)}
@@ -518,7 +518,7 @@
 												>
 												<select
 													name="type"
-													class="border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+													class="border border-gray-300 py-1 pr-6 pl-2 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 												>
 													<option value="supports">supports</option>
 													<option value="contradicts">contradicts</option>
@@ -564,7 +564,7 @@
 											>
 											<select
 												name="type"
-												class="border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+												class="border border-gray-300 py-1 pr-6 pl-2 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 											>
 												<option value="supports">supports</option>
 												<option value="contradicts">contradicts</option>
