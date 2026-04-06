@@ -145,7 +145,7 @@
 				},
 				markerEnd: {
 					type: MarkerType.ArrowClosed,
-					color: rel.type === 'supports' ? '#22c55e' : '#ef4444'
+					color: rel.type === 'supports' ? '#3b82f6' : '#ef4444'
 				}
 			});
 		}
@@ -159,7 +159,7 @@
 				data: { type: link.type, pending: false, onDelete: handleEdgeDeleteFromLabel },
 				markerEnd: {
 					type: MarkerType.ArrowClosed,
-					color: link.type === 'supports' ? '#22c55e' : '#ef4444'
+					color: link.type === 'supports' ? '#3b82f6' : '#ef4444'
 				}
 			});
 		}
@@ -220,7 +220,7 @@
 			data: { type: r.type, pending: true, onDelete: handleEdgeDeleteFromLabel },
 			markerEnd: {
 				type: MarkerType.ArrowClosed,
-				color: r.type === 'supports' ? '#22c55e' : '#ef4444'
+				color: r.type === 'supports' ? '#3b82f6' : '#ef4444'
 			}
 		}));
 		edges = [...rebuilt.edges, ...pendingEdges];
@@ -268,7 +268,7 @@
 			data: { type, pending: true, onDelete: handleEdgeDeleteFromLabel },
 			markerEnd: {
 				type: MarkerType.ArrowClosed,
-				color: type === 'supports' ? '#22c55e' : '#ef4444'
+				color: type === 'supports' ? '#3b82f6' : '#ef4444'
 			}
 		};
 		edges = [...edges, newEdge];
@@ -278,6 +278,27 @@
 
 	function cancelTypePicker() {
 		typePicker = null;
+	}
+
+	async function handleBeforeDelete({
+		nodes: nodesToDelete,
+		edges: edgesToDelete
+	}: {
+		nodes: Node[];
+		edges: Edge[];
+	}): Promise<boolean> {
+		// For nodes: intercept and show confirmation in side panel
+		if (nodesToDelete.length > 0) {
+			const beliefNode = nodesToDelete.find((n) => n.id.startsWith('b-'));
+			if (beliefNode) {
+				const beliefId = parseInt(beliefNode.id.replace('b-', ''));
+				openBeliefPanel(beliefId);
+				panelConfirmDelete = true;
+			}
+			return false;
+		}
+		// For edges: allow deletion (handleEdgesDelete will commit)
+		return edgesToDelete.length > 0;
 	}
 
 	function handleEdgesDelete(deletedEdges: Edge[]) {
@@ -610,6 +631,7 @@
 			editingGraphNodeId = null;
 			selectedGraphBeliefId = null;
 			graphShowNewBeliefForm = false;
+			panelConfirmDelete = false;
 		}
 	}
 
@@ -837,7 +859,7 @@
 							<div class="min-w-0 flex-1">
 								<div class="flex items-center gap-2">
 									{#if belief.valence === 'positive'}
-										<span class="text-xs font-medium text-green-600">+</span>
+										<span class="text-xs font-medium text-blue-600">+</span>
 									{:else if belief.valence === 'negative'}
 										<span class="text-xs font-medium text-red-500">&minus;</span>
 									{/if}
@@ -916,7 +938,7 @@
 						</div>
 
 						{#if recordingBeliefId === belief.id}
-							<div class="border-t border-purple-100 bg-purple-50/40 px-4 py-3">
+							<div class="border-t border-purple-100 bg-purple-50 px-4 py-3">
 								<div class="mb-2">
 									<span class="text-xs font-medium text-purple-600">Intensity</span>
 								</div>
@@ -1099,7 +1121,7 @@
 									</button>
 								{/if}
 
-								<div class="border-t border-blue-100 bg-blue-50/40 px-4 py-3">
+								<div class="border-t border-blue-100 bg-blue-50 px-4 py-3">
 									<div class="mb-2">
 										<span class="text-xs font-medium text-blue-600">Related Beliefs</span>
 									</div>
@@ -1111,7 +1133,7 @@
 														<span class="text-xs text-gray-400">this</span>
 														<span
 															class="{rel.type === 'supports'
-																? 'border border-green-200 bg-green-50 text-green-700'
+																? 'border border-blue-200 bg-blue-50 text-blue-700'
 																: 'border border-red-200 bg-red-50 text-red-700'} px-1.5 py-0.5 text-xs"
 														>
 															{rel.type}
@@ -1140,7 +1162,7 @@
 														<span class="text-sm text-gray-700">{rel.beliefContent}</span>
 														<span
 															class="{rel.type === 'supports'
-																? 'border border-green-200 bg-green-50 text-green-700'
+																? 'border border-blue-200 bg-blue-50 text-blue-700'
 																: 'border border-red-200 bg-red-50 text-red-700'} px-1.5 py-0.5 text-xs"
 														>
 															{rel.type}
@@ -1232,7 +1254,7 @@
 									{/if}
 								</div>
 
-								<div class="border-t border-amber-100 bg-amber-50/40 px-4 py-3">
+								<div class="border-t border-amber-100 bg-amber-50 px-4 py-3">
 									<div class="mb-2">
 										<span class="text-xs font-medium text-amber-600">Evidence</span>
 									</div>
@@ -1243,11 +1265,11 @@
 													<div class="flex items-center gap-1.5">
 														<span class="text-sm text-gray-700">{ev.evidenceContent}</span>
 														<span
-															class="{ev.type === 'supports'
-																? 'border border-green-200 bg-green-50 text-green-700'
-																: 'border border-red-200 bg-red-50 text-red-700'} px-1.5 py-0.5 text-xs"
+															class="{rel.type === 'supports'
+																? 'border border-blue-200 bg-blue-50 text-blue-700'
+																: 'border border-red-200 bg-red-50 text-red-700'} px-1 py-0.5 text-xs"
 														>
-															{ev.type}
+															{rel.type}
 														</span>
 														<span class="text-xs text-gray-400">this</span>
 													</div>
@@ -1361,9 +1383,9 @@
 									</div>
 								</div>
 
-								<div class="border-t border-green-100 bg-green-50/40 px-4 py-3">
+								<div class="border-t border-emerald-100 bg-emerald-50 px-4 py-3">
 									<div class="mb-2">
-										<span class="text-xs font-medium text-green-600">Linked Habits</span>
+										<span class="text-xs font-medium text-emerald-600">Linked Habits</span>
 									</div>
 									<div class="mb-3 space-y-2">
 										{#each belief.linkedHabits as linked (linked.linkId)}
@@ -1373,7 +1395,7 @@
 													<span
 														class="text-xs {linked.habitType === 'bad'
 															? 'text-red-500'
-															: 'text-green-600'}">{linked.habitType}</span
+															: 'text-emerald-600'}">{linked.habitType}</span
 													>
 												</div>
 												<form method="post" action="?/unlinkHabit" use:enhance>
@@ -1418,7 +1440,7 @@
 			</div>
 		{/if}
 	{:else}
-		<div class="flex items-center justify-between">
+		<div class="space-y-2">
 			<div class="flex items-center gap-3">
 				{#if pendingRelations.length > 0}
 					<span class="text-sm text-gray-500">{pendingRelations.length} pending</span>
@@ -1430,7 +1452,7 @@
 					</button>
 				{/if}
 				{#if graphShowNewBeliefForm}
-					<div class="flex items-center gap-2">
+					<div class="flex flex-wrap items-center gap-2">
 						<input
 							type="text"
 							placeholder="belief text..."
@@ -1474,10 +1496,10 @@
 					</button>
 				{/if}
 			</div>
-			<div class="text-xs text-gray-400">
+			<p class="text-xs text-gray-400">
 				Drag from a handle to connect beliefs. Hover an edge label and click &times; to remove it.
 				Double-click a belief to edit its text.
-			</div>
+			</p>
 		</div>
 
 		{#if data.beliefs.length === 0}
@@ -1494,6 +1516,7 @@
 						{edgeTypes}
 						{onconnect}
 						{isValidConnection}
+						onbeforedelete={handleBeforeDelete}
 						onedgesdelete={handleEdgesDelete}
 						fitView
 						deleteKey="Delete"
@@ -1519,7 +1542,7 @@
 								<button
 									onclick={() => selectType('supports')}
 									class="px-3 py-1 text-xs"
-									style="background-color: #f0fdf4; color: #16a34a; border: 1px solid #86efac;"
+									style="background-color: #eff6ff; color: #1e40af; border: 1px solid #93c5fd;"
 								>
 									Supports
 								</button>
@@ -1583,7 +1606,7 @@
 									</button>
 								</div>
 
-								<div class="mb-4 space-y-2 rounded-none border border-cyan-100 bg-cyan-50/40 p-3">
+								<div class="mb-4 space-y-2 rounded-none border border-cyan-100 bg-cyan-50 p-3">
 									{#if belief.tags && belief.tags.length > 0}
 										<div>
 											<span class="text-xs font-medium text-cyan-600">Tags</span>
@@ -1624,7 +1647,7 @@
 									</div>
 								</div>
 
-								<div class="mb-4 space-y-2 rounded-none border border-blue-100 bg-blue-50/40 p-3">
+								<div class="mb-4 space-y-2 rounded-none border border-blue-100 bg-blue-50 p-3">
 									<span class="text-xs font-medium text-blue-600">Related Beliefs</span>
 									{#if belief.relatedBeliefs.length > 0}
 										<div class="space-y-2">
@@ -1635,7 +1658,7 @@
 															<span class="text-xs text-gray-400">this</span>
 															<span
 																class="{rel.type === 'supports'
-																	? 'border border-green-200 bg-green-50 text-green-700'
+																	? 'border border-blue-200 bg-blue-50 text-blue-700'
 																	: 'border border-red-200 bg-red-50 text-red-700'} px-1 py-0.5 text-xs"
 															>
 																{rel.type}
@@ -1645,7 +1668,7 @@
 															<span class="text-xs text-gray-400">that</span>
 															<span
 																class="{rel.type === 'supports'
-																	? 'border border-green-200 bg-green-50 text-green-700'
+																	? 'border border-blue-200 bg-blue-50 text-blue-700'
 																	: 'border border-red-200 bg-red-50 text-red-700'} px-1 py-0.5 text-xs"
 															>
 																{rel.type}
@@ -1694,7 +1717,7 @@
 									{/if}
 								</div>
 
-								<div class="mb-4 space-y-2 rounded-none border border-amber-100 bg-amber-50/40 p-3">
+								<div class="mb-4 space-y-2 rounded-none border border-amber-100 bg-amber-50 p-3">
 									<span class="text-xs font-medium text-amber-600">Evidence</span>
 									{#if belief.linkedEvidence.length > 0}
 										<div class="space-y-2">
@@ -1704,7 +1727,7 @@
 														<span class="text-xs text-gray-700">{ev.evidenceContent}</span>
 														<span
 															class="{ev.type === 'supports'
-																? 'border border-green-200 bg-green-50 text-green-700'
+																? 'border border-blue-200 bg-blue-50 text-blue-700'
 																: 'border border-red-200 bg-red-50 text-red-700'} px-1 py-0.5 text-xs"
 														>
 															{ev.type}
@@ -1780,8 +1803,10 @@
 									</button>
 								</div>
 
-								<div class="mb-4 space-y-2 rounded-none border border-green-100 bg-green-50/40 p-3">
-									<span class="text-xs font-medium text-green-600">Linked Habits</span>
+								<div
+									class="mb-4 space-y-2 rounded-none border border-emerald-100 bg-emerald-50 p-3"
+								>
+									<span class="text-xs font-medium text-emerald-600">Linked Habits</span>
 									{#if belief.linkedHabits.length > 0}
 										<div class="space-y-2">
 											{#each belief.linkedHabits as linked (linked.linkId)}
@@ -1791,7 +1816,7 @@
 														<span
 															class="text-xs {linked.habitType === 'bad'
 																? 'text-red-500'
-																: 'text-green-600'}">{linked.habitType}</span
+																: 'text-emerald-600'}">{linked.habitType}</span
 														>
 													</div>
 													<button
@@ -1824,9 +1849,7 @@
 									{/if}
 								</div>
 
-								<div
-									class="mb-4 space-y-2 rounded-none border border-purple-100 bg-purple-50/40 p-3"
-								>
+								<div class="mb-4 space-y-2 rounded-none border border-purple-100 bg-purple-50 p-3">
 									<span class="text-xs font-medium text-purple-600">Intensity Log</span>
 									{#if belief.intensities.length > 0}
 										<div class="mb-2 flex items-end gap-1" style="height: 44px">

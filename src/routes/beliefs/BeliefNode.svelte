@@ -91,8 +91,8 @@
 	}
 
 	.belief-node.positive {
-		background: #f0fdf4;
-		border-color: #86efac;
+		background: #eff6ff;
+		border-color: #93c5fd;
 	}
 
 	.belief-node.negative {

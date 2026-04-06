@@ -29,8 +29,8 @@
 	let labelY = $derived(pathResult[2]);
 
 	let isSupports = $derived(data?.type === 'supports');
-	let color = $derived(isSupports ? '#22c55e' : '#ef4444');
-	let labelBg = $derived(isSupports ? '#f0fdf4' : '#fef2f2');
+	let color = $derived(isSupports ? '#3b82f6' : '#ef4444');
+	let labelBg = $derived(isSupports ? '#eff6ff' : '#fef2f2');
 	let isPending = $derived(data?.pending === true);
 
 	let showDelete = $state(false);
