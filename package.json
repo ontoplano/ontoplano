@@ -57,6 +57,7 @@
 		"svelte"
 	],
 	"dependencies": {
-		"better-sqlite3": "^12.6.2"
+		"better-sqlite3": "^12.6.2",
+		"cytoscape": "^3.33.1"
 	}
 }
