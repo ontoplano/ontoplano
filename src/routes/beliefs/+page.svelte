@@ -11,8 +11,9 @@
 	let editingBeliefId: number | null = $state(null);
 	let confirmingDeleteId: number | null = $state(null);
 
-	let newReasonContent: Record<number, string> = $state({});
-	let newContradictionContent: Record<number, string> = $state({});
+	let linkBeliefSelect: Record<number, number | null> = $state({});
+	let linkEvidenceSelect: Record<number, number | null> = $state({});
+	let newEvidenceContent: Record<number, string> = $state({});
 	let linkHabitSelect: Record<number, number | null> = $state({});
 	let intensityValue: Record<number, number> = $state({});
 	let intensityNotes: Record<number, string> = $state({});
@@ -20,6 +21,18 @@
 
 	function beliefsList() {
 		return data.beliefs;
+	}
+
+	function unlinkedBeliefs(sourceId: number) {
+		const linkedIds =
+			data.beliefs.find((b) => b.id === sourceId)?.relatedBeliefs.map((r) => r.beliefId) ?? [];
+		return data.beliefs.filter((b) => b.id !== sourceId && !linkedIds.includes(b.id));
+	}
+
+	function unlinkedEvidence(beliefId: number) {
+		const linkedIds =
+			data.beliefs.find((b) => b.id === beliefId)?.linkedEvidence.map((e) => e.evidenceId) ?? [];
+		return data.allEvidence.filter((e) => !linkedIds.includes(e.id));
 	}
 
 	function unlinkedHabits(beliefId: number) {
@@ -184,6 +197,8 @@
 				{@const isExpanded = expandedBeliefId === belief.id}
 				{@const isEditing = editingBeliefId === belief.id}
 				{@const latest = latestIntensity(belief.id)}
+				{@const outgoingRelations = belief.relatedBeliefs.filter((r) => r.direction === 'outgoing')}
+				{@const incomingRelations = belief.relatedBeliefs.filter((r) => r.direction === 'incoming')}
 				<div
 					class="border border-gray-200 bg-white shadow-sm {i === selectedBeliefIndex
 						? 'ring-2 ring-gray-900 ring-inset'
@@ -198,11 +213,8 @@
 								{/if}
 							</div>
 							<div class="flex items-center gap-3 text-xs text-gray-400">
-								<span>{belief.reasons.length} reason{belief.reasons.length === 1 ? '' : 's'}</span>
-								<span
-									>{belief.contradictions.length}
-									contradiction{belief.contradictions.length === 1 ? '' : 's'}</span
-								>
+								<span>{outgoingRelations.length + incomingRelations.length} related</span>
+								<span>{belief.linkedEvidence.length} evidence</span>
 								{#if belief.linkedHabits.length > 0}
 									<span
 										>{belief.linkedHabits.length}
@@ -295,12 +307,6 @@
 								<button
 									onclick={() => {
 										editingBeliefId = belief.id;
-										tick().then(() => {
-											const ta = document.querySelector<HTMLTextAreaElement>(
-												'textarea[name="editContent"]'
-											);
-											ta?.focus();
-										});
 									}}
 									class="w-full border-t border-gray-200 px-4 py-2 text-left text-xs text-gray-400 transition hover:bg-gray-50"
 								>
@@ -310,151 +316,214 @@
 
 							<div class="border-t border-gray-200 px-4 py-3">
 								<div class="mb-2">
-									<span class="text-xs font-medium text-gray-500">Reasons</span>
-									<p class="text-xs text-gray-400">why this feels true</p>
+									<span class="text-xs font-medium text-gray-500">Related Beliefs</span>
 								</div>
-								<div class="mb-3 space-y-2">
-									{#each belief.reasons as reason (reason.id)}
-										<div class="flex items-center justify-between gap-2">
-											<span class="text-sm text-gray-700">{reason.content}</span>
-											<form method="post" action="?/removeReason" use:enhance>
-												<input type="hidden" name="id" value={reason.id} />
-												<button
-													type="submit"
-													class="text-xs text-gray-400 transition hover:text-red-500"
-												>
-													&times;
-												</button>
-											</form>
-										</div>
-									{/each}
-								</div>
-								<form
-									method="post"
-									action="?/addReason"
-									use:enhance={() => {
-										return async ({ update }) => {
-											await update();
-											newReasonContent[belief.id] = '';
-										};
-									}}
-									class="flex gap-2"
-								>
-									<input type="hidden" name="beliefId" value={belief.id} />
-									<input
-										name="content"
-										type="text"
-										placeholder="add a reason..."
-										bind:value={newReasonContent[belief.id]}
-										class="flex-1 border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-									/>
-									<button
-										type="submit"
-										class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-									>
-										Add
-									</button>
-								</form>
-							</div>
-
-							<div class="border-t border-gray-200 px-4 py-3">
-								<div class="mb-2">
-									<span class="text-xs font-medium text-gray-500">Contradictions</span>
-									<p class="text-xs text-gray-400">disconfirming evidence</p>
-								</div>
-								<div class="mb-3 space-y-2">
-									{#each belief.contradictions as contradiction (contradiction.id)}
-										<div class="flex items-center justify-between gap-2">
-											<span class="text-sm text-gray-700">{contradiction.content}</span>
-											<form method="post" action="?/removeContradiction" use:enhance>
-												<input type="hidden" name="id" value={contradiction.id} />
-												<button
-													type="submit"
-													class="text-xs text-gray-400 transition hover:text-red-500"
-												>
-													&times;
-												</button>
-											</form>
-										</div>
-									{/each}
-								</div>
-								<form
-									method="post"
-									action="?/addContradiction"
-									use:enhance={() => {
-										return async ({ update }) => {
-											await update();
-											newContradictionContent[belief.id] = '';
-										};
-									}}
-									class="flex gap-2"
-								>
-									<input type="hidden" name="beliefId" value={belief.id} />
-									<input
-										name="content"
-										type="text"
-										placeholder="add a contradiction..."
-										bind:value={newContradictionContent[belief.id]}
-										class="flex-1 border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-									/>
-									<button
-										type="submit"
-										class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-									>
-										Add
-									</button>
-								</form>
-							</div>
-
-							<div class="border-t border-gray-200 px-4 py-3">
-								<div class="mb-2">
-									<span class="text-xs font-medium text-gray-500">Linked Habits</span>
-								</div>
-								<div class="mb-3 space-y-2">
-									{#each belief.linkedHabits as linked (linked.linkId)}
-										<div class="flex items-center justify-between gap-2">
-											<div class="flex items-center gap-2">
-												<span class="text-sm text-gray-700">{linked.habitName}</span>
-												<span
-													class="text-xs {linked.habitType === 'bad'
-														? 'text-red-500'
-														: 'text-green-600'}">{linked.habitType}</span
-												>
+								{#if outgoingRelations.length > 0}
+									<div class="mb-3 space-y-2">
+										{#each outgoingRelations as rel (rel.relationId)}
+											<div class="flex items-center justify-between gap-2">
+												<div class="flex items-center gap-2">
+													<span class="text-xs text-gray-400">this</span>
+													<span
+														class="{rel.type === 'supports'
+															? 'border border-green-200 bg-green-50 text-green-700'
+															: 'border border-red-200 bg-red-50 text-red-700'} px-1.5 py-0.5 text-xs"
+													>
+														{rel.type}
+													</span>
+													<span class="text-xs text-gray-400">that</span>
+													<span class="text-sm text-gray-700">{rel.beliefContent}</span>
+												</div>
+												<form method="post" action="?/removeRelation" use:enhance>
+													<input type="hidden" name="id" value={rel.relationId} />
+													<button
+														type="submit"
+														class="text-xs text-gray-400 transition hover:text-red-500"
+													>
+														&times;
+													</button>
+												</form>
 											</div>
-											<form method="post" action="?/unlinkHabit" use:enhance>
-												<input type="hidden" name="id" value={linked.linkId} />
-												<button
-													type="submit"
-													class="text-xs text-gray-400 transition hover:text-red-500"
-												>
-													&times;
-												</button>
-											</form>
-										</div>
-									{/each}
-								</div>
-								{#if unlinkedHabits(belief.id).length > 0}
-									<form method="post" action="?/linkHabit" use:enhance class="flex gap-2">
-										<input type="hidden" name="beliefId" value={belief.id} />
+										{/each}
+									</div>
+								{/if}
+								{#if incomingRelations.length > 0}
+									<div class="mb-3 space-y-2">
+										{#each incomingRelations as rel (rel.relationId)}
+											<div class="flex items-center justify-between gap-2">
+												<div class="flex items-center gap-2">
+													<span class="text-sm text-gray-700">{rel.beliefContent}</span>
+													<span
+														class="{rel.type === 'supports'
+															? 'border border-green-200 bg-green-50 text-green-700'
+															: 'border border-red-200 bg-red-50 text-red-700'} px-1.5 py-0.5 text-xs"
+													>
+														{rel.type}
+													</span>
+													<span class="text-xs text-gray-400">this</span>
+												</div>
+												<form method="post" action="?/removeRelation" use:enhance>
+													<input type="hidden" name="id" value={rel.relationId} />
+													<button
+														type="submit"
+														class="text-xs text-gray-400 transition hover:text-red-500"
+													>
+														&times;
+													</button>
+												</form>
+											</div>
+										{/each}
+									</div>
+								{/if}
+								{#if unlinkedBeliefs(belief.id).length > 0}
+									<form
+										method="post"
+										action="?/addRelation"
+										use:enhance
+										class="flex flex-wrap gap-2"
+									>
+										<input type="hidden" name="sourceBeliefId" value={belief.id} />
 										<select
-											name="habitId"
-											bind:value={linkHabitSelect[belief.id]}
-											class="flex-1 border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+											name="targetBeliefId"
+											bind:value={linkBeliefSelect[belief.id]}
+											class="border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 										>
-											<option value={null}>Select habit...</option>
-											{#each unlinkedHabits(belief.id) as habit (habit.id)}
-												<option value={habit.id}>{habit.name}</option>
+											<option value={null}>Select belief...</option>
+											{#each unlinkedBeliefs(belief.id) as b (b.id)}
+												<option value={b.id}>{b.content}</option>
 											{/each}
+										</select>
+										<select
+											name="type"
+											class="border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+										>
+											<option value="supports">supports</option>
+											<option value="contradicts">contradicts</option>
 										</select>
 										<button
 											type="submit"
-											disabled={!linkHabitSelect[belief.id]}
+											disabled={!linkBeliefSelect[belief.id]}
 											class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
 										>
 											Link
 										</button>
 									</form>
 								{/if}
+							</div>
+
+							<div class="border-t border-gray-200 px-4 py-3">
+								<div class="mb-2">
+									<span class="text-xs font-medium text-gray-500">Evidence</span>
+								</div>
+								{#if belief.linkedEvidence.length > 0}
+									<div class="mb-3 space-y-2">
+										{#each belief.linkedEvidence as ev (ev.linkId)}
+											<div class="flex items-center justify-between gap-2">
+												<div class="flex items-center gap-2">
+													<span
+														class="{ev.type === 'supports'
+															? 'border border-green-200 bg-green-50 text-green-700'
+															: 'border border-red-200 bg-red-50 text-red-700'} px-1.5 py-0.5 text-xs"
+													>
+														{ev.type}
+													</span>
+													<span class="text-sm text-gray-700">{ev.evidenceContent}</span>
+												</div>
+												<div class="flex items-center gap-2">
+													<form method="post" action="?/deleteEvidence" use:enhance>
+														<input type="hidden" name="id" value={ev.evidenceId} />
+														<button
+															type="submit"
+															class="text-xs text-gray-400 transition hover:text-red-500"
+															title="Delete evidence"
+														>
+															del
+														</button>
+													</form>
+													<form method="post" action="?/unlinkEvidence" use:enhance>
+														<input type="hidden" name="id" value={ev.linkId} />
+														<button
+															type="submit"
+															class="text-xs text-gray-400 transition hover:text-red-500"
+														>
+															&times;
+														</button>
+													</form>
+												</div>
+											</div>
+										{/each}
+									</div>
+								{/if}
+								<div class="space-y-2">
+									{#if unlinkedEvidence(belief.id).length > 0}
+										<form
+											method="post"
+											action="?/linkEvidence"
+											use:enhance
+											class="flex flex-wrap gap-2"
+										>
+											<input type="hidden" name="beliefId" value={belief.id} />
+											<select
+												name="evidenceId"
+												bind:value={linkEvidenceSelect[belief.id]}
+												class="border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+											>
+												<option value={null}>Link existing evidence...</option>
+												{#each unlinkedEvidence(belief.id) as ev (ev.id)}
+													<option value={ev.id}>{ev.content}</option>
+												{/each}
+											</select>
+											<select
+												name="type"
+												class="border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+											>
+												<option value="supports">supports</option>
+												<option value="contradicts">contradicts</option>
+											</select>
+											<button
+												type="submit"
+												disabled={!linkEvidenceSelect[belief.id]}
+												class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
+											>
+												Link
+											</button>
+										</form>
+									{/if}
+									<form
+										method="post"
+										action="?/createEvidence"
+										use:enhance={() => {
+											return async ({ update }) => {
+												await update();
+												newEvidenceContent[belief.id] = '';
+											};
+										}}
+										class="flex flex-wrap gap-2"
+									>
+										<input type="hidden" name="beliefId" value={belief.id} />
+										<input
+											name="content"
+											type="text"
+											placeholder="new evidence..."
+											bind:value={newEvidenceContent[belief.id]}
+											class="flex-1 border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+										/>
+										<select
+											name="type"
+											class="border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+										>
+											<option value="supports">supports</option>
+											<option value="contradicts">contradicts</option>
+										</select>
+										<button
+											type="submit"
+											disabled={!newEvidenceContent[belief.id]?.trim()}
+											class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
+										>
+											Create
+										</button>
+									</form>
+								</div>
 							</div>
 
 							<div class="border-t border-gray-200 px-4 py-3">
@@ -556,6 +625,57 @@
 										</div>
 									</form>
 								</div>
+							</div>
+
+							<div class="border-t border-gray-200 px-4 py-3">
+								<div class="mb-2">
+									<span class="text-xs font-medium text-gray-500">Linked Habits</span>
+								</div>
+								<div class="mb-3 space-y-2">
+									{#each belief.linkedHabits as linked (linked.linkId)}
+										<div class="flex items-center justify-between gap-2">
+											<div class="flex items-center gap-2">
+												<span class="text-sm text-gray-700">{linked.habitName}</span>
+												<span
+													class="text-xs {linked.habitType === 'bad'
+														? 'text-red-500'
+														: 'text-green-600'}">{linked.habitType}</span
+												>
+											</div>
+											<form method="post" action="?/unlinkHabit" use:enhance>
+												<input type="hidden" name="id" value={linked.linkId} />
+												<button
+													type="submit"
+													class="text-xs text-gray-400 transition hover:text-red-500"
+												>
+													&times;
+												</button>
+											</form>
+										</div>
+									{/each}
+								</div>
+								{#if unlinkedHabits(belief.id).length > 0}
+									<form method="post" action="?/linkHabit" use:enhance class="flex gap-2">
+										<input type="hidden" name="beliefId" value={belief.id} />
+										<select
+											name="habitId"
+											bind:value={linkHabitSelect[belief.id]}
+											class="flex-1 border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+										>
+											<option value={null}>Select habit...</option>
+											{#each unlinkedHabits(belief.id) as habit (habit.id)}
+												<option value={habit.id}>{habit.name}</option>
+											{/each}
+										</select>
+										<button
+											type="submit"
+											disabled={!linkHabitSelect[belief.id]}
+											class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
+										>
+											Link
+										</button>
+									</form>
+								{/if}
 							</div>
 						</div>
 					{/if}

@@ -3,13 +3,14 @@ import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import {
 	beliefs,
-	beliefReasons,
-	beliefContradictions,
+	beliefRelations,
 	beliefIntensities,
 	beliefHabits,
+	beliefEvidence,
+	evidence,
 	habits
 } from '$lib/server/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, or } from 'drizzle-orm';
 import { toLocalISOString } from '$lib/server/week-generator';
 
 function todayStr(): string {
@@ -30,26 +31,62 @@ export const load: PageServerLoad = async () => {
 		.all();
 
 	const beliefsWithRelations = allBeliefs.map((belief) => {
-		const reasons = db
+		const outgoing = db
 			.select({
-				id: beliefReasons.id,
-				content: beliefReasons.content,
-				createdAt: beliefReasons.createdAt
+				id: beliefRelations.id,
+				targetBeliefId: beliefRelations.targetBeliefId,
+				type: beliefRelations.type,
+				createdAt: beliefRelations.createdAt
 			})
-			.from(beliefReasons)
-			.where(eq(beliefReasons.beliefId, belief.id))
-			.orderBy(beliefReasons.createdAt)
+			.from(beliefRelations)
+			.where(eq(beliefRelations.sourceBeliefId, belief.id))
 			.all();
 
-		const contradictions = db
+		const incoming = db
 			.select({
-				id: beliefContradictions.id,
-				content: beliefContradictions.content,
-				createdAt: beliefContradictions.createdAt
+				id: beliefRelations.id,
+				sourceBeliefId: beliefRelations.sourceBeliefId,
+				type: beliefRelations.type,
+				createdAt: beliefRelations.createdAt
 			})
-			.from(beliefContradictions)
-			.where(eq(beliefContradictions.beliefId, belief.id))
-			.orderBy(beliefContradictions.createdAt)
+			.from(beliefRelations)
+			.where(eq(beliefRelations.targetBeliefId, belief.id))
+			.all();
+
+		const relatedBeliefs = [
+			...outgoing.map((r) => {
+				const target = allBeliefs.find((b) => b.id === r.targetBeliefId);
+				return {
+					relationId: r.id,
+					beliefId: r.targetBeliefId,
+					beliefContent: target?.content ?? '',
+					type: r.type as 'supports' | 'contradicts',
+					direction: 'outgoing' as const
+				};
+			}),
+			...incoming.map((r) => {
+				const source = allBeliefs.find((b) => b.id === r.sourceBeliefId);
+				return {
+					relationId: r.id,
+					beliefId: r.sourceBeliefId,
+					beliefContent: source?.content ?? '',
+					type: r.type as 'supports' | 'contradicts',
+					direction: 'incoming' as const
+				};
+			})
+		];
+
+		const linkedEvidence = db
+			.select({
+				linkId: beliefEvidence.id,
+				evidenceId: evidence.id,
+				evidenceContent: evidence.content,
+				type: beliefEvidence.type,
+				createdAt: evidence.createdAt
+			})
+			.from(beliefEvidence)
+			.innerJoin(evidence, eq(beliefEvidence.evidenceId, evidence.id))
+			.where(eq(beliefEvidence.beliefId, belief.id))
 			.all();
 
 		const intensities = db
@@ -76,7 +113,7 @@ export const load: PageServerLoad = async () => {
 			.where(eq(beliefHabits.beliefId, belief.id))
 			.all();
 
-		return { ...belief, reasons, contradictions, intensities, linkedHabits };
+		return { ...belief, relatedBeliefs, linkedEvidence, intensities, linkedHabits };
 	});
 
 	const allHabits = db
@@ -85,7 +122,13 @@ export const load: PageServerLoad = async () => {
 		.orderBy(habits.name)
 		.all();
 
-	return { beliefs: beliefsWithRelations, allHabits, today: todayStr() };
+	const allEvidence = db
+		.select({ id: evidence.id, content: evidence.content, createdAt: evidence.createdAt })
+		.from(evidence)
+		.orderBy(desc(evidence.createdAt))
+		.all();
+
+	return { beliefs: beliefsWithRelations, allHabits, allEvidence, today: todayStr() };
 };
 
 export const actions: Actions = {
@@ -126,48 +169,113 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	addReason: async ({ request }) => {
+	addRelation: async ({ request }) => {
 		const formData = await request.formData();
-		const beliefId = Number(formData.get('beliefId'));
-		const content = formData.get('content')?.toString()?.trim();
+		const sourceBeliefId = Number(formData.get('sourceBeliefId'));
+		const targetBeliefId = Number(formData.get('targetBeliefId'));
+		const type = formData.get('type')?.toString() as 'supports' | 'contradicts';
 
-		if (!beliefId || !content) return fail(400, { message: 'Missing fields' });
+		if (!sourceBeliefId || !targetBeliefId || !type)
+			return fail(400, { message: 'Missing fields' });
+		if (sourceBeliefId === targetBeliefId)
+			return fail(400, { message: 'Cannot relate a belief to itself' });
+		if (type !== 'supports' && type !== 'contradicts')
+			return fail(400, { message: 'Type must be supports or contradicts' });
 
-		db.insert(beliefReasons).values({ beliefId, content }).run();
+		const existing = db
+			.select({ id: beliefRelations.id })
+			.from(beliefRelations)
+			.where(
+				or(
+					and(
+						eq(beliefRelations.sourceBeliefId, sourceBeliefId),
+						eq(beliefRelations.targetBeliefId, targetBeliefId)
+					),
+					and(
+						eq(beliefRelations.sourceBeliefId, targetBeliefId),
+						eq(beliefRelations.targetBeliefId, sourceBeliefId)
+					)
+				)
+			)
+			.get();
+
+		if (existing) return fail(400, { message: 'Relation already exists between these beliefs' });
+
+		db.insert(beliefRelations).values({ sourceBeliefId, targetBeliefId, type }).run();
 
 		return { success: true };
 	},
 
-	removeReason: async ({ request }) => {
+	removeRelation: async ({ request }) => {
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 
 		if (!id) return fail(400, { message: 'Missing id' });
 
-		db.delete(beliefReasons).where(eq(beliefReasons.id, id)).run();
+		db.delete(beliefRelations).where(eq(beliefRelations.id, id)).run();
 
 		return { success: true };
 	},
 
-	addContradiction: async ({ request }) => {
+	createEvidence: async ({ request }) => {
+		const formData = await request.formData();
+		const content = formData.get('content')?.toString()?.trim();
+		const beliefId = Number(formData.get('beliefId'));
+		const type = formData.get('type')?.toString() as 'supports' | 'contradicts';
+
+		if (!content) return fail(400, { message: 'Evidence content is required' });
+
+		const result = db.insert(evidence).values({ content }).run();
+		const evidenceId = Number(result.lastInsertRowid);
+
+		if (beliefId && type && (type === 'supports' || type === 'contradicts')) {
+			db.insert(beliefEvidence).values({ beliefId, evidenceId, type }).run();
+		}
+
+		return { success: true };
+	},
+
+	linkEvidence: async ({ request }) => {
 		const formData = await request.formData();
 		const beliefId = Number(formData.get('beliefId'));
-		const content = formData.get('content')?.toString()?.trim();
+		const evidenceId = Number(formData.get('evidenceId'));
+		const type = formData.get('type')?.toString() as 'supports' | 'contradicts';
 
-		if (!beliefId || !content) return fail(400, { message: 'Missing fields' });
+		if (!beliefId || !evidenceId || !type) return fail(400, { message: 'Missing fields' });
+		if (type !== 'supports' && type !== 'contradicts')
+			return fail(400, { message: 'Type must be supports or contradicts' });
 
-		db.insert(beliefContradictions).values({ beliefId, content }).run();
+		const existing = db
+			.select({ id: beliefEvidence.id })
+			.from(beliefEvidence)
+			.where(and(eq(beliefEvidence.beliefId, beliefId), eq(beliefEvidence.evidenceId, evidenceId)))
+			.get();
+
+		if (existing) return fail(400, { message: 'Evidence already linked' });
+
+		db.insert(beliefEvidence).values({ beliefId, evidenceId, type }).run();
 
 		return { success: true };
 	},
 
-	removeContradiction: async ({ request }) => {
+	unlinkEvidence: async ({ request }) => {
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 
 		if (!id) return fail(400, { message: 'Missing id' });
 
-		db.delete(beliefContradictions).where(eq(beliefContradictions.id, id)).run();
+		db.delete(beliefEvidence).where(eq(beliefEvidence.id, id)).run();
+
+		return { success: true };
+	},
+
+	deleteEvidence: async ({ request }) => {
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+
+		if (!id) return fail(400, { message: 'Missing id' });
+
+		db.delete(evidence).where(eq(evidence.id, id)).run();
 
 		return { success: true };
 	},

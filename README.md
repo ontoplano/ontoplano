@@ -1,6 +1,6 @@
 # semotina
 
-A weekly routine dashboard for tracking daily activities across three domains: **duty**, **skill**, and **money**.
+A weekly routine dashboard for tracking daily activities across three domains: **duty**, **skill**, and **money**. Also tracks habits, diary entries, and beliefs (memory reconsolidation).
 
 ## Setup
 
@@ -41,6 +41,9 @@ Copy `.env.example` to `.env` and set `ORIGIN` and `BETTER_AUTH_SECRET`.
 2. Create activities at `/activities`
 3. Plan your week at `/planner`
 4. Track daily execution on `/`
+5. Journal at `/diary`
+6. Track habits at `/habits`
+7. Work on beliefs at `/beliefs`
 
 ### Keyboard shortcuts
 
@@ -68,6 +71,16 @@ Copy `.env.example` to `.env` and set `ORIGIN` and `BETTER_AUTH_SECRET`.
 | History    | `h`/`l`             | Switch day                                 |
 | History    | `j`/`k`             | Navigate tasks                             |
 | History    | `[`/`]`             | Previous/next week                         |
+| Diary      | `j`/`k`             | Navigate entries                           |
+| Diary      | `n`                 | New entry                                  |
+| Diary      | `e`                 | Edit entry                                 |
+| Habits     | `j`/`k`             | Navigate habits                            |
+| Habits     | `n`                 | New habit                                  |
+| Habits     | `Enter`             | Expand/collapse                            |
+| Beliefs    | `j`/`k`             | Navigate beliefs                           |
+| Beliefs    | `n`                 | New belief                                 |
+| Beliefs    | `Enter`             | Expand/collapse                            |
+| Beliefs    | `e`                 | Edit belief                                |
 | All        | `J`/`K`             | Navigate between pages                     |
 | All        | `Esc`               | Close form                                 |
 

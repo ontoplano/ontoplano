@@ -185,34 +185,58 @@ export const beliefs = sqliteTable(
 	(table) => [index('beliefs_created_idx').on(table.createdAt)]
 );
 
-export const beliefReasons = sqliteTable(
-	'belief_reasons',
+export const beliefRelations = sqliteTable(
+	'belief_relations',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
-		beliefId: integer('belief_id')
+		sourceBeliefId: integer('source_belief_id')
 			.notNull()
 			.references(() => beliefs.id, { onDelete: 'cascade' }),
-		content: text('content').notNull(),
+		targetBeliefId: integer('target_belief_id')
+			.notNull()
+			.references(() => beliefs.id, { onDelete: 'cascade' }),
+		type: text('type', { enum: ['supports', 'contradicts'] }).notNull(),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
-	(table) => [index('belief_reasons_belief_idx').on(table.beliefId)]
+	(table) => [
+		index('belief_relations_source_idx').on(table.sourceBeliefId),
+		index('belief_relations_target_idx').on(table.targetBeliefId)
+	]
 );
 
-export const beliefContradictions = sqliteTable(
-	'belief_contradictions',
+export const evidence = sqliteTable(
+	'evidence',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
-		beliefId: integer('belief_id')
-			.notNull()
-			.references(() => beliefs.id, { onDelete: 'cascade' }),
 		content: text('content').notNull(),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
-	(table) => [index('belief_contradictions_belief_idx').on(table.beliefId)]
+	(table) => [index('evidence_created_idx').on(table.createdAt)]
+);
+
+export const beliefEvidence = sqliteTable(
+	'belief_evidence',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		beliefId: integer('belief_id')
+			.notNull()
+			.references(() => beliefs.id, { onDelete: 'cascade' }),
+		evidenceId: integer('evidence_id')
+			.notNull()
+			.references(() => evidence.id, { onDelete: 'cascade' }),
+		type: text('type', { enum: ['supports', 'contradicts'] }).notNull(),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('belief_evidence_belief_idx').on(table.beliefId),
+		index('belief_evidence_evidence_idx').on(table.evidenceId)
+	]
 );
 
 export const beliefIntensities = sqliteTable(
