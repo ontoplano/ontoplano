@@ -3,24 +3,34 @@
 
 	let { data }: NodeProps = $props();
 
-	let editing = $state(false);
 	let editValue = $state('');
+
+	function isEditing(): boolean {
+		const getter = data.editingNodeId as (() => number | null) | undefined;
+		return getter ? getter() === (data.beliefId as number) : false;
+	}
 
 	function startEditing() {
 		editValue = data.label as string;
-		editing = true;
+		if (data.onStartEdit) {
+			(data.onStartEdit as (id: number) => void)(data.beliefId as number);
+		}
 	}
 
 	function commitEdit() {
 		const trimmed = editValue.trim();
 		if (trimmed && trimmed !== data.label && data.onUpdate) {
-			data.onUpdate(data.beliefId as number, trimmed);
+			(data.onUpdate as (id: number, content: string) => void)(data.beliefId as number, trimmed);
 		}
-		editing = false;
+		if (data.onCancelEdit) {
+			(data.onCancelEdit as () => void)();
+		}
 	}
 
 	function cancelEdit() {
-		editing = false;
+		if (data.onCancelEdit) {
+			(data.onCancelEdit as () => void)();
+		}
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -29,6 +39,7 @@
 			commitEdit();
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
+			e.stopPropagation();
 			cancelEdit();
 		}
 	}
@@ -44,7 +55,7 @@
 	<div class="content">
 		<span class="id-badge">{data.beliefId}</span>
 		<div class="main">
-			{#if editing}
+			{#if isEditing()}
 				<textarea
 					class="edit-textarea nodrag nowheel"
 					bind:value={editValue}

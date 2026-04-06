@@ -62,6 +62,15 @@
 	let graphShowNewBeliefForm = $state(false);
 	let graphNewBeliefContent = $state('');
 	let graphNewBeliefValence = $state('');
+	let editingGraphNodeId: number | null = $state(null);
+
+	function onStartEditNode(beliefId: number) {
+		editingGraphNodeId = beliefId;
+	}
+
+	function onCancelEditNode() {
+		editingGraphNodeId = null;
+	}
 
 	const nodeTypes: NodeTypes = {
 		belief: BeliefNode,
@@ -104,7 +113,10 @@
 					label: belief.content,
 					valence: belief.valence ?? 'neutral',
 					onUpdate: updateBeliefContent,
-					tags: belief.tags
+					tags: belief.tags,
+					editingNodeId: () => editingGraphNodeId,
+					onStartEdit: onStartEditNode,
+					onCancelEdit: onCancelEditNode
 				},
 				position: { x: 0, y: 0 }
 			});
@@ -595,6 +607,7 @@
 	function handleGraphKeydown(e: KeyboardEvent) {
 		if (!graphView) return;
 		if (e.key === 'Escape') {
+			editingGraphNodeId = null;
 			selectedGraphBeliefId = null;
 			graphShowNewBeliefForm = false;
 		}
@@ -615,6 +628,7 @@
 	let panelConfirmDelete: boolean = $state(false);
 
 	function openBeliefPanel(beliefId: number) {
+		editingGraphNodeId = null;
 		selectedGraphBeliefId = beliefId;
 		panelConfirmDelete = false;
 		const belief = data.beliefs.find((b) => b.id === beliefId);
@@ -902,9 +916,9 @@
 						</div>
 
 						{#if recordingBeliefId === belief.id}
-							<div class="border-t border-gray-200 px-4 py-3">
+							<div class="border-t border-purple-100 bg-purple-50/40 px-4 py-3">
 								<div class="mb-2">
-									<span class="text-xs font-medium text-gray-500">Intensity</span>
+									<span class="text-xs font-medium text-purple-600">Intensity</span>
 								</div>
 
 								{#if belief.intensities.length > 0}
@@ -1085,9 +1099,9 @@
 									</button>
 								{/if}
 
-								<div class="border-t border-gray-200 px-4 py-3">
+								<div class="border-t border-blue-100 bg-blue-50/40 px-4 py-3">
 									<div class="mb-2">
-										<span class="text-xs font-medium text-gray-500">Related Beliefs</span>
+										<span class="text-xs font-medium text-blue-600">Related Beliefs</span>
 									</div>
 									{#if outgoingRelations.length > 0}
 										<div class="mb-3 space-y-2">
@@ -1218,9 +1232,9 @@
 									{/if}
 								</div>
 
-								<div class="border-t border-gray-200 px-4 py-3">
+								<div class="border-t border-amber-100 bg-amber-50/40 px-4 py-3">
 									<div class="mb-2">
-										<span class="text-xs font-medium text-gray-500">Evidence</span>
+										<span class="text-xs font-medium text-amber-600">Evidence</span>
 									</div>
 									{#if belief.linkedEvidence.length > 0}
 										<div class="mb-3 space-y-2">
@@ -1347,9 +1361,9 @@
 									</div>
 								</div>
 
-								<div class="border-t border-gray-200 px-4 py-3">
+								<div class="border-t border-green-100 bg-green-50/40 px-4 py-3">
 									<div class="mb-2">
-										<span class="text-xs font-medium text-gray-500">Linked Habits</span>
+										<span class="text-xs font-medium text-green-600">Linked Habits</span>
 									</div>
 									<div class="mb-3 space-y-2">
 										{#each belief.linkedHabits as linked (linked.linkId)}
@@ -1569,10 +1583,10 @@
 									</button>
 								</div>
 
-								<div class="mb-4 space-y-2">
+								<div class="mb-4 space-y-2 rounded-none border border-cyan-100 bg-cyan-50/40 p-3">
 									{#if belief.tags && belief.tags.length > 0}
 										<div>
-											<span class="text-xs font-medium text-gray-500">Tags</span>
+											<span class="text-xs font-medium text-cyan-600">Tags</span>
 											<div class="mt-1 flex flex-wrap gap-1">
 												{#each belief.tags as tag (tag.linkId)}
 													<span
@@ -1610,8 +1624,8 @@
 									</div>
 								</div>
 
-								<div class="mb-4 space-y-2">
-									<span class="text-xs font-medium text-gray-500">Related Beliefs</span>
+								<div class="mb-4 space-y-2 rounded-none border border-blue-100 bg-blue-50/40 p-3">
+									<span class="text-xs font-medium text-blue-600">Related Beliefs</span>
 									{#if belief.relatedBeliefs.length > 0}
 										<div class="space-y-2">
 											{#each belief.relatedBeliefs as rel (rel.relationId)}
@@ -1680,8 +1694,8 @@
 									{/if}
 								</div>
 
-								<div class="mb-4 space-y-2">
-									<span class="text-xs font-medium text-gray-500">Evidence</span>
+								<div class="mb-4 space-y-2 rounded-none border border-amber-100 bg-amber-50/40 p-3">
+									<span class="text-xs font-medium text-amber-600">Evidence</span>
 									{#if belief.linkedEvidence.length > 0}
 										<div class="space-y-2">
 											{#each belief.linkedEvidence as ev (ev.linkId)}
@@ -1766,8 +1780,8 @@
 									</button>
 								</div>
 
-								<div class="mb-4 space-y-2">
-									<span class="text-xs font-medium text-gray-500">Linked Habits</span>
+								<div class="mb-4 space-y-2 rounded-none border border-green-100 bg-green-50/40 p-3">
+									<span class="text-xs font-medium text-green-600">Linked Habits</span>
 									{#if belief.linkedHabits.length > 0}
 										<div class="space-y-2">
 											{#each belief.linkedHabits as linked (linked.linkId)}
@@ -1810,8 +1824,10 @@
 									{/if}
 								</div>
 
-								<div class="mb-4 space-y-2">
-									<span class="text-xs font-medium text-gray-500">Intensity Log</span>
+								<div
+									class="mb-4 space-y-2 rounded-none border border-purple-100 bg-purple-50/40 p-3"
+								>
+									<span class="text-xs font-medium text-purple-600">Intensity Log</span>
 									{#if belief.intensities.length > 0}
 										<div class="mb-2 flex items-end gap-1" style="height: 44px">
 											{#each belief.intensities
