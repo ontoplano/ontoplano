@@ -43,18 +43,27 @@
 	<Handle type="target" position={Position.Top} />
 	<div class="content">
 		<span class="id-badge">{data.beliefId}</span>
-		{#if editing}
-			<textarea
-				class="edit-textarea nodrag nowheel"
-				bind:value={editValue}
-				onblur={commitEdit}
-				onkeydown={handleKeydown}
-				rows="2"
-			></textarea>
-		{:else}
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<span class="label" ondblclick={startEditing}>{data.label}</span>
-		{/if}
+		<div class="main">
+			{#if editing}
+				<textarea
+					class="edit-textarea nodrag nowheel"
+					bind:value={editValue}
+					onblur={commitEdit}
+					onkeydown={handleKeydown}
+					rows="2"
+				></textarea>
+			{:else}
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<span class="label" ondblclick={startEditing}>{data.label}</span>
+			{/if}
+			{#if data.tags && data.tags.length > 0}
+				<div class="tags">
+					{#each data.tags as tag (tag.tagId)}
+						<span class="tag">#{tag.tagName}</span>
+					{/each}
+				</div>
+			{/if}
+		</div>
 	</div>
 	<Handle type="source" position={Position.Bottom} />
 </div>
@@ -94,6 +103,24 @@
 		display: flex;
 		align-items: flex-start;
 		gap: 8px;
+	}
+
+	.main {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		min-width: 0;
+	}
+
+	.tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+	}
+
+	.tag {
+		font-size: 10px;
+		color: #9ca3af;
 	}
 
 	.id-badge {

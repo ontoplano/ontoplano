@@ -7,8 +7,10 @@ import {
 	beliefIntensities,
 	beliefHabits,
 	beliefEvidence,
+	beliefTags,
 	evidence,
-	habits
+	habits,
+	tags
 } from '$lib/server/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { toLocalISOString } from '$lib/server/week-generator';
@@ -18,7 +20,29 @@ function todayStr(): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export const load: PageServerLoad = async () => {
+function parseTags(raw: string): string[] {
+	return [
+		...new Set(
+			raw
+				.split(/[,\s]+/)
+				.map((t) => t.replace(/^#/, '').trim().toLowerCase())
+				.filter(Boolean)
+		)
+	];
+}
+
+function ensureTagIds(tagNames: string[]): number[] {
+	return tagNames.map((name) => {
+		const existing = db.select({ id: tags.id }).from(tags).where(eq(tags.name, name)).get();
+		if (existing) return existing.id;
+		const result = db.insert(tags).values({ name }).run();
+		return Number(result.lastInsertRowid);
+	});
+}
+
+export const load: PageServerLoad = async ({ url }) => {
+	const view = url.searchParams.get('view') ?? 'list';
+
 	const allBeliefs = db
 		.select({
 			id: beliefs.id,
@@ -114,7 +138,21 @@ export const load: PageServerLoad = async () => {
 			.where(eq(beliefHabits.beliefId, belief.id))
 			.all();
 
-		return { ...belief, relatedBeliefs, linkedEvidence, intensities, linkedHabits };
+		const beliefTagRows = db
+			.select({ linkId: beliefTags.id, tagId: tags.id, tagName: tags.name })
+			.from(beliefTags)
+			.innerJoin(tags, eq(beliefTags.tagId, tags.id))
+			.where(eq(beliefTags.beliefId, belief.id))
+			.all();
+
+		return {
+			...belief,
+			relatedBeliefs,
+			linkedEvidence,
+			intensities,
+			linkedHabits,
+			tags: beliefTagRows
+		};
 	});
 
 	const allHabits = db
@@ -129,7 +167,38 @@ export const load: PageServerLoad = async () => {
 		.orderBy(desc(evidence.createdAt))
 		.all();
 
-	return { beliefs: beliefsWithRelations, allHabits, allEvidence, today: todayStr() };
+	const allTags = db.select({ id: tags.id, name: tags.name }).from(tags).orderBy(tags.name).all();
+
+	const allRelations = db
+		.select({
+			id: beliefRelations.id,
+			sourceBeliefId: beliefRelations.sourceBeliefId,
+			targetBeliefId: beliefRelations.targetBeliefId,
+			type: beliefRelations.type
+		})
+		.from(beliefRelations)
+		.all();
+
+	const allBeliefEvidence = db
+		.select({
+			id: beliefEvidence.id,
+			beliefId: beliefEvidence.beliefId,
+			evidenceId: beliefEvidence.evidenceId,
+			type: beliefEvidence.type
+		})
+		.from(beliefEvidence)
+		.all();
+
+	return {
+		beliefs: beliefsWithRelations,
+		allHabits,
+		allEvidence,
+		allTags,
+		allRelations,
+		allBeliefEvidence,
+		today: todayStr(),
+		view
+	};
 };
 
 export const actions: Actions = {
@@ -138,10 +207,20 @@ export const actions: Actions = {
 		const content = formData.get('content')?.toString()?.trim();
 		const valenceRaw = formData.get('valence')?.toString()?.trim() || null;
 		const valence = valenceRaw === 'positive' || valenceRaw === 'negative' ? valenceRaw : null;
+		const rawTags = formData.get('tags')?.toString()?.trim() ?? '';
 
 		if (!content) return fail(400, { message: 'Belief content is required' });
 
-		db.insert(beliefs).values({ content, valence }).run();
+		const result = db.insert(beliefs).values({ content, valence }).run();
+		const beliefId = Number(result.lastInsertRowid);
+
+		const tagNames = parseTags(rawTags);
+		if (tagNames.length > 0) {
+			const tagIds = ensureTagIds(tagNames);
+			for (const tagId of tagIds) {
+				db.insert(beliefTags).values({ beliefId, tagId }).run();
+			}
+		}
 
 		return { success: true };
 	},
@@ -152,6 +231,7 @@ export const actions: Actions = {
 		const content = formData.get('content')?.toString()?.trim();
 		const valenceRaw = formData.get('valence')?.toString()?.trim() || null;
 		const valence = valenceRaw === 'positive' || valenceRaw === 'negative' ? valenceRaw : null;
+		const rawTags = formData.get('tags')?.toString()?.trim() ?? '';
 
 		if (!id || !content) return fail(400, { message: 'Missing fields' });
 
@@ -159,6 +239,15 @@ export const actions: Actions = {
 			.set({ content, valence, updatedAt: toLocalISOString(new Date()) })
 			.where(eq(beliefs.id, id))
 			.run();
+
+		db.delete(beliefTags).where(eq(beliefTags.beliefId, id)).run();
+		const tagNames = parseTags(rawTags);
+		if (tagNames.length > 0) {
+			const tagIds = ensureTagIds(tagNames);
+			for (const tagId of tagIds) {
+				db.insert(beliefTags).values({ beliefId: id, tagId }).run();
+			}
+		}
 
 		return { success: true };
 	},
@@ -321,6 +410,59 @@ export const actions: Actions = {
 		if (!id) return fail(400, { message: 'Missing id' });
 
 		db.delete(beliefHabits).where(eq(beliefHabits.id, id)).run();
+
+		return { success: true };
+	},
+
+	updateBelief: async ({ request }) => {
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const content = formData.get('content')?.toString()?.trim();
+		const valenceRaw = formData.get('valence')?.toString()?.trim();
+		const valence = valenceRaw === 'positive' || valenceRaw === 'negative' ? valenceRaw : null;
+
+		if (!id || !content) return fail(400, { message: 'Missing fields' });
+
+		db.update(beliefs)
+			.set({ content, valence, updatedAt: toLocalISOString(new Date()) })
+			.where(eq(beliefs.id, id))
+			.run();
+
+		return { success: true };
+	},
+
+	addBeliefTag: async ({ request }) => {
+		const formData = await request.formData();
+		const beliefId = Number(formData.get('beliefId'));
+		const rawTags = formData.get('tags')?.toString()?.trim() ?? '';
+
+		if (!beliefId) return fail(400, { message: 'Missing belief id' });
+
+		const tagNames = parseTags(rawTags);
+		if (tagNames.length === 0) return fail(400, { message: 'No tags provided' });
+
+		const tagIds = ensureTagIds(tagNames);
+		for (const tagId of tagIds) {
+			const existing = db
+				.select({ id: beliefTags.id })
+				.from(beliefTags)
+				.where(and(eq(beliefTags.beliefId, beliefId), eq(beliefTags.tagId, tagId)))
+				.get();
+			if (!existing) {
+				db.insert(beliefTags).values({ beliefId, tagId }).run();
+			}
+		}
+
+		return { success: true };
+	},
+
+	removeBeliefTag: async ({ request }) => {
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+
+		if (!id) return fail(400, { message: 'Missing id' });
+
+		db.delete(beliefTags).where(eq(beliefTags.id, id)).run();
 
 		return { success: true };
 	}

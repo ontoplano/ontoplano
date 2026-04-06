@@ -278,4 +278,21 @@ export const beliefHabits = sqliteTable(
 	]
 );
 
+export const beliefTags = sqliteTable(
+	'belief_tags',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		beliefId: integer('belief_id')
+			.notNull()
+			.references(() => beliefs.id, { onDelete: 'cascade' }),
+		tagId: integer('tag_id')
+			.notNull()
+			.references(() => tags.id, { onDelete: 'cascade' })
+	},
+	(table) => [
+		index('belief_tags_belief_idx').on(table.beliefId),
+		index('belief_tags_tag_idx').on(table.tagId)
+	]
+);
+
 export * from './auth.schema.js';
