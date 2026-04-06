@@ -1,350 +1,216 @@
 <script lang="ts">
+	import {
+		SvelteFlow,
+		Controls,
+		Background,
+		BackgroundVariant,
+		MiniMap,
+		MarkerType,
+		Position,
+		type Node,
+		type Edge,
+		type NodeTypes,
+		type EdgeTypes,
+		type Connection
+	} from '@xyflow/svelte';
+	import '@xyflow/svelte/dist/style.css';
+	import dagre from '@dagrejs/dagre';
 	import type { PageServerData } from './$types';
-	import { onMount } from 'svelte';
-	import type { Core, ElementDefinition, NodeSingular, EdgeSingular } from 'cytoscape';
+	import BeliefNode from './BeliefNode.svelte';
+	import EvidenceNode from './EvidenceNode.svelte';
+	import RelationEdge from './RelationEdge.svelte';
 
 	let { data }: { data: PageServerData } = $props();
 
-	let container: HTMLDivElement = $state(null!);
+	const nodeTypes: NodeTypes = {
+		belief: BeliefNode,
+		evidence: EvidenceNode
+	};
 
-	// Pending relations pending save
+	const edgeTypes: EdgeTypes = {
+		relation: RelationEdge
+	};
+
+	// Pending relations waiting to be saved
 	let pendingRelations: Array<{
 		source: number;
 		target: number;
 		type: 'supports' | 'contradicts';
-		tempId: string;
+		edgeId: string;
 	}> = $state([]);
 
-	// Type picker state
-	let typePicker: { tempId: string; x: number; y: number } | null = $state(null);
+	// Type picker state — shown after dragging a connection
+	let typePicker: {
+		edgeId: string;
+		sourceId: number;
+		targetId: number;
+		x: number;
+		y: number;
+	} | null = $state(null);
 
-	// Selected edge for deletion
-	let selectedEdge: EdgeSingular | null = $state(null);
+	// Build initial nodes and edges from server data
+	function buildInitialElements(): { nodes: Node[]; edges: Edge[] } {
+		const nodes: Node[] = [];
+		const edges: Edge[] = [];
 
-	// Track the cytoscape instance
-	let cyInstance: Core | null = $state(null);
-
-	onMount(async () => {
-		const cytoscape = (await import('cytoscape')).default;
-		const edgehandles = (await import('cytoscape-edgehandles')).default;
-
-		// Register edgehandles once
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		if (!(cytoscape as any).prototype.edgehandles) {
-			cytoscape.use(edgehandles);
-		}
-
-		const elements: ElementDefinition[] = [];
-
-		// Add belief nodes with valence
 		for (const belief of data.beliefs) {
-			elements.push({
-				data: {
-					id: `b-${belief.id}`,
-					label: belief.content,
-					valence: belief.valence ?? 'neutral'
-				}
+			nodes.push({
+				id: `b-${belief.id}`,
+				type: 'belief',
+				data: { label: belief.content, valence: belief.valence ?? 'neutral' },
+				position: { x: 0, y: 0 }
 			});
 		}
 
-		// Add evidence nodes
 		for (const ev of data.evidence) {
-			elements.push({
-				data: { id: `e-${ev.id}`, label: ev.content }
+			nodes.push({
+				id: `e-${ev.id}`,
+				type: 'evidence',
+				data: { label: ev.content },
+				position: { x: 0, y: 0 }
 			});
 		}
 
-		// Add belief relation edges with relationId for deletion
 		for (const rel of data.relations) {
-			elements.push({
-				data: {
-					source: `b-${rel.sourceBeliefId}`,
-					target: `b-${rel.targetBeliefId}`,
-					label: rel.type,
-					type: rel.type,
-					relationId: rel.id
+			edges.push({
+				id: `rel-${rel.id}`,
+				source: `b-${rel.sourceBeliefId}`,
+				target: `b-${rel.targetBeliefId}`,
+				type: 'relation',
+				data: { type: rel.type, relationId: rel.id, pending: false },
+				markerEnd: {
+					type: MarkerType.ArrowClosed,
+					color: rel.type === 'supports' ? '#22c55e' : '#ef4444'
 				}
 			});
 		}
 
-		// Add evidence links
 		for (const link of data.beliefEvidence) {
-			elements.push({
-				data: {
-					source: `e-${link.evidenceId}`,
-					target: `b-${link.beliefId}`,
-					label: link.type,
-					type: link.type
+			edges.push({
+				id: `ev-${link.id}`,
+				source: `e-${link.evidenceId}`,
+				target: `b-${link.beliefId}`,
+				type: 'relation',
+				data: { type: link.type, pending: false },
+				markerEnd: {
+					type: MarkerType.ArrowClosed,
+					color: link.type === 'supports' ? '#22c55e' : '#ef4444'
 				}
 			});
 		}
 
-		const cy = cytoscape({
-			container,
-			elements,
-			style: [
-				{
-					selector: 'node',
-					style: {
-						label: 'data(label)',
-						'text-wrap': 'wrap',
-						'text-max-width': '250px',
-						width: 'label',
-						height: 'label',
-						padding: '14px',
-						shape: 'roundrectangle',
-						'background-color': '#f9fafb',
-						'border-width': 1,
-						'border-color': '#d1d5db',
-						'font-size': '13px',
-						'text-valign': 'center',
-						'text-halign': 'center'
-					}
-				},
-				{
-					selector: 'node[valence = "positive"]',
-					style: {
-						'background-color': '#f0fdf4',
-						'border-color': '#86efac'
-					}
-				},
-				{
-					selector: 'node[valence = "negative"]',
-					style: {
-						'background-color': '#fef2f2',
-						'border-color': '#fca5a5'
-					}
-				},
-				{
-					selector: 'node[valence = "neutral"]',
-					style: {
-						'background-color': '#f9fafb',
-						'border-color': '#d1d5db'
-					}
-				},
-				{
-					selector: 'node[id ^= "e-"]',
-					style: {
-						'background-color': '#fefce8',
-						'border-color': '#fde68a',
-						'font-size': '11px'
-					}
-				},
-				{
-					selector: 'edge[type = "supports"]',
-					style: {
-						'line-color': '#22c55e',
-						'target-arrow-color': '#22c55e',
-						label: 'data(label)',
-						'font-size': '9px',
-						color: '#22c55e',
-						'curve-style': 'bezier',
-						'target-arrow-shape': 'triangle',
-						'arrow-scale': 0.8,
-						width: 1.5,
-						'text-rotation': 'autorotate'
-					}
-				},
-				{
-					selector: 'edge[type = "contradicts"]',
-					style: {
-						'line-color': '#ef4444',
-						'target-arrow-color': '#ef4444',
-						label: 'data(label)',
-						'font-size': '9px',
-						color: '#ef4444',
-						'curve-style': 'bezier',
-						'target-arrow-shape': 'triangle',
-						'arrow-scale': 0.8,
-						width: 1.5,
-						'text-rotation': 'autorotate'
-					}
-				},
-				// Pending edge styles
-				{
-					selector: '.pending[type = "supports"]',
-					style: {
-						'line-color': '#22c55e',
-						'target-arrow-color': '#22c55e',
-						'line-style': 'dashed',
-						'curve-style': 'bezier',
-						'target-arrow-shape': 'triangle',
-						'arrow-scale': 0.8,
-						width: 1.5
-					}
-				},
-				{
-					selector: '.pending[type = "contradicts"]',
-					style: {
-						'line-color': '#ef4444',
-						'target-arrow-color': '#ef4444',
-						'line-style': 'dashed',
-						'curve-style': 'bezier',
-						'target-arrow-shape': 'triangle',
-						'arrow-scale': 0.8,
-						width: 1.5
-					}
-				},
-				// Ghost edge styles for edgehandles preview
-				{
-					selector: '.eh-ghost-edge',
-					style: {
-						'line-color': '#9ca3af',
-						'line-style': 'dashed',
-						width: 1.5,
-						'target-arrow-shape': 'triangle',
-						'target-arrow-color': '#9ca3af',
-						'curve-style': 'bezier'
-					}
-				},
-				{
-					selector: '.eh-preview',
-					style: {
-						'line-color': '#9ca3af',
-						'line-style': 'dashed',
-						width: 1.5,
-						'target-arrow-shape': 'triangle',
-						'target-arrow-color': '#9ca3af',
-						'curve-style': 'bezier'
-					}
-				},
-				// Edgehandles handle node style
-				{
-					selector: '.eh-handle',
-					style: {
-						'background-color': '#6b7280',
-						width: 8,
-						height: 8,
-						shape: 'ellipse'
-					}
+		return { nodes, edges };
+	}
+
+	// Apply dagre layout to position nodes
+	function layoutElements(nodes: Node[], edges: Edge[]): Node[] {
+		const g = new dagre.graphlib.Graph();
+		g.setDefaultEdgeLabel(() => ({}));
+		g.setGraph({ rankdir: 'TB', nodesep: 80, ranksep: 100 });
+
+		const nodeWidth = 260;
+		const nodeHeight = 80;
+
+		for (const node of nodes) {
+			g.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+		}
+
+		for (const edge of edges) {
+			g.setEdge(edge.source, edge.target);
+		}
+
+		dagre.layout(g);
+
+		return nodes.map((node) => {
+			const pos = g.node(node.id);
+			return {
+				...node,
+				position: {
+					x: pos.x - nodeWidth / 2,
+					y: pos.y - nodeHeight / 2
 				}
-			],
-			layout: {
-				name: 'cose',
-				animate: false,
-				padding: 40,
-				nodeRepulsion: function () {
-					return 8000;
-				},
-				idealEdgeLength: function () {
-					return 120;
-				},
-				edgeElasticity: function () {
-					return 100;
-				}
-			},
-			minZoom: 0.3,
-			maxZoom: 3,
-			wheelSensitivity: 0.3
-		});
-
-		// Initialize edgehandles - only allow belief-to-belief edges
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-		const _eh = (cy as any).edgehandles({
-			canConnect: (src: NodeSingular, tgt: NodeSingular) => {
-				return !src.same(tgt) && src.id().startsWith('b-') && tgt.id().startsWith('b-');
-			},
-			edgeParams: () => ({})
-		});
-
-		// Store instance for use in event handlers
-		cyInstance = cy;
-
-		// Handle edge creation completion
-		cy.on('ehcomplete', (_evt: unknown, sourceNode: NodeSingular, targetNode: NodeSingular) => {
-			// Remove the auto-created edge (we'll create our own with proper styling)
-			const lastEdge = cy.edges().last();
-			if (lastEdge.length > 0) {
-				lastEdge.remove();
-			}
-
-			// Parse belief IDs from node ids
-			const sourceId = parseInt(sourceNode.id().replace('b-', ''));
-			const targetId = parseInt(targetNode.id().replace('b-', ''));
-
-			// Generate temp ID
-			const tempId = `temp-${Date.now()}`;
-
-			// Add to pending relations
-			pendingRelations = [
-				...pendingRelations,
-				{
-					source: sourceId,
-					target: targetId,
-					type: 'supports',
-					tempId
-				}
-			];
-
-			// Add pending edge to cytoscape
-			cy.add({
-				group: 'edges',
-				data: {
-					source: `b-${sourceId}`,
-					target: `b-${targetId}`,
-					type: 'supports',
-					tempId
-				},
-				classes: 'pending'
-			});
-
-			// Get the edge rendered midpoint for type picker positioning
-			const edge = cy.edges().last();
-			const midpoint = edge.renderedMidpoint();
-
-			// Show type picker at edge midpoint (in rendered/screen coordinates)
-			typePicker = {
-				tempId,
-				x: midpoint.x,
-				y: midpoint.y
 			};
 		});
+	}
 
-		// Handle edge selection for deletion
-		cy.on('select', 'edge', (e) => {
-			selectedEdge = e.target as EdgeSingular;
-		});
+	const initial = buildInitialElements();
+	let nodes = $state.raw<Node[]>(layoutElements(initial.nodes, initial.edges));
+	let edges = $state.raw<Edge[]>(initial.edges);
 
-		cy.on('unselect', 'edge', () => {
-			selectedEdge = null;
-		});
-	});
+	// Handle new connection from drag-to-connect
+	function onconnect(connection: Connection) {
+		const sourceId = connection.source;
+		const targetId = connection.target;
 
-	// Handle type selection from picker
+		// Only allow belief-to-belief connections
+		if (!sourceId?.startsWith('b-') || !targetId?.startsWith('b-')) return;
+		if (sourceId === targetId) return;
+
+		const edgeId = `pending-${Date.now()}`;
+		const sourceBeliefId = parseInt(sourceId.replace('b-', ''));
+		const targetBeliefId = parseInt(targetId.replace('b-', ''));
+
+		// Show type picker — don't add edge yet
+		typePicker = {
+			edgeId,
+			sourceId: sourceBeliefId,
+			targetId: targetBeliefId,
+			x: 0,
+			y: 0
+		};
+
+		// Position the picker in the center of the viewport (simple approach)
+		const container = document.querySelector('.svelte-flow');
+		if (container) {
+			const rect = container.getBoundingClientRect();
+			typePicker.x = rect.width / 2;
+			typePicker.y = rect.height / 2;
+		}
+	}
+
 	function selectType(type: 'supports' | 'contradicts') {
 		if (!typePicker) return;
 
-		const tempId = typePicker.tempId;
+		const { edgeId, sourceId, targetId } = typePicker;
 
-		// Update pending relation
-		pendingRelations = pendingRelations.map((rel) =>
-			rel.tempId === tempId ? { ...rel, type } : rel
-		);
+		// Add pending relation
+		pendingRelations = [...pendingRelations, { source: sourceId, target: targetId, type, edgeId }];
 
-		// Update edge data
-		if (cyInstance) {
-			cyInstance.edges().forEach((edge) => {
-				if (edge.data('tempId') === tempId) {
-					edge.data('type', type);
-				}
-			});
-		}
+		// Add pending edge to the graph
+		const newEdge: Edge = {
+			id: edgeId,
+			source: `b-${sourceId}`,
+			target: `b-${targetId}`,
+			type: 'relation',
+			data: { type, pending: true },
+			markerEnd: {
+				type: MarkerType.ArrowClosed,
+				color: type === 'supports' ? '#22c55e' : '#ef4444'
+			}
+		};
+		edges = [...edges, newEdge];
 
-		// Hide picker
 		typePicker = null;
 	}
 
-	// Handle keydown for deleting edges
-	function handleKeydown(e: KeyboardEvent) {
-		if ((e.key === 'Delete' || e.key === 'Backspace') && selectedEdge) {
-			const relationId = selectedEdge.data('relationId');
+	function cancelTypePicker() {
+		typePicker = null;
+	}
+
+	// Delete edge — works for both saved and pending edges
+	function handleEdgesDelete(deletedEdges: Edge[]) {
+		for (const edge of deletedEdges) {
+			const relationId = edge.data?.relationId;
 			if (relationId) {
+				// Saved relation — delete from DB
 				deleteRelation(Number(relationId));
+			} else {
+				// Pending relation — just remove from pending list
+				pendingRelations = pendingRelations.filter((r) => r.edgeId !== edge.id);
 			}
 		}
 	}
 
-	// Delete an existing relation
 	async function deleteRelation(id: number) {
 		const body = new URLSearchParams({ id: String(id) });
 		await fetch('?/removeRelation', {
@@ -355,7 +221,6 @@
 		window.location.reload();
 	}
 
-	// Save all pending relations
 	async function saveRelations() {
 		for (const rel of pendingRelations) {
 			const body = new URLSearchParams({
@@ -372,15 +237,13 @@
 		window.location.reload();
 	}
 
-	// Calculate type picker position in viewport (relative to container)
-	function getPickerStyle(): string {
-		if (!typePicker) return '';
-		// renderedMidpoint() returns coordinates relative to the container
-		return `left: ${typePicker.x}px; top: ${typePicker.y - 40}px;`;
+	function isValidConnection(connection: Connection): boolean {
+		const { source, target } = connection;
+		if (!source?.startsWith('b-') || !target?.startsWith('b-')) return false;
+		if (source === target) return false;
+		return true;
 	}
 </script>
-
-<svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
 	<div class="flex items-center justify-between">
@@ -409,31 +272,52 @@
 			No beliefs yet. <a href="/beliefs" class="text-gray-900 underline">Add one</a> to see the graph.
 		</div>
 	{:else}
-		<div class="relative">
-			<div
-				bind:this={container}
-				class="border border-gray-200 bg-white shadow-sm"
-				style="width: 100%; height: calc(100vh - 120px);"
-			></div>
+		<div
+			class="relative border border-gray-200 shadow-sm"
+			style="width: 100%; height: calc(100vh - 120px);"
+		>
+			<SvelteFlow
+				bind:nodes
+				bind:edges
+				{nodeTypes}
+				{edgeTypes}
+				{onconnect}
+				{isValidConnection}
+				onedgesdelete={handleEdgesDelete}
+				fitView
+				deleteKey="Delete"
+				minZoom={0.3}
+				maxZoom={3}
+			>
+				<Controls />
+				<Background variant={BackgroundVariant.Dots} />
+				<MiniMap />
+			</SvelteFlow>
 
 			{#if typePicker}
 				<div
-					class="absolute z-50 flex gap-1 rounded-none border border-gray-200 bg-white p-1 shadow-sm"
-					style={getPickerStyle()}
+					class="absolute z-50 flex flex-col gap-2 border border-gray-200 bg-white p-3 shadow-sm"
+					style="left: {typePicker.x}px; top: {typePicker.y}px; transform: translate(-50%, -50%);"
 				>
-					<button
-						onclick={() => selectType('supports')}
-						class="px-2 py-1 text-xs"
-						style="background-color: #f0fdf4; color: #16a34a; border: 1px solid #86efac;"
-					>
-						Supports
-					</button>
-					<button
-						onclick={() => selectType('contradicts')}
-						class="px-2 py-1 text-xs"
-						style="background-color: #fef2f2; color: #dc2626; border: 1px solid #fca5a5;"
-					>
-						Contradicts
+					<span class="text-xs font-medium text-gray-600">Relation type:</span>
+					<div class="flex gap-2">
+						<button
+							onclick={() => selectType('supports')}
+							class="px-3 py-1 text-xs"
+							style="background-color: #f0fdf4; color: #16a34a; border: 1px solid #86efac;"
+						>
+							Supports
+						</button>
+						<button
+							onclick={() => selectType('contradicts')}
+							class="px-3 py-1 text-xs"
+							style="background-color: #fef2f2; color: #dc2626; border: 1px solid #fca5a5;"
+						>
+							Contradicts
+						</button>
+					</div>
+					<button onclick={cancelTypePicker} class="text-xs text-gray-400 hover:text-gray-600">
+						Cancel
 					</button>
 				</div>
 			{/if}
@@ -441,6 +325,29 @@
 	{/if}
 
 	<div class="text-xs text-gray-400">
-		Drag between belief nodes to create a relation. Click an edge and press Delete to remove it.
+		Drag from a handle to another belief node to create a relation. Select an edge and press Delete
+		to remove it.
 	</div>
 </div>
+
+<style>
+	:global(.svelte-flow) {
+		background: white;
+	}
+
+	:global(.svelte-flow__node) {
+		border-radius: 0 !important;
+	}
+
+	:global(.svelte-flow__minimap) {
+		border-radius: 0 !important;
+	}
+
+	:global(.svelte-flow__controls) {
+		border-radius: 0 !important;
+	}
+
+	:global(.svelte-flow__controls button) {
+		border-radius: 0 !important;
+	}
+</style>
