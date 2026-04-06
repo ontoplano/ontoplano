@@ -26,9 +26,7 @@
 	}
 
 	function unlinkedBeliefs(sourceId: number) {
-		const linkedIds =
-			data.beliefs.find((b) => b.id === sourceId)?.relatedBeliefs.map((r) => r.beliefId) ?? [];
-		return data.beliefs.filter((b) => b.id !== sourceId && !linkedIds.includes(b.id));
+		return data.beliefs.filter((b) => b.id !== sourceId);
 	}
 
 	function unlinkedEvidence(beliefId: number) {

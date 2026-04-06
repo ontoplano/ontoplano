@@ -10,7 +10,7 @@ import {
 	evidence,
 	habits
 } from '$lib/server/db/schema';
-import { eq, and, desc, or } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { toLocalISOString } from '$lib/server/week-generator';
 
 function todayStr(): string {
@@ -191,20 +191,14 @@ export const actions: Actions = {
 			.select({ id: beliefRelations.id })
 			.from(beliefRelations)
 			.where(
-				or(
-					and(
-						eq(beliefRelations.sourceBeliefId, sourceBeliefId),
-						eq(beliefRelations.targetBeliefId, targetBeliefId)
-					),
-					and(
-						eq(beliefRelations.sourceBeliefId, targetBeliefId),
-						eq(beliefRelations.targetBeliefId, sourceBeliefId)
-					)
+				and(
+					eq(beliefRelations.sourceBeliefId, sourceBeliefId),
+					eq(beliefRelations.targetBeliefId, targetBeliefId)
 				)
 			)
 			.get();
 
-		if (existing) return fail(400, { message: 'Relation already exists between these beliefs' });
+		if (existing) return fail(400, { message: 'This exact relation already exists' });
 
 		db.insert(beliefRelations).values({ sourceBeliefId, targetBeliefId, type }).run();
 

@@ -26,11 +26,11 @@
 
 	onMount(async () => {
 		const cytoscape = (await import('cytoscape')).default;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const edgehandles = (await import('cytoscape-edgehandles')) as any;
+		const edgehandles = (await import('cytoscape-edgehandles')).default;
 
 		// Register edgehandles once
-		if (!cytoscape.prototype.edgehandles) {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		if (!(cytoscape as any).prototype.edgehandles) {
 			cytoscape.use(edgehandles);
 		}
 

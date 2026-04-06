@@ -2,7 +2,7 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { beliefs, beliefRelations, evidence, beliefEvidence } from '$lib/server/db/schema';
-import { eq, and, or } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 export const load: PageServerLoad = async () => {
 	const allBeliefs = db
@@ -68,20 +68,14 @@ export const actions: Actions = {
 			.select({ id: beliefRelations.id })
 			.from(beliefRelations)
 			.where(
-				or(
-					and(
-						eq(beliefRelations.sourceBeliefId, sourceBeliefId),
-						eq(beliefRelations.targetBeliefId, targetBeliefId)
-					),
-					and(
-						eq(beliefRelations.sourceBeliefId, targetBeliefId),
-						eq(beliefRelations.targetBeliefId, sourceBeliefId)
-					)
+				and(
+					eq(beliefRelations.sourceBeliefId, sourceBeliefId),
+					eq(beliefRelations.targetBeliefId, targetBeliefId)
 				)
 			)
 			.get();
 
-		if (existing) return fail(400, { message: 'Relation already exists between these beliefs' });
+		if (existing) return fail(400, { message: 'This exact relation already exists' });
 
 		db.insert(beliefRelations).values({ sourceBeliefId, targetBeliefId, type }).run();
 
