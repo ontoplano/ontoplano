@@ -3,14 +3,43 @@
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
 
+	interface Habit {
+		id: number;
+		name: string;
+		description: string | null;
+		type: 'bad' | 'good';
+		scheduledDays: string | null;
+		createdAt: string;
+		streak: number;
+	}
+
+	interface Occurrence {
+		id: number;
+		habitId: number;
+		date: string;
+		notes: string | null;
+	}
+
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	let showForm = $state(false);
 	let selectedHabitIndex = $state(0);
 	let expandedHabitId: number | null = $state(null);
+	let confirmingDeleteId: number | null = $state(null);
+	let typeFilter: 'all' | 'bad' | 'good' = $state('all');
+
+	let newHabitType: 'bad' | 'good' = $state('bad');
+	let scheduledDaysState: boolean[] = $state([false, false, false, false, false, false, false]);
+
+	const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+	function filteredHabits() {
+		if (typeFilter === 'all') return data.habits as Habit[];
+		return (data.habits as Habit[]).filter((h: Habit) => h.type === typeFilter);
+	}
 
 	function occurrencesForHabit(habitId: number) {
-		return data.occurrences.filter((o) => o.habitId === habitId);
+		return (data.occurrences as Occurrence[]).filter((o: Occurrence) => o.habitId === habitId);
 	}
 
 	function occurrenceCountByDate(habitId: number): Record<string, number> {
@@ -61,14 +90,32 @@
 		return weeks;
 	}
 
-	function heatmapColor(count: number): string {
+	function badHeatmapColor(count: number): string {
 		if (count === 0) return 'bg-gray-100';
 		if (count === 1) return 'bg-red-200';
 		if (count === 2) return 'bg-red-400';
 		return 'bg-red-600';
 	}
 
+	function goodHeatmapColor(count: number): string {
+		if (count === 0) return 'bg-gray-100';
+		if (count === 1) return 'bg-green-200';
+		if (count === 2) return 'bg-green-400';
+		return 'bg-green-600';
+	}
+
 	const heatmapWeeks = buildHeatmapWeeks();
+
+	function formatScheduledDays(raw: string | null): string {
+		if (!raw || raw.trim() === '') return 'Every day';
+		const days = raw
+			.split(',')
+			.map((s) => parseInt(s.trim(), 10))
+			.filter((n) => !isNaN(n) && n >= 0 && n <= 6);
+		if (days.length === 0) return 'Every day';
+		if (days.length === 7) return 'Every day';
+		return days.map((d) => DAY_LABELS[d]).join(', ');
+	}
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (
@@ -78,10 +125,12 @@
 		)
 			return;
 
+		const habits = filteredHabits();
+
 		switch (e.key) {
 			case 'j':
 				e.preventDefault();
-				selectedHabitIndex = Math.min(selectedHabitIndex + 1, data.habits.length - 1);
+				selectedHabitIndex = Math.min(selectedHabitIndex + 1, habits.length - 1);
 				break;
 			case 'k':
 				e.preventDefault();
@@ -90,6 +139,7 @@
 			case 'n':
 				e.preventDefault();
 				showForm = true;
+				confirmingDeleteId = null;
 				tick().then(() => {
 					const nameInput = document.querySelector<HTMLInputElement>('input[name="name"]');
 					nameInput?.focus();
@@ -97,8 +147,8 @@
 				break;
 			case 'Enter':
 				e.preventDefault();
-				if (data.habits.length > 0) {
-					const habit = data.habits[selectedHabitIndex];
+				if (habits.length > 0) {
+					const habit = habits[selectedHabitIndex];
 					expandedHabitId = expandedHabitId === habit.id ? null : habit.id;
 				}
 				break;
@@ -108,9 +158,20 @@
 					showForm = false;
 				} else {
 					expandedHabitId = null;
+					confirmingDeleteId = null;
 				}
 				break;
 		}
+	}
+
+	function resetForm() {
+		newHabitType = 'bad';
+		scheduledDaysState = [false, false, false, false, false, false, false];
+	}
+
+	function getScheduledDaysString(): string {
+		const days = scheduledDaysState.map((checked, i) => (checked ? i : -1)).filter((i) => i !== -1);
+		return days.join(',');
 	}
 </script>
 
@@ -118,11 +179,15 @@
 
 <div class="space-y-4">
 	<div class="flex items-center justify-between">
-		<h1 class="text-lg font-bold text-gray-900">Bad Habits</h1>
+		<h1 class="text-lg font-bold text-gray-900">Habits</h1>
 		<button
 			onclick={() => {
 				showForm = !showForm;
-				if (!showForm) return;
+				confirmingDeleteId = null;
+				if (!showForm) {
+					resetForm();
+					return;
+				}
 				tick().then(() => {
 					const nameInput = document.querySelector<HTMLInputElement>('input[name="name"]');
 					nameInput?.focus();
@@ -131,6 +196,42 @@
 			class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
 		>
 			{showForm ? 'Cancel' : 'New Habit'}
+		</button>
+	</div>
+
+	<div class="flex gap-2">
+		<button
+			onclick={() => {
+				typeFilter = 'all';
+				selectedHabitIndex = 0;
+			}}
+			class="border px-3 py-1 text-sm transition {typeFilter === 'all'
+				? 'border-gray-900 bg-gray-900 text-white'
+				: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+		>
+			All
+		</button>
+		<button
+			onclick={() => {
+				typeFilter = 'bad';
+				selectedHabitIndex = 0;
+			}}
+			class="border px-3 py-1 text-sm transition {typeFilter === 'bad'
+				? 'border-red-600 bg-red-600 text-white'
+				: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+		>
+			Bad
+		</button>
+		<button
+			onclick={() => {
+				typeFilter = 'good';
+				selectedHabitIndex = 0;
+			}}
+			class="border px-3 py-1 text-sm transition {typeFilter === 'good'
+				? 'border-green-600 bg-green-600 text-white'
+				: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+		>
+			Good
 		</button>
 	</div>
 
@@ -158,6 +259,7 @@
 				return async ({ update }) => {
 					await update();
 					showForm = false;
+					resetForm();
 				};
 			}}
 			class="space-y-3 border border-gray-200 bg-white p-4 shadow-sm"
@@ -168,7 +270,7 @@
 					name="name"
 					type="text"
 					required
-					placeholder="e.g. smoking, biting nails"
+					placeholder={newHabitType === 'bad' ? 'e.g. smoking, biting nails' : 'e.g. gym, reading'}
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>
@@ -180,6 +282,51 @@
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>
+			<div class="flex gap-4">
+				<label class="flex items-center gap-2">
+					<input
+						type="radio"
+						name="type"
+						value="bad"
+						checked={newHabitType === 'bad'}
+						onchange={() => (newHabitType = 'bad')}
+						class="text-red-600 focus:ring-gray-900"
+					/>
+					<span class="text-sm text-gray-700">Bad</span>
+				</label>
+				<label class="flex items-center gap-2">
+					<input
+						type="radio"
+						name="type"
+						value="good"
+						checked={newHabitType === 'good'}
+						onchange={() => (newHabitType = 'good')}
+						class="text-green-600 focus:ring-gray-900"
+					/>
+					<span class="text-sm text-gray-700">Good</span>
+				</label>
+			</div>
+			{#if newHabitType === 'good'}
+				<div class="space-y-2">
+					<span class="text-sm font-medium text-gray-700">Scheduled Days</span>
+					<div class="flex flex-wrap gap-2">
+						{#each DAY_LABELS as label, i}
+							<label class="flex items-center gap-1">
+								<input
+									type="checkbox"
+									checked={scheduledDaysState[i]}
+									onchange={(e) => {
+										scheduledDaysState[i] = (e.target as HTMLInputElement).checked;
+									}}
+									class="border border-gray-300 text-green-600 focus:ring-gray-900"
+								/>
+								<span class="text-xs text-gray-600">{label}</span>
+							</label>
+						{/each}
+					</div>
+				</div>
+			{/if}
+			<input type="hidden" name="scheduledDays" value={getScheduledDaysString()} />
 			<button
 				type="submit"
 				class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
@@ -189,15 +336,20 @@
 		</form>
 	{/if}
 
-	{#if data.habits.length === 0}
+	{#if filteredHabits().length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-			No bad habits tracked. Add one to start monitoring.
+			{typeFilter === 'all'
+				? 'No habits tracked. Add one to start monitoring.'
+				: typeFilter === 'bad'
+					? 'No bad habits tracked.'
+					: 'No good habits tracked.'}
 		</div>
 	{:else}
 		<div class="space-y-3">
-			{#each data.habits as habit, i (habit.id)}
+			{#each filteredHabits() as habit, i (habit.id)}
 				{@const occ = occurrencesForHabit(habit.id)}
 				{@const todayLogged = occ.some((o) => o.date === data.today)}
+				{@const isBad = habit.type === 'bad'}
 				<div
 					class="border border-gray-200 bg-white shadow-sm {i === selectedHabitIndex
 						? 'ring-2 ring-gray-900 ring-inset'
@@ -207,48 +359,75 @@
 						<div class="min-w-0 flex-1">
 							<div class="flex items-center gap-2">
 								<span class="text-sm font-medium text-gray-900">{habit.name}</span>
-								<span class="text-xs text-gray-400">{occ.length} occurrences</span>
+								{#if habit.streak > 0}
+									<span class="text-xs font-medium text-green-600">
+										{isBad
+											? `${habit.streak} day${habit.streak === 1 ? '' : 's'} clean`
+											: `${habit.streak} day streak`}
+									</span>
+								{/if}
+								<span class="text-xs text-gray-400">{occ.length} total</span>
 							</div>
 							{#if habit.description}
 								<p class="truncate text-xs text-gray-500">{habit.description}</p>
+							{/if}
+							{#if !isBad}
+								<p class="text-xs text-gray-400">{formatScheduledDays(habit.scheduledDays)}</p>
 							{/if}
 						</div>
 
 						<div class="flex shrink-0 items-center gap-2">
 							{#if todayLogged}
 								<span
-									class="border border-red-200 bg-red-50 px-2 py-1 text-xs font-medium text-red-600"
-									>logged today</span
+									class="border {isBad
+										? 'border-red-200 bg-red-50 text-red-600'
+										: 'border-green-200 bg-green-50 text-green-600'} px-2 py-1 text-xs font-medium"
 								>
+									{isBad ? 'logged today' : 'done today'}
+								</span>
 							{:else}
 								<form method="post" action="?/logOccurrence" use:enhance>
 									<input type="hidden" name="habitId" value={habit.id} />
 									<input type="hidden" name="date" value={data.today} />
 									<button
 										type="submit"
-										class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+										class="border {isBad
+											? 'border-red-200 bg-white text-red-600 hover:bg-red-50'
+											: 'border-green-200 bg-white text-green-600 hover:bg-green-50'} px-2 py-1 text-xs transition"
 									>
-										I slipped
+										{isBad ? 'I slipped' : 'Done \u2713'}
 									</button>
 								</form>
 							{/if}
 							<button
 								onclick={() => {
 									expandedHabitId = expandedHabitId === habit.id ? null : habit.id;
+									confirmingDeleteId = null;
 								}}
 								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
 							>
 								{expandedHabitId === habit.id ? 'Collapse' : 'Expand'}
 							</button>
-							<form method="post" action="?/delete" use:enhance>
-								<input type="hidden" name="id" value={habit.id} />
+							{#if confirmingDeleteId === habit.id}
+								<form method="post" action="?/delete" use:enhance>
+									<input type="hidden" name="id" value={habit.id} />
+									<button
+										type="submit"
+										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
+									>
+										Confirm?
+									</button>
+								</form>
+							{:else}
 								<button
-									type="submit"
+									onclick={() => {
+										confirmingDeleteId = habit.id;
+									}}
 									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
 								>
 									Delete
 								</button>
-							</form>
+							{/if}
 						</div>
 					</div>
 
@@ -263,7 +442,9 @@
 											{#each week as day, di (di)}
 												{#if day}
 													<div
-														class="h-2.5 w-2.5 {heatmapColor(counts[day] || 0)}"
+														class="h-2.5 w-2.5 {isBad
+															? badHeatmapColor(counts[day] || 0)
+															: goodHeatmapColor(counts[day] || 0)}"
 														title="{day}: {counts[day] || 0} occurrence{(counts[day] || 0) === 1
 															? ''
 															: 's'}"
@@ -280,9 +461,15 @@
 								<span>Less</span>
 								<div class="flex gap-px">
 									<div class="h-2.5 w-2.5 bg-gray-100"></div>
-									<div class="h-2.5 w-2.5 bg-red-200"></div>
-									<div class="h-2.5 w-2.5 bg-red-400"></div>
-									<div class="h-2.5 w-2.5 bg-red-600"></div>
+									{#if isBad}
+										<div class="h-2.5 w-2.5 bg-red-200"></div>
+										<div class="h-2.5 w-2.5 bg-red-400"></div>
+										<div class="h-2.5 w-2.5 bg-red-600"></div>
+									{:else}
+										<div class="h-2.5 w-2.5 bg-green-200"></div>
+										<div class="h-2.5 w-2.5 bg-green-400"></div>
+										<div class="h-2.5 w-2.5 bg-green-600"></div>
+									{/if}
 								</div>
 								<span>More</span>
 							</div>

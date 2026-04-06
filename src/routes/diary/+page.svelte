@@ -9,6 +9,18 @@
 	let editingId: number | null = $state(null);
 	let selectedIndex = $state(0);
 	let filterTag: string | null = $state(null);
+	let confirmingDeleteId: number | null = $state(null);
+
+	function renderMarkdown(text: string): string {
+		let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+		html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+		html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+		html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+		html = html.replace(/~~(.+?)~~/g, '<s>$1</s>');
+		html = html.replace(/\n/g, '<br>');
+		return html;
+	}
 
 	function filteredEntries() {
 		if (!filterTag) return data.entries;
@@ -81,6 +93,7 @@
 				e.preventDefault();
 				showForm = false;
 				editingId = null;
+				confirmingDeleteId = null;
 				break;
 		}
 	}
@@ -214,7 +227,7 @@
 						: ''}"
 				>
 					<div class="mb-2 flex items-start justify-between gap-4">
-						<p class="text-sm whitespace-pre-wrap text-gray-900">{entry.content}</p>
+						<p class="text-sm text-gray-900">{@html renderMarkdown(entry.content)}</p>
 						<div class="flex shrink-0 items-center gap-2">
 							<button
 								onclick={() => {
@@ -231,14 +244,35 @@
 							>
 								Edit
 							</button>
-							<form method="post" action="?/delete" use:enhance>
+							<form
+								method="post"
+								action="?/delete"
+								use:enhance={() => {
+									return async ({ update }) => {
+										await update();
+										confirmingDeleteId = null;
+									};
+								}}
+							>
 								<input type="hidden" name="id" value={entry.id} />
-								<button
-									type="submit"
-									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
-								>
-									Delete
-								</button>
+								{#if confirmingDeleteId === entry.id}
+									<button
+										type="submit"
+										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+									>
+										Confirm?
+									</button>
+								{:else}
+									<button
+										type="button"
+										onclick={() => {
+											confirmingDeleteId = entry.id;
+										}}
+										class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+									>
+										Delete
+									</button>
+								{/if}
 							</form>
 						</div>
 					</div>

@@ -134,24 +134,28 @@ export const diaryEntryTags = sqliteTable(
 	]
 );
 
-// --- Bad Habits ---
+// --- Habits ---
 
-export const badHabits = sqliteTable('bad_habits', {
+export const habits = sqliteTable('habits', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	name: text('name').notNull(),
 	description: text('description').default(''),
+	type: text('type', { enum: ['bad', 'good'] })
+		.notNull()
+		.default('bad'),
+	scheduledDays: text('scheduled_days').default(''), // comma-separated weekday numbers (0=Mon..6=Sun), empty = every day
 	createdAt: text('created_at')
 		.notNull()
 		.default(sql`(CURRENT_TIMESTAMP)`)
 });
 
-export const badHabitOccurrences = sqliteTable(
-	'bad_habit_occurrences',
+export const habitOccurrences = sqliteTable(
+	'habit_occurrences',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
 		habitId: integer('habit_id')
 			.notNull()
-			.references(() => badHabits.id, { onDelete: 'cascade' }),
+			.references(() => habits.id, { onDelete: 'cascade' }),
 		date: text('date').notNull(), // YYYY-MM-DD
 		notes: text('notes').default(''),
 		createdAt: text('created_at')
@@ -159,8 +163,8 @@ export const badHabitOccurrences = sqliteTable(
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
 	(table) => [
-		index('bad_habit_occurrences_habit_idx').on(table.habitId),
-		index('bad_habit_occurrences_date_idx').on(table.date)
+		index('habit_occurrences_habit_idx').on(table.habitId),
+		index('habit_occurrences_date_idx').on(table.date)
 	]
 );
 
