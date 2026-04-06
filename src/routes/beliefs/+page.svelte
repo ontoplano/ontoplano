@@ -238,6 +238,12 @@
 						: ''}"
 				>
 					<div class="flex items-center gap-4 px-4 py-3">
+						<span
+							class="flex h-6 w-6 shrink-0 items-center justify-center border border-gray-300 bg-gray-50 font-mono text-xs font-medium text-gray-500"
+							title="Belief #{belief.id}"
+						>
+							{belief.id}
+						</span>
 						<div class="min-w-0 flex-1">
 							<div class="flex items-center gap-2">
 								{#if belief.valence === 'positive'}

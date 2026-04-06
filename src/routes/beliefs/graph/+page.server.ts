@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { beliefs, beliefRelations, evidence, beliefEvidence } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { toLocalISOString } from '$lib/server/week-generator';
 
 export const load: PageServerLoad = async () => {
 	const allBeliefs = db
@@ -89,6 +90,21 @@ export const actions: Actions = {
 		if (!id) return fail(400, { message: 'Missing id' });
 
 		db.delete(beliefRelations).where(eq(beliefRelations.id, id)).run();
+
+		return { success: true };
+	},
+
+	updateBelief: async ({ request }) => {
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const content = formData.get('content')?.toString()?.trim();
+
+		if (!id || !content) return fail(400, { message: 'Missing fields' });
+
+		db.update(beliefs)
+			.set({ content, updatedAt: toLocalISOString(new Date()) })
+			.where(eq(beliefs.id, id))
+			.run();
 
 		return { success: true };
 	}

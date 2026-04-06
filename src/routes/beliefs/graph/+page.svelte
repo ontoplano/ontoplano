@@ -31,7 +31,6 @@
 		relation: RelationEdge
 	};
 
-	// Pending relations waiting to be saved
 	let pendingRelations: Array<{
 		source: number;
 		target: number;
@@ -39,7 +38,6 @@
 		edgeId: string;
 	}> = $state([]);
 
-	// Type picker state — shown after dragging a connection
 	let typePicker: {
 		edgeId: string;
 		sourceId: number;
@@ -48,7 +46,27 @@
 		y: number;
 	} | null = $state(null);
 
-	// Build initial nodes and edges from server data
+	function handleEdgeDeleteFromLabel(edgeId: string, relationId?: number) {
+		if (relationId) {
+			deleteRelation(relationId);
+		} else {
+			pendingRelations = pendingRelations.filter((r) => r.edgeId !== edgeId);
+			edges = edges.filter((e) => e.id !== edgeId);
+		}
+	}
+
+	async function updateBeliefContent(beliefId: number, content: string) {
+		const body = new URLSearchParams({ id: String(beliefId), content });
+		await fetch('?/updateBelief', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+			body: body.toString()
+		});
+		nodes = nodes.map((n) =>
+			n.id === `b-${beliefId}` ? { ...n, data: { ...n.data, label: content } } : n
+		);
+	}
+
 	function buildInitialElements(): { nodes: Node[]; edges: Edge[] } {
 		const nodes: Node[] = [];
 		const edges: Edge[] = [];
@@ -57,7 +75,12 @@
 			nodes.push({
 				id: `b-${belief.id}`,
 				type: 'belief',
-				data: { label: belief.content, valence: belief.valence ?? 'neutral' },
+				data: {
+					beliefId: belief.id,
+					label: belief.content,
+					valence: belief.valence ?? 'neutral',
+					onUpdate: updateBeliefContent
+				},
 				position: { x: 0, y: 0 }
 			});
 		}
@@ -77,7 +100,12 @@
 				source: `b-${rel.sourceBeliefId}`,
 				target: `b-${rel.targetBeliefId}`,
 				type: 'relation',
-				data: { type: rel.type, relationId: rel.id, pending: false },
+				data: {
+					type: rel.type,
+					relationId: rel.id,
+					pending: false,
+					onDelete: handleEdgeDeleteFromLabel
+				},
 				markerEnd: {
 					type: MarkerType.ArrowClosed,
 					color: rel.type === 'supports' ? '#22c55e' : '#ef4444'
@@ -91,7 +119,7 @@
 				source: `e-${link.evidenceId}`,
 				target: `b-${link.beliefId}`,
 				type: 'relation',
-				data: { type: link.type, pending: false },
+				data: { type: link.type, pending: false, onDelete: handleEdgeDeleteFromLabel },
 				markerEnd: {
 					type: MarkerType.ArrowClosed,
 					color: link.type === 'supports' ? '#22c55e' : '#ef4444'
@@ -102,7 +130,6 @@
 		return { nodes, edges };
 	}
 
-	// Apply dagre layout to position nodes
 	function layoutElements(nodes: Node[], edges: Edge[]): Node[] {
 		const g = new dagre.graphlib.Graph();
 		g.setDefaultEdgeLabel(() => ({}));
@@ -137,12 +164,10 @@
 	let nodes = $state.raw<Node[]>(layoutElements(initial.nodes, initial.edges));
 	let edges = $state.raw<Edge[]>(initial.edges);
 
-	// Handle new connection from drag-to-connect
 	function onconnect(connection: Connection) {
 		const sourceId = connection.source;
 		const targetId = connection.target;
 
-		// Only allow belief-to-belief connections
 		if (!sourceId?.startsWith('b-') || !targetId?.startsWith('b-')) return;
 		if (sourceId === targetId) return;
 
@@ -150,7 +175,6 @@
 		const sourceBeliefId = parseInt(sourceId.replace('b-', ''));
 		const targetBeliefId = parseInt(targetId.replace('b-', ''));
 
-		// Show type picker — don't add edge yet
 		typePicker = {
 			edgeId,
 			sourceId: sourceBeliefId,
@@ -159,7 +183,6 @@
 			y: 0
 		};
 
-		// Position the picker in the center of the viewport (simple approach)
 		const container = document.querySelector('.svelte-flow');
 		if (container) {
 			const rect = container.getBoundingClientRect();
@@ -173,16 +196,14 @@
 
 		const { edgeId, sourceId, targetId } = typePicker;
 
-		// Add pending relation
 		pendingRelations = [...pendingRelations, { source: sourceId, target: targetId, type, edgeId }];
 
-		// Add pending edge to the graph
 		const newEdge: Edge = {
 			id: edgeId,
 			source: `b-${sourceId}`,
 			target: `b-${targetId}`,
 			type: 'relation',
-			data: { type, pending: true },
+			data: { type, pending: true, onDelete: handleEdgeDeleteFromLabel },
 			markerEnd: {
 				type: MarkerType.ArrowClosed,
 				color: type === 'supports' ? '#22c55e' : '#ef4444'
@@ -197,15 +218,12 @@
 		typePicker = null;
 	}
 
-	// Delete edge — works for both saved and pending edges
 	function handleEdgesDelete(deletedEdges: Edge[]) {
 		for (const edge of deletedEdges) {
 			const relationId = edge.data?.relationId;
 			if (relationId) {
-				// Saved relation — delete from DB
 				deleteRelation(Number(relationId));
 			} else {
-				// Pending relation — just remove from pending list
 				pendingRelations = pendingRelations.filter((r) => r.edgeId !== edge.id);
 			}
 		}
@@ -325,8 +343,8 @@
 	{/if}
 
 	<div class="text-xs text-gray-400">
-		Drag from a handle to another belief node to create a relation. Select an edge and press Delete
-		to remove it.
+		Drag from a handle to connect beliefs. Hover an edge label and click &times; to remove it.
+		Double-click a belief to edit its text.
 	</div>
 </div>
 
