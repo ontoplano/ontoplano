@@ -168,4 +168,89 @@ export const habitOccurrences = sqliteTable(
 	]
 );
 
+// --- Beliefs (memory reconsolidation) ---
+
+export const beliefs = sqliteTable(
+	'beliefs',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		content: text('content').notNull(),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [index('beliefs_created_idx').on(table.createdAt)]
+);
+
+export const beliefReasons = sqliteTable(
+	'belief_reasons',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		beliefId: integer('belief_id')
+			.notNull()
+			.references(() => beliefs.id, { onDelete: 'cascade' }),
+		content: text('content').notNull(),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [index('belief_reasons_belief_idx').on(table.beliefId)]
+);
+
+export const beliefContradictions = sqliteTable(
+	'belief_contradictions',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		beliefId: integer('belief_id')
+			.notNull()
+			.references(() => beliefs.id, { onDelete: 'cascade' }),
+		content: text('content').notNull(),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [index('belief_contradictions_belief_idx').on(table.beliefId)]
+);
+
+export const beliefIntensities = sqliteTable(
+	'belief_intensities',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		beliefId: integer('belief_id')
+			.notNull()
+			.references(() => beliefs.id, { onDelete: 'cascade' }),
+		date: text('date').notNull(),
+		value: integer('value').notNull(),
+		notes: text('notes').default(''),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('belief_intensities_belief_idx').on(table.beliefId),
+		index('belief_intensities_date_idx').on(table.date),
+		check('belief_intensities_value_range', sql`${table.value} >= 1 AND ${table.value} <= 10`)
+	]
+);
+
+export const beliefHabits = sqliteTable(
+	'belief_habits',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		beliefId: integer('belief_id')
+			.notNull()
+			.references(() => beliefs.id, { onDelete: 'cascade' }),
+		habitId: integer('habit_id')
+			.notNull()
+			.references(() => habits.id, { onDelete: 'cascade' })
+	},
+	(table) => [
+		index('belief_habits_belief_idx').on(table.beliefId),
+		index('belief_habits_habit_idx').on(table.habitId)
+	]
+);
+
 export * from './auth.schema.js';

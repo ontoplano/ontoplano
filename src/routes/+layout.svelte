@@ -14,7 +14,8 @@
 		{ href: '/planner', label: 'Planner' },
 		{ href: '/history', label: 'History' },
 		{ href: '/diary', label: 'Diary' },
-		{ href: '/habits', label: 'Habits' }
+		{ href: '/habits', label: 'Habits' },
+		{ href: '/beliefs', label: 'Beliefs' }
 	];
 
 	function handleGlobalKeydown(e: KeyboardEvent) {
