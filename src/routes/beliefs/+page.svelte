@@ -10,6 +10,7 @@
 	let expandedBeliefId: number | null = $state(null);
 	let editingBeliefId: number | null = $state(null);
 	let confirmingDeleteId: number | null = $state(null);
+	let recordingBeliefId: number | null = $state(null);
 
 	let linkBeliefSelect: Record<number, number | null> = $state({});
 	let linkBeliefFlipped: Record<number, boolean> = $state({});
@@ -242,6 +243,18 @@
 						<div class="flex shrink-0 items-center gap-2">
 							<button
 								onclick={() => {
+									recordingBeliefId = recordingBeliefId === belief.id ? null : belief.id;
+									initIntensityForm(belief.id);
+								}}
+								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100 {recordingBeliefId ===
+								belief.id
+									? 'bg-gray-100'
+									: ''}"
+							>
+								Record
+							</button>
+							<button
+								onclick={() => {
 									expandedBeliefId = isExpanded ? null : belief.id;
 									editingBeliefId = null;
 									confirmingDeleteId = null;
@@ -272,6 +285,107 @@
 							{/if}
 						</div>
 					</div>
+
+					{#if recordingBeliefId === belief.id}
+						<div class="border-t border-gray-200 px-4 py-3">
+							<div class="mb-2">
+								<span class="text-xs font-medium text-gray-500">Intensity</span>
+							</div>
+
+							{#if belief.intensities.length > 0}
+								<div class="mb-3 flex items-end gap-1" style="height: 44px">
+									{#each belief.intensities.slice(0, 20).toReversed() as intensity (intensity.id)}
+										<div
+											class="w-4 bg-gray-900"
+											style="height: {getIntensityBarHeight(intensity.value)}"
+											title="{intensity.date}: {intensity.value}/10{intensity.notes
+												? ` - ${intensity.notes}`
+												: ''}"
+										></div>
+									{/each}
+								</div>
+								<div class="mb-3 space-y-1">
+									{#each belief.intensities.slice(0, 5) as intensity (intensity.id)}
+										<div class="flex items-center justify-between text-xs">
+											<span class="text-gray-500">{intensity.date}</span>
+											<span class="font-medium text-gray-900">{intensity.value}/10</span>
+											{#if intensity.notes}
+												<span class="text-gray-400">{intensity.notes}</span>
+											{/if}
+										</div>
+									{/each}
+									{#if belief.intensities.length > 5}
+										<div class="text-xs text-gray-400">
+											and {belief.intensities.length - 5} more...
+										</div>
+									{/if}
+								</div>
+							{/if}
+
+							<div class="border border-gray-100 bg-gray-50 p-3">
+								<form
+									method="post"
+									action="?/logIntensity"
+									use:enhance={() => {
+										return async ({ update }) => {
+											await update();
+											intensityValue[belief.id] = 5;
+											intensityNotes[belief.id] = '';
+										};
+									}}
+									class="space-y-2"
+								>
+									<input type="hidden" name="beliefId" value={belief.id} />
+									<div class="flex items-center gap-3">
+										<input
+											type="range"
+											name="value"
+											min="1"
+											max="10"
+											value={intensityValue[belief.id] ?? 5}
+											oninput={(e) => {
+												initIntensityForm(belief.id);
+												intensityValue[belief.id] = parseInt((e.target as HTMLInputElement).value);
+											}}
+											class="flex-1"
+										/>
+										<span class="w-8 text-center text-sm font-medium text-gray-900"
+											>{intensityValue[belief.id] ?? 5}</span
+										>
+									</div>
+									<div class="flex gap-2">
+										<input
+											name="date"
+											type="date"
+											value={intensityDate[belief.id] ?? data.today}
+											oninput={(e) => {
+												initIntensityForm(belief.id);
+												intensityDate[belief.id] = (e.target as HTMLInputElement).value;
+											}}
+											class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+										/>
+										<input
+											name="notes"
+											type="text"
+											placeholder="optional notes"
+											value={intensityNotes[belief.id] ?? ''}
+											oninput={(e) => {
+												initIntensityForm(belief.id);
+												intensityNotes[belief.id] = (e.target as HTMLInputElement).value;
+											}}
+											class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+										/>
+										<button
+											type="submit"
+											class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+										>
+											Log
+										</button>
+									</div>
+								</form>
+							</div>
+						</div>
+					{/if}
 
 					{#if isExpanded}
 						<div>
@@ -585,107 +699,6 @@
 												class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
 											>
 												Create
-											</button>
-										</div>
-									</form>
-								</div>
-							</div>
-
-							<div class="border-t border-gray-200 px-4 py-3">
-								<div class="mb-2">
-									<span class="text-xs font-medium text-gray-500">Intensity</span>
-								</div>
-
-								{#if belief.intensities.length > 0}
-									<div class="mb-3 flex items-end gap-1" style="height: 44px">
-										{#each belief.intensities.slice(0, 20).toReversed() as intensity (intensity.id)}
-											<div
-												class="w-4 bg-gray-900"
-												style="height: {getIntensityBarHeight(intensity.value)}"
-												title="{intensity.date}: {intensity.value}/10{intensity.notes
-													? ` - ${intensity.notes}`
-													: ''}"
-											></div>
-										{/each}
-									</div>
-									<div class="mb-3 space-y-1">
-										{#each belief.intensities.slice(0, 5) as intensity (intensity.id)}
-											<div class="flex items-center justify-between text-xs">
-												<span class="text-gray-500">{intensity.date}</span>
-												<span class="font-medium text-gray-900">{intensity.value}/10</span>
-												{#if intensity.notes}
-													<span class="text-gray-400">{intensity.notes}</span>
-												{/if}
-											</div>
-										{/each}
-										{#if belief.intensities.length > 5}
-											<div class="text-xs text-gray-400">
-												and {belief.intensities.length - 5} more...
-											</div>
-										{/if}
-									</div>
-								{/if}
-
-								<div class="border border-gray-100 bg-gray-50 p-3">
-									<form
-										method="post"
-										action="?/logIntensity"
-										use:enhance={() => {
-											return async ({ update }) => {
-												await update();
-												intensityValue[belief.id] = 5;
-												intensityNotes[belief.id] = '';
-											};
-										}}
-										class="space-y-2"
-									>
-										<input type="hidden" name="beliefId" value={belief.id} />
-										<div class="flex items-center gap-3">
-											<input
-												type="range"
-												name="value"
-												min="1"
-												max="10"
-												value={intensityValue[belief.id] ?? 5}
-												oninput={(e) => {
-													initIntensityForm(belief.id);
-													intensityValue[belief.id] = parseInt(
-														(e.target as HTMLInputElement).value
-													);
-												}}
-												class="flex-1"
-											/>
-											<span class="w-8 text-center text-sm font-medium text-gray-900"
-												>{intensityValue[belief.id] ?? 5}</span
-											>
-										</div>
-										<div class="flex gap-2">
-											<input
-												name="date"
-												type="date"
-												value={intensityDate[belief.id] ?? data.today}
-												oninput={(e) => {
-													initIntensityForm(belief.id);
-													intensityDate[belief.id] = (e.target as HTMLInputElement).value;
-												}}
-												class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-											/>
-											<input
-												name="notes"
-												type="text"
-												placeholder="optional notes"
-												value={intensityNotes[belief.id] ?? ''}
-												oninput={(e) => {
-													initIntensityForm(belief.id);
-													intensityNotes[belief.id] = (e.target as HTMLInputElement).value;
-												}}
-												class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-											/>
-											<button
-												type="submit"
-												class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-											>
-												Log
 											</button>
 										</div>
 									</form>
