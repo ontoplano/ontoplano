@@ -23,6 +23,7 @@ export const load: PageServerLoad = async () => {
 		.select({
 			id: beliefs.id,
 			content: beliefs.content,
+			valence: beliefs.valence,
 			createdAt: beliefs.createdAt,
 			updatedAt: beliefs.updatedAt
 		})
@@ -135,10 +136,12 @@ export const actions: Actions = {
 	create: async ({ request }) => {
 		const formData = await request.formData();
 		const content = formData.get('content')?.toString()?.trim();
+		const valenceRaw = formData.get('valence')?.toString()?.trim() || null;
+		const valence = valenceRaw === 'positive' || valenceRaw === 'negative' ? valenceRaw : null;
 
 		if (!content) return fail(400, { message: 'Belief content is required' });
 
-		db.insert(beliefs).values({ content }).run();
+		db.insert(beliefs).values({ content, valence }).run();
 
 		return { success: true };
 	},
@@ -147,11 +150,13 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 		const content = formData.get('content')?.toString()?.trim();
+		const valenceRaw = formData.get('valence')?.toString()?.trim() || null;
+		const valence = valenceRaw === 'positive' || valenceRaw === 'negative' ? valenceRaw : null;
 
 		if (!id || !content) return fail(400, { message: 'Missing fields' });
 
 		db.update(beliefs)
-			.set({ content, updatedAt: toLocalISOString(new Date()) })
+			.set({ content, valence, updatedAt: toLocalISOString(new Date()) })
 			.where(eq(beliefs.id, id))
 			.run();
 

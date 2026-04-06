@@ -175,6 +175,7 @@ export const beliefs = sqliteTable(
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
 		content: text('content').notNull(),
+		valence: text('valence', { enum: ['positive', 'negative'] }),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),

@@ -138,21 +138,29 @@
 <div class="space-y-4">
 	<div class="flex items-center justify-between">
 		<h1 class="text-lg font-bold text-gray-900">Beliefs</h1>
-		<button
-			onclick={() => {
-				showForm = !showForm;
-				editingBeliefId = null;
-				confirmingDeleteId = null;
-				if (!showForm) return;
-				tick().then(() => {
-					const ta = document.querySelector<HTMLTextAreaElement>('textarea[name="content"]');
-					ta?.focus();
-				});
-			}}
-			class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-		>
-			{showForm ? 'Cancel' : 'New Belief'}
-		</button>
+		<div class="flex items-center gap-2">
+			<a
+				href="/beliefs/graph"
+				class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+			>
+				Graph
+			</a>
+			<button
+				onclick={() => {
+					showForm = !showForm;
+					editingBeliefId = null;
+					confirmingDeleteId = null;
+					if (!showForm) return;
+					tick().then(() => {
+						const ta = document.querySelector<HTMLTextAreaElement>('textarea[name="content"]');
+						ta?.focus();
+					});
+				}}
+				class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+			>
+				{showForm ? 'Cancel' : 'New Belief'}
+			</button>
+		</div>
 	</div>
 
 	<div class="text-xs text-gray-400">
@@ -194,6 +202,17 @@
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				></textarea>
 			</label>
+			<label class="block">
+				<span class="text-sm font-medium text-gray-700">Valence</span>
+				<select
+					name="valence"
+					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+				>
+					<option value="">Neutral</option>
+					<option value="positive">Positive</option>
+					<option value="negative">Negative</option>
+				</select>
+			</label>
 			<button
 				type="submit"
 				class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
@@ -223,6 +242,11 @@
 					<div class="flex items-center gap-4 px-4 py-3">
 						<div class="min-w-0 flex-1">
 							<div class="flex items-center gap-2">
+								{#if belief.valence === 'positive'}
+									<span class="text-xs font-medium text-green-600">+</span>
+								{:else if belief.valence === 'negative'}
+									<span class="text-xs font-medium text-red-500">&minus;</span>
+								{/if}
 								<span class="text-sm font-medium text-gray-900">{belief.content}</span>
 								{#if latest}
 									<span class="text-xs font-medium text-gray-600">{latest}/10</span>
@@ -412,6 +436,21 @@
 												class="edit-belief-textarea mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 												>{belief.content}</textarea
 											>
+										</label>
+										<label class="block">
+											<span class="text-xs font-medium text-gray-500">Valence</span>
+											<select
+												name="valence"
+												class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+											>
+												<option value="" selected={!belief.valence}>Neutral</option>
+												<option value="positive" selected={belief.valence === 'positive'}
+													>Positive</option
+												>
+												<option value="negative" selected={belief.valence === 'negative'}
+													>Negative</option
+												>
+											</select>
 										</label>
 										<div class="flex gap-2">
 											<button
