@@ -26,3 +26,7 @@ vite.config.ts.timestamp-*
 test-results
 # SQLite
 *.db
+# Scratch files
+blie
+pass.py
+todo
