@@ -58,6 +58,13 @@
 		y: number;
 	} | null = $state(null);
 
+	let evidenceTypePicker: {
+		evidenceId: number;
+		beliefId: number;
+		x: number;
+		y: number;
+	} | null = $state(null);
+
 	let selectedGraphBeliefId: number | null = $state(null);
 	let graphShowNewBeliefForm = $state(false);
 	let graphNewBeliefContent = $state('');
@@ -287,10 +294,30 @@
 			}
 		}));
 
+		// Merge nodes to preserve SvelteFlow's internal drag/interaction state:
+		// - Update existing nodes in-place (position + data)
+		// - Add new nodes, remove deleted ones
+		const existingMap = new Map(currentNodes.map((n) => [n.id, n]));
+
+		const mergedNodes: Node[] = [];
+		for (const newNode of laidOut) {
+			const existing = existingMap.get(newNode.id);
+			if (existing) {
+				// Preserve the existing node object, update data and position
+				mergedNodes.push({
+					...existing,
+					data: newNode.data,
+					position: newNode.position
+				});
+			} else {
+				mergedNodes.push(newNode);
+			}
+		}
+
 		untrack(() => {
-			nodes = laidOut;
+			nodes = mergedNodes;
 			edges = [...rebuilt.edges, ...pendingEdges];
-			savePositions(laidOut);
+			savePositions(mergedNodes);
 		});
 	});
 
@@ -298,8 +325,36 @@
 		const sourceId = connection.source;
 		const targetId = connection.target;
 
-		if (!sourceId?.startsWith('b-') || !targetId?.startsWith('b-')) return;
-		if (sourceId === targetId) return;
+		if (!sourceId || !targetId || sourceId === targetId) return;
+
+		// Evidence → Belief connection
+		let evidenceNodeId: string | null = null;
+		let beliefNodeId: string | null = null;
+
+		if (sourceId.startsWith('e-') && targetId.startsWith('b-')) {
+			evidenceNodeId = sourceId;
+			beliefNodeId = targetId;
+		} else if (sourceId.startsWith('b-') && targetId.startsWith('e-')) {
+			evidenceNodeId = targetId;
+			beliefNodeId = sourceId;
+		}
+
+		if (evidenceNodeId && beliefNodeId) {
+			const evidenceId = parseInt(evidenceNodeId.replace('e-', ''));
+			const beliefId = parseInt(beliefNodeId.replace('b-', ''));
+
+			evidenceTypePicker = { evidenceId, beliefId, x: 0, y: 0 };
+			const container = document.querySelector('.svelte-flow');
+			if (container) {
+				const rect = container.getBoundingClientRect();
+				evidenceTypePicker.x = rect.width / 2;
+				evidenceTypePicker.y = rect.height / 2;
+			}
+			return;
+		}
+
+		// Belief → Belief connection
+		if (!sourceId.startsWith('b-') || !targetId.startsWith('b-')) return;
 
 		const edgeId = `pending-${Date.now()}`;
 		const sourceBeliefId = parseInt(sourceId.replace('b-', ''));
@@ -348,6 +403,17 @@
 
 	function cancelTypePicker() {
 		typePicker = null;
+	}
+
+	async function selectEvidenceType(type: 'supports' | 'contradicts') {
+		if (!evidenceTypePicker) return;
+		const { evidenceId, beliefId } = evidenceTypePicker;
+		evidenceTypePicker = null;
+		await graphLinkEvidence(beliefId, evidenceId, type);
+	}
+
+	function cancelEvidenceTypePicker() {
+		evidenceTypePicker = null;
 	}
 
 	async function handleBeforeDelete({
@@ -415,9 +481,14 @@
 
 	function isValidConnection(connection: Connection): boolean {
 		const { source, target } = connection;
-		if (!source?.startsWith('b-') || !target?.startsWith('b-')) return false;
 		if (source === target) return false;
-		return true;
+		// belief → belief
+		if (source?.startsWith('b-') && target?.startsWith('b-')) return true;
+		// evidence → belief
+		if (source?.startsWith('e-') && target?.startsWith('b-')) return true;
+		// belief → evidence
+		if (source?.startsWith('b-') && target?.startsWith('e-')) return true;
+		return false;
 	}
 
 	function beliefsList() {
@@ -1597,7 +1668,10 @@
 						deleteKey="Delete"
 						minZoom={0.3}
 						maxZoom={3}
+						selectionOnDrag={false}
+						panOnDrag
 						onnodeclick={(e) => {
+							if (!e.node.id.startsWith('b-')) return;
 							const beliefId = parseInt(e.node.id.replace('b-', ''));
 							openBeliefPanel(beliefId);
 						}}
@@ -1630,6 +1704,37 @@
 								</button>
 							</div>
 							<button onclick={cancelTypePicker} class="text-xs text-gray-400 hover:text-gray-600">
+								Cancel
+							</button>
+						</div>
+					{/if}
+
+					{#if evidenceTypePicker}
+						<div
+							class="absolute z-50 flex flex-col gap-2 border border-gray-200 bg-white p-3 shadow-sm"
+							style="left: {evidenceTypePicker.x}px; top: {evidenceTypePicker.y}px; transform: translate(-50%, -50%);"
+						>
+							<span class="text-xs font-medium text-gray-600">Evidence link type:</span>
+							<div class="flex gap-2">
+								<button
+									onclick={() => selectEvidenceType('supports')}
+									class="px-3 py-1 text-xs"
+									style="background-color: #eff6ff; color: #1e40af; border: 1px solid #93c5fd;"
+								>
+									Supports
+								</button>
+								<button
+									onclick={() => selectEvidenceType('contradicts')}
+									class="px-3 py-1 text-xs"
+									style="background-color: #fef2f2; color: #dc2626; border: 1px solid #fca5a5;"
+								>
+									Contradicts
+								</button>
+							</div>
+							<button
+								onclick={cancelEvidenceTypePicker}
+								class="text-xs text-gray-400 hover:text-gray-600"
+							>
 								Cancel
 							</button>
 						</div>
