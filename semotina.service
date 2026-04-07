@@ -4,8 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=${HOME}/codes/semotina
-ExecStartPre=/usr/bin/yarn build
+WorkingDirectory=${HOME}/.local/share/semotina/app
 ExecStart=/usr/bin/node build/index.js
 Restart=on-failure
 RestartSec=5

@@ -1,4 +1,4 @@
-.PHONY: dev build preview start stop clean install-service uninstall-service db-push db-seed db-generate db-migrate db-studio db bdb lint format test docker-build docker-up docker-down logs
+.PHONY: dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-studio db bdb lint format test docker-build docker-up docker-down logs
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -66,7 +66,23 @@ logs:
 
 # ─── Systemd ─────────────────────────────────────────────────────────────────
 
-install-service:
+PROD_DIR = $(HOME)/.local/share/semotina/app
+
+deploy: build
+	@echo "Deploying to $(PROD_DIR)..."
+	@mkdir -p $(PROD_DIR)
+	@rm -rf $(PROD_DIR)/build
+	@cp -r build $(PROD_DIR)/build
+	@cp package.json $(PROD_DIR)/package.json
+	@rsync -a --delete node_modules $(PROD_DIR)/
+	@echo "Deploy complete."
+
+update: deploy
+	@echo "Restarting semotina service..."
+	@systemctl --user restart semotina
+	@echo "Update complete. Check: systemctl --user status semotina"
+
+install-service: deploy
 	@echo "Installing semotina systemd service..."
 	@mkdir -p ~/.config/systemd/user
 	@envsubst < semotina.service > ~/.config/systemd/user/semotina.service
