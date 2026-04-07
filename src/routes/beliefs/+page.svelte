@@ -64,6 +64,31 @@
 	let graphNewBeliefValence = $state('');
 	let editingGraphNodeId: number | null = $state(null);
 
+	const POSITIONS_KEY = 'semotina:beliefs:node-positions';
+
+	function loadSavedPositions(): Record<string, { x: number; y: number }> {
+		if (typeof localStorage === 'undefined') return {};
+		try {
+			const raw = localStorage.getItem(POSITIONS_KEY);
+			return raw ? JSON.parse(raw) : {};
+		} catch {
+			return {};
+		}
+	}
+
+	function savePositions(currentNodes: Node[]) {
+		if (typeof localStorage === 'undefined') return;
+		const positions: Record<string, { x: number; y: number }> = {};
+		for (const node of currentNodes) {
+			positions[node.id] = { x: node.position.x, y: node.position.y };
+		}
+		try {
+			localStorage.setItem(POSITIONS_KEY, JSON.stringify(positions));
+		} catch {
+			// quota exceeded, ignore
+		}
+	}
+
 	function onStartEditNode(beliefId: number) {
 		editingGraphNodeId = beliefId;
 	}
@@ -100,13 +125,18 @@
 		await invalidateAll();
 	}
 
-	function buildInitialElements(): { nodes: Node[]; edges: Edge[] } {
+	function buildInitialElements(savedPositions?: Record<string, { x: number; y: number }>): {
+		nodes: Node[];
+		edges: Edge[];
+	} {
 		const nodes: Node[] = [];
 		const edges: Edge[] = [];
+		const positions = savedPositions ?? {};
 
 		for (const belief of data.beliefs) {
+			const id = `b-${belief.id}`;
 			nodes.push({
-				id: `b-${belief.id}`,
+				id,
 				type: 'belief',
 				data: {
 					beliefId: belief.id,
@@ -118,16 +148,17 @@
 					onStartEdit: onStartEditNode,
 					onCancelEdit: onCancelEditNode
 				},
-				position: { x: 0, y: 0 }
+				position: positions[id] ?? { x: 0, y: 0 }
 			});
 		}
 
 		for (const ev of data.allEvidence) {
+			const id = `e-${ev.id}`;
 			nodes.push({
-				id: `e-${ev.id}`,
+				id,
 				type: 'evidence',
 				data: { label: ev.content },
-				position: { x: 0, y: 0 }
+				position: positions[id] ?? { x: 0, y: 0 }
 			});
 		}
 
@@ -145,7 +176,9 @@
 				},
 				markerEnd: {
 					type: MarkerType.ArrowClosed,
-					color: rel.type === 'supports' ? '#3b82f6' : '#ef4444'
+					color: rel.type === 'supports' ? '#3b82f6' : '#ef4444',
+					width: 20,
+					height: 20
 				}
 			});
 		}
@@ -159,7 +192,9 @@
 				data: { type: link.type, pending: false, onDelete: handleEdgeDeleteFromLabel },
 				markerEnd: {
 					type: MarkerType.ArrowClosed,
-					color: link.type === 'supports' ? '#3b82f6' : '#ef4444'
+					color: link.type === 'supports' ? '#3b82f6' : '#ef4444',
+					width: 20,
+					height: 20
 				}
 			});
 		}
@@ -167,7 +202,7 @@
 		return { nodes, edges };
 	}
 
-	function layoutElements(nodes: Node[], edges: Edge[]): Node[] {
+	function layoutElements(nodesToLayout: Node[], edgesToLayout: Edge[], force = false): Node[] {
 		const g = new dagre.graphlib.Graph();
 		g.setDefaultEdgeLabel(() => ({}));
 		g.setGraph({ rankdir: 'TB', nodesep: 80, ranksep: 100 });
@@ -175,17 +210,21 @@
 		const nodeWidth = 260;
 		const nodeHeight = 80;
 
-		for (const node of nodes) {
+		for (const node of nodesToLayout) {
 			g.setNode(node.id, { width: nodeWidth, height: nodeHeight });
 		}
 
-		for (const edge of edges) {
+		for (const edge of edgesToLayout) {
 			g.setEdge(edge.source, edge.target);
 		}
 
 		dagre.layout(g);
 
-		return nodes.map((node) => {
+		return nodesToLayout.map((node) => {
+			// If force=false and node already has a real position, keep it
+			if (!force && (node.position.x !== 0 || node.position.y !== 0)) {
+				return node;
+			}
 			const pos = g.node(node.id);
 			return {
 				...node,
@@ -197,18 +236,40 @@
 		});
 	}
 
-	const initial = buildInitialElements();
-	let nodes = $state.raw<Node[]>(layoutElements(initial.nodes, initial.edges));
+	const savedPositions = loadSavedPositions();
+	const initial = buildInitialElements(savedPositions);
+	const hasSavedPositions = Object.keys(savedPositions).length > 0;
+	let nodes = $state.raw<Node[]>(
+		hasSavedPositions ? initial.nodes : layoutElements(initial.nodes, initial.edges, true)
+	);
 	let edges = $state.raw<Edge[]>(initial.edges);
 
 	$effect(() => {
 		graphView = data.view === 'graph';
 	});
 
+	// Track data identity to skip the initial run (already handled by buildInitialElements above)
+	let prevDataRef = data;
+
 	$effect(() => {
+		// Read data to register dependency
+		const currentData = data;
+
+		// Skip initial run — the initial nodes/edges are already set above
+		if (currentData === prevDataRef) return;
+		prevDataRef = currentData;
+
 		// Rebuild graph elements when data changes (after invalidateAll)
-		const rebuilt = buildInitialElements();
-		nodes = layoutElements(rebuilt.nodes, rebuilt.edges);
+		// Preserve current node positions instead of re-running dagre
+		const currentPositions: Record<string, { x: number; y: number }> = {};
+		const currentNodes = untrack(() => nodes);
+		for (const node of currentNodes) {
+			currentPositions[node.id] = { x: node.position.x, y: node.position.y };
+		}
+
+		const rebuilt = buildInitialElements(currentPositions);
+		// Only run dagre on genuinely new nodes (those at 0,0 with no saved position)
+		const laidOut = layoutElements(rebuilt.nodes, rebuilt.edges);
 
 		// Preserve committed edges and re-add any pending ones (untracked to avoid re-layout on new pending edges)
 		const currentPending = untrack(() => pendingRelations);
@@ -220,10 +281,17 @@
 			data: { type: r.type, pending: true, onDelete: handleEdgeDeleteFromLabel },
 			markerEnd: {
 				type: MarkerType.ArrowClosed,
-				color: r.type === 'supports' ? '#3b82f6' : '#ef4444'
+				color: r.type === 'supports' ? '#3b82f6' : '#ef4444',
+				width: 20,
+				height: 20
 			}
 		}));
-		edges = [...rebuilt.edges, ...pendingEdges];
+
+		untrack(() => {
+			nodes = laidOut;
+			edges = [...rebuilt.edges, ...pendingEdges];
+			savePositions(laidOut);
+		});
 	});
 
 	function onconnect(connection: Connection) {
@@ -268,7 +336,9 @@
 			data: { type, pending: true, onDelete: handleEdgeDeleteFromLabel },
 			markerEnd: {
 				type: MarkerType.ArrowClosed,
-				color: type === 'supports' ? '#3b82f6' : '#ef4444'
+				color: type === 'supports' ? '#3b82f6' : '#ef4444',
+				width: 20,
+				height: 20
 			}
 		};
 		edges = [...edges, newEdge];
@@ -337,6 +407,10 @@
 		}
 		pendingRelations = [];
 		await invalidateAll();
+	}
+
+	function handleNodeDragStop() {
+		savePositions(nodes);
 	}
 
 	function isValidConnection(connection: Connection): boolean {
@@ -1518,6 +1592,7 @@
 						{isValidConnection}
 						onbeforedelete={handleBeforeDelete}
 						onedgesdelete={handleEdgesDelete}
+						onnodedragstop={handleNodeDragStop}
 						fitView
 						deleteKey="Delete"
 						minZoom={0.3}
