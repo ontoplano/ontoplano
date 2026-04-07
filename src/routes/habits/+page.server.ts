@@ -69,7 +69,8 @@ function parseScheduledDays(raw: string | null): number[] {
 		.filter((n) => !isNaN(n) && n >= 0 && n <= 6);
 }
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async (event) => {
+	const userId = event.locals.user!.id;
 	const allHabits = db
 		.select({
 			id: habits.id,
@@ -80,6 +81,7 @@ export const load: PageServerLoad = async () => {
 			createdAt: habits.createdAt
 		})
 		.from(habits)
+		.where(eq(habits.userId, userId))
 		.orderBy(habits.name)
 		.all();
 
@@ -92,7 +94,8 @@ export const load: PageServerLoad = async () => {
 			notes: habitOccurrences.notes
 		})
 		.from(habitOccurrences)
-		.where(gte(habitOccurrences.date, cutoff))
+		.innerJoin(habits, eq(habitOccurrences.habitId, habits.id))
+		.where(and(eq(habits.userId, userId), gte(habitOccurrences.date, cutoff)))
 		.orderBy(desc(habitOccurrences.date))
 		.all();
 
@@ -110,7 +113,8 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions: Actions = {
-	create: async ({ request }) => {
+	create: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const name = formData.get('name')?.toString()?.trim();
 		const description = formData.get('description')?.toString()?.trim() ?? '';
@@ -120,29 +124,45 @@ export const actions: Actions = {
 		if (!name) return fail(400, { message: 'Name is required' });
 		if (type !== 'bad' && type !== 'good') return fail(400, { message: 'Invalid type' });
 
-		db.insert(habits).values({ name, description, type, scheduledDays }).run();
+		db.insert(habits).values({ userId, name, description, type, scheduledDays }).run();
 
 		return { success: true };
 	},
 
-	delete: async ({ request }) => {
+	delete: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 
 		if (!id) return fail(400, { message: 'Missing id' });
+		const existing = db
+			.select({ id: habits.id })
+			.from(habits)
+			.where(and(eq(habits.id, id), eq(habits.userId, userId)))
+			.get();
+		if (!existing) return fail(404, { message: 'Habit not found' });
 
-		db.delete(habits).where(eq(habits.id, id)).run();
+		db.delete(habits)
+			.where(and(eq(habits.id, id), eq(habits.userId, userId)))
+			.run();
 
 		return { success: true };
 	},
 
-	logOccurrence: async ({ request }) => {
+	logOccurrence: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const habitId = Number(formData.get('habitId'));
 		const date = formData.get('date')?.toString()?.trim() || todayStr();
 		const notes = formData.get('notes')?.toString()?.trim() ?? '';
 
 		if (!habitId) return fail(400, { message: 'Missing habit id' });
+		const habit = db
+			.select({ id: habits.id })
+			.from(habits)
+			.where(and(eq(habits.id, habitId), eq(habits.userId, userId)))
+			.get();
+		if (!habit) return fail(404, { message: 'Habit not found' });
 
 		const existing = db
 			.select({ id: habitOccurrences.id })
@@ -159,11 +179,19 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	deleteOccurrence: async ({ request }) => {
+	deleteOccurrence: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 
 		if (!id) return fail(400, { message: 'Missing id' });
+		const occurrence = db
+			.select({ id: habitOccurrences.id })
+			.from(habitOccurrences)
+			.innerJoin(habits, eq(habitOccurrences.habitId, habits.id))
+			.where(and(eq(habitOccurrences.id, id), eq(habits.userId, userId)))
+			.get();
+		if (!occurrence) return fail(404, { message: 'Occurrence not found' });
 
 		db.delete(habitOccurrences).where(eq(habitOccurrences.id, id)).run();
 

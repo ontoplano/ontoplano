@@ -28,7 +28,9 @@ function formatDate(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async (event) => {
+	const { url } = event;
+	const userId = event.locals.user!.id;
 	const weekParam = url.searchParams.get('week');
 	const monday = parseWeekParam(weekParam);
 	const sunday = addDays(monday, 6);
@@ -80,7 +82,11 @@ export const load: PageServerLoad = async ({ url }) => {
 		.leftJoin(activityCategories, eq(slotActivities.categoryId, activityCategories.id))
 		.leftJoin(activities, eq(taskInstances.resolvedActivityId, activities.id))
 		.where(
-			and(gte(taskInstances.scheduledAt, mondayStr), lt(taskInstances.scheduledAt, nextMondayStr))
+			and(
+				eq(taskInstances.userId, userId),
+				gte(taskInstances.scheduledAt, mondayStr),
+				lt(taskInstances.scheduledAt, nextMondayStr)
+			)
 		)
 		.orderBy(taskInstances.scheduledAt)
 		.all();

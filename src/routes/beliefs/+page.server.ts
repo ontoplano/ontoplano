@@ -12,7 +12,7 @@ import {
 	habits,
 	tags
 } from '$lib/server/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, or, desc, inArray } from 'drizzle-orm';
 import { toLocalISOString } from '$lib/server/week-generator';
 
 function todayStr(): string {
@@ -31,16 +31,30 @@ function parseTags(raw: string): string[] {
 	];
 }
 
-function ensureTagIds(tagNames: string[]): number[] {
+function ensureTagIds(tagNames: string[], userId: string): number[] {
 	return tagNames.map((name) => {
-		const existing = db.select({ id: tags.id }).from(tags).where(eq(tags.name, name)).get();
+		const existing = db
+			.select({ id: tags.id })
+			.from(tags)
+			.where(and(eq(tags.name, name), eq(tags.userId, userId)))
+			.get();
 		if (existing) return existing.id;
-		const result = db.insert(tags).values({ name }).run();
+		const result = db.insert(tags).values({ userId, name }).run();
 		return Number(result.lastInsertRowid);
 	});
 }
 
-export const load: PageServerLoad = async ({ url }) => {
+function getBeliefForUser(beliefId: number, userId: string): { id: number } | undefined {
+	return db
+		.select({ id: beliefs.id })
+		.from(beliefs)
+		.where(and(eq(beliefs.id, beliefId), eq(beliefs.userId, userId)))
+		.get();
+}
+
+export const load: PageServerLoad = async (event) => {
+	const { url } = event;
+	const userId = event.locals.user!.id;
 	const view = url.searchParams.get('view') ?? 'list';
 
 	const allBeliefs = db
@@ -52,8 +66,11 @@ export const load: PageServerLoad = async ({ url }) => {
 			updatedAt: beliefs.updatedAt
 		})
 		.from(beliefs)
+		.where(eq(beliefs.userId, userId))
 		.orderBy(desc(beliefs.createdAt))
 		.all();
+
+	const beliefIds = allBeliefs.map((belief) => belief.id);
 
 	const beliefsWithRelations = allBeliefs.map((belief) => {
 		const outgoing = db
@@ -64,7 +81,12 @@ export const load: PageServerLoad = async ({ url }) => {
 				createdAt: beliefRelations.createdAt
 			})
 			.from(beliefRelations)
-			.where(eq(beliefRelations.sourceBeliefId, belief.id))
+			.where(
+				and(
+					eq(beliefRelations.sourceBeliefId, belief.id),
+					inArray(beliefRelations.targetBeliefId, beliefIds)
+				)
+			)
 			.all();
 
 		const incoming = db
@@ -75,7 +97,12 @@ export const load: PageServerLoad = async ({ url }) => {
 				createdAt: beliefRelations.createdAt
 			})
 			.from(beliefRelations)
-			.where(eq(beliefRelations.targetBeliefId, belief.id))
+			.where(
+				and(
+					eq(beliefRelations.targetBeliefId, belief.id),
+					inArray(beliefRelations.sourceBeliefId, beliefIds)
+				)
+			)
 			.all();
 
 		const relatedBeliefs = [
@@ -111,7 +138,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			})
 			.from(beliefEvidence)
 			.innerJoin(evidence, eq(beliefEvidence.evidenceId, evidence.id))
-			.where(eq(beliefEvidence.beliefId, belief.id))
+			.where(and(eq(beliefEvidence.beliefId, belief.id), eq(evidence.userId, userId)))
 			.all();
 
 		const intensities = db
@@ -135,14 +162,14 @@ export const load: PageServerLoad = async ({ url }) => {
 			})
 			.from(beliefHabits)
 			.innerJoin(habits, eq(beliefHabits.habitId, habits.id))
-			.where(eq(beliefHabits.beliefId, belief.id))
+			.where(and(eq(beliefHabits.beliefId, belief.id), eq(habits.userId, userId)))
 			.all();
 
 		const beliefTagRows = db
 			.select({ linkId: beliefTags.id, tagId: tags.id, tagName: tags.name })
 			.from(beliefTags)
 			.innerJoin(tags, eq(beliefTags.tagId, tags.id))
-			.where(eq(beliefTags.beliefId, belief.id))
+			.where(and(eq(beliefTags.beliefId, belief.id), eq(tags.userId, userId)))
 			.all();
 
 		return {
@@ -158,16 +185,23 @@ export const load: PageServerLoad = async ({ url }) => {
 	const allHabits = db
 		.select({ id: habits.id, name: habits.name, type: habits.type })
 		.from(habits)
+		.where(eq(habits.userId, userId))
 		.orderBy(habits.name)
 		.all();
 
 	const allEvidence = db
 		.select({ id: evidence.id, content: evidence.content, createdAt: evidence.createdAt })
 		.from(evidence)
+		.where(eq(evidence.userId, userId))
 		.orderBy(desc(evidence.createdAt))
 		.all();
 
-	const allTags = db.select({ id: tags.id, name: tags.name }).from(tags).orderBy(tags.name).all();
+	const allTags = db
+		.select({ id: tags.id, name: tags.name })
+		.from(tags)
+		.where(eq(tags.userId, userId))
+		.orderBy(tags.name)
+		.all();
 
 	const allRelations = db
 		.select({
@@ -177,6 +211,14 @@ export const load: PageServerLoad = async ({ url }) => {
 			type: beliefRelations.type
 		})
 		.from(beliefRelations)
+		.where(
+			beliefIds.length > 0
+				? or(
+						inArray(beliefRelations.sourceBeliefId, beliefIds),
+						inArray(beliefRelations.targetBeliefId, beliefIds)
+					)
+				: eq(beliefRelations.id, -1)
+		)
 		.all();
 
 	const allBeliefEvidence = db
@@ -187,6 +229,9 @@ export const load: PageServerLoad = async ({ url }) => {
 			type: beliefEvidence.type
 		})
 		.from(beliefEvidence)
+		.where(
+			beliefIds.length > 0 ? inArray(beliefEvidence.beliefId, beliefIds) : eq(beliefEvidence.id, -1)
+		)
 		.all();
 
 	return {
@@ -202,7 +247,8 @@ export const load: PageServerLoad = async ({ url }) => {
 };
 
 export const actions: Actions = {
-	create: async ({ request }) => {
+	create: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const content = formData.get('content')?.toString()?.trim();
 		const valenceRaw = formData.get('valence')?.toString()?.trim() || null;
@@ -211,12 +257,12 @@ export const actions: Actions = {
 
 		if (!content) return fail(400, { message: 'Belief content is required' });
 
-		const result = db.insert(beliefs).values({ content, valence }).run();
+		const result = db.insert(beliefs).values({ userId, content, valence }).run();
 		const beliefId = Number(result.lastInsertRowid);
 
 		const tagNames = parseTags(rawTags);
 		if (tagNames.length > 0) {
-			const tagIds = ensureTagIds(tagNames);
+			const tagIds = ensureTagIds(tagNames, userId);
 			for (const tagId of tagIds) {
 				db.insert(beliefTags).values({ beliefId, tagId }).run();
 			}
@@ -225,7 +271,8 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	update: async ({ request }) => {
+	update: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 		const content = formData.get('content')?.toString()?.trim();
@@ -234,16 +281,18 @@ export const actions: Actions = {
 		const rawTags = formData.get('tags')?.toString()?.trim() ?? '';
 
 		if (!id || !content) return fail(400, { message: 'Missing fields' });
+		const belief = getBeliefForUser(id, userId);
+		if (!belief) return fail(404, { message: 'Belief not found' });
 
 		db.update(beliefs)
 			.set({ content, valence, updatedAt: toLocalISOString(new Date()) })
-			.where(eq(beliefs.id, id))
+			.where(and(eq(beliefs.id, id), eq(beliefs.userId, userId)))
 			.run();
 
 		db.delete(beliefTags).where(eq(beliefTags.beliefId, id)).run();
 		const tagNames = parseTags(rawTags);
 		if (tagNames.length > 0) {
-			const tagIds = ensureTagIds(tagNames);
+			const tagIds = ensureTagIds(tagNames, userId);
 			for (const tagId of tagIds) {
 				db.insert(beliefTags).values({ beliefId: id, tagId }).run();
 			}
@@ -252,18 +301,24 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	delete: async ({ request }) => {
+	delete: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 
 		if (!id) return fail(400, { message: 'Missing id' });
+		const belief = getBeliefForUser(id, userId);
+		if (!belief) return fail(404, { message: 'Belief not found' });
 
-		db.delete(beliefs).where(eq(beliefs.id, id)).run();
+		db.delete(beliefs)
+			.where(and(eq(beliefs.id, id), eq(beliefs.userId, userId)))
+			.run();
 
 		return { success: true };
 	},
 
-	addRelation: async ({ request }) => {
+	addRelation: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const sourceBeliefId = Number(formData.get('sourceBeliefId'));
 		const targetBeliefId = Number(formData.get('targetBeliefId'));
@@ -275,6 +330,12 @@ export const actions: Actions = {
 			return fail(400, { message: 'Cannot relate a belief to itself' });
 		if (type !== 'supports' && type !== 'contradicts')
 			return fail(400, { message: 'Type must be supports or contradicts' });
+		const beliefMatches = db
+			.select({ id: beliefs.id })
+			.from(beliefs)
+			.where(and(eq(beliefs.userId, userId), inArray(beliefs.id, [sourceBeliefId, targetBeliefId])))
+			.all();
+		if (beliefMatches.length < 2) return fail(404, { message: 'Belief not found' });
 
 		const existing = db
 			.select({ id: beliefRelations.id })
@@ -294,18 +355,27 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	removeRelation: async ({ request }) => {
+	removeRelation: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 
 		if (!id) return fail(400, { message: 'Missing id' });
+		const relation = db
+			.select({ id: beliefRelations.id })
+			.from(beliefRelations)
+			.innerJoin(beliefs, eq(beliefRelations.sourceBeliefId, beliefs.id))
+			.where(and(eq(beliefRelations.id, id), eq(beliefs.userId, userId)))
+			.get();
+		if (!relation) return fail(404, { message: 'Relation not found' });
 
 		db.delete(beliefRelations).where(eq(beliefRelations.id, id)).run();
 
 		return { success: true };
 	},
 
-	createEvidence: async ({ request }) => {
+	createEvidence: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const content = formData.get('content')?.toString()?.trim();
 		const beliefId = Number(formData.get('beliefId'));
@@ -313,17 +383,20 @@ export const actions: Actions = {
 
 		if (!content) return fail(400, { message: 'Evidence content is required' });
 
-		const result = db.insert(evidence).values({ content }).run();
+		const result = db.insert(evidence).values({ userId, content }).run();
 		const evidenceId = Number(result.lastInsertRowid);
 
 		if (beliefId && type && (type === 'supports' || type === 'contradicts')) {
+			const belief = getBeliefForUser(beliefId, userId);
+			if (!belief) return fail(404, { message: 'Belief not found' });
 			db.insert(beliefEvidence).values({ beliefId, evidenceId, type }).run();
 		}
 
 		return { success: true };
 	},
 
-	linkEvidence: async ({ request }) => {
+	linkEvidence: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const beliefId = Number(formData.get('beliefId'));
 		const evidenceId = Number(formData.get('evidenceId'));
@@ -332,6 +405,14 @@ export const actions: Actions = {
 		if (!beliefId || !evidenceId || !type) return fail(400, { message: 'Missing fields' });
 		if (type !== 'supports' && type !== 'contradicts')
 			return fail(400, { message: 'Type must be supports or contradicts' });
+		const belief = getBeliefForUser(beliefId, userId);
+		if (!belief) return fail(404, { message: 'Belief not found' });
+		const evidenceRow = db
+			.select({ id: evidence.id })
+			.from(evidence)
+			.where(and(eq(evidence.id, evidenceId), eq(evidence.userId, userId)))
+			.get();
+		if (!evidenceRow) return fail(404, { message: 'Evidence not found' });
 
 		const existing = db
 			.select({ id: beliefEvidence.id })
@@ -346,29 +427,47 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	unlinkEvidence: async ({ request }) => {
+	unlinkEvidence: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 
 		if (!id) return fail(400, { message: 'Missing id' });
+		const link = db
+			.select({ id: beliefEvidence.id })
+			.from(beliefEvidence)
+			.innerJoin(beliefs, eq(beliefEvidence.beliefId, beliefs.id))
+			.where(and(eq(beliefEvidence.id, id), eq(beliefs.userId, userId)))
+			.get();
+		if (!link) return fail(404, { message: 'Evidence link not found' });
 
 		db.delete(beliefEvidence).where(eq(beliefEvidence.id, id)).run();
 
 		return { success: true };
 	},
 
-	deleteEvidence: async ({ request }) => {
+	deleteEvidence: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 
 		if (!id) return fail(400, { message: 'Missing id' });
+		const evidenceRow = db
+			.select({ id: evidence.id })
+			.from(evidence)
+			.where(and(eq(evidence.id, id), eq(evidence.userId, userId)))
+			.get();
+		if (!evidenceRow) return fail(404, { message: 'Evidence not found' });
 
-		db.delete(evidence).where(eq(evidence.id, id)).run();
+		db.delete(evidence)
+			.where(and(eq(evidence.id, id), eq(evidence.userId, userId)))
+			.run();
 
 		return { success: true };
 	},
 
-	logIntensity: async ({ request }) => {
+	logIntensity: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const beliefId = Number(formData.get('beliefId'));
 		const value = Number(formData.get('value'));
@@ -377,18 +476,29 @@ export const actions: Actions = {
 
 		if (!beliefId) return fail(400, { message: 'Missing belief id' });
 		if (!value || value < 1 || value > 10) return fail(400, { message: 'Value must be 1-10' });
+		const belief = getBeliefForUser(beliefId, userId);
+		if (!belief) return fail(404, { message: 'Belief not found' });
 
 		db.insert(beliefIntensities).values({ beliefId, date, value, notes }).run();
 
 		return { success: true };
 	},
 
-	linkHabit: async ({ request }) => {
+	linkHabit: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const beliefId = Number(formData.get('beliefId'));
 		const habitId = Number(formData.get('habitId'));
 
 		if (!beliefId || !habitId) return fail(400, { message: 'Missing fields' });
+		const belief = getBeliefForUser(beliefId, userId);
+		if (!belief) return fail(404, { message: 'Belief not found' });
+		const habit = db
+			.select({ id: habits.id })
+			.from(habits)
+			.where(and(eq(habits.id, habitId), eq(habits.userId, userId)))
+			.get();
+		if (!habit) return fail(404, { message: 'Habit not found' });
 
 		const existing = db
 			.select({ id: beliefHabits.id })
@@ -403,18 +513,27 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	unlinkHabit: async ({ request }) => {
+	unlinkHabit: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 
 		if (!id) return fail(400, { message: 'Missing id' });
+		const link = db
+			.select({ id: beliefHabits.id })
+			.from(beliefHabits)
+			.innerJoin(beliefs, eq(beliefHabits.beliefId, beliefs.id))
+			.where(and(eq(beliefHabits.id, id), eq(beliefs.userId, userId)))
+			.get();
+		if (!link) return fail(404, { message: 'Habit link not found' });
 
 		db.delete(beliefHabits).where(eq(beliefHabits.id, id)).run();
 
 		return { success: true };
 	},
 
-	updateBelief: async ({ request }) => {
+	updateBelief: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 		const content = formData.get('content')?.toString()?.trim();
@@ -422,26 +541,31 @@ export const actions: Actions = {
 		const valence = valenceRaw === 'positive' || valenceRaw === 'negative' ? valenceRaw : null;
 
 		if (!id || !content) return fail(400, { message: 'Missing fields' });
+		const belief = getBeliefForUser(id, userId);
+		if (!belief) return fail(404, { message: 'Belief not found' });
 
 		db.update(beliefs)
 			.set({ content, valence, updatedAt: toLocalISOString(new Date()) })
-			.where(eq(beliefs.id, id))
+			.where(and(eq(beliefs.id, id), eq(beliefs.userId, userId)))
 			.run();
 
 		return { success: true };
 	},
 
-	addBeliefTag: async ({ request }) => {
+	addBeliefTag: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const beliefId = Number(formData.get('beliefId'));
 		const rawTags = formData.get('tags')?.toString()?.trim() ?? '';
 
 		if (!beliefId) return fail(400, { message: 'Missing belief id' });
+		const belief = getBeliefForUser(beliefId, userId);
+		if (!belief) return fail(404, { message: 'Belief not found' });
 
 		const tagNames = parseTags(rawTags);
 		if (tagNames.length === 0) return fail(400, { message: 'No tags provided' });
 
-		const tagIds = ensureTagIds(tagNames);
+		const tagIds = ensureTagIds(tagNames, userId);
 		for (const tagId of tagIds) {
 			const existing = db
 				.select({ id: beliefTags.id })
@@ -456,11 +580,19 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	removeBeliefTag: async ({ request }) => {
+	removeBeliefTag: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 
 		if (!id) return fail(400, { message: 'Missing id' });
+		const link = db
+			.select({ id: beliefTags.id })
+			.from(beliefTags)
+			.innerJoin(beliefs, eq(beliefTags.beliefId, beliefs.id))
+			.where(and(eq(beliefTags.id, id), eq(beliefs.userId, userId)))
+			.get();
+		if (!link) return fail(404, { message: 'Belief tag not found' });
 
 		db.delete(beliefTags).where(eq(beliefTags.id, id)).run();
 

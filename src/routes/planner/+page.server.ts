@@ -30,7 +30,9 @@ function formatDate(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async (event) => {
+	const { url } = event;
+	const userId = event.locals.user!.id;
 	const weekParam = url.searchParams.get('week');
 	const monday = parseWeekParam(weekParam);
 	const sunday = addDays(monday, 6);
@@ -55,7 +57,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	const allActivities = db
 		.select()
 		.from(activities)
-		.where(eq(activities.active, true))
+		.where(and(eq(activities.active, true), eq(activities.userId, userId)))
 		.orderBy(activities.name)
 		.all();
 
@@ -76,6 +78,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		.from(weeklySlots)
 		.leftJoin(categories, eq(weeklySlots.categoryId, categories.id))
 		.leftJoin(activities, eq(weeklySlots.activityId, activities.id))
+		.where(eq(weeklySlots.userId, userId))
 		.orderBy(weeklySlots.weekday, weeklySlots.startTime)
 		.all();
 
@@ -89,7 +92,8 @@ export const load: PageServerLoad = async ({ url }) => {
 };
 
 export const actions: Actions = {
-	create: async ({ request }) => {
+	create: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const weekday = Number(formData.get('weekday'));
 		const startTime = formData.get('startTime')?.toString()?.trim() ?? '';
@@ -106,13 +110,23 @@ export const actions: Actions = {
 		if (mode === 'activity' && !activityId) return fail(400, { message: 'Activity required' });
 
 		db.insert(weeklySlots)
-			.values({ weekday, startTime, durationMinutes, mode, categoryId, activityId, label })
+			.values({
+				userId,
+				weekday,
+				startTime,
+				durationMinutes,
+				mode,
+				categoryId,
+				activityId,
+				label
+			})
 			.run();
 
 		return { success: true };
 	},
 
-	update: async ({ request }) => {
+	update: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 		const weekday = Number(formData.get('weekday'));
@@ -124,6 +138,12 @@ export const actions: Actions = {
 		const label = formData.get('label')?.toString()?.trim() ?? '';
 
 		if (!id) return fail(400, { message: 'Missing id' });
+		const existing = db
+			.select({ id: weeklySlots.id })
+			.from(weeklySlots)
+			.where(and(eq(weeklySlots.id, id), eq(weeklySlots.userId, userId)))
+			.get();
+		if (!existing) return fail(404, { message: 'Slot not found' });
 
 		db.update(weeklySlots)
 			.set({
@@ -136,40 +156,59 @@ export const actions: Actions = {
 				label,
 				updatedAt: toLocalISOString(new Date())
 			})
-			.where(eq(weeklySlots.id, id))
+			.where(and(eq(weeklySlots.id, id), eq(weeklySlots.userId, userId)))
 			.run();
 
 		return { success: true };
 	},
 
-	toggleActive: async ({ request }) => {
+	toggleActive: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 		const active = formData.get('active') === 'true';
 
 		if (!id) return fail(400, { message: 'Missing id' });
+		const existing = db
+			.select({ id: weeklySlots.id })
+			.from(weeklySlots)
+			.where(and(eq(weeklySlots.id, id), eq(weeklySlots.userId, userId)))
+			.get();
+		if (!existing) return fail(404, { message: 'Slot not found' });
 
 		db.update(weeklySlots)
 			.set({ active: !active, updatedAt: toLocalISOString(new Date()) })
-			.where(eq(weeklySlots.id, id))
+			.where(and(eq(weeklySlots.id, id), eq(weeklySlots.userId, userId)))
 			.run();
 
 		return { success: true };
 	},
 
-	delete: async ({ request }) => {
+	delete: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 
 		if (!id) return fail(400, { message: 'Missing id' });
+		const existing = db
+			.select({ id: weeklySlots.id })
+			.from(weeklySlots)
+			.where(and(eq(weeklySlots.id, id), eq(weeklySlots.userId, userId)))
+			.get();
+		if (!existing) return fail(404, { message: 'Slot not found' });
 
-		db.delete(taskInstances).where(eq(taskInstances.slotId, id)).run();
-		db.delete(weeklySlots).where(eq(weeklySlots.id, id)).run();
+		db.delete(taskInstances)
+			.where(and(eq(taskInstances.slotId, id), eq(taskInstances.userId, userId)))
+			.run();
+		db.delete(weeklySlots)
+			.where(and(eq(weeklySlots.id, id), eq(weeklySlots.userId, userId)))
+			.run();
 
 		return { success: true };
 	},
 
-	bulkDelete: async ({ request }) => {
+	bulkDelete: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const idsStr = formData.get('ids')?.toString() ?? '';
 		const ids = idsStr
@@ -178,16 +217,26 @@ export const actions: Actions = {
 			.filter((n) => n > 0);
 
 		if (ids.length === 0) return fail(400, { message: 'No slots selected' });
+		const userSlots = db
+			.select({ id: weeklySlots.id })
+			.from(weeklySlots)
+			.where(and(inArray(weeklySlots.id, ids), eq(weeklySlots.userId, userId)))
+			.all();
+		const userSlotIds = userSlots.map((slot) => slot.id);
+		if (userSlotIds.length === 0) return fail(404, { message: 'Slots not found' });
 
-		for (const id of ids) {
-			db.delete(taskInstances).where(eq(taskInstances.slotId, id)).run();
-		}
-		db.delete(weeklySlots).where(inArray(weeklySlots.id, ids)).run();
+		db.delete(taskInstances)
+			.where(and(inArray(taskInstances.slotId, userSlotIds), eq(taskInstances.userId, userId)))
+			.run();
+		db.delete(weeklySlots)
+			.where(and(inArray(weeklySlots.id, userSlotIds), eq(weeklySlots.userId, userId)))
+			.run();
 
 		return { success: true };
 	},
 
-	copyToWeekdays: async ({ request }) => {
+	copyToWeekdays: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const idsStr = formData.get('ids')?.toString() ?? '';
 		const targetDaysStr = formData.get('targetDays')?.toString() ?? '';
@@ -203,13 +252,19 @@ export const actions: Actions = {
 		if (ids.length === 0) return fail(400, { message: 'No slots selected' });
 		if (targetDays.length === 0) return fail(400, { message: 'No target days selected' });
 
-		const sourceSlots = db.select().from(weeklySlots).where(inArray(weeklySlots.id, ids)).all();
+		const sourceSlots = db
+			.select()
+			.from(weeklySlots)
+			.where(and(inArray(weeklySlots.id, ids), eq(weeklySlots.userId, userId)))
+			.all();
+		if (sourceSlots.length === 0) return fail(404, { message: 'Slots not found' });
 
 		for (const slot of sourceSlots) {
 			for (const day of targetDays) {
 				if (day === slot.weekday) continue;
 				db.insert(weeklySlots)
 					.values({
+						userId,
 						weekday: day,
 						startTime: slot.startTime,
 						durationMinutes: slot.durationMinutes,

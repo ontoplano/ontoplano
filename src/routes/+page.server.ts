@@ -17,8 +17,9 @@ function todayRange(): { start: string; end: string } {
 	};
 }
 
-export const load: PageServerLoad = async () => {
-	generateCurrentWeek();
+export const load: PageServerLoad = async (event) => {
+	const userId = event.locals.user!.id;
+	generateCurrentWeek(userId);
 
 	const { start, end } = todayRange();
 
@@ -54,7 +55,13 @@ export const load: PageServerLoad = async () => {
 		.leftJoin(slotActivities, eq(weeklySlots.activityId, slotActivities.id))
 		.leftJoin(activityCategories, eq(slotActivities.categoryId, activityCategories.id))
 		.leftJoin(activities, eq(taskInstances.resolvedActivityId, activities.id))
-		.where(and(gte(taskInstances.scheduledAt, start), lt(taskInstances.scheduledAt, end)))
+		.where(
+			and(
+				eq(taskInstances.userId, userId),
+				gte(taskInstances.scheduledAt, start),
+				lt(taskInstances.scheduledAt, end)
+			)
+		)
 		.orderBy(taskInstances.scheduledAt)
 		.all();
 
@@ -65,7 +72,7 @@ export const load: PageServerLoad = async () => {
 			categoryId: activities.categoryId
 		})
 		.from(activities)
-		.where(eq(activities.active, true))
+		.where(and(eq(activities.active, true), eq(activities.userId, userId)))
 		.orderBy(activities.name)
 		.all();
 
@@ -73,7 +80,8 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions: Actions = {
-	updateStatus: async ({ request }) => {
+	updateStatus: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 		const status = formData.get('status')?.toString();
@@ -100,7 +108,7 @@ export const actions: Actions = {
 				.select({ slotMode: weeklySlots.mode })
 				.from(taskInstances)
 				.innerJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
-				.where(eq(taskInstances.id, id))
+				.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
 				.get();
 
 			if (task?.slotMode === 'category') {
@@ -108,12 +116,16 @@ export const actions: Actions = {
 			}
 		}
 
-		db.update(taskInstances).set(updateData).where(eq(taskInstances.id, id)).run();
+		db.update(taskInstances)
+			.set(updateData)
+			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
+			.run();
 
 		return { success: true };
 	},
 
-	resolveActivity: async ({ request }) => {
+	resolveActivity: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 		const activityId = formData.get('activityId') ? Number(formData.get('activityId')) : null;
@@ -122,13 +134,14 @@ export const actions: Actions = {
 
 		db.update(taskInstances)
 			.set({ resolvedActivityId: activityId })
-			.where(eq(taskInstances.id, id))
+			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
 			.run();
 
 		return { success: true };
 	},
 
-	updateScheduledAt: async ({ request }) => {
+	updateScheduledAt: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 		const time = formData.get('time')?.toString()?.trim();
@@ -136,7 +149,11 @@ export const actions: Actions = {
 		if (!id) return fail(400, { message: 'Missing task id' });
 		if (!time || !/^\d{2}:\d{2}$/.test(time)) return fail(400, { message: 'Invalid time format' });
 
-		const task = db.select().from(taskInstances).where(eq(taskInstances.id, id)).get();
+		const task = db
+			.select()
+			.from(taskInstances)
+			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
+			.get();
 		if (!task) return fail(404, { message: 'Task not found' });
 
 		const datePart = task.scheduledAt.slice(0, 10);
@@ -144,13 +161,14 @@ export const actions: Actions = {
 
 		db.update(taskInstances)
 			.set({ scheduledAt: newScheduledAt })
-			.where(eq(taskInstances.id, id))
+			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
 			.run();
 
 		return { success: true };
 	},
 
-	updateDuration: async ({ request }) => {
+	updateDuration: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 		const minutes = formData.get('minutes')?.toString()?.trim();
@@ -161,18 +179,24 @@ export const actions: Actions = {
 		}
 
 		const value = Number(minutes) === 0 ? null : Number(minutes);
-		db.update(taskInstances).set({ durationOverride: value }).where(eq(taskInstances.id, id)).run();
+		db.update(taskInstances)
+			.set({ durationOverride: value })
+			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
+			.run();
 
 		return { success: true };
 	},
 
-	deleteTask: async ({ request }) => {
+	deleteTask: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 
 		if (!id) return fail(400, { message: 'Missing task id' });
 
-		db.delete(taskInstances).where(eq(taskInstances.id, id)).run();
+		db.delete(taskInstances)
+			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
+			.run();
 
 		return { success: true };
 	}

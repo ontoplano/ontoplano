@@ -64,14 +64,18 @@ function formatDatetime(date: Date, time: string): string {
  * Idempotently generate task_instances for a week from active weekly_slots.
  * Skips slots that already have an instance in the target week.
  */
-export function generateWeekInstances(weekStart: Date): number {
+export function generateWeekInstances(weekStart: Date, userId: string): number {
 	const monday = getMonday(weekStart);
 	const nextMonday = addDays(monday, 7);
 
 	const mondayStr = toLocalISOString(monday);
 	const nextMondayStr = toLocalISOString(nextMonday);
 
-	const slots = db.select().from(weeklySlots).where(eq(weeklySlots.active, true)).all();
+	const slots = db
+		.select()
+		.from(weeklySlots)
+		.where(and(eq(weeklySlots.active, true), eq(weeklySlots.userId, userId)))
+		.all();
 
 	let created = 0;
 
@@ -85,6 +89,7 @@ export function generateWeekInstances(weekStart: Date): number {
 			.where(
 				and(
 					eq(taskInstances.slotId, slot.id),
+					eq(taskInstances.userId, userId),
 					gte(taskInstances.scheduledAt, mondayStr),
 					lt(taskInstances.scheduledAt, nextMondayStr)
 				)
@@ -94,6 +99,7 @@ export function generateWeekInstances(weekStart: Date): number {
 		if (existing.length === 0) {
 			db.insert(taskInstances)
 				.values({
+					userId,
 					slotId: slot.id,
 					scheduledAt,
 					status: 'pending',
@@ -107,11 +113,11 @@ export function generateWeekInstances(weekStart: Date): number {
 	return created;
 }
 
-export function generateCurrentWeek(): number {
-	return generateWeekInstances(new Date());
+export function generateCurrentWeek(userId: string): number {
+	return generateWeekInstances(new Date(), userId);
 }
 
-export function generateNextWeek(): number {
+export function generateNextWeek(userId: string): number {
 	const nextMonday = addDays(getMonday(new Date()), 7);
-	return generateWeekInstances(nextMonday);
+	return generateWeekInstances(nextMonday, userId);
 }

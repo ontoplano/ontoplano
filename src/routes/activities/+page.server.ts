@@ -2,10 +2,11 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { activities, categories, weeklySlots, taskInstances } from '$lib/server/db/schema';
-import { eq, count } from 'drizzle-orm';
+import { eq, count, and } from 'drizzle-orm';
 import { toLocalISOString } from '$lib/server/week-generator';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async (event) => {
+	const userId = event.locals.user!.id;
 	const allCategories = db.select().from(categories).all();
 	const allActivities = db
 		.select({
@@ -20,6 +21,7 @@ export const load: PageServerLoad = async () => {
 		})
 		.from(activities)
 		.leftJoin(categories, eq(activities.categoryId, categories.id))
+		.where(eq(activities.userId, userId))
 		.orderBy(activities.name)
 		.all();
 
@@ -27,12 +29,12 @@ export const load: PageServerLoad = async () => {
 		const slotRefs = db
 			.select({ cnt: count() })
 			.from(weeklySlots)
-			.where(eq(weeklySlots.activityId, a.id))
+			.where(and(eq(weeklySlots.activityId, a.id), eq(weeklySlots.userId, userId)))
 			.get();
 		const instanceRefs = db
 			.select({ cnt: count() })
 			.from(taskInstances)
-			.where(eq(taskInstances.resolvedActivityId, a.id))
+			.where(and(eq(taskInstances.resolvedActivityId, a.id), eq(taskInstances.userId, userId)))
 			.get();
 		return {
 			...a,
@@ -44,7 +46,8 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions: Actions = {
-	create: async ({ request }) => {
+	create: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const name = formData.get('name')?.toString()?.trim();
 		const categoryId = Number(formData.get('categoryId'));
@@ -53,12 +56,13 @@ export const actions: Actions = {
 		if (!name) return fail(400, { message: 'Name is required' });
 		if (!categoryId) return fail(400, { message: 'Category is required' });
 
-		db.insert(activities).values({ name, categoryId, description }).run();
+		db.insert(activities).values({ userId, name, categoryId, description }).run();
 
 		return { success: true };
 	},
 
-	update: async ({ request }) => {
+	update: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 		const name = formData.get('name')?.toString()?.trim();
@@ -66,6 +70,12 @@ export const actions: Actions = {
 		const description = formData.get('description')?.toString()?.trim() ?? '';
 
 		if (!id || !name) return fail(400, { message: 'Missing fields' });
+		const existing = db
+			.select({ id: activities.id })
+			.from(activities)
+			.where(and(eq(activities.id, id), eq(activities.userId, userId)))
+			.get();
+		if (!existing) return fail(404, { message: 'Activity not found' });
 
 		db.update(activities)
 			.set({
@@ -74,42 +84,56 @@ export const actions: Actions = {
 				description,
 				updatedAt: toLocalISOString(new Date())
 			})
-			.where(eq(activities.id, id))
+			.where(and(eq(activities.id, id), eq(activities.userId, userId)))
 			.run();
 
 		return { success: true };
 	},
 
-	toggleActive: async ({ request }) => {
+	toggleActive: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 		const active = formData.get('active') === 'true';
 
 		if (!id) return fail(400, { message: 'Missing id' });
+		const existing = db
+			.select({ id: activities.id })
+			.from(activities)
+			.where(and(eq(activities.id, id), eq(activities.userId, userId)))
+			.get();
+		if (!existing) return fail(404, { message: 'Activity not found' });
 
 		db.update(activities)
 			.set({ active: !active, updatedAt: toLocalISOString(new Date()) })
-			.where(eq(activities.id, id))
+			.where(and(eq(activities.id, id), eq(activities.userId, userId)))
 			.run();
 
 		return { success: true };
 	},
 
-	delete: async ({ request }) => {
+	delete: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 
 		if (!id) return fail(400, { message: 'Missing id' });
+		const existing = db
+			.select({ id: activities.id })
+			.from(activities)
+			.where(and(eq(activities.id, id), eq(activities.userId, userId)))
+			.get();
+		if (!existing) return fail(404, { message: 'Activity not found' });
 
 		const slotRefs = db
 			.select({ cnt: count() })
 			.from(weeklySlots)
-			.where(eq(weeklySlots.activityId, id))
+			.where(and(eq(weeklySlots.activityId, id), eq(weeklySlots.userId, userId)))
 			.get();
 		const instanceRefs = db
 			.select({ cnt: count() })
 			.from(taskInstances)
-			.where(eq(taskInstances.resolvedActivityId, id))
+			.where(and(eq(taskInstances.resolvedActivityId, id), eq(taskInstances.userId, userId)))
 			.get();
 
 		if ((slotRefs?.cnt ?? 0) > 0 || (instanceRefs?.cnt ?? 0) > 0) {
@@ -118,7 +142,9 @@ export const actions: Actions = {
 			});
 		}
 
-		db.delete(activities).where(eq(activities.id, id)).run();
+		db.delete(activities)
+			.where(and(eq(activities.id, id), eq(activities.userId, userId)))
+			.run();
 
 		return { success: true };
 	}
