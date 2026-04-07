@@ -1,5 +1,6 @@
-import { integer, sqliteTable, text, index, check } from 'drizzle-orm/sqlite-core';
+import { integer, sqliteTable, text, index, uniqueIndex, check } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
+import { user } from './auth.schema.js';
 
 export const categories = sqliteTable('categories', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
@@ -12,6 +13,9 @@ export const activities = sqliteTable(
 	'activities',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
 		name: text('name').notNull(),
 		categoryId: integer('category_id')
 			.notNull()
@@ -27,6 +31,7 @@ export const activities = sqliteTable(
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
 	(table) => [
+		index('activities_user_idx').on(table.userId),
 		index('activities_category_idx').on(table.categoryId),
 		index('activities_active_idx').on(table.active)
 	]
@@ -36,6 +41,9 @@ export const weeklySlots = sqliteTable(
 	'weekly_slots',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
 		weekday: integer('weekday').notNull(), // 0=Mon … 6=Sun
 		startTime: text('start_time').notNull(), // HH:MM
 		durationMinutes: integer('duration_minutes').notNull().default(60),
@@ -52,6 +60,7 @@ export const weeklySlots = sqliteTable(
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
 	(table) => [
+		index('slots_user_idx').on(table.userId),
 		index('slots_weekday_idx').on(table.weekday),
 		index('slots_weekday_time_idx').on(table.weekday, table.startTime),
 		check('slots_weekday_range', sql`${table.weekday} >= 0 AND ${table.weekday} <= 6`),
@@ -70,6 +79,9 @@ export const taskInstances = sqliteTable(
 	'task_instances',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
 		slotId: integer('slot_id')
 			.notNull()
 			.references(() => weeklySlots.id),
@@ -88,6 +100,7 @@ export const taskInstances = sqliteTable(
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
 	(table) => [
+		index('instances_user_idx').on(table.userId),
 		index('instances_slot_idx').on(table.slotId),
 		index('instances_scheduled_idx').on(table.scheduledAt),
 		index('instances_status_idx').on(table.status),
@@ -101,6 +114,9 @@ export const diaryEntries = sqliteTable(
 	'diary_entries',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
 		content: text('content').notNull(),
 		createdAt: text('created_at')
 			.notNull()
@@ -109,13 +125,26 @@ export const diaryEntries = sqliteTable(
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
-	(table) => [index('diary_entries_created_idx').on(table.createdAt)]
+	(table) => [
+		index('diary_entries_user_idx').on(table.userId),
+		index('diary_entries_created_idx').on(table.createdAt)
+	]
 );
 
-export const tags = sqliteTable('tags', {
-	id: integer('id').primaryKey({ autoIncrement: true }),
-	name: text('name').notNull().unique()
-});
+export const tags = sqliteTable(
+	'tags',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull()
+	},
+	(table) => [
+		index('tags_user_idx').on(table.userId),
+		uniqueIndex('tags_user_name_unique').on(table.userId, table.name)
+	]
+);
 
 export const diaryEntryTags = sqliteTable(
 	'diary_entry_tags',
@@ -136,18 +165,25 @@ export const diaryEntryTags = sqliteTable(
 
 // --- Habits ---
 
-export const habits = sqliteTable('habits', {
-	id: integer('id').primaryKey({ autoIncrement: true }),
-	name: text('name').notNull(),
-	description: text('description').default(''),
-	type: text('type', { enum: ['bad', 'good'] })
-		.notNull()
-		.default('bad'),
-	scheduledDays: text('scheduled_days').default(''), // comma-separated weekday numbers (0=Mon..6=Sun), empty = every day
-	createdAt: text('created_at')
-		.notNull()
-		.default(sql`(CURRENT_TIMESTAMP)`)
-});
+export const habits = sqliteTable(
+	'habits',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull(),
+		description: text('description').default(''),
+		type: text('type', { enum: ['bad', 'good'] })
+			.notNull()
+			.default('bad'),
+		scheduledDays: text('scheduled_days').default(''), // comma-separated weekday numbers (0=Mon..6=Sun), empty = every day
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [index('habits_user_idx').on(table.userId)]
+);
 
 export const habitOccurrences = sqliteTable(
 	'habit_occurrences',
@@ -174,6 +210,9 @@ export const beliefs = sqliteTable(
 	'beliefs',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
 		content: text('content').notNull(),
 		valence: text('valence', { enum: ['positive', 'negative'] }),
 		createdAt: text('created_at')
@@ -183,7 +222,10 @@ export const beliefs = sqliteTable(
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
-	(table) => [index('beliefs_created_idx').on(table.createdAt)]
+	(table) => [
+		index('beliefs_user_idx').on(table.userId),
+		index('beliefs_created_idx').on(table.createdAt)
+	]
 );
 
 export const beliefRelations = sqliteTable(
@@ -211,12 +253,18 @@ export const evidence = sqliteTable(
 	'evidence',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
 		content: text('content').notNull(),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
-	(table) => [index('evidence_created_idx').on(table.createdAt)]
+	(table) => [
+		index('evidence_user_idx').on(table.userId),
+		index('evidence_created_idx').on(table.createdAt)
+	]
 );
 
 export const beliefEvidence = sqliteTable(
