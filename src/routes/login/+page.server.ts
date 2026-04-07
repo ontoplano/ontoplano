@@ -24,6 +24,7 @@ export const actions: Actions = {
 			if (error instanceof APIError) {
 				return fail(400, { message: error.message || 'Sign in failed' });
 			}
+			console.error('Sign-in non-API error:', error);
 			return fail(500, { message: 'Unexpected error' });
 		}
 

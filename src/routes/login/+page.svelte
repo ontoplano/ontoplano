@@ -43,7 +43,7 @@
 					name="password"
 					type="password"
 					required
-					minlength="8"
+					minlength="3"
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>

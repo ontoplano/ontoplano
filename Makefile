@@ -62,7 +62,7 @@ docker-down:
 	docker compose down
 
 logs:
-	docker compose logs -f semotina
+	journalctl --user -u semotina -f
 
 # ─── Systemd ─────────────────────────────────────────────────────────────────
 
