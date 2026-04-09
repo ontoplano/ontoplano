@@ -11,6 +11,7 @@
 	let activeFilters: Set<number> = $state(new Set());
 	let showCategoryForm = $state(false);
 	let editingCategoryId: number | null = $state(null);
+	let newCatColor = $state('#6b7280');
 
 	function catColor(catId: number | null): string {
 		if (!catId) return '#d1d5db';
@@ -71,7 +72,7 @@
 				showForm = true;
 				editingId = null;
 				tick().then(() => {
-					const nameInput = document.querySelector<HTMLInputElement>('input[name="name"]');
+					const nameInput = document.querySelector<HTMLInputElement>('#activity-name');
 					nameInput?.focus();
 				});
 				break;
@@ -79,6 +80,8 @@
 				e.preventDefault();
 				showForm = false;
 				editingId = null;
+				showCategoryForm = false;
+				editingCategoryId = null;
 				break;
 		}
 	}
@@ -87,14 +90,26 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<div class="flex items-center justify-end">
+	<div class="flex items-center justify-end gap-2">
+		<button
+			onclick={() => {
+				showCategoryForm = !showCategoryForm;
+				editingCategoryId = null;
+				if (showCategoryForm) {
+					newCatColor = '#6b7280';
+				}
+			}}
+			class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+		>
+			{showCategoryForm ? 'Hide Categories' : 'Manage Categories'}
+		</button>
 		<button
 			onclick={() => {
 				showForm = !showForm;
 				editingId = null;
 				if (!showForm) return;
 				tick().then(() => {
-					const nameInput = document.querySelector<HTMLInputElement>('input[name="name"]');
+					const nameInput = document.querySelector<HTMLInputElement>('#activity-name');
 					nameInput?.focus();
 				});
 			}}
@@ -103,6 +118,111 @@
 			{showForm ? 'Cancel' : 'New Activity'}
 		</button>
 	</div>
+
+	{#if showCategoryForm}
+		<div class="space-y-3 border border-gray-200 bg-white p-4 shadow-sm">
+			<div class="text-sm font-semibold text-gray-900">Categories</div>
+			<div class="divide-y divide-gray-100">
+				{#each data.categories as cat (cat.id)}
+					<div class="flex items-center gap-3 py-2">
+						{#if editingCategoryId === cat.id}
+							<form
+								method="post"
+								action="?/updateCategory"
+								use:enhance={() => {
+									return async ({ update }) => {
+										await update();
+										editingCategoryId = null;
+									};
+								}}
+								class="flex flex-1 items-center gap-2"
+							>
+								<input type="hidden" name="id" value={cat.id} />
+								<input
+									name="color"
+									type="color"
+									value={cat.color}
+									class="h-8 w-10 cursor-pointer border border-gray-300"
+								/>
+								<input
+									name="name"
+									type="text"
+									value={cat.name}
+									required
+									class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								/>
+								<button
+									type="submit"
+									class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm hover:bg-gray-50"
+								>
+									Save
+								</button>
+								<button
+									type="button"
+									onclick={() => (editingCategoryId = null)}
+									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-400 hover:text-gray-600"
+								>
+									Cancel
+								</button>
+							</form>
+						{:else}
+							<span
+								class="inline-block h-4 w-4 shrink-0 border border-gray-200"
+								style="background-color: {cat.color}"
+							></span>
+							<span class="flex-1 text-sm text-gray-900">{cat.name}</span>
+							<button
+								onclick={() => (editingCategoryId = cat.id)}
+								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
+							>
+								Edit
+							</button>
+							<form method="post" action="?/deleteCategory" use:enhance>
+								<input type="hidden" name="id" value={cat.id} />
+								<button
+									type="submit"
+									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+								>
+									Delete
+								</button>
+							</form>
+						{/if}
+					</div>
+				{/each}
+			</div>
+			<form
+				method="post"
+				action="?/createCategory"
+				use:enhance={() => {
+					return async ({ update }) => {
+						await update();
+						newCatColor = '#6b7280';
+					};
+				}}
+				class="flex items-center gap-2 border-t border-gray-100 pt-3"
+			>
+				<input
+					name="color"
+					type="color"
+					bind:value={newCatColor}
+					class="h-8 w-10 cursor-pointer border border-gray-300"
+				/>
+				<input
+					name="name"
+					type="text"
+					placeholder="New category name"
+					required
+					class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+				/>
+				<button
+					type="submit"
+					class="bg-gray-900 px-3 py-1 text-xs font-medium text-white hover:bg-gray-800"
+				>
+					Add
+				</button>
+			</form>
+		</div>
+	{/if}
 
 	<div class="flex gap-2">
 		{#each data.categories as cat}
@@ -167,6 +287,7 @@
 				<label class="flex-1">
 					<span class="text-sm font-medium text-gray-700">Name</span>
 					<input
+						id="activity-name"
 						name="name"
 						type="text"
 						required

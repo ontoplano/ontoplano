@@ -56,7 +56,7 @@ export const load: PageServerLoad = async (event) => {
 	const today = formatDate(now);
 	const isPastWeek = formatDate(monday) < formatDate(currentMonday);
 
-	const allCategories = db.select().from(categories).all();
+	const allCategories = db.select().from(categories).where(eq(categories.userId, userId)).all();
 	const allActivities = db
 		.select()
 		.from(activities)

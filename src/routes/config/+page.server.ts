@@ -14,28 +14,18 @@ export const actions: Actions = {
 		const port = Number(formData.get('port') || 1493);
 		const firstDay = Number(formData.get('firstDay') ?? 0);
 		const generateDay = Number(formData.get('generateDay') ?? 6);
-		const dutyColor = formData.get('dutyColor')?.toString()?.trim() ?? '#3b82f6';
-		const skillColor = formData.get('skillColor')?.toString()?.trim() ?? '#22c55e';
-		const moneyColor = formData.get('moneyColor')?.toString()?.trim() ?? '#f59e0b';
 
 		if (!host) return fail(400, { message: 'Host is required' });
 		if (port < 1 || port > 65535) return fail(400, { message: 'Port must be between 1 and 65535' });
 		if (firstDay < 0 || firstDay > 6) return fail(400, { message: 'Invalid first day' });
 		if (generateDay < 0 || generateDay > 6) return fail(400, { message: 'Invalid generate day' });
-		if (!/^#[0-9a-fA-F]{6}$/.test(dutyColor))
-			return fail(400, { message: 'Invalid duty color format' });
-		if (!/^#[0-9a-fA-F]{6}$/.test(skillColor))
-			return fail(400, { message: 'Invalid skill color format' });
-		if (!/^#[0-9a-fA-F]{6}$/.test(moneyColor))
-			return fail(400, { message: 'Invalid money color format' });
 
 		const current = loadConfig();
 
 		saveConfig({
 			server: { host, port },
 			database: { path: current.database.path || DB_PATH },
-			week: { firstDay, generateDay },
-			colors: { duty: dutyColor, skill: skillColor, money: moneyColor }
+			week: { firstDay, generateDay }
 		});
 
 		return { success: true };

@@ -82,48 +82,6 @@
 			</div>
 		</fieldset>
 
-		<fieldset class="space-y-3">
-			<legend class="text-sm font-semibold text-gray-900">Colors</legend>
-			<div class="flex gap-4">
-				<label class="flex-1">
-					<span class="text-sm font-medium text-gray-700">Duty</span>
-					<div class="mt-1 flex items-center gap-2">
-						<input
-							name="dutyColor"
-							type="color"
-							value={data.config.colors.duty}
-							class="h-9 w-12 cursor-pointer border border-gray-300"
-						/>
-						<span class="text-xs text-gray-400">{data.config.colors.duty}</span>
-					</div>
-				</label>
-				<label class="flex-1">
-					<span class="text-sm font-medium text-gray-700">Skill</span>
-					<div class="mt-1 flex items-center gap-2">
-						<input
-							name="skillColor"
-							type="color"
-							value={data.config.colors.skill}
-							class="h-9 w-12 cursor-pointer border border-gray-300"
-						/>
-						<span class="text-xs text-gray-400">{data.config.colors.skill}</span>
-					</div>
-				</label>
-				<label class="flex-1">
-					<span class="text-sm font-medium text-gray-700">Money</span>
-					<div class="mt-1 flex items-center gap-2">
-						<input
-							name="moneyColor"
-							type="color"
-							value={data.config.colors.money}
-							class="h-9 w-12 cursor-pointer border border-gray-300"
-						/>
-						<span class="text-xs text-gray-400">{data.config.colors.money}</span>
-					</div>
-				</label>
-			</div>
-		</fieldset>
-
 		<button
 			type="submit"
 			class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"

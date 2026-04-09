@@ -84,22 +84,6 @@ async function seed() {
 		return;
 	}
 
-	// Ensure categories exist
-	const cats = db.select().from(categories).all();
-	if (cats.length === 0) {
-		db.insert(categories)
-			.values([{ name: 'duty' }, { name: 'skill' }, { name: 'money' }])
-			.run();
-		console.log('  ✓ Seeded categories');
-	}
-	const catMap = Object.fromEntries(
-		db
-			.select()
-			.from(categories)
-			.all()
-			.map((c) => [c.name, c.id])
-	);
-
 	// Create dev user
 	const userId = generateId();
 	const now = new Date();
@@ -130,6 +114,27 @@ async function seed() {
 		.run();
 
 	console.log(`  ✓ Created dev user: ${DEV_EMAIL} (password: ${DEV_PASSWORD})`);
+
+	// Ensure categories exist for this user
+	const cats = db.select().from(categories).where(eq(categories.userId, userId)).all();
+	if (cats.length === 0) {
+		db.insert(categories)
+			.values([
+				{ userId, name: 'duty', color: '#3b82f6', colorLight: '#dbeafe' },
+				{ userId, name: 'skill', color: '#22c55e', colorLight: '#dcfce7' },
+				{ userId, name: 'money', color: '#f59e0b', colorLight: '#fef3c7' }
+			])
+			.run();
+		console.log('  ✓ Seeded categories for dev user');
+	}
+	const catMap = Object.fromEntries(
+		db
+			.select()
+			.from(categories)
+			.where(eq(categories.userId, userId))
+			.all()
+			.map((c) => [c.name, c.id])
+	);
 
 	// ── Activities ──────────────────────────────────────────────────────────
 	const activityData = [
