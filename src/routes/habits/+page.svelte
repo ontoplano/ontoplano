@@ -51,6 +51,15 @@
 		return counts;
 	}
 
+	async function toggleOccurrence(habitId: number, date: string) {
+		const body = new FormData();
+		body.set('habitId', String(habitId));
+		body.set('date', date);
+		await fetch('?/toggleOccurrence', { method: 'POST', body });
+		const { invalidateAll } = await import('$app/navigation');
+		await invalidateAll();
+	}
+
 	function buildHeatmapWeeks(): string[][] {
 		const weeks: string[][] = [];
 		const today = new Date();
@@ -441,14 +450,16 @@
 										<div class="flex flex-col gap-px">
 											{#each week as day, di (di)}
 												{#if day}
-													<div
-														class="h-2.5 w-2.5 {isBad
+													<button
+														type="button"
+														onclick={() => toggleOccurrence(habit.id, day)}
+														class="h-2.5 w-2.5 cursor-pointer {isBad
 															? badHeatmapColor(counts[day] || 0)
 															: goodHeatmapColor(counts[day] || 0)}"
 														title="{day}: {counts[day] || 0} occurrence{(counts[day] || 0) === 1
 															? ''
-															: 's'}"
-													></div>
+															: 's'} — click to toggle"
+													></button>
 												{:else}
 													<div class="h-2.5 w-2.5"></div>
 												{/if}

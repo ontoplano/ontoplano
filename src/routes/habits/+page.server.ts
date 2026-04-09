@@ -196,5 +196,35 @@ export const actions: Actions = {
 		db.delete(habitOccurrences).where(eq(habitOccurrences.id, id)).run();
 
 		return { success: true };
+	},
+
+	toggleOccurrence: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const habitId = Number(formData.get('habitId'));
+		const date = formData.get('date')?.toString()?.trim();
+
+		if (!habitId || !date) return fail(400, { message: 'Missing habitId or date' });
+
+		const habit = db
+			.select({ id: habits.id })
+			.from(habits)
+			.where(and(eq(habits.id, habitId), eq(habits.userId, userId)))
+			.get();
+		if (!habit) return fail(404, { message: 'Habit not found' });
+
+		const existing = db
+			.select({ id: habitOccurrences.id })
+			.from(habitOccurrences)
+			.where(and(eq(habitOccurrences.habitId, habitId), eq(habitOccurrences.date, date)))
+			.get();
+
+		if (existing) {
+			db.delete(habitOccurrences).where(eq(habitOccurrences.id, existing.id)).run();
+		} else {
+			db.insert(habitOccurrences).values({ habitId, date, notes: '' }).run();
+		}
+
+		return { success: true };
 	}
 };
