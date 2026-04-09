@@ -71,6 +71,9 @@
 	let graphNewBeliefValence = $state('');
 	let editingGraphNodeId: number | null = $state(null);
 
+	// Auto-layout toggle: stores positions before dagre so we can revert
+	let preLayoutPositions: Record<string, { x: number; y: number }> | null = $state(null);
+
 	const POSITIONS_KEY = 'semotina:beliefs:node-positions';
 
 	function loadSavedPositions(): Record<string, { x: number; y: number }> {
@@ -93,6 +96,27 @@
 			localStorage.setItem(POSITIONS_KEY, JSON.stringify(positions));
 		} catch {
 			// quota exceeded, ignore
+		}
+	}
+
+	function toggleAutoLayout() {
+		if (preLayoutPositions) {
+			// Revert to saved positions
+			nodes = nodes.map((n) => {
+				const saved = preLayoutPositions![n.id];
+				return saved ? { ...n, position: saved } : n;
+			});
+			savePositions(nodes);
+			preLayoutPositions = null;
+		} else {
+			// Save current positions, then apply dagre
+			const saved: Record<string, { x: number; y: number }> = {};
+			for (const n of nodes) {
+				saved[n.id] = { x: n.position.x, y: n.position.y };
+			}
+			preLayoutPositions = saved;
+			nodes = layoutElements(nodes, edges, true);
+			// Don't persist dagre positions — they're temporary
 		}
 	}
 
@@ -153,7 +177,11 @@
 					tags: belief.tags,
 					editingNodeId: () => editingGraphNodeId,
 					onStartEdit: onStartEditNode,
-					onCancelEdit: onCancelEditNode
+					onCancelEdit: onCancelEditNode,
+					getIslandColor: () => {
+						const iid = islands.islandMap.get(id);
+						return iid !== undefined && islands.islandCount > 1 ? islandColor(iid) : null;
+					}
 				},
 				position: positions[id] ?? { x: 0, y: 0 }
 			});
@@ -164,7 +192,13 @@
 			nodes.push({
 				id,
 				type: 'evidence',
-				data: { label: ev.content },
+				data: {
+					label: ev.content,
+					getIslandColor: () => {
+						const iid = islands.islandMap.get(id);
+						return iid !== undefined && islands.islandCount > 1 ? islandColor(iid) : null;
+					}
+				},
 				position: positions[id] ?? { x: 0, y: 0 }
 			});
 		}
@@ -179,7 +213,9 @@
 					type: rel.type,
 					relationId: rel.id,
 					pending: false,
-					onDelete: handleEdgeDeleteFromLabel
+					notes: rel.notes ?? '',
+					onDelete: handleEdgeDeleteFromLabel,
+					onUpdateNotes: graphUpdateRelationNotes
 				},
 				markerEnd: {
 					type: MarkerType.ArrowClosed,
@@ -243,6 +279,92 @@
 		});
 	}
 
+	// Union-Find for connected component (island) detection
+	// O(n·α(n)) ≈ O(n) with path compression + union by rank
+	function computeIslands(
+		graphNodes: Node[],
+		graphEdges: Edge[]
+	): { islandMap: Map<string, number>; islandCount: number } {
+		const parent = new Map<string, string>();
+		const rank = new Map<string, number>();
+
+		function find(x: string): string {
+			let root = x;
+			while (parent.get(root) !== root) root = parent.get(root)!;
+			// Path compression
+			let curr = x;
+			while (curr !== root) {
+				const next = parent.get(curr)!;
+				parent.set(curr, root);
+				curr = next;
+			}
+			return root;
+		}
+
+		function union(a: string, b: string) {
+			const ra = find(a);
+			const rb = find(b);
+			if (ra === rb) return;
+			const rankA = rank.get(ra) ?? 0;
+			const rankB = rank.get(rb) ?? 0;
+			if (rankA < rankB) {
+				parent.set(ra, rb);
+			} else if (rankA > rankB) {
+				parent.set(rb, ra);
+			} else {
+				parent.set(rb, ra);
+				rank.set(ra, rankA + 1);
+			}
+		}
+
+		for (const n of graphNodes) {
+			parent.set(n.id, n.id);
+			rank.set(n.id, 0);
+		}
+
+		for (const e of graphEdges) {
+			if (parent.has(e.source) && parent.has(e.target)) {
+				union(e.source, e.target);
+			}
+		}
+
+		// Assign sequential island IDs (sorted by first node appearance for stability)
+		const rootToIsland = new Map<string, number>();
+		let nextIsland = 0;
+		const islandMap = new Map<string, number>();
+
+		for (const n of graphNodes) {
+			const root = find(n.id);
+			if (!rootToIsland.has(root)) {
+				rootToIsland.set(root, nextIsland++);
+			}
+			islandMap.set(n.id, rootToIsland.get(root)!);
+		}
+
+		return { islandMap, islandCount: nextIsland };
+	}
+
+	// Deterministic palette: golden-angle HSL for maximum hue separation
+	const ISLAND_COLORS = [
+		'#6366f1', // indigo
+		'#f59e0b', // amber
+		'#10b981', // emerald
+		'#ef4444', // red
+		'#8b5cf6', // violet
+		'#06b6d4', // cyan
+		'#f97316', // orange
+		'#ec4899', // pink
+		'#14b8a6', // teal
+		'#84cc16' // lime
+	];
+
+	function islandColor(islandId: number): string {
+		if (islandId < ISLAND_COLORS.length) return ISLAND_COLORS[islandId];
+		// Fallback: golden-angle HSL
+		const hue = (islandId * 137.508) % 360;
+		return `hsl(${hue} 65% 50%)`;
+	}
+
 	const savedPositions = loadSavedPositions();
 	const initial = buildInitialElements(savedPositions);
 	const hasSavedPositions = Object.keys(savedPositions).length > 0;
@@ -250,6 +372,9 @@
 		hasSavedPositions ? initial.nodes : layoutElements(initial.nodes, initial.edges, true)
 	);
 	let edges = $state.raw<Edge[]>(initial.edges);
+
+	// Compute connected components (islands) reactively from current graph structure
+	let islands = $derived.by(() => computeIslands(nodes, edges));
 
 	$effect(() => {
 		graphView = data.view === 'graph';
@@ -294,24 +419,27 @@
 			}
 		}));
 
-		// Merge nodes to preserve SvelteFlow's internal drag/interaction state:
-		// - Update existing nodes in-place (position + data)
-		// - Add new nodes, remove deleted ones
+		// Preserve exact node object references so adoptUserNodes reuses internal nodes
+		// (userNode === internalNode.internals.userNode identity check).
+		// Mutate existing nodes in-place instead of spreading, which would create new objects
+		// and cause SvelteFlow to rebuild internals, breaking drag/interaction state.
 		const existingMap = new Map(currentNodes.map((n) => [n.id, n]));
 
-		const mergedNodes: Node[] = [];
+		// Update existing nodes in-place (mutate, don't spread)
 		for (const newNode of laidOut) {
 			const existing = existingMap.get(newNode.id);
 			if (existing) {
-				// Preserve the existing node object, update data and position
-				mergedNodes.push({
-					...existing,
-					data: newNode.data,
-					position: newNode.position
-				});
-			} else {
-				mergedNodes.push(newNode);
+				existing.data = newNode.data;
+				existing.position = newNode.position;
 			}
+		}
+
+		// Build final array: existing nodes (same references) + genuinely new nodes
+		// Filter out deleted nodes (not in rebuilt set)
+		const mergedNodes: Node[] = [];
+		for (const newNode of laidOut) {
+			const existing = existingMap.get(newNode.id);
+			mergedNodes.push(existing ?? newNode);
 		}
 
 		untrack(() => {
@@ -477,6 +605,8 @@
 
 	function handleNodeDragStop() {
 		savePositions(nodes);
+		// User manually moved nodes — invalidate auto-layout undo
+		preLayoutPositions = null;
 	}
 
 	function isValidConnection(connection: Connection): boolean {
@@ -663,6 +793,16 @@
 		await invalidateAll();
 	}
 
+	async function graphUpdateRelationNotes(relationId: number, notes: string) {
+		const body = new URLSearchParams({ id: String(relationId), notes });
+		await fetch('?/updateRelationNotes', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+			body: body.toString()
+		});
+		await invalidateAll();
+	}
+
 	async function graphCreateEvidence(beliefId: number, content: string, type: string) {
 		const body = new URLSearchParams({ beliefId: String(beliefId), content, type });
 		await fetch('?/createEvidence', {
@@ -764,9 +904,9 @@
 
 	function toggleView() {
 		if (graphView) {
-			goto('/beliefs', { replaceState: true });
+			goto('?view=list', { replaceState: true });
 		} else {
-			goto('?view=graph', { replaceState: true });
+			goto('/beliefs', { replaceState: true });
 		}
 	}
 
@@ -777,6 +917,8 @@
 			selectedGraphBeliefId = null;
 			graphShowNewBeliefForm = false;
 			panelConfirmDelete = false;
+			// Deselect all nodes to prevent stuck selection state
+			nodes = nodes.map((n) => (n.selected ? { ...n, selected: false } : n));
 		}
 	}
 
@@ -1629,6 +1771,11 @@
 						>
 							Cancel
 						</button>
+						{#if islands.islandCount > 1}
+							<span class="text-xs text-gray-400">
+								{islands.islandCount} islands
+							</span>
+						{/if}
 					</div>
 				{:else}
 					<button
@@ -1640,6 +1787,13 @@
 						New Belief
 					</button>
 				{/if}
+				<button
+					onclick={toggleAutoLayout}
+					class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+					class:bg-gray-100={preLayoutPositions !== null}
+				>
+					{preLayoutPositions ? 'Undo Layout' : 'Auto Layout'}
+				</button>
 			</div>
 			<p class="text-xs text-gray-400">
 				Drag from a handle to connect beliefs. Hover an edge label and click &times; to remove it.
@@ -1670,10 +1824,15 @@
 						maxZoom={3}
 						selectionOnDrag={false}
 						panOnDrag
+						clickConnect={false}
 						onnodeclick={(e) => {
 							if (!e.node.id.startsWith('b-')) return;
 							const beliefId = parseInt(e.node.id.replace('b-', ''));
 							openBeliefPanel(beliefId);
+							// Deselect all nodes after opening the panel to prevent
+							// SvelteFlow's selectionRectMode from getting stuck at 'nodes',
+							// which causes the cursor to enter selection mode permanently.
+							nodes = nodes.map((n) => (n.selected ? { ...n, selected: false } : n));
 						}}
 					>
 						<Controls />
@@ -1750,6 +1909,8 @@
 								<button
 									onclick={() => {
 										selectedGraphBeliefId = null;
+										// Deselect all nodes to prevent stuck selection state
+										nodes = nodes.map((n) => (n.selected ? { ...n, selected: false } : n));
 									}}
 									class="text-gray-400 hover:text-gray-600"
 								>

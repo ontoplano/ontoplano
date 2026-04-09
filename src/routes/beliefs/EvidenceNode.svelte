@@ -2,9 +2,16 @@
 	import { Handle, Position, type NodeProps } from '@xyflow/svelte';
 
 	let { data }: NodeProps = $props();
+
+	function getIslandColorValue(): string | null {
+		const getter = data.getIslandColor as (() => string | null) | undefined;
+		return getter ? getter() : null;
+	}
+
+	let icolor = $derived(getIslandColorValue());
 </script>
 
-<div class="evidence-node">
+<div class="evidence-node" style={icolor ? `border-left: 3px solid ${icolor}` : ''}>
 	<Handle type="source" position={Position.Bottom} />
 	<div class="label">{data.label}</div>
 </div>

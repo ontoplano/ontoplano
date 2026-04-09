@@ -43,6 +43,13 @@
 			cancelEdit();
 		}
 	}
+
+	function getIslandColorValue(): string | null {
+		const getter = data.getIslandColor as (() => string | null) | undefined;
+		return getter ? getter() : null;
+	}
+
+	let icolor = $derived(getIslandColorValue());
 </script>
 
 <div
@@ -50,6 +57,7 @@
 	class:positive={data.valence === 'positive'}
 	class:negative={data.valence === 'negative'}
 	class:neutral={data.valence !== 'positive' && data.valence !== 'negative'}
+	style={icolor ? `border-left: 3px solid ${icolor}` : ''}
 >
 	<Handle type="target" position={Position.Top} />
 	<div class="content">

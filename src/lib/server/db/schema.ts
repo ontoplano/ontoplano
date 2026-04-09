@@ -239,6 +239,7 @@ export const beliefRelations = sqliteTable(
 			.notNull()
 			.references(() => beliefs.id, { onDelete: 'cascade' }),
 		type: text('type', { enum: ['supports', 'contradicts'] }).notNull(),
+		notes: text('notes').default(''),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)

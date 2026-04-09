@@ -55,7 +55,7 @@ function getBeliefForUser(beliefId: number, userId: string): { id: number } | un
 export const load: PageServerLoad = async (event) => {
 	const { url } = event;
 	const userId = event.locals.user!.id;
-	const view = url.searchParams.get('view') ?? 'list';
+	const view = url.searchParams.get('view') ?? 'graph';
 
 	const allBeliefs = db
 		.select({
@@ -208,7 +208,8 @@ export const load: PageServerLoad = async (event) => {
 			id: beliefRelations.id,
 			sourceBeliefId: beliefRelations.sourceBeliefId,
 			targetBeliefId: beliefRelations.targetBeliefId,
-			type: beliefRelations.type
+			type: beliefRelations.type,
+			notes: beliefRelations.notes
 		})
 		.from(beliefRelations)
 		.where(
@@ -370,6 +371,26 @@ export const actions: Actions = {
 		if (!relation) return fail(404, { message: 'Relation not found' });
 
 		db.delete(beliefRelations).where(eq(beliefRelations.id, id)).run();
+
+		return { success: true };
+	},
+
+	updateRelationNotes: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const notes = formData.get('notes')?.toString()?.trim() ?? '';
+
+		if (!id) return fail(400, { message: 'Missing id' });
+		const relation = db
+			.select({ id: beliefRelations.id })
+			.from(beliefRelations)
+			.innerJoin(beliefs, eq(beliefRelations.sourceBeliefId, beliefs.id))
+			.where(and(eq(beliefRelations.id, id), eq(beliefs.userId, userId)))
+			.get();
+		if (!relation) return fail(404, { message: 'Relation not found' });
+
+		db.update(beliefRelations).set({ notes }).where(eq(beliefRelations.id, id)).run();
 
 		return { success: true };
 	},
