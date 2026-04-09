@@ -1,10 +1,22 @@
+import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { taskInstances, weeklySlots, activities, categories } from '$lib/server/db/schema';
-import { eq, and, gte, lt, sql } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/sqlite-core';
+import {
+	diaryEntries,
+	tags,
+	diaryEntryTags,
+	beliefs,
+	taskInstances,
+	habits,
+	habitOccurrences
+} from '$lib/server/db/schema';
+import { eq, and, gte, lt, desc } from 'drizzle-orm';
 import { generateCurrentWeek, toLocalISOString } from '$lib/server/week-generator';
+
+function todayStr(): string {
+	const d = new Date();
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 function todayRange(): { start: string; end: string } {
 	const now = new Date();
@@ -17,44 +29,52 @@ function todayRange(): { start: string; end: string } {
 	};
 }
 
+function daysBetween(a: string, b: string): number {
+	const da = new Date(a + 'T00:00:00');
+	const db_ = new Date(b + 'T00:00:00');
+	return Math.floor((db_.getTime() - da.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 export const load: PageServerLoad = async (event) => {
 	const userId = event.locals.user!.id;
 	generateCurrentWeek(userId);
 
+	const lastEntry = db
+		.select({
+			id: diaryEntries.id,
+			content: diaryEntries.content,
+			createdAt: diaryEntries.createdAt
+		})
+		.from(diaryEntries)
+		.where(eq(diaryEntries.userId, userId))
+		.orderBy(desc(diaryEntries.createdAt))
+		.limit(1)
+		.get();
+
+	let lastEntryTags: { id: number; name: string }[] = [];
+	if (lastEntry) {
+		lastEntryTags = db
+			.select({ id: tags.id, name: tags.name })
+			.from(diaryEntryTags)
+			.innerJoin(tags, eq(diaryEntryTags.tagId, tags.id))
+			.where(and(eq(diaryEntryTags.entryId, lastEntry.id), eq(tags.userId, userId)))
+			.all();
+	}
+
+	const allTags = db
+		.select({ id: tags.id, name: tags.name })
+		.from(tags)
+		.where(eq(tags.userId, userId))
+		.orderBy(tags.name)
+		.all();
+
 	const { start, end } = todayRange();
 
-	const slotActivities = alias(activities, 'slot_activities');
-	const activityCategories = alias(categories, 'activity_categories');
-
-	const tasks = db
+	const todayTasks = db
 		.select({
-			id: taskInstances.id,
-			scheduledAt: taskInstances.scheduledAt,
-			status: taskInstances.status,
-			completedAt: taskInstances.completedAt,
-			notes: taskInstances.notes,
-			slotId: taskInstances.slotId,
-			slotMode: weeklySlots.mode,
-			slotLabel: weeklySlots.label,
-			slotStartTime: weeklySlots.startTime,
-			slotDuration: weeklySlots.durationMinutes,
-			durationOverride: taskInstances.durationOverride,
-			categoryId: sql<number>`coalesce(${weeklySlots.categoryId}, ${slotActivities.categoryId})`.as(
-				'effective_category_id'
-			),
-			categoryName: sql<string>`coalesce(${categories.name}, ${activityCategories.name})`.as(
-				'effective_category_name'
-			),
-			activityId: taskInstances.resolvedActivityId,
-			activityName: activities.name,
-			activityColor: activities.color
+			status: taskInstances.status
 		})
 		.from(taskInstances)
-		.innerJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
-		.leftJoin(categories, eq(weeklySlots.categoryId, categories.id))
-		.leftJoin(slotActivities, eq(weeklySlots.activityId, slotActivities.id))
-		.leftJoin(activityCategories, eq(slotActivities.categoryId, activityCategories.id))
-		.leftJoin(activities, eq(taskInstances.resolvedActivityId, activities.id))
 		.where(
 			and(
 				eq(taskInstances.userId, userId),
@@ -62,140 +82,129 @@ export const load: PageServerLoad = async (event) => {
 				lt(taskInstances.scheduledAt, end)
 			)
 		)
-		.orderBy(taskInstances.scheduledAt)
 		.all();
 
-	const allActivities = db
+	const taskSummary = {
+		total: todayTasks.length,
+		completed: todayTasks.filter((t) => t.status === 'completed').length,
+		delayed: todayTasks.filter((t) => t.status === 'delayed').length,
+		early: todayTasks.filter((t) => t.status === 'early').length,
+		skipped: todayTasks.filter((t) => t.status === 'skipped').length,
+		pending: todayTasks.filter((t) => t.status === 'pending').length
+	};
+
+	const today = todayStr();
+	const userHabits = db
 		.select({
-			id: activities.id,
-			name: activities.name,
-			categoryId: activities.categoryId
+			id: habits.id,
+			name: habits.name,
+			type: habits.type,
+			createdAt: habits.createdAt
 		})
-		.from(activities)
-		.where(and(eq(activities.active, true), eq(activities.userId, userId)))
-		.orderBy(activities.name)
+		.from(habits)
+		.where(eq(habits.userId, userId))
+		.orderBy(habits.name)
 		.all();
 
-	return { tasks, activities: allActivities, now: toLocalISOString(new Date()) };
-};
+	const habitStreaks = userHabits.map((habit) => {
+		const occurrences = db
+			.select({ date: habitOccurrences.date })
+			.from(habitOccurrences)
+			.where(eq(habitOccurrences.habitId, habit.id))
+			.orderBy(desc(habitOccurrences.date))
+			.all();
 
-export const actions: Actions = {
-	updateStatus: async ({ request, locals }) => {
-		const userId = locals.user!.id;
-		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const status = formData.get('status')?.toString();
-
-		if (!id || !status) return fail(400, { message: 'Missing id or status' });
-
-		const validStatuses = ['pending', 'completed', 'delayed', 'early', 'skipped'] as const;
-		if (!validStatuses.includes(status as (typeof validStatuses)[number])) {
-			return fail(400, { message: 'Invalid status' });
-		}
-
-		const completedAt = ['completed', 'delayed', 'early'].includes(status)
-			? toLocalISOString(new Date())
-			: null;
-
-		const updateData: Record<string, unknown> = {
-			status: status as (typeof validStatuses)[number],
-			completedAt
-		};
-
-		// Clear resolved activity when resetting or skipping a category-mode task
-		if (status === 'pending' || status === 'skipped') {
-			const task = db
-				.select({ slotMode: weeklySlots.mode })
-				.from(taskInstances)
-				.innerJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
-				.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-				.get();
-
-			if (task?.slotMode === 'category') {
-				updateData.resolvedActivityId = null;
+		let streak: number;
+		if (habit.type === 'bad') {
+			if (occurrences.length === 0) {
+				streak = daysBetween(habit.createdAt.slice(0, 10), today);
+			} else {
+				streak = daysBetween(occurrences[0].date, today);
+			}
+		} else {
+			const completedDates = new Set(occurrences.map((o) => o.date));
+			streak = 0;
+			const d = new Date(today + 'T00:00:00');
+			for (let i = 0; i < 365; i++) {
+				const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+				if (completedDates.has(dateStr)) {
+					streak++;
+				} else if (i > 0) {
+					break;
+				}
+				d.setDate(d.getDate() - 1);
 			}
 		}
 
-		db.update(taskInstances)
-			.set(updateData)
-			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-			.run();
+		return { id: habit.id, name: habit.name, type: habit.type, streak };
+	});
 
-		return { success: true };
-	},
+	const recentBeliefs = db
+		.select({ id: beliefs.id, content: beliefs.content, valence: beliefs.valence })
+		.from(beliefs)
+		.where(eq(beliefs.userId, userId))
+		.orderBy(desc(beliefs.createdAt))
+		.limit(3)
+		.all();
 
-	resolveActivity: async ({ request, locals }) => {
+	return {
+		lastEntry: lastEntry ? { ...lastEntry, tags: lastEntryTags } : null,
+		allTags,
+		taskSummary,
+		habitStreaks,
+		recentBeliefs,
+		today
+	};
+};
+
+export const actions: Actions = {
+	createDiaryEntry: async ({ request, locals }) => {
 		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const activityId = formData.get('activityId') ? Number(formData.get('activityId')) : null;
+		const content = formData.get('content')?.toString()?.trim();
+		const tagsStr = formData.get('tags')?.toString()?.trim() ?? '';
 
-		if (!id) return fail(400, { message: 'Missing task id' });
+		if (!content) return fail(400, { message: 'Content is required' });
 
-		db.update(taskInstances)
-			.set({ resolvedActivityId: activityId })
-			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-			.run();
+		const result = db.insert(diaryEntries).values({ userId, content }).run();
+		const entryId = Number(result.lastInsertRowid);
 
-		return { success: true };
-	},
-
-	updateScheduledAt: async ({ request, locals }) => {
-		const userId = locals.user!.id;
-		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const time = formData.get('time')?.toString()?.trim();
-
-		if (!id) return fail(400, { message: 'Missing task id' });
-		if (!time || !/^\d{2}:\d{2}$/.test(time)) return fail(400, { message: 'Invalid time format' });
-
-		const task = db
-			.select()
-			.from(taskInstances)
-			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-			.get();
-		if (!task) return fail(404, { message: 'Task not found' });
-
-		const datePart = task.scheduledAt.slice(0, 10);
-		const newScheduledAt = `${datePart}T${time}:00`;
-
-		db.update(taskInstances)
-			.set({ scheduledAt: newScheduledAt })
-			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-			.run();
-
-		return { success: true };
-	},
-
-	updateDuration: async ({ request, locals }) => {
-		const userId = locals.user!.id;
-		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const minutes = formData.get('minutes')?.toString()?.trim();
-
-		if (!id) return fail(400, { message: 'Missing task id' });
-		if (!minutes || isNaN(Number(minutes)) || Number(minutes) < 0) {
-			return fail(400, { message: 'Invalid duration' });
+		if (tagsStr) {
+			const tagNames = tagsStr
+				.split(',')
+				.map((t) => t.trim())
+				.filter(Boolean);
+			for (const name of tagNames) {
+				let tag = db
+					.select({ id: tags.id })
+					.from(tags)
+					.where(and(eq(tags.name, name), eq(tags.userId, userId)))
+					.get();
+				if (!tag) {
+					const tagResult = db.insert(tags).values({ userId, name }).run();
+					tag = { id: Number(tagResult.lastInsertRowid) };
+				}
+				db.insert(diaryEntryTags).values({ entryId, tagId: tag.id }).run();
+			}
 		}
 
-		const value = Number(minutes) === 0 ? null : Number(minutes);
-		db.update(taskInstances)
-			.set({ durationOverride: value })
-			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-			.run();
-
 		return { success: true };
 	},
 
-	deleteTask: async ({ request, locals }) => {
+	createBelief: async ({ request, locals }) => {
 		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
+		const content = formData.get('content')?.toString()?.trim();
+		const valence = formData.get('valence')?.toString() || null;
 
-		if (!id) return fail(400, { message: 'Missing task id' });
+		if (!content) return fail(400, { message: 'Content is required' });
 
-		db.delete(taskInstances)
-			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
+		db.insert(beliefs)
+			.values({
+				userId,
+				content,
+				valence: valence as 'positive' | 'negative' | null
+			})
 			.run();
 
 		return { success: true };

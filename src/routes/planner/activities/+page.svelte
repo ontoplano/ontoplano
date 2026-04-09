@@ -87,8 +87,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<div class="flex items-center justify-between">
-		<h1 class="text-lg font-bold text-gray-900">Activities</h1>
+	<div class="flex items-center justify-end">
 		<button
 			onclick={() => {
 				showForm = !showForm;

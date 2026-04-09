@@ -12,6 +12,13 @@
 	let selectedDay: number = $state(new Date().getDay() === 0 ? 6 : new Date().getDay() - 1);
 	let selectedIndex: number = $state(0);
 
+	// Ensure we don't start on a past day by default on current week
+	$effect(() => {
+		if (data.weekMeta.isCurrent && selectedDay < data.todayDayIndex) {
+			selectedDay = data.todayDayIndex;
+		}
+	});
+
 	// Multiselect state
 	let selectedIds: Set<number> = $state(new Set());
 	let multiselect = $state(false);
@@ -77,16 +84,16 @@
 
 	function goToPrevWeek() {
 		if (data.weekMeta.prevWeek) {
-			goto(`/planner?week=${data.weekMeta.prevWeek}`);
+			goto(`/planner/plan?week=${data.weekMeta.prevWeek}`);
 		}
 	}
 
 	function goToNextWeek() {
-		goto(`/planner?week=${data.weekMeta.nextWeek}`);
+		goto(`/planner/plan?week=${data.weekMeta.nextWeek}`);
 	}
 
 	function goToCurrentWeek() {
-		goto('/planner');
+		goto('/planner/plan');
 	}
 
 	function toggleSlotSelection(id: number) {
@@ -247,13 +254,18 @@
 	function editingSlot(): Slot | null {
 		return editingId ? (data.slots.find((s: Slot) => s.id === editingId) ?? null) : null;
 	}
+
+	function isDayPast(dayIndex: number): boolean {
+		if (data.isPastWeek) return true;
+		if (!data.weekMeta.isCurrent) return false;
+		return dayIndex < data.todayDayIndex;
+	}
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
 	<div class="flex items-center justify-between">
-		<h1 class="text-lg font-bold text-gray-900">Weekly Planner</h1>
 		<div class="flex items-center gap-2">
 			<button
 				onclick={goToPrevWeek}
@@ -546,11 +558,16 @@
 
 	<div class="flex gap-1">
 		{#each data.weekdays as day, i (i)}
+			{@const past = isDayPast(i)}
 			<button
 				onclick={() => (selectedDay = i)}
 				class="flex-1 border px-2 py-2 text-center text-xs font-medium transition {selectedDay === i
-					? 'border-gray-900 bg-gray-900 text-white'
-					: 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}"
+					? past
+						? 'border-gray-400 bg-gray-400 text-white'
+						: 'border-gray-900 bg-gray-900 text-white'
+					: past
+						? 'border-gray-100 bg-gray-50 text-gray-300'
+						: 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}"
 			>
 				{day.slice(0, 3)}
 			</button>
@@ -562,7 +579,12 @@
 			No slots for {data.weekdays[selectedDay]}.
 		</div>
 	{:else}
-		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
+		{@const dayPast = isDayPast(selectedDay)}
+		<div
+			class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm {dayPast
+				? 'opacity-60'
+				: ''}"
+		>
 			{#each slotsForDay(selectedDay) as slot, i (slot.id)}
 				{@const colorClass = categoryColors[slot.categoryName ?? ''] ?? 'border-l-gray-300'}
 				{@const isSelected = selectedIds.has(slot.id)}
@@ -571,7 +593,7 @@
 						? 'opacity-50'
 						: ''} {selectedIndex === i ? 'bg-gray-100' : ''} {isSelected ? 'bg-blue-50' : ''}"
 				>
-					{#if multiselect}
+					{#if multiselect && !dayPast}
 						<button
 							type="button"
 							onclick={() => toggleSlotSelection(slot.id)}
@@ -606,33 +628,35 @@
 							<p class="truncate text-xs text-gray-500">{slot.label}</p>
 						{/if}
 					</div>
-					<div class="flex shrink-0 items-center gap-2">
-						<button
-							onclick={() => startEdit(slot)}
-							class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-						>
-							Edit
-						</button>
-						<form id="toggle-form-{slot.id}" method="post" action="?/toggleActive" use:enhance>
-							<input type="hidden" name="id" value={slot.id} />
-							<input type="hidden" name="active" value={String(slot.active)} />
+					{#if !dayPast}
+						<div class="flex shrink-0 items-center gap-2">
 							<button
-								type="submit"
+								onclick={() => startEdit(slot)}
 								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
 							>
-								{slot.active ? 'Disable' : 'Enable'}
+								Edit
 							</button>
-						</form>
-						<form id="delete-form-{slot.id}" method="post" action="?/delete" use:enhance>
-							<input type="hidden" name="id" value={slot.id} />
-							<button
-								type="submit"
-								class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
-							>
-								Delete
-							</button>
-						</form>
-					</div>
+							<form id="toggle-form-{slot.id}" method="post" action="?/toggleActive" use:enhance>
+								<input type="hidden" name="id" value={slot.id} />
+								<input type="hidden" name="active" value={String(slot.active)} />
+								<button
+									type="submit"
+									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+								>
+									{slot.active ? 'Disable' : 'Enable'}
+								</button>
+							</form>
+							<form id="delete-form-{slot.id}" method="post" action="?/delete" use:enhance>
+								<input type="hidden" name="id" value={slot.id} />
+								<button
+									type="submit"
+									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+								>
+									Delete
+								</button>
+							</form>
+						</div>
+					{/if}
 				</div>
 			{/each}
 		</div>

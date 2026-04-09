@@ -9,14 +9,18 @@
 	let menuOpen = $state(false);
 
 	const nav = [
-		{ href: '/', label: 'Dashboard' },
-		{ href: '/activities', label: 'Activities' },
-		{ href: '/planner', label: 'Planner' },
-		{ href: '/history', label: 'History' },
+		{ href: '/', label: 'Home' },
+		{ href: '/planner/track', label: 'Planner' },
 		{ href: '/diary', label: 'Diary' },
 		{ href: '/habits', label: 'Habits' },
 		{ href: '/beliefs', label: 'Beliefs' }
 	];
+
+	function isNavActive(href: string): boolean {
+		if (href === '/') return page.url.pathname === '/';
+		if (href === '/planner/track') return page.url.pathname.startsWith('/planner');
+		return page.url.pathname === href;
+	}
 
 	function handleGlobalKeydown(e: KeyboardEvent) {
 		if (
@@ -28,7 +32,7 @@
 
 		if (e.key === 'J' || e.key === 'K') {
 			e.preventDefault();
-			const currentIdx = nav.findIndex((item) => item.href === page.url.pathname);
+			let currentIdx = nav.findIndex((item) => isNavActive(item.href));
 			const idx = currentIdx === -1 ? 0 : currentIdx;
 			const next = e.key === 'J' ? (idx + 1) % nav.length : (idx - 1 + nav.length) % nav.length;
 			goto(nav[next].href);
@@ -62,7 +66,7 @@
 						{#each nav as item}
 							<a
 								href={item.href}
-								class="text-sm font-medium transition-colors {page.url.pathname === item.href
+								class="text-sm font-medium transition-colors {isNavActive(item.href)
 									? 'text-gray-900 underline underline-offset-4'
 									: 'text-gray-500 hover:text-gray-900'}"
 							>

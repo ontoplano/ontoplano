@@ -60,7 +60,7 @@
 
 	function navigateWeek(direction: 'prev' | 'next') {
 		const target = direction === 'prev' ? data.weekMeta.prevWeek : data.weekMeta.nextWeek;
-		goto(`/history?week=${target}`);
+		goto(`/planner/history?week=${target}`);
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -107,8 +107,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<div class="flex items-center justify-between">
-		<h1 class="text-lg font-bold text-gray-900">History</h1>
+	<div class="flex items-center justify-end">
 		<div class="flex items-center gap-2">
 			<button
 				onclick={() => navigateWeek('prev')}
