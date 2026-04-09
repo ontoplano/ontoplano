@@ -8,6 +8,7 @@
 	let selectedIndex = $state(0);
 	let editingTimeId: number | null = $state(null);
 	let editingDurationId: number | null = $state(null);
+	let editingActivityId: number | null = $state(null);
 
 	const statusOptions = [
 		{ value: 'completed', label: 'Done', key: 'c' },
@@ -17,11 +18,17 @@
 		{ value: 'pending', label: 'Reset', key: 'r' }
 	];
 
-	const categoryColors: Record<string, string> = {
-		duty: 'border-l-duty bg-duty-light/30',
-		skill: 'border-l-skill bg-skill-light/30',
-		money: 'border-l-money bg-money-light/30'
-	};
+	function catColor(catId: number | null): string {
+		if (!catId) return '#d1d5db';
+		const cat = data.categories?.find((c: { id: number }) => c.id === catId);
+		return cat?.color ?? '#d1d5db';
+	}
+
+	function catColorLight(catId: number | null): string {
+		if (!catId) return '#f3f4f6';
+		const cat = data.categories?.find((c: { id: number }) => c.id === catId);
+		return cat?.colorLight ?? '#f3f4f6';
+	}
 
 	function isFuture(scheduledAt: string): boolean {
 		return scheduledAt > data.now;
@@ -134,6 +141,10 @@
 				e.preventDefault();
 				editingDurationId = tasks[selectedIndex].id;
 				break;
+			case 'a':
+				e.preventDefault();
+				editingActivityId = tasks[selectedIndex].id;
+				break;
 			case 'x': {
 				e.preventDefault();
 				const deleteForm = document.getElementById(`delete-form-${tasks[selectedIndex].id}`);
@@ -144,6 +155,7 @@
 				e.preventDefault();
 				editingTimeId = null;
 				editingDurationId = null;
+				editingActivityId = null;
 				break;
 			case 'c':
 			case 'd':
@@ -168,10 +180,27 @@
 	}
 
 	function taskLabel(task: (typeof data.tasks)[number]): string {
-		if (task.slotMode === 'activity' && task.activityName) return task.activityName;
+		// If there's a resolved (overridden) activity, show that
+		if (task.activityId && task.activityName) return task.activityName;
+		// Otherwise show the slot's original activity
+		if (task.slotActivityName) return task.slotActivityName;
 		if (task.slotLabel) return task.slotLabel;
 		if (task.categoryName) return task.categoryName;
 		return 'Task';
+	}
+
+	function originalSlotLabel(task: (typeof data.tasks)[number]): string {
+		if (task.slotActivityName) return task.slotActivityName;
+		if (task.slotLabel) return task.slotLabel;
+		if (task.categoryName) return task.categoryName;
+		return 'Task';
+	}
+
+	function wasSwapped(task: (typeof data.tasks)[number]): boolean {
+		if (!task.activityId) return false;
+		// If the slot was activity-mode and the resolved activity matches the slot's activity, not swapped
+		if (task.slotMode === 'activity' && task.activityId === task.slotActivityId) return false;
+		return true;
 	}
 
 	function activitiesForCategory(categoryId: number | null) {
@@ -191,14 +220,19 @@
 		return task.durationOverride ?? task.slotDuration ?? 60;
 	}
 
-	function categoryTotals(): { name: string; minutes: number }[] {
-		const totals: Record<string, number> = {};
+	function categoryTotals(): { name: string; categoryId: number | null; minutes: number }[] {
+		const totals: Record<string, { categoryId: number | null; minutes: number }> = {};
 		for (const task of data.tasks) {
 			const cat = task.categoryName;
 			if (!cat) continue;
-			totals[cat] = (totals[cat] || 0) + effectiveDuration(task);
+			if (!totals[cat]) totals[cat] = { categoryId: task.categoryId, minutes: 0 };
+			totals[cat].minutes += effectiveDuration(task);
 		}
-		return Object.entries(totals).map(([name, minutes]) => ({ name, minutes }));
+		return Object.entries(totals).map(([name, v]) => ({
+			name,
+			categoryId: v.categoryId,
+			minutes: v.minutes
+		}));
 	}
 
 	function isToday(dayIndex: number): boolean {
@@ -260,6 +294,7 @@
 		<kbd class="border border-gray-300 bg-gray-50 px-1">r</kbd> reset &middot;
 		<kbd class="border border-gray-300 bg-gray-50 px-1">t</kbd> time
 		<kbd class="border border-gray-300 bg-gray-50 px-1">D</kbd> duration
+		<kbd class="border border-gray-300 bg-gray-50 px-1">a</kbd> activity
 		<kbd class="border border-gray-300 bg-gray-50 px-1">x</kbd> delete
 	</div>
 
@@ -292,12 +327,13 @@
 		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
 			{#each data.tasks as task, i}
 				{@const future = isFuture(task.scheduledAt)}
-				{@const colorClass = categoryColors[task.categoryName ?? ''] ?? 'border-l-gray-300'}
 				<div
-					class="flex items-center gap-4 border-l-4 px-4 py-3 transition-colors {colorClass} {i ===
-					selectedIndex
+					class="flex items-center gap-4 border-l-4 px-4 py-3 transition-colors {i === selectedIndex
 						? 'ring-2 ring-gray-900 ring-inset'
 						: ''} {future ? 'opacity-50' : ''}"
+					style="border-left-color: {catColor(task.categoryId)}; background-color: {catColorLight(
+						task.categoryId
+					)}30"
 				>
 					{#if editingTimeId === task.id}
 						<form
@@ -396,25 +432,80 @@
 						</button>
 					{/if}
 
-					<div class="min-w-0 flex-1">
-						<div class="flex items-center gap-2">
-							<span class="truncate text-sm font-medium text-gray-900">{taskLabel(task)}</span>
-							{#if task.slotMode === 'activity' && task.categoryName}
-								<span class="text-xs text-gray-400">{task.categoryName}</span>
+					{#if editingActivityId === task.id}
+						<form
+							method="post"
+							action="?/resolveActivity"
+							use:enhance={() => {
+								return async ({ update }) => {
+									await update();
+									editingActivityId = null;
+								};
+							}}
+							class="min-w-0 flex-1"
+						>
+							<input type="hidden" name="id" value={task.id} />
+							<select
+								name="activityId"
+								class="w-full border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								onchange={(e) => {
+									const form = (e.currentTarget as HTMLSelectElement).closest('form');
+									if (form instanceof HTMLFormElement) form.requestSubmit();
+								}}
+								onkeydown={(e) => {
+									if (e.key === 'Escape') {
+										e.preventDefault();
+										e.stopPropagation();
+										editingActivityId = null;
+									}
+								}}
+							>
+								<option value="">— clear override —</option>
+								{#each data.categories as cat}
+									{@const catActivities = data.activities.filter(
+										(a: { categoryName: string }) => a.categoryName === cat.name
+									)}
+									{#if catActivities.length > 0}
+										<optgroup label={cat.name}>
+											{#each catActivities as act}
+												<option value={act.id} selected={act.id === task.activityId}
+													>{act.name}</option
+												>
+											{/each}
+										</optgroup>
+									{/if}
+								{/each}
+							</select>
+						</form>
+					{:else}
+						<div class="min-w-0 flex-1">
+							<div class="flex items-center gap-2">
+								<button
+									type="button"
+									onclick={() => (editingActivityId = task.id)}
+									class="truncate text-sm font-medium text-gray-900 hover:text-gray-600"
+									title="click to change activity (a)"
+								>
+									{taskLabel(task)}
+								</button>
+								{#if task.categoryName}
+									<span class="text-xs text-gray-400">{task.categoryName}</span>
+								{/if}
+								{#if wasSwapped(task)}
+									<span class="text-xs text-gray-400" title="originally: {originalSlotLabel(task)}"
+										>↻</span
+									>
+								{/if}
+							</div>
+							{#if task.slotLabel && taskLabel(task) !== task.slotLabel}
+								<p class="truncate text-xs text-gray-500">{task.slotLabel}</p>
 							{/if}
 						</div>
-						{#if task.slotLabel && taskLabel(task) !== task.slotLabel}
-							<p class="truncate text-xs text-gray-500">{task.slotLabel}</p>
-						{/if}
-					</div>
+					{/if}
 
 					<span class="shrink-0 px-2 py-0.5 text-xs font-medium {statusBadgeClass(task.status)}">
 						{task.status}
 					</span>
-
-					{#if task.slotMode === 'category' && task.activityId && task.activityName}
-						<span class="shrink-0 text-xs text-gray-500">({task.activityName})</span>
-					{/if}
 
 					{#if needsResolution(task)}
 						{@const catActivities = activitiesForCategory(task.categoryId)}
@@ -484,11 +575,9 @@
 		{@const totals = categoryTotals()}
 		{#if totals.length > 0}
 			<div class="flex gap-4 border border-gray-200 bg-white px-4 py-3 shadow-sm">
-				{#each totals as { name, minutes }}
+				{#each totals as { name, categoryId, minutes }}
 					<div class="flex items-center gap-2">
-						<span
-							class="h-3 w-3 border-l-4 {categoryColors[name]?.split(' ')[0] ??
-								'border-l-gray-300'}"
+						<span class="h-3 w-3 border-l-4" style="border-left-color: {catColor(categoryId)}"
 						></span>
 						<span class="text-sm font-medium text-gray-700">{name}</span>
 						<span class="text-sm text-gray-500">{formatDuration(minutes)}</span>

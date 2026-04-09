@@ -2,12 +2,22 @@ import { integer, sqliteTable, text, index, uniqueIndex, check } from 'drizzle-o
 import { sql } from 'drizzle-orm';
 import { user } from './auth.schema.js';
 
-export const categories = sqliteTable('categories', {
-	id: integer('id').primaryKey({ autoIncrement: true }),
-	name: text('name', { enum: ['duty', 'skill', 'money'] })
-		.notNull()
-		.unique()
-});
+export const categories = sqliteTable(
+	'categories',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull(),
+		color: text('color').notNull().default('#6b7280'),
+		colorLight: text('color_light').notNull().default('#f3f4f6')
+	},
+	(table) => [
+		index('categories_user_idx').on(table.userId),
+		uniqueIndex('categories_user_name_unique').on(table.userId, table.name)
+	]
+);
 
 export const activities = sqliteTable(
 	'activities',

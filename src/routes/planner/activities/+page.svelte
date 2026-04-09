@@ -8,29 +8,25 @@
 	let showForm = $state(false);
 	let editingId: number | null = $state(null);
 	let selectedIndex = $state(0);
-	let activeFilters: Set<string> = $state(new Set());
+	let activeFilters: Set<number> = $state(new Set());
+	let showCategoryForm = $state(false);
+	let editingCategoryId: number | null = $state(null);
 
-	const categoryColors: Record<string, string> = {
-		duty: 'text-duty',
-		skill: 'text-skill',
-		money: 'text-money'
-	};
-
-	const categoryBorderColors: Record<string, string> = {
-		duty: 'border-duty',
-		skill: 'border-skill',
-		money: 'border-money'
-	};
+	function catColor(catId: number | null): string {
+		if (!catId) return '#d1d5db';
+		const cat = data.categories?.find((c: { id: number }) => c.id === catId);
+		return cat?.color ?? '#d1d5db';
+	}
 
 	function filteredActivities() {
 		if (activeFilters.size === 0) return data.activities;
-		return data.activities.filter((a) => a.categoryName && activeFilters.has(a.categoryName));
+		return data.activities.filter((a: { categoryId: number }) => activeFilters.has(a.categoryId));
 	}
 
-	function toggleFilter(name: string) {
+	function toggleFilter(catId: number) {
 		const next = new Set(activeFilters);
-		if (next.has(name)) next.delete(name);
-		else next.add(name);
+		if (next.has(catId)) next.delete(catId);
+		else next.add(catId);
 		activeFilters = next;
 		selectedIndex = 0;
 	}
@@ -55,17 +51,21 @@
 				selectedIndex = Math.max(selectedIndex - 1, 0);
 				break;
 			case '1':
-				e.preventDefault();
-				toggleFilter('duty');
-				break;
 			case '2':
-				e.preventDefault();
-				toggleFilter('skill');
-				break;
 			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9': {
 				e.preventDefault();
-				toggleFilter('money');
+				const idx = Number(e.key) - 1;
+				if (data.categories[idx]) {
+					toggleFilter(data.categories[idx].id);
+				}
 				break;
+			}
 			case 'n':
 				e.preventDefault();
 				showForm = true;
@@ -107,10 +107,11 @@
 	<div class="flex gap-2">
 		{#each data.categories as cat}
 			<button
-				onclick={() => toggleFilter(cat.name)}
-				class="border px-2 py-1 text-xs font-medium transition {activeFilters.has(cat.name)
-					? `border-2 ${categoryBorderColors[cat.name] ?? 'border-gray-300'} ${categoryColors[cat.name] ?? 'text-gray-700'} bg-white`
+				onclick={() => toggleFilter(cat.id)}
+				class="border px-2 py-1 text-xs font-medium transition {activeFilters.has(cat.id)
+					? 'border-2 bg-white'
 					: 'border-gray-200 bg-white text-gray-400 hover:text-gray-600'}"
+				style={activeFilters.has(cat.id) ? `border-color: ${cat.color}; color: ${cat.color}` : ''}
 			>
 				{cat.name}
 			</button>
@@ -134,9 +135,9 @@
 		>
 		navigate &middot;
 		<kbd class="border border-gray-300 bg-gray-50 px-1">n</kbd> new &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">1</kbd>
-		<kbd class="border border-gray-300 bg-gray-50 px-1">2</kbd>
-		<kbd class="border border-gray-300 bg-gray-50 px-1">3</kbd> filter duty/skill/money &middot;
+		{#each data.categories as cat, i}
+			<kbd class="border border-gray-300 bg-gray-50 px-1">{i + 1}</kbd>{' '}
+		{/each}filter categories &middot;
 		<kbd class="border border-gray-300 bg-gray-50 px-1">Esc</kbd> close form
 	</div>
 
@@ -232,9 +233,8 @@
 					<div class="min-w-0 flex-1">
 						<div class="flex items-center gap-2">
 							<span class="text-sm font-medium text-gray-900">{activity.name}</span>
-							<span
-								class="text-xs font-medium {categoryColors[activity.categoryName ?? ''] ??
-									'text-gray-400'}">{activity.categoryName}</span
+							<span class="text-xs font-medium" style="color: {catColor(activity.categoryId)}"
+								>{activity.categoryName}</span
 							>
 						</div>
 						{#if activity.description}

@@ -92,6 +92,8 @@ export const load: PageServerLoad = async (event) => {
 			categoryName: sql<string>`coalesce(${categories.name}, ${activityCategories.name})`.as(
 				'effective_category_name'
 			),
+			slotActivityId: weeklySlots.activityId,
+			slotActivityName: slotActivities.name,
 			activityId: taskInstances.resolvedActivityId,
 			activityName: activities.name,
 			activityColor: activities.color
@@ -116,11 +118,13 @@ export const load: PageServerLoad = async (event) => {
 		.select({
 			id: activities.id,
 			name: activities.name,
-			categoryId: activities.categoryId
+			categoryId: activities.categoryId,
+			categoryName: categories.name
 		})
 		.from(activities)
+		.innerJoin(categories, eq(activities.categoryId, categories.id))
 		.where(and(eq(activities.active, true), eq(activities.userId, userId)))
-		.orderBy(activities.name)
+		.orderBy(categories.name, activities.name)
 		.all();
 
 	const mondayStr = toLocalISOString(monday);

@@ -7,11 +7,11 @@
 	let selectedDay: number = $state(0);
 	let selectedIndex: number = $state(0);
 
-	const categoryColors: Record<string, string> = {
-		duty: 'border-l-duty',
-		skill: 'border-l-skill',
-		money: 'border-l-money'
-	};
+	function catColor(catId: number | null): string {
+		if (!catId) return '#d1d5db';
+		const cat = data.categories?.find((c: { id: number }) => c.id === catId);
+		return cat?.color ?? '#d1d5db';
+	}
 
 	const statusBadgeClass: Record<string, string> = {
 		pending: 'bg-gray-100 text-gray-600',
@@ -191,11 +191,11 @@
 	{:else}
 		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
 			{#each instancesForDay(selectedDay) as inst, i (inst.id)}
-				{@const colorClass = categoryColors[inst.categoryName ?? ''] ?? 'border-l-gray-300'}
 				<div
-					class="flex items-center gap-4 border-l-4 px-4 py-3 {colorClass} {selectedIndex === i
+					class="flex items-center gap-4 border-l-4 px-4 py-3 {selectedIndex === i
 						? 'bg-gray-100'
 						: ''}"
+					style="border-left-color: {catColor(inst.categoryId)}"
 				>
 					<div
 						class="w-24 shrink-0 font-mono text-sm text-gray-500"

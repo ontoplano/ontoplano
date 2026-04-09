@@ -46,11 +46,6 @@ port = "1493"
 [week]
 first_day = "0"
 generate_day = "6"
-
-[colors]
-duty = "#3b82f6"
-skill = "#22c55e"
-money = "#f59e0b"
 `;
 
 export interface SemotinaConfig {
@@ -64,11 +59,6 @@ export interface SemotinaConfig {
 	week: {
 		firstDay: number;
 		generateDay: number;
-	};
-	colors: {
-		duty: string;
-		skill: string;
-		money: string;
 	};
 }
 
@@ -95,11 +85,6 @@ ${config.database.path !== DB_PATH ? `path = "${config.database.path}"` : ''}
 [week]
 first_day = "${config.week.firstDay}"
 generate_day = "${config.week.generateDay}"
-
-[colors]
-duty = "${config.colors.duty}"
-skill = "${config.colors.skill}"
-money = "${config.colors.money}"
 `;
 }
 
@@ -117,7 +102,6 @@ export function loadConfig(): SemotinaConfig {
 	const server = (parsed.server as Record<string, string>) || {};
 	const database = (parsed.database as Record<string, string>) || {};
 	const week = (parsed.week as Record<string, string>) || {};
-	const colors = (parsed.colors as Record<string, string>) || {};
 
 	return {
 		server: {
@@ -130,11 +114,6 @@ export function loadConfig(): SemotinaConfig {
 		week: {
 			firstDay: parseInt(week.first_day || '0', 10),
 			generateDay: parseInt(week.generate_day || '6', 10)
-		},
-		colors: {
-			duty: colors.duty || '#3b82f6',
-			skill: colors.skill || '#22c55e',
-			money: colors.money || '#f59e0b'
 		}
 	};
 }

@@ -31,11 +31,11 @@
 	// Slot type alias
 	type Slot = (typeof data.slots)[number];
 
-	const categoryColors: Record<string, string> = {
-		duty: 'border-l-duty',
-		skill: 'border-l-skill',
-		money: 'border-l-money'
-	};
+	function catColor(catId: number | null): string {
+		if (!catId) return '#d1d5db';
+		const cat = data.categories?.find((c: { id: number }) => c.id === catId);
+		return cat?.color ?? '#d1d5db';
+	}
 
 	function slotsForDay(day: number): Slot[] {
 		return data.slots.filter((s: Slot) => s.weekday === day);
@@ -586,12 +586,12 @@
 				: ''}"
 		>
 			{#each slotsForDay(selectedDay) as slot, i (slot.id)}
-				{@const colorClass = categoryColors[slot.categoryName ?? ''] ?? 'border-l-gray-300'}
 				{@const isSelected = selectedIds.has(slot.id)}
 				<div
-					class="flex items-center gap-4 border-l-4 px-4 py-3 {colorClass} {!slot.active
+					class="flex items-center gap-4 border-l-4 px-4 py-3 {!slot.active
 						? 'opacity-50'
 						: ''} {selectedIndex === i ? 'bg-gray-100' : ''} {isSelected ? 'bg-blue-50' : ''}"
+					style="border-left-color: {catColor(slot.categoryId)}"
 				>
 					{#if multiselect && !dayPast}
 						<button

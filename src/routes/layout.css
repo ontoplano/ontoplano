@@ -2,15 +2,6 @@
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 
-@theme {
-	--color-duty: #3b82f6;
-	--color-skill: #22c55e;
-	--color-money: #f59e0b;
-	--color-duty-light: #dbeafe;
-	--color-skill-light: #dcfce7;
-	--color-money-light: #fef3c7;
-}
-
 /* No rounded corners anywhere */
 *,
 *::before,

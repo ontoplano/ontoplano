@@ -8,6 +8,15 @@
 	let { children, data }: { children: any; data: LayoutServerData } = $props();
 	let menuOpen = $state(false);
 
+	function categoryStyle(): string {
+		return data.categories
+			.map(
+				(c: { id: number; name: string; color: string; colorLight: string }) =>
+					`--color-cat-${c.id}:${c.color};--color-cat-${c.id}-light:${c.colorLight}`
+			)
+			.join(';');
+	}
+
 	const nav = [
 		{ href: '/', label: 'Home' },
 		{ href: '/planner/track', label: 'Planner' },
@@ -52,12 +61,7 @@
 <svelte:window onkeydown={handleGlobalKeydown} onclick={handleClickOutside} />
 
 {#if data.user}
-	<div
-		class="flex min-h-screen flex-col bg-gray-50"
-		style="--color-duty:{data.colors.duty};--color-skill:{data.colors.skill};--color-money:{data
-			.colors.money};--color-duty-light:{data.colors.dutyLight};--color-skill-light:{data.colors
-			.skillLight};--color-money-light:{data.colors.moneyLight}"
-	>
+	<div class="flex min-h-screen flex-col bg-gray-50" style={categoryStyle()}>
 		<header class="border-b border-gray-200 bg-white shadow-sm">
 			<div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
 				<div class="flex items-center gap-6">

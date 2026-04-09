@@ -1,16 +1,9 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { loadConfig } from '$lib/server/config';
-
-function hexToLightVariant(hex: string): string {
-	const r = parseInt(hex.slice(1, 3), 16);
-	const g = parseInt(hex.slice(3, 5), 16);
-	const b = parseInt(hex.slice(5, 7), 16);
-	const lr = Math.round(r + (255 - r) * 0.85);
-	const lg = Math.round(g + (255 - g) * 0.85);
-	const lb = Math.round(b + (255 - b) * 0.85);
-	return `#${lr.toString(16).padStart(2, '0')}${lg.toString(16).padStart(2, '0')}${lb.toString(16).padStart(2, '0')}`;
-}
+import { db } from '$lib/server/db';
+import { categories } from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
 
 export const load: LayoutServerLoad = async (event) => {
 	const isLoginPage = event.url.pathname === '/login';
@@ -23,15 +16,25 @@ export const load: LayoutServerLoad = async (event) => {
 
 	const config = loadConfig();
 
+	let userCategories: { id: number; name: string; color: string; colorLight: string }[] = [];
+	if (event.locals.user) {
+		userCategories = db
+			.select({
+				id: categories.id,
+				name: categories.name,
+				color: categories.color,
+				colorLight: categories.colorLight
+			})
+			.from(categories)
+			.where(eq(categories.userId, event.locals.user.id))
+			.all();
+	}
+
 	return {
 		user: event.locals.user ?? null,
-		colors: {
-			duty: config.colors.duty,
-			skill: config.colors.skill,
-			money: config.colors.money,
-			dutyLight: hexToLightVariant(config.colors.duty),
-			skillLight: hexToLightVariant(config.colors.skill),
-			moneyLight: hexToLightVariant(config.colors.money)
+		categories: userCategories,
+		config: {
+			week: config.week
 		}
 	};
 };
