@@ -80,8 +80,12 @@
 			if (editingNotes) cancelEditNotes();
 		}}
 	>
-		<div class="edge-label" style="background: {labelBg}; color: {color}; border-color: {color};">
-			{data?.type ?? ''}{#if hasNotes}<span class="note-indicator" title={data?.notes}>¹</span>{/if}
+		<div
+			class="edge-label"
+			style="background: {labelBg}; color: {color}; border-color: {color};"
+			title={hasNotes ? data?.notes : undefined}
+		>
+			{data?.type ?? ''}{#if hasNotes}<span class="note-indicator">*</span>{/if}
 		</div>
 		{#if showActions && !editingNotes}
 			<button
@@ -148,7 +152,6 @@
 	.note-indicator {
 		margin-left: 1px;
 		font-weight: bold;
-		cursor: help;
 	}
 
 	.action-btn {

@@ -13,6 +13,7 @@
 		BackgroundVariant,
 		MiniMap,
 		MarkerType,
+		SelectionMode,
 		type Node,
 		type Edge,
 		type NodeTypes,
@@ -1026,19 +1027,19 @@
 			<div class="flex">
 				<button
 					onclick={toggleView}
-					class="px-3 py-1 text-sm {graphView
-						? 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50'
-						: 'bg-gray-900 px-3 py-1 text-sm font-medium text-white hover:bg-gray-800'}"
-				>
-					List
-				</button>
-				<button
-					onclick={toggleView}
 					class="px-3 py-1 text-sm {!graphView
 						? 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50'
 						: 'bg-gray-900 px-3 py-1 text-sm font-medium text-white hover:bg-gray-800'}"
 				>
 					Graph
+				</button>
+				<button
+					onclick={toggleView}
+					class="px-3 py-1 text-sm {graphView
+						? 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50'
+						: 'bg-gray-900 px-3 py-1 text-sm font-medium text-white hover:bg-gray-800'}"
+				>
+					List
 				</button>
 			</div>
 		</div>
@@ -1822,17 +1823,14 @@
 						deleteKey="Delete"
 						minZoom={0.3}
 						maxZoom={3}
-						selectionOnDrag={false}
-						panOnDrag
+						selectionOnDrag
+						panOnDrag={[1, 2]}
+						selectionMode={SelectionMode.Partial}
 						clickConnect={false}
 						onnodeclick={(e) => {
 							if (!e.node.id.startsWith('b-')) return;
 							const beliefId = parseInt(e.node.id.replace('b-', ''));
 							openBeliefPanel(beliefId);
-							// Deselect all nodes after opening the panel to prevent
-							// SvelteFlow's selectionRectMode from getting stuck at 'nodes',
-							// which causes the cursor to enter selection mode permanently.
-							nodes = nodes.map((n) => (n.selected ? { ...n, selected: false } : n));
 						}}
 					>
 						<Controls />
