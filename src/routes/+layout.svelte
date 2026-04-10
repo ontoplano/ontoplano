@@ -61,22 +61,18 @@
 <svelte:window onkeydown={handleGlobalKeydown} onclick={handleClickOutside} />
 
 {#if data.user}
-	<div class="flex min-h-screen flex-col bg-slate-50/80" style={categoryStyle()}>
-		<header
-			class="border-b border-gray-200/60 bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 shadow-sm"
-		>
+	<div class="flex min-h-screen flex-col bg-stone-100" style={categoryStyle()}>
+		<header class="border-b border-gray-800 bg-gray-900 shadow-sm">
 			<div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
 				<div class="flex items-center gap-6">
-					<a href="/" class="text-lg font-bold tracking-tight text-gray-900">semotina</a>
+					<a href="/" class="text-lg font-bold tracking-tight text-white">semotina</a>
 					<nav class="flex gap-1">
 						{#each nav as item}
 							<a
 								href={item.href}
-								class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors {isNavActive(
-									item.href
-								)
-									? 'bg-gray-900/10 text-gray-900'
-									: 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'}"
+								class="px-3 py-1.5 text-sm font-medium transition-colors {isNavActive(item.href)
+									? 'bg-white/15 text-white'
+									: 'text-gray-400 hover:bg-white/10 hover:text-gray-200'}"
 							>
 								{item.label}
 							</a>
@@ -84,10 +80,10 @@
 					</nav>
 				</div>
 				<div class="menu-container relative flex items-center gap-3">
-					<span class="text-sm text-gray-500">{data.user.name}</span>
+					<span class="text-sm text-gray-400">{data.user.name}</span>
 					<button
 						onclick={() => (menuOpen = !menuOpen)}
-						class="flex h-8 w-8 items-center justify-center border border-gray-300 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50"
+						class="flex h-8 w-8 items-center justify-center border border-gray-600 bg-gray-800 text-gray-300 shadow-sm transition hover:bg-gray-700"
 						aria-label="Menu"
 					>
 						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,19 +97,19 @@
 					</button>
 					{#if menuOpen}
 						<div
-							class="absolute top-full right-0 mt-1 w-40 border border-gray-200 bg-white shadow-sm"
+							class="absolute top-full right-0 mt-1 w-40 border border-gray-700 bg-gray-800 shadow-sm"
 						>
 							<a
 								href="/config"
 								onclick={() => (menuOpen = false)}
-								class="block px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+								class="block px-4 py-2 text-sm text-gray-300 transition hover:bg-gray-700"
 							>
 								Config
 							</a>
 							<form method="post" action="/login?/signOut" use:enhance>
 								<button
 									type="submit"
-									class="w-full px-4 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-50"
+									class="w-full px-4 py-2 text-left text-sm text-gray-300 transition hover:bg-gray-700"
 								>
 									Sign out
 								</button>

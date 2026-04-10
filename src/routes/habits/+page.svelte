@@ -31,7 +31,16 @@
 	let newHabitType: 'bad' | 'good' = $state('bad');
 	let scheduledDaysState: boolean[] = $state([false, false, false, false, false, false, false]);
 
-	const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+	const FULL_DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+	function getFirstDay(): number {
+		return data.config?.week?.firstDay ?? 0;
+	}
+
+	function orderedDayLabels(): string[] {
+		const fd = getFirstDay();
+		return [...FULL_DAY_LABELS.slice(fd), ...FULL_DAY_LABELS.slice(0, fd)];
+	}
 
 	function filteredHabits() {
 		if (typeFilter === 'all') return data.habits as Habit[];
@@ -63,6 +72,7 @@
 	function buildHeatmapWeeks(): string[][] {
 		const weeks: string[][] = [];
 		const today = new Date();
+		const fd = getFirstDay();
 
 		const endDay = new Date(today);
 		const startDay = new Date(today);
@@ -70,9 +80,10 @@
 
 		const startDow = startDay.getDay();
 		const adjustedStart = new Date(startDay);
-		if (startDow !== 1) {
-			const daysToMonday = startDow === 0 ? 6 : startDow - 1;
-			adjustedStart.setDate(adjustedStart.getDate() - daysToMonday);
+		const jsDayOfFirstDay = fd === 6 ? 0 : fd + 1;
+		const diff = (startDow - jsDayOfFirstDay + 7) % 7;
+		if (diff !== 0) {
+			adjustedStart.setDate(adjustedStart.getDate() - diff);
 		}
 
 		let current = new Date(adjustedStart);
@@ -123,7 +134,7 @@
 			.filter((n) => !isNaN(n) && n >= 0 && n <= 6);
 		if (days.length === 0) return 'Every day';
 		if (days.length === 7) return 'Every day';
-		return days.map((d) => DAY_LABELS[d]).join(', ');
+		return days.map((d) => FULL_DAY_LABELS[d]).join(', ');
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -319,7 +330,7 @@
 				<div class="space-y-2">
 					<span class="text-sm font-medium text-gray-700">Scheduled Days</span>
 					<div class="flex flex-wrap gap-2">
-						{#each DAY_LABELS as label, i}
+						{#each FULL_DAY_LABELS as label, i}
 							<label class="flex items-center gap-1">
 								<input
 									type="checkbox"
@@ -446,7 +457,7 @@
 						<div class="border-t border-gray-200 px-4 py-3">
 							<div class="mb-2 text-xs font-medium text-gray-500">Last 365 days</div>
 							<div class="overflow-x-auto">
-								<div class="inline-flex gap-px">
+								<div class="inline-flex items-start gap-px">
 									{#each heatmapWeeks as week, wi (wi)}
 										<div class="flex flex-col gap-px">
 											{#each week as day, di (di)}
@@ -467,6 +478,13 @@
 											{/each}
 										</div>
 									{/each}
+									<div class="ml-1 flex flex-col gap-px">
+										{#each orderedDayLabels() as label}
+											<span class="flex h-2.5 items-center text-[9px] leading-none text-gray-400"
+												>{label}</span
+											>
+										{/each}
+									</div>
 								</div>
 							</div>
 							<div class="mt-2 flex items-center gap-2 text-xs text-gray-400">

@@ -27,7 +27,6 @@
 		action="?/save"
 		use:enhance
 		class="space-y-6 border border-gray-200 bg-white p-6 shadow-sm"
-		style="border-left: 4px solid rgba(59, 130, 246, 0.5)"
 	>
 		<fieldset class="space-y-3">
 			<legend class="text-sm font-semibold text-gray-900">Server</legend>
