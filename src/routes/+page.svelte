@@ -113,7 +113,7 @@
 							<span
 								class="text-xs font-medium {habit.type === 'bad'
 									? habit.streak > 0
-										? 'text-green-600'
+										? 'text-blue-600'
 										: 'text-red-600'
 									: habit.streak > 0
 										? 'text-blue-600'

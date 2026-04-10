@@ -381,7 +381,7 @@
 							<div class="flex items-center gap-2">
 								<span class="text-sm font-medium text-gray-900">{habit.name}</span>
 								{#if habit.streak > 0}
-									<span class="text-xs font-medium {isBad ? 'text-green-600' : 'text-blue-600'}">
+									<span class="text-xs font-medium text-blue-600">
 										{isBad
 											? `${habit.streak} day${habit.streak === 1 ? '' : 's'} clean`
 											: `${habit.streak} day streak`}
