@@ -100,17 +100,17 @@
 	}
 
 	function badHeatmapColor(count: number): string {
-		if (count === 0) return 'bg-gray-100';
-		if (count === 1) return 'bg-red-200';
-		if (count === 2) return 'bg-red-400';
-		return 'bg-red-600';
+		if (count === 0) return 'bg-slate-100';
+		if (count === 1) return 'bg-red-300';
+		if (count === 2) return 'bg-red-500';
+		return 'bg-red-700';
 	}
 
 	function goodHeatmapColor(count: number): string {
-		if (count === 0) return 'bg-gray-100';
-		if (count === 1) return 'bg-green-200';
-		if (count === 2) return 'bg-green-400';
-		return 'bg-green-600';
+		if (count === 0) return 'bg-slate-100';
+		if (count === 1) return 'bg-green-300';
+		if (count === 2) return 'bg-green-500';
+		return 'bg-green-700';
 	}
 
 	const heatmapWeeks = buildHeatmapWeeks();
@@ -363,6 +363,7 @@
 					class="border border-gray-200 bg-white shadow-sm {i === selectedHabitIndex
 						? 'ring-2 ring-gray-900 ring-inset'
 						: ''}"
+					style="border-left-width: 4px; border-left-color: {isBad ? '#ef4444' : '#22c55e'}"
 				>
 					<div class="flex items-center gap-4 px-4 py-3">
 						<div class="min-w-0 flex-1">
@@ -471,15 +472,15 @@
 							<div class="mt-2 flex items-center gap-2 text-xs text-gray-400">
 								<span>Less</span>
 								<div class="flex gap-px">
-									<div class="h-2.5 w-2.5 bg-gray-100"></div>
+									<div class="h-2.5 w-2.5 bg-slate-100"></div>
 									{#if isBad}
-										<div class="h-2.5 w-2.5 bg-red-200"></div>
-										<div class="h-2.5 w-2.5 bg-red-400"></div>
-										<div class="h-2.5 w-2.5 bg-red-600"></div>
+										<div class="h-2.5 w-2.5 bg-red-300"></div>
+										<div class="h-2.5 w-2.5 bg-red-500"></div>
+										<div class="h-2.5 w-2.5 bg-red-700"></div>
 									{:else}
-										<div class="h-2.5 w-2.5 bg-green-200"></div>
-										<div class="h-2.5 w-2.5 bg-green-400"></div>
-										<div class="h-2.5 w-2.5 bg-green-600"></div>
+										<div class="h-2.5 w-2.5 bg-green-300"></div>
+										<div class="h-2.5 w-2.5 bg-green-500"></div>
+										<div class="h-2.5 w-2.5 bg-green-700"></div>
 									{/if}
 								</div>
 								<span>More</span>

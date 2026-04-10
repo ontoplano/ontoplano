@@ -302,14 +302,18 @@
 		{#each data.weekdays as day, i (i)}
 			{@const count = data.taskCountByDay[i] ?? 0}
 			{@const today = isToday(i)}
+			{@const catId = data.tasks.find((t: any) => {
+				const d = new Date(t.scheduledAt).getDay();
+				return d === i || (d === 0 && i === 6) || d === i + 1;
+			})?.categoryId}
 			<button
 				onclick={() => navigateToDay(i)}
 				class="flex-1 border px-2 py-2 text-center text-xs font-medium transition {data.selectedDayIndex ===
 				i
 					? 'border-gray-900 bg-gray-900 text-white'
 					: today
-						? 'border-gray-400 bg-gray-100 text-gray-900'
-						: 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}"
+						? 'border-slate-400 bg-slate-100 text-gray-900'
+						: 'border-gray-200 bg-white text-gray-600 hover:bg-slate-50'}"
 			>
 				{day.slice(0, 3)}
 				{#if count > 0}

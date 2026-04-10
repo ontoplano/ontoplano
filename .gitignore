@@ -30,3 +30,5 @@ test-results
 blie
 pass.py
 todo
+# OpenCode
+.opencode

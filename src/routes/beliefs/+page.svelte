@@ -1132,10 +1132,18 @@
 					{@const incomingRelations = belief.relatedBeliefs.filter(
 						(r) => r.direction === 'incoming'
 					)}
+					{@const valenceColor =
+						belief.valence === 'positive'
+							? '#22c55e'
+							: belief.valence === 'negative'
+								? '#ef4444'
+								: '#9ca3af'}
 					<div
-						class="border border-gray-200 bg-white shadow-sm {i === selectedBeliefIndex
+						class="border border-gray-200 bg-white shadow-sm transition-all {i ===
+						selectedBeliefIndex
 							? 'ring-2 ring-gray-900 ring-inset'
 							: ''}"
+						style="border-left-width: 4px; border-left-color: {valenceColor}"
 					>
 						<div class="flex items-center gap-4 px-4 py-3">
 							<span
@@ -1147,9 +1155,11 @@
 							<div class="min-w-0 flex-1">
 								<div class="flex items-center gap-2">
 									{#if belief.valence === 'positive'}
-										<span class="text-xs font-medium text-blue-600">+</span>
+										<span class="text-xs font-bold text-green-500">+</span>
 									{:else if belief.valence === 'negative'}
-										<span class="text-xs font-medium text-red-500">&minus;</span>
+										<span class="text-xs font-bold text-red-500">&minus;</span>
+									{:else}
+										<span class="text-xs text-gray-300">·</span>
 									{/if}
 									<span class="text-sm font-medium text-gray-900">{belief.content}</span>
 									{#if latest}

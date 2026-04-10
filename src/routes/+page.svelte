@@ -49,7 +49,10 @@
 	</div>
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-		<div class="border border-gray-200 bg-white p-4 shadow-sm">
+		<div
+			class="border-l-4 border-blue-400/60 bg-white p-4 shadow-sm"
+			style="border-left-color: rgba(59, 130, 246, 0.6)"
+		>
 			<div class="mb-3 flex items-center justify-between">
 				<h2 class="text-sm font-bold text-gray-900">Today's Tasks</h2>
 				<a href="/planner/track" class="text-xs text-gray-500 transition hover:text-gray-900">
@@ -85,7 +88,10 @@
 			{/if}
 		</div>
 
-		<div class="border border-gray-200 bg-white p-4 shadow-sm">
+		<div
+			class="border-l-4 border-green-400/60 bg-white p-4 shadow-sm"
+			style="border-left-color: rgba(34, 197, 94, 0.6)"
+		>
 			<div class="mb-3 flex items-center justify-between">
 				<h2 class="text-sm font-bold text-gray-900">Habits</h2>
 				<a href="/habits" class="text-xs text-gray-500 transition hover:text-gray-900"> Open → </a>
@@ -115,7 +121,10 @@
 		</div>
 	</div>
 
-	<div class="border border-gray-200 bg-white p-4 shadow-sm">
+	<div
+		class="border-l-4 border-amber-400/60 bg-white p-4 shadow-sm"
+		style="border-left-color: rgba(245, 158, 11, 0.6)"
+	>
 		<div class="mb-3 flex items-center justify-between">
 			<h2 class="text-sm font-bold text-gray-900">Diary</h2>
 			<div class="flex items-center gap-3">
@@ -186,7 +195,10 @@
 	</div>
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-		<div class="border border-gray-200 bg-white p-4 shadow-sm">
+		<div
+			class="border-l-4 border-purple-400/60 bg-white p-4 shadow-sm"
+			style="border-left-color: rgba(168, 85, 247, 0.6)"
+		>
 			<div class="mb-3 flex items-center justify-between">
 				<h2 class="text-sm font-bold text-gray-900">Quick Belief</h2>
 				<a href="/beliefs" class="text-xs text-gray-500 transition hover:text-gray-900">
@@ -266,7 +278,7 @@
 			{/if}
 		</div>
 
-		<div class="border border-gray-200 bg-white p-4 shadow-sm">
+		<div class="border-l-4 border-slate-300/60 bg-white p-4 shadow-sm">
 			<h2 class="mb-3 text-sm font-bold text-gray-900">Quick Links</h2>
 			<div class="space-y-2">
 				<a href="/planner/track" class="block text-sm text-gray-600 transition hover:text-gray-900"

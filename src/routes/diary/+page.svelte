@@ -129,8 +129,8 @@
 						selectedIndex = 0;
 					}}
 					class="border px-2 py-0.5 text-xs transition {filterTag === tag.name
-						? 'border-gray-900 bg-gray-900 text-white'
-						: 'border-gray-200 bg-white text-gray-500 hover:text-gray-700'}"
+						? 'border-amber-500 bg-amber-50 text-amber-700'
+						: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
 				>
 					#{tag.name}
 				</button>
@@ -222,8 +222,8 @@
 		<div class="space-y-3">
 			{#each filteredEntries() as entry, i (entry.id)}
 				<div
-					class="border border-gray-200 bg-white p-4 shadow-sm {i === selectedIndex
-						? 'ring-2 ring-gray-900 ring-inset'
+					class="border border-gray-200 bg-white p-4 shadow-sm transition-all {i === selectedIndex
+						? 'border-l-4 border-l-amber-300/60 ring-2 ring-amber-400 ring-inset'
 						: ''}"
 				>
 					<div class="mb-2 flex items-start justify-between gap-4">

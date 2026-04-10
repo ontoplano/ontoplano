@@ -61,18 +61,22 @@
 <svelte:window onkeydown={handleGlobalKeydown} onclick={handleClickOutside} />
 
 {#if data.user}
-	<div class="flex min-h-screen flex-col bg-gray-50" style={categoryStyle()}>
-		<header class="border-b border-gray-200 bg-white shadow-sm">
+	<div class="flex min-h-screen flex-col bg-slate-50/80" style={categoryStyle()}>
+		<header
+			class="border-b border-gray-200/60 bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 shadow-sm"
+		>
 			<div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
 				<div class="flex items-center gap-6">
 					<a href="/" class="text-lg font-bold tracking-tight text-gray-900">semotina</a>
-					<nav class="flex gap-4">
+					<nav class="flex gap-1">
 						{#each nav as item}
 							<a
 								href={item.href}
-								class="text-sm font-medium transition-colors {isNavActive(item.href)
-									? 'text-gray-900 underline underline-offset-4'
-									: 'text-gray-500 hover:text-gray-900'}"
+								class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors {isNavActive(
+									item.href
+								)
+									? 'bg-gray-900/10 text-gray-900'
+									: 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'}"
 							>
 								{item.label}
 							</a>

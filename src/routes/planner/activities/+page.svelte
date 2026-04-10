@@ -350,6 +350,7 @@
 					class="flex items-center gap-4 px-4 py-3 transition-colors {i === selectedIndex
 						? 'ring-2 ring-gray-900 ring-inset'
 						: ''} {!activity.active ? 'opacity-50' : ''}"
+					style="border-left: 4px solid {catColor(activity.categoryId)}"
 				>
 					<div class="min-w-0 flex-1">
 						<div class="flex items-center gap-2">
