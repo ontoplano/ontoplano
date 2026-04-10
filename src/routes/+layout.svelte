@@ -4,24 +4,10 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import type { LayoutServerData } from './$types';
+	import { NAV_LINK, NAV_LINK_ACTIVE, NAV_USER_TEXT, NAV_DROPDOWN_ITEM } from '$lib/colors.js';
 
 	let { children, data }: { children: any; data: LayoutServerData } = $props();
 	let menuOpen = $state(false);
-
-	const sectionColors: Record<string, string> = {
-		'/planner': '59, 130, 246',
-		'/diary': '234, 179, 8',
-		'/habits': '6, 182, 212',
-		'/beliefs': '168, 85, 247'
-	};
-
-	function sectionTint(): string {
-		const path = page.url.pathname;
-		for (const [prefix, rgb] of Object.entries(sectionColors)) {
-			if (path.startsWith(prefix)) return `rgba(${rgb}, 0.06)`;
-		}
-		return '';
-	}
 
 	function categoryStyle(): string {
 		return data.categories
@@ -76,18 +62,18 @@
 <svelte:window onkeydown={handleGlobalKeydown} onclick={handleClickOutside} />
 
 {#if data.user}
-	<div class="flex min-h-screen flex-col bg-stone-100" style={categoryStyle()}>
-		<header class="border-b border-gray-800 bg-gray-900 shadow-sm">
+	<div class="flex min-h-screen flex-col bg-gray-50" style={categoryStyle()}>
+		<header class="border-b border-gray-200 bg-white shadow-sm">
 			<div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
 				<div class="flex items-center gap-6">
-					<a href="/" class="text-lg font-bold tracking-tight text-white">semotina</a>
-					<nav class="flex gap-1">
+					<a href="/" class="text-lg font-bold tracking-tight text-gray-900">semotina</a>
+					<nav class="flex gap-4">
 						{#each nav as item}
 							<a
 								href={item.href}
-								class="px-3 py-1.5 text-sm font-medium transition-colors {isNavActive(item.href)
-									? 'bg-white/15 text-white'
-									: 'text-gray-400 hover:bg-white/10 hover:text-gray-200'}"
+								class="text-sm font-medium transition-colors {isNavActive(item.href)
+									? NAV_LINK_ACTIVE
+									: NAV_LINK}"
 							>
 								{item.label}
 							</a>
@@ -95,10 +81,10 @@
 					</nav>
 				</div>
 				<div class="menu-container relative flex items-center gap-3">
-					<span class="text-sm text-gray-400">{data.user.name}</span>
+					<span class="text-sm {NAV_USER_TEXT}">{data.user.name}</span>
 					<button
 						onclick={() => (menuOpen = !menuOpen)}
-						class="flex h-8 w-8 items-center justify-center border border-gray-600 bg-gray-800 text-gray-300 shadow-sm transition hover:bg-gray-700"
+						class="flex h-8 w-8 items-center justify-center border border-gray-300 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50"
 						aria-label="Menu"
 					>
 						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,19 +98,19 @@
 					</button>
 					{#if menuOpen}
 						<div
-							class="absolute top-full right-0 mt-1 w-40 border border-gray-700 bg-gray-800 shadow-sm"
+							class="absolute top-full right-0 mt-1 w-40 border border-gray-200 bg-white shadow-sm"
 						>
 							<a
 								href="/config"
 								onclick={() => (menuOpen = false)}
-								class="block px-4 py-2 text-sm text-gray-300 transition hover:bg-gray-700"
+								class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
 							>
 								Config
 							</a>
 							<form method="post" action="/login?/signOut" use:enhance>
 								<button
 									type="submit"
-									class="w-full px-4 py-2 text-left text-sm text-gray-300 transition hover:bg-gray-700"
+									class="w-full px-4 py-2 text-left text-sm {NAV_DROPDOWN_ITEM} transition"
 								>
 									Sign out
 								</button>
@@ -134,11 +120,9 @@
 				</div>
 			</div>
 		</header>
-		<div class="flex-1" style={sectionTint() ? `background-color: ${sectionTint()}` : ''}>
-			<main class="mx-auto w-full max-w-5xl px-4 py-6">
-				{@render children()}
-			</main>
-		</div>
+		<main class="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
+			{@render children()}
+		</main>
 	</div>
 {:else}
 	{@render children()}

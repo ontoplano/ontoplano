@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
+	import { HEATMAP_BAD, HEATMAP_GOOD, HABIT_BAD_ACCENT, HABIT_GOOD_ACCENT } from '$lib/colors.js';
 
 	interface Habit {
 		id: number;
@@ -23,10 +24,12 @@
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	let showForm = $state(false);
+	let editingId: number | null = $state(null);
 	let selectedHabitIndex = $state(0);
 	let expandedHabitId: number | null = $state(null);
 	let confirmingDeleteId: number | null = $state(null);
 	let typeFilter: 'all' | 'bad' | 'good' = $state('all');
+	let backdateInput: string = $state('');
 
 	let newHabitType: 'bad' | 'good' = $state('bad');
 	let scheduledDaysState: boolean[] = $state([false, false, false, false, false, false, false]);
@@ -111,17 +114,11 @@
 	}
 
 	function badHeatmapColor(count: number): string {
-		if (count === 0) return 'bg-slate-100';
-		if (count === 1) return 'bg-red-300';
-		if (count === 2) return 'bg-red-500';
-		return 'bg-red-700';
+		return HEATMAP_BAD[Math.min(count, HEATMAP_BAD.length - 1)];
 	}
 
 	function goodHeatmapColor(count: number): string {
-		if (count === 0) return 'bg-slate-100';
-		if (count === 1) return 'bg-blue-300';
-		if (count === 2) return 'bg-blue-500';
-		return 'bg-blue-700';
+		return HEATMAP_GOOD[Math.min(count, HEATMAP_GOOD.length - 1)];
 	}
 
 	const heatmapWeeks = buildHeatmapWeeks();
@@ -158,8 +155,10 @@
 				break;
 			case 'n':
 				e.preventDefault();
+				editingId = null;
 				showForm = true;
 				confirmingDeleteId = null;
+				resetForm();
 				tick().then(() => {
 					const nameInput = document.querySelector<HTMLInputElement>('input[name="name"]');
 					nameInput?.focus();
@@ -176,6 +175,7 @@
 				e.preventDefault();
 				if (showForm) {
 					showForm = false;
+					resetForm();
 				} else {
 					expandedHabitId = null;
 					confirmingDeleteId = null;
@@ -185,8 +185,26 @@
 	}
 
 	function resetForm() {
+		editingId = null;
 		newHabitType = 'bad';
 		scheduledDaysState = [false, false, false, false, false, false, false];
+	}
+
+	function startEdit(habit: Habit) {
+		editingId = habit.id;
+		newHabitType = habit.type;
+		const scheduled = habit.scheduledDays
+			? habit.scheduledDays
+					.split(',')
+					.map((s) => parseInt(s.trim(), 10))
+					.filter((n) => !isNaN(n) && n >= 0 && n <= 6)
+			: [];
+		scheduledDaysState = [0, 1, 2, 3, 4, 5, 6].map((d) => scheduled.includes(d));
+		showForm = true;
+		tick().then(() => {
+			const nameInput = document.querySelector<HTMLInputElement>('input[name="name"]');
+			nameInput?.focus();
+		});
 	}
 
 	function getScheduledDaysString(): string {
@@ -202,6 +220,12 @@
 		<h1 class="text-lg font-bold text-gray-900">Habits</h1>
 		<button
 			onclick={() => {
+				if (showForm && !editingId) {
+					showForm = false;
+					resetForm();
+					return;
+				}
+				editingId = null;
 				showForm = !showForm;
 				confirmingDeleteId = null;
 				if (!showForm) {
@@ -272,9 +296,10 @@
 	{/if}
 
 	{#if showForm}
+		{@const editHabit = editingId ? (data.habits as Habit[]).find((h) => h.id === editingId) : null}
 		<form
 			method="post"
-			action="?/create"
+			action={editingId ? '?/update' : '?/create'}
 			use:enhance={() => {
 				return async ({ update }) => {
 					await update();
@@ -284,12 +309,16 @@
 			}}
 			class="space-y-3 border border-gray-200 bg-white p-4 shadow-sm"
 		>
+			{#if editingId}
+				<input type="hidden" name="id" value={editingId} />
+			{/if}
 			<label class="block">
 				<span class="text-sm font-medium text-gray-700">Name</span>
 				<input
 					name="name"
 					type="text"
 					required
+					value={editHabit?.name ?? ''}
 					placeholder={newHabitType === 'bad' ? 'e.g. smoking, biting nails' : 'e.g. gym, reading'}
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
@@ -299,6 +328,7 @@
 				<input
 					name="description"
 					type="text"
+					value={editHabit?.description ?? ''}
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>
@@ -351,7 +381,7 @@
 				type="submit"
 				class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
 			>
-				Create
+				{editingId ? 'Save' : 'Create'}
 			</button>
 		</form>
 	{/if}
@@ -374,7 +404,9 @@
 					class="border border-gray-200 bg-white shadow-sm {i === selectedHabitIndex
 						? 'ring-2 ring-gray-900 ring-inset'
 						: ''}"
-					style="border-left-width: 4px; border-left-color: {isBad ? '#ef4444' : '#3b82f6'}"
+					style="border-left-width: 4px; border-left-color: {isBad
+						? HABIT_BAD_ACCENT
+						: HABIT_GOOD_ACCENT}"
 				>
 					<div class="flex items-center gap-4 px-4 py-3">
 						<div class="min-w-0 flex-1">
@@ -420,6 +452,12 @@
 									</button>
 								</form>
 							{/if}
+							<button
+								onclick={() => startEdit(habit)}
+								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+							>
+								Edit
+							</button>
 							<button
 								onclick={() => {
 									expandedHabitId = expandedHabitId === habit.id ? null : habit.id;
@@ -490,18 +528,48 @@
 							<div class="mt-2 flex items-center gap-2 text-xs text-gray-400">
 								<span>Less</span>
 								<div class="flex gap-px">
-									<div class="h-2.5 w-2.5 bg-slate-100"></div>
+									<div class="h-2.5 w-2.5 {HEATMAP_BAD[0]}"></div>
 									{#if isBad}
-										<div class="h-2.5 w-2.5 bg-red-300"></div>
-										<div class="h-2.5 w-2.5 bg-red-500"></div>
-										<div class="h-2.5 w-2.5 bg-red-700"></div>
+										<div class="h-2.5 w-2.5 {HEATMAP_BAD[1]}"></div>
+										<div class="h-2.5 w-2.5 {HEATMAP_BAD[2]}"></div>
+										<div class="h-2.5 w-2.5 {HEATMAP_BAD[3]}"></div>
 									{:else}
-										<div class="h-2.5 w-2.5 bg-blue-300"></div>
-										<div class="h-2.5 w-2.5 bg-blue-500"></div>
-										<div class="h-2.5 w-2.5 bg-blue-700"></div>
+										<div class="h-2.5 w-2.5 {HEATMAP_GOOD[1]}"></div>
+										<div class="h-2.5 w-2.5 {HEATMAP_GOOD[2]}"></div>
+										<div class="h-2.5 w-2.5 {HEATMAP_GOOD[3]}"></div>
 									{/if}
 								</div>
 								<span>More</span>
+							</div>
+
+							<div class="mt-3 flex items-center gap-2">
+								<span class="text-xs font-medium text-gray-500">Log past entry:</span>
+								<input
+									type="date"
+									bind:value={backdateInput}
+									max={data.today}
+									class="border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								/>
+								<form
+									method="post"
+									action="?/logOccurrence"
+									use:enhance={() => {
+										return async ({ update }) => {
+											await update();
+											backdateInput = '';
+										};
+									}}
+								>
+									<input type="hidden" name="habitId" value={habit.id} />
+									<input type="hidden" name="date" value={backdateInput} />
+									<button
+										type="submit"
+										disabled={!backdateInput}
+										class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
+									>
+										Log
+									</button>
+								</form>
 							</div>
 
 							{#if occ.length > 0}

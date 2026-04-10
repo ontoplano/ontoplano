@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { activities, categories, weeklySlots, taskInstances } from '$lib/server/db/schema';
 import { eq, count, and } from 'drizzle-orm';
+import { CATEGORY_DEFAULT_NEW } from '$lib/colors.js';
 import { toLocalISOString } from '$lib/server/week-generator';
 
 function hexToLightVariant(hex: string): string {
@@ -163,7 +164,7 @@ export const actions: Actions = {
 		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const name = formData.get('name')?.toString()?.trim();
-		const color = formData.get('color')?.toString()?.trim() ?? '#6b7280';
+		const color = formData.get('color')?.toString()?.trim() ?? CATEGORY_DEFAULT_NEW;
 
 		if (!name) return fail(400, { message: 'Category name is required' });
 		if (!/^#[0-9a-fA-F]{6}$/.test(color)) return fail(400, { message: 'Invalid color format' });

@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types.js';
+	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -32,9 +33,9 @@
 	type Slot = (typeof data.slots)[number];
 
 	function catColor(catId: number | null): string {
-		if (!catId) return '#d1d5db';
+		if (!catId) return CATEGORY_FALLBACK_COLOR;
 		const cat = data.categories?.find((c: { id: number }) => c.id === catId);
-		return cat?.color ?? '#d1d5db';
+		return cat?.color ?? CATEGORY_FALLBACK_COLOR;
 	}
 
 	function slotsForDay(day: number): Slot[] {

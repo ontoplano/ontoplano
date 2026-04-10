@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
+	import { CATEGORY_FALLBACK_COLOR, CATEGORY_DEFAULT_NEW } from '$lib/colors.js';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -11,12 +12,12 @@
 	let activeFilters: Set<number> = $state(new Set());
 	let showCategoryForm = $state(false);
 	let editingCategoryId: number | null = $state(null);
-	let newCatColor = $state('#6b7280');
+	let newCatColor = $state(CATEGORY_DEFAULT_NEW);
 
 	function catColor(catId: number | null): string {
-		if (!catId) return '#d1d5db';
+		if (!catId) return CATEGORY_FALLBACK_COLOR;
 		const cat = data.categories?.find((c: { id: number }) => c.id === catId);
-		return cat?.color ?? '#d1d5db';
+		return cat?.color ?? CATEGORY_FALLBACK_COLOR;
 	}
 
 	function filteredActivities() {
@@ -96,7 +97,7 @@
 				showCategoryForm = !showCategoryForm;
 				editingCategoryId = null;
 				if (showCategoryForm) {
-					newCatColor = '#6b7280';
+					newCatColor = CATEGORY_DEFAULT_NEW;
 				}
 			}}
 			class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
@@ -196,7 +197,7 @@
 				use:enhance={() => {
 					return async ({ update }) => {
 						await update();
-						newCatColor = '#6b7280';
+						newCatColor = CATEGORY_DEFAULT_NEW;
 					};
 				}}
 				class="flex items-center gap-2 border-t border-gray-100 pt-3"

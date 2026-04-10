@@ -1,9 +1,20 @@
 <script lang="ts">
 	import { Handle, Position, type NodeProps } from '@xyflow/svelte';
+	import { VALENCE_POSITIVE, VALENCE_NEGATIVE, VALENCE_NEUTRAL } from '$lib/colors.js';
 
 	let { data }: NodeProps = $props();
 
 	let editValue = $state('');
+
+	const valenceStyles: Record<string, { bg: string; border: string }> = {
+		positive: { bg: VALENCE_POSITIVE.bg, border: VALENCE_POSITIVE.border },
+		negative: { bg: VALENCE_NEGATIVE.bg, border: VALENCE_NEGATIVE.border },
+		neutral: { bg: VALENCE_NEUTRAL.bg, border: VALENCE_NEUTRAL.border }
+	};
+
+	let vstyle = $derived(
+		valenceStyles[(data.valence as string) ?? 'neutral'] ?? valenceStyles.neutral
+	);
 
 	function isEditing(): boolean {
 		const getter = data.editingNodeId as (() => number | null) | undefined;
@@ -54,10 +65,9 @@
 
 <div
 	class="belief-node"
-	class:positive={data.valence === 'positive'}
-	class:negative={data.valence === 'negative'}
-	class:neutral={data.valence !== 'positive' && data.valence !== 'negative'}
-	style={icolor ? `border-left: 3px solid ${icolor}` : ''}
+	style="background: {vstyle.bg}; border-color: {vstyle.border};{icolor
+		? ` border-left: 3px solid ${icolor}`
+		: ''}"
 >
 	<Handle type="target" position={Position.Top} />
 	<div class="content">
@@ -89,28 +99,12 @@
 
 <style>
 	.belief-node {
-		border: 1px solid #d1d5db;
-		background: #f9fafb;
+		border: 1px solid;
 		padding: 10px 14px;
 		font-size: 13px;
 		line-height: 1.4;
 		max-width: 260px;
 		min-width: 80px;
-	}
-
-	.belief-node.positive {
-		background: #eff6ff;
-		border-color: #93c5fd;
-	}
-
-	.belief-node.negative {
-		background: #fef2f2;
-		border-color: #fca5a5;
-	}
-
-	.belief-node.neutral {
-		background: #f9fafb;
-		border-color: #d1d5db;
 	}
 
 	.label {

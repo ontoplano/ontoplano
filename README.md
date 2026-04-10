@@ -134,6 +134,10 @@ make build            # Docker image
 make dev              # Docker dev
 ```
 
+## Colors
+
+All UI colors are centralized in `src/lib/colors.ts`. Edit that file to change colors across all routes — navbar, beliefs graph (valence, relations, islands), habits heatmap, category fallbacks, and dashboard section accents.
+
 ## Stack
 
 SvelteKit · Svelte 5 · SQLite · Drizzle ORM · better-auth · Tailwind CSS v4 · adapter-node

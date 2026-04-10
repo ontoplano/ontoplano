@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageServerData, ActionData } from './$types';
+	import { SECTION_COLORS } from '$lib/colors.js';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -22,13 +23,6 @@
 		if (text.length <= max) return text;
 		return text.slice(0, max).trimEnd() + '…';
 	}
-
-	const sectionColors = {
-		planner: 'rgba(59, 130, 246, 0.6)',
-		habits: 'rgba(6, 182, 212, 0.6)',
-		diary: 'rgba(234, 179, 8, 0.6)',
-		beliefs: 'rgba(168, 85, 247, 0.6)'
-	};
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (
@@ -58,7 +52,7 @@
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 		<div
 			class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
-			style="border-left-color: {sectionColors.planner}"
+			style="border-left-color: {SECTION_COLORS.planner}"
 		>
 			<div class="mb-3 flex items-center justify-between">
 				<h2 class="text-sm font-bold text-gray-900">Today's Tasks</h2>
@@ -97,7 +91,7 @@
 
 		<div
 			class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
-			style="border-left-color: {sectionColors.habits}"
+			style="border-left-color: {SECTION_COLORS.habits}"
 		>
 			<div class="mb-3 flex items-center justify-between">
 				<h2 class="text-sm font-bold text-gray-900">Habits</h2>
@@ -130,7 +124,7 @@
 
 	<div
 		class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
-		style="border-left-color: {sectionColors.diary}"
+		style="border-left-color: {SECTION_COLORS.diary}"
 	>
 		<div class="mb-3 flex items-center justify-between">
 			<h2 class="text-sm font-bold text-gray-900">Diary</h2>
@@ -204,7 +198,7 @@
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 		<div
 			class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
-			style="border-left-color: {sectionColors.beliefs}"
+			style="border-left-color: {SECTION_COLORS.beliefs}"
 		>
 			<div class="mb-3 flex items-center justify-between">
 				<h2 class="text-sm font-bold text-gray-900">Quick Belief</h2>

@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import type { PageServerData } from './$types';
+	import { CATEGORY_FALLBACK_COLOR, CATEGORY_FALLBACK_LIGHT } from '$lib/colors.js';
 
 	let { data }: { data: PageServerData } = $props();
 
@@ -19,15 +20,15 @@
 	];
 
 	function catColor(catId: number | null): string {
-		if (!catId) return '#d1d5db';
+		if (!catId) return CATEGORY_FALLBACK_COLOR;
 		const cat = data.categories?.find((c: { id: number }) => c.id === catId);
-		return cat?.color ?? '#d1d5db';
+		return cat?.color ?? CATEGORY_FALLBACK_COLOR;
 	}
 
 	function catColorLight(catId: number | null): string {
-		if (!catId) return '#f3f4f6';
+		if (!catId) return CATEGORY_FALLBACK_LIGHT;
 		const cat = data.categories?.find((c: { id: number }) => c.id === catId);
-		return cat?.colorLight ?? '#f3f4f6';
+		return cat?.colorLight ?? CATEGORY_FALLBACK_LIGHT;
 	}
 
 	function isFuture(scheduledAt: string): boolean {

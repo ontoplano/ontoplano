@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import type { PageServerData } from './$types';
+	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 
 	let { data }: { data: PageServerData } = $props();
 
@@ -8,9 +9,9 @@
 	let selectedIndex: number = $state(0);
 
 	function catColor(catId: number | null): string {
-		if (!catId) return '#d1d5db';
+		if (!catId) return CATEGORY_FALLBACK_COLOR;
 		const cat = data.categories?.find((c: { id: number }) => c.id === catId);
-		return cat?.color ?? '#d1d5db';
+		return cat?.color ?? CATEGORY_FALLBACK_COLOR;
 	}
 
 	const statusBadgeClass: Record<string, string> = {

@@ -1,5 +1,11 @@
 <script lang="ts">
 	import { BaseEdge, EdgeLabel, getBezierPath, type EdgeProps } from '@xyflow/svelte';
+	import {
+		RELATION_SUPPORTS_COLOR,
+		RELATION_CONTRADICTS_COLOR,
+		SUPPORTS_STYLE,
+		CONTRADICTS_STYLE
+	} from '$lib/colors.js';
 
 	let {
 		id,
@@ -29,8 +35,8 @@
 	let labelY = $derived(pathResult[2]);
 
 	let isSupports = $derived(data?.type === 'supports');
-	let color = $derived(isSupports ? '#3b82f6' : '#ef4444');
-	let labelBg = $derived(isSupports ? '#eff6ff' : '#fef2f2');
+	let color = $derived(isSupports ? RELATION_SUPPORTS_COLOR : RELATION_CONTRADICTS_COLOR);
+	let labelBg = $derived(isSupports ? SUPPORTS_STYLE.bg : CONTRADICTS_STYLE.bg);
 	let isPending = $derived(data?.pending === true);
 	let hasNotes = $derived(!!data?.notes);
 
