@@ -618,5 +618,48 @@ export const actions: Actions = {
 		db.delete(beliefTags).where(eq(beliefTags.id, id)).run();
 
 		return { success: true };
+	},
+
+	bulkAddBeliefTag: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const rawIds = formData.get('beliefIds')?.toString()?.trim() ?? '';
+		const rawTags = formData.get('tags')?.toString()?.trim() ?? '';
+
+		const beliefIds = rawIds
+			.split(',')
+			.map((s) => Number(s.trim()))
+			.filter((n) => !isNaN(n) && n > 0);
+
+		if (beliefIds.length === 0) return fail(400, { message: 'No belief IDs provided' });
+
+		const tagNames = parseTags(rawTags);
+		if (tagNames.length === 0) return fail(400, { message: 'No tags provided' });
+
+		const ownedBeliefs = db
+			.select({ id: beliefs.id })
+			.from(beliefs)
+			.where(and(inArray(beliefs.id, beliefIds), eq(beliefs.userId, userId)))
+			.all();
+		const ownedIds = new Set(ownedBeliefs.map((b) => b.id));
+
+		if (ownedIds.size === 0) return fail(404, { message: 'No matching beliefs found' });
+
+		const tagIds = ensureTagIds(tagNames, userId);
+
+		for (const beliefId of ownedIds) {
+			for (const tagId of tagIds) {
+				const existing = db
+					.select({ id: beliefTags.id })
+					.from(beliefTags)
+					.where(and(eq(beliefTags.beliefId, beliefId), eq(beliefTags.tagId, tagId)))
+					.get();
+				if (!existing) {
+					db.insert(beliefTags).values({ beliefId, tagId }).run();
+				}
+			}
+		}
+
+		return { success: true };
 	}
 };

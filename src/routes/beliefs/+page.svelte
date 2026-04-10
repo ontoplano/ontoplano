@@ -23,6 +23,14 @@
 	import '@xyflow/svelte/dist/style.css';
 	import dagre from '@dagrejs/dagre';
 	import { goto } from '$app/navigation';
+	import {
+		ISLAND_COLORS,
+		RELATION_SUPPORTS_COLOR,
+		RELATION_CONTRADICTS_COLOR,
+		SUPPORTS_STYLE,
+		CONTRADICTS_STYLE,
+		VALENCE_DOT
+	} from '$lib/colors';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -220,7 +228,7 @@
 				},
 				markerEnd: {
 					type: MarkerType.ArrowClosed,
-					color: rel.type === 'supports' ? '#3b82f6' : '#ef4444',
+					color: rel.type === 'supports' ? RELATION_SUPPORTS_COLOR : RELATION_CONTRADICTS_COLOR,
 					width: 20,
 					height: 20
 				}
@@ -236,7 +244,7 @@
 				data: { type: link.type, pending: false, onDelete: handleEdgeDeleteFromLabel },
 				markerEnd: {
 					type: MarkerType.ArrowClosed,
-					color: link.type === 'supports' ? '#3b82f6' : '#ef4444',
+					color: link.type === 'supports' ? RELATION_SUPPORTS_COLOR : RELATION_CONTRADICTS_COLOR,
 					width: 20,
 					height: 20
 				}
@@ -345,20 +353,7 @@
 		return { islandMap, islandCount: nextIsland };
 	}
 
-	// Deterministic palette: golden-angle HSL for maximum hue separation
-	const ISLAND_COLORS = [
-		'#6366f1', // indigo
-		'#f59e0b', // amber
-		'#10b981', // emerald
-		'#ef4444', // red
-		'#8b5cf6', // violet
-		'#06b6d4', // cyan
-		'#f97316', // orange
-		'#ec4899', // pink
-		'#14b8a6', // teal
-		'#84cc16' // lime
-	];
-
+	// ISLAND_COLORS is now imported from $lib/colors — see islandColor() below for fallback HSL logic
 	function islandColor(islandId: number): string {
 		if (islandId < ISLAND_COLORS.length) return ISLAND_COLORS[islandId];
 		// Fallback: golden-angle HSL
@@ -414,7 +409,7 @@
 			data: { type: r.type, pending: true, onDelete: handleEdgeDeleteFromLabel },
 			markerEnd: {
 				type: MarkerType.ArrowClosed,
-				color: r.type === 'supports' ? '#3b82f6' : '#ef4444',
+				color: r.type === 'supports' ? RELATION_SUPPORTS_COLOR : RELATION_CONTRADICTS_COLOR,
 				width: 20,
 				height: 20
 			}
@@ -520,7 +515,7 @@
 			data: { type, pending: true, onDelete: handleEdgeDeleteFromLabel },
 			markerEnd: {
 				type: MarkerType.ArrowClosed,
-				color: type === 'supports' ? '#3b82f6' : '#ef4444',
+				color: type === 'supports' ? RELATION_SUPPORTS_COLOR : RELATION_CONTRADICTS_COLOR,
 				width: 20,
 				height: 20
 			}
@@ -937,6 +932,32 @@
 	let panelEditValence: string = $state('');
 	let panelConfirmDelete: boolean = $state(false);
 
+	let bulkTagInput: string = $state('');
+	let bulkTagging = $state(false);
+
+	let selectedBeliefIds = $derived(
+		nodes
+			.filter((n) => n.selected && n.id.startsWith('b-'))
+			.map((n) => parseInt(n.id.replace('b-', '')))
+	);
+
+	async function bulkAddTags() {
+		if (selectedBeliefIds.length === 0 || !bulkTagInput.trim()) return;
+		bulkTagging = true;
+		const body = new URLSearchParams({
+			beliefIds: selectedBeliefIds.join(','),
+			tags: bulkTagInput.trim()
+		});
+		await fetch('?/bulkAddBeliefTag', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+			body: body.toString()
+		});
+		bulkTagInput = '';
+		bulkTagging = false;
+		await invalidateAll();
+	}
+
 	function openBeliefPanel(beliefId: number) {
 		editingGraphNodeId = null;
 		selectedGraphBeliefId = beliefId;
@@ -1134,10 +1155,10 @@
 					)}
 					{@const valenceColor =
 						belief.valence === 'positive'
-							? '#22c55e'
+							? VALENCE_DOT.positive
 							: belief.valence === 'negative'
-								? '#ef4444'
-								: '#9ca3af'}
+								? VALENCE_DOT.negative
+								: VALENCE_DOT.neutral}
 					<div
 						class="border border-gray-200 bg-white shadow-sm transition-all {i ===
 						selectedBeliefIndex
@@ -1806,6 +1827,30 @@
 					{preLayoutPositions ? 'Undo Layout' : 'Auto Layout'}
 				</button>
 			</div>
+			{#if selectedBeliefIds.length >= 2}
+				<div class="flex items-center gap-2 border border-gray-200 bg-white px-3 py-2 shadow-sm">
+					<span class="text-xs font-medium text-gray-500">{selectedBeliefIds.length} selected</span>
+					<input
+						type="text"
+						bind:value={bulkTagInput}
+						placeholder="tag name(s), comma separated"
+						onkeydown={(e) => {
+							if (e.key === 'Enter') {
+								e.preventDefault();
+								bulkAddTags();
+							}
+						}}
+						class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					/>
+					<button
+						onclick={bulkAddTags}
+						disabled={bulkTagging || !bulkTagInput.trim()}
+						class="bg-gray-900 px-3 py-1 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
+					>
+						Tag All
+					</button>
+				</div>
+			{/if}
 			<p class="text-xs text-gray-400">
 				Drag from a handle to connect beliefs. Hover an edge label and click &times; to remove it.
 				Double-click a belief to edit its text.
@@ -1858,14 +1903,14 @@
 								<button
 									onclick={() => selectType('supports')}
 									class="px-3 py-1 text-xs"
-									style="background-color: #eff6ff; color: #1e40af; border: 1px solid #93c5fd;"
+									style="background-color: {SUPPORTS_STYLE.bg}; color: {SUPPORTS_STYLE.text}; border: 1px solid {SUPPORTS_STYLE.border};"
 								>
 									Supports
 								</button>
 								<button
 									onclick={() => selectType('contradicts')}
 									class="px-3 py-1 text-xs"
-									style="background-color: #fef2f2; color: #dc2626; border: 1px solid #fca5a5;"
+									style="background-color: {CONTRADICTS_STYLE.bg}; color: {CONTRADICTS_STYLE.text}; border: 1px solid {CONTRADICTS_STYLE.border};"
 								>
 									Contradicts
 								</button>
@@ -1886,14 +1931,14 @@
 								<button
 									onclick={() => selectEvidenceType('supports')}
 									class="px-3 py-1 text-xs"
-									style="background-color: #eff6ff; color: #1e40af; border: 1px solid #93c5fd;"
+									style="background-color: {SUPPORTS_STYLE.bg}; color: {SUPPORTS_STYLE.text}; border: 1px solid {SUPPORTS_STYLE.border};"
 								>
 									Supports
 								</button>
 								<button
 									onclick={() => selectEvidenceType('contradicts')}
 									class="px-3 py-1 text-xs"
-									style="background-color: #fef2f2; color: #dc2626; border: 1px solid #fca5a5;"
+									style="background-color: {CONTRADICTS_STYLE.bg}; color: {CONTRADICTS_STYLE.text}; border: 1px solid {CONTRADICTS_STYLE.border};"
 								>
 									Contradicts
 								</button>
