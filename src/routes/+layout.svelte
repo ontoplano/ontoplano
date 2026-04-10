@@ -8,6 +8,21 @@
 	let { children, data }: { children: any; data: LayoutServerData } = $props();
 	let menuOpen = $state(false);
 
+	const sectionColors: Record<string, string> = {
+		'/planner': '59, 130, 246',
+		'/diary': '234, 179, 8',
+		'/habits': '6, 182, 212',
+		'/beliefs': '168, 85, 247'
+	};
+
+	function sectionTint(): string {
+		const path = page.url.pathname;
+		for (const [prefix, rgb] of Object.entries(sectionColors)) {
+			if (path.startsWith(prefix)) return `rgba(${rgb}, 0.06)`;
+		}
+		return '';
+	}
+
 	function categoryStyle(): string {
 		return data.categories
 			.map(
@@ -119,9 +134,11 @@
 				</div>
 			</div>
 		</header>
-		<main class="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
-			{@render children()}
-		</main>
+		<div class="flex-1" style={sectionTint() ? `background-color: ${sectionTint()}` : ''}>
+			<main class="mx-auto w-full max-w-5xl px-4 py-6">
+				{@render children()}
+			</main>
+		</div>
 	</div>
 {:else}
 	{@render children()}

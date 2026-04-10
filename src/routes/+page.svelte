@@ -23,30 +23,12 @@
 		return text.slice(0, max).trimEnd() + '…';
 	}
 
-	function taskCompletionColor(): string {
-		const s = data.taskSummary;
-		if (s.total === 0) return '#9ca3af';
-		const done = s.completed + s.early + s.delayed;
-		const ratio = done / s.total;
-		if (ratio >= 0.75) return '#22c55e';
-		if (ratio >= 0.4) return '#f59e0b';
-		return '#ef4444';
-	}
-
-	function habitHealthColor(): string {
-		if (data.habitStreaks.length === 0) return '#9ca3af';
-		let goodScore = 0;
-		let total = 0;
-		for (const h of data.habitStreaks) {
-			total++;
-			if (h.type === 'bad' && h.streak > 0) goodScore++;
-			else if (h.type === 'good' && h.streak > 0) goodScore++;
-		}
-		const ratio = total > 0 ? goodScore / total : 0;
-		if (ratio >= 0.7) return '#22c55e';
-		if (ratio >= 0.4) return '#f59e0b';
-		return '#ef4444';
-	}
+	const sectionColors = {
+		planner: 'rgba(59, 130, 246, 0.6)',
+		habits: 'rgba(6, 182, 212, 0.6)',
+		diary: 'rgba(234, 179, 8, 0.6)',
+		beliefs: 'rgba(168, 85, 247, 0.6)'
+	};
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (
@@ -76,7 +58,7 @@
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 		<div
 			class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
-			style="border-left-color: {taskCompletionColor()}"
+			style="border-left-color: {sectionColors.planner}"
 		>
 			<div class="mb-3 flex items-center justify-between">
 				<h2 class="text-sm font-bold text-gray-900">Today's Tasks</h2>
@@ -115,7 +97,7 @@
 
 		<div
 			class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
-			style="border-left-color: {habitHealthColor()}"
+			style="border-left-color: {sectionColors.habits}"
 		>
 			<div class="mb-3 flex items-center justify-between">
 				<h2 class="text-sm font-bold text-gray-900">Habits</h2>
@@ -134,7 +116,7 @@
 										? 'text-green-600'
 										: 'text-red-600'
 									: habit.streak > 0
-										? 'text-green-600'
+										? 'text-blue-600'
 										: 'text-gray-400'}"
 							>
 								{habit.streak}d
@@ -146,7 +128,10 @@
 		</div>
 	</div>
 
-	<div class="border border-gray-200 bg-white p-4 shadow-sm">
+	<div
+		class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
+		style="border-left-color: {sectionColors.diary}"
+	>
 		<div class="mb-3 flex items-center justify-between">
 			<h2 class="text-sm font-bold text-gray-900">Diary</h2>
 			<div class="flex items-center gap-3">
@@ -217,7 +202,10 @@
 	</div>
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-		<div class="border border-gray-200 bg-white p-4 shadow-sm">
+		<div
+			class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
+			style="border-left-color: {sectionColors.beliefs}"
+		>
 			<div class="mb-3 flex items-center justify-between">
 				<h2 class="text-sm font-bold text-gray-900">Quick Belief</h2>
 				<a href="/beliefs" class="text-xs text-gray-500 transition hover:text-gray-900">

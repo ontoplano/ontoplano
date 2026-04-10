@@ -119,9 +119,9 @@
 
 	function goodHeatmapColor(count: number): string {
 		if (count === 0) return 'bg-slate-100';
-		if (count === 1) return 'bg-green-300';
-		if (count === 2) return 'bg-green-500';
-		return 'bg-green-700';
+		if (count === 1) return 'bg-blue-300';
+		if (count === 2) return 'bg-blue-500';
+		return 'bg-blue-700';
 	}
 
 	const heatmapWeeks = buildHeatmapWeeks();
@@ -248,7 +248,7 @@
 				selectedHabitIndex = 0;
 			}}
 			class="border px-3 py-1 text-sm transition {typeFilter === 'good'
-				? 'border-green-600 bg-green-600 text-white'
+				? 'border-blue-600 bg-blue-600 text-white'
 				: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
 		>
 			Good
@@ -321,7 +321,7 @@
 						value="good"
 						checked={newHabitType === 'good'}
 						onchange={() => (newHabitType = 'good')}
-						class="text-green-600 focus:ring-gray-900"
+						class="text-blue-600 focus:ring-gray-900"
 					/>
 					<span class="text-sm text-gray-700">Good</span>
 				</label>
@@ -338,7 +338,7 @@
 									onchange={(e) => {
 										scheduledDaysState[i] = (e.target as HTMLInputElement).checked;
 									}}
-									class="border border-gray-300 text-green-600 focus:ring-gray-900"
+									class="border border-gray-300 text-blue-600 focus:ring-gray-900"
 								/>
 								<span class="text-xs text-gray-600">{label}</span>
 							</label>
@@ -374,14 +374,14 @@
 					class="border border-gray-200 bg-white shadow-sm {i === selectedHabitIndex
 						? 'ring-2 ring-gray-900 ring-inset'
 						: ''}"
-					style="border-left-width: 4px; border-left-color: {isBad ? '#ef4444' : '#22c55e'}"
+					style="border-left-width: 4px; border-left-color: {isBad ? '#ef4444' : '#3b82f6'}"
 				>
 					<div class="flex items-center gap-4 px-4 py-3">
 						<div class="min-w-0 flex-1">
 							<div class="flex items-center gap-2">
 								<span class="text-sm font-medium text-gray-900">{habit.name}</span>
 								{#if habit.streak > 0}
-									<span class="text-xs font-medium text-green-600">
+									<span class="text-xs font-medium {isBad ? 'text-green-600' : 'text-blue-600'}">
 										{isBad
 											? `${habit.streak} day${habit.streak === 1 ? '' : 's'} clean`
 											: `${habit.streak} day streak`}
@@ -402,7 +402,7 @@
 								<span
 									class="border {isBad
 										? 'border-red-200 bg-red-50 text-red-600'
-										: 'border-green-200 bg-green-50 text-green-600'} px-2 py-1 text-xs font-medium"
+										: 'border-blue-200 bg-blue-50 text-blue-600'} px-2 py-1 text-xs font-medium"
 								>
 									{isBad ? 'logged today' : 'done today'}
 								</span>
@@ -414,7 +414,7 @@
 										type="submit"
 										class="border {isBad
 											? 'border-red-200 bg-white text-red-600 hover:bg-red-50'
-											: 'border-green-200 bg-white text-green-600 hover:bg-green-50'} px-2 py-1 text-xs transition"
+											: 'border-blue-200 bg-white text-blue-600 hover:bg-blue-50'} px-2 py-1 text-xs transition"
 									>
 										{isBad ? 'I slipped' : 'Done \u2713'}
 									</button>
@@ -496,9 +496,9 @@
 										<div class="h-2.5 w-2.5 bg-red-500"></div>
 										<div class="h-2.5 w-2.5 bg-red-700"></div>
 									{:else}
-										<div class="h-2.5 w-2.5 bg-green-300"></div>
-										<div class="h-2.5 w-2.5 bg-green-500"></div>
-										<div class="h-2.5 w-2.5 bg-green-700"></div>
+										<div class="h-2.5 w-2.5 bg-blue-300"></div>
+										<div class="h-2.5 w-2.5 bg-blue-500"></div>
+										<div class="h-2.5 w-2.5 bg-blue-700"></div>
 									{/if}
 								</div>
 								<span>More</span>
