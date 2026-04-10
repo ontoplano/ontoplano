@@ -149,6 +149,34 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
+	update: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const name = formData.get('name')?.toString()?.trim();
+		const description = formData.get('description')?.toString()?.trim() ?? '';
+		const type = formData.get('type')?.toString()?.trim() || 'bad';
+		const scheduledDays = formData.get('scheduledDays')?.toString()?.trim() ?? '';
+
+		if (!id) return fail(400, { message: 'Missing id' });
+		if (!name) return fail(400, { message: 'Name is required' });
+		if (type !== 'bad' && type !== 'good') return fail(400, { message: 'Invalid type' });
+
+		const existing = db
+			.select({ id: habits.id })
+			.from(habits)
+			.where(and(eq(habits.id, id), eq(habits.userId, userId)))
+			.get();
+		if (!existing) return fail(404, { message: 'Habit not found' });
+
+		db.update(habits)
+			.set({ name, description, type, scheduledDays })
+			.where(and(eq(habits.id, id), eq(habits.userId, userId)))
+			.run();
+
+		return { success: true };
+	},
+
 	logOccurrence: async ({ request, locals }) => {
 		const userId = locals.user!.id;
 		const formData = await request.formData();
