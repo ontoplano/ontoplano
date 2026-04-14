@@ -35,7 +35,7 @@ function computeStreak(
 		return daysBetween(lastSlip, today);
 	}
 
-	// Good habit: count consecutive days completed going backwards from today
+	// Good and neutral habits: count consecutive days completed going backwards from today
 	const scheduledSet = parseScheduledDays(habit.scheduledDays);
 	const completedDates = new Set(occurrences.map((o) => o.date));
 	let streak = 0;
@@ -122,7 +122,8 @@ export const actions: Actions = {
 		const scheduledDays = formData.get('scheduledDays')?.toString()?.trim() ?? '';
 
 		if (!name) return fail(400, { message: 'Name is required' });
-		if (type !== 'bad' && type !== 'good') return fail(400, { message: 'Invalid type' });
+		if (type !== 'bad' && type !== 'good' && type !== 'neutral')
+			return fail(400, { message: 'Invalid type' });
 
 		db.insert(habits).values({ userId, name, description, type, scheduledDays }).run();
 
@@ -160,7 +161,8 @@ export const actions: Actions = {
 
 		if (!id) return fail(400, { message: 'Missing id' });
 		if (!name) return fail(400, { message: 'Name is required' });
-		if (type !== 'bad' && type !== 'good') return fail(400, { message: 'Invalid type' });
+		if (type !== 'bad' && type !== 'good' && type !== 'neutral')
+			return fail(400, { message: 'Invalid type' });
 
 		const existing = db
 			.select({ id: habits.id })
@@ -252,6 +254,26 @@ export const actions: Actions = {
 		} else {
 			db.insert(habitOccurrences).values({ habitId, date, notes: '' }).run();
 		}
+
+		return { success: true };
+	},
+
+	updateOccurrence: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const notes = formData.get('notes')?.toString()?.trim() ?? '';
+
+		if (!id) return fail(400, { message: 'Missing id' });
+		const occurrence = db
+			.select({ id: habitOccurrences.id })
+			.from(habitOccurrences)
+			.innerJoin(habits, eq(habitOccurrences.habitId, habits.id))
+			.where(and(eq(habitOccurrences.id, id), eq(habits.userId, userId)))
+			.get();
+		if (!occurrence) return fail(404, { message: 'Occurrence not found' });
+
+		db.update(habitOccurrences).set({ notes }).where(eq(habitOccurrences.id, id)).run();
 
 		return { success: true };
 	}

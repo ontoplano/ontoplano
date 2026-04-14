@@ -184,7 +184,7 @@ export const habits = sqliteTable(
 			.references(() => user.id),
 		name: text('name').notNull(),
 		description: text('description').default(''),
-		type: text('type', { enum: ['bad', 'good'] })
+		type: text('type', { enum: ['bad', 'good', 'neutral'] })
 			.notNull()
 			.default('bad'),
 		scheduledDays: text('scheduled_days').default(''), // comma-separated weekday numbers (0=Mon..6=Sun), empty = every day
@@ -352,6 +352,23 @@ export const beliefTags = sqliteTable(
 		index('belief_tags_belief_idx').on(table.beliefId),
 		index('belief_tags_tag_idx').on(table.tagId)
 	]
+);
+
+export const graphViews = sqliteTable(
+	'graph_views',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		name: text('name').notNull(),
+		data: text('data').notNull(),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+	},
+	(table) => [index('graph_views_user_idx').on(table.userId)]
 );
 
 export * from './auth.schema.js';

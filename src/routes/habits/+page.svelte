@@ -2,13 +2,20 @@
 	import { enhance } from '$app/forms';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
-	import { HEATMAP_BAD, HEATMAP_GOOD, HABIT_BAD_ACCENT, HABIT_GOOD_ACCENT } from '$lib/colors.js';
+	import {
+		HEATMAP_BAD,
+		HEATMAP_GOOD,
+		HEATMAP_NEUTRAL,
+		HABIT_BAD_ACCENT,
+		HABIT_GOOD_ACCENT,
+		HABIT_NEUTRAL_ACCENT
+	} from '$lib/colors.js';
 
 	interface Habit {
 		id: number;
 		name: string;
 		description: string | null;
-		type: 'bad' | 'good';
+		type: 'bad' | 'good' | 'neutral';
 		scheduledDays: string | null;
 		createdAt: string;
 		streak: number;
@@ -28,10 +35,10 @@
 	let selectedHabitIndex = $state(0);
 	let expandedHabitId: number | null = $state(null);
 	let confirmingDeleteId: number | null = $state(null);
-	let typeFilter: 'all' | 'bad' | 'good' = $state('all');
+	let typeFilter: 'all' | 'bad' | 'good' | 'neutral' = $state('all');
 	let backdateInput: string = $state('');
 
-	let newHabitType: 'bad' | 'good' = $state('bad');
+	let newHabitType: 'bad' | 'good' | 'neutral' = $state('bad');
 	let scheduledDaysState: boolean[] = $state([false, false, false, false, false, false, false]);
 
 	const FULL_DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -119,6 +126,10 @@
 
 	function goodHeatmapColor(count: number): string {
 		return HEATMAP_GOOD[Math.min(count, HEATMAP_GOOD.length - 1)];
+	}
+
+	function neutralHeatmapColor(count: number): string {
+		return HEATMAP_NEUTRAL[Math.min(count, HEATMAP_NEUTRAL.length - 1)];
 	}
 
 	const heatmapWeeks = buildHeatmapWeeks();
@@ -277,6 +288,17 @@
 		>
 			Good
 		</button>
+		<button
+			onclick={() => {
+				typeFilter = 'neutral';
+				selectedHabitIndex = 0;
+			}}
+			class="border px-3 py-1 text-sm transition {typeFilter === 'neutral'
+				? 'border-gray-600 bg-gray-600 text-white'
+				: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+		>
+			Neutral
+		</button>
 	</div>
 
 	<div class="text-xs text-gray-400">
@@ -319,7 +341,11 @@
 					type="text"
 					required
 					value={editHabit?.name ?? ''}
-					placeholder={newHabitType === 'bad' ? 'e.g. smoking, biting nails' : 'e.g. gym, reading'}
+					placeholder={newHabitType === 'bad'
+						? 'e.g. smoking, biting nails'
+						: newHabitType === 'neutral'
+							? 'e.g. coffee, naps'
+							: 'e.g. gym, reading'}
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>
@@ -355,8 +381,19 @@
 					/>
 					<span class="text-sm text-gray-700">Good</span>
 				</label>
+				<label class="flex items-center gap-2">
+					<input
+						type="radio"
+						name="type"
+						value="neutral"
+						checked={newHabitType === 'neutral'}
+						onchange={() => (newHabitType = 'neutral')}
+						class="text-gray-500 focus:ring-gray-900"
+					/>
+					<span class="text-sm text-gray-700">Neutral</span>
+				</label>
 			</div>
-			{#if newHabitType === 'good'}
+			{#if newHabitType === 'good' || newHabitType === 'neutral'}
 				<div class="space-y-2">
 					<span class="text-sm font-medium text-gray-700">Scheduled Days</span>
 					<div class="flex flex-wrap gap-2">
@@ -392,7 +429,9 @@
 				? 'No habits tracked. Add one to start monitoring.'
 				: typeFilter === 'bad'
 					? 'No bad habits tracked.'
-					: 'No good habits tracked.'}
+					: typeFilter === 'neutral'
+						? 'No neutral habits tracked.'
+						: 'No good habits tracked.'}
 		</div>
 	{:else}
 		<div class="space-y-3">
@@ -400,20 +439,23 @@
 				{@const occ = occurrencesForHabit(habit.id)}
 				{@const todayLogged = occ.some((o) => o.date === data.today)}
 				{@const isBad = habit.type === 'bad'}
+				{@const isNeutral = habit.type === 'neutral'}
 				<div
 					class="border border-gray-200 bg-white shadow-sm {i === selectedHabitIndex
 						? 'ring-2 ring-gray-900 ring-inset'
 						: ''}"
 					style="border-left-width: 4px; border-left-color: {isBad
 						? HABIT_BAD_ACCENT
-						: HABIT_GOOD_ACCENT}"
+						: isNeutral
+							? HABIT_NEUTRAL_ACCENT
+							: HABIT_GOOD_ACCENT}"
 				>
 					<div class="flex items-center gap-4 px-4 py-3">
 						<div class="min-w-0 flex-1">
 							<div class="flex items-center gap-2">
 								<span class="text-sm font-medium text-gray-900">{habit.name}</span>
 								{#if habit.streak > 0}
-									<span class="text-xs font-medium text-blue-600">
+									<span class="text-xs font-medium {isNeutral ? 'text-gray-600' : 'text-blue-600'}">
 										{isBad
 											? `${habit.streak} day${habit.streak === 1 ? '' : 's'} clean`
 											: `${habit.streak} day streak`}
@@ -434,7 +476,9 @@
 								<span
 									class="border {isBad
 										? 'border-red-200 bg-red-50 text-red-600'
-										: 'border-blue-200 bg-blue-50 text-blue-600'} px-2 py-1 text-xs font-medium"
+										: isNeutral
+											? 'border-gray-300 bg-gray-50 text-gray-600'
+											: 'border-blue-200 bg-blue-50 text-blue-600'} px-2 py-1 text-xs font-medium"
 								>
 									{isBad ? 'logged today' : 'done today'}
 								</span>
@@ -442,14 +486,24 @@
 								<form method="post" action="?/logOccurrence" use:enhance>
 									<input type="hidden" name="habitId" value={habit.id} />
 									<input type="hidden" name="date" value={data.today} />
-									<button
-										type="submit"
-										class="border {isBad
-											? 'border-red-200 bg-white text-red-600 hover:bg-red-50'
-											: 'border-blue-200 bg-white text-blue-600 hover:bg-blue-50'} px-2 py-1 text-xs transition"
-									>
-										{isBad ? 'I slipped' : 'Done \u2713'}
-									</button>
+									<div class="flex items-center gap-1">
+										<input
+											name="notes"
+											type="text"
+											placeholder="note"
+											class="w-20 border border-gray-200 px-1.5 py-1 text-xs focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+										/>
+										<button
+											type="submit"
+											class="border {isBad
+												? 'border-red-200 bg-white text-red-600 hover:bg-red-50'
+												: isNeutral
+													? 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
+													: 'border-blue-200 bg-white text-blue-600 hover:bg-blue-50'} px-2 py-1 text-xs transition"
+										>
+											{isBad ? 'I slipped' : isNeutral ? 'Log ✓' : 'Done ✓'}
+										</button>
+									</div>
 								</form>
 							{/if}
 							<button
@@ -505,7 +559,9 @@
 														onclick={() => toggleOccurrence(habit.id, day)}
 														class="h-2.5 w-2.5 cursor-pointer {isBad
 															? badHeatmapColor(counts[day] || 0)
-															: goodHeatmapColor(counts[day] || 0)}"
+															: isNeutral
+																? neutralHeatmapColor(counts[day] || 0)
+																: goodHeatmapColor(counts[day] || 0)}"
 														title={day}
 													></button>
 												{:else}
@@ -526,16 +582,34 @@
 							<div class="mt-2 flex items-center gap-2 text-xs text-gray-400">
 								<span>Less</span>
 								<div class="flex gap-px">
-									<div class="h-2.5 w-2.5 {HEATMAP_BAD[0]}"></div>
-									{#if isBad}
-										<div class="h-2.5 w-2.5 {HEATMAP_BAD[1]}"></div>
-										<div class="h-2.5 w-2.5 {HEATMAP_BAD[2]}"></div>
-										<div class="h-2.5 w-2.5 {HEATMAP_BAD[3]}"></div>
-									{:else}
-										<div class="h-2.5 w-2.5 {HEATMAP_GOOD[1]}"></div>
-										<div class="h-2.5 w-2.5 {HEATMAP_GOOD[2]}"></div>
-										<div class="h-2.5 w-2.5 {HEATMAP_GOOD[3]}"></div>
-									{/if}
+									<div
+										class="h-2.5 w-2.5 {isBad
+											? HEATMAP_BAD[0]
+											: isNeutral
+												? HEATMAP_NEUTRAL[0]
+												: HEATMAP_GOOD[0]}"
+									></div>
+									<div
+										class="h-2.5 w-2.5 {isBad
+											? HEATMAP_BAD[1]
+											: isNeutral
+												? HEATMAP_NEUTRAL[1]
+												: HEATMAP_GOOD[1]}"
+									></div>
+									<div
+										class="h-2.5 w-2.5 {isBad
+											? HEATMAP_BAD[2]
+											: isNeutral
+												? HEATMAP_NEUTRAL[2]
+												: HEATMAP_GOOD[2]}"
+									></div>
+									<div
+										class="h-2.5 w-2.5 {isBad
+											? HEATMAP_BAD[3]
+											: isNeutral
+												? HEATMAP_NEUTRAL[3]
+												: HEATMAP_GOOD[3]}"
+									></div>
 								</div>
 								<span>More</span>
 							</div>
@@ -560,13 +634,21 @@
 								>
 									<input type="hidden" name="habitId" value={habit.id} />
 									<input type="hidden" name="date" value={backdateInput} />
-									<button
-										type="submit"
-										disabled={!backdateInput}
-										class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
-									>
-										Log
-									</button>
+									<div class="flex items-center gap-1">
+										<input
+											name="notes"
+											type="text"
+											placeholder="note"
+											class="w-20 border border-gray-200 px-1.5 py-1 text-xs focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+										/>
+										<button
+											type="submit"
+											disabled={!backdateInput}
+											class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
+										>
+											Log
+										</button>
+									</div>
 								</form>
 							</div>
 
@@ -576,9 +658,27 @@
 										<div class="flex items-center justify-between py-1.5">
 											<div class="flex items-center gap-2">
 												<span class="text-xs font-medium text-gray-600">{occurrence.date}</span>
-												{#if occurrence.notes}
-													<span class="text-xs text-gray-400">{occurrence.notes}</span>
-												{/if}
+												<form
+													method="post"
+													action="?/updateOccurrence"
+													use:enhance
+													class="flex items-center gap-1"
+												>
+													<input type="hidden" name="id" value={occurrence.id} />
+													<input
+														name="notes"
+														type="text"
+														value={occurrence.notes ?? ''}
+														placeholder="add note…"
+														class="w-32 border border-transparent px-1 py-0.5 text-xs text-gray-500 hover:border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+													/>
+													<button
+														type="submit"
+														class="text-xs text-gray-300 transition hover:text-gray-600"
+													>
+														✓
+													</button>
+												</form>
 											</div>
 											<form method="post" action="?/deleteOccurrence" use:enhance>
 												<input type="hidden" name="id" value={occurrence.id} />

@@ -70,10 +70,17 @@ export const EVIDENCE_NODE = { bg: '#fefce8', border: '#fde68a' };
 /** Heatmap background classes (Tailwind) indexed by intensity 0-3 */
 export const HEATMAP_BAD = ['bg-slate-100', 'bg-red-300', 'bg-red-500', 'bg-red-700'] as const;
 export const HEATMAP_GOOD = ['bg-slate-100', 'bg-blue-300', 'bg-blue-500', 'bg-blue-700'] as const;
+export const HEATMAP_NEUTRAL = [
+	'bg-slate-100',
+	'bg-gray-300',
+	'bg-gray-500',
+	'bg-gray-700'
+] as const;
 
 /** Habit accent border (inline style) */
 export const HABIT_BAD_ACCENT = '#ef4444';
 export const HABIT_GOOD_ACCENT = '#3b82f6';
+export const HABIT_NEUTRAL_ACCENT = '#6b7280';
 
 // -- Category fallback --------------------------------------------------------
 

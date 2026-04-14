@@ -109,9 +109,13 @@
 									? habit.streak > 0
 										? 'text-blue-600'
 										: 'text-red-600'
-									: habit.streak > 0
-										? 'text-blue-600'
-										: 'text-gray-400'}"
+									: habit.type === 'neutral'
+										? habit.streak > 0
+											? 'text-gray-600'
+											: 'text-gray-400'
+										: habit.streak > 0
+											? 'text-blue-600'
+											: 'text-gray-400'}"
 							>
 								{habit.streak}d
 							</span>
