@@ -14,7 +14,12 @@ const config = {
 			return isExternalLibrary ? undefined : true;
 		}
 	},
-	kit: { adapter: adapter() },
+	kit: {
+		adapter: adapter(),
+		csrf: {
+			checkOrigin: false
+		}
+	},
 	preprocess: [mdsvex({ extensions: ['.svx', '.md'] })],
 	extensions: ['.svelte', '.svx', '.md']
 };
