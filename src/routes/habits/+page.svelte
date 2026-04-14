@@ -506,9 +506,7 @@
 														class="h-2.5 w-2.5 cursor-pointer {isBad
 															? badHeatmapColor(counts[day] || 0)
 															: goodHeatmapColor(counts[day] || 0)}"
-														title="{day}: {counts[day] || 0} occurrence{(counts[day] || 0) === 1
-															? ''
-															: 's'} — click to toggle"
+														title={day}
 													></button>
 												{:else}
 													<div class="h-2.5 w-2.5"></div>
