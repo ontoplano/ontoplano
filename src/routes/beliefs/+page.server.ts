@@ -10,7 +10,8 @@ import {
 	beliefTags,
 	evidence,
 	habits,
-	tags
+	tags,
+	graphViews
 } from '$lib/server/db/schema';
 import { eq, and, or, desc, inArray } from 'drizzle-orm';
 import { toLocalISOString } from '$lib/server/week-generator';
@@ -235,15 +236,39 @@ export const load: PageServerLoad = async (event) => {
 		)
 		.all();
 
+	const today = todayStr();
+	const sevenDaysAgo = new Date();
+	sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+	const sevenDaysAgoStr = `${sevenDaysAgo.getFullYear()}-${String(sevenDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(sevenDaysAgo.getDate()).padStart(2, '0')}`;
+
+	const beliefsWithFlags = beliefsWithRelations.map((b) => ({
+		...b,
+		isNew: b.createdAt >= sevenDaysAgoStr,
+		isOrphan: b.relatedBeliefs.length === 0 && b.linkedEvidence.length === 0
+	}));
+
+	const savedViews = db
+		.select({
+			id: graphViews.id,
+			name: graphViews.name,
+			data: graphViews.data,
+			createdAt: graphViews.createdAt
+		})
+		.from(graphViews)
+		.where(eq(graphViews.userId, userId))
+		.orderBy(graphViews.name)
+		.all();
+
 	return {
-		beliefs: beliefsWithRelations,
+		beliefs: beliefsWithFlags,
 		allHabits,
 		allEvidence,
 		allTags,
 		allRelations,
 		allBeliefEvidence,
-		today: todayStr(),
-		view
+		today,
+		view,
+		savedViews
 	};
 };
 
@@ -660,6 +685,81 @@ export const actions: Actions = {
 			}
 		}
 
+		return { success: true };
+	},
+
+	saveView: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const name = formData.get('name')?.toString()?.trim();
+		const data = formData.get('data')?.toString();
+
+		if (!name) return fail(400, { message: 'View name is required' });
+		if (!data) return fail(400, { message: 'View data is required' });
+
+		db.insert(graphViews).values({ userId, name, data }).run();
+		return { success: true };
+	},
+
+	updateView: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const data = formData.get('data')?.toString();
+
+		if (!id || !data) return fail(400, { message: 'Missing fields' });
+
+		const existing = db
+			.select({ id: graphViews.id })
+			.from(graphViews)
+			.where(and(eq(graphViews.id, id), eq(graphViews.userId, userId)))
+			.get();
+		if (!existing) return fail(404, { message: 'View not found' });
+
+		db.update(graphViews)
+			.set({ data, updatedAt: toLocalISOString(new Date()) })
+			.where(eq(graphViews.id, id))
+			.run();
+		return { success: true };
+	},
+
+	renameView: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const name = formData.get('name')?.toString()?.trim();
+
+		if (!id || !name) return fail(400, { message: 'Missing fields' });
+
+		const existing = db
+			.select({ id: graphViews.id })
+			.from(graphViews)
+			.where(and(eq(graphViews.id, id), eq(graphViews.userId, userId)))
+			.get();
+		if (!existing) return fail(404, { message: 'View not found' });
+
+		db.update(graphViews)
+			.set({ name, updatedAt: toLocalISOString(new Date()) })
+			.where(eq(graphViews.id, id))
+			.run();
+		return { success: true };
+	},
+
+	deleteView: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+
+		if (!id) return fail(400, { message: 'Missing id' });
+
+		const existing = db
+			.select({ id: graphViews.id })
+			.from(graphViews)
+			.where(and(eq(graphViews.id, id), eq(graphViews.userId, userId)))
+			.get();
+		if (!existing) return fail(404, { message: 'View not found' });
+
+		db.delete(graphViews).where(eq(graphViews.id, id)).run();
 		return { success: true };
 	}
 };

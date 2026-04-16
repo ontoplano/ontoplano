@@ -61,10 +61,15 @@
 	}
 
 	let icolor = $derived(getIslandColorValue());
+
+	let isNew = $derived(data.isNew === true);
+	let isOrphan = $derived(data.isOrphan === true);
+	let showNewBadge = $derived(isNew && isOrphan);
 </script>
 
 <div
 	class="belief-node"
+	class:new-orphan={showNewBadge}
 	style="background: {vstyle.bg}; border-color: {vstyle.border};{icolor
 		? ` border-left: 3px solid ${icolor}`
 		: ''}"
@@ -84,6 +89,9 @@
 			{:else}
 				<!-- svelte-ignore a11y_no_static_element_interactions -->
 				<span class="label" ondblclick={startEditing}>{data.label}</span>
+			{/if}
+			{#if showNewBadge}
+				<span class="new-badge">NEW</span>
 			{/if}
 			{#if data.tags && data.tags.length > 0}
 				<div class="tags">
@@ -105,6 +113,32 @@
 		line-height: 1.4;
 		max-width: 260px;
 		min-width: 80px;
+	}
+
+	.belief-node.new-orphan {
+		border: 2px dashed #3b82f6;
+		animation: pulse-border 2s ease-in-out infinite;
+	}
+
+	@keyframes pulse-border {
+		0%,
+		100% {
+			border-color: #3b82f6;
+		}
+		50% {
+			border-color: #93c5fd;
+		}
+	}
+
+	.new-badge {
+		font-size: 9px;
+		font-weight: 700;
+		letter-spacing: 0.05em;
+		color: #3b82f6;
+		padding: 0 4px;
+		border: 1px solid #93c5fd;
+		background: #eff6ff;
+		align-self: flex-start;
 	}
 
 	.label {

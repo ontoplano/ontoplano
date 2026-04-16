@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
 	import { tick, untrack } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import BeliefNode from './BeliefNode.svelte';
 	import EvidenceNode from './EvidenceNode.svelte';
 	import RelationEdge from './RelationEdge.svelte';
+	import FlowBridge from './FlowBridge.svelte';
 	import {
 		SvelteFlow,
 		Controls,
@@ -31,8 +31,45 @@
 		CONTRADICTS_STYLE,
 		VALENCE_DOT
 	} from '$lib/colors';
+	import {
+		graphCreateBelief,
+		graphDeleteBelief,
+		graphUpdateBelief,
+		graphAddRelation,
+		graphRemoveRelation,
+		graphUpdateRelationNotes,
+		graphCreateEvidence,
+		graphLinkEvidence,
+		graphUnlinkEvidence,
+		graphDeleteEvidence,
+		graphLogIntensity,
+		graphLinkHabit,
+		graphUnlinkHabit,
+		graphAddTag,
+		graphRemoveTag,
+		graphBulkAddTags,
+		updateBeliefContent,
+		saveView,
+		updateView,
+		renameView,
+		deleteView
+	} from './beliefs-graph-actions.js';
+	import {
+		DEFAULT_FILTERS,
+		applyFilters,
+		deserializeFilters,
+		serializeFilters,
+		type FilterState,
+		type TraversalState
+	} from './beliefs-graph-filters.js';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+
+	let flowApi: {
+		fitView: (opts?: { includeHiddenNodes?: boolean }) => void;
+		getViewport: () => { x: number; y: number; zoom: number };
+		setViewport: (vp: { x: number; y: number; zoom: number }) => void;
+	} | null = $state(null);
 
 	let showForm = $state(false);
 	let selectedBeliefIndex = $state(0);
@@ -50,7 +87,7 @@
 	let intensityNotes: Record<number, string> = $state({});
 	let intensityDate: Record<number, string> = $state({});
 
-	let graphView = $state(data.view === 'graph');
+	let graphView = $state(false);
 
 	let pendingRelations: Array<{
 		source: number;
@@ -79,11 +116,56 @@
 	let graphNewBeliefContent = $state('');
 	let graphNewBeliefValence = $state('');
 	let editingGraphNodeId: number | null = $state(null);
+	let drawerElement = $state<HTMLDivElement | null>(null);
+	let savedViewsOpen = $state(false);
+	let newViewName = $state('');
+	let editingViewId: number | null = $state(null);
+	let editingViewName = $state('');
+
+	const FILTERS_KEY = 'semotina:beliefs:filters';
+	const VIEWPORT_KEY = 'semotina:beliefs:viewport';
 
 	// Auto-layout toggle: stores positions before dagre so we can revert
 	let preLayoutPositions: Record<string, { x: number; y: number }> | null = $state(null);
 
+	let filters = $state<FilterState>(loadSavedFilters());
+	let traversal = $state<TraversalState>({
+		active: false,
+		focusBeliefId: null,
+		depth: 1,
+		savedViewport: null
+	});
+
 	const POSITIONS_KEY = 'semotina:beliefs:node-positions';
+
+	function loadSavedFilters(): FilterState {
+		if (typeof localStorage === 'undefined') return { ...DEFAULT_FILTERS };
+		try {
+			const raw = localStorage.getItem(FILTERS_KEY);
+			if (!raw) return { ...DEFAULT_FILTERS };
+			return deserializeFilters(JSON.parse(raw));
+		} catch {
+			return { ...DEFAULT_FILTERS };
+		}
+	}
+
+	function saveFilters(next: FilterState) {
+		if (typeof localStorage === 'undefined') return;
+		try {
+			localStorage.setItem(FILTERS_KEY, JSON.stringify(serializeFilters(next)));
+		} catch {
+			// quota exceeded, ignore
+		}
+	}
+
+	function saveViewport(viewport: { x: number; y: number; zoom: number }) {
+		if (typeof localStorage === 'undefined') return;
+		try {
+			localStorage.setItem(VIEWPORT_KEY, JSON.stringify(viewport));
+		} catch {
+			// quota exceeded, ignore
+		}
+	}
 
 	function loadSavedPositions(): Record<string, { x: number; y: number }> {
 		if (typeof localStorage === 'undefined') return {};
@@ -148,21 +230,11 @@
 
 	function handleEdgeDeleteFromLabel(edgeId: string, relationId?: number) {
 		if (relationId) {
-			deleteRelation(relationId);
+			graphRemoveRelation(relationId);
 		} else {
 			pendingRelations = pendingRelations.filter((r) => r.edgeId !== edgeId);
 			edges = edges.filter((e) => e.id !== edgeId);
 		}
-	}
-
-	async function updateBeliefContent(beliefId: number, content: string) {
-		const body = new URLSearchParams({ id: String(beliefId), content });
-		await fetch('?/updateBelief', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		await invalidateAll();
 	}
 
 	function buildInitialElements(savedPositions?: Record<string, { x: number; y: number }>): {
@@ -182,6 +254,8 @@
 					beliefId: belief.id,
 					label: belief.content,
 					valence: belief.valence ?? 'neutral',
+					isNew: belief.isNew,
+					isOrphan: belief.isOrphan,
 					onUpdate: updateBeliefContent,
 					tags: belief.tags,
 					editingNodeId: () => editingGraphNodeId,
@@ -376,14 +450,24 @@
 		graphView = data.view === 'graph';
 	});
 
+	let savedViews = $derived(data.savedViews ?? []);
+
+	$effect(() => {
+		saveFilters(filters);
+	});
+
 	// Track data identity to skip the initial run (already handled by buildInitialElements above)
-	let prevDataRef = data;
+	let prevDataRef: PageServerData | null = null;
 
 	$effect(() => {
 		// Read data to register dependency
 		const currentData = data;
 
 		// Skip initial run — the initial nodes/edges are already set above
+		if (prevDataRef === null) {
+			prevDataRef = currentData;
+			return;
+		}
 		if (currentData === prevDataRef) return;
 		prevDataRef = currentData;
 
@@ -443,6 +527,26 @@
 			edges = [...rebuilt.edges, ...pendingEdges];
 			savePositions(mergedNodes);
 		});
+	});
+
+	$effect(() => {
+		const result = applyFilters(nodes, edges, filters, traversal);
+		let nodesChanged = false;
+		for (let i = 0; i < result.nodes.length; i++) {
+			if (result.nodes[i] !== nodes[i]) {
+				nodesChanged = true;
+				break;
+			}
+		}
+		let edgesChanged = false;
+		for (let i = 0; i < result.edges.length; i++) {
+			if (result.edges[i] !== edges[i]) {
+				edgesChanged = true;
+				break;
+			}
+		}
+		if (nodesChanged) nodes = result.nodes;
+		if (edgesChanged) edges = result.edges;
 	});
 
 	function onconnect(connection: Connection) {
@@ -565,38 +669,138 @@
 		for (const edge of deletedEdges) {
 			const relationId = edge.data?.relationId;
 			if (relationId) {
-				deleteRelation(Number(relationId));
+				graphRemoveRelation(Number(relationId));
 			} else {
 				pendingRelations = pendingRelations.filter((r) => r.edgeId !== edge.id);
 			}
 		}
 	}
 
-	async function deleteRelation(id: number) {
-		const body = new URLSearchParams({ id: String(id) });
-		await fetch('?/removeRelation', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		await invalidateAll();
-	}
-
 	async function saveRelations() {
 		for (const rel of pendingRelations) {
-			const body = new URLSearchParams({
-				sourceBeliefId: String(rel.source),
-				targetBeliefId: String(rel.target),
-				type: rel.type
-			});
-			await fetch('?/addRelation', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-				body: body.toString()
-			});
+			await graphAddRelation(rel.source, rel.target, rel.type);
 		}
 		pendingRelations = [];
-		await invalidateAll();
+	}
+
+	async function handleGraphCreateBelief() {
+		if (!graphNewBeliefContent.trim()) return;
+		await graphCreateBelief(graphNewBeliefContent.trim(), graphNewBeliefValence);
+		graphNewBeliefContent = '';
+		graphNewBeliefValence = '';
+		graphShowNewBeliefForm = false;
+	}
+
+	async function handleGraphDeleteBelief(beliefId: number) {
+		selectedGraphBeliefId = null;
+		panelConfirmDelete = false;
+		await graphDeleteBelief(beliefId);
+	}
+
+	async function enterTraversal() {
+		if (!selectedGraphBeliefId || !flowApi) return;
+		const viewport = flowApi.getViewport();
+		traversal = {
+			active: true,
+			focusBeliefId: selectedGraphBeliefId,
+			depth: 1,
+			savedViewport: viewport
+		};
+		await tick();
+		flowApi.fitView({ includeHiddenNodes: false });
+	}
+
+	function exitTraversal() {
+		if (traversal.savedViewport && flowApi) {
+			flowApi.setViewport(traversal.savedViewport);
+		}
+		traversal = { active: false, focusBeliefId: null, depth: 1, savedViewport: null };
+	}
+
+	function handleGraphContainerClick() {
+		if (!selectedGraphBeliefId) return;
+		selectedGraphBeliefId = null;
+		panelConfirmDelete = false;
+		nodes = nodes.map((n) => (n.selected ? { ...n, selected: false } : n));
+	}
+
+	function handleGraphContainerKeydown(event: KeyboardEvent) {
+		if (!selectedGraphBeliefId) return;
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
+			selectedGraphBeliefId = null;
+			panelConfirmDelete = false;
+			nodes = nodes.map((n) => (n.selected ? { ...n, selected: false } : n));
+		}
+	}
+
+	function buildViewPayload(): string {
+		const positions: Record<string, { x: number; y: number }> = {};
+		for (const node of nodes) {
+			positions[node.id] = { x: node.position.x, y: node.position.y };
+		}
+		const viewport = flowApi?.getViewport() ?? { x: 0, y: 0, zoom: 1 };
+		return JSON.stringify({
+			version: 1,
+			positions,
+			viewport,
+			filters: serializeFilters(filters)
+		});
+	}
+
+	async function applySavedView(viewData: string) {
+		let parsed: {
+			positions?: Record<string, { x: number; y: number }>;
+			viewport?: { x: number; y: number; zoom: number };
+			filters?: Record<string, unknown>;
+		} | null = null;
+		try {
+			parsed = JSON.parse(viewData);
+		} catch {
+			parsed = null;
+		}
+		if (!parsed) return;
+		const positions = parsed.positions ?? {};
+		filters = deserializeFilters(parsed.filters ?? {});
+		const updatedNodes = nodes.map((node) => {
+			const position = positions[node.id];
+			if (!position) return node;
+			if (node.position.x === position.x && node.position.y === position.y) return node;
+			return { ...node, position };
+		});
+		nodes = updatedNodes;
+		savePositions(updatedNodes);
+		saveFilters(filters);
+		if (parsed.viewport && flowApi) {
+			await tick();
+			flowApi.setViewport(parsed.viewport);
+			saveViewport(parsed.viewport);
+		}
+		savedViewsOpen = false;
+	}
+
+	async function saveCurrentView() {
+		if (!newViewName.trim()) return;
+		await saveView(newViewName.trim(), buildViewPayload());
+		newViewName = '';
+		savedViewsOpen = false;
+	}
+
+	async function updateCurrentView(viewId: number) {
+		await updateView(viewId, buildViewPayload());
+	}
+
+	async function commitRenameView() {
+		if (!editingViewId) return;
+		const name = editingViewName.trim();
+		if (!name) {
+			editingViewId = null;
+			editingViewName = '';
+			return;
+		}
+		await renameView(editingViewId, name);
+		editingViewId = null;
+		editingViewName = '';
 	}
 
 	function handleNodeDragStop() {
@@ -727,177 +931,6 @@
 		return `${Math.round((value / 10) * 40)}px`;
 	}
 
-	async function graphCreateBelief() {
-		if (!graphNewBeliefContent.trim()) return;
-		const body = new URLSearchParams({
-			content: graphNewBeliefContent.trim(),
-			valence: graphNewBeliefValence
-		});
-		await fetch('?/create', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		graphNewBeliefContent = '';
-		graphNewBeliefValence = '';
-		graphShowNewBeliefForm = false;
-		await invalidateAll();
-	}
-
-	async function graphDeleteBelief(beliefId: number) {
-		const body = new URLSearchParams({ id: String(beliefId) });
-		await fetch('?/delete', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		selectedGraphBeliefId = null;
-		await invalidateAll();
-	}
-
-	async function graphUpdateBelief(beliefId: number, content: string, valence: string) {
-		const body = new URLSearchParams({ id: String(beliefId), content, valence });
-		await fetch('?/update', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		await invalidateAll();
-	}
-
-	async function graphAddRelation(sourceId: number, targetId: number, type: string) {
-		const body = new URLSearchParams({
-			sourceBeliefId: String(sourceId),
-			targetBeliefId: String(targetId),
-			type
-		});
-		await fetch('?/addRelation', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		await invalidateAll();
-	}
-
-	async function graphRemoveRelation(relationId: number) {
-		const body = new URLSearchParams({ id: String(relationId) });
-		await fetch('?/removeRelation', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		await invalidateAll();
-	}
-
-	async function graphUpdateRelationNotes(relationId: number, notes: string) {
-		const body = new URLSearchParams({ id: String(relationId), notes });
-		await fetch('?/updateRelationNotes', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		await invalidateAll();
-	}
-
-	async function graphCreateEvidence(beliefId: number, content: string, type: string) {
-		const body = new URLSearchParams({ beliefId: String(beliefId), content, type });
-		await fetch('?/createEvidence', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		await invalidateAll();
-	}
-
-	async function graphLinkEvidence(beliefId: number, evidenceId: number, type: string) {
-		const body = new URLSearchParams({
-			beliefId: String(beliefId),
-			evidenceId: String(evidenceId),
-			type
-		});
-		await fetch('?/linkEvidence', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		await invalidateAll();
-	}
-
-	async function graphUnlinkEvidence(linkId: number) {
-		const body = new URLSearchParams({ id: String(linkId) });
-		await fetch('?/unlinkEvidence', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		await invalidateAll();
-	}
-
-	async function graphDeleteEvidence(evidenceId: number) {
-		const body = new URLSearchParams({ id: String(evidenceId) });
-		await fetch('?/deleteEvidence', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		await invalidateAll();
-	}
-
-	async function graphLogIntensity(beliefId: number, value: number, date: string, notes: string) {
-		const body = new URLSearchParams({
-			beliefId: String(beliefId),
-			value: String(value),
-			date,
-			notes
-		});
-		await fetch('?/logIntensity', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		await invalidateAll();
-	}
-
-	async function graphLinkHabit(beliefId: number, habitId: number) {
-		const body = new URLSearchParams({ beliefId: String(beliefId), habitId: String(habitId) });
-		await fetch('?/linkHabit', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		await invalidateAll();
-	}
-
-	async function graphUnlinkHabit(linkId: number) {
-		const body = new URLSearchParams({ id: String(linkId) });
-		await fetch('?/unlinkHabit', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		await invalidateAll();
-	}
-
-	async function graphAddTag(beliefId: number, tagName: string) {
-		const body = new URLSearchParams({ beliefId: String(beliefId), tags: tagName });
-		await fetch('?/addBeliefTag', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		await invalidateAll();
-	}
-
-	async function graphRemoveTag(linkId: number) {
-		const body = new URLSearchParams({ id: String(linkId) });
-		await fetch('?/removeBeliefTag', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
-		await invalidateAll();
-	}
-
 	function toggleView() {
 		if (graphView) {
 			goto('?view=list', { replaceState: true });
@@ -944,18 +977,9 @@
 	async function bulkAddTags() {
 		if (selectedBeliefIds.length === 0 || !bulkTagInput.trim()) return;
 		bulkTagging = true;
-		const body = new URLSearchParams({
-			beliefIds: selectedBeliefIds.join(','),
-			tags: bulkTagInput.trim()
-		});
-		await fetch('?/bulkAddBeliefTag', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		});
+		await graphBulkAddTags(selectedBeliefIds, bulkTagInput.trim());
 		bulkTagInput = '';
 		bulkTagging = false;
-		await invalidateAll();
 	}
 
 	function openBeliefPanel(beliefId: number) {
@@ -1584,11 +1608,11 @@
 													<div class="flex items-center gap-1.5">
 														<span class="text-sm text-gray-700">{ev.evidenceContent}</span>
 														<span
-															class="{rel.type === 'supports'
+															class="{ev.type === 'supports'
 																? 'border border-blue-200 bg-blue-50 text-blue-700'
 																: 'border border-red-200 bg-red-50 text-red-700'} px-1 py-0.5 text-xs"
 														>
-															{rel.type}
+															{ev.type}
 														</span>
 														<span class="text-xs text-gray-400">this</span>
 													</div>
@@ -1759,102 +1783,257 @@
 			</div>
 		{/if}
 	{:else}
-		<div class="space-y-2">
-			<div class="flex items-center gap-3">
-				{#if pendingRelations.length > 0}
-					<span class="text-sm text-gray-500">{pendingRelations.length} pending</span>
-					<button
-						onclick={saveRelations}
-						class="bg-gray-900 px-3 py-1 text-sm text-white hover:bg-gray-800"
-					>
-						Save ({pendingRelations.length})
-					</button>
-				{/if}
-				{#if graphShowNewBeliefForm}
-					<div class="flex flex-wrap items-center gap-2">
-						<input
-							type="text"
-							placeholder="belief text..."
-							bind:value={graphNewBeliefContent}
-							class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						/>
-						<select
-							bind:value={graphNewBeliefValence}
-							class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						>
-							<option value="">Neutral</option>
-							<option value="positive">Positive</option>
-							<option value="negative">Negative</option>
-						</select>
-						<button
-							onclick={graphCreateBelief}
-							disabled={!graphNewBeliefContent.trim()}
-							class="bg-gray-900 px-3 py-1 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
-						>
-							Create
-						</button>
-						<button
-							onclick={() => {
-								graphShowNewBeliefForm = false;
-								graphNewBeliefContent = '';
-								graphNewBeliefValence = '';
-							}}
-							class="border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
-						>
-							Cancel
-						</button>
-						{#if islands.islandCount > 1}
-							<span class="text-xs text-gray-400">
-								{islands.islandCount} islands
-							</span>
-						{/if}
-					</div>
-				{:else}
+		<div class="space-y-3">
+			<div
+				class="flex flex-wrap items-center gap-3 border border-gray-200 bg-white px-3 py-2 shadow-sm"
+			>
+				<div class="flex flex-wrap items-center gap-2">
+					<span class="text-xs font-medium text-gray-500">Edges</span>
 					<button
 						onclick={() => {
-							graphShowNewBeliefForm = true;
+							filters = { ...filters, showSupports: !filters.showSupports };
 						}}
-						class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+						class="px-2 py-1 text-xs shadow-sm {filters.showSupports
+							? 'border border-blue-200 bg-blue-50 text-blue-700'
+							: 'border border-gray-300 bg-white text-gray-500 opacity-50'}"
 					>
-						New Belief
+						Supports
 					</button>
-				{/if}
-				<button
-					onclick={toggleAutoLayout}
-					class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-					class:bg-gray-100={preLayoutPositions !== null}
-				>
-					{preLayoutPositions ? 'Undo Layout' : 'Auto Layout'}
-				</button>
-			</div>
-			{#if selectedBeliefIds.length >= 2}
-				<div class="flex items-center gap-2 border border-gray-200 bg-white px-3 py-2 shadow-sm">
-					<span class="text-xs font-medium text-gray-500">{selectedBeliefIds.length} selected</span>
-					<input
-						type="text"
-						bind:value={bulkTagInput}
-						placeholder="tag name(s), comma separated"
-						onkeydown={(e) => {
-							if (e.key === 'Enter') {
-								e.preventDefault();
-								bulkAddTags();
-							}
-						}}
-						class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					/>
 					<button
-						onclick={bulkAddTags}
-						disabled={bulkTagging || !bulkTagInput.trim()}
-						class="bg-gray-900 px-3 py-1 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
+						onclick={() => {
+							filters = { ...filters, showContradicts: !filters.showContradicts };
+						}}
+						class="px-2 py-1 text-xs shadow-sm {filters.showContradicts
+							? 'border border-red-200 bg-red-50 text-red-700'
+							: 'border border-gray-300 bg-white text-gray-500 opacity-50'}"
 					>
-						Tag All
+						Contradicts
+					</button>
+					<button
+						onclick={() => {
+							filters = { ...filters, showEvidence: !filters.showEvidence };
+						}}
+						class="px-2 py-1 text-xs shadow-sm {filters.showEvidence
+							? 'border border-amber-200 bg-amber-50 text-amber-700'
+							: 'border border-gray-300 bg-white text-gray-500 opacity-50'}"
+					>
+						Evidence
 					</button>
 				</div>
-			{/if}
-			<p class="text-xs text-gray-400">
-				Drag from a handle to connect beliefs. Hover an edge label and click &times; to remove it.
-				Double-click a belief to edit its text.
-			</p>
+				<div class="flex flex-wrap items-center gap-2">
+					<span class="text-xs font-medium text-gray-500">Valence</span>
+					<button
+						onclick={() => {
+							filters = { ...filters, showPositive: !filters.showPositive };
+						}}
+						class="px-2 py-1 text-xs shadow-sm {filters.showPositive
+							? 'border border-blue-200 bg-blue-50 text-blue-700'
+							: 'border border-gray-300 bg-white text-gray-500 opacity-50'}"
+					>
+						Positive
+					</button>
+					<button
+						onclick={() => {
+							filters = { ...filters, showNegative: !filters.showNegative };
+						}}
+						class="px-2 py-1 text-xs shadow-sm {filters.showNegative
+							? 'border border-red-200 bg-red-50 text-red-700'
+							: 'border border-gray-300 bg-white text-gray-500 opacity-50'}"
+					>
+						Negative
+					</button>
+					<button
+						onclick={() => {
+							filters = { ...filters, showNeutral: !filters.showNeutral };
+						}}
+						class="px-2 py-1 text-xs shadow-sm {filters.showNeutral
+							? 'border border-gray-300 bg-gray-50 text-gray-700'
+							: 'border border-gray-300 bg-white text-gray-500 opacity-50'}"
+					>
+						Neutral
+					</button>
+				</div>
+				<div class="relative ml-auto">
+					<button
+						onclick={() => {
+							savedViewsOpen = !savedViewsOpen;
+						}}
+						class="border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 shadow-sm hover:bg-gray-50"
+					>
+						Saved views
+					</button>
+					{#if savedViewsOpen}
+						<div
+							class="absolute top-full right-0 z-40 mt-2 w-[280px] border border-gray-200 bg-white shadow-sm"
+						>
+							<div class="border-b border-gray-200 p-2">
+								<div class="flex items-center gap-2">
+									<input
+										bind:value={newViewName}
+										placeholder="view name"
+										class="flex-1 border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+									/>
+									<button
+										onclick={saveCurrentView}
+										disabled={!newViewName.trim()}
+										class="bg-gray-900 px-2 py-1 text-xs text-white hover:bg-gray-800 disabled:opacity-50"
+									>
+										Save current
+									</button>
+								</div>
+							</div>
+							{#if savedViews.length === 0}
+								<div class="px-3 py-2 text-xs text-gray-400">No saved views yet.</div>
+							{:else}
+								<div class="divide-y divide-gray-100">
+									{#each savedViews as view (view.id)}
+										<div class="flex items-center gap-2 px-3 py-2">
+											{#if editingViewId === view.id}
+												<input
+													bind:value={editingViewName}
+													onkeydown={(e) => {
+														if (e.key === 'Enter') commitRenameView();
+														if (e.key === 'Escape') {
+															editingViewId = null;
+															editingViewName = '';
+														}
+													}}
+													onblur={commitRenameView}
+													class="flex-1 border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+												/>
+											{:else}
+												<button
+													onclick={() => applySavedView(view.data)}
+													ondblclick={() => {
+														editingViewId = view.id;
+														editingViewName = view.name;
+													}}
+													class="min-w-0 flex-1 text-left text-xs text-gray-700 hover:text-gray-900"
+													title={view.name}
+												>
+													{view.name}
+												</button>
+											{/if}
+											<button
+												onclick={() => updateCurrentView(view.id)}
+												class="border border-gray-300 bg-white px-2 py-0.5 text-[10px] text-gray-600 shadow-sm hover:bg-gray-50"
+											>
+												Update
+											</button>
+											<button
+												onclick={() => deleteView(view.id)}
+												class="text-xs text-gray-400 hover:text-red-500"
+												title="Delete"
+											>
+												&times;
+											</button>
+										</div>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					{/if}
+				</div>
+			</div>
+			<div class="space-y-2">
+				<div class="flex items-center gap-3">
+					{#if pendingRelations.length > 0}
+						<span class="text-sm text-gray-500">{pendingRelations.length} pending</span>
+						<button
+							onclick={saveRelations}
+							class="bg-gray-900 px-3 py-1 text-sm text-white hover:bg-gray-800"
+						>
+							Save ({pendingRelations.length})
+						</button>
+					{/if}
+					{#if graphShowNewBeliefForm}
+						<div class="flex flex-wrap items-center gap-2">
+							<input
+								type="text"
+								placeholder="belief text..."
+								bind:value={graphNewBeliefContent}
+								class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							/>
+							<select
+								bind:value={graphNewBeliefValence}
+								class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							>
+								<option value="">Neutral</option>
+								<option value="positive">Positive</option>
+								<option value="negative">Negative</option>
+							</select>
+							<button
+								onclick={handleGraphCreateBelief}
+								disabled={!graphNewBeliefContent.trim()}
+								class="bg-gray-900 px-3 py-1 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
+							>
+								Create
+							</button>
+							<button
+								onclick={() => {
+									graphShowNewBeliefForm = false;
+									graphNewBeliefContent = '';
+									graphNewBeliefValence = '';
+								}}
+								class="border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
+							>
+								Cancel
+							</button>
+							{#if islands.islandCount > 1}
+								<span class="text-xs text-gray-400">
+									{islands.islandCount} islands
+								</span>
+							{/if}
+						</div>
+					{:else}
+						<button
+							onclick={() => {
+								graphShowNewBeliefForm = true;
+							}}
+							class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+						>
+							New Belief
+						</button>
+					{/if}
+					<button
+						onclick={toggleAutoLayout}
+						class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+						class:bg-gray-100={preLayoutPositions !== null}
+					>
+						{preLayoutPositions ? 'Undo Layout' : 'Auto Layout'}
+					</button>
+				</div>
+				{#if selectedBeliefIds.length >= 2}
+					<div class="flex items-center gap-2 border border-gray-200 bg-white px-3 py-2 shadow-sm">
+						<span class="text-xs font-medium text-gray-500"
+							>{selectedBeliefIds.length} selected</span
+						>
+						<input
+							type="text"
+							bind:value={bulkTagInput}
+							placeholder="tag name(s), comma separated"
+							onkeydown={(e) => {
+								if (e.key === 'Enter') {
+									e.preventDefault();
+									bulkAddTags();
+								}
+							}}
+							class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						/>
+						<button
+							onclick={bulkAddTags}
+							disabled={bulkTagging || !bulkTagInput.trim()}
+							class="bg-gray-900 px-3 py-1 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
+						>
+							Tag All
+						</button>
+					</div>
+				{/if}
+				<p class="text-xs text-gray-400">
+					Drag from a handle to connect beliefs. Hover an edge label and click &times; to remove it.
+					Double-click a belief to edit its text.
+				</p>
+			</div>
 		</div>
 
 		{#if data.beliefs.length === 0}
@@ -1862,8 +2041,14 @@
 				No beliefs yet. Add one to start reconsolidation work.
 			</div>
 		{:else}
-			<div class="relative flex" style="width: 100%; height: calc(100vh - 180px);">
-				<div class="flex-1 border border-gray-200 shadow-sm">
+			<div
+				class="relative"
+				style="width: 100%; height: calc(100vh - 180px); overflow: hidden;"
+				onkeydown={handleGraphContainerKeydown}
+				role="button"
+				tabindex="0"
+			>
+				<div class="h-full w-full border border-gray-200 shadow-sm">
 					<SvelteFlow
 						bind:nodes
 						bind:edges
@@ -1887,7 +2072,13 @@
 							const beliefId = parseInt(e.node.id.replace('b-', ''));
 							openBeliefPanel(beliefId);
 						}}
+						onpaneclick={handleGraphContainerClick}
 					>
+						<FlowBridge
+							onready={(api) => {
+								flowApi = api;
+							}}
+						/>
 						<Controls />
 						<Background variant={BackgroundVariant.Dots} />
 						<MiniMap />
@@ -1953,15 +2144,78 @@
 					{/if}
 				</div>
 
-				{#if selectedGraphBeliefId}
-					{@const belief = data.beliefs.find((b) => b.id === selectedGraphBeliefId)}
-					{#if belief}
-						<div class="flex h-full w-[350px] flex-col border-l border-gray-200 bg-white shadow-sm">
+				{#if traversal.active}
+					<div
+						class="absolute top-3 left-3 z-30 flex items-center gap-2 border border-gray-200 bg-white px-2 py-1 text-xs shadow-sm"
+					>
+						<span class="text-gray-500">Depth</span>
+						<button
+							onclick={() => {
+								traversal = { ...traversal, depth: 1 };
+							}}
+							class="border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-700 shadow-sm hover:bg-gray-50 {traversal.depth ===
+							1
+								? 'bg-gray-100'
+								: ''}"
+						>
+							1
+						</button>
+						<button
+							onclick={() => {
+								traversal = { ...traversal, depth: 2 };
+							}}
+							class="border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-700 shadow-sm hover:bg-gray-50 {traversal.depth ===
+							2
+								? 'bg-gray-100'
+								: ''}"
+						>
+							2
+						</button>
+						<button
+							onclick={() => {
+								traversal = { ...traversal, depth: 3 };
+							}}
+							class="border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-700 shadow-sm hover:bg-gray-50 {traversal.depth ===
+							3
+								? 'bg-gray-100'
+								: ''}"
+						>
+							3
+						</button>
+						<button
+							onclick={exitTraversal}
+							class="border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-700 shadow-sm hover:bg-gray-50"
+						>
+							Exit
+						</button>
+					</div>
+				{/if}
+
+				<div
+					bind:this={drawerElement}
+					class="beliefs-drawer absolute top-0 right-0 z-40 flex h-full w-[350px] flex-col border-l border-gray-200 bg-white shadow-sm"
+					style="transform: translateX({selectedGraphBeliefId
+						? '0'
+						: '100%'}); transition: transform 200ms ease;"
+				>
+					{#if selectedGraphBeliefId}
+						{@const belief = data.beliefs.find((b) => b.id === selectedGraphBeliefId)}
+						{#if belief}
 							<div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-								<span class="font-mono text-sm font-medium text-gray-500">#{belief.id}</span>
+								<div class="flex items-center gap-2">
+									<span class="font-mono text-sm font-medium text-gray-500">#{belief.id}</span>
+									<button
+										onclick={enterTraversal}
+										disabled={traversal.active && traversal.focusBeliefId === belief.id}
+										class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+									>
+										Focus
+									</button>
+								</div>
 								<button
 									onclick={() => {
 										selectedGraphBeliefId = null;
+										panelConfirmDelete = false;
 										// Deselect all nodes to prevent stuck selection state
 										nodes = nodes.map((n) => (n.selected ? { ...n, selected: false } : n));
 									}}
@@ -2295,7 +2549,7 @@
 											<span class="text-xs text-red-600">Delete this belief?</span>
 											<div class="flex gap-2">
 												<button
-													onclick={() => graphDeleteBelief(belief.id)}
+													onclick={() => handleGraphDeleteBelief(belief.id)}
 													class="flex-1 border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
 												>
 													Confirm
@@ -2322,9 +2576,9 @@
 									{/if}
 								</div>
 							</div>
-						</div>
+						{/if}
 					{/if}
-				{/if}
+				</div>
 			</div>
 		{/if}
 	{/if}
