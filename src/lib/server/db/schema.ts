@@ -354,6 +354,34 @@ export const beliefTags = sqliteTable(
 	]
 );
 
+// --- Shopping List ---
+
+export const shoppingItems = sqliteTable(
+	'shopping_items',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull(),
+		type: text('type', { enum: ['someday', 'replenish'] }).notNull(),
+		notes: text('notes').default(''),
+		bought: integer('bought', { mode: 'boolean' }).notNull().default(false),
+		boughtAt: text('bought_at'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('shopping_items_user_idx').on(table.userId),
+		index('shopping_items_type_idx').on(table.type),
+		index('shopping_items_bought_idx').on(table.bought)
+	]
+);
+
 export const graphViews = sqliteTable(
 	'graph_views',
 	{

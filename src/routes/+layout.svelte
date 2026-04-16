@@ -23,7 +23,8 @@
 		{ href: '/planner/track', label: 'Planner' },
 		{ href: '/diary', label: 'Diary' },
 		{ href: '/habits', label: 'Habits' },
-		{ href: '/beliefs', label: 'Beliefs' }
+		{ href: '/beliefs', label: 'Beliefs' },
+		{ href: '/shopping', label: 'Shopping' }
 	];
 
 	function isNavActive(href: string): boolean {

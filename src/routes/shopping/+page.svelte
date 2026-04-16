@@ -1,0 +1,406 @@
+<script lang="ts">
+	import { enhance } from '$app/forms';
+	import type { PageServerData, ActionData } from './$types';
+
+	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+
+	let showForm = $state(false);
+	let selectedIndex = $state(0);
+	let editingId: number | null = $state(null);
+	let editName = $state('');
+	let editType = $state('');
+	let editNotes = $state('');
+	let filterType = $state<'all' | 'someday' | 'replenish'>('all');
+	let showBought = $state(false);
+
+	let filteredItems = $derived(
+		data.items.filter((item) => {
+			if (!showBought && item.bought) return false;
+			if (filterType === 'all') return true;
+			return item.type === filterType;
+		})
+	);
+
+	let somedayItems = $derived(filteredItems.filter((i) => i.type === 'someday'));
+	let replenishItems = $derived(filteredItems.filter((i) => i.type === 'replenish'));
+
+	function startEdit(item: (typeof data.items)[0]) {
+		editingId = item.id;
+		editName = item.name;
+		editType = item.type;
+		editNotes = item.notes ?? '';
+	}
+
+	function cancelEdit() {
+		editingId = null;
+		editName = '';
+		editType = '';
+		editNotes = '';
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (
+			e.target instanceof HTMLInputElement ||
+			e.target instanceof HTMLTextAreaElement ||
+			e.target instanceof HTMLSelectElement
+		)
+			return;
+
+		const items = filteredItems;
+
+		if (e.key === 'j') {
+			e.preventDefault();
+			selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+		} else if (e.key === 'k') {
+			e.preventDefault();
+			selectedIndex = Math.max(selectedIndex - 1, 0);
+		} else if (e.key === 'n') {
+			e.preventDefault();
+			showForm = true;
+		} else if (e.key === 'Escape') {
+			e.preventDefault();
+			showForm = false;
+			cancelEdit();
+		} else if (e.key === 'e' && items.length > 0) {
+			e.preventDefault();
+			startEdit(items[selectedIndex]);
+		} else if (e.key === '1') {
+			filterType = filterType === 'someday' ? 'all' : 'someday';
+		} else if (e.key === '2') {
+			filterType = filterType === 'replenish' ? 'all' : 'replenish';
+		} else if (e.key === 'b') {
+			showBought = !showBought;
+		}
+	}
+</script>
+
+<svelte:window onkeydown={handleKeydown} />
+
+<div class="space-y-4">
+	<div class="flex items-center justify-between">
+		<h1 class="text-lg font-bold text-gray-900">Shopping List</h1>
+		<div class="flex items-center gap-2">
+			<button
+				onclick={() => (filterType = filterType === 'someday' ? 'all' : 'someday')}
+				class="px-2 py-1 text-xs shadow-sm {filterType === 'someday'
+					? 'border border-orange-200 bg-orange-50 text-orange-700'
+					: 'border border-gray-300 bg-white text-gray-700'}"
+			>
+				Someday <kbd class="border border-gray-300 bg-gray-50 px-1">1</kbd>
+			</button>
+			<button
+				onclick={() => (filterType = filterType === 'replenish' ? 'all' : 'replenish')}
+				class="px-2 py-1 text-xs shadow-sm {filterType === 'replenish'
+					? 'border border-cyan-200 bg-cyan-50 text-cyan-700'
+					: 'border border-gray-300 bg-white text-gray-700'}"
+			>
+				Replenish <kbd class="border border-gray-300 bg-gray-50 px-1">2</kbd>
+			</button>
+			<button
+				onclick={() => (showBought = !showBought)}
+				class="px-2 py-1 text-xs shadow-sm {showBought
+					? 'border border-gray-400 bg-gray-100 text-gray-700'
+					: 'border border-gray-300 bg-white text-gray-500'}"
+			>
+				{showBought ? 'Hide' : 'Show'} bought
+				<kbd class="border border-gray-300 bg-gray-50 px-1">b</kbd>
+			</button>
+			<button
+				onclick={() => (showForm = !showForm)}
+				class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
+			>
+				{showForm ? 'Cancel' : 'Add item'}
+				<kbd class="border border-gray-300 bg-gray-50 px-1">n</kbd>
+			</button>
+		</div>
+	</div>
+
+	{#if form?.message}
+		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+			{form.message}
+		</div>
+	{/if}
+
+	{#if showForm}
+		<form
+			method="POST"
+			action="?/create"
+			use:enhance={() => {
+				return async ({ update }) => {
+					await update();
+					showForm = false;
+				};
+			}}
+			class="border border-gray-200 bg-white p-4 shadow-sm"
+		>
+			<div class="space-y-3">
+				<div class="flex gap-3">
+					<input
+						name="name"
+						type="text"
+						placeholder="Item name"
+						required
+						class="flex-1 border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					/>
+					<select
+						name="type"
+						required
+						class="border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					>
+						<option value="replenish">Replenish</option>
+						<option value="someday">Someday</option>
+					</select>
+				</div>
+				<input
+					name="notes"
+					type="text"
+					placeholder="Notes (optional)"
+					class="w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+				/>
+				<button
+					type="submit"
+					class="bg-gray-900 px-4 py-2 text-sm text-white shadow-sm hover:bg-gray-800"
+				>
+					Add
+				</button>
+			</div>
+		</form>
+	{/if}
+
+	{#if replenishItems.length > 0}
+		<div>
+			<h2 class="mb-2 text-sm font-bold text-gray-500">Replenish</h2>
+			<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
+				{#each replenishItems as item, i (item.id)}
+					{@const globalIdx = filteredItems.indexOf(item)}
+					<div
+						class="flex items-center gap-4 px-4 py-3 {globalIdx === selectedIndex
+							? 'ring-2 ring-gray-900 ring-inset'
+							: ''}"
+					>
+						{#if editingId === item.id}
+							<form
+								method="POST"
+								action="?/update"
+								use:enhance={() => {
+									return async ({ update }) => {
+										await update();
+										cancelEdit();
+									};
+								}}
+								class="flex flex-1 items-center gap-2"
+							>
+								<input type="hidden" name="id" value={item.id} />
+								<input
+									name="name"
+									type="text"
+									bind:value={editName}
+									required
+									class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								/>
+								<select
+									name="type"
+									bind:value={editType}
+									class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								>
+									<option value="replenish">Replenish</option>
+									<option value="someday">Someday</option>
+								</select>
+								<input
+									name="notes"
+									type="text"
+									bind:value={editNotes}
+									placeholder="Notes"
+									class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								/>
+								<button
+									type="submit"
+									class="bg-gray-900 px-2 py-1 text-xs text-white hover:bg-gray-800"
+								>
+									Save
+								</button>
+								<button
+									type="button"
+									onclick={cancelEdit}
+									class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
+								>
+									Cancel
+								</button>
+							</form>
+						{:else}
+							<form method="POST" action="?/toggleBought" use:enhance>
+								<input type="hidden" name="id" value={item.id} />
+								<button
+									type="submit"
+									class="flex h-5 w-5 items-center justify-center border border-gray-300 bg-white shadow-sm hover:bg-gray-50 {item.bought
+										? 'bg-gray-100'
+										: ''}"
+								>
+									{#if item.bought}
+										<span class="text-xs text-gray-600">&#10003;</span>
+									{/if}
+								</button>
+							</form>
+							<div class="min-w-0 flex-1">
+								<span
+									class="text-sm {item.bought ? 'text-gray-400 line-through' : 'text-gray-900'}"
+								>
+									{item.name}
+								</span>
+								{#if item.notes}
+									<span class="ml-2 text-xs text-gray-400">{item.notes}</span>
+								{/if}
+							</div>
+							<span
+								class="border border-cyan-200 bg-cyan-50 px-1.5 py-0.5 text-[10px] font-medium text-cyan-700"
+							>
+								replenish
+							</span>
+							{#if item.bought}
+								<form method="POST" action="?/restock" use:enhance>
+									<input type="hidden" name="id" value={item.id} />
+									<button
+										type="submit"
+										class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm hover:bg-gray-50"
+									>
+										Restock
+									</button>
+								</form>
+							{/if}
+							<button
+								onclick={() => startEdit(item)}
+								class="text-xs text-gray-400 hover:text-gray-700"
+							>
+								edit
+							</button>
+							<form method="POST" action="?/delete" use:enhance>
+								<input type="hidden" name="id" value={item.id} />
+								<button type="submit" class="text-xs text-gray-400 hover:text-red-500">
+									&times;
+								</button>
+							</form>
+						{/if}
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
+
+	{#if somedayItems.length > 0}
+		<div>
+			<h2 class="mb-2 text-sm font-bold text-gray-500">Someday</h2>
+			<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
+				{#each somedayItems as item, i (item.id)}
+					{@const globalIdx = filteredItems.indexOf(item)}
+					<div
+						class="flex items-center gap-4 px-4 py-3 {globalIdx === selectedIndex
+							? 'ring-2 ring-gray-900 ring-inset'
+							: ''}"
+					>
+						{#if editingId === item.id}
+							<form
+								method="POST"
+								action="?/update"
+								use:enhance={() => {
+									return async ({ update }) => {
+										await update();
+										cancelEdit();
+									};
+								}}
+								class="flex flex-1 items-center gap-2"
+							>
+								<input type="hidden" name="id" value={item.id} />
+								<input
+									name="name"
+									type="text"
+									bind:value={editName}
+									required
+									class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								/>
+								<select
+									name="type"
+									bind:value={editType}
+									class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								>
+									<option value="replenish">Replenish</option>
+									<option value="someday">Someday</option>
+								</select>
+								<input
+									name="notes"
+									type="text"
+									bind:value={editNotes}
+									placeholder="Notes"
+									class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								/>
+								<button
+									type="submit"
+									class="bg-gray-900 px-2 py-1 text-xs text-white hover:bg-gray-800"
+								>
+									Save
+								</button>
+								<button
+									type="button"
+									onclick={cancelEdit}
+									class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
+								>
+									Cancel
+								</button>
+							</form>
+						{:else}
+							<form method="POST" action="?/toggleBought" use:enhance>
+								<input type="hidden" name="id" value={item.id} />
+								<button
+									type="submit"
+									class="flex h-5 w-5 items-center justify-center border border-gray-300 bg-white shadow-sm hover:bg-gray-50 {item.bought
+										? 'bg-gray-100'
+										: ''}"
+								>
+									{#if item.bought}
+										<span class="text-xs text-gray-600">&#10003;</span>
+									{/if}
+								</button>
+							</form>
+							<div class="min-w-0 flex-1">
+								<span
+									class="text-sm {item.bought ? 'text-gray-400 line-through' : 'text-gray-900'}"
+								>
+									{item.name}
+								</span>
+								{#if item.notes}
+									<span class="ml-2 text-xs text-gray-400">{item.notes}</span>
+								{/if}
+							</div>
+							<span
+								class="border border-orange-200 bg-orange-50 px-1.5 py-0.5 text-[10px] font-medium text-orange-700"
+							>
+								someday
+							</span>
+							<button
+								onclick={() => startEdit(item)}
+								class="text-xs text-gray-400 hover:text-gray-700"
+							>
+								edit
+							</button>
+							<form method="POST" action="?/delete" use:enhance>
+								<input type="hidden" name="id" value={item.id} />
+								<button type="submit" class="text-xs text-gray-400 hover:text-red-500">
+									&times;
+								</button>
+							</form>
+						{/if}
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
+
+	{#if filteredItems.length === 0}
+		<div class="py-12 text-center text-sm text-gray-400">
+			{#if data.items.length === 0}
+				No items yet. Add something to buy.
+			{:else}
+				No items match the current filter.
+			{/if}
+		</div>
+	{/if}
+</div>

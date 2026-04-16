@@ -199,6 +199,35 @@
 		{/if}
 	</div>
 
+	<div
+		class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
+		style="border-left-color: {SECTION_COLORS.shopping}"
+	>
+		<div class="mb-3 flex items-center justify-between">
+			<h2 class="text-sm font-bold text-gray-900">Shopping</h2>
+			<a href="/shopping" class="text-xs text-gray-500 transition hover:text-gray-900">Open →</a>
+		</div>
+		{#if data.shoppingToBuy.length === 0}
+			<p class="text-sm text-gray-400">Nothing to buy.</p>
+		{:else}
+			<div class="space-y-1">
+				{#each data.shoppingToBuy.slice(0, 8) as item}
+					<div class="flex items-center gap-2">
+						<span class="text-sm text-gray-700">{item.name}</span>
+						<span
+							class="text-[10px] {item.type === 'replenish' ? 'text-cyan-600' : 'text-orange-600'}"
+						>
+							{item.type}
+						</span>
+					</div>
+				{/each}
+				{#if data.shoppingToBuy.length > 8}
+					<span class="text-xs text-gray-400">+{data.shoppingToBuy.length - 8} more</span>
+				{/if}
+			</div>
+		{/if}
+	</div>
+
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 		<div
 			class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
@@ -300,6 +329,9 @@
 				>
 				<a href="/beliefs" class="block text-sm text-gray-600 transition hover:text-gray-900"
 					>→ Beliefs</a
+				>
+				<a href="/shopping" class="block text-sm text-gray-600 transition hover:text-gray-900"
+					>→ Shopping</a
 				>
 			</div>
 		</div>

@@ -8,7 +8,8 @@ import {
 	beliefs,
 	taskInstances,
 	habits,
-	habitOccurrences
+	habitOccurrences,
+	shoppingItems
 } from '$lib/server/db/schema';
 import { eq, and, gte, lt, desc } from 'drizzle-orm';
 import { generateCurrentWeek, toLocalISOString } from '$lib/server/week-generator';
@@ -147,12 +148,24 @@ export const load: PageServerLoad = async (event) => {
 		.limit(3)
 		.all();
 
+	const shoppingToBuy = db
+		.select({
+			id: shoppingItems.id,
+			name: shoppingItems.name,
+			type: shoppingItems.type
+		})
+		.from(shoppingItems)
+		.where(and(eq(shoppingItems.userId, userId), eq(shoppingItems.bought, false)))
+		.orderBy(desc(shoppingItems.createdAt))
+		.all();
+
 	return {
 		lastEntry: lastEntry ? { ...lastEntry, tags: lastEntryTags } : null,
 		allTags,
 		taskSummary,
 		habitStreaks,
 		recentBeliefs,
+		shoppingToBuy,
 		today
 	};
 };
