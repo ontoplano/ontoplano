@@ -24,7 +24,8 @@
 		{ href: '/diary', label: 'Diary' },
 		{ href: '/habits', label: 'Habits' },
 		{ href: '/beliefs', label: 'Beliefs' },
-		{ href: '/shopping', label: 'Shopping' }
+		{ href: '/shopping', label: 'Shopping' },
+		{ href: '/services', label: 'Services' }
 	];
 
 	function isNavActive(href: string): boolean {

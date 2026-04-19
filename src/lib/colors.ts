@@ -28,7 +28,8 @@ export const SECTION_COLORS = {
 	habits: 'rgba(6, 182, 212, 0.6)',
 	diary: 'rgba(234, 179, 8, 0.6)',
 	beliefs: 'rgba(168, 85, 247, 0.6)',
-	shopping: 'rgba(249, 115, 22, 0.6)'
+	shopping: 'rgba(249, 115, 22, 0.6)',
+	services: 'rgba(34, 197, 94, 0.6)'
 } as const;
 
 // -- Beliefs graph ------------------------------------------------------------
