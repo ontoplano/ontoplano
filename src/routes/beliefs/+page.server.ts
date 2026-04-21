@@ -15,34 +15,11 @@ import {
 } from '$lib/server/db/schema';
 import { eq, and, or, desc, inArray } from 'drizzle-orm';
 import { toLocalISOString } from '$lib/server/week-generator';
+import { parseTags, ensureTagIds, cleanupOrphanTags } from '$lib/server/tags';
 
 function todayStr(): string {
 	const d = new Date();
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function parseTags(raw: string): string[] {
-	return [
-		...new Set(
-			raw
-				.split(/[,\s]+/)
-				.map((t) => t.replace(/^#/, '').trim().toLowerCase())
-				.filter(Boolean)
-		)
-	];
-}
-
-function ensureTagIds(tagNames: string[], userId: string): number[] {
-	return tagNames.map((name) => {
-		const existing = db
-			.select({ id: tags.id })
-			.from(tags)
-			.where(and(eq(tags.name, name), eq(tags.userId, userId)))
-			.get();
-		if (existing) return existing.id;
-		const result = db.insert(tags).values({ userId, name }).run();
-		return Number(result.lastInsertRowid);
-	});
 }
 
 function getBeliefForUser(beliefId: number, userId: string): { id: number } | undefined {
@@ -324,6 +301,8 @@ export const actions: Actions = {
 			}
 		}
 
+		cleanupOrphanTags(userId);
+
 		return { success: true };
 	},
 
@@ -339,6 +318,8 @@ export const actions: Actions = {
 		db.delete(beliefs)
 			.where(and(eq(beliefs.id, id), eq(beliefs.userId, userId)))
 			.run();
+
+		cleanupOrphanTags(userId);
 
 		return { success: true };
 	},
@@ -641,6 +622,8 @@ export const actions: Actions = {
 		if (!link) return fail(404, { message: 'Belief tag not found' });
 
 		db.delete(beliefTags).where(eq(beliefTags.id, id)).run();
+
+		cleanupOrphanTags(userId);
 
 		return { success: true };
 	},

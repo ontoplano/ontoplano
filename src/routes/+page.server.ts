@@ -13,6 +13,7 @@ import {
 } from '$lib/server/db/schema';
 import { eq, and, gte, lt, desc } from 'drizzle-orm';
 import { generateCurrentWeek, toLocalISOString } from '$lib/server/week-generator';
+import { parseTags, ensureTagIds, linkDiaryTags } from '$lib/server/tags';
 
 function todayStr(): string {
 	const d = new Date();
@@ -182,23 +183,10 @@ export const actions: Actions = {
 		const result = db.insert(diaryEntries).values({ userId, content }).run();
 		const entryId = Number(result.lastInsertRowid);
 
-		if (tagsStr) {
-			const tagNames = tagsStr
-				.split(',')
-				.map((t) => t.trim())
-				.filter(Boolean);
-			for (const name of tagNames) {
-				let tag = db
-					.select({ id: tags.id })
-					.from(tags)
-					.where(and(eq(tags.name, name), eq(tags.userId, userId)))
-					.get();
-				if (!tag) {
-					const tagResult = db.insert(tags).values({ userId, name }).run();
-					tag = { id: Number(tagResult.lastInsertRowid) };
-				}
-				db.insert(diaryEntryTags).values({ entryId, tagId: tag.id }).run();
-			}
+		const tagNames = parseTags(tagsStr);
+		if (tagNames.length > 0) {
+			const tagIds = ensureTagIds(tagNames, userId);
+			linkDiaryTags(entryId, tagIds);
 		}
 
 		return { success: true };

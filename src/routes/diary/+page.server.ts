@@ -4,6 +4,13 @@ import { db } from '$lib/server/db';
 import { diaryEntries, tags, diaryEntryTags } from '$lib/server/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
 import { toLocalISOString } from '$lib/server/week-generator';
+import {
+	parseTags,
+	ensureTagIds,
+	linkDiaryTags,
+	replaceDiaryTags,
+	cleanupOrphanTags
+} from '$lib/server/tags';
 
 export const load: PageServerLoad = async (event) => {
 	const userId = event.locals.user!.id;
@@ -34,30 +41,6 @@ export const load: PageServerLoad = async (event) => {
 	return { entries: entriesWithTags, allTags };
 };
 
-function parseTags(raw: string): string[] {
-	return [
-		...new Set(
-			raw
-				.split(/[,\s]+/)
-				.map((t) => t.replace(/^#/, '').trim().toLowerCase())
-				.filter(Boolean)
-		)
-	];
-}
-
-function ensureTagIds(tagNames: string[], userId: string): number[] {
-	return tagNames.map((name) => {
-		const existing = db
-			.select({ id: tags.id })
-			.from(tags)
-			.where(and(eq(tags.name, name), eq(tags.userId, userId)))
-			.get();
-		if (existing) return existing.id;
-		const result = db.insert(tags).values({ userId, name }).run();
-		return Number(result.lastInsertRowid);
-	});
-}
-
 export const actions: Actions = {
 	create: async ({ request, locals }) => {
 		const userId = locals.user!.id;
@@ -73,10 +56,35 @@ export const actions: Actions = {
 		const tagNames = parseTags(rawTags);
 		if (tagNames.length > 0) {
 			const tagIds = ensureTagIds(tagNames, userId);
-			for (const tagId of tagIds) {
-				db.insert(diaryEntryTags).values({ entryId, tagId }).run();
-			}
+			linkDiaryTags(entryId, tagIds);
 		}
+
+		return { success: true };
+	},
+
+	createWins: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const rawTags = formData.get('tags')?.toString()?.trim() ?? '';
+
+		const wins: string[] = [];
+		for (let i = 0; ; i++) {
+			const val = formData.get(`win_${i}`)?.toString()?.trim();
+			if (val === undefined || val === null) break;
+			if (val) wins.push(val);
+		}
+
+		if (wins.length === 0) return fail(400, { message: 'At least one win is required' });
+
+		const content = wins.map((w, i) => `Win ${i + 1}: ${w}`).join('\n');
+
+		const result = db.insert(diaryEntries).values({ userId, content }).run();
+		const entryId = Number(result.lastInsertRowid);
+
+		const userTags = parseTags(rawTags);
+		const allTagNames = ['3w', ...userTags.filter((t) => t !== '3w')];
+		const tagIds = ensureTagIds(allTagNames, userId);
+		linkDiaryTags(entryId, tagIds);
 
 		return { success: true };
 	},
@@ -101,14 +109,8 @@ export const actions: Actions = {
 			.where(and(eq(diaryEntries.id, id), eq(diaryEntries.userId, userId)))
 			.run();
 
-		db.delete(diaryEntryTags).where(eq(diaryEntryTags.entryId, id)).run();
-		const tagNames = parseTags(rawTags);
-		if (tagNames.length > 0) {
-			const tagIds = ensureTagIds(tagNames, userId);
-			for (const tagId of tagIds) {
-				db.insert(diaryEntryTags).values({ entryId: id, tagId }).run();
-			}
-		}
+		replaceDiaryTags(id, parseTags(rawTags), userId);
+		cleanupOrphanTags(userId);
 
 		return { success: true };
 	},
@@ -123,6 +125,8 @@ export const actions: Actions = {
 		db.delete(diaryEntries)
 			.where(and(eq(diaryEntries.id, id), eq(diaryEntries.userId, userId)))
 			.run();
+
+		cleanupOrphanTags(userId);
 
 		return { success: true };
 	}

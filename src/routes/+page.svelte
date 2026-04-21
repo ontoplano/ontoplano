@@ -32,7 +32,11 @@
 		)
 			return;
 
-		if (e.key === 'Escape') {
+		if (e.key === 'n') {
+			e.preventDefault();
+			showDiaryForm = !showDiaryForm;
+			showBeliefForm = false;
+		} else if (e.key === 'Escape') {
 			e.preventDefault();
 			showDiaryForm = false;
 			showBeliefForm = false;
@@ -217,7 +221,7 @@
 						<span
 							class="text-[10px] {item.type === 'replenish' ? 'text-cyan-600' : 'text-orange-600'}"
 						>
-							{item.type}
+							{item.type === 'replenish' ? 'inventory' : 'someday'}
 						</span>
 					</div>
 				{/each}

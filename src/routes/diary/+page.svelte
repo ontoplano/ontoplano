@@ -6,10 +6,12 @@
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	let showForm = $state(false);
+	let showWinsForm = $state(false);
 	let editingId: number | null = $state(null);
 	let selectedIndex = $state(0);
 	let filterTag: string | null = $state(null);
 	let confirmingDeleteId: number | null = $state(null);
+	let winInputCount = $state(3);
 
 	function renderMarkdown(text: string): string {
 		let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -72,6 +74,7 @@
 			case 'n':
 				e.preventDefault();
 				showForm = true;
+				showWinsForm = false;
 				editingId = null;
 				tick().then(() => {
 					const ta = document.querySelector<HTMLTextAreaElement>('textarea[name="content"]');
@@ -92,6 +95,7 @@
 			case 'Escape':
 				e.preventDefault();
 				showForm = false;
+				showWinsForm = false;
 				editingId = null;
 				confirmingDeleteId = null;
 				break;
@@ -104,20 +108,34 @@
 <div class="space-y-4">
 	<div class="flex items-center justify-between">
 		<h1 class="text-lg font-bold text-gray-900">Diary</h1>
-		<button
-			onclick={() => {
-				showForm = !showForm;
-				editingId = null;
-				if (!showForm) return;
-				tick().then(() => {
-					const ta = document.querySelector<HTMLTextAreaElement>('textarea[name="content"]');
-					ta?.focus();
-				});
-			}}
-			class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-		>
-			{showForm ? 'Cancel' : 'New Entry'}
-		</button>
+		<div class="flex items-center gap-2">
+			<button
+				onclick={() => {
+					showWinsForm = !showWinsForm;
+					showForm = false;
+					editingId = null;
+					winInputCount = 3;
+				}}
+				class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+			>
+				{showWinsForm ? 'Cancel' : 'New Wins'}
+			</button>
+			<button
+				onclick={() => {
+					showForm = !showForm;
+					showWinsForm = false;
+					editingId = null;
+					if (!showForm) return;
+					tick().then(() => {
+						const ta = document.querySelector<HTMLTextAreaElement>('textarea[name="content"]');
+						ta?.focus();
+					});
+				}}
+				class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+			>
+				{showForm ? 'Cancel' : 'New Entry'}
+			</button>
+		</div>
 	</div>
 
 	{#if data.allTags.length > 0}
@@ -163,6 +181,55 @@
 		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
 			{form.message}
 		</div>
+	{/if}
+
+	{#if showWinsForm}
+		<form
+			method="post"
+			action="?/createWins"
+			use:enhance={() => {
+				return async ({ update }) => {
+					await update();
+					showWinsForm = false;
+					winInputCount = 3;
+				};
+			}}
+			class="space-y-3 border border-gray-200 bg-white p-4 shadow-sm"
+		>
+			<span class="text-sm font-medium text-gray-700">Today's Wins</span>
+			{#each { length: winInputCount } as _, i}
+				<input
+					name="win_{i}"
+					type="text"
+					placeholder="Win {i + 1}"
+					class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+				/>
+			{/each}
+			<div class="flex items-center gap-3">
+				<button
+					type="button"
+					onclick={() => (winInputCount += 1)}
+					class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50"
+				>
+					+ Add another
+				</button>
+			</div>
+			<label class="block">
+				<span class="text-sm font-medium text-gray-700">Tags</span>
+				<input
+					name="tags"
+					type="text"
+					placeholder="optional extra tags"
+					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+				/>
+			</label>
+			<button
+				type="submit"
+				class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+			>
+				Save Wins
+			</button>
+		</form>
 	{/if}
 
 	{#if showForm}

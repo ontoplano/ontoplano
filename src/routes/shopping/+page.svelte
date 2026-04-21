@@ -15,7 +15,7 @@
 
 	let filteredItems = $derived(
 		data.items.filter((item) => {
-			if (!showBought && item.bought) return false;
+			if (!showBought && item.bought && item.type === 'someday') return false;
 			if (filterType === 'all') return true;
 			return item.type === filterType;
 		})
@@ -94,7 +94,7 @@
 					? 'border border-cyan-200 bg-cyan-50 text-cyan-700'
 					: 'border border-gray-300 bg-white text-gray-700'}"
 			>
-				Replenish <kbd class="border border-gray-300 bg-gray-50 px-1">2</kbd>
+				Inventory <kbd class="border border-gray-300 bg-gray-50 px-1">2</kbd>
 			</button>
 			<button
 				onclick={() => (showBought = !showBought)}
@@ -169,7 +169,7 @@
 
 	{#if replenishItems.length > 0}
 		<div>
-			<h2 class="mb-2 text-sm font-bold text-gray-500">Replenish</h2>
+			<h2 class="mb-2 text-sm font-bold text-gray-500">Inventory</h2>
 			<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
 				{#each replenishItems as item, i (item.id)}
 					{@const globalIdx = filteredItems.indexOf(item)}
@@ -228,42 +228,40 @@
 								</button>
 							</form>
 						{:else}
-							<form method="POST" action="?/toggleBought" use:enhance>
-								<input type="hidden" name="id" value={item.id} />
-								<button
-									type="submit"
-									class="flex h-5 w-5 items-center justify-center border border-gray-300 bg-white shadow-sm hover:bg-gray-50 {item.bought
-										? 'bg-gray-100'
-										: ''}"
-								>
-									{#if item.bought}
-										<span class="text-xs text-gray-600">&#10003;</span>
-									{/if}
-								</button>
-							</form>
 							<div class="min-w-0 flex-1">
-								<span
-									class="text-sm {item.bought ? 'text-gray-400 line-through' : 'text-gray-900'}"
-								>
-									{item.name}
-								</span>
+								<span class="text-sm text-gray-900">{item.name}</span>
 								{#if item.notes}
 									<span class="ml-2 text-xs text-gray-400">{item.notes}</span>
 								{/if}
 							</div>
-							<span
-								class="border border-cyan-200 bg-cyan-50 px-1.5 py-0.5 text-[10px] font-medium text-cyan-700"
-							>
-								replenish
-							</span>
 							{#if item.bought}
+								<span
+									class="border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700"
+								>
+									stocked
+								</span>
 								<form method="POST" action="?/restock" use:enhance>
 									<input type="hidden" name="id" value={item.id} />
 									<button
 										type="submit"
-										class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm hover:bg-gray-50"
+										class="border border-orange-200 bg-white px-2 py-1 text-xs text-orange-600 shadow-sm hover:bg-orange-50"
 									>
-										Restock
+										Need to buy
+									</button>
+								</form>
+							{:else}
+								<span
+									class="border border-orange-200 bg-orange-50 px-1.5 py-0.5 text-[10px] font-medium text-orange-700"
+								>
+									need to buy
+								</span>
+								<form method="POST" action="?/toggleBought" use:enhance>
+									<input type="hidden" name="id" value={item.id} />
+									<button
+										type="submit"
+										class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-600 shadow-sm hover:bg-blue-50"
+									>
+										Got it
 									</button>
 								</form>
 							{/if}
