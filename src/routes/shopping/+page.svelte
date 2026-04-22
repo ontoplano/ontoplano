@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
+	import { autofocus } from '$lib/actions/autofocus.js';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	let showForm = $state(false);
-	let selectedIndex = $state(0);
+	let selectedIndex = $state(-1);
 	let editingId: number | null = $state(null);
 	let editName = $state('');
 	let editType = $state('');
@@ -41,13 +41,6 @@
 		editNotes = '';
 	}
 
-	function focusForm() {
-		tick().then(() => {
-			const input = document.querySelector<HTMLInputElement>('input[name="name"]');
-			input?.focus();
-		});
-	}
-
 	function handleKeydown(e: KeyboardEvent) {
 		if (
 			e.target instanceof HTMLInputElement ||
@@ -63,16 +56,15 @@
 			selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
 		} else if (e.key === 'k') {
 			e.preventDefault();
-			selectedIndex = Math.max(selectedIndex - 1, 0);
+			selectedIndex = Math.max(selectedIndex - 1, -1);
 		} else if (e.key === 'n') {
 			e.preventDefault();
 			showForm = true;
-			focusForm();
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
 			showForm = false;
 			cancelEdit();
-		} else if (e.key === 'e' && items.length > 0) {
+		} else if (e.key === 'e' && items.length > 0 && selectedIndex >= 0) {
 			e.preventDefault();
 			startEdit(items[selectedIndex]);
 		} else if (e.key === '1') {
@@ -127,13 +119,10 @@
 				{showSnoozed ? 'Hide' : 'Show'} snoozed
 				<kbd class="border border-gray-300 bg-gray-50 px-1">s</kbd>
 			</button>
-			<button
-				onclick={() => {
-					showForm = !showForm;
-					if (showForm) focusForm();
-				}}
-				class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
-			>
+		<button
+			onclick={() => (showForm = !showForm)}
+			class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
+		>
 				{showForm ? 'Cancel' : 'Add item'}
 				<kbd class="border border-gray-300 bg-gray-50 px-1">n</kbd>
 			</button>
@@ -156,6 +145,7 @@
 					showForm = false;
 				};
 			}}
+			use:autofocus
 			class="border border-gray-200 bg-white p-4 shadow-sm"
 		>
 			<div class="space-y-3">
@@ -172,8 +162,8 @@
 						required
 						class="border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					>
-						<option value="replenish">Replenish</option>
-						<option value="someday">Wishlist</option>
+						<option value="replenish" selected={filterType !== 'someday'}>Inventory</option>
+						<option value="someday" selected={filterType === 'someday'}>Wishlist</option>
 					</select>
 				</div>
 				<input
@@ -199,9 +189,11 @@
 				{#each replenishItems as item, i (item.id)}
 					{@const globalIdx = filteredItems.indexOf(item)}
 					<div
-						class="flex items-center gap-4 px-4 py-3 {globalIdx === selectedIndex
-							? 'ring-2 ring-gray-900 ring-inset'
-							: ''} {item.snoozed ? 'opacity-50' : ''}"
+						class="flex items-center gap-4 px-4 py-3 {item.snoozed
+							? 'bg-gray-50 opacity-50'
+							: item.bought
+								? 'bg-blue-50'
+								: 'bg-red-50'} {globalIdx === selectedIndex ? 'ring-2 ring-gray-400 ring-inset' : ''}"
 					>
 						{#if editingId === item.id}
 							<form
@@ -213,6 +205,7 @@
 										cancelEdit();
 									};
 								}}
+								use:autofocus
 								class="flex flex-1 items-center gap-2"
 							>
 								<input type="hidden" name="id" value={item.id} />
@@ -228,7 +221,7 @@
 									bind:value={editType}
 									class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 								>
-									<option value="replenish">Replenish</option>
+									<option value="replenish">Inventory</option>
 									<option value="someday">Wishlist</option>
 								</select>
 								<input
@@ -260,11 +253,6 @@
 								{/if}
 							</div>
 							{#if item.snoozed}
-								<span
-									class="border border-gray-300 bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500"
-								>
-									snoozed
-								</span>
 								<form method="POST" action="?/toggleSnoozed" use:enhance>
 									<input type="hidden" name="id" value={item.id} />
 									<button
@@ -275,11 +263,6 @@
 									</button>
 								</form>
 							{:else if item.bought}
-								<span
-									class="border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700"
-								>
-									stocked
-								</span>
 								<form method="POST" action="?/restock" use:enhance>
 									<input type="hidden" name="id" value={item.id} />
 									<button
@@ -290,11 +273,6 @@
 									</button>
 								</form>
 							{:else}
-								<span
-									class="border border-orange-200 bg-orange-50 px-1.5 py-0.5 text-[10px] font-medium text-orange-700"
-								>
-									need to buy
-								</span>
 								<form method="POST" action="?/toggleBought" use:enhance>
 									<input type="hidden" name="id" value={item.id} />
 									<button
@@ -341,7 +319,7 @@
 					{@const globalIdx = filteredItems.indexOf(item)}
 					<div
 						class="flex items-center gap-4 px-4 py-3 {globalIdx === selectedIndex
-							? 'ring-2 ring-gray-900 ring-inset'
+							? 'bg-gray-50'
 							: ''} {item.snoozed ? 'opacity-50' : ''}"
 					>
 						{#if editingId === item.id}
@@ -354,6 +332,7 @@
 										cancelEdit();
 									};
 								}}
+								use:autofocus
 								class="flex flex-1 items-center gap-2"
 							>
 								<input type="hidden" name="id" value={item.id} />
@@ -369,7 +348,7 @@
 									bind:value={editType}
 									class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 								>
-									<option value="replenish">Replenish</option>
+									<option value="replenish">Inventory</option>
 									<option value="someday">Wishlist</option>
 								</select>
 								<input
@@ -401,11 +380,6 @@
 										<span class="ml-2 text-xs text-gray-400">{item.notes}</span>
 									{/if}
 								</div>
-								<span
-									class="border border-gray-300 bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500"
-								>
-									snoozed
-								</span>
 								<form method="POST" action="?/toggleSnoozed" use:enhance>
 									<input type="hidden" name="id" value={item.id} />
 									<button
@@ -453,11 +427,6 @@
 									</form>
 								{/if}
 							{/if}
-							<span
-								class="border border-orange-200 bg-orange-50 px-1.5 py-0.5 text-[10px] font-medium text-orange-700"
-							>
-								wishlist
-							</span>
 							<button
 								onclick={() => startEdit(item)}
 								class="text-xs text-gray-400 hover:text-gray-700"
