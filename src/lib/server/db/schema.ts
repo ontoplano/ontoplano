@@ -370,6 +370,7 @@ export const shoppingItems = sqliteTable(
 		notes: text('notes').default(''),
 		bought: integer('bought', { mode: 'boolean' }).notNull().default(false),
 		boughtAt: text('bought_at'),
+		snoozed: integer('snoozed', { mode: 'boolean' }).notNull().default(false),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -380,7 +381,8 @@ export const shoppingItems = sqliteTable(
 	(table) => [
 		index('shopping_items_user_idx').on(table.userId),
 		index('shopping_items_type_idx').on(table.type),
-		index('shopping_items_bought_idx').on(table.bought)
+		index('shopping_items_bought_idx').on(table.bought),
+		index('shopping_items_snoozed_idx').on(table.snoozed)
 	]
 );
 

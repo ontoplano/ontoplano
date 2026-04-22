@@ -16,6 +16,7 @@ export const load: PageServerLoad = async (event) => {
 			notes: shoppingItems.notes,
 			bought: shoppingItems.bought,
 			boughtAt: shoppingItems.boughtAt,
+			snoozed: shoppingItems.snoozed,
 			createdAt: shoppingItems.createdAt
 		})
 		.from(shoppingItems)
@@ -131,6 +132,27 @@ export const actions: Actions = {
 
 		db.update(shoppingItems)
 			.set({ bought: false, boughtAt: null, updatedAt: toLocalISOString(new Date()) })
+			.where(eq(shoppingItems.id, id))
+			.run();
+		return { success: true };
+	},
+
+	toggleSnoozed: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+
+		if (!id) return fail(400, { message: 'Missing id' });
+
+		const item = db
+			.select({ id: shoppingItems.id, snoozed: shoppingItems.snoozed })
+			.from(shoppingItems)
+			.where(and(eq(shoppingItems.id, id), eq(shoppingItems.userId, userId)))
+			.get();
+		if (!item) return fail(404, { message: 'Item not found' });
+
+		db.update(shoppingItems)
+			.set({ snoozed: !item.snoozed, updatedAt: toLocalISOString(new Date()) })
 			.where(eq(shoppingItems.id, id))
 			.run();
 		return { success: true };
