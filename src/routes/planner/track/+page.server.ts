@@ -1,7 +1,13 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { taskInstances, weeklySlots, activities, categories } from '$lib/server/db/schema';
+import {
+	taskInstances,
+	weeklySlots,
+	activities,
+	categories,
+	exceptionalSlots
+} from '$lib/server/db/schema';
 import { eq, and, gte, lt, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 import {
@@ -127,6 +133,49 @@ export const load: PageServerLoad = async (event) => {
 		.orderBy(categories.name, activities.name)
 		.all();
 
+	const selectedDateStr = formatDate(selectedDate);
+	const exceptionalActivities = alias(activities, 'exceptional_activities');
+	const exceptionalCategories = alias(categories, 'exceptional_categories');
+	const resolvedExcActivities = alias(activities, 'resolved_exc_activities');
+
+	const exceptionalTasks = db
+		.select({
+			id: exceptionalSlots.id,
+			date: exceptionalSlots.date,
+			startTime: exceptionalSlots.startTime,
+			durationMinutes: exceptionalSlots.durationMinutes,
+			durationOverride: exceptionalSlots.durationOverride,
+			mode: exceptionalSlots.mode,
+			categoryId: sql<number>`coalesce(${exceptionalSlots.categoryId}, ${exceptionalActivities.categoryId})`.as(
+				'exc_category_id'
+			),
+			categoryName: sql<string>`coalesce(${exceptionalCategories.name}, (SELECT name FROM categories WHERE id = ${exceptionalActivities.categoryId}))`.as(
+				'exc_category_name'
+			),
+			slotActivityId: exceptionalSlots.activityId,
+			slotActivityName: exceptionalActivities.name,
+			activityId: exceptionalSlots.resolvedActivityId,
+			activityName: resolvedExcActivities.name,
+			activityColor: resolvedExcActivities.color,
+			label: exceptionalSlots.label,
+			active: exceptionalSlots.active,
+			status: exceptionalSlots.status,
+			completedAt: exceptionalSlots.completedAt,
+			notes: exceptionalSlots.notes
+		})
+		.from(exceptionalSlots)
+		.leftJoin(exceptionalCategories, eq(exceptionalSlots.categoryId, exceptionalCategories.id))
+		.leftJoin(exceptionalActivities, eq(exceptionalSlots.activityId, exceptionalActivities.id))
+		.leftJoin(resolvedExcActivities, eq(exceptionalSlots.resolvedActivityId, resolvedExcActivities.id))
+		.where(
+			and(
+				eq(exceptionalSlots.userId, userId),
+				eq(exceptionalSlots.date, selectedDateStr)
+			)
+		)
+		.orderBy(exceptionalSlots.startTime)
+		.all();
+
 	const mondayStr = toLocalISOString(monday);
 	const nextMondayStr = toLocalISOString(nextMonday);
 	const allWeekTasks = db
@@ -155,9 +204,13 @@ export const load: PageServerLoad = async (event) => {
 	const todayDow = now.getDay();
 	const todayDayIndex = todayDow === 0 ? 6 : todayDow - 1;
 
+	const allCategories = db.select().from(categories).where(eq(categories.userId, userId)).all();
+
 	return {
 		tasks,
+		exceptionalTasks,
 		activities: allActivities,
+		categories: allCategories,
 		now: toLocalISOString(now),
 		weekMeta,
 		weekdays: WEEKDAYS,
@@ -285,6 +338,115 @@ export const actions: Actions = {
 
 		db.delete(taskInstances)
 			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
+			.run();
+
+		return { success: true };
+	},
+
+	updateExceptionalStatus: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const status = formData.get('status')?.toString();
+
+		if (!id || !status) return fail(400, { message: 'Missing id or status' });
+
+		const validStatuses = ['pending', 'completed', 'delayed', 'early', 'skipped'] as const;
+		if (!validStatuses.includes(status as (typeof validStatuses)[number])) {
+			return fail(400, { message: 'Invalid status' });
+		}
+
+		const completedAt = ['completed', 'delayed', 'early'].includes(status)
+			? toLocalISOString(new Date())
+			: null;
+
+		const updateData: Record<string, unknown> = {
+			status: status as (typeof validStatuses)[number],
+			completedAt
+		};
+
+		if (status === 'pending' || status === 'skipped') {
+			const exc = db
+				.select({ mode: exceptionalSlots.mode })
+				.from(exceptionalSlots)
+				.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
+				.get();
+
+			if (exc?.mode === 'category') {
+				updateData.resolvedActivityId = null;
+			}
+		}
+
+		db.update(exceptionalSlots)
+			.set(updateData)
+			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
+			.run();
+
+		return { success: true };
+	},
+
+	resolveExceptionalActivity: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const activityId = formData.get('activityId') ? Number(formData.get('activityId')) : null;
+
+		if (!id) return fail(400, { message: 'Missing id' });
+
+		db.update(exceptionalSlots)
+			.set({ resolvedActivityId: activityId })
+			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
+			.run();
+
+		return { success: true };
+	},
+
+	updateExceptionalTime: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const time = formData.get('time')?.toString()?.trim();
+
+		if (!id) return fail(400, { message: 'Missing id' });
+		if (!time || !/^\d{2}:\d{2}$/.test(time)) return fail(400, { message: 'Invalid time format' });
+
+		db.update(exceptionalSlots)
+			.set({ startTime: time })
+			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
+			.run();
+
+		return { success: true };
+	},
+
+	updateExceptionalDuration: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const minutes = formData.get('minutes')?.toString()?.trim();
+
+		if (!id) return fail(400, { message: 'Missing id' });
+		if (!minutes || isNaN(Number(minutes)) || Number(minutes) < 0) {
+			return fail(400, { message: 'Invalid duration' });
+		}
+
+		const value = Number(minutes) === 0 ? null : Number(minutes);
+		db.update(exceptionalSlots)
+			.set({ durationOverride: value })
+			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
+			.run();
+
+		return { success: true };
+	},
+
+	deleteExceptional: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+
+		if (!id) return fail(400, { message: 'Missing id' });
+
+		db.delete(exceptionalSlots)
+			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
 			.run();
 
 		return { success: true };

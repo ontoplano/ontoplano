@@ -29,6 +29,6 @@ test-results
 # Scratch files
 blie
 pass.py
-todo
+/todo
 # OpenCode
 .opencode

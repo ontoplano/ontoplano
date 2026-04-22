@@ -12,25 +12,42 @@
 	let slotMode: 'category' | 'activity' = $state('activity');
 	let selectedDay: number = $state(new Date().getDay() === 0 ? 6 : new Date().getDay() - 1);
 	let selectedIndex: number = $state(0);
+	let showExceptionalForm = $state(false);
+	let exceptionalMode: 'category' | 'activity' = $state('activity');
 
-	// Ensure we don't start on a past day by default on current week
 	$effect(() => {
 		if (data.weekMeta.isCurrent && selectedDay < data.todayDayIndex) {
 			selectedDay = data.todayDayIndex;
 		}
 	});
 
-	// Multiselect state
 	let selectedIds: Set<number> = $state(new Set());
 	let multiselect = $state(false);
 	let showCopyPanel = $state(false);
 	let copyTargetDays: Set<number> = $state(new Set());
 
-	// Time input ref for auto-focus
 	let timeInput: HTMLInputElement | undefined = $state(undefined);
 
-	// Slot type alias
 	type Slot = (typeof data.slots)[number];
+
+	function selectedDateStr(): string {
+		const monday = new Date(data.weekMeta.monday + 'T00:00:00');
+		const d = new Date(monday);
+		d.setDate(d.getDate() + selectedDay);
+		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+	}
+
+	function isSlotSuppressed(slotId: number): boolean {
+		const date = selectedDateStr();
+		return data.suppressions.some(
+			(s: { slotId: number; date: string }) => s.slotId === slotId && s.date === date
+		);
+	}
+
+	function exceptionalSlotsForDay() {
+		const date = selectedDateStr();
+		return data.exceptionals.filter((e: { date: string }) => e.date === date);
+	}
 
 	function catColor(catId: number | null): string {
 		if (!catId) return CATEGORY_FALLBACK_COLOR;
@@ -74,13 +91,22 @@
 		editingId = slot.id;
 		slotMode = slot.mode as 'category' | 'activity';
 		showForm = true;
+		showExceptionalForm = false;
 		tick().then(() => timeInput?.focus());
 	}
 
 	function startNew() {
 		showForm = true;
+		showExceptionalForm = false;
 		editingId = null;
 		tick().then(() => timeInput?.focus());
+	}
+
+	function startNewExceptional() {
+		showExceptionalForm = true;
+		showForm = false;
+		editingId = null;
+		exceptionalMode = 'activity';
 	}
 
 	function goToPrevWeek() {
@@ -103,6 +129,13 @@
 		} else {
 			selectedIds = new Set([...selectedIds, id]);
 		}
+	}
+
+	function exceptionalLabel(e: (typeof data.exceptionals)[number]): string {
+		if (e.mode === 'activity' && e.activityName) return e.activityName;
+		if (e.label) return e.label;
+		if (e.categoryName) return e.categoryName;
+		return 'Slot';
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -244,9 +277,14 @@
 				e.preventDefault();
 				startNew();
 				break;
+			case 'N':
+				e.preventDefault();
+				startNewExceptional();
+				break;
 			case 'Escape':
 				e.preventDefault();
 				showForm = false;
+				showExceptionalForm = false;
 				editingId = null;
 				break;
 		}
@@ -288,19 +326,33 @@
 				title="Next week (])">&rarr;</button
 			>
 		</div>
-		<button
-			onclick={() => {
-				if (showForm) {
-					showForm = false;
-					editingId = null;
-				} else {
-					startNew();
-				}
-			}}
-			class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-		>
-			{showForm ? 'Cancel' : 'New Slot'}
-		</button>
+		<div class="flex gap-2">
+			<button
+				onclick={() => {
+					if (showExceptionalForm) {
+						showExceptionalForm = false;
+					} else {
+						startNewExceptional();
+					}
+				}}
+				class="border border-blue-200 bg-white px-3 py-1 text-sm text-blue-600 shadow-sm transition hover:bg-blue-50"
+			>
+				{showExceptionalForm ? 'Cancel' : '+ Exception'}
+			</button>
+			<button
+				onclick={() => {
+					if (showForm) {
+						showForm = false;
+						editingId = null;
+					} else {
+						startNew();
+					}
+				}}
+				class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+			>
+				{showForm ? 'Cancel' : 'New Slot'}
+			</button>
+		</div>
 	</div>
 
 	<div class="text-center text-sm text-gray-500">
@@ -324,6 +376,7 @@
 		<kbd class="border border-gray-300 bg-gray-50 px-1">d</kbd> disable &middot;
 		<kbd class="border border-gray-300 bg-gray-50 px-1">D</kbd> delete &middot;
 		<kbd class="border border-gray-300 bg-gray-50 px-1">n</kbd> new &middot;
+		<kbd class="border border-gray-300 bg-gray-50 px-1">N</kbd> exception &middot;
 		<kbd class="border border-gray-300 bg-gray-50 px-1">Esc</kbd> close form
 		{#if !multiselect}
 			&middot; <kbd class="border border-gray-300 bg-gray-50 px-1">v</kbd> multiselect
@@ -557,6 +610,110 @@
 		</form>
 	{/if}
 
+	{#if showExceptionalForm}
+		<form
+			method="post"
+			action="?/createExceptional"
+			use:enhance={() => {
+				return async ({ update }) => {
+					await update();
+					showExceptionalForm = false;
+				};
+			}}
+			class="space-y-3 border border-blue-200 bg-blue-50 p-4 shadow-sm"
+		>
+			<h3 class="text-sm font-medium text-gray-900">New exception for {data.weekdays[selectedDay]}</h3>
+			<input type="hidden" name="date" value={selectedDateStr()} />
+			<div class="flex gap-3">
+				<label class="w-28">
+					<span class="text-sm font-medium text-gray-700">Time</span>
+					<input
+						name="startTime"
+						type="time"
+						required
+						value="09:00"
+						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					/>
+				</label>
+				<label class="w-24">
+					<span class="text-sm font-medium text-gray-700">Duration</span>
+					<input
+						name="durationMinutes"
+						type="number"
+						min="15"
+						step="15"
+						value="60"
+						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					/>
+				</label>
+			</div>
+			<div class="flex gap-3">
+				<label class="w-36">
+					<span class="text-sm font-medium text-gray-700">Mode</span>
+					<select
+						name="mode"
+						required
+						bind:value={exceptionalMode}
+						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					>
+						<option value="activity">Activity</option>
+						<option value="category">Category</option>
+					</select>
+				</label>
+				{#if exceptionalMode === 'category'}
+					<label class="flex-1">
+						<span class="text-sm font-medium text-gray-700">Category</span>
+						<select
+							name="categoryId"
+							required
+							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						>
+							{#each data.categories as cat (cat.id)}
+								<option value={cat.id}>{cat.name}</option>
+							{/each}
+						</select>
+					</label>
+				{:else}
+					<label class="flex-1">
+						<span class="text-sm font-medium text-gray-700">Activity</span>
+						<select
+							name="activityId"
+							required
+							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						>
+							{#each data.activities as act (act.id)}
+								<option value={act.id}>{act.name}</option>
+							{/each}
+						</select>
+					</label>
+				{/if}
+				<label class="flex-1">
+					<span class="text-sm font-medium text-gray-700">Label (optional)</span>
+					<input
+						name="label"
+						type="text"
+						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					/>
+				</label>
+			</div>
+			<div class="flex gap-2">
+				<button
+					type="submit"
+					class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+				>
+					Create Exception
+				</button>
+				<button
+					type="button"
+					onclick={() => (showExceptionalForm = false)}
+					class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+				>
+					Cancel
+				</button>
+			</div>
+		</form>
+	{/if}
+
 	<div class="flex gap-1">
 		{#each data.weekdays as day, i (i)}
 			{@const past = isDayPast(i)}
@@ -575,12 +732,13 @@
 		{/each}
 	</div>
 
-	{#if slotsForDay(selectedDay).length === 0}
+	{#if slotsForDay(selectedDay).length === 0 && exceptionalSlotsForDay().length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
 			No slots for {data.weekdays[selectedDay]}.
 		</div>
 	{:else}
 		{@const dayPast = isDayPast(selectedDay)}
+		{#if slotsForDay(selectedDay).length > 0}
 		<div
 			class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm {dayPast
 				? 'opacity-60'
@@ -588,8 +746,9 @@
 		>
 			{#each slotsForDay(selectedDay) as slot, i (slot.id)}
 				{@const isSelected = selectedIds.has(slot.id)}
+				{@const suppressed = isSlotSuppressed(slot.id)}
 				<div
-					class="flex items-center gap-4 border-l-4 px-4 py-3 {!slot.active
+					class="flex items-center gap-4 border-l-4 px-4 py-3 {!slot.active || suppressed
 						? 'opacity-50'
 						: ''} {selectedIndex === i ? 'bg-gray-100' : ''} {isSelected ? 'bg-blue-50' : ''}"
 					style="border-left-color: {catColor(slot.categoryId)}"
@@ -621,9 +780,12 @@
 						{slot.startTime} - {computeEndTime(slot.startTime, slot.durationMinutes)}
 					</div>
 					<div class="min-w-0 flex-1">
-						<span class="text-sm font-medium text-gray-900">{slotLabel(slot)}</span>
+						<span class="text-sm font-medium text-gray-900 {suppressed ? 'line-through' : ''}">{slotLabel(slot)}</span>
 						{#if slot.mode === 'activity' && slot.categoryName}
 							<span class="ml-1 text-xs text-gray-400">{slot.categoryName}</span>
+						{/if}
+						{#if suppressed}
+							<span class="ml-1 text-xs text-amber-600">skipped this day</span>
 						{/if}
 						{#if slot.label && slotLabel(slot) !== slot.label}
 							<p class="truncate text-xs text-gray-500">{slot.label}</p>
@@ -631,6 +793,30 @@
 					</div>
 					{#if !dayPast}
 						<div class="flex shrink-0 items-center gap-2">
+							{#if suppressed}
+								<form method="post" action="?/unsuppress" use:enhance>
+									<input type="hidden" name="slotId" value={slot.id} />
+									<input type="hidden" name="date" value={selectedDateStr()} />
+									<button
+										type="submit"
+										class="border border-amber-200 bg-white px-2 py-1 text-xs text-amber-600 transition hover:bg-amber-50"
+									>
+										Restore
+									</button>
+								</form>
+							{:else}
+								<form method="post" action="?/suppress" use:enhance>
+									<input type="hidden" name="slotId" value={slot.id} />
+									<input type="hidden" name="date" value={selectedDateStr()} />
+									<button
+										type="submit"
+										class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+										title="Skip this slot for this day only"
+									>
+										Skip
+									</button>
+								</form>
+							{/if}
 							<button
 								onclick={() => startEdit(slot)}
 								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
@@ -661,5 +847,49 @@
 				</div>
 			{/each}
 		</div>
+		{/if}
+
+		{@const dayExceptionals = exceptionalSlotsForDay()}
+		{#if dayExceptionals.length > 0}
+			<div class="divide-y divide-blue-100 border border-blue-200 bg-blue-50 shadow-sm">
+				<div class="px-4 py-2 text-xs font-medium text-blue-700">Exceptions for this day</div>
+				{#each dayExceptionals as exc (exc.id)}
+					<div
+						class="flex items-center gap-4 border-l-4 px-4 py-3"
+						style="border-left-color: {catColor(exc.categoryId)}"
+					>
+						<div
+							class="w-24 shrink-0 font-mono text-sm text-gray-500"
+							title={formatDuration(exc.durationMinutes)}
+						>
+							{exc.startTime} - {computeEndTime(exc.startTime, exc.durationMinutes)}
+						</div>
+						<div class="min-w-0 flex-1">
+							<span class="text-sm font-medium text-gray-900">{exceptionalLabel(exc)}</span>
+							{#if exc.mode === 'activity' && exc.categoryName}
+								<span class="ml-1 text-xs text-gray-400">{exc.categoryName}</span>
+							{/if}
+							{#if exc.label && exceptionalLabel(exc) !== exc.label}
+								<p class="truncate text-xs text-gray-500">{exc.label}</p>
+							{/if}
+						</div>
+						<span class="shrink-0 px-2 py-0.5 text-xs font-medium {exc.status === 'pending' ? 'bg-gray-100 text-gray-600' : 'bg-blue-100 text-blue-700'}">
+							{exc.status}
+						</span>
+						{#if !dayPast}
+							<form method="post" action="?/deleteExceptional" use:enhance>
+								<input type="hidden" name="id" value={exc.id} />
+								<button
+									type="submit"
+									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+								>
+									Delete
+								</button>
+							</form>
+						{/if}
+					</div>
+				{/each}
+			</div>
+		{/if}
 	{/if}
 </div>

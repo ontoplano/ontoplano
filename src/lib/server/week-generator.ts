@@ -1,5 +1,5 @@
 import { db } from './db/index.js';
-import { weeklySlots, taskInstances } from './db/schema.js';
+import { weeklySlots, taskInstances, suppressedSlots } from './db/schema.js';
 import { eq, and, gte, lt } from 'drizzle-orm';
 
 /** Format a Date as 'YYYY-MM-DDTHH:MM:SS' in local time (no UTC conversion). */
@@ -60,6 +60,10 @@ function formatDatetime(date: Date, time: string): string {
 	return toLocalISOString(d);
 }
 
+function formatDate(d: Date): string {
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 /**
  * Idempotently generate task_instances for a week from active weekly_slots.
  * Skips slots that already have an instance in the target week.
@@ -79,8 +83,25 @@ export function generateWeekInstances(weekStart: Date, userId: string): number {
 
 	let created = 0;
 
+	const suppressions = db
+		.select()
+		.from(suppressedSlots)
+		.where(
+			and(
+				eq(suppressedSlots.userId, userId),
+				gte(suppressedSlots.date, formatDate(monday)),
+				lt(suppressedSlots.date, formatDate(nextMonday))
+			)
+		)
+		.all();
+	const suppressedSet = new Set(suppressions.map((s) => `${s.slotId}:${s.date}`));
+
 	for (const slot of slots) {
 		const scheduledDate = addDays(monday, slot.weekday);
+		const dateStr = formatDate(scheduledDate);
+
+		if (suppressedSet.has(`${slot.id}:${dateStr}`)) continue;
+
 		const scheduledAt = formatDatetime(scheduledDate, slot.startTime);
 
 		const existing = db

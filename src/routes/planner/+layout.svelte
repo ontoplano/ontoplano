@@ -6,6 +6,7 @@
 	const tabs = [
 		{ href: '/planner/track', label: 'Track' },
 		{ href: '/planner/plan', label: 'Plan' },
+		{ href: '/planner/todo', label: 'Todo' },
 		{ href: '/planner/activities', label: 'Activities' },
 		{ href: '/planner/history', label: 'History' }
 	];

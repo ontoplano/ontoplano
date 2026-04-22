@@ -1,8 +1,15 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { weeklySlots, activities, categories, taskInstances } from '$lib/server/db/schema';
-import { eq, and, inArray } from 'drizzle-orm';
+import {
+	weeklySlots,
+	activities,
+	categories,
+	taskInstances,
+	suppressedSlots,
+	exceptionalSlots
+} from '$lib/server/db/schema';
+import { eq, and, inArray, gte, lt } from 'drizzle-orm';
 import {
 	toLocalISOString,
 	getMonday,
@@ -85,6 +92,46 @@ export const load: PageServerLoad = async (event) => {
 		.orderBy(weeklySlots.weekday, weeklySlots.startTime)
 		.all();
 
+	const weekSuppressions = db
+		.select()
+		.from(suppressedSlots)
+		.where(
+			and(
+				eq(suppressedSlots.userId, userId),
+				gte(suppressedSlots.date, formatDate(monday)),
+				lt(suppressedSlots.date, formatDate(nextMonday))
+			)
+		)
+		.all();
+
+	const weekExceptionals = db
+		.select({
+			id: exceptionalSlots.id,
+			date: exceptionalSlots.date,
+			startTime: exceptionalSlots.startTime,
+			durationMinutes: exceptionalSlots.durationMinutes,
+			mode: exceptionalSlots.mode,
+			categoryId: exceptionalSlots.categoryId,
+			categoryName: categories.name,
+			activityId: exceptionalSlots.activityId,
+			activityName: activities.name,
+			label: exceptionalSlots.label,
+			active: exceptionalSlots.active,
+			status: exceptionalSlots.status
+		})
+		.from(exceptionalSlots)
+		.leftJoin(categories, eq(exceptionalSlots.categoryId, categories.id))
+		.leftJoin(activities, eq(exceptionalSlots.activityId, activities.id))
+		.where(
+			and(
+				eq(exceptionalSlots.userId, userId),
+				gte(exceptionalSlots.date, formatDate(monday)),
+				lt(exceptionalSlots.date, formatDate(nextMonday))
+			)
+		)
+		.orderBy(exceptionalSlots.date, exceptionalSlots.startTime)
+		.all();
+
 	return {
 		slots,
 		weekMeta,
@@ -93,7 +140,9 @@ export const load: PageServerLoad = async (event) => {
 		weekdays: WEEKDAYS,
 		today,
 		todayDayIndex,
-		isPastWeek
+		isPastWeek,
+		suppressions: weekSuppressions,
+		exceptionals: weekExceptionals
 	};
 };
 
@@ -283,6 +332,104 @@ export const actions: Actions = {
 					.run();
 			}
 		}
+
+		return { success: true };
+	},
+
+	suppress: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const slotId = Number(formData.get('slotId'));
+		const date = formData.get('date')?.toString()?.trim() ?? '';
+
+		if (!slotId) return fail(400, { message: 'Missing slot id' });
+		if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return fail(400, { message: 'Invalid date' });
+
+		const existing = db
+			.select({ id: suppressedSlots.id })
+			.from(suppressedSlots)
+			.where(
+				and(
+					eq(suppressedSlots.userId, userId),
+					eq(suppressedSlots.slotId, slotId),
+					eq(suppressedSlots.date, date)
+				)
+			)
+			.get();
+		if (existing) return { success: true };
+
+		db.insert(suppressedSlots)
+			.values({ userId, date, slotId })
+			.run();
+
+		return { success: true };
+	},
+
+	unsuppress: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const slotId = Number(formData.get('slotId'));
+		const date = formData.get('date')?.toString()?.trim() ?? '';
+
+		if (!slotId) return fail(400, { message: 'Missing slot id' });
+		if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return fail(400, { message: 'Invalid date' });
+
+		db.delete(suppressedSlots)
+			.where(
+				and(
+					eq(suppressedSlots.userId, userId),
+					eq(suppressedSlots.slotId, slotId),
+					eq(suppressedSlots.date, date)
+				)
+			)
+			.run();
+
+		return { success: true };
+	},
+
+	createExceptional: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const date = formData.get('date')?.toString()?.trim() ?? '';
+		const startTime = formData.get('startTime')?.toString()?.trim() ?? '';
+		const durationMinutes = Number(formData.get('durationMinutes') || 60);
+		const mode = formData.get('mode')?.toString() as 'category' | 'activity';
+		const categoryId = formData.get('categoryId') ? Number(formData.get('categoryId')) : null;
+		const activityId = formData.get('activityId') ? Number(formData.get('activityId')) : null;
+		const label = formData.get('label')?.toString()?.trim() ?? '';
+
+		if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return fail(400, { message: 'Invalid date' });
+		if (!startTime.match(/^\d{2}:\d{2}$/)) return fail(400, { message: 'Invalid time' });
+		if (!mode) return fail(400, { message: 'Mode is required' });
+		if (mode === 'category' && !categoryId) return fail(400, { message: 'Category required' });
+		if (mode === 'activity' && !activityId) return fail(400, { message: 'Activity required' });
+
+		db.insert(exceptionalSlots)
+			.values({
+				userId,
+				date,
+				startTime,
+				durationMinutes,
+				mode,
+				categoryId,
+				activityId,
+				label
+			})
+			.run();
+
+		return { success: true };
+	},
+
+	deleteExceptional: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+
+		if (!id) return fail(400, { message: 'Missing id' });
+
+		db.delete(exceptionalSlots)
+			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
+			.run();
 
 		return { success: true };
 	}

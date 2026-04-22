@@ -356,6 +356,87 @@ export const beliefTags = sqliteTable(
 	]
 );
 
+// --- Planner: Suppressions, Exceptional Slots, Todos ---
+
+export const suppressedSlots = sqliteTable(
+	'suppressed_slots',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		date: text('date').notNull(), // YYYY-MM-DD
+		slotId: integer('slot_id')
+			.notNull()
+			.references(() => weeklySlots.id, { onDelete: 'cascade' })
+	},
+	(table) => [
+		index('suppressed_slots_user_date_idx').on(table.userId, table.date),
+		uniqueIndex('suppressed_slots_unique').on(table.userId, table.date, table.slotId)
+	]
+);
+
+export const exceptionalSlots = sqliteTable(
+	'exceptional_slots',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		date: text('date').notNull(), // YYYY-MM-DD
+		startTime: text('start_time').notNull(), // HH:MM
+		durationMinutes: integer('duration_minutes').notNull().default(60),
+		mode: text('mode', { enum: ['category', 'activity'] }).notNull(),
+		categoryId: integer('category_id').references(() => categories.id),
+		activityId: integer('activity_id').references(() => activities.id),
+		label: text('label').default(''),
+		active: integer('active', { mode: 'boolean' }).notNull().default(true),
+		status: text('status', {
+			enum: ['pending', 'completed', 'delayed', 'early', 'skipped']
+		})
+			.notNull()
+			.default('pending'),
+		completedAt: text('completed_at'),
+		notes: text('notes').default(''),
+		resolvedActivityId: integer('resolved_activity_id').references(() => activities.id),
+		durationOverride: integer('duration_override'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('exceptional_slots_user_date_idx').on(table.userId, table.date),
+		check(
+			'exceptional_mode_category',
+			sql`${table.mode} != 'category' OR ${table.categoryId} IS NOT NULL`
+		),
+		check(
+			'exceptional_mode_activity',
+			sql`${table.mode} != 'activity' OR ${table.activityId} IS NOT NULL`
+		)
+	]
+);
+
+export const plannerTodos = sqliteTable(
+	'planner_todos',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		title: text('title').notNull(),
+		notes: text('notes').default(''),
+		completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [index('planner_todos_user_idx').on(table.userId)]
+);
+
 // --- Shopping List ---
 
 export const shoppingItems = sqliteTable(
