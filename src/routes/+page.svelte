@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { SECTION_COLORS } from '$lib/colors.js';
 
@@ -36,6 +37,12 @@
 			e.preventDefault();
 			showDiaryForm = !showDiaryForm;
 			showBeliefForm = false;
+			if (showDiaryForm) {
+				tick().then(() => {
+					const ta = document.querySelector<HTMLTextAreaElement>('textarea[name="content"]');
+					ta?.focus();
+				});
+			}
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
 			showDiaryForm = false;
