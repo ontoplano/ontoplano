@@ -417,6 +417,11 @@
 					</div>
 					<div class="flex items-center gap-2">
 						<span class="text-xs text-gray-400">{formatDate(entry.createdAt)}</span>
+						{#if entry.updatedAt !== entry.createdAt}
+							<br /><span class="text-xs text-gray-400">
+								Edited: {formatDate(entry.updatedAt)}</span
+							>
+						{/if}
 						{#if entry.tags.length > 0}
 							<div class="flex flex-wrap gap-1">
 								{#each entry.tags as tag (tag.id)}
