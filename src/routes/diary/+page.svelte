@@ -287,12 +287,24 @@
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>
-			<button
-				type="submit"
-				class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
-			>
-				Save Wins
-			</button>
+			<div class="flex items-center gap-2">
+				<button
+					type="submit"
+					class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+				>
+					Save Wins
+				</button>
+				<button
+					type="button"
+					onclick={() => {
+						showWinsForm = false;
+						winInputCount = 3;
+					}}
+					class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+				>
+					Cancel
+				</button>
+			</div>
 		</form>
 	{/if}
 
@@ -332,12 +344,24 @@
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>
-			<button
-				type="submit"
-				class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
-			>
-				{editingId ? 'Update' : 'Post'}
-			</button>
+			<div class="flex items-center gap-2">
+				<button
+					type="submit"
+					class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+				>
+					{editingId ? 'Update' : 'Post'}
+				</button>
+				<button
+					type="button"
+					onclick={() => {
+						showForm = false;
+						editingId = null;
+					}}
+					class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+				>
+					Cancel
+				</button>
+			</div>
 		</form>
 	{/if}
 
@@ -368,51 +392,60 @@
 					<div class="mb-2 flex items-start justify-between gap-4">
 						<p class="text-sm text-gray-900">{@html renderMarkdown(entry.content)}</p>
 						<div class="flex shrink-0 items-center gap-2">
-							<button
-								onclick={() => {
-									editingId = entry.id;
-									showForm = true;
-									tick().then(() => {
-										const ta = document.querySelector<HTMLTextAreaElement>(
-											'textarea[name="content"]'
-										);
-										ta?.focus();
-									});
-								}}
-								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-							>
-								Edit
-							</button>
-							<form
-								method="post"
-								action="?/delete"
-								use:enhance={() => {
-									return async ({ update }) => {
-										await update();
-										confirmingDeleteId = null;
-									};
-								}}
-							>
-								<input type="hidden" name="id" value={entry.id} />
-								{#if confirmingDeleteId === entry.id}
+							{#if confirmingDeleteId === entry.id}
+								<form
+									method="post"
+									action="?/delete"
+									use:enhance={() => {
+										return async ({ update }) => {
+											await update();
+											confirmingDeleteId = null;
+										};
+									}}
+								>
+									<input type="hidden" name="id" value={entry.id} />
 									<button
 										type="submit"
 										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
 									>
 										Confirm?
 									</button>
-								{:else}
-									<button
-										type="button"
-										onclick={() => {
-											confirmingDeleteId = entry.id;
-										}}
-										class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
-									>
-										Delete
-									</button>
-								{/if}
-							</form>
+								</form>
+								<button
+									type="button"
+									onclick={() => {
+										confirmingDeleteId = null;
+									}}
+									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+								>
+									Cancel
+								</button>
+							{:else}
+								<button
+									onclick={() => {
+										editingId = entry.id;
+										showForm = true;
+										tick().then(() => {
+											const ta = document.querySelector<HTMLTextAreaElement>(
+												'textarea[name="content"]'
+											);
+											ta?.focus();
+										});
+									}}
+									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+								>
+									Edit
+								</button>
+								<button
+									type="button"
+									onclick={() => {
+										confirmingDeleteId = entry.id;
+									}}
+									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+								>
+									Delete
+								</button>
+							{/if}
 						</div>
 					</div>
 					<div class="flex items-center gap-2">
@@ -438,7 +471,7 @@
 							</div>
 						{/if}
 					</div>
-					<span class="absolute right-2 bottom-1.5 text-[10px] tabular-nums text-gray-300"
+					<span class="absolute right-2 bottom-1.5 text-[10px] tabular-nums text-black"
 						>#{entry.seq}</span
 					>
 				</div>
