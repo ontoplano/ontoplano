@@ -102,11 +102,11 @@
 
 		<div
 			class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
-			style="border-left-color: {SECTION_COLORS.habits}"
+			style="border-left-color: {SECTION_COLORS.health}"
 		>
 			<div class="mb-3 flex items-center justify-between">
 				<h2 class="text-sm font-bold text-gray-900">Habits</h2>
-				<a href="/habits" class="text-xs text-gray-500 transition hover:text-gray-900"> Open → </a>
+				<a href="/health/habits" class="text-xs text-gray-500 transition hover:text-gray-900"> Open → </a>
 			</div>
 			{#if data.habitStreaks.length === 0}
 				<p class="text-sm text-gray-400">No habits tracked.</p>
@@ -335,7 +335,7 @@
 				<a href="/diary" class="block text-sm text-gray-600 transition hover:text-gray-900"
 					>→ Diary</a
 				>
-				<a href="/habits" class="block text-sm text-gray-600 transition hover:text-gray-900"
+				<a href="/health/habits" class="block text-sm text-gray-600 transition hover:text-gray-900"
 					>→ Habits</a
 				>
 				<a href="/beliefs" class="block text-sm text-gray-600 transition hover:text-gray-900"

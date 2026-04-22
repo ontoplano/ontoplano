@@ -22,15 +22,15 @@
 		{ href: '/', label: 'Home' },
 		{ href: '/planner/track', label: 'Planner' },
 		{ href: '/diary', label: 'Diary' },
-		{ href: '/habits', label: 'Habits' },
+		{ href: '/health/habits', label: 'Health' },
 		{ href: '/beliefs', label: 'Beliefs' },
-		{ href: '/shopping', label: 'Shopping' },
-		{ href: '/services', label: 'Services' }
+		{ href: '/shopping', label: 'Shopping' }
 	];
 
 	function isNavActive(href: string): boolean {
 		if (href === '/') return page.url.pathname === '/';
 		if (href === '/planner/track') return page.url.pathname.startsWith('/planner');
+		if (href === '/health/habits') return page.url.pathname.startsWith('/health');
 		return page.url.pathname === href;
 	}
 
@@ -102,6 +102,13 @@
 						<div
 							class="absolute top-full right-0 mt-1 w-40 border border-gray-200 bg-white shadow-sm"
 						>
+							<a
+								href="/services"
+								onclick={() => (menuOpen = false)}
+								class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
+							>
+								Services
+							</a>
 							<a
 								href="/config"
 								onclick={() => (menuOpen = false)}

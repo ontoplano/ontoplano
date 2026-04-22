@@ -228,7 +228,7 @@
 
 <div class="space-y-4">
 	<div class="flex items-center justify-between">
-		<h1 class="text-lg font-bold text-gray-900">Habits</h1>
+		<div></div>
 		<button
 			onclick={() => {
 				if (showForm && !editingId) {

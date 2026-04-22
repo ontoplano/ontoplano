@@ -25,7 +25,7 @@ export const NAV_DROPDOWN_ITEM = 'text-gray-700 hover:bg-gray-50';
 
 export const SECTION_COLORS = {
 	planner: 'rgba(59, 130, 246, 0.6)',
-	habits: 'rgba(6, 182, 212, 0.6)',
+	health: 'rgba(6, 182, 212, 0.6)',
 	diary: 'rgba(234, 179, 8, 0.6)',
 	beliefs: 'rgba(168, 85, 247, 0.6)',
 	shopping: 'rgba(249, 115, 22, 0.6)',
