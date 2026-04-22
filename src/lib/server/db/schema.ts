@@ -127,6 +127,7 @@ export const diaryEntries = sqliteTable(
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id),
+		seq: integer('seq').notNull().default(0),
 		content: text('content').notNull(),
 		createdAt: text('created_at')
 			.notNull()
@@ -137,7 +138,8 @@ export const diaryEntries = sqliteTable(
 	},
 	(table) => [
 		index('diary_entries_user_idx').on(table.userId),
-		index('diary_entries_created_idx').on(table.createdAt)
+		index('diary_entries_created_idx').on(table.createdAt),
+		uniqueIndex('diary_entries_user_seq_unique').on(table.userId, table.seq)
 	]
 );
 

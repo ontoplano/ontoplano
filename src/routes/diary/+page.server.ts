@@ -2,7 +2,7 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { diaryEntries, tags, diaryEntryTags } from '$lib/server/db/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, max } from 'drizzle-orm';
 import { toLocalISOString } from '$lib/server/week-generator';
 import {
 	parseTags,
@@ -17,6 +17,7 @@ export const load: PageServerLoad = async (event) => {
 	const entries = db
 		.select({
 			id: diaryEntries.id,
+			seq: diaryEntries.seq,
 			content: diaryEntries.content,
 			createdAt: diaryEntries.createdAt,
 			updatedAt: diaryEntries.updatedAt
@@ -50,7 +51,15 @@ export const actions: Actions = {
 
 		if (!content) return fail(400, { message: 'Content is required' });
 
-		const result = db.insert(diaryEntries).values({ userId, content }).run();
+		const maxSeq =
+			db
+				.select({ value: max(diaryEntries.seq) })
+				.from(diaryEntries)
+				.where(eq(diaryEntries.userId, userId))
+				.get()?.value ?? 0;
+		const seq = maxSeq + 1;
+
+		const result = db.insert(diaryEntries).values({ userId, content, seq }).run();
 		const entryId = Number(result.lastInsertRowid);
 
 		const tagNames = parseTags(rawTags);
@@ -78,7 +87,15 @@ export const actions: Actions = {
 
 		const content = wins.map((w, i) => `Win ${i + 1}: ${w}`).join('\n');
 
-		const result = db.insert(diaryEntries).values({ userId, content }).run();
+		const maxSeq =
+			db
+				.select({ value: max(diaryEntries.seq) })
+				.from(diaryEntries)
+				.where(eq(diaryEntries.userId, userId))
+				.get()?.value ?? 0;
+		const seq = maxSeq + 1;
+
+		const result = db.insert(diaryEntries).values({ userId, content, seq }).run();
 		const entryId = Number(result.lastInsertRowid);
 
 		const userTags = parseTags(rawTags);

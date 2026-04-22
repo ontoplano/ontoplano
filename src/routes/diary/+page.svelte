@@ -13,6 +13,23 @@
 	let confirmingDeleteId: number | null = $state(null);
 	let winInputCount = $state(3);
 
+	// Tooltip state for #N references
+	let tooltip = $state<{ visible: boolean; x: number; y: number; content: string; date: string }>({
+		visible: false,
+		x: 0,
+		y: 0,
+		content: '',
+		date: ''
+	});
+
+	function seqMap() {
+		const map = new Map<number, { content: string; createdAt: string }>();
+		for (const entry of data.entries) {
+			map.set(entry.seq, { content: entry.content, createdAt: entry.createdAt });
+		}
+		return map;
+	}
+
 	function renderMarkdown(text: string): string {
 		let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 		html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
@@ -20,6 +37,11 @@
 		html = html.replace(/_(.+?)_/g, '<em>$1</em>');
 		html = html.replace(/`(.+?)`/g, '<code>$1</code>');
 		html = html.replace(/~~(.+?)~~/g, '<s>$1</s>');
+		// Turn #N (numeric) into diary entry reference links
+		html = html.replace(
+			/(^|[\s(])#(\d+)\b/g,
+			'$1<a class="diary-ref" data-seq="$2" href="#diary-$2">#$2</a>'
+		);
 		html = html.replace(/\n/g, '<br>');
 		return html;
 	}
@@ -50,6 +72,48 @@
 			hour: '2-digit',
 			minute: '2-digit'
 		});
+	}
+
+	function formatDateShort(iso: string): string {
+		return iso.slice(0, 10);
+	}
+
+	function handleEntriesPointerOver(e: PointerEvent) {
+		const target = (e.target as HTMLElement).closest('.diary-ref') as HTMLElement | null;
+		if (!target) return;
+		const seq = Number(target.dataset.seq);
+		const entry = seqMap().get(seq);
+		if (!entry) return;
+		const rect = target.getBoundingClientRect();
+		const preview =
+			entry.content.length > 120 ? entry.content.slice(0, 120) + '…' : entry.content;
+		tooltip = {
+			visible: true,
+			x: rect.left,
+			y: rect.top,
+			content: preview,
+			date: formatDateShort(entry.createdAt)
+		};
+	}
+
+	function handleEntriesPointerOut(e: PointerEvent) {
+		const target = (e.target as HTMLElement).closest('.diary-ref');
+		if (!target) return;
+		tooltip.visible = false;
+	}
+
+	function handleEntriesClick(e: MouseEvent) {
+		const target = (e.target as HTMLElement).closest('.diary-ref') as HTMLElement | null;
+		if (!target) return;
+		e.preventDefault();
+		const seq = Number(target.dataset.seq);
+		const el = document.getElementById(`diary-${seq}`);
+		if (el) {
+			el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			// Briefly highlight
+			el.classList.add('ring-2', 'ring-amber-400');
+			setTimeout(() => el.classList.remove('ring-2', 'ring-amber-400'), 1500);
+		}
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -286,10 +350,18 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="space-y-3">
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			class="space-y-3"
+			onpointerover={handleEntriesPointerOver}
+			onpointerout={handleEntriesPointerOut}
+			onclick={handleEntriesClick}
+		>
 			{#each filteredEntries() as entry, i (entry.id)}
 				<div
-					class="border border-gray-200 bg-white p-4 shadow-sm transition-all {i === selectedIndex
+					id="diary-{entry.seq}"
+					class="relative border border-gray-200 bg-white p-4 shadow-sm transition-all {i ===
+					selectedIndex
 						? 'border-l-4 border-l-amber-300/60 ring-2 ring-amber-400 ring-inset'
 						: ''}"
 				>
@@ -361,8 +433,35 @@
 							</div>
 						{/if}
 					</div>
+					<span class="absolute right-2 bottom-1.5 text-[10px] tabular-nums text-gray-300"
+						>#{entry.seq}</span
+					>
 				</div>
 			{/each}
 		</div>
 	{/if}
 </div>
+
+{#if tooltip.visible}
+	<div
+		class="pointer-events-none fixed z-50 max-w-xs border border-gray-200 bg-white px-3 py-2 text-xs shadow-sm"
+		style="left: {tooltip.x}px; top: {tooltip.y - 8}px; transform: translateY(-100%);"
+	>
+		<div class="mb-1 font-medium text-gray-500">{tooltip.date}</div>
+		<div class="text-gray-700">{tooltip.content}</div>
+	</div>
+{/if}
+
+<style>
+	:global(.diary-ref) {
+		color: #d97706;
+		text-decoration: underline;
+		text-decoration-color: #fde68a;
+		text-underline-offset: 2px;
+		cursor: pointer;
+	}
+	:global(.diary-ref:hover) {
+		color: #b45309;
+		text-decoration-color: #d97706;
+	}
+</style>
