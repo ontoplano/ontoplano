@@ -1,0 +1,20 @@
+{
+	"name": "semotina-telegram",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"start": "node --import=tsx src/index.ts",
+		"dev": "node --import=tsx --watch src/index.ts"
+	},
+	"dependencies": {
+		"better-sqlite3": "link:../node_modules/better-sqlite3",
+		"drizzle-orm": "link:../node_modules/drizzle-orm",
+		"grammy": "^1.38.3",
+		"tsx": "^4.20.6"
+	},
+	"devDependencies": {
+		"@types/better-sqlite3": "link:../node_modules/@types/better-sqlite3",
+		"@types/node": "link:../node_modules/@types/node",
+		"typescript": "link:../node_modules/typescript"
+	}
+}

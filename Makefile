@@ -1,4 +1,4 @@
-.PHONY: dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-studio db bdb lint format test docker-build docker-up docker-down logs
+.PHONY: dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-studio db bdb lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -97,6 +97,33 @@ uninstall-service:
 	@rm -f ~/.config/systemd/user/semotina.service
 	@systemctl --user daemon-reload
 	@echo "Service uninstalled."
+
+# ─── Telegram Bot ────────────────────────────────────────────────────────────
+
+telegram-install:
+	cd telegram && yarn install
+
+telegram-dev:
+	cd telegram && yarn dev
+
+telegram-logs:
+	journalctl --user -u semotina-telegram -f
+
+install-telegram-service: telegram-install
+	@echo "Installing semotina-telegram systemd service..."
+	@mkdir -p ~/.config/systemd/user
+	@envsubst < semotina-telegram.service > ~/.config/systemd/user/semotina-telegram.service
+	@systemctl --user daemon-reload
+	@systemctl --user enable semotina-telegram
+	@systemctl --user start semotina-telegram
+	@echo "Telegram bot service installed. Check: systemctl --user status semotina-telegram"
+
+uninstall-telegram-service:
+	@systemctl --user stop semotina-telegram || true
+	@systemctl --user disable semotina-telegram || true
+	@rm -f ~/.config/systemd/user/semotina-telegram.service
+	@systemctl --user daemon-reload
+	@echo "Telegram bot service uninstalled."
 
 # ─── Clean ────────────────────────────────────────────────────────────────────
 

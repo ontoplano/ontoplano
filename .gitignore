@@ -32,3 +32,6 @@ pass.py
 /todo
 # OpenCode
 .opencode
+
+# Telegram bot
+telegram/node_modules

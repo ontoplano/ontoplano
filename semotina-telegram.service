@@ -1,0 +1,15 @@
+[Unit]
+Description=Semotina Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=${HOME}/codes/semotina/telegram
+ExecStart=/usr/bin/node --import=tsx src/index.ts
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+EnvironmentFile=%h/.config/semotina/env
+
+[Install]
+WantedBy=default.target
