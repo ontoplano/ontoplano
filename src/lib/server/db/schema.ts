@@ -439,6 +439,25 @@ export const plannerTodos = sqliteTable(
 
 // --- Shopping List ---
 
+export const shoppingCategories = sqliteTable(
+	'shopping_categories',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull(),
+		sortOrder: integer('sort_order').notNull().default(0),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('shopping_categories_user_idx').on(table.userId),
+		uniqueIndex('shopping_categories_user_name_unique').on(table.userId, table.name)
+	]
+);
+
 export const shoppingItems = sqliteTable(
 	'shopping_items',
 	{
@@ -448,6 +467,7 @@ export const shoppingItems = sqliteTable(
 			.references(() => user.id),
 		name: text('name').notNull(),
 		type: text('type', { enum: ['someday', 'replenish'] }).notNull(),
+		shoppingCategoryId: integer('shopping_category_id').references(() => shoppingCategories.id),
 		notes: text('notes').default(''),
 		bought: integer('bought', { mode: 'boolean' }).notNull().default(false),
 		boughtAt: text('bought_at'),
@@ -463,7 +483,8 @@ export const shoppingItems = sqliteTable(
 		index('shopping_items_user_idx').on(table.userId),
 		index('shopping_items_type_idx').on(table.type),
 		index('shopping_items_bought_idx').on(table.bought),
-		index('shopping_items_snoozed_idx').on(table.snoozed)
+		index('shopping_items_snoozed_idx').on(table.snoozed),
+		index('shopping_items_category_idx').on(table.shoppingCategoryId)
 	]
 );
 

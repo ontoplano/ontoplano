@@ -10,11 +10,18 @@
 	let editingId: number | null = $state(null);
 	let editName = $state('');
 	let editType = $state('');
+	let editShoppingCategoryId: number | null = $state(null);
 	let editNotes = $state('');
 	let filterType = $state<'all' | 'someday' | 'replenish'>('all');
+	let newItemType = $state<'replenish' | 'someday'>('replenish');
 	let showBought = $state(false);
 	let showSnoozed = $state(false);
 	let confirmingDelete: number | null = $state(null);
+
+	let defaultShoppingCategoryId = $derived.by(() => {
+		const otherCategory = data.shoppingCategories.find((category) => category.name === 'Other');
+		return otherCategory?.id ?? data.shoppingCategories[0]?.id ?? null;
+	});
 
 	let filteredItems = $derived(
 		data.items.filter((item) => {
@@ -27,11 +34,34 @@
 
 	let somedayItems = $derived(filteredItems.filter((i) => i.type === 'someday'));
 	let replenishItems = $derived(filteredItems.filter((i) => i.type === 'replenish'));
+	let replenishByCategory = $derived.by(() => {
+		const catOrder = new Map(data.shoppingCategories.map((c) => [c.name, c.sortOrder]));
+		const grouped: Record<string, typeof replenishItems> = {};
+
+		for (const item of replenishItems) {
+			const catName = item.shoppingCategoryName ?? 'Other';
+			if (!(catName in grouped)) grouped[catName] = [];
+			grouped[catName].push(item);
+		}
+
+		return Object.entries(grouped)
+			.sort((a, b) => (catOrder.get(a[0]) ?? 999) - (catOrder.get(b[0]) ?? 999))
+			.map(([name, items]) => {
+				const cat = data.shoppingCategories.find((c) => c.name === name);
+				return { name, id: cat?.id ?? null, items };
+			});
+	});
+
+	function openCreateForm() {
+		newItemType = filterType === 'someday' ? 'someday' : 'replenish';
+		showForm = true;
+	}
 
 	function startEdit(item: (typeof data.items)[0]) {
 		editingId = item.id;
 		editName = item.name;
 		editType = item.type;
+		editShoppingCategoryId = item.shoppingCategoryId;
 		editNotes = item.notes ?? '';
 	}
 
@@ -39,6 +69,7 @@
 		editingId = null;
 		editName = '';
 		editType = '';
+		editShoppingCategoryId = null;
 		editNotes = '';
 	}
 
@@ -62,7 +93,7 @@
 			confirmingDelete = null;
 		} else if (e.key === 'n') {
 			e.preventDefault();
-			showForm = true;
+			openCreateForm();
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
 			showForm = false;
@@ -124,7 +155,7 @@
 				<kbd class="border border-gray-300 bg-gray-50 px-1">s</kbd>
 			</button>
 		<button
-			onclick={() => (showForm = !showForm)}
+			onclick={() => (showForm ? (showForm = false) : openCreateForm())}
 			class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
 		>
 				{showForm ? 'Cancel' : 'Add item'}
@@ -164,12 +195,25 @@
 					<select
 						name="type"
 						required
+						bind:value={newItemType}
 						class="border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					>
-						<option value="replenish" selected={filterType !== 'someday'}>Inventory</option>
-						<option value="someday" selected={filterType === 'someday'}>Wishlist</option>
+						<option value="replenish">Inventory</option>
+						<option value="someday">Wishlist</option>
 					</select>
 				</div>
+				{#if newItemType === 'replenish'}
+					<select
+						name="shoppingCategoryId"
+						class="border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						>
+						{#each data.shoppingCategories as category (category.id)}
+							<option value={category.id} selected={category.id === defaultShoppingCategoryId}>
+								{category.name}
+							</option>
+						{/each}
+					</select>
+				{/if}
 				<input
 					name="notes"
 					type="text"
@@ -190,160 +234,176 @@
 		<div>
 			<h2 class="mb-2 text-sm font-bold text-gray-500">Inventory</h2>
 			<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
-				{#each replenishItems as item, i (item.id)}
-					{@const globalIdx = filteredItems.indexOf(item)}
-					<div
-						class="flex items-center gap-4 px-4 py-3 {item.snoozed
-							? 'bg-gray-50 opacity-50'
-							: item.bought
-								? 'bg-blue-50'
-								: 'bg-red-50'} {globalIdx === selectedIndex ? 'ring-2 ring-gray-400 ring-inset' : ''}"
-					>
-						{#if editingId === item.id}
-							<form
-								method="POST"
-								action="?/update"
-								use:enhance={() => {
-									return async ({ update }) => {
-										await update();
-										cancelEdit();
-									};
-								}}
-								use:autofocus
-								class="flex flex-1 items-center gap-2"
-							>
-								<input type="hidden" name="id" value={item.id} />
-								<input
-									name="name"
-									type="text"
-									bind:value={editName}
-									required
-									class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-								/>
-								<select
-									name="type"
-									bind:value={editType}
-									class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+				{#each replenishByCategory as category (category.name)}
+					<h3 class="mb-1 mt-3 px-1 text-xs font-medium uppercase tracking-wide text-gray-400">
+						{category.name}
+					</h3>
+					{#each category.items as item (item.id)}
+						{@const globalIdx = filteredItems.indexOf(item)}
+						<div
+							class="flex items-center gap-4 px-4 py-3 {item.snoozed
+								? 'bg-gray-50 opacity-50'
+								: item.bought
+									? 'bg-blue-50'
+									: 'bg-red-50'} {globalIdx === selectedIndex ? 'ring-2 ring-gray-400 ring-inset' : ''}"
+						>
+							{#if editingId === item.id}
+								<form
+									method="POST"
+									action="?/update"
+									use:enhance={() => {
+										return async ({ update }) => {
+											await update();
+											cancelEdit();
+										};
+									}}
+									use:autofocus
+									class="flex flex-1 items-center gap-2"
 								>
-									<option value="replenish">Inventory</option>
-									<option value="someday">Wishlist</option>
-								</select>
-								<input
-									name="notes"
-									type="text"
-									bind:value={editNotes}
-									placeholder="Notes"
-									class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-								/>
-								<button
-									type="submit"
-									class="bg-gray-900 px-2 py-1 text-xs text-white hover:bg-gray-800"
-								>
-									Save
-								</button>
-								<button
-									type="button"
-									onclick={cancelEdit}
-									class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
-								>
-									Cancel
-								</button>
-							</form>
-						{:else}
-							<div class="min-w-0 flex-1">
-								<span class="text-sm text-gray-900">{item.name}</span>
-								{#if item.notes}
-									<span class="ml-2 text-xs text-gray-400">{item.notes}</span>
-								{/if}
-							</div>
-							{#if item.snoozed}
-								<form method="POST" action="?/toggleSnoozed" use:enhance>
 									<input type="hidden" name="id" value={item.id} />
+									<input
+										name="name"
+										type="text"
+										bind:value={editName}
+										required
+										class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+									/>
+									<select
+										name="type"
+										bind:value={editType}
+										class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+									>
+										<option value="replenish">Inventory</option>
+										<option value="someday">Wishlist</option>
+									</select>
+									{#if editType === 'replenish'}
+										<select
+											name="shoppingCategoryId"
+											bind:value={editShoppingCategoryId}
+											class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+										>
+											{#each data.shoppingCategories as categoryOption (categoryOption.id)}
+												<option value={categoryOption.id}>{categoryOption.name}</option>
+											{/each}
+										</select>
+									{/if}
+									<input
+										name="notes"
+										type="text"
+										bind:value={editNotes}
+										placeholder="Notes"
+										class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+									/>
 									<button
 										type="submit"
-										class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 shadow-sm hover:bg-gray-50"
+										class="bg-gray-900 px-2 py-1 text-xs text-white hover:bg-gray-800"
 									>
-										Unshelve
+										Save
 									</button>
-								</form>
-							{:else if item.bought}
-								<form method="POST" action="?/restock" use:enhance>
-									<input type="hidden" name="id" value={item.id} />
 									<button
-										type="submit"
-										class="border border-orange-200 bg-white px-2 py-1 text-xs text-orange-600 shadow-sm hover:bg-orange-50"
+										type="button"
+										onclick={cancelEdit}
+										class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
 									>
-										Need to buy
+										Cancel
 									</button>
 								</form>
 							{:else}
-								<form method="POST" action="?/toggleBought" use:enhance>
-									<input type="hidden" name="id" value={item.id} />
-									<button
-										type="submit"
-										class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-600 shadow-sm hover:bg-blue-50"
-									>
-										Got it
-									</button>
-								</form>
-								<form method="POST" action="?/toggleSnoozed" use:enhance>
-									<input type="hidden" name="id" value={item.id} />
-									<button
-										type="submit"
-										class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500 shadow-sm hover:bg-gray-50"
-									>
-										Not now
-									</button>
-							</form>
-						{/if}
-						<button
-							onclick={() => startEdit(item)}
-							class="text-xs text-gray-400 hover:text-gray-700"
-						>
-							edit
-						</button>
-						{#if confirmingDelete === item.id}
-							<form
-								method="POST"
-								action="?/delete"
-								use:enhance={() => {
-									return async ({ update }) => {
-										await update();
-										confirmingDelete = null;
-									};
-								}}
-							>
-								<input type="hidden" name="id" value={item.id} />
+								<div class="min-w-0 flex-1">
+									<span class="text-sm text-gray-900">{item.name}</span>
+									{#if item.notes}
+										<span class="ml-2 text-xs text-gray-400">{item.notes}</span>
+									{/if}
+								</div>
+								{#if item.snoozed}
+									<form method="POST" action="?/toggleSnoozed" use:enhance>
+										<input type="hidden" name="id" value={item.id} />
+										<button
+											type="submit"
+											class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 shadow-sm hover:bg-gray-50"
+										>
+											Unshelve
+										</button>
+									</form>
+								{:else if item.bought}
+									<form method="POST" action="?/restock" use:enhance>
+										<input type="hidden" name="id" value={item.id} />
+										<button
+											type="submit"
+											class="border border-orange-200 bg-white px-2 py-1 text-xs text-orange-600 shadow-sm hover:bg-orange-50"
+										>
+											Need to buy
+										</button>
+									</form>
+								{:else}
+									<form method="POST" action="?/toggleBought" use:enhance>
+										<input type="hidden" name="id" value={item.id} />
+										<button
+											type="submit"
+											class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-600 shadow-sm hover:bg-blue-50"
+										>
+											Got it
+										</button>
+									</form>
+									<form method="POST" action="?/toggleSnoozed" use:enhance>
+										<input type="hidden" name="id" value={item.id} />
+										<button
+											type="submit"
+											class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500 shadow-sm hover:bg-gray-50"
+										>
+											Not now
+										</button>
+									</form>
+								{/if}
 								<button
-									type="submit"
-									class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+									onclick={() => startEdit(item)}
+									class="text-xs text-gray-400 hover:text-gray-700"
 								>
-									Confirm?
+									edit
 								</button>
-							</form>
-							<button
-								type="button"
-								onclick={() => {
-									confirmingDelete = null;
-								}}
-								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-							>
-								Cancel
-							</button>
-						{:else}
-							<button
-								type="button"
-								onclick={() => {
-									confirmingDelete = item.id;
-								}}
-								class="text-xs text-gray-400 hover:text-red-500"
-							>
-								&times;
-							</button>
-						{/if}
-					{/if}
-				</div>
-			{/each}
+								{#if confirmingDelete === item.id}
+									<form
+										method="POST"
+										action="?/delete"
+										use:enhance={() => {
+											return async ({ update }) => {
+												await update();
+												confirmingDelete = null;
+											};
+										}}
+									>
+										<input type="hidden" name="id" value={item.id} />
+										<button
+											type="submit"
+											class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+										>
+											Confirm?
+										</button>
+									</form>
+									<button
+										type="button"
+										onclick={() => {
+											confirmingDelete = null;
+										}}
+										class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+									>
+										Cancel
+									</button>
+								{:else}
+									<button
+										type="button"
+										onclick={() => {
+											confirmingDelete = item.id;
+										}}
+										class="text-xs text-gray-400 hover:text-red-500"
+									>
+										&times;
+									</button>
+								{/if}
+							{/if}
+						</div>
+					{/each}
+				{/each}
 			</div>
 		</div>
 	{/if}
@@ -388,6 +448,17 @@
 									<option value="replenish">Inventory</option>
 									<option value="someday">Wishlist</option>
 								</select>
+								{#if editType === 'replenish'}
+									<select
+										name="shoppingCategoryId"
+										bind:value={editShoppingCategoryId}
+										class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+									>
+										{#each data.shoppingCategories as categoryOption (categoryOption.id)}
+											<option value={categoryOption.id}>{categoryOption.name}</option>
+										{/each}
+									</select>
+								{/if}
 								<input
 									name="notes"
 									type="text"
