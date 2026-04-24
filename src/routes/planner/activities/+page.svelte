@@ -13,6 +13,7 @@
 	let showCategoryForm = $state(false);
 	let editingCategoryId: number | null = $state(null);
 	let newCatColor = $state(CATEGORY_DEFAULT_NEW);
+	let confirmingDelete: string | null = $state(null);
 
 	function catColor(catId: number | null): string {
 		if (!catId) return CATEGORY_FALLBACK_COLOR;
@@ -46,10 +47,12 @@
 		switch (e.key) {
 			case 'j':
 				e.preventDefault();
+				confirmingDelete = null;
 				selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
 				break;
 			case 'k':
 				e.preventDefault();
+				confirmingDelete = null;
 				selectedIndex = Math.max(selectedIndex - 1, 0);
 				break;
 			case '1':
@@ -83,6 +86,7 @@
 				editingId = null;
 				showCategoryForm = false;
 				editingCategoryId = null;
+				confirmingDelete = null;
 				break;
 		}
 	}
@@ -178,15 +182,45 @@
 							>
 								Edit
 							</button>
-							<form method="post" action="?/deleteCategory" use:enhance>
-								<input type="hidden" name="id" value={cat.id} />
+							{#if confirmingDelete === `cat-${cat.id}`}
+								<form
+									method="post"
+									action="?/deleteCategory"
+									use:enhance={() => {
+										return async ({ update }) => {
+											await update();
+											confirmingDelete = null;
+										};
+									}}
+								>
+									<input type="hidden" name="id" value={cat.id} />
+									<button
+										type="submit"
+										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
+									>
+										Confirm?
+									</button>
+								</form>
 								<button
-									type="submit"
+									type="button"
+									onclick={() => {
+										confirmingDelete = null;
+									}}
+									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+								>
+									Cancel
+								</button>
+							{:else}
+								<button
+									type="button"
+									onclick={() => {
+										confirmingDelete = `cat-${cat.id}`;
+									}}
 									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50"
 								>
 									Delete
 								</button>
-							</form>
+							{/if}
 						{/if}
 					</div>
 				{/each}
@@ -389,10 +423,40 @@
 								{activity.active ? 'Disable' : 'Enable'}
 							</button>
 						</form>
-						<form method="post" action="?/delete" use:enhance>
-							<input type="hidden" name="id" value={activity.id} />
+						{#if confirmingDelete === `act-${activity.id}` && !activity.hasReferences}
+							<form
+								method="post"
+								action="?/delete"
+								use:enhance={() => {
+									return async ({ update }) => {
+										await update();
+										confirmingDelete = null;
+									};
+								}}
+							>
+								<input type="hidden" name="id" value={activity.id} />
+								<button
+									type="submit"
+									class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
+								>
+									Confirm?
+								</button>
+							</form>
 							<button
-								type="submit"
+								type="button"
+								onclick={() => {
+									confirmingDelete = null;
+								}}
+								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+							>
+								Cancel
+							</button>
+						{:else}
+							<button
+								type="button"
+								onclick={() => {
+									if (!activity.hasReferences) confirmingDelete = `act-${activity.id}`;
+								}}
 								disabled={activity.hasReferences}
 								class="border px-2 py-1 text-xs transition {activity.hasReferences
 									? 'cursor-not-allowed border-gray-100 text-gray-300'
@@ -403,7 +467,7 @@
 							>
 								Delete
 							</button>
-						</form>
+						{/if}
 					</div>
 				</div>
 			{/each}

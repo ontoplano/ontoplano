@@ -35,6 +35,7 @@
 	let selectedHabitIndex = $state(0);
 	let expandedHabitId: number | null = $state(null);
 	let confirmingDeleteId: number | null = $state(null);
+	let confirmingOccurrenceDelete: number | null = $state(null);
 	let typeFilter: 'all' | 'bad' | 'good' | 'neutral' = $state('all');
 	let backdateInput: string = $state('');
 
@@ -158,10 +159,12 @@
 		switch (e.key) {
 			case 'j':
 				e.preventDefault();
+				confirmingOccurrenceDelete = null;
 				selectedHabitIndex = Math.min(selectedHabitIndex + 1, habits.length - 1);
 				break;
 			case 'k':
 				e.preventDefault();
+				confirmingOccurrenceDelete = null;
 				selectedHabitIndex = Math.max(selectedHabitIndex - 1, 0);
 				break;
 			case 'n':
@@ -184,6 +187,7 @@
 				break;
 			case 'Escape':
 				e.preventDefault();
+				confirmingOccurrenceDelete = null;
 				if (showForm) {
 					showForm = false;
 					resetForm();
@@ -680,15 +684,45 @@
 													</button>
 												</form>
 											</div>
-											<form method="post" action="?/deleteOccurrence" use:enhance>
+										{#if confirmingOccurrenceDelete === occurrence.id}
+											<form
+												method="post"
+												action="?/deleteOccurrence"
+												use:enhance={() => {
+													return async ({ update }) => {
+														await update();
+														confirmingOccurrenceDelete = null;
+													};
+												}}
+											>
 												<input type="hidden" name="id" value={occurrence.id} />
 												<button
 													type="submit"
-													class="text-xs text-gray-400 transition hover:text-red-500"
+													class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
 												>
-													&times;
+													Confirm?
 												</button>
 											</form>
+											<button
+												type="button"
+												onclick={() => {
+													confirmingOccurrenceDelete = null;
+												}}
+												class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+											>
+												Cancel
+											</button>
+										{:else}
+											<button
+												type="button"
+												onclick={() => {
+													confirmingOccurrenceDelete = occurrence.id;
+												}}
+												class="text-xs text-gray-400 transition hover:text-red-500"
+											>
+												&times;
+											</button>
+										{/if}
 										</div>
 									{/each}
 									{#if occ.length > 10}

@@ -25,6 +25,8 @@
 	let multiselect = $state(false);
 	let showCopyPanel = $state(false);
 	let copyTargetDays: Set<number> = $state(new Set());
+	let confirmingDelete: string | null = $state(null);
+	let confirmingBulkDelete = $state(false);
 
 	let timeInput: HTMLInputElement | undefined = $state(undefined);
 
@@ -159,6 +161,8 @@
 			switch (e.key) {
 				case 'v':
 					e.preventDefault();
+					confirmingDelete = null;
+					confirmingBulkDelete = false;
 					multiselect = false;
 					selectedIds = new Set();
 					return;
@@ -171,8 +175,13 @@
 				case 'x':
 					e.preventDefault();
 					if (selectedIds.size > 0) {
-						const form = document.getElementById('bulk-delete-form');
-						if (form instanceof HTMLFormElement) form.requestSubmit();
+						if (confirmingBulkDelete) {
+							const form = document.getElementById('bulk-delete-form');
+							if (form instanceof HTMLFormElement) form.requestSubmit();
+							confirmingBulkDelete = false;
+						} else {
+							confirmingBulkDelete = true;
+						}
 					}
 					return;
 				case 'p':
@@ -184,27 +193,37 @@
 					return;
 				case 'Escape':
 					e.preventDefault();
+					confirmingDelete = null;
+					confirmingBulkDelete = false;
 					multiselect = false;
 					selectedIds = new Set();
 					return;
 				case 'h':
 					e.preventDefault();
+					confirmingDelete = null;
+					confirmingBulkDelete = false;
 					selectedDay = Math.max(selectedDay - 1, 0);
 					selectedIndex = 0;
 					return;
 				case 'l':
 					e.preventDefault();
+					confirmingDelete = null;
+					confirmingBulkDelete = false;
 					selectedDay = Math.min(selectedDay + 1, 6);
 					selectedIndex = 0;
 					return;
 				case 'j':
 					e.preventDefault();
+					confirmingDelete = null;
+					confirmingBulkDelete = false;
 					if (slots.length > 0) {
 						selectedIndex = Math.min(selectedIndex + 1, slots.length - 1);
 					}
 					return;
 				case 'k':
 					e.preventDefault();
+					confirmingDelete = null;
+					confirmingBulkDelete = false;
 					if (slots.length > 0) {
 						selectedIndex = Math.max(selectedIndex - 1, 0);
 					}
@@ -233,22 +252,30 @@
 				break;
 			case 'h':
 				e.preventDefault();
+				confirmingDelete = null;
+				confirmingBulkDelete = false;
 				selectedDay = Math.max(selectedDay - 1, 0);
 				selectedIndex = 0;
 				break;
 			case 'l':
 				e.preventDefault();
+				confirmingDelete = null;
+				confirmingBulkDelete = false;
 				selectedDay = Math.min(selectedDay + 1, 6);
 				selectedIndex = 0;
 				break;
 			case 'j':
 				e.preventDefault();
+				confirmingDelete = null;
+				confirmingBulkDelete = false;
 				if (slots.length > 0) {
 					selectedIndex = Math.min(selectedIndex + 1, slots.length - 1);
 				}
 				break;
 			case 'k':
 				e.preventDefault();
+				confirmingDelete = null;
+				confirmingBulkDelete = false;
 				if (slots.length > 0) {
 					selectedIndex = Math.max(selectedIndex - 1, 0);
 				}
@@ -269,8 +296,15 @@
 			case 'D':
 				e.preventDefault();
 				if (slots.length > 0 && slots[selectedIndex]) {
-					const form = document.getElementById(`delete-form-${slots[selectedIndex].id}`);
-					if (form instanceof HTMLFormElement) form.requestSubmit();
+					const slot = slots[selectedIndex];
+					const key = `slot-${slot.id}`;
+					if (confirmingDelete === key) {
+						const form = document.getElementById(`delete-form-${slot.id}`);
+						if (form instanceof HTMLFormElement) form.requestSubmit();
+						confirmingDelete = null;
+					} else {
+						confirmingDelete = key;
+					}
 				}
 				break;
 			case 'n':
@@ -283,6 +317,8 @@
 				break;
 			case 'Escape':
 				e.preventDefault();
+				confirmingDelete = null;
+				confirmingBulkDelete = false;
 				showForm = false;
 				showExceptionalForm = false;
 				editingId = null;
@@ -470,21 +506,34 @@
 						method="post"
 						action="?/bulkDelete"
 						use:enhance={() => {
-							return async ({ update }) => {
-								await update();
-								multiselect = false;
-								selectedIds = new Set();
-							};
-						}}
-					>
-						<input type="hidden" name="ids" value={[...selectedIds].join(',')} />
+						return async ({ update }) => {
+							await update();
+							confirmingBulkDelete = false;
+							multiselect = false;
+							selectedIds = new Set();
+						};
+					}}
+				>
+					<input type="hidden" name="ids" value={[...selectedIds].join(',')} />
+					{#if confirmingBulkDelete}
 						<button
 							type="submit"
+							class="border border-red-300 bg-red-50 px-3 py-1 text-sm font-medium text-red-700 transition hover:bg-red-100"
+						>
+							Confirm delete?
+						</button>
+					{:else}
+						<button
+							type="button"
+							onclick={() => {
+								confirmingBulkDelete = true;
+							}}
 							class="border border-red-200 bg-white px-3 py-1 text-sm text-red-600 transition hover:bg-red-50"
 						>
 							Delete selected
 						</button>
-					</form>
+					{/if}
+				</form>
 					<button
 						onclick={() => (showCopyPanel = true)}
 						class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-50"
@@ -833,15 +882,37 @@
 									{slot.active ? 'Disable' : 'Enable'}
 								</button>
 							</form>
-							<form id="delete-form-{slot.id}" method="post" action="?/delete" use:enhance>
-								<input type="hidden" name="id" value={slot.id} />
+							{#if confirmingDelete === `slot-${slot.id}`}
+								<form
+									id="delete-form-{slot.id}"
+									method="post"
+									action="?/delete"
+									use:enhance={() => {
+										return async ({ update }) => {
+											await update();
+											confirmingDelete = null;
+										};
+									}}
+								>
+									<input type="hidden" name="id" value={slot.id} />
+									<button
+										type="submit"
+										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
+									>
+										Confirm?
+									</button>
+								</form>
+							{:else}
 								<button
-									type="submit"
+									type="button"
+									onclick={() => {
+										confirmingDelete = `slot-${slot.id}`;
+									}}
 									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
 								>
 									Delete
 								</button>
-							</form>
+							{/if}
 						</div>
 					{/if}
 				</div>
@@ -877,15 +948,36 @@
 							{exc.status}
 						</span>
 						{#if !dayPast}
-							<form method="post" action="?/deleteExceptional" use:enhance>
-								<input type="hidden" name="id" value={exc.id} />
+							{#if confirmingDelete === `exc-${exc.id}`}
+								<form
+									method="post"
+									action="?/deleteExceptional"
+									use:enhance={() => {
+										return async ({ update }) => {
+											await update();
+											confirmingDelete = null;
+										};
+									}}
+								>
+									<input type="hidden" name="id" value={exc.id} />
+									<button
+										type="submit"
+										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
+									>
+										Confirm?
+									</button>
+								</form>
+							{:else}
 								<button
-									type="submit"
+									type="button"
+									onclick={() => {
+										confirmingDelete = `exc-${exc.id}`;
+									}}
 									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
 								>
 									Delete
 								</button>
-							</form>
+							{/if}
 						{/if}
 					</div>
 				{/each}

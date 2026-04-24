@@ -14,6 +14,7 @@
 	let filterType = $state<'all' | 'someday' | 'replenish'>('all');
 	let showBought = $state(false);
 	let showSnoozed = $state(false);
+	let confirmingDelete: number | null = $state(null);
 
 	let filteredItems = $derived(
 		data.items.filter((item) => {
@@ -54,9 +55,11 @@
 		if (e.key === 'j') {
 			e.preventDefault();
 			selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+			confirmingDelete = null;
 		} else if (e.key === 'k') {
 			e.preventDefault();
 			selectedIndex = Math.max(selectedIndex - 1, -1);
+			confirmingDelete = null;
 		} else if (e.key === 'n') {
 			e.preventDefault();
 			showForm = true;
@@ -64,6 +67,7 @@
 			e.preventDefault();
 			showForm = false;
 			cancelEdit();
+			confirmingDelete = null;
 		} else if (e.key === 'e' && items.length > 0 && selectedIndex >= 0) {
 			e.preventDefault();
 			startEdit(items[selectedIndex]);
@@ -290,23 +294,56 @@
 									>
 										Not now
 									</button>
-								</form>
-							{/if}
-							<button
-								onclick={() => startEdit(item)}
-								class="text-xs text-gray-400 hover:text-gray-700"
-							>
-								edit
-							</button>
-							<form method="POST" action="?/delete" use:enhance>
-								<input type="hidden" name="id" value={item.id} />
-								<button type="submit" class="text-xs text-gray-400 hover:text-red-500">
-									&times;
-								</button>
 							</form>
 						{/if}
-					</div>
-				{/each}
+						<button
+							onclick={() => startEdit(item)}
+							class="text-xs text-gray-400 hover:text-gray-700"
+						>
+							edit
+						</button>
+						{#if confirmingDelete === item.id}
+							<form
+								method="POST"
+								action="?/delete"
+								use:enhance={() => {
+									return async ({ update }) => {
+										await update();
+										confirmingDelete = null;
+									};
+								}}
+							>
+								<input type="hidden" name="id" value={item.id} />
+								<button
+									type="submit"
+									class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+								>
+									Confirm?
+								</button>
+							</form>
+							<button
+								type="button"
+								onclick={() => {
+									confirmingDelete = null;
+								}}
+								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+							>
+								Cancel
+							</button>
+						{:else}
+							<button
+								type="button"
+								onclick={() => {
+									confirmingDelete = item.id;
+								}}
+								class="text-xs text-gray-400 hover:text-red-500"
+							>
+								&times;
+							</button>
+						{/if}
+					{/if}
+				</div>
+			{/each}
 			</div>
 		</div>
 	{/if}
@@ -425,21 +462,54 @@
 											Not now
 										</button>
 									</form>
-								{/if}
 							{/if}
-							<button
-								onclick={() => startEdit(item)}
-								class="text-xs text-gray-400 hover:text-gray-700"
+						{/if}
+						<button
+							onclick={() => startEdit(item)}
+							class="text-xs text-gray-400 hover:text-gray-700"
+						>
+							edit
+						</button>
+						{#if confirmingDelete === item.id}
+							<form
+								method="POST"
+								action="?/delete"
+								use:enhance={() => {
+									return async ({ update }) => {
+										await update();
+										confirmingDelete = null;
+									};
+								}}
 							>
-								edit
-							</button>
-							<form method="POST" action="?/delete" use:enhance>
 								<input type="hidden" name="id" value={item.id} />
-								<button type="submit" class="text-xs text-gray-400 hover:text-red-500">
-									&times;
+								<button
+									type="submit"
+									class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+								>
+									Confirm?
 								</button>
 							</form>
+							<button
+								type="button"
+								onclick={() => {
+									confirmingDelete = null;
+								}}
+								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+							>
+								Cancel
+							</button>
+						{:else}
+							<button
+								type="button"
+								onclick={() => {
+									confirmingDelete = item.id;
+								}}
+								class="text-xs text-gray-400 hover:text-red-500"
+							>
+								&times;
+							</button>
 						{/if}
+					{/if}
 					</div>
 				{/each}
 			</div>

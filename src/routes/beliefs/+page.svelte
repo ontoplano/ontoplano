@@ -76,6 +76,7 @@
 	let expandedBeliefId: number | null = $state(null);
 	let editingBeliefId: number | null = $state(null);
 	let confirmingDeleteId: number | null = $state(null);
+	let confirmingEvidenceDelete: number | null = $state(null);
 	let recordingBeliefId: number | null = $state(null);
 
 	let linkBeliefSelect: Record<number, number | null> = $state({});
@@ -874,10 +875,12 @@
 		switch (e.key) {
 			case 'j':
 				e.preventDefault();
+				confirmingEvidenceDelete = null;
 				selectedBeliefIndex = Math.min(selectedBeliefIndex + 1, beliefs.length - 1);
 				break;
 			case 'k':
 				e.preventDefault();
+				confirmingEvidenceDelete = null;
 				selectedBeliefIndex = Math.max(selectedBeliefIndex - 1, 0);
 				break;
 			case 'n':
@@ -915,6 +918,7 @@
 				expandedBeliefId = null;
 				editingBeliefId = null;
 				confirmingDeleteId = null;
+				confirmingEvidenceDelete = null;
 				break;
 		}
 	}
@@ -1617,16 +1621,45 @@
 														<span class="text-xs text-gray-400">this</span>
 													</div>
 													<div class="flex items-center gap-2">
-														<form method="post" action="?/deleteEvidence" use:enhance>
+													{#if confirmingEvidenceDelete === ev.evidenceId}
+														<form
+															method="post"
+															action="?/deleteEvidence"
+															use:enhance={() => {
+																return async ({ update }) => {
+																	await update();
+																	confirmingEvidenceDelete = null;
+																};
+															}}
+														>
 															<input type="hidden" name="id" value={ev.evidenceId} />
 															<button
 																type="submit"
-																class="text-xs text-gray-400 transition hover:text-red-500"
-																title="Delete evidence"
+																class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
 															>
-																del
+																Confirm?
 															</button>
 														</form>
+														<button
+															type="button"
+															onclick={() => {
+																confirmingEvidenceDelete = null;
+															}}
+															class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+														>
+															Cancel
+														</button>
+													{:else}
+														<button
+															type="button"
+															onclick={() => {
+																confirmingEvidenceDelete = ev.evidenceId;
+															}}
+															class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+														>
+															Delete
+														</button>
+													{/if}
 														<form method="post" action="?/unlinkEvidence" use:enhance>
 															<input type="hidden" name="id" value={ev.linkId} />
 															<button

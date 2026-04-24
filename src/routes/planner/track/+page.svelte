@@ -10,6 +10,7 @@
 	let editingTimeId: string | null = $state(null);
 	let editingDurationId: string | null = $state(null);
 	let editingActivityId: string | null = $state(null);
+	let confirmingDelete: string | null = $state(null);
 
 	const statusOptions = [
 		{ value: 'completed', label: 'Done', key: 'c' },
@@ -209,10 +210,12 @@
 		switch (e.key) {
 			case 'j':
 				e.preventDefault();
+				confirmingDelete = null;
 				selectedIndex = Math.min(selectedIndex + 1, tasks.length - 1);
 				break;
 			case 'k':
 				e.preventDefault();
+				confirmingDelete = null;
 				selectedIndex = Math.max(selectedIndex - 1, 0);
 				break;
 			case 't':
@@ -229,8 +232,14 @@
 				break;
 			case 'x': {
 				e.preventDefault();
-				const deleteForm = document.getElementById(`delete-form-${tasks[selectedIndex].uid}`);
-				if (deleteForm instanceof HTMLFormElement) deleteForm.requestSubmit();
+				const task = tasks[selectedIndex];
+				if (confirmingDelete === task.uid) {
+					const deleteForm = document.getElementById(`delete-form-${task.uid}`);
+					if (deleteForm instanceof HTMLFormElement) deleteForm.requestSubmit();
+					confirmingDelete = null;
+				} else {
+					confirmingDelete = task.uid;
+				}
 				break;
 			}
 			case 'Escape':
@@ -238,6 +247,7 @@
 				editingTimeId = null;
 				editingDurationId = null;
 				editingActivityId = null;
+				confirmingDelete = null;
 				break;
 			case 'c':
 			case 'd':
@@ -661,20 +671,49 @@
 						{/each}
 					</form>
 
-					<form
-						id="delete-form-{task.uid}"
-						method="post"
-						action={deleteAction(task)}
-						use:enhance
-						class="shrink-0"
-					>
-						<input type="hidden" name="id" value={task.id} />
+					{#if confirmingDelete === task.uid}
+						<div class="flex shrink-0 items-center gap-2">
+							<form
+								id="delete-form-{task.uid}"
+								method="post"
+								action={deleteAction(task)}
+								use:enhance={() => {
+									return async ({ update }) => {
+										await update();
+										confirmingDelete = null;
+									};
+								}}
+							>
+								<input type="hidden" name="id" value={task.id} />
+								<button
+									type="submit"
+									class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+								>
+									Confirm?
+								</button>
+							</form>
+							<button
+								type="button"
+								onclick={() => {
+									confirmingDelete = null;
+								}}
+								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+							>
+								Cancel
+							</button>
+						</div>
+					{:else}
 						<button
-							type="submit"
-							class="px-1 py-0.5 text-xs text-gray-300 transition hover:text-red-600"
-							title="Delete task (x)">×</button
+							type="button"
+							onclick={() => {
+								confirmingDelete = task.uid;
+							}}
+							class="text-xs text-gray-400 hover:text-red-500"
+							title="Delete task (x)"
 						>
-					</form>
+							&times;
+						</button>
+					{/if}
 				</div>
 			{/each}
 		</div>
