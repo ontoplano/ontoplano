@@ -12,6 +12,11 @@ import {
 	cleanupOrphanTags
 } from '$lib/server/tags';
 
+function todayStr(): string {
+	const d = new Date();
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export const load: PageServerLoad = async (event) => {
 	const userId = event.locals.user!.id;
 	const entries = db
@@ -19,6 +24,7 @@ export const load: PageServerLoad = async (event) => {
 			id: diaryEntries.id,
 			seq: diaryEntries.seq,
 			content: diaryEntries.content,
+			forDate: diaryEntries.forDate,
 			createdAt: diaryEntries.createdAt,
 			updatedAt: diaryEntries.updatedAt
 		})
@@ -75,6 +81,7 @@ export const actions: Actions = {
 		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const rawTags = formData.get('tags')?.toString()?.trim() ?? '';
+		const forDate = formData.get('forDate')?.toString()?.trim() || todayStr();
 
 		const wins: string[] = [];
 		for (let i = 0; ; i++) {
@@ -95,7 +102,7 @@ export const actions: Actions = {
 				.get()?.value ?? 0;
 		const seq = maxSeq + 1;
 
-		const result = db.insert(diaryEntries).values({ userId, content, seq }).run();
+		const result = db.insert(diaryEntries).values({ userId, content, seq, forDate }).run();
 		const entryId = Number(result.lastInsertRowid);
 
 		const userTags = parseTags(rawTags);

@@ -8,6 +8,7 @@
 
 	let showDiaryForm = $state(false);
 	let showBeliefForm = $state(false);
+	let showWinsForm = $state(false);
 
 	function formatDate(dateStr: string): string {
 		const d = new Date(dateStr);
@@ -37,16 +38,29 @@
 			e.preventDefault();
 			showDiaryForm = !showDiaryForm;
 			showBeliefForm = false;
+			showWinsForm = false;
 			if (showDiaryForm) {
 				tick().then(() => {
 					const ta = document.querySelector<HTMLTextAreaElement>('textarea[name="content"]');
 					ta?.focus();
 				});
 			}
+		} else if (e.key === 'w') {
+			e.preventDefault();
+			showWinsForm = !showWinsForm;
+			showDiaryForm = false;
+			showBeliefForm = false;
+			if (showWinsForm) {
+				tick().then(() => {
+					const input = document.querySelector<HTMLInputElement>('input[name="win_0"]');
+					input?.focus();
+				});
+			}
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
 			showDiaryForm = false;
 			showBeliefForm = false;
+			showWinsForm = false;
 		}
 	}
 </script>
@@ -112,7 +126,7 @@
 				<p class="text-sm text-gray-400">No habits tracked.</p>
 			{:else}
 				<div class="space-y-2">
-					{#each data.habitStreaks as habit}
+					{#each data.habitStreaks as habit (habit.id)}
 						<div class="flex items-center justify-between">
 							<span class="text-sm text-gray-700">{habit.name}</span>
 							<span
@@ -149,8 +163,25 @@
 				</a>
 				<button
 					onclick={() => {
+						showWinsForm = !showWinsForm;
+						showDiaryForm = false;
+						showBeliefForm = false;
+						if (showWinsForm) {
+							tick().then(() => {
+								const input = document.querySelector<HTMLInputElement>('input[name="win_0"]');
+								input?.focus();
+							});
+						}
+					}}
+					class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50"
+				>
+					{showWinsForm ? 'Cancel' : 'Wins'} <kbd class="border border-gray-300 bg-gray-50 px-1">w</kbd>
+				</button>
+				<button
+					onclick={() => {
 						showDiaryForm = !showDiaryForm;
 						showBeliefForm = false;
+						showWinsForm = false;
 					}}
 					class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50"
 				>
@@ -193,12 +224,60 @@
 			</form>
 		{/if}
 
+		{#if showWinsForm}
+			<form
+				method="post"
+				action="?/createWins"
+				use:enhance={() => {
+					return async ({ update }) => {
+						await update();
+						showWinsForm = false;
+					};
+				}}
+				class="mb-4 space-y-3 border border-gray-100 bg-gray-50 p-3"
+			>
+				<div class="flex items-center justify-between">
+					<span class="text-sm font-medium text-gray-700">3 Wins</span>
+					<input
+						name="forDate"
+						type="date"
+						value={new Date().toISOString().slice(0, 10)}
+						class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					/>
+				</div>
+				<input
+					name="win_0"
+					type="text"
+					placeholder="Win 1"
+					class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+				/>
+				<input
+					name="win_1"
+					type="text"
+					placeholder="Win 2"
+					class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+				/>
+				<input
+					name="win_2"
+					type="text"
+					placeholder="Win 3"
+					class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+				/>
+				<button
+					type="submit"
+					class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800"
+				>
+					Save Wins
+				</button>
+			</form>
+		{/if}
+
 		{#if data.lastEntry}
 			<div>
 				<p class="text-sm leading-relaxed text-gray-700">{truncate(data.lastEntry.content, 300)}</p>
 				<div class="mt-2 flex items-center gap-2">
 					<span class="text-xs text-gray-400">{formatDate(data.lastEntry.createdAt)}</span>
-					{#each data.lastEntry.tags as tag}
+					{#each data.lastEntry.tags as tag (tag.id)}
 						<span class="border border-gray-200 px-1.5 py-0.5 text-xs text-gray-500"
 							>{tag.name}</span
 						>
@@ -222,7 +301,7 @@
 			<p class="text-sm text-gray-400">Nothing to buy.</p>
 		{:else}
 			<div class="space-y-1">
-				{#each data.shoppingToBuy.slice(0, 8) as item}
+				{#each data.shoppingToBuy.slice(0, 8) as item (item.id)}
 					<div class="flex items-center gap-2">
 						<span class="text-sm text-gray-700">{item.name}</span>
 						<span
@@ -299,6 +378,7 @@
 					onclick={() => {
 						showBeliefForm = true;
 						showDiaryForm = false;
+						showWinsForm = false;
 					}}
 					class="w-full border border-dashed border-gray-300 px-3 py-3 text-sm text-gray-400 transition hover:border-gray-400 hover:text-gray-600"
 				>
@@ -306,7 +386,7 @@
 				</button>
 				{#if data.recentBeliefs.length > 0}
 					<div class="mt-3 space-y-2">
-						{#each data.recentBeliefs as belief}
+						{#each data.recentBeliefs as belief (belief.id)}
 							<div class="flex items-start gap-2">
 								{#if belief.valence === 'positive'}
 									<span class="mt-0.5 text-xs text-green-500">+</span>

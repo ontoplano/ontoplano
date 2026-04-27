@@ -260,7 +260,15 @@
 			}}
 			class="space-y-3 border border-gray-200 bg-white p-4 shadow-sm"
 		>
-			<span class="text-sm font-medium text-gray-700">Today's Wins</span>
+			<div class="flex items-center justify-between">
+				<span class="text-sm font-medium text-gray-700">Wins</span>
+				<input
+					name="forDate"
+					type="date"
+					value={new Date().toISOString().slice(0, 10)}
+					class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+				/>
+			</div>
 			{#each { length: winInputCount } as _, i}
 				<input
 					name="win_{i}"
@@ -450,6 +458,9 @@
 					</div>
 					<div class="flex items-center gap-2">
 						<span class="text-xs text-gray-400">{formatDate(entry.createdAt)}</span>
+						{#if entry.forDate}
+							<span class="text-xs font-medium text-amber-600">for {entry.forDate}</span>
+						{/if}
 						{#if entry.updatedAt !== entry.createdAt}
 							<br /><span class="text-xs text-gray-400">
 								Edited: {formatDate(entry.updatedAt)}</span

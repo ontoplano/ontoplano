@@ -11,7 +11,7 @@ import {
 	habitOccurrences,
 	shoppingItems
 } from '$lib/server/db/schema';
-import { eq, and, gte, lt, desc } from 'drizzle-orm';
+import { eq, and, gte, lt, desc, max } from 'drizzle-orm';
 import { generateCurrentWeek, toLocalISOString } from '$lib/server/week-generator';
 import { parseTags, ensureTagIds, linkDiaryTags } from '$lib/server/tags';
 
@@ -180,7 +180,15 @@ export const actions: Actions = {
 
 		if (!content) return fail(400, { message: 'Content is required' });
 
-		const result = db.insert(diaryEntries).values({ userId, content }).run();
+		const maxSeq =
+			db
+				.select({ value: max(diaryEntries.seq) })
+				.from(diaryEntries)
+				.where(eq(diaryEntries.userId, userId))
+				.get()?.value ?? 0;
+		const seq = maxSeq + 1;
+
+		const result = db.insert(diaryEntries).values({ userId, content, seq }).run();
 		const entryId = Number(result.lastInsertRowid);
 
 		const tagNames = parseTags(tagsStr);
@@ -188,6 +196,42 @@ export const actions: Actions = {
 			const tagIds = ensureTagIds(tagNames, userId);
 			linkDiaryTags(entryId, tagIds);
 		}
+
+		return { success: true };
+	},
+
+	createWins: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const forDate = formData.get('forDate')?.toString()?.trim() || todayStr();
+
+		const wins: string[] = [];
+		for (let i = 0; ; i++) {
+			const val = formData.get(`win_${i}`)?.toString()?.trim();
+			if (val === undefined || val === null) break;
+			if (val) wins.push(val);
+		}
+
+		if (wins.length === 0) return fail(400, { message: 'At least one win is required' });
+
+		const content = wins.map((w, i) => `Win ${i + 1}: ${w}`).join('\n');
+
+		const maxSeq =
+			db
+				.select({ value: max(diaryEntries.seq) })
+				.from(diaryEntries)
+				.where(eq(diaryEntries.userId, userId))
+				.get()?.value ?? 0;
+		const seq = maxSeq + 1;
+
+		const result = db
+			.insert(diaryEntries)
+			.values({ userId, content, seq, forDate })
+			.run();
+		const entryId = Number(result.lastInsertRowid);
+
+		const tagIds = ensureTagIds(['3w'], userId);
+		linkDiaryTags(entryId, tagIds);
 
 		return { success: true };
 	},
