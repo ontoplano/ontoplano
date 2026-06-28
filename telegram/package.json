@@ -15,6 +15,7 @@
 	"devDependencies": {
 		"@types/better-sqlite3": "link:../node_modules/@types/better-sqlite3",
 		"@types/node": "link:../node_modules/@types/node",
+		"dotenv-cli": "^11.0.0",
 		"typescript": "link:../node_modules/typescript"
 	}
 }
