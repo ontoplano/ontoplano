@@ -507,4 +507,44 @@ export const graphViews = sqliteTable(
 	(table) => [index('graph_views_user_idx').on(table.userId)]
 );
 
+// --- Ideas ---
+
+export const ideas = sqliteTable(
+	'ideas',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		content: text('content').notNull(),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('ideas_user_idx').on(table.userId),
+		index('ideas_created_idx').on(table.createdAt)
+	]
+);
+
+export const ideaTags = sqliteTable(
+	'idea_tags',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		ideaId: integer('idea_id')
+			.notNull()
+			.references(() => ideas.id, { onDelete: 'cascade' }),
+		tagId: integer('tag_id')
+			.notNull()
+			.references(() => tags.id, { onDelete: 'cascade' })
+	},
+	(table) => [
+		index('idea_tags_idea_idx').on(table.ideaId),
+		index('idea_tags_tag_idx').on(table.tagId)
+	]
+);
+
 export * from './auth.schema.js';

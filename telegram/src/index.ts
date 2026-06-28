@@ -3,6 +3,7 @@ import { registerListCommands } from './commands/list.js';
 import { registerPlanCommand } from './commands/plan.js';
 import { registerTodoCommand } from './commands/todo.js';
 import { registerDiaryCommand } from './commands/diary.js';
+import { registerIdeiaCommand } from './commands/ideia.js';
 
 const ALLOWED_USER = 123456789;
 const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -22,6 +23,7 @@ registerListCommands(bot);
 registerPlanCommand(bot);
 registerTodoCommand(bot);
 registerDiaryCommand(bot);
+registerIdeiaCommand(bot);
 
 bot.catch((error) => {
 	const { ctx } = error;

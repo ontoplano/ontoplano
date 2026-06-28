@@ -1,5 +1,5 @@
 import { db } from '$lib/server/db';
-import { tags, diaryEntryTags, beliefTags } from '$lib/server/db/schema';
+import { tags, diaryEntryTags, beliefTags, ideaTags } from '$lib/server/db/schema';
 import { eq, and, notInArray } from 'drizzle-orm';
 
 /**
@@ -62,7 +62,15 @@ export function cleanupOrphanTags(userId: string): void {
 		.all()
 		.map((r) => r.tagId);
 
-	const referencedIds = [...new Set([...diaryRefIds, ...beliefRefIds])];
+	const ideaRefIds = db
+		.select({ tagId: ideaTags.tagId })
+		.from(ideaTags)
+		.innerJoin(tags, eq(ideaTags.tagId, tags.id))
+		.where(eq(tags.userId, userId))
+		.all()
+		.map((r) => r.tagId);
+
+	const referencedIds = [...new Set([...diaryRefIds, ...beliefRefIds, ...ideaRefIds])];
 
 	if (referencedIds.length === 0) {
 		db.delete(tags).where(eq(tags.userId, userId)).run();
@@ -70,5 +78,19 @@ export function cleanupOrphanTags(userId: string): void {
 		db.delete(tags)
 			.where(and(eq(tags.userId, userId), notInArray(tags.id, referencedIds)))
 			.run();
+	}
+}
+
+export function linkIdeaTags(ideaId: number, tagIds: number[]): void {
+	for (const tagId of tagIds) {
+		db.insert(ideaTags).values({ ideaId, tagId }).run();
+	}
+}
+
+export function replaceIdeaTags(ideaId: number, tagNames: string[], userId: string): void {
+	db.delete(ideaTags).where(eq(ideaTags.ideaId, ideaId)).run();
+	if (tagNames.length > 0) {
+		const tagIds = ensureTagIds(tagNames, userId);
+		linkIdeaTags(ideaId, tagIds);
 	}
 }

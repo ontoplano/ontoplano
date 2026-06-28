@@ -22,6 +22,7 @@
 		{ href: '/', label: 'Home' },
 		{ href: '/planner/track', label: 'Planner' },
 		{ href: '/diary', label: 'Diary' },
+		{ href: '/ideas', label: 'Ideas' },
 		{ href: '/health/habits', label: 'Health' },
 		{ href: '/beliefs', label: 'Beliefs' },
 		{ href: '/shopping', label: 'Shopping' }
