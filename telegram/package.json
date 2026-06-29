@@ -4,7 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"start": "node --import=tsx src/index.ts",
-		"dev": "node --import=tsx --watch src/index.ts"
+		"dev": "dotenv -e ../.env -- node --import=tsx --watch src/index.ts"
 	},
 	"dependencies": {
 		"better-sqlite3": "link:../node_modules/better-sqlite3",
