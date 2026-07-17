@@ -4,6 +4,7 @@
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types.js';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
+	import { autofocus } from '$lib/actions/autofocus.js';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -27,15 +28,19 @@
 	let copyTargetDays: Set<number> = $state(new Set());
 	let confirmingDelete: string | null = $state(null);
 	let confirmingBulkDelete = $state(false);
+	let schemesExpanded = $state(false);
+	let newSchemeName = $state('');
+	let confirmingLoadSchemeId: number | null = $state(null);
+	let confirmingDeleteSchemeId: number | null = $state(null);
+	let confirmingClearAll = $state(false);
 
 	let timeInput: HTMLInputElement | undefined = $state(undefined);
 
 	type Slot = (typeof data.slots)[number];
 
 	function selectedDateStr(): string {
-		const monday = new Date(data.weekMeta.monday + 'T00:00:00');
-		const d = new Date(monday);
-		d.setDate(d.getDate() + selectedDay);
+		const monday = new Date(`${data.weekMeta.monday}T00:00:00`);
+		const d = new Date(monday.getTime() + selectedDay * 24 * 60 * 60 * 1000);
 		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 	}
 
@@ -85,7 +90,7 @@
 	}
 
 	function formatWeekDate(dateStr: string): string {
-		const d = new Date(dateStr + 'T00:00:00');
+		const d = new Date(`${dateStr}T00:00:00`);
 		return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 	}
 
@@ -400,6 +405,201 @@
 			{form.message}
 		</div>
 	{/if}
+
+	<div class="border border-gray-200 bg-white shadow-sm">
+		<button
+			type="button"
+			onclick={() => {
+				schemesExpanded = !schemesExpanded;
+				if (!schemesExpanded) {
+					confirmingLoadSchemeId = null;
+					confirmingDeleteSchemeId = null;
+					confirmingClearAll = false;
+				}
+			}}
+			class="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium text-gray-900 hover:bg-gray-50"
+		>
+			<span>Schemes</span>
+			<span class="text-xs text-gray-500">{schemesExpanded ? 'Hide' : 'Show'}</span>
+		</button>
+
+		{#if schemesExpanded}
+			<div class="space-y-4 border-t border-gray-200 px-4 py-4">
+				<form
+					method="post"
+					action="?/saveScheme"
+					use:enhance={() => {
+						return async ({ result, update }) => {
+							await update();
+							if (result.type === 'success') {
+								newSchemeName = '';
+							}
+						};
+					}}
+					class="space-y-2"
+				>
+					<div class="text-sm font-medium text-gray-900">Save current plan as scheme</div>
+					<div class="flex gap-2">
+						<input
+							name="name"
+							type="text"
+							bind:value={newSchemeName}
+							placeholder="Scheme name"
+							required
+							use:autofocus
+							class="flex-1 border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+						/>
+						<button
+							type="submit"
+							class="bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800"
+						>
+							Save
+						</button>
+					</div>
+				</form>
+
+				<div class="border border-gray-200 bg-white shadow-sm">
+					<div class="border-b border-gray-200 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+						Saved schemes
+					</div>
+					{#if data.schemes.length === 0}
+						<div class="px-4 py-6 text-sm text-gray-500">No schemes saved yet.</div>
+					{:else}
+						<div class="divide-y divide-gray-200">
+							{#each data.schemes as scheme (scheme.id)}
+								<div class="flex items-center gap-4 px-4 py-3">
+									<form
+										method="post"
+										action="?/renameScheme"
+										use:enhance
+										class="min-w-0 flex-1"
+									>
+										<input type="hidden" name="schemeId" value={scheme.id} />
+										<div class="flex gap-2">
+											<input
+												name="name"
+												type="text"
+												value={scheme.name}
+												required
+												class="w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+											/>
+											<button
+												type="submit"
+												class="border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+											>
+												Rename
+											</button>
+										</div>
+									</form>
+									<div class="flex shrink-0 items-center gap-2">
+										<form
+											method="post"
+											action="?/loadScheme"
+											use:enhance={() => {
+												return async ({ update }) => {
+													await update();
+													confirmingLoadSchemeId = null;
+												};
+											}}
+										>
+											<input type="hidden" name="schemeId" value={scheme.id} />
+											{#if confirmingLoadSchemeId === scheme.id}
+												<button
+													type="submit"
+													class="border border-blue-200 bg-white px-3 py-2 text-sm text-blue-600 shadow-sm transition hover:bg-blue-50"
+												>
+													This will replace your current plan. Continue?
+												</button>
+											{:else}
+												<button
+													type="button"
+													onclick={() => {
+														confirmingLoadSchemeId = scheme.id;
+														confirmingDeleteSchemeId = null;
+														confirmingClearAll = false;
+													}}
+													class="border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+												>
+													Load
+												</button>
+											{/if}
+										</form>
+
+										{#if confirmingDeleteSchemeId === scheme.id}
+											<form
+												method="post"
+												action="?/deleteScheme"
+												use:enhance={() => {
+													return async ({ update }) => {
+														await update();
+														confirmingDeleteSchemeId = null;
+													};
+												}}
+											>
+												<input type="hidden" name="schemeId" value={scheme.id} />
+												<button
+													type="submit"
+													class="border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 shadow-sm transition hover:bg-red-100"
+												>
+													Confirm?
+												</button>
+											</form>
+										{:else}
+											<button
+												type="button"
+												onclick={() => {
+													confirmingDeleteSchemeId = scheme.id;
+													confirmingLoadSchemeId = null;
+													confirmingClearAll = false;
+												}}
+												class="border border-red-200 bg-white px-3 py-2 text-sm text-red-600 shadow-sm transition hover:bg-red-50"
+											>
+												Delete
+											</button>
+										{/if}
+									</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				</div>
+
+				<div class="border-t border-gray-200 pt-4">
+					{#if confirmingClearAll}
+						<form
+							method="post"
+							action="?/clearAll"
+							use:enhance={() => {
+								return async ({ update }) => {
+									await update();
+									confirmingClearAll = false;
+								};
+							}}
+						>
+							<button
+								type="submit"
+								class="border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 shadow-sm transition hover:bg-red-100"
+							>
+								Confirm clear all slots?
+							</button>
+						</form>
+					{:else}
+						<button
+							type="button"
+							onclick={() => {
+								confirmingClearAll = true;
+								confirmingLoadSchemeId = null;
+								confirmingDeleteSchemeId = null;
+							}}
+							class="border border-red-200 bg-white px-3 py-2 text-sm text-red-600 shadow-sm transition hover:bg-red-50"
+						>
+							Clear all slots
+						</button>
+					{/if}
+				</div>
+			</div>
+		{/if}
+	</div>
 
 	{#if showCopyPanel}
 		<div class="border border-gray-200 bg-white p-4 shadow-sm">

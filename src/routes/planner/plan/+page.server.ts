@@ -7,7 +7,9 @@ import {
 	categories,
 	taskInstances,
 	suppressedSlots,
-	exceptionalSlots
+	exceptionalSlots,
+	planningSchemes,
+	schemeSlots
 } from '$lib/server/db/schema';
 import { eq, and, inArray, gte, lt } from 'drizzle-orm';
 import {
@@ -32,6 +34,28 @@ function parseWeekParam(param: string | null): Date {
 
 function formatDate(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function clearWeeklyPlan(userId: string) {
+	db.transaction((tx) => {
+		const userSlots = tx
+			.select({ id: weeklySlots.id })
+			.from(weeklySlots)
+			.where(eq(weeklySlots.userId, userId))
+			.all();
+		const slotIds = userSlots.map((slot) => slot.id);
+
+		if (slotIds.length > 0) {
+			tx.delete(taskInstances)
+				.where(and(inArray(taskInstances.slotId, slotIds), eq(taskInstances.userId, userId)))
+				.run();
+			tx.delete(suppressedSlots)
+				.where(and(inArray(suppressedSlots.slotId, slotIds), eq(suppressedSlots.userId, userId)))
+				.run();
+		}
+
+		tx.delete(weeklySlots).where(eq(weeklySlots.userId, userId)).run();
+	});
 }
 
 export const load: PageServerLoad = async (event) => {
@@ -69,6 +93,13 @@ export const load: PageServerLoad = async (event) => {
 		.from(activities)
 		.where(and(eq(activities.active, true), eq(activities.userId, userId)))
 		.orderBy(activities.name)
+		.all();
+
+	const schemes = db
+		.select({ id: planningSchemes.id, name: planningSchemes.name })
+		.from(planningSchemes)
+		.where(eq(planningSchemes.userId, userId))
+		.orderBy(planningSchemes.name)
 		.all();
 
 	const slots = db
@@ -137,6 +168,7 @@ export const load: PageServerLoad = async (event) => {
 		weekMeta,
 		categories: allCategories,
 		activities: allActivities,
+		schemes,
 		weekdays: WEEKDAYS,
 		today,
 		todayDayIndex,
@@ -332,6 +364,170 @@ export const actions: Actions = {
 					.run();
 			}
 		}
+
+		return { success: true };
+	},
+
+	clearAll: async ({ locals }) => {
+		const userId = locals.user!.id;
+		clearWeeklyPlan(userId);
+
+		return { success: true };
+	},
+
+	saveScheme: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const name = formData.get('name')?.toString().trim() ?? '';
+
+		if (!name) return fail(400, { message: 'Scheme name is required' });
+
+		const existingScheme = db
+			.select({ id: planningSchemes.id })
+			.from(planningSchemes)
+			.where(and(eq(planningSchemes.userId, userId), eq(planningSchemes.name, name)))
+			.get();
+		if (existingScheme) return fail(400, { message: 'A scheme with this name already exists' });
+
+		db.transaction((tx) => {
+			const schemeInsert = tx.insert(planningSchemes).values({ userId, name }).run();
+			const schemeId = Number(schemeInsert.lastInsertRowid);
+			const slots = tx.select().from(weeklySlots).where(eq(weeklySlots.userId, userId)).all();
+
+			if (slots.length > 0) {
+				tx.insert(schemeSlots)
+					.values(
+						slots.map((slot) => ({
+							schemeId,
+							weekday: slot.weekday,
+							startTime: slot.startTime,
+							durationMinutes: slot.durationMinutes,
+							mode: slot.mode,
+							categoryId: slot.categoryId,
+							activityId: slot.activityId,
+							label: slot.label,
+							active: slot.active
+						}))
+					)
+					.run();
+			}
+		});
+
+		return { success: true };
+	},
+
+	loadScheme: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const schemeId = Number(formData.get('schemeId'));
+
+		if (!schemeId) return fail(400, { message: 'Missing scheme id' });
+
+		const scheme = db
+			.select({ id: planningSchemes.id })
+			.from(planningSchemes)
+			.where(and(eq(planningSchemes.id, schemeId), eq(planningSchemes.userId, userId)))
+			.get();
+		if (!scheme) return fail(404, { message: 'Scheme not found' });
+
+		db.transaction((tx) => {
+			const userSlots = tx
+				.select({ id: weeklySlots.id })
+				.from(weeklySlots)
+				.where(eq(weeklySlots.userId, userId))
+				.all();
+			const slotIds = userSlots.map((slot) => slot.id);
+
+			if (slotIds.length > 0) {
+				tx.delete(taskInstances)
+					.where(and(inArray(taskInstances.slotId, slotIds), eq(taskInstances.userId, userId)))
+					.run();
+				tx.delete(suppressedSlots)
+					.where(and(inArray(suppressedSlots.slotId, slotIds), eq(suppressedSlots.userId, userId)))
+					.run();
+			}
+
+			tx.delete(weeklySlots).where(eq(weeklySlots.userId, userId)).run();
+
+			const slots = tx
+				.select()
+				.from(schemeSlots)
+				.where(eq(schemeSlots.schemeId, schemeId))
+				.orderBy(schemeSlots.weekday, schemeSlots.startTime)
+				.all();
+
+			if (slots.length > 0) {
+				tx.insert(weeklySlots)
+					.values(
+						slots.map((slot) => ({
+							userId,
+							weekday: slot.weekday,
+							startTime: slot.startTime,
+							durationMinutes: slot.durationMinutes,
+							mode: slot.mode,
+							categoryId: slot.categoryId,
+							activityId: slot.activityId,
+							label: slot.label,
+							active: slot.active
+						}))
+					)
+					.run();
+			}
+		});
+
+		return { success: true };
+	},
+
+	deleteScheme: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const schemeId = Number(formData.get('schemeId'));
+
+		if (!schemeId) return fail(400, { message: 'Missing scheme id' });
+
+		const scheme = db
+			.select({ id: planningSchemes.id })
+			.from(planningSchemes)
+			.where(and(eq(planningSchemes.id, schemeId), eq(planningSchemes.userId, userId)))
+			.get();
+		if (!scheme) return fail(404, { message: 'Scheme not found' });
+
+		db.delete(planningSchemes)
+			.where(and(eq(planningSchemes.id, schemeId), eq(planningSchemes.userId, userId)))
+			.run();
+
+		return { success: true };
+	},
+
+	renameScheme: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const schemeId = Number(formData.get('schemeId'));
+		const name = formData.get('name')?.toString().trim() ?? '';
+
+		if (!schemeId) return fail(400, { message: 'Missing scheme id' });
+		if (!name) return fail(400, { message: 'Scheme name is required' });
+
+		const scheme = db
+			.select({ id: planningSchemes.id })
+			.from(planningSchemes)
+			.where(and(eq(planningSchemes.id, schemeId), eq(planningSchemes.userId, userId)))
+			.get();
+		if (!scheme) return fail(404, { message: 'Scheme not found' });
+
+		const duplicate = db
+			.select({ id: planningSchemes.id })
+			.from(planningSchemes)
+			.where(and(eq(planningSchemes.userId, userId), eq(planningSchemes.name, name)))
+			.get();
+		if (duplicate && duplicate.id !== schemeId) {
+			return fail(400, { message: 'A scheme with this name already exists' });
+		}
+
+		db.update(planningSchemes)
+			.set({ name, updatedAt: toLocalISOString(new Date()) })
+			.where(and(eq(planningSchemes.id, schemeId), eq(planningSchemes.userId, userId)))
+			.run();
 
 		return { success: true };
 	},
