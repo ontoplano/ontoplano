@@ -3,6 +3,7 @@ import type { LayoutServerLoad } from './$types';
 import { loadConfig } from '$lib/server/config';
 import { db } from '$lib/server/db';
 import { categories } from '$lib/server/db/schema';
+import { getFeatureFlags } from '$lib/server/settings';
 import { eq } from 'drizzle-orm';
 
 export const load: LayoutServerLoad = async (event) => {
@@ -17,6 +18,7 @@ export const load: LayoutServerLoad = async (event) => {
 	const config = loadConfig();
 
 	let userCategories: { id: number; name: string; color: string; colorLight: string }[] = [];
+	let features: Record<string, boolean> = {};
 	if (event.locals.user) {
 		userCategories = db
 			.select({
@@ -28,11 +30,13 @@ export const load: LayoutServerLoad = async (event) => {
 			.from(categories)
 			.where(eq(categories.userId, event.locals.user.id))
 			.all();
+		features = getFeatureFlags(event.locals.user.id);
 	}
 
 	return {
 		user: event.locals.user ?? null,
 		categories: userCategories,
+		features,
 		config: {
 			week: config.week
 		}

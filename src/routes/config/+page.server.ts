@@ -1,10 +1,14 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { loadConfig, saveConfig, DB_PATH } from '$lib/server/config';
+import { FEATURE_DEFAULTS, getFeatureFlags, setUserSetting } from '$lib/server/settings';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
 	const config = loadConfig();
-	return { config };
+	return {
+		config,
+		features: getFeatureFlags(locals.user!.id)
+	};
 };
 
 export const actions: Actions = {
@@ -28,6 +32,20 @@ export const actions: Actions = {
 			week: { firstDay, generateDay }
 		});
 
-		return { success: true };
+		return { success: true, action: 'save' };
+	},
+
+	toggleFeature: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const key = formData.get('key')?.toString();
+
+		if (!key || !(key in FEATURE_DEFAULTS)) {
+			return fail(400, { message: 'Invalid feature key' });
+		}
+
+		const currentFlags = getFeatureFlags(locals.user!.id);
+		setUserSetting(locals.user!.id, key, String(!currentFlags[key]));
+
+		return { success: true, action: 'toggleFeature' };
 	}
 };
