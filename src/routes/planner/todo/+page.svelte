@@ -10,7 +10,6 @@
 	let showCompleted = $state(false);
 	let selectedIndex = $state(0);
 	let delegatingId: number | null = $state(null);
-	let delegateMode: 'category' | 'activity' = $state('activity');
 	let confirmingDelete: number | null = $state(null);
 
 	type Todo = (typeof data.todos)[number];
@@ -31,7 +30,6 @@
 
 	function startDelegate(todo: Todo) {
 		delegatingId = todo.id;
-		delegateMode = 'activity';
 	}
 
 	function formatDate(d: Date): string {
@@ -268,47 +266,19 @@
 						/>
 					</label>
 				</div>
-				<div class="flex gap-3">
-					<label class="w-36">
-						<span class="text-sm font-medium text-gray-700">Mode</span>
-						<select
-							name="mode"
-							required
-							bind:value={delegateMode}
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						>
-							<option value="activity">Activity</option>
-							<option value="category">Category</option>
-						</select>
-					</label>
-					{#if delegateMode === 'category'}
-						<label class="flex-1">
-							<span class="text-sm font-medium text-gray-700">Category</span>
-							<select
-								name="categoryId"
-								required
-								class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-							>
-								{#each data.categories as cat (cat.id)}
-									<option value={cat.id}>{cat.name}</option>
-								{/each}
-							</select>
-						</label>
-					{:else}
-						<label class="flex-1">
-							<span class="text-sm font-medium text-gray-700">Activity</span>
-							<select
-								name="activityId"
-								required
-								class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-							>
-								{#each data.activities as act (act.id)}
-									<option value={act.id}>{act.name}</option>
-								{/each}
-							</select>
-						</label>
-					{/if}
-				</div>
+				<input type="hidden" name="mode" value="category" />
+				<label class="flex-1">
+					<span class="text-sm font-medium text-gray-700">Category</span>
+					<select
+						name="categoryId"
+						required
+						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					>
+						{#each data.categories as cat (cat.id)}
+							<option value={cat.id}>{cat.name}</option>
+						{/each}
+					</select>
+				</label>
 				<div class="flex gap-2">
 					<button
 						type="submit"
