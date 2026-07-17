@@ -12,6 +12,7 @@
 	let filterTag: string | null = $state(null);
 	let confirmingDeleteId: number | null = $state(null);
 	let winInputCount = $state(3);
+	const winsEnabled = $derived(Boolean(data.features?.['feature.threeWins']));
 
 	// Tooltip state for #N references
 	let tooltip = $state<{ visible: boolean; x: number; y: number; content: string; date: string }>({
@@ -173,17 +174,19 @@
 	<div class="flex items-center justify-between">
 		<h1 class="text-lg font-bold text-gray-900">Diary</h1>
 		<div class="flex items-center gap-2">
-			<button
-				onclick={() => {
-					showWinsForm = !showWinsForm;
-					showForm = false;
-					editingId = null;
-					winInputCount = 3;
-				}}
-				class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-			>
-				{showWinsForm ? 'Cancel' : 'New Wins'}
-			</button>
+			{#if winsEnabled}
+				<button
+					onclick={() => {
+						showWinsForm = !showWinsForm;
+						showForm = false;
+						editingId = null;
+						winInputCount = 3;
+					}}
+					class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+				>
+					{showWinsForm ? 'Cancel' : 'New Wins'}
+				</button>
+			{/if}
 			<button
 				onclick={() => {
 					showForm = !showForm;
@@ -237,7 +240,7 @@
 		</div>
 	{/if}
 
-	{#if showWinsForm}
+	{#if winsEnabled && showWinsForm}
 		<form
 			method="post"
 			action="?/createWins"
@@ -372,7 +375,7 @@
 			{/if}
 		</div>
 	{:else}
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
 		<div
 			class="space-y-3"
 			onpointerover={handleEntriesPointerOver}
