@@ -507,6 +507,64 @@ export const graphViews = sqliteTable(
 	(table) => [index('graph_views_user_idx').on(table.userId)]
 );
 
+// --- Planning Schemes ---
+
+export const planningSchemes = sqliteTable(
+	'planning_schemes',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull(),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('schemes_user_idx').on(table.userId),
+		uniqueIndex('schemes_user_name_unique').on(table.userId, table.name)
+	]
+);
+
+export const schemeSlots = sqliteTable(
+	'scheme_slots',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		schemeId: integer('scheme_id')
+			.notNull()
+			.references(() => planningSchemes.id, { onDelete: 'cascade' }),
+		weekday: integer('weekday').notNull(),
+		startTime: text('start_time').notNull(),
+		durationMinutes: integer('duration_minutes').notNull().default(60),
+		mode: text('mode', { enum: ['category', 'activity'] }).notNull(),
+		categoryId: integer('category_id').references(() => categories.id),
+		activityId: integer('activity_id').references(() => activities.id),
+		label: text('label').default(''),
+		active: integer('active', { mode: 'boolean' }).notNull().default(true)
+	},
+	(table) => [index('scheme_slots_scheme_idx').on(table.schemeId)]
+);
+
+export const userSettings = sqliteTable(
+	'user_settings',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		key: text('key').notNull(),
+		value: text('value').notNull()
+	},
+	(table) => [
+		uniqueIndex('user_settings_user_key_unique').on(table.userId, table.key),
+		index('user_settings_user_idx').on(table.userId)
+	]
+);
+
 // --- Ideas ---
 
 export const ideas = sqliteTable(
