@@ -517,6 +517,9 @@ export const ideas = sqliteTable(
 			.notNull()
 			.references(() => user.id),
 		content: text('content').notNull(),
+		isApplied: integer('is_applied', { mode: 'boolean' }).notNull().default(false),
+		appliedNote: text('applied_note'),
+		favorite: integer('favorite', { mode: 'boolean' }).notNull().default(false),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),

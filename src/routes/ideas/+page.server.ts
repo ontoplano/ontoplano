@@ -18,6 +18,9 @@ export const load: PageServerLoad = async (event) => {
 		.select({
 			id: ideas.id,
 			content: ideas.content,
+			isApplied: ideas.isApplied,
+			appliedNote: ideas.appliedNote,
+			favorite: ideas.favorite,
 			createdAt: ideas.createdAt,
 			updatedAt: ideas.updatedAt
 		})
@@ -101,6 +104,84 @@ export const actions: Actions = {
 			.run();
 
 		cleanupOrphanTags(userId);
+
+		return { success: true };
+	},
+
+	toggleApplied: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const appliedNote = formData.get('appliedNote')?.toString().trim() || null;
+
+		if (!id) return fail(400, { message: 'Missing id' });
+
+		const existing = db
+			.select({ id: ideas.id, isApplied: ideas.isApplied })
+			.from(ideas)
+			.where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
+			.get();
+
+		if (!existing) return fail(404, { message: 'Idea not found' });
+
+		const nextIsApplied = !existing.isApplied;
+
+		db.update(ideas)
+			.set({
+				isApplied: nextIsApplied,
+				appliedNote: nextIsApplied ? appliedNote : null,
+				updatedAt: toLocalISOString(new Date())
+			})
+			.where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
+			.run();
+
+		return { success: true };
+	},
+
+	updateAppliedNote: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const appliedNote = formData.get('appliedNote')?.toString().trim() || null;
+
+		if (!id) return fail(400, { message: 'Missing id' });
+
+		const existing = db
+			.select({ id: ideas.id, isApplied: ideas.isApplied })
+			.from(ideas)
+			.where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
+			.get();
+
+		if (!existing) return fail(404, { message: 'Idea not found' });
+		if (!existing.isApplied) return fail(400, { message: 'Idea is not marked as applied' });
+
+		db.update(ideas)
+			.set({ appliedNote, updatedAt: toLocalISOString(new Date()) })
+			.where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
+			.run();
+
+		return { success: true };
+	},
+
+	toggleFavorite: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+
+		if (!id) return fail(400, { message: 'Missing id' });
+
+		const existing = db
+			.select({ id: ideas.id, favorite: ideas.favorite })
+			.from(ideas)
+			.where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
+			.get();
+
+		if (!existing) return fail(404, { message: 'Idea not found' });
+
+		db.update(ideas)
+			.set({ favorite: !existing.favorite, updatedAt: toLocalISOString(new Date()) })
+			.where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
+			.run();
 
 		return { success: true };
 	}
