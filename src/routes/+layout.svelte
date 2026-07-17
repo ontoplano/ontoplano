@@ -5,6 +5,7 @@
 	import { goto } from '$app/navigation';
 	import type { LayoutServerData } from './$types';
 	import { NAV_LINK, NAV_LINK_ACTIVE, NAV_USER_TEXT, NAV_DROPDOWN_ITEM } from '$lib/colors.js';
+	import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
 
 	let { children, data }: { children: any; data: LayoutServerData } = $props();
 	let menuOpen = $state(false);
@@ -133,6 +134,7 @@
 		<main class="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
 			{@render children()}
 		</main>
+		<ShortcutHelp />
 	</div>
 {:else}
 	{@render children()}

@@ -305,16 +305,6 @@
 		</button>
 	</div>
 
-	<div class="text-xs text-gray-400">
-		<kbd class="border border-gray-300 bg-gray-50 px-1">j</kbd>/<kbd
-			class="border border-gray-300 bg-gray-50 px-1">k</kbd
-		>
-		navigate &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">n</kbd> new &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">Enter</kbd> expand &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">Esc</kbd> close
-	</div>
-
 	{#if form?.message}
 		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
 			{form.message}

@@ -383,30 +383,6 @@
 		</div>
 	</div>
 
-	<div class="text-xs text-gray-400">
-		<kbd class="border border-gray-300 bg-gray-50 px-1">h</kbd>/<kbd
-			class="border border-gray-300 bg-gray-50 px-1">l</kbd
-		>
-		switch day &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">j</kbd>/<kbd
-			class="border border-gray-300 bg-gray-50 px-1">k</kbd
-		>
-		navigate &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">[</kbd>/<kbd
-			class="border border-gray-300 bg-gray-50 px-1">]</kbd
-		>
-		prev/next week &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">c</kbd> done
-		<kbd class="border border-gray-300 bg-gray-50 px-1">d</kbd> delayed
-		<kbd class="border border-gray-300 bg-gray-50 px-1">e</kbd> early
-		<kbd class="border border-gray-300 bg-gray-50 px-1">s</kbd> skip
-		<kbd class="border border-gray-300 bg-gray-50 px-1">r</kbd> reset &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">t</kbd> time
-		<kbd class="border border-gray-300 bg-gray-50 px-1">D</kbd> duration
-		<kbd class="border border-gray-300 bg-gray-50 px-1">a</kbd> activity
-		<kbd class="border border-gray-300 bg-gray-50 px-1">x</kbd> delete
-	</div>
-
 	<div class="flex gap-1">
 		{#each data.weekdays as day, i (i)}
 			{@const count = data.taskCountByDay[i] ?? 0}

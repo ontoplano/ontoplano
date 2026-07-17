@@ -395,35 +395,6 @@
 		{formatWeekDate(data.weekMeta.monday)} &mdash; {formatWeekDate(data.weekMeta.sunday)}
 	</div>
 
-	<div class="text-xs text-gray-400">
-		<kbd class="border border-gray-300 bg-gray-50 px-1">h</kbd>/<kbd
-			class="border border-gray-300 bg-gray-50 px-1">l</kbd
-		>
-		switch day &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">j</kbd>/<kbd
-			class="border border-gray-300 bg-gray-50 px-1">k</kbd
-		>
-		navigate &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">[</kbd>/<kbd
-			class="border border-gray-300 bg-gray-50 px-1">]</kbd
-		>
-		prev/next week &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">e</kbd> edit &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">d</kbd> disable &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">D</kbd> delete &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">n</kbd> new &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">N</kbd> exception &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">Esc</kbd> close form
-		{#if !multiselect}
-			&middot; <kbd class="border border-gray-300 bg-gray-50 px-1">v</kbd> multiselect
-		{:else}
-			&middot; <kbd class="border border-gray-300 bg-gray-50 px-1">Space</kbd> select &middot;
-			<kbd class="border border-gray-300 bg-gray-50 px-1">x</kbd> delete &middot;
-			<kbd class="border border-gray-300 bg-gray-50 px-1">p</kbd> copy &middot;
-			<kbd class="border border-gray-300 bg-gray-50 px-1">Esc</kbd> cancel
-		{/if}
-	</div>
-
 	{#if form?.message}
 		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
 			{form.message}

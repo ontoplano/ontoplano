@@ -153,21 +153,6 @@
 		</div>
 	{/if}
 
-	<div class="text-xs text-gray-400">
-		<kbd class="border border-gray-300 bg-gray-50 px-1">h</kbd>/<kbd
-			class="border border-gray-300 bg-gray-50 px-1">l</kbd
-		>
-		switch day &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">j</kbd>/<kbd
-			class="border border-gray-300 bg-gray-50 px-1">k</kbd
-		>
-		navigate &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">[</kbd>/<kbd
-			class="border border-gray-300 bg-gray-50 px-1">]</kbd
-		>
-		prev/next week
-	</div>
-
 	<div class="flex gap-1">
 		{#each data.weekdays as day, i (i)}
 			{@const count = instancesForDay(i).length}
