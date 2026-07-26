@@ -1,21 +1,21 @@
 services:
-  semotina:
+  ontoplano:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: semotina
+    container_name: ontoplano
     restart: unless-stopped
     ports:
       - '${PORT:-1493}:1493'
     volumes:
-      - semotina-data:/data
+      - ontoplano-data:/data
     environment:
-      - DATABASE_URL=/data/semotina.db
+      - DATABASE_URL=/data/ontoplano.db
       - ORIGIN=${ORIGIN:-http://localhost:1493}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}
       - HOST=0.0.0.0
       - PORT=1493
 
 volumes:
-  semotina-data:
+  ontoplano-data:
     driver: local

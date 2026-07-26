@@ -8,7 +8,7 @@
 
 <div class="flex min-h-screen items-center justify-center bg-gray-50">
 	<div class="w-full max-w-sm border border-gray-200 bg-white p-8 shadow-sm">
-		<h1 class="mb-6 text-xl font-bold tracking-tight text-gray-900">semotina</h1>
+		<h1 class="mb-6 text-xl font-bold tracking-tight text-gray-900">ontoplano</h1>
 
 		{#if form?.message}
 			<div class="mb-4 border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

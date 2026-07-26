@@ -32,10 +32,10 @@ db-studio:
 	yarn db:studio
 
 db:
-	sqlite3 ~/.local/share/semotina/semotina.db
+	sqlite3 ~/.local/share/ontoplano/ontoplano.db
 
 bdb:
-	sqlitebrowser ~/.local/share/semotina/semotina.db &
+	sqlitebrowser ~/.local/share/ontoplano/ontoplano.db &
 
 db-setup: db-push db-seed
 
@@ -62,11 +62,11 @@ docker-down:
 	docker compose down
 
 logs:
-	journalctl --user -u semotina -f
+	journalctl --user -u ontoplano -f
 
 # ─── Systemd ─────────────────────────────────────────────────────────────────
 
-PROD_DIR = $(HOME)/.local/share/semotina/app
+PROD_DIR = $(HOME)/.local/share/ontoplano/app
 
 deploy: build
 	@echo "Deploying to $(PROD_DIR)..."
@@ -78,23 +78,23 @@ deploy: build
 	@echo "Deploy complete."
 
 update: deploy
-	@echo "Restarting semotina service..."
-	@systemctl --user restart semotina
-	@echo "Update complete. Check: systemctl --user status semotina"
+	@echo "Restarting ontoplano service..."
+	@systemctl --user restart ontoplano
+	@echo "Update complete. Check: systemctl --user status ontoplano"
 
 install-service: deploy
-	@echo "Installing semotina systemd service..."
+	@echo "Installing ontoplano systemd service..."
 	@mkdir -p ~/.config/systemd/user
-	@envsubst < semotina.service > ~/.config/systemd/user/semotina.service
+	@envsubst < ontoplano.service > ~/.config/systemd/user/ontoplano.service
 	@systemctl --user daemon-reload
-	@systemctl --user enable semotina
-	@systemctl --user start semotina
-	@echo "Service installed and started. Check: systemctl --user status semotina"
+	@systemctl --user enable ontoplano
+	@systemctl --user start ontoplano
+	@echo "Service installed and started. Check: systemctl --user status ontoplano"
 
 uninstall-service:
-	@systemctl --user stop semotina || true
-	@systemctl --user disable semotina || true
-	@rm -f ~/.config/systemd/user/semotina.service
+	@systemctl --user stop ontoplano || true
+	@systemctl --user disable ontoplano || true
+	@rm -f ~/.config/systemd/user/ontoplano.service
 	@systemctl --user daemon-reload
 	@echo "Service uninstalled."
 
@@ -107,21 +107,21 @@ telegram-dev:
 	cd telegram && yarn dev
 
 telegram-logs:
-	journalctl --user -u semotina-telegram -f
+	journalctl --user -u ontoplano-telegram -f
 
 install-telegram-service: telegram-install
-	@echo "Installing semotina-telegram systemd service..."
+	@echo "Installing ontoplano-telegram systemd service..."
 	@mkdir -p ~/.config/systemd/user
-	@envsubst < semotina-telegram.service > ~/.config/systemd/user/semotina-telegram.service
+	@envsubst < ontoplano-telegram.service > ~/.config/systemd/user/ontoplano-telegram.service
 	@systemctl --user daemon-reload
-	@systemctl --user enable semotina-telegram
-	@systemctl --user start semotina-telegram
-	@echo "Telegram bot service installed. Check: systemctl --user status semotina-telegram"
+	@systemctl --user enable ontoplano-telegram
+	@systemctl --user start ontoplano-telegram
+	@echo "Telegram bot service installed. Check: systemctl --user status ontoplano-telegram"
 
 uninstall-telegram-service:
-	@systemctl --user stop semotina-telegram || true
-	@systemctl --user disable semotina-telegram || true
-	@rm -f ~/.config/systemd/user/semotina-telegram.service
+	@systemctl --user stop ontoplano-telegram || true
+	@systemctl --user disable ontoplano-telegram || true
+	@rm -f ~/.config/systemd/user/ontoplano-telegram.service
 	@systemctl --user daemon-reload
 	@echo "Telegram bot service uninstalled."
 

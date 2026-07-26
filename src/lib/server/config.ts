@@ -3,10 +3,10 @@ import { join } from 'node:path';
 import { homedir } from 'node:os';
 
 const home = homedir();
-export const CONFIG_DIR = join(home, '.config', 'semotina');
-export const DATA_DIR = join(home, '.local', 'share', 'semotina');
+export const CONFIG_DIR = join(home, '.config', 'ontoplano');
+export const DATA_DIR = join(home, '.local', 'share', 'ontoplano');
 export const CONFIG_FILE = join(CONFIG_DIR, 'config.toml');
-export const DB_PATH = join(DATA_DIR, 'semotina.db');
+export const DB_PATH = join(DATA_DIR, 'ontoplano.db');
 
 function parseToml(content: string): Record<string, Record<string, string>> {
 	const result: Record<string, Record<string, string>> = {};

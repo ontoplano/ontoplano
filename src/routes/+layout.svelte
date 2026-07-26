@@ -81,7 +81,7 @@
 		<header class="border-b border-gray-200 bg-white shadow-sm">
 			<div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
 				<div class="flex items-center gap-6">
-					<a href="/" class="text-lg font-bold tracking-tight text-gray-900">semotina</a>
+					<a href="/" class="text-lg font-bold tracking-tight text-gray-900">ontoplano</a>
 					<nav class="flex gap-4">
 						{#each nav as item}
 							<a

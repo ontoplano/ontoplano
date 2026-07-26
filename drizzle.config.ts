@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { homedir } from 'node:os';
 
 const dbPath =
-	process.env.DATABASE_URL || join(homedir(), '.local', 'share', 'semotina', 'semotina.db');
+	process.env.DATABASE_URL || join(homedir(), '.local', 'share', 'ontoplano', 'ontoplano.db');
 
 export default defineConfig({
 	schema: './src/lib/server/db/schema.ts',

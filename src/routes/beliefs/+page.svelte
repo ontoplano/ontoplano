@@ -124,8 +124,8 @@
 	let editingViewId: number | null = $state(null);
 	let editingViewName = $state('');
 
-	const FILTERS_KEY = 'semotina:beliefs:filters';
-	const VIEWPORT_KEY = 'semotina:beliefs:viewport';
+	const FILTERS_KEY = 'ontoplano:beliefs:filters';
+	const VIEWPORT_KEY = 'ontoplano:beliefs:viewport';
 
 	// Auto-layout toggle: stores positions before dagre so we can revert
 	let preLayoutPositions: Record<string, { x: number; y: number }> | null = $state(null);
@@ -138,7 +138,7 @@
 		savedViewport: null
 	});
 
-	const POSITIONS_KEY = 'semotina:beliefs:node-positions';
+	const POSITIONS_KEY = 'ontoplano:beliefs:node-positions';
 
 	function loadSavedFilters(): FilterState {
 		if (typeof localStorage === 'undefined') return { ...DEFAULT_FILTERS };

@@ -4,12 +4,12 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=${HOME}/codes/semotina/telegram
+WorkingDirectory=${HOME}/codes/ontoplano/telegram
 ExecStart=/usr/bin/node --import=tsx src/index.ts
 Restart=on-failure
 RestartSec=5
 Environment=NODE_ENV=production
-EnvironmentFile=%h/.config/semotina/env
+EnvironmentFile=%h/.config/ontoplano/env
 
 [Install]
 WantedBy=default.target

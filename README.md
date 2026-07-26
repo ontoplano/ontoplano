@@ -1,4 +1,4 @@
-# semotina
+# ontoplano
 
 A weekly routine dashboard for tracking daily activities across three domains: **duty**, **skill**, and **money**. Also tracks habits, diary entries, and beliefs (memory reconsolidation).
 
@@ -13,12 +13,12 @@ yarn dev
 
 Config and data directories are created automatically on first run:
 
-- Config: `~/.config/semotina/config.toml`
-- Data: `~/.local/share/semotina/`
+- Config: `~/.config/ontoplano/config.toml`
+- Data: `~/.local/share/ontoplano/`
 
 ## Configuration
 
-Edit `~/.config/semotina/config.toml`:
+Edit `~/.config/ontoplano/config.toml`:
 
 ```toml
 [server]
@@ -26,7 +26,7 @@ host = "0.0.0.0"
 port = "1493"
 
 [database]
-# path = "/custom/path/to/semotina.db"
+# path = "/custom/path/to/ontoplano.db"
 
 [week]
 first_day = "0"
@@ -103,12 +103,12 @@ yarn format           # Auto-format
 
 ### systemd user service
 
-1. Create the production env file at `~/.config/semotina/env`:
+1. Create the production env file at `~/.config/ontoplano/env`:
 
 ```sh
 # App origin URL
 # LAN:      http://<your-lan-ip>:1493
-# External: https://semotina.example.com
+# External: https://ontoplano.example.com
 ORIGIN=http://192.168.1.50:1493
 
 # Better Auth secret — generate with: openssl rand -hex 16
@@ -121,10 +121,10 @@ BETTER_AUTH_SECRET=your-secret-here
 make install-service
 ```
 
-To switch from LAN to an external domain later, edit `~/.config/semotina/env`, set `ORIGIN=https://semotina.yourdomain.com`, then restart:
+To switch from LAN to an external domain later, edit `~/.config/ontoplano/env`, set `ORIGIN=https://ontoplano.yourdomain.com`, then restart:
 
 ```sh
-systemctl --user restart semotina
+systemctl --user restart ontoplano
 ```
 
 ### Docker

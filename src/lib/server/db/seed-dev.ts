@@ -29,7 +29,7 @@ client.pragma('journal_mode = WAL');
 client.pragma('foreign_keys = ON');
 const db = drizzle(client);
 
-const DEV_EMAIL = 'dev@semotina.user';
+const DEV_EMAIL = 'dev@ontoplano.user';
 const DEV_PASSWORD = 'dev';
 const DEV_NAME = 'Dev User';
 

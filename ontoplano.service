@@ -4,14 +4,14 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=${HOME}/.local/share/semotina/app
+WorkingDirectory=${HOME}/.local/share/ontoplano/app
 ExecStart=/usr/bin/node build/index.js
 Restart=on-failure
 RestartSec=5
 Environment=NODE_ENV=production
 Environment=HOST=0.0.0.0
 Environment=PORT=1493
-EnvironmentFile=%h/.config/semotina/env
+EnvironmentFile=%h/.config/ontoplano/env
 
 [Install]
 WantedBy=default.target
