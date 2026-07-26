@@ -1,5 +1,5 @@
 [Unit]
-Description=Semotina - Weekly Routine Dashboard
+Description=Ontoplano - Weekly Routine Dashboard
 After=network.target
 
 [Service]

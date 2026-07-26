@@ -48,7 +48,7 @@ first_day = "0"
 generate_day = "6"
 `;
 
-export interface SemotinaConfig {
+export interface OntoplanoConfig {
 	server: {
 		host: string;
 		port: number;
@@ -74,7 +74,7 @@ export function ensureConfig(): void {
 	}
 }
 
-function toToml(config: SemotinaConfig): string {
+function toToml(config: OntoplanoConfig): string {
 	return `[server]
 host = "${config.server.host}"
 port = "${config.server.port}"
@@ -88,12 +88,12 @@ generate_day = "${config.week.generateDay}"
 `;
 }
 
-export function saveConfig(config: SemotinaConfig): void {
+export function saveConfig(config: OntoplanoConfig): void {
 	ensureDirectories();
 	writeFileSync(CONFIG_FILE, toToml(config), 'utf-8');
 }
 
-export function loadConfig(): SemotinaConfig {
+export function loadConfig(): OntoplanoConfig {
 	ensureConfig();
 
 	const content = readFileSync(CONFIG_FILE, 'utf-8');

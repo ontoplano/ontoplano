@@ -1,5 +1,5 @@
 [Unit]
-Description=Semotina Telegram Bot
+Description=Ontoplano Telegram Bot
 After=network.target
 
 [Service]

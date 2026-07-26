@@ -18,7 +18,7 @@ export async function getPrimaryUserId(): Promise<string> {
 	const firstUser = db.select({ id: schema.user.id }).from(schema.user).orderBy(asc(schema.user.createdAt)).get();
 
 	if (!firstUser) {
-		throw new Error('No Semotina user found in the database');
+		throw new Error('No Ontoplano user found in the database');
 	}
 
 	return firstUser.id;
