@@ -118,7 +118,7 @@
 		{#if editingNotes}
 			<!-- svelte-ignore a11y_autofocus -->
 			<input
-				type="text"
+				type="text" autocomplete="off"
 				class="note-input"
 				bind:value={noteInput}
 				onkeydown={handleNoteKeydown}

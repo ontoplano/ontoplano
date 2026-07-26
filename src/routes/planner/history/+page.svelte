@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import type { PageServerData } from './$types';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
+	import { getAction } from '$lib/shortcuts';
 
 	let { data }: { data: PageServerData } = $props();
 
@@ -73,32 +74,29 @@
 			return;
 
 		const items = instancesForDay(selectedDay);
+		const action = getAction('/planner/history', e.key);
+		if (!action) return;
+		e.preventDefault();
 
-		switch (e.key) {
-			case '[':
-				e.preventDefault();
+		switch (action) {
+			case 'prev-week':
 				navigateWeek('prev');
 				break;
-			case ']':
-				e.preventDefault();
+			case 'next-week':
 				navigateWeek('next');
 				break;
-			case 'h':
-				e.preventDefault();
+			case 'prev-day':
 				selectedDay = Math.max(selectedDay - 1, 0);
 				selectedIndex = 0;
 				break;
-			case 'l':
-				e.preventDefault();
+			case 'next-day':
 				selectedDay = Math.min(selectedDay + 1, 6);
 				selectedIndex = 0;
 				break;
-			case 'j':
-				e.preventDefault();
+			case 'navigate-down':
 				if (items.length > 0) selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
 				break;
-			case 'k':
-				e.preventDefault();
+			case 'navigate-up':
 				if (items.length > 0) selectedIndex = Math.max(selectedIndex - 1, 0);
 				break;
 		}

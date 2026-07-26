@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
+	import { getAction } from '$lib/shortcuts';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -118,6 +119,16 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			showForm = false;
+			showWinsForm = false;
+			editingId = null;
+			confirmingDeleteId = null;
+			(document.activeElement as HTMLElement)?.blur?.();
+			return;
+		}
+
 		if (
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
@@ -126,18 +137,18 @@
 			return;
 
 		const items = filteredEntries();
+		const action = getAction('/diary', e.key);
+		if (!action) return;
+		e.preventDefault();
 
-		switch (e.key) {
-			case 'j':
-				e.preventDefault();
+		switch (action) {
+			case 'navigate-down':
 				selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
 				break;
-			case 'k':
-				e.preventDefault();
+			case 'navigate-up':
 				selectedIndex = Math.max(selectedIndex - 1, 0);
 				break;
-			case 'n':
-				e.preventDefault();
+			case 'new':
 				showForm = true;
 				showWinsForm = false;
 				editingId = null;
@@ -146,8 +157,7 @@
 					ta?.focus();
 				});
 				break;
-			case 'e':
-				e.preventDefault();
+			case 'edit':
 				if (items.length > 0) {
 					editingId = items[selectedIndex].id;
 					showForm = true;
@@ -156,13 +166,6 @@
 						ta?.focus();
 					});
 				}
-				break;
-			case 'Escape':
-				e.preventDefault();
-				showForm = false;
-				showWinsForm = false;
-				editingId = null;
-				confirmingDeleteId = null;
 				break;
 		}
 	}

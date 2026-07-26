@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import type { PageServerData, ActionData } from './$types';
 	import { autofocus } from '$lib/actions/autofocus.js';
+	import { getAction } from '$lib/shortcuts';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -74,6 +75,15 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			showForm = false;
+			cancelEdit();
+			confirmingDelete = null;
+			(document.activeElement as HTMLElement)?.blur?.();
+			return;
+		}
+
 		if (
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
@@ -82,34 +92,39 @@
 			return;
 
 		const items = filteredItems;
+		const action = getAction('/shopping', e.key);
+		if (!action) return;
+		e.preventDefault();
 
-		if (e.key === 'j') {
-			e.preventDefault();
-			selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
-			confirmingDelete = null;
-		} else if (e.key === 'k') {
-			e.preventDefault();
-			selectedIndex = Math.max(selectedIndex - 1, -1);
-			confirmingDelete = null;
-		} else if (e.key === 'n') {
-			e.preventDefault();
-			openCreateForm();
-		} else if (e.key === 'Escape') {
-			e.preventDefault();
-			showForm = false;
-			cancelEdit();
-			confirmingDelete = null;
-		} else if (e.key === 'e' && items.length > 0 && selectedIndex >= 0) {
-			e.preventDefault();
-			startEdit(items[selectedIndex]);
-		} else if (e.key === '1') {
-			filterType = filterType === 'someday' ? 'all' : 'someday';
-		} else if (e.key === '2') {
-			filterType = filterType === 'replenish' ? 'all' : 'replenish';
-		} else if (e.key === 'b') {
-			showBought = !showBought;
-		} else if (e.key === 's') {
-			showSnoozed = !showSnoozed;
+		switch (action) {
+			case 'navigate-down':
+				selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+				confirmingDelete = null;
+				break;
+			case 'navigate-up':
+				selectedIndex = Math.max(selectedIndex - 1, -1);
+				confirmingDelete = null;
+				break;
+			case 'new':
+				openCreateForm();
+				break;
+			case 'edit':
+				if (items.length > 0 && selectedIndex >= 0) {
+					startEdit(items[selectedIndex]);
+				}
+				break;
+			case 'filter-someday':
+				filterType = filterType === 'someday' ? 'all' : 'someday';
+				break;
+			case 'filter-replenish':
+				filterType = filterType === 'replenish' ? 'all' : 'replenish';
+				break;
+			case 'toggle-show-bought':
+				showBought = !showBought;
+				break;
+			case 'toggle-show-snoozed':
+				showSnoozed = !showSnoozed;
+				break;
 		}
 	}
 </script>
@@ -187,7 +202,7 @@
 				<div class="flex gap-3">
 					<input
 						name="name"
-						type="text"
+						type="text" autocomplete="off"
 						placeholder="Item name"
 						required
 						class="flex-1 border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -216,7 +231,7 @@
 				{/if}
 				<input
 					name="notes"
-					type="text"
+					type="text" autocomplete="off"
 					placeholder="Notes (optional)"
 					class="w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
@@ -263,7 +278,7 @@
 									<input type="hidden" name="id" value={item.id} />
 									<input
 										name="name"
-										type="text"
+										type="text" autocomplete="off"
 										bind:value={editName}
 										required
 										class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -289,7 +304,7 @@
 									{/if}
 									<input
 										name="notes"
-										type="text"
+										type="text" autocomplete="off"
 										bind:value={editNotes}
 										placeholder="Notes"
 										class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -435,7 +450,7 @@
 								<input type="hidden" name="id" value={item.id} />
 								<input
 									name="name"
-									type="text"
+									type="text" autocomplete="off"
 									bind:value={editName}
 									required
 									class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -461,7 +476,7 @@
 								{/if}
 								<input
 									name="notes"
-									type="text"
+									type="text" autocomplete="off"
 									bind:value={editNotes}
 									placeholder="Notes"
 									class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"

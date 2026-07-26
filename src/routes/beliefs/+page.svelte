@@ -62,6 +62,7 @@
 		type FilterState,
 		type TraversalState
 	} from './beliefs-graph-filters.js';
+	import { getAction } from '$lib/shortcuts';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -862,6 +863,17 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			showForm = false;
+			expandedBeliefId = null;
+			editingBeliefId = null;
+			confirmingDeleteId = null;
+			confirmingEvidenceDelete = null;
+			(document.activeElement as HTMLElement)?.blur?.();
+			return;
+		}
+
 		if (graphView) return;
 		if (
 			e.target instanceof HTMLInputElement ||
@@ -871,20 +883,20 @@
 			return;
 
 		const beliefs = beliefsList();
+		const action = getAction('/beliefs', e.key);
+		if (!action) return;
+		e.preventDefault();
 
-		switch (e.key) {
-			case 'j':
-				e.preventDefault();
+		switch (action) {
+			case 'navigate-down':
 				confirmingEvidenceDelete = null;
 				selectedBeliefIndex = Math.min(selectedBeliefIndex + 1, beliefs.length - 1);
 				break;
-			case 'k':
-				e.preventDefault();
+			case 'navigate-up':
 				confirmingEvidenceDelete = null;
 				selectedBeliefIndex = Math.max(selectedBeliefIndex - 1, 0);
 				break;
-			case 'n':
-				e.preventDefault();
+			case 'new':
 				showForm = true;
 				editingBeliefId = null;
 				confirmingDeleteId = null;
@@ -893,15 +905,13 @@
 					ta?.focus();
 				});
 				break;
-			case 'Enter':
-				e.preventDefault();
+			case 'toggle-expand':
 				if (beliefs.length > 0) {
 					const belief = beliefs[selectedBeliefIndex];
 					expandedBeliefId = expandedBeliefId === belief.id ? null : belief.id;
 				}
 				break;
-			case 'e':
-				e.preventDefault();
+			case 'edit':
 				if (beliefs.length > 0) {
 					const belief = beliefs[selectedBeliefIndex];
 					expandedBeliefId = belief.id;
@@ -911,14 +921,6 @@
 						ta?.focus();
 					});
 				}
-				break;
-			case 'Escape':
-				e.preventDefault();
-				showForm = false;
-				expandedBeliefId = null;
-				editingBeliefId = null;
-				confirmingDeleteId = null;
-				confirmingEvidenceDelete = null;
 				break;
 		}
 	}
@@ -1137,7 +1139,7 @@
 				<label class="block">
 					<span class="text-sm font-medium text-gray-700">Tags</span>
 					<input
-						type="text"
+						type="text" autocomplete="off"
 						name="tags"
 						placeholder="tags (comma separated)"
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -1353,7 +1355,7 @@
 											/>
 											<input
 												name="notes"
-												type="text"
+												type="text" autocomplete="off"
 												placeholder="optional notes"
 												value={intensityNotes[belief.id] ?? ''}
 												oninput={(e) => {
@@ -1418,7 +1420,7 @@
 											<label class="block">
 												<span class="text-xs font-medium text-gray-500">Tags</span>
 												<input
-													type="text"
+													type="text" autocomplete="off"
 													name="tags"
 													value={belief.tags?.map((t) => t.tagName).join(', ') ?? ''}
 													placeholder="tags (comma separated)"
@@ -1729,7 +1731,7 @@
 											<div class="flex gap-2">
 												<input
 													name="content"
-													type="text"
+													type="text" autocomplete="off"
 													placeholder="new evidence..."
 													bind:value={newEvidenceContent[belief.id]}
 													class="flex-1 border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -1969,7 +1971,7 @@
 					{#if graphShowNewBeliefForm}
 						<div class="flex flex-wrap items-center gap-2">
 							<input
-								type="text"
+								type="text" autocomplete="off"
 								placeholder="belief text..."
 								bind:value={graphNewBeliefContent}
 								class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -2029,7 +2031,7 @@
 							>{selectedBeliefIds.length} selected</span
 						>
 						<input
-							type="text"
+							type="text" autocomplete="off"
 							bind:value={bulkTagInput}
 							placeholder="tag name(s), comma separated"
 							onkeydown={(e) => {
@@ -2299,7 +2301,7 @@
 										<span class="text-xs font-medium text-gray-500">Add Tag</span>
 										<div class="mt-1 flex gap-2">
 											<input
-												type="text"
+												type="text" autocomplete="off"
 												placeholder="tag name"
 												bind:value={panelNewTagName}
 												class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -2449,7 +2451,7 @@
 									{/if}
 									<div class="flex items-center gap-1.5 text-xs text-gray-500">
 										<input
-											type="text"
+											type="text" autocomplete="off"
 											placeholder="new evidence..."
 											bind:value={panelNewEvidenceContent}
 											class="flex-1 border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -2549,7 +2551,7 @@
 											class="border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 										/>
 										<input
-											type="text"
+											type="text" autocomplete="off"
 											placeholder="notes..."
 											bind:value={panelIntensityNotes}
 											class="flex-1 border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"

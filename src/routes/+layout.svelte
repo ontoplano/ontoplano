@@ -36,6 +36,8 @@
 		return page.url.pathname === href;
 	}
 
+	import { GLOBAL_SHORTCUTS } from '$lib/shortcuts';
+
 	function handleGlobalKeydown(e: KeyboardEvent) {
 		if (
 			e.target instanceof HTMLInputElement ||
@@ -44,12 +46,21 @@
 		)
 			return;
 
-		if (e.key === 'J' || e.key === 'K') {
-			e.preventDefault();
-			let currentIdx = nav.findIndex((item) => isNavActive(item.href));
-			const idx = currentIdx === -1 ? 0 : currentIdx;
-			const next = e.key === 'J' ? (idx + 1) % nav.length : (idx - 1 + nav.length) % nav.length;
-			goto(nav[next].href);
+		const action = GLOBAL_SHORTCUTS.find((s) => s.key === e.key)?.action;
+
+		switch (action) {
+			case 'global-next-page':
+			case 'global-prev-page': {
+				e.preventDefault();
+				let currentIdx = nav.findIndex((item) => isNavActive(item.href));
+				const idx = currentIdx === -1 ? 0 : currentIdx;
+				const next =
+					action === 'global-next-page'
+						? (idx + 1) % nav.length
+						: (idx - 1 + nav.length) % nav.length;
+				goto(nav[next].href);
+				break;
+			}
 		}
 	}
 

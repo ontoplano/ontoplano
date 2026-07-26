@@ -3,6 +3,7 @@
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { SECTION_COLORS } from '$lib/colors.js';
+	import { getAction } from '$lib/shortcuts';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -32,6 +33,15 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			showDiaryForm = false;
+			showBeliefForm = false;
+			showWinsForm = false;
+			(document.activeElement as HTMLElement)?.blur?.();
+			return;
+		}
+
 		if (
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
@@ -39,33 +49,34 @@
 		)
 			return;
 
-		if (e.key === 'n') {
-			e.preventDefault();
-			showDiaryForm = !showDiaryForm;
-			showBeliefForm = false;
-			showWinsForm = false;
-			if (showDiaryForm) {
-				tick().then(() => {
-					const ta = document.querySelector<HTMLTextAreaElement>('textarea[name="content"]');
-					ta?.focus();
-				});
-			}
-		} else if (e.key === 'w' && winsEnabled) {
-			e.preventDefault();
-			showWinsForm = !showWinsForm;
-			showDiaryForm = false;
-			showBeliefForm = false;
-			if (showWinsForm) {
-				tick().then(() => {
-					const input = document.querySelector<HTMLInputElement>('input[name="win_0"]');
-					input?.focus();
-				});
-			}
-		} else if (e.key === 'Escape') {
-			e.preventDefault();
-			showDiaryForm = false;
-			showBeliefForm = false;
-			showWinsForm = false;
+		const action = getAction('/', e.key);
+		if (!action) return;
+		e.preventDefault();
+
+		switch (action) {
+			case 'new-diary':
+				showDiaryForm = !showDiaryForm;
+				showBeliefForm = false;
+				showWinsForm = false;
+				if (showDiaryForm) {
+					tick().then(() => {
+						const ta = document.querySelector<HTMLTextAreaElement>('textarea[name="content"]');
+						ta?.focus();
+					});
+				}
+				break;
+			case 'new-wins':
+				if (!winsEnabled) break;
+				showWinsForm = !showWinsForm;
+				showDiaryForm = false;
+				showBeliefForm = false;
+				if (showWinsForm) {
+					tick().then(() => {
+						const input = document.querySelector<HTMLInputElement>('input[name="win_0"]');
+						input?.focus();
+					});
+				}
+				break;
 		}
 	}
 </script>

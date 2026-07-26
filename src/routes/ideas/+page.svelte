@@ -3,6 +3,7 @@
 	import { enhance } from '$app/forms';
 	import { autofocus } from '$lib/actions/autofocus';
 	import type { PageServerData, ActionData } from './$types';
+	import { getAction } from '$lib/shortcuts';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -86,6 +87,13 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			closeForms();
+			(document.activeElement as HTMLElement)?.blur?.();
+			return;
+		}
+
 		if (
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
@@ -94,40 +102,33 @@
 			return;
 
 		const items = filteredIdeas;
+		const action = getAction('/ideas', e.key);
+		if (!action) return;
+		e.preventDefault();
 
-			switch (e.key) {
-			case 'j':
-				e.preventDefault();
+		switch (action) {
+			case 'navigate-down':
 				selectedIndex = Math.min(clampedSelectedIndex + 1, Math.max(items.length - 1, 0));
 				break;
-			case 'k':
-				e.preventDefault();
+			case 'navigate-up':
 				selectedIndex = Math.max(clampedSelectedIndex - 1, 0);
 				break;
-			case 'n':
-				e.preventDefault();
+			case 'new':
 				openIdeaForm();
 				break;
-			case 'e':
-				e.preventDefault();
+			case 'edit':
 				if (items.length > 0) openIdeaForm(items[clampedSelectedIndex].id);
 				break;
-			case 'f': {
-				e.preventDefault();
+			case 'toggle-favorite': {
 				const idea = currentSelectedIdea;
 				if (idea) submitIdeaAction(idea.id, 'favorite');
 				break;
 			}
-			case 'a': {
-				e.preventDefault();
+			case 'toggle-applied': {
 				const idea = currentSelectedIdea;
 				if (idea) submitIdeaAction(idea.id, 'applied');
 				break;
 			}
-			case 'Escape':
-				e.preventDefault();
-				closeForms();
-				break;
 		}
 	}
 </script>
@@ -242,17 +243,18 @@
 			>
 				Favorites
 			</button>
+			<button
+				onclick={() => {
+					filterFavorite = 'not-favorite';
+					selectedIndex = 0;
+				}}
+				class="border px-2 py-0.5 text-xs transition {filterFavorite === 'not-favorite'
+					? 'border-amber-500 bg-amber-50 text-amber-700'
+					: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
+			>
+				Not Favorite
+			</button>
 		</div>
-	</div>
-
-	<div class="text-xs text-gray-400">
-		<kbd class="border border-gray-300 bg-gray-50 px-1">j</kbd>/<kbd class="border border-gray-300 bg-gray-50 px-1">k</kbd>
-		navigate &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">n</kbd> new &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">e</kbd> edit &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">f</kbd> favorite &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">a</kbd> applied &middot;
-		<kbd class="border border-gray-300 bg-gray-50 px-1">Esc</kbd> close form
 	</div>
 
 	{#if form?.message}
@@ -290,7 +292,7 @@
 				<span class="text-sm font-medium text-gray-700">Tags</span>
 				<input
 					name="tags"
-					type="text"
+					type="text" autocomplete="off"
 					value={editingId ? editingTagString() : ''}
 					placeholder="comma separated, e.g. project, app, music"
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -460,7 +462,7 @@
 													<input type="hidden" name="id" value={idea.id} />
 													<input
 														name="appliedNote"
-														type="text"
+														type="text" autocomplete="off"
 														bind:value={appliedNoteDraft}
 														placeholder="What did you apply?"
 														use:autofocus

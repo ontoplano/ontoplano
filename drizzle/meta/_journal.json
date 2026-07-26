@@ -15,6 +15,13 @@
       "when": 1775467812421,
       "tag": "0001_shocking_namor",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784252632230,
+      "tag": "0002_nice_misty_knight",
+      "breakpoints": true
     }
   ]
 }

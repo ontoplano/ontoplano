@@ -3,6 +3,7 @@
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { CATEGORY_FALLBACK_COLOR, CATEGORY_DEFAULT_NEW } from '$lib/colors.js';
+	import { getAction } from '$lib/shortcuts';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -35,6 +36,17 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			showForm = false;
+			editingId = null;
+			showCategoryForm = false;
+			editingCategoryId = null;
+			confirmingDelete = null;
+			(document.activeElement as HTMLElement)?.blur?.();
+			return;
+		}
+
 		if (
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
@@ -43,36 +55,20 @@
 			return;
 
 		const items = filteredActivities();
+		const action = getAction('/planner/activities', e.key);
+		if (!action) return;
+		e.preventDefault();
 
-		switch (e.key) {
-			case 'j':
-				e.preventDefault();
+		switch (action) {
+			case 'navigate-down':
 				confirmingDelete = null;
 				selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
 				break;
-			case 'k':
-				e.preventDefault();
+			case 'navigate-up':
 				confirmingDelete = null;
 				selectedIndex = Math.max(selectedIndex - 1, 0);
 				break;
-			case '1':
-			case '2':
-			case '3':
-			case '4':
-			case '5':
-			case '6':
-			case '7':
-			case '8':
-			case '9': {
-				e.preventDefault();
-				const idx = Number(e.key) - 1;
-				if (data.categories[idx]) {
-					toggleFilter(data.categories[idx].id);
-				}
-				break;
-			}
-			case 'n':
-				e.preventDefault();
+			case 'new':
 				showForm = true;
 				editingId = null;
 				tick().then(() => {
@@ -80,14 +76,14 @@
 					nameInput?.focus();
 				});
 				break;
-			case 'Escape':
-				e.preventDefault();
-				showForm = false;
-				editingId = null;
-				showCategoryForm = false;
-				editingCategoryId = null;
-				confirmingDelete = null;
+			default: {
+				if (!action.startsWith('filter-')) break;
+				const idx = parseInt(action.split('-')[1], 10) - 1;
+				if (data.categories[idx]) {
+					toggleFilter(data.categories[idx].id);
+				}
 				break;
+			}
 		}
 	}
 </script>
@@ -151,7 +147,7 @@
 								/>
 								<input
 									name="name"
-									type="text"
+									type="text" autocomplete="off"
 									value={cat.name}
 									required
 									class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -244,7 +240,7 @@
 				/>
 				<input
 					name="name"
-					type="text"
+					type="text" autocomplete="off"
 					placeholder="New category name"
 					required
 					class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -312,7 +308,7 @@
 					<input
 						id="activity-name"
 						name="name"
-						type="text"
+						type="text" autocomplete="off"
 						required
 						value={editingId ? (data.activities.find((a) => a.id === editingId)?.name ?? '') : ''}
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -342,7 +338,7 @@
 				<span class="text-sm font-medium text-gray-700">Description</span>
 				<input
 					name="description"
-					type="text"
+					type="text" autocomplete="off"
 					value={editingId
 						? (data.activities.find((a) => a.id === editingId)?.description ?? '')
 						: ''}

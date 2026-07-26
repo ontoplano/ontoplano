@@ -5,6 +5,7 @@
 	import type { PageServerData, ActionData } from './$types.js';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { autofocus } from '$lib/actions/autofocus.js';
+	import { getAction } from '$lib/shortcuts';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -146,6 +147,20 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			showCopyPanel = false;
+			confirmingDelete = null;
+			confirmingBulkDelete = false;
+			multiselect = false;
+			selectedIds = new Set();
+			showForm = false;
+			showExceptionalForm = false;
+			editingId = null;
+			(document.activeElement as HTMLElement)?.blur?.();
+			return;
+		}
+
 		if (
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
@@ -153,32 +168,35 @@
 		)
 			return;
 
-		if (showCopyPanel) {
-			if (e.key === 'Escape') {
-				e.preventDefault();
-				showCopyPanel = false;
+		const action = getAction('/planner/plan', e.key);
+		if (!action) {
+			if (showCopyPanel) {
+				return;
 			}
 			return;
 		}
+		e.preventDefault();
+
+		if (showCopyPanel) {
+			return;
+		}
+
+		const slots = slotsForDay(selectedDay);
 
 		if (multiselect) {
-			const slots = slotsForDay(selectedDay);
-			switch (e.key) {
-				case 'v':
-					e.preventDefault();
+			switch (action) {
+				case 'toggle-multiselect':
 					confirmingDelete = null;
 					confirmingBulkDelete = false;
 					multiselect = false;
 					selectedIds = new Set();
 					return;
-				case ' ':
-					e.preventDefault();
+				case 'toggle-select':
 					if (slots.length > 0 && slots[selectedIndex]) {
 						toggleSlotSelection(slots[selectedIndex].id);
 					}
 					return;
-				case 'x':
-					e.preventDefault();
+				case 'delete-selected':
 					if (selectedIds.size > 0) {
 						if (confirmingBulkDelete) {
 							const form = document.getElementById('bulk-delete-form');
@@ -189,44 +207,32 @@
 						}
 					}
 					return;
-				case 'p':
-					e.preventDefault();
+				case 'copy-to-days':
 					if (selectedIds.size > 0) {
 						showCopyPanel = true;
 						copyTargetDays = new Set();
 					}
 					return;
-				case 'Escape':
-					e.preventDefault();
-					confirmingDelete = null;
-					confirmingBulkDelete = false;
-					multiselect = false;
-					selectedIds = new Set();
-					return;
-				case 'h':
-					e.preventDefault();
+				case 'prev-day':
 					confirmingDelete = null;
 					confirmingBulkDelete = false;
 					selectedDay = Math.max(selectedDay - 1, 0);
 					selectedIndex = 0;
 					return;
-				case 'l':
-					e.preventDefault();
+				case 'next-day':
 					confirmingDelete = null;
 					confirmingBulkDelete = false;
 					selectedDay = Math.min(selectedDay + 1, 6);
 					selectedIndex = 0;
 					return;
-				case 'j':
-					e.preventDefault();
+				case 'navigate-down':
 					confirmingDelete = null;
 					confirmingBulkDelete = false;
 					if (slots.length > 0) {
 						selectedIndex = Math.min(selectedIndex + 1, slots.length - 1);
 					}
 					return;
-				case 'k':
-					e.preventDefault();
+				case 'navigate-up':
 					confirmingDelete = null;
 					confirmingBulkDelete = false;
 					if (slots.length > 0) {
@@ -237,69 +243,54 @@
 			return;
 		}
 
-		if (e.key === '[') {
-			e.preventDefault();
-			goToPrevWeek();
-			return;
-		}
-		if (e.key === ']') {
-			e.preventDefault();
-			goToNextWeek();
-			return;
-		}
-
-		const slots = slotsForDay(selectedDay);
-
-		switch (e.key) {
-			case 'v':
-				e.preventDefault();
+		switch (action) {
+			case 'prev-week':
+				goToPrevWeek();
+				break;
+			case 'next-week':
+				goToNextWeek();
+				break;
+			case 'toggle-multiselect':
 				multiselect = true;
 				break;
-			case 'h':
-				e.preventDefault();
+			case 'prev-day':
 				confirmingDelete = null;
 				confirmingBulkDelete = false;
 				selectedDay = Math.max(selectedDay - 1, 0);
 				selectedIndex = 0;
 				break;
-			case 'l':
-				e.preventDefault();
+			case 'next-day':
 				confirmingDelete = null;
 				confirmingBulkDelete = false;
 				selectedDay = Math.min(selectedDay + 1, 6);
 				selectedIndex = 0;
 				break;
-			case 'j':
-				e.preventDefault();
+			case 'navigate-down':
 				confirmingDelete = null;
 				confirmingBulkDelete = false;
 				if (slots.length > 0) {
 					selectedIndex = Math.min(selectedIndex + 1, slots.length - 1);
 				}
 				break;
-			case 'k':
-				e.preventDefault();
+			case 'navigate-up':
 				confirmingDelete = null;
 				confirmingBulkDelete = false;
 				if (slots.length > 0) {
 					selectedIndex = Math.max(selectedIndex - 1, 0);
 				}
 				break;
-			case 'e':
-				e.preventDefault();
+			case 'edit':
 				if (slots.length > 0 && slots[selectedIndex]) {
 					startEdit(slots[selectedIndex]);
 				}
 				break;
-			case 'd':
-				e.preventDefault();
+			case 'toggle-active':
 				if (slots.length > 0 && slots[selectedIndex]) {
 					const form = document.getElementById(`toggle-form-${slots[selectedIndex].id}`);
 					if (form instanceof HTMLFormElement) form.requestSubmit();
 				}
 				break;
-			case 'D':
-				e.preventDefault();
+			case 'delete':
 				if (slots.length > 0 && slots[selectedIndex]) {
 					const slot = slots[selectedIndex];
 					const key = `slot-${slot.id}`;
@@ -312,22 +303,13 @@
 					}
 				}
 				break;
-			case 'n':
-				e.preventDefault();
+			case 'new':
 				startNew();
 				break;
-			case 'N':
-				e.preventDefault();
+			case 'new-exceptional':
 				startNewExceptional();
 				break;
-			case 'Escape':
-				e.preventDefault();
-				confirmingDelete = null;
-				confirmingBulkDelete = false;
-				showForm = false;
-				showExceptionalForm = false;
-				editingId = null;
-				break;
+
 		}
 	}
 
@@ -442,7 +424,7 @@
 					<div class="flex gap-2">
 						<input
 							name="name"
-							type="text"
+							type="text" autocomplete="off"
 							bind:value={newSchemeName}
 							placeholder="Scheme name"
 							required
@@ -478,7 +460,7 @@
 										<div class="flex gap-2">
 											<input
 												name="name"
-												type="text"
+												type="text" autocomplete="off"
 												value={scheme.name}
 												required
 												class="w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
@@ -526,6 +508,7 @@
 										</form>
 
 										{#if confirmingDeleteSchemeId === scheme.id}
+										<div class="flex items-center gap-2">
 											<form
 												method="post"
 												action="?/deleteScheme"
@@ -544,6 +527,14 @@
 													Confirm?
 												</button>
 											</form>
+											<button
+												type="button"
+												onclick={() => (confirmingDeleteSchemeId = null)}
+												class="border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+											>
+												Cancel
+											</button>
+										</div>
 										{:else}
 											<button
 												type="button"
@@ -566,23 +557,33 @@
 
 				<div class="border-t border-gray-200 pt-4">
 					{#if confirmingClearAll}
-						<form
-							method="post"
-							action="?/clearAll"
-							use:enhance={() => {
-								return async ({ update }) => {
-									await update();
-									confirmingClearAll = false;
-								};
-							}}
-						>
-							<button
-								type="submit"
-								class="border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 shadow-sm transition hover:bg-red-100"
+						<div class="flex items-center gap-3">
+							<span class="text-sm text-red-600">Delete all slots?</span>
+							<form
+								method="post"
+								action="?/clearAll"
+								use:enhance={() => {
+									return async ({ update }) => {
+										await update();
+										confirmingClearAll = false;
+									};
+								}}
 							>
-								Confirm clear all slots?
+								<button
+									type="submit"
+									class="border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 shadow-sm transition hover:bg-red-100"
+								>
+									Yes, clear all
+								</button>
+							</form>
+							<button
+								type="button"
+								onclick={() => (confirmingClearAll = false)}
+								class="border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+							>
+								Cancel
 							</button>
-						</form>
+						</div>
 					{:else}
 						<button
 							type="button"
@@ -815,7 +816,7 @@
 					<span class="text-sm font-medium text-gray-700">Label (optional)</span>
 					<input
 						name="label"
-						type="text"
+						type="text" autocomplete="off"
 						value={editing?.label ?? ''}
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
@@ -911,7 +912,7 @@
 					<span class="text-sm font-medium text-gray-700">Label (optional)</span>
 					<input
 						name="label"
-						type="text"
+						type="text" autocomplete="off"
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
 				</label>

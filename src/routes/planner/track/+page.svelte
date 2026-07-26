@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import type { PageServerData } from './$types';
 	import { CATEGORY_FALLBACK_COLOR, CATEGORY_FALLBACK_LIGHT } from '$lib/colors.js';
+	import { getAction } from '$lib/shortcuts';
 
 	let { data }: { data: PageServerData } = $props();
 
@@ -11,14 +12,6 @@
 	let editingDurationId: string | null = $state(null);
 	let editingActivityId: string | null = $state(null);
 	let confirmingDelete: string | null = $state(null);
-
-	const statusOptions = [
-		{ value: 'completed', label: 'Done', key: 'c' },
-		{ value: 'delayed', label: 'Delayed', key: 'd' },
-		{ value: 'early', label: 'Early', key: 'e' },
-		{ value: 'skipped', label: 'Skip', key: 's' },
-		{ value: 'pending', label: 'Reset', key: 'r' }
-	];
 
 	type UnifiedTask = {
 		source: 'regular' | 'exceptional';
@@ -176,6 +169,16 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			editingTimeId = null;
+			editingDurationId = null;
+			editingActivityId = null;
+			confirmingDelete = null;
+			(document.activeElement as HTMLElement)?.blur?.();
+			return;
+		}
+
 		if (
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
@@ -183,87 +186,79 @@
 		)
 			return;
 
-		if (e.key === '[') {
-			e.preventDefault();
-			navigateWeek('prev');
-			return;
-		}
-		if (e.key === ']') {
-			e.preventDefault();
-			navigateWeek('next');
-			return;
-		}
-		if (e.key === 'h') {
-			e.preventDefault();
-			if (data.selectedDayIndex > 0) navigateToDay(data.selectedDayIndex - 1);
-			return;
-		}
-		if (e.key === 'l') {
-			e.preventDefault();
-			if (data.selectedDayIndex < 6) navigateToDay(data.selectedDayIndex + 1);
-			return;
-		}
+		const action = getAction('/planner/track', e.key);
+		if (!action) return;
+		e.preventDefault();
 
 		const tasks = allTasks;
-		if (!tasks.length) return;
+		if (
+			!tasks.length &&
+			action !== 'prev-week' &&
+			action !== 'next-week' &&
+			action !== 'prev-day' &&
+			action !== 'next-day'
+		)
+			return;
 
-		switch (e.key) {
-			case 'j':
-				e.preventDefault();
+		switch (action) {
+			case 'prev-week':
+				navigateWeek('prev');
+				break;
+			case 'next-week':
+				navigateWeek('next');
+				break;
+			case 'prev-day':
+				if (data.selectedDayIndex > 0) navigateToDay(data.selectedDayIndex - 1);
+				break;
+			case 'next-day':
+				if (data.selectedDayIndex < 6) navigateToDay(data.selectedDayIndex + 1);
+				break;
+			case 'navigate-down':
 				confirmingDelete = null;
 				selectedIndex = Math.min(selectedIndex + 1, tasks.length - 1);
 				break;
-			case 'k':
-				e.preventDefault();
+			case 'navigate-up':
 				confirmingDelete = null;
 				selectedIndex = Math.max(selectedIndex - 1, 0);
 				break;
-			case 't':
-				e.preventDefault();
+			case 'edit-time':
 				editingTimeId = tasks[selectedIndex].uid;
 				break;
-			case 'D':
-				e.preventDefault();
+			case 'edit-duration':
 				editingDurationId = tasks[selectedIndex].uid;
 				break;
-			case 'a':
-				e.preventDefault();
+			case 'edit-activity':
 				editingActivityId = tasks[selectedIndex].uid;
 				break;
-			case 'x': {
-				e.preventDefault();
+			case 'delete': {
 				const task = tasks[selectedIndex];
 				if (confirmingDelete === task.uid) {
 					const deleteForm = document.getElementById(`delete-form-${task.uid}`);
 					if (deleteForm instanceof HTMLFormElement) deleteForm.requestSubmit();
-					confirmingDelete = null;
 				} else {
 					confirmingDelete = task.uid;
 				}
 				break;
 			}
-			case 'Escape':
-				e.preventDefault();
-				editingTimeId = null;
-				editingDurationId = null;
-				editingActivityId = null;
-				confirmingDelete = null;
-				break;
-			case 'c':
-			case 'd':
-			case 'e':
-			case 's':
-			case 'r': {
-				e.preventDefault();
-				const opt = statusOptions.find((o) => o.key === e.key);
-				if (opt) {
-					const form = document.getElementById(`status-form-${tasks[selectedIndex].uid}`);
-					if (form instanceof HTMLFormElement) {
-						const statusInput = form.querySelector<HTMLInputElement>('input[name="status"]');
-						if (statusInput) {
-							statusInput.value = opt.value;
-							form.requestSubmit();
-						}
+			case 'mark-done':
+			case 'mark-delayed':
+			case 'mark-early':
+			case 'mark-skipped':
+			case 'reset-status': {
+				const statusMap: Record<string, string> = {
+					'mark-done': 'completed',
+					'mark-delayed': 'delayed',
+					'mark-early': 'early',
+					'mark-skipped': 'skipped',
+					'reset-status': 'pending'
+				};
+				const statusValue = statusMap[action];
+				const form = document.getElementById(`status-form-${tasks[selectedIndex].uid}`);
+				if (form instanceof HTMLFormElement) {
+					const statusInput = form.querySelector<HTMLInputElement>('input[name="status"]');
+					if (statusInput) {
+						statusInput.value = statusValue;
+						form.requestSubmit();
 					}
 				}
 				break;

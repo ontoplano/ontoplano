@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import type { PageServerData, ActionData } from './$types.js';
 	import { autofocus } from '$lib/actions/autofocus.js';
+	import { getAction } from '$lib/shortcuts';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -37,6 +38,16 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			showForm = false;
+			editingId = null;
+			delegatingId = null;
+			confirmingDelete = null;
+			(document.activeElement as HTMLElement)?.blur?.();
+			return;
+		}
+
 		if (
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
@@ -44,46 +55,43 @@
 		)
 			return;
 
-		switch (e.key) {
-			case 'j':
-				e.preventDefault();
+		const action = getAction('/planner/todo', e.key);
+		if (!action) return;
+		e.preventDefault();
+
+		switch (action) {
+			case 'navigate-down':
 				confirmingDelete = null;
 				if (visibleTodos.length > 0) {
 					selectedIndex = Math.min(selectedIndex + 1, visibleTodos.length - 1);
 				}
 				break;
-			case 'k':
-				e.preventDefault();
+			case 'navigate-up':
 				confirmingDelete = null;
 				if (visibleTodos.length > 0) {
 					selectedIndex = Math.max(selectedIndex - 1, 0);
 				}
 				break;
-			case 'n':
-				e.preventDefault();
+			case 'new':
 				startNew();
 				break;
-			case 'e':
-				e.preventDefault();
+			case 'edit':
 				if (visibleTodos.length > 0 && visibleTodos[selectedIndex]) {
 					startEdit(visibleTodos[selectedIndex]);
 				}
 				break;
-			case 'c':
-				e.preventDefault();
+			case 'toggle-done':
 				if (visibleTodos.length > 0 && visibleTodos[selectedIndex]) {
 					const f = document.getElementById(`toggle-form-${visibleTodos[selectedIndex].id}`);
 					if (f instanceof HTMLFormElement) f.requestSubmit();
 				}
 				break;
-			case 'g':
-				e.preventDefault();
+			case 'delegate':
 				if (visibleTodos.length > 0 && visibleTodos[selectedIndex] && !visibleTodos[selectedIndex].completed) {
 					startDelegate(visibleTodos[selectedIndex]);
 				}
 				break;
-			case 'x':
-				e.preventDefault();
+			case 'delete':
 				if (visibleTodos.length > 0 && visibleTodos[selectedIndex]) {
 					const todo = visibleTodos[selectedIndex];
 					if (confirmingDelete === todo.id) {
@@ -94,13 +102,6 @@
 						confirmingDelete = todo.id;
 					}
 				}
-				break;
-			case 'Escape':
-				e.preventDefault();
-				showForm = false;
-				editingId = null;
-				delegatingId = null;
-				confirmingDelete = null;
 				break;
 		}
 	}
@@ -173,6 +174,7 @@
 					name="title"
 					type="text"
 					required
+					autocomplete="off"
 					value={editing?.title ?? ''}
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>

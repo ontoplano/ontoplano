@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { GLOBAL_SHORTCUTS, PAGE_SHORTCUTS } from '$lib/shortcuts';
+	import { GLOBAL_SHORTCUTS, PAGE_SHORTCUTS, getDisplayShortcuts } from '$lib/shortcuts';
 
 	let show = $state(false);
 
 	let currentPath = $derived(page.url.pathname);
-	let pageShortcuts = $derived(PAGE_SHORTCUTS[currentPath]);
+	let pageDisplay = $derived(getDisplayShortcuts(currentPath));
+	let pageLabel = $derived(PAGE_SHORTCUTS[currentPath]?.label);
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (
@@ -37,28 +38,28 @@
 				</button>
 			</div>
 
-			{#if pageShortcuts}
-				<div class="mb-3">
-					<h4 class="mb-1 text-xs font-medium text-gray-500">{pageShortcuts.label}</h4>
-					<div class="space-y-0.5">
-						{#each pageShortcuts.shortcuts as s}
-							<div class="flex items-center justify-between text-xs">
-								<kbd class="border border-gray-300 bg-gray-50 px-1 font-mono">{s.key}</kbd>
-								<span class="text-gray-600">{s.description}</span>
-							</div>
-						{/each}
-					</div>
+		{#if pageDisplay.length > 0}
+			<div class="mb-3">
+				<h4 class="mb-1 text-xs font-medium text-gray-500">{pageLabel}</h4>
+				<div class="space-y-0.5">
+					{#each pageDisplay as s}
+						<div class="flex items-center justify-between text-xs">
+							<kbd class="border border-gray-300 bg-gray-50 px-1 font-mono">{s.displayKey}</kbd>
+							<span class="text-gray-600">{s.description}</span>
+						</div>
+					{/each}
 				</div>
-			{/if}
+			</div>
+		{/if}
 
 			<div>
 				<h4 class="mb-1 text-xs font-medium text-gray-500">Global</h4>
 				<div class="space-y-0.5">
-					{#each GLOBAL_SHORTCUTS as s}
-						<div class="flex items-center justify-between text-xs">
-							<kbd class="border border-gray-300 bg-gray-50 px-1 font-mono">{s.key}</kbd>
-							<span class="text-gray-600">{s.description}</span>
-						</div>
+				{#each GLOBAL_SHORTCUTS as s}
+					<div class="flex items-center justify-between text-xs">
+						<kbd class="border border-gray-300 bg-gray-50 px-1 font-mono">{s.key === 'Escape' ? 'Esc' : s.key}</kbd>
+						<span class="text-gray-600">{s.description}</span>
+					</div>
 					{/each}
 				</div>
 			</div>

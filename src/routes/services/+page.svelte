@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageServerData, ActionData } from './$types';
+	import { getAction } from '$lib/shortcuts';
 
 	interface ServiceInfo {
 		name: string;
@@ -49,6 +50,13 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			expandedService = null;
+			(document.activeElement as HTMLElement)?.blur?.();
+			return;
+		}
+
 		if (
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
@@ -57,26 +65,22 @@
 			return;
 
 		const svcs = services();
+		const action = getAction('/services', e.key);
+		if (!action) return;
+		e.preventDefault();
 
-		switch (e.key) {
-			case 'j':
-				e.preventDefault();
+		switch (action) {
+			case 'navigate-down':
 				selectedIndex = Math.min(selectedIndex + 1, svcs.length - 1);
 				break;
-			case 'k':
-				e.preventDefault();
+			case 'navigate-up':
 				selectedIndex = Math.max(selectedIndex - 1, 0);
 				break;
-			case 'Enter':
-				e.preventDefault();
+			case 'toggle-expand':
 				if (svcs.length > 0) {
 					const svc = svcs[selectedIndex];
 					expandedService = expandedService === svc.name ? null : svc.name;
 				}
-				break;
-			case 'Escape':
-				e.preventDefault();
-				expandedService = null;
 				break;
 		}
 	}

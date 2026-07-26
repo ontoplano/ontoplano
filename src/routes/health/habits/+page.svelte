@@ -10,6 +10,7 @@
 		HABIT_GOOD_ACCENT,
 		HABIT_NEUTRAL_ACCENT
 	} from '$lib/colors.js';
+	import { getAction } from '$lib/shortcuts';
 
 	interface Habit {
 		id: number;
@@ -147,6 +148,20 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			confirmingOccurrenceDelete = null;
+			if (showForm) {
+				showForm = false;
+				resetForm();
+			} else {
+				expandedHabitId = null;
+				confirmingDeleteId = null;
+			}
+			(document.activeElement as HTMLElement)?.blur?.();
+			return;
+		}
+
 		if (
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
@@ -155,20 +170,20 @@
 			return;
 
 		const habits = filteredHabits();
+		const action = getAction('/health/habits', e.key);
+		if (!action) return;
+		e.preventDefault();
 
-		switch (e.key) {
-			case 'j':
-				e.preventDefault();
+		switch (action) {
+			case 'navigate-down':
 				confirmingOccurrenceDelete = null;
 				selectedHabitIndex = Math.min(selectedHabitIndex + 1, habits.length - 1);
 				break;
-			case 'k':
-				e.preventDefault();
+			case 'navigate-up':
 				confirmingOccurrenceDelete = null;
 				selectedHabitIndex = Math.max(selectedHabitIndex - 1, 0);
 				break;
-			case 'n':
-				e.preventDefault();
+			case 'new':
 				editingId = null;
 				showForm = true;
 				confirmingDeleteId = null;
@@ -178,22 +193,10 @@
 					nameInput?.focus();
 				});
 				break;
-			case 'Enter':
-				e.preventDefault();
+			case 'toggle-expand':
 				if (habits.length > 0) {
 					const habit = habits[selectedHabitIndex];
 					expandedHabitId = expandedHabitId === habit.id ? null : habit.id;
-				}
-				break;
-			case 'Escape':
-				e.preventDefault();
-				confirmingOccurrenceDelete = null;
-				if (showForm) {
-					showForm = false;
-					resetForm();
-				} else {
-					expandedHabitId = null;
-					confirmingDeleteId = null;
 				}
 				break;
 		}
@@ -332,7 +335,7 @@
 				<span class="text-sm font-medium text-gray-700">Name</span>
 				<input
 					name="name"
-					type="text"
+					type="text" autocomplete="off"
 					required
 					value={editHabit?.name ?? ''}
 					placeholder={newHabitType === 'bad'
@@ -347,7 +350,7 @@
 				<span class="text-sm font-medium text-gray-700">Description</span>
 				<input
 					name="description"
-					type="text"
+					type="text" autocomplete="off"
 					value={editHabit?.description ?? ''}
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
@@ -483,7 +486,7 @@
 									<div class="flex items-center gap-1">
 										<input
 											name="notes"
-											type="text"
+											type="text" autocomplete="off"
 											placeholder="note"
 											class="w-20 border border-gray-200 px-1.5 py-1 text-xs focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 										/>
@@ -631,7 +634,7 @@
 									<div class="flex items-center gap-1">
 										<input
 											name="notes"
-											type="text"
+											type="text" autocomplete="off"
 											placeholder="note"
 											class="w-20 border border-gray-200 px-1.5 py-1 text-xs focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 										/>
@@ -661,7 +664,7 @@
 													<input type="hidden" name="id" value={occurrence.id} />
 													<input
 														name="notes"
-														type="text"
+														type="text" autocomplete="off"
 														value={occurrence.notes ?? ''}
 														placeholder="add note…"
 														class="w-32 border border-transparent px-1 py-0.5 text-xs text-gray-500 hover:border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
