@@ -217,7 +217,8 @@ export const load: PageServerLoad = async (event) => {
 		selectedDayIndex,
 		todayDayIndex,
 		taskCountByDay,
-		selectedDate: formatDate(selectedDate)
+		selectedDate: formatDate(selectedDate),
+    validStatuses
 	};
 };
 

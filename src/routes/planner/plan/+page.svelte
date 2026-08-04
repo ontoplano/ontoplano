@@ -1179,19 +1179,15 @@
 				class="space-y-3 border-t border-gray-200 px-4 py-4"
 			>
 				<p class="text-xs text-gray-500">
-					Format: first column is time (610 = 06:10, 1810 = 18:10), columns 2-8 are Mon-Sun activity names.
+					Format: h (time), d (duration in min), then Mon-Sun activity names. Time: 610 = 06:10, 1810 = 18:10.
 				</p>
 				<textarea
 					name="csv"
 					rows="8"
-					placeholder={"h,m,t,w,t,f,s,s\n610,wake up,wake up,wake up,wake up,wake up,,\n630,alongar,regar plantas,alongar,regar plantas,alongar,,"}
+					placeholder={"h,d,m,t,w,t,f,s,s\n610,30,wake up,wake up,wake up,wake up,wake up,,\n630,60,alongar,regar plantas,alongar,regar plantas,alongar,,"}
 					class="block w-full font-mono text-xs border border-gray-300 px-3 py-2 shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				></textarea>
 				<div class="flex items-center gap-4">
-					<label class="flex items-center gap-2 text-sm text-gray-700">
-						<input type="number" name="durationMinutes" value="60" min="5" max="480" class="w-16 border border-gray-300 px-2 py-1 text-sm" />
-						min per slot
-					</label>
 					<label class="flex items-center gap-2 text-sm text-gray-700">
 						<input type="checkbox" name="clearExisting" class="border-gray-300" />
 						Clear existing plan

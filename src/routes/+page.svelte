@@ -175,6 +175,7 @@
 		{@const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']}
 		{@const todayDow = new Date().getDay()}
 		{@const todayIndex = todayDow === 0 ? 6 : todayDow - 1}
+    {@const timeSlots = [...new Set(data.weekSlots.map((s: { startTime: string }) => s.startTime))].sort()}
 		<div
 			class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
 			style="border-left-color: {SECTION_COLORS.planner}"
@@ -195,7 +196,6 @@
 						</tr>
 					</thead>
 					<tbody>
-						{@const timeSlots = [...new Set(data.weekSlots.map((s: { startTime: string }) => s.startTime))].sort()}
 						{#each timeSlots as time}
 							<tr class="border-t border-gray-100">
 								{#each Array(7) as _, day}

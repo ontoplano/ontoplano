@@ -634,7 +634,6 @@ export const actions: Actions = {
 		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const csv = formData.get('csv')?.toString()?.trim() ?? '';
-		const durationMinutes = Number(formData.get('durationMinutes') || 60);
 		const clearExisting = formData.get('clearExisting') === 'on';
 
 		if (!csv) return fail(400, { message: 'CSV content is required' });
@@ -666,7 +665,7 @@ export const actions: Actions = {
 
 		for (const line of dataLines) {
 			const cells = line.split(',').map((c) => c.trim());
-			if (cells.length < 2) continue;
+			if (cells.length < 3) continue;
 
 			const timeCode = cells[0];
 			// Parse time: 610 -> 06:10, 1810 -> 18:10
@@ -677,8 +676,10 @@ export const actions: Actions = {
 
 			if (!/^\d{2}:\d{2}$/.test(startTime)) continue;
 
-			for (let day = 0; day < 7 && day + 1 < cells.length; day++) {
-				const cellValue = cells[day + 1].trim();
+			const durationMinutes = Number(cells[1]) || 60;
+
+			for (let day = 0; day < 7 && day + 2 < cells.length; day++) {
+				const cellValue = cells[day + 2].trim();
 				if (!cellValue) continue;
 
 				const activityId = activityMap.get(cellValue.toLowerCase());
