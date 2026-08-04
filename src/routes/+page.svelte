@@ -171,6 +171,56 @@
 		{/if}
 	</div>
 
+	{#if data.weekSlots.length > 0}
+		{@const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']}
+		{@const todayDow = new Date().getDay()}
+		{@const todayIndex = todayDow === 0 ? 6 : todayDow - 1}
+		<div
+			class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
+			style="border-left-color: {SECTION_COLORS.planner}"
+		>
+			<div class="mb-3 flex items-center justify-between">
+				<h2 class="text-sm font-bold text-gray-900">Week Plan</h2>
+				<a href="/planner/plan" class="text-xs text-gray-500 transition hover:text-gray-900">Edit →</a>
+			</div>
+			<div class="overflow-x-auto">
+				<table class="w-full text-xs">
+					<thead>
+						<tr>
+							{#each DAYS as day, i}
+								<th class="px-1 py-1 text-center font-medium {i === todayIndex ? 'bg-gray-100 text-gray-900' : 'text-gray-500'}">
+									{day}
+								</th>
+							{/each}
+						</tr>
+					</thead>
+					<tbody>
+						{@const timeSlots = [...new Set(data.weekSlots.map((s: { startTime: string }) => s.startTime))].sort()}
+						{#each timeSlots as time}
+							<tr class="border-t border-gray-100">
+								{#each Array(7) as _, day}
+									{@const slots = data.weekSlots.filter((s: { weekday: number; startTime: string }) => s.weekday === day && s.startTime === time)}
+									<td class="px-1 py-0.5 {day === todayIndex ? 'bg-gray-50' : ''}">
+										{#each slots as slot}
+											<div
+												class="truncate leading-tight"
+												title="{time} - {slot.activityName || slot.label || slot.categoryName}"
+												style="color: {slot.categoryColor || '#6b7280'}"
+											>
+												<span class="text-gray-400">{time.slice(0, 5)}</span>
+												{slot.activityName || slot.label || slot.categoryName}
+											</div>
+										{/each}
+									</td>
+								{/each}
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	{/if}
+
 	<div
 		class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
 		style="border-left-color: {SECTION_COLORS.diary}"

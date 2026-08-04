@@ -92,6 +92,14 @@
 
 	let allTasks = $derived(buildUnifiedTasks());
 
+	const statusOptions = [
+		{ value: 'completed', label: 'Done', key: 'c' },
+		{ value: 'delayed', label: 'Delayed', key: 'd' },
+		{ value: 'early', label: 'Early', key: 'e' },
+		{ value: 'skipped', label: 'Skip', key: 's' },
+		{ value: 'pending', label: 'Reset', key: 'r' }
+	];
+
 	function catColor(catId: number | null): string {
 		if (!catId) return CATEGORY_FALLBACK_COLOR;
 		const cat = data.categories?.find((c: { id: number }) => c.id === catId);

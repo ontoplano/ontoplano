@@ -34,6 +34,7 @@
 	let confirmingLoadSchemeId: number | null = $state(null);
 	let confirmingDeleteSchemeId: number | null = $state(null);
 	let confirmingClearAll = $state(false);
+	let showCsvImport = $state(false);
 
 	let timeInput: HTMLInputElement | undefined = $state(undefined);
 
@@ -1156,4 +1157,53 @@
 			</div>
 		{/if}
 	{/if}
+
+	<div class="mt-6 border border-gray-200 bg-white shadow-sm">
+		<button
+			type="button"
+			onclick={() => (showCsvImport = !showCsvImport)}
+			class="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+		>
+			Import CSV
+			<span class="text-xs text-gray-400">{showCsvImport ? '▲' : '▼'}</span>
+		</button>
+		{#if showCsvImport}
+			<form
+				method="post"
+				action="?/importCsv"
+				use:enhance={() => {
+					return async ({ update }) => {
+						await update();
+					};
+				}}
+				class="space-y-3 border-t border-gray-200 px-4 py-4"
+			>
+				<p class="text-xs text-gray-500">
+					Format: first column is time (610 = 06:10, 1810 = 18:10), columns 2-8 are Mon-Sun activity names.
+				</p>
+				<textarea
+					name="csv"
+					rows="8"
+					placeholder={"h,m,t,w,t,f,s,s\n610,wake up,wake up,wake up,wake up,wake up,,\n630,alongar,regar plantas,alongar,regar plantas,alongar,,"}
+					class="block w-full font-mono text-xs border border-gray-300 px-3 py-2 shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+				></textarea>
+				<div class="flex items-center gap-4">
+					<label class="flex items-center gap-2 text-sm text-gray-700">
+						<input type="number" name="durationMinutes" value="60" min="5" max="480" class="w-16 border border-gray-300 px-2 py-1 text-sm" />
+						min per slot
+					</label>
+					<label class="flex items-center gap-2 text-sm text-gray-700">
+						<input type="checkbox" name="clearExisting" class="border-gray-300" />
+						Clear existing plan
+					</label>
+				</div>
+				<button
+					type="submit"
+					class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800"
+				>
+					Import
+				</button>
+			</form>
+		{/if}
+	</div>
 </div>

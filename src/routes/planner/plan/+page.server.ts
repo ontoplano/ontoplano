@@ -628,5 +628,117 @@ export const actions: Actions = {
 			.run();
 
 		return { success: true };
+	},
+
+	importCsv: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const csv = formData.get('csv')?.toString()?.trim() ?? '';
+		const durationMinutes = Number(formData.get('durationMinutes') || 60);
+		const clearExisting = formData.get('clearExisting') === 'on';
+
+		if (!csv) return fail(400, { message: 'CSV content is required' });
+
+		const lines = csv.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
+		if (lines.length < 2) return fail(400, { message: 'CSV must have a header and at least one row' });
+
+		const dataLines = lines.slice(1);
+
+		const userActivities = db
+			.select({ id: activities.id, name: activities.name })
+			.from(activities)
+			.where(eq(activities.userId, userId))
+			.all();
+		const activityMap = new Map(userActivities.map((a) => [a.name.toLowerCase(), a.id]));
+
+		const slotsToInsert: {
+			userId: string;
+			weekday: number;
+			startTime: string;
+			durationMinutes: number;
+			mode: 'activity' | 'category';
+			activityId: number | null;
+			categoryId: number | null;
+			label: string;
+		}[] = [];
+
+		const notFound: string[] = [];
+
+		for (const line of dataLines) {
+			const cells = line.split(',').map((c) => c.trim());
+			if (cells.length < 2) continue;
+
+			const timeCode = cells[0];
+			// Parse time: 610 -> 06:10, 1810 -> 18:10
+			const padded = timeCode.padStart(4, '0');
+			const hours = padded.slice(0, -2);
+			const minutes = padded.slice(-2);
+			const startTime = `${hours.padStart(2, '0')}:${minutes}`;
+
+			if (!/^\d{2}:\d{2}$/.test(startTime)) continue;
+
+			for (let day = 0; day < 7 && day + 1 < cells.length; day++) {
+				const cellValue = cells[day + 1].trim();
+				if (!cellValue) continue;
+
+				const activityId = activityMap.get(cellValue.toLowerCase());
+				if (activityId) {
+					slotsToInsert.push({
+						userId,
+						weekday: day,
+						startTime,
+						durationMinutes,
+						mode: 'activity',
+						activityId,
+						categoryId: null,
+						label: ''
+					});
+				} else {
+					slotsToInsert.push({
+						userId,
+						weekday: day,
+						startTime,
+						durationMinutes,
+						mode: 'category',
+						activityId: null,
+						categoryId: null,
+						label: cellValue
+					});
+					if (!notFound.includes(cellValue)) notFound.push(cellValue);
+				}
+			}
+		}
+
+		if (slotsToInsert.length === 0) return fail(400, { message: 'No valid slots found in CSV' });
+
+		db.transaction((tx) => {
+			if (clearExisting) {
+				const userSlots = tx
+					.select({ id: weeklySlots.id })
+					.from(weeklySlots)
+					.where(eq(weeklySlots.userId, userId))
+					.all();
+				const slotIds = userSlots.map((s) => s.id);
+				if (slotIds.length > 0) {
+					tx.delete(taskInstances)
+						.where(and(inArray(taskInstances.slotId, slotIds), eq(taskInstances.userId, userId)))
+						.run();
+					tx.delete(suppressedSlots)
+						.where(and(inArray(suppressedSlots.slotId, slotIds), eq(suppressedSlots.userId, userId)))
+						.run();
+				}
+				tx.delete(weeklySlots).where(eq(weeklySlots.userId, userId)).run();
+			}
+
+			for (const slot of slotsToInsert) {
+				tx.insert(weeklySlots).values(slot).run();
+			}
+		});
+
+		if (notFound.length > 0) {
+			return { success: true, message: `Imported ${slotsToInsert.length} slots. Activities not found (used as labels): ${notFound.join(', ')}` };
+		}
+
+		return { success: true, message: `Imported ${slotsToInsert.length} slots.` };
 	}
 };

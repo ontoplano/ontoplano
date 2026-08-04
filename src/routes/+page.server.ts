@@ -9,7 +9,10 @@ import {
 	taskInstances,
 	habits,
 	habitOccurrences,
-	shoppingItems
+	shoppingItems,
+	weeklySlots,
+	activities,
+	categories
 } from '$lib/server/db/schema';
 import { eq, and, gte, lt, desc, max } from 'drizzle-orm';
 import { generateCurrentWeek, toLocalISOString } from '$lib/server/week-generator';
@@ -160,6 +163,25 @@ export const load: PageServerLoad = async (event) => {
 		.orderBy(desc(shoppingItems.createdAt))
 		.all();
 
+	const weekSlots = db
+		.select({
+			id: weeklySlots.id,
+			weekday: weeklySlots.weekday,
+			startTime: weeklySlots.startTime,
+			durationMinutes: weeklySlots.durationMinutes,
+			mode: weeklySlots.mode,
+			label: weeklySlots.label,
+			activityName: activities.name,
+			categoryName: categories.name,
+			categoryColor: categories.color
+		})
+		.from(weeklySlots)
+		.leftJoin(activities, eq(weeklySlots.activityId, activities.id))
+		.leftJoin(categories, eq(weeklySlots.categoryId, categories.id))
+		.where(and(eq(weeklySlots.userId, userId), eq(weeklySlots.active, true)))
+		.orderBy(weeklySlots.startTime)
+		.all();
+
 	return {
 		lastEntry: lastEntry ? { ...lastEntry, tags: lastEntryTags } : null,
 		allTags,
@@ -167,6 +189,7 @@ export const load: PageServerLoad = async (event) => {
 		habitStreaks,
 		recentBeliefs,
 		shoppingToBuy,
+		weekSlots,
 		today
 	};
 };
