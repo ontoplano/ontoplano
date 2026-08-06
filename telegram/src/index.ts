@@ -6,6 +6,7 @@ import { registerActivitiesCommand } from './commands/activities.js';
 import { registerTodoCommand } from './commands/todo.js';
 import { registerDiaryCommand } from './commands/diary.js';
 import { registerIdeiaCommand } from './commands/ideia.js';
+import { COMMANDS, registerHelpCommand } from './commands/help.js';
 
 const ALLOWED_USER = 123456789;
 const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -28,6 +29,7 @@ registerActivitiesCommand(bot);
 registerTodoCommand(bot);
 registerDiaryCommand(bot);
 registerIdeiaCommand(bot);
+registerHelpCommand(bot);
 
 bot.catch((error) => {
 	const { ctx } = error;
@@ -45,5 +47,10 @@ bot.catch((error) => {
 
 	console.error('Unknown Telegram bot error:', error.error);
 });
+
+// Keeps Telegram's own command menu in sync with /help.
+bot.api
+	.setMyCommands(COMMANDS.map(({ command, description }) => ({ command, description })))
+	.catch((error: unknown) => console.error('Failed to publish command list:', error));
 
 bot.start();
