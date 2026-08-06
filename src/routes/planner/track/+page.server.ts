@@ -205,6 +205,7 @@ export const load: PageServerLoad = async (event) => {
 	const todayDayIndex = todayDow === 0 ? 6 : todayDow - 1;
 
 	const allCategories = db.select().from(categories).where(eq(categories.userId, userId)).all();
+  const validStatuses = ['pending', 'completed', 'delayed', 'early', 'skipped'] as const;
 
 	return {
 		tasks,
