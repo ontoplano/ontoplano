@@ -16,7 +16,11 @@
 		placementFromDates,
 		decodeEventId,
 		weekdayToDate,
-		formatLocalDate
+		formatLocalDate,
+		describeGridEvent,
+		GRID_ZOOM_LEVELS,
+		GRID_DEFAULT_ZOOM_INDEX,
+		type GridEventDetail
 	} from '$lib/planner-grid.js';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -27,6 +31,58 @@
 	let gridError: string | null = $state(null);
 	let createFormEl: HTMLFormElement | undefined = $state();
 	let ec: { addEvent: (e: unknown) => unknown } | undefined = $state();
+
+	const ZOOM_STORAGE_KEY = 'ontoplano:planner-grid-zoom';
+
+	function storedZoomIndex(): number {
+		if (!browser) return GRID_DEFAULT_ZOOM_INDEX;
+		const raw = Number(localStorage.getItem(ZOOM_STORAGE_KEY));
+		if (!Number.isInteger(raw) || raw < 0 || raw >= GRID_ZOOM_LEVELS.length) {
+			return GRID_DEFAULT_ZOOM_INDEX;
+		}
+		return raw;
+	}
+
+	let zoomIndex = $state(storedZoomIndex());
+	let hovered: (GridEventDetail & { top: number; left: number; flip: boolean }) | null =
+		$state(null);
+
+	const slotHeight = $derived(GRID_ZOOM_LEVELS[zoomIndex]);
+
+	function setZoom(index: number) {
+		const next = Math.min(Math.max(index, 0), GRID_ZOOM_LEVELS.length - 1);
+		if (next === zoomIndex) return;
+		zoomIndex = next;
+		hovered = null;
+		if (browser) localStorage.setItem(ZOOM_STORAGE_KEY, String(next));
+	}
+
+	// Ctrl/Cmd+wheel over the grid zooms the grid instead of the whole page. The listener
+	// must be non-passive for preventDefault() to take effect, hence the manual binding.
+	function gridZoomWheel(node: HTMLElement) {
+		const onWheel = (e: WheelEvent) => {
+			if (!e.ctrlKey && !e.metaKey) return;
+			e.preventDefault();
+			setZoom(zoomIndex + (e.deltaY < 0 ? 1 : -1));
+		};
+		node.addEventListener('wheel', onWheel, { passive: false });
+		return {
+			destroy() {
+				node.removeEventListener('wheel', onWheel);
+			}
+		};
+	}
+
+	function showHover(info: { el: HTMLElement; event: Parameters<typeof describeGridEvent>[0] }) {
+		const rect = info.el.getBoundingClientRect();
+		const flip = rect.right + 260 > window.innerWidth;
+		hovered = {
+			...describeGridEvent(info.event),
+			top: rect.top,
+			left: flip ? rect.left : rect.right,
+			flip
+		};
+	}
 
 	$effect(() => {
 		viewMode = data.view === 'grid' ? 'grid' : 'list';
@@ -221,6 +277,13 @@
 			return;
 		}
 
+		if (action === 'zoom-in' || action === 'zoom-out' || action === 'zoom-reset') {
+			if (viewMode !== 'grid') return;
+			if (action === 'zoom-reset') setZoom(GRID_DEFAULT_ZOOM_INDEX);
+			else setZoom(zoomIndex + (action === 'zoom-in' ? 1 : -1));
+			return;
+		}
+
 		if (showCopyPanel) {
 			return;
 		}
@@ -400,14 +463,18 @@
 	]);
 
 	const gridOptions = $derived({
-		...baseWeekGridOptions(data.weekMeta.monday),
+		...baseWeekGridOptions(data.weekMeta.monday, { slotHeight }),
 		events: gridEvents,
 		editable: true,
 		selectable: !data.isPastWeek,
 		eventClick: handleEventClick,
 		eventDrop: handleEventDrop,
 		eventResize: handleEventPersist,
-		select: handleGridSelect
+		select: handleGridSelect,
+		eventMouseEnter: showHover,
+		eventMouseLeave: () => (hovered = null),
+		eventDragStart: () => (hovered = null),
+		eventResizeStart: () => (hovered = null)
 	});
 
 	function handleEventClick(info: { event: { id: string | number } }) {
@@ -1484,16 +1551,70 @@
 			{/if}
 		{/if}
 	{:else}
-		<div class="h-[70vh] border border-gray-200 bg-white shadow-sm">
+		<div class="h-[70vh] border border-gray-200 bg-white shadow-sm" use:gridZoomWheel>
 			{#if browser}
 				<Calendar bind:this={ec} plugins={[TimeGrid, Interaction]} options={gridOptions} />
 			{/if}
 		</div>
-		<p class="mt-1 text-xs text-gray-400">
-			Drag to create · drag a slot to move · hold <kbd
-				class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd
-			> while dragging to duplicate
-		</p>
+		<div class="mt-1 flex items-center justify-between gap-4">
+			<p class="text-xs text-gray-400">
+				Drag to create · drag a slot to move · hold <kbd
+					class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd
+				> while dragging to duplicate · snaps to 15min
+			</p>
+			<div class="flex items-center gap-1">
+				<span class="mr-1 text-xs text-gray-400">
+					Zoom (<kbd class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd>+scroll)
+				</span>
+				<button
+					type="button"
+					onclick={() => setZoom(zoomIndex - 1)}
+					disabled={zoomIndex === 0}
+					title="Zoom out (-)"
+					aria-label="Zoom out"
+					class="border border-gray-300 bg-white px-2 py-0.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+					>&minus;</button
+				>
+				<button
+					type="button"
+					onclick={() => setZoom(GRID_DEFAULT_ZOOM_INDEX)}
+					title="Reset zoom (0)"
+					class="border border-gray-300 bg-white px-2 py-0.5 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+					>{Math.round((slotHeight / GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX]) * 100)}%</button
+				>
+				<button
+					type="button"
+					onclick={() => setZoom(zoomIndex + 1)}
+					disabled={zoomIndex === GRID_ZOOM_LEVELS.length - 1}
+					title="Zoom in (+)"
+					aria-label="Zoom in"
+					class="border border-gray-300 bg-white px-2 py-0.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+					>+</button
+				>
+			</div>
+		</div>
+		{#if hovered}
+			<div
+				class="pointer-events-none fixed z-50 max-w-[240px] border border-gray-200 bg-white px-3 py-2 shadow-sm"
+				style:top="{hovered.top}px"
+				style:left="{hovered.left}px"
+				style:transform={hovered.flip ? 'translateX(-100%) translateX(-8px)' : 'translateX(8px)'}
+			>
+				<p class="text-sm font-medium text-gray-900">{hovered.title}</p>
+				<p class="mt-0.5 text-xs text-gray-600">
+					{hovered.timeText} · {hovered.durationText}
+				</p>
+				{#if hovered.categoryName}
+					<p class="text-xs text-gray-500">{hovered.categoryName}</p>
+				{/if}
+				{#if hovered.label}
+					<p class="text-xs text-gray-500">Label: {hovered.label}</p>
+				{/if}
+				{#if hovered.state}
+					<p class="mt-0.5 text-xs font-medium text-gray-400">{hovered.state}</p>
+				{/if}
+			</div>
+		{/if}
 	{/if}
 
 	<div class="mt-6 border border-gray-200 bg-white shadow-sm">
