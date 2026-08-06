@@ -32,9 +32,15 @@
 		viewMode = data.view === 'grid' ? 'grid' : 'list';
 	});
 
+	// Sentinel value for the "+ New activity" option in the activity selects; the
+	// server creates the activity as part of the same submission.
+	const NEW_ACTIVITY = '__new__';
+
 	let showForm = $state(false);
 	let editingId: number | null = $state(null);
 	let slotMode: 'category' | 'activity' = $state('activity');
+	let activityChoice = $state(NEW_ACTIVITY);
+	let exceptionalActivityChoice = $state(NEW_ACTIVITY);
 	let selectedDay: number = $state(new Date().getDay() === 0 ? 6 : new Date().getDay() - 1);
 	let selectedIndex: number = $state(0);
 	let showExceptionalForm = $state(false);
@@ -119,9 +125,16 @@
 		return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 	}
 
+	function defaultActivityChoice(activityId: number | null | undefined): string {
+		if (activityId != null) return String(activityId);
+		if (data.activities.length > 0) return String(data.activities[0].id);
+		return NEW_ACTIVITY;
+	}
+
 	function startEdit(slot: (typeof data.slots)[number]) {
 		editingId = slot.id;
 		slotMode = slot.mode as 'category' | 'activity';
+		activityChoice = defaultActivityChoice(slot.activityId);
 		showForm = true;
 		showExceptionalForm = false;
 		tick().then(() => timeInput?.focus());
@@ -131,6 +144,7 @@
 		showForm = true;
 		showExceptionalForm = false;
 		editingId = null;
+		activityChoice = defaultActivityChoice(null);
 		tick().then(() => timeInput?.focus());
 	}
 
@@ -139,6 +153,7 @@
 		showForm = false;
 		editingId = null;
 		exceptionalMode = 'activity';
+		exceptionalActivityChoice = defaultActivityChoice(null);
 	}
 
 	function goToPrevWeek() {
@@ -1037,11 +1052,13 @@
 						<select
 							name="activityId"
 							required
+							bind:value={activityChoice}
 							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						>
 							{#each data.activities as act (act.id)}
-								<option value={act.id} selected={editing?.activityId === act.id}>{act.name}</option>
+								<option value={String(act.id)}>{act.name}</option>
 							{/each}
+							<option value={NEW_ACTIVITY}>+ New activity...</option>
 						</select>
 					</label>
 				{/if}
@@ -1056,6 +1073,34 @@
 					/>
 				</label>
 			</div>
+			{#if slotMode === 'activity' && activityChoice === NEW_ACTIVITY}
+				<div class="flex gap-3 border border-gray-200 bg-gray-50 p-3">
+					<label class="flex-1">
+						<span class="text-sm font-medium text-gray-700">New activity name</span>
+						<input
+							name="newActivityName"
+							type="text"
+							required
+							autocomplete="off"
+							use:autofocus
+							placeholder="e.g. learn russian"
+							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						/>
+					</label>
+					<label class="w-44">
+						<span class="text-sm font-medium text-gray-700">Its category</span>
+						<select
+							name="newActivityCategoryId"
+							required
+							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						>
+							{#each data.categories as cat (cat.id)}
+								<option value={cat.id}>{cat.name}</option>
+							{/each}
+						</select>
+					</label>
+				</div>
+			{/if}
 			<button
 				type="submit"
 				class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
@@ -1136,11 +1181,13 @@
 						<select
 							name="activityId"
 							required
+							bind:value={exceptionalActivityChoice}
 							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						>
 							{#each data.activities as act (act.id)}
-								<option value={act.id}>{act.name}</option>
+								<option value={String(act.id)}>{act.name}</option>
 							{/each}
+							<option value={NEW_ACTIVITY}>+ New activity...</option>
 						</select>
 					</label>
 				{/if}
@@ -1154,6 +1201,34 @@
 					/>
 				</label>
 			</div>
+			{#if exceptionalMode === 'activity' && exceptionalActivityChoice === NEW_ACTIVITY}
+				<div class="flex gap-3 border border-gray-200 bg-white p-3">
+					<label class="flex-1">
+						<span class="text-sm font-medium text-gray-700">New activity name</span>
+						<input
+							name="newActivityName"
+							type="text"
+							required
+							autocomplete="off"
+							use:autofocus
+							placeholder="e.g. dentist appointment"
+							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						/>
+					</label>
+					<label class="w-44">
+						<span class="text-sm font-medium text-gray-700">Its category</span>
+						<select
+							name="newActivityCategoryId"
+							required
+							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						>
+							{#each data.categories as cat (cat.id)}
+								<option value={cat.id}>{cat.name}</option>
+							{/each}
+						</select>
+					</label>
+				</div>
+			{/if}
 			<div class="flex gap-2">
 				<button
 					type="submit"

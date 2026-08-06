@@ -11,7 +11,7 @@ import {
 	planningSchemes,
 	schemeSlots
 } from '$lib/server/db/schema';
-import { eq, and, inArray, gte, lt } from 'drizzle-orm';
+import { eq, and, inArray, gte, lt, sql } from 'drizzle-orm';
 import {
 	toLocalISOString,
 	getMonday,
@@ -21,6 +21,50 @@ import {
 } from '$lib/server/week-generator';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+// Sentinel submitted by the activity <select> when the user wants to create the
+// activity inline instead of picking an existing one.
+const NEW_ACTIVITY_VALUE = '__new__';
+
+// Resolves the submitted activity to an id, creating the activity on the fly when
+// the "+ New activity" option was picked. An activity that already exists under the
+// same name is reused instead of duplicated.
+function resolveActivityId(
+	userId: string,
+	formData: FormData
+): { activityId: number | null } | { message: string } {
+	const raw = formData.get('activityId')?.toString()?.trim() ?? '';
+	if (raw !== NEW_ACTIVITY_VALUE) {
+		return { activityId: raw ? Number(raw) : null };
+	}
+
+	const name = formData.get('newActivityName')?.toString()?.trim() ?? '';
+	const categoryId = Number(formData.get('newActivityCategoryId'));
+	if (!name) return { message: 'Activity name is required' };
+	if (!categoryId) return { message: 'Category is required for the new activity' };
+
+	const category = db
+		.select({ id: categories.id })
+		.from(categories)
+		.where(and(eq(categories.id, categoryId), eq(categories.userId, userId)))
+		.get();
+	if (!category) return { message: 'Category not found' };
+
+	const existing = db
+		.select({ id: activities.id })
+		.from(activities)
+		.where(and(eq(activities.userId, userId), sql`lower(${activities.name}) = lower(${name})`))
+		.get();
+	if (existing) return { activityId: existing.id };
+
+	const inserted = db
+		.insert(activities)
+		.values({ userId, name, categoryId })
+		.returning({ id: activities.id })
+		.get();
+
+	return { activityId: inserted.id };
+}
 
 function parseWeekParam(param: string | null): Date {
 	if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
@@ -191,14 +235,20 @@ export const actions: Actions = {
 		const durationMinutes = Number(formData.get('durationMinutes') || 60);
 		const mode = formData.get('mode')?.toString() as 'category' | 'activity';
 		const categoryId = formData.get('categoryId') ? Number(formData.get('categoryId')) : null;
-		const activityId = formData.get('activityId') ? Number(formData.get('activityId')) : null;
 		const label = formData.get('label')?.toString()?.trim() ?? '';
 
 		if (weekday < 0 || weekday > 6) return fail(400, { message: 'Invalid weekday' });
 		if (!startTime.match(/^\d{2}:\d{2}$/)) return fail(400, { message: 'Invalid time format' });
 		if (!mode) return fail(400, { message: 'Mode is required' });
 		if (mode === 'category' && !categoryId) return fail(400, { message: 'Category required' });
-		if (mode === 'activity' && !activityId) return fail(400, { message: 'Activity required' });
+
+		let activityId: number | null = null;
+		if (mode === 'activity') {
+			const resolved = resolveActivityId(userId, formData);
+			if ('message' in resolved) return fail(400, { message: resolved.message });
+			activityId = resolved.activityId;
+			if (!activityId) return fail(400, { message: 'Activity required' });
+		}
 
 		const inserted = db
 			.insert(weeklySlots)
@@ -227,7 +277,6 @@ export const actions: Actions = {
 		const durationMinutes = Number(formData.get('durationMinutes') || 60);
 		const mode = formData.get('mode')?.toString() as 'category' | 'activity';
 		const categoryId = formData.get('categoryId') ? Number(formData.get('categoryId')) : null;
-		const activityId = formData.get('activityId') ? Number(formData.get('activityId')) : null;
 		const label = formData.get('label')?.toString()?.trim() ?? '';
 
 		if (!id) return fail(400, { message: 'Missing id' });
@@ -237,6 +286,14 @@ export const actions: Actions = {
 			.where(and(eq(weeklySlots.id, id), eq(weeklySlots.userId, userId)))
 			.get();
 		if (!existing) return fail(404, { message: 'Slot not found' });
+
+		let activityId: number | null = null;
+		if (mode === 'activity') {
+			const resolved = resolveActivityId(userId, formData);
+			if ('message' in resolved) return fail(400, { message: resolved.message });
+			activityId = resolved.activityId;
+			if (!activityId) return fail(400, { message: 'Activity required' });
+		}
 
 		db.update(weeklySlots)
 			.set({
@@ -595,14 +652,20 @@ export const actions: Actions = {
 		const durationMinutes = Number(formData.get('durationMinutes') || 60);
 		const mode = formData.get('mode')?.toString() as 'category' | 'activity';
 		const categoryId = formData.get('categoryId') ? Number(formData.get('categoryId')) : null;
-		const activityId = formData.get('activityId') ? Number(formData.get('activityId')) : null;
 		const label = formData.get('label')?.toString()?.trim() ?? '';
 
 		if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return fail(400, { message: 'Invalid date' });
 		if (!startTime.match(/^\d{2}:\d{2}$/)) return fail(400, { message: 'Invalid time' });
 		if (!mode) return fail(400, { message: 'Mode is required' });
 		if (mode === 'category' && !categoryId) return fail(400, { message: 'Category required' });
-		if (mode === 'activity' && !activityId) return fail(400, { message: 'Activity required' });
+
+		let activityId: number | null = null;
+		if (mode === 'activity') {
+			const resolved = resolveActivityId(userId, formData);
+			if ('message' in resolved) return fail(400, { message: resolved.message });
+			activityId = resolved.activityId;
+			if (!activityId) return fail(400, { message: 'Activity required' });
+		}
 
 		db.insert(exceptionalSlots)
 			.values({
