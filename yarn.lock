@@ -893,6 +893,13 @@
     "@eslint/core" "^1.1.1"
     levn "^0.4.1"
 
+"@event-calendar/core@^5.12.0":
+  version "5.12.0"
+  resolved "https://registry.yarnpkg.com/@event-calendar/core/-/core-5.12.0.tgz#7a38832115b1a82e75058539d109ad01d4748b93"
+  integrity sha512-qvdbuC04vfucWRh2Sr6toi95Mno3PQnBJ+3J8VMDor9u7d1xmNI+20ZVD635jgetQAwPN9+ScEqM4xeP4pVc1Q==
+  dependencies:
+    svelte "^5.56.7"
+
 "@humanfs/core@^0.19.1":
   version "0.19.1"
   resolved "https://registry.yarnpkg.com/@humanfs/core/-/core-0.19.1.tgz#17c55ca7d426733fe3c561906b8173c336b40a77"
@@ -1171,6 +1178,11 @@
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/@svelte-put/shortcut/-/shortcut-4.1.0.tgz#8b7bba44d8d12a6c3aa4b7c12ac4f530e138c350"
   integrity sha512-wImNEIkbxAIWFqlfuhcbC+jRPDeRa/uJGIXHMEVVD+jqL9xCwWNnkGQJ6Qb2XVszuRLHlb8SGZDL3Io/h3vs8w==
+
+"@sveltejs/acorn-typescript@^1.0.10":
+  version "1.0.12"
+  resolved "https://registry.yarnpkg.com/@sveltejs/acorn-typescript/-/acorn-typescript-1.0.12.tgz#1d1d2d1fa74dc29960f65776701a1dfc23fbf291"
+  integrity sha512-J1jNYG23QWd67UfrQSFHtjhV37r9mVi0gdc12A3MWPldOjRK35Xk+um+qACPVjgw3AleiqoyEAhok8Wm3q46NA==
 
 "@sveltejs/acorn-typescript@^1.0.5":
   version "1.0.9"
@@ -2004,6 +2016,11 @@ devalue@^5.6.4:
   resolved "https://registry.yarnpkg.com/devalue/-/devalue-5.6.4.tgz#aec6cdba0e4109543b40c94d46e2b87bf8af8de5"
   integrity sha512-Gp6rDldRsFh/7XuouDbxMH3Mx8GMCcgzIb1pDTvNyn8pZGQ22u+Wa+lGV9dQCltFQ7uVw0MhRyb8XDskNFOReA==
 
+devalue@^5.8.1:
+  version "5.9.0"
+  resolved "https://registry.yarnpkg.com/devalue/-/devalue-5.9.0.tgz#5d30db41a0db9171cf4ee9dbf6617e0b77cd7c2a"
+  integrity sha512-RWrqdArjvPbsATEhOPUo6Wndc/iWnkWKlhIrdlF3zMMYo/c3CVtoaVAyLtWxz5h8nSlkHzxnzV2uLydPXmtF+A==
+
 dotenv@^17.2.2, dotenv@^17.2.3:
   version "17.3.1"
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-17.3.1.tgz#2706f5b0165e45a1503348187b8468f87fe6aae2"
@@ -2270,6 +2287,13 @@ esquery@^1.7.0:
   integrity sha512-Ap6G0WQwcU/LHsvLwON1fAQX9Zp0A2Y6Y/cJBl9r/JbW90Zyg4/zbG6zzKa2OTALELarYHmKu0GhpM5EO+7T0g==
   dependencies:
     estraverse "^5.1.0"
+
+esrap@^2.2.12:
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/esrap/-/esrap-2.3.1.tgz#105060351b84b9fe726302c5957e0c072d7b96d9"
+  integrity sha512-MXjVkrBAjuwIZ8xq9+a1MOOnLIwANZOx/4gtdWHfSJtXOrUh2QQK2I5mMC3urLli559jTlq2j+kSqht80uRgog==
+  dependencies:
+    "@jridgewell/sourcemap-codec" "^1.4.15"
 
 esrap@^2.2.4:
   version "2.2.4"
@@ -3401,6 +3425,28 @@ svelte@^5.54.0:
     devalue "^5.6.4"
     esm-env "^1.2.1"
     esrap "^2.2.4"
+    is-reference "^3.0.3"
+    locate-character "^3.0.0"
+    magic-string "^0.30.11"
+    zimmerframe "^1.1.2"
+
+svelte@^5.56.7:
+  version "5.56.8"
+  resolved "https://registry.yarnpkg.com/svelte/-/svelte-5.56.8.tgz#e8eb5ec8d338943607f93121c8f62f2959938158"
+  integrity sha512-PY8LOw7xP6c8IOiVqdo0sbbZVYhXRSfklOQLAUyGBKqjTX0wx/z4l/9J+PmBpmlLnxzEb1NqltxQ5/wZme/Cmg==
+  dependencies:
+    "@jridgewell/remapping" "^2.3.4"
+    "@jridgewell/sourcemap-codec" "^1.5.0"
+    "@sveltejs/acorn-typescript" "^1.0.10"
+    "@types/estree" "^1.0.5"
+    "@types/trusted-types" "^2.0.7"
+    acorn "^8.12.1"
+    aria-query "5.3.1"
+    axobject-query "^4.1.0"
+    clsx "^2.1.1"
+    devalue "^5.8.1"
+    esm-env "^1.2.1"
+    esrap "^2.2.12"
     is-reference "^3.0.3"
     locate-character "^3.0.0"
     magic-string "^0.30.11"

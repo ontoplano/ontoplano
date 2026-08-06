@@ -58,6 +58,7 @@
 	],
 	"dependencies": {
 		"@dagrejs/dagre": "^3.0.0",
+		"@event-calendar/core": "^5.12.0",
 		"@xyflow/svelte": "^1.5.2",
 		"better-sqlite3": "^12.6.2"
 	}

@@ -1,13 +1,35 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance, deserialize } from '$app/forms';
 	import { goto } from '$app/navigation';
+	import { browser } from '$app/environment';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types.js';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { autofocus } from '$lib/actions/autofocus.js';
 	import { getAction } from '$lib/shortcuts';
+	import { Calendar, TimeGrid, Interaction } from '@event-calendar/core';
+	import '@event-calendar/core/index.css';
+	import type { Calendar as EventCalendar } from '@event-calendar/core';
+	import {
+		baseWeekGridOptions,
+		buildSlotEvents,
+		buildExceptionalEvents,
+		placementFromDates,
+		decodeEventId,
+		weekdayToDate,
+		formatLocalDate
+	} from '$lib/planner-grid.js';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+
+	let viewMode: 'list' | 'grid' = $state(data.view === 'grid' ? 'grid' : 'list');
+	let prefillTime = $state('09:00');
+	let prefillDuration = $state(60);
+	let gridError: string | null = $state(null);
+
+	$effect(() => {
+		viewMode = data.view === 'grid' ? 'grid' : 'list';
+	});
 
 	let showForm = $state(false);
 	let editingId: number | null = $state(null);
@@ -178,6 +200,11 @@
 		}
 		e.preventDefault();
 
+		if (action === 'toggle-view') {
+			setView(viewMode === 'grid' ? 'list' : 'grid');
+			return;
+		}
+
 		if (showCopyPanel) {
 			return;
 		}
@@ -310,7 +337,6 @@
 			case 'new-exceptional':
 				startNewExceptional();
 				break;
-
 		}
 	}
 
@@ -322,6 +348,114 @@
 		if (data.isPastWeek) return true;
 		if (!data.weekMeta.isCurrent) return false;
 		return dayIndex < data.todayDayIndex;
+	}
+
+	function setView(mode: 'list' | 'grid') {
+		viewMode = mode;
+		const params = new URLSearchParams();
+		if (mode === 'grid') params.set('view', 'grid');
+		if (!data.weekMeta.isCurrent) params.set('week', data.weekMeta.monday);
+		const qs = params.toString();
+		goto(`/planner/plan${qs ? `?${qs}` : ''}`, {
+			replaceState: true,
+			keepFocus: true,
+			noScroll: true
+		});
+	}
+
+	const suppressedSlotIds = $derived(
+		new Set<number>(
+			data.suppressions
+				.filter((sup: { slotId: number; date: string }) => {
+					const slot = data.slots.find((s: Slot) => s.id === sup.slotId);
+					if (!slot) return false;
+					return formatLocalDate(weekdayToDate(data.weekMeta.monday, slot.weekday)) === sup.date;
+				})
+				.map((sup: { slotId: number }) => sup.slotId)
+		)
+	);
+
+	const gridEvents = $derived([
+		...buildSlotEvents(data.slots, data.weekMeta.monday, data.categories, {
+			isWeekdayEditable: (wd) => !isDayPast(wd),
+			suppressedSlotIds
+		}),
+		...buildExceptionalEvents(data.exceptionals, data.categories)
+	]);
+
+	const gridOptions = $derived({
+		...baseWeekGridOptions(data.weekMeta.monday),
+		events: gridEvents,
+		editable: true,
+		selectable: !data.isPastWeek,
+		eventClick: handleEventClick,
+		eventDrop: handleEventPersist,
+		eventResize: handleEventPersist,
+		select: handleGridSelect
+	});
+
+	function handleEventClick(info: { event: { id: string | number } }) {
+		const decoded = decodeEventId(info.event.id);
+		if (!decoded || decoded.kind !== 'slot') return;
+		const slot = data.slots.find((s: Slot) => s.id === decoded.refId);
+		if (slot) startEdit(slot);
+	}
+
+	function handleGridSelect(info: { start: Date; end: Date }) {
+		const placement = placementFromDates(info.start, info.end);
+		if (isDayPast(placement.weekday)) return;
+		selectedDay = placement.weekday;
+		prefillTime = placement.startTime;
+		prefillDuration = placement.durationMinutes;
+		startNew();
+	}
+
+	async function handleEventPersist(info: {
+		event: { id: string | number; start: Date; end: Date };
+		revert: () => void;
+	}) {
+		const decoded = decodeEventId(info.event.id);
+		if (!decoded || decoded.kind !== 'slot') {
+			info.revert();
+			return;
+		}
+		const slot = data.slots.find((s: Slot) => s.id === decoded.refId);
+		if (!slot) {
+			info.revert();
+			return;
+		}
+		const placement = placementFromDates(info.event.start, info.event.end);
+		const body = new FormData();
+		body.set('id', String(slot.id));
+		body.set('weekday', String(placement.weekday));
+		body.set('startTime', placement.startTime);
+		body.set('durationMinutes', String(placement.durationMinutes));
+		body.set('mode', slot.mode);
+		if (slot.categoryId != null) body.set('categoryId', String(slot.categoryId));
+		if (slot.activityId != null) body.set('activityId', String(slot.activityId));
+		body.set('label', slot.label ?? '');
+
+		try {
+			const res = await fetch(`${location.pathname}?/update`, {
+				method: 'POST',
+				headers: { 'x-sveltekit-action': 'true' },
+				body
+			});
+			const result = deserialize(await res.text());
+			if (result.type === 'failure' || result.type === 'error') {
+				info.revert();
+				gridError =
+					(result.type === 'failure' && (result.data?.message as string)) || 'Failed to move slot.';
+				return;
+			}
+			gridError = null;
+			slot.weekday = placement.weekday;
+			slot.startTime = placement.startTime;
+			slot.durationMinutes = placement.durationMinutes;
+		} catch {
+			info.revert();
+			gridError = 'Failed to move slot.';
+		}
 	}
 </script>
 
@@ -351,6 +485,22 @@
 			>
 		</div>
 		<div class="flex gap-2">
+			<div class="flex">
+				<button
+					onclick={() => setView('list')}
+					class="px-3 py-1 text-sm {viewMode === 'list'
+						? 'bg-gray-900 font-medium text-white hover:bg-gray-800'
+						: 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50'}"
+					title="List view (g)">List</button
+				>
+				<button
+					onclick={() => setView('grid')}
+					class="px-3 py-1 text-sm {viewMode === 'grid'
+						? 'bg-gray-900 font-medium text-white hover:bg-gray-800'
+						: 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50'}"
+					title="Grid view (g)">Grid</button
+				>
+			</div>
 			<button
 				onclick={() => {
 					if (showExceptionalForm) {
@@ -386,6 +536,12 @@
 	{#if form?.message}
 		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
 			{form.message}
+		</div>
+	{/if}
+
+	{#if gridError}
+		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+			{gridError}
 		</div>
 	{/if}
 
@@ -425,12 +581,13 @@
 					<div class="flex gap-2">
 						<input
 							name="name"
-							type="text" autocomplete="off"
+							type="text"
+							autocomplete="off"
 							bind:value={newSchemeName}
 							placeholder="Scheme name"
 							required
 							use:autofocus
-							class="flex-1 border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+							class="flex-1 border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
 						<button
 							type="submit"
@@ -442,7 +599,9 @@
 				</form>
 
 				<div class="border border-gray-200 bg-white shadow-sm">
-					<div class="border-b border-gray-200 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+					<div
+						class="border-b border-gray-200 px-4 py-2 text-xs font-medium tracking-wide text-gray-500 uppercase"
+					>
 						Saved schemes
 					</div>
 					{#if data.schemes.length === 0}
@@ -451,20 +610,16 @@
 						<div class="divide-y divide-gray-200">
 							{#each data.schemes as scheme (scheme.id)}
 								<div class="flex items-center gap-4 px-4 py-3">
-									<form
-										method="post"
-										action="?/renameScheme"
-										use:enhance
-										class="min-w-0 flex-1"
-									>
+									<form method="post" action="?/renameScheme" use:enhance class="min-w-0 flex-1">
 										<input type="hidden" name="schemeId" value={scheme.id} />
 										<div class="flex gap-2">
 											<input
 												name="name"
-												type="text" autocomplete="off"
+												type="text"
+												autocomplete="off"
 												value={scheme.name}
 												required
-												class="w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+												class="w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 											/>
 											<button
 												type="submit"
@@ -509,33 +664,33 @@
 										</form>
 
 										{#if confirmingDeleteSchemeId === scheme.id}
-										<div class="flex items-center gap-2">
-											<form
-												method="post"
-												action="?/deleteScheme"
-												use:enhance={() => {
-													return async ({ update }) => {
-														await update();
-														confirmingDeleteSchemeId = null;
-													};
-												}}
-											>
-												<input type="hidden" name="schemeId" value={scheme.id} />
-												<button
-													type="submit"
-													class="border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 shadow-sm transition hover:bg-red-100"
+											<div class="flex items-center gap-2">
+												<form
+													method="post"
+													action="?/deleteScheme"
+													use:enhance={() => {
+														return async ({ update }) => {
+															await update();
+															confirmingDeleteSchemeId = null;
+														};
+													}}
 												>
-													Confirm?
+													<input type="hidden" name="schemeId" value={scheme.id} />
+													<button
+														type="submit"
+														class="border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 shadow-sm transition hover:bg-red-100"
+													>
+														Confirm?
+													</button>
+												</form>
+												<button
+													type="button"
+													onclick={() => (confirmingDeleteSchemeId = null)}
+													class="border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+												>
+													Cancel
 												</button>
-											</form>
-											<button
-												type="button"
-												onclick={() => (confirmingDeleteSchemeId = null)}
-												class="border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-											>
-												Cancel
-											</button>
-										</div>
+											</div>
 										{:else}
 											<button
 												type="button"
@@ -670,7 +825,7 @@
 	{/if}
 
 	{#if multiselect && selectedIds.size > 0}
-		<div class="fixed bottom-0 left-0 right-0 z-50 border-t border-blue-200 bg-blue-50 px-4 py-2">
+		<div class="fixed right-0 bottom-0 left-0 z-50 border-t border-blue-200 bg-blue-50 px-4 py-2">
 			<div class="mx-auto flex max-w-5xl items-center justify-between">
 				<span class="text-sm font-medium text-blue-900">{selectedIds.size} selected</span>
 				<div class="flex gap-2">
@@ -679,34 +834,34 @@
 						method="post"
 						action="?/bulkDelete"
 						use:enhance={() => {
-						return async ({ update }) => {
-							await update();
-							confirmingBulkDelete = false;
-							multiselect = false;
-							selectedIds = new Set();
-						};
-					}}
-				>
-					<input type="hidden" name="ids" value={[...selectedIds].join(',')} />
-					{#if confirmingBulkDelete}
-						<button
-							type="submit"
-							class="border border-red-300 bg-red-50 px-3 py-1 text-sm font-medium text-red-700 transition hover:bg-red-100"
-						>
-							Confirm delete?
-						</button>
-					{:else}
-						<button
-							type="button"
-							onclick={() => {
-								confirmingBulkDelete = true;
-							}}
-							class="border border-red-200 bg-white px-3 py-1 text-sm text-red-600 transition hover:bg-red-50"
-						>
-							Delete selected
-						</button>
-					{/if}
-				</form>
+							return async ({ update }) => {
+								await update();
+								confirmingBulkDelete = false;
+								multiselect = false;
+								selectedIds = new Set();
+							};
+						}}
+					>
+						<input type="hidden" name="ids" value={[...selectedIds].join(',')} />
+						{#if confirmingBulkDelete}
+							<button
+								type="submit"
+								class="border border-red-300 bg-red-50 px-3 py-1 text-sm font-medium text-red-700 transition hover:bg-red-100"
+							>
+								Confirm delete?
+							</button>
+						{:else}
+							<button
+								type="button"
+								onclick={() => {
+									confirmingBulkDelete = true;
+								}}
+								class="border border-red-200 bg-white px-3 py-1 text-sm text-red-600 transition hover:bg-red-50"
+							>
+								Delete selected
+							</button>
+						{/if}
+					</form>
 					<button
 						onclick={() => (showCopyPanel = true)}
 						class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-50"
@@ -757,7 +912,7 @@
 						name="startTime"
 						type="time"
 						required
-						value={editing?.startTime ?? '09:00'}
+						value={editing?.startTime ?? prefillTime}
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
 				</label>
@@ -768,7 +923,7 @@
 						type="number"
 						min="15"
 						step="15"
-						value={editing?.durationMinutes ?? 60}
+						value={editing?.durationMinutes ?? prefillDuration}
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
 				</label>
@@ -817,7 +972,8 @@
 					<span class="text-sm font-medium text-gray-700">Label (optional)</span>
 					<input
 						name="label"
-						type="text" autocomplete="off"
+						type="text"
+						autocomplete="off"
 						value={editing?.label ?? ''}
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
@@ -844,7 +1000,9 @@
 			}}
 			class="space-y-3 border border-blue-200 bg-blue-50 p-4 shadow-sm"
 		>
-			<h3 class="text-sm font-medium text-gray-900">New exception for {data.weekdays[selectedDay]}</h3>
+			<h3 class="text-sm font-medium text-gray-900">
+				New exception for {data.weekdays[selectedDay]}
+			</h3>
 			<input type="hidden" name="date" value={selectedDateStr()} />
 			<div class="flex gap-3">
 				<label class="w-28">
@@ -913,7 +1071,8 @@
 					<span class="text-sm font-medium text-gray-700">Label (optional)</span>
 					<input
 						name="label"
-						type="text" autocomplete="off"
+						type="text"
+						autocomplete="off"
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
 				</label>
@@ -936,226 +1095,248 @@
 		</form>
 	{/if}
 
-	<div class="flex gap-1">
-		{#each data.weekdays as day, i (i)}
-			{@const past = isDayPast(i)}
-			<button
-				onclick={() => (selectedDay = i)}
-				class="flex-1 border px-2 py-2 text-center text-xs font-medium transition {selectedDay === i
-					? past
-						? 'border-gray-400 bg-gray-400 text-white'
-						: 'border-gray-900 bg-gray-900 text-white'
-					: past
-						? 'border-gray-100 bg-gray-50 text-gray-300'
-						: 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}"
-			>
-				{day.slice(0, 3)}
-			</button>
-		{/each}
-	</div>
-
-	{#if slotsForDay(selectedDay).length === 0 && exceptionalSlotsForDay().length === 0}
-		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-			No slots for {data.weekdays[selectedDay]}.
-		</div>
-	{:else}
-		{@const dayPast = isDayPast(selectedDay)}
-		{#if slotsForDay(selectedDay).length > 0}
-		<div
-			class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm {dayPast
-				? 'opacity-60'
-				: ''}"
-		>
-			{#each slotsForDay(selectedDay) as slot, i (slot.id)}
-				{@const isSelected = selectedIds.has(slot.id)}
-				{@const suppressed = isSlotSuppressed(slot.id)}
-				<div
-					class="flex items-center gap-4 border-l-4 px-4 py-3 {!slot.active || suppressed
-						? 'opacity-50'
-						: ''} {selectedIndex === i ? 'bg-gray-100' : ''} {isSelected ? 'bg-blue-50' : ''}"
-					style="border-left-color: {catColor(slot.categoryId)}"
+	{#if viewMode === 'list'}
+		<div class="flex gap-1">
+			{#each data.weekdays as day, i (i)}
+				{@const past = isDayPast(i)}
+				<button
+					onclick={() => (selectedDay = i)}
+					class="flex-1 border px-2 py-2 text-center text-xs font-medium transition {selectedDay ===
+					i
+						? past
+							? 'border-gray-400 bg-gray-400 text-white'
+							: 'border-gray-900 bg-gray-900 text-white'
+						: past
+							? 'border-gray-100 bg-gray-50 text-gray-300'
+							: 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}"
 				>
-					{#if multiselect && !dayPast}
-						<button
-							type="button"
-							onclick={() => toggleSlotSelection(slot.id)}
-							class="h-5 w-5 shrink-0 border {isSelected
-								? 'border-blue-500 bg-blue-500'
-								: 'border-gray-400 bg-white'}"
-							aria-label={isSelected ? 'Deselect' : 'Select'}
-						>
-							{#if isSelected}
-								<svg class="h-full w-full text-white" viewBox="0 0 20 20" fill="currentColor">
-									<path
-										fill-rule="evenodd"
-										d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-										clip-rule="evenodd"
-									/>
-								</svg>
-							{/if}
-						</button>
-					{/if}
-					<div
-						class="w-24 shrink-0 font-mono text-sm text-gray-500"
-						title={formatDuration(slot.durationMinutes)}
-					>
-						{slot.startTime} - {computeEndTime(slot.startTime, slot.durationMinutes)}
-					</div>
-					<div class="min-w-0 flex-1">
-						<span class="text-sm font-medium text-gray-900 {suppressed ? 'line-through' : ''}">{slotLabel(slot)}</span>
-						{#if slot.mode === 'activity' && slot.categoryName}
-							<span class="ml-1 text-xs text-gray-400">{slot.categoryName}</span>
-						{/if}
-						{#if suppressed}
-							<span class="ml-1 text-xs text-amber-600">skipped this day</span>
-						{/if}
-						{#if slot.label && slotLabel(slot) !== slot.label}
-							<p class="truncate text-xs text-gray-500">{slot.label}</p>
-						{/if}
-					</div>
-					{#if !dayPast}
-						<div class="flex shrink-0 items-center gap-2">
-							{#if suppressed}
-								<form method="post" action="?/unsuppress" use:enhance>
-									<input type="hidden" name="slotId" value={slot.id} />
-									<input type="hidden" name="date" value={selectedDateStr()} />
-									<button
-										type="submit"
-										class="border border-amber-200 bg-white px-2 py-1 text-xs text-amber-600 transition hover:bg-amber-50"
-									>
-										Restore
-									</button>
-								</form>
-							{:else}
-								<form method="post" action="?/suppress" use:enhance>
-									<input type="hidden" name="slotId" value={slot.id} />
-									<input type="hidden" name="date" value={selectedDateStr()} />
-									<button
-										type="submit"
-										class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-										title="Skip this slot for this day only"
-									>
-										Skip
-									</button>
-								</form>
-							{/if}
-							<button
-								onclick={() => startEdit(slot)}
-								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-							>
-								Edit
-							</button>
-							<form id="toggle-form-{slot.id}" method="post" action="?/toggleActive" use:enhance>
-								<input type="hidden" name="id" value={slot.id} />
-								<input type="hidden" name="active" value={String(slot.active)} />
-								<button
-									type="submit"
-									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-								>
-									{slot.active ? 'Disable' : 'Enable'}
-								</button>
-							</form>
-							{#if confirmingDelete === `slot-${slot.id}`}
-								<form
-									id="delete-form-{slot.id}"
-									method="post"
-									action="?/delete"
-									use:enhance={() => {
-										return async ({ update }) => {
-											await update();
-											confirmingDelete = null;
-										};
-									}}
-								>
-									<input type="hidden" name="id" value={slot.id} />
-									<button
-										type="submit"
-										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
-									>
-										Confirm?
-									</button>
-								</form>
-							{:else}
-								<button
-									type="button"
-									onclick={() => {
-										confirmingDelete = `slot-${slot.id}`;
-									}}
-									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
-								>
-									Delete
-								</button>
-							{/if}
-						</div>
-					{/if}
-				</div>
+					{day.slice(0, 3)}
+				</button>
 			{/each}
 		</div>
-		{/if}
+	{/if}
 
-		{@const dayExceptionals = exceptionalSlotsForDay()}
-		{#if dayExceptionals.length > 0}
-			<div class="divide-y divide-blue-100 border border-blue-200 bg-blue-50 shadow-sm">
-				<div class="px-4 py-2 text-xs font-medium text-blue-700">Exceptions for this day</div>
-				{#each dayExceptionals as exc (exc.id)}
-					<div
-						class="flex items-center gap-4 border-l-4 px-4 py-3"
-						style="border-left-color: {catColor(exc.categoryId)}"
-					>
+	{#if viewMode === 'list'}
+		{#if slotsForDay(selectedDay).length === 0 && exceptionalSlotsForDay().length === 0}
+			<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
+				No slots for {data.weekdays[selectedDay]}.
+			</div>
+		{:else}
+			{@const dayPast = isDayPast(selectedDay)}
+			{#if slotsForDay(selectedDay).length > 0}
+				<div
+					class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm {dayPast
+						? 'opacity-60'
+						: ''}"
+				>
+					{#each slotsForDay(selectedDay) as slot, i (slot.id)}
+						{@const isSelected = selectedIds.has(slot.id)}
+						{@const suppressed = isSlotSuppressed(slot.id)}
 						<div
-							class="w-24 shrink-0 font-mono text-sm text-gray-500"
-							title={formatDuration(exc.durationMinutes)}
+							class="flex items-center gap-4 border-l-4 px-4 py-3 {!slot.active || suppressed
+								? 'opacity-50'
+								: ''} {selectedIndex === i ? 'bg-gray-100' : ''} {isSelected ? 'bg-blue-50' : ''}"
+							style="border-left-color: {catColor(slot.categoryId)}"
 						>
-							{exc.startTime} - {computeEndTime(exc.startTime, exc.durationMinutes)}
-						</div>
-						<div class="min-w-0 flex-1">
-							<span class="text-sm font-medium text-gray-900">{exceptionalLabel(exc)}</span>
-							{#if exc.mode === 'activity' && exc.categoryName}
-								<span class="ml-1 text-xs text-gray-400">{exc.categoryName}</span>
-							{/if}
-							{#if exc.label && exceptionalLabel(exc) !== exc.label}
-								<p class="truncate text-xs text-gray-500">{exc.label}</p>
-							{/if}
-						</div>
-						<span class="shrink-0 px-2 py-0.5 text-xs font-medium {exc.status === 'pending' ? 'bg-gray-100 text-gray-600' : 'bg-blue-100 text-blue-700'}">
-							{exc.status}
-						</span>
-						{#if !dayPast}
-							{#if confirmingDelete === `exc-${exc.id}`}
-								<form
-									method="post"
-									action="?/deleteExceptional"
-									use:enhance={() => {
-										return async ({ update }) => {
-											await update();
-											confirmingDelete = null;
-										};
-									}}
-								>
-									<input type="hidden" name="id" value={exc.id} />
-									<button
-										type="submit"
-										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
-									>
-										Confirm?
-									</button>
-								</form>
-							{:else}
+							{#if multiselect && !dayPast}
 								<button
 									type="button"
-									onclick={() => {
-										confirmingDelete = `exc-${exc.id}`;
-									}}
-									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+									onclick={() => toggleSlotSelection(slot.id)}
+									class="h-5 w-5 shrink-0 border {isSelected
+										? 'border-blue-500 bg-blue-500'
+										: 'border-gray-400 bg-white'}"
+									aria-label={isSelected ? 'Deselect' : 'Select'}
 								>
-									Delete
+									{#if isSelected}
+										<svg class="h-full w-full text-white" viewBox="0 0 20 20" fill="currentColor">
+											<path
+												fill-rule="evenodd"
+												d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+												clip-rule="evenodd"
+											/>
+										</svg>
+									{/if}
 								</button>
 							{/if}
-						{/if}
-					</div>
-				{/each}
-			</div>
+							<div
+								class="w-24 shrink-0 font-mono text-sm text-gray-500"
+								title={formatDuration(slot.durationMinutes)}
+							>
+								{slot.startTime} - {computeEndTime(slot.startTime, slot.durationMinutes)}
+							</div>
+							<div class="min-w-0 flex-1">
+								<span class="text-sm font-medium text-gray-900 {suppressed ? 'line-through' : ''}"
+									>{slotLabel(slot)}</span
+								>
+								{#if slot.mode === 'activity' && slot.categoryName}
+									<span class="ml-1 text-xs text-gray-400">{slot.categoryName}</span>
+								{/if}
+								{#if suppressed}
+									<span class="ml-1 text-xs text-amber-600">skipped this day</span>
+								{/if}
+								{#if slot.label && slotLabel(slot) !== slot.label}
+									<p class="truncate text-xs text-gray-500">{slot.label}</p>
+								{/if}
+							</div>
+							{#if !dayPast}
+								<div class="flex shrink-0 items-center gap-2">
+									{#if suppressed}
+										<form method="post" action="?/unsuppress" use:enhance>
+											<input type="hidden" name="slotId" value={slot.id} />
+											<input type="hidden" name="date" value={selectedDateStr()} />
+											<button
+												type="submit"
+												class="border border-amber-200 bg-white px-2 py-1 text-xs text-amber-600 transition hover:bg-amber-50"
+											>
+												Restore
+											</button>
+										</form>
+									{:else}
+										<form method="post" action="?/suppress" use:enhance>
+											<input type="hidden" name="slotId" value={slot.id} />
+											<input type="hidden" name="date" value={selectedDateStr()} />
+											<button
+												type="submit"
+												class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+												title="Skip this slot for this day only"
+											>
+												Skip
+											</button>
+										</form>
+									{/if}
+									<button
+										onclick={() => startEdit(slot)}
+										class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+									>
+										Edit
+									</button>
+									<form
+										id="toggle-form-{slot.id}"
+										method="post"
+										action="?/toggleActive"
+										use:enhance
+									>
+										<input type="hidden" name="id" value={slot.id} />
+										<input type="hidden" name="active" value={String(slot.active)} />
+										<button
+											type="submit"
+											class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+										>
+											{slot.active ? 'Disable' : 'Enable'}
+										</button>
+									</form>
+									{#if confirmingDelete === `slot-${slot.id}`}
+										<form
+											id="delete-form-{slot.id}"
+											method="post"
+											action="?/delete"
+											use:enhance={() => {
+												return async ({ update }) => {
+													await update();
+													confirmingDelete = null;
+												};
+											}}
+										>
+											<input type="hidden" name="id" value={slot.id} />
+											<button
+												type="submit"
+												class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
+											>
+												Confirm?
+											</button>
+										</form>
+									{:else}
+										<button
+											type="button"
+											onclick={() => {
+												confirmingDelete = `slot-${slot.id}`;
+											}}
+											class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+										>
+											Delete
+										</button>
+									{/if}
+								</div>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			{/if}
+
+			{@const dayExceptionals = exceptionalSlotsForDay()}
+			{#if dayExceptionals.length > 0}
+				<div class="divide-y divide-blue-100 border border-blue-200 bg-blue-50 shadow-sm">
+					<div class="px-4 py-2 text-xs font-medium text-blue-700">Exceptions for this day</div>
+					{#each dayExceptionals as exc (exc.id)}
+						<div
+							class="flex items-center gap-4 border-l-4 px-4 py-3"
+							style="border-left-color: {catColor(exc.categoryId)}"
+						>
+							<div
+								class="w-24 shrink-0 font-mono text-sm text-gray-500"
+								title={formatDuration(exc.durationMinutes)}
+							>
+								{exc.startTime} - {computeEndTime(exc.startTime, exc.durationMinutes)}
+							</div>
+							<div class="min-w-0 flex-1">
+								<span class="text-sm font-medium text-gray-900">{exceptionalLabel(exc)}</span>
+								{#if exc.mode === 'activity' && exc.categoryName}
+									<span class="ml-1 text-xs text-gray-400">{exc.categoryName}</span>
+								{/if}
+								{#if exc.label && exceptionalLabel(exc) !== exc.label}
+									<p class="truncate text-xs text-gray-500">{exc.label}</p>
+								{/if}
+							</div>
+							<span
+								class="shrink-0 px-2 py-0.5 text-xs font-medium {exc.status === 'pending'
+									? 'bg-gray-100 text-gray-600'
+									: 'bg-blue-100 text-blue-700'}"
+							>
+								{exc.status}
+							</span>
+							{#if !dayPast}
+								{#if confirmingDelete === `exc-${exc.id}`}
+									<form
+										method="post"
+										action="?/deleteExceptional"
+										use:enhance={() => {
+											return async ({ update }) => {
+												await update();
+												confirmingDelete = null;
+											};
+										}}
+									>
+										<input type="hidden" name="id" value={exc.id} />
+										<button
+											type="submit"
+											class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
+										>
+											Confirm?
+										</button>
+									</form>
+								{:else}
+									<button
+										type="button"
+										onclick={() => {
+											confirmingDelete = `exc-${exc.id}`;
+										}}
+										class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+									>
+										Delete
+									</button>
+								{/if}
+							{/if}
+						</div>
+					{/each}
+				</div>
+			{/if}
 		{/if}
+	{:else}
+		<div class="h-[70vh] border border-gray-200 bg-white shadow-sm">
+			{#if browser}
+				<Calendar plugins={[TimeGrid, Interaction]} options={gridOptions} />
+			{/if}
+		</div>
 	{/if}
 
 	<div class="mt-6 border border-gray-200 bg-white shadow-sm">
@@ -1179,13 +1360,14 @@
 				class="space-y-3 border-t border-gray-200 px-4 py-4"
 			>
 				<p class="text-xs text-gray-500">
-					Format: h (time), d (duration in min), then Mon-Sun activity names. Time: 610 = 06:10, 1810 = 18:10.
+					Format: h (time), d (duration in min), then Mon-Sun activity names. Time: 610 = 06:10,
+					1810 = 18:10.
 				</p>
 				<textarea
 					name="csv"
 					rows="8"
-					placeholder={"h,d,m,t,w,t,f,s,s\n610,30,wake up,wake up,wake up,wake up,wake up,,\n630,60,alongar,regar plantas,alongar,regar plantas,alongar,,"}
-					class="block w-full font-mono text-xs border border-gray-300 px-3 py-2 shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					placeholder={'h,d,m,t,w,t,f,s,s\n610,30,wake up,wake up,wake up,wake up,wake up,,\n630,60,alongar,regar plantas,alongar,regar plantas,alongar,,'}
+					class="block w-full border border-gray-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				></textarea>
 				<div class="flex items-center gap-4">
 					<label class="flex items-center gap-2 text-sm text-gray-700">
@@ -1203,3 +1385,12 @@
 		{/if}
 	</div>
 </div>
+
+<style>
+	:global(.og-event--inactive) {
+		opacity: 0.5;
+	}
+	:global(.og-event--exceptional) {
+		border-left: 3px solid #3b82f6;
+	}
+</style>

@@ -49,6 +49,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate slots' },
 			{ key: 'k', action: 'navigate-up', description: 'Navigate slots' },
+			{ key: 'g', action: 'toggle-view', description: 'Toggle list/grid view' },
 			{ key: 'h', action: 'prev-day', description: 'Switch day' },
 			{ key: 'l', action: 'next-day', description: 'Switch day' },
 			{ key: '[', action: 'prev-week', description: 'Switch week' },

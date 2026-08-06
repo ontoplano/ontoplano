@@ -62,6 +62,7 @@ export const load: PageServerLoad = async (event) => {
 	const { url } = event;
 	const userId = event.locals.user!.id;
 	const weekParam = url.searchParams.get('week');
+	const view = url.searchParams.get('view') === 'grid' ? 'grid' : 'list';
 	const monday = parseWeekParam(weekParam);
 	const sunday = addDays(monday, 6);
 	const nextMonday = addDays(monday, 7);
@@ -166,6 +167,7 @@ export const load: PageServerLoad = async (event) => {
 	return {
 		slots,
 		weekMeta,
+		view,
 		categories: allCategories,
 		activities: allActivities,
 		schemes,
@@ -554,9 +556,7 @@ export const actions: Actions = {
 			.get();
 		if (existing) return { success: true };
 
-		db.insert(suppressedSlots)
-			.values({ userId, date, slotId })
-			.run();
+		db.insert(suppressedSlots).values({ userId, date, slotId }).run();
 
 		return { success: true };
 	},
@@ -638,8 +638,12 @@ export const actions: Actions = {
 
 		if (!csv) return fail(400, { message: 'CSV content is required' });
 
-		const lines = csv.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
-		if (lines.length < 2) return fail(400, { message: 'CSV must have a header and at least one row' });
+		const lines = csv
+			.split('\n')
+			.map((l) => l.trim())
+			.filter((l) => l.length > 0);
+		if (lines.length < 2)
+			return fail(400, { message: 'CSV must have a header and at least one row' });
 
 		const dataLines = lines.slice(1);
 
@@ -725,7 +729,9 @@ export const actions: Actions = {
 						.where(and(inArray(taskInstances.slotId, slotIds), eq(taskInstances.userId, userId)))
 						.run();
 					tx.delete(suppressedSlots)
-						.where(and(inArray(suppressedSlots.slotId, slotIds), eq(suppressedSlots.userId, userId)))
+						.where(
+							and(inArray(suppressedSlots.slotId, slotIds), eq(suppressedSlots.userId, userId))
+						)
 						.run();
 				}
 				tx.delete(weeklySlots).where(eq(weeklySlots.userId, userId)).run();
@@ -737,7 +743,10 @@ export const actions: Actions = {
 		});
 
 		if (notFound.length > 0) {
-			return { success: true, message: `Imported ${slotsToInsert.length} slots. Activities not found (used as labels): ${notFound.join(', ')}` };
+			return {
+				success: true,
+				message: `Imported ${slotsToInsert.length} slots. Activities not found (used as labels): ${notFound.join(', ')}`
+			};
 		}
 
 		return { success: true, message: `Imported ${slotsToInsert.length} slots.` };
