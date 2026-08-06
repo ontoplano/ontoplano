@@ -45,6 +45,20 @@ Copy `.env.example` to `.env` and set `ORIGIN` and `BETTER_AUTH_SECRET`.
 6. Track habits at `/habits`
 7. Work on beliefs at `/beliefs`
 
+### Planner grid
+
+`/planner/plan` opens on a weekly calendar grid (press `g` for the list view). Drag on empty space
+to create a slot, drag a slot to move it, and hold `Ctrl` while dragging to duplicate it. Moves and
+resizes snap to 15 minutes.
+
+Activities don't have to exist beforehand: pick **+ New activity...** in the slot form and give it a
+name and a category — it's created together with the slot (an activity with the same name is reused
+rather than duplicated).
+
+Short slots are too thin to show their title, so hover any block for its name, time range, duration,
+category and label. `Ctrl`+scroll (or `+` / `-` / `0`) zooms the grid, and the zoom level is
+remembered per browser.
+
 ### Keyboard shortcuts
 
 | Page       | Keys                | Action                                     |
@@ -66,6 +80,8 @@ Copy `.env.example` to `.env` and set `ORIGIN` and `BETTER_AUTH_SECRET`.
 | Planner    | `[`/`]`             | Previous/next week (can't go past current) |
 | Planner    | `g`                 | Toggle list/grid (calendar) view           |
 | Planner    | Ctrl+drag (grid)    | Duplicate a slot to the drop location      |
+| Planner    | Ctrl+scroll (grid)  | Zoom the grid in/out                       |
+| Planner    | `+`/`-`/`0`         | Zoom in / out / reset (grid)               |
 | Planner    | `v`                 | Toggle multiselect mode                    |
 | Planner    | `Space`             | Toggle slot selection (multiselect)        |
 | Planner    | `x`                 | Delete selected slots (multiselect)        |
