@@ -9,7 +9,6 @@
 	import { getAction } from '$lib/shortcuts';
 	import { Calendar, TimeGrid, Interaction } from '@event-calendar/core';
 	import '@event-calendar/core/index.css';
-	import type { Calendar as EventCalendar } from '@event-calendar/core';
 	import {
 		baseWeekGridOptions,
 		buildSlotEvents,
@@ -352,10 +351,10 @@
 
 	function setView(mode: 'list' | 'grid') {
 		viewMode = mode;
-		const params = new URLSearchParams();
-		if (mode === 'grid') params.set('view', 'grid');
-		if (!data.weekMeta.isCurrent) params.set('week', data.weekMeta.monday);
-		const qs = params.toString();
+		const parts: string[] = [];
+		if (mode === 'grid') parts.push('view=grid');
+		if (!data.weekMeta.isCurrent) parts.push(`week=${data.weekMeta.monday}`);
+		const qs = parts.join('&');
 		goto(`/planner/plan${qs ? `?${qs}` : ''}`, {
 			replaceState: true,
 			keepFocus: true,
