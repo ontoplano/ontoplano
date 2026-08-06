@@ -62,7 +62,7 @@ export const load: PageServerLoad = async (event) => {
 	const { url } = event;
 	const userId = event.locals.user!.id;
 	const weekParam = url.searchParams.get('week');
-	const view = url.searchParams.get('view') === 'grid' ? 'grid' : 'list';
+	const view = url.searchParams.get('view') === 'list' ? 'list' : 'grid';
 	const monday = parseWeekParam(weekParam);
 	const sunday = addDays(monday, 6);
 	const nextMonday = addDays(monday, 7);
@@ -200,7 +200,8 @@ export const actions: Actions = {
 		if (mode === 'category' && !categoryId) return fail(400, { message: 'Category required' });
 		if (mode === 'activity' && !activityId) return fail(400, { message: 'Activity required' });
 
-		db.insert(weeklySlots)
+		const inserted = db
+			.insert(weeklySlots)
 			.values({
 				userId,
 				weekday,
@@ -211,9 +212,10 @@ export const actions: Actions = {
 				activityId,
 				label
 			})
-			.run();
+			.returning({ id: weeklySlots.id })
+			.get();
 
-		return { success: true };
+		return { success: true, id: inserted.id };
 	},
 
 	update: async ({ request, locals }) => {

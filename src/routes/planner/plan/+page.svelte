@@ -26,6 +26,7 @@
 	let prefillDuration = $state(60);
 	let gridError: string | null = $state(null);
 	let createFormEl: HTMLFormElement | undefined = $state();
+	let ec: { addEvent: (e: unknown) => unknown } | undefined = $state();
 
 	$effect(() => {
 		viewMode = data.view === 'grid' ? 'grid' : 'list';
@@ -353,7 +354,7 @@
 	function setView(mode: 'list' | 'grid') {
 		viewMode = mode;
 		const parts: string[] = [];
-		if (mode === 'grid') parts.push('view=grid');
+		if (mode === 'list') parts.push('view=list');
 		if (!data.weekMeta.isCurrent) parts.push(`week=${data.weekMeta.monday}`);
 		const qs = parts.join('&');
 		goto(`/planner/plan${qs ? `?${qs}` : ''}`, {
@@ -389,7 +390,7 @@
 		editable: true,
 		selectable: !data.isPastWeek,
 		eventClick: handleEventClick,
-		eventDrop: handleEventPersist,
+		eventDrop: handleEventDrop,
 		eventResize: handleEventPersist,
 		select: handleGridSelect
 	});
@@ -409,6 +410,80 @@
 		prefillDuration = placement.durationMinutes;
 		startNew();
 		tick().then(() => createFormEl?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
+	}
+
+	async function handleEventDrop(info: {
+		event: { id: string | number; start: Date; end: Date };
+		revert: () => void;
+		jsEvent?: { ctrlKey?: boolean; metaKey?: boolean };
+	}) {
+		if (info.jsEvent?.ctrlKey || info.jsEvent?.metaKey) {
+			await duplicateSlot(info);
+			return;
+		}
+		await handleEventPersist(info);
+	}
+
+	async function duplicateSlot(info: {
+		event: { id: string | number; start: Date; end: Date };
+		revert: () => void;
+	}) {
+		const decoded = decodeEventId(info.event.id);
+		const source =
+			decoded && decoded.kind === 'slot'
+				? data.slots.find((s: Slot) => s.id === decoded.refId)
+				: null;
+		const placement = placementFromDates(info.event.start, info.event.end);
+		info.revert();
+
+		if (!source) return;
+		if (isDayPast(placement.weekday)) {
+			gridError = "Can't add slots to past days.";
+			return;
+		}
+
+		const body = new FormData();
+		body.set('weekday', String(placement.weekday));
+		body.set('startTime', placement.startTime);
+		body.set('durationMinutes', String(placement.durationMinutes));
+		body.set('mode', source.mode);
+		if (source.categoryId != null) body.set('categoryId', String(source.categoryId));
+		if (source.activityId != null) body.set('activityId', String(source.activityId));
+		body.set('label', source.label ?? '');
+
+		try {
+			const res = await fetch(`${location.pathname}?/create`, {
+				method: 'POST',
+				headers: { 'x-sveltekit-action': 'true' },
+				body
+			});
+			const result = deserialize(await res.text());
+			if (result.type === 'failure' || result.type === 'error') {
+				gridError =
+					(result.type === 'failure' && (result.data?.message as string)) ||
+					'Failed to duplicate slot.';
+				return;
+			}
+			gridError = null;
+			const newId = result.type === 'success' ? (result.data?.id as number | undefined) : undefined;
+			if (newId != null) {
+				const newSlot: Slot = {
+					...source,
+					id: newId,
+					weekday: placement.weekday,
+					startTime: placement.startTime,
+					durationMinutes: placement.durationMinutes
+				};
+				const [event] = buildSlotEvents([newSlot], data.weekMeta.monday, data.categories, {
+					isWeekdayEditable: (wd) => !isDayPast(wd),
+					suppressedSlotIds
+				});
+				ec?.addEvent(event);
+				data.slots.push(newSlot);
+			}
+		} catch {
+			gridError = 'Failed to duplicate slot.';
+		}
 	}
 
 	async function handleEventPersist(info: {
@@ -1336,9 +1411,14 @@
 	{:else}
 		<div class="h-[70vh] border border-gray-200 bg-white shadow-sm">
 			{#if browser}
-				<Calendar plugins={[TimeGrid, Interaction]} options={gridOptions} />
+				<Calendar bind:this={ec} plugins={[TimeGrid, Interaction]} options={gridOptions} />
 			{/if}
 		</div>
+		<p class="mt-1 text-xs text-gray-400">
+			Drag to create · drag a slot to move · hold <kbd
+				class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd
+			> while dragging to duplicate
+		</p>
 	{/if}
 
 	<div class="mt-6 border border-gray-200 bg-white shadow-sm">

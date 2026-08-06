@@ -65,6 +65,7 @@ Copy `.env.example` to `.env` and set `ORIGIN` and `BETTER_AUTH_SECRET`.
 | Planner    | `n`                 | New slot (focuses time input)              |
 | Planner    | `[`/`]`             | Previous/next week (can't go past current) |
 | Planner    | `g`                 | Toggle list/grid (calendar) view           |
+| Planner    | Ctrl+drag (grid)    | Duplicate a slot to the drop location      |
 | Planner    | `v`                 | Toggle multiselect mode                    |
 | Planner    | `Space`             | Toggle slot selection (multiselect)        |
 | Planner    | `x`                 | Delete selected slots (multiselect)        |
