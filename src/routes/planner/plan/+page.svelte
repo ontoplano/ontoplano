@@ -36,7 +36,9 @@
 
 	function storedZoomIndex(): number {
 		if (!browser) return GRID_DEFAULT_ZOOM_INDEX;
-		const raw = Number(localStorage.getItem(ZOOM_STORAGE_KEY));
+		const stored = localStorage.getItem(ZOOM_STORAGE_KEY);
+		if (stored === null) return GRID_DEFAULT_ZOOM_INDEX;
+		const raw = Number(stored);
 		if (!Number.isInteger(raw) || raw < 0 || raw >= GRID_ZOOM_LEVELS.length) {
 			return GRID_DEFAULT_ZOOM_INDEX;
 		}
