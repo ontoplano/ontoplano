@@ -1,6 +1,8 @@
 import { Bot, GrammyError, HttpError } from 'grammy';
 import { registerListCommands } from './commands/list.js';
 import { registerPlanCommand } from './commands/plan.js';
+import { registerGridCommand } from './commands/grid.js';
+import { registerActivitiesCommand } from './commands/activities.js';
 import { registerTodoCommand } from './commands/todo.js';
 import { registerDiaryCommand } from './commands/diary.js';
 import { registerIdeiaCommand } from './commands/ideia.js';
@@ -21,6 +23,8 @@ bot.use(async (ctx, next) => {
 
 registerListCommands(bot);
 registerPlanCommand(bot);
+registerGridCommand(bot);
+registerActivitiesCommand(bot);
 registerTodoCommand(bot);
 registerDiaryCommand(bot);
 registerIdeiaCommand(bot);

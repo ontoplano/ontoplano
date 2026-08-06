@@ -9,6 +9,7 @@ import {
 	taskInstances,
 	weeklySlots
 } from '../../../src/lib/server/db/schema.js';
+import { categoryEmoji } from '../emoji.js';
 
 const STATUS_EMOJI: Record<'pending' | 'completed' | 'delayed' | 'early' | 'skipped', string> = {
 	pending: '⏳',
@@ -26,6 +27,7 @@ type RegularTask = {
 	slotDuration: number;
 	durationOverride: number | null;
 	categoryName: string | null;
+	categoryColor: string | null;
 	slotActivityName: string | null;
 	activityName: string | null;
 };
@@ -37,6 +39,7 @@ type ExceptionalTask = {
 	durationMinutes: number;
 	durationOverride: number | null;
 	categoryName: string | null;
+	categoryColor: string | null;
 	slotActivityName: string | null;
 	activityName: string | null;
 };
@@ -54,7 +57,15 @@ function atStartOfDay(date: Date): Date {
 }
 
 function addDays(date: Date, days: number): Date {
-	return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days, date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds());
+	return new Date(
+		date.getFullYear(),
+		date.getMonth(),
+		date.getDate() + days,
+		date.getHours(),
+		date.getMinutes(),
+		date.getSeconds(),
+		date.getMilliseconds()
+	);
 }
 
 function formatHeaderDate(date: Date): string {
@@ -82,7 +93,13 @@ function getTaskTitle(task: RegularTask): string {
 }
 
 function getExceptionalTitle(task: ExceptionalTask): string {
-	return task.label ?? task.activityName ?? task.slotActivityName ?? task.categoryName ?? 'Unnamed special task';
+	return (
+		task.label ??
+		task.activityName ??
+		task.slotActivityName ??
+		task.categoryName ??
+		'Unnamed special task'
+	);
 }
 
 function isDone(status: keyof typeof STATUS_EMOJI): boolean {
@@ -114,6 +131,7 @@ async function fetchPlan() {
 			slotDuration: weeklySlots.durationMinutes,
 			durationOverride: taskInstances.durationOverride,
 			categoryName: sql<string | null>`coalesce(${categories.name}, ${activityCategories.name})`,
+			categoryColor: sql<string | null>`coalesce(${categories.color}, ${activityCategories.color})`,
 			slotActivityName: slotActivities.name,
 			activityName: resolvedActivities.name
 		})
@@ -123,7 +141,13 @@ async function fetchPlan() {
 		.leftJoin(slotActivities, eq(weeklySlots.activityId, slotActivities.id))
 		.leftJoin(activityCategories, eq(slotActivities.categoryId, activityCategories.id))
 		.leftJoin(resolvedActivities, eq(taskInstances.resolvedActivityId, resolvedActivities.id))
-		.where(and(eq(taskInstances.userId, userId), gte(taskInstances.scheduledAt, start), lt(taskInstances.scheduledAt, end)))
+		.where(
+			and(
+				eq(taskInstances.userId, userId),
+				gte(taskInstances.scheduledAt, start),
+				lt(taskInstances.scheduledAt, end)
+			)
+		)
 		.orderBy(taskInstances.scheduledAt)
 		.all() as RegularTask[];
 
@@ -134,15 +158,26 @@ async function fetchPlan() {
 			label: exceptionalSlots.label,
 			durationMinutes: exceptionalSlots.durationMinutes,
 			durationOverride: exceptionalSlots.durationOverride,
-			categoryName: sql<string | null>`coalesce(${categories.name}, ${exceptionalActivityCategories.name})`,
+			categoryName: sql<
+				string | null
+			>`coalesce(${categories.name}, ${exceptionalActivityCategories.name})`,
+			categoryColor: sql<
+				string | null
+			>`coalesce(${categories.color}, ${exceptionalActivityCategories.color})`,
 			slotActivityName: exceptionalActivities.name,
 			activityName: resolvedExceptionalActivities.name
 		})
 		.from(exceptionalSlots)
 		.leftJoin(categories, eq(exceptionalSlots.categoryId, categories.id))
 		.leftJoin(exceptionalActivities, eq(exceptionalSlots.activityId, exceptionalActivities.id))
-		.leftJoin(exceptionalActivityCategories, eq(exceptionalActivities.categoryId, exceptionalActivityCategories.id))
-		.leftJoin(resolvedExceptionalActivities, eq(exceptionalSlots.resolvedActivityId, resolvedExceptionalActivities.id))
+		.leftJoin(
+			exceptionalActivityCategories,
+			eq(exceptionalActivities.categoryId, exceptionalActivityCategories.id)
+		)
+		.leftJoin(
+			resolvedExceptionalActivities,
+			eq(exceptionalSlots.resolvedActivityId, resolvedExceptionalActivities.id)
+		)
 		.where(and(eq(exceptionalSlots.userId, userId), eq(exceptionalSlots.date, selectedDate)))
 		.orderBy(exceptionalSlots.startTime)
 		.all() as ExceptionalTask[];
@@ -150,26 +185,33 @@ async function fetchPlan() {
 	return { today, regularTasks, exceptionalTasks };
 }
 
-function formatPlanMessage(tasks: RegularTask[], exceptionalTasks: ExceptionalTask[], today: Date): string {
+function formatPlanMessage(
+	tasks: RegularTask[],
+	exceptionalTasks: ExceptionalTask[],
+	today: Date
+): string {
 	const lines = [`📋 Today's Plan (${formatHeaderDate(today)})`, ''];
 
 	for (const task of tasks) {
 		const duration = task.durationOverride ?? task.slotDuration;
 		const categoryPrefix = task.categoryName ? `${task.categoryName}: ` : '';
 		lines.push(
-			`⏰ ${extractTime(task.scheduledAt)} — ${categoryPrefix}${getTaskTitle(task)} [${formatDuration(duration)}] ${STATUS_EMOJI[task.status]}`
+			`⏰ ${extractTime(task.scheduledAt)} — ${categoryEmoji(task.categoryColor)} ${categoryPrefix}${getTaskTitle(task)} [${formatDuration(duration)}] ${STATUS_EMOJI[task.status]}`
 		);
 	}
 
 	for (const task of exceptionalTasks) {
 		const duration = task.durationOverride ?? task.durationMinutes;
 		lines.push(
-			`⏰ ${task.startTime} — 🌟 Special: ${getExceptionalTitle(task)} [${formatDuration(duration)}] ${STATUS_EMOJI[task.status]}`
+			`⏰ ${task.startTime} — ${categoryEmoji(task.categoryColor)} 🌟 Special: ${getExceptionalTitle(task)} [${formatDuration(duration)}] ${STATUS_EMOJI[task.status]}`
 		);
 	}
 
 	const total = tasks.length + exceptionalTasks.length;
-	const done = [...tasks.map((task) => task.status), ...exceptionalTasks.map((task) => task.status)].filter(isDone).length;
+	const done = [
+		...tasks.map((task) => task.status),
+		...exceptionalTasks.map((task) => task.status)
+	].filter(isDone).length;
 
 	if (total === 0) {
 		lines.push('No tasks scheduled for today.');

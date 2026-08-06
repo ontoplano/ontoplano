@@ -29,13 +29,30 @@ function formatTodoMessage(todos: PlannerTodo[]): string {
 
 	const active = todos.filter((todo) => !todo.completed).length;
 	const done = todos.length - active;
-	const lines = ['📝 Todo List', '', ...todos.map((todo) => `${todo.completed ? '✅' : '❌'} ${todo.title}`), '', `Active: ${active} | Done: ${done}`];
+	const lines = [
+		'📝 Todo List',
+		'',
+		...todos.map((todo) => `${todo.completed ? '✅' : '❌'} ${todo.title}`),
+		'',
+		`Active: ${active} | Done: ${done}`
+	];
 
 	return lines.join('\n');
 }
 
+async function addTodo(title: string): Promise<void> {
+	const userId = await getPrimaryUserId();
+	db.insert(plannerTodos).values({ userId, title }).run();
+}
+
 export function registerTodoCommand(bot: Bot<Context>): void {
 	bot.command('todo', async (ctx) => {
+		const title = ctx.match?.trim();
+		if (title) {
+			await addTodo(title);
+			await ctx.reply(`📝 Added: ${title}`);
+			return;
+		}
 		const todos = await fetchTodos();
 		await ctx.reply(formatTodoMessage(todos));
 	});
