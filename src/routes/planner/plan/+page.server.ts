@@ -114,6 +114,7 @@ export const load: PageServerLoad = async (event) => {
 			categoryName: categories.name,
 			activityId: weeklySlots.activityId,
 			activityName: activities.name,
+			activityCategoryId: activities.categoryId,
 			label: weeklySlots.label,
 			active: weeklySlots.active
 		})
@@ -147,6 +148,7 @@ export const load: PageServerLoad = async (event) => {
 			categoryName: categories.name,
 			activityId: exceptionalSlots.activityId,
 			activityName: activities.name,
+			activityCategoryId: activities.categoryId,
 			label: exceptionalSlots.label,
 			active: exceptionalSlots.active,
 			status: exceptionalSlots.status

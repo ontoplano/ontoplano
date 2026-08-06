@@ -20,6 +20,7 @@ export interface GridSlotInput {
 	activityId: number | null;
 	categoryName?: string | null;
 	activityName?: string | null;
+	activityCategoryId?: number | null;
 	label?: string | null;
 	active: boolean;
 }
@@ -34,6 +35,7 @@ export interface GridExceptionalInput {
 	activityId: number | null;
 	categoryName?: string | null;
 	activityName?: string | null;
+	activityCategoryId?: number | null;
 	label?: string | null;
 	active: boolean;
 	status?: string;
@@ -101,6 +103,13 @@ export function categoryColor(categories: GridCategory[], categoryId: number | n
 	return cat?.color ?? CATEGORY_FALLBACK_COLOR;
 }
 
+function effectiveCategoryId(item: {
+	categoryId: number | null;
+	activityCategoryId?: number | null;
+}): number | null {
+	return item.categoryId ?? item.activityCategoryId ?? null;
+}
+
 export function contrastText(hex: string): string {
 	const parsed = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
 	if (!parsed) return '#111827';
@@ -130,7 +139,7 @@ function slotToEvent(
 	const dayDate = weekdayToDate(mondayStr, slot.weekday);
 	const start = combineDateAndClock(dayDate, slot.startTime);
 	const end = new Date(start.getTime() + slot.durationMinutes * 60_000);
-	const bg = categoryColor(categories, slot.categoryId);
+	const bg = categoryColor(categories, effectiveCategoryId(slot));
 	const suppressed = opts.suppressedSlotIds?.has(slot.id) ?? false;
 	const inactive = !slot.active || suppressed;
 	const editable = (opts.isWeekdayEditable?.(slot.weekday) ?? true) && !suppressed;
@@ -167,7 +176,7 @@ function exceptionalToEvent(
 	const dayDate = parseLocalDate(exc.date);
 	const start = combineDateAndClock(dayDate, exc.startTime);
 	const end = new Date(start.getTime() + exc.durationMinutes * 60_000);
-	const bg = categoryColor(categories, exc.categoryId);
+	const bg = categoryColor(categories, effectiveCategoryId(exc));
 
 	return {
 		id: encodeEventId('exceptional', exc.id),
@@ -227,6 +236,7 @@ export function baseWeekGridOptions(mondayStr: string): Calendar.Options {
 		scrollTime: GRID_MIN_TIME,
 		nowIndicator: true,
 		height: '100%',
+		eventContent: (info) => info.event.title,
 		headerToolbar: { start: '', center: '', end: '' },
 		dayHeaderFormat: { weekday: 'short', day: 'numeric' }
 	};

@@ -25,6 +25,7 @@
 	let prefillTime = $state('09:00');
 	let prefillDuration = $state(60);
 	let gridError: string | null = $state(null);
+	let createFormEl: HTMLFormElement | undefined = $state();
 
 	$effect(() => {
 		viewMode = data.view === 'grid' ? 'grid' : 'list';
@@ -407,6 +408,7 @@
 		prefillTime = placement.startTime;
 		prefillDuration = placement.durationMinutes;
 		startNew();
+		tick().then(() => createFormEl?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
 	}
 
 	async function handleEventPersist(info: {
@@ -875,6 +877,7 @@
 	{#if showForm}
 		{@const editing = editingSlot()}
 		<form
+			bind:this={createFormEl}
 			method="post"
 			action={editingId ? '?/update' : '?/create'}
 			use:enhance={() => {
