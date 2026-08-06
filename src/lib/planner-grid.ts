@@ -4,6 +4,10 @@ import { CATEGORY_FALLBACK_COLOR } from './colors.js';
 export const GRID_MIN_TIME = '06:00:00';
 export const GRID_MAX_TIME = '24:00:00';
 export const GRID_SLOT_DURATION = '00:30:00';
+export const GRID_SLOT_MINUTES = 30;
+// Drag/resize/select step. Independent from GRID_SLOT_DURATION so the gridlines stay
+// readable at 30min while placement is precise to the quarter hour.
+export const GRID_SNAP_DURATION = '00:15:00';
 
 export interface GridCategory {
 	id: number;
@@ -233,6 +237,7 @@ export function baseWeekGridOptions(mondayStr: string): Calendar.Options {
 		slotMinTime: GRID_MIN_TIME,
 		slotMaxTime: GRID_MAX_TIME,
 		slotDuration: GRID_SLOT_DURATION,
+		snapDuration: GRID_SNAP_DURATION,
 		scrollTime: GRID_MIN_TIME,
 		nowIndicator: true,
 		height: '100%',
