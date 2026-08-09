@@ -1,4 +1,12 @@
-import { integer, sqliteTable, text, index, uniqueIndex, check } from 'drizzle-orm/sqlite-core';
+import {
+	integer,
+	real,
+	sqliteTable,
+	text,
+	index,
+	uniqueIndex,
+	check
+} from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 import { user } from './auth.schema.js';
 
@@ -605,6 +613,99 @@ export const ideaTags = sqliteTable(
 	(table) => [
 		index('idea_tags_idea_idx').on(table.ideaId),
 		index('idea_tags_tag_idx').on(table.tagId)
+	]
+);
+
+// --- Plugin platform: API tokens ---
+//
+// Tokens are how external apps (a-private-plugin, scripts, future plugins) talk to
+// ontoplano. Only the SHA-256 hash is stored — the plaintext is shown once at
+// creation and is unrecoverable afterwards. `scopes` is a comma-separated list
+// of scope slugs; see `$lib/server/services/tokens.ts` for the vocabulary.
+
+export const apiTokens = sqliteTable(
+	'api_tokens',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		name: text('name').notNull(),
+		tokenHash: text('token_hash').notNull(),
+		prefix: text('prefix').notNull(), // first chars, shown in the UI to identify a token
+		scopes: text('scopes').notNull().default(''),
+		lastUsedAt: text('last_used_at'),
+		expiresAt: text('expires_at'),
+		revokedAt: text('revoked_at'),
+		createdAt: text('created_at').notNull(),
+		updatedAt: text('updated_at').notNull()
+	},
+	(table) => [
+		uniqueIndex('api_tokens_hash_unique').on(table.tokenHash),
+		index('api_tokens_user_idx').on(table.userId)
+	]
+);
+
+// --- Plugin platform: data streams ---
+//
+// A "plugin" that produces data (a smart scale, a sleep tracker, a script)
+// declares a stream and pushes points to it. Ontoplano renders streams with
+// built-in generic renderers — producers never ship frontend code.
+
+export const dataStreams = sqliteTable(
+	'data_streams',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		slug: text('slug').notNull(), // 'a-private-plugin.weight'
+		name: text('name').notNull(),
+		source: text('source').notNull(), // producing app, e.g. 'a-private-plugin'
+		kind: text('kind', { enum: ['measurement', 'event', 'counter', 'state'] }).notNull(),
+		unit: text('unit').notNull().default(''),
+		display: text('display', {
+			enum: ['line_chart', 'calendar_heatmap', 'latest_value', 'bar_chart', 'list']
+		})
+			.notNull()
+			.default('list'),
+		config: text('config').notNull().default('{}'),
+		showOnDashboard: integer('show_on_dashboard', { mode: 'boolean' }).notNull().default(false),
+		archivedAt: text('archived_at'),
+		createdAt: text('created_at').notNull(),
+		updatedAt: text('updated_at').notNull()
+	},
+	(table) => [
+		uniqueIndex('data_streams_user_slug_unique').on(table.userId, table.slug),
+		index('data_streams_user_idx').on(table.userId)
+	]
+);
+
+export const dataPoints = sqliteTable(
+	'data_points',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		streamId: integer('stream_id')
+			.notNull()
+			.references(() => dataStreams.id, { onDelete: 'cascade' }),
+		// Producer-supplied stable id. The unique index below is the entire
+		// idempotency story: a phone retrying a lost request must not duplicate.
+		externalId: text('external_id').notNull(),
+		at: text('at').notNull(), // UTC ISO-8601 instant, with Z
+		localDate: text('local_date').notNull(), // YYYY-MM-DD, civil date in the user's zone
+		valueNum: real('value_num'),
+		valueText: text('value_text'),
+		meta: text('meta').notNull().default('{}'),
+		createdAt: text('created_at').notNull()
+	},
+	(table) => [
+		uniqueIndex('data_points_stream_external_unique').on(table.streamId, table.externalId),
+		index('data_points_stream_at_idx').on(table.streamId, table.at),
+		index('data_points_user_idx').on(table.userId),
+		index('data_points_stream_local_date_idx').on(table.streamId, table.localDate)
 	]
 );
 
