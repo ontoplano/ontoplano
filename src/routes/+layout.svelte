@@ -116,13 +116,6 @@
 							class="absolute top-full right-0 mt-1 w-40 border border-gray-200 bg-white shadow-sm"
 						>
 							<a
-								href="/services"
-								onclick={() => (menuOpen = false)}
-								class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
-							>
-								Services
-							</a>
-							<a
 								href="/config"
 								onclick={() => (menuOpen = false)}
 								class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"

@@ -163,14 +163,6 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'Enter', action: 'toggle-expand', description: 'Expand/collapse' },
 			{ key: 'e', action: 'edit', description: 'Edit belief' }
 		]
-	},
-	'/services': {
-		label: 'Services',
-		shortcuts: [
-			{ key: 'j', action: 'navigate-down', description: 'Navigate services' },
-			{ key: 'k', action: 'navigate-up', description: 'Navigate services' },
-			{ key: 'Enter', action: 'toggle-expand', description: 'Expand/collapse' }
-		]
 	}
 };
 
