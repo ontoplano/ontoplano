@@ -14,7 +14,8 @@
 		"test": "npm run test:e2e",
 		"db:push": "drizzle-kit push",
 		"db:generate": "drizzle-kit generate",
-		"db:migrate": "drizzle-kit migrate",
+		"db:migrate": "node scripts/migrate.mjs",
+		"db:snapshot": "node scripts/db-snapshot.mjs",
 		"db:studio": "drizzle-kit studio",
 		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes"
 	},

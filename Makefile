@@ -1,4 +1,4 @@
-.PHONY: dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-studio db bdb lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service
+.PHONY: dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -25,8 +25,13 @@ db-seed:
 db-generate:
 	yarn db:generate
 
+# Snapshots the database, then applies pending migrations. Part of `deploy`,
+# so a schema change can never ship without the migration that backs it.
 db-migrate:
 	yarn db:migrate
+
+db-snapshot:
+	yarn db:snapshot manual
 
 db-studio:
 	yarn db:studio
@@ -68,7 +73,7 @@ logs:
 
 PROD_DIR = $(HOME)/.local/share/ontoplano/app
 
-deploy: build
+deploy: build db-migrate
 	@echo "Deploying to $(PROD_DIR)..."
 	@mkdir -p $(PROD_DIR)
 	@rm -rf $(PROD_DIR)/build
