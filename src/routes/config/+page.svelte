@@ -7,7 +7,6 @@
 	const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 	const featureLabels: Record<string, string> = {
 		'feature.threeWins': 'Three Wins',
-		'feature.dashboardQuickBelief': 'Dashboard: Quick Belief',
 		'feature.dashboardShopping': 'Dashboard: Shopping',
 		'feature.dashboardHabits': 'Dashboard: Habits'
 	};

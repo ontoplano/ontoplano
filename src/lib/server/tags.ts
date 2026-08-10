@@ -1,5 +1,5 @@
 import { db } from '$lib/server/db';
-import { tags, diaryEntryTags, beliefTags, ideaTags } from '$lib/server/db/schema';
+import { tags, diaryEntryTags, ideaTags } from '$lib/server/db/schema';
 import { eq, and, notInArray } from 'drizzle-orm';
 
 /**
@@ -54,14 +54,6 @@ export function cleanupOrphanTags(userId: string): void {
 		.all()
 		.map((r) => r.tagId);
 
-	const beliefRefIds = db
-		.select({ tagId: beliefTags.tagId })
-		.from(beliefTags)
-		.innerJoin(tags, eq(beliefTags.tagId, tags.id))
-		.where(eq(tags.userId, userId))
-		.all()
-		.map((r) => r.tagId);
-
 	const ideaRefIds = db
 		.select({ tagId: ideaTags.tagId })
 		.from(ideaTags)
@@ -70,7 +62,7 @@ export function cleanupOrphanTags(userId: string): void {
 		.all()
 		.map((r) => r.tagId);
 
-	const referencedIds = [...new Set([...diaryRefIds, ...beliefRefIds, ...ideaRefIds])];
+	const referencedIds = [...new Set([...diaryRefIds, ...ideaRefIds])];
 
 	if (referencedIds.length === 0) {
 		db.delete(tags).where(eq(tags.userId, userId)).run();

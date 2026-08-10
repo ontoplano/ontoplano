@@ -6,6 +6,8 @@
 	import type { PageServerData, ActionData } from './$types.js';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { autofocus } from '$lib/actions/autofocus.js';
+	import MetaEditor from '$lib/components/MetaEditor.svelte';
+	import { parseSlotMeta } from '$lib/meta-keys.js';
 	import { getAction } from '$lib/shortcuts';
 	import { Calendar, TimeGrid, Interaction } from '@event-calendar/core';
 	import '@event-calendar/core/index.css';
@@ -1170,6 +1172,7 @@
 					</label>
 				</div>
 			{/if}
+			<MetaEditor initial={parseSlotMeta(editing?.meta)} />
 			<button
 				type="submit"
 				class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
@@ -1298,6 +1301,7 @@
 					</label>
 				</div>
 			{/if}
+			<MetaEditor initial={{}} />
 			<div class="flex gap-2">
 				<button
 					type="submit"

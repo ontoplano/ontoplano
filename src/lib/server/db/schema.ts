@@ -70,6 +70,10 @@ export const weeklySlots = sqliteTable(
 		activityId: integer('activity_id').references(() => activities.id),
 		label: text('label').default(''),
 		active: integer('active', { mode: 'boolean' }).notNull().default(true),
+		// User-defined key/value pairs, opaque to ontoplano and surfaced to
+		// plugins via the schedule API — e.g. { "alarm": "true", "remind_min": "5" }.
+		// Stored as a JSON object of string→string. See services/meta.ts.
+		meta: text('meta').notNull().default('{}'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -226,146 +230,6 @@ export const habitOccurrences = sqliteTable(
 	]
 );
 
-// --- Beliefs (memory reconsolidation) ---
-
-export const beliefs = sqliteTable(
-	'beliefs',
-	{
-		id: integer('id').primaryKey({ autoIncrement: true }),
-		userId: text('user_id')
-			.notNull()
-			.references(() => user.id),
-		content: text('content').notNull(),
-		valence: text('valence', { enum: ['positive', 'negative'] }),
-		createdAt: text('created_at')
-			.notNull()
-			.default(sql`(CURRENT_TIMESTAMP)`),
-		updatedAt: text('updated_at')
-			.notNull()
-			.default(sql`(CURRENT_TIMESTAMP)`)
-	},
-	(table) => [
-		index('beliefs_user_idx').on(table.userId),
-		index('beliefs_created_idx').on(table.createdAt)
-	]
-);
-
-export const beliefRelations = sqliteTable(
-	'belief_relations',
-	{
-		id: integer('id').primaryKey({ autoIncrement: true }),
-		sourceBeliefId: integer('source_belief_id')
-			.notNull()
-			.references(() => beliefs.id, { onDelete: 'cascade' }),
-		targetBeliefId: integer('target_belief_id')
-			.notNull()
-			.references(() => beliefs.id, { onDelete: 'cascade' }),
-		type: text('type', { enum: ['supports', 'contradicts'] }).notNull(),
-		notes: text('notes').default(''),
-		createdAt: text('created_at')
-			.notNull()
-			.default(sql`(CURRENT_TIMESTAMP)`)
-	},
-	(table) => [
-		index('belief_relations_source_idx').on(table.sourceBeliefId),
-		index('belief_relations_target_idx').on(table.targetBeliefId)
-	]
-);
-
-export const evidence = sqliteTable(
-	'evidence',
-	{
-		id: integer('id').primaryKey({ autoIncrement: true }),
-		userId: text('user_id')
-			.notNull()
-			.references(() => user.id),
-		content: text('content').notNull(),
-		createdAt: text('created_at')
-			.notNull()
-			.default(sql`(CURRENT_TIMESTAMP)`)
-	},
-	(table) => [
-		index('evidence_user_idx').on(table.userId),
-		index('evidence_created_idx').on(table.createdAt)
-	]
-);
-
-export const beliefEvidence = sqliteTable(
-	'belief_evidence',
-	{
-		id: integer('id').primaryKey({ autoIncrement: true }),
-		beliefId: integer('belief_id')
-			.notNull()
-			.references(() => beliefs.id, { onDelete: 'cascade' }),
-		evidenceId: integer('evidence_id')
-			.notNull()
-			.references(() => evidence.id, { onDelete: 'cascade' }),
-		type: text('type', { enum: ['supports', 'contradicts'] }).notNull(),
-		createdAt: text('created_at')
-			.notNull()
-			.default(sql`(CURRENT_TIMESTAMP)`)
-	},
-	(table) => [
-		index('belief_evidence_belief_idx').on(table.beliefId),
-		index('belief_evidence_evidence_idx').on(table.evidenceId)
-	]
-);
-
-export const beliefIntensities = sqliteTable(
-	'belief_intensities',
-	{
-		id: integer('id').primaryKey({ autoIncrement: true }),
-		beliefId: integer('belief_id')
-			.notNull()
-			.references(() => beliefs.id, { onDelete: 'cascade' }),
-		date: text('date').notNull(),
-		value: integer('value').notNull(),
-		notes: text('notes').default(''),
-		createdAt: text('created_at')
-			.notNull()
-			.default(sql`(CURRENT_TIMESTAMP)`)
-	},
-	(table) => [
-		index('belief_intensities_belief_idx').on(table.beliefId),
-		index('belief_intensities_date_idx').on(table.date),
-		check('belief_intensities_value_range', sql`${table.value} >= 1 AND ${table.value} <= 10`)
-	]
-);
-
-export const beliefHabits = sqliteTable(
-	'belief_habits',
-	{
-		id: integer('id').primaryKey({ autoIncrement: true }),
-		beliefId: integer('belief_id')
-			.notNull()
-			.references(() => beliefs.id, { onDelete: 'cascade' }),
-		habitId: integer('habit_id')
-			.notNull()
-			.references(() => habits.id, { onDelete: 'cascade' })
-	},
-	(table) => [
-		index('belief_habits_belief_idx').on(table.beliefId),
-		index('belief_habits_habit_idx').on(table.habitId)
-	]
-);
-
-export const beliefTags = sqliteTable(
-	'belief_tags',
-	{
-		id: integer('id').primaryKey({ autoIncrement: true }),
-		beliefId: integer('belief_id')
-			.notNull()
-			.references(() => beliefs.id, { onDelete: 'cascade' }),
-		tagId: integer('tag_id')
-			.notNull()
-			.references(() => tags.id, { onDelete: 'cascade' })
-	},
-	(table) => [
-		index('belief_tags_belief_idx').on(table.beliefId),
-		index('belief_tags_tag_idx').on(table.tagId)
-	]
-);
-
 // --- Planner: Suppressions, Exceptional Slots, Todos ---
 
 export const suppressedSlots = sqliteTable(
@@ -410,6 +274,7 @@ export const exceptionalSlots = sqliteTable(
 		notes: text('notes').default(''),
 		resolvedActivityId: integer('resolved_activity_id').references(() => activities.id),
 		durationOverride: integer('duration_override'),
+		meta: text('meta').notNull().default('{}'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
@@ -496,23 +361,6 @@ export const shoppingItems = sqliteTable(
 		index('shopping_items_snoozed_idx').on(table.snoozed),
 		index('shopping_items_category_idx').on(table.shoppingCategoryId)
 	]
-);
-
-export const graphViews = sqliteTable(
-	'graph_views',
-	{
-		id: integer('id').primaryKey({ autoIncrement: true }),
-		userId: text('user_id')
-			.notNull()
-			.references(() => user.id, { onDelete: 'cascade' }),
-		name: text('name').notNull(),
-		data: text('data').notNull(),
-		createdAt: text('created_at')
-			.notNull()
-			.default(sql`(CURRENT_TIMESTAMP)`),
-		updatedAt: text('updated_at')
-	},
-	(table) => [index('graph_views_user_idx').on(table.userId)]
 );
 
 // --- Planning Schemes ---

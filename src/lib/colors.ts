@@ -27,45 +27,8 @@ export const SECTION_COLORS = {
 	planner: 'rgba(59, 130, 246, 0.6)',
 	health: 'rgba(6, 182, 212, 0.6)',
 	diary: 'rgba(234, 179, 8, 0.6)',
-	beliefs: 'rgba(168, 85, 247, 0.6)',
-	shopping: 'rgba(249, 115, 22, 0.6)',
-	services: 'rgba(34, 197, 94, 0.6)'
+	shopping: 'rgba(249, 115, 22, 0.6)'
 } as const;
-
-// -- Beliefs graph ------------------------------------------------------------
-
-/** Island indicator colors (10-color palette, curated for distinguishability) */
-export const ISLAND_COLORS = [
-	'#6366f1',
-	'#f59e0b',
-	'#10b981',
-	'#ef4444',
-	'#8b5cf6',
-	'#06b6d4',
-	'#f97316',
-	'#ec4899',
-	'#14b8a6',
-	'#84cc16'
-] as const;
-
-/** Relation / edge colors */
-export const RELATION_SUPPORTS_COLOR = '#3b82f6';
-export const RELATION_CONTRADICTS_COLOR = '#ef4444';
-
-/** Relation type picker styles (inline) */
-export const SUPPORTS_STYLE = { bg: '#eff6ff', text: '#1e40af', border: '#93c5fd' };
-export const CONTRADICTS_STYLE = { bg: '#fef2f2', text: '#dc2626', border: '#fca5a5' };
-
-/** Belief node valence colors */
-export const VALENCE_POSITIVE = { bg: '#eff6ff', border: '#93c5fd' };
-export const VALENCE_NEGATIVE = { bg: '#fef2f2', border: '#fca5a5' };
-export const VALENCE_NEUTRAL = { bg: '#f9fafb', border: '#d1d5db' };
-
-/** Valence indicator (small colored dot in detail panel) */
-export const VALENCE_DOT = { positive: '#22c55e', negative: '#ef4444', neutral: '#9ca3af' };
-
-/** Evidence node colors */
-export const EVIDENCE_NODE = { bg: '#fefce8', border: '#fde68a' };
 
 // -- Habits -------------------------------------------------------------------
 

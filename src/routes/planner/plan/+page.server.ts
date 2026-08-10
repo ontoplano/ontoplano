@@ -1,4 +1,26 @@
 import { fail } from '@sveltejs/kit';
+import { metaFromFormData, metaPatchFromFormData } from '$lib/server/services/meta';
+import { ServiceError } from '$lib/server/services/errors';
+
+/**
+ * Parse slot metadata, turning a validation failure into a form error rather
+ * than letting it escape the action and surface as a 500.
+ */
+function readMeta(formData: FormData): { meta: string } | { message: string } {
+	try {
+		return { meta: metaFromFormData(formData) };
+	} catch (e) {
+		return { message: e instanceof ServiceError ? e.message : 'Invalid options' };
+	}
+}
+
+function readMetaPatch(formData: FormData): { meta: string | undefined } | { message: string } {
+	try {
+		return { meta: metaPatchFromFormData(formData) };
+	} catch (e) {
+		return { message: e instanceof ServiceError ? e.message : 'Invalid options' };
+	}
+}
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import {
@@ -160,6 +182,7 @@ export const load: PageServerLoad = async (event) => {
 			activityName: activities.name,
 			activityCategoryId: activities.categoryId,
 			label: weeklySlots.label,
+			meta: weeklySlots.meta,
 			active: weeklySlots.active
 		})
 		.from(weeklySlots)
@@ -194,6 +217,7 @@ export const load: PageServerLoad = async (event) => {
 			activityName: activities.name,
 			activityCategoryId: activities.categoryId,
 			label: exceptionalSlots.label,
+			meta: exceptionalSlots.meta,
 			active: exceptionalSlots.active,
 			status: exceptionalSlots.status
 		})
@@ -250,6 +274,9 @@ export const actions: Actions = {
 			if (!activityId) return fail(400, { message: 'Activity required' });
 		}
 
+		const metaResult = readMeta(formData);
+		if ('message' in metaResult) return fail(400, { message: metaResult.message });
+
 		const inserted = db
 			.insert(weeklySlots)
 			.values({
@@ -260,7 +287,8 @@ export const actions: Actions = {
 				mode,
 				categoryId,
 				activityId,
-				label
+				label,
+				meta: metaResult.meta
 			})
 			.returning({ id: weeklySlots.id })
 			.get();
@@ -295,6 +323,12 @@ export const actions: Actions = {
 			if (!activityId) return fail(400, { message: 'Activity required' });
 		}
 
+		// `meta` is only touched when the request actually carried it. Drag and
+		// resize post here with placement fields only, and must not clear it.
+		const metaPatchResult = readMetaPatch(formData);
+		if ('message' in metaPatchResult) return fail(400, { message: metaPatchResult.message });
+		const metaPatch = metaPatchResult.meta;
+
 		db.update(weeklySlots)
 			.set({
 				weekday,
@@ -304,6 +338,7 @@ export const actions: Actions = {
 				categoryId,
 				activityId,
 				label,
+				...(metaPatch !== undefined ? { meta: metaPatch } : {}),
 				updatedAt: toLocalISOString(new Date())
 			})
 			.where(and(eq(weeklySlots.id, id), eq(weeklySlots.userId, userId)))
@@ -667,6 +702,9 @@ export const actions: Actions = {
 			if (!activityId) return fail(400, { message: 'Activity required' });
 		}
 
+		const excMeta = readMeta(formData);
+		if ('message' in excMeta) return fail(400, { message: excMeta.message });
+
 		db.insert(exceptionalSlots)
 			.values({
 				userId,
@@ -676,7 +714,8 @@ export const actions: Actions = {
 				mode,
 				categoryId,
 				activityId,
-				label
+				label,
+				meta: excMeta.meta
 			})
 			.run();
 

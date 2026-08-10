@@ -11,6 +11,7 @@ import {
 } from '../db/schema.js';
 import { generateWeekInstances, getMonday, toLocalISOString, addDays } from '../week-generator.js';
 import type { Ctx } from './ctx.js';
+import { parseMeta, type SlotMeta } from './meta.js';
 import { num } from './validate.js';
 
 /**
@@ -42,6 +43,12 @@ export interface ScheduleOccurrence {
 	category: string | null;
 	label: string;
 	status: string;
+	/**
+	 * User-defined key/value pairs from the slot, passed through untouched.
+	 * Ontoplano assigns them no meaning — consumers decide what to do with
+	 * e.g. `alarm` or `remind_min`.
+	 */
+	meta: SlotMeta;
 }
 
 function formatDate(d: Date): string {
@@ -92,6 +99,7 @@ export function getUpcomingSchedule(
 			durationOverride: taskInstances.durationOverride,
 			startTime: weeklySlots.startTime,
 			label: weeklySlots.label,
+			meta: weeklySlots.meta,
 			slotActivityName: slotActivities.name,
 			resolvedActivityName: activities.name,
 			categoryName: categories.name,
@@ -122,6 +130,7 @@ export function getUpcomingSchedule(
 			durationOverride: exceptionalSlots.durationOverride,
 			status: exceptionalSlots.status,
 			label: exceptionalSlots.label,
+			meta: exceptionalSlots.meta,
 			active: exceptionalSlots.active,
 			activityName: activities.name,
 			categoryName: categories.name
@@ -153,7 +162,8 @@ export function getUpcomingSchedule(
 			title,
 			category: t.categoryName ?? t.activityCategoryName ?? null,
 			label: t.label ?? '',
-			status: t.status
+			status: t.status,
+			meta: parseMeta(t.meta)
 		});
 	}
 
@@ -171,7 +181,8 @@ export function getUpcomingSchedule(
 			title: e.activityName || e.label || e.categoryName || 'Scheduled',
 			category: e.categoryName ?? null,
 			label: e.label ?? '',
-			status: e.status
+			status: e.status,
+			meta: parseMeta(e.meta)
 		});
 	}
 

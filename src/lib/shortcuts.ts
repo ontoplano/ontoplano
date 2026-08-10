@@ -154,16 +154,6 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'Enter', action: 'toggle-expand', description: 'Expand/collapse' }
 		]
 	},
-	'/beliefs': {
-		label: 'Beliefs',
-		shortcuts: [
-			{ key: 'j', action: 'navigate-down', description: 'Navigate beliefs' },
-			{ key: 'k', action: 'navigate-up', description: 'Navigate beliefs' },
-			{ key: 'n', action: 'new', description: 'New belief' },
-			{ key: 'Enter', action: 'toggle-expand', description: 'Expand/collapse' },
-			{ key: 'e', action: 'edit', description: 'Edit belief' }
-		]
-	}
 };
 
 /**

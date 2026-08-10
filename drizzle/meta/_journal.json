@@ -29,6 +29,13 @@
       "when": 1786303249112,
       "tag": "0003_purple_leopardon",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1786319673171,
+      "tag": "0004_outgoing_the_stranger",
+      "breakpoints": true
     }
   ]
 }

@@ -5,7 +5,6 @@ import {
 	diaryEntries,
 	tags,
 	diaryEntryTags,
-	beliefs,
 	taskInstances,
 	habits,
 	habitOccurrences,
@@ -144,14 +143,6 @@ export const load: PageServerLoad = async (event) => {
 		return { id: habit.id, name: habit.name, type: habit.type, streak };
 	});
 
-	const recentBeliefs = db
-		.select({ id: beliefs.id, content: beliefs.content, valence: beliefs.valence })
-		.from(beliefs)
-		.where(eq(beliefs.userId, userId))
-		.orderBy(desc(beliefs.createdAt))
-		.limit(3)
-		.all();
-
 	const shoppingToBuy = db
 		.select({
 			id: shoppingItems.id,
@@ -187,7 +178,6 @@ export const load: PageServerLoad = async (event) => {
 		allTags,
 		taskSummary,
 		habitStreaks,
-		recentBeliefs,
 		shoppingToBuy,
 		weekSlots,
 		today
@@ -255,25 +245,6 @@ export const actions: Actions = {
 
 		const tagIds = ensureTagIds(['3w'], userId);
 		linkDiaryTags(entryId, tagIds);
-
-		return { success: true };
-	},
-
-	createBelief: async ({ request, locals }) => {
-		const userId = locals.user!.id;
-		const formData = await request.formData();
-		const content = formData.get('content')?.toString()?.trim();
-		const valence = formData.get('valence')?.toString() || null;
-
-		if (!content) return fail(400, { message: 'Content is required' });
-
-		db.insert(beliefs)
-			.values({
-				userId,
-				content,
-				valence: valence as 'positive' | 'negative' | null
-			})
-			.run();
 
 		return { success: true };
 	}

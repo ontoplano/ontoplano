@@ -8,13 +8,11 @@
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	let showDiaryForm = $state(false);
-	let showBeliefForm = $state(false);
 	let showWinsForm = $state(false);
 
 	const winsEnabled = $derived(Boolean(data.features?.['feature.threeWins']));
 	const habitsEnabled = $derived(Boolean(data.features?.['feature.dashboardHabits']));
 	const shoppingEnabled = $derived(Boolean(data.features?.['feature.dashboardShopping']));
-	const quickBeliefEnabled = $derived(Boolean(data.features?.['feature.dashboardQuickBelief']));
 
 	function formatDate(dateStr: string): string {
 		const d = new Date(dateStr);
@@ -36,7 +34,6 @@
 		if (e.key === 'Escape') {
 			e.preventDefault();
 			showDiaryForm = false;
-			showBeliefForm = false;
 			showWinsForm = false;
 			(document.activeElement as HTMLElement)?.blur?.();
 			return;
@@ -56,8 +53,7 @@
 		switch (action) {
 			case 'new-diary':
 				showDiaryForm = !showDiaryForm;
-				showBeliefForm = false;
-				showWinsForm = false;
+					showWinsForm = false;
 				if (showDiaryForm) {
 					tick().then(() => {
 						const ta = document.querySelector<HTMLTextAreaElement>('textarea[name="content"]');
@@ -69,8 +65,7 @@
 				if (!winsEnabled) break;
 				showWinsForm = !showWinsForm;
 				showDiaryForm = false;
-				showBeliefForm = false;
-				if (showWinsForm) {
+					if (showWinsForm) {
 					tick().then(() => {
 						const input = document.querySelector<HTMLInputElement>('input[name="win_0"]');
 						input?.focus();
@@ -236,8 +231,7 @@
 						onclick={() => {
 							showWinsForm = !showWinsForm;
 							showDiaryForm = false;
-							showBeliefForm = false;
-							if (showWinsForm) {
+											if (showWinsForm) {
 								tick().then(() => {
 									const input = document.querySelector<HTMLInputElement>('input[name="win_0"]');
 									input?.focus();
@@ -252,8 +246,7 @@
 				<button
 					onclick={() => {
 						showDiaryForm = !showDiaryForm;
-						showBeliefForm = false;
-						showWinsForm = false;
+									showWinsForm = false;
 					}}
 					class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50"
 				>
@@ -393,92 +386,6 @@
 	{/if}
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-		{#if quickBeliefEnabled}
-			<div
-				class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
-				style="border-left-color: {SECTION_COLORS.beliefs}"
-			>
-				<div class="mb-3 flex items-center justify-between">
-					<h2 class="text-sm font-bold text-gray-900">Quick Belief</h2>
-					<a href="/beliefs" class="text-xs text-gray-500 transition hover:text-gray-900">
-						All beliefs →
-					</a>
-				</div>
-
-				{#if showBeliefForm}
-					<form
-						method="post"
-						action="?/createBelief"
-						use:enhance={() => {
-							return async ({ update }) => {
-								await update();
-								showBeliefForm = false;
-							};
-						}}
-						class="space-y-3"
-					>
-						<textarea
-							name="content"
-							required
-							rows="2"
-							placeholder="Describe a belief or implicit learning…"
-							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						></textarea>
-						<select
-							name="valence"
-							class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						>
-							<option value="">Neutral</option>
-							<option value="positive">Positive</option>
-							<option value="negative">Negative</option>
-						</select>
-						<div class="flex gap-2">
-							<button
-								type="submit"
-								class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800"
-							>
-								Save
-							</button>
-							<button
-								type="button"
-								onclick={() => (showBeliefForm = false)}
-								class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50"
-							>
-								Cancel
-							</button>
-						</div>
-					</form>
-				{:else}
-					<button
-						onclick={() => {
-							showBeliefForm = true;
-							showDiaryForm = false;
-							showWinsForm = false;
-						}}
-						class="w-full border border-dashed border-gray-300 px-3 py-3 text-sm text-gray-400 transition hover:border-gray-400 hover:text-gray-600"
-					>
-						+ Add a belief
-					</button>
-					{#if data.recentBeliefs.length > 0}
-						<div class="mt-3 space-y-2">
-							{#each data.recentBeliefs as belief (belief.id)}
-								<div class="flex items-start gap-2">
-									{#if belief.valence === 'positive'}
-										<span class="mt-0.5 text-xs text-green-500">+</span>
-									{:else if belief.valence === 'negative'}
-										<span class="mt-0.5 text-xs text-red-500">−</span>
-									{:else}
-										<span class="mt-0.5 text-xs text-gray-300">·</span>
-									{/if}
-									<span class="text-sm text-gray-600">{truncate(belief.content, 80)}</span>
-								</div>
-							{/each}
-						</div>
-					{/if}
-				{/if}
-			</div>
-		{/if}
-
 		<div class="border border-gray-200 bg-white p-4 shadow-sm">
 			<h2 class="mb-3 text-sm font-bold text-gray-900">Quick Links</h2>
 			<div class="space-y-2">
@@ -493,9 +400,6 @@
 				>
 				<a href="/health/habits" class="block text-sm text-gray-600 transition hover:text-gray-900"
 					>→ Habits</a
-				>
-				<a href="/beliefs" class="block text-sm text-gray-600 transition hover:text-gray-900"
-					>→ Beliefs</a
 				>
 				<a href="/shopping" class="block text-sm text-gray-600 transition hover:text-gray-900"
 					>→ Shopping</a

@@ -31,7 +31,6 @@ const tables = [
 	'tags',
 	'habits',
 	'evidence',
-	'beliefs'
 ];
 
 for (const table of tables) {

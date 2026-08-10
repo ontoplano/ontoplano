@@ -5,7 +5,6 @@ import { userSettings } from './db/schema.js';
 
 export const FEATURE_DEFAULTS: Record<string, boolean> = {
 	'feature.threeWins': false,
-	'feature.dashboardQuickBelief': true,
 	'feature.dashboardShopping': true,
 	'feature.dashboardHabits': true
 };
