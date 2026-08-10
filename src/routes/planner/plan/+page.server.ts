@@ -34,15 +34,12 @@ import {
 	schemeSlots
 } from '$lib/server/db/schema';
 import { eq, and, inArray, gte, lt, sql } from 'drizzle-orm';
-import {
-	toLocalISOString,
-	getMonday,
-	addDays,
-	getISOWeekNumber,
-	getISOWeekYear
-} from '$lib/server/week-generator';
+import { toLocalISOString, addDays } from '$lib/server/week-generator';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+/** Days visible at once. Seven keeps every weekday on screen exactly once. */
+const PLAN_DAYS = 7;
 
 // Sentinel submitted by the activity <select> when the user wants to create the
 // activity inline instead of picking an existing one.
@@ -88,18 +85,28 @@ function resolveActivityId(
 	return { activityId: inserted.id };
 }
 
-function parseWeekParam(param: string | null): Date {
-	if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
-		const parsed = new Date(param + 'T00:00:00');
-		if (!isNaN(parsed.getTime())) {
-			return getMonday(parsed);
-		}
-	}
-	return getMonday(new Date());
-}
-
 function formatDate(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function startOfDay(d: Date): Date {
+	return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/**
+ * Start of the visible window, clamped so it never begins before today.
+ *
+ * The plan is what you are going to do; a window anchored on Monday puts
+ * Monday to Wednesday of a Thursday in the past, where planning is pointless.
+ * Anchoring on today makes every visible column actionable, and the seven-day
+ * span still shows each weekday once, so recurring slots all remain reachable.
+ */
+function parseFromParam(param: string | null, today: Date): Date {
+	if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
+		const parsed = new Date(`${param}T00:00:00`);
+		if (!isNaN(parsed.getTime()) && parsed.getTime() > today.getTime()) return parsed;
+	}
+	return today;
 }
 
 function clearWeeklyPlan(userId: string) {
@@ -127,32 +134,37 @@ function clearWeeklyPlan(userId: string) {
 export const load: PageServerLoad = async (event) => {
 	const { url } = event;
 	const userId = event.locals.user!.id;
-	const weekParam = url.searchParams.get('week');
 	const view = url.searchParams.get('view') === 'list' ? 'list' : 'grid';
-	const monday = parseWeekParam(weekParam);
-	const sunday = addDays(monday, 6);
-	const nextMonday = addDays(monday, 7);
-	const currentMonday = getMonday(new Date());
 
-	const weekNumber = getISOWeekNumber(monday);
-	const weekYear = getISOWeekYear(monday);
-	const isCurrent = formatDate(monday) === formatDate(currentMonday);
+	const today = startOfDay(new Date());
+	const from = parseFromParam(url.searchParams.get('from'), today);
+	const to = addDays(from, PLAN_DAYS);
 
-	const weekMeta = {
-		monday: formatDate(monday),
-		sunday: formatDate(sunday),
-		weekNumber,
-		weekYear,
-		isCurrent,
-		prevWeek: formatDate(addDays(monday, -7)),
-		nextWeek: formatDate(nextMonday)
+	const days = Array.from({ length: PLAN_DAYS }, (_, offset) => {
+		const d = addDays(from, offset);
+		const weekday = (d.getDay() + 6) % 7;
+		return {
+			date: formatDate(d),
+			weekday,
+			name: WEEKDAYS[weekday],
+			isToday: formatDate(d) === formatDate(today)
+		};
+	});
+
+	// Stepping back is clamped to today rather than hidden, so the button still
+	// returns you to the live window from anywhere ahead of it.
+	const prevFrom = addDays(from, -PLAN_DAYS);
+	const range = {
+		from: formatDate(from),
+		last: formatDate(addDays(from, PLAN_DAYS - 1)),
+		isCurrent: formatDate(from) === formatDate(today),
+		prev:
+			formatDate(from) === formatDate(today)
+				? null
+				: formatDate(prevFrom.getTime() < today.getTime() ? today : prevFrom),
+		next: formatDate(to),
+		days
 	};
-
-	const now = new Date();
-	const todayDow = now.getDay();
-	const todayDayIndex = todayDow === 0 ? 6 : todayDow - 1;
-	const today = formatDate(now);
-	const isPastWeek = formatDate(monday) < formatDate(currentMonday);
 
 	const allCategories = db.select().from(categories).where(eq(categories.userId, userId)).all();
 	const allActivities = db
@@ -192,19 +204,19 @@ export const load: PageServerLoad = async (event) => {
 		.orderBy(weeklySlots.weekday, weeklySlots.startTime)
 		.all();
 
-	const weekSuppressions = db
+	const rangeSuppressions = db
 		.select()
 		.from(suppressedSlots)
 		.where(
 			and(
 				eq(suppressedSlots.userId, userId),
-				gte(suppressedSlots.date, formatDate(monday)),
-				lt(suppressedSlots.date, formatDate(nextMonday))
+				gte(suppressedSlots.date, formatDate(from)),
+				lt(suppressedSlots.date, formatDate(to))
 			)
 		)
 		.all();
 
-	const weekExceptionals = db
+	const rangeExceptionals = db
 		.select({
 			id: exceptionalSlots.id,
 			date: exceptionalSlots.date,
@@ -227,8 +239,8 @@ export const load: PageServerLoad = async (event) => {
 		.where(
 			and(
 				eq(exceptionalSlots.userId, userId),
-				gte(exceptionalSlots.date, formatDate(monday)),
-				lt(exceptionalSlots.date, formatDate(nextMonday))
+				gte(exceptionalSlots.date, formatDate(from)),
+				lt(exceptionalSlots.date, formatDate(to))
 			)
 		)
 		.orderBy(exceptionalSlots.date, exceptionalSlots.startTime)
@@ -236,17 +248,15 @@ export const load: PageServerLoad = async (event) => {
 
 	return {
 		slots,
-		weekMeta,
+		range,
 		view,
 		categories: allCategories,
 		activities: allActivities,
 		schemes,
 		weekdays: WEEKDAYS,
-		today,
-		todayDayIndex,
-		isPastWeek,
-		suppressions: weekSuppressions,
-		exceptionals: weekExceptionals
+		today: formatDate(today),
+		suppressions: rangeSuppressions,
+		exceptionals: rangeExceptionals
 	};
 };
 

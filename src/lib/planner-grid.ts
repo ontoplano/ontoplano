@@ -60,7 +60,6 @@ export interface SlotPlacement {
 }
 
 export interface BuildEventsOptions {
-	isWeekdayEditable?: (weekday: number) => boolean;
 	suppressedSlotIds?: Set<number>;
 }
 
@@ -93,10 +92,14 @@ export function formatClock(d: Date): string {
 }
 
 // Weekly slots are recurring (Monday-indexed weekday), so each is projected onto
-// a concrete date within the currently displayed week before rendering.
-export function weekdayToDate(mondayStr: string, weekday: number): Date {
-	const monday = parseLocalDate(mondayStr);
-	return new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + weekday);
+// a concrete date before rendering. The window is seven consecutive days starting
+// at `fromStr`, which contains every weekday exactly once — so the projection is
+// the first occurrence of that weekday at or after the window start. When the
+// window happens to start on a Monday this is the plain Monday + weekday offset.
+export function weekdayToDate(fromStr: string, weekday: number): Date {
+	const from = parseLocalDate(fromStr);
+	const offset = (weekday - dateToWeekday(from) + 7) % 7;
+	return new Date(from.getFullYear(), from.getMonth(), from.getDate() + offset);
 }
 
 export function dateToWeekday(d: Date): number {
@@ -159,7 +162,9 @@ function slotToEvent(
 	const bg = categoryColor(categories, effectiveCategoryId(slot));
 	const suppressed = opts.suppressedSlotIds?.has(slot.id) ?? false;
 	const inactive = !slot.active || suppressed;
-	const editable = (opts.isWeekdayEditable?.(slot.weekday) ?? true) && !suppressed;
+	// A slot skipped for this date is a stand-in for something that isn't
+	// happening, so there is nothing meaningful to drag it to.
+	const editable = !suppressed;
 
 	const classNames = ['og-event'];
 	if (inactive) classNames.push('og-event--inactive');
@@ -203,7 +208,7 @@ function exceptionalToEvent(
 		title: slotDisplayLabel(exc),
 		backgroundColor: bg,
 		textColor: contrastText(bg),
-		editable: false,
+		editable: true,
 		classNames: ['og-event', 'og-event--exceptional'],
 		extendedProps: {
 			kind: 'exceptional',
@@ -299,16 +304,24 @@ export function describeGridEvent(event: GridEventLike): GridEventDetail {
 	};
 }
 
-export function baseWeekGridOptions(
-	mondayStr: string,
+/**
+ * Grid options for the seven days starting at `fromStr`.
+ *
+ * `duration: { days: 7 }` rather than `{ weeks: 1 }` on purpose: a week-shaped
+ * duration snaps the range back to `firstDay`, which would put already-elapsed
+ * days on the left of a plan you can only act on going forward. Seven plain days
+ * keeps the window anchored wherever the caller puts it.
+ */
+export function baseGridOptions(
+	fromStr: string,
 	opts: { slotHeight?: number } = {}
 ): Calendar.Options {
 	const slotHeight = opts.slotHeight ?? GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX];
 
 	return {
 		view: 'timeGridWeek',
-		date: parseLocalDate(mondayStr),
-		firstDay: 1,
+		duration: { days: 7 },
+		date: parseLocalDate(fromStr),
 		allDaySlot: false,
 		slotMinTime: GRID_MIN_TIME,
 		slotMaxTime: GRID_MAX_TIME,

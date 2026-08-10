@@ -12,7 +12,7 @@
 	import { Calendar, TimeGrid, Interaction } from '@event-calendar/core';
 	import '@event-calendar/core/index.css';
 	import {
-		baseWeekGridOptions,
+		baseGridOptions,
 		buildSlotEvents,
 		buildExceptionalEvents,
 		placementFromDates,
@@ -101,16 +101,15 @@
 	let slotMode: 'category' | 'activity' = $state('activity');
 	let activityChoice = $state(NEW_ACTIVITY);
 	let exceptionalActivityChoice = $state(NEW_ACTIVITY);
-	let selectedDay: number = $state(new Date().getDay() === 0 ? 6 : new Date().getDay() - 1);
+	// Offset into the visible window (0 = the day it starts on, i.e. today by
+	// default), not a Monday-indexed weekday. The weekday is derived from it.
+	let selectedOffset: number = $state(0);
 	let selectedIndex: number = $state(0);
 	let showExceptionalForm = $state(false);
 	let exceptionalMode: 'category' | 'activity' = $state('activity');
 
-	$effect(() => {
-		if (data.weekMeta.isCurrent && selectedDay < data.todayDayIndex) {
-			selectedDay = data.todayDayIndex;
-		}
-	});
+	const selectedDayInfo = $derived(data.range.days[selectedOffset] ?? data.range.days[0]);
+	const selectedWeekday = $derived(selectedDayInfo.weekday);
 
 	let selectedIds: Set<number> = $state(new Set());
 	let multiselect = $state(false);
@@ -130,9 +129,12 @@
 	type Slot = (typeof data.slots)[number];
 
 	function selectedDateStr(): string {
-		const monday = new Date(`${data.weekMeta.monday}T00:00:00`);
-		const d = new Date(monday.getTime() + selectedDay * 24 * 60 * 60 * 1000);
-		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+		return selectedDayInfo.date;
+	}
+
+	function selectOffsetForDate(date: string) {
+		const offset = data.range.days.findIndex((d: { date: string }) => d.date === date);
+		if (offset >= 0) selectedOffset = offset;
 	}
 
 	function isSlotSuppressed(slotId: number): boolean {
@@ -216,18 +218,23 @@
 		exceptionalActivityChoice = defaultActivityChoice(null);
 	}
 
+	function goToRange(from: string | null) {
+		const parts: string[] = [];
+		if (from) parts.push(`from=${from}`);
+		if (viewMode === 'list') parts.push('view=list');
+		goto(`/planner/plan${parts.length ? `?${parts.join('&')}` : ''}`);
+	}
+
 	function goToPrevWeek() {
-		if (data.weekMeta.prevWeek) {
-			goto(`/planner/plan?week=${data.weekMeta.prevWeek}`);
-		}
+		if (data.range.prev) goToRange(data.range.prev);
 	}
 
 	function goToNextWeek() {
-		goto(`/planner/plan?week=${data.weekMeta.nextWeek}`);
+		goToRange(data.range.next);
 	}
 
-	function goToCurrentWeek() {
-		goto('/planner/plan');
+	function goToToday() {
+		goToRange(null);
 	}
 
 	function toggleSlotSelection(id: number) {
@@ -292,7 +299,7 @@
 			return;
 		}
 
-		const slots = slotsForDay(selectedDay);
+		const slots = slotsForDay(selectedWeekday);
 
 		if (multiselect) {
 			switch (action) {
@@ -327,13 +334,13 @@
 				case 'prev-day':
 					confirmingDelete = null;
 					confirmingBulkDelete = false;
-					selectedDay = Math.max(selectedDay - 1, 0);
+					selectedOffset = Math.max(selectedOffset - 1, 0);
 					selectedIndex = 0;
 					return;
 				case 'next-day':
 					confirmingDelete = null;
 					confirmingBulkDelete = false;
-					selectedDay = Math.min(selectedDay + 1, 6);
+					selectedOffset = Math.min(selectedOffset + 1, data.range.days.length - 1);
 					selectedIndex = 0;
 					return;
 				case 'navigate-down':
@@ -367,13 +374,13 @@
 			case 'prev-day':
 				confirmingDelete = null;
 				confirmingBulkDelete = false;
-				selectedDay = Math.max(selectedDay - 1, 0);
+				selectedOffset = Math.max(selectedOffset - 1, 0);
 				selectedIndex = 0;
 				break;
 			case 'next-day':
 				confirmingDelete = null;
 				confirmingBulkDelete = false;
-				selectedDay = Math.min(selectedDay + 1, 6);
+				selectedOffset = Math.min(selectedOffset + 1, data.range.days.length - 1);
 				selectedIndex = 0;
 				break;
 			case 'navigate-down':
@@ -427,17 +434,11 @@
 		return editingId ? (data.slots.find((s: Slot) => s.id === editingId) ?? null) : null;
 	}
 
-	function isDayPast(dayIndex: number): boolean {
-		if (data.isPastWeek) return true;
-		if (!data.weekMeta.isCurrent) return false;
-		return dayIndex < data.todayDayIndex;
-	}
-
 	function setView(mode: 'list' | 'grid') {
 		viewMode = mode;
 		const parts: string[] = [];
 		if (mode === 'list') parts.push('view=list');
-		if (!data.weekMeta.isCurrent) parts.push(`week=${data.weekMeta.monday}`);
+		if (!data.range.isCurrent) parts.push(`from=${data.range.from}`);
 		const qs = parts.join('&');
 		goto(`/planner/plan${qs ? `?${qs}` : ''}`, {
 			replaceState: true,
@@ -452,25 +453,22 @@
 				.filter((sup: { slotId: number; date: string }) => {
 					const slot = data.slots.find((s: Slot) => s.id === sup.slotId);
 					if (!slot) return false;
-					return formatLocalDate(weekdayToDate(data.weekMeta.monday, slot.weekday)) === sup.date;
+					return formatLocalDate(weekdayToDate(data.range.from, slot.weekday)) === sup.date;
 				})
 				.map((sup: { slotId: number }) => sup.slotId)
 		)
 	);
 
 	const gridEvents = $derived([
-		...buildSlotEvents(data.slots, data.weekMeta.monday, data.categories, {
-			isWeekdayEditable: (wd) => !isDayPast(wd),
-			suppressedSlotIds
-		}),
+		...buildSlotEvents(data.slots, data.range.from, data.categories, { suppressedSlotIds }),
 		...buildExceptionalEvents(data.exceptionals, data.categories)
 	]);
 
 	const gridOptions = $derived({
-		...baseWeekGridOptions(data.weekMeta.monday, { slotHeight }),
+		...baseGridOptions(data.range.from, { slotHeight }),
 		events: gridEvents,
 		editable: true,
-		selectable: !data.isPastWeek,
+		selectable: true,
 		eventClick: handleEventClick,
 		eventDrop: handleEventDrop,
 		eventResize: handleEventPersist,
@@ -490,8 +488,7 @@
 
 	function handleGridSelect(info: { start: Date; end: Date }) {
 		const placement = placementFromDates(info.start, info.end);
-		if (isDayPast(placement.weekday)) return;
-		selectedDay = placement.weekday;
+		selectOffsetForDate(formatLocalDate(info.start));
 		prefillTime = placement.startTime;
 		prefillDuration = placement.durationMinutes;
 		startNew();
@@ -523,10 +520,6 @@
 		info.revert();
 
 		if (!source) return;
-		if (isDayPast(placement.weekday)) {
-			gridError = "Can't add slots to past days.";
-			return;
-		}
 
 		const body = new FormData();
 		body.set('weekday', String(placement.weekday));
@@ -560,8 +553,7 @@
 					startTime: placement.startTime,
 					durationMinutes: placement.durationMinutes
 				};
-				const [event] = buildSlotEvents([newSlot], data.weekMeta.monday, data.categories, {
-					isWeekdayEditable: (wd) => !isDayPast(wd),
+				const [event] = buildSlotEvents([newSlot], data.range.from, data.categories, {
 					suppressedSlotIds
 				});
 				ec?.addEvent(event);
@@ -628,22 +620,23 @@
 		<div class="flex items-center gap-2">
 			<button
 				onclick={goToPrevWeek}
-				disabled={!data.weekMeta.prevWeek}
+				disabled={!data.range.prev}
 				class="border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
-				title="Previous week ([)">&larr;</button
+				title={data.range.prev ? 'Back 7 days ([)' : 'Already starting today'}>&larr;</button
 			>
 			<button
-				onclick={goToCurrentWeek}
-				class="border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
-				class:border-gray-900={data.weekMeta.isCurrent}
-				class:text-gray-900={data.weekMeta.isCurrent}
+				onclick={goToToday}
+				disabled={data.range.isCurrent}
+				class="border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed"
+				class:border-gray-900={data.range.isCurrent}
+				class:text-gray-900={data.range.isCurrent}
 			>
-				W{data.weekMeta.weekNumber}, {data.weekMeta.weekYear}
+				Today
 			</button>
 			<button
 				onclick={goToNextWeek}
 				class="border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-				title="Next week (])">&rarr;</button
+				title="Forward 7 days (])">&rarr;</button
 			>
 		</div>
 		<div class="flex gap-2">
@@ -692,7 +685,10 @@
 	</div>
 
 	<div class="text-center text-sm text-gray-500">
-		{formatWeekDate(data.weekMeta.monday)} &mdash; {formatWeekDate(data.weekMeta.sunday)}
+		{formatWeekDate(data.range.from)} &mdash; {formatWeekDate(data.range.last)}
+		{#if data.range.isCurrent}
+			<span class="text-gray-400">· next 7 days</span>
+		{/if}
 	</div>
 
 	{#if form?.message}
@@ -940,14 +936,14 @@
 				<div class="mb-3 flex flex-wrap gap-2">
 					{#each data.weekdays as day, i (i)}
 						<label
-							class="flex items-center gap-1.5 px-2 py-1 text-sm {selectedDay === i
+							class="flex items-center gap-1.5 px-2 py-1 text-sm {selectedWeekday === i
 								? 'cursor-not-allowed text-gray-400'
 								: 'cursor-pointer text-gray-700 hover:bg-gray-50'}"
 						>
 							<input
 								type="checkbox"
 								checked={copyTargetDays.has(i)}
-								disabled={selectedDay === i}
+								disabled={selectedWeekday === i}
 								onchange={() => {
 									if (copyTargetDays.has(i)) {
 										copyTargetDays = new Set([...copyTargetDays].filter((x) => x !== i));
@@ -1062,7 +1058,7 @@
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					>
 						{#each data.weekdays as day, i (i)}
-							<option value={i} selected={editing ? editing.weekday === i : selectedDay === i}
+							<option value={i} selected={editing ? editing.weekday === i : selectedWeekday === i}
 								>{day}</option
 							>
 						{/each}
@@ -1195,7 +1191,7 @@
 			class="space-y-3 border border-blue-200 bg-blue-50 p-4 shadow-sm"
 		>
 			<h3 class="text-sm font-medium text-gray-900">
-				New exception for {data.weekdays[selectedDay]}
+				New exception for {selectedDayInfo.name}
 			</h3>
 			<input type="hidden" name="date" value={selectedDateStr()} />
 			<div class="flex gap-3">
@@ -1322,39 +1318,30 @@
 
 	{#if viewMode === 'list'}
 		<div class="flex gap-1">
-			{#each data.weekdays as day, i (i)}
-				{@const past = isDayPast(i)}
+			{#each data.range.days as day, i (day.date)}
 				<button
-					onclick={() => (selectedDay = i)}
-					class="flex-1 border px-2 py-2 text-center text-xs font-medium transition {selectedDay ===
+					onclick={() => (selectedOffset = i)}
+					class="flex-1 border px-2 py-2 text-center text-xs font-medium transition {selectedOffset ===
 					i
-						? past
-							? 'border-gray-400 bg-gray-400 text-white'
-							: 'border-gray-900 bg-gray-900 text-white'
-						: past
-							? 'border-gray-100 bg-gray-50 text-gray-300'
-							: 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}"
+						? 'border-gray-900 bg-gray-900 text-white'
+						: 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}"
+					title={day.date}
 				>
-					{day.slice(0, 3)}
+					{day.isToday ? 'Today' : day.name.slice(0, 3)}
 				</button>
 			{/each}
 		</div>
 	{/if}
 
 	{#if viewMode === 'list'}
-		{#if slotsForDay(selectedDay).length === 0 && exceptionalSlotsForDay().length === 0}
+		{#if slotsForDay(selectedWeekday).length === 0 && exceptionalSlotsForDay().length === 0}
 			<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-				No slots for {data.weekdays[selectedDay]}.
+				No slots for {selectedDayInfo.name}.
 			</div>
 		{:else}
-			{@const dayPast = isDayPast(selectedDay)}
-			{#if slotsForDay(selectedDay).length > 0}
-				<div
-					class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm {dayPast
-						? 'opacity-60'
-						: ''}"
-				>
-					{#each slotsForDay(selectedDay) as slot, i (slot.id)}
+			{#if slotsForDay(selectedWeekday).length > 0}
+				<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
+					{#each slotsForDay(selectedWeekday) as slot, i (slot.id)}
 						{@const isSelected = selectedIds.has(slot.id)}
 						{@const suppressed = isSlotSuppressed(slot.id)}
 						<div
@@ -1363,7 +1350,7 @@
 								: ''} {selectedIndex === i ? 'bg-gray-100' : ''} {isSelected ? 'bg-blue-50' : ''}"
 							style="border-left-color: {catColor(slot.categoryId)}"
 						>
-							{#if multiselect && !dayPast}
+							{#if multiselect}
 								<button
 									type="button"
 									onclick={() => toggleSlotSelection(slot.id)}
@@ -1403,86 +1390,79 @@
 									<p class="truncate text-xs text-gray-500">{slot.label}</p>
 								{/if}
 							</div>
-							{#if !dayPast}
-								<div class="flex shrink-0 items-center gap-2">
-									{#if suppressed}
-										<form method="post" action="?/unsuppress" use:enhance>
-											<input type="hidden" name="slotId" value={slot.id} />
-											<input type="hidden" name="date" value={selectedDateStr()} />
-											<button
-												type="submit"
-												class="border border-amber-200 bg-white px-2 py-1 text-xs text-amber-600 transition hover:bg-amber-50"
-											>
-												Restore
-											</button>
-										</form>
-									{:else}
-										<form method="post" action="?/suppress" use:enhance>
-											<input type="hidden" name="slotId" value={slot.id} />
-											<input type="hidden" name="date" value={selectedDateStr()} />
-											<button
-												type="submit"
-												class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-												title="Skip this slot for this day only"
-											>
-												Skip
-											</button>
-										</form>
-									{/if}
-									<button
-										onclick={() => startEdit(slot)}
-										class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-									>
-										Edit
-									</button>
-									<form
-										id="toggle-form-{slot.id}"
-										method="post"
-										action="?/toggleActive"
-										use:enhance
-									>
-										<input type="hidden" name="id" value={slot.id} />
-										<input type="hidden" name="active" value={String(slot.active)} />
+							<div class="flex shrink-0 items-center gap-2">
+								{#if suppressed}
+									<form method="post" action="?/unsuppress" use:enhance>
+										<input type="hidden" name="slotId" value={slot.id} />
+										<input type="hidden" name="date" value={selectedDateStr()} />
+										<button
+											type="submit"
+											class="border border-amber-200 bg-white px-2 py-1 text-xs text-amber-600 transition hover:bg-amber-50"
+										>
+											Restore
+										</button>
+									</form>
+								{:else}
+									<form method="post" action="?/suppress" use:enhance>
+										<input type="hidden" name="slotId" value={slot.id} />
+										<input type="hidden" name="date" value={selectedDateStr()} />
 										<button
 											type="submit"
 											class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+											title="Skip this slot for this day only"
 										>
-											{slot.active ? 'Disable' : 'Enable'}
+											Skip
 										</button>
 									</form>
-									{#if confirmingDelete === `slot-${slot.id}`}
-										<form
-											id="delete-form-{slot.id}"
-											method="post"
-											action="?/delete"
-											use:enhance={() => {
-												return async ({ update }) => {
-													await update();
-													confirmingDelete = null;
-												};
-											}}
-										>
-											<input type="hidden" name="id" value={slot.id} />
-											<button
-												type="submit"
-												class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
-											>
-												Confirm?
-											</button>
-										</form>
-									{:else}
+								{/if}
+								<button
+									onclick={() => startEdit(slot)}
+									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+								>
+									Edit
+								</button>
+								<form id="toggle-form-{slot.id}" method="post" action="?/toggleActive" use:enhance>
+									<input type="hidden" name="id" value={slot.id} />
+									<input type="hidden" name="active" value={String(slot.active)} />
+									<button
+										type="submit"
+										class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+									>
+										{slot.active ? 'Disable' : 'Enable'}
+									</button>
+								</form>
+								{#if confirmingDelete === `slot-${slot.id}`}
+									<form
+										id="delete-form-{slot.id}"
+										method="post"
+										action="?/delete"
+										use:enhance={() => {
+											return async ({ update }) => {
+												await update();
+												confirmingDelete = null;
+											};
+										}}
+									>
+										<input type="hidden" name="id" value={slot.id} />
 										<button
-											type="button"
-											onclick={() => {
-												confirmingDelete = `slot-${slot.id}`;
-											}}
-											class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+											type="submit"
+											class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
 										>
-											Delete
+											Confirm?
 										</button>
-									{/if}
-								</div>
-							{/if}
+									</form>
+								{:else}
+									<button
+										type="button"
+										onclick={() => {
+											confirmingDelete = `slot-${slot.id}`;
+										}}
+										class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+									>
+										Delete
+									</button>
+								{/if}
+							</div>
 						</div>
 					{/each}
 				</div>
@@ -1519,37 +1499,35 @@
 							>
 								{exc.status}
 							</span>
-							{#if !dayPast}
-								{#if confirmingDelete === `exc-${exc.id}`}
-									<form
-										method="post"
-										action="?/deleteExceptional"
-										use:enhance={() => {
-											return async ({ update }) => {
-												await update();
-												confirmingDelete = null;
-											};
-										}}
-									>
-										<input type="hidden" name="id" value={exc.id} />
-										<button
-											type="submit"
-											class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
-										>
-											Confirm?
-										</button>
-									</form>
-								{:else}
+							{#if confirmingDelete === `exc-${exc.id}`}
+								<form
+									method="post"
+									action="?/deleteExceptional"
+									use:enhance={() => {
+										return async ({ update }) => {
+											await update();
+											confirmingDelete = null;
+										};
+									}}
+								>
+									<input type="hidden" name="id" value={exc.id} />
 									<button
-										type="button"
-										onclick={() => {
-											confirmingDelete = `exc-${exc.id}`;
-										}}
-										class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+										type="submit"
+										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
 									>
-										Delete
+										Confirm?
 									</button>
-								{/if}
+								</form>
+							{:else}
+								<button
+									type="button"
+									onclick={() => {
+										confirmingDelete = `exc-${exc.id}`;
+									}}
+									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+								>
+									Delete
+								</button>
 							{/if}
 						</div>
 					{/each}
