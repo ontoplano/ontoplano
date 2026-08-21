@@ -396,15 +396,13 @@
 			})?.categoryId}
 			<button
 				onclick={() => navigateToDay(i)}
-				class="flex-1 border px-2 py-2 text-center text-xs font-medium transition {data.selectedDayIndex ===
+				class="flex-1 border border-b-2 px-2 py-2 text-center text-xs transition {data.selectedDayIndex ===
 				i
-					? 'text-white'
+					? 'border-gray-300 bg-white font-semibold text-gray-900 shadow-card'
 					: today
-						? 'border-slate-400 bg-slate-100 text-gray-900'
-						: 'border-gray-200 bg-white text-gray-600 hover:bg-slate-50'}"
-				style={data.selectedDayIndex === i
-					? 'background-color: var(--section-accent); border-color: var(--section-accent)'
-					: ''}
+						? 'border-slate-300 bg-slate-100 font-medium text-gray-900'
+						: 'border-gray-200 bg-white font-medium text-gray-500 hover:text-gray-900'}"
+				style={data.selectedDayIndex === i ? 'border-bottom-color: var(--section-accent)' : ''}
 			>
 				{day.slice(0, 3)}
 				{#if count > 0}

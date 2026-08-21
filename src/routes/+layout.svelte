@@ -84,7 +84,7 @@
 		class="flex min-h-screen flex-col bg-gray-100"
 		style="{categoryStyle()};--section-accent:{section.accent}"
 	>
-		<header class="bg-gray-900 shadow-sm">
+		<header class="bg-gray-900 shadow-raised">
 			<div class="mx-auto flex max-w-5xl items-stretch justify-between px-4">
 				<div class="flex items-stretch gap-6">
 					<a href="/" class="flex items-center text-lg font-bold tracking-tight text-white"
@@ -97,10 +97,10 @@
 							     neutral so the fill is the thing that reads. -->
 							<a
 								href={item.href}
-								class="flex items-center px-3 py-4 text-sm font-medium transition-colors {active
-									? 'text-white'
-									: 'text-gray-400 hover:bg-gray-800 hover:text-white'}"
-								style={active ? `background-color: ${SECTIONS[item.section].accent}` : ''}
+								class="flex items-center border-b-2 px-3 py-4 text-sm transition-colors {active
+									? 'font-semibold text-white'
+									: 'border-transparent font-medium text-gray-400 hover:text-white'}"
+								style={active ? `border-color: ${SECTIONS[item.section].accent}` : ''}
 							>
 								{item.label}
 							</a>
@@ -125,7 +125,7 @@
 					</button>
 					{#if menuOpen}
 						<div
-							class="absolute top-full right-0 mt-1 w-40 border border-gray-200 bg-white shadow-sm"
+							class="rise absolute top-full right-0 mt-1 w-40 border border-gray-200 bg-white shadow-overlay"
 						>
 							<a
 								href="/settings/integrations"

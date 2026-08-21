@@ -89,15 +89,13 @@
 	</div>
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-		<div class="border border-gray-200 bg-white p-4 shadow-sm">
+		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
-				class="-mx-4 -mt-4 mb-3 flex items-center justify-between px-4 py-2"
-				style="background-color: {SECTION_COLORS.planner}"
+				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				style="border-top-color: {SECTION_COLORS.planner}"
 			>
-				<h2 class="text-sm font-bold text-white">Today's Tasks</h2>
-				<a href="/planner/track" class="text-xs text-white/70 transition hover:text-white">
-					Open →
-				</a>
+				<h2 class="eyebrow text-gray-500">Today's Tasks</h2>
+				<a href="/planner/track" class="text-xs text-gray-500 hover:text-gray-900"> Open → </a>
 			</div>
 			{#if data.taskSummary.total === 0}
 				<p class="text-sm text-gray-400">No tasks scheduled.</p>
@@ -120,7 +118,9 @@
 									class="w-1 shrink-0 self-stretch"
 									style="background-color: {task.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
 								></span>
-								<span class="w-11 shrink-0 font-mono text-xs text-gray-500">{task.startTime}</span>
+								<span class="tabular w-12 shrink-0 font-mono text-xs text-gray-500"
+									>{task.startTime}</span
+								>
 								<span class="truncate text-sm text-gray-900">{task.name}</span>
 								{#if task.kind === 'exceptional'}
 									<span class="ml-auto shrink-0 text-[10px] tracking-wide text-blue-600 uppercase">
@@ -155,15 +155,13 @@
 		</div>
 
 		{#if habitsEnabled}
-			<div class="border border-gray-200 bg-white p-4 shadow-sm">
+			<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 				<div
-					class="-mx-4 -mt-4 mb-3 flex items-center justify-between px-4 py-2"
-					style="background-color: {SECTION_COLORS.health}"
+					class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+					style="border-top-color: {SECTION_COLORS.health}"
 				>
-					<h2 class="text-sm font-bold text-white">Habits</h2>
-					<a href="/health/habits" class="text-xs text-white/70 transition hover:text-white">
-						Open →
-					</a>
+					<h2 class="eyebrow text-gray-500">Habits</h2>
+					<a href="/health/habits" class="text-xs text-gray-500 hover:text-gray-900"> Open → </a>
 				</div>
 				{#if data.habitStreaks.length === 0}
 					<p class="text-sm text-gray-400">No habits tracked.</p>
@@ -202,13 +200,13 @@
 		{@const timeSlots = [
 			...new Set(data.weekSlots.map((s: { startTime: string }) => s.startTime))
 		].sort()}
-		<div class="border border-gray-200 bg-white p-4 shadow-sm">
+		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
-				class="-mx-4 -mt-4 mb-3 flex items-center justify-between px-4 py-2"
-				style="background-color: {SECTION_COLORS.planner}"
+				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				style="border-top-color: {SECTION_COLORS.planner}"
 			>
-				<h2 class="text-sm font-bold text-white">Week Plan</h2>
-				<a href="/planner/plan" class="text-xs text-white/70 transition hover:text-white">Edit →</a>
+				<h2 class="eyebrow text-gray-500">Week Plan</h2>
+				<a href="/planner/plan" class="text-xs text-gray-500 hover:text-gray-900">Edit →</a>
 			</div>
 			<div class="overflow-x-auto">
 				<table class="w-full text-xs">
@@ -254,16 +252,14 @@
 		</div>
 	{/if}
 
-	<div class="border border-gray-200 bg-white p-4 shadow-sm">
+	<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 		<div
-			class="-mx-4 -mt-4 mb-3 flex items-center justify-between px-4 py-2"
-			style="background-color: {SECTION_COLORS.diary}"
+			class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+			style="border-top-color: {SECTION_COLORS.diary}"
 		>
-			<h2 class="text-sm font-bold text-white">Diary</h2>
+			<h2 class="eyebrow text-gray-500">Diary</h2>
 			<div class="flex items-center gap-3">
-				<a href="/diary" class="text-xs text-white/70 transition hover:text-white">
-					All entries →
-				</a>
+				<a href="/diary" class="text-xs text-gray-500 hover:text-gray-900"> All entries → </a>
 				{#if winsEnabled}
 					<button
 						onclick={() => {
@@ -394,13 +390,13 @@
 	</div>
 
 	{#if shoppingEnabled}
-		<div class="border border-gray-200 bg-white p-4 shadow-sm">
+		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
-				class="-mx-4 -mt-4 mb-3 flex items-center justify-between px-4 py-2"
-				style="background-color: {SECTION_COLORS.shopping}"
+				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				style="border-top-color: {SECTION_COLORS.shopping}"
 			>
-				<h2 class="text-sm font-bold text-white">Shopping</h2>
-				<a href="/shopping" class="text-xs text-white/70 transition hover:text-white">Open →</a>
+				<h2 class="eyebrow text-gray-500">Shopping</h2>
+				<a href="/shopping" class="text-xs text-gray-500 hover:text-gray-900">Open →</a>
 			</div>
 			{#if data.shoppingToBuy.length === 0}
 				<p class="text-sm text-gray-400">Nothing to buy.</p>
@@ -427,12 +423,12 @@
 	{/if}
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-		<div class="border border-gray-200 bg-white p-4 shadow-sm">
+		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
-				class="-mx-4 -mt-4 mb-3 flex items-center justify-between px-4 py-2"
-				style="background-color: {SECTION_COLORS.home}"
+				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				style="border-top-color: {SECTION_COLORS.home}"
 			>
-				<h2 class="text-sm font-bold text-white">Quick Links</h2>
+				<h2 class="eyebrow text-gray-500">Quick Links</h2>
 			</div>
 			<div class="space-y-2">
 				<a href="/planner/track" class="block text-sm text-gray-600 transition hover:text-gray-900"

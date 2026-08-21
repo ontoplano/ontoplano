@@ -1,10 +1,89 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/ibm-plex-sans';
+@import '@fontsource-variable/jetbrains-mono';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+
+/*
+ * Type, shadow and motion carry the visual interest here, because colour
+ * cannot: the vivid colours in this app belong to the user's categories, and
+ * chrome that competes with them makes the data harder to read. So the chrome
+ * is near-neutral and the interest comes from everything else.
+ */
+@theme {
+	--font-sans: 'IBM Plex Sans Variable', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+
+	/* Flat and close to the surface. Depth separates layers, it does not decorate. */
+	--shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06);
+	--shadow-raised: 0 2px 4px rgb(15 23 42 / 0.06), 0 4px 12px rgb(15 23 42 / 0.08);
+	--shadow-overlay: 0 8px 24px rgb(15 23 42 / 0.12), 0 2px 6px rgb(15 23 42 / 0.08);
+}
 
 /* No rounded corners anywhere */
 *,
 *::before,
 *::after {
 	border-radius: 0 !important;
+}
+
+/*
+ * A section label: small, spaced capitals. Does the job a coloured band was
+ * doing, without spending colour on it.
+ */
+.eyebrow {
+	font-size: 0.6875rem;
+	font-weight: 600;
+	letter-spacing: 0.09em;
+	text-transform: uppercase;
+	line-height: 1;
+}
+
+/* Figures line up in columns when they share a width. */
+.tabular {
+	font-variant-numeric: tabular-nums;
+	font-feature-settings: 'tnum';
+}
+
+/* One motion vocabulary, so nothing animates at its own improvised speed. */
+@media (prefers-reduced-motion: no-preference) {
+	a,
+	button,
+	input,
+	select,
+	textarea,
+	summary {
+		transition:
+			background-color 120ms ease,
+			border-color 120ms ease,
+			color 120ms ease,
+			box-shadow 120ms ease,
+			opacity 120ms ease;
+	}
+
+	.lift {
+		transition:
+			box-shadow 160ms ease,
+			transform 160ms ease;
+	}
+
+	.lift:hover {
+		box-shadow: var(--shadow-raised);
+		transform: translateY(-1px);
+	}
+
+	@keyframes rise {
+		from {
+			opacity: 0;
+			transform: translateY(4px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	.rise {
+		animation: rise 180ms ease-out both;
+	}
 }
