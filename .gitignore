@@ -42,3 +42,6 @@ telegram/node_modules
 
 # Claude Code local settings
 .claude/
+
+# envsubst output from the .service templates
+ontoplano-prod.service
