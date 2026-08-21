@@ -125,7 +125,7 @@ async function fetchPlan() {
 	const regularTasks = db
 		.select({
 			scheduledAt: taskInstances.scheduledAt,
-			status: taskInstances.status,
+			status: sql<string>`coalesce(${taskInstances.status}, 'pending')`.as('one_off_status'),
 			slotMode: weeklySlots.mode,
 			slotLabel: weeklySlots.label,
 			slotDuration: weeklySlots.durationMinutes,
@@ -154,10 +154,10 @@ async function fetchPlan() {
 	const exceptionalTasks = db
 		.select({
 			startTime: exceptionalSlots.startTime,
-			status: exceptionalSlots.status,
+			status: sql<string>`coalesce(${taskInstances.status}, 'pending')`.as('one_off_status'),
 			label: exceptionalSlots.label,
 			durationMinutes: exceptionalSlots.durationMinutes,
-			durationOverride: exceptionalSlots.durationOverride,
+			durationOverride: taskInstances.durationOverride,
 			categoryName: sql<
 				string | null
 			>`coalesce(${categories.name}, ${exceptionalActivityCategories.name})`,
@@ -169,6 +169,7 @@ async function fetchPlan() {
 		})
 		.from(exceptionalSlots)
 		.leftJoin(categories, eq(exceptionalSlots.categoryId, categories.id))
+		.leftJoin(taskInstances, eq(taskInstances.exceptionalSlotId, exceptionalSlots.id))
 		.leftJoin(exceptionalActivities, eq(exceptionalSlots.activityId, exceptionalActivities.id))
 		.leftJoin(
 			exceptionalActivityCategories,
@@ -176,7 +177,7 @@ async function fetchPlan() {
 		)
 		.leftJoin(
 			resolvedExceptionalActivities,
-			eq(exceptionalSlots.resolvedActivityId, resolvedExceptionalActivities.id)
+			eq(taskInstances.resolvedActivityId, resolvedExceptionalActivities.id)
 		)
 		.where(and(eq(exceptionalSlots.userId, userId), eq(exceptionalSlots.date, selectedDate)))
 		.orderBy(exceptionalSlots.startTime)

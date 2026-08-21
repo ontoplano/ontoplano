@@ -97,6 +97,15 @@ export const weeklySlots = sqliteTable(
 	]
 );
 
+/**
+ * One occurrence of a planned block on one date, with its own status.
+ *
+ * Exactly one of `slotId` / `exceptionalSlotId` is set: the first for an
+ * occurrence of a recurring weekly slot, the second for a one-off. Before this
+ * split, one-off blocks carried their own status columns and never produced an
+ * instance, so every "what is on this date" question needed two queries and a
+ * union — and the callers that forgot the second one were silently wrong.
+ */
 export const taskInstances = sqliteTable(
 	'task_instances',
 	{
@@ -104,9 +113,10 @@ export const taskInstances = sqliteTable(
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id),
-		slotId: integer('slot_id')
-			.notNull()
-			.references(() => weeklySlots.id),
+		slotId: integer('slot_id').references(() => weeklySlots.id),
+		exceptionalSlotId: integer('exceptional_slot_id').references(() => exceptionalSlots.id, {
+			onDelete: 'cascade'
+		}),
 		scheduledAt: text('scheduled_at').notNull(), // ISO 8601
 		status: text('status', {
 			enum: ['pending', 'completed', 'delayed', 'early', 'skipped']
@@ -124,9 +134,15 @@ export const taskInstances = sqliteTable(
 	(table) => [
 		index('instances_user_idx').on(table.userId),
 		index('instances_slot_idx').on(table.slotId),
+		index('instances_exceptional_idx').on(table.exceptionalSlotId),
 		index('instances_scheduled_idx').on(table.scheduledAt),
 		index('instances_status_idx').on(table.status),
-		index('instances_slot_scheduled_idx').on(table.slotId, table.scheduledAt)
+		index('instances_slot_scheduled_idx').on(table.slotId, table.scheduledAt),
+		uniqueIndex('instances_exceptional_unique').on(table.exceptionalSlotId),
+		check(
+			'instance_has_exactly_one_source',
+			sql`(${table.slotId} IS NULL) != (${table.exceptionalSlotId} IS NULL)`
+		)
 	]
 );
 
@@ -265,15 +281,6 @@ export const exceptionalSlots = sqliteTable(
 		activityId: integer('activity_id').references(() => activities.id),
 		label: text('label').default(''),
 		active: integer('active', { mode: 'boolean' }).notNull().default(true),
-		status: text('status', {
-			enum: ['pending', 'completed', 'delayed', 'early', 'skipped']
-		})
-			.notNull()
-			.default('pending'),
-		completedAt: text('completed_at'),
-		notes: text('notes').default(''),
-		resolvedActivityId: integer('resolved_activity_id').references(() => activities.id),
-		durationOverride: integer('duration_override'),
 		meta: text('meta').notNull().default('{}'),
 		createdAt: text('created_at')
 			.notNull()

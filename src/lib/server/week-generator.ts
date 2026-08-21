@@ -1,6 +1,4 @@
-import { db } from './db/index.js';
-import { weeklySlots, taskInstances, suppressedSlots } from './db/schema.js';
-import { eq, and, gte, lt } from 'drizzle-orm';
+import { generateInstances } from './services/instances.js';
 
 /** Format a Date as 'YYYY-MM-DDTHH:MM:SS' in local time (no UTC conversion). */
 export function toLocalISOString(d: Date): string {
@@ -53,92 +51,17 @@ export function addDays(date: Date, days: number): Date {
 	return d;
 }
 
-function formatDatetime(date: Date, time: string): string {
-	const [hours, minutes] = time.split(':').map(Number);
-	const d = new Date(date);
-	d.setHours(hours, minutes, 0, 0);
-	return toLocalISOString(d);
-}
-
-function formatDate(d: Date): string {
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
 /**
- * Idempotently generate task_instances for a week from active weekly_slots.
- * Skips slots that already have an instance in the target week.
+ * Idempotently generate instances for a week, for both kinds of block.
+ *
+ * The work now lives in `services/instances.ts`, which is also what reads them
+ * back; this stays as the week-shaped entry point the pages already call.
  */
 export function generateWeekInstances(weekStart: Date, userId: string): number {
 	const monday = getMonday(weekStart);
-	const nextMonday = addDays(monday, 7);
-
-	const mondayStr = toLocalISOString(monday);
-	const nextMondayStr = toLocalISOString(nextMonday);
-
-	const slots = db
-		.select()
-		.from(weeklySlots)
-		.where(and(eq(weeklySlots.active, true), eq(weeklySlots.userId, userId)))
-		.all();
-
-	let created = 0;
-
-	const suppressions = db
-		.select()
-		.from(suppressedSlots)
-		.where(
-			and(
-				eq(suppressedSlots.userId, userId),
-				gte(suppressedSlots.date, formatDate(monday)),
-				lt(suppressedSlots.date, formatDate(nextMonday))
-			)
-		)
-		.all();
-	const suppressedSet = new Set(suppressions.map((s) => `${s.slotId}:${s.date}`));
-
-	for (const slot of slots) {
-		const scheduledDate = addDays(monday, slot.weekday);
-		const dateStr = formatDate(scheduledDate);
-
-		if (suppressedSet.has(`${slot.id}:${dateStr}`)) continue;
-
-		const scheduledAt = formatDatetime(scheduledDate, slot.startTime);
-
-		const existing = db
-			.select()
-			.from(taskInstances)
-			.where(
-				and(
-					eq(taskInstances.slotId, slot.id),
-					eq(taskInstances.userId, userId),
-					gte(taskInstances.scheduledAt, mondayStr),
-					lt(taskInstances.scheduledAt, nextMondayStr)
-				)
-			)
-			.all();
-
-		if (existing.length === 0) {
-			db.insert(taskInstances)
-				.values({
-					userId,
-					slotId: slot.id,
-					scheduledAt,
-					status: 'pending',
-					resolvedActivityId: slot.mode === 'activity' ? slot.activityId : null
-				})
-				.run();
-			created++;
-		}
-	}
-
-	return created;
+	return generateInstances(userId, monday, addDays(monday, 7));
 }
 
 export function generateCurrentWeek(userId: string): number {
 	return generateWeekInstances(new Date(), userId);
-}
-
-export function generateNextWeek(userId: string): number {
-	const nextMonday = addDays(getMonday(new Date()), 7);
-	return generateWeekInstances(nextMonday, userId);
 }

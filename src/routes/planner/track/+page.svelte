@@ -8,89 +8,16 @@
 	let { data }: { data: PageServerData } = $props();
 
 	let selectedIndex = $state(0);
-	let editingTimeId: string | null = $state(null);
-	let editingDurationId: string | null = $state(null);
-	let editingActivityId: string | null = $state(null);
-	let confirmingDelete: string | null = $state(null);
+	let editingTimeId: number | null = $state(null);
+	let editingDurationId: number | null = $state(null);
+	let editingActivityId: number | null = $state(null);
+	let confirmingDelete: number | null = $state(null);
 
-	type UnifiedTask = {
-		source: 'regular' | 'exceptional';
-		uid: string;
-		id: number;
-		startTime: string;
-		status: string;
-		completedAt: string | null;
-		notes: string | null;
-		categoryId: number | null;
-		categoryName: string | null;
-		activityId: number | null;
-		activityName: string | null;
-		slotActivityId: number | null;
-		slotActivityName: string | null;
-		slotMode: string;
-		slotLabel: string | null;
-		durationMinutes: number;
-		durationOverride: number | null;
-		activityColor: string | null;
-		scheduledAt?: string;
-	};
+	// The server returns one row shape for both kinds of block, so the union
+	// that used to be assembled here is gone along with the second query.
+	type UnifiedTask = (typeof data.tasks)[number];
 
-	function buildUnifiedTasks(): UnifiedTask[] {
-		const unified: UnifiedTask[] = [];
-
-		for (const t of data.tasks) {
-			unified.push({
-				source: 'regular',
-				uid: `r-${t.id}`,
-				id: t.id,
-				startTime: formatTime(t.scheduledAt),
-				status: t.status,
-				completedAt: t.completedAt,
-				notes: t.notes,
-				categoryId: t.categoryId,
-				categoryName: t.categoryName,
-				activityId: t.activityId,
-				activityName: t.activityName,
-				slotActivityId: t.slotActivityId,
-				slotActivityName: t.slotActivityName,
-				slotMode: t.slotMode,
-				slotLabel: t.slotLabel,
-				durationMinutes: t.slotDuration ?? 60,
-				durationOverride: t.durationOverride,
-				activityColor: t.activityColor,
-				scheduledAt: t.scheduledAt
-			});
-		}
-
-		for (const e of data.exceptionalTasks) {
-			unified.push({
-				source: 'exceptional',
-				uid: `e-${e.id}`,
-				id: e.id,
-				startTime: e.startTime,
-				status: e.status,
-				completedAt: e.completedAt,
-				notes: e.notes,
-				categoryId: e.categoryId,
-				categoryName: e.categoryName,
-				activityId: e.activityId,
-				activityName: e.activityName,
-				slotActivityId: e.slotActivityId,
-				slotActivityName: e.slotActivityName,
-				slotMode: e.mode,
-				slotLabel: e.label,
-				durationMinutes: e.durationMinutes,
-				durationOverride: e.durationOverride,
-				activityColor: e.activityColor,
-				scheduledAt: undefined
-			});
-		}
-
-		unified.sort((a, b) => a.startTime.localeCompare(b.startTime));
-		return unified;
-	}
-
-	let allTasks = $derived(buildUnifiedTasks());
+	let allTasks = $derived(data.tasks);
 
 	const statusOptions = [
 		{ value: 'completed', label: 'Done', key: 'c' },
@@ -127,10 +54,6 @@
 			skipped: 'bg-red-100 text-red-700'
 		};
 		return map[status] ?? 'bg-gray-100 text-gray-600';
-	}
-
-	function formatTime(scheduledAt: string): string {
-		return scheduledAt.slice(11, 16);
 	}
 
 	function computeEndTime(startTime: string, durationMinutes: number): string {
@@ -230,21 +153,21 @@
 				selectedIndex = Math.max(selectedIndex - 1, 0);
 				break;
 			case 'edit-time':
-				editingTimeId = tasks[selectedIndex].uid;
+				editingTimeId = tasks[selectedIndex].id;
 				break;
 			case 'edit-duration':
-				editingDurationId = tasks[selectedIndex].uid;
+				editingDurationId = tasks[selectedIndex].id;
 				break;
 			case 'edit-activity':
-				editingActivityId = tasks[selectedIndex].uid;
+				editingActivityId = tasks[selectedIndex].id;
 				break;
 			case 'delete': {
 				const task = tasks[selectedIndex];
-				if (confirmingDelete === task.uid) {
-					const deleteForm = document.getElementById(`delete-form-${task.uid}`);
+				if (confirmingDelete === task.id) {
+					const deleteForm = document.getElementById(`delete-form-${task.id}`);
 					if (deleteForm instanceof HTMLFormElement) deleteForm.requestSubmit();
 				} else {
-					confirmingDelete = task.uid;
+					confirmingDelete = task.id;
 				}
 				break;
 			}
@@ -261,7 +184,7 @@
 					'reset-status': 'pending'
 				};
 				const statusValue = statusMap[action];
-				const form = document.getElementById(`status-form-${tasks[selectedIndex].uid}`);
+				const form = document.getElementById(`status-form-${tasks[selectedIndex].id}`);
 				if (form instanceof HTMLFormElement) {
 					const statusInput = form.querySelector<HTMLInputElement>('input[name="status"]');
 					if (statusInput) {
@@ -276,22 +199,22 @@
 
 	function taskLabel(task: UnifiedTask): string {
 		if (task.activityId && task.activityName) return task.activityName;
-		if (task.slotActivityName) return task.slotActivityName;
-		if (task.slotLabel) return task.slotLabel;
+		if (task.blockActivityName) return task.blockActivityName;
+		if (task.label) return task.label;
 		if (task.categoryName) return task.categoryName;
 		return 'Task';
 	}
 
 	function originalSlotLabel(task: UnifiedTask): string {
-		if (task.slotActivityName) return task.slotActivityName;
-		if (task.slotLabel) return task.slotLabel;
+		if (task.blockActivityName) return task.blockActivityName;
+		if (task.label) return task.label;
 		if (task.categoryName) return task.categoryName;
 		return 'Task';
 	}
 
 	function wasSwapped(task: UnifiedTask): boolean {
 		if (!task.activityId) return false;
-		if (task.slotMode === 'activity' && task.activityId === task.slotActivityId) return false;
+		if (task.mode === 'activity' && task.activityId === task.blockActivityId) return false;
 		return true;
 	}
 
@@ -302,7 +225,7 @@
 
 	function needsResolution(task: UnifiedTask): boolean {
 		return (
-			task.slotMode === 'category' &&
+			task.mode === 'category' &&
 			['completed', 'delayed', 'early'].includes(task.status) &&
 			!task.activityId
 		);
@@ -329,26 +252,6 @@
 
 	function isToday(dayIndex: number): boolean {
 		return data.weekMeta.isCurrent && dayIndex === data.todayDayIndex;
-	}
-
-	function statusAction(task: UnifiedTask): string {
-		return task.source === 'exceptional' ? '?/updateExceptionalStatus' : '?/updateStatus';
-	}
-
-	function activityAction(task: UnifiedTask): string {
-		return task.source === 'exceptional' ? '?/resolveExceptionalActivity' : '?/resolveActivity';
-	}
-
-	function timeAction(task: UnifiedTask): string {
-		return task.source === 'exceptional' ? '?/updateExceptionalTime' : '?/updateScheduledAt';
-	}
-
-	function durationAction(task: UnifiedTask): string {
-		return task.source === 'exceptional' ? '?/updateExceptionalDuration' : '?/updateDuration';
-	}
-
-	function deleteAction(task: UnifiedTask): string {
-		return task.source === 'exceptional' ? '?/deleteExceptional' : '?/deleteTask';
 	}
 
 	$effect(() => {
@@ -390,10 +293,6 @@
 		{#each data.weekdays as day, i (i)}
 			{@const count = data.taskCountByDay[i] ?? 0}
 			{@const today = isToday(i)}
-			{@const catId = data.tasks.find((t: any) => {
-				const d = new Date(t.scheduledAt).getDay();
-				return d === i || (d === 0 && i === 6) || d === i + 1;
-			})?.categoryId}
 			<button
 				onclick={() => navigateToDay(i)}
 				class="flex-1 border border-b-2 px-2 py-2 text-center text-xs transition {data.selectedDayIndex ===
@@ -418,7 +317,7 @@
 		</div>
 	{:else}
 		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
-			{#each allTasks as task, i (task.uid)}
+			{#each allTasks as task, i (task.id)}
 				{@const future = isFuture(task)}
 				<div
 					class="flex items-center gap-4 border-l-4 px-4 py-3 transition-colors {i === selectedIndex
@@ -428,14 +327,14 @@
 						task.categoryId
 					)}30"
 				>
-					{#if task.source === 'exceptional'}
-						<span class="shrink-0 text-xs text-blue-500" title="Exceptional slot">★</span>
+					{#if task.kind === 'once'}
+						<span class="shrink-0 text-xs text-blue-500" title="One-off block">★</span>
 					{/if}
 
-					{#if editingTimeId === task.uid}
+					{#if editingTimeId === task.id}
 						<form
 							method="post"
-							action={timeAction(task)}
+							action="?/updateScheduledAt"
 							use:enhance={() => {
 								return async ({ update }) => {
 									await update();
@@ -470,7 +369,7 @@
 					{:else}
 						<button
 							type="button"
-							onclick={() => (editingTimeId = task.uid)}
+							onclick={() => (editingTimeId = task.id)}
 							class="w-24 shrink-0 text-left font-mono text-sm text-gray-500 hover:text-gray-900"
 							title="click to edit time"
 						>
@@ -478,10 +377,10 @@
 						</button>
 					{/if}
 
-					{#if editingDurationId === task.uid}
+					{#if editingDurationId === task.id}
 						<form
 							method="post"
-							action={durationAction(task)}
+							action="?/updateDuration"
 							use:enhance={() => {
 								return async ({ update }) => {
 									await update();
@@ -518,7 +417,7 @@
 					{:else}
 						<button
 							type="button"
-							onclick={() => (editingDurationId = task.uid)}
+							onclick={() => (editingDurationId = task.id)}
 							class="shrink-0 font-mono text-xs text-gray-400 hover:text-gray-700"
 							title="click to edit duration"
 						>
@@ -526,10 +425,10 @@
 						</button>
 					{/if}
 
-					{#if editingActivityId === task.uid}
+					{#if editingActivityId === task.id}
 						<form
 							method="post"
-							action={activityAction(task)}
+							action="?/resolveActivity"
 							use:enhance={() => {
 								return async ({ update }) => {
 									await update();
@@ -576,7 +475,7 @@
 							<div class="flex items-center gap-2">
 								<button
 									type="button"
-									onclick={() => (editingActivityId = task.uid)}
+									onclick={() => (editingActivityId = task.id)}
 									class="truncate text-sm font-medium text-gray-900 hover:text-gray-600"
 									title="click to change activity (a)"
 								>
@@ -591,8 +490,8 @@
 									>
 								{/if}
 							</div>
-							{#if task.slotLabel && taskLabel(task) !== task.slotLabel}
-								<p class="truncate text-xs text-gray-500">{task.slotLabel}</p>
+							{#if task.label && taskLabel(task) !== task.label}
+								<p class="truncate text-xs text-gray-500">{task.label}</p>
 							{/if}
 						</div>
 					{/if}
@@ -604,7 +503,7 @@
 					{#if needsResolution(task)}
 						{@const catActivities = activitiesForCategory(task.categoryId)}
 						{#if catActivities.length > 0}
-							<form method="post" action={activityAction(task)} use:enhance class="shrink-0">
+							<form method="post" action="?/resolveActivity" use:enhance class="shrink-0">
 								<input type="hidden" name="id" value={task.id} />
 								<select
 									name="activityId"
@@ -624,9 +523,9 @@
 					{/if}
 
 					<form
-						id="status-form-{task.uid}"
+						id="status-form-{task.id}"
 						method="post"
-						action={statusAction(task)}
+						action="?/updateStatus"
 						use:enhance
 						class="flex shrink-0 gap-1"
 					>
@@ -648,12 +547,12 @@
 						{/each}
 					</form>
 
-					{#if confirmingDelete === task.uid}
+					{#if confirmingDelete === task.id}
 						<div class="flex shrink-0 items-center gap-2">
 							<form
-								id="delete-form-{task.uid}"
+								id="delete-form-{task.id}"
 								method="post"
-								action={deleteAction(task)}
+								action="?/deleteTask"
 								use:enhance={() => {
 									return async ({ update }) => {
 										await update();
@@ -683,7 +582,7 @@
 						<button
 							type="button"
 							onclick={() => {
-								confirmingDelete = task.uid;
+								confirmingDelete = task.id;
 							}}
 							class="text-xs text-gray-400 hover:text-red-500"
 							title="Delete task (x)"

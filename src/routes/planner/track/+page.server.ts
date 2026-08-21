@@ -4,20 +4,19 @@ import { db } from '$lib/server/db';
 import {
 	taskInstances,
 	weeklySlots,
+	exceptionalSlots,
 	activities,
-	categories,
-	exceptionalSlots
+	categories
 } from '$lib/server/db/schema';
-import { eq, and, gte, lt, sql } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/sqlite-core';
+import { eq, and } from 'drizzle-orm';
 import {
-	generateCurrentWeek,
 	toLocalISOString,
 	getMonday,
 	addDays,
 	getISOWeekNumber,
 	getISOWeekYear
 } from '$lib/server/week-generator';
+import { generateInstances, listForDate, listInstances } from '$lib/server/services/instances';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -38,7 +37,6 @@ function parseWeekParam(param: string | null): Date {
 export const load: PageServerLoad = async (event) => {
 	const { url } = event;
 	const userId = event.locals.user!.id;
-	generateCurrentWeek(userId);
 
 	const weekParam = url.searchParams.get('week');
 	const dayParam = url.searchParams.get('day');
@@ -72,53 +70,12 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	const selectedDate = addDays(monday, selectedDayIndex);
-	const nextDate = addDays(selectedDate, 1);
-	const start = toLocalISOString(selectedDate);
-	const end = toLocalISOString(nextDate);
 
-	const slotActivities = alias(activities, 'slot_activities');
-	const activityCategories = alias(categories, 'activity_categories');
+	// Generate for the week actually being viewed. The old code only ever
+	// generated the current one, so paging forward showed an empty week.
+	generateInstances(userId, monday, nextMonday);
 
-	const tasks = db
-		.select({
-			id: taskInstances.id,
-			scheduledAt: taskInstances.scheduledAt,
-			status: taskInstances.status,
-			completedAt: taskInstances.completedAt,
-			notes: taskInstances.notes,
-			slotId: taskInstances.slotId,
-			slotMode: weeklySlots.mode,
-			slotLabel: weeklySlots.label,
-			slotStartTime: weeklySlots.startTime,
-			slotDuration: weeklySlots.durationMinutes,
-			durationOverride: taskInstances.durationOverride,
-			categoryId: sql<number>`coalesce(${weeklySlots.categoryId}, ${slotActivities.categoryId})`.as(
-				'effective_category_id'
-			),
-			categoryName: sql<string>`coalesce(${categories.name}, ${activityCategories.name})`.as(
-				'effective_category_name'
-			),
-			slotActivityId: weeklySlots.activityId,
-			slotActivityName: slotActivities.name,
-			activityId: taskInstances.resolvedActivityId,
-			activityName: activities.name,
-			activityColor: activities.color
-		})
-		.from(taskInstances)
-		.innerJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
-		.leftJoin(categories, eq(weeklySlots.categoryId, categories.id))
-		.leftJoin(slotActivities, eq(weeklySlots.activityId, slotActivities.id))
-		.leftJoin(activityCategories, eq(slotActivities.categoryId, activityCategories.id))
-		.leftJoin(activities, eq(taskInstances.resolvedActivityId, activities.id))
-		.where(
-			and(
-				eq(taskInstances.userId, userId),
-				gte(taskInstances.scheduledAt, start),
-				lt(taskInstances.scheduledAt, end)
-			)
-		)
-		.orderBy(taskInstances.scheduledAt)
-		.all();
+	const tasks = listForDate(userId, selectedDate);
 
 	const allActivities = db
 		.select({
@@ -133,68 +90,12 @@ export const load: PageServerLoad = async (event) => {
 		.orderBy(categories.name, activities.name)
 		.all();
 
-	const selectedDateStr = formatDate(selectedDate);
-	const exceptionalActivities = alias(activities, 'exceptional_activities');
-	const exceptionalCategories = alias(categories, 'exceptional_categories');
-	const resolvedExcActivities = alias(activities, 'resolved_exc_activities');
-
-	const exceptionalTasks = db
-		.select({
-			id: exceptionalSlots.id,
-			date: exceptionalSlots.date,
-			startTime: exceptionalSlots.startTime,
-			durationMinutes: exceptionalSlots.durationMinutes,
-			durationOverride: exceptionalSlots.durationOverride,
-			mode: exceptionalSlots.mode,
-			categoryId: sql<number>`coalesce(${exceptionalSlots.categoryId}, ${exceptionalActivities.categoryId})`.as(
-				'exc_category_id'
-			),
-			categoryName: sql<string>`coalesce(${exceptionalCategories.name}, (SELECT name FROM categories WHERE id = ${exceptionalActivities.categoryId}))`.as(
-				'exc_category_name'
-			),
-			slotActivityId: exceptionalSlots.activityId,
-			slotActivityName: exceptionalActivities.name,
-			activityId: exceptionalSlots.resolvedActivityId,
-			activityName: resolvedExcActivities.name,
-			activityColor: resolvedExcActivities.color,
-			label: exceptionalSlots.label,
-			active: exceptionalSlots.active,
-			status: exceptionalSlots.status,
-			completedAt: exceptionalSlots.completedAt,
-			notes: exceptionalSlots.notes
-		})
-		.from(exceptionalSlots)
-		.leftJoin(exceptionalCategories, eq(exceptionalSlots.categoryId, exceptionalCategories.id))
-		.leftJoin(exceptionalActivities, eq(exceptionalSlots.activityId, exceptionalActivities.id))
-		.leftJoin(resolvedExcActivities, eq(exceptionalSlots.resolvedActivityId, resolvedExcActivities.id))
-		.where(
-			and(
-				eq(exceptionalSlots.userId, userId),
-				eq(exceptionalSlots.date, selectedDateStr)
-			)
-		)
-		.orderBy(exceptionalSlots.startTime)
-		.all();
-
-	const mondayStr = toLocalISOString(monday);
-	const nextMondayStr = toLocalISOString(nextMonday);
-	const allWeekTasks = db
-		.select({
-			scheduledAt: taskInstances.scheduledAt
-		})
-		.from(taskInstances)
-		.where(
-			and(
-				eq(taskInstances.userId, userId),
-				gte(taskInstances.scheduledAt, mondayStr),
-				lt(taskInstances.scheduledAt, nextMondayStr)
-			)
-		)
-		.all();
-
+	// Counted from the same source the list is built from, so a day tab can no
+	// longer disagree with the rows underneath it.
+	const weekOccurrences = listInstances(userId, monday, nextMonday);
 	const taskCountByDay: Record<number, number> = {};
-	for (const t of allWeekTasks) {
-		const d = new Date(t.scheduledAt);
+	for (const o of weekOccurrences) {
+		const d = new Date(o.scheduledAt);
 		const dow = d.getDay();
 		const idx = dow === 0 ? 6 : dow - 1;
 		taskCountByDay[idx] = (taskCountByDay[idx] || 0) + 1;
@@ -205,11 +106,10 @@ export const load: PageServerLoad = async (event) => {
 	const todayDayIndex = todayDow === 0 ? 6 : todayDow - 1;
 
 	const allCategories = db.select().from(categories).where(eq(categories.userId, userId)).all();
-  const validStatuses = ['pending', 'completed', 'delayed', 'early', 'skipped'] as const;
+	const validStatuses = ['pending', 'completed', 'delayed', 'early', 'skipped'] as const;
 
 	return {
 		tasks,
-		exceptionalTasks,
 		activities: allActivities,
 		categories: allCategories,
 		now: toLocalISOString(now),
@@ -219,7 +119,7 @@ export const load: PageServerLoad = async (event) => {
 		todayDayIndex,
 		taskCountByDay,
 		selectedDate: formatDate(selectedDate),
-    validStatuses
+		validStatuses
 	};
 };
 
@@ -246,16 +146,21 @@ export const actions: Actions = {
 			completedAt
 		};
 
-		// Clear resolved activity when resetting or skipping a category-mode task
+		// Clear the resolved activity when resetting or skipping a category-mode
+		// task, whichever kind of block it came from.
 		if (status === 'pending' || status === 'skipped') {
-			const task = db
-				.select({ slotMode: weeklySlots.mode })
+			const owning = db
+				.select({
+					slotMode: weeklySlots.mode,
+					oneOffMode: exceptionalSlots.mode
+				})
 				.from(taskInstances)
-				.innerJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
+				.leftJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
+				.leftJoin(exceptionalSlots, eq(taskInstances.exceptionalSlotId, exceptionalSlots.id))
 				.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
 				.get();
 
-			if (task?.slotMode === 'category') {
+			if ((owning?.slotMode ?? owning?.oneOffMode) === 'category') {
 				updateData.resolvedActivityId = null;
 			}
 		}
@@ -308,6 +213,17 @@ export const actions: Actions = {
 			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
 			.run();
 
+		// A one-off block and its instance are one-to-one, and the plan grid draws
+		// the block — leaving it behind would put the same task at two times.
+		if (task.exceptionalSlotId !== null) {
+			db.update(exceptionalSlots)
+				.set({ startTime: time })
+				.where(
+					and(eq(exceptionalSlots.id, task.exceptionalSlotId), eq(exceptionalSlots.userId, userId))
+				)
+				.run();
+		}
+
 		return { success: true };
 	},
 
@@ -340,115 +256,6 @@ export const actions: Actions = {
 
 		db.delete(taskInstances)
 			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-			.run();
-
-		return { success: true };
-	},
-
-	updateExceptionalStatus: async ({ request, locals }) => {
-		const userId = locals.user!.id;
-		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const status = formData.get('status')?.toString();
-
-		if (!id || !status) return fail(400, { message: 'Missing id or status' });
-
-		const validStatuses = ['pending', 'completed', 'delayed', 'early', 'skipped'] as const;
-		if (!validStatuses.includes(status as (typeof validStatuses)[number])) {
-			return fail(400, { message: 'Invalid status' });
-		}
-
-		const completedAt = ['completed', 'delayed', 'early'].includes(status)
-			? toLocalISOString(new Date())
-			: null;
-
-		const updateData: Record<string, unknown> = {
-			status: status as (typeof validStatuses)[number],
-			completedAt
-		};
-
-		if (status === 'pending' || status === 'skipped') {
-			const exc = db
-				.select({ mode: exceptionalSlots.mode })
-				.from(exceptionalSlots)
-				.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
-				.get();
-
-			if (exc?.mode === 'category') {
-				updateData.resolvedActivityId = null;
-			}
-		}
-
-		db.update(exceptionalSlots)
-			.set(updateData)
-			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
-			.run();
-
-		return { success: true };
-	},
-
-	resolveExceptionalActivity: async ({ request, locals }) => {
-		const userId = locals.user!.id;
-		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const activityId = formData.get('activityId') ? Number(formData.get('activityId')) : null;
-
-		if (!id) return fail(400, { message: 'Missing id' });
-
-		db.update(exceptionalSlots)
-			.set({ resolvedActivityId: activityId })
-			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
-			.run();
-
-		return { success: true };
-	},
-
-	updateExceptionalTime: async ({ request, locals }) => {
-		const userId = locals.user!.id;
-		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const time = formData.get('time')?.toString()?.trim();
-
-		if (!id) return fail(400, { message: 'Missing id' });
-		if (!time || !/^\d{2}:\d{2}$/.test(time)) return fail(400, { message: 'Invalid time format' });
-
-		db.update(exceptionalSlots)
-			.set({ startTime: time })
-			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
-			.run();
-
-		return { success: true };
-	},
-
-	updateExceptionalDuration: async ({ request, locals }) => {
-		const userId = locals.user!.id;
-		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const minutes = formData.get('minutes')?.toString()?.trim();
-
-		if (!id) return fail(400, { message: 'Missing id' });
-		if (!minutes || isNaN(Number(minutes)) || Number(minutes) < 0) {
-			return fail(400, { message: 'Invalid duration' });
-		}
-
-		const value = Number(minutes) === 0 ? null : Number(minutes);
-		db.update(exceptionalSlots)
-			.set({ durationOverride: value })
-			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
-			.run();
-
-		return { success: true };
-	},
-
-	deleteExceptional: async ({ request, locals }) => {
-		const userId = locals.user!.id;
-		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-
-		if (!id) return fail(400, { message: 'Missing id' });
-
-		db.delete(exceptionalSlots)
-			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
 			.run();
 
 		return { success: true };

@@ -231,11 +231,13 @@ export const load: PageServerLoad = async (event) => {
 			label: exceptionalSlots.label,
 			meta: exceptionalSlots.meta,
 			active: exceptionalSlots.active,
-			status: exceptionalSlots.status
+			// A one-off's status lives on its instance now, not on the block.
+			status: sql<string>`coalesce(${taskInstances.status}, 'pending')`.as('one_off_status')
 		})
 		.from(exceptionalSlots)
 		.leftJoin(categories, eq(exceptionalSlots.categoryId, categories.id))
 		.leftJoin(activities, eq(exceptionalSlots.activityId, activities.id))
+		.leftJoin(taskInstances, eq(taskInstances.exceptionalSlotId, exceptionalSlots.id))
 		.where(
 			and(
 				eq(exceptionalSlots.userId, userId),

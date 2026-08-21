@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, lt } from 'drizzle-orm';
+import { and, asc, eq, gte, lt, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 
 import { db } from '../db/index.js';
@@ -127,8 +127,9 @@ export function getUpcomingSchedule(
 			date: exceptionalSlots.date,
 			startTime: exceptionalSlots.startTime,
 			duration: exceptionalSlots.durationMinutes,
-			durationOverride: exceptionalSlots.durationOverride,
-			status: exceptionalSlots.status,
+			// Execution state moved onto the instance the one-off produces.
+			durationOverride: taskInstances.durationOverride,
+			status: sql<string>`coalesce(${taskInstances.status}, 'pending')`.as('one_off_status'),
 			label: exceptionalSlots.label,
 			meta: exceptionalSlots.meta,
 			active: exceptionalSlots.active,
@@ -138,6 +139,7 @@ export function getUpcomingSchedule(
 		.from(exceptionalSlots)
 		.leftJoin(categories, eq(exceptionalSlots.categoryId, categories.id))
 		.leftJoin(activities, eq(exceptionalSlots.activityId, activities.id))
+		.leftJoin(taskInstances, eq(taskInstances.exceptionalSlotId, exceptionalSlots.id))
 		.where(
 			and(
 				eq(exceptionalSlots.userId, ctx.userId),

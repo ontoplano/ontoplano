@@ -5,34 +5,21 @@ import {
 	diaryEntries,
 	tags,
 	diaryEntryTags,
-	taskInstances,
 	habits,
 	habitOccurrences,
 	shoppingItems,
 	weeklySlots,
-	exceptionalSlots,
 	activities,
 	categories
 } from '$lib/server/db/schema';
-import { eq, and, gte, lt, desc, max, sql } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/sqlite-core';
-import { generateCurrentWeek, toLocalISOString } from '$lib/server/week-generator';
+import { eq, and, desc, max } from 'drizzle-orm';
+import { generateCurrentWeek } from '$lib/server/week-generator';
+import { generateForDate, listForDate } from '$lib/server/services/instances';
 import { parseTags, ensureTagIds, linkDiaryTags } from '$lib/server/tags';
 
 function todayStr(): string {
 	const d = new Date();
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function todayRange(): { start: string; end: string } {
-	const now = new Date();
-	const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-	const end = new Date(start);
-	end.setDate(end.getDate() + 1);
-	return {
-		start: toLocalISOString(start),
-		end: toLocalISOString(end)
-	};
 }
 
 function daysBetween(a: string, b: string): number {
@@ -74,111 +61,20 @@ export const load: PageServerLoad = async (event) => {
 		.orderBy(tags.name)
 		.all();
 
-	const { start, end } = todayRange();
 	const today = todayStr();
+	generateForDate(userId, new Date());
 
-	// What a block is *called* falls back through three levels: an explicit
-	// label, then the activity (a per-instance override beats the slot's own),
-	// then the category it belongs to. Same order the tracker uses.
-	const slotActivities = alias(activities, 'slot_activities');
-	const activityCategories = alias(categories, 'activity_categories');
-
-	const weeklyToday = db
-		.select({
-			id: taskInstances.id,
-			status: taskInstances.status,
-			startTime: weeklySlots.startTime,
-			label: weeklySlots.label,
-			resolvedActivityName: activities.name,
-			slotActivityName: slotActivities.name,
-			categoryName: sql<string | null>`coalesce(${categories.name}, ${activityCategories.name})`.as(
-				'effective_category_name'
-			),
-			categoryColor: sql<
-				string | null
-			>`coalesce(${categories.color}, ${activityCategories.color})`.as('effective_category_color')
-		})
-		.from(taskInstances)
-		.innerJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
-		.leftJoin(categories, eq(weeklySlots.categoryId, categories.id))
-		.leftJoin(slotActivities, eq(weeklySlots.activityId, slotActivities.id))
-		.leftJoin(activityCategories, eq(slotActivities.categoryId, activityCategories.id))
-		.leftJoin(activities, eq(taskInstances.resolvedActivityId, activities.id))
-		.where(
-			and(
-				eq(taskInstances.userId, userId),
-				gte(taskInstances.scheduledAt, start),
-				lt(taskInstances.scheduledAt, end)
-			)
-		)
-		.all();
-
-	// One-off blocks carry their own status rather than generating an instance,
-	// so they need a second query. Unifying the two is phase 1 of the product
-	// plan; until then, leaving this out is what made them invisible here.
-	const excActivities = alias(activities, 'exc_activities');
-	const excResolvedActivities = alias(activities, 'exc_resolved_activities');
-	const excCategories = alias(categories, 'exc_categories');
-	const excActivityCategories = alias(categories, 'exc_activity_categories');
-
-	const exceptionalToday = db
-		.select({
-			id: exceptionalSlots.id,
-			status: exceptionalSlots.status,
-			startTime: exceptionalSlots.startTime,
-			label: exceptionalSlots.label,
-			resolvedActivityName: excResolvedActivities.name,
-			slotActivityName: excActivities.name,
-			categoryName: sql<
-				string | null
-			>`coalesce(${excCategories.name}, ${excActivityCategories.name})`.as('exc_category_name'),
-			categoryColor: sql<
-				string | null
-			>`coalesce(${excCategories.color}, ${excActivityCategories.color})`.as('exc_category_color')
-		})
-		.from(exceptionalSlots)
-		.leftJoin(excCategories, eq(exceptionalSlots.categoryId, excCategories.id))
-		.leftJoin(excActivities, eq(exceptionalSlots.activityId, excActivities.id))
-		.leftJoin(excActivityCategories, eq(excActivities.categoryId, excActivityCategories.id))
-		.leftJoin(
-			excResolvedActivities,
-			eq(exceptionalSlots.resolvedActivityId, excResolvedActivities.id)
-		)
-		.where(
-			and(
-				eq(exceptionalSlots.userId, userId),
-				eq(exceptionalSlots.date, today),
-				eq(exceptionalSlots.active, true)
-			)
-		)
-		.all();
-
-	type TodayRow = (typeof weeklyToday)[number];
-
-	function taskName(row: TodayRow): string {
-		return (
-			row.label?.trim() ||
-			row.resolvedActivityName ||
-			row.slotActivityName ||
-			row.categoryName ||
-			'Untitled'
-		);
-	}
-
-	const todayTasks = [
-		...weeklyToday.map((r) => ({ ...r, kind: 'weekly' as const })),
-		...exceptionalToday.map((r) => ({ ...r, kind: 'exceptional' as const }))
-	]
-		.map((r) => ({
-			id: r.id,
-			kind: r.kind,
-			startTime: r.startTime,
-			name: taskName(r),
-			status: r.status,
-			categoryName: r.categoryName,
-			categoryColor: r.categoryColor
-		}))
-		.sort((a, b) => a.startTime.localeCompare(b.startTime));
+	// One call, both kinds of block. The union that used to live here is why
+	// one-offs were missing from this card in the first place.
+	const todayTasks = listForDate(userId, new Date()).map((o) => ({
+		id: o.id,
+		kind: o.kind,
+		startTime: o.startTime,
+		name: o.title,
+		status: o.status,
+		categoryName: o.categoryName,
+		categoryColor: o.categoryColor
+	}));
 
 	const taskSummary = {
 		total: todayTasks.length,

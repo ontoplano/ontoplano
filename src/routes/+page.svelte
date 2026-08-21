@@ -122,7 +122,7 @@
 									>{task.startTime}</span
 								>
 								<span class="truncate text-sm text-gray-900">{task.name}</span>
-								{#if task.kind === 'exceptional'}
+								{#if task.kind === 'once'}
 									<span class="ml-auto shrink-0 text-[10px] tracking-wide text-blue-600 uppercase">
 										one-off
 									</span>
