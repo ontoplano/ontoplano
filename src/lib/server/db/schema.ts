@@ -633,3 +633,108 @@ export const dataPoints = sqliteTable(
 );
 
 export * from './auth.schema.js';
+
+// --- Goals -------------------------------------------------------------------
+
+/**
+ * An area of life a goal belongs to: fitness, study, money, and whatever else
+ * the user names. Seeded empty — the point of "manage life like a business" is
+ * that the chart of accounts is yours.
+ */
+export const goalAreas = sqliteTable(
+	'goal_areas',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull(),
+		color: text('color').notNull().default('#6b7280'),
+		sortOrder: integer('sort_order').notNull().default(0),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('goal_areas_user_idx').on(table.userId),
+		uniqueIndex('goal_areas_user_name_unique').on(table.userId, table.name)
+	]
+);
+
+/**
+ * A goal at some horizon, optionally hanging off a larger one.
+ *
+ * `parentId` is what makes a year decompose into quarters and a quarter into
+ * weeks, rather than leaving six unrelated lists. `periodStart` anchors the
+ * goal to a specific week or quarter, so "read 12 books" in 2026 and the same
+ * goal in 2027 are different rows with their own progress.
+ *
+ * `targetValue` is optional: plenty of goals are "do the thing", not "do the
+ * thing N times". When it is set, progress can be counted rather than felt.
+ */
+export const goals = sqliteTable(
+	'goals',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		areaId: integer('area_id').references(() => goalAreas.id, { onDelete: 'set null' }),
+		parentId: integer('parent_id'),
+		title: text('title').notNull(),
+		notes: text('notes').default(''),
+		horizon: text('horizon', {
+			enum: ['day', 'week', 'month', 'quarter', 'semester', 'year']
+		}).notNull(),
+		periodStart: text('period_start').notNull(), // YYYY-MM-DD, first day of the period
+		targetValue: real('target_value'),
+		currentValue: real('current_value').notNull().default(0),
+		unit: text('unit').default(''),
+		status: text('status', { enum: ['open', 'achieved', 'missed', 'abandoned'] })
+			.notNull()
+			.default('open'),
+		outcome: text('outcome').default(''),
+		closedAt: text('closed_at'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('goals_user_idx').on(table.userId),
+		index('goals_period_idx').on(table.userId, table.horizon, table.periodStart),
+		index('goals_parent_idx').on(table.parentId),
+		index('goals_area_idx').on(table.areaId),
+		check('goals_target_positive', sql`${table.targetValue} IS NULL OR ${table.targetValue} > 0`)
+	]
+);
+
+/**
+ * Which tasks count towards a goal.
+ *
+ * A goal linked to tasks has progress that is a real number — how many of the
+ * committed occurrences got done — rather than a self-report. Both kinds of
+ * task can be linked, and exactly one column is set, the same shape
+ * task_instances itself uses.
+ */
+export const goalLinks = sqliteTable(
+	'goal_links',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		goalId: integer('goal_id')
+			.notNull()
+			.references(() => goals.id, { onDelete: 'cascade' }),
+		slotId: integer('slot_id').references(() => weeklySlots.id, { onDelete: 'cascade' }),
+		todoId: integer('todo_id').references(() => plannerTodos.id, { onDelete: 'cascade' }),
+		activityId: integer('activity_id').references(() => activities.id, { onDelete: 'cascade' })
+	},
+	(table) => [
+		index('goal_links_goal_idx').on(table.goalId),
+		check(
+			'goal_link_has_exactly_one_target',
+			sql`(CASE WHEN ${table.slotId} IS NULL THEN 0 ELSE 1 END) + (CASE WHEN ${table.todoId} IS NULL THEN 0 ELSE 1 END) + (CASE WHEN ${table.activityId} IS NULL THEN 0 ELSE 1 END) = 1`
+		)
+	]
+);

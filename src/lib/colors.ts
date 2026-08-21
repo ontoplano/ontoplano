@@ -38,11 +38,12 @@ export const NAV_DROPDOWN_ITEM = 'text-gray-700 hover:bg-gray-50';
  * band is also labelled in words. Nothing here encodes good/bad, which is the
  * case the red/blue rule in AGENTS.md actually governs.
  */
-export type SectionKey = 'home' | 'planner' | 'diary' | 'ideas' | 'health' | 'shopping';
+export type SectionKey = 'home' | 'planner' | 'goals' | 'diary' | 'ideas' | 'health' | 'shopping';
 
 export const SECTIONS: Record<SectionKey, { accent: string; label: string }> = {
 	home: { accent: '#475569', label: 'Home' },
 	planner: { accent: '#1d4ed8', label: 'Planner' },
+	goals: { accent: '#7c2d12', label: 'Goals' },
 	diary: { accent: '#b45309', label: 'Diary' },
 	ideas: { accent: '#6d28d9', label: 'Ideas' },
 	health: { accent: '#0f766e', label: 'Health' },
@@ -52,6 +53,7 @@ export const SECTIONS: Record<SectionKey, { accent: string; label: string }> = {
 /** Which section a pathname belongs to. */
 export function sectionFor(pathname: string): SectionKey {
 	if (pathname.startsWith('/planner')) return 'planner';
+	if (pathname.startsWith('/goals')) return 'goals';
 	if (pathname.startsWith('/health')) return 'health';
 	if (pathname.startsWith('/diary')) return 'diary';
 	if (pathname.startsWith('/ideas')) return 'ideas';
@@ -66,7 +68,8 @@ export const SECTION_COLORS = {
 	diary: SECTIONS.diary.accent,
 	shopping: SECTIONS.shopping.accent,
 	ideas: SECTIONS.ideas.accent,
-	home: SECTIONS.home.accent
+	home: SECTIONS.home.accent,
+	goals: SECTIONS.goals.accent
 } as const;
 
 // -- Habits -------------------------------------------------------------------

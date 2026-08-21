@@ -7,6 +7,7 @@
 
 	/** Keep the card a card: the tracker is one click away for the full list. */
 	const TODO_PREVIEW = 5;
+	const GOAL_PREVIEW = 4;
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -154,6 +155,51 @@
 						<span>{data.taskSummary.early} early</span>
 					{/if}
 				</div>
+			{/if}
+		</div>
+
+		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
+			<div
+				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				style="border-top-color: {SECTION_COLORS.goals}"
+			>
+				<h2 class="eyebrow text-gray-500">Goals</h2>
+				<a href="/goals" class="text-xs text-gray-500 hover:text-gray-900">Open &rarr;</a>
+			</div>
+			{#if data.activeGoals.length === 0}
+				<p class="text-sm text-gray-400">No goals running.</p>
+			{:else}
+				<ul class="space-y-2">
+					{#each data.activeGoals.slice(0, GOAL_PREVIEW) as goal (goal.id)}
+						{@const pct =
+							goal.progress.fraction === null ? null : Math.round(goal.progress.fraction * 100)}
+						<li class="flex items-center gap-3">
+							<span
+								class="h-4 w-1 shrink-0"
+								style="background-color: {goal.areaColor ?? CATEGORY_FALLBACK_COLOR}"
+								title={goal.areaName ?? 'No area'}
+							></span>
+							<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{goal.title}</span>
+							<span class="h-1.5 w-16 shrink-0 bg-gray-200">
+								{#if pct !== null}
+									<span
+										class="block h-full"
+										style="width: {pct}%; background-color: {goal.areaColor ??
+											SECTION_COLORS.goals}"
+									></span>
+								{/if}
+							</span>
+							<span class="tabular w-10 shrink-0 text-right text-xs text-gray-500"
+								>{pct === null ? '—' : `${pct}%`}</span
+							>
+						</li>
+					{/each}
+				</ul>
+				{#if data.activeGoals.length > GOAL_PREVIEW}
+					<p class="mt-2 text-xs text-gray-400">
+						+{data.activeGoals.length - GOAL_PREVIEW} more
+					</p>
+				{/if}
 			{/if}
 		</div>
 

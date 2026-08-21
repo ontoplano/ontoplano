@@ -24,6 +24,7 @@
 	const nav: { href: string; label: string; section: SectionKey }[] = [
 		{ href: '/', label: 'Home', section: 'home' },
 		{ href: '/planner/track', label: 'Planner', section: 'planner' },
+		{ href: '/goals', label: 'Goals', section: 'goals' },
 		{ href: '/diary', label: 'Diary', section: 'diary' },
 		{ href: '/ideas', label: 'Ideas', section: 'ideas' },
 		{ href: '/health/habits', label: 'Health', section: 'health' },
@@ -36,6 +37,7 @@
 	function isNavActive(href: string): boolean {
 		if (href === '/') return page.url.pathname === '/';
 		if (href === '/planner/track') return page.url.pathname.startsWith('/planner');
+		if (href === '/goals') return page.url.pathname.startsWith('/goals');
 		if (href === '/health/habits') return page.url.pathname.startsWith('/health');
 		return page.url.pathname === href;
 	}

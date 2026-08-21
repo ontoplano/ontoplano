@@ -15,6 +15,7 @@ import {
 import { eq, and, desc, max } from 'drizzle-orm';
 import { generateCurrentWeek } from '$lib/server/week-generator';
 import { generateForDate, listForDate } from '$lib/server/services/instances';
+import { listActiveOn } from '$lib/server/services/goals';
 import { parseTags, ensureTagIds, linkDiaryTags } from '$lib/server/tags';
 
 function todayStr(): string {
@@ -168,7 +169,12 @@ export const load: PageServerLoad = async (event) => {
 		.orderBy(weeklySlots.startTime)
 		.all();
 
+	// Goals whose period covers today — the week's and the year's alike, since
+	// the point is that they are all live at once.
+	const activeGoals = listActiveOn(userId, today);
+
 	return {
+		activeGoals,
 		lastEntry: lastEntry ? { ...lastEntry, tags: lastEntryTags } : null,
 		allTags,
 		taskSummary,

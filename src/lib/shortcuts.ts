@@ -24,6 +24,15 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'w', action: 'new-wins', description: 'New wins' }
 		]
 	},
+	'/goals': {
+		label: 'Goals',
+		shortcuts: [
+			{ key: 'n', action: 'new', description: 'New goal' },
+			{ key: 'j', action: 'next', description: 'Next goal' },
+			{ key: 'k', action: 'prev', description: 'Previous goal' }
+		]
+	},
+
 	'/planner/board': {
 		label: 'Board',
 		shortcuts: [
