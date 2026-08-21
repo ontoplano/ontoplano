@@ -398,10 +398,13 @@
 				onclick={() => navigateToDay(i)}
 				class="flex-1 border px-2 py-2 text-center text-xs font-medium transition {data.selectedDayIndex ===
 				i
-					? 'border-gray-900 bg-gray-900 text-white'
+					? 'text-white'
 					: today
 						? 'border-slate-400 bg-slate-100 text-gray-900'
 						: 'border-gray-200 bg-white text-gray-600 hover:bg-slate-50'}"
+				style={data.selectedDayIndex === i
+					? 'background-color: var(--section-accent); border-color: var(--section-accent)'
+					: ''}
 			>
 				{day.slice(0, 3)}
 				{#if count > 0}
@@ -473,10 +476,7 @@
 							class="w-24 shrink-0 text-left font-mono text-sm text-gray-500 hover:text-gray-900"
 							title="click to edit time"
 						>
-							{task.startTime} - {computeEndTime(
-								task.startTime,
-								effectiveDuration(task)
-							)}
+							{task.startTime} - {computeEndTime(task.startTime, effectiveDuration(task))}
 						</button>
 					{/if}
 

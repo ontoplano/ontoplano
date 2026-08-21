@@ -26,8 +26,9 @@
 			<a
 				href={tab.href}
 				class="px-4 py-2 text-sm font-medium transition {isActive(tab.href)
-					? 'border-b-2 border-gray-900 text-gray-900'
+					? 'border-b-2 text-gray-900'
 					: 'text-gray-500 hover:text-gray-700'}"
+				style={isActive(tab.href) ? 'border-color: var(--section-accent)' : ''}
 			>
 				{tab.label}
 			</a>

@@ -89,13 +89,13 @@
 	</div>
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-		<div
-			class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
-			style="border-left-color: {SECTION_COLORS.planner}"
-		>
-			<div class="mb-3 flex items-center justify-between">
-				<h2 class="text-sm font-bold" style="color: {SECTION_COLORS.planner}">Today's Tasks</h2>
-				<a href="/planner/track" class="text-xs text-gray-500 transition hover:text-gray-900">
+		<div class="border border-gray-200 bg-white p-4 shadow-sm">
+			<div
+				class="-mx-4 -mt-4 mb-3 flex items-center justify-between px-4 py-2"
+				style="background-color: {SECTION_COLORS.planner}"
+			>
+				<h2 class="text-sm font-bold text-white">Today's Tasks</h2>
+				<a href="/planner/track" class="text-xs text-white/70 transition hover:text-white">
 					Open →
 				</a>
 			</div>
@@ -155,13 +155,13 @@
 		</div>
 
 		{#if habitsEnabled}
-			<div
-				class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
-				style="border-left-color: {SECTION_COLORS.health}"
-			>
-				<div class="mb-3 flex items-center justify-between">
-					<h2 class="text-sm font-bold" style="color: {SECTION_COLORS.health}">Habits</h2>
-					<a href="/health/habits" class="text-xs text-gray-500 transition hover:text-gray-900">
+			<div class="border border-gray-200 bg-white p-4 shadow-sm">
+				<div
+					class="-mx-4 -mt-4 mb-3 flex items-center justify-between px-4 py-2"
+					style="background-color: {SECTION_COLORS.health}"
+				>
+					<h2 class="text-sm font-bold text-white">Habits</h2>
+					<a href="/health/habits" class="text-xs text-white/70 transition hover:text-white">
 						Open →
 					</a>
 				</div>
@@ -202,15 +202,13 @@
 		{@const timeSlots = [
 			...new Set(data.weekSlots.map((s: { startTime: string }) => s.startTime))
 		].sort()}
-		<div
-			class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
-			style="border-left-color: {SECTION_COLORS.planner}"
-		>
-			<div class="mb-3 flex items-center justify-between">
-				<h2 class="text-sm font-bold" style="color: {SECTION_COLORS.planner}">Week Plan</h2>
-				<a href="/planner/plan" class="text-xs text-gray-500 transition hover:text-gray-900"
-					>Edit →</a
-				>
+		<div class="border border-gray-200 bg-white p-4 shadow-sm">
+			<div
+				class="-mx-4 -mt-4 mb-3 flex items-center justify-between px-4 py-2"
+				style="background-color: {SECTION_COLORS.planner}"
+			>
+				<h2 class="text-sm font-bold text-white">Week Plan</h2>
+				<a href="/planner/plan" class="text-xs text-white/70 transition hover:text-white">Edit →</a>
 			</div>
 			<div class="overflow-x-auto">
 				<table class="w-full text-xs">
@@ -256,14 +254,14 @@
 		</div>
 	{/if}
 
-	<div
-		class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
-		style="border-left-color: {SECTION_COLORS.diary}"
-	>
-		<div class="mb-3 flex items-center justify-between">
-			<h2 class="text-sm font-bold" style="color: {SECTION_COLORS.diary}">Diary</h2>
+	<div class="border border-gray-200 bg-white p-4 shadow-sm">
+		<div
+			class="-mx-4 -mt-4 mb-3 flex items-center justify-between px-4 py-2"
+			style="background-color: {SECTION_COLORS.diary}"
+		>
+			<h2 class="text-sm font-bold text-white">Diary</h2>
 			<div class="flex items-center gap-3">
-				<a href="/diary" class="text-xs text-gray-500 transition hover:text-gray-900">
+				<a href="/diary" class="text-xs text-white/70 transition hover:text-white">
 					All entries →
 				</a>
 				{#if winsEnabled}
@@ -396,13 +394,13 @@
 	</div>
 
 	{#if shoppingEnabled}
-		<div
-			class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
-			style="border-left-color: {SECTION_COLORS.shopping}"
-		>
-			<div class="mb-3 flex items-center justify-between">
-				<h2 class="text-sm font-bold" style="color: {SECTION_COLORS.shopping}">Shopping</h2>
-				<a href="/shopping" class="text-xs text-gray-500 transition hover:text-gray-900">Open →</a>
+		<div class="border border-gray-200 bg-white p-4 shadow-sm">
+			<div
+				class="-mx-4 -mt-4 mb-3 flex items-center justify-between px-4 py-2"
+				style="background-color: {SECTION_COLORS.shopping}"
+			>
+				<h2 class="text-sm font-bold text-white">Shopping</h2>
+				<a href="/shopping" class="text-xs text-white/70 transition hover:text-white">Open →</a>
 			</div>
 			{#if data.shoppingToBuy.length === 0}
 				<p class="text-sm text-gray-400">Nothing to buy.</p>
@@ -429,11 +427,13 @@
 	{/if}
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-		<div
-			class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
-			style="border-left-color: {SECTION_COLORS.home}"
-		>
-			<h2 class="mb-3 text-sm font-bold" style="color: {SECTION_COLORS.home}">Quick Links</h2>
+		<div class="border border-gray-200 bg-white p-4 shadow-sm">
+			<div
+				class="-mx-4 -mt-4 mb-3 flex items-center justify-between px-4 py-2"
+				style="background-color: {SECTION_COLORS.home}"
+			>
+				<h2 class="text-sm font-bold text-white">Quick Links</h2>
+			</div>
 			<div class="space-y-2">
 				<a href="/planner/track" class="block text-sm text-gray-600 transition hover:text-gray-900"
 					>→ Track tasks</a

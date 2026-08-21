@@ -4,7 +4,7 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import type { LayoutServerData } from './$types';
-	import { NAV_USER_TEXT, NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
+	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import type { SectionKey } from '$lib/colors.js';
 	import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
 
@@ -29,7 +29,7 @@
 		{ href: '/shopping', label: 'Shopping', section: 'shopping' }
 	];
 
-	/** The section being viewed, which colours the page wash and the header rule. */
+	/** The section being viewed. Its accent fills the active nav tab. */
 	const section = $derived(SECTIONS[sectionFor(page.url.pathname)]);
 
 	function isNavActive(href: string): boolean {
@@ -81,27 +81,26 @@
 
 {#if data.user}
 	<div
-		class="flex min-h-screen flex-col"
-		style="{categoryStyle()};--section-accent:{section.accent};--section-tint:{section.tint};background-color:{section.tint}"
+		class="flex min-h-screen flex-col bg-gray-100"
+		style="{categoryStyle()};--section-accent:{section.accent}"
 	>
-		<header class="border-b border-gray-200 bg-white shadow-sm">
-			<!-- The one place the current section is stated in colour alone; the
-			     active nav link says it again in words. -->
-			<div class="h-1 w-full" style="background-color: {section.accent}"></div>
-			<div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-				<div class="flex items-center gap-6">
-					<a href="/" class="text-lg font-bold tracking-tight text-gray-900">ontoplano</a>
-					<nav class="flex gap-4">
+		<header class="bg-gray-900 shadow-sm">
+			<div class="mx-auto flex max-w-5xl items-stretch justify-between px-4">
+				<div class="flex items-stretch gap-6">
+					<a href="/" class="flex items-center text-lg font-bold tracking-tight text-white"
+						>ontoplano</a
+					>
+					<nav class="flex">
 						{#each nav as item (item.href)}
 							{@const active = isNavActive(item.href)}
+							<!-- Active tab is a solid block of its section colour; the rest stay
+							     neutral so the fill is the thing that reads. -->
 							<a
 								href={item.href}
-								class="border-b-2 pb-0.5 text-sm font-medium transition-colors {active
-									? 'font-semibold'
-									: 'border-transparent opacity-70 hover:opacity-100'}"
-								style="color: {SECTIONS[item.section].accent}; border-color: {active
-									? SECTIONS[item.section].accent
-									: 'transparent'}"
+								class="flex items-center px-3 py-4 text-sm font-medium transition-colors {active
+									? 'text-white'
+									: 'text-gray-400 hover:bg-gray-800 hover:text-white'}"
+								style={active ? `background-color: ${SECTIONS[item.section].accent}` : ''}
 							>
 								{item.label}
 							</a>
@@ -109,10 +108,10 @@
 					</nav>
 				</div>
 				<div class="menu-container relative flex items-center gap-3">
-					<span class="text-sm {NAV_USER_TEXT}">{data.user.name}</span>
+					<span class="text-sm text-gray-400">{data.user.name}</span>
 					<button
 						onclick={() => (menuOpen = !menuOpen)}
-						class="flex h-8 w-8 items-center justify-center border border-gray-300 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50"
+						class="flex h-8 w-8 items-center justify-center border border-gray-700 bg-gray-800 text-gray-300 shadow-sm transition hover:bg-gray-700 hover:text-white"
 						aria-label="Menu"
 					>
 						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -7,8 +7,8 @@
 
 // -- Layout ------------------------------------------------------------------
 
-/** Main page background */
-export const PAGE_BG = 'bg-gray-50';
+/** Main page background — deliberately neutral; colour belongs to the cards. */
+export const PAGE_BG = 'bg-gray-100';
 
 /** Navbar */
 export const NAV_BG = 'bg-white';
@@ -24,27 +24,29 @@ export const NAV_DROPDOWN_ITEM = 'text-gray-700 hover:bg-gray-50';
 // -- Section identity ---------------------------------------------------------
 
 /**
- * Every section owns a colour, used for its nav link, the wash behind its
- * pages, and the cards that report into it on the dashboard.
+ * Every section owns a colour, used solid — a filled header band on its cards
+ * and a filled tab in the nav. Never as tinted body text, and never as a wash
+ * behind a whole page: pale hues over the entire viewport read as decoration
+ * rather than structure, and washed-out text is just harder to read.
+ *
+ * The tones are deep on purpose. At these lightness levels white text clears
+ * AA on every one of them, which is what makes a solid fill usable.
  *
  * Six hues cannot all stay distinct under red-green colour blindness — the
- * usable hue circle collapses to blue-ish versus yellow-ish. So these are
- * spread by *lightness* as well as hue, and the colour is never the only cue:
- * every place one appears is also labelled in words. Nothing here encodes
- * good/bad, which is the case the red/blue rule in AGENTS.md actually governs.
- *
- * `accent` is for borders, active nav and headings. `tint` is a large-area
- * fill, pale enough for black body text to stay at AA contrast on it.
+ * usable hue circle collapses to blue-ish versus yellow-ish. So they are spread
+ * by lightness as well as hue, and colour is never the only cue: every filled
+ * band is also labelled in words. Nothing here encodes good/bad, which is the
+ * case the red/blue rule in AGENTS.md actually governs.
  */
 export type SectionKey = 'home' | 'planner' | 'diary' | 'ideas' | 'health' | 'shopping';
 
-export const SECTIONS: Record<SectionKey, { accent: string; tint: string; label: string }> = {
-	home: { accent: '#4f46e5', tint: '#eef2ff', label: 'Home' },
-	planner: { accent: '#0284c7', tint: '#eff6ff', label: 'Planner' },
-	diary: { accent: '#d97706', tint: '#fffbeb', label: 'Diary' },
-	ideas: { accent: '#7c3aed', tint: '#f5f3ff', label: 'Ideas' },
-	health: { accent: '#0d9488', tint: '#f0fdfa', label: 'Health' },
-	shopping: { accent: '#c026d3', tint: '#fdf4ff', label: 'Shopping' }
+export const SECTIONS: Record<SectionKey, { accent: string; label: string }> = {
+	home: { accent: '#475569', label: 'Home' },
+	planner: { accent: '#1d4ed8', label: 'Planner' },
+	diary: { accent: '#b45309', label: 'Diary' },
+	ideas: { accent: '#6d28d9', label: 'Ideas' },
+	health: { accent: '#0f766e', label: 'Health' },
+	shopping: { accent: '#9d174d', label: 'Shopping' }
 };
 
 /** Which section a pathname belongs to. */
