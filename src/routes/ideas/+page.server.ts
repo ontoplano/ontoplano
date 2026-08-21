@@ -54,7 +54,10 @@ export const actions: Actions = {
 		if (!content) return fail(400, { message: 'Content is required' });
 
 		const now = toLocalISOString(new Date());
-		const result = db.insert(ideas).values({ userId, content, createdAt: now, updatedAt: now }).run();
+		const result = db
+			.insert(ideas)
+			.values({ userId, content, createdAt: now, updatedAt: now })
+			.run();
 		const ideaId = Number(result.lastInsertRowid);
 
 		const tagNames = parseTags(rawTags);

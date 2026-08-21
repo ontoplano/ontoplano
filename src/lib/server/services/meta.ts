@@ -65,7 +65,9 @@ export function serialiseMeta(input: unknown): string {
 		if (!key) continue;
 
 		if (key.length > MAX_KEY_LENGTH)
-			throw new ValidationError(`metadata key "${key}" is longer than ${MAX_KEY_LENGTH} characters`);
+			throw new ValidationError(
+				`metadata key "${key}" is longer than ${MAX_KEY_LENGTH} characters`
+			);
 		if (!META_KEY_PATTERN.test(key))
 			throw new ValidationError(
 				`metadata key "${key}" must be lowercase letters, digits and underscores, starting with a letter`

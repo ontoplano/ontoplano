@@ -577,10 +577,10 @@ async function seed() {
 	// ── Task Instances (some historical) ────────────────────────────────────
 	// Generate a few task instances for the last couple of days
 	const taskData = [
-		{ slotIdx: 0, daysAgo: 1, hour: 6, min: 30, status: 'completed' as const },
-		{ slotIdx: 1, daysAgo: 1, hour: 7, min: 0, status: 'completed' as const },
-		{ slotIdx: 2, daysAgo: 1, hour: 9, min: 0, status: 'completed' as const },
-		{ slotIdx: 3, daysAgo: 1, hour: 14, min: 0, status: 'delayed' as const },
+		{ slotIdx: 0, daysAgo: 1, hour: 6, min: 30, status: 'done' as const },
+		{ slotIdx: 1, daysAgo: 1, hour: 7, min: 0, status: 'done' as const },
+		{ slotIdx: 2, daysAgo: 1, hour: 9, min: 0, status: 'done' as const },
+		{ slotIdx: 3, daysAgo: 1, hour: 14, min: 0, status: 'done' as const },
 		{ slotIdx: 4, daysAgo: 1, hour: 19, min: 0, status: 'skipped' as const }
 	];
 
@@ -592,10 +592,7 @@ async function seed() {
 					scheduledAt: datetimeDaysAgo(t.daysAgo, t.hour, t.min),
 					status: t.status,
 					userId,
-					completedAt:
-						t.status === 'completed' || t.status === 'delayed'
-							? datetimeDaysAgo(t.daysAgo, t.hour + 1, t.min)
-							: null
+					completedAt: t.status === 'done' ? datetimeDaysAgo(t.daysAgo, t.hour + 1, t.min) : null
 				})
 				.run();
 		}

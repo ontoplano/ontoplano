@@ -147,7 +147,8 @@
 								/>
 								<input
 									name="name"
-									type="text" autocomplete="off"
+									type="text"
+									autocomplete="off"
 									value={cat.name}
 									required
 									class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -240,7 +241,8 @@
 				/>
 				<input
 					name="name"
-					type="text" autocomplete="off"
+					type="text"
+					autocomplete="off"
 					placeholder="New category name"
 					required
 					class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -308,7 +310,8 @@
 					<input
 						id="activity-name"
 						name="name"
-						type="text" autocomplete="off"
+						type="text"
+						autocomplete="off"
 						required
 						value={editingId ? (data.activities.find((a) => a.id === editingId)?.name ?? '') : ''}
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -338,7 +341,8 @@
 				<span class="text-sm font-medium text-gray-700">Description</span>
 				<input
 					name="description"
-					type="text" autocomplete="off"
+					type="text"
+					autocomplete="off"
 					value={editingId
 						? (data.activities.find((a) => a.id === editingId)?.description ?? '')
 						: ''}

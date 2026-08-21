@@ -16,11 +16,10 @@
 	}
 
 	const statusBadgeClass: Record<string, string> = {
-		pending: 'bg-gray-100 text-gray-600',
-		completed: 'bg-green-100 text-green-700',
-		delayed: 'bg-yellow-100 text-yellow-700',
-		early: 'bg-blue-100 text-blue-700',
-		skipped: 'bg-red-100 text-red-700'
+		todo: 'bg-gray-100 text-gray-600',
+		doing: 'bg-blue-100 text-blue-700',
+		done: 'bg-green-100 text-green-700',
+		skipped: 'bg-gray-200 text-gray-500'
 	};
 
 	function instancesForDay(day: number) {
@@ -133,20 +132,20 @@
 	{#if data.summary.total > 0}
 		<div class="flex gap-3 text-xs text-gray-500">
 			<span>{data.summary.total} tasks</span>
-			{#if data.summary.completed > 0}
-				<span class="text-green-600">{data.summary.completed} done</span>
+			{#if data.summary.done > 0}
+				<span class="text-green-600">{data.summary.done} done</span>
 			{/if}
 			{#if data.summary.early > 0}
 				<span class="text-blue-600">{data.summary.early} early</span>
 			{/if}
-			{#if data.summary.delayed > 0}
-				<span class="text-yellow-600">{data.summary.delayed} delayed</span>
+			{#if data.summary.late > 0}
+				<span class="text-gray-500">{data.summary.late} late</span>
 			{/if}
 			{#if data.summary.skipped > 0}
-				<span class="text-red-600">{data.summary.skipped} skipped</span>
+				<span class="text-gray-500">{data.summary.skipped} skipped</span>
 			{/if}
-			{#if data.summary.pending > 0}
-				<span class="text-gray-400">{data.summary.pending} pending</span>
+			{#if data.summary.todo > 0}
+				<span class="text-gray-400">{data.summary.todo} to do</span>
 			{/if}
 		</div>
 	{/if}

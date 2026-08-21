@@ -76,7 +76,11 @@ function formatWishlistMessage(items: WishlistItem[]): string {
 		return '💫 Wishlist\n\nNo wishlist items yet.';
 	}
 
-	const lines = ['💫 Wishlist', '', ...items.map((item) => `${item.bought ? '✅' : '❌'} ${item.name}`)];
+	const lines = [
+		'💫 Wishlist',
+		'',
+		...items.map((item) => `${item.bought ? '✅' : '❌'} ${item.name}`)
+	];
 	return lines.join('\n');
 }
 

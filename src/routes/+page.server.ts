@@ -72,21 +72,26 @@ export const load: PageServerLoad = async (event) => {
 		startTime: o.startTime,
 		name: o.title,
 		status: o.status,
+		timing: o.timing,
 		categoryName: o.categoryName,
 		categoryColor: o.categoryColor
 	}));
 
+	const done = todayTasks.filter((t) => t.status === 'done');
 	const taskSummary = {
 		total: todayTasks.length,
-		completed: todayTasks.filter((t) => t.status === 'completed').length,
-		delayed: todayTasks.filter((t) => t.status === 'delayed').length,
-		early: todayTasks.filter((t) => t.status === 'early').length,
+		done: done.length,
+		doing: todayTasks.filter((t) => t.status === 'doing').length,
 		skipped: todayTasks.filter((t) => t.status === 'skipped').length,
-		pending: todayTasks.filter((t) => t.status === 'pending').length
+		todo: todayTasks.filter((t) => t.status === 'todo').length,
+		// Timing describes the finished ones, so it is counted among them rather
+		// than sitting alongside the states.
+		late: done.filter((t) => t.timing === 'late').length,
+		early: done.filter((t) => t.timing === 'early').length
 	};
 
 	/** Still to be done today, in the order they come up. */
-	const tasksTodo = todayTasks.filter((t) => t.status === 'pending');
+	const tasksTodo = todayTasks.filter((t) => t.status === 'todo' || t.status === 'doing');
 
 	const userHabits = db
 		.select({

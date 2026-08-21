@@ -87,7 +87,11 @@
 				}
 				break;
 			case 'delegate':
-				if (visibleTodos.length > 0 && visibleTodos[selectedIndex] && !visibleTodos[selectedIndex].completed) {
+				if (
+					visibleTodos.length > 0 &&
+					visibleTodos[selectedIndex] &&
+					!visibleTodos[selectedIndex].completed
+				) {
 					startDelegate(visibleTodos[selectedIndex]);
 				}
 				break;
@@ -185,7 +189,8 @@
 					name="notes"
 					rows="2"
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				>{editing?.notes ?? ''}</textarea>
+					>{editing?.notes ?? ''}</textarea
+				>
 			</label>
 			<div class="flex gap-2">
 				<button
@@ -196,7 +201,10 @@
 				</button>
 				<button
 					type="button"
-					onclick={() => { showForm = false; editingId = null; }}
+					onclick={() => {
+						showForm = false;
+						editingId = null;
+					}}
 					class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
 				>
 					Cancel
@@ -322,7 +330,9 @@
 					</form>
 
 					<div class="min-w-0 flex-1">
-						<span class="text-sm font-medium text-gray-900 {todo.completed ? 'line-through' : ''}">{todo.title}</span>
+						<span class="text-sm font-medium text-gray-900 {todo.completed ? 'line-through' : ''}"
+							>{todo.title}</span
+						>
 						{#if todo.notes}
 							<p class="truncate text-xs text-gray-500">{todo.notes}</p>
 						{/if}

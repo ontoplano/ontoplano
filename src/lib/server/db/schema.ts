@@ -118,11 +118,14 @@ export const taskInstances = sqliteTable(
 			onDelete: 'cascade'
 		}),
 		scheduledAt: text('scheduled_at').notNull(), // ISO 8601
-		status: text('status', {
-			enum: ['pending', 'completed', 'delayed', 'early', 'skipped']
-		})
+		// What state the task is in. These are the kanban columns.
+		status: text('status', { enum: ['todo', 'doing', 'done', 'skipped'] })
 			.notNull()
-			.default('pending'),
+			.default('todo'),
+		// When it happened relative to plan. Set only once something is done —
+		// `delayed` and `early` used to be statuses, but both mean *done*, which
+		// is why there was nothing for a board column to map onto.
+		timing: text('timing', { enum: ['early', 'on_time', 'late'] }),
 		completedAt: text('completed_at'),
 		notes: text('notes').default(''),
 		resolvedActivityId: integer('resolved_activity_id').references(() => activities.id),

@@ -11,11 +11,10 @@ import {
 } from '../../../src/lib/server/db/schema.js';
 import { categoryEmoji } from '../emoji.js';
 
-const STATUS_EMOJI: Record<'pending' | 'completed' | 'delayed' | 'early' | 'skipped', string> = {
-	pending: '⏳',
-	completed: '✅',
-	delayed: '⏰',
-	early: '⚡',
+const STATUS_EMOJI: Record<'todo' | 'doing' | 'done' | 'skipped', string> = {
+	todo: '⏳',
+	doing: '▶️',
+	done: '✅',
 	skipped: '⏭️'
 };
 
@@ -103,7 +102,7 @@ function getExceptionalTitle(task: ExceptionalTask): string {
 }
 
 function isDone(status: keyof typeof STATUS_EMOJI): boolean {
-	return status === 'completed' || status === 'delayed' || status === 'early';
+	return status === 'done';
 }
 
 async function fetchPlan() {
@@ -125,7 +124,7 @@ async function fetchPlan() {
 	const regularTasks = db
 		.select({
 			scheduledAt: taskInstances.scheduledAt,
-			status: sql<string>`coalesce(${taskInstances.status}, 'pending')`.as('one_off_status'),
+			status: sql<string>`coalesce(${taskInstances.status}, 'todo')`.as('one_off_status'),
 			slotMode: weeklySlots.mode,
 			slotLabel: weeklySlots.label,
 			slotDuration: weeklySlots.durationMinutes,
@@ -154,7 +153,7 @@ async function fetchPlan() {
 	const exceptionalTasks = db
 		.select({
 			startTime: exceptionalSlots.startTime,
-			status: sql<string>`coalesce(${taskInstances.status}, 'pending')`.as('one_off_status'),
+			status: sql<string>`coalesce(${taskInstances.status}, 'todo')`.as('one_off_status'),
 			label: exceptionalSlots.label,
 			durationMinutes: exceptionalSlots.durationMinutes,
 			durationOverride: taskInstances.durationOverride,

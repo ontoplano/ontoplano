@@ -34,7 +34,9 @@
 		for (let i = 0; i < weights.length; i++) {
 			const x = xFor(weights[i].date);
 			const y = yFor(weights[i].weight);
-			currentSegment.push(`${currentSegment.length === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`);
+			currentSegment.push(
+				`${currentSegment.length === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`
+			);
 
 			if (i < weights.length - 1) {
 				const d1 = new Date(weights[i].date + 'T00:00:00');
@@ -107,25 +109,13 @@
 						stroke="#e5e7eb"
 						stroke-width="1"
 					/>
-					<text
-						x={PAD.left - 8}
-						y={tick.y + 4}
-						text-anchor="end"
-						fill="#9ca3af"
-						font-size="11"
-					>
+					<text x={PAD.left - 8} y={tick.y + 4} text-anchor="end" fill="#9ca3af" font-size="11">
 						{tick.value}
 					</text>
 				{/each}
 
 				{#each chart.xTicks as tick}
-					<text
-						x={tick.x}
-						y={HEIGHT - 8}
-						text-anchor="middle"
-						fill="#9ca3af"
-						font-size="11"
-					>
+					<text x={tick.x} y={HEIGHT - 8} text-anchor="middle" fill="#9ca3af" font-size="11">
 						{tick.label}
 					</text>
 				{/each}

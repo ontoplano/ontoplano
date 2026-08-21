@@ -129,7 +129,7 @@ export function getUpcomingSchedule(
 			duration: exceptionalSlots.durationMinutes,
 			// Execution state moved onto the instance the one-off produces.
 			durationOverride: taskInstances.durationOverride,
-			status: sql<string>`coalesce(${taskInstances.status}, 'pending')`.as('one_off_status'),
+			status: sql<string>`coalesce(${taskInstances.status}, 'todo')`.as('one_off_status'),
 			label: exceptionalSlots.label,
 			meta: exceptionalSlots.meta,
 			active: exceptionalSlots.active,
@@ -190,7 +190,7 @@ export function getUpcomingSchedule(
 
 	const filtered = opts.includeCompleted
 		? occurrences
-		: occurrences.filter((o) => o.status === 'pending');
+		: occurrences.filter((o) => o.status === 'todo' || o.status === 'doing');
 
 	filtered.sort((a, b) => a.at_local.localeCompare(b.at_local));
 

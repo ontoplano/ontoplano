@@ -19,12 +19,13 @@
 
 	let allTasks = $derived(data.tasks);
 
+	// Timing is no longer something you pick — the server derives early/late
+	// from when you marked it done against when it was planned for.
 	const statusOptions = [
-		{ value: 'completed', label: 'Done', key: 'c' },
-		{ value: 'delayed', label: 'Delayed', key: 'd' },
-		{ value: 'early', label: 'Early', key: 'e' },
+		{ value: 'doing', label: 'Doing', key: 'i' },
+		{ value: 'done', label: 'Done', key: 'c' },
 		{ value: 'skipped', label: 'Skip', key: 's' },
-		{ value: 'pending', label: 'Reset', key: 'r' }
+		{ value: 'todo', label: 'Reset', key: 'r' }
 	];
 
 	function catColor(catId: number | null): string {
@@ -47,11 +48,10 @@
 
 	function statusBadgeClass(status: string): string {
 		const map: Record<string, string> = {
-			pending: 'bg-gray-100 text-gray-600',
-			completed: 'bg-green-100 text-green-700',
-			delayed: 'bg-yellow-100 text-yellow-700',
-			early: 'bg-blue-100 text-blue-700',
-			skipped: 'bg-red-100 text-red-700'
+			todo: 'bg-gray-100 text-gray-600',
+			doing: 'bg-blue-100 text-blue-700',
+			done: 'bg-green-100 text-green-700',
+			skipped: 'bg-gray-200 text-gray-500'
 		};
 		return map[status] ?? 'bg-gray-100 text-gray-600';
 	}
@@ -172,16 +172,14 @@
 				break;
 			}
 			case 'mark-done':
-			case 'mark-delayed':
-			case 'mark-early':
+			case 'mark-doing':
 			case 'mark-skipped':
 			case 'reset-status': {
 				const statusMap: Record<string, string> = {
-					'mark-done': 'completed',
-					'mark-delayed': 'delayed',
-					'mark-early': 'early',
+					'mark-done': 'done',
+					'mark-doing': 'doing',
 					'mark-skipped': 'skipped',
-					'reset-status': 'pending'
+					'reset-status': 'todo'
 				};
 				const statusValue = statusMap[action];
 				const form = document.getElementById(`status-form-${tasks[selectedIndex].id}`);
@@ -224,11 +222,7 @@
 	}
 
 	function needsResolution(task: UnifiedTask): boolean {
-		return (
-			task.mode === 'category' &&
-			['completed', 'delayed', 'early'].includes(task.status) &&
-			!task.activityId
-		);
+		return task.mode === 'category' && task.status === 'done' && !task.activityId;
 	}
 
 	function effectiveDuration(task: UnifiedTask): number {

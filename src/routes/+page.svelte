@@ -102,7 +102,7 @@
 			{:else}
 				<div class="flex items-baseline gap-3">
 					<span class="text-2xl font-bold text-gray-900">
-						{data.taskSummary.completed + data.taskSummary.early + data.taskSummary.delayed}
+						{data.taskSummary.done}
 						<span class="text-sm font-normal text-gray-400">/ {data.taskSummary.total}</span>
 					</span>
 					<span class="text-xs text-gray-500">
@@ -137,18 +137,21 @@
 					{/if}
 				{/if}
 
-				<div class="mt-3 flex flex-wrap gap-3 text-xs">
-					{#if data.taskSummary.completed > 0}
-						<span class="text-green-600">{data.taskSummary.completed} done</span>
+				<div class="mt-3 flex flex-wrap gap-3 text-xs text-gray-500">
+					{#if data.taskSummary.done > 0}
+						<span>{data.taskSummary.done} done</span>
 					{/if}
-					{#if data.taskSummary.early > 0}
-						<span class="text-blue-600">{data.taskSummary.early} early</span>
-					{/if}
-					{#if data.taskSummary.delayed > 0}
-						<span class="text-yellow-600">{data.taskSummary.delayed} delayed</span>
+					{#if data.taskSummary.doing > 0}
+						<span>{data.taskSummary.doing} in progress</span>
 					{/if}
 					{#if data.taskSummary.skipped > 0}
-						<span class="text-red-600">{data.taskSummary.skipped} skipped</span>
+						<span>{data.taskSummary.skipped} skipped</span>
+					{/if}
+					{#if data.taskSummary.late > 0}
+						<span>{data.taskSummary.late} late</span>
+					{/if}
+					{#if data.taskSummary.early > 0}
+						<span>{data.taskSummary.early} early</span>
 					{/if}
 				</div>
 			{/if}

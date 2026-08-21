@@ -1552,7 +1552,7 @@
 								{/if}
 							</div>
 							<span
-								class="shrink-0 px-2 py-0.5 text-xs font-medium {exc.status === 'pending'
+								class="shrink-0 px-2 py-0.5 text-xs font-medium {exc.status === 'todo'
 									? 'bg-gray-100 text-gray-600'
 									: 'bg-blue-100 text-blue-700'}"
 							>

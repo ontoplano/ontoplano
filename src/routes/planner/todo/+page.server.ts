@@ -1,12 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import {
-	plannerTodos,
-	exceptionalSlots,
-	categories,
-	activities
-} from '$lib/server/db/schema';
+import { plannerTodos, exceptionalSlots, categories, activities } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { toLocalISOString } from '$lib/server/week-generator';
 
@@ -44,9 +39,7 @@ export const actions: Actions = {
 
 		if (!title) return fail(400, { message: 'Title is required' });
 
-		db.insert(plannerTodos)
-			.values({ userId, title, notes })
-			.run();
+		db.insert(plannerTodos).values({ userId, title, notes }).run();
 
 		return { success: true };
 	},

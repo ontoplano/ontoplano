@@ -21,7 +21,7 @@ import {
 	weeklySlots
 } from '../db/schema.js';
 
-export type InstanceStatus = 'pending' | 'completed' | 'delayed' | 'early' | 'skipped';
+import type { Status, Timing } from '../../task-status.js';
 
 /** A single occurrence, whichever kind of block produced it. */
 export type Occurrence = {
@@ -37,7 +37,8 @@ export type Occurrence = {
 	durationMinutes: number;
 	/** The override on its own, so an editor can show "unset" as empty. */
 	durationOverride: number | null;
-	status: InstanceStatus;
+	status: Status;
+	timing: Timing | null;
 	completedAt: string | null;
 	notes: string;
 	mode: 'category' | 'activity';
@@ -156,7 +157,7 @@ export function generateInstances(userId: string, from: Date, to: Date): number 
 					userId,
 					slotId: slot.id,
 					scheduledAt: atLocal(dateStr, slot.startTime),
-					status: 'pending',
+					status: 'todo',
 					resolvedActivityId: slot.mode === 'activity' ? slot.activityId : null
 				})
 				.run();
@@ -192,7 +193,7 @@ export function generateInstances(userId: string, from: Date, to: Date): number 
 				userId,
 				exceptionalSlotId: one.id,
 				scheduledAt: atLocal(one.date, one.startTime),
-				status: 'pending',
+				status: 'todo',
 				resolvedActivityId: one.mode === 'activity' ? one.activityId : null
 			})
 			.run();
@@ -231,6 +232,7 @@ export function listInstances(userId: string, from: Date, to: Date): Occurrence[
 			exceptionalSlotId: taskInstances.exceptionalSlotId,
 			scheduledAt: taskInstances.scheduledAt,
 			status: taskInstances.status,
+			timing: taskInstances.timing,
 			completedAt: taskInstances.completedAt,
 			notes: taskInstances.notes,
 			durationOverride: taskInstances.durationOverride,
@@ -330,6 +332,7 @@ export function listInstances(userId: string, from: Date, to: Date): Occurrence[
 			durationMinutes: r.durationOverride ?? duration,
 			durationOverride: r.durationOverride,
 			status: r.status,
+			timing: r.timing,
 			completedAt: r.completedAt,
 			notes: r.notes ?? '',
 			mode,

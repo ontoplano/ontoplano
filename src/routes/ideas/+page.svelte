@@ -32,7 +32,9 @@
 			})
 	);
 
-	let clampedSelectedIndex = $derived(Math.min(selectedIndex, Math.max(filteredIdeas.length - 1, 0)));
+	let clampedSelectedIndex = $derived(
+		Math.min(selectedIndex, Math.max(filteredIdeas.length - 1, 0))
+	);
 	let currentSelectedIdea = $derived(filteredIdeas[clampedSelectedIndex] ?? null);
 
 	function editingIdea() {
@@ -183,7 +185,7 @@
 
 	<div class="flex flex-wrap items-center gap-3">
 		<div class="flex flex-wrap items-center gap-2">
-			<span class="text-xs font-medium uppercase tracking-wide text-gray-400">Applied</span>
+			<span class="text-xs font-medium tracking-wide text-gray-400 uppercase">Applied</span>
 			<button
 				onclick={() => {
 					filterApplied = 'all';
@@ -220,7 +222,7 @@
 		</div>
 
 		<div class="flex flex-wrap items-center gap-2">
-			<span class="text-xs font-medium uppercase tracking-wide text-gray-400">Favorite</span>
+			<span class="text-xs font-medium tracking-wide text-gray-400 uppercase">Favorite</span>
 			<button
 				onclick={() => {
 					filterFavorite = 'all';
@@ -286,20 +288,25 @@
 					required
 					rows="4"
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				>{editingId ? (editingIdea()?.content ?? '') : ''}</textarea>
+					>{editingId ? (editingIdea()?.content ?? '') : ''}</textarea
+				>
 			</label>
 			<label class="block">
 				<span class="text-sm font-medium text-gray-700">Tags</span>
 				<input
 					name="tags"
-					type="text" autocomplete="off"
+					type="text"
+					autocomplete="off"
 					value={editingId ? editingTagString() : ''}
 					placeholder="comma separated, e.g. project, app, music"
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>
 			<div class="flex items-center gap-2">
-				<button type="submit" class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800">
+				<button
+					type="submit"
+					class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+				>
 					{editingId ? 'Update' : 'Save'}
 				</button>
 				<button
@@ -325,12 +332,18 @@
 		<div class="space-y-3">
 			{#each filteredIdeas as idea, i (idea.id)}
 				<div
-					class="relative border border-gray-200 bg-white p-4 shadow-sm transition-all {i === clampedSelectedIndex
+					class="relative border border-gray-200 bg-white p-4 shadow-sm transition-all {i ===
+					clampedSelectedIndex
 						? 'border-l-4 border-l-indigo-300/60 ring-2 ring-indigo-400 ring-inset'
 						: ''}"
 				>
 					<div class="mb-2 flex items-start gap-4">
-						<form method="post" action="?/toggleFavorite" data-favorite-toggle-id={idea.id} use:enhance>
+						<form
+							method="post"
+							action="?/toggleFavorite"
+							data-favorite-toggle-id={idea.id}
+							use:enhance
+						>
 							<input type="hidden" name="id" value={idea.id} />
 							<button
 								type="submit"
@@ -345,7 +358,7 @@
 
 						<div class="min-w-0 flex-1">
 							<div class="flex items-start justify-between gap-4">
-								<p class="whitespace-pre-wrap text-sm text-gray-900">{idea.content}</p>
+								<p class="text-sm whitespace-pre-wrap text-gray-900">{idea.content}</p>
 								<div class="flex shrink-0 items-center gap-2">
 									{#if confirmingDeleteId === idea.id}
 										<form
@@ -359,7 +372,10 @@
 											}}
 										>
 											<input type="hidden" name="id" value={idea.id} />
-											<button type="submit" class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700">
+											<button
+												type="submit"
+												class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+											>
 												Confirm?
 											</button>
 										</form>
@@ -442,10 +458,14 @@
 							</div>
 
 							{#if idea.isApplied && i === clampedSelectedIndex}
-								<div class="mt-3 border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900 shadow-sm">
+								<div
+									class="mt-3 border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900 shadow-sm"
+								>
 									<div class="flex items-start justify-between gap-3">
 										<div class="min-w-0 flex-1">
-											<div class="text-xs font-medium uppercase tracking-wide text-blue-700">Applied note</div>
+											<div class="text-xs font-medium tracking-wide text-blue-700 uppercase">
+												Applied note
+											</div>
 											{#if editingAppliedNoteId === idea.id}
 												<form
 													method="post"
@@ -462,13 +482,18 @@
 													<input type="hidden" name="id" value={idea.id} />
 													<input
 														name="appliedNote"
-														type="text" autocomplete="off"
+														type="text"
+														autocomplete="off"
 														bind:value={appliedNoteDraft}
 														placeholder="What did you apply?"
 														use:autofocus
 														class="min-w-0 flex-1 border border-blue-300 bg-white px-2 py-1 text-sm shadow-sm focus:border-blue-700 focus:ring-1 focus:ring-blue-700 focus:outline-none"
 													/>
-													<button type="submit" class="bg-gray-900 px-2 py-1 text-xs text-white hover:bg-gray-800">Save</button>
+													<button
+														type="submit"
+														class="bg-gray-900 px-2 py-1 text-xs text-white hover:bg-gray-800"
+														>Save</button
+													>
 													<button
 														type="button"
 														onclick={() => {
@@ -481,7 +506,9 @@
 													</button>
 												</form>
 											{:else}
-												<p class="mt-1 whitespace-pre-wrap text-sm text-blue-900">{idea.appliedNote || 'No applied note yet.'}</p>
+												<p class="mt-1 text-sm whitespace-pre-wrap text-blue-900">
+													{idea.appliedNote || 'No applied note yet.'}
+												</p>
 											{/if}
 										</div>
 

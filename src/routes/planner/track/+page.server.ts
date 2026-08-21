@@ -17,6 +17,7 @@ import {
 	getISOWeekYear
 } from '$lib/server/week-generator';
 import { generateInstances, listForDate, listInstances } from '$lib/server/services/instances';
+import { STATUSES, isStatus, timingFor } from '$lib/task-status';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -106,7 +107,6 @@ export const load: PageServerLoad = async (event) => {
 	const todayDayIndex = todayDow === 0 ? 6 : todayDow - 1;
 
 	const allCategories = db.select().from(categories).where(eq(categories.userId, userId)).all();
-	const validStatuses = ['pending', 'completed', 'delayed', 'early', 'skipped'] as const;
 
 	return {
 		tasks,
@@ -119,7 +119,7 @@ export const load: PageServerLoad = async (event) => {
 		todayDayIndex,
 		taskCountByDay,
 		selectedDate: formatDate(selectedDate),
-		validStatuses
+		validStatuses: STATUSES
 	};
 };
 
@@ -131,24 +131,25 @@ export const actions: Actions = {
 		const status = formData.get('status')?.toString();
 
 		if (!id || !status) return fail(400, { message: 'Missing id or status' });
+		if (!isStatus(status)) return fail(400, { message: 'Invalid status' });
 
-		const validStatuses = ['pending', 'completed', 'delayed', 'early', 'skipped'] as const;
-		if (!validStatuses.includes(status as (typeof validStatuses)[number])) {
-			return fail(400, { message: 'Invalid status' });
-		}
+		const instance = db
+			.select({ scheduledAt: taskInstances.scheduledAt })
+			.from(taskInstances)
+			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
+			.get();
+		if (!instance) return fail(404, { message: 'Task not found' });
 
-		const completedAt = ['completed', 'delayed', 'early'].includes(status)
-			? toLocalISOString(new Date())
-			: null;
+		// Timing is derived, not chosen: it is a fact about a finished task, so it
+		// only exists once one is done and is cleared whenever it is reopened.
+		const completedAt = status === 'done' ? toLocalISOString(new Date()) : null;
+		const timing = completedAt ? timingFor(instance.scheduledAt, completedAt) : null;
 
-		const updateData: Record<string, unknown> = {
-			status: status as (typeof validStatuses)[number],
-			completedAt
-		};
+		const updateData: Record<string, unknown> = { status, completedAt, timing };
 
 		// Clear the resolved activity when resetting or skipping a category-mode
 		// task, whichever kind of block it came from.
-		if (status === 'pending' || status === 'skipped') {
+		if (status === 'todo' || status === 'skipped') {
 			const owning = db
 				.select({
 					slotMode: weeklySlots.mode,

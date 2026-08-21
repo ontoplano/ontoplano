@@ -335,7 +335,8 @@
 				<span class="text-sm font-medium text-gray-700">Name</span>
 				<input
 					name="name"
-					type="text" autocomplete="off"
+					type="text"
+					autocomplete="off"
 					required
 					value={editHabit?.name ?? ''}
 					placeholder={newHabitType === 'bad'
@@ -350,7 +351,8 @@
 				<span class="text-sm font-medium text-gray-700">Description</span>
 				<input
 					name="description"
-					type="text" autocomplete="off"
+					type="text"
+					autocomplete="off"
 					value={editHabit?.description ?? ''}
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
@@ -486,7 +488,8 @@
 									<div class="flex items-center gap-1">
 										<input
 											name="notes"
-											type="text" autocomplete="off"
+											type="text"
+											autocomplete="off"
 											placeholder="note"
 											class="w-20 border border-gray-200 px-1.5 py-1 text-xs focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 										/>
@@ -634,7 +637,8 @@
 									<div class="flex items-center gap-1">
 										<input
 											name="notes"
-											type="text" autocomplete="off"
+											type="text"
+											autocomplete="off"
 											placeholder="note"
 											class="w-20 border border-gray-200 px-1.5 py-1 text-xs focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 										/>
@@ -664,7 +668,8 @@
 													<input type="hidden" name="id" value={occurrence.id} />
 													<input
 														name="notes"
-														type="text" autocomplete="off"
+														type="text"
+														autocomplete="off"
 														value={occurrence.notes ?? ''}
 														placeholder="add note…"
 														class="w-32 border border-transparent px-1 py-0.5 text-xs text-gray-500 hover:border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -677,45 +682,45 @@
 													</button>
 												</form>
 											</div>
-										{#if confirmingOccurrenceDelete === occurrence.id}
-											<form
-												method="post"
-												action="?/deleteOccurrence"
-												use:enhance={() => {
-													return async ({ update }) => {
-														await update();
-														confirmingOccurrenceDelete = null;
-													};
-												}}
-											>
-												<input type="hidden" name="id" value={occurrence.id} />
-												<button
-													type="submit"
-													class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+											{#if confirmingOccurrenceDelete === occurrence.id}
+												<form
+													method="post"
+													action="?/deleteOccurrence"
+													use:enhance={() => {
+														return async ({ update }) => {
+															await update();
+															confirmingOccurrenceDelete = null;
+														};
+													}}
 												>
-													Confirm?
+													<input type="hidden" name="id" value={occurrence.id} />
+													<button
+														type="submit"
+														class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+													>
+														Confirm?
+													</button>
+												</form>
+												<button
+													type="button"
+													onclick={() => {
+														confirmingOccurrenceDelete = null;
+													}}
+													class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+												>
+													Cancel
 												</button>
-											</form>
-											<button
-												type="button"
-												onclick={() => {
-													confirmingOccurrenceDelete = null;
-												}}
-												class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-											>
-												Cancel
-											</button>
-										{:else}
-											<button
-												type="button"
-												onclick={() => {
-													confirmingOccurrenceDelete = occurrence.id;
-												}}
-												class="text-xs text-gray-400 transition hover:text-red-500"
-											>
-												&times;
-											</button>
-										{/if}
+											{:else}
+												<button
+													type="button"
+													onclick={() => {
+														confirmingOccurrenceDelete = occurrence.id;
+													}}
+													class="text-xs text-gray-400 transition hover:text-red-500"
+												>
+													&times;
+												</button>
+											{/if}
 										</div>
 									{/each}
 									{#if occ.length > 10}

@@ -15,7 +15,11 @@ client.pragma('foreign_keys = ON');
 export const db = drizzle(client, { schema });
 
 export async function getPrimaryUserId(): Promise<string> {
-	const firstUser = db.select({ id: schema.user.id }).from(schema.user).orderBy(asc(schema.user.createdAt)).get();
+	const firstUser = db
+		.select({ id: schema.user.id })
+		.from(schema.user)
+		.orderBy(asc(schema.user.createdAt))
+		.get();
 
 	if (!firstUser) {
 		throw new Error('No Ontoplano user found in the database');

@@ -87,8 +87,7 @@
 		const entry = seqMap().get(seq);
 		if (!entry) return;
 		const rect = target.getBoundingClientRect();
-		const preview =
-			entry.content.length > 120 ? entry.content.slice(0, 120) + '…' : entry.content;
+		const preview = entry.content.length > 120 ? entry.content.slice(0, 120) + '…' : entry.content;
 		tooltip = {
 			visible: true,
 			x: rect.left,
@@ -478,7 +477,7 @@
 							</div>
 						{/if}
 					</div>
-					<span class="absolute right-2 bottom-1.5 text-[10px] tabular-nums text-black"
+					<span class="absolute right-2 bottom-1.5 text-[10px] text-black tabular-nums"
 						>#{entry.seq}</span
 					>
 				</div>

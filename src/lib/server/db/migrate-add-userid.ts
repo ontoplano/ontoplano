@@ -30,7 +30,7 @@ const tables = [
 	'diary_entries',
 	'tags',
 	'habits',
-	'evidence',
+	'evidence'
 ];
 
 for (const table of tables) {

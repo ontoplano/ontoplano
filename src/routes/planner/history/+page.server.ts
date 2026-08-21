@@ -59,6 +59,7 @@ export const load: PageServerLoad = async (event) => {
 			id: taskInstances.id,
 			scheduledAt: taskInstances.scheduledAt,
 			status: taskInstances.status,
+			timing: taskInstances.timing,
 			completedAt: taskInstances.completedAt,
 			notes: taskInstances.notes,
 			slotId: taskInstances.slotId,
@@ -100,13 +101,15 @@ export const load: PageServerLoad = async (event) => {
 		instancesByDay[weekdayIdx].push(inst);
 	}
 
+	const done = instances.filter((i) => i.status === 'done');
 	const summary = {
 		total: instances.length,
-		completed: instances.filter((i) => i.status === 'completed').length,
-		delayed: instances.filter((i) => i.status === 'delayed').length,
-		early: instances.filter((i) => i.status === 'early').length,
+		done: done.length,
+		doing: instances.filter((i) => i.status === 'doing').length,
 		skipped: instances.filter((i) => i.status === 'skipped').length,
-		pending: instances.filter((i) => i.status === 'pending').length
+		todo: instances.filter((i) => i.status === 'todo').length,
+		late: done.filter((i) => i.timing === 'late').length,
+		early: done.filter((i) => i.timing === 'early').length
 	};
 
 	return { instancesByDay, weekMeta, weekdays: WEEKDAYS, summary };
