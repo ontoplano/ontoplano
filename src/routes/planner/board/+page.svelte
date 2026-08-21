@@ -33,8 +33,11 @@
 	let confirmingDelete: string | null = $state(null);
 	let dragging: Card | null = $state(null);
 	let dragOverColumn: Status | null = $state(null);
+	let railOver = $state(false);
 
 	const cards = $derived(tab === 'today' ? data.todayCards : data.generalCards);
+	/** The rail beside Today always shows the todo list, whatever the tab. */
+	const railCards = $derived(data.generalCards);
 
 	function visible(status: Status): Card[] {
 		let out = cards.filter((c) => c.status === status);
@@ -101,13 +104,20 @@
 		await refresh();
 	}
 
-	async function scheduleCard(card: Card, date: string | null) {
+	/**
+	 * A todo dragged onto a day stops being a todo: it becomes a real block with
+	 * a time, which is what puts it on the grid, in the tracker, and against a
+	 * goal. Dragging a one-off back undoes exactly that.
+	 */
+	async function promote(card: Card, date: string, status: Status) {
 		if (card.kind !== 'todo') return;
-		await post('schedule', {
-			kind: 'todo',
-			id: String(card.id),
-			scheduledDate: date ?? ''
-		});
+		await post('promote', { id: String(card.id), date, status });
+		await refresh();
+	}
+
+	async function demote(card: Card) {
+		if (card.kind !== 'instance') return;
+		await post('demote', { id: String(card.id) });
 		await refresh();
 	}
 
@@ -134,6 +144,16 @@
 	function onDragEnd() {
 		dragging = null;
 		dragOverColumn = null;
+		railOver = false;
+	}
+
+	/** Dropping a scheduled one-off back on the rail turns it into a todo again. */
+	async function onDropInRail(e: DragEvent) {
+		e.preventDefault();
+		const card = dragging;
+		railOver = false;
+		dragging = null;
+		if (card?.kind === 'instance') await demote(card);
 	}
 
 	async function onDropInColumn(status: Status, e: DragEvent) {
@@ -143,10 +163,11 @@
 		dragging = null;
 		if (!card) return;
 
-		// Dropping a general todo onto a Today column does two things at once:
-		// it gains the day and it takes the column it landed in.
-		if (tab === 'today' && card.kind === 'todo' && !card.scheduledDate) {
-			await scheduleCard(card, data.date);
+		// A todo landing in a day column becomes a scheduled task in that column,
+		// in one gesture.
+		if (card.kind === 'todo') {
+			await promote(card, data.date, status);
+			return;
 		}
 		await move(card, status);
 	}
@@ -261,9 +282,10 @@
 			return;
 		}
 
-		if (e.key === 't' && card.kind === 'todo') {
+		if (e.key === 't') {
 			e.preventDefault();
-			scheduleCard(card, card.scheduledDate ? null : data.date);
+			if (card.kind === 'todo') promote(card, data.date, card.status);
+			else demote(card);
 			return;
 		}
 
@@ -306,7 +328,7 @@
 
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div class="flex items-center gap-1">
-			{#each [{ v: 'today', l: 'Today' }, { v: 'general', l: 'General Todo' }] as t (t.v)}
+			{#each [{ v: 'today', l: 'Today' }, { v: 'general', l: 'Todo' }] as t (t.v)}
 				<button
 					onclick={() => {
 						tab = t.v as typeof tab;
@@ -438,46 +460,121 @@
 		</form>
 	{/if}
 
-	<div class="grid gap-3" style="grid-template-columns: repeat({columns.length}, minmax(0, 1fr))">
-		{#each columns as column, ci (column.status)}
-			<section
-				class="flex min-h-64 flex-col border bg-gray-50 {dragOverColumn === column.status
-					? 'border-gray-900'
-					: 'border-gray-200'}"
+	<div class="flex gap-3">
+		<div class="min-w-0 flex-1">
+			<div
+				class="grid gap-3"
+				style="grid-template-columns: repeat({columns.length}, minmax(0, 1fr))"
+			>
+				{#each columns as column, ci (column.status)}
+					<section
+						class="flex min-h-64 flex-col border bg-gray-50 {dragOverColumn === column.status
+							? 'border-gray-900'
+							: 'border-gray-200'}"
+						ondragover={(e) => {
+							e.preventDefault();
+							dragOverColumn = column.status;
+						}}
+						ondragleave={() => {
+							if (dragOverColumn === column.status) dragOverColumn = null;
+						}}
+						ondrop={(e) => onDropInColumn(column.status, e)}
+					>
+						<header
+							class="flex items-center justify-between border-b border-gray-200 bg-white px-3 py-2"
+						>
+							<span class="eyebrow text-gray-500">{STATUS_LABELS[column.status]}</span>
+							<span class="tabular text-xs text-gray-400">{column.cards.length}</span>
+						</header>
+
+						<div class="flex-1 space-y-2 p-2">
+							{#each column.cards as card, ri (card.uid)}
+								<article
+									draggable="true"
+									ondragstart={(e) => onDragStart(card, e)}
+									ondragend={onDragEnd}
+									ondrop={(e) => onDropOnCard(card, column.status, e)}
+									ondragover={(e) => e.preventDefault()}
+									onclick={() => {
+										focusCol = ci;
+										focusRow = ri;
+									}}
+									onkeydown={() => {}}
+									role="button"
+									tabindex="0"
+									class="cursor-grab border bg-white p-2 shadow-card {focusCol === ci &&
+									focusRow === ri
+										? 'ring-2 ring-gray-900 ring-inset'
+										: ''} {dragging?.uid === card.uid ? 'opacity-40' : ''} border-gray-200"
+								>
+									<div class="flex items-start gap-2">
+										<span
+											class="mt-0.5 h-3 w-1 shrink-0"
+											style="background-color: {card.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
+											title={card.categoryName ?? 'No category'}
+										></span>
+										<div class="min-w-0 flex-1">
+											<p class="truncate text-sm text-gray-900">{card.title}</p>
+											<div class="mt-1 flex flex-wrap items-center gap-2">
+												{#if card.startTime}
+													<span class="tabular font-mono text-[10px] text-gray-500"
+														>{card.startTime}</span
+													>
+												{/if}
+												{#if card.kind === 'todo' && card.scheduledDate && card.scheduledDate < data.date}
+													<span class="text-[10px] text-gray-500">carried over</span>
+												{/if}
+												{#if card.timing === 'early' || card.timing === 'late'}
+													<span class="text-[10px] text-gray-500">{TIMING_LABELS[card.timing]}</span
+													>
+												{/if}
+												<RatingBadges values={card.ratings} />
+											</div>
+										</div>
+									</div>
+								</article>
+							{/each}
+
+							{#if column.cards.length === 0}
+								<p class="px-1 py-4 text-center text-xs text-gray-400">
+									{dragOverColumn === column.status ? 'Drop here' : 'Nothing here'}
+								</p>
+							{/if}
+						</div>
+					</section>
+				{/each}
+			</div>
+		</div>
+
+		{#if tab === 'today'}
+			<!-- The todo list stays visible beside Today so the two can actually
+			     interact: drag one across and it becomes a scheduled task. -->
+			<aside
+				class="w-56 shrink-0 border bg-gray-50 {railOver ? 'border-gray-900' : 'border-gray-200'}"
 				ondragover={(e) => {
 					e.preventDefault();
-					dragOverColumn = column.status;
+					railOver = true;
 				}}
-				ondragleave={() => {
-					if (dragOverColumn === column.status) dragOverColumn = null;
-				}}
-				ondrop={(e) => onDropInColumn(column.status, e)}
+				ondragleave={() => (railOver = false)}
+				ondrop={(e) => onDropInRail(e)}
 			>
 				<header
 					class="flex items-center justify-between border-b border-gray-200 bg-white px-3 py-2"
 				>
-					<span class="eyebrow text-gray-500">{STATUS_LABELS[column.status]}</span>
-					<span class="tabular text-xs text-gray-400">{column.cards.length}</span>
+					<span class="eyebrow text-gray-500">Todo</span>
+					<span class="tabular text-xs text-gray-400">{railCards.length}</span>
 				</header>
-
-				<div class="flex-1 space-y-2 p-2">
-					{#each column.cards as card, ri (card.uid)}
+				<div class="space-y-2 p-2">
+					{#each railCards as card (card.uid)}
 						<article
 							draggable="true"
 							ondragstart={(e) => onDragStart(card, e)}
 							ondragend={onDragEnd}
-							ondrop={(e) => onDropOnCard(card, column.status, e)}
 							ondragover={(e) => e.preventDefault()}
-							onclick={() => {
-								focusCol = ci;
-								focusRow = ri;
-							}}
-							onkeydown={() => {}}
-							role="button"
-							tabindex="0"
-							class="cursor-grab border bg-white p-2 shadow-card {focusCol === ci && focusRow === ri
-								? 'ring-2 ring-gray-900 ring-inset'
-								: ''} {dragging?.uid === card.uid ? 'opacity-40' : ''} border-gray-200"
+							class="lift cursor-grab border border-gray-200 bg-white p-2 shadow-card {dragging?.uid ===
+							card.uid
+								? 'opacity-40'
+								: ''}"
 						>
 							<div class="flex items-start gap-2">
 								<span
@@ -487,33 +584,20 @@
 								></span>
 								<div class="min-w-0 flex-1">
 									<p class="truncate text-sm text-gray-900">{card.title}</p>
-									<div class="mt-1 flex flex-wrap items-center gap-2">
-										{#if card.startTime}
-											<span class="tabular font-mono text-[10px] text-gray-500"
-												>{card.startTime}</span
-											>
-										{/if}
-										{#if card.kind === 'todo' && card.scheduledDate && card.scheduledDate < data.date}
-											<span class="text-[10px] text-gray-500">carried over</span>
-										{/if}
-										{#if card.timing === 'early' || card.timing === 'late'}
-											<span class="text-[10px] text-gray-500">{TIMING_LABELS[card.timing]}</span>
-										{/if}
-										<RatingBadges values={card.ratings} />
-									</div>
+									<RatingBadges values={card.ratings} class="mt-1" />
 								</div>
 							</div>
 						</article>
 					{/each}
 
-					{#if column.cards.length === 0}
-						<p class="px-1 py-4 text-center text-xs text-gray-400">
-							{dragOverColumn === column.status ? 'Drop here' : 'Nothing here'}
+					{#if railCards.length === 0}
+						<p class="px-1 py-6 text-center text-xs text-gray-400">
+							{railOver ? 'Drop to send back' : 'Nothing waiting'}
 						</p>
 					{/if}
 				</div>
-			</section>
-		{/each}
+			</aside>
+		{/if}
 	</div>
 
 	<p class="text-xs text-gray-400">

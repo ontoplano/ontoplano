@@ -1,14 +1,10 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { categories, plannerTodos, taskInstances } from '$lib/server/db/schema';
+import { categories, exceptionalSlots, plannerTodos, taskInstances } from '$lib/server/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { generateForDate, listForDate as listOccurrences } from '$lib/server/services/instances';
-import {
-	listForDate as listDayTodos,
-	listUnscheduled,
-	nextSortOrder
-} from '$lib/server/services/todos';
+import { listUnscheduled, nextSortOrder } from '$lib/server/services/todos';
 import { isStatus, timingFor, type Status, type Timing } from '$lib/task-status';
 import { ratingsFromForm } from '$lib/ratings';
 import { toLocalISOString } from '$lib/server/week-generator';
@@ -27,6 +23,23 @@ function parseDate(param: string | null): Date {
 		if (!isNaN(parsed.getTime())) return parsed;
 	}
 	return new Date();
+}
+
+/**
+ * Next sensible start time on a day.
+ *
+ * Today gets the next half hour from now so a promoted todo lands ahead of you
+ * rather than in the past; another day starts at nine.
+ */
+function nextFreeTime(dateStr: string): string {
+	const now = new Date();
+	const isToday = formatDate(now) === dateStr;
+	if (!isToday) return '09:00';
+
+	const minutes = now.getMinutes() <= 30 ? 30 : 0;
+	const hour = minutes === 0 ? now.getHours() + 1 : now.getHours();
+	if (hour > 23) return '23:30';
+	return `${pad(hour)}:${pad(minutes)}`;
 }
 
 /**
@@ -98,7 +111,7 @@ export const load: PageServerLoad = async (event) => {
 		ratings: t.ratings
 	});
 
-	const todayCards = [...occurrences, ...listDayTodos(userId, dateStr).map(asCard)];
+	const todayCards = occurrences;
 	const generalCards = listUnscheduled(userId).map(asCard);
 
 	const allCategories = db
@@ -211,6 +224,146 @@ export const actions: Actions = {
 			.set({ scheduledDate: date, updatedAt: toLocalISOString(new Date()) })
 			.where(and(eq(plannerTodos.id, target.id), eq(plannerTodos.userId, userId)))
 			.run();
+
+		return { success: true };
+	},
+
+	/**
+	 * Turn a todo into a real scheduled task.
+	 *
+	 * A todo pulled onto a day stops being a todo: it becomes a one-off block
+	 * with a time, which is what makes it show up on the grid, in the tracker,
+	 * and against a goal. The row moves rather than being copied, so there is
+	 * never a todo and a task that are secretly the same thing.
+	 */
+	promote: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const date = formData.get('date')?.toString()?.trim() ?? '';
+		const status = formData.get('status')?.toString();
+
+		if (!id) return fail(400, { message: 'Missing id' });
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail(400, { message: 'Invalid date' });
+
+		const todo = db
+			.select()
+			.from(plannerTodos)
+			.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, userId)))
+			.get();
+		if (!todo) return fail(404, { message: 'Todo not found' });
+
+		// A block has to name a category or an activity. A todo need not, so fall
+		// back to the user's first category rather than refusing the drag.
+		const categoryId =
+			todo.categoryId ??
+			db
+				.select({ id: categories.id })
+				.from(categories)
+				.where(eq(categories.userId, userId))
+				.orderBy(categories.name)
+				.get()?.id;
+
+		if (!categoryId) return fail(400, { message: 'Create a category before scheduling todos' });
+
+		const startTime = formData.get('startTime')?.toString()?.trim() || nextFreeTime(date);
+
+		db.transaction((tx) => {
+			const slot = tx
+				.insert(exceptionalSlots)
+				.values({
+					userId,
+					date,
+					startTime,
+					durationMinutes: 30,
+					mode: 'category',
+					categoryId,
+					label: todo.title,
+					urgency: todo.urgency,
+					interest: todo.interest,
+					energy: todo.energy
+				})
+				.returning({ id: exceptionalSlots.id })
+				.get();
+
+			tx.insert(taskInstances)
+				.values({
+					userId,
+					exceptionalSlotId: slot.id,
+					scheduledAt: `${date}T${startTime}:00`,
+					status: isStatus(status) ? status : todo.status,
+					// The todo's notes are the only thing a block has nowhere to put,
+					// so they ride on the instance.
+					notes: todo.notes ?? ''
+				})
+				.run();
+
+			tx.delete(plannerTodos)
+				.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, userId)))
+				.run();
+		});
+
+		return { success: true };
+	},
+
+	/** The reverse: a one-off goes back to being an undated todo. */
+	demote: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		if (!id) return fail(400, { message: 'Missing id' });
+
+		const instance = db
+			.select({
+				id: taskInstances.id,
+				exceptionalSlotId: taskInstances.exceptionalSlotId,
+				status: taskInstances.status,
+				notes: taskInstances.notes,
+				urgencyOverride: taskInstances.urgencyOverride,
+				interestOverride: taskInstances.interestOverride,
+				energyOverride: taskInstances.energyOverride,
+				label: exceptionalSlots.label,
+				categoryId: exceptionalSlots.categoryId,
+				urgency: exceptionalSlots.urgency,
+				interest: exceptionalSlots.interest,
+				energy: exceptionalSlots.energy
+			})
+			.from(taskInstances)
+			.innerJoin(exceptionalSlots, eq(taskInstances.exceptionalSlotId, exceptionalSlots.id))
+			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
+			.get();
+
+		// Only one-offs can go back. A weekly block is a standing commitment, not
+		// a todo that happens to have a time.
+		if (!instance)
+			return fail(400, { message: 'Only one-off blocks can go back to the todo list' });
+
+		db.transaction((tx) => {
+			tx.insert(plannerTodos)
+				.values({
+					userId,
+					title: instance.label || 'Untitled',
+					notes: instance.notes ?? '',
+					categoryId: instance.categoryId,
+					status: instance.status,
+					completed: instance.status === 'done',
+					sortOrder: nextSortOrder(userId),
+					urgency: instance.urgencyOverride ?? instance.urgency,
+					interest: instance.interestOverride ?? instance.interest,
+					energy: instance.energyOverride ?? instance.energy
+				})
+				.run();
+
+			// The instance goes with it, by cascade.
+			tx.delete(exceptionalSlots)
+				.where(
+					and(
+						eq(exceptionalSlots.id, instance.exceptionalSlotId!),
+						eq(exceptionalSlots.userId, userId)
+					)
+				)
+				.run();
+		});
 
 		return { success: true };
 	},
