@@ -35,3 +35,10 @@ pass.py
 
 # Telegram bot
 telegram/node_modules
+
+# claude-docker local state (may contain credentials)
+.claude-docker/
+.claude-docker-EMERGENCY-BACKUP-*.tar.gz
+
+# Claude Code local settings
+.claude/
