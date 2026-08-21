@@ -109,7 +109,10 @@ export function loadConfig(): OntoplanoConfig {
 			port: parseInt(server.port || '1493', 10)
 		},
 		database: {
-			path: database.path || DB_PATH
+			// DATABASE_URL wins over the config file, because drizzle.config.ts and
+			// scripts/migrate.mjs already resolve it that way — without this the app
+			// could be reading one database while migrations rewrite another.
+			path: process.env.DATABASE_URL || database.path || DB_PATH
 		},
 		week: {
 			firstDay: parseInt(week.first_day || '0', 10),

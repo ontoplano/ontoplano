@@ -162,6 +162,13 @@
 								</form>
 							</div>
 							<a
+								href="/account"
+								onclick={() => (menuOpen = false)}
+								class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
+							>
+								Account
+							</a>
+							<a
 								href="/settings/integrations"
 								onclick={() => (menuOpen = false)}
 								class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
