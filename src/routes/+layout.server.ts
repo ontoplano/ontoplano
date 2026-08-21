@@ -1,9 +1,8 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { loadConfig } from '$lib/server/config';
 import { db } from '$lib/server/db';
 import { categories } from '$lib/server/db/schema';
-import { DEFAULT_THEME, getFeatureFlags, getTheme } from '$lib/server/settings';
+import { DEFAULT_THEME, DEFAULT_WEEK, getTheme, getWeekSettings } from '$lib/server/settings';
 import { eq } from 'drizzle-orm';
 
 export const load: LayoutServerLoad = async (event) => {
@@ -15,11 +14,9 @@ export const load: LayoutServerLoad = async (event) => {
 		return redirect(302, '/login');
 	}
 
-	const config = loadConfig();
-
 	let userCategories: { id: number; name: string; color: string; colorLight: string }[] = [];
-	let features: Record<string, boolean> = {};
 	let theme = DEFAULT_THEME;
+	let week = DEFAULT_WEEK;
 	if (event.locals.user) {
 		userCategories = db
 			.select({
@@ -31,17 +28,15 @@ export const load: LayoutServerLoad = async (event) => {
 			.from(categories)
 			.where(eq(categories.userId, event.locals.user.id))
 			.all();
-		features = getFeatureFlags(event.locals.user.id);
 		theme = getTheme(event.locals.user.id);
+		week = getWeekSettings(event.locals.user.id);
 	}
 
 	return {
 		user: event.locals.user ?? null,
 		categories: userCategories,
-		features,
 		theme,
-		config: {
-			week: config.week
-		}
+		// The week is the user's, not the instance's.
+		config: { week }
 	};
 };

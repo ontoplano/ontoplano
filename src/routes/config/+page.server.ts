@@ -12,13 +12,27 @@ import {
 	serialiseLayout,
 	type DashboardCardId
 } from '$lib/dashboard';
-import { getTheme, getUserSetting, isTheme, setTheme, setUserSetting } from '$lib/server/settings';
+import {
+	getTheme,
+	getUserSetting,
+	getWeekSettings,
+	isInstanceOwner,
+	isTheme,
+	setTheme,
+	setUserSetting,
+	setWeekSettings
+} from '$lib/server/settings';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const config = loadConfig();
 	const userId = locals.user!.id;
+	const canEditInstance = isInstanceOwner(userId);
 	return {
+		// Deployment settings are shown to everyone but writable only by whoever
+		// runs the instance; week settings belong to each account.
 		config,
+		canEditInstance,
+		week: getWeekSettings(userId),
 		theme: getTheme(userId),
 		cards: DASHBOARD_CARDS,
 		layout: parseLayout(getUserSetting(userId, DASHBOARD_LAYOUT_KEY)),
@@ -83,26 +97,46 @@ export const actions: Actions = {
 		return { success: true, action: 'setTheme' };
 	},
 
-	save: async ({ request }) => {
+	/**
+	 * Bind host, port and database path.
+	 *
+	 * These describe the deployment, not the account, so they are only writable
+	 * on a self-hosted instance by its owner. This action previously never
+	 * looked at `locals.user` at all: any registered account could rewrite where
+	 * the server listens.
+	 */
+	saveInstance: async ({ request, locals }) => {
+		if (!isInstanceOwner(locals.user!.id))
+			return fail(403, { message: 'Only the instance owner can change deployment settings' });
+
 		const formData = await request.formData();
 		const host = formData.get('host')?.toString()?.trim() ?? '0.0.0.0';
 		const port = Number(formData.get('port') || 1493);
-		const firstDay = Number(formData.get('firstDay') ?? 0);
-		const generateDay = Number(formData.get('generateDay') ?? 6);
 
 		if (!host) return fail(400, { message: 'Host is required' });
 		if (port < 1 || port > 65535) return fail(400, { message: 'Port must be between 1 and 65535' });
-		if (firstDay < 0 || firstDay > 6) return fail(400, { message: 'Invalid first day' });
-		if (generateDay < 0 || generateDay > 6) return fail(400, { message: 'Invalid generate day' });
 
 		const current = loadConfig();
-
 		saveConfig({
 			server: { host, port },
 			database: { path: current.database.path || DB_PATH },
-			week: { firstDay, generateDay }
+			week: current.week
 		});
 
-		return { success: true, action: 'save' };
+		return { success: true, action: 'saveInstance' };
+	},
+
+	/** Which day your week starts on. Yours, not the server's. */
+	saveWeek: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const firstDay = Number(formData.get('firstDay') ?? 0);
+		const generateDay = Number(formData.get('generateDay') ?? 6);
+
+		if (firstDay < 0 || firstDay > 6) return fail(400, { message: 'Invalid first day' });
+		if (generateDay < 0 || generateDay > 6) return fail(400, { message: 'Invalid generate day' });
+
+		setWeekSettings(locals.user!.id, { firstDay, generateDay });
+
+		return { success: true, action: 'saveWeek' };
 	}
 };

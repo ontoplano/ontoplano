@@ -1,33 +1,27 @@
+import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import Database from 'better-sqlite3';
-import { existsSync } from 'fs';
-import { join } from 'path';
 
-const WEIGHTS_DB_PATH = join(
-	process.env.HOME ?? '/home/you',
-	'.local/share/a-private-plugin/weights.db'
-);
+import { buildCtx } from '$lib/server/services/ctx';
+import { getStreamBySlug } from '$lib/server/services/streams';
 
-interface WeightRow {
-	timestamp: string;
-	weight_kg: number;
-}
+/**
+ * Weight used to be read straight off a SQLite file belonging to a different
+ * application, at a hardcoded absolute path, unscoped by user — so every
+ * registered account saw one person's body-weight history, and the page only
+ * worked on one machine.
+ *
+ * The plugin platform already solves this properly: a producer pushes readings
+ * over the API into a per-user data stream. So this route no longer reads
+ * anything itself; it points at the stream, and explains how to fill it when
+ * there is none.
+ */
+const WEIGHT_STREAM_SLUG = 'a-private-plugin.weight';
 
-export const load: PageServerLoad = async () => {
-	if (!existsSync(WEIGHTS_DB_PATH)) {
-		return { weights: [] as { date: string; weight: number }[] };
-	}
+export const load: PageServerLoad = async ({ locals }) => {
+	const ctx = buildCtx(locals.user!.id);
+	const stream = getStreamBySlug(ctx, WEIGHT_STREAM_SLUG);
 
-	const weightsDb = new Database(WEIGHTS_DB_PATH, { readonly: true });
-	const rows = weightsDb
-		.prepare('SELECT timestamp, weight_kg FROM weights ORDER BY timestamp ASC')
-		.all() as WeightRow[];
-	weightsDb.close();
+	if (stream) redirect(302, `/data/${WEIGHT_STREAM_SLUG}`);
 
-	const weights = rows.map((r) => ({
-		date: r.timestamp.slice(0, 10),
-		weight: r.weight_kg
-	}));
-
-	return { weights };
+	return { slug: WEIGHT_STREAM_SLUG };
 };
