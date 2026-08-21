@@ -3,7 +3,9 @@
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { SECTION_COLORS, CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
-	import { cardById } from '$lib/dashboard.js';
+	import { cardById, type DashboardCardId } from '$lib/dashboard.js';
+	import { deserialize } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 	import { getAction } from '$lib/shortcuts';
 
 	/** Keep the card a card: the tracker is one click away for the full list. */
@@ -11,6 +13,54 @@
 	const GOAL_PREVIEW = 4;
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+
+	// Rearranging is a mode rather than something you can trigger by accident:
+	// the cards hold forms and links, and making them permanently draggable
+	// would fight every click you actually meant.
+	let arranging = $state(false);
+	let order: DashboardCardId[] = $state([]);
+	let dragging: DashboardCardId | null = $state(null);
+	let dragOver: DashboardCardId | null = $state(null);
+
+	const layout = $derived(arranging ? order : data.layout);
+
+	function startArranging() {
+		order = [...data.layout];
+		arranging = true;
+	}
+
+	function onDragStart(id: DashboardCardId, e: DragEvent) {
+		dragging = id;
+		if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+	}
+
+	function onDragOver(id: DashboardCardId, e: DragEvent) {
+		e.preventDefault();
+		dragOver = id;
+		if (!dragging || dragging === id) return;
+		const next = order.filter((x) => x !== dragging);
+		next.splice(next.indexOf(id), 0, dragging);
+		order = next;
+	}
+
+	async function saveOrder() {
+		const body = new FormData();
+		for (const id of order) body.append('card', id);
+		const res = await fetch('/?/setLayout', {
+			method: 'POST',
+			headers: { 'x-sveltekit-action': 'true' },
+			body
+		});
+		deserialize(await res.text());
+		arranging = false;
+		dragging = null;
+		dragOver = null;
+		await invalidateAll();
+	}
+
+	async function hideCard(id: DashboardCardId) {
+		order = order.filter((x) => x !== id);
+	}
 
 	let showDiaryForm = $state(false);
 	let showWinsForm = $state(false);
@@ -87,6 +137,14 @@
 		<h1 class="text-lg font-bold text-gray-900">
 			{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
 		</h1>
+		{#if !arranging}
+			<button
+				onclick={startArranging}
+				class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
+			>
+				Arrange
+			</button>
+		{/if}
 	</div>
 
 	{#snippet card_todayTasks()}
@@ -557,11 +615,35 @@
 	{/snippet}
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-		{#each data.layout as id (id)}
+		{#each layout as id (id)}
 			{@const card = cardById(id)}
 			{#if card}
 				<!-- Half-width cards pair up on wide screens; full-width ones take the row. -->
-				<div class={card.width === 'half' ? 'md:col-span-1' : 'md:col-span-2'}>
+				<div
+					class="{card.width === 'half' ? 'md:col-span-1' : 'md:col-span-2'} {arranging
+						? 'cursor-grab'
+						: ''} {dragging === id ? 'opacity-40' : ''} {arranging && dragOver === id
+						? 'outline-2 outline-gray-900'
+						: ''}"
+					draggable={arranging}
+					ondragstart={(e) => onDragStart(id, e)}
+					ondragend={() => {
+						dragging = null;
+						dragOver = null;
+					}}
+					ondragover={(e) => onDragOver(id, e)}
+					role={arranging ? 'listitem' : undefined}
+				>
+					{#if arranging}
+						<div
+							class="mb-1 flex items-center justify-between border border-gray-300 bg-gray-100 px-2 py-1"
+						>
+							<span class="eyebrow text-gray-500">{card.label}</span>
+							<button onclick={() => hideCard(id)} class="text-xs text-gray-500 hover:text-gray-900"
+								>Hide</button
+							>
+						</div>
+					{/if}
 					{#if id === 'todayTasks'}{@render card_todayTasks()}
 					{:else if id === 'goals'}{@render card_goals()}
 					{:else if id === 'habits'}{@render card_habits()}
@@ -576,6 +658,31 @@
 			{/if}
 		{/each}
 	</div>
+
+	{#if arranging}
+		<div class="flex flex-wrap items-center gap-2 border border-gray-200 bg-white p-3 shadow-card">
+			<span class="text-xs text-gray-500">Drag the cards to reorder them.</span>
+			{#each data.cards.filter((c) => !order.includes(c.id)) as card (card.id)}
+				<button
+					onclick={() => (order = [...order, card.id])}
+					class="border border-dashed border-gray-300 px-2 py-1 text-xs text-gray-600 hover:text-gray-900"
+					title={card.description}
+				>
+					+ {card.label}
+				</button>
+			{/each}
+			<button
+				onclick={saveOrder}
+				class="ml-auto bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800"
+				>Done</button
+			>
+			<button
+				onclick={() => (arranging = false)}
+				class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+				>Cancel</button
+			>
+		</div>
+	{/if}
 
 	{#if form?.message}
 		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

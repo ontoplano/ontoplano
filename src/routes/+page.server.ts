@@ -18,6 +18,7 @@ import { generateForDate, listForDate } from '$lib/server/services/instances';
 import { listActiveOn } from '$lib/server/services/goals';
 import { dailyWins, quotes } from '$lib/server/db/schema';
 import {
+	DASHBOARD_CARDS,
 	DASHBOARD_LAYOUT_KEY,
 	defaultLayout,
 	parseLayout,
@@ -202,6 +203,7 @@ export const load: PageServerLoad = async (event) => {
 
 	return {
 		layout,
+		cards: DASHBOARD_CARDS,
 		quote: quoteForDate(userQuotes, today),
 		wins,
 		activeGoals,
