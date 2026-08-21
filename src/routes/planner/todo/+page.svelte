@@ -188,7 +188,7 @@
 					editingId = null;
 				};
 			}}
-			class="space-y-3 border border-gray-200 bg-white p-4 shadow-sm"
+			class="lift space-y-3 border border-gray-200 bg-white p-4 shadow-card"
 		>
 			{#if editingId}
 				<input type="hidden" name="id" value={editingId} />
@@ -342,7 +342,7 @@
 			{showCompleted ? 'No todos yet.' : 'No pending todos.'}
 		</div>
 	{:else}
-		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
+		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
 			{#each visibleTodos as todo, i (todo.id)}
 				<div
 					class="flex items-center gap-4 px-4 py-3 {selectedIndex === i

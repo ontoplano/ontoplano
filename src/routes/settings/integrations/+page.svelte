@@ -100,7 +100,7 @@
 	{/if}
 
 	<!-- API tokens -->
-	<section class="border border-gray-200 bg-white shadow-sm">
+	<section class="border border-gray-200 bg-white shadow-card">
 		<header class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
 			<h2 class="text-sm font-semibold text-gray-900">API tokens</h2>
 			<button
@@ -237,7 +237,7 @@
 	</section>
 
 	<!-- Data streams -->
-	<section class="border border-gray-200 bg-white shadow-sm">
+	<section class="border border-gray-200 bg-white shadow-card">
 		<header class="border-b border-gray-200 px-4 py-3">
 			<h2 class="text-sm font-semibold text-gray-900">Data streams</h2>
 			<p class="mt-1 text-xs text-gray-500">

@@ -253,7 +253,7 @@
 					winInputCount = 3;
 				};
 			}}
-			class="space-y-3 border border-gray-200 bg-white p-4 shadow-sm"
+			class="lift space-y-3 border border-gray-200 bg-white p-4 shadow-card"
 		>
 			<div class="flex items-center justify-between">
 				<span class="text-sm font-medium text-gray-700">Wins</span>
@@ -322,7 +322,7 @@
 					editingId = null;
 				};
 			}}
-			class="space-y-3 border border-gray-200 bg-white p-4 shadow-sm"
+			class="lift space-y-3 border border-gray-200 bg-white p-4 shadow-card"
 		>
 			{#if editingId}
 				<input type="hidden" name="id" value={editingId} />
@@ -387,7 +387,7 @@
 			{#each filteredEntries() as entry, i (entry.id)}
 				<div
 					id="diary-{entry.seq}"
-					class="relative border border-gray-200 bg-white p-4 shadow-sm transition-all {i ===
+					class="lift relative border border-gray-200 bg-white p-4 shadow-card transition-all {i ===
 					selectedIndex
 						? 'border-l-4 border-l-amber-300/60 ring-2 ring-amber-400 ring-inset'
 						: ''}"

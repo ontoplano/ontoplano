@@ -121,7 +121,7 @@
 	</div>
 
 	{#if showCategoryForm}
-		<div class="space-y-3 border border-gray-200 bg-white p-4 shadow-sm">
+		<div class="lift space-y-3 border border-gray-200 bg-white p-4 shadow-card">
 			<div class="text-sm font-semibold text-gray-900">Categories</div>
 			<div class="divide-y divide-gray-100">
 				{#each data.categories as cat (cat.id)}
@@ -299,7 +299,7 @@
 					editingId = null;
 				};
 			}}
-			class="space-y-3 border border-gray-200 bg-white p-4 shadow-sm"
+			class="lift space-y-3 border border-gray-200 bg-white p-4 shadow-card"
 		>
 			{#if editingId}
 				<input type="hidden" name="id" value={editingId} />
@@ -367,7 +367,7 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
+		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
 			{#each filteredActivities() as activity, i}
 				<div
 					class="flex items-center gap-4 px-4 py-3 transition-colors {i === selectedIndex

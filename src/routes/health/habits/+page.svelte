@@ -326,7 +326,7 @@
 					resetForm();
 				};
 			}}
-			class="space-y-3 border border-gray-200 bg-white p-4 shadow-sm"
+			class="lift space-y-3 border border-gray-200 bg-white p-4 shadow-card"
 		>
 			{#if editingId}
 				<input type="hidden" name="id" value={editingId} />
@@ -440,7 +440,7 @@
 				{@const isBad = habit.type === 'bad'}
 				{@const isNeutral = habit.type === 'neutral'}
 				<div
-					class="border border-gray-200 bg-white shadow-sm {i === selectedHabitIndex
+					class="border border-gray-200 bg-white shadow-card {i === selectedHabitIndex
 						? 'ring-2 ring-gray-900 ring-inset'
 						: ''}"
 					style="border-left-width: 4px; border-left-color: {isBad

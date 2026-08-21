@@ -196,7 +196,7 @@
 				};
 			}}
 			use:autofocus
-			class="border border-gray-200 bg-white p-4 shadow-sm"
+			class="lift border border-gray-200 bg-white p-4 shadow-card"
 		>
 			<div class="space-y-3">
 				<div class="flex gap-3">
@@ -250,7 +250,7 @@
 	{#if replenishItems.length > 0}
 		<div>
 			<h2 class="mb-2 text-sm font-bold text-gray-500">Inventory</h2>
-			<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
+			<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
 				{#each replenishByCategory as category (category.name)}
 					<h3 class="mt-3 mb-1 px-1 text-xs font-medium tracking-wide text-gray-400 uppercase">
 						{category.name}
@@ -432,7 +432,7 @@
 	{#if somedayItems.length > 0}
 		<div>
 			<h2 class="mb-2 text-sm font-bold text-gray-500">Wishlist</h2>
-			<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
+			<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
 				{#each somedayItems as item, i (item.id)}
 					{@const globalIdx = filteredItems.indexOf(item)}
 					<div

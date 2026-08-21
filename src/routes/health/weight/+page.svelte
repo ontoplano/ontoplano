@@ -98,7 +98,7 @@
 			</span>
 		</div>
 
-		<div class="overflow-x-auto border border-gray-200 bg-white shadow-sm">
+		<div class="overflow-x-auto border border-gray-200 bg-white shadow-card">
 			<svg viewBox="0 0 {WIDTH} {HEIGHT}" class="w-full" style="min-width: 600px">
 				{#each chart.yTicks as tick}
 					<line

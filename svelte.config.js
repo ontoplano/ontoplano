@@ -15,10 +15,12 @@ const config = {
 		}
 	},
 	kit: {
-		adapter: adapter(),
-		csrf: {
-			checkOrigin: false
-		}
+		adapter: adapter()
+		// csrf.checkOrigin is left at its default of `true`. It is the only CSRF
+		// defence this app has — there are no tokens — so turning it off makes
+		// every form action forgeable by any page on the internet. If a form
+		// starts failing behind a proxy, the fix is to set ORIGIN correctly, not
+		// to disable the check.
 	},
 	preprocess: [mdsvex({ extensions: ['.svx', '.md'] })],
 	extensions: ['.svelte', '.svx', '.md']

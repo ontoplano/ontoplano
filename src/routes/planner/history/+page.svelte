@@ -172,7 +172,7 @@
 			No tasks recorded for {data.weekdays[selectedDay]}.
 		</div>
 	{:else}
-		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
+		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
 			{#each instancesForDay(selectedDay) as inst, i (inst.id)}
 				<div
 					class="flex items-center gap-4 border-l-4 px-4 py-3 {selectedIndex === i
