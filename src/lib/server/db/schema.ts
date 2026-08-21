@@ -738,3 +738,55 @@ export const goalLinks = sqliteTable(
 		)
 	]
 );
+
+// --- Dashboard -----------------------------------------------------------------
+
+/**
+ * Quotes the user wants to see on their dashboard.
+ *
+ * One is shown per day, picked deterministically from the date so it does not
+ * change every time the page is refreshed — a quote that flickers is noise, and
+ * one that holds for a day can actually land.
+ */
+export const quotes = sqliteTable(
+	'quotes',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		text: text('text').notNull(),
+		author: text('author').default(''),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [index('quotes_user_idx').on(table.userId)]
+);
+
+/**
+ * Three wins for a day.
+ *
+ * Previously these were written into the diary as text, which made them
+ * unreportable — you could read last Tuesday's wins but never count them. Their
+ * own table means a streak or a monthly tally is a query rather than a parse.
+ */
+export const dailyWins = sqliteTable(
+	'daily_wins',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		forDate: text('for_date').notNull(), // YYYY-MM-DD
+		position: integer('position').notNull(), // 1-based, so "win 2" stays win 2
+		content: text('content').notNull(),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('daily_wins_user_date_idx').on(table.userId, table.forDate),
+		uniqueIndex('daily_wins_slot_unique').on(table.userId, table.forDate, table.position)
+	]
+);

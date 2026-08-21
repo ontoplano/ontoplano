@@ -16,6 +16,16 @@ import { eq, and, desc, max } from 'drizzle-orm';
 import { generateCurrentWeek } from '$lib/server/week-generator';
 import { generateForDate, listForDate } from '$lib/server/services/instances';
 import { listActiveOn } from '$lib/server/services/goals';
+import { dailyWins, quotes } from '$lib/server/db/schema';
+import {
+	DASHBOARD_LAYOUT_KEY,
+	defaultLayout,
+	parseLayout,
+	quoteForDate,
+	serialiseLayout,
+	type DashboardCardId
+} from '$lib/dashboard';
+import { getUserSetting, setUserSetting } from '$lib/server/settings';
 import { parseTags, ensureTagIds, linkDiaryTags } from '$lib/server/tags';
 
 function todayStr(): string {
@@ -173,7 +183,27 @@ export const load: PageServerLoad = async (event) => {
 	// the point is that they are all live at once.
 	const activeGoals = listActiveOn(userId, today);
 
+	// A layout the user has never set falls back to the registry defaults, so a
+	// new account meets a sensible dashboard rather than an empty one.
+	const layout = parseLayout(getUserSetting(userId, DASHBOARD_LAYOUT_KEY));
+
+	const userQuotes = db
+		.select({ id: quotes.id, text: quotes.text, author: quotes.author })
+		.from(quotes)
+		.where(eq(quotes.userId, userId))
+		.orderBy(quotes.id)
+		.all();
+
+	const wins = db
+		.select({ position: dailyWins.position, content: dailyWins.content })
+		.from(dailyWins)
+		.where(and(eq(dailyWins.userId, userId), eq(dailyWins.forDate, today)))
+		.all();
+
 	return {
+		layout,
+		quote: quoteForDate(userQuotes, today),
+		wins,
 		activeGoals,
 		lastEntry: lastEntry ? { ...lastEntry, tags: lastEntryTags } : null,
 		allTags,
@@ -216,36 +246,47 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	createWins: async ({ request, locals }) => {
+	/**
+	 * Three wins for today.
+	 *
+	 * Upserted by (date, position) so re-saving edits the same three rows
+	 * instead of accumulating duplicates, and an emptied box removes its win
+	 * rather than storing a blank.
+	 */
+	saveWins: async ({ request, locals }) => {
 		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const forDate = formData.get('forDate')?.toString()?.trim() || todayStr();
 
-		const wins: string[] = [];
-		for (let i = 0; ; i++) {
-			const val = formData.get(`win_${i}`)?.toString()?.trim();
-			if (val === undefined || val === null) break;
-			if (val) wins.push(val);
-		}
+		db.transaction((tx) => {
+			for (let position = 1; position <= 3; position++) {
+				const content = formData.get(`win_${position}`)?.toString()?.trim() ?? '';
+				tx.delete(dailyWins)
+					.where(
+						and(
+							eq(dailyWins.userId, userId),
+							eq(dailyWins.forDate, forDate),
+							eq(dailyWins.position, position)
+						)
+					)
+					.run();
+				if (content) tx.insert(dailyWins).values({ userId, forDate, position, content }).run();
+			}
+		});
 
-		if (wins.length === 0) return fail(400, { message: 'At least one win is required' });
+		return { success: true };
+	},
 
-		const content = wins.map((w, i) => `Win ${i + 1}: ${w}`).join('\n');
+	setLayout: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const ids = formData.getAll('card').map((v) => String(v)) as DashboardCardId[];
+		setUserSetting(userId, DASHBOARD_LAYOUT_KEY, serialiseLayout(ids));
+		return { success: true };
+	},
 
-		const maxSeq =
-			db
-				.select({ value: max(diaryEntries.seq) })
-				.from(diaryEntries)
-				.where(eq(diaryEntries.userId, userId))
-				.get()?.value ?? 0;
-		const seq = maxSeq + 1;
-
-		const result = db.insert(diaryEntries).values({ userId, content, seq, forDate }).run();
-		const entryId = Number(result.lastInsertRowid);
-
-		const tagIds = ensureTagIds(['3w'], userId);
-		linkDiaryTags(entryId, tagIds);
-
+	resetLayout: async ({ locals }) => {
+		setUserSetting(locals.user!.id, DASHBOARD_LAYOUT_KEY, serialiseLayout(defaultLayout()));
 		return { success: true };
 	}
 };

@@ -2,15 +2,34 @@
 	import { enhance } from '$app/forms';
 	import type { PageServerData, ActionData } from './$types';
 	import { THEMES } from '$lib/theme.js';
+	import type { DashboardCardId } from '$lib/dashboard.js';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
+	// Local copy so a card can be toggled and reordered before saving.
+	let layout: DashboardCardId[] = $state([...data.layout]);
+	$effect(() => {
+		layout = [...data.layout];
+	});
+
+	function isOn(id: DashboardCardId): boolean {
+		return layout.includes(id);
+	}
+
+	function toggle(id: DashboardCardId) {
+		layout = isOn(id) ? layout.filter((x) => x !== id) : [...layout, id];
+	}
+
+	function shift(id: DashboardCardId, by: number) {
+		const at = layout.indexOf(id);
+		const to = at + by;
+		if (at === -1 || to < 0 || to >= layout.length) return;
+		const next = [...layout];
+		[next[at], next[to]] = [next[to], next[at]];
+		layout = next;
+	}
+
 	const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-	const featureLabels: Record<string, string> = {
-		'feature.threeWins': 'Three Wins',
-		'feature.dashboardShopping': 'Dashboard: Shopping',
-		'feature.dashboardHabits': 'Dashboard: Habits'
-	};
 </script>
 
 <div class="space-y-4">
@@ -26,7 +45,7 @@
 		<div class="border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
 			Config saved. Some changes (host, port) require a restart.
 		</div>
-	{:else if form?.success && form.action === 'toggleFeature'}
+	{:else if form?.success && form.action === 'setLayout'}
 		<div class="border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
 			Feature setting updated.
 		</div>
@@ -102,6 +121,139 @@
 
 	<section class="border border-gray-200 bg-white p-6 shadow-card">
 		<div class="mb-4">
+			<h2 class="text-sm font-semibold text-gray-900">Dashboard</h2>
+			<p class="mt-1 text-sm text-gray-500">
+				Which cards appear, and in what order. Anything personal is off until you turn it on.
+			</p>
+		</div>
+
+		<form method="post" action="?/setLayout" use:enhance class="space-y-2">
+			{#each layout as id (id)}
+				{@const card = data.cards.find((c) => c.id === id)}
+				{#if card}
+					<div class="flex items-center gap-3 border border-gray-200 px-3 py-2">
+						<input type="hidden" name="card" value={id} />
+						<div class="flex flex-col">
+							<button
+								type="button"
+								onclick={() => shift(id, -1)}
+								class="text-xs leading-none text-gray-400 hover:text-gray-900"
+								aria-label="Move {card.label} up">&uarr;</button
+							>
+							<button
+								type="button"
+								onclick={() => shift(id, 1)}
+								class="text-xs leading-none text-gray-400 hover:text-gray-900"
+								aria-label="Move {card.label} down">&darr;</button
+							>
+						</div>
+						<div class="min-w-0 flex-1">
+							<span class="text-sm font-medium text-gray-900">{card.label}</span>
+							<p class="text-xs text-gray-500">{card.description}</p>
+						</div>
+						<button
+							type="button"
+							onclick={() => toggle(id)}
+							class="border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
+							>Hide</button
+						>
+					</div>
+				{/if}
+			{/each}
+
+			{#each data.cards.filter((c) => !isOn(c.id)) as card (card.id)}
+				<div
+					class="flex items-center gap-3 border border-dashed border-gray-300 px-3 py-2 opacity-60"
+				>
+					<div class="min-w-0 flex-1">
+						<span class="text-sm font-medium text-gray-900">{card.label}</span>
+						<p class="text-xs text-gray-500">{card.description}</p>
+					</div>
+					<button
+						type="button"
+						onclick={() => toggle(card.id)}
+						class="border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
+						>Show</button
+					>
+				</div>
+			{/each}
+
+			<div class="flex gap-2 pt-1">
+				<button class="bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+					>Save layout</button
+				>
+				<button
+					formaction="?/resetLayout"
+					class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+					>Reset to defaults</button
+				>
+			</div>
+		</form>
+	</section>
+
+	<section class="border border-gray-200 bg-white p-6 shadow-card">
+		<div class="mb-4">
+			<h2 class="text-sm font-semibold text-gray-900">Quotes</h2>
+			<p class="mt-1 text-sm text-gray-500">
+				One is shown per day on the dashboard, the same one all day rather than a new one on every
+				refresh.
+			</p>
+		</div>
+
+		{#if data.quotes.length > 0}
+			<div class="mb-3 divide-y divide-gray-200 border border-gray-200">
+				{#each data.quotes as quote (quote.id)}
+					<div class="flex items-start gap-3 px-3 py-2">
+						<div class="min-w-0 flex-1">
+							<p class="text-sm text-gray-900 italic">&ldquo;{quote.text}&rdquo;</p>
+							{#if quote.author}
+								<p class="text-xs text-gray-500">&mdash; {quote.author}</p>
+							{/if}
+						</div>
+						<form method="post" action="?/deleteQuote" use:enhance>
+							<input type="hidden" name="id" value={quote.id} />
+							<button class="text-xs text-gray-400 hover:text-red-600">Remove</button>
+						</form>
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<p class="mb-3 text-sm text-gray-400">No quotes yet.</p>
+		{/if}
+
+		<form
+			method="post"
+			action="?/addQuote"
+			use:enhance={() =>
+				async ({ update }) =>
+					update({ reset: true })}
+			class="flex flex-wrap items-end gap-2"
+		>
+			<label class="min-w-64 flex-1">
+				<span class="eyebrow text-gray-500">Quote</span>
+				<input
+					name="text"
+					required
+					autocomplete="off"
+					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+				/>
+			</label>
+			<label class="w-44">
+				<span class="eyebrow text-gray-500">Author</span>
+				<input
+					name="author"
+					autocomplete="off"
+					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+				/>
+			</label>
+			<button class="bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+				>Add</button
+			>
+		</form>
+	</section>
+
+	<section class="border border-gray-200 bg-white p-6 shadow-card">
+		<div class="mb-4">
 			<h2 class="text-sm font-semibold text-gray-900">Appearance</h2>
 			<p class="mt-1 text-sm text-gray-500">
 				Saved to your account, so it follows you to another browser. "System" uses whatever your
@@ -133,36 +285,5 @@
 				</button>
 			{/each}
 		</form>
-	</section>
-
-	<section class="border border-gray-200 bg-white p-6 shadow-card">
-		<div class="mb-4">
-			<h2 class="text-sm font-semibold text-gray-900">Features</h2>
-			<p class="mt-1 text-sm text-gray-500">
-				Enable or hide optional UI features for your account.
-			</p>
-		</div>
-
-		<div class="divide-y divide-gray-200">
-			{#each Object.entries(featureLabels) as [key, label] (key)}
-				<form
-					method="post"
-					action="?/toggleFeature"
-					use:enhance
-					class="flex items-center justify-between gap-4 px-4 py-3"
-				>
-					<input type="hidden" name="key" value={key} />
-					<h3 class="text-sm font-medium text-gray-900">{label}</h3>
-					<button
-						type="submit"
-						class="border px-3 py-1.5 text-sm shadow-sm transition {data.features[key]
-							? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
-							: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
-					>
-						{data.features[key] ? 'On' : 'Off'}
-					</button>
-				</form>
-			{/each}
-		</div>
 	</section>
 </div>

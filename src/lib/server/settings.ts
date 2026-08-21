@@ -4,11 +4,14 @@ import { db } from './db/index.js';
 import { userSettings } from './db/schema.js';
 import { THEMES, type Theme } from '../theme.js';
 
-export const FEATURE_DEFAULTS: Record<string, boolean> = {
-	'feature.threeWins': false,
-	'feature.dashboardShopping': true,
-	'feature.dashboardHabits': true
-};
+/**
+ * Feature flags.
+ *
+ * The three dashboard toggles that used to live here are gone: which cards
+ * appear is a layout now (see $lib/dashboard.ts), which also covers ordering
+ * and the cards those flags never knew about.
+ */
+export const FEATURE_DEFAULTS: Record<string, boolean> = {};
 
 export function getUserSetting(userId: string, key: string): string | null {
 	const row = db

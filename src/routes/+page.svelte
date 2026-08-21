@@ -3,6 +3,7 @@
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { SECTION_COLORS, CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
+	import { cardById } from '$lib/dashboard.js';
 	import { getAction } from '$lib/shortcuts';
 
 	/** Keep the card a card: the tracker is one click away for the full list. */
@@ -14,9 +15,8 @@
 	let showDiaryForm = $state(false);
 	let showWinsForm = $state(false);
 
-	const winsEnabled = $derived(Boolean(data.features?.['feature.threeWins']));
-	const habitsEnabled = $derived(Boolean(data.features?.['feature.dashboardHabits']));
-	const shoppingEnabled = $derived(Boolean(data.features?.['feature.dashboardShopping']));
+	// The three-wins card is now a layout choice; this only gates its keybind.
+	const winsEnabled = $derived(data.layout.includes('threeWins'));
 
 	function formatDate(dateStr: string): string {
 		const d = new Date(dateStr);
@@ -89,7 +89,7 @@
 		</h1>
 	</div>
 
-	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+	{#snippet card_todayTasks()}
 		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
 				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
@@ -157,7 +157,9 @@
 				</div>
 			{/if}
 		</div>
+	{/snippet}
 
+	{#snippet card_goals()}
 		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
 				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
@@ -202,47 +204,47 @@
 				{/if}
 			{/if}
 		</div>
+	{/snippet}
 
-		{#if habitsEnabled}
-			<div class="lift border border-gray-200 bg-white p-4 shadow-card">
-				<div
-					class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
-					style="border-top-color: {SECTION_COLORS.health}"
-				>
-					<h2 class="eyebrow text-gray-500">Habits</h2>
-					<a href="/health/habits" class="text-xs text-gray-500 hover:text-gray-900"> Open → </a>
-				</div>
-				{#if data.habitStreaks.length === 0}
-					<p class="text-sm text-gray-400">No habits tracked.</p>
-				{:else}
-					<div class="space-y-2">
-						{#each data.habitStreaks as habit (habit.id)}
-							<div class="flex items-center justify-between">
-								<span class="text-sm text-gray-700">{habit.name}</span>
-								<span
-									class="text-xs font-medium {habit.type === 'bad'
-										? habit.streak > 0
-											? 'text-blue-600'
-											: 'text-red-600'
-										: habit.type === 'neutral'
-											? habit.streak > 0
-												? 'text-gray-600'
-												: 'text-gray-400'
-											: habit.streak > 0
-												? 'text-blue-600'
-												: 'text-gray-400'}"
-								>
-									{habit.streak}d
-								</span>
-							</div>
-						{/each}
-					</div>
-				{/if}
+	{#snippet card_habits()}
+		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
+			<div
+				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				style="border-top-color: {SECTION_COLORS.health}"
+			>
+				<h2 class="eyebrow text-gray-500">Habits</h2>
+				<a href="/health/habits" class="text-xs text-gray-500 hover:text-gray-900"> Open → </a>
 			</div>
-		{/if}
-	</div>
+			{#if data.habitStreaks.length === 0}
+				<p class="text-sm text-gray-400">No habits tracked.</p>
+			{:else}
+				<div class="space-y-2">
+					{#each data.habitStreaks as habit (habit.id)}
+						<div class="flex items-center justify-between">
+							<span class="text-sm text-gray-700">{habit.name}</span>
+							<span
+								class="text-xs font-medium {habit.type === 'bad'
+									? habit.streak > 0
+										? 'text-blue-600'
+										: 'text-red-600'
+									: habit.type === 'neutral'
+										? habit.streak > 0
+											? 'text-gray-600'
+											: 'text-gray-400'
+										: habit.streak > 0
+											? 'text-blue-600'
+											: 'text-gray-400'}"
+							>
+								{habit.streak}d
+							</span>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
+	{/snippet}
 
-	{#if data.weekSlots.length > 0}
+	{#snippet card_weekPlan()}
 		{@const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']}
 		{@const todayDow = new Date().getDay()}
 		{@const todayIndex = todayDow === 0 ? 6 : todayDow - 1}
@@ -299,146 +301,150 @@
 				</table>
 			</div>
 		</div>
-	{/if}
+	{/snippet}
 
-	<div class="lift border border-gray-200 bg-white p-4 shadow-card">
-		<div
-			class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
-			style="border-top-color: {SECTION_COLORS.diary}"
-		>
-			<h2 class="eyebrow text-gray-500">Diary</h2>
-			<div class="flex items-center gap-3">
-				<a href="/diary" class="text-xs text-gray-500 hover:text-gray-900"> All entries → </a>
-				{#if winsEnabled}
+	{#snippet card_diary()}
+		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
+			<div
+				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				style="border-top-color: {SECTION_COLORS.diary}"
+			>
+				<h2 class="eyebrow text-gray-500">Diary</h2>
+				<div class="flex items-center gap-3">
+					<a href="/diary" class="text-xs text-gray-500 hover:text-gray-900"> All entries → </a>
+					{#if winsEnabled}
+						<button
+							onclick={() => {
+								showWinsForm = !showWinsForm;
+								showDiaryForm = false;
+								if (showWinsForm) {
+									tick().then(() => {
+										const input = document.querySelector<HTMLInputElement>('input[name="win_0"]');
+										input?.focus();
+									});
+								}
+							}}
+							class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50"
+						>
+							{showWinsForm ? 'Cancel' : 'Wins'}
+							<kbd class="border border-gray-300 bg-gray-50 px-1">w</kbd>
+						</button>
+					{/if}
 					<button
 						onclick={() => {
-							showWinsForm = !showWinsForm;
-							showDiaryForm = false;
-							if (showWinsForm) {
-								tick().then(() => {
-									const input = document.querySelector<HTMLInputElement>('input[name="win_0"]');
-									input?.focus();
-								});
-							}
+							showDiaryForm = !showDiaryForm;
+							showWinsForm = false;
 						}}
 						class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50"
 					>
-						{showWinsForm ? 'Cancel' : 'Wins'}
-						<kbd class="border border-gray-300 bg-gray-50 px-1">w</kbd>
+						{showDiaryForm ? 'Cancel' : 'New Entry'}
 					</button>
-				{/if}
-				<button
-					onclick={() => {
-						showDiaryForm = !showDiaryForm;
-						showWinsForm = false;
+				</div>
+			</div>
+
+			{#if showDiaryForm}
+				<form
+					method="post"
+					action="?/createDiaryEntry"
+					use:enhance={() => {
+						return async ({ update }) => {
+							await update();
+							showDiaryForm = false;
+						};
 					}}
-					class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50"
+					class="mb-4 space-y-3 border border-gray-100 bg-gray-50 p-3"
 				>
-					{showDiaryForm ? 'Cancel' : 'New Entry'}
-				</button>
-			</div>
-		</div>
-
-		{#if showDiaryForm}
-			<form
-				method="post"
-				action="?/createDiaryEntry"
-				use:enhance={() => {
-					return async ({ update }) => {
-						await update();
-						showDiaryForm = false;
-					};
-				}}
-				class="mb-4 space-y-3 border border-gray-100 bg-gray-50 p-3"
-			>
-				<textarea
-					name="content"
-					required
-					rows="3"
-					placeholder="What's on your mind?"
-					class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				></textarea>
-				<input
-					name="tags"
-					type="text"
-					placeholder="Tags (comma-separated)"
-					class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				/>
-				<button
-					type="submit"
-					class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800"
-				>
-					Save
-				</button>
-			</form>
-		{/if}
-
-		{#if winsEnabled && showWinsForm}
-			<form
-				method="post"
-				action="?/createWins"
-				use:enhance={() => {
-					return async ({ update }) => {
-						await update();
-						showWinsForm = false;
-					};
-				}}
-				class="mb-4 space-y-3 border border-gray-100 bg-gray-50 p-3"
-			>
-				<div class="flex items-center justify-between">
-					<span class="text-sm font-medium text-gray-700">3 Wins</span>
+					<textarea
+						name="content"
+						required
+						rows="3"
+						placeholder="What's on your mind?"
+						class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					></textarea>
 					<input
-						name="forDate"
-						type="date"
-						value={new Date().toISOString().slice(0, 10)}
-						class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						name="tags"
+						type="text"
+						placeholder="Tags (comma-separated)"
+						class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
-				</div>
-				<input
-					name="win_0"
-					type="text"
-					placeholder="Win 1"
-					class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				/>
-				<input
-					name="win_1"
-					type="text"
-					placeholder="Win 2"
-					class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				/>
-				<input
-					name="win_2"
-					type="text"
-					placeholder="Win 3"
-					class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				/>
-				<button
-					type="submit"
-					class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800"
+					<button
+						type="submit"
+						class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800"
+					>
+						Save
+					</button>
+				</form>
+			{/if}
+
+			{#if winsEnabled && showWinsForm}
+				<form
+					method="post"
+					action="?/createWins"
+					use:enhance={() => {
+						return async ({ update }) => {
+							await update();
+							showWinsForm = false;
+						};
+					}}
+					class="mb-4 space-y-3 border border-gray-100 bg-gray-50 p-3"
 				>
-					Save Wins
-				</button>
-			</form>
-		{/if}
+					<div class="flex items-center justify-between">
+						<span class="text-sm font-medium text-gray-700">3 Wins</span>
+						<input
+							name="forDate"
+							type="date"
+							value={new Date().toISOString().slice(0, 10)}
+							class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						/>
+					</div>
+					<input
+						name="win_0"
+						type="text"
+						placeholder="Win 1"
+						class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					/>
+					<input
+						name="win_1"
+						type="text"
+						placeholder="Win 2"
+						class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					/>
+					<input
+						name="win_2"
+						type="text"
+						placeholder="Win 3"
+						class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					/>
+					<button
+						type="submit"
+						class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800"
+					>
+						Save Wins
+					</button>
+				</form>
+			{/if}
 
-		{#if data.lastEntry}
-			<div>
-				<p class="text-sm leading-relaxed text-gray-700">{truncate(data.lastEntry.content, 300)}</p>
-				<div class="mt-2 flex items-center gap-2">
-					<span class="text-xs text-gray-400">{formatDate(data.lastEntry.createdAt)}</span>
-					{#each data.lastEntry.tags as tag (tag.id)}
-						<span class="border border-gray-200 px-1.5 py-0.5 text-xs text-gray-500"
-							>{tag.name}</span
-						>
-					{/each}
+			{#if data.lastEntry}
+				<div>
+					<p class="text-sm leading-relaxed text-gray-700">
+						{truncate(data.lastEntry.content, 300)}
+					</p>
+					<div class="mt-2 flex items-center gap-2">
+						<span class="text-xs text-gray-400">{formatDate(data.lastEntry.createdAt)}</span>
+						{#each data.lastEntry.tags as tag (tag.id)}
+							<span class="border border-gray-200 px-1.5 py-0.5 text-xs text-gray-500"
+								>{tag.name}</span
+							>
+						{/each}
+					</div>
 				</div>
-			</div>
-		{:else}
-			<p class="text-sm text-gray-400">No diary entries yet.</p>
-		{/if}
-	</div>
+			{:else}
+				<p class="text-sm text-gray-400">No diary entries yet.</p>
+			{/if}
+		</div>
+	{/snippet}
 
-	{#if shoppingEnabled}
+	{#snippet card_shopping()}
 		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
 				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
@@ -469,9 +475,9 @@
 				</div>
 			{/if}
 		</div>
-	{/if}
+	{/snippet}
 
-	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+	{#snippet card_quickLinks()}
 		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
 				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
@@ -497,6 +503,78 @@
 				>
 			</div>
 		</div>
+	{/snippet}
+
+	{#snippet card_quote()}
+		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
+			<div
+				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				style="border-top-color: {SECTION_COLORS.home}"
+			>
+				<h2 class="eyebrow text-gray-500">Today</h2>
+				<a href="/config" class="text-xs text-gray-500 hover:text-gray-900">Edit &rarr;</a>
+			</div>
+			{#if data.quote}
+				<blockquote class="text-sm text-gray-900 italic">
+					&ldquo;{data.quote.text}&rdquo;
+				</blockquote>
+				{#if data.quote.author}
+					<p class="mt-1 text-xs text-gray-500">&mdash; {data.quote.author}</p>
+				{/if}
+			{:else}
+				<p class="text-sm text-gray-400">No quotes yet. Add some in config.</p>
+			{/if}
+		</div>
+	{/snippet}
+
+	{#snippet card_threeWins()}
+		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
+			<div
+				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				style="border-top-color: {SECTION_COLORS.diary}"
+			>
+				<h2 class="eyebrow text-gray-500">Three wins</h2>
+				<span class="text-xs text-gray-400">What went well today</span>
+			</div>
+			<!-- Rows of their own rather than diary prose, so they can be counted later. -->
+			<form method="post" action="?/saveWins" use:enhance class="space-y-2">
+				{#each [1, 2, 3] as position (position)}
+					<div class="flex items-center gap-2">
+						<span class="tabular w-4 shrink-0 text-xs text-gray-400">{position}</span>
+						<input
+							name="win_{position}"
+							autocomplete="off"
+							value={data.wins.find((w) => w.position === position)?.content ?? ''}
+							class="block w-full border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						/>
+					</div>
+				{/each}
+				<button class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800">
+					Save
+				</button>
+			</form>
+		</div>
+	{/snippet}
+
+	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+		{#each data.layout as id (id)}
+			{@const card = cardById(id)}
+			{#if card}
+				<!-- Half-width cards pair up on wide screens; full-width ones take the row. -->
+				<div class={card.width === 'half' ? 'md:col-span-1' : 'md:col-span-2'}>
+					{#if id === 'todayTasks'}{@render card_todayTasks()}
+					{:else if id === 'goals'}{@render card_goals()}
+					{:else if id === 'habits'}{@render card_habits()}
+					{:else if id === 'weekPlan'}{@render card_weekPlan()}
+					{:else if id === 'diary'}{@render card_diary()}
+					{:else if id === 'shopping'}{@render card_shopping()}
+					{:else if id === 'quickLinks'}{@render card_quickLinks()}
+					{:else if id === 'quote'}{@render card_quote()}
+					{:else if id === 'threeWins'}{@render card_threeWins()}
+					{/if}
+				</div>
+			{/if}
+		{/each}
 	</div>
 
 	{#if form?.message}
