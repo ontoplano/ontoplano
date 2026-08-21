@@ -204,3 +204,57 @@ html[data-theme='dark'] {
 		--shadow-overlay: 0 8px 24px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.5);
 	}
 }
+
+/*
+ * Form controls.
+ *
+ * @tailwindcss/forms writes a literal `background-color: #fff` into its reset,
+ * which does not participate in the palette inversion above — in dark mode that
+ * leaves a white field carrying light inherited text. Bind the controls to the
+ * tokens instead, once, for both themes.
+ */
+input,
+select,
+textarea,
+option {
+	background-color: var(--color-white);
+	color: var(--color-gray-900);
+}
+
+/*
+ * @event-calendar ships its own palette. It exposes the whole thing as --ec-*
+ * variables, so point those at our tokens and the grid inverts with everything
+ * else instead of staying a white island with unreadable day headers.
+ *
+ * One block covers both themes, because the tokens it reads already flip. The
+ * `html` prefix is load-bearing: the library's own `.ec` block has the same
+ * specificity and is imported by the component, so it lands after this file and
+ * would otherwise win on source order.
+ */
+html .ec {
+	color-scheme: inherit;
+
+	--ec-bg-color: var(--color-white);
+	--ec-text-color: var(--color-gray-900);
+	--ec-border-color: var(--color-gray-200);
+
+	--ec-color-400: var(--color-gray-400);
+	--ec-color-300: var(--color-gray-300);
+	--ec-color-200: var(--color-gray-200);
+	--ec-color-100: var(--color-gray-100);
+	--ec-color-50: var(--color-gray-50);
+
+	--ec-button-bg-color: var(--color-white);
+	--ec-button-border-color: var(--color-gray-300);
+	--ec-button-text-color: var(--color-gray-700);
+	--ec-button-active-bg-color: var(--color-gray-900);
+	--ec-button-active-border-color: var(--color-gray-900);
+	--ec-button-active-text-color: var(--color-white);
+
+	/* Today reads as a slightly raised column rather than a wash of colour. */
+	--ec-today-bg-color: var(--color-gray-100);
+	--ec-highlight-color: var(--color-gray-200);
+
+	--ec-popup-bg-color: var(--color-white);
+	--ec-now-indicator-color: var(--section-accent);
+}
