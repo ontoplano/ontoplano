@@ -28,29 +28,69 @@ if (!user) {
 }
 const uid = user.id;
 
-const category = (name, color) =>
-	db
+// Registering a user already creates the default categories, and the script is
+// meant to be re-runnable, so every lookup here is get-or-create rather than a
+// plain insert.
+const category = (name, color) => {
+	const existing = db
+		.prepare('select id from categories where user_id = ? and name = ?')
+		.get(uid, name);
+	if (existing) return existing.id;
+	return db
 		.prepare('insert into categories (user_id, name, color, color_light) values (?, ?, ?, ?)')
 		.run(uid, name, color, '#eeeeee').lastInsertRowid;
+};
 
-const activity = (name, categoryId) =>
-	db
+const activity = (name, categoryId) => {
+	const existing = db
+		.prepare('select id from activities where user_id = ? and name = ?')
+		.get(uid, name);
+	if (existing) return existing.id;
+	return db
 		.prepare('insert into activities (user_id, name, category_id) values (?, ?, ?)')
 		.run(uid, name, categoryId).lastInsertRowid;
+};
 
-const slot = (weekday, startTime, durationMinutes, activityId) =>
-	db
+const slot = (weekday, startTime, durationMinutes, activityId) => {
+	const existing = db
+		.prepare(
+			'select id from weekly_slots where user_id = ? and weekday = ? and start_time = ? and activity_id = ?'
+		)
+		.get(uid, weekday, startTime, activityId);
+	if (existing) return existing.id;
+	return db
 		.prepare(
 			`insert into weekly_slots
 			 (user_id, weekday, start_time, duration_minutes, mode, activity_id, label, meta)
 			 values (?, ?, ?, ?, 'activity', ?, '', '{}')`
 		)
 		.run(uid, weekday, startTime, durationMinutes, activityId).lastInsertRowid;
+};
 
-const todo = (title) =>
-	db
+/** A one-off block, so the dashboard and tracker have both kinds to show. */
+const oneOff = (date, startTime, durationMinutes, activityId, label) => {
+	const existing = db
+		.prepare('select id from exceptional_slots where user_id = ? and date = ? and start_time = ?')
+		.get(uid, date, startTime);
+	if (existing) return existing.id;
+	return db
+		.prepare(
+			`insert into exceptional_slots
+			 (user_id, date, start_time, duration_minutes, mode, activity_id, label, meta)
+			 values (?, ?, ?, ?, 'activity', ?, ?, '{}')`
+		)
+		.run(uid, date, startTime, durationMinutes, activityId, label).lastInsertRowid;
+};
+
+const todo = (title) => {
+	const existing = db
+		.prepare('select id from planner_todos where user_id = ? and title = ?')
+		.get(uid, title);
+	if (existing) return existing.id;
+	return db
 		.prepare('insert into planner_todos (user_id, title, notes) values (?, ?, ?)')
-		.run(uid, title, '');
+		.run(uid, title, '').lastInsertRowid;
+};
 
 const duty = category('duty', '#3b82f6');
 const skill = category('skill', '#a855f7');
@@ -63,6 +103,10 @@ for (let weekday = 0; weekday < 7; weekday++) slot(weekday, '07:00', 30, wakeUp)
 slot(1, '18:00', 60, gym);
 slot(3, '18:00', 60, gym);
 slot(2, '20:00', 45, russian);
+
+const now = new Date();
+const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+oneOff(today, '14:00', 90, russian, 'dentist appointment');
 
 todo('call the dentist');
 todo('buy running shoes');

@@ -10,10 +10,12 @@ import {
 	habitOccurrences,
 	shoppingItems,
 	weeklySlots,
+	exceptionalSlots,
 	activities,
 	categories
 } from '$lib/server/db/schema';
-import { eq, and, gte, lt, desc, max } from 'drizzle-orm';
+import { eq, and, gte, lt, desc, max, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/sqlite-core';
 import { generateCurrentWeek, toLocalISOString } from '$lib/server/week-generator';
 import { parseTags, ensureTagIds, linkDiaryTags } from '$lib/server/tags';
 
@@ -73,12 +75,35 @@ export const load: PageServerLoad = async (event) => {
 		.all();
 
 	const { start, end } = todayRange();
+	const today = todayStr();
 
-	const todayTasks = db
+	// What a block is *called* falls back through three levels: an explicit
+	// label, then the activity (a per-instance override beats the slot's own),
+	// then the category it belongs to. Same order the tracker uses.
+	const slotActivities = alias(activities, 'slot_activities');
+	const activityCategories = alias(categories, 'activity_categories');
+
+	const weeklyToday = db
 		.select({
-			status: taskInstances.status
+			id: taskInstances.id,
+			status: taskInstances.status,
+			startTime: weeklySlots.startTime,
+			label: weeklySlots.label,
+			resolvedActivityName: activities.name,
+			slotActivityName: slotActivities.name,
+			categoryName: sql<string | null>`coalesce(${categories.name}, ${activityCategories.name})`.as(
+				'effective_category_name'
+			),
+			categoryColor: sql<
+				string | null
+			>`coalesce(${categories.color}, ${activityCategories.color})`.as('effective_category_color')
 		})
 		.from(taskInstances)
+		.innerJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
+		.leftJoin(categories, eq(weeklySlots.categoryId, categories.id))
+		.leftJoin(slotActivities, eq(weeklySlots.activityId, slotActivities.id))
+		.leftJoin(activityCategories, eq(slotActivities.categoryId, activityCategories.id))
+		.leftJoin(activities, eq(taskInstances.resolvedActivityId, activities.id))
 		.where(
 			and(
 				eq(taskInstances.userId, userId),
@@ -87,6 +112,73 @@ export const load: PageServerLoad = async (event) => {
 			)
 		)
 		.all();
+
+	// One-off blocks carry their own status rather than generating an instance,
+	// so they need a second query. Unifying the two is phase 1 of the product
+	// plan; until then, leaving this out is what made them invisible here.
+	const excActivities = alias(activities, 'exc_activities');
+	const excResolvedActivities = alias(activities, 'exc_resolved_activities');
+	const excCategories = alias(categories, 'exc_categories');
+	const excActivityCategories = alias(categories, 'exc_activity_categories');
+
+	const exceptionalToday = db
+		.select({
+			id: exceptionalSlots.id,
+			status: exceptionalSlots.status,
+			startTime: exceptionalSlots.startTime,
+			label: exceptionalSlots.label,
+			resolvedActivityName: excResolvedActivities.name,
+			slotActivityName: excActivities.name,
+			categoryName: sql<
+				string | null
+			>`coalesce(${excCategories.name}, ${excActivityCategories.name})`.as('exc_category_name'),
+			categoryColor: sql<
+				string | null
+			>`coalesce(${excCategories.color}, ${excActivityCategories.color})`.as('exc_category_color')
+		})
+		.from(exceptionalSlots)
+		.leftJoin(excCategories, eq(exceptionalSlots.categoryId, excCategories.id))
+		.leftJoin(excActivities, eq(exceptionalSlots.activityId, excActivities.id))
+		.leftJoin(excActivityCategories, eq(excActivities.categoryId, excActivityCategories.id))
+		.leftJoin(
+			excResolvedActivities,
+			eq(exceptionalSlots.resolvedActivityId, excResolvedActivities.id)
+		)
+		.where(
+			and(
+				eq(exceptionalSlots.userId, userId),
+				eq(exceptionalSlots.date, today),
+				eq(exceptionalSlots.active, true)
+			)
+		)
+		.all();
+
+	type TodayRow = (typeof weeklyToday)[number];
+
+	function taskName(row: TodayRow): string {
+		return (
+			row.label?.trim() ||
+			row.resolvedActivityName ||
+			row.slotActivityName ||
+			row.categoryName ||
+			'Untitled'
+		);
+	}
+
+	const todayTasks = [
+		...weeklyToday.map((r) => ({ ...r, kind: 'weekly' as const })),
+		...exceptionalToday.map((r) => ({ ...r, kind: 'exceptional' as const }))
+	]
+		.map((r) => ({
+			id: r.id,
+			kind: r.kind,
+			startTime: r.startTime,
+			name: taskName(r),
+			status: r.status,
+			categoryName: r.categoryName,
+			categoryColor: r.categoryColor
+		}))
+		.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
 	const taskSummary = {
 		total: todayTasks.length,
@@ -97,7 +189,9 @@ export const load: PageServerLoad = async (event) => {
 		pending: todayTasks.filter((t) => t.status === 'pending').length
 	};
 
-	const today = todayStr();
+	/** Still to be done today, in the order they come up. */
+	const tasksTodo = todayTasks.filter((t) => t.status === 'pending');
+
 	const userHabits = db
 		.select({
 			id: habits.id,
@@ -177,6 +271,8 @@ export const load: PageServerLoad = async (event) => {
 		lastEntry: lastEntry ? { ...lastEntry, tags: lastEntryTags } : null,
 		allTags,
 		taskSummary,
+		todayTasks,
+		tasksTodo,
 		habitStreaks,
 		shoppingToBuy,
 		weekSlots,
@@ -237,10 +333,7 @@ export const actions: Actions = {
 				.get()?.value ?? 0;
 		const seq = maxSeq + 1;
 
-		const result = db
-			.insert(diaryEntries)
-			.values({ userId, content, seq, forDate })
-			.run();
+		const result = db.insert(diaryEntries).values({ userId, content, seq, forDate }).run();
 		const entryId = Number(result.lastInsertRowid);
 
 		const tagIds = ensureTagIds(['3w'], userId);

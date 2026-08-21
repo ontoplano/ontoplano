@@ -2,8 +2,11 @@
 	import { enhance } from '$app/forms';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
-	import { SECTION_COLORS } from '$lib/colors.js';
+	import { SECTION_COLORS, CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { getAction } from '$lib/shortcuts';
+
+	/** Keep the card a card: the tracker is one click away for the full list. */
+	const TODO_PREVIEW = 5;
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -53,7 +56,7 @@
 		switch (action) {
 			case 'new-diary':
 				showDiaryForm = !showDiaryForm;
-					showWinsForm = false;
+				showWinsForm = false;
 				if (showDiaryForm) {
 					tick().then(() => {
 						const ta = document.querySelector<HTMLTextAreaElement>('textarea[name="content"]');
@@ -65,7 +68,7 @@
 				if (!winsEnabled) break;
 				showWinsForm = !showWinsForm;
 				showDiaryForm = false;
-					if (showWinsForm) {
+				if (showWinsForm) {
 					tick().then(() => {
 						const input = document.querySelector<HTMLInputElement>('input[name="win_0"]');
 						input?.focus();
@@ -104,8 +107,37 @@
 						{data.taskSummary.completed + data.taskSummary.early + data.taskSummary.delayed}
 						<span class="text-sm font-normal text-gray-400">/ {data.taskSummary.total}</span>
 					</span>
+					<span class="text-xs text-gray-500">
+						{data.tasksTodo.length === 0 ? 'nothing left today' : `${data.tasksTodo.length} to go`}
+					</span>
 				</div>
-				<div class="mt-2 flex gap-3 text-xs">
+
+				{#if data.tasksTodo.length > 0}
+					<ul class="mt-3 divide-y divide-gray-100 border-t border-gray-100">
+						{#each data.tasksTodo.slice(0, TODO_PREVIEW) as task (`${task.kind}-${task.id}`)}
+							<li class="flex items-center gap-3 py-1.5">
+								<span
+									class="w-1 shrink-0 self-stretch"
+									style="background-color: {task.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
+								></span>
+								<span class="w-11 shrink-0 font-mono text-xs text-gray-500">{task.startTime}</span>
+								<span class="truncate text-sm text-gray-900">{task.name}</span>
+								{#if task.kind === 'exceptional'}
+									<span class="ml-auto shrink-0 text-[10px] tracking-wide text-blue-600 uppercase">
+										one-off
+									</span>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+					{#if data.tasksTodo.length > TODO_PREVIEW}
+						<p class="mt-1 text-xs text-gray-400">
+							+{data.tasksTodo.length - TODO_PREVIEW} more
+						</p>
+					{/if}
+				{/if}
+
+				<div class="mt-3 flex flex-wrap gap-3 text-xs">
 					{#if data.taskSummary.completed > 0}
 						<span class="text-green-600">{data.taskSummary.completed} done</span>
 					{/if}
@@ -117,9 +149,6 @@
 					{/if}
 					{#if data.taskSummary.skipped > 0}
 						<span class="text-red-600">{data.taskSummary.skipped} skipped</span>
-					{/if}
-					{#if data.taskSummary.pending > 0}
-						<span class="text-gray-400">{data.taskSummary.pending} pending</span>
 					{/if}
 				</div>
 			{/if}
@@ -170,21 +199,29 @@
 		{@const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']}
 		{@const todayDow = new Date().getDay()}
 		{@const todayIndex = todayDow === 0 ? 6 : todayDow - 1}
-    {@const timeSlots = [...new Set(data.weekSlots.map((s: { startTime: string }) => s.startTime))].sort()}
+		{@const timeSlots = [
+			...new Set(data.weekSlots.map((s: { startTime: string }) => s.startTime))
+		].sort()}
 		<div
 			class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
 			style="border-left-color: {SECTION_COLORS.planner}"
 		>
 			<div class="mb-3 flex items-center justify-between">
 				<h2 class="text-sm font-bold text-gray-900">Week Plan</h2>
-				<a href="/planner/plan" class="text-xs text-gray-500 transition hover:text-gray-900">Edit →</a>
+				<a href="/planner/plan" class="text-xs text-gray-500 transition hover:text-gray-900"
+					>Edit →</a
+				>
 			</div>
 			<div class="overflow-x-auto">
 				<table class="w-full text-xs">
 					<thead>
 						<tr>
 							{#each DAYS as day, i}
-								<th class="px-1 py-1 text-center font-medium {i === todayIndex ? 'bg-gray-100 text-gray-900' : 'text-gray-500'}">
+								<th
+									class="px-1 py-1 text-center font-medium {i === todayIndex
+										? 'bg-gray-100 text-gray-900'
+										: 'text-gray-500'}"
+								>
 									{day}
 								</th>
 							{/each}
@@ -194,7 +231,10 @@
 						{#each timeSlots as time}
 							<tr class="border-t border-gray-100">
 								{#each Array(7) as _, day}
-									{@const slots = data.weekSlots.filter((s: { weekday: number; startTime: string }) => s.weekday === day && s.startTime === time)}
+									{@const slots = data.weekSlots.filter(
+										(s: { weekday: number; startTime: string }) =>
+											s.weekday === day && s.startTime === time
+									)}
 									<td class="px-1 py-0.5 {day === todayIndex ? 'bg-gray-50' : ''}">
 										{#each slots as slot}
 											<div
@@ -231,7 +271,7 @@
 						onclick={() => {
 							showWinsForm = !showWinsForm;
 							showDiaryForm = false;
-											if (showWinsForm) {
+							if (showWinsForm) {
 								tick().then(() => {
 									const input = document.querySelector<HTMLInputElement>('input[name="win_0"]');
 									input?.focus();
@@ -240,13 +280,14 @@
 						}}
 						class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50"
 					>
-						{showWinsForm ? 'Cancel' : 'Wins'} <kbd class="border border-gray-300 bg-gray-50 px-1">w</kbd>
+						{showWinsForm ? 'Cancel' : 'Wins'}
+						<kbd class="border border-gray-300 bg-gray-50 px-1">w</kbd>
 					</button>
 				{/if}
 				<button
 					onclick={() => {
 						showDiaryForm = !showDiaryForm;
-									showWinsForm = false;
+						showWinsForm = false;
 					}}
 					class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50"
 				>
@@ -371,7 +412,9 @@
 						<div class="flex items-center gap-2">
 							<span class="text-sm text-gray-700">{item.name}</span>
 							<span
-								class="text-[10px] {item.type === 'replenish' ? 'text-cyan-600' : 'text-orange-600'}"
+								class="text-[10px] {item.type === 'replenish'
+									? 'text-cyan-600'
+									: 'text-orange-600'}"
 							>
 								{item.type === 'replenish' ? 'inventory' : 'someday'}
 							</span>
