@@ -19,7 +19,9 @@ const WEIGHT_STREAM_SLUG = 'a-private-plugin.weight';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
-	const stream = getStreamBySlug(ctx, WEIGHT_STREAM_SLUG);
+	// getStreamBySlug throws unless told not to; here a missing stream is the
+	// normal case, not an error.
+	const stream = getStreamBySlug(ctx, WEIGHT_STREAM_SLUG, { throwIfMissing: false });
 
 	if (stream) redirect(302, `/data/${WEIGHT_STREAM_SLUG}`);
 
