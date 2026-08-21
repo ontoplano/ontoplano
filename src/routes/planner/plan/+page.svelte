@@ -31,7 +31,7 @@
 	let prefillTime = $state('09:00');
 	let prefillDuration = $state(60);
 	let gridError: string | null = $state(null);
-	let createFormEl: HTMLFormElement | undefined = $state();
+	let createFormEl: HTMLElement | undefined = $state();
 	let ec: { addEvent: (e: unknown) => unknown } | undefined = $state();
 
 	const ZOOM_STORAGE_KEY = 'ontoplano:planner-grid-zoom';
@@ -96,17 +96,24 @@
 	// server creates the activity as part of the same submission.
 	const NEW_ACTIVITY = '__new__';
 
+	// One form creates and edits both kinds of block. A recurring slot and a
+	// one-off differ only in "which day" — weekday versus date — so splitting
+	// them into two forms only ever made the user pick the storage table.
+	type BlockKind = 'slot' | 'exceptional';
+
 	let showForm = $state(false);
-	let editingId: number | null = $state(null);
+	let repeat: 'weekly' | 'once' = $state('weekly');
+	let editingKind: BlockKind | null = $state(null);
+	let editingBlockId: number | null = $state(null);
+	let confirmingFormDelete = $state(false);
+	let formDate = $state('');
+	let formWeekday = $state(0);
 	let slotMode: 'category' | 'activity' = $state('activity');
 	let activityChoice = $state(NEW_ACTIVITY);
-	let exceptionalActivityChoice = $state(NEW_ACTIVITY);
 	// Offset into the visible window (0 = the day it starts on, i.e. today by
 	// default), not a Monday-indexed weekday. The weekday is derived from it.
 	let selectedOffset: number = $state(0);
 	let selectedIndex: number = $state(0);
-	let showExceptionalForm = $state(false);
-	let exceptionalMode: 'category' | 'activity' = $state('activity');
 
 	const selectedDayInfo = $derived(data.range.days[selectedOffset] ?? data.range.days[0]);
 	const selectedWeekday = $derived(selectedDayInfo.weekday);
@@ -127,6 +134,15 @@
 	let timeInput: HTMLInputElement | undefined = $state(undefined);
 
 	type Slot = (typeof data.slots)[number];
+	type Exceptional = (typeof data.exceptionals)[number];
+
+	function findSlot(id: number): Slot | null {
+		return data.slots.find((s: Slot) => s.id === id) ?? null;
+	}
+
+	function findExceptional(id: number): Exceptional | null {
+		return data.exceptionals.find((e: Exceptional) => e.id === id) ?? null;
+	}
 
 	function selectedDateStr(): string {
 		return selectedDayInfo.date;
@@ -193,29 +209,48 @@
 		return NEW_ACTIVITY;
 	}
 
-	function startEdit(slot: (typeof data.slots)[number]) {
-		editingId = slot.id;
+	function openForm() {
+		showForm = true;
+		confirmingFormDelete = false;
+		tick().then(() => timeInput?.focus());
+	}
+
+	function closeForm() {
+		showForm = false;
+		editingKind = null;
+		editingBlockId = null;
+		confirmingFormDelete = false;
+	}
+
+	function startEdit(slot: Slot) {
+		editingKind = 'slot';
+		editingBlockId = slot.id;
+		repeat = 'weekly';
+		formWeekday = slot.weekday;
 		slotMode = slot.mode as 'category' | 'activity';
 		activityChoice = defaultActivityChoice(slot.activityId);
-		showForm = true;
-		showExceptionalForm = false;
-		tick().then(() => timeInput?.focus());
+		openForm();
 	}
 
-	function startNew() {
-		showForm = true;
-		showExceptionalForm = false;
-		editingId = null;
+	function startEditExceptional(exc: Exceptional) {
+		editingKind = 'exceptional';
+		editingBlockId = exc.id;
+		repeat = 'once';
+		formDate = exc.date;
+		slotMode = exc.mode as 'category' | 'activity';
+		activityChoice = defaultActivityChoice(exc.activityId);
+		openForm();
+	}
+
+	function startNew(mode: 'weekly' | 'once' = 'weekly') {
+		editingKind = null;
+		editingBlockId = null;
+		repeat = mode;
+		formWeekday = selectedWeekday;
+		formDate = selectedDateStr();
+		slotMode = 'activity';
 		activityChoice = defaultActivityChoice(null);
-		tick().then(() => timeInput?.focus());
-	}
-
-	function startNewExceptional() {
-		showExceptionalForm = true;
-		showForm = false;
-		editingId = null;
-		exceptionalMode = 'activity';
-		exceptionalActivityChoice = defaultActivityChoice(null);
+		openForm();
 	}
 
 	function goToRange(from: string | null) {
@@ -260,9 +295,7 @@
 			confirmingBulkDelete = false;
 			multiselect = false;
 			selectedIds = new Set();
-			showForm = false;
-			showExceptionalForm = false;
-			editingId = null;
+			closeForm();
 			(document.activeElement as HTMLElement)?.blur?.();
 			return;
 		}
@@ -425,14 +458,24 @@
 				startNew();
 				break;
 			case 'new-exceptional':
-				startNewExceptional();
+				startNew('once');
 				break;
 		}
 	}
 
-	function editingSlot(): Slot | null {
-		return editingId ? (data.slots.find((s: Slot) => s.id === editingId) ?? null) : null;
-	}
+	// The block currently open in the form, whichever kind it is. Only the fields
+	// both kinds share are read through this; the day/date field is rendered from
+	// `formWeekday` / `formDate` instead.
+	const editingBlock = $derived.by((): Slot | Exceptional | null => {
+		if (editingBlockId === null) return null;
+		return editingKind === 'slot' ? findSlot(editingBlockId) : findExceptional(editingBlockId);
+	});
+
+	const formAction = $derived.by(() => {
+		if (editingKind === 'slot') return '?/update';
+		if (editingKind === 'exceptional') return '?/updateExceptional';
+		return repeat === 'once' ? '?/createExceptional' : '?/create';
+	});
 
 	function setView(mode: 'list' | 'grid') {
 		viewMode = mode;
@@ -479,11 +522,19 @@
 		eventResizeStart: () => (hovered = null)
 	});
 
-	function handleEventClick(info: { event: { id: string | number } }) {
+	function handleEventClick(info: { event: { id: string | number; start: Date } }) {
 		const decoded = decodeEventId(info.event.id);
-		if (!decoded || decoded.kind !== 'slot') return;
-		const slot = data.slots.find((s: Slot) => s.id === decoded.refId);
-		if (slot) startEdit(slot);
+		if (!decoded) return;
+		if (decoded.kind === 'slot') {
+			const slot = findSlot(decoded.refId);
+			if (!slot) return;
+			// The occurrence that was clicked is what "skip this day" acts on.
+			selectOffsetForDate(formatLocalDate(info.event.start));
+			startEdit(slot);
+		} else {
+			const exc = findExceptional(decoded.refId);
+			if (exc) startEditExceptional(exc);
+		}
 	}
 
 	function handleGridSelect(info: { start: Date; end: Date }) {
@@ -491,8 +542,41 @@
 		selectOffsetForDate(formatLocalDate(info.start));
 		prefillTime = placement.startTime;
 		prefillDuration = placement.durationMinutes;
-		startNew();
+		startNew(repeat);
 		tick().then(() => createFormEl?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
+	}
+
+	/** Fields that identify what a block *is*, as opposed to where it sits. */
+	function setIdentityFields(body: FormData, source: Slot | Exceptional) {
+		body.set('mode', source.mode);
+		if (source.categoryId != null) body.set('categoryId', String(source.categoryId));
+		if (source.activityId != null) body.set('activityId', String(source.activityId));
+		body.set('label', source.label ?? '');
+	}
+
+	async function postGridAction(
+		action: string,
+		body: FormData,
+		fallbackMessage: string
+	): Promise<Record<string, unknown> | null> {
+		try {
+			const res = await fetch(`${location.pathname}?/${action}`, {
+				method: 'POST',
+				headers: { 'x-sveltekit-action': 'true' },
+				body
+			});
+			const result = deserialize(await res.text());
+			if (result.type === 'failure' || result.type === 'error') {
+				gridError =
+					(result.type === 'failure' && (result.data?.message as string)) || fallbackMessage;
+				return null;
+			}
+			gridError = null;
+			return result.type === 'success' ? ((result.data as Record<string, unknown>) ?? {}) : {};
+		} catch {
+			gridError = fallbackMessage;
+			return null;
+		}
 	}
 
 	async function handleEventDrop(info: {
@@ -501,66 +585,69 @@
 		jsEvent?: { ctrlKey?: boolean; metaKey?: boolean };
 	}) {
 		if (info.jsEvent?.ctrlKey || info.jsEvent?.metaKey) {
-			await duplicateSlot(info);
+			await duplicateBlock(info);
 			return;
 		}
 		await handleEventPersist(info);
 	}
 
-	async function duplicateSlot(info: {
+	async function duplicateBlock(info: {
 		event: { id: string | number; start: Date; end: Date };
 		revert: () => void;
 	}) {
 		const decoded = decodeEventId(info.event.id);
-		const source =
-			decoded && decoded.kind === 'slot'
-				? data.slots.find((s: Slot) => s.id === decoded.refId)
-				: null;
 		const placement = placementFromDates(info.event.start, info.event.end);
+		const date = formatLocalDate(info.event.start);
+		// The dragged copy is only a gesture; the original stays put and the new
+		// block arrives from the server.
 		info.revert();
+		if (!decoded) return;
 
+		const source =
+			decoded.kind === 'slot' ? findSlot(decoded.refId) : findExceptional(decoded.refId);
 		if (!source) return;
 
 		const body = new FormData();
-		body.set('weekday', String(placement.weekday));
 		body.set('startTime', placement.startTime);
 		body.set('durationMinutes', String(placement.durationMinutes));
-		body.set('mode', source.mode);
-		if (source.categoryId != null) body.set('categoryId', String(source.categoryId));
-		if (source.activityId != null) body.set('activityId', String(source.activityId));
-		body.set('label', source.label ?? '');
+		setIdentityFields(body, source);
+		if (decoded.kind === 'slot') body.set('weekday', String(placement.weekday));
+		else body.set('date', date);
 
-		try {
-			const res = await fetch(`${location.pathname}?/create`, {
-				method: 'POST',
-				headers: { 'x-sveltekit-action': 'true' },
-				body
+		const data_ = await postGridAction(
+			decoded.kind === 'slot' ? 'create' : 'createExceptional',
+			body,
+			'Failed to duplicate block.'
+		);
+		if (!data_) return;
+
+		const newId = data_.id as number | undefined;
+		if (newId == null) return;
+
+		if (decoded.kind === 'slot') {
+			const copy: Slot = {
+				...(source as Slot),
+				id: newId,
+				weekday: placement.weekday,
+				startTime: placement.startTime,
+				durationMinutes: placement.durationMinutes
+			};
+			const [event] = buildSlotEvents([copy], data.range.from, data.categories, {
+				suppressedSlotIds
 			});
-			const result = deserialize(await res.text());
-			if (result.type === 'failure' || result.type === 'error') {
-				gridError =
-					(result.type === 'failure' && (result.data?.message as string)) ||
-					'Failed to duplicate slot.';
-				return;
-			}
-			gridError = null;
-			const newId = result.type === 'success' ? (result.data?.id as number | undefined) : undefined;
-			if (newId != null) {
-				const newSlot: Slot = {
-					...source,
-					id: newId,
-					weekday: placement.weekday,
-					startTime: placement.startTime,
-					durationMinutes: placement.durationMinutes
-				};
-				const [event] = buildSlotEvents([newSlot], data.range.from, data.categories, {
-					suppressedSlotIds
-				});
-				ec?.addEvent(event);
-				data.slots.push(newSlot);
-			}
-		} catch {
-			gridError = 'Failed to duplicate slot.';
+			ec?.addEvent(event);
+			data.slots.push(copy);
+		} else {
+			const copy: Exceptional = {
+				...(source as Exceptional),
+				id: newId,
+				date,
+				startTime: placement.startTime,
+				durationMinutes: placement.durationMinutes
+			};
+			const [event] = buildExceptionalEvents([copy], data.categories);
+			ec?.addEvent(event);
+			data.exceptionals.push(copy);
 		}
 	}
 
@@ -569,47 +656,43 @@
 		revert: () => void;
 	}) {
 		const decoded = decodeEventId(info.event.id);
-		if (!decoded || decoded.kind !== 'slot') {
+		if (!decoded) {
 			info.revert();
 			return;
 		}
-		const slot = data.slots.find((s: Slot) => s.id === decoded.refId);
-		if (!slot) {
+		const source =
+			decoded.kind === 'slot' ? findSlot(decoded.refId) : findExceptional(decoded.refId);
+		if (!source) {
 			info.revert();
 			return;
 		}
+
 		const placement = placementFromDates(info.event.start, info.event.end);
+		const date = formatLocalDate(info.event.start);
 		const body = new FormData();
-		body.set('id', String(slot.id));
-		body.set('weekday', String(placement.weekday));
+		body.set('id', String(source.id));
 		body.set('startTime', placement.startTime);
 		body.set('durationMinutes', String(placement.durationMinutes));
-		body.set('mode', slot.mode);
-		if (slot.categoryId != null) body.set('categoryId', String(slot.categoryId));
-		if (slot.activityId != null) body.set('activityId', String(slot.activityId));
-		body.set('label', slot.label ?? '');
+		setIdentityFields(body, source);
+		if (decoded.kind === 'slot') body.set('weekday', String(placement.weekday));
+		else body.set('date', date);
 
-		try {
-			const res = await fetch(`${location.pathname}?/update`, {
-				method: 'POST',
-				headers: { 'x-sveltekit-action': 'true' },
-				body
-			});
-			const result = deserialize(await res.text());
-			if (result.type === 'failure' || result.type === 'error') {
-				info.revert();
-				gridError =
-					(result.type === 'failure' && (result.data?.message as string)) || 'Failed to move slot.';
-				return;
-			}
-			gridError = null;
-			slot.weekday = placement.weekday;
-			slot.startTime = placement.startTime;
-			slot.durationMinutes = placement.durationMinutes;
-		} catch {
+		// No `meta` fields go out with a move, so the server leaves the block's
+		// options alone -- see metaPatchFromFormData.
+		const result = await postGridAction(
+			decoded.kind === 'slot' ? 'update' : 'updateExceptional',
+			body,
+			'Failed to move block.'
+		);
+		if (!result) {
 			info.revert();
-			gridError = 'Failed to move slot.';
+			return;
 		}
+
+		source.startTime = placement.startTime;
+		source.durationMinutes = placement.durationMinutes;
+		if (decoded.kind === 'slot') (source as Slot).weekday = placement.weekday;
+		else (source as Exceptional).date = date;
 	}
 </script>
 
@@ -657,29 +740,18 @@
 				>
 			</div>
 			<button
-				onclick={() => {
-					if (showExceptionalForm) {
-						showExceptionalForm = false;
-					} else {
-						startNewExceptional();
-					}
-				}}
+				onclick={() => (showForm && repeat === 'once' ? closeForm() : startNew('once'))}
 				class="border border-blue-200 bg-white px-3 py-1 text-sm text-blue-600 shadow-sm transition hover:bg-blue-50"
+				title="One-off block (N)"
 			>
-				{showExceptionalForm ? 'Cancel' : '+ Exception'}
+				{showForm && repeat === 'once' ? 'Cancel' : '+ One-off'}
 			</button>
 			<button
-				onclick={() => {
-					if (showForm) {
-						showForm = false;
-						editingId = null;
-					} else {
-						startNew();
-					}
-				}}
+				onclick={() => (showForm && repeat === 'weekly' ? closeForm() : startNew('weekly'))}
 				class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+				title="Weekly block (n)"
 			>
-				{showForm ? 'Cancel' : 'New Slot'}
+				{showForm && repeat === 'weekly' ? 'Cancel' : '+ Weekly'}
 			</button>
 		</div>
 	</div>
@@ -1032,288 +1104,275 @@
 	{/if}
 
 	{#if showForm}
-		{@const editing = editingSlot()}
-		<form
+		<div
 			bind:this={createFormEl}
-			method="post"
-			action={editingId ? '?/update' : '?/create'}
-			use:enhance={() => {
-				return async ({ update }) => {
-					await update();
-					showForm = false;
-					editingId = null;
-				};
-			}}
-			class="space-y-3 border border-gray-200 bg-white p-4 shadow-sm"
+			class="space-y-3 border bg-white p-4 shadow-sm {repeat === 'once'
+				? 'border-blue-200'
+				: 'border-gray-200'}"
 		>
-			{#if editingId}
-				<input type="hidden" name="id" value={editingId} />
-			{/if}
-			<div class="flex gap-3">
-				<label class="w-36">
-					<span class="text-sm font-medium text-gray-700">Day</span>
-					<select
-						name="weekday"
-						required
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					>
-						{#each data.weekdays as day, i (i)}
-							<option value={i} selected={editing ? editing.weekday === i : selectedWeekday === i}
-								>{day}</option
-							>
-						{/each}
-					</select>
-				</label>
-				<label class="w-28">
-					<span class="text-sm font-medium text-gray-700">Time</span>
-					<input
-						bind:this={timeInput}
-						name="startTime"
-						type="time"
-						required
-						value={editing?.startTime ?? prefillTime}
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					/>
-				</label>
-				<label class="w-24">
-					<span class="text-sm font-medium text-gray-700">Duration</span>
-					<input
-						name="durationMinutes"
-						type="number"
-						min="15"
-						step="15"
-						value={editing?.durationMinutes ?? prefillDuration}
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					/>
-				</label>
-			</div>
-			<div class="flex gap-3">
-				<label class="w-36">
-					<span class="text-sm font-medium text-gray-700">Mode</span>
-					<select
-						name="mode"
-						required
-						bind:value={slotMode}
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					>
-						<option value="activity">Activity</option>
-						<option value="category">Category</option>
-					</select>
-				</label>
-				{#if slotMode === 'category'}
-					<label class="flex-1">
-						<span class="text-sm font-medium text-gray-700">Category</span>
-						<select
-							name="categoryId"
-							required
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						>
-							{#each data.categories as cat (cat.id)}
-								<option value={cat.id} selected={editing?.categoryId === cat.id}>{cat.name}</option>
-							{/each}
-						</select>
-					</label>
-				{:else}
-					<label class="flex-1">
-						<span class="text-sm font-medium text-gray-700">Activity</span>
-						<select
-							name="activityId"
-							required
-							bind:value={activityChoice}
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						>
-							{#each data.activities as act (act.id)}
-								<option value={String(act.id)}>{act.name}</option>
-							{/each}
-							<option value={NEW_ACTIVITY}>+ New activity...</option>
-						</select>
-					</label>
-				{/if}
-				<label class="flex-1">
-					<span class="text-sm font-medium text-gray-700">Label (optional)</span>
-					<input
-						name="label"
-						type="text"
-						autocomplete="off"
-						value={editing?.label ?? ''}
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					/>
-				</label>
-			</div>
-			{#if slotMode === 'activity' && activityChoice === NEW_ACTIVITY}
-				<div class="flex gap-3 border border-gray-200 bg-gray-50 p-3">
-					<label class="flex-1">
-						<span class="text-sm font-medium text-gray-700">New activity name</span>
-						<input
-							name="newActivityName"
-							type="text"
-							required
-							autocomplete="off"
-							use:autofocus
-							placeholder="e.g. learn russian"
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						/>
-					</label>
-					<label class="w-44">
-						<span class="text-sm font-medium text-gray-700">Its category</span>
-						<select
-							name="newActivityCategoryId"
-							required
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						>
-							{#each data.categories as cat (cat.id)}
-								<option value={cat.id}>{cat.name}</option>
-							{/each}
-						</select>
-					</label>
-				</div>
-			{/if}
-			<MetaEditor initial={parseSlotMeta(editing?.meta)} />
-			<button
-				type="submit"
-				class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+			<form
+				id="block-form"
+				method="post"
+				action={formAction}
+				use:enhance={() => {
+					return async ({ result, update }) => {
+						await update();
+						if (result.type === 'success') closeForm();
+					};
+				}}
+				class="space-y-3"
 			>
-				{editingId ? 'Update' : 'Create'}
-			</button>
-		</form>
-	{/if}
-
-	{#if showExceptionalForm}
-		<form
-			method="post"
-			action="?/createExceptional"
-			use:enhance={() => {
-				return async ({ update }) => {
-					await update();
-					showExceptionalForm = false;
-				};
-			}}
-			class="space-y-3 border border-blue-200 bg-blue-50 p-4 shadow-sm"
-		>
-			<h3 class="text-sm font-medium text-gray-900">
-				New exception for {selectedDayInfo.name}
-			</h3>
-			<input type="hidden" name="date" value={selectedDateStr()} />
-			<div class="flex gap-3">
-				<label class="w-28">
-					<span class="text-sm font-medium text-gray-700">Time</span>
-					<input
-						name="startTime"
-						type="time"
-						required
-						value="09:00"
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					/>
-				</label>
-				<label class="w-24">
-					<span class="text-sm font-medium text-gray-700">Duration</span>
-					<input
-						name="durationMinutes"
-						type="number"
-						min="15"
-						step="15"
-						value="60"
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					/>
-				</label>
-			</div>
-			<div class="flex gap-3">
-				<label class="w-36">
-					<span class="text-sm font-medium text-gray-700">Mode</span>
-					<select
-						name="mode"
-						required
-						bind:value={exceptionalMode}
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					>
-						<option value="activity">Activity</option>
-						<option value="category">Category</option>
-					</select>
-				</label>
-				{#if exceptionalMode === 'category'}
-					<label class="flex-1">
-						<span class="text-sm font-medium text-gray-700">Category</span>
-						<select
-							name="categoryId"
-							required
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						>
-							{#each data.categories as cat (cat.id)}
-								<option value={cat.id}>{cat.name}</option>
-							{/each}
-						</select>
-					</label>
-				{:else}
-					<label class="flex-1">
-						<span class="text-sm font-medium text-gray-700">Activity</span>
-						<select
-							name="activityId"
-							required
-							bind:value={exceptionalActivityChoice}
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						>
-							{#each data.activities as act (act.id)}
-								<option value={String(act.id)}>{act.name}</option>
-							{/each}
-							<option value={NEW_ACTIVITY}>+ New activity...</option>
-						</select>
-					</label>
+				{#if editingBlockId !== null}
+					<input type="hidden" name="id" value={editingBlockId} />
 				{/if}
-				<label class="flex-1">
-					<span class="text-sm font-medium text-gray-700">Label (optional)</span>
-					<input
-						name="label"
-						type="text"
-						autocomplete="off"
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					/>
-				</label>
-			</div>
-			{#if exceptionalMode === 'activity' && exceptionalActivityChoice === NEW_ACTIVITY}
-				<div class="flex gap-3 border border-gray-200 bg-white p-3">
-					<label class="flex-1">
-						<span class="text-sm font-medium text-gray-700">New activity name</span>
+
+				<div class="flex items-center gap-3">
+					<span class="text-sm font-medium text-gray-700">Repeats</span>
+					{#if editingKind}
+						<span class="text-sm text-gray-500">
+							{editingKind === 'slot' ? 'Every week' : 'Once only'}
+						</span>
+					{:else}
+						<div class="flex">
+							{#each [{ value: 'weekly', label: 'Every week' }, { value: 'once', label: 'Once only' }] as choice (choice.value)}
+								<button
+									type="button"
+									onclick={() => (repeat = choice.value as 'weekly' | 'once')}
+									class="px-3 py-1 text-sm {repeat === choice.value
+										? 'bg-gray-900 font-medium text-white'
+										: 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50'}"
+								>
+									{choice.label}
+								</button>
+							{/each}
+						</div>
+						{#if repeat === 'once'}
+							<span class="text-xs text-gray-500">Won't come back next week.</span>
+						{/if}
+					{/if}
+				</div>
+
+				<div class="flex gap-3">
+					{#if repeat === 'weekly'}
+						<label class="w-36">
+							<span class="text-sm font-medium text-gray-700">Day</span>
+							<select
+								name="weekday"
+								required
+								bind:value={formWeekday}
+								class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							>
+								{#each data.weekdays as day, i (i)}
+									<option value={i}>{day}</option>
+								{/each}
+							</select>
+						</label>
+					{:else}
+						<label class="w-40">
+							<span class="text-sm font-medium text-gray-700">Date</span>
+							<input
+								name="date"
+								type="date"
+								required
+								min={data.today}
+								bind:value={formDate}
+								class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							/>
+						</label>
+					{/if}
+					<label class="w-28">
+						<span class="text-sm font-medium text-gray-700">Time</span>
 						<input
-							name="newActivityName"
-							type="text"
+							bind:this={timeInput}
+							name="startTime"
+							type="time"
 							required
-							autocomplete="off"
-							use:autofocus
-							placeholder="e.g. dentist appointment"
+							value={editingBlock?.startTime ?? prefillTime}
 							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
 					</label>
-					<label class="w-44">
-						<span class="text-sm font-medium text-gray-700">Its category</span>
-						<select
-							name="newActivityCategoryId"
-							required
+					<label class="w-24">
+						<span class="text-sm font-medium text-gray-700">Duration</span>
+						<input
+							name="durationMinutes"
+							type="number"
+							min="15"
+							step="15"
+							value={editingBlock?.durationMinutes ?? prefillDuration}
 							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						>
-							{#each data.categories as cat (cat.id)}
-								<option value={cat.id}>{cat.name}</option>
-							{/each}
-						</select>
+						/>
 					</label>
 				</div>
-			{/if}
-			<MetaEditor initial={{}} />
-			<div class="flex gap-2">
+
+				<div class="flex gap-3">
+					<label class="w-36">
+						<span class="text-sm font-medium text-gray-700">Mode</span>
+						<select
+							name="mode"
+							required
+							bind:value={slotMode}
+							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						>
+							<option value="activity">Activity</option>
+							<option value="category">Category</option>
+						</select>
+					</label>
+					{#if slotMode === 'category'}
+						<label class="flex-1">
+							<span class="text-sm font-medium text-gray-700">Category</span>
+							<select
+								name="categoryId"
+								required
+								class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							>
+								{#each data.categories as cat (cat.id)}
+									<option value={cat.id} selected={editingBlock?.categoryId === cat.id}
+										>{cat.name}</option
+									>
+								{/each}
+							</select>
+						</label>
+					{:else}
+						<label class="flex-1">
+							<span class="text-sm font-medium text-gray-700">Activity</span>
+							<select
+								name="activityId"
+								required
+								bind:value={activityChoice}
+								class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							>
+								{#each data.activities as act (act.id)}
+									<option value={String(act.id)}>{act.name}</option>
+								{/each}
+								<option value={NEW_ACTIVITY}>+ New activity...</option>
+							</select>
+						</label>
+					{/if}
+					<label class="flex-1">
+						<span class="text-sm font-medium text-gray-700">
+							Label {slotMode === 'category' ? '' : '(optional)'}
+						</span>
+						<input
+							name="label"
+							type="text"
+							autocomplete="off"
+							placeholder={slotMode === 'category' ? 'e.g. dentist' : ''}
+							value={editingBlock?.label ?? ''}
+							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						/>
+					</label>
+				</div>
+
+				{#if slotMode === 'activity' && activityChoice === NEW_ACTIVITY}
+					<div class="flex gap-3 border border-gray-200 bg-gray-50 p-3">
+						<label class="flex-1">
+							<span class="text-sm font-medium text-gray-700">New activity name</span>
+							<input
+								name="newActivityName"
+								type="text"
+								required
+								autocomplete="off"
+								use:autofocus
+								placeholder="e.g. learn russian"
+								class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							/>
+						</label>
+						<label class="w-44">
+							<span class="text-sm font-medium text-gray-700">Its category</span>
+							<select
+								name="newActivityCategoryId"
+								required
+								class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							>
+								{#each data.categories as cat (cat.id)}
+									<option value={cat.id}>{cat.name}</option>
+								{/each}
+							</select>
+						</label>
+					</div>
+				{/if}
+
+				<MetaEditor initial={parseSlotMeta(editingBlock?.meta)} />
+			</form>
+
+			<div class="flex flex-wrap items-center gap-2 border-t border-gray-200 pt-3">
 				<button
 					type="submit"
+					form="block-form"
 					class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
 				>
-					Create Exception
+					{editingKind ? 'Save' : repeat === 'once' ? 'Add one-off' : 'Add weekly block'}
 				</button>
 				<button
 					type="button"
-					onclick={() => (showExceptionalForm = false)}
+					onclick={closeForm}
 					class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
 				>
 					Cancel
 				</button>
+
+				{#if editingKind === 'slot' && editingBlockId !== null}
+					<!-- Skipping and deleting are different intentions on a recurring block:
+					     one drops a single occurrence, the other stops it happening at all.
+					     The skip is reversible from the same spot, so a misclick costs nothing. -->
+					{@const skipped = isSlotSuppressed(editingBlockId)}
+					<form
+						method="post"
+						action={skipped ? '?/unsuppress' : '?/suppress'}
+						use:enhance={() =>
+							async ({ update }) =>
+								update()}
+					>
+						<input type="hidden" name="slotId" value={editingBlockId} />
+						<input type="hidden" name="date" value={selectedDateStr()} />
+						<button
+							type="submit"
+							title={skipped
+								? 'Put this occurrence back'
+								: 'Drop just this one occurrence; the block still repeats'}
+							class="border px-3 py-2 text-sm transition {skipped
+								? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
+								: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+						>
+							{skipped ? 'Restore' : 'Skip'} on {formatWeekDate(selectedDateStr())}
+						</button>
+					</form>
+				{/if}
+
+				{#if editingKind}
+					<div class="ml-auto">
+						{#if confirmingFormDelete}
+							<form
+								method="post"
+								action={editingKind === 'slot' ? '?/delete' : '?/deleteExceptional'}
+								use:enhance={() => {
+									return async ({ update }) => {
+										await update();
+										closeForm();
+									};
+								}}
+							>
+								<input type="hidden" name="id" value={editingBlockId} />
+								<button
+									type="submit"
+									class="border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100"
+								>
+									{editingKind === 'slot' ? 'Delete every week — confirm?' : 'Delete — confirm?'}
+								</button>
+							</form>
+						{:else}
+							<button
+								type="button"
+								onclick={() => (confirmingFormDelete = true)}
+								class="border border-red-200 bg-white px-3 py-2 text-sm text-red-600 transition hover:bg-red-50"
+							>
+								Delete
+							</button>
+						{/if}
+					</div>
+				{/if}
 			</div>
-		</form>
+		</div>
 	{/if}
 
 	{#if viewMode === 'list'}
@@ -1471,7 +1530,7 @@
 			{@const dayExceptionals = exceptionalSlotsForDay()}
 			{#if dayExceptionals.length > 0}
 				<div class="divide-y divide-blue-100 border border-blue-200 bg-blue-50 shadow-sm">
-					<div class="px-4 py-2 text-xs font-medium text-blue-700">Exceptions for this day</div>
+					<div class="px-4 py-2 text-xs font-medium text-blue-700">One-off blocks for this day</div>
 					{#each dayExceptionals as exc (exc.id)}
 						<div
 							class="flex items-center gap-4 border-l-4 px-4 py-3"
@@ -1499,6 +1558,13 @@
 							>
 								{exc.status}
 							</span>
+							<button
+								type="button"
+								onclick={() => startEditExceptional(exc)}
+								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+							>
+								Edit
+							</button>
 							{#if confirmingDelete === `exc-${exc.id}`}
 								<form
 									method="post"
@@ -1542,7 +1608,7 @@
 		</div>
 		<div class="mt-1 flex items-center justify-between gap-4">
 			<p class="text-xs text-gray-400">
-				Drag to create · drag a slot to move · hold <kbd
+				Drag to create · drag a block to move · click it to edit, skip or delete · hold <kbd
 					class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd
 				> while dragging to duplicate · snaps to 15min
 			</p>

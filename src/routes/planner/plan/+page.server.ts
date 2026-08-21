@@ -715,7 +715,8 @@ export const actions: Actions = {
 		const excMeta = readMeta(formData);
 		if ('message' in excMeta) return fail(400, { message: excMeta.message });
 
-		db.insert(exceptionalSlots)
+		const inserted = db
+			.insert(exceptionalSlots)
 			.values({
 				userId,
 				date,
@@ -727,6 +728,62 @@ export const actions: Actions = {
 				label,
 				meta: excMeta.meta
 			})
+			.returning({ id: exceptionalSlots.id })
+			.get();
+
+		return { success: true, id: inserted.id };
+	},
+
+	updateExceptional: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const date = formData.get('date')?.toString()?.trim() ?? '';
+		const startTime = formData.get('startTime')?.toString()?.trim() ?? '';
+		const durationMinutes = Number(formData.get('durationMinutes') || 60);
+		const mode = formData.get('mode')?.toString() as 'category' | 'activity';
+		const categoryId = formData.get('categoryId') ? Number(formData.get('categoryId')) : null;
+		const label = formData.get('label')?.toString()?.trim() ?? '';
+
+		if (!id) return fail(400, { message: 'Missing id' });
+		if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return fail(400, { message: 'Invalid date' });
+		if (!startTime.match(/^\d{2}:\d{2}$/)) return fail(400, { message: 'Invalid time' });
+		if (!mode) return fail(400, { message: 'Mode is required' });
+		if (mode === 'category' && !categoryId) return fail(400, { message: 'Category required' });
+
+		const existing = db
+			.select({ id: exceptionalSlots.id })
+			.from(exceptionalSlots)
+			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
+			.get();
+		if (!existing) return fail(404, { message: 'Exception not found' });
+
+		let activityId: number | null = null;
+		if (mode === 'activity') {
+			const resolved = resolveActivityId(userId, formData);
+			if ('message' in resolved) return fail(400, { message: resolved.message });
+			activityId = resolved.activityId;
+			if (!activityId) return fail(400, { message: 'Activity required' });
+		}
+
+		// Same rule as `update`: a drag or resize carries placement only, and must
+		// leave any metadata on the block untouched.
+		const metaPatchResult = readMetaPatch(formData);
+		if ('message' in metaPatchResult) return fail(400, { message: metaPatchResult.message });
+		const metaPatch = metaPatchResult.meta;
+
+		db.update(exceptionalSlots)
+			.set({
+				date,
+				startTime,
+				durationMinutes,
+				mode,
+				categoryId,
+				activityId,
+				label,
+				...(metaPatch !== undefined ? { meta: metaPatch } : {})
+			})
+			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
 			.run();
 
 		return { success: true };
@@ -738,6 +795,13 @@ export const actions: Actions = {
 		const id = Number(formData.get('id'));
 
 		if (!id) return fail(400, { message: 'Missing id' });
+
+		const existing = db
+			.select({ id: exceptionalSlots.id })
+			.from(exceptionalSlots)
+			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
+			.get();
+		if (!existing) return fail(404, { message: 'Exception not found' });
 
 		db.delete(exceptionalSlots)
 			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))

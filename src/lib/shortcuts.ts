@@ -58,11 +58,11 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'l', action: 'next-day', description: 'Switch day' },
 			{ key: '[', action: 'prev-week', description: 'Switch week' },
 			{ key: ']', action: 'next-week', description: 'Switch week' },
-			{ key: 'n', action: 'new', description: 'New slot' },
-			{ key: 'N', action: 'new-exceptional', description: 'New exceptional slot' },
-			{ key: 'e', action: 'edit', description: 'Edit slot' },
+			{ key: 'n', action: 'new', description: 'New weekly block' },
+			{ key: 'N', action: 'new-exceptional', description: 'New one-off block' },
+			{ key: 'e', action: 'edit', description: 'Edit block' },
 			{ key: 'd', action: 'toggle-active', description: 'Toggle active' },
-			{ key: 'D', action: 'delete', description: 'Delete slot' },
+			{ key: 'D', action: 'delete', description: 'Delete block' },
 			{ key: 'v', action: 'toggle-multiselect', description: 'Toggle multiselect' },
 			{ key: ' ', action: 'toggle-select', description: 'Select/deselect (multiselect)' },
 			{ key: 'x', action: 'delete-selected', description: 'Delete selected (multiselect)' },
@@ -153,7 +153,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'n', action: 'new', description: 'New habit' },
 			{ key: 'Enter', action: 'toggle-expand', description: 'Expand/collapse' }
 		]
-	},
+	}
 };
 
 /**

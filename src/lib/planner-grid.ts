@@ -290,7 +290,7 @@ export function describeGridEvent(event: GridEventLike): GridEventDetail {
 	const minutes = Math.max(0, Math.round((event.end.getTime() - event.start.getTime()) / 60_000));
 
 	let state: string | null = null;
-	if (props.kind === 'exceptional') state = 'Exception (this week only)';
+	if (props.kind === 'exceptional') state = 'One-off';
 	else if (props.suppressed) state = 'Skipped this week';
 	else if (props.active === false) state = 'Inactive';
 
