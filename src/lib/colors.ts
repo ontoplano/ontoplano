@@ -21,13 +21,50 @@ export const NAV_MENU_BTN = 'border-gray-300 bg-white text-gray-700 hover:bg-gra
 export const NAV_DROPDOWN_BG = 'border-gray-200 bg-white';
 export const NAV_DROPDOWN_ITEM = 'text-gray-700 hover:bg-gray-50';
 
-// -- Dashboard section card left-border colors --------------------------------
+// -- Section identity ---------------------------------------------------------
 
+/**
+ * Every section owns a colour, used for its nav link, the wash behind its
+ * pages, and the cards that report into it on the dashboard.
+ *
+ * Six hues cannot all stay distinct under red-green colour blindness — the
+ * usable hue circle collapses to blue-ish versus yellow-ish. So these are
+ * spread by *lightness* as well as hue, and the colour is never the only cue:
+ * every place one appears is also labelled in words. Nothing here encodes
+ * good/bad, which is the case the red/blue rule in AGENTS.md actually governs.
+ *
+ * `accent` is for borders, active nav and headings. `tint` is a large-area
+ * fill, pale enough for black body text to stay at AA contrast on it.
+ */
+export type SectionKey = 'home' | 'planner' | 'diary' | 'ideas' | 'health' | 'shopping';
+
+export const SECTIONS: Record<SectionKey, { accent: string; tint: string; label: string }> = {
+	home: { accent: '#4f46e5', tint: '#eef2ff', label: 'Home' },
+	planner: { accent: '#0284c7', tint: '#eff6ff', label: 'Planner' },
+	diary: { accent: '#d97706', tint: '#fffbeb', label: 'Diary' },
+	ideas: { accent: '#7c3aed', tint: '#f5f3ff', label: 'Ideas' },
+	health: { accent: '#0d9488', tint: '#f0fdfa', label: 'Health' },
+	shopping: { accent: '#c026d3', tint: '#fdf4ff', label: 'Shopping' }
+};
+
+/** Which section a pathname belongs to. */
+export function sectionFor(pathname: string): SectionKey {
+	if (pathname.startsWith('/planner')) return 'planner';
+	if (pathname.startsWith('/health')) return 'health';
+	if (pathname.startsWith('/diary')) return 'diary';
+	if (pathname.startsWith('/ideas')) return 'ideas';
+	if (pathname.startsWith('/shopping')) return 'shopping';
+	return 'home';
+}
+
+/** Dashboard card left-border colours, kept as the section accents. */
 export const SECTION_COLORS = {
-	planner: 'rgba(59, 130, 246, 0.6)',
-	health: 'rgba(6, 182, 212, 0.6)',
-	diary: 'rgba(234, 179, 8, 0.6)',
-	shopping: 'rgba(249, 115, 22, 0.6)'
+	planner: SECTIONS.planner.accent,
+	health: SECTIONS.health.accent,
+	diary: SECTIONS.diary.accent,
+	shopping: SECTIONS.shopping.accent,
+	ideas: SECTIONS.ideas.accent,
+	home: SECTIONS.home.accent
 } as const;
 
 // -- Habits -------------------------------------------------------------------

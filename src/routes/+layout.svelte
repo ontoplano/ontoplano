@@ -4,7 +4,8 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import type { LayoutServerData } from './$types';
-	import { NAV_LINK, NAV_LINK_ACTIVE, NAV_USER_TEXT, NAV_DROPDOWN_ITEM } from '$lib/colors.js';
+	import { NAV_USER_TEXT, NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
+	import type { SectionKey } from '$lib/colors.js';
 	import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
 
 	let { children, data }: { children: any; data: LayoutServerData } = $props();
@@ -19,14 +20,17 @@
 			.join(';');
 	}
 
-	const nav = [
-		{ href: '/', label: 'Home' },
-		{ href: '/planner/track', label: 'Planner' },
-		{ href: '/diary', label: 'Diary' },
-		{ href: '/ideas', label: 'Ideas' },
-		{ href: '/health/habits', label: 'Health' },
-		{ href: '/shopping', label: 'Shopping' }
+	const nav: { href: string; label: string; section: SectionKey }[] = [
+		{ href: '/', label: 'Home', section: 'home' },
+		{ href: '/planner/track', label: 'Planner', section: 'planner' },
+		{ href: '/diary', label: 'Diary', section: 'diary' },
+		{ href: '/ideas', label: 'Ideas', section: 'ideas' },
+		{ href: '/health/habits', label: 'Health', section: 'health' },
+		{ href: '/shopping', label: 'Shopping', section: 'shopping' }
 	];
+
+	/** The section being viewed, which colours the page wash and the header rule. */
+	const section = $derived(SECTIONS[sectionFor(page.url.pathname)]);
 
 	function isNavActive(href: string): boolean {
 		if (href === '/') return page.url.pathname === '/';
@@ -76,18 +80,28 @@
 <svelte:window onkeydown={handleGlobalKeydown} onclick={handleClickOutside} />
 
 {#if data.user}
-	<div class="flex min-h-screen flex-col bg-gray-50" style={categoryStyle()}>
+	<div
+		class="flex min-h-screen flex-col"
+		style="{categoryStyle()};--section-accent:{section.accent};--section-tint:{section.tint};background-color:{section.tint}"
+	>
 		<header class="border-b border-gray-200 bg-white shadow-sm">
+			<!-- The one place the current section is stated in colour alone; the
+			     active nav link says it again in words. -->
+			<div class="h-1 w-full" style="background-color: {section.accent}"></div>
 			<div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
 				<div class="flex items-center gap-6">
 					<a href="/" class="text-lg font-bold tracking-tight text-gray-900">ontoplano</a>
 					<nav class="flex gap-4">
-						{#each nav as item}
+						{#each nav as item (item.href)}
+							{@const active = isNavActive(item.href)}
 							<a
 								href={item.href}
-								class="text-sm font-medium transition-colors {isNavActive(item.href)
-									? NAV_LINK_ACTIVE
-									: NAV_LINK}"
+								class="border-b-2 pb-0.5 text-sm font-medium transition-colors {active
+									? 'font-semibold'
+									: 'border-transparent opacity-70 hover:opacity-100'}"
+								style="color: {SECTIONS[item.section].accent}; border-color: {active
+									? SECTIONS[item.section].accent
+									: 'transparent'}"
 							>
 								{item.label}
 							</a>

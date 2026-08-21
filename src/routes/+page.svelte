@@ -94,7 +94,7 @@
 			style="border-left-color: {SECTION_COLORS.planner}"
 		>
 			<div class="mb-3 flex items-center justify-between">
-				<h2 class="text-sm font-bold text-gray-900">Today's Tasks</h2>
+				<h2 class="text-sm font-bold" style="color: {SECTION_COLORS.planner}">Today's Tasks</h2>
 				<a href="/planner/track" class="text-xs text-gray-500 transition hover:text-gray-900">
 					Open →
 				</a>
@@ -160,7 +160,7 @@
 				style="border-left-color: {SECTION_COLORS.health}"
 			>
 				<div class="mb-3 flex items-center justify-between">
-					<h2 class="text-sm font-bold text-gray-900">Habits</h2>
+					<h2 class="text-sm font-bold" style="color: {SECTION_COLORS.health}">Habits</h2>
 					<a href="/health/habits" class="text-xs text-gray-500 transition hover:text-gray-900">
 						Open →
 					</a>
@@ -207,7 +207,7 @@
 			style="border-left-color: {SECTION_COLORS.planner}"
 		>
 			<div class="mb-3 flex items-center justify-between">
-				<h2 class="text-sm font-bold text-gray-900">Week Plan</h2>
+				<h2 class="text-sm font-bold" style="color: {SECTION_COLORS.planner}">Week Plan</h2>
 				<a href="/planner/plan" class="text-xs text-gray-500 transition hover:text-gray-900"
 					>Edit →</a
 				>
@@ -261,7 +261,7 @@
 		style="border-left-color: {SECTION_COLORS.diary}"
 	>
 		<div class="mb-3 flex items-center justify-between">
-			<h2 class="text-sm font-bold text-gray-900">Diary</h2>
+			<h2 class="text-sm font-bold" style="color: {SECTION_COLORS.diary}">Diary</h2>
 			<div class="flex items-center gap-3">
 				<a href="/diary" class="text-xs text-gray-500 transition hover:text-gray-900">
 					All entries →
@@ -401,7 +401,7 @@
 			style="border-left-color: {SECTION_COLORS.shopping}"
 		>
 			<div class="mb-3 flex items-center justify-between">
-				<h2 class="text-sm font-bold text-gray-900">Shopping</h2>
+				<h2 class="text-sm font-bold" style="color: {SECTION_COLORS.shopping}">Shopping</h2>
 				<a href="/shopping" class="text-xs text-gray-500 transition hover:text-gray-900">Open →</a>
 			</div>
 			{#if data.shoppingToBuy.length === 0}
@@ -429,8 +429,11 @@
 	{/if}
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-		<div class="border border-gray-200 bg-white p-4 shadow-sm">
-			<h2 class="mb-3 text-sm font-bold text-gray-900">Quick Links</h2>
+		<div
+			class="border border-l-4 border-gray-200 bg-white p-4 shadow-sm"
+			style="border-left-color: {SECTION_COLORS.home}"
+		>
+			<h2 class="mb-3 text-sm font-bold" style="color: {SECTION_COLORS.home}">Quick Links</h2>
 			<div class="space-y-2">
 				<a href="/planner/track" class="block text-sm text-gray-600 transition hover:text-gray-900"
 					>→ Track tasks</a
