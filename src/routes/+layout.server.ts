@@ -6,7 +6,9 @@ import { DEFAULT_THEME, DEFAULT_WEEK, getTheme, getWeekSettings } from '$lib/ser
 import { eq } from 'drizzle-orm';
 
 export const load: LayoutServerLoad = async (event) => {
-	const isLoginPage = event.url.pathname === '/login';
+	// Anything under /login, not just /login itself — /login/reset is where a
+	// password-reset link lands, and by definition its visitor is signed out.
+	const isLoginPage = event.url.pathname === '/login' || event.url.pathname.startsWith('/login/');
 	const isDemo = event.url.pathname.startsWith('/demo');
 	const isAuthApi = event.url.pathname.startsWith('/api/auth');
 
