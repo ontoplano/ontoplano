@@ -24,6 +24,27 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'w', action: 'new-wins', description: 'New wins' }
 		]
 	},
+	'/planner/board': {
+		title: 'Board',
+		shortcuts: [
+			{ key: 'h', action: 'prev-column', description: 'Move between columns' },
+			{ key: 'j', action: 'next-card', description: 'Move between cards' },
+			{ key: 'k', action: 'prev-card', description: 'Move between cards' },
+			{ key: 'l', action: 'next-column', description: 'Move between columns' },
+			{ key: 'H', action: 'carry-left', description: 'Carry card to previous column' },
+			{ key: 'L', action: 'carry-right', description: 'Carry card to next column' },
+			{ key: 'c', action: 'toggle-done', description: 'Mark done / reopen' },
+			{ key: 't', action: 'toggle-today', description: 'Pull onto today / put back' },
+			{ key: 'g', action: 'switch-tab', description: 'Switch Today / General' },
+			{ key: 'n', action: 'new', description: 'New card' },
+			{ key: '1', action: 'rate', description: 'Set the active rating 1-5' },
+			{ key: 'u', action: 'rate-urgency', description: 'Number keys set urgency' },
+			{ key: 'i', action: 'rate-interest', description: 'Number keys set interest' },
+			{ key: 'y', action: 'rate-energy', description: 'Number keys set energy' },
+			{ key: 'x', action: 'delete', description: 'Delete card (twice to confirm)' }
+		]
+	},
+
 	'/planner/track': {
 		label: 'Track',
 		shortcuts: [

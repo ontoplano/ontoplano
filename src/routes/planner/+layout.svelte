@@ -4,6 +4,7 @@
 	let { children }: { children: any } = $props();
 
 	const tabs = [
+		{ href: '/planner/board', label: 'Board' },
 		{ href: '/planner/track', label: 'Track' },
 		{ href: '/planner/plan', label: 'Plan' },
 		{ href: '/planner/todo', label: 'Todo' },
