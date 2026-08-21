@@ -3,6 +3,10 @@
 	import type { PageServerData, ActionData } from './$types.js';
 	import { autofocus } from '$lib/actions/autofocus.js';
 	import { getAction } from '$lib/shortcuts';
+	import RatingBadges from '$lib/components/RatingBadges.svelte';
+	import RatingPicker from '$lib/components/RatingPicker.svelte';
+	import { RATINGS } from '$lib/ratings.js';
+	import { CLOSED_STATUSES } from '$lib/task-status.js';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -12,21 +16,39 @@
 	let selectedIndex = $state(0);
 	let delegatingId: number | null = $state(null);
 	let confirmingDelete: number | null = $state(null);
+	let formRatings: Record<string, number | null> = $state({
+		urgency: null,
+		interest: null,
+		energy: null
+	});
 
 	type Todo = (typeof data.todos)[number];
 
 	let visibleTodos = $derived(
-		showCompleted ? data.todos : data.todos.filter((t: Todo) => !t.completed)
+		showCompleted ? data.todos : data.todos.filter((t: Todo) => !CLOSED_STATUSES.includes(t.status))
 	);
+
+	function isDone(todo: Todo): boolean {
+		return todo.status === 'done';
+	}
+
+	/** Today, as the value the scheduling form wants. */
+	function todayStr(): string {
+		const d = new Date();
+		const pad = (n: number) => String(n).padStart(2, '0');
+		return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+	}
 
 	function startNew() {
 		showForm = true;
 		editingId = null;
+		formRatings = { urgency: null, interest: null, energy: null };
 	}
 
 	function startEdit(todo: Todo) {
 		editingId = todo.id;
 		showForm = true;
+		formRatings = { ...todo.ratings };
 	}
 
 	function startDelegate(todo: Todo) {
@@ -90,7 +112,7 @@
 				if (
 					visibleTodos.length > 0 &&
 					visibleTodos[selectedIndex] &&
-					!visibleTodos[selectedIndex].completed
+					!isDone(visibleTodos[selectedIndex])
 				) {
 					startDelegate(visibleTodos[selectedIndex]);
 				}
@@ -192,6 +214,26 @@
 					>{editing?.notes ?? ''}</textarea
 				>
 			</label>
+
+			<label class="block w-48">
+				<span class="eyebrow text-gray-500">Category</span>
+				<select
+					name="categoryId"
+					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+				>
+					<option value="">— none —</option>
+					{#each data.categories as cat (cat.id)}
+						<option value={cat.id} selected={editing?.categoryId === cat.id}>{cat.name}</option>
+					{/each}
+				</select>
+			</label>
+
+			<div class="space-y-2 border border-gray-200 bg-gray-50 p-3">
+				{#each RATINGS as r (r)}
+					<RatingPicker rating={r} bind:value={formRatings[r]} />
+				{/each}
+			</div>
+
 			<div class="flex gap-2">
 				<button
 					type="submit"
@@ -305,19 +347,19 @@
 				<div
 					class="flex items-center gap-4 px-4 py-3 {selectedIndex === i
 						? 'ring-2 ring-gray-900 ring-inset'
-						: ''} {todo.completed ? 'opacity-50' : ''}"
+						: ''} {isDone(todo) ? 'opacity-50' : ''}"
 				>
-					<form id="toggle-form-{todo.id}" method="post" action="?/toggleComplete" use:enhance>
+					<form id="toggle-form-{todo.id}" method="post" action="?/setStatus" use:enhance>
 						<input type="hidden" name="id" value={todo.id} />
-						<input type="hidden" name="completed" value={String(todo.completed)} />
+						<input type="hidden" name="status" value={isDone(todo) ? 'todo' : 'done'} />
 						<button
 							type="submit"
-							class="flex h-5 w-5 shrink-0 items-center justify-center border {todo.completed
+							class="flex h-5 w-5 shrink-0 items-center justify-center border {isDone(todo)
 								? 'border-gray-400 bg-gray-400'
 								: 'border-gray-400 bg-white'}"
-							aria-label={todo.completed ? 'Mark incomplete' : 'Mark complete'}
+							aria-label={isDone(todo) ? 'Mark incomplete' : 'Mark complete'}
 						>
-							{#if todo.completed}
+							{#if isDone(todo)}
 								<svg class="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor">
 									<path
 										fill-rule="evenodd"
@@ -330,16 +372,54 @@
 					</form>
 
 					<div class="min-w-0 flex-1">
-						<span class="text-sm font-medium text-gray-900 {todo.completed ? 'line-through' : ''}"
-							>{todo.title}</span
-						>
+						<div class="flex items-center gap-2">
+							{#if todo.categoryColor}
+								<span
+									class="h-3 w-1 shrink-0"
+									style="background-color: {todo.categoryColor}"
+									title={todo.categoryName}
+								></span>
+							{/if}
+							<span class="text-sm font-medium text-gray-900 {isDone(todo) ? 'line-through' : ''}"
+								>{todo.title}</span
+							>
+							<RatingBadges values={todo.ratings} />
+							{#if todo.scheduledDate}
+								<span
+									class="tabular border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
+									title="Pulled onto this day"
+								>
+									{todo.scheduledDate}
+								</span>
+							{/if}
+						</div>
 						{#if todo.notes}
 							<p class="truncate text-xs text-gray-500">{todo.notes}</p>
 						{/if}
 					</div>
 
 					<div class="flex shrink-0 items-center gap-2">
-						{#if !todo.completed}
+						{#if !isDone(todo)}
+							<!-- One column changes; nothing is copied anywhere. -->
+							<form method="post" action="?/schedule" use:enhance>
+								<input type="hidden" name="id" value={todo.id} />
+								<input
+									type="hidden"
+									name="scheduledDate"
+									value={todo.scheduledDate ? '' : todayStr()}
+								/>
+								<button
+									type="submit"
+									class="border px-2 py-1 text-xs transition {todo.scheduledDate
+										? 'border-gray-900 bg-gray-900 text-white'
+										: 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}"
+									title={todo.scheduledDate ? 'Put back on the general list' : 'Pull onto today'}
+								>
+									{todo.scheduledDate ? 'On a day' : 'Today'}
+								</button>
+							</form>
+						{/if}
+						{#if !isDone(todo)}
 							<button
 								onclick={() => startDelegate(todo)}
 								class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-600 transition hover:bg-blue-50"

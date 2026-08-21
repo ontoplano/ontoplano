@@ -4,16 +4,14 @@ import { db } from '$lib/server/db';
 import { plannerTodos, exceptionalSlots, categories, activities } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { toLocalISOString } from '$lib/server/week-generator';
+import { listTodos, nextSortOrder } from '$lib/server/services/todos';
+import { ratingsFromForm } from '$lib/ratings';
+import { isStatus } from '$lib/task-status';
 
 export const load: PageServerLoad = async (event) => {
 	const userId = event.locals.user!.id;
 
-	const todos = db
-		.select()
-		.from(plannerTodos)
-		.where(eq(plannerTodos.userId, userId))
-		.orderBy(plannerTodos.completed, plannerTodos.createdAt)
-		.all();
+	const todos = listTodos(userId);
 
 	const allCategories = db.select().from(categories).where(eq(categories.userId, userId)).all();
 	const allActivities = db
@@ -39,7 +37,22 @@ export const actions: Actions = {
 
 		if (!title) return fail(400, { message: 'Title is required' });
 
-		db.insert(plannerTodos).values({ userId, title, notes }).run();
+		const categoryId = formData.get('categoryId') ? Number(formData.get('categoryId')) : null;
+		const scheduledDate = formData.get('scheduledDate')?.toString()?.trim() || null;
+		if (scheduledDate && !scheduledDate.match(/^\d{4}-\d{2}-\d{2}$/))
+			return fail(400, { message: 'Invalid date' });
+
+		db.insert(plannerTodos)
+			.values({
+				userId,
+				title,
+				notes,
+				categoryId,
+				scheduledDate,
+				sortOrder: nextSortOrder(userId),
+				...ratingsFromForm(formData)
+			})
+			.run();
 
 		return { success: true };
 	},
@@ -61,24 +74,70 @@ export const actions: Actions = {
 			.get();
 		if (!existing) return fail(404, { message: 'Todo not found' });
 
+		const categoryId = formData.get('categoryId') ? Number(formData.get('categoryId')) : null;
+
 		db.update(plannerTodos)
-			.set({ title, notes, updatedAt: toLocalISOString(new Date()) })
+			.set({
+				title,
+				notes,
+				categoryId,
+				...ratingsFromForm(formData),
+				updatedAt: toLocalISOString(new Date())
+			})
 			.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, userId)))
 			.run();
 
 		return { success: true };
 	},
 
-	toggleComplete: async ({ request, locals }) => {
+	setStatus: async ({ request, locals }) => {
 		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
-		const completed = formData.get('completed') === 'true';
+		const status = formData.get('status')?.toString();
 
 		if (!id) return fail(400, { message: 'Missing id' });
+		if (!isStatus(status)) return fail(400, { message: 'Invalid status' });
 
 		db.update(plannerTodos)
-			.set({ completed: !completed, updatedAt: toLocalISOString(new Date()) })
+			.set({
+				status,
+				// `completed` is kept in step for anything still reading it, and so
+				// existing data stays meaningful either way round.
+				completed: status === 'done',
+				updatedAt: toLocalISOString(new Date())
+			})
+			.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, userId)))
+			.run();
+
+		return { success: true };
+	},
+
+	/**
+	 * Pull a todo onto a day, or push it back to the general list.
+	 *
+	 * This is the whole of "scheduling" a todo: one column changes. Nothing is
+	 * copied, so there is no second row to keep in sync and no way for the two
+	 * to disagree.
+	 */
+	schedule: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const date = formData.get('scheduledDate')?.toString()?.trim() || null;
+
+		if (!id) return fail(400, { message: 'Missing id' });
+		if (date && !date.match(/^\d{4}-\d{2}-\d{2}$/)) return fail(400, { message: 'Invalid date' });
+
+		const existing = db
+			.select({ id: plannerTodos.id })
+			.from(plannerTodos)
+			.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, userId)))
+			.get();
+		if (!existing) return fail(404, { message: 'Todo not found' });
+
+		db.update(plannerTodos)
+			.set({ scheduledDate: date, updatedAt: toLocalISOString(new Date()) })
 			.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, userId)))
 			.run();
 
