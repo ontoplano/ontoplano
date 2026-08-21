@@ -63,6 +63,10 @@ export const weeklySlots = sqliteTable(
 			.notNull()
 			.references(() => user.id),
 		weekday: integer('weekday').notNull(), // 0=Mon … 6=Sun
+		// How often this actually repeats. 'weekly' is every week on `weekday`;
+		// see $lib/recurrence.ts for the other shapes. Anything unrecognised reads
+		// as weekly, so a bad value degrades rather than hiding the slot.
+		recurrence: text('recurrence').notNull().default('weekly'),
 		startTime: text('start_time').notNull(), // HH:MM
 		durationMinutes: integer('duration_minutes').notNull().default(60),
 		mode: text('mode', { enum: ['category', 'activity'] }).notNull(),

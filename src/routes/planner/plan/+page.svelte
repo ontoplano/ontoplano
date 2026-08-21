@@ -9,6 +9,7 @@
 	import MetaEditor from '$lib/components/MetaEditor.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
 	import { RATINGS } from '$lib/ratings.js';
+	import { MAX_INTERVAL, parseRecurrence } from '$lib/recurrence.js';
 	import { parseSlotMeta } from '$lib/meta-keys.js';
 	import { getAction } from '$lib/shortcuts';
 	import { Calendar, TimeGrid, Interaction } from '@event-calendar/core';
@@ -110,6 +111,11 @@
 	let confirmingFormDelete = $state(false);
 	let formDate = $state('');
 	let formWeekday = $state(0);
+	// The Repeats control extends the weekly/one-off toggle rather than replacing
+	// it: "every week" is still one click, the rest unfold from it.
+	let recurrenceKind: 'weekly' | 'weeks' | 'days' | 'monthly' = $state('weekly');
+	let recurrenceInterval = $state(2);
+	let recurrenceMonthDay = $state(1);
 	let formRatings: Record<string, number | null> = $state({
 		urgency: null,
 		interest: null,
@@ -230,6 +236,10 @@
 	}
 
 	function startEdit(slot: Slot) {
+		const rec = parseRecurrence(slot.recurrence);
+		recurrenceKind = rec.kind;
+		if (rec.kind === 'weeks' || rec.kind === 'days') recurrenceInterval = rec.interval;
+		if (rec.kind === 'monthly') recurrenceMonthDay = rec.day;
 		formRatings = {
 			urgency: slot.urgency ?? null,
 			interest: slot.interest ?? null,
@@ -260,6 +270,9 @@
 	}
 
 	function startNew(mode: 'weekly' | 'once' = 'weekly') {
+		recurrenceKind = 'weekly';
+		recurrenceInterval = 2;
+		recurrenceMonthDay = 1;
 		formRatings = { urgency: null, interest: null, energy: null };
 		editingKind = null;
 		editingBlockId = null;
@@ -1169,6 +1182,64 @@
 						{/if}
 					{/if}
 				</div>
+
+				<!-- Recurrent but not weekly: the bins are fortnightly, rent is the
+				     first of the month, a stretch routine is every third day. -->
+				{#if repeat === 'weekly'}
+					<div class="flex flex-wrap items-center gap-3 border border-gray-200 bg-gray-50 p-3">
+						<span class="eyebrow shrink-0 text-gray-500">How often</span>
+						<input type="hidden" name="recurrenceKind" value={recurrenceKind} />
+						<input type="hidden" name="recurrenceAnchor" value={selectedDateStr()} />
+
+						<div class="flex">
+							{#each [{ v: 'weekly', l: 'Every week' }, { v: 'weeks', l: 'Every N weeks' }, { v: 'days', l: 'Every N days' }, { v: 'monthly', l: 'Monthly' }] as opt (opt.v)}
+								<button
+									type="button"
+									onclick={() => (recurrenceKind = opt.v as typeof recurrenceKind)}
+									class="px-3 py-1 text-sm {recurrenceKind === opt.v
+										? 'bg-gray-900 font-medium text-white'
+										: 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50'}"
+								>
+									{opt.l}
+								</button>
+							{/each}
+						</div>
+
+						{#if recurrenceKind === 'weeks' || recurrenceKind === 'days'}
+							<label class="flex items-center gap-2 text-sm text-gray-700">
+								Every
+								<input
+									name="recurrenceInterval"
+									type="number"
+									min="1"
+									max={MAX_INTERVAL}
+									bind:value={recurrenceInterval}
+									class="tabular w-16 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								/>
+								{recurrenceKind === 'weeks' ? 'weeks' : 'days'}
+							</label>
+							<span class="text-xs text-gray-500">counting from {selectedDateStr()}</span>
+						{:else if recurrenceKind === 'monthly'}
+							<label class="flex items-center gap-2 text-sm text-gray-700">
+								Day
+								<input
+									name="recurrenceMonthDay"
+									type="number"
+									min="1"
+									max="31"
+									bind:value={recurrenceMonthDay}
+									class="tabular w-16 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								/>
+								of each month
+							</label>
+							{#if recurrenceMonthDay > 28}
+								<span class="text-xs text-gray-500">
+									Falls on the last day in shorter months.
+								</span>
+							{/if}
+						{/if}
+					</div>
+				{/if}
 
 				<div class="flex gap-3">
 					{#if repeat === 'weekly'}

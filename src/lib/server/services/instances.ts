@@ -23,6 +23,7 @@ import {
 
 import type { Status, Timing } from '../../task-status.js';
 import type { RatingValues } from '../../ratings.js';
+import { occursOn, parseRecurrence } from '../../recurrence.js';
 
 /** A single occurrence, whichever kind of block produced it. */
 export type Occurrence = {
@@ -148,11 +149,11 @@ export function generateInstances(userId: string, from: Date, to: Date): number 
 
 	for (let day = new Date(from); day < to; day = addDays(day, 1)) {
 		const dateStr = formatDate(day);
-		// weeklySlots.weekday is Monday-indexed; Date.getDay() is Sunday-indexed.
-		const weekday = (day.getDay() + 6) % 7;
 
 		for (const slot of slots) {
-			if (slot.weekday !== weekday) continue;
+			// The weekday check moved into the rule: an every-3-days slot lands on
+			// whatever weekday it lands on.
+			if (!occursOn(parseRecurrence(slot.recurrence), day, slot.weekday)) continue;
 			if (suppressed.has(`${slot.id}:${dateStr}`)) continue;
 			if (existingWeekly.has(`${slot.id}:${dateStr}`)) continue;
 

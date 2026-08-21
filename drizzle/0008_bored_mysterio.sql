@@ -1,0 +1,1 @@
+ALTER TABLE `weekly_slots` ADD `recurrence` text DEFAULT 'weekly' NOT NULL;

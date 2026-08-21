@@ -1,12 +1,35 @@
 import { fail } from '@sveltejs/kit';
 import { metaFromFormData, metaPatchFromFormData } from '$lib/server/services/meta';
 import { ratingsFromForm } from '$lib/ratings';
+import { parseRecurrence, serialiseRecurrence, formatDate as recFormatDate } from '$lib/recurrence';
 import { ServiceError } from '$lib/server/services/errors';
 
 /**
  * Parse slot metadata, turning a validation failure into a form error rather
  * than letting it escape the action and surface as a 500.
  */
+/**
+ * The recurrence rule from a block form.
+ *
+ * Every-N shapes need an anchor to count from; the form supplies the block's
+ * own date when it has one, and today otherwise, so "every 2 weeks" starts
+ * counting from the occurrence you were looking at.
+ */
+function readRecurrence(formData: FormData): string {
+	const kind = formData.get('recurrenceKind')?.toString() ?? 'weekly';
+	const interval = Number(formData.get('recurrenceInterval') || 1);
+	const anchor = formData.get('recurrenceAnchor')?.toString()?.trim() || recFormatDate(new Date());
+	const monthDay = Number(formData.get('recurrenceMonthDay') || 1);
+
+	if (kind === 'weeks' || kind === 'days') {
+		// Round-tripping through the parser is the validation: anything out of
+		// range comes back as plain weekly rather than reaching the database.
+		return serialiseRecurrence(parseRecurrence(`${kind}:${interval}:${anchor}`));
+	}
+	if (kind === 'monthly') return serialiseRecurrence(parseRecurrence(`monthly:${monthDay}`));
+	return 'weekly';
+}
+
 function readMeta(formData: FormData): { meta: string } | { message: string } {
 	try {
 		return { meta: metaFromFormData(formData) };
@@ -195,6 +218,7 @@ export const load: PageServerLoad = async (event) => {
 			activityName: activities.name,
 			activityCategoryId: activities.categoryId,
 			label: weeklySlots.label,
+			recurrence: weeklySlots.recurrence,
 			urgency: weeklySlots.urgency,
 			interest: weeklySlots.interest,
 			energy: weeklySlots.energy,
@@ -307,6 +331,7 @@ export const actions: Actions = {
 				categoryId,
 				activityId,
 				label,
+				recurrence: readRecurrence(formData),
 				...ratingsFromForm(formData),
 				meta: metaResult.meta
 			})
@@ -792,6 +817,9 @@ export const actions: Actions = {
 				categoryId,
 				activityId,
 				label,
+				// A drag posts placement only, so leave the rule alone unless the
+				// form actually sent one.
+				...(formData.has('recurrenceKind') ? { recurrence: readRecurrence(formData) } : {}),
 				...ratingsFromForm(formData),
 				...(metaPatch !== undefined ? { meta: metaPatch } : {})
 			})

@@ -57,6 +57,13 @@
       "when": 1787280830403,
       "tag": "0007_tricky_baron_strucker",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1787281772129,
+      "tag": "0008_bored_mysterio",
+      "breakpoints": true
     }
   ]
 }

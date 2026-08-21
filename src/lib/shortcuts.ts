@@ -25,7 +25,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 	'/planner/board': {
-		title: 'Board',
+		label: 'Board',
 		shortcuts: [
 			{ key: 'h', action: 'prev-column', description: 'Move between columns' },
 			{ key: 'j', action: 'next-card', description: 'Move between cards' },
