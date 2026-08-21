@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageServerData, ActionData } from './$types';
+	import { THEMES } from '$lib/theme.js';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -99,10 +100,47 @@
 		</button>
 	</form>
 
-	<section class="border border-gray-200 bg-white p-6 shadow-sm">
+	<section class="border border-gray-200 bg-white p-6 shadow-card">
+		<div class="mb-4">
+			<h2 class="text-sm font-semibold text-gray-900">Appearance</h2>
+			<p class="mt-1 text-sm text-gray-500">
+				Saved to your account, so it follows you to another browser. "System" uses whatever your
+				device is set to.
+			</p>
+		</div>
+
+		<form
+			method="post"
+			action="?/setTheme"
+			use:enhance={({ formData }) => {
+				// <html> is outside the component tree, so `update()` will not touch it.
+				const chosen = formData.get('theme')?.toString();
+				if (chosen) document.documentElement.dataset.theme = chosen;
+				return async ({ update }) => update({ reset: false });
+			}}
+			class="flex gap-2"
+		>
+			{#each THEMES as option (option)}
+				<button
+					type="submit"
+					name="theme"
+					value={option}
+					class="border px-4 py-2 text-sm capitalize shadow-sm {data.theme === option
+						? 'border-gray-900 bg-gray-900 font-semibold text-white'
+						: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+				>
+					{option}
+				</button>
+			{/each}
+		</form>
+	</section>
+
+	<section class="border border-gray-200 bg-white p-6 shadow-card">
 		<div class="mb-4">
 			<h2 class="text-sm font-semibold text-gray-900">Features</h2>
-			<p class="mt-1 text-sm text-gray-500">Enable or hide optional UI features for your account.</p>
+			<p class="mt-1 text-sm text-gray-500">
+				Enable or hide optional UI features for your account.
+			</p>
 		</div>
 
 		<div class="divide-y divide-gray-200">
