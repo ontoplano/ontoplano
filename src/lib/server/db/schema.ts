@@ -70,6 +70,13 @@ export const weeklySlots = sqliteTable(
 		activityId: integer('activity_id').references(() => activities.id),
 		label: text('label').default(''),
 		active: integer('active', { mode: 'boolean' }).notNull().default(true),
+		// How pressing, how appealing, how much it will take out of you, 1-5.
+		// Nullable on purpose: forcing three numbers onto every task is how a
+		// system stops being used by the second week. Columns rather than `meta`
+		// JSON because the board sorts and filters on them.
+		urgency: integer('urgency'),
+		interest: integer('interest'),
+		energy: integer('energy'),
 		// User-defined key/value pairs, opaque to ontoplano and surfaced to
 		// plugins via the schedule API — e.g. { "alarm": "true", "remind_min": "5" }.
 		// Stored as a JSON object of string→string. See services/meta.ts.
@@ -85,6 +92,12 @@ export const weeklySlots = sqliteTable(
 		index('slots_user_idx').on(table.userId),
 		index('slots_weekday_idx').on(table.weekday),
 		index('slots_weekday_time_idx').on(table.weekday, table.startTime),
+		check('slots_urgency_range', sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 1 AND 5`),
+		check(
+			'slots_interest_range',
+			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 1 AND 5`
+		),
+		check('slots_energy_range', sql`${table.energy} IS NULL OR ${table.energy} BETWEEN 1 AND 5`),
 		check('slots_weekday_range', sql`${table.weekday} >= 0 AND ${table.weekday} <= 6`),
 		check(
 			'slots_mode_category',
@@ -130,6 +143,11 @@ export const taskInstances = sqliteTable(
 		notes: text('notes').default(''),
 		resolvedActivityId: integer('resolved_activity_id').references(() => activities.id),
 		durationOverride: integer('duration_override'),
+		// Per-occurrence overrides of the block's ratings, exactly as
+		// durationOverride overrides its length. Null means "inherit".
+		urgencyOverride: integer('urgency_override'),
+		interestOverride: integer('interest_override'),
+		energyOverride: integer('energy_override'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
@@ -284,6 +302,13 @@ export const exceptionalSlots = sqliteTable(
 		activityId: integer('activity_id').references(() => activities.id),
 		label: text('label').default(''),
 		active: integer('active', { mode: 'boolean' }).notNull().default(true),
+		// How pressing, how appealing, how much it will take out of you. Nullable
+		// on purpose: forcing three numbers onto every task is how a system stops
+		// being used by the second week. Columns rather than `meta` JSON because
+		// the board sorts and filters on them.
+		urgency: integer('urgency'),
+		interest: integer('interest'),
+		energy: integer('energy'),
 		meta: text('meta').notNull().default('{}'),
 		createdAt: text('created_at')
 			.notNull()
@@ -291,6 +316,18 @@ export const exceptionalSlots = sqliteTable(
 	},
 	(table) => [
 		index('exceptional_slots_user_date_idx').on(table.userId, table.date),
+		check(
+			'exceptional_urgency_range',
+			sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 1 AND 5`
+		),
+		check(
+			'exceptional_interest_range',
+			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 1 AND 5`
+		),
+		check(
+			'exceptional_energy_range',
+			sql`${table.energy} IS NULL OR ${table.energy} BETWEEN 1 AND 5`
+		),
 		check(
 			'exceptional_mode_category',
 			sql`${table.mode} != 'category' OR ${table.categoryId} IS NOT NULL`
@@ -312,6 +349,21 @@ export const plannerTodos = sqliteTable(
 		title: text('title').notNull(),
 		notes: text('notes').default(''),
 		completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
+		categoryId: integer('category_id').references(() => categories.id),
+		// A todo is a task without a date yet. Setting this is what "drag it onto
+		// today" does — the same row acquires a day rather than being copied.
+		scheduledDate: text('scheduled_date'),
+		status: text('status', { enum: ['todo', 'doing', 'done', 'skipped'] })
+			.notNull()
+			.default('todo'),
+		sortOrder: integer('sort_order').notNull().default(0),
+		// How pressing, how appealing, how much it will take out of you, 1-5.
+		// Nullable on purpose: forcing three numbers onto every task is how a
+		// system stops being used by the second week. Columns rather than `meta`
+		// JSON because the board sorts and filters on them.
+		urgency: integer('urgency'),
+		interest: integer('interest'),
+		energy: integer('energy'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -319,7 +371,16 @@ export const plannerTodos = sqliteTable(
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
-	(table) => [index('planner_todos_user_idx').on(table.userId)]
+	(table) => [
+		index('planner_todos_user_idx').on(table.userId),
+		index('planner_todos_scheduled_idx').on(table.userId, table.scheduledDate),
+		check('todos_urgency_range', sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 1 AND 5`),
+		check(
+			'todos_interest_range',
+			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 1 AND 5`
+		),
+		check('todos_energy_range', sql`${table.energy} IS NULL OR ${table.energy} BETWEEN 1 AND 5`)
+	]
 );
 
 // --- Shopping List ---

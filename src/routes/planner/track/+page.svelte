@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import RatingBadges from '$lib/components/RatingBadges.svelte';
+	import { TIMING_LABELS } from '$lib/task-status.js';
+	import type { Rating } from '$lib/ratings.js';
 	import { goto } from '$app/navigation';
 	import type { PageServerData } from './$types';
 	import { CATEGORY_FALLBACK_COLOR, CATEGORY_FALLBACK_LIGHT } from '$lib/colors.js';
@@ -17,7 +20,36 @@
 	// that used to be assembled here is gone along with the second query.
 	type UnifiedTask = (typeof data.tasks)[number];
 
-	let allTasks = $derived(data.tasks);
+	// "What can I actually do right now" is the question the ratings exist to
+	// answer, so the list can be narrowed by energy and reordered by any of them.
+	let maxEnergy: number | null = $state(null);
+	let sortBy: 'time' | 'urgency' | 'interest' | 'energy' = $state('time');
+
+	let allTasks = $derived.by(() => {
+		let out = data.tasks;
+
+		// Unrated tasks are never filtered out — the filter is for choosing among
+		// what you have described, not for hiding what you have not.
+		if (maxEnergy !== null) {
+			out = out.filter((t) => t.ratings.energy === null || t.ratings.energy <= maxEnergy!);
+		}
+
+		if (sortBy === 'time') return out;
+		const key: Rating = sortBy;
+
+		// Highest first for urgency and interest, lowest first for energy, and
+		// unrated always last: an unrated task is not "a zero".
+		const ascending = key === 'energy';
+		return [...out].sort((a, b) => {
+			const av = a.ratings[key];
+			const bv = b.ratings[key];
+			if (av === null && bv === null) return a.startTime.localeCompare(b.startTime);
+			if (av === null) return 1;
+			if (bv === null) return -1;
+			if (av !== bv) return ascending ? av - bv : bv - av;
+			return a.startTime.localeCompare(b.startTime);
+		});
+	});
 
 	// Timing is no longer something you pick — the server derives early/late
 	// from when you marked it done against when it was planned for.
@@ -283,6 +315,45 @@
 		</div>
 	</div>
 
+	<div class="flex flex-wrap items-center gap-3 text-xs">
+		<div class="flex items-center gap-1">
+			<span class="eyebrow text-gray-500">Sort</span>
+			{#each [{ v: 'time', l: 'Time' }, { v: 'urgency', l: 'Urgency' }, { v: 'interest', l: 'Interest' }, { v: 'energy', l: 'Energy' }] as opt (opt.v)}
+				<button
+					type="button"
+					onclick={() => (sortBy = opt.v as typeof sortBy)}
+					class="border px-2 py-0.5 {sortBy === opt.v
+						? 'border-gray-900 bg-gray-900 font-semibold text-white'
+						: 'border-gray-300 bg-white text-gray-600 hover:text-gray-900'}"
+				>
+					{opt.l}
+				</button>
+			{/each}
+		</div>
+
+		<div class="flex items-center gap-1">
+			<span class="eyebrow text-gray-500">Energy up to</span>
+			{#each [1, 2, 3, 4, 5] as n (n)}
+				<button
+					type="button"
+					onclick={() => (maxEnergy = maxEnergy === n ? null : n)}
+					class="tabular h-6 w-6 border {maxEnergy === n
+						? 'border-gray-900 bg-gray-900 font-semibold text-white'
+						: 'border-gray-300 bg-white text-gray-500 hover:text-gray-900'}"
+				>
+					{n}
+				</button>
+			{/each}
+			{#if maxEnergy !== null}
+				<button
+					type="button"
+					onclick={() => (maxEnergy = null)}
+					class="ml-1 text-gray-400 hover:text-gray-900">clear</button
+				>
+			{/if}
+		</div>
+	</div>
+
 	<div class="flex gap-1">
 		{#each data.weekdays as day, i (i)}
 			{@const count = data.taskCountByDay[i] ?? 0}
@@ -490,8 +561,13 @@
 						</div>
 					{/if}
 
+					<RatingBadges values={task.ratings} class="shrink-0" />
+
 					<span class="shrink-0 px-2 py-0.5 text-xs font-medium {statusBadgeClass(task.status)}">
 						{task.status}
+						{#if task.status === 'done' && task.timing && task.timing !== 'on_time'}
+							<span class="font-normal opacity-70">· {TIMING_LABELS[task.timing]}</span>
+						{/if}
 					</span>
 
 					{#if needsResolution(task)}

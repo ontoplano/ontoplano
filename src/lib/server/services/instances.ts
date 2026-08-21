@@ -22,6 +22,7 @@ import {
 } from '../db/schema.js';
 
 import type { Status, Timing } from '../../task-status.js';
+import type { RatingValues } from '../../ratings.js';
 
 /** A single occurrence, whichever kind of block produced it. */
 export type Occurrence = {
@@ -60,6 +61,9 @@ export type Occurrence = {
 	resolvedActivityId: number | null;
 	/** True when the block still names only a category and no activity was picked. */
 	needsResolution: boolean;
+	/** Effective ratings: a per-occurrence override where one is set, else the
+	 *  block's own. */
+	ratings: RatingValues;
 	meta: string;
 };
 
@@ -236,6 +240,9 @@ export function listInstances(userId: string, from: Date, to: Date): Occurrence[
 			completedAt: taskInstances.completedAt,
 			notes: taskInstances.notes,
 			durationOverride: taskInstances.durationOverride,
+			urgencyOverride: taskInstances.urgencyOverride,
+			interestOverride: taskInstances.interestOverride,
+			energyOverride: taskInstances.energyOverride,
 			resolvedActivityId: taskInstances.resolvedActivityId,
 			resolvedActivityName: resolvedActivities.name,
 			resolvedActivityColor: resolvedActivities.color,
@@ -248,6 +255,9 @@ export function listInstances(userId: string, from: Date, to: Date): Occurrence[
 			slotCategoryId: weeklySlots.categoryId,
 			slotCategoryName: slotCategories.name,
 			slotCategoryColor: slotCategories.color,
+			slotUrgency: weeklySlots.urgency,
+			slotInterest: weeklySlots.interest,
+			slotEnergy: weeklySlots.energy,
 			slotActivityId: weeklySlots.activityId,
 			slotActivityName: slotActivities.name,
 			slotActivityColor: slotActivities.color,
@@ -263,6 +273,9 @@ export function listInstances(userId: string, from: Date, to: Date): Occurrence[
 			oneOffCategoryId: exceptionalSlots.categoryId,
 			oneOffCategoryName: oneOffCategories.name,
 			oneOffCategoryColor: oneOffCategories.color,
+			oneOffUrgency: exceptionalSlots.urgency,
+			oneOffInterest: exceptionalSlots.interest,
+			oneOffEnergy: exceptionalSlots.energy,
 			oneOffActivityId: exceptionalSlots.activityId,
 			oneOffActivityName: oneOffActivities.name,
 			oneOffActivityColor: oneOffActivities.color,
@@ -348,6 +361,11 @@ export function listInstances(userId: string, from: Date, to: Date): Occurrence[
 			blockActivityName: blockActivityName ?? null,
 			resolvedActivityId: r.resolvedActivityId ?? null,
 			needsResolution: mode === 'category' && activityId == null,
+			ratings: {
+				urgency: r.urgencyOverride ?? (weekly ? r.slotUrgency : r.oneOffUrgency) ?? null,
+				interest: r.interestOverride ?? (weekly ? r.slotInterest : r.oneOffInterest) ?? null,
+				energy: r.energyOverride ?? (weekly ? r.slotEnergy : r.oneOffEnergy) ?? null
+			},
 			meta: (weekly ? r.slotMeta : r.oneOffMeta) ?? '{}'
 		};
 	});

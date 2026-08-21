@@ -7,6 +7,8 @@
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { autofocus } from '$lib/actions/autofocus.js';
 	import MetaEditor from '$lib/components/MetaEditor.svelte';
+	import RatingPicker from '$lib/components/RatingPicker.svelte';
+	import { RATINGS } from '$lib/ratings.js';
 	import { parseSlotMeta } from '$lib/meta-keys.js';
 	import { getAction } from '$lib/shortcuts';
 	import { Calendar, TimeGrid, Interaction } from '@event-calendar/core';
@@ -108,6 +110,11 @@
 	let confirmingFormDelete = $state(false);
 	let formDate = $state('');
 	let formWeekday = $state(0);
+	let formRatings: Record<string, number | null> = $state({
+		urgency: null,
+		interest: null,
+		energy: null
+	});
 	let slotMode: 'category' | 'activity' = $state('activity');
 	let activityChoice = $state(NEW_ACTIVITY);
 	// Offset into the visible window (0 = the day it starts on, i.e. today by
@@ -223,6 +230,11 @@
 	}
 
 	function startEdit(slot: Slot) {
+		formRatings = {
+			urgency: slot.urgency ?? null,
+			interest: slot.interest ?? null,
+			energy: slot.energy ?? null
+		};
 		editingKind = 'slot';
 		editingBlockId = slot.id;
 		repeat = 'weekly';
@@ -233,6 +245,11 @@
 	}
 
 	function startEditExceptional(exc: Exceptional) {
+		formRatings = {
+			urgency: exc.urgency ?? null,
+			interest: exc.interest ?? null,
+			energy: exc.energy ?? null
+		};
 		editingKind = 'exceptional';
 		editingBlockId = exc.id;
 		repeat = 'once';
@@ -243,6 +260,7 @@
 	}
 
 	function startNew(mode: 'weekly' | 'once' = 'weekly') {
+		formRatings = { urgency: null, interest: null, energy: null };
 		editingKind = null;
 		editingBlockId = null;
 		repeat = mode;
@@ -1291,6 +1309,12 @@
 						</label>
 					</div>
 				{/if}
+
+				<div class="space-y-2 border border-gray-200 bg-gray-50 p-3">
+					{#each RATINGS as r (r)}
+						<RatingPicker rating={r} bind:value={formRatings[r]} />
+					{/each}
+				</div>
 
 				<MetaEditor initial={parseSlotMeta(editingBlock?.meta)} />
 			</form>

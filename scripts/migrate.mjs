@@ -22,11 +22,37 @@ if (!isNew) snapshot('pre-migrate');
 
 const client = new Database(path);
 client.pragma('journal_mode = WAL');
-client.pragma('foreign_keys = ON');
+
+/*
+ * Foreign keys stay off for the duration of the migration.
+ *
+ * SQLite cannot alter a table in place, so a column change is really "build the
+ * new table, copy, drop the old, rename". With enforcement on, dropping the old
+ * table trips every child row that still points at it. The generated migrations
+ * carry a `PRAGMA foreign_keys=OFF` of their own, but that is a no-op inside a
+ * transaction and drizzle runs the whole migration in one — so it has to be set
+ * here, on the connection, before anything starts.
+ *
+ * The integrity check afterwards is what makes this safe rather than merely
+ * quiet: it fails loudly if a migration left a dangling reference behind.
+ */
+client.pragma('foreign_keys = OFF');
 
 try {
 	migrate(drizzle(client), { migrationsFolder: './drizzle' });
-	console.log('Migrations applied.');
+
+	const violations = client.pragma('foreign_key_check');
+	if (violations.length > 0) {
+		console.error('\nMigrations applied but left broken references:\n');
+		for (const v of violations.slice(0, 20)) {
+			console.error(`  ${v.table} row ${v.rowid} -> ${v.parent} (fk ${v.fkid})`);
+		}
+		if (violations.length > 20) console.error(`  ... and ${violations.length - 20} more`);
+		console.error('\nRestore the snapshot printed above.');
+		process.exitCode = 1;
+	} else {
+		console.log('Migrations applied.');
+	}
 } catch (e) {
 	console.error('\nMigration failed:\n');
 	console.error(e instanceof Error ? (e.stack ?? e.message) : e);

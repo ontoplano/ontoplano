@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { metaFromFormData, metaPatchFromFormData } from '$lib/server/services/meta';
+import { ratingsFromForm } from '$lib/ratings';
 import { ServiceError } from '$lib/server/services/errors';
 
 /**
@@ -194,6 +195,9 @@ export const load: PageServerLoad = async (event) => {
 			activityName: activities.name,
 			activityCategoryId: activities.categoryId,
 			label: weeklySlots.label,
+			urgency: weeklySlots.urgency,
+			interest: weeklySlots.interest,
+			energy: weeklySlots.energy,
 			meta: weeklySlots.meta,
 			active: weeklySlots.active
 		})
@@ -229,6 +233,9 @@ export const load: PageServerLoad = async (event) => {
 			activityName: activities.name,
 			activityCategoryId: activities.categoryId,
 			label: exceptionalSlots.label,
+			urgency: exceptionalSlots.urgency,
+			interest: exceptionalSlots.interest,
+			energy: exceptionalSlots.energy,
 			meta: exceptionalSlots.meta,
 			active: exceptionalSlots.active,
 			// A one-off's status lives on its instance now, not on the block.
@@ -300,6 +307,7 @@ export const actions: Actions = {
 				categoryId,
 				activityId,
 				label,
+				...ratingsFromForm(formData),
 				meta: metaResult.meta
 			})
 			.returning({ id: weeklySlots.id })
@@ -728,6 +736,7 @@ export const actions: Actions = {
 				categoryId,
 				activityId,
 				label,
+				...ratingsFromForm(formData),
 				meta: excMeta.meta
 			})
 			.returning({ id: exceptionalSlots.id })
@@ -783,6 +792,7 @@ export const actions: Actions = {
 				categoryId,
 				activityId,
 				label,
+				...ratingsFromForm(formData),
 				...(metaPatch !== undefined ? { meta: metaPatch } : {})
 			})
 			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
