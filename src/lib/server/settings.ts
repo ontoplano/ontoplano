@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm';
 
 import { db } from './db/index.js';
 import { userSettings } from './db/schema.js';
+import { THEMES, type Theme } from '../theme.js';
 
 export const FEATURE_DEFAULTS: Record<string, boolean> = {
 	'feature.threeWins': false,
@@ -45,4 +46,32 @@ export function getFeatureFlags(userId: string): Record<string, boolean> {
 	}
 
 	return flags;
+}
+
+// --- Theme -------------------------------------------------------------------
+
+export { THEMES };
+export type { Theme };
+
+export const THEME_KEY = 'ui.theme';
+export const DEFAULT_THEME: Theme = 'system';
+
+export function isTheme(value: string | null | undefined): value is Theme {
+	return !!value && (THEMES as readonly string[]).includes(value);
+}
+
+/**
+ * The user's stored theme, or `system` if they have never chosen one.
+ *
+ * `system` is resolved in CSS from `prefers-color-scheme`, not here — the
+ * server has no way to know what the device is set to, and guessing would make
+ * the first paint wrong for half of visitors.
+ */
+export function getTheme(userId: string): Theme {
+	const stored = getUserSetting(userId, THEME_KEY);
+	return isTheme(stored) ? stored : DEFAULT_THEME;
+}
+
+export function setTheme(userId: string, theme: Theme): void {
+	setUserSetting(userId, THEME_KEY, theme);
 }

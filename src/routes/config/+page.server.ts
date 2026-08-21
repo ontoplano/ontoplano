@@ -1,17 +1,36 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { loadConfig, saveConfig, DB_PATH } from '$lib/server/config';
-import { FEATURE_DEFAULTS, getFeatureFlags, setUserSetting } from '$lib/server/settings';
+import {
+	FEATURE_DEFAULTS,
+	getFeatureFlags,
+	getTheme,
+	isTheme,
+	setTheme,
+	setUserSetting
+} from '$lib/server/settings';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const config = loadConfig();
 	return {
 		config,
-		features: getFeatureFlags(locals.user!.id)
+		features: getFeatureFlags(locals.user!.id),
+		theme: getTheme(locals.user!.id)
 	};
 };
 
 export const actions: Actions = {
+	setTheme: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const theme = formData.get('theme')?.toString() ?? '';
+
+		if (!isTheme(theme)) return fail(400, { message: 'Unknown theme' });
+
+		setTheme(locals.user!.id, theme);
+
+		return { success: true, action: 'setTheme' };
+	},
+
 	save: async ({ request }) => {
 		const formData = await request.formData();
 		const host = formData.get('host')?.toString()?.trim() ?? '0.0.0.0';

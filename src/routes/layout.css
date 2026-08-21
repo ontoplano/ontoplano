@@ -14,6 +14,17 @@
 	--font-sans: 'IBM Plex Sans Variable', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
 
+	/*
+	 * Header chrome is dark in both themes, so it cannot ride the gray ramp —
+	 * that ramp inverts, and inverting it would make the header the brightest
+	 * thing on a dark screen.
+	 */
+	--color-chrome: #111827;
+	--color-chrome-raised: #1f2937;
+	--color-chrome-line: #374151;
+	--color-chrome-muted: #9aa4b2;
+	--color-chrome-ink: #ffffff;
+
 	/* Flat and close to the surface. Depth separates layers, it does not decorate. */
 	--shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06);
 	--shadow-raised: 0 2px 4px rgb(15 23 42 / 0.06), 0 4px 12px rgb(15 23 42 / 0.08);
@@ -85,5 +96,111 @@
 
 	.rise {
 		animation: rise 180ms ease-out both;
+	}
+}
+
+/*
+ * Dark mode by inverting the palette itself.
+ *
+ * Every utility in this app compiles to `var(--color-gray-200)` and friends,
+ * so redefining those variables on <html> flips the whole UI without touching
+ * a single page. `html[…]` outranks the `:root` block Tailwind emits.
+ *
+ * The ramp is inverted, not merely darkened: gray-900 is the darkest ink in
+ * light mode and must become the lightest in dark mode, or every heading
+ * disappears into its background. Category and section accents are left alone —
+ * they are the user's data, and they stay recognisable against either ground.
+ */
+html[data-theme='dark'] {
+	color-scheme: dark;
+
+	--color-chrome: #0a0d12;
+	--color-chrome-raised: #171b22;
+	--color-chrome-line: #2a3039;
+	--color-chrome-muted: #8b94a3;
+	--color-chrome-ink: #f2f5fa;
+
+	--color-white: #101317;
+	--color-black: #ffffff;
+
+	--color-gray-50: #161a20;
+	--color-gray-100: #1c212a;
+	--color-gray-200: #272d38;
+	--color-gray-300: #3a4150;
+	--color-gray-400: #6f7889;
+	--color-gray-500: #909aab;
+	--color-gray-600: #adb6c4;
+	--color-gray-700: #c7cedb;
+	--color-gray-800: #dfe4ec;
+	--color-gray-900: #f2f5fa;
+
+	--color-slate-50: #161a20;
+	--color-slate-100: #1c212a;
+	--color-slate-200: #272d38;
+	--color-slate-300: #3a4150;
+	--color-slate-400: #6f7889;
+	--color-slate-500: #909aab;
+	--color-slate-600: #adb6c4;
+	--color-slate-700: #c7cedb;
+	--color-slate-800: #dfe4ec;
+	--color-slate-900: #f2f5fa;
+
+	/* Tinted backdrops are fills, so they darken rather than invert. */
+	--color-red-50: #2b1417;
+	--color-blue-50: #101f33;
+	--color-green-50: #10251a;
+	--color-yellow-50: #2a2110;
+	--color-amber-50: #2a2110;
+
+	--shadow-card: 0 1px 2px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
+	--shadow-raised: 0 2px 4px rgb(0 0 0 / 0.5), 0 4px 12px rgb(0 0 0 / 0.45);
+	--shadow-overlay: 0 8px 24px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+	html[data-theme='system'] {
+		color-scheme: dark;
+
+		--color-chrome: #0a0d12;
+		--color-chrome-raised: #171b22;
+		--color-chrome-line: #2a3039;
+		--color-chrome-muted: #8b94a3;
+		--color-chrome-ink: #f2f5fa;
+
+		--color-white: #101317;
+		--color-black: #ffffff;
+
+		--color-gray-50: #161a20;
+		--color-gray-100: #1c212a;
+		--color-gray-200: #272d38;
+		--color-gray-300: #3a4150;
+		--color-gray-400: #6f7889;
+		--color-gray-500: #909aab;
+		--color-gray-600: #adb6c4;
+		--color-gray-700: #c7cedb;
+		--color-gray-800: #dfe4ec;
+		--color-gray-900: #f2f5fa;
+
+		--color-slate-50: #161a20;
+		--color-slate-100: #1c212a;
+		--color-slate-200: #272d38;
+		--color-slate-300: #3a4150;
+		--color-slate-400: #6f7889;
+		--color-slate-500: #909aab;
+		--color-slate-600: #adb6c4;
+		--color-slate-700: #c7cedb;
+		--color-slate-800: #dfe4ec;
+		--color-slate-900: #f2f5fa;
+
+		/* Tinted backdrops are fills, so they darken rather than invert. */
+		--color-red-50: #2b1417;
+		--color-blue-50: #101f33;
+		--color-green-50: #10251a;
+		--color-yellow-50: #2a2110;
+		--color-amber-50: #2a2110;
+
+		--shadow-card: 0 1px 2px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
+		--shadow-raised: 0 2px 4px rgb(0 0 0 / 0.5), 0 4px 12px rgb(0 0 0 / 0.45);
+		--shadow-overlay: 0 8px 24px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.5);
 	}
 }

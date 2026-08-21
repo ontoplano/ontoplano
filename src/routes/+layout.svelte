@@ -5,6 +5,7 @@
 	import { goto } from '$app/navigation';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
+	import { THEMES } from '$lib/theme.js';
 	import type { SectionKey } from '$lib/colors.js';
 	import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
 
@@ -84,10 +85,10 @@
 		class="flex min-h-screen flex-col bg-gray-100"
 		style="{categoryStyle()};--section-accent:{section.accent}"
 	>
-		<header class="bg-gray-900 shadow-raised">
+		<header class="bg-chrome shadow-raised">
 			<div class="mx-auto flex max-w-5xl items-stretch justify-between px-4">
 				<div class="flex items-stretch gap-6">
-					<a href="/" class="flex items-center text-lg font-bold tracking-tight text-white"
+					<a href="/" class="flex items-center text-lg font-bold tracking-tight text-chrome-ink"
 						>ontoplano</a
 					>
 					<nav class="flex">
@@ -98,8 +99,8 @@
 							<a
 								href={item.href}
 								class="flex items-center border-b-2 px-3 py-4 text-sm transition-colors {active
-									? 'font-semibold text-white'
-									: 'border-transparent font-medium text-gray-400 hover:text-white'}"
+									? 'font-semibold text-chrome-ink'
+									: 'border-transparent font-medium text-chrome-muted hover:text-chrome-ink'}"
 								style={active ? `border-color: ${SECTIONS[item.section].accent}` : ''}
 							>
 								{item.label}
@@ -108,10 +109,10 @@
 					</nav>
 				</div>
 				<div class="menu-container relative flex items-center gap-3">
-					<span class="text-sm text-gray-400">{data.user.name}</span>
+					<span class="text-sm text-chrome-muted">{data.user.name}</span>
 					<button
 						onclick={() => (menuOpen = !menuOpen)}
-						class="flex h-8 w-8 items-center justify-center border border-gray-700 bg-gray-800 text-gray-300 shadow-sm transition hover:bg-gray-700 hover:text-white"
+						class="flex h-8 w-8 items-center justify-center border border-chrome-line bg-chrome-raised text-chrome-muted shadow-sm transition hover:text-chrome-ink hover:brightness-125"
 						aria-label="Menu"
 					>
 						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,8 +126,39 @@
 					</button>
 					{#if menuOpen}
 						<div
-							class="rise absolute top-full right-0 mt-1 w-40 border border-gray-200 bg-white shadow-overlay"
+							class="rise absolute top-full right-0 mt-1 w-44 border border-gray-200 bg-white shadow-overlay"
 						>
+							<div class="border-b border-gray-200 px-4 py-2">
+								<span class="eyebrow text-gray-500">Theme</span>
+								<form
+									method="post"
+									action="/config?/setTheme"
+									use:enhance={({ formData }) => {
+										// <html> lives outside the component tree, so `update()` will
+										// not touch it — set it here and let the reload agree later.
+										const chosen = formData.get('theme')?.toString();
+										if (chosen) document.documentElement.dataset.theme = chosen;
+										return async ({ update }) => {
+											await update({ reset: false });
+											menuOpen = false;
+										};
+									}}
+									class="mt-2 flex"
+								>
+									{#each THEMES as option (option)}
+										<button
+											type="submit"
+											name="theme"
+											value={option}
+											class="flex-1 border px-2 py-1 text-xs capitalize {data.theme === option
+												? 'border-gray-900 bg-gray-900 font-semibold text-white'
+												: 'border-gray-300 bg-white text-gray-600 hover:text-gray-900'}"
+										>
+											{option}
+										</button>
+									{/each}
+								</form>
+							</div>
 							<a
 								href="/settings/integrations"
 								onclick={() => (menuOpen = false)}
