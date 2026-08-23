@@ -10,9 +10,12 @@ export const load: LayoutServerLoad = async (event) => {
 	// password-reset link lands, and by definition its visitor is signed out.
 	const isLoginPage = event.url.pathname === '/login' || event.url.pathname.startsWith('/login/');
 	const isDemo = event.url.pathname.startsWith('/demo');
+	// The offline fallback has to render without a session check — reaching it
+	// means the network is down, so there is nothing to check against.
+	const isOffline = event.url.pathname === '/offline';
 	const isAuthApi = event.url.pathname.startsWith('/api/auth');
 
-	if (!event.locals.user && !isLoginPage && !isDemo && !isAuthApi) {
+	if (!event.locals.user && !isLoginPage && !isDemo && !isAuthApi && !isOffline) {
 		return redirect(302, '/login');
 	}
 
