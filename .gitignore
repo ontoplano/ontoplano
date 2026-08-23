@@ -45,3 +45,13 @@ telegram/node_modules
 
 # envsubst output from the .service templates
 ontoplano-prod.service
+
+# Android (TWA)
+# The generated Gradle project is build output — `node scripts/build-twa.mjs`
+# recreates it. twa-manifest.json is generated too, from the environment.
+android-twa/
+# Signing keys never go in a repository. Play ties an app to its key forever:
+# a leaked key lets someone else ship an update to your users, and a lost one
+# means republishing under a new listing.
+*.keystore
+*.jks
