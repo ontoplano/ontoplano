@@ -25,7 +25,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="fixed right-4 bottom-4 z-50">
+<div class="kbd-hint fixed right-4 bottom-4 z-50">
 	{#if show}
 		<div class="mb-2 w-72 border border-gray-200 bg-white p-4 shadow-sm">
 			<div class="mb-3 flex items-center justify-between">

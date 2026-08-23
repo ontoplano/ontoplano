@@ -158,7 +158,11 @@ function clearWeeklyPlan(userId: string) {
 export const load: PageServerLoad = async (event) => {
 	const { url } = event;
 	const userId = event.locals.user!.id;
-	const view = url.searchParams.get('view') === 'list' ? 'list' : 'grid';
+	// Whether the URL named a view matters: without one the client may pick the
+	// list on a narrow screen, but an explicit choice is always honoured.
+	const requestedView = url.searchParams.get('view');
+	const view = requestedView === 'list' ? 'list' : 'grid';
+	const viewExplicit = requestedView === 'list' || requestedView === 'grid';
 
 	const today = startOfDay(new Date());
 	const from = parseFromParam(url.searchParams.get('from'), today);
@@ -283,6 +287,7 @@ export const load: PageServerLoad = async (event) => {
 		slots,
 		range,
 		view,
+		viewExplicit,
 		categories: allCategories,
 		activities: allActivities,
 		schemes,

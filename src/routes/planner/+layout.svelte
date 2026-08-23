@@ -22,7 +22,7 @@
 		<h1 class="text-lg font-bold text-gray-900">Weekly Planner</h1>
 	</div>
 
-	<div class="flex gap-1 border-b border-gray-200">
+	<div class="snap-strip gap-1 border-b border-gray-200 md:flex">
 		{#each tabs as tab}
 			<a
 				href={tab.href}

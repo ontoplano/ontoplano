@@ -31,6 +31,47 @@
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	let viewMode: 'list' | 'grid' = $state(data.view === 'grid' ? 'grid' : 'list');
+
+	/**
+	 * A 7x24 grid needs roughly 90px per day column to stay readable, so below
+	 * about 700px the week view stops being a week view and becomes seven strips
+	 * of truncated text. On a narrow screen the list is the honest default; the
+	 * grid stays one tap away and comes back in landscape or on a tablet.
+	 *
+	 * Only applied when the URL did not ask for a view explicitly — an explicit
+	 * `?view=grid` is the user saying they want it anyway.
+	 */
+	const NARROW_BREAKPOINT = 700;
+
+	/**
+	 * Whether the width question has been answered yet.
+	 *
+	 * The calendar must not be mounted before it has: mounting and then tearing
+	 * it down in the same frame makes the library set scrollTop on an element it
+	 * no longer has, which throws.
+	 */
+	let widthChecked = $state(false);
+	let narrowScreen = $state(false);
+
+	// One effect owns `viewMode`, because two of them assigning it is what makes
+	// the calendar mount and unmount in the same frame.
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+
+		const query = window.matchMedia(`(max-width: ${NARROW_BREAKPOINT - 1}px)`);
+		const apply = () => {
+			narrowScreen = query.matches;
+			widthChecked = true;
+		};
+		apply();
+		query.addEventListener('change', apply);
+		return () => query.removeEventListener('change', apply);
+	});
+
+	$effect(() => {
+		const fromUrl = data.view === 'grid' ? 'grid' : 'list';
+		viewMode = !data.viewExplicit && narrowScreen ? 'list' : fromUrl;
+	});
 	let prefillTime = $state('09:00');
 	let prefillDuration = $state(60);
 	let gridError: string | null = $state(null);
@@ -90,10 +131,6 @@
 			flip
 		};
 	}
-
-	$effect(() => {
-		viewMode = data.view === 'grid' ? 'grid' : 'list';
-	});
 
 	// Sentinel value for the "+ New activity" option in the activity selects; the
 	// server creates the activity as part of the same submission.
@@ -1697,7 +1734,7 @@
 		{/if}
 	{:else}
 		<div class="h-[70vh] border border-gray-200 bg-white shadow-sm" use:gridZoomWheel>
-			{#if browser}
+			{#if browser && widthChecked}
 				<Calendar bind:this={ec} plugins={[TimeGrid, Interaction]} options={gridOptions} />
 			{/if}
 		</div>

@@ -258,3 +258,85 @@ html .ec {
 	--ec-popup-bg-color: var(--color-white);
 	--ec-now-indicator-color: var(--section-accent);
 }
+
+/*
+ * Phones.
+ *
+ * The desktop UI is keyboard-first by design — hjkl, bracket keys, <kbd> hints
+ * in every list. None of that exists on a touchscreen, so those affordances are
+ * hidden rather than shrunk, and the navigation moves to where a thumb reaches.
+ */
+
+/* Room for the bottom navigation, plus whatever the home indicator occupies. */
+:root {
+	--mobile-nav-height: 3.5rem;
+	--safe-bottom: env(safe-area-inset-bottom, 0px);
+	--safe-top: env(safe-area-inset-top, 0px);
+}
+
+/*
+ * Keyboard hints are noise without a keyboard. Keyed on the pointer being
+ * coarse rather than on width: a small window on a laptop still has a keyboard,
+ * and a large tablet does not.
+ */
+@media (pointer: coarse) {
+	kbd,
+	.kbd-hint {
+		/* `!important` because these elements also carry Tailwind display
+		   utilities, which would otherwise win on source order. */
+		display: none !important;
+	}
+}
+
+/*
+ * Touch targets. 44px is the smallest thing a finger hits reliably; the desktop
+ * buttons here are around 28px, which is fine for a cursor and not for a thumb.
+ */
+@media (pointer: coarse) {
+	button,
+	[role='button'],
+	select,
+	summary,
+	nav a {
+		min-height: 2.75rem;
+	}
+
+	input[type='checkbox'],
+	input[type='radio'] {
+		min-height: 1.25rem;
+		width: 1.25rem;
+		height: 1.25rem;
+	}
+}
+
+/*
+ * Horizontal column strips — the board, the day tabs.
+ *
+ * Rather than crushing every column to fit, they keep a usable width and the
+ * strip scrolls, snapping so a column always lands squarely. `overscroll-behavior`
+ * stops a sideways flick from also navigating the page back.
+ */
+.snap-strip {
+	display: flex;
+	gap: 0.75rem;
+	overflow-x: auto;
+	scroll-snap-type: x mandatory;
+	overscroll-behavior-x: contain;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+}
+
+.snap-strip::-webkit-scrollbar {
+	display: none;
+}
+
+.snap-strip > * {
+	scroll-snap-align: start;
+}
+
+/* Nothing may push the page sideways; a horizontally scrolling body is the
+   single most common way a desktop layout fails on a phone. */
+html,
+body {
+	overflow-x: hidden;
+}

@@ -367,7 +367,7 @@
 		</div>
 	</div>
 
-	<div class="flex flex-wrap items-center gap-4 text-xs">
+	<div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
 		<div class="flex items-center gap-1">
 			<span class="eyebrow text-gray-500">Sort</span>
 			{#each [{ v: 'default', l: 'Default' }, { v: 'urgency', l: 'Urgency' }, { v: 'interest', l: 'Interest' }, { v: 'energy', l: 'Energy' }] as opt (opt.v)}
@@ -397,7 +397,7 @@
 			Show skipped
 		</label>
 
-		<span class="text-gray-400">
+		<span class="kbd-hint text-gray-400">
 			Number keys set <strong class="font-semibold text-gray-600">{ratingKey}</strong> — u / i / y to
 			switch
 		</span>
@@ -460,15 +460,18 @@
 		</form>
 	{/if}
 
-	<div class="flex gap-3">
+	<div class="flex flex-col gap-3 md:flex-row">
 		<div class="min-w-0 flex-1">
+			<!-- Below md this is a snapping strip of readable columns rather than a
+			     grid squeezed to fit: a 90px column is not a column. -->
 			<div
-				class="grid gap-3"
+				class="snap-strip md:grid md:gap-3"
 				style="grid-template-columns: repeat({columns.length}, minmax(0, 1fr))"
 			>
 				{#each columns as column, ci (column.status)}
 					<section
-						class="flex min-h-64 flex-col border bg-gray-50 {dragOverColumn === column.status
+						class="flex min-h-64 w-[78vw] shrink-0 flex-col border bg-gray-50 sm:w-64 md:w-auto {dragOverColumn ===
+						column.status
 							? 'border-gray-900'
 							: 'border-gray-200'}"
 						ondragover={(e) => {
@@ -550,7 +553,9 @@
 			<!-- The todo list stays visible beside Today so the two can actually
 			     interact: drag one across and it becomes a scheduled task. -->
 			<aside
-				class="w-56 shrink-0 border bg-gray-50 {railOver ? 'border-gray-900' : 'border-gray-200'}"
+				class="w-full shrink-0 border bg-gray-50 md:w-56 {railOver
+					? 'border-gray-900'
+					: 'border-gray-200'}"
 				ondragover={(e) => {
 					e.preventDefault();
 					railOver = true;
@@ -600,7 +605,7 @@
 		{/if}
 	</div>
 
-	<p class="text-xs text-gray-400">
+	<p class="kbd-hint text-xs text-gray-400">
 		<kbd class="border border-gray-300 bg-gray-50 px-1">h</kbd>
 		<kbd class="border border-gray-300 bg-gray-50 px-1">j</kbd>
 		<kbd class="border border-gray-300 bg-gray-50 px-1">k</kbd>

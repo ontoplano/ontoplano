@@ -21,15 +21,50 @@
 			.join(';');
 	}
 
-	const nav: { href: string; label: string; section: SectionKey }[] = [
-		{ href: '/', label: 'Home', section: 'home' },
-		{ href: '/planner/track', label: 'Planner', section: 'planner' },
-		{ href: '/goals', label: 'Goals', section: 'goals' },
-		{ href: '/diary', label: 'Diary', section: 'diary' },
-		{ href: '/ideas', label: 'Ideas', section: 'ideas' },
-		{ href: '/health/habits', label: 'Health', section: 'health' },
-		{ href: '/shopping', label: 'Shopping', section: 'shopping' }
+	const nav: { href: string; label: string; section: SectionKey; icon: string }[] = [
+		// `icon` is an SVG path drawn at 24x24. Inline rather than an icon package:
+		// seven glyphs is not worth a dependency that ships to a webview.
+		{ href: '/', label: 'Home', section: 'home', icon: 'M3 10.5 12 3l9 7.5V21H3z' },
+		{
+			href: '/planner/board',
+			label: 'Planner',
+			section: 'planner',
+			icon: 'M4 5h16v16H4zM4 9h16M9 9v12M15 9v12'
+		},
+		{ href: '/goals', label: 'Goals', section: 'goals', icon: 'M12 3v18M4 6h14l-3 4 3 4H4z' },
+		{
+			href: '/diary',
+			label: 'Diary',
+			section: 'diary',
+			icon: 'M5 3h14v18H5zM9 3v18M12 8h4M12 12h4'
+		},
+		{
+			href: '/ideas',
+			label: 'Ideas',
+			section: 'ideas',
+			icon: 'M9 21h6M10 18h4M12 3a6 6 0 0 1 4 10.5V16H8v-2.5A6 6 0 0 1 12 3z'
+		},
+		{ href: '/health/habits', label: 'Health', section: 'health', icon: 'M3 12h4l2 6 4-14 2 8h6' },
+		{
+			href: '/shopping',
+			label: 'Shopping',
+			section: 'shopping',
+			icon: 'M4 7h16l-1.5 12h-13zM9 7V5a3 3 0 0 1 6 0v2'
+		}
 	];
+
+	/**
+	 * The bottom bar holds four; the rest live behind More.
+	 *
+	 * Four is what fits at 360px without the labels truncating, and a bar you
+	 * cannot read the labels on is just a row of mystery glyphs.
+	 */
+	const PRIMARY_NAV_COUNT = 4;
+	const primaryNav = $derived(nav.slice(0, PRIMARY_NAV_COUNT));
+	const secondaryNav = $derived(nav.slice(PRIMARY_NAV_COUNT));
+
+	let moreOpen = $state(false);
+	const secondaryActive = $derived(secondaryNav.some((item) => isNavActive(item.href)));
 
 	/** The section being viewed. Its accent fills the active nav tab. */
 	const section = $derived(SECTIONS[sectionFor(page.url.pathname)]);
@@ -87,13 +122,15 @@
 		class="flex min-h-screen flex-col bg-gray-100"
 		style="{categoryStyle()};--section-accent:{section.accent}"
 	>
-		<header class="bg-chrome shadow-raised">
+		<header class="bg-chrome shadow-raised" style="padding-top: var(--safe-top)">
 			<div class="mx-auto flex max-w-5xl items-stretch justify-between px-4">
 				<div class="flex items-stretch gap-6">
 					<a href="/" class="flex items-center text-lg font-bold tracking-tight text-chrome-ink"
 						>ontoplano</a
 					>
-					<nav class="flex">
+					<!-- The word-nav needs more width than a phone has; below md the
+					     bottom bar takes over. -->
+					<nav class="hidden md:flex">
 						{#each nav as item (item.href)}
 							{@const active = isNavActive(item.href)}
 							<!-- Active tab is a solid block of its section colour; the rest stay
@@ -110,7 +147,7 @@
 						{/each}
 					</nav>
 				</div>
-				<div class="menu-container relative flex items-center gap-3">
+				<div class="menu-container relative hidden items-center gap-3 md:flex">
 					<span class="text-sm text-chrome-muted">{data.user.name}</span>
 					<button
 						onclick={() => (menuOpen = !menuOpen)}
@@ -195,9 +232,130 @@
 				</div>
 			</div>
 		</header>
-		<main class="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
+		<!-- The bottom bar floats over the page, so the last card needs clearance
+		     or it sits underneath it forever. -->
+		<main
+			class="mx-auto w-full max-w-5xl flex-1 px-4 py-6"
+			style="padding-bottom: calc(var(--mobile-nav-height) + var(--safe-bottom) + 1.5rem)"
+		>
 			{@render children()}
 		</main>
+
+		<!-- Thumb-zone navigation. Primary actions belong where a thumb rests,
+		     not in a corner reachable only by shifting grip. -->
+		<nav
+			class="fixed inset-x-0 bottom-0 z-40 border-t border-chrome-line bg-chrome md:hidden"
+			style="padding-bottom: var(--safe-bottom)"
+			aria-label="Primary"
+		>
+			<div class="flex" style="height: var(--mobile-nav-height)">
+				{#each primaryNav as item (item.href)}
+					{@const active = isNavActive(item.href)}
+					<a
+						href={item.href}
+						class="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] {active
+							? 'font-semibold text-chrome-ink'
+							: 'text-chrome-muted'}"
+						aria-current={active ? 'page' : undefined}
+					>
+						<svg
+							class="h-5 w-5"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.75"
+							stroke-linecap="square"
+							aria-hidden="true"
+						>
+							<path d={item.icon} />
+						</svg>
+						{item.label}
+						<span
+							class="h-0.5 w-6"
+							style="background-color: {active ? SECTIONS[item.section].accent : 'transparent'}"
+						></span>
+					</a>
+				{/each}
+
+				<button
+					onclick={() => (moreOpen = !moreOpen)}
+					class="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] {secondaryActive ||
+					moreOpen
+						? 'font-semibold text-chrome-ink'
+						: 'text-chrome-muted'}"
+					aria-expanded={moreOpen}
+				>
+					<svg
+						class="h-5 w-5"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.75"
+						stroke-linecap="square"
+						aria-hidden="true"
+					>
+						<path d="M5 12h.01M12 12h.01M19 12h.01" />
+					</svg>
+					More
+					<span
+						class="h-0.5 w-6"
+						style="background-color: {secondaryActive ? 'currentColor' : 'transparent'}"
+					></span>
+				</button>
+			</div>
+		</nav>
+
+		{#if moreOpen}
+			<!-- A sheet rather than a dropdown: it opens upward from the bar that
+			     spawned it, which is also where the thumb already is. -->
+			<button
+				class="fixed inset-0 z-40 bg-black/40 md:hidden"
+				onclick={() => (moreOpen = false)}
+				aria-label="Close menu"
+			></button>
+			<div
+				class="rise fixed inset-x-0 z-50 border-t border-gray-200 bg-white md:hidden"
+				style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom))"
+			>
+				<div class="divide-y divide-gray-200">
+					{#each secondaryNav as item (item.href)}
+						<a
+							href={item.href}
+							onclick={() => (moreOpen = false)}
+							class="flex items-center gap-3 px-4 py-3 text-sm text-gray-900"
+						>
+							<svg
+								class="h-5 w-5 text-gray-400"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.75"
+								stroke-linecap="square"
+								aria-hidden="true"
+							>
+								<path d={item.icon} />
+							</svg>
+							{item.label}
+						</a>
+					{/each}
+					<a
+						href="/account"
+						onclick={() => (moreOpen = false)}
+						class="block px-4 py-3 text-sm text-gray-900">Account</a
+					>
+					<a
+						href="/config"
+						onclick={() => (moreOpen = false)}
+						class="block px-4 py-3 text-sm text-gray-900">Config</a
+					>
+					<form method="post" action="/login?/signOut" use:enhance>
+						<button type="submit" class="w-full px-4 py-3 text-left text-sm text-gray-900"
+							>Sign out</button
+						>
+					</form>
+				</div>
+			</div>
+		{/if}
 		<ShortcutHelp />
 	</div>
 {:else}
