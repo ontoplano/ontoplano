@@ -11,6 +11,29 @@ that is the point to revisit Capacitor — see `the planning notes/05-mobile-str
 which also notes that a bundled Capacitor build needs a JSON API first, since a
 static bundle has no server to run the current form actions against.
 
+## Getting it onto a phone
+
+```sh
+make android-install     # over USB or wireless debugging, needs adb
+make android-share       # serve it on the wifi and scan a QR code, needs nothing
+```
+
+`android-share` is the one that works everywhere: it serves the APK on this
+machine's LAN address and prints a QR code to scan. Android will ask permission
+to install from the browser the first time.
+
+It serves out of `android-twa/dist/`, holding nothing but a copy of the APK —
+`android-twa/` itself contains the signing keystore, and pointing an open HTTP
+server at that directory would publish the key to everyone on the network.
+
+Neither target needs a JDK or the Android SDK. The APK is just a file in the
+repo; only building one needs the toolchain.
+
+```sh
+make android-fingerprint # the SHA-256 for ANDROID_CERT_FINGERPRINTS
+make android-clean       # throw away the generated project
+```
+
 ## Building
 
 ```sh
