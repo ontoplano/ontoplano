@@ -423,6 +423,142 @@
 		await invalidateAll();
 	}
 
+	/* ── Multi-select ──────────────────────────────────────────────────────────
+	 *
+	 * Shift-drag draws a rectangle over the grid and selects every block it
+	 * touches; dragging any one of them then moves the whole set by the same
+	 * amount.
+	 *
+	 * The rectangle has to intercept the mousedown before event-calendar sees
+	 * it, because the calendar reads a plain drag on empty space as "create a
+	 * block here". Hence capture-phase listeners that stop propagation while
+	 * Shift is held, and leave every other gesture untouched.
+	 */
+	type Marquee = { x1: number; y1: number; x2: number; y2: number };
+
+	let selectedEventIds: Set<string> = $state(new Set<string>());
+	let marquee: Marquee | null = $state<Marquee | null>(null);
+	let gridEl: HTMLElement | undefined = $state();
+
+	const marqueeRect = $derived(
+		marquee
+			? {
+					left: Math.min(marquee.x1, marquee.x2),
+					top: Math.min(marquee.y1, marquee.y2),
+					width: Math.abs(marquee.x2 - marquee.x1),
+					height: Math.abs(marquee.y2 - marquee.y1)
+				}
+			: null
+	);
+
+	function selectionSurface(node: HTMLElement) {
+		gridEl = node;
+
+		const onMouseDown = (e: MouseEvent) => {
+			if (!e.shiftKey || e.button !== 0) return;
+			// Keep the calendar from starting its own drag-to-create.
+			e.preventDefault();
+			e.stopPropagation();
+
+			const rect = node.getBoundingClientRect();
+			marquee = {
+				x1: e.clientX - rect.left,
+				y1: e.clientY - rect.top,
+				x2: e.clientX - rect.left,
+				y2: e.clientY - rect.top
+			};
+
+			const onMove = (move: MouseEvent) => {
+				if (!marquee) return;
+				marquee = { ...marquee, x2: move.clientX - rect.left, y2: move.clientY - rect.top };
+			};
+
+			const onUp = () => {
+				window.removeEventListener('mousemove', onMove);
+				window.removeEventListener('mouseup', onUp);
+				commitMarquee(node);
+			};
+
+			window.addEventListener('mousemove', onMove);
+			window.addEventListener('mouseup', onUp);
+		};
+
+		node.addEventListener('mousedown', onMouseDown, { capture: true });
+		return {
+			destroy() {
+				node.removeEventListener('mousedown', onMouseDown, { capture: true });
+			}
+		};
+	}
+
+	/** Every block the rectangle touched, by event id. */
+	function commitMarquee(node: HTMLElement) {
+		if (!marqueeRect) return;
+
+		const base = node.getBoundingClientRect();
+		const box = {
+			left: base.left + marqueeRect.left,
+			top: base.top + marqueeRect.top,
+			right: base.left + marqueeRect.left + marqueeRect.width,
+			bottom: base.top + marqueeRect.top + marqueeRect.height
+		};
+
+		// A click rather than a drag clears the selection, which is what
+		// clicking empty space is expected to do.
+		const isClick = marqueeRect.width < 4 && marqueeRect.height < 4;
+		marquee = null;
+
+		if (isClick) {
+			selectedEventIds = new Set();
+			return;
+		}
+
+		// Not a SvelteSet: this is built locally and assigned wholesale to
+		// selectedEventIds, so reactivity comes from the assignment. Nothing ever
+		// mutates a Set in place here.
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const found = new Set<string>();
+		for (const el of node.querySelectorAll<HTMLElement>('.ec-event')) {
+			const r = el.getBoundingClientRect();
+			const overlaps =
+				r.left < box.right && r.right > box.left && r.top < box.bottom && r.bottom > box.top;
+			if (!overlaps) continue;
+
+			const id = el.dataset.ogEventId;
+			if (id) found.add(id);
+		}
+		selectedEventIds = found;
+	}
+
+	/**
+	 * The id event-calendar does not put in the DOM.
+	 *
+	 * `eventDidMount` is the only hook that sees both the event and its element,
+	 * so the id is stamped there and read back when the rectangle needs to know
+	 * what it touched.
+	 */
+	function stampEventId(info: { el: HTMLElement; event: { id: string | number } }) {
+		info.el.dataset.ogEventId = String(info.event.id);
+		// Re-applied here as well as in the effect below, because a block that
+		// mounts after a selection was made would otherwise miss it.
+		info.el.classList.toggle('og-selected', selectedEventIds.has(String(info.event.id)));
+	}
+
+	// The calendar owns these elements and re-renders them, so the selected
+	// class is written onto the DOM rather than expressed in markup.
+	$effect(() => {
+		// Both dependencies are read before anything can return early: a guard
+		// that skips the read means the effect is never re-run when it changes.
+		const ids = selectedEventIds;
+		const root = gridEl;
+		if (!root) return;
+
+		for (const el of root.querySelectorAll<HTMLElement>('.ec-event')) {
+			const id = el.dataset.ogEventId;
+			el.classList.toggle('og-selected', !!id && ids.has(id));
+		}
+	});
+
 	function goToRange(from: string | null) {
 		const parts: string[] = [];
 		if (from) parts.push(`from=${from}`);
@@ -711,6 +847,7 @@
 		eventDrop: handleEventDrop,
 		eventResize: handleEventPersist,
 		select: handleGridSelect,
+		eventDidMount: stampEventId,
 		eventMouseEnter: showHover,
 		eventMouseLeave: () => (hovered = null),
 		eventDragStart: () => (hovered = null),
@@ -789,7 +926,88 @@
 			await moveOccurrenceOnly(info);
 			return;
 		}
+
+		// Dragging one of a selected set moves the set.
+		const draggedId = String(info.event.id);
+		if (selectedEventIds.size > 1 && selectedEventIds.has(draggedId)) {
+			await moveSelection(info);
+			return;
+		}
+
 		await handleEventPersist(info);
+	}
+
+	/**
+	 * Move every selected block by the amount the dragged one moved.
+	 *
+	 * The delta is taken from the dragged block rather than from the pointer, so
+	 * the whole group lands on the same gridlines the calendar already snapped
+	 * that one to.
+	 */
+	async function moveSelection(info: {
+		event: { id: string | number; start: Date; end: Date };
+		oldEvent?: { start: Date };
+		revert: () => void;
+	}) {
+		if (!info.oldEvent) {
+			await handleEventPersist(info);
+			return;
+		}
+
+		const deltaMs = info.event.start.getTime() - info.oldEvent.start.getTime();
+		// The calendar has already drawn the dragged one where it belongs; the
+		// rest arrive from the server, so put it back and let the reload speak.
+		info.revert();
+
+		if (deltaMs === 0) return;
+
+		let failed = 0;
+		for (const id of selectedEventIds) {
+			const decoded = decodeEventId(id);
+			if (!decoded) continue;
+
+			const source =
+				decoded.kind === 'slot' ? findSlot(decoded.refId) : findExceptional(decoded.refId);
+			if (!source) continue;
+
+			// Where this block currently sits, as a real instant, so the delta can
+			// carry it across midnight or into another day correctly.
+			// A scratch value used to compute one new time and then discarded —
+			// nothing reads it reactively.
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
+			const currentDate =
+				decoded.kind === 'slot'
+					? weekdayToDate(data.range.from, (source as Slot).weekday)
+					: // eslint-disable-next-line svelte/prefer-svelte-reactivity
+						new Date(`${(source as Exceptional).date}T00:00:00`);
+			const [hh, mm] = source.startTime.split(':').map(Number);
+			currentDate.setHours(hh, mm, 0, 0);
+
+			const moved = new Date(currentDate.getTime() + deltaMs);
+			const placement = placementFromDates(
+				moved,
+				new Date(moved.getTime() + source.durationMinutes * 60_000)
+			);
+
+			const body = new FormData();
+			body.set('id', String(source.id));
+			body.set('startTime', placement.startTime);
+			body.set('durationMinutes', String(source.durationMinutes));
+			setIdentityFields(body, source);
+			if (decoded.kind === 'slot') body.set('weekday', String(placement.weekday));
+			else body.set('date', formatLocalDate(moved));
+
+			const result = await postGridAction(
+				decoded.kind === 'slot' ? 'update' : 'updateExceptional',
+				body,
+				'Failed to move the selection.'
+			);
+			if (!result) failed++;
+		}
+
+		if (failed > 0) gridError = `${failed} block(s) could not be moved.`;
+		selectedEventIds = new Set();
+		await invalidateAll();
 	}
 
 	/**
@@ -1981,6 +2199,7 @@
 				? 'h-[62vh]'
 				: 'h-[70vh]'}"
 			use:gridZoomWheel
+			use:selectionSurface
 			ondragover={(e) => {
 				if (dragTodoId === null) return;
 				e.preventDefault();
@@ -1990,6 +2209,15 @@
 			ondrop={onTodoDrop}
 			role="application"
 		>
+			{#if marqueeRect}
+				<!-- Drawn over the grid rather than inside it, so it can span
+				     columns without the calendar reflowing anything. -->
+				<div
+					class="pointer-events-none absolute z-30 border-2 border-gray-900 bg-gray-900/10"
+					style="left:{marqueeRect.left}px; top:{marqueeRect.top}px; width:{marqueeRect.width}px; height:{marqueeRect.height}px"
+				></div>
+			{/if}
+
 			{#if dropPreview}
 				<!-- Says exactly where it will land, since the grid gives no other
 				     feedback for a drop it does not itself handle. -->
@@ -2010,7 +2238,9 @@
 				>
 				while dragging to duplicate, or
 				<kbd class="border border-gray-300 bg-gray-50 px-1">Alt</kbd>
-				to move just this day's occurrence · snaps to 15min
+				to move just this day's occurrence ·
+				<kbd class="border border-gray-300 bg-gray-50 px-1">Shift</kbd>
+				drag to select several, then drag one to move them all · snaps to 15min
 			</p>
 			<div class="flex items-center gap-1">
 				<span class="mr-1 text-xs text-gray-400">

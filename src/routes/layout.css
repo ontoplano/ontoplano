@@ -366,3 +366,16 @@ html .ec {
 		font-size: 0.6875rem;
 	}
 }
+
+/*
+ * Blocks picked out by a shift-drag rectangle on the planner grid.
+ *
+ * An outline rather than a colour change: the fill is the category's, and
+ * recolouring it to show selection would hide the one thing the block is
+ * telling you.
+ */
+html .ec .ec-event.og-selected {
+	outline: 2px solid var(--color-gray-900);
+	outline-offset: -2px;
+	filter: brightness(1.08);
+}
