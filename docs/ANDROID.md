@@ -71,9 +71,18 @@ project; the app is still bound to `ONTOPLANO_DOMAIN`.
 
 ### Prerequisites
 
-Bubblewrap runs through `npx` if it is not installed globally, so the only hard
-requirement is a JDK. On first run the script creates a signing key for you —
-give it a password it can use:
+Bubblewrap, a JDK and the Android SDK, all installed by you. The build fetches
+nothing: with no config file Bubblewrap offers to download its own JDK on
+_every_ invocation, including `--version`, so the script writes that config from
+what is already installed and refuses if something is missing. Set `ANDROID_HOME`
+and it will find the rest.
+
+```sh
+npm install -g @bubblewrap/cli     # or: yarn add -D @bubblewrap/cli
+apt install openjdk-21-jdk-headless
+```
+
+On first run the script creates a signing key — give it a password:
 
 ```sh
 BUBBLEWRAP_KEYSTORE_PASSWORD=... BUBBLEWRAP_KEY_PASSWORD=... make android

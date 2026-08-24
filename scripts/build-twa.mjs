@@ -161,6 +161,13 @@ const twaManifest = {
 	generatorApp: 'bubblewrap-cli'
 };
 
+// Everything that can refuse runs before anything is written, so a build that
+// cannot finish leaves no half-made project behind.
+// Order matters: the toolchain config must exist before Bubblewrap is invoked,
+// because without it every invocation stops to ask about downloading a JDK.
+checkToolchain();
+const bubblewrap = bubblewrapCommand();
+
 mkdirSync(DIR, { recursive: true });
 const manifestPath = join(DIR, 'twa-manifest.json');
 writeFileSync(manifestPath, JSON.stringify(twaManifest, null, 2) + '\n');
@@ -185,6 +192,13 @@ function ensureSigningKey() {
 				'Pick a password and keep it — an app is tied to its key permanently:\n' +
 				'  BUBBLEWRAP_KEYSTORE_PASSWORD=... BUBBLEWRAP_KEY_PASSWORD=... make android\n'
 		);
+		process.exit(1);
+	}
+
+	// keytool's own complaint about this is a Java exception with a stack trace.
+	const keyPassword = process.env.BUBBLEWRAP_KEY_PASSWORD ?? password;
+	if (password.length < 6 || keyPassword.length < 6) {
+		console.error('\nKeystore passwords must be at least 6 characters.\n');
 		process.exit(1);
 	}
 
@@ -226,68 +240,80 @@ function ensureSigningKey() {
 ensureSigningKey();
 
 /**
- * How to invoke Bubblewrap.
+ * Locate Bubblewrap without running it.
  *
- * Prefers a global install and falls back to npx, so this works on a machine
- * that has never installed it — which is most machines, and was the first thing
- * to fail when someone other than the author ran this.
+ * Deliberately a path lookup rather than `bubblewrap --version`: with no
+ * config file, *any* invocation opens an interactive prompt offering to
+ * download a JDK. A presence check that installs a toolchain is not a presence
+ * check. Nothing here fetches anything — if a tool is missing, the answer is to
+ * install it once, on purpose.
  */
 function bubblewrapCommand() {
-	const globallyInstalled = (() => {
+	// A project-local install counts: declared in package.json and installed by
+	// the same `yarn install` as everything else.
+	const local = resolve('node_modules', '.bin', 'bubblewrap');
+	if (existsSync(local)) return local;
+
+	try {
+		return execFileSync('which', ['bubblewrap'], { stdio: ['ignore', 'pipe', 'ignore'] })
+			.toString()
+			.trim();
+	} catch {
+		console.error(
+			'\nBubblewrap is not installed. Install it once:\n' +
+				'  npm install -g @bubblewrap/cli\n' +
+				'or add it to this project:\n' +
+				'  yarn add -D @bubblewrap/cli\n'
+		);
+		process.exit(1);
+	}
+}
+
+function checkToolchain() {
+	const configPath = join(homedir(), '.bubblewrap', 'config.json');
+	if (existsSync(configPath)) return;
+
+	const hasJava = (() => {
 		try {
-			execFileSync('bubblewrap', ['--version'], { stdio: 'ignore' });
+			execFileSync('java', ['-version'], { stdio: 'ignore' });
 			return true;
 		} catch {
 			return false;
 		}
 	})();
 
-	if (globallyInstalled) return { file: 'bubblewrap', prefix: [] };
+	const sdk = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT;
 
-	try {
-		execFileSync('npx', ['--version'], { stdio: 'ignore' });
-	} catch {
-		console.error(
-			'Bubblewrap is not installed and npx is unavailable.\n' + '  npm install -g @bubblewrap/cli'
-		);
-		process.exit(1);
+	if (hasJava && sdk) {
+		// Both are already installed, so record where they are rather than
+		// letting Bubblewrap ask to fetch its own.
+		const javaBin = execFileSync('readlink', [
+			'-f',
+			execFileSync('which', ['java']).toString().trim()
+		])
+			.toString()
+			.trim();
+		const jdkPath = process.env.JAVA_HOME ?? dirname(dirname(javaBin));
+
+		mkdirSync(dirname(configPath), { recursive: true });
+		writeFileSync(configPath, JSON.stringify({ jdkPath, androidSdkPath: sdk }, null, 2) + '\n');
+		console.log(`Pointed Bubblewrap at the installed toolchain (${jdkPath}, ${sdk})`);
+		return;
 	}
 
-	console.log('Bubblewrap not installed globally; running it through npx.');
-	return { file: 'npx', prefix: ['--yes', '@bubblewrap/cli@latest'] };
+	console.error(
+		'\nNo Android toolchain, and this will not download one for you.\n\nMissing:\n' +
+			(hasJava ? '' : '  - a JDK, e.g. apt install openjdk-21-jdk-headless\n') +
+			(sdk ? '' : '  - the Android SDK, with ANDROID_HOME pointing at it\n') +
+			'\nOr write ~/.bubblewrap/config.json yourself:\n' +
+			'  { "jdkPath": "/usr/lib/jvm/java-21-openjdk-amd64", "androidSdkPath": "..." }\n\n' +
+			'See docs/ANDROID.md.\n'
+	);
+	process.exit(1);
 }
-
-/**
- * Bubblewrap shells out to a JDK and the Android SDK, and its own failure when
- * they are missing is a Java stack trace. Say it plainly first.
- */
-function checkToolchain() {
-	const configured = existsSync(join(homedir(), '.bubblewrap', 'config.json'));
-	if (configured) return;
-
-	try {
-		execFileSync('java', ['-version'], { stdio: 'ignore' });
-	} catch {
-		console.error(
-			'\nNo JDK found, and Bubblewrap has no toolchain configured.\n' +
-				'Either install one and point Bubblewrap at it:\n' +
-				'  ~/.bubblewrap/config.json\n' +
-				'  { "jdkPath": "/usr/lib/jvm/java-21-openjdk-amd64", "androidSdkPath": "..." }\n' +
-				'or let Bubblewrap fetch its own on first run — it will offer to.\n' +
-				'See docs/ANDROID.md.\n'
-		);
-	}
-}
-
-const bubblewrap = bubblewrapCommand();
-checkToolchain();
 
 const run = (args) =>
-	execFileSync(bubblewrap.file, [...bubblewrap.prefix, ...args], {
-		cwd: DIR,
-		stdio: 'inherit',
-		env: process.env
-	});
+	execFileSync(bubblewrap, args, { cwd: DIR, stdio: 'inherit', env: process.env });
 
 console.log('\nGenerating the Android project…');
 // --skipVersionUpgrade keeps `update` non-interactive; without it Bubblewrap
