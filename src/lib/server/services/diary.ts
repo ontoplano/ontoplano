@@ -148,3 +148,30 @@ function civilDate(ctx: Ctx, value: unknown): string {
 	if (!s) return localDateOf(ctx.now, ctx.tz);
 	return str(s, 'date', { max: 10, pattern: /^\d{4}-\d{2}-\d{2}$/ });
 }
+
+/** The most recent entry, for the dashboard card. */
+export function latestEntry(ctx: Ctx) {
+	const entry = db
+		.select({
+			id: diaryEntries.id,
+			content: diaryEntries.content,
+			createdAt: diaryEntries.createdAt
+		})
+		.from(diaryEntries)
+		.where(eq(diaryEntries.userId, ctx.userId))
+		.orderBy(desc(diaryEntries.createdAt))
+		.limit(1)
+		.get();
+
+	if (!entry) return null;
+
+	return {
+		...entry,
+		tags: db
+			.select({ id: tags.id, name: tags.name })
+			.from(diaryEntryTags)
+			.innerJoin(tags, eq(diaryEntryTags.tagId, tags.id))
+			.where(and(eq(diaryEntryTags.entryId, entry.id), eq(tags.userId, ctx.userId)))
+			.all()
+	};
+}

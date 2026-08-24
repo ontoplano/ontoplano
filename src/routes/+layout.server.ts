@@ -1,9 +1,8 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { db } from '$lib/server/db';
-import { categories } from '$lib/server/db/schema';
 import { DEFAULT_THEME, DEFAULT_WEEK, getTheme, getWeekSettings } from '$lib/server/settings';
-import { eq } from 'drizzle-orm';
+import { listCategories } from '$lib/server/services/activities';
+import { buildCtx } from '$lib/server/services/ctx';
 
 export const load: LayoutServerLoad = async (event) => {
 	// Anything under /login, not just /login itself — /login/reset is where a
@@ -23,18 +22,15 @@ export const load: LayoutServerLoad = async (event) => {
 	let theme = DEFAULT_THEME;
 	let week = DEFAULT_WEEK;
 	if (event.locals.user) {
-		userCategories = db
-			.select({
-				id: categories.id,
-				name: categories.name,
-				color: categories.color,
-				colorLight: categories.colorLight
-			})
-			.from(categories)
-			.where(eq(categories.userId, event.locals.user.id))
-			.all();
-		theme = getTheme(event.locals.user.id);
-		week = getWeekSettings(event.locals.user.id);
+		const ctx = buildCtx(event.locals.user.id);
+		userCategories = listCategories(ctx).map((c) => ({
+			id: c.id,
+			name: c.name,
+			color: c.color,
+			colorLight: c.colorLight
+		}));
+		theme = getTheme(ctx.userId);
+		week = getWeekSettings(ctx.userId);
 	}
 
 	return {

@@ -160,3 +160,13 @@ function parseCategoryId(ctx: Ctx, value: unknown): number | null {
 	if (!owned) throw new NotFoundError('category');
 	return id;
 }
+
+/** What is still to buy, for the dashboard card. */
+export function listToBuy(ctx: Ctx) {
+	return db
+		.select({ id: shoppingItems.id, name: shoppingItems.name, type: shoppingItems.type })
+		.from(shoppingItems)
+		.where(and(eq(shoppingItems.userId, ctx.userId), eq(shoppingItems.bought, false)))
+		.orderBy(desc(shoppingItems.createdAt))
+		.all();
+}
