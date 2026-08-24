@@ -155,6 +155,11 @@ make android-uninstall && make android-install
 The uninstall is needed whenever the signing key changed; if it has not, the
 install goes over the top.
 
+`make https-tailscale` points at the app directly rather than through a reverse
+proxy in front of it. If you run one, note that it will not see this traffic —
+and that a proxy bound to `127.0.0.1` is unreachable from a phone anyway, which
+is why the app is usually reached on the LAN address instead.
+
 If you already own a domain, Caddy with a DNS-01 challenge gets the same result
 without Tailscale — point it at `127.0.0.1:1493` and set the same three
 variables.

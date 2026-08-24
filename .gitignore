@@ -60,3 +60,6 @@ android-twa/
 # The signing key password lives beside the key; neither belongs in git.
 *.keystore.pass
 *.pass.*.bak
+
+# Scratch copies of host config, pasted in for debugging
+temp/
