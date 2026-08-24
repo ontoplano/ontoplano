@@ -38,6 +38,31 @@ export const auth = betterAuth({
 			});
 		}
 	},
+	user: {
+		changeEmail: {
+			enabled: true,
+			/**
+			 * Asks the address you are leaving to approve the move.
+			 *
+			 * The swap does not happen here. Following this link makes
+			 * better-auth mail the *new* address, and only that second link
+			 * changes anything — so a stolen session cannot walk an account to
+			 * an attacker's mailbox without access to both.
+			 */
+			sendChangeEmailVerification: async ({ user, newEmail, url }) => {
+				await sendEmail({
+					to: user.email,
+					subject: 'Confirm the new address for your ontoplano account',
+					text:
+						`Someone asked to change this account's address to ${newEmail}.\n\n` +
+						`${url}\n\n` +
+						`Until you follow that link and confirm the new address, ` +
+						`nothing changes and you keep signing in with this one. If this ` +
+						`wasn't you, ignore this message and change your password.`
+				});
+			}
+		}
+	},
 	emailVerification: {
 		sendOnSignUp: true,
 		autoSignInAfterVerification: true,
@@ -53,3 +78,23 @@ export const auth = betterAuth({
 		sveltekitCookies(getRequestEvent) // make sure this is the last plugin in the array
 	]
 });
+
+/**
+ * Does this password belong to this account?
+ *
+ * better-auth asks for the current password on `changePassword` but not on
+ * `changeEmail`, and an email change with a borrowed session is exactly the
+ * takeover the second factor is there to stop. There is no public endpoint for
+ * "check this password" that does not also mint a session, so this reads the
+ * credential account through the auth context and compares hashes.
+ */
+export async function verifyPassword(userId: string, password: string): Promise<boolean> {
+	if (!password) return false;
+
+	const ctx = await auth.$context;
+	const accounts = await ctx.internalAdapter.findAccounts(userId);
+	const credential = accounts.find((a) => a.providerId === 'credential' && a.password);
+	if (!credential?.password) return false;
+
+	return ctx.password.verify({ hash: credential.password, password });
+}
