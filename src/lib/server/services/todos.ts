@@ -240,6 +240,7 @@ export type TodoInput = {
 	notes?: unknown;
 	categoryId?: unknown;
 	scheduledDate?: unknown;
+	status?: unknown;
 	ratings?: Partial<RatingValues>;
 };
 
@@ -252,6 +253,7 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
 			categoryId: ownedCategoryId(ctx, raw.categoryId),
 			scheduledDate: optionalDate(raw.scheduledDate),
+			status: isStatus(raw.status) ? raw.status : 'todo',
 			sortOrder: nextSortOrder(ctx),
 			...(raw.ratings ?? {})
 		})
@@ -416,4 +418,95 @@ function ownedActivityId(ctx: Ctx, value: unknown): number | null {
 
 	if (!owned) throw new NotFoundError('activity');
 	return id;
+}
+
+/**
+ * Where the cards sit in a column, after a drag.
+ *
+ * Ids the account does not own simply do not match, so a posted list can
+ * reorder nothing but its own todos.
+ */
+export function reorderTodos(ctx: Ctx, ids: unknown[]): void {
+	const ordered = ids.map(Number).filter((n) => Number.isFinite(n) && n > 0);
+	if (ordered.length === 0) throw new ValidationError('Bad ordering');
+
+	const now = stamp(ctx);
+	db.transaction((tx) => {
+		ordered.forEach((id, index) => {
+			tx.update(plannerTodos)
+				.set({ sortOrder: index, updatedAt: now })
+				.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, ctx.userId)))
+				.run();
+		});
+	});
+}
+
+export function setTodoRatings(ctx: Ctx, id: number, ratings: Partial<RatingValues>): void {
+	if (Object.keys(ratings).length === 0) return;
+
+	const res = db
+		.update(plannerTodos)
+		.set({ ...ratings, updatedAt: stamp(ctx) })
+		.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('todo');
+}
+
+/**
+ * The reverse of `promoteTodo`: a one-off block goes back to being a todo.
+ *
+ * Only one-offs can go back. A weekly block is a standing commitment, not a
+ * todo that happens to have a time.
+ */
+export function demoteInstance(ctx: Ctx, instanceId: number): void {
+	const instance = db
+		.select({
+			exceptionalSlotId: taskInstances.exceptionalSlotId,
+			status: taskInstances.status,
+			notes: taskInstances.notes,
+			urgencyOverride: taskInstances.urgencyOverride,
+			interestOverride: taskInstances.interestOverride,
+			energyOverride: taskInstances.energyOverride,
+			label: exceptionalSlots.label,
+			categoryId: exceptionalSlots.categoryId,
+			urgency: exceptionalSlots.urgency,
+			interest: exceptionalSlots.interest,
+			energy: exceptionalSlots.energy
+		})
+		.from(taskInstances)
+		.innerJoin(exceptionalSlots, eq(taskInstances.exceptionalSlotId, exceptionalSlots.id))
+		.where(and(eq(taskInstances.id, instanceId), eq(taskInstances.userId, ctx.userId)))
+		.get();
+
+	if (!instance) throw new ValidationError('Only one-off blocks can go back to the todo list');
+
+	const sortOrder = nextSortOrder(ctx);
+
+	db.transaction((tx) => {
+		tx.insert(plannerTodos)
+			.values({
+				userId: ctx.userId,
+				title: instance.label || 'Untitled',
+				notes: instance.notes ?? '',
+				categoryId: instance.categoryId,
+				status: instance.status,
+				completed: instance.status === 'done',
+				sortOrder,
+				urgency: instance.urgencyOverride ?? instance.urgency,
+				interest: instance.interestOverride ?? instance.interest,
+				energy: instance.energyOverride ?? instance.energy
+			})
+			.run();
+
+		// The instance goes with it, by cascade.
+		tx.delete(exceptionalSlots)
+			.where(
+				and(
+					eq(exceptionalSlots.id, instance.exceptionalSlotId!),
+					eq(exceptionalSlots.userId, ctx.userId)
+				)
+			)
+			.run();
+	});
 }

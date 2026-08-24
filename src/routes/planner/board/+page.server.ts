@@ -1,14 +1,27 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
-import { db } from '$lib/server/db';
-import { categories, exceptionalSlots, plannerTodos, taskInstances } from '$lib/server/db/schema';
-import { and, eq } from 'drizzle-orm';
-import { generateForDate, listForDate as listOccurrences } from '$lib/server/services/instances';
-import { listUnscheduled, nextSortOrder, promoteTodo } from '$lib/server/services/todos';
-import { isStatus, timingFor, type Status, type Timing } from '$lib/task-status';
 import { ratingsFromForm } from '$lib/ratings';
-import { toLocalISOString } from '$lib/server/week-generator';
+import { isStatus, type Status, type Timing } from '$lib/task-status';
+import { listCategories } from '$lib/server/services/activities';
+import { buildCtx, type Ctx } from '$lib/server/services/ctx';
+import { toActionFailure } from '$lib/server/services/errors';
+import {
+	generateForDate,
+	listForDate as listOccurrences,
+	setInstanceRatings,
+	setInstanceStatus
+} from '$lib/server/services/instances';
+import {
+	createTodo,
+	demoteInstance,
+	deleteTodo,
+	listUnscheduled,
+	promoteTodo,
+	reorderTodos,
+	scheduleTodo,
+	setTodoRatings,
+	setTodoStatus
+} from '$lib/server/services/todos';
 
 function pad(n: number): string {
 	return String(n).padStart(2, '0');
@@ -32,8 +45,7 @@ function parseDate(param: string | null): Date {
  * Today gets the next half hour from now so a promoted todo lands ahead of you
  * rather than in the past; another day starts at nine.
  */
-function nextFreeTime(dateStr: string): string {
-	const now = new Date();
+function nextFreeTime(dateStr: string, now: Date): string {
 	const isToday = formatDate(now) === dateStr;
 	if (!isToday) return '09:00';
 
@@ -67,14 +79,14 @@ export type Card = {
 	ratings: { urgency: number | null; interest: number | null; energy: number | null };
 };
 
-export const load: PageServerLoad = async (event) => {
-	const userId = event.locals.user!.id;
-	const date = parseDate(event.url.searchParams.get('date'));
+export const load: PageServerLoad = async ({ locals, url }) => {
+	const ctx = buildCtx(locals.user!.id);
+	const date = parseDate(url.searchParams.get('date'));
 	const dateStr = formatDate(date);
 
-	generateForDate(userId, date);
+	generateForDate(ctx, date);
 
-	const occurrences = listOccurrences(userId, date).map(
+	const occurrences = listOccurrences(ctx, date).map(
 		(o, i): Card => ({
 			uid: `instance:${o.id}`,
 			kind: 'instance',
@@ -113,21 +125,16 @@ export const load: PageServerLoad = async (event) => {
 	});
 
 	const todayCards = occurrences;
-	const generalCards = listUnscheduled(buildCtx(userId)).map(asCard);
-
-	const allCategories = db
-		.select({ id: categories.id, name: categories.name, color: categories.color })
-		.from(categories)
-		.where(eq(categories.userId, userId))
-		.orderBy(categories.name)
-		.all();
+	const generalCards = listUnscheduled(ctx).map(asCard);
 
 	return {
 		date: dateStr,
-		today: formatDate(new Date()),
+		today: formatDate(ctx.now),
 		todayCards,
 		generalCards,
-		categories: allCategories
+		categories: listCategories(ctx)
+			.map((c) => ({ id: c.id, name: c.name, color: c.color }))
+			.sort((a, b) => a.name.localeCompare(b.name))
 	};
 };
 
@@ -143,90 +150,50 @@ async function readTarget(request: Request) {
 
 export const actions: Actions = {
 	setStatus: async ({ request, locals }) => {
-		const userId = locals.user!.id;
+		const ctx = buildCtx(locals.user!.id);
 		const target = await readTarget(request);
 		if ('error' in target) return fail(400, { message: target.error });
 
-		const status = target.formData.get('status')?.toString();
-		if (!isStatus(status)) return fail(400, { message: 'Invalid status' });
-
-		if (target.kind === 'instance') {
-			const instance = db
-				.select({ scheduledAt: taskInstances.scheduledAt })
-				.from(taskInstances)
-				.where(and(eq(taskInstances.id, target.id), eq(taskInstances.userId, userId)))
-				.get();
-			if (!instance) return fail(404, { message: 'Task not found' });
-
-			const completedAt = status === 'done' ? toLocalISOString(new Date()) : null;
-			db.update(taskInstances)
-				.set({
-					status,
-					completedAt,
-					timing: completedAt ? timingFor(instance.scheduledAt, completedAt) : null
-				})
-				.where(and(eq(taskInstances.id, target.id), eq(taskInstances.userId, userId)))
-				.run();
-		} else {
-			db.update(plannerTodos)
-				.set({ status, completed: status === 'done', updatedAt: toLocalISOString(new Date()) })
-				.where(and(eq(plannerTodos.id, target.id), eq(plannerTodos.userId, userId)))
-				.run();
+		const status = target.formData.get('status');
+		try {
+			if (target.kind === 'instance') setInstanceStatus(ctx, target.id, status);
+			else setTodoStatus(ctx, target.id, status);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
 		}
-
-		return { success: true };
 	},
 
 	/**
 	 * Where a card sits within its column.
 	 *
-	 * Only todos have a position to remember — an occurrence's place is its
-	 * time of day, and letting a drag override that would put the board and the
+	 * Only todos have a position to remember — an occurrence's place is its time
+	 * of day, and letting a drag override that would put the board and the
 	 * calendar into disagreement over the same task.
 	 */
 	reorder: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const ids = formData.getAll('todoId').map((v) => Number(v));
-		if (ids.some((n) => !Number.isFinite(n) || n <= 0))
-			return fail(400, { message: 'Bad ordering' });
-
-		db.transaction((tx) => {
-			ids.forEach((id, index) => {
-				tx.update(plannerTodos)
-					.set({ sortOrder: index, updatedAt: toLocalISOString(new Date()) })
-					.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, userId)))
-					.run();
-			});
-		});
-
-		return { success: true };
+		try {
+			reorderTodos(buildCtx(locals.user!.id), formData.getAll('todoId'));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	/** Dragging between the two tabs: a todo gains a day, or gives one up. */
 	schedule: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const target = await readTarget(request);
 		if ('error' in target) return fail(400, { message: target.error });
 		if (target.kind !== 'todo')
 			return fail(400, { message: 'Only a todo can be moved between days that way' });
 
-		const date = target.formData.get('scheduledDate')?.toString()?.trim() || null;
-		if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail(400, { message: 'Invalid date' });
-
-		const existing = db
-			.select({ id: plannerTodos.id })
-			.from(plannerTodos)
-			.where(and(eq(plannerTodos.id, target.id), eq(plannerTodos.userId, userId)))
-			.get();
-		if (!existing) return fail(404, { message: 'Todo not found' });
-
-		db.update(plannerTodos)
-			.set({ scheduledDate: date, updatedAt: toLocalISOString(new Date()) })
-			.where(and(eq(plannerTodos.id, target.id), eq(plannerTodos.userId, userId)))
-			.run();
-
-		return { success: true };
+		try {
+			scheduleTodo(buildCtx(locals.user!.id), target.id, target.formData.get('scheduledDate'));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	/**
@@ -238,7 +205,7 @@ export const actions: Actions = {
 	 * never a todo and a task that are secretly the same thing.
 	 */
 	promote: async ({ request, locals }) => {
-		const userId = locals.user!.id;
+		const ctx: Ctx = buildCtx(locals.user!.id);
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 		const date = formData.get('date')?.toString()?.trim() ?? '';
@@ -247,10 +214,10 @@ export const actions: Actions = {
 		if (!id) return fail(400, { message: 'Missing id' });
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail(400, { message: 'Invalid date' });
 
-		const result = promoteTodo(buildCtx(userId), {
+		const result = promoteTodo(ctx, {
 			todoId: id,
 			date,
-			startTime: formData.get('startTime')?.toString()?.trim() || nextFreeTime(date),
+			startTime: formData.get('startTime')?.toString()?.trim() || nextFreeTime(date, ctx.now),
 			status: isStatus(status) ? status : undefined
 		});
 
@@ -260,134 +227,57 @@ export const actions: Actions = {
 
 	/** The reverse: a one-off goes back to being an undated todo. */
 	demote: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		if (!id) return fail(400, { message: 'Missing id' });
-
-		const instance = db
-			.select({
-				id: taskInstances.id,
-				exceptionalSlotId: taskInstances.exceptionalSlotId,
-				status: taskInstances.status,
-				notes: taskInstances.notes,
-				urgencyOverride: taskInstances.urgencyOverride,
-				interestOverride: taskInstances.interestOverride,
-				energyOverride: taskInstances.energyOverride,
-				label: exceptionalSlots.label,
-				categoryId: exceptionalSlots.categoryId,
-				urgency: exceptionalSlots.urgency,
-				interest: exceptionalSlots.interest,
-				energy: exceptionalSlots.energy
-			})
-			.from(taskInstances)
-			.innerJoin(exceptionalSlots, eq(taskInstances.exceptionalSlotId, exceptionalSlots.id))
-			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-			.get();
-
-		// Only one-offs can go back. A weekly block is a standing commitment, not
-		// a todo that happens to have a time.
-		if (!instance)
-			return fail(400, { message: 'Only one-off blocks can go back to the todo list' });
-
-		db.transaction((tx) => {
-			tx.insert(plannerTodos)
-				.values({
-					userId,
-					title: instance.label || 'Untitled',
-					notes: instance.notes ?? '',
-					categoryId: instance.categoryId,
-					status: instance.status,
-					completed: instance.status === 'done',
-					sortOrder: nextSortOrder(buildCtx(userId)),
-					urgency: instance.urgencyOverride ?? instance.urgency,
-					interest: instance.interestOverride ?? instance.interest,
-					energy: instance.energyOverride ?? instance.energy
-				})
-				.run();
-
-			// The instance goes with it, by cascade.
-			tx.delete(exceptionalSlots)
-				.where(
-					and(
-						eq(exceptionalSlots.id, instance.exceptionalSlotId!),
-						eq(exceptionalSlots.userId, userId)
-					)
-				)
-				.run();
-		});
-
-		return { success: true };
+		try {
+			demoteInstance(buildCtx(locals.user!.id), Number(formData.get('id')));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	createTodo: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const title = formData.get('title')?.toString()?.trim() ?? '';
-		if (!title) return fail(400, { message: 'Title is required' });
-
-		const scheduledDate = formData.get('scheduledDate')?.toString()?.trim() || null;
-		if (scheduledDate && !/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate))
-			return fail(400, { message: 'Invalid date' });
-
-		const categoryId = formData.get('categoryId') ? Number(formData.get('categoryId')) : null;
-		const status = formData.get('status')?.toString();
-
-		db.insert(plannerTodos)
-			.values({
-				userId,
-				title,
-				notes: formData.get('notes')?.toString()?.trim() ?? '',
-				categoryId,
-				scheduledDate,
-				status: isStatus(status) ? status : 'todo',
-				sortOrder: nextSortOrder(buildCtx(userId)),
-				...ratingsFromForm(formData)
-			})
-			.run();
-
-		return { success: true };
+		try {
+			createTodo(buildCtx(locals.user!.id), {
+				title: formData.get('title'),
+				notes: formData.get('notes'),
+				categoryId: formData.get('categoryId'),
+				scheduledDate: formData.get('scheduledDate'),
+				status: formData.get('status'),
+				ratings: ratingsFromForm(formData)
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	setRatings: async ({ request, locals }) => {
-		const userId = locals.user!.id;
+		const ctx = buildCtx(locals.user!.id);
 		const target = await readTarget(request);
 		if ('error' in target) return fail(400, { message: target.error });
 
 		const ratings = ratingsFromForm(target.formData);
-		if (Object.keys(ratings).length === 0) return { success: true };
-
-		if (target.kind === 'todo') {
-			db.update(plannerTodos)
-				.set({ ...ratings, updatedAt: toLocalISOString(new Date()) })
-				.where(and(eq(plannerTodos.id, target.id), eq(plannerTodos.userId, userId)))
-				.run();
-		} else {
-			// On an occurrence these are per-day overrides, leaving the block that
-			// produced it — and every other day it produces — untouched.
-			db.update(taskInstances)
-				.set({
-					urgencyOverride: ratings.urgency,
-					interestOverride: ratings.interest,
-					energyOverride: ratings.energy
-				})
-				.where(and(eq(taskInstances.id, target.id), eq(taskInstances.userId, userId)))
-				.run();
+		try {
+			if (target.kind === 'todo') setTodoRatings(ctx, target.id, ratings);
+			else setInstanceRatings(ctx, target.id, ratings);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
 		}
-
-		return { success: true };
 	},
 
 	deleteTodo: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const target = await readTarget(request);
 		if ('error' in target) return fail(400, { message: target.error });
 		if (target.kind !== 'todo') return fail(400, { message: 'Only todos can be deleted here' });
 
-		db.delete(plannerTodos)
-			.where(and(eq(plannerTodos.id, target.id), eq(plannerTodos.userId, userId)))
-			.run();
-
-		return { success: true };
+		try {
+			deleteTodo(buildCtx(locals.user!.id), target.id);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	}
 };

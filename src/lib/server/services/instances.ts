@@ -537,3 +537,29 @@ function ownedActivity(ctx: Ctx, value: unknown): number | null {
 	if (!owned) throw new NotFoundError('activity');
 	return id;
 }
+
+/**
+ * Per-day rating overrides.
+ *
+ * On an occurrence these leave the block that produced it — and every other day
+ * it produces — untouched.
+ */
+export function setInstanceRatings(
+	ctx: Ctx,
+	id: number,
+	ratings: { urgency?: number | null; interest?: number | null; energy?: number | null }
+): void {
+	if (Object.keys(ratings).length === 0) return;
+
+	const res = db
+		.update(taskInstances)
+		.set({
+			urgencyOverride: ratings.urgency,
+			interestOverride: ratings.interest,
+			energyOverride: ratings.energy
+		})
+		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('task');
+}
