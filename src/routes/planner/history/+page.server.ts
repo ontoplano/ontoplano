@@ -1,104 +1,63 @@
 import type { PageServerLoad } from './$types';
-import { db } from '$lib/server/db';
-import { taskInstances, weeklySlots, activities, categories } from '$lib/server/db/schema';
-import { eq, and, gte, lt, sql } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/sqlite-core';
-import {
-	toLocalISOString,
-	getMonday,
-	addDays,
-	getISOWeekNumber,
-	getISOWeekYear
-} from '$lib/server/week-generator';
+import { buildCtx } from '$lib/server/services/ctx';
+import { listInstances } from '$lib/server/services/instances';
+import { addDays, getISOWeekNumber, getISOWeekYear, getMonday } from '$lib/server/week-generator';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
-function parseWeekParam(param: string | null): Date {
-	if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
-		const parsed = new Date(param + 'T00:00:00');
-		if (!isNaN(parsed.getTime())) {
-			return getMonday(parsed);
-		}
-	}
-	const lastMonday = addDays(getMonday(new Date()), -7);
-	return lastMonday;
-}
 
 function formatDate(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export const load: PageServerLoad = async (event) => {
-	const { url } = event;
-	const userId = event.locals.user!.id;
-	const weekParam = url.searchParams.get('week');
-	const monday = parseWeekParam(weekParam);
-	const sunday = addDays(monday, 6);
-	const nextMonday = addDays(monday, 7);
+/** Last week by default: this week is what the tracker is for. */
+function parseWeekParam(param: string | null, now: Date): Date {
+	if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
+		const parsed = new Date(param + 'T00:00:00');
+		if (!isNaN(parsed.getTime())) return getMonday(parsed);
+	}
+	return addDays(getMonday(now), -7);
+}
 
-	const weekNumber = getISOWeekNumber(monday);
-	const weekYear = getISOWeekYear(monday);
+export const load: PageServerLoad = async ({ locals, url }) => {
+	const ctx = buildCtx(locals.user!.id);
+	const monday = parseWeekParam(url.searchParams.get('week'), ctx.now);
+	const nextMonday = addDays(monday, 7);
 
 	const weekMeta = {
 		monday: formatDate(monday),
-		sunday: formatDate(sunday),
-		weekNumber,
-		weekYear,
+		sunday: formatDate(addDays(monday, 6)),
+		weekNumber: getISOWeekNumber(monday),
+		weekYear: getISOWeekYear(monday),
 		prevWeek: formatDate(addDays(monday, -7)),
 		nextWeek: formatDate(nextMonday)
 	};
 
-	const mondayStr = toLocalISOString(monday);
-	const nextMondayStr = toLocalISOString(nextMonday);
-
-	const slotActivities = alias(activities, 'slot_activities');
-	const activityCategories = alias(categories, 'activity_categories');
-
-	const instances = db
-		.select({
-			id: taskInstances.id,
-			scheduledAt: taskInstances.scheduledAt,
-			status: taskInstances.status,
-			timing: taskInstances.timing,
-			completedAt: taskInstances.completedAt,
-			notes: taskInstances.notes,
-			slotId: taskInstances.slotId,
-			slotMode: weeklySlots.mode,
-			slotLabel: weeklySlots.label,
-			slotStartTime: weeklySlots.startTime,
-			slotDuration: weeklySlots.durationMinutes,
-			categoryId: sql<number>`coalesce(${weeklySlots.categoryId}, ${slotActivities.categoryId})`.as(
-				'effective_category_id'
-			),
-			categoryName: sql<string>`coalesce(${categories.name}, ${activityCategories.name})`.as(
-				'effective_category_name'
-			),
-			activityId: taskInstances.resolvedActivityId,
-			activityName: activities.name
-		})
-		.from(taskInstances)
-		.innerJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
-		.leftJoin(categories, eq(weeklySlots.categoryId, categories.id))
-		.leftJoin(slotActivities, eq(weeklySlots.activityId, slotActivities.id))
-		.leftJoin(activityCategories, eq(slotActivities.categoryId, activityCategories.id))
-		.leftJoin(activities, eq(taskInstances.resolvedActivityId, activities.id))
-		.where(
-			and(
-				eq(taskInstances.userId, userId),
-				gte(taskInstances.scheduledAt, mondayStr),
-				lt(taskInstances.scheduledAt, nextMondayStr)
-			)
-		)
-		.orderBy(taskInstances.scheduledAt)
-		.all();
+	// Read through the instances service, which is also what generated these
+	// rows. The hand-written query this replaced joined weekly slots only, so a
+	// week's one-off blocks were missing from its own history.
+	const instances = listInstances(ctx, monday, nextMonday).map((o) => ({
+		id: o.id,
+		scheduledAt: o.scheduledAt,
+		status: o.status,
+		timing: o.timing,
+		completedAt: o.completedAt,
+		notes: o.notes,
+		slotId: o.slotId,
+		slotMode: o.mode,
+		slotLabel: o.label,
+		slotStartTime: o.startTime,
+		slotDuration: o.durationMinutes,
+		categoryId: o.categoryId,
+		categoryName: o.categoryName,
+		activityId: o.activityId,
+		activityName: o.activityName
+	}));
 
 	const instancesByDay: Record<number, typeof instances> = {};
 	for (const inst of instances) {
-		const d = new Date(inst.scheduledAt);
-		const dayOfWeek = d.getDay();
+		const dayOfWeek = new Date(inst.scheduledAt).getDay();
 		const weekdayIdx = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-		if (!instancesByDay[weekdayIdx]) instancesByDay[weekdayIdx] = [];
-		instancesByDay[weekdayIdx].push(inst);
+		(instancesByDay[weekdayIdx] ??= []).push(inst);
 	}
 
 	const done = instances.filter((i) => i.status === 'done');
