@@ -10,6 +10,7 @@ import { and, asc, eq, gte, inArray, lt } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import {
+	activities,
 	goalAreas,
 	goalLinks,
 	goals,
@@ -17,7 +18,11 @@ import {
 	taskInstances,
 	weeklySlots
 } from '../db/schema.js';
-import { periodEnd, type Horizon } from '../../goals.js';
+import { periodEnd, periodStart, isGoalStatus, isHorizon, type Horizon } from '../../goals.js';
+import type { Ctx } from './ctx.js';
+import { ConflictError, NotFoundError, ValidationError } from './errors.js';
+import { stamp } from './time.js';
+import { num, optionalStr, str } from './validate.js';
 
 export type GoalArea = { id: number; name: string; color: string; sortOrder: number };
 
@@ -51,7 +56,7 @@ export type Goal = {
 	progress: GoalProgress;
 };
 
-export function listAreas(userId: string): GoalArea[] {
+export function listAreas(ctx: Ctx): GoalArea[] {
 	return db
 		.select({
 			id: goalAreas.id,
@@ -60,7 +65,7 @@ export function listAreas(userId: string): GoalArea[] {
 			sortOrder: goalAreas.sortOrder
 		})
 		.from(goalAreas)
-		.where(eq(goalAreas.userId, userId))
+		.where(eq(goalAreas.userId, ctx.userId))
 		.orderBy(asc(goalAreas.sortOrder), asc(goalAreas.name))
 		.all();
 }
@@ -74,7 +79,7 @@ export function listAreas(userId: string): GoalArea[] {
  * once each.
  */
 function progressFor(
-	userId: string,
+	ctx: Ctx,
 	goal: { horizon: Horizon; periodStart: string },
 	slotIds: number[],
 	todoIds: number[],
@@ -104,7 +109,7 @@ function progressFor(
 			.from(taskInstances)
 			.where(
 				and(
-					eq(taskInstances.userId, userId),
+					eq(taskInstances.userId, ctx.userId),
 					gte(taskInstances.scheduledAt, `${from}T00:00:00`),
 					lt(taskInstances.scheduledAt, `${to}T00:00:00`)
 				)
@@ -127,7 +132,7 @@ function progressFor(
 		const rows = db
 			.select({ status: plannerTodos.status })
 			.from(plannerTodos)
-			.where(and(eq(plannerTodos.userId, userId), inArray(plannerTodos.id, todoIds)))
+			.where(and(eq(plannerTodos.userId, ctx.userId), inArray(plannerTodos.id, todoIds)))
 			.all();
 		total += rows.length;
 		done += rows.filter((r) => r.status === 'done').length;
@@ -136,7 +141,7 @@ function progressFor(
 	return { total, done, fraction: total > 0 ? done / total : null };
 }
 
-export function listGoals(userId: string, opts: { includeClosed?: boolean } = {}): Goal[] {
+export function listGoals(ctx: Ctx, opts: { includeClosed?: boolean } = {}): Goal[] {
 	const rows = db
 		.select({
 			id: goals.id,
@@ -157,7 +162,7 @@ export function listGoals(userId: string, opts: { includeClosed?: boolean } = {}
 		})
 		.from(goals)
 		.leftJoin(goalAreas, eq(goals.areaId, goalAreas.id))
-		.where(eq(goals.userId, userId))
+		.where(eq(goals.userId, ctx.userId))
 		.orderBy(asc(goals.periodStart), asc(goals.title))
 		.all();
 
@@ -195,7 +200,7 @@ export function listGoals(userId: string, opts: { includeClosed?: boolean } = {}
 				linkedTodoIds,
 				linkedActivityIds,
 				progress: progressFor(
-					userId,
+					ctx,
 					r,
 					linkedSlotIds,
 					linkedTodoIds,
@@ -208,14 +213,14 @@ export function listGoals(userId: string, opts: { includeClosed?: boolean } = {}
 }
 
 /** Goals whose period covers `date`, for the dashboard card. */
-export function listActiveOn(userId: string, date: string): Goal[] {
-	return listGoals(userId).filter(
+export function listActiveOn(ctx: Ctx, date: string): Goal[] {
+	return listGoals(ctx).filter(
 		(g) => date >= g.periodStart && date < periodEnd(g.horizon, g.periodStart)
 	);
 }
 
 /** Weekly slots a goal can be linked to, for the picker. */
-export function linkableSlots(userId: string) {
+export function linkableSlots(ctx: Ctx) {
 	return db
 		.select({
 			id: weeklySlots.id,
@@ -225,7 +230,252 @@ export function linkableSlots(userId: string) {
 			activityId: weeklySlots.activityId
 		})
 		.from(weeklySlots)
-		.where(and(eq(weeklySlots.userId, userId), eq(weeklySlots.active, true)))
+		.where(and(eq(weeklySlots.userId, ctx.userId), eq(weeklySlots.active, true)))
 		.orderBy(asc(weeklySlots.weekday), asc(weeklySlots.startTime))
 		.all();
+}
+
+// --- Mutations ----------------------------------------------------------------
+
+export const MAX_TITLE_LENGTH = 300;
+export const MAX_NOTES_LENGTH = 4000;
+export const MAX_UNIT_LENGTH = 40;
+export const MAX_OUTCOME_LENGTH = 2000;
+export const MAX_AREA_NAME_LENGTH = 100;
+
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+export function createArea(ctx: Ctx, raw: { name: unknown; color?: unknown }): number {
+	const name = str(raw.name, 'name', { max: MAX_AREA_NAME_LENGTH });
+	const color = parseColor(raw.color) ?? '#6b7280';
+
+	const clash = db
+		.select({ id: goalAreas.id })
+		.from(goalAreas)
+		.where(and(eq(goalAreas.userId, ctx.userId), eq(goalAreas.name, name)))
+		.get();
+
+	if (clash) throw new ConflictError('You already have an area with that name');
+
+	const result = db.insert(goalAreas).values({ userId: ctx.userId, name, color }).run();
+	return Number(result.lastInsertRowid);
+}
+
+/** Goals keep existing without an area rather than disappearing with it. */
+export function deleteArea(ctx: Ctx, id: number): void {
+	const res = db
+		.delete(goalAreas)
+		.where(and(eq(goalAreas.id, id), eq(goalAreas.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('area');
+}
+
+export function createGoal(
+	ctx: Ctx,
+	raw: {
+		title: unknown;
+		horizon: unknown;
+		notes?: unknown;
+		periodAnchor?: unknown;
+		areaId?: unknown;
+		parentId?: unknown;
+		targetValue?: unknown;
+		unit?: unknown;
+	}
+): number {
+	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
+	const horizon = raw.horizon;
+	if (!isHorizon(horizon)) throw new ValidationError('Pick a horizon');
+
+	const anchorRaw = raw.periodAnchor ? String(raw.periodAnchor).trim() : '';
+	const anchor = DATE_PATTERN.test(anchorRaw) ? new Date(`${anchorRaw}T00:00:00`) : ctx.now;
+
+	const result = db
+		.insert(goals)
+		.values({
+			userId: ctx.userId,
+			title,
+			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
+			horizon,
+			// Anchored to the period containing the chosen date, so two goals in
+			// the same quarter always agree on where that quarter starts.
+			periodStart: periodStart(horizon, anchor),
+			areaId: ownedAreaId(ctx, raw.areaId),
+			parentId: ownedGoalId(ctx, raw.parentId),
+			targetValue: parseTarget(raw.targetValue),
+			unit: optionalStr(raw.unit, 'unit', { max: MAX_UNIT_LENGTH })
+		})
+		.run();
+
+	return Number(result.lastInsertRowid);
+}
+
+export function updateGoal(
+	ctx: Ctx,
+	id: number,
+	raw: { title: unknown; notes?: unknown; areaId?: unknown; targetValue?: unknown; unit?: unknown }
+): void {
+	const res = db
+		.update(goals)
+		.set({
+			title: str(raw.title, 'title', { max: MAX_TITLE_LENGTH }),
+			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
+			areaId: ownedAreaId(ctx, raw.areaId),
+			targetValue: parseTarget(raw.targetValue),
+			unit: optionalStr(raw.unit, 'unit', { max: MAX_UNIT_LENGTH }),
+			updatedAt: stamp(ctx)
+		})
+		.where(and(eq(goals.id, id), eq(goals.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('goal');
+}
+
+/** Self-reported progress, for goals with a target and no linked tasks. */
+export function setGoalProgress(ctx: Ctx, id: number, value: unknown): void {
+	const currentValue = num(value, 'progress', { min: 0 });
+
+	const res = db
+		.update(goals)
+		.set({ currentValue, updatedAt: stamp(ctx) })
+		.where(and(eq(goals.id, id), eq(goals.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('goal');
+}
+
+export function closeGoal(ctx: Ctx, id: number, raw: { status: unknown; outcome?: unknown }): void {
+	const status = raw.status;
+	if (!isGoalStatus(status)) throw new ValidationError('Invalid status');
+
+	const now = stamp(ctx);
+	const res = db
+		.update(goals)
+		.set({
+			status,
+			outcome: optionalStr(raw.outcome, 'outcome', { max: MAX_OUTCOME_LENGTH }),
+			// Reopening clears the closing date, so a reopened goal does not read
+			// as having been finished at some point in the past.
+			closedAt: status === 'open' ? null : now,
+			updatedAt: now
+		})
+		.where(and(eq(goals.id, id), eq(goals.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('goal');
+}
+
+/** Replace a goal's links wholesale — simpler than diffing, and idempotent. */
+export function setGoalLinks(
+	ctx: Ctx,
+	id: number,
+	links: { slotIds: unknown[]; todoIds: unknown[]; activityIds: unknown[] }
+): void {
+	assertOwnedGoal(ctx, id);
+
+	const slotIds = ownedIds(links.slotIds, ownedSlotIds(ctx));
+	const todoIds = ownedIds(links.todoIds, ownedTodoIds(ctx));
+	const activityIds = ownedIds(links.activityIds, ownedActivityIds(ctx));
+
+	db.transaction((tx) => {
+		tx.delete(goalLinks).where(eq(goalLinks.goalId, id)).run();
+		for (const slotId of slotIds) tx.insert(goalLinks).values({ goalId: id, slotId }).run();
+		for (const todoId of todoIds) tx.insert(goalLinks).values({ goalId: id, todoId }).run();
+		for (const activityId of activityIds)
+			tx.insert(goalLinks).values({ goalId: id, activityId }).run();
+	});
+}
+
+export function deleteGoal(ctx: Ctx, id: number): void {
+	assertOwnedGoal(ctx, id);
+
+	db.transaction((tx) => {
+		// Children outlive their parent rather than cascading away; losing a year
+		// goal should not silently delete a quarter's worth of work.
+		tx.update(goals)
+			.set({ parentId: null })
+			.where(and(eq(goals.parentId, id), eq(goals.userId, ctx.userId)))
+			.run();
+		tx.delete(goals)
+			.where(and(eq(goals.id, id), eq(goals.userId, ctx.userId)))
+			.run();
+	});
+}
+
+function assertOwnedGoal(ctx: Ctx, id: number): void {
+	const owned = db
+		.select({ id: goals.id })
+		.from(goals)
+		.where(and(eq(goals.id, id), eq(goals.userId, ctx.userId)))
+		.get();
+
+	if (!owned) throw new NotFoundError('goal');
+}
+
+function ownedGoalId(ctx: Ctx, value: unknown): number | null {
+	if (value === undefined || value === null || value === '') return null;
+	const id = num(value, 'parent goal', { int: true, min: 1 });
+	assertOwnedGoal(ctx, id);
+	return id;
+}
+
+function ownedAreaId(ctx: Ctx, value: unknown): number | null {
+	if (value === undefined || value === null || value === '') return null;
+
+	const id = num(value, 'area', { int: true, min: 1 });
+	const owned = db
+		.select({ id: goalAreas.id })
+		.from(goalAreas)
+		.where(and(eq(goalAreas.id, id), eq(goalAreas.userId, ctx.userId)))
+		.get();
+
+	if (!owned) throw new NotFoundError('area');
+	return id;
+}
+
+/** Link targets are ids from a form; keep only the ones this account owns. */
+function ownedIds(claimed: unknown[], owned: number[]): number[] {
+	const allowed = new Set(owned);
+	return claimed.map(Number).filter((n) => Number.isFinite(n) && allowed.has(n));
+}
+
+function ownedSlotIds(ctx: Ctx): number[] {
+	return db
+		.select({ id: weeklySlots.id })
+		.from(weeklySlots)
+		.where(eq(weeklySlots.userId, ctx.userId))
+		.all()
+		.map((r) => r.id);
+}
+
+function ownedTodoIds(ctx: Ctx): number[] {
+	return db
+		.select({ id: plannerTodos.id })
+		.from(plannerTodos)
+		.where(eq(plannerTodos.userId, ctx.userId))
+		.all()
+		.map((r) => r.id);
+}
+
+function ownedActivityIds(ctx: Ctx): number[] {
+	return db
+		.select({ id: activities.id })
+		.from(activities)
+		.where(eq(activities.userId, ctx.userId))
+		.all()
+		.map((r) => r.id);
+}
+
+function parseTarget(value: unknown): number | null {
+	if (value === undefined || value === null || String(value).trim() === '') return null;
+	return num(value, 'target', { min: 0.000001 });
+}
+
+function parseColor(value: unknown): string | null {
+	if (value === undefined || value === null || String(value).trim() === '') return null;
+	const color = String(value).trim();
+	if (!HEX_COLOR.test(color)) throw new ValidationError('Invalid color format');
+	return color;
 }

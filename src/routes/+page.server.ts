@@ -15,6 +15,7 @@ import {
 import { eq, and, desc, max } from 'drizzle-orm';
 import { generateCurrentWeek } from '$lib/server/week-generator';
 import { generateForDate, listForDate } from '$lib/server/services/instances';
+import { buildCtx } from '$lib/server/services/ctx';
 import { listActiveOn } from '$lib/server/services/goals';
 import { dailyWins, quotes } from '$lib/server/db/schema';
 import {
@@ -182,7 +183,7 @@ export const load: PageServerLoad = async (event) => {
 
 	// Goals whose period covers today — the week's and the year's alike, since
 	// the point is that they are all live at once.
-	const activeGoals = listActiveOn(userId, today);
+	const activeGoals = listActiveOn(buildCtx(userId), today);
 
 	// A layout the user has never set falls back to the registry defaults, so a
 	// new account meets a sensible dashboard rather than an empty one.

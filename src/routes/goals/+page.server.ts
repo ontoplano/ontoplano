@@ -1,226 +1,143 @@
-import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { listActivities } from '$lib/server/services/activities';
 import { buildCtx } from '$lib/server/services/ctx';
-import { db } from '$lib/server/db';
-import { activities, goalAreas, goalLinks, goals } from '$lib/server/db/schema';
-import { and, eq } from 'drizzle-orm';
-import { listAreas, listGoals, linkableSlots } from '$lib/server/services/goals';
-import { isGoalStatus, isHorizon, periodStart } from '$lib/goals';
-import { toLocalISOString } from '$lib/server/week-generator';
+import { toActionFailure } from '$lib/server/services/errors';
+import {
+	closeGoal,
+	createArea,
+	createGoal,
+	deleteArea,
+	deleteGoal,
+	linkableSlots,
+	listAreas,
+	listGoals,
+	setGoalLinks,
+	setGoalProgress,
+	updateGoal
+} from '$lib/server/services/goals';
 import { listTodos } from '$lib/server/services/todos';
 
-export const load: PageServerLoad = async (event) => {
-	const userId = event.locals.user!.id;
-	const includeClosed = event.url.searchParams.get('closed') === '1';
+export const load: PageServerLoad = async ({ locals, url }) => {
+	const ctx = buildCtx(locals.user!.id);
+	const includeClosed = url.searchParams.get('closed') === '1';
 
 	return {
-		areas: listAreas(userId),
-		goals: listGoals(userId, { includeClosed }),
+		areas: listAreas(ctx),
+		goals: listGoals(ctx, { includeClosed }),
 		includeClosed,
-		slots: linkableSlots(userId),
-		todos: listTodos(buildCtx(userId)).filter((t) => t.status !== 'done'),
-		activities: db
-			.select({ id: activities.id, name: activities.name })
-			.from(activities)
-			.where(and(eq(activities.userId, userId), eq(activities.active, true)))
-			.orderBy(activities.name)
-			.all()
+		slots: linkableSlots(ctx),
+		todos: listTodos(ctx).filter((t) => t.status !== 'done'),
+		activities: listActivities(ctx, { activeOnly: true }).map((a) => ({ id: a.id, name: a.name }))
 	};
 };
 
-function ownGoal(userId: string, id: number) {
-	return db
-		.select({ id: goals.id })
-		.from(goals)
-		.where(and(eq(goals.id, id), eq(goals.userId, userId)))
-		.get();
-}
-
 export const actions: Actions = {
 	createArea: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const name = formData.get('name')?.toString()?.trim() ?? '';
-		const color = formData.get('color')?.toString()?.trim() || '#6b7280';
-		if (!name) return fail(400, { message: 'Name is required' });
-
-		const existing = db
-			.select({ id: goalAreas.id })
-			.from(goalAreas)
-			.where(and(eq(goalAreas.userId, userId), eq(goalAreas.name, name)))
-			.get();
-		if (existing) return fail(400, { message: 'You already have an area with that name' });
-
-		db.insert(goalAreas).values({ userId, name, color }).run();
-		return { success: true };
+		try {
+			createArea(buildCtx(locals.user!.id), {
+				name: formData.get('name'),
+				color: formData.get('color')
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	deleteArea: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		if (!id) return fail(400, { message: 'Missing id' });
-
-		// Goals keep existing without an area rather than disappearing with it.
-		db.delete(goalAreas)
-			.where(and(eq(goalAreas.id, id), eq(goalAreas.userId, userId)))
-			.run();
-		return { success: true };
+		try {
+			deleteArea(buildCtx(locals.user!.id), Number(formData.get('id')));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	create: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const title = formData.get('title')?.toString()?.trim() ?? '';
-		const horizon = formData.get('horizon')?.toString();
-		if (!title) return fail(400, { message: 'Title is required' });
-		if (!isHorizon(horizon)) return fail(400, { message: 'Pick a horizon' });
-
-		const anchorRaw = formData.get('periodAnchor')?.toString()?.trim();
-		const anchor =
-			anchorRaw && /^\d{4}-\d{2}-\d{2}$/.test(anchorRaw)
-				? new Date(anchorRaw + 'T00:00:00')
-				: new Date();
-
-		const targetRaw = formData.get('targetValue')?.toString()?.trim();
-		const targetValue = targetRaw ? Number(targetRaw) : null;
-		if (targetValue !== null && (!Number.isFinite(targetValue) || targetValue <= 0))
-			return fail(400, { message: 'Target must be a positive number' });
-
-		const areaId = formData.get('areaId') ? Number(formData.get('areaId')) : null;
-		const parentId = formData.get('parentId') ? Number(formData.get('parentId')) : null;
-		if (parentId && !ownGoal(userId, parentId))
-			return fail(400, { message: 'Unknown parent goal' });
-
-		db.insert(goals)
-			.values({
-				userId,
-				title,
-				notes: formData.get('notes')?.toString()?.trim() ?? '',
-				horizon,
-				// Anchored to the period containing the chosen date, so two goals in
-				// the same quarter always agree on where that quarter starts.
-				periodStart: periodStart(horizon, anchor),
-				areaId,
-				parentId,
-				targetValue,
-				unit: formData.get('unit')?.toString()?.trim() ?? ''
-			})
-			.run();
-
-		return { success: true };
+		try {
+			createGoal(buildCtx(locals.user!.id), {
+				title: formData.get('title'),
+				horizon: formData.get('horizon'),
+				notes: formData.get('notes'),
+				periodAnchor: formData.get('periodAnchor'),
+				areaId: formData.get('areaId'),
+				parentId: formData.get('parentId'),
+				targetValue: formData.get('targetValue'),
+				unit: formData.get('unit')
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	update: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const title = formData.get('title')?.toString()?.trim() ?? '';
-		if (!id) return fail(400, { message: 'Missing id' });
-		if (!title) return fail(400, { message: 'Title is required' });
-		if (!ownGoal(userId, id)) return fail(404, { message: 'Goal not found' });
-
-		const targetRaw = formData.get('targetValue')?.toString()?.trim();
-		const targetValue = targetRaw ? Number(targetRaw) : null;
-		if (targetValue !== null && (!Number.isFinite(targetValue) || targetValue <= 0))
-			return fail(400, { message: 'Target must be a positive number' });
-
-		db.update(goals)
-			.set({
-				title,
-				notes: formData.get('notes')?.toString()?.trim() ?? '',
-				areaId: formData.get('areaId') ? Number(formData.get('areaId')) : null,
-				targetValue,
-				unit: formData.get('unit')?.toString()?.trim() ?? '',
-				updatedAt: toLocalISOString(new Date())
-			})
-			.where(and(eq(goals.id, id), eq(goals.userId, userId)))
-			.run();
-
-		return { success: true };
+		try {
+			updateGoal(buildCtx(locals.user!.id), Number(formData.get('id')), {
+				title: formData.get('title'),
+				notes: formData.get('notes'),
+				areaId: formData.get('areaId'),
+				targetValue: formData.get('targetValue'),
+				unit: formData.get('unit')
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
-	/** Self-reported progress, for goals with a target and no linked tasks. */
 	setProgress: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const value = Number(formData.get('currentValue'));
-		if (!id) return fail(400, { message: 'Missing id' });
-		if (!Number.isFinite(value) || value < 0)
-			return fail(400, { message: 'Progress must be zero or more' });
-		if (!ownGoal(userId, id)) return fail(404, { message: 'Goal not found' });
-
-		db.update(goals)
-			.set({ currentValue: value, updatedAt: toLocalISOString(new Date()) })
-			.where(and(eq(goals.id, id), eq(goals.userId, userId)))
-			.run();
-
-		return { success: true };
+		try {
+			setGoalProgress(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('currentValue')
+			);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	close: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const status = formData.get('status')?.toString();
-		if (!id) return fail(400, { message: 'Missing id' });
-		if (!isGoalStatus(status)) return fail(400, { message: 'Invalid status' });
-		if (!ownGoal(userId, id)) return fail(404, { message: 'Goal not found' });
-
-		db.update(goals)
-			.set({
-				status,
-				outcome: formData.get('outcome')?.toString()?.trim() ?? '',
-				// Reopening clears the closing date, so a reopened goal does not read
-				// as having been finished at some point in the past.
-				closedAt: status === 'open' ? null : toLocalISOString(new Date()),
-				updatedAt: toLocalISOString(new Date())
-			})
-			.where(and(eq(goals.id, id), eq(goals.userId, userId)))
-			.run();
-
-		return { success: true };
+		try {
+			closeGoal(buildCtx(locals.user!.id), Number(formData.get('id')), {
+				status: formData.get('status'),
+				outcome: formData.get('outcome')
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
-	/** Replace a goal's links wholesale — simpler than diffing, and idempotent. */
 	setLinks: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		if (!id) return fail(400, { message: 'Missing id' });
-		if (!ownGoal(userId, id)) return fail(404, { message: 'Goal not found' });
-
-		const slotIds = formData.getAll('slotId').map(Number).filter(Number.isFinite);
-		const todoIds = formData.getAll('todoId').map(Number).filter(Number.isFinite);
-		const activityIds = formData.getAll('activityId').map(Number).filter(Number.isFinite);
-
-		db.transaction((tx) => {
-			tx.delete(goalLinks).where(eq(goalLinks.goalId, id)).run();
-			for (const slotId of slotIds) tx.insert(goalLinks).values({ goalId: id, slotId }).run();
-			for (const todoId of todoIds) tx.insert(goalLinks).values({ goalId: id, todoId }).run();
-			for (const activityId of activityIds)
-				tx.insert(goalLinks).values({ goalId: id, activityId }).run();
-		});
-
-		return { success: true };
+		try {
+			setGoalLinks(buildCtx(locals.user!.id), Number(formData.get('id')), {
+				slotIds: formData.getAll('slotId'),
+				todoIds: formData.getAll('todoId'),
+				activityIds: formData.getAll('activityId')
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	remove: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		if (!id) return fail(400, { message: 'Missing id' });
-
-		db.transaction((tx) => {
-			// Children outlive their parent rather than cascading away; losing a
-			// year goal should not silently delete a quarter's worth of work.
-			tx.update(goals).set({ parentId: null }).where(eq(goals.parentId, id)).run();
-			tx.delete(goals)
-				.where(and(eq(goals.id, id), eq(goals.userId, userId)))
-				.run();
-		});
-
-		return { success: true };
+		try {
+			deleteGoal(buildCtx(locals.user!.id), Number(formData.get('id')));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	}
 };
