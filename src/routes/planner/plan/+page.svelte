@@ -1501,7 +1501,7 @@
 					{/each}
 				</div>
 
-				<MetaEditor initial={parseSlotMeta(editingBlock?.meta)} />
+				<MetaEditor initial={parseSlotMeta(editingBlock?.meta)} plugins={data.plugins} />
 			</form>
 
 			<div class="flex flex-wrap items-center gap-2 border-t border-gray-200 pt-3">

@@ -8,11 +8,22 @@
 	 * and resize post to the same action).
 	 *
 	 * Ontoplano stores these without interpreting them; plugins read them from
-	 * the schedule API. `alarm` / `remind_min` are only suggestions.
+	 * the schedule API. The suggestions are only suggestions — any valid key is
+	 * accepted — but a key a plugin has declared says so, because a bare list of
+	 * names like `hard_alarm` gives no clue what sets it off or what reads it.
 	 */
-	import { SUGGESTED_KEYS } from '$lib/meta-keys';
+	import { mergeSuggestions, type MetaKeySuggestion } from '$lib/meta-keys';
 
-	let { initial = {} }: { initial?: Record<string, string> } = $props();
+	let {
+		initial = {},
+		plugins = []
+	}: {
+		initial?: Record<string, string>;
+		/** Manifests, so a declared key can name the plugin that reads it. */
+		plugins?: { name: string; metaKeys: { key: string; description: string; example: string }[] }[];
+	} = $props();
+
+	const suggestions: MetaKeySuggestion[] = $derived(mergeSuggestions(plugins));
 
 	type Pair = { key: string; value: string };
 
@@ -95,8 +106,10 @@
 			{/each}
 
 			<datalist id="meta-key-suggestions">
-				{#each SUGGESTED_KEYS as s (s.key)}
-					<option value={s.key}>{s.description}</option>
+				{#each suggestions as s (s.key)}
+					<option value={s.key}
+						>{s.usedBy ? `${s.description} — ${s.usedBy}` : s.description}</option
+					>
 				{/each}
 			</datalist>
 
@@ -108,15 +121,18 @@
 				>
 					+ Add option
 				</button>
-				{#each SUGGESTED_KEYS as s (s.key)}
+				{#each suggestions as s (s.key)}
 					{#if !usedKeys.has(s.key)}
 						<button
 							type="button"
 							onclick={() => addPair(s.key, s.example)}
-							title={s.description}
-							class="border border-gray-200 bg-white px-2 py-1 font-mono text-xs text-gray-500 shadow-sm hover:bg-gray-50 hover:text-gray-900"
+							title={s.usedBy ? `${s.description} (used by ${s.usedBy})` : s.description}
+							class="flex items-center gap-1 border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500 shadow-sm hover:bg-gray-50 hover:text-gray-900"
 						>
-							{s.key}
+							<span class="font-mono">{s.key}</span>
+							{#if s.usedBy}
+								<span class="text-[10px] text-gray-400">· {s.usedBy}</span>
+							{/if}
 						</button>
 					{/if}
 				{/each}

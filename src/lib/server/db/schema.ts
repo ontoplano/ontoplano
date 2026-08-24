@@ -794,3 +794,49 @@ export const dailyWins = sqliteTable(
 		uniqueIndex('daily_wins_slot_unique').on(table.userId, table.forDate, table.position)
 	]
 );
+
+// --- Plugin manifests -----------------------------------------------------------
+
+/**
+ * What a plugin says about itself.
+ *
+ * Slot metadata is deliberately open — any key is accepted, so a plugin can
+ * invent its own vocabulary without a schema change. The cost is that the keys
+ * arrive anonymous: `hard_alarm` next to `location` with nothing saying which
+ * program reads which, or what happens if you set it.
+ *
+ * A manifest is a plugin declaring, through the API and with its own token,
+ * which keys it understands. The editor then shows provenance — "used by
+ * a-private-plugin" — instead of a list that looks arbitrary.
+ *
+ * Per-user rather than global: one person's a-private-plugin may be a version behind
+ * another's, and a manifest is a claim by an installation, not a fact about the
+ * world.
+ */
+export const pluginManifests = sqliteTable(
+	'plugin_manifests',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		/** Matches data_streams.source, so a plugin is one name across both. */
+		source: text('source').notNull(),
+		name: text('name').notNull(),
+		description: text('description').default(''),
+		homepage: text('homepage').default(''),
+		/**
+		 * The keys this plugin reads, as JSON:
+		 * [{ key, description, example }]. Stored as a blob because it is the
+		 * plugin's vocabulary, not ours — validated on the way in, never joined on.
+		 */
+		metaKeys: text('meta_keys').notNull().default('[]'),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		uniqueIndex('plugin_manifests_user_source_unique').on(table.userId, table.source),
+		index('plugin_manifests_user_idx').on(table.userId)
+	]
+);

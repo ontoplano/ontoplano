@@ -17,7 +17,8 @@ import { num, str } from './validate.js';
 export const SCOPES = {
 	'streams:write': 'Push data points to your streams',
 	'streams:read': 'Read back your stream data',
-	'schedule:read': 'Read your upcoming scheduled tasks'
+	'schedule:read': 'Read your upcoming scheduled tasks',
+	'plugin:declare': 'Describe itself, so its settings are labelled rather than anonymous'
 } as const;
 
 export type Scope = keyof typeof SCOPES;

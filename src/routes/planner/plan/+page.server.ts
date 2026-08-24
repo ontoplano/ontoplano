@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { metaFromFormData, metaPatchFromFormData } from '$lib/server/services/meta';
 import { ratingsFromForm } from '$lib/ratings';
+import { listManifests } from '$lib/server/services/plugins';
 import { parseRecurrence, serialiseRecurrence, formatDate as recFormatDate } from '$lib/recurrence';
 import { ServiceError } from '$lib/server/services/errors';
 
@@ -284,6 +285,8 @@ export const load: PageServerLoad = async (event) => {
 		.all();
 
 	return {
+		// So the metadata editor can say which plugin reads which key.
+		plugins: listManifests(userId).map((m) => ({ name: m.name, metaKeys: m.metaKeys })),
 		slots,
 		range,
 		view,

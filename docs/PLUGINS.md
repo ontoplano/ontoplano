@@ -242,3 +242,43 @@ curl -s "$BASE/api/v1/schedule/upcoming?days=7" -H "Authorization: Bearer $TOKEN
 ```
 
 Then open `/data/demo.temperature`.
+
+## Declaring what your plugin understands
+
+Slot metadata accepts any key, which is what lets a plugin invent its own
+vocabulary without a change to ontoplano. The cost is that the keys arrive
+anonymous: `hard_alarm` sitting next to `location` with nothing saying which
+program reads it or what it does.
+
+So declare a manifest at startup. It is idempotent per `source`, and the newest
+call wins — a plugin that stops using a key drops it by omitting it.
+
+```http
+PUT /api/v1/plugin
+Authorization: Bearer <token with plugin:declare>
+Content-Type: application/json
+
+{
+  "source": "a-private-plugin",
+  "name": "a-private-plugin",
+  "description": "Smart-scale alarm",
+  "homepage": "https://example.com/a-private-plugin",
+  "metaKeys": [
+    { "key": "alarm",       "description": "Ring an alarm for this block",       "example": "true" },
+    { "key": "remind_min",  "description": "Notify N minutes beforehand",        "example": "5" },
+    { "key": "hard_alarm",  "description": "Alarm that resists being dismissed", "example": "true" }
+  ]
+}
+```
+
+The metadata editor then offers those keys labelled with your plugin's name
+instead of as a bare list. Declared keys must be valid metadata keys —
+lowercase letters, digits and underscores — because a manifest describing keys
+the server would reject on save is worse than no manifest.
+
+Manifests are per-account, not global: they are a claim by one installation, and
+two people may be running different versions.
+
+Withdrawing one (`DELETE /api/v1/plugin?source=…`) removes the labels. It does
+not remove the metadata — those keys keep working, they just stop saying who
+reads them.
