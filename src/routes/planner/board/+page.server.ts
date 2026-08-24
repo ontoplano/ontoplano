@@ -4,7 +4,7 @@ import { db } from '$lib/server/db';
 import { categories, exceptionalSlots, plannerTodos, taskInstances } from '$lib/server/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { generateForDate, listForDate as listOccurrences } from '$lib/server/services/instances';
-import { listUnscheduled, nextSortOrder } from '$lib/server/services/todos';
+import { listUnscheduled, nextSortOrder, promoteTodo } from '$lib/server/services/todos';
 import { isStatus, timingFor, type Status, type Timing } from '$lib/task-status';
 import { ratingsFromForm } from '$lib/ratings';
 import { toLocalISOString } from '$lib/server/week-generator';
@@ -246,63 +246,14 @@ export const actions: Actions = {
 		if (!id) return fail(400, { message: 'Missing id' });
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail(400, { message: 'Invalid date' });
 
-		const todo = db
-			.select()
-			.from(plannerTodos)
-			.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, userId)))
-			.get();
-		if (!todo) return fail(404, { message: 'Todo not found' });
-
-		// A block has to name a category or an activity. A todo need not, so fall
-		// back to the user's first category rather than refusing the drag.
-		const categoryId =
-			todo.categoryId ??
-			db
-				.select({ id: categories.id })
-				.from(categories)
-				.where(eq(categories.userId, userId))
-				.orderBy(categories.name)
-				.get()?.id;
-
-		if (!categoryId) return fail(400, { message: 'Create a category before scheduling todos' });
-
-		const startTime = formData.get('startTime')?.toString()?.trim() || nextFreeTime(date);
-
-		db.transaction((tx) => {
-			const slot = tx
-				.insert(exceptionalSlots)
-				.values({
-					userId,
-					date,
-					startTime,
-					durationMinutes: 30,
-					mode: 'category',
-					categoryId,
-					label: todo.title,
-					urgency: todo.urgency,
-					interest: todo.interest,
-					energy: todo.energy
-				})
-				.returning({ id: exceptionalSlots.id })
-				.get();
-
-			tx.insert(taskInstances)
-				.values({
-					userId,
-					exceptionalSlotId: slot.id,
-					scheduledAt: `${date}T${startTime}:00`,
-					status: isStatus(status) ? status : todo.status,
-					// The todo's notes are the only thing a block has nowhere to put,
-					// so they ride on the instance.
-					notes: todo.notes ?? ''
-				})
-				.run();
-
-			tx.delete(plannerTodos)
-				.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, userId)))
-				.run();
+		const result = promoteTodo(userId, {
+			todoId: id,
+			date,
+			startTime: formData.get('startTime')?.toString()?.trim() || nextFreeTime(date),
+			status: isStatus(status) ? status : undefined
 		});
 
+		if (!result.ok) return fail(400, { message: result.message });
 		return { success: true };
 	},
 

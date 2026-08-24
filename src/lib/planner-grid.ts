@@ -356,3 +356,16 @@ export function baseGridOptions(
 				: { weekday: 'short', day: 'numeric' }
 	};
 }
+
+/** 'HH:MM' or 'HH:MM:SS' as minutes past midnight. */
+export function timeToMinutes(time: string): number {
+	const [h, m] = time.split(':').map(Number);
+	return h * 60 + (m || 0);
+}
+
+/** Minutes past midnight as 'HH:MM', clamped to a real time of day. */
+export function minutesToTime(minutes: number): string {
+	const clamped = Math.min(Math.max(minutes, 0), 23 * 60 + 59);
+	const pad = (n: number) => String(n).padStart(2, '0');
+	return `${pad(Math.floor(clamped / 60))}:${pad(clamped % 60)}`;
+}

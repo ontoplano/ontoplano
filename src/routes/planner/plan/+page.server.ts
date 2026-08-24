@@ -2,6 +2,7 @@ import { fail } from '@sveltejs/kit';
 import { metaFromFormData, metaPatchFromFormData } from '$lib/server/services/meta';
 import { ratingsFromForm } from '$lib/ratings';
 import { listManifests } from '$lib/server/services/plugins';
+import { listUnscheduled, promoteTodo } from '$lib/server/services/todos';
 import { parseRecurrence, serialiseRecurrence, formatDate as recFormatDate } from '$lib/recurrence';
 import { ServiceError } from '$lib/server/services/errors';
 
@@ -287,6 +288,8 @@ export const load: PageServerLoad = async (event) => {
 	return {
 		// So the metadata editor can say which plugin reads which key.
 		plugins: listManifests(userId).map((m) => ({ name: m.name, metaKeys: m.metaKeys })),
+		// Undated todos, so one can be dragged straight onto an hour.
+		todos: listUnscheduled(userId),
 		slots,
 		range,
 		view,
@@ -703,6 +706,25 @@ export const actions: Actions = {
 	 * visible window; its other occurrences were never separate things, so there
 	 * is nothing else to preserve.
 	 */
+	/** Drop an undated todo onto the grid: it becomes a block at that hour. */
+	scheduleTodo: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const todoId = Number(formData.get('todoId'));
+		const date = formData.get('date')?.toString()?.trim() ?? '';
+		const startTime = formData.get('startTime')?.toString()?.trim() ?? '';
+		const durationMinutes = Number(formData.get('durationMinutes') || 30);
+
+		if (!todoId) return fail(400, { message: 'Missing todo id' });
+		if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return fail(400, { message: 'Invalid date' });
+		if (!startTime.match(/^\d{2}:\d{2}$/)) return fail(400, { message: 'Invalid time' });
+
+		const result = promoteTodo(userId, { todoId, date, startTime, durationMinutes });
+		if (!result.ok) return fail(400, { message: result.message });
+
+		return { success: true };
+	},
+
 	convertRepeat: async ({ request, locals }) => {
 		const userId = locals.user!.id;
 		const formData = await request.formData();

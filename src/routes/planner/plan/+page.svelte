@@ -27,6 +27,11 @@
 		GRID_DEFAULT_ZOOM_INDEX,
 		GRID_DAYS_DESKTOP,
 		GRID_DAYS_MOBILE,
+		GRID_MIN_TIME,
+		GRID_MAX_TIME,
+		GRID_SNAP_DURATION,
+		timeToMinutes,
+		minutesToTime,
 		type GridEventDetail
 	} from '$lib/planner-grid.js';
 
@@ -351,6 +356,70 @@
 		if (!result) return;
 
 		closeForm();
+		await invalidateAll();
+	}
+
+	/**
+	 * Where a drop landed on the grid, in calendar terms.
+	 *
+	 * The calendar has no external-drop support, so this reads the geometry
+	 * back: which day column the pointer is over, and how far down the body it
+	 * fell. Returns null when the pointer is outside the grid, which is how a
+	 * drop onto the toolbar or the page margin gets ignored rather than
+	 * scheduling something at a guessed time.
+	 */
+	function dropTarget(e: DragEvent): { date: string; startTime: string } | null {
+		const dayEl = (e.target as HTMLElement | null)?.closest('.ec-day:not(.ec-sidebar)');
+		const bodyEl = (e.target as HTMLElement | null)?.closest('.ec-body');
+		if (!dayEl || !bodyEl) return null;
+
+		// The day columns in the body, in order, matched against the dates the
+		// grid is currently showing.
+		const columns = [...bodyEl.querySelectorAll('.ec-day:not(.ec-sidebar)')];
+		const index = columns.indexOf(dayEl);
+		if (index === -1) return null;
+
+		const days =
+			gridDays === 1 ? [selectedDateStr()] : data.range.days.map((d: { date: string }) => d.date);
+		const date = days[index];
+		if (!date) return null;
+
+		const rect = dayEl.getBoundingClientRect();
+		if (rect.height === 0) return null;
+
+		const minMinutes = timeToMinutes(GRID_MIN_TIME);
+		const span = timeToMinutes(GRID_MAX_TIME) - minMinutes;
+		const fraction = Math.min(Math.max((e.clientY - rect.top) / rect.height, 0), 1);
+
+		// Snapped to the same step a drag uses, so a dropped todo lands on the
+		// same gridlines as everything else.
+		const snap = timeToMinutes(GRID_SNAP_DURATION);
+		const minutes = Math.floor((minMinutes + fraction * span) / snap) * snap;
+
+		return { date, startTime: minutesToTime(minutes) };
+	}
+
+	let dragTodoId: number | null = $state(null);
+	let dropPreview: { date: string; startTime: string } | null = $state(null);
+
+	async function onTodoDrop(e: DragEvent) {
+		e.preventDefault();
+		const todoId = dragTodoId;
+		dragTodoId = null;
+		dropPreview = null;
+		if (todoId === null) return;
+
+		const target = dropTarget(e);
+		if (!target) return;
+
+		const body = new FormData();
+		body.set('todoId', String(todoId));
+		body.set('date', target.date);
+		body.set('startTime', target.startTime);
+		body.set('durationMinutes', '30');
+
+		const result = await postGridAction('scheduleTodo', body, 'Could not schedule that todo.');
+		if (!result) return;
 		await invalidateAll();
 	}
 
@@ -1870,10 +1939,66 @@
 			{/if}
 		{/if}
 	{:else}
+		<!-- Undated todos, so one can be dragged straight onto an hour instead of
+		     being scheduled on the board and then found here. -->
+		{#if data.todos.length > 0}
+			<div class="mb-2 flex flex-wrap items-center gap-2">
+				<span class="eyebrow shrink-0 text-gray-500">Todo</span>
+				{#each data.todos as todo (todo.id)}
+					<button
+						type="button"
+						draggable="true"
+						ondragstart={(e) => {
+							dragTodoId = todo.id;
+							e.dataTransfer?.setData('text/plain', String(todo.id));
+							if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+						}}
+						ondragend={() => {
+							dragTodoId = null;
+							dropPreview = null;
+						}}
+						class="lift cursor-grab border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 shadow-card {dragTodoId ===
+						todo.id
+							? 'opacity-40'
+							: ''}"
+						title="Drag onto the grid to schedule it"
+					>
+						{#if todo.categoryColor}
+							<span
+								class="mr-1 inline-block h-2 w-1 align-middle"
+								style="background-color: {todo.categoryColor}"
+							></span>
+						{/if}
+						{todo.title}
+					</button>
+				{/each}
+				<span class="text-xs text-gray-400">drag onto the grid to give it a time</span>
+			</div>
+		{/if}
+
 		<div
-			class="border border-gray-200 bg-white shadow-sm {gridDays === 1 ? 'h-[62vh]' : 'h-[70vh]'}"
+			class="relative border border-gray-200 bg-white shadow-sm {gridDays === 1
+				? 'h-[62vh]'
+				: 'h-[70vh]'}"
 			use:gridZoomWheel
+			ondragover={(e) => {
+				if (dragTodoId === null) return;
+				e.preventDefault();
+				dropPreview = dropTarget(e);
+			}}
+			ondragleave={() => (dropPreview = null)}
+			ondrop={onTodoDrop}
+			role="application"
 		>
+			{#if dropPreview}
+				<!-- Says exactly where it will land, since the grid gives no other
+				     feedback for a drop it does not itself handle. -->
+				<div
+					class="tabular pointer-events-none absolute top-2 right-2 z-20 border border-gray-900 bg-gray-900 px-2 py-1 text-xs text-white"
+				>
+					{dropPreview.date} · {dropPreview.startTime}
+				</div>
+			{/if}
 			{#if browser && widthChecked}
 				<Calendar bind:this={ec} plugins={[TimeGrid, Interaction]} options={gridOptions} />
 			{/if}

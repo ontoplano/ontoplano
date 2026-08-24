@@ -10,7 +10,7 @@
 import { and, asc, eq, isNull, or } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { categories, plannerTodos } from '../db/schema.js';
+import { categories, exceptionalSlots, plannerTodos, taskInstances } from '../db/schema.js';
 import type { Status } from '../../task-status.js';
 import type { RatingValues } from '../../ratings.js';
 
@@ -134,4 +134,84 @@ export function nextSortOrder(userId: string): number {
 		.where(eq(plannerTodos.userId, userId))
 		.all();
 	return rows.reduce((max, r) => Math.max(max, r.sortOrder), 0) + 1;
+}
+
+/**
+ * Turn a todo into a scheduled block.
+ *
+ * A todo pulled onto a day stops being a todo: it becomes a one-off with a
+ * time, which is what puts it on the grid, in the tracker, and against a goal.
+ * The row moves rather than being copied, so there is never a todo and a task
+ * that are secretly the same thing.
+ *
+ * Shared by the board, where it is a drop into a status column, and the plan
+ * grid, where it is a drop at a particular hour.
+ */
+export function promoteTodo(
+	userId: string,
+	input: {
+		todoId: number;
+		date: string;
+		startTime: string;
+		durationMinutes?: number;
+		status?: Status;
+	}
+): { ok: true } | { ok: false; message: string } {
+	const todo = db
+		.select()
+		.from(plannerTodos)
+		.where(and(eq(plannerTodos.id, input.todoId), eq(plannerTodos.userId, userId)))
+		.get();
+	if (!todo) return { ok: false, message: 'Todo not found' };
+
+	// A block must name a category or an activity; a todo need not. Falling back
+	// to the first category beats refusing the drag over a field the user never
+	// filled in.
+	const categoryId =
+		todo.categoryId ??
+		db
+			.select({ id: categories.id })
+			.from(categories)
+			.where(eq(categories.userId, userId))
+			.orderBy(categories.name)
+			.get()?.id;
+
+	if (!categoryId) return { ok: false, message: 'Create a category before scheduling todos' };
+
+	db.transaction((tx) => {
+		const slot = tx
+			.insert(exceptionalSlots)
+			.values({
+				userId,
+				date: input.date,
+				startTime: input.startTime,
+				durationMinutes: input.durationMinutes ?? 30,
+				mode: 'category',
+				categoryId,
+				label: todo.title,
+				urgency: todo.urgency,
+				interest: todo.interest,
+				energy: todo.energy
+			})
+			.returning({ id: exceptionalSlots.id })
+			.get();
+
+		tx.insert(taskInstances)
+			.values({
+				userId,
+				exceptionalSlotId: slot.id,
+				scheduledAt: `${input.date}T${input.startTime}:00`,
+				status: input.status ?? todo.status,
+				// Notes are the one thing a block has nowhere to put, so they ride
+				// on the instance.
+				notes: todo.notes ?? ''
+			})
+			.run();
+
+		tx.delete(plannerTodos)
+			.where(and(eq(plannerTodos.id, input.todoId), eq(plannerTodos.userId, userId)))
+			.run();
+	});
+
+	return { ok: true };
 }
