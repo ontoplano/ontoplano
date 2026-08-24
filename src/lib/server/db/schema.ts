@@ -287,7 +287,18 @@ export const suppressedSlots = sqliteTable(
 		date: text('date').notNull(), // YYYY-MM-DD
 		slotId: integer('slot_id')
 			.notNull()
-			.references(() => weeklySlots.id, { onDelete: 'cascade' })
+			.references(() => weeklySlots.id, { onDelete: 'cascade' }),
+		/**
+		 * Set when this day was *moved* rather than skipped.
+		 *
+		 * A skip means "not happening today", and the grid keeps showing it
+		 * greyed so it can be put back. A move means "happening, but there
+		 * instead" — the replacement is what should be on screen, and leaving
+		 * the original visible makes one block look like two.
+		 */
+		movedToId: integer('moved_to_id').references(() => exceptionalSlots.id, {
+			onDelete: 'set null'
+		})
 	},
 	(table) => [
 		index('suppressed_slots_user_date_idx').on(table.userId, table.date),

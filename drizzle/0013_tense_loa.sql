@@ -1,0 +1,1 @@
+ALTER TABLE `suppressed_slots` ADD `moved_to_id` integer REFERENCES exceptional_slots(id);

@@ -23,6 +23,7 @@
 	"type": "module",
 	"devDependencies": {
 		"@better-auth/cli": "~1.4.21",
+		"@bubblewrap/cli": "^1.25.0",
 		"@eslint/compat": "^2.0.3",
 		"@eslint/js": "^10.0.1",
 		"@playwright/test": "^1.58.2",

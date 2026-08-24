@@ -333,6 +333,27 @@
 		openForm();
 	}
 
+	/** Swap a block between repeating and one-off, keeping everything else. */
+	async function convertRepeat() {
+		if (editingBlockId === null || editingKind === null) return;
+
+		const body = new FormData();
+		body.set('id', String(editingBlockId));
+		body.set('to', editingKind === 'slot' ? 'once' : 'weekly');
+		// Which day a converted weekly block lands on: the one being looked at.
+		body.set('date', editingKind === 'slot' ? selectedDateStr() : formDate || selectedDateStr());
+
+		const result = await postGridAction(
+			'convertRepeat',
+			body,
+			'Could not change how this repeats.'
+		);
+		if (!result) return;
+
+		closeForm();
+		await invalidateAll();
+	}
+
 	function goToRange(from: string | null) {
 		const parts: string[] = [];
 		if (from) parts.push(`from=${from}`);
@@ -570,20 +591,45 @@
 		});
 	}
 
+	/**
+	 * Occurrences skipped on the day the grid is showing them.
+	 *
+	 * Split by reason: a skip stays visible and greyed so it can be put back, a
+	 * move is hidden because its replacement is already on screen and showing
+	 * both makes one block look like two.
+	 */
+	const suppressionsHere = $derived(
+		data.suppressions.filter((sup: { slotId: number; date: string }) => {
+			const slot = data.slots.find((s: Slot) => s.id === sup.slotId);
+			if (!slot) return false;
+			return formatLocalDate(weekdayToDate(data.range.from, slot.weekday)) === sup.date;
+		})
+	);
+
 	const suppressedSlotIds = $derived(
 		new Set<number>(
-			data.suppressions
-				.filter((sup: { slotId: number; date: string }) => {
-					const slot = data.slots.find((s: Slot) => s.id === sup.slotId);
-					if (!slot) return false;
-					return formatLocalDate(weekdayToDate(data.range.from, slot.weekday)) === sup.date;
-				})
+			suppressionsHere
+				.filter((sup: { movedToId: number | null }) => sup.movedToId === null)
+				.map((sup: { slotId: number }) => sup.slotId)
+		)
+	);
+
+	/** Moved away from this day — drawn at its new time instead. */
+	const movedSlotIds = $derived(
+		new Set<number>(
+			suppressionsHere
+				.filter((sup: { movedToId: number | null }) => sup.movedToId !== null)
 				.map((sup: { slotId: number }) => sup.slotId)
 		)
 	);
 
 	const gridEvents = $derived([
-		...buildSlotEvents(data.slots, data.range.from, data.categories, { suppressedSlotIds }),
+		...buildSlotEvents(
+			data.slots.filter((s: Slot) => !movedSlotIds.has(s.id)),
+			data.range.from,
+			data.categories,
+			{ suppressedSlotIds }
+		),
 		...buildExceptionalEvents(data.exceptionals, data.categories)
 	]);
 
@@ -1277,6 +1323,18 @@
 						<span class="text-sm text-gray-500">
 							{editingKind === 'slot' ? 'Every week' : 'Once only'}
 						</span>
+						<!-- The two differ only in which day they name, so changing your
+						     mind should not mean deleting one and retyping the other. -->
+						<button
+							type="button"
+							onclick={convertRepeat}
+							class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm hover:bg-gray-50"
+							title={editingKind === 'slot'
+								? 'Keep only this occurrence and stop repeating'
+								: 'Repeat this every week from now on'}
+						>
+							{editingKind === 'slot' ? 'Make it once only' : 'Make it weekly'}
+						</button>
 					{:else}
 						<div class="flex">
 							{#each [{ value: 'weekly', label: 'Every week' }, { value: 'once', label: 'Once only' }] as choice (choice.value)}

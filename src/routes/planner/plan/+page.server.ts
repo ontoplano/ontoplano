@@ -692,6 +692,104 @@ export const actions: Actions = {
 	 * different" is exactly a skip plus a one-off, and both halves stay
 	 * individually reversible.
 	 */
+	/**
+	 * Turn a one-off into a recurring block, or a recurring block into a one-off.
+	 *
+	 * The two differ only in which day they name — a weekday versus a date — so
+	 * changing your mind should not mean deleting one and retyping the other.
+	 * Everything else about the block travels with it.
+	 *
+	 * A recurring block becoming a one-off keeps only the occurrence in the
+	 * visible window; its other occurrences were never separate things, so there
+	 * is nothing else to preserve.
+	 */
+	convertRepeat: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const to = formData.get('to')?.toString();
+		const date = formData.get('date')?.toString()?.trim() ?? '';
+
+		if (!id) return fail(400, { message: 'Missing id' });
+		if (to !== 'weekly' && to !== 'once') return fail(400, { message: 'Unknown target' });
+		if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return fail(400, { message: 'Invalid date' });
+
+		if (to === 'weekly') {
+			const one = db
+				.select()
+				.from(exceptionalSlots)
+				.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
+				.get();
+			if (!one) return fail(404, { message: 'Block not found' });
+
+			db.transaction((tx) => {
+				tx.insert(weeklySlots)
+					.values({
+						userId,
+						// The date it sits on decides which weekday it repeats on.
+						weekday: (new Date(`${one.date}T00:00:00`).getDay() + 6) % 7,
+						startTime: one.startTime,
+						durationMinutes: one.durationMinutes,
+						mode: one.mode,
+						categoryId: one.categoryId,
+						activityId: one.activityId,
+						label: one.label,
+						urgency: one.urgency,
+						interest: one.interest,
+						energy: one.energy,
+						meta: one.meta
+					})
+					.run();
+
+				// Cascades to the instance it produced; the new weekly slot
+				// generates its own.
+				tx.delete(exceptionalSlots)
+					.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, userId)))
+					.run();
+			});
+
+			return { success: true };
+		}
+
+		const slot = db
+			.select()
+			.from(weeklySlots)
+			.where(and(eq(weeklySlots.id, id), eq(weeklySlots.userId, userId)))
+			.get();
+		if (!slot) return fail(404, { message: 'Block not found' });
+
+		db.transaction((tx) => {
+			tx.insert(exceptionalSlots)
+				.values({
+					userId,
+					date,
+					startTime: slot.startTime,
+					durationMinutes: slot.durationMinutes,
+					mode: slot.mode,
+					categoryId: slot.categoryId,
+					activityId: slot.activityId,
+					label: slot.label,
+					urgency: slot.urgency,
+					interest: slot.interest,
+					energy: slot.energy,
+					meta: slot.meta
+				})
+				.run();
+
+			tx.delete(taskInstances)
+				.where(and(eq(taskInstances.userId, userId), eq(taskInstances.slotId, id)))
+				.run();
+			tx.delete(suppressedSlots)
+				.where(and(eq(suppressedSlots.userId, userId), eq(suppressedSlots.slotId, id)))
+				.run();
+			tx.delete(weeklySlots)
+				.where(and(eq(weeklySlots.id, id), eq(weeklySlots.userId, userId)))
+				.run();
+		});
+
+		return { success: true };
+	},
+
 	moveOccurrence: async ({ request, locals }) => {
 		const userId = locals.user!.id;
 		const formData = await request.formData();
@@ -727,8 +825,10 @@ export const actions: Actions = {
 				)
 				.get();
 
-			if (!already) {
-				tx.insert(suppressedSlots).values({ userId, slotId, date: fromDate }).run();
+			// Deleted and re-inserted rather than updated, because the same day may
+			// already carry a plain skip and this has to become a move.
+			if (already) {
+				tx.delete(suppressedSlots).where(eq(suppressedSlots.id, already.id)).run();
 			}
 
 			// The instance the skipped occurrence produced would otherwise linger
@@ -744,7 +844,7 @@ export const actions: Actions = {
 				)
 				.run();
 
-			return tx
+			const moved = tx
 				.insert(exceptionalSlots)
 				.values({
 					userId,
@@ -762,6 +862,12 @@ export const actions: Actions = {
 				})
 				.returning({ id: exceptionalSlots.id })
 				.get();
+
+			tx.insert(suppressedSlots)
+				.values({ userId, slotId, date: fromDate, movedToId: moved.id })
+				.run();
+
+			return moved;
 		});
 
 		return { success: true, id: created.id };

@@ -1,4 +1,4 @@
-.PHONY: dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service android android-install android-share android-fingerprint android-clean
+.PHONY: dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -161,6 +161,15 @@ android:
 			echo "  make android ONTOPLANO_ORIGIN=https://plan.example.com"; \
 			exit 1;; \
 	esac
+	@if [ -z "$$BUBBLEWRAP_KEYSTORE_PASSWORD" ] && [ -z "$$ANDROID_KEYSTORE_PASSWORD" ]; then \
+		echo "No keystore password set, so the build would stop and ask for one."; \
+		echo; \
+		echo "  export BUBBLEWRAP_KEYSTORE_PASSWORD=... BUBBLEWRAP_KEY_PASSWORD=..."; \
+		echo; \
+		echo "If you have forgotten the password to an existing key:"; \
+		echo "  make android-keystore-reset      (starts a new one — see below)"; \
+		exit 1; \
+	fi
 	@echo "Building against $(ONTOPLANO_ORIGIN)"
 	ONTOPLANO_ORIGIN="$(ONTOPLANO_ORIGIN)" node scripts/build-twa.mjs
 
@@ -182,8 +191,23 @@ android-install: $(APK)
 	@echo "Installing to $$(adb devices | sed -n '2p' | cut -f1)…"
 	@# -r reinstalls over an existing copy; -d allows going back to an older
 	@# version, which happens whenever you rebuild without bumping the version.
-	adb install -r -d $(APK)
-	@echo "Installed. Look for Ontoplano in the launcher."
+	@# Android refuses an update signed by a different key than the installed
+	@# copy, which is a deliberate protection and not something -r can override —
+	@# so say what it means instead of leaving the raw failure.
+	@if ! adb install -r -d $(APK) 2>&1 | tee /tmp/ontoplano-adb.log; then :; fi
+	@if grep -q INSTALL_FAILED_UPDATE_INCOMPATIBLE /tmp/ontoplano-adb.log; then \
+		echo; \
+		echo "The copy on the phone was signed with a different key than this build."; \
+		echo "Android will not replace it — that check is what stops someone else"; \
+		echo "shipping an update to your app. Remove the old one first:"; \
+		echo; \
+		echo "  make android-uninstall && make android-install"; \
+		echo; \
+		echo "Its data goes with it. For a TWA that is only the browser storage;"; \
+		echo "your planner data lives on the server."; \
+		exit 1; \
+	fi
+	@grep -q "^Success" /tmp/ontoplano-adb.log && echo "Installed. Look for Ontoplano in the launcher."
 
 # No adb, no cable: serve the APK and scan the code with the phone's camera.
 #
@@ -238,6 +262,28 @@ android-fingerprint:
 	echo; \
 	echo "Once published, add Play's app-signing fingerprint too — Play re-signs"; \
 	echo "uploads, so trusting only this key shows a URL bar for store installs."
+
+# Removing the app is the only way past a signing-key change.
+android-uninstall:
+	@command -v adb >/dev/null || { echo "adb not found."; exit 1; }
+	adb uninstall $${ANDROID_PACKAGE_NAME:-app.ontoplano.twa}
+
+# Start a new signing key, when the old one's password is lost.
+#
+# Only safe while the app is self-distributed: a published app is tied to its
+# key forever, and a new key means a new Play listing that existing users will
+# not receive updates from.
+android-keystore-reset:
+	@keystore=$${ANDROID_KEYSTORE:-android-twa/android.keystore}; \
+	if [ ! -f "$$keystore" ]; then echo "No keystore at $$keystore — nothing to reset."; exit 0; fi; \
+	echo "This deletes $$keystore and the app can no longer update the copy"; \
+	echo "installed on any phone — you will need 'make android-uninstall' there."; \
+	printf 'Type the word reset to continue: '; \
+	read answer; \
+	[ "$$answer" = reset ] || { echo "Cancelled."; exit 1; }; \
+	mv "$$keystore" "$$keystore.$$(date +%Y%m%d%H%M%S).bak"; \
+	echo "Old key kept alongside as .bak in case the password comes back to you."; \
+	echo "Now run: make android"
 
 android-clean:
 	rm -rf android-twa
