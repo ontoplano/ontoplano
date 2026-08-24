@@ -25,6 +25,8 @@
 		describeGridEvent,
 		GRID_ZOOM_LEVELS,
 		GRID_DEFAULT_ZOOM_INDEX,
+		GRID_DAYS_DESKTOP,
+		GRID_DAYS_MOBILE,
 		type GridEventDetail
 	} from '$lib/planner-grid.js';
 
@@ -69,9 +71,19 @@
 	});
 
 	$effect(() => {
-		const fromUrl = data.view === 'grid' ? 'grid' : 'list';
-		viewMode = !data.viewExplicit && narrowScreen ? 'list' : fromUrl;
+		viewMode = data.view === 'grid' ? 'grid' : 'list';
 	});
+
+	/** One day on a phone, the full week elsewhere. */
+	const gridDays = $derived(narrowScreen ? GRID_DAYS_MOBILE : GRID_DAYS_DESKTOP);
+
+	/**
+	 * Which day the single-day grid is showing.
+	 *
+	 * Tracks the day tabs, so moving between days and moving the grid are the
+	 * same act rather than two independent cursors.
+	 */
+	const gridFrom = $derived(narrowScreen ? selectedDateStr() : data.range.from);
 	let prefillTime = $state('09:00');
 	let prefillDuration = $state(60);
 	let gridError: string | null = $state(null);
@@ -576,7 +588,7 @@
 	]);
 
 	const gridOptions = $derived({
-		...baseGridOptions(data.range.from, { slotHeight }),
+		...baseGridOptions(gridFrom, { slotHeight, days: gridDays }),
 		events: gridEvents,
 		editable: true,
 		selectable: true,
@@ -767,7 +779,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<div class="flex items-center justify-between">
+	<div class="flex flex-wrap items-center justify-between gap-2">
 		<div class="flex items-center gap-2">
 			<button
 				onclick={goToPrevWeek}
@@ -790,7 +802,7 @@
 				title="Forward 7 days (])">&rarr;</button
 			>
 		</div>
-		<div class="flex gap-2">
+		<div class="flex flex-wrap gap-2">
 			<div class="flex">
 				<button
 					onclick={() => setView('list')}
@@ -1507,7 +1519,9 @@
 		</div>
 	{/if}
 
-	{#if viewMode === 'list'}
+	<!-- Also shown over the day grid, which needs a way to move between days;
+	     the full week grid already shows all seven at once. -->
+	{#if viewMode === 'list' || gridDays === 1}
 		<div class="flex gap-1">
 			{#each data.range.days as day, i (day.date)}
 				<button
@@ -1733,7 +1747,10 @@
 			{/if}
 		{/if}
 	{:else}
-		<div class="h-[70vh] border border-gray-200 bg-white shadow-sm" use:gridZoomWheel>
+		<div
+			class="border border-gray-200 bg-white shadow-sm {gridDays === 1 ? 'h-[62vh]' : 'h-[70vh]'}"
+			use:gridZoomWheel
+		>
 			{#if browser && widthChecked}
 				<Calendar bind:this={ec} plugins={[TimeGrid, Interaction]} options={gridOptions} />
 			{/if}

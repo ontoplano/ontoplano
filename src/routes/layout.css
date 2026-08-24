@@ -334,9 +334,35 @@ html .ec {
 	scroll-snap-align: start;
 }
 
-/* Nothing may push the page sideways; a horizontally scrolling body is the
-   single most common way a desktop layout fails on a phone. */
-html,
-body {
-	overflow-x: hidden;
+/*
+ * Deliberately NOT `overflow-x: hidden` on the body.
+ *
+ * That hides sideways overflow rather than fixing it — and not even reliably:
+ * Firefox still allows a small drag, which is exactly how the last one was
+ * found. Rows that would overflow wrap instead, and strips that are meant to
+ * scroll say so with `.snap-strip`. If the page scrolls sideways, something is
+ * genuinely too wide and should be found, not clipped.
+ */
+
+/*
+ * The planner grid on a phone.
+ *
+ * The hour gutter is sized for a desktop week, where it is a small fraction of
+ * the width. On a single-day view at 390px it was taking half the screen, so
+ * the day column — the part you actually read and drag in — got what was left.
+ */
+@media (max-width: 699px) {
+	html .ec {
+		--ec-sidebar-width: 3rem;
+	}
+
+	/* The gutter is sized by its content, so the padding is what actually
+	   shrinks it. */
+	html .ec .ec-time-grid .ec-sidebar {
+		padding-inline: 0.25rem;
+	}
+
+	html .ec .ec-time {
+		font-size: 0.6875rem;
+	}
 }

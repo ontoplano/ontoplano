@@ -385,7 +385,8 @@
 			{#each allTasks as task, i (task.id)}
 				{@const future = isFuture(task)}
 				<div
-					class="flex items-center gap-4 border-l-4 px-4 py-3 transition-colors {i === selectedIndex
+					class="flex flex-wrap items-center gap-x-4 gap-y-2 border-l-4 px-4 py-3 transition-colors {i ===
+					selectedIndex
 						? 'ring-2 ring-gray-900 ring-inset'
 						: ''} {future ? 'opacity-50' : ''}"
 					style="border-left-color: {catColor(task.categoryId)}; background-color: {catColorLight(
@@ -597,7 +598,7 @@
 						method="post"
 						action="?/updateStatus"
 						use:enhance
-						class="flex shrink-0 gap-1"
+						class="flex shrink-0 flex-wrap gap-1"
 					>
 						<input type="hidden" name="id" value={task.id} />
 						<input type="hidden" name="status" value="pending" />

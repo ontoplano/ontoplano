@@ -312,15 +312,27 @@ export function describeGridEvent(event: GridEventLike): GridEventDetail {
  * days on the left of a plan you can only act on going forward. Seven plain days
  * keeps the window anchored wherever the caller puts it.
  */
+/**
+ * How many days the grid shows at once.
+ *
+ * Seven columns need roughly 90px each before the titles turn into single
+ * truncated words, so a phone gets one day rather than a squashed week. This is
+ * the same grid with the same interactions — a day column at full width is
+ * usable with a thumb, where a 50px one is not.
+ */
+export const GRID_DAYS_DESKTOP = 7;
+export const GRID_DAYS_MOBILE = 1;
+
 export function baseGridOptions(
 	fromStr: string,
-	opts: { slotHeight?: number } = {}
+	opts: { slotHeight?: number; days?: number } = {}
 ): Calendar.Options {
 	const slotHeight = opts.slotHeight ?? GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX];
+	const days = opts.days ?? GRID_DAYS_DESKTOP;
 
 	return {
-		view: 'timeGridWeek',
-		duration: { days: 7 },
+		view: days === 1 ? 'timeGridDay' : 'timeGridWeek',
+		duration: { days },
 		date: parseLocalDate(fromStr),
 		allDaySlot: false,
 		slotMinTime: GRID_MIN_TIME,
@@ -330,9 +342,17 @@ export function baseGridOptions(
 		slotHeight,
 		scrollTime: GRID_MIN_TIME,
 		nowIndicator: true,
+		// 24-hour, matching every other time in the app — the board and the
+		// tracker both read 07:00. It is also narrower, which is what lets the
+		// hour gutter shrink on a phone.
+		slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
 		height: '100%',
 		eventContent: (info) => (eventFitsText(info.event, slotHeight) ? info.event.title : ''),
 		headerToolbar: { start: '', center: '', end: '' },
-		dayHeaderFormat: { weekday: 'short', day: 'numeric' }
+		// One day has room to say which day it is.
+		dayHeaderFormat:
+			days === 1
+				? { weekday: 'long', day: 'numeric', month: 'short' }
+				: { weekday: 'short', day: 'numeric' }
 	};
 }
