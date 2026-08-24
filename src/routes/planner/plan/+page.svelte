@@ -942,7 +942,7 @@
 		selectable: true,
 		eventClick: handleEventClick,
 		eventDrop: handleEventDrop,
-		eventResize: handleEventPersist,
+		eventResize: handleEventResize,
 		select: handleGridSelect,
 		eventDidMount: stampEventId,
 		eventMouseEnter: showHover,
@@ -1025,7 +1025,7 @@
 		}
 		// Alt moves this occurrence only, leaving the recurring block where it is.
 		if (info.jsEvent?.altKey) {
-			await moveOccurrenceOnly(info);
+			await detachOccurrence(info);
 			return;
 		}
 
@@ -1134,16 +1134,34 @@
 		await invalidateAll();
 	}
 
+	async function handleEventResize(info: {
+		event: { id: string | number; start: Date; end: Date };
+		revert: () => void;
+		oldEvent?: { start: Date };
+		jsEvent?: { altKey?: boolean };
+	}) {
+		// Alt retimes this occurrence only, leaving the recurring block's own
+		// hours alone — the same bargain alt-drag makes, for the other edge.
+		if (info.jsEvent?.altKey) {
+			await detachOccurrence(info);
+			return;
+		}
+
+		await handleEventPersist(info);
+	}
+
 	/**
-	 * Move a single occurrence of a recurring block.
+	 * Give a single occurrence of a recurring block its own time.
 	 *
-	 * The block keeps its schedule; this week's instance of it moves. The server
-	 * models that as a skip on the original date plus a one-off at the new time,
-	 * so the grid shows exactly one of them and both halves stay undoable.
+	 * The block keeps its schedule; this week's instance of it moves or changes
+	 * length. The server models that as a skip on the original date plus a
+	 * one-off at the new time, so the grid shows exactly one of them and both
+	 * halves stay undoable. Drag and resize differ only in which edge moved,
+	 * and both arrive here as a start and an end.
 	 *
-	 * A one-off has no recurrence to diverge from, so alt on one is just a move.
+	 * A one-off has no recurrence to diverge from, so alt on one is just an edit.
 	 */
-	async function moveOccurrenceOnly(info: {
+	async function detachOccurrence(info: {
 		event: { id: string | number; start: Date; end: Date };
 		oldEvent?: { start: Date };
 		revert: () => void;
@@ -2390,7 +2408,7 @@
 				>
 				while dragging to duplicate, or
 				<kbd class="border border-gray-300 bg-gray-50 px-1">Alt</kbd>
-				to move just this day's occurrence ·
+				to move or resize just this day's occurrence ·
 				<kbd class="border border-gray-300 bg-gray-50 px-1">Shift</kbd>
 				drag to select several, then drag one to move them all ·
 				<kbd class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd>+<kbd
