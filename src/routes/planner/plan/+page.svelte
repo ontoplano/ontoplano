@@ -32,7 +32,8 @@
 		GRID_SNAP_DURATION,
 		timeToMinutes,
 		minutesToTime,
-		type GridEventDetail
+		type GridEventDetail,
+		type GridEventKind
 	} from '$lib/planner-grid.js';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -437,6 +438,15 @@
 	type Marquee = { x1: number; y1: number; x2: number; y2: number };
 
 	let selectedEventIds: Set<string> = $state(new Set<string>());
+
+	/**
+	 * True from the start of a shift-drag until just after it ends.
+	 *
+	 * event-calendar decides a drag was a "select" once the pointer is released,
+	 * and by then the shift key may already be up — so the flag, not the
+	 * modifier, is what tells the two gestures apart.
+	 */
+	let marqueeJustFinished = false;
 	let marquee: Marquee | null = $state<Marquee | null>(null);
 	let gridEl: HTMLElement | undefined = $state();
 
@@ -460,6 +470,7 @@
 			e.preventDefault();
 			e.stopPropagation();
 
+			marqueeJustFinished = true;
 			const rect = node.getBoundingClientRect();
 			marquee = {
 				x1: e.clientX - rect.left,
@@ -477,6 +488,8 @@
 				window.removeEventListener('mousemove', onMove);
 				window.removeEventListener('mouseup', onUp);
 				commitMarquee(node);
+				// Cleared after the calendar has had its turn at the same release.
+				setTimeout(() => (marqueeJustFinished = false), 0);
 			};
 
 			window.addEventListener('mousemove', onMove);
@@ -559,6 +572,80 @@
 		}
 	});
 
+	/* ── Undo ──────────────────────────────────────────────────────────────────
+	 *
+	 * Every grid edit records how to put things back, and Ctrl-Z runs the last
+	 * one. Inverse operations rather than snapshots: the page reloads from the
+	 * server after each change, so a stored snapshot would be stale the moment
+	 * anything else touched the same data, whereas "put block 7 back on Tuesday
+	 * at 18:00" stays true.
+	 *
+	 * Deliberately bounded and in-memory. Undo here is for taking back the drag
+	 * you just made, not a document history — persisting it would raise
+	 * questions (whose undo? across devices?) that the feature does not need to
+	 * answer.
+	 */
+	type UndoStep = { label: string; run: () => Promise<void> };
+
+	const UNDO_LIMIT = 25;
+	let undoStack: UndoStep[] = [];
+	let undoNotice: string | null = $state(null);
+
+	function pushUndo(step: UndoStep) {
+		undoStack.push(step);
+		if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+	}
+
+	/** Restore a block to a known placement. */
+	function restorePlacement(
+		kind: GridEventKind,
+		source: Slot | Exceptional,
+		placement: { weekday?: number; date?: string; startTime: string; durationMinutes: number }
+	): () => Promise<void> {
+		// The identity fields are captured now, because by the time this runs the
+		// block may no longer be in `data`.
+		const identity = {
+			mode: source.mode,
+			categoryId: source.categoryId,
+			activityId: source.activityId,
+			label: source.label ?? ''
+		};
+		const id = source.id;
+
+		return async () => {
+			const body = new FormData();
+			body.set('id', String(id));
+			body.set('startTime', placement.startTime);
+			body.set('durationMinutes', String(placement.durationMinutes));
+			body.set('mode', identity.mode);
+			if (identity.categoryId != null) body.set('categoryId', String(identity.categoryId));
+			if (identity.activityId != null) body.set('activityId', String(identity.activityId));
+			body.set('label', identity.label);
+			if (kind === 'slot') body.set('weekday', String(placement.weekday ?? 0));
+			else body.set('date', placement.date ?? '');
+
+			await postGridAction(
+				kind === 'slot' ? 'update' : 'updateExceptional',
+				body,
+				'Could not undo that.'
+			);
+		};
+	}
+
+	async function undoLast() {
+		const step = undoStack.pop();
+		if (!step) {
+			undoNotice = 'Nothing to undo';
+			setTimeout(() => (undoNotice = null), 1500);
+			return;
+		}
+
+		await step.run();
+		undoNotice = `Undid: ${step.label}`;
+		setTimeout(() => (undoNotice = null), 2000);
+		await invalidateAll();
+	}
+
 	function goToRange(from: string | null) {
 		const parts: string[] = [];
 		if (from) parts.push(`from=${from}`);
@@ -594,6 +681,15 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		// Before the input guard: Ctrl-Z is expected to work regardless of what
+		// happens to hold focus, and the grid has no text field of its own.
+		if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+			e.preventDefault();
+			undoLast();
+			return;
+		}
+
 		if (e.key === 'Escape') {
 			e.preventDefault();
 			showCopyPanel = false;
@@ -601,6 +697,7 @@
 			confirmingBulkDelete = false;
 			multiselect = false;
 			selectedIds = new Set();
+			selectedEventIds = new Set();
 			closeForm();
 			(document.activeElement as HTMLElement)?.blur?.();
 			return;
@@ -869,7 +966,12 @@
 		}
 	}
 
-	function handleGridSelect(info: { start: Date; end: Date }) {
+	function handleGridSelect(info: { start: Date; end: Date; jsEvent?: { shiftKey?: boolean } }) {
+		// A shift-drag is a selection rectangle, not "create a block here".
+		// The calendar starts its own drag from a pointer event this code cannot
+		// always intercept first, so the intent is re-checked at the end.
+		if (info.jsEvent?.shiftKey || marqueeJustFinished) return;
+
 		const placement = placementFromDates(info.start, info.end);
 		selectOffsetForDate(formatLocalDate(info.start));
 		prefillTime = placement.startTime;
@@ -962,6 +1064,8 @@
 		if (deltaMs === 0) return;
 
 		let failed = 0;
+		const restores: (() => Promise<void>)[] = [];
+
 		for (const id of selectedEventIds) {
 			const decoded = decodeEventId(id);
 			if (!decoded) continue;
@@ -989,6 +1093,15 @@
 				new Date(moved.getTime() + source.durationMinutes * 60_000)
 			);
 
+			restores.push(
+				restorePlacement(decoded.kind, source, {
+					weekday: decoded.kind === 'slot' ? (source as Slot).weekday : undefined,
+					date: decoded.kind === 'slot' ? undefined : (source as Exceptional).date,
+					startTime: source.startTime,
+					durationMinutes: source.durationMinutes
+				})
+			);
+
 			const body = new FormData();
 			body.set('id', String(source.id));
 			body.set('startTime', placement.startTime);
@@ -1005,8 +1118,19 @@
 			if (!result) failed++;
 		}
 
+		// One entry for the whole group, so Ctrl-Z undoes the gesture rather than
+		// one block of it.
+		pushUndo({
+			label: `move ${restores.length} blocks`,
+			run: async () => {
+				for (const restore of restores) await restore();
+			}
+		});
+
 		if (failed > 0) gridError = `${failed} block(s) could not be moved.`;
-		selectedEventIds = new Set();
+		// The selection survives the move: nudging a group into place usually
+		// takes more than one drag, and reselecting between each is the tedious
+		// part of doing it by hand.
 		await invalidateAll();
 	}
 
@@ -1147,6 +1271,18 @@
 
 		const placement = placementFromDates(info.event.start, info.event.end);
 		const date = formatLocalDate(info.event.start);
+
+		// Captured before the write, while `source` still says where it was.
+		pushUndo({
+			label: 'move',
+			run: restorePlacement(decoded.kind, source, {
+				weekday: decoded.kind === 'slot' ? (source as Slot).weekday : undefined,
+				date: decoded.kind === 'slot' ? undefined : (source as Exceptional).date,
+				startTime: source.startTime,
+				durationMinutes: source.durationMinutes
+			})
+		});
+
 		const body = new FormData();
 		body.set('id', String(source.id));
 		body.set('startTime', placement.startTime);
@@ -2218,6 +2354,22 @@
 				></div>
 			{/if}
 
+			{#if undoNotice}
+				<div
+					class="pointer-events-none absolute top-2 left-2 z-30 border border-gray-900 bg-gray-900 px-2 py-1 text-xs text-white"
+				>
+					{undoNotice}
+				</div>
+			{/if}
+
+			{#if selectedEventIds.size > 1}
+				<div
+					class="pointer-events-none absolute bottom-2 left-2 z-30 border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-card"
+				>
+					{selectedEventIds.size} selected · drag one to move them · Esc to clear
+				</div>
+			{/if}
+
 			{#if dropPreview}
 				<!-- Says exactly where it will land, since the grid gives no other
 				     feedback for a drop it does not itself handle. -->
@@ -2240,7 +2392,10 @@
 				<kbd class="border border-gray-300 bg-gray-50 px-1">Alt</kbd>
 				to move just this day's occurrence ·
 				<kbd class="border border-gray-300 bg-gray-50 px-1">Shift</kbd>
-				drag to select several, then drag one to move them all · snaps to 15min
+				drag to select several, then drag one to move them all ·
+				<kbd class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd>+<kbd
+					class="border border-gray-300 bg-gray-50 px-1">Z</kbd
+				> undoes · snaps to 15min
 			</p>
 			<div class="flex items-center gap-1">
 				<span class="mr-1 text-xs text-gray-400">
