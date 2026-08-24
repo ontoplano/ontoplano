@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { buildCtx } from '$lib/server/services/ctx';
 import { db } from '$lib/server/db';
 import { activities, goalAreas, goalLinks, goals } from '$lib/server/db/schema';
 import { and, eq } from 'drizzle-orm';
@@ -17,7 +18,7 @@ export const load: PageServerLoad = async (event) => {
 		goals: listGoals(userId, { includeClosed }),
 		includeClosed,
 		slots: linkableSlots(userId),
-		todos: listTodos(userId).filter((t) => t.status !== 'done'),
+		todos: listTodos(buildCtx(userId)).filter((t) => t.status !== 'done'),
 		activities: db
 			.select({ id: activities.id, name: activities.name })
 			.from(activities)

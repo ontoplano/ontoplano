@@ -48,6 +48,7 @@ function readMetaPatch(formData: FormData): { meta: string | undefined } | { mes
 	}
 }
 import type { Actions, PageServerLoad } from './$types';
+import { buildCtx } from '$lib/server/services/ctx';
 import { db } from '$lib/server/db';
 import {
 	weeklySlots,
@@ -289,7 +290,7 @@ export const load: PageServerLoad = async (event) => {
 		// So the metadata editor can say which plugin reads which key.
 		plugins: listManifests(userId).map((m) => ({ name: m.name, metaKeys: m.metaKeys })),
 		// Undated todos, so one can be dragged straight onto an hour.
-		todos: listUnscheduled(userId),
+		todos: listUnscheduled(buildCtx(userId)),
 		slots,
 		range,
 		view,
@@ -719,7 +720,7 @@ export const actions: Actions = {
 		if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return fail(400, { message: 'Invalid date' });
 		if (!startTime.match(/^\d{2}:\d{2}$/)) return fail(400, { message: 'Invalid time' });
 
-		const result = promoteTodo(userId, { todoId, date, startTime, durationMinutes });
+		const result = promoteTodo(buildCtx(userId), { todoId, date, startTime, durationMinutes });
 		if (!result.ok) return fail(400, { message: result.message });
 
 		return { success: true };

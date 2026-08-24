@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { buildCtx } from '$lib/server/services/ctx';
 import { db } from '$lib/server/db';
 import { categories, exceptionalSlots, plannerTodos, taskInstances } from '$lib/server/db/schema';
 import { and, eq } from 'drizzle-orm';
@@ -112,7 +113,7 @@ export const load: PageServerLoad = async (event) => {
 	});
 
 	const todayCards = occurrences;
-	const generalCards = listUnscheduled(userId).map(asCard);
+	const generalCards = listUnscheduled(buildCtx(userId)).map(asCard);
 
 	const allCategories = db
 		.select({ id: categories.id, name: categories.name, color: categories.color })
@@ -246,7 +247,7 @@ export const actions: Actions = {
 		if (!id) return fail(400, { message: 'Missing id' });
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail(400, { message: 'Invalid date' });
 
-		const result = promoteTodo(userId, {
+		const result = promoteTodo(buildCtx(userId), {
 			todoId: id,
 			date,
 			startTime: formData.get('startTime')?.toString()?.trim() || nextFreeTime(date),
@@ -298,7 +299,7 @@ export const actions: Actions = {
 					categoryId: instance.categoryId,
 					status: instance.status,
 					completed: instance.status === 'done',
-					sortOrder: nextSortOrder(userId),
+					sortOrder: nextSortOrder(buildCtx(userId)),
 					urgency: instance.urgencyOverride ?? instance.urgency,
 					interest: instance.interestOverride ?? instance.interest,
 					energy: instance.energyOverride ?? instance.energy
@@ -340,7 +341,7 @@ export const actions: Actions = {
 				categoryId,
 				scheduledDate,
 				status: isStatus(status) ? status : 'todo',
-				sortOrder: nextSortOrder(userId),
+				sortOrder: nextSortOrder(buildCtx(userId)),
 				...ratingsFromForm(formData)
 			})
 			.run();
