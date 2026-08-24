@@ -171,7 +171,7 @@
 								<span class="eyebrow text-gray-500">Theme</span>
 								<form
 									method="post"
-									action="/config?/setTheme"
+									action="/settings/preferences?/setTheme"
 									use:enhance={({ formData }) => {
 										// <html> lives outside the component tree, so `update()` will
 										// not touch it — set it here and let the reload agree later.
@@ -199,11 +199,18 @@
 								</form>
 							</div>
 							<a
-								href="/account"
+								href="/settings/account"
 								onclick={() => (menuOpen = false)}
 								class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
 							>
 								Account
+							</a>
+							<a
+								href="/settings/preferences"
+								onclick={() => (menuOpen = false)}
+								class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
+							>
+								Preferences
 							</a>
 							<a
 								href="/settings/integrations"
@@ -211,13 +218,6 @@
 								class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
 							>
 								Integrations
-							</a>
-							<a
-								href="/config"
-								onclick={() => (menuOpen = false)}
-								class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
-							>
-								Config
 							</a>
 							<form method="post" action="/login?/signOut" use:enhance>
 								<button
@@ -339,14 +339,9 @@
 						</a>
 					{/each}
 					<a
-						href="/account"
+						href="/settings/account"
 						onclick={() => (moreOpen = false)}
-						class="block px-4 py-3 text-sm text-gray-900">Account</a
-					>
-					<a
-						href="/config"
-						onclick={() => (moreOpen = false)}
-						class="block px-4 py-3 text-sm text-gray-900">Config</a
+						class="block px-4 py-3 text-sm text-gray-900">Settings</a
 					>
 					<form method="post" action="/login?/signOut" use:enhance>
 						<button type="submit" class="w-full px-4 py-3 text-left text-sm text-gray-900"

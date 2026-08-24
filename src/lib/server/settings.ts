@@ -4,15 +4,6 @@ import { db } from './db/index.js';
 import { user, userSettings } from './db/schema.js';
 import { THEMES, type Theme } from '../theme.js';
 
-/**
- * Feature flags.
- *
- * The three dashboard toggles that used to live here are gone: which cards
- * appear is a layout now (see $lib/dashboard.ts), which also covers ordering
- * and the cards those flags never knew about.
- */
-export const FEATURE_DEFAULTS: Record<string, boolean> = {};
-
 export function getUserSetting(userId: string, key: string): string | null {
 	const row = db
 		.select()
@@ -38,17 +29,6 @@ export function setUserSetting(userId: string, key: string, value: string): void
 	} else {
 		db.insert(userSettings).values({ userId, key, value }).run();
 	}
-}
-
-export function getFeatureFlags(userId: string): Record<string, boolean> {
-	const flags: Record<string, boolean> = {};
-
-	for (const [key, defaultVal] of Object.entries(FEATURE_DEFAULTS)) {
-		const val = getUserSetting(userId, key);
-		flags[key] = val !== null ? val === 'true' : defaultVal;
-	}
-
-	return flags;
 }
 
 // --- Theme -------------------------------------------------------------------

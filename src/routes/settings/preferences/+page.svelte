@@ -30,29 +30,38 @@
 	}
 
 	const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+	// Removing a quote is destructive, so it takes two clicks like every other
+	// delete in the app.
+	let confirmRemove = $state<number | null>(null);
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (
+			e.target instanceof HTMLInputElement ||
+			e.target instanceof HTMLTextAreaElement ||
+			e.target instanceof HTMLSelectElement
+		)
+			return;
+
+		if (e.key === 'Escape') confirmRemove = null;
+	}
 </script>
 
-<div class="space-y-4">
-	<h1 class="text-lg font-bold text-gray-900">Configuration</h1>
+<svelte:window onkeydown={handleKeydown} />
 
+<div class="space-y-4">
 	{#if form?.message}
 		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
 			{form.message}
 		</div>
 	{/if}
 
-	{#if form?.success && form.action === 'save'}
+	{#if form?.success && form.action === 'setLayout'}
 		<div class="border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
-			Config saved. Some changes (host, port) require a restart.
-		</div>
-	{:else if form?.success && form.action === 'setLayout'}
-		<div class="border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
-			Feature setting updated.
+			Dashboard layout saved.
 		</div>
 	{/if}
 
-	<!-- Two forms, because these are two different scopes: the week is yours,
-	     the deployment is the machine's. -->
 	<form
 		method="post"
 		action="?/saveWeek"
@@ -91,48 +100,6 @@
 			>Save week</button
 		>
 	</form>
-
-	{#if data.canEditInstance}
-		<form
-			method="post"
-			action="?/saveInstance"
-			use:enhance
-			class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
-		>
-			<div>
-				<h2 class="text-sm font-semibold text-gray-900">Deployment</h2>
-				<p class="mt-1 text-sm text-gray-500">
-					Where the server listens. Applies to everyone on this instance, so only its owner can
-					change it — and only on a self-hosted install.
-				</p>
-			</div>
-			<div class="flex gap-4">
-				<label class="flex-1">
-					<span class="eyebrow text-gray-500">Host</span>
-					<input
-						name="host"
-						type="text"
-						value={data.config.server.host}
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					/>
-				</label>
-				<label class="w-28">
-					<span class="eyebrow text-gray-500">Port</span>
-					<input
-						name="port"
-						type="number"
-						min="1"
-						max="65535"
-						value={data.config.server.port}
-						class="tabular mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					/>
-				</label>
-			</div>
-			<button class="bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-				>Save deployment</button
-			>
-		</form>
-	{/if}
 
 	<section class="border border-gray-200 bg-white p-6 shadow-card">
 		<div class="mb-4">
@@ -225,10 +192,35 @@
 								<p class="text-xs text-gray-500">&mdash; {quote.author}</p>
 							{/if}
 						</div>
-						<form method="post" action="?/deleteQuote" use:enhance>
-							<input type="hidden" name="id" value={quote.id} />
-							<button class="text-xs text-gray-400 hover:text-red-600">Remove</button>
-						</form>
+						{#if confirmRemove === quote.id}
+							<form
+								method="post"
+								action="?/deleteQuote"
+								use:enhance={() =>
+									async ({ update }) => {
+										confirmRemove = null;
+										await update();
+									}}
+								class="flex items-center gap-2"
+							>
+								<input type="hidden" name="id" value={quote.id} />
+								<button
+									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+									>Confirm?</button
+								>
+								<button
+									type="button"
+									onclick={() => (confirmRemove = null)}
+									class="text-xs text-gray-400 hover:text-gray-900">Cancel</button
+								>
+							</form>
+						{:else}
+							<button
+								type="button"
+								onclick={() => (confirmRemove = quote.id)}
+								class="text-xs text-gray-400 hover:text-red-600">Remove</button
+							>
+						{/if}
 					</div>
 				{/each}
 			</div>

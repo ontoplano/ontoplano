@@ -570,7 +570,9 @@
 				style="border-top-color: {SECTION_COLORS.home}"
 			>
 				<h2 class="eyebrow text-gray-500">Today</h2>
-				<a href="/config" class="text-xs text-gray-500 hover:text-gray-900">Edit &rarr;</a>
+				<a href="/settings/preferences" class="text-xs text-gray-500 hover:text-gray-900"
+					>Edit &rarr;</a
+				>
 			</div>
 			{#if data.quote}
 				<blockquote class="text-sm text-gray-900 italic">

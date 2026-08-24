@@ -61,13 +61,10 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-6">
-	<div>
-		<h1 class="text-lg font-bold text-gray-900">Integrations</h1>
-		<p class="mt-1 text-sm text-gray-500">
-			Connect external apps. They push data in as <em>streams</em> and can read your upcoming schedule
-			— without shipping any code into ontoplano.
-		</p>
-	</div>
+	<p class="text-sm text-gray-500">
+		Connect external apps. They push data in as <em>streams</em> and can read your upcoming schedule —
+		without shipping any code into ontoplano.
+	</p>
 
 	{#if form?.message}
 		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

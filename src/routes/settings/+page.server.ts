@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-/** /account is now /settings/account. */
+/** /settings itself has no content; the account tab is the landing page. */
 export const load: PageServerLoad = async () => {
-	redirect(301, '/settings/account');
+	redirect(302, '/settings/account');
 };

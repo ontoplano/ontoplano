@@ -69,7 +69,8 @@ sw.addEventListener('fetch', (event) => {
 
 	// Auth and the API are never served from cache: a cached session check or a
 	// cached token list is a security answer that has gone stale.
-	if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/account/export')) return;
+	if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/settings/account/export'))
+		return;
 
 	if (isAsset(url)) {
 		event.respondWith(caches.match(request).then((hit) => hit ?? fetch(request)));

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -8,8 +9,6 @@
 </script>
 
 <div class="space-y-4">
-	<h1 class="text-lg font-bold text-gray-900">Account</h1>
-
 	{#if form?.message}
 		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{form.message}</div>
 	{/if}
@@ -26,7 +25,7 @@
 			settings. The raw rows, so it is complete rather than pretty.
 		</p>
 		<a
-			href="/account/export"
+			href={resolve('/settings/account/export')}
 			download
 			class="mt-4 inline-block border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
 		>
