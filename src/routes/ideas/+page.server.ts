@@ -1,191 +1,94 @@
-import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { db } from '$lib/server/db';
-import { ideas, tags, ideaTags } from '$lib/server/db/schema';
-import { eq, desc, and } from 'drizzle-orm';
-import { toLocalISOString } from '$lib/server/week-generator';
+import { buildCtx } from '$lib/server/services/ctx';
+import { toActionFailure } from '$lib/server/services/errors';
 import {
-	parseTags,
-	ensureTagIds,
-	linkIdeaTags,
-	replaceIdeaTags,
-	cleanupOrphanTags
-} from '$lib/server/tags';
+	createIdea,
+	deleteIdea,
+	listIdeas,
+	listTags,
+	toggleApplied,
+	toggleFavorite,
+	updateAppliedNote,
+	updateIdea
+} from '$lib/server/services/ideas';
 
-export const load: PageServerLoad = async (event) => {
-	const userId = event.locals.user!.id;
-	const allIdeas = db
-		.select({
-			id: ideas.id,
-			content: ideas.content,
-			isApplied: ideas.isApplied,
-			appliedNote: ideas.appliedNote,
-			favorite: ideas.favorite,
-			createdAt: ideas.createdAt,
-			updatedAt: ideas.updatedAt
-		})
-		.from(ideas)
-		.where(eq(ideas.userId, userId))
-		.orderBy(desc(ideas.createdAt))
-		.all();
-
-	const ideasWithTags = allIdeas.map((idea) => {
-		const ideaTagList = db
-			.select({ id: tags.id, name: tags.name })
-			.from(ideaTags)
-			.innerJoin(tags, eq(ideaTags.tagId, tags.id))
-			.where(and(eq(ideaTags.ideaId, idea.id), eq(tags.userId, userId)))
-			.all();
-		return { ...idea, tags: ideaTagList };
-	});
-
-	const allTags = db.select().from(tags).where(eq(tags.userId, userId)).orderBy(tags.name).all();
-
-	return { ideas: ideasWithTags, allTags };
+export const load: PageServerLoad = async ({ locals }) => {
+	const ctx = buildCtx(locals.user!.id);
+	return { ideas: listIdeas(ctx), allTags: listTags(ctx) };
 };
 
 export const actions: Actions = {
 	create: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const content = formData.get('content')?.toString()?.trim();
-		const rawTags = formData.get('tags')?.toString()?.trim() ?? '';
-
-		if (!content) return fail(400, { message: 'Content is required' });
-
-		const now = toLocalISOString(new Date());
-		const result = db
-			.insert(ideas)
-			.values({ userId, content, createdAt: now, updatedAt: now })
-			.run();
-		const ideaId = Number(result.lastInsertRowid);
-
-		const tagNames = parseTags(rawTags);
-		if (tagNames.length > 0) {
-			const tagIds = ensureTagIds(tagNames, userId);
-			linkIdeaTags(ideaId, tagIds);
+		try {
+			createIdea(buildCtx(locals.user!.id), {
+				content: formData.get('content'),
+				tags: formData.get('tags')
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
 		}
-
-		return { success: true };
 	},
 
 	update: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const content = formData.get('content')?.toString()?.trim();
-		const rawTags = formData.get('tags')?.toString()?.trim() ?? '';
-
-		if (!id || !content) return fail(400, { message: 'Missing fields' });
-		const existing = db
-			.select({ id: ideas.id })
-			.from(ideas)
-			.where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
-			.get();
-		if (!existing) return fail(404, { message: 'Idea not found' });
-
-		db.update(ideas)
-			.set({ content, updatedAt: toLocalISOString(new Date()) })
-			.where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
-			.run();
-
-		replaceIdeaTags(id, parseTags(rawTags), userId);
-		cleanupOrphanTags(userId);
-
-		return { success: true };
+		try {
+			updateIdea(buildCtx(locals.user!.id), Number(formData.get('id')), {
+				content: formData.get('content'),
+				tags: formData.get('tags')
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	delete: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-
-		if (!id) return fail(400, { message: 'Missing id' });
-
-		db.delete(ideas)
-			.where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
-			.run();
-
-		cleanupOrphanTags(userId);
-
-		return { success: true };
+		try {
+			deleteIdea(buildCtx(locals.user!.id), Number(formData.get('id')));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	toggleApplied: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const appliedNote = formData.get('appliedNote')?.toString().trim() || null;
-
-		if (!id) return fail(400, { message: 'Missing id' });
-
-		const existing = db
-			.select({ id: ideas.id, isApplied: ideas.isApplied })
-			.from(ideas)
-			.where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
-			.get();
-
-		if (!existing) return fail(404, { message: 'Idea not found' });
-
-		const nextIsApplied = !existing.isApplied;
-
-		db.update(ideas)
-			.set({
-				isApplied: nextIsApplied,
-				appliedNote: nextIsApplied ? appliedNote : null,
-				updatedAt: toLocalISOString(new Date())
-			})
-			.where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
-			.run();
-
-		return { success: true };
+		try {
+			toggleApplied(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('appliedNote')
+			);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	updateAppliedNote: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const appliedNote = formData.get('appliedNote')?.toString().trim() || null;
-
-		if (!id) return fail(400, { message: 'Missing id' });
-
-		const existing = db
-			.select({ id: ideas.id, isApplied: ideas.isApplied })
-			.from(ideas)
-			.where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
-			.get();
-
-		if (!existing) return fail(404, { message: 'Idea not found' });
-		if (!existing.isApplied) return fail(400, { message: 'Idea is not marked as applied' });
-
-		db.update(ideas)
-			.set({ appliedNote, updatedAt: toLocalISOString(new Date()) })
-			.where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
-			.run();
-
-		return { success: true };
+		try {
+			updateAppliedNote(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('appliedNote')
+			);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	toggleFavorite: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-
-		if (!id) return fail(400, { message: 'Missing id' });
-
-		const existing = db
-			.select({ id: ideas.id, favorite: ideas.favorite })
-			.from(ideas)
-			.where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
-			.get();
-
-		if (!existing) return fail(404, { message: 'Idea not found' });
-
-		db.update(ideas)
-			.set({ favorite: !existing.favorite, updatedAt: toLocalISOString(new Date()) })
-			.where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
-			.run();
-
-		return { success: true };
+		try {
+			toggleFavorite(buildCtx(locals.user!.id), Number(formData.get('id')));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	}
 };
