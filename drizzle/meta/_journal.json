@@ -78,6 +78,13 @@
       "when": 1787282331945,
       "tag": "0010_pink_nico_minoru",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1787539927394,
+      "tag": "0011_mean_risque",
+      "breakpoints": true
     }
   ]
 }

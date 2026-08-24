@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
+	import { autofocus } from '$lib/actions/autofocus.js';
 	import { TIMING_LABELS } from '$lib/task-status.js';
 	import type { Rating } from '$lib/ratings.js';
 	import { goto } from '$app/navigation';
@@ -14,6 +15,8 @@
 	let editingTimeId: number | null = $state(null);
 	let editingDurationId: number | null = $state(null);
 	let editingActivityId: number | null = $state(null);
+	/** Which task's one-day name is being edited. */
+	let editingLabelId: number | null = $state(null);
 	let confirmingDelete: number | null = $state(null);
 
 	// The server returns one row shape for both kinds of block, so the union
@@ -136,6 +139,7 @@
 			e.preventDefault();
 			editingTimeId = null;
 			editingDurationId = null;
+			editingLabelId = null;
 			editingActivityId = null;
 			confirmingDelete = null;
 			(document.activeElement as HTMLElement)?.blur?.();
@@ -193,6 +197,9 @@
 			case 'edit-activity':
 				editingActivityId = tasks[selectedIndex].id;
 				break;
+			case 'edit-label':
+				editingLabelId = tasks[selectedIndex].id;
+				break;
 			case 'delete': {
 				const task = tasks[selectedIndex];
 				if (confirmingDelete === task.id) {
@@ -228,6 +235,9 @@
 	}
 
 	function taskLabel(task: UnifiedTask): string {
+		// A name given to this occurrence beats whatever the block is called —
+		// that is the whole point of setting one.
+		if (task.labelOverride) return task.labelOverride;
 		if (task.activityId && task.activityName) return task.activityName;
 		if (task.blockActivityName) return task.blockActivityName;
 		if (task.label) return task.label;
@@ -536,6 +546,39 @@
 								{/each}
 							</select>
 						</form>
+					{:else if editingLabelId === task.id}
+						<!-- Names this occurrence only. Empty clears it and the block's own
+						     name comes back, so there is no separate reset. -->
+						<form
+							method="post"
+							action="?/updateLabel"
+							use:enhance={() => {
+								return async ({ update }) => {
+									await update();
+									editingLabelId = null;
+								};
+							}}
+							class="min-w-0 flex-1"
+						>
+							<input type="hidden" name="id" value={task.id} />
+							<input
+								name="label"
+								value={task.labelOverride ?? ''}
+								placeholder="what you're doing today"
+								autocomplete="off"
+								use:autofocus
+								onblur={(e: FocusEvent & { currentTarget: HTMLInputElement }) =>
+									e.currentTarget.form?.requestSubmit()}
+								onkeydown={(e: KeyboardEvent) => {
+									if (e.key === 'Escape') {
+										e.preventDefault();
+										e.stopPropagation();
+										editingLabelId = null;
+									}
+								}}
+								class="block w-full border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							/>
+						</form>
 					{:else}
 						<div class="min-w-0 flex-1">
 							<div class="flex items-center gap-2">
@@ -555,8 +598,20 @@
 										>↻</span
 									>
 								{/if}
+								<button
+									type="button"
+									onclick={() => (editingLabelId = task.id)}
+									class="shrink-0 text-xs text-gray-400 hover:text-gray-900"
+									title="Name just this day (l)"
+									aria-label="Name just this occurrence"
+								>
+									{task.labelOverride ? '✎' : '+'}
+								</button>
 							</div>
-							{#if task.label && taskLabel(task) !== task.label}
+							{#if task.labelOverride}
+								<!-- What this block usually is, now that today says otherwise. -->
+								<p class="truncate text-xs text-gray-500">usually: {originalSlotLabel(task)}</p>
+							{:else if task.label && taskLabel(task) !== task.label}
 								<p class="truncate text-xs text-gray-500">{task.label}</p>
 							{/if}
 						</div>

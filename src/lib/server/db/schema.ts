@@ -147,6 +147,10 @@ export const taskInstances = sqliteTable(
 		notes: text('notes').default(''),
 		resolvedActivityId: integer('resolved_activity_id').references(() => activities.id),
 		durationOverride: integer('duration_override'),
+		// What this one occurrence is, when it differs from what the block
+		// usually is — "leg day" on a recurring gym block. Null means "whatever
+		// the block says", the same as every other override here.
+		labelOverride: text('label_override'),
 		// Per-occurrence overrides of the block's ratings, exactly as
 		// durationOverride overrides its length. Null means "inherit".
 		urgencyOverride: integer('urgency_override'),

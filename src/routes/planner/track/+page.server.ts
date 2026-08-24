@@ -174,6 +174,29 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
+	/**
+	 * Name this one occurrence.
+	 *
+	 * A recurring block says what you usually do; this says what you are doing
+	 * today. Empty clears it and the block's own label comes back, so there is
+	 * no separate "reset".
+	 */
+	updateLabel: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const label = formData.get('label')?.toString()?.trim() ?? '';
+
+		if (!id) return fail(400, { message: 'Missing task id' });
+
+		db.update(taskInstances)
+			.set({ labelOverride: label || null })
+			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
+			.run();
+
+		return { success: true };
+	},
+
 	resolveActivity: async ({ request, locals }) => {
 		const userId = locals.user!.id;
 		const formData = await request.formData();

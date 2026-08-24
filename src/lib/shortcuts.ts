@@ -70,6 +70,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 't', action: 'edit-time', description: 'Edit time' },
 			{ key: 'D', action: 'edit-duration', description: 'Edit duration' },
 			{ key: 'a', action: 'edit-activity', description: 'Edit activity' },
+			{ key: 'l', action: 'edit-label', description: 'Name just this day' },
 			{ key: 'x', action: 'delete', description: 'Delete task' }
 		]
 	},

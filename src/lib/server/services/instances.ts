@@ -45,7 +45,10 @@ export type Occurrence = {
 	notes: string;
 	mode: 'category' | 'activity';
 	label: string;
-	/** Best available name: explicit label, else the activity, else the category. */
+	/** A name for this occurrence alone, when it differs from the block's. */
+	labelOverride: string | null;
+	/** Best available name: this occurrence's own label, then the block's, then
+	 *  the activity, then the category. */
 	title: string;
 	categoryId: number | null;
 	categoryName: string | null;
@@ -240,6 +243,7 @@ export function listInstances(userId: string, from: Date, to: Date): Occurrence[
 			timing: taskInstances.timing,
 			completedAt: taskInstances.completedAt,
 			notes: taskInstances.notes,
+			labelOverride: taskInstances.labelOverride,
 			durationOverride: taskInstances.durationOverride,
 			urgencyOverride: taskInstances.urgencyOverride,
 			interestOverride: taskInstances.interestOverride,
@@ -351,7 +355,8 @@ export function listInstances(userId: string, from: Date, to: Date): Occurrence[
 			notes: r.notes ?? '',
 			mode,
 			label,
-			title: label.trim() || activityName || categoryName || 'Untitled',
+			labelOverride: r.labelOverride,
+			title: r.labelOverride?.trim() || label.trim() || activityName || categoryName || 'Untitled',
 			categoryId: categoryId ?? null,
 			categoryName: categoryName ?? null,
 			categoryColor: categoryColor ?? null,
