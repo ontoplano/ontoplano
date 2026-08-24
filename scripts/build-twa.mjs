@@ -22,20 +22,59 @@ import { join } from 'node:path';
 
 const DIR = 'android-twa';
 
-const domain = process.env.ONTOPLANO_DOMAIN;
-if (!domain) {
+/**
+ * The origin the app opens.
+ *
+ * ONTOPLANO_ORIGIN takes a full origin including scheme and port, which is what
+ * a self-hosted instance on a LAN looks like: http://192.168.1.50:1493.
+ * ONTOPLANO_DOMAIN remains for the ordinary https case.
+ */
+const rawOrigin = process.env.ONTOPLANO_ORIGIN
+	? process.env.ONTOPLANO_ORIGIN
+	: process.env.ONTOPLANO_DOMAIN
+		? `https://${process.env.ONTOPLANO_DOMAIN}`
+		: null;
+
+if (!rawOrigin) {
 	console.error(
-		'ONTOPLANO_DOMAIN is required — the domain the app opens, e.g. plan.example.com.\n' +
+		'Set ONTOPLANO_ORIGIN to the address the app opens, e.g.\n' +
+			'  ONTOPLANO_ORIGIN=http://192.168.1.50:1493\n' +
+			'  ONTOPLANO_ORIGIN=https://plan.example.com\n' +
 			'A TWA is bound to one origin; there is no sensible default.'
 	);
 	process.exit(1);
+}
+
+let parsed;
+try {
+	parsed = new URL(rawOrigin);
+} catch {
+	console.error(`ONTOPLANO_ORIGIN is not a URL: ${rawOrigin}`);
+	process.exit(1);
+}
+
+const scheme = parsed.protocol.replace(':', '');
+// `host` keeps the port, which is part of the origin a TWA is bound to.
+const domain = parsed.host;
+const cleartext = scheme === 'http';
+
+if (cleartext) {
+	console.warn(
+		`\nBuilding against ${rawOrigin}, which is plain HTTP. Two consequences:\n` +
+			'  - The URL bar stays. Digital Asset Links verification requires HTTPS,\n' +
+			'    so the app cannot prove it owns the origin and Chrome keeps the bar.\n' +
+			'  - No offline. Service workers only run in a secure context, so the one\n' +
+			'    this app ships never registers over http.\n' +
+			'Put the site behind HTTPS — Tailscale Serve and Caddy both do this for a\n' +
+			'LAN address — and both go away with no change to the app.\n'
+	);
 }
 
 const packageId = process.env.ANDROID_PACKAGE_NAME ?? 'app.ontoplano.twa';
 const versionName = process.env.ANDROID_VERSION_NAME ?? '1.0.0';
 // Play requires this to increase with every upload and never repeat.
 const versionCode = Number(process.env.ANDROID_VERSION_CODE ?? 1);
-const origin = `https://${domain}`;
+const origin = `${scheme}://${domain}`;
 
 /**
  * Where Bubblewrap reads the icons and manifest while generating the project.
@@ -143,11 +182,42 @@ console.log('\nGenerating the Android project…');
 run(['update', '--skipVersionUpgrade']);
 
 const gradlePath = join(DIR, 'app', 'build.gradle');
-const gradle = readFileSync(gradlePath, 'utf8')
+let gradle = readFileSync(gradlePath, 'utf8')
 	.replace(/versionCode\s+\d+/, `versionCode ${versionCode}`)
 	.replace(/versionName\s+"[^"]*"/, `versionName "${versionName}"`);
+
+if (cleartext) {
+	/*
+	 * Bubblewrap hardcodes https in its Gradle template — it assumes a TWA can
+	 * only target a secure origin, which is true of a published app and not of
+	 * a self-hosted box on a LAN.
+	 *
+	 * Rewritten narrowly: the one expression that builds launchUrl, and literal
+	 * URLs already carrying our own host. A blanket https→http replacement would
+	 * also rewrite the Maven repository URLs in the same file.
+	 */
+	gradle = gradle
+		.replaceAll('"https://" + twaManifest.hostName', `"${scheme}://" + twaManifest.hostName`)
+		.replaceAll(`https://${domain}`, `${scheme}://${domain}`);
+}
+
 writeFileSync(gradlePath, gradle);
 console.log(`Set version ${versionName} (${versionCode})`);
+
+if (cleartext) {
+	// Android has blocked cleartext by default since API 28, so without this the
+	// app launches to a blank page and nothing explains why.
+	const manifestXmlPath = join(DIR, 'app', 'src', 'main', 'AndroidManifest.xml');
+	const xml = readFileSync(manifestXmlPath, 'utf8');
+
+	if (!xml.includes('usesCleartextTraffic')) {
+		writeFileSync(
+			manifestXmlPath,
+			xml.replace('<application', '<application\n        android:usesCleartextTraffic="true"')
+		);
+		console.log('Allowed cleartext traffic, required to reach an http origin');
+	}
+}
 
 console.log('\nBuilding…');
 run(['build', '--skipPwaValidation']);

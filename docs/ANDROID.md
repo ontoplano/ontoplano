@@ -37,13 +37,13 @@ make android-clean       # throw away the generated project
 ## Building
 
 ```sh
-ONTOPLANO_DOMAIN=plan.example.com \
-ANDROID_VERSION_NAME=0.1.0 \
-ANDROID_VERSION_CODE=1 \
-BUBBLEWRAP_KEYSTORE_PASSWORD=... \
-BUBBLEWRAP_KEY_PASSWORD=... \
-node scripts/build-twa.mjs
+make android          # defaults to http://<LAN_IP>:1493 — this machine
+make android ONTOPLANO_ORIGIN=https://plan.example.com
 ```
+
+`LAN_IP` is read from the network interface, so the default builds an app that
+opens the instance running on this machine. That is the right answer for a
+self-hosted setup and the wrong one for anything published, hence the override.
 
 Outputs land in `android-twa/`:
 
@@ -83,6 +83,25 @@ Bubblewrap still expects the pre-2020 SDK layout and looks for `tools/` or
 `cmdline-tools/latest/`, so copy that to `<sdk>/tools` — a symlink is not
 enough, because the `sdkmanager` script resolves its own classpath relative to
 where it sits.
+
+## Plain HTTP, and what it costs
+
+Pointed at an `http://` origin — a box on your LAN — the build still works, and
+patches the two things Bubblewrap assumes are HTTPS: the hardcoded scheme in its
+Gradle template, and `usesCleartextTraffic`, which Android has required since
+API 28 and whose absence shows up as a blank page with no explanation.
+
+Two things cannot be patched, and the build warns about both:
+
+- **The URL bar stays.** Verification below needs HTTPS, so the app cannot prove
+  it owns the origin and Chrome keeps the address bar visible.
+- **No offline.** Service workers only run in a secure context, so the one this
+  app ships never registers over `http://`. The APK is then a launcher icon
+  around the live site.
+
+Both go away with HTTPS and no change to the app. For a LAN address the two
+cheap routes are Tailscale Serve, which issues a real certificate for a
+`*.ts.net` name, and Caddy with a DNS challenge against a domain you own.
 
 ## Removing the URL bar
 

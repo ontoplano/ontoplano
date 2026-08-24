@@ -145,13 +145,24 @@ APK_PORT ?= 8088
 # the one a phone on the same wifi can reach — not 127.0.0.1.
 LAN_IP := $(shell ip -4 addr show eth0 | awk '$$1 == "inet" {sub(/\/.*/, "", $$2); print $$2; exit}')
 
+# The address the app opens. Defaults to this machine on the app's port, which
+# is what a phone on the same wifi can reach. Override for a real deployment:
+#   ONTOPLANO_ORIGIN=https://plan.example.com make android
+APP_PORT ?= 1493
+ONTOPLANO_ORIGIN ?= http://$(LAN_IP):$(APP_PORT)
+
 android:
-	@if [ -z "$$ONTOPLANO_DOMAIN" ]; then \
-		echo "ONTOPLANO_DOMAIN is required — the domain the app opens."; \
-		echo "  ONTOPLANO_DOMAIN=plan.example.com make android"; \
-		exit 1; \
-	fi
-	node scripts/build-twa.mjs
+	@# Catches an empty LAN_IP, which would otherwise build an app pointed at
+	@# "http://:1493" and fail confusingly on the phone rather than here.
+	@case "$(ONTOPLANO_ORIGIN)" in \
+		*://:*|*://) \
+			echo "ONTOPLANO_ORIGIN has no host: $(ONTOPLANO_ORIGIN)"; \
+			echo "LAN_IP came back empty. Either fix it or pass an origin:"; \
+			echo "  make android ONTOPLANO_ORIGIN=https://plan.example.com"; \
+			exit 1;; \
+	esac
+	@echo "Building against $(ONTOPLANO_ORIGIN)"
+	ONTOPLANO_ORIGIN="$(ONTOPLANO_ORIGIN)" node scripts/build-twa.mjs
 
 # Straight onto a phone over USB or wireless debugging.
 android-install: $(APK)
