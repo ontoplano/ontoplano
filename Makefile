@@ -1,4 +1,4 @@
-.PHONY: dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -286,6 +286,44 @@ $(APK):
 	@echo "$(APK) does not exist yet. Build it with:"
 	@echo "  ONTOPLANO_DOMAIN=plan.example.com make android"
 	@exit 1
+
+
+# ─── HTTPS ───────────────────────────────────────────────────────────────────
+#
+# The Android app shows a browser-style URL bar until it can prove it owns the
+# site it opens, and that proof — Digital Asset Links — is only checked over
+# HTTPS. On plain http there is no way to hide the bar, and no service worker
+# either, since browsers only run those in a secure context.
+#
+# Tailscale is the least painful way to get a real certificate for a machine
+# with no public address: it issues one for a name it controls, and nothing has
+# to be port-forwarded or exposed.
+
+https-tailscale:
+	@command -v tailscale >/dev/null || { \
+		echo "tailscale is not installed. https://tailscale.com/download"; \
+		exit 1; \
+	}
+	@tailscale status >/dev/null 2>&1 || { echo "Not logged in: tailscale up"; exit 1; }
+	@host=$$(tailscale status --json | python3 -c \
+		'import json,sys; print(json.load(sys.stdin)["Self"]["DNSName"].rstrip("."))'); \
+	if [ -z "$$host" ]; then echo "Could not read this machine's tailnet name."; exit 1; fi; \
+	echo "Serving http://127.0.0.1:$(APP_PORT) as https://$$host"; \
+	tailscale serve --bg --https=443 http://127.0.0.1:$(APP_PORT) || exit 1; \
+	echo; \
+	echo "Now point the app at it. In the service environment:"; \
+	echo "  ORIGIN=https://$$host"; \
+	echo "  ONTOPLANO_TRUST_PROXY=true    # so rate limiting sees the real client"; \
+	echo "  ONTOPLANO_HTTPS=true          # enables HSTS"; \
+	echo "  ANDROID_CERT_FINGERPRINTS=$$(make -s android-fingerprint 2>/dev/null | head -1)"; \
+	echo; \
+	echo "Then rebuild the app against it:"; \
+	echo "  make android ONTOPLANO_ORIGIN=https://$$host"; \
+	echo "  make android-uninstall && make android-install"
+
+https-tailscale-off:
+	@tailscale serve --https=443 off || true
+	@echo "Stopped. Remember to put ORIGIN back to the http address."
 
 # ─── Clean ────────────────────────────────────────────────────────────────────
 

@@ -127,6 +127,42 @@ Both go away with HTTPS and no change to the app. For a LAN address the two
 cheap routes are Tailscale Serve, which issues a real certificate for a
 `*.ts.net` name, and Caddy with a DNS challenge against a domain you own.
 
+## Getting rid of the URL bar
+
+If the app opens with an address bar, a share icon and a browser menu, it has
+fallen back to a Custom Tab: it could not prove it owns the site, so the browser
+is showing you whose site it is. That is the intended behaviour, not a bug.
+
+Verification is **only checked over HTTPS**. On `http://192.168.x.x:1493` there
+is no way to hide the bar, no matter what fingerprints are configured — and no
+service worker either, so no offline. One change fixes both.
+
+For a machine with no public address, Tailscale is the least painful route: it
+issues a real certificate for a name it controls, and nothing is exposed or
+port-forwarded.
+
+```sh
+make https-tailscale
+```
+
+That prints the origin and the environment to set. Then:
+
+```sh
+make android ONTOPLANO_ORIGIN=https://<your-machine>.ts.net
+make android-uninstall && make android-install
+```
+
+The uninstall is needed whenever the signing key changed; if it has not, the
+install goes over the top.
+
+If you already own a domain, Caddy with a DNS-01 challenge gets the same result
+without Tailscale — point it at `127.0.0.1:1493` and set the same three
+variables.
+
+`mkcert` and other private CAs are not a shortcut here: the certificate has to
+be trusted by the browser doing the verification, and a locally-issued one
+generally is not. Untested, so treat it as unlikely rather than merely fiddly.
+
 ## Removing the URL bar
 
 A TWA shows an address bar until it can prove the app and the site belong
