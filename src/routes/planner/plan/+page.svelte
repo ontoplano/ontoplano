@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance, deserialize } from '$app/forms';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { browser } from '$app/environment';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types.js';
@@ -662,13 +662,78 @@
 	async function handleEventDrop(info: {
 		event: { id: string | number; start: Date; end: Date };
 		revert: () => void;
-		jsEvent?: { ctrlKey?: boolean; metaKey?: boolean };
+		oldEvent?: { start: Date };
+		jsEvent?: { ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean };
 	}) {
 		if (info.jsEvent?.ctrlKey || info.jsEvent?.metaKey) {
 			await duplicateBlock(info);
 			return;
 		}
+		// Alt moves this occurrence only, leaving the recurring block where it is.
+		if (info.jsEvent?.altKey) {
+			await moveOccurrenceOnly(info);
+			return;
+		}
 		await handleEventPersist(info);
+	}
+
+	/**
+	 * Move a single occurrence of a recurring block.
+	 *
+	 * The block keeps its schedule; this week's instance of it moves. The server
+	 * models that as a skip on the original date plus a one-off at the new time,
+	 * so the grid shows exactly one of them and both halves stay undoable.
+	 *
+	 * A one-off has no recurrence to diverge from, so alt on one is just a move.
+	 */
+	async function moveOccurrenceOnly(info: {
+		event: { id: string | number; start: Date; end: Date };
+		oldEvent?: { start: Date };
+		revert: () => void;
+	}) {
+		const decoded = decodeEventId(info.event.id);
+		if (!decoded) {
+			info.revert();
+			return;
+		}
+
+		if (decoded.kind !== 'slot') {
+			await handleEventPersist(info);
+			return;
+		}
+
+		const slot = findSlot(decoded.refId);
+		if (!slot) {
+			info.revert();
+			return;
+		}
+
+		const placement = placementFromDates(info.event.start, info.event.end);
+		const toDate = formatLocalDate(info.event.start);
+
+		// Where the occurrence was before the drag. Taken from the event rather
+		// than derived from the slot's weekday: with non-weekly recurrence a
+		// block can appear on several dates in the window, and only the calendar
+		// knows which one was picked up.
+		const fromDate = info.oldEvent
+			? formatLocalDate(info.oldEvent.start)
+			: formatLocalDate(weekdayToDate(data.range.from, slot.weekday));
+
+		// The original disappears and a one-off appears; both arrive from the
+		// server rather than being guessed at here.
+		info.revert();
+
+		const body = new FormData();
+		body.set('slotId', String(slot.id));
+		body.set('fromDate', fromDate);
+		body.set('date', toDate);
+		body.set('startTime', placement.startTime);
+		body.set('durationMinutes', String(placement.durationMinutes));
+
+		const result = await postGridAction('moveOccurrence', body, 'Failed to move this occurrence.');
+		if (!result) return;
+
+		await invalidateAll();
 	}
 
 	async function duplicateBlock(info: {
@@ -1759,7 +1824,10 @@
 			<p class="text-xs text-gray-400">
 				Drag to create · drag a block to move · click it to edit, skip or delete · hold <kbd
 					class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd
-				> while dragging to duplicate · snaps to 15min
+				>
+				while dragging to duplicate, or
+				<kbd class="border border-gray-300 bg-gray-50 px-1">Alt</kbd>
+				to move just this day's occurrence · snaps to 15min
 			</p>
 			<div class="flex items-center gap-1">
 				<span class="mr-1 text-xs text-gray-400">

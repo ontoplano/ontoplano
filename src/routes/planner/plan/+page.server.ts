@@ -680,6 +680,90 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
+	/**
+	 * Move one occurrence of a recurring block without moving the block.
+	 *
+	 * Modelled as the two things that already exist: the occurrence is skipped
+	 * on its own date, and a one-off carrying the same identity is created at
+	 * the new time. No new table and no third kind of thing — "this week is
+	 * different" is exactly a skip plus a one-off, and both halves stay
+	 * individually reversible.
+	 */
+	moveOccurrence: async ({ request, locals }) => {
+		const userId = locals.user!.id;
+		const formData = await request.formData();
+		const slotId = Number(formData.get('slotId'));
+		const fromDate = formData.get('fromDate')?.toString()?.trim() ?? '';
+		const date = formData.get('date')?.toString()?.trim() ?? '';
+		const startTime = formData.get('startTime')?.toString()?.trim() ?? '';
+		const durationMinutes = Number(formData.get('durationMinutes') || 60);
+
+		if (!slotId) return fail(400, { message: 'Missing slot id' });
+		if (!fromDate.match(/^\d{4}-\d{2}-\d{2}$/))
+			return fail(400, { message: 'Invalid source date' });
+		if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return fail(400, { message: 'Invalid date' });
+		if (!startTime.match(/^\d{2}:\d{2}$/)) return fail(400, { message: 'Invalid time' });
+
+		const slot = db
+			.select()
+			.from(weeklySlots)
+			.where(and(eq(weeklySlots.id, slotId), eq(weeklySlots.userId, userId)))
+			.get();
+		if (!slot) return fail(404, { message: 'Block not found' });
+
+		const created = db.transaction((tx) => {
+			const already = tx
+				.select({ id: suppressedSlots.id })
+				.from(suppressedSlots)
+				.where(
+					and(
+						eq(suppressedSlots.userId, userId),
+						eq(suppressedSlots.slotId, slotId),
+						eq(suppressedSlots.date, fromDate)
+					)
+				)
+				.get();
+
+			if (!already) {
+				tx.insert(suppressedSlots).values({ userId, slotId, date: fromDate }).run();
+			}
+
+			// The instance the skipped occurrence produced would otherwise linger
+			// as a task for a block that is no longer on that day.
+			tx.delete(taskInstances)
+				.where(
+					and(
+						eq(taskInstances.userId, userId),
+						eq(taskInstances.slotId, slotId),
+						gte(taskInstances.scheduledAt, `${fromDate}T00:00:00`),
+						lt(taskInstances.scheduledAt, `${fromDate}T23:59:59`)
+					)
+				)
+				.run();
+
+			return tx
+				.insert(exceptionalSlots)
+				.values({
+					userId,
+					date,
+					startTime,
+					durationMinutes,
+					mode: slot.mode,
+					categoryId: slot.categoryId,
+					activityId: slot.activityId,
+					label: slot.label,
+					urgency: slot.urgency,
+					interest: slot.interest,
+					energy: slot.energy,
+					meta: slot.meta
+				})
+				.returning({ id: exceptionalSlots.id })
+				.get();
+		});
+
+		return { success: true, id: created.id };
+	},
+
 	suppress: async ({ request, locals }) => {
 		const userId = locals.user!.id;
 		const formData = await request.formData();
