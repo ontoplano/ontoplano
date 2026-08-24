@@ -82,7 +82,7 @@ export function getUpcomingSchedule(
 	// alarm consumer would never learn about tomorrow. `generateWeekInstances`
 	// is idempotent and skips slots that already have an instance.
 	for (let week = getMonday(from); week < to; week = addDays(week, 7)) {
-		generateWeekInstances(week, ctx.userId);
+		generateWeekInstances(ctx, week);
 	}
 	const fromStr = toLocalISOString(from);
 	const toStr = toLocalISOString(to);

@@ -1,23 +1,26 @@
-import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { db } from '$lib/server/db';
+import { listActivities, listCategories } from '$lib/server/services/activities';
+import { buildCtx } from '$lib/server/services/ctx';
+import { toActionFailure } from '$lib/server/services/errors';
 import {
-	taskInstances,
-	weeklySlots,
-	exceptionalSlots,
-	activities,
-	categories
-} from '$lib/server/db/schema';
-import { eq, and } from 'drizzle-orm';
+	deleteInstance,
+	generateInstances,
+	listForDate,
+	listInstances,
+	resolveInstanceActivity,
+	setInstanceDuration,
+	setInstanceLabel,
+	setInstanceStatus,
+	setInstanceTime
+} from '$lib/server/services/instances';
 import {
-	toLocalISOString,
-	getMonday,
 	addDays,
 	getISOWeekNumber,
-	getISOWeekYear
+	getISOWeekYear,
+	getMonday,
+	toLocalISOString
 } from '$lib/server/week-generator';
-import { generateInstances, listForDate, listInstances } from '$lib/server/services/instances';
-import { STATUSES, isStatus, timingFor } from '$lib/task-status';
+import { STATUSES } from '$lib/task-status';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -25,27 +28,24 @@ function formatDate(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function parseWeekParam(param: string | null): Date {
+function parseWeekParam(param: string | null, now: Date): Date {
 	if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
 		const parsed = new Date(param + 'T00:00:00');
-		if (!isNaN(parsed.getTime())) {
-			return getMonday(parsed);
-		}
+		if (!isNaN(parsed.getTime())) return getMonday(parsed);
 	}
-	return getMonday(new Date());
+	return getMonday(now);
 }
 
-export const load: PageServerLoad = async (event) => {
-	const { url } = event;
-	const userId = event.locals.user!.id;
+export const load: PageServerLoad = async ({ locals, url }) => {
+	const ctx = buildCtx(locals.user!.id);
 
 	const weekParam = url.searchParams.get('week');
 	const dayParam = url.searchParams.get('day');
 
-	const monday = parseWeekParam(weekParam);
+	const monday = parseWeekParam(weekParam, ctx.now);
 	const sunday = addDays(monday, 6);
 	const nextMonday = addDays(monday, 7);
-	const currentMonday = getMonday(new Date());
+	const currentMonday = getMonday(ctx.now);
 
 	const weekNumber = getISOWeekNumber(monday);
 	const weekYear = getISOWeekYear(monday);
@@ -65,8 +65,7 @@ export const load: PageServerLoad = async (event) => {
 	if (dayParam !== null && /^\d$/.test(dayParam)) {
 		selectedDayIndex = Math.min(Math.max(Number(dayParam), 0), 6);
 	} else {
-		const now = new Date();
-		const dow = now.getDay();
+		const dow = ctx.now.getDay();
 		selectedDayIndex = dow === 0 ? 6 : dow - 1;
 	}
 
@@ -74,26 +73,22 @@ export const load: PageServerLoad = async (event) => {
 
 	// Generate for the week actually being viewed. The old code only ever
 	// generated the current one, so paging forward showed an empty week.
-	generateInstances(userId, monday, nextMonday);
+	generateInstances(ctx, monday, nextMonday);
 
-	const tasks = listForDate(userId, selectedDate);
-
-	const allActivities = db
-		.select({
-			id: activities.id,
-			name: activities.name,
-			categoryId: activities.categoryId,
-			categoryName: categories.name
-		})
-		.from(activities)
-		.innerJoin(categories, eq(activities.categoryId, categories.id))
-		.where(and(eq(activities.active, true), eq(activities.userId, userId)))
-		.orderBy(categories.name, activities.name)
-		.all();
+	const tasks = listForDate(ctx, selectedDate);
+	const categoryNames = new Map(listCategories(ctx).map((c) => [c.id, c.name]));
+	const allActivities = listActivities(ctx, { activeOnly: true })
+		.map((a) => ({
+			id: a.id,
+			name: a.name,
+			categoryId: a.categoryId,
+			categoryName: categoryNames.get(a.categoryId) ?? ''
+		}))
+		.sort((a, b) => a.categoryName.localeCompare(b.categoryName) || a.name.localeCompare(b.name));
 
 	// Counted from the same source the list is built from, so a day tab can no
 	// longer disagree with the rows underneath it.
-	const weekOccurrences = listInstances(userId, monday, nextMonday);
+	const weekOccurrences = listInstances(ctx, monday, nextMonday);
 	const taskCountByDay: Record<number, number> = {};
 	for (const o of weekOccurrences) {
 		const d = new Date(o.scheduledAt);
@@ -102,17 +97,14 @@ export const load: PageServerLoad = async (event) => {
 		taskCountByDay[idx] = (taskCountByDay[idx] || 0) + 1;
 	}
 
-	const now = new Date();
-	const todayDow = now.getDay();
+	const todayDow = ctx.now.getDay();
 	const todayDayIndex = todayDow === 0 ? 6 : todayDow - 1;
-
-	const allCategories = db.select().from(categories).where(eq(categories.userId, userId)).all();
 
 	return {
 		tasks,
 		activities: allActivities,
-		categories: allCategories,
-		now: toLocalISOString(now),
+		categories: listCategories(ctx),
+		now: toLocalISOString(ctx.now),
 		weekMeta,
 		weekdays: WEEKDAYS,
 		selectedDayIndex,
@@ -125,163 +117,78 @@ export const load: PageServerLoad = async (event) => {
 
 export const actions: Actions = {
 	updateStatus: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const status = formData.get('status')?.toString();
-
-		if (!id || !status) return fail(400, { message: 'Missing id or status' });
-		if (!isStatus(status)) return fail(400, { message: 'Invalid status' });
-
-		const instance = db
-			.select({ scheduledAt: taskInstances.scheduledAt })
-			.from(taskInstances)
-			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-			.get();
-		if (!instance) return fail(404, { message: 'Task not found' });
-
-		// Timing is derived, not chosen: it is a fact about a finished task, so it
-		// only exists once one is done and is cleared whenever it is reopened.
-		const completedAt = status === 'done' ? toLocalISOString(new Date()) : null;
-		const timing = completedAt ? timingFor(instance.scheduledAt, completedAt) : null;
-
-		const updateData: Record<string, unknown> = { status, completedAt, timing };
-
-		// Clear the resolved activity when resetting or skipping a category-mode
-		// task, whichever kind of block it came from.
-		if (status === 'todo' || status === 'skipped') {
-			const owning = db
-				.select({
-					slotMode: weeklySlots.mode,
-					oneOffMode: exceptionalSlots.mode
-				})
-				.from(taskInstances)
-				.leftJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
-				.leftJoin(exceptionalSlots, eq(taskInstances.exceptionalSlotId, exceptionalSlots.id))
-				.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-				.get();
-
-			if ((owning?.slotMode ?? owning?.oneOffMode) === 'category') {
-				updateData.resolvedActivityId = null;
-			}
+		try {
+			setInstanceStatus(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('status')
+			);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
 		}
-
-		db.update(taskInstances)
-			.set(updateData)
-			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-			.run();
-
-		return { success: true };
 	},
 
-	/**
-	 * Name this one occurrence.
-	 *
-	 * A recurring block says what you usually do; this says what you are doing
-	 * today. Empty clears it and the block's own label comes back, so there is
-	 * no separate "reset".
-	 */
 	updateLabel: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const label = formData.get('label')?.toString()?.trim() ?? '';
-
-		if (!id) return fail(400, { message: 'Missing task id' });
-
-		db.update(taskInstances)
-			.set({ labelOverride: label || null })
-			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-			.run();
-
-		return { success: true };
+		try {
+			setInstanceLabel(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('label')
+			);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	resolveActivity: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const activityId = formData.get('activityId') ? Number(formData.get('activityId')) : null;
-
-		if (!id) return fail(400, { message: 'Missing task id' });
-
-		db.update(taskInstances)
-			.set({ resolvedActivityId: activityId })
-			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-			.run();
-
-		return { success: true };
+		try {
+			resolveInstanceActivity(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('activityId')
+			);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	updateScheduledAt: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const time = formData.get('time')?.toString()?.trim();
-
-		if (!id) return fail(400, { message: 'Missing task id' });
-		if (!time || !/^\d{2}:\d{2}$/.test(time)) return fail(400, { message: 'Invalid time format' });
-
-		const task = db
-			.select()
-			.from(taskInstances)
-			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-			.get();
-		if (!task) return fail(404, { message: 'Task not found' });
-
-		const datePart = task.scheduledAt.slice(0, 10);
-		const newScheduledAt = `${datePart}T${time}:00`;
-
-		db.update(taskInstances)
-			.set({ scheduledAt: newScheduledAt })
-			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-			.run();
-
-		// A one-off block and its instance are one-to-one, and the plan grid draws
-		// the block — leaving it behind would put the same task at two times.
-		if (task.exceptionalSlotId !== null) {
-			db.update(exceptionalSlots)
-				.set({ startTime: time })
-				.where(
-					and(eq(exceptionalSlots.id, task.exceptionalSlotId), eq(exceptionalSlots.userId, userId))
-				)
-				.run();
+		try {
+			setInstanceTime(buildCtx(locals.user!.id), Number(formData.get('id')), formData.get('time'));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
 		}
-
-		return { success: true };
 	},
 
 	updateDuration: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const minutes = formData.get('minutes')?.toString()?.trim();
-
-		if (!id) return fail(400, { message: 'Missing task id' });
-		if (!minutes || isNaN(Number(minutes)) || Number(minutes) < 0) {
-			return fail(400, { message: 'Invalid duration' });
+		try {
+			setInstanceDuration(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('minutes')
+			);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
 		}
-
-		const value = Number(minutes) === 0 ? null : Number(minutes);
-		db.update(taskInstances)
-			.set({ durationOverride: value })
-			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-			.run();
-
-		return { success: true };
 	},
 
 	deleteTask: async ({ request, locals }) => {
-		const userId = locals.user!.id;
 		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-
-		if (!id) return fail(400, { message: 'Missing task id' });
-
-		db.delete(taskInstances)
-			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, userId)))
-			.run();
-
-		return { success: true };
+		try {
+			deleteInstance(buildCtx(locals.user!.id), Number(formData.get('id')));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	}
 };

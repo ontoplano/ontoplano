@@ -12,6 +12,11 @@ import { and, asc, eq, gte, lt } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 
 import { db } from '../db/index.js';
+import { isStatus, timingFor } from '../../task-status.js';
+import type { Ctx } from './ctx.js';
+import { NotFoundError, ValidationError } from './errors.js';
+import { stamp } from './time.js';
+import { num, optionalStr, str } from './validate.js';
 import {
 	activities,
 	categories,
@@ -105,7 +110,7 @@ function addDays(d: Date, n: number): Date {
  * this can run on every page load without disturbing recorded status. `from` is
  * inclusive, `to` exclusive.
  */
-export function generateInstances(userId: string, from: Date, to: Date): number {
+export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 	const fromDate = formatDate(from);
 	const toDate = formatDate(to);
 	const fromStr = localISO(new Date(from.getFullYear(), from.getMonth(), from.getDate()));
@@ -116,7 +121,7 @@ export function generateInstances(userId: string, from: Date, to: Date): number 
 	const slots = db
 		.select()
 		.from(weeklySlots)
-		.where(and(eq(weeklySlots.userId, userId), eq(weeklySlots.active, true)))
+		.where(and(eq(weeklySlots.userId, ctx.userId), eq(weeklySlots.active, true)))
 		.all();
 
 	const suppressed = new Set(
@@ -125,7 +130,7 @@ export function generateInstances(userId: string, from: Date, to: Date): number 
 			.from(suppressedSlots)
 			.where(
 				and(
-					eq(suppressedSlots.userId, userId),
+					eq(suppressedSlots.userId, ctx.userId),
 					gte(suppressedSlots.date, fromDate),
 					lt(suppressedSlots.date, toDate)
 				)
@@ -140,7 +145,7 @@ export function generateInstances(userId: string, from: Date, to: Date): number 
 			.from(taskInstances)
 			.where(
 				and(
-					eq(taskInstances.userId, userId),
+					eq(taskInstances.userId, ctx.userId),
 					gte(taskInstances.scheduledAt, fromStr),
 					lt(taskInstances.scheduledAt, toStr)
 				)
@@ -162,7 +167,7 @@ export function generateInstances(userId: string, from: Date, to: Date): number 
 
 			db.insert(taskInstances)
 				.values({
-					userId,
+					userId: ctx.userId,
 					slotId: slot.id,
 					scheduledAt: atLocal(dateStr, slot.startTime),
 					status: 'todo',
@@ -180,7 +185,7 @@ export function generateInstances(userId: string, from: Date, to: Date): number 
 		.from(exceptionalSlots)
 		.where(
 			and(
-				eq(exceptionalSlots.userId, userId),
+				eq(exceptionalSlots.userId, ctx.userId),
 				eq(exceptionalSlots.active, true),
 				gte(exceptionalSlots.date, fromDate),
 				lt(exceptionalSlots.date, toDate)
@@ -198,7 +203,7 @@ export function generateInstances(userId: string, from: Date, to: Date): number 
 
 		db.insert(taskInstances)
 			.values({
-				userId,
+				userId: ctx.userId,
 				exceptionalSlotId: one.id,
 				scheduledAt: atLocal(one.date, one.startTime),
 				status: 'todo',
@@ -212,16 +217,16 @@ export function generateInstances(userId: string, from: Date, to: Date): number 
 }
 
 /** Generate for a whole day, the common case for a page that shows "today". */
-export function generateForDate(userId: string, date: Date): number {
+export function generateForDate(ctx: Ctx, date: Date): number {
 	const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-	return generateInstances(userId, start, addDays(start, 1));
+	return generateInstances(ctx, start, addDays(start, 1));
 }
 
 /**
  * Every occurrence in the window, ordered by time. `from` inclusive, `to`
  * exclusive, both dates rather than datetimes.
  */
-export function listInstances(userId: string, from: Date, to: Date): Occurrence[] {
+export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 	const fromStr = localISO(new Date(from.getFullYear(), from.getMonth(), from.getDate()));
 	const toStr = localISO(new Date(to.getFullYear(), to.getMonth(), to.getDate()));
 
@@ -303,7 +308,7 @@ export function listInstances(userId: string, from: Date, to: Date): Occurrence[
 		.leftJoin(resolvedActivities, eq(taskInstances.resolvedActivityId, resolvedActivities.id))
 		.where(
 			and(
-				eq(taskInstances.userId, userId),
+				eq(taskInstances.userId, ctx.userId),
 				gte(taskInstances.scheduledAt, fromStr),
 				lt(taskInstances.scheduledAt, toStr)
 			)
@@ -378,7 +383,157 @@ export function listInstances(userId: string, from: Date, to: Date): Occurrence[
 }
 
 /** Everything on one date. */
-export function listForDate(userId: string, date: Date): Occurrence[] {
+export function listForDate(ctx: Ctx, date: Date): Occurrence[] {
 	const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-	return listInstances(userId, start, addDays(start, 1));
+	return listInstances(ctx, start, addDays(start, 1));
+}
+
+// --- Mutations ----------------------------------------------------------------
+
+export const MAX_LABEL_LENGTH = 300;
+
+const TIME_PATTERN = /^\d{2}:\d{2}$/;
+
+/**
+ * Move an occurrence between statuses.
+ *
+ * Timing is derived, not chosen: it is a fact about a finished task, so it only
+ * exists once one is done and is cleared whenever it is reopened. Resetting or
+ * skipping a category-mode task also forgets which activity it turned out to
+ * be, since that answer belonged to the attempt.
+ */
+export function setInstanceStatus(ctx: Ctx, id: number, rawStatus: unknown): void {
+	if (!isStatus(rawStatus)) throw new ValidationError('Invalid status');
+	const status = rawStatus;
+
+	const instance = db
+		.select({
+			scheduledAt: taskInstances.scheduledAt,
+			slotMode: weeklySlots.mode,
+			oneOffMode: exceptionalSlots.mode
+		})
+		.from(taskInstances)
+		.leftJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
+		.leftJoin(exceptionalSlots, eq(taskInstances.exceptionalSlotId, exceptionalSlots.id))
+		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.get();
+
+	if (!instance) throw new NotFoundError('task');
+
+	const completedAt = status === 'done' ? stamp(ctx) : null;
+	const timing = completedAt ? timingFor(instance.scheduledAt, completedAt) : null;
+
+	const values: Record<string, unknown> = { status, completedAt, timing };
+	const mode = instance.slotMode ?? instance.oneOffMode;
+	if ((status === 'todo' || status === 'skipped') && mode === 'category')
+		values.resolvedActivityId = null;
+
+	db.update(taskInstances)
+		.set(values)
+		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.run();
+}
+
+/**
+ * Name this one occurrence.
+ *
+ * A recurring block says what you usually do; this says what you are doing
+ * today. Empty clears it and the block's own label comes back, so there is no
+ * separate "reset".
+ */
+export function setInstanceLabel(ctx: Ctx, id: number, label: unknown): void {
+	const text = optionalStr(label, 'label', { max: MAX_LABEL_LENGTH });
+
+	const res = db
+		.update(taskInstances)
+		.set({ labelOverride: text || null })
+		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('task');
+}
+
+/** Which activity a category-mode block turned out to be. */
+export function resolveInstanceActivity(ctx: Ctx, id: number, activityId: unknown): void {
+	const resolved = ownedActivity(ctx, activityId);
+
+	const res = db
+		.update(taskInstances)
+		.set({ resolvedActivityId: resolved })
+		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('task');
+}
+
+export function setInstanceTime(ctx: Ctx, id: number, rawTime: unknown): void {
+	const time = str(rawTime, 'time', { max: 5, pattern: TIME_PATTERN });
+
+	const task = db
+		.select({
+			scheduledAt: taskInstances.scheduledAt,
+			exceptionalSlotId: taskInstances.exceptionalSlotId
+		})
+		.from(taskInstances)
+		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.get();
+
+	if (!task) throw new NotFoundError('task');
+
+	db.transaction((tx) => {
+		tx.update(taskInstances)
+			.set({ scheduledAt: `${task.scheduledAt.slice(0, 10)}T${time}:00` })
+			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+			.run();
+
+		// A one-off block and its instance are one-to-one, and the plan grid draws
+		// the block — leaving it behind would put the same task at two times.
+		if (task.exceptionalSlotId !== null) {
+			tx.update(exceptionalSlots)
+				.set({ startTime: time })
+				.where(
+					and(
+						eq(exceptionalSlots.id, task.exceptionalSlotId),
+						eq(exceptionalSlots.userId, ctx.userId)
+					)
+				)
+				.run();
+		}
+	});
+}
+
+/** Zero means "however long the block says"; anything else overrides it. */
+export function setInstanceDuration(ctx: Ctx, id: number, minutes: unknown): void {
+	const value = num(minutes, 'duration', { int: true, min: 0, max: 24 * 60 });
+
+	const res = db
+		.update(taskInstances)
+		.set({ durationOverride: value === 0 ? null : value })
+		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('task');
+}
+
+export function deleteInstance(ctx: Ctx, id: number): void {
+	const res = db
+		.delete(taskInstances)
+		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('task');
+}
+
+function ownedActivity(ctx: Ctx, value: unknown): number | null {
+	if (value === undefined || value === null || value === '') return null;
+
+	const id = num(value, 'activity', { int: true, min: 1 });
+	const owned = db
+		.select({ id: activities.id })
+		.from(activities)
+		.where(and(eq(activities.id, id), eq(activities.userId, ctx.userId)))
+		.get();
+
+	if (!owned) throw new NotFoundError('activity');
+	return id;
 }

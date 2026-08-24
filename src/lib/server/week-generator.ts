@@ -1,3 +1,4 @@
+import type { Ctx } from './services/ctx.js';
 import { generateInstances } from './services/instances.js';
 
 /** Format a Date as 'YYYY-MM-DDTHH:MM:SS' in local time (no UTC conversion). */
@@ -57,11 +58,11 @@ export function addDays(date: Date, days: number): Date {
  * The work now lives in `services/instances.ts`, which is also what reads them
  * back; this stays as the week-shaped entry point the pages already call.
  */
-export function generateWeekInstances(weekStart: Date, userId: string): number {
+export function generateWeekInstances(ctx: Ctx, weekStart: Date): number {
 	const monday = getMonday(weekStart);
-	return generateInstances(userId, monday, addDays(monday, 7));
+	return generateInstances(ctx, monday, addDays(monday, 7));
 }
 
-export function generateCurrentWeek(userId: string): number {
-	return generateWeekInstances(new Date(), userId);
+export function generateCurrentWeek(ctx: Ctx): number {
+	return generateWeekInstances(ctx, ctx.now);
 }
