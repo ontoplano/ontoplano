@@ -4,12 +4,15 @@ import type { Actions, PageServerLoad } from './$types';
 import { auth, verifyPassword } from '$lib/server/auth';
 import { isEmailConfigured } from '$lib/server/email';
 import { deleteAccount } from '$lib/server/services/account';
+import { buildCtx } from '$lib/server/services/ctx';
+import { toActionFailure } from '$lib/server/services/errors';
+import { listSessions, sessionTokenById } from '$lib/server/services/sessions';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	return {
 		email: locals.user!.email,
-		name: locals.user!.name,
 		emailVerified: locals.user!.emailVerified,
+		sessions: listSessions(buildCtx(locals.user!.id), locals.session?.token),
 		// Both credential changes are confirmed by mail, so the page says up
 		// front when this server has no transport and the link will land in its
 		// log instead.
@@ -98,6 +101,39 @@ export const actions: Actions = {
 			action: 'changePassword',
 			message: 'Password changed. Every other signed-in device was signed out.'
 		};
+	},
+
+	/** Sign one device out. Its next request finds nothing to authenticate with. */
+	revokeSession: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const id = formData.get('id')?.toString() ?? '';
+
+		try {
+			const token = sessionTokenById(buildCtx(locals.user!.id), id);
+			await auth.api.revokeSession({ body: { token }, headers: request.headers });
+		} catch (error) {
+			if (error instanceof APIError) return authFailure(error, 'Could not sign that device out');
+			return toActionFailure(error);
+		}
+
+		return { success: true, action: 'revokeSession', message: 'That device was signed out.' };
+	},
+
+	/**
+	 * Sign out everywhere, this browser included.
+	 *
+	 * Keeping the current session alive would be friendlier and wrong: someone
+	 * clicking this has usually decided they do not know who else is logged in,
+	 * and the answer to that is nobody.
+	 */
+	signOutEverywhere: async ({ request }) => {
+		try {
+			await auth.api.revokeSessions({ headers: request.headers });
+		} catch (error) {
+			return authFailure(error, 'Could not sign the other devices out');
+		}
+
+		redirect(303, '/login');
 	},
 
 	/**
