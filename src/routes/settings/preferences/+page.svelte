@@ -70,7 +70,6 @@
 	>
 		<div>
 			<h2 class="text-sm font-semibold text-gray-900">Week</h2>
-			<p class="mt-1 text-sm text-gray-500">Saved to your account, not the server.</p>
 		</div>
 		<div class="flex gap-4">
 			<label class="flex-1">
@@ -104,9 +103,7 @@
 	<section class="border border-gray-200 bg-white p-6 shadow-card">
 		<div class="mb-4">
 			<h2 class="text-sm font-semibold text-gray-900">Dashboard</h2>
-			<p class="mt-1 text-sm text-gray-500">
-				Which cards appear, and in what order. Anything personal is off until you turn it on.
-			</p>
+			<p class="mt-1 text-sm text-gray-500">Which cards appear, and in what order.</p>
 		</div>
 
 		<form method="post" action="?/setLayout" use:enhance class="space-y-2">
@@ -176,10 +173,7 @@
 	<section class="border border-gray-200 bg-white p-6 shadow-card">
 		<div class="mb-4">
 			<h2 class="text-sm font-semibold text-gray-900">Quotes</h2>
-			<p class="mt-1 text-sm text-gray-500">
-				One is shown per day on the dashboard, the same one all day rather than a new one on every
-				refresh.
-			</p>
+			<p class="mt-1 text-sm text-gray-500">One is shown per day on the dashboard.</p>
 		</div>
 
 		{#if data.quotes.length > 0}
@@ -263,8 +257,7 @@
 		<div class="mb-4">
 			<h2 class="text-sm font-semibold text-gray-900">Appearance</h2>
 			<p class="mt-1 text-sm text-gray-500">
-				Saved to your account, so it follows you to another browser. "System" uses whatever your
-				device is set to.
+				&ldquo;System&rdquo; uses whatever your device is set to.
 			</p>
 		</div>
 
