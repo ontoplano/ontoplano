@@ -71,7 +71,15 @@ project; the app is still bound to `ONTOPLANO_DOMAIN`.
 
 ### Prerequisites
 
-A JDK and the Android SDK, with Bubblewrap told where they are:
+Bubblewrap runs through `npx` if it is not installed globally, so the only hard
+requirement is a JDK. On first run the script creates a signing key for you —
+give it a password it can use:
+
+```sh
+BUBBLEWRAP_KEYSTORE_PASSWORD=... BUBBLEWRAP_KEY_PASSWORD=... make android
+```
+
+For a JDK and SDK you already have, tell Bubblewrap where they are:
 
 ```jsonc
 // ~/.bubblewrap/config.json

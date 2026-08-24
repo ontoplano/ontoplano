@@ -18,7 +18,8 @@
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 
 const DIR = 'android-twa';
 
@@ -71,6 +72,12 @@ if (cleartext) {
 }
 
 const packageId = process.env.ANDROID_PACKAGE_NAME ?? 'app.ontoplano.twa';
+
+const keyAlias = process.env.ANDROID_KEY_ALIAS ?? 'ontoplano';
+const keystoreSetting = process.env.ANDROID_KEYSTORE ?? join(DIR, 'android.keystore');
+const keystorePath = isAbsolute(keystoreSetting)
+	? keystoreSetting
+	: resolve(process.cwd(), keystoreSetting);
 const versionName = process.env.ANDROID_VERSION_NAME ?? '1.0.0';
 // Play requires this to increase with every upload and never repeat.
 const versionCode = Number(process.env.ANDROID_VERSION_CODE ?? 1);
@@ -111,8 +118,10 @@ const twaManifest = {
 	maskableIconUrl: `${assetOrigin}/icons/icon-maskable-512.png`,
 	splashScreenFadeOutDuration: 300,
 	signingKey: {
-		path: process.env.ANDROID_KEYSTORE ?? join(DIR, 'android.keystore'),
-		alias: process.env.ANDROID_KEY_ALIAS ?? 'ontoplano'
+		// Absolute, because Bubblewrap runs with its cwd inside DIR and a relative
+		// path here was being resolved against DIR twice.
+		path: keystorePath,
+		alias: keyAlias
 	},
 	appVersionName: versionName,
 	appVersionCode: versionCode,
@@ -157,22 +166,128 @@ const manifestPath = join(DIR, 'twa-manifest.json');
 writeFileSync(manifestPath, JSON.stringify(twaManifest, null, 2) + '\n');
 console.log(`Wrote ${manifestPath} for ${origin}`);
 
-// signingKey.path is relative to the project directory, which is where
-// Bubblewrap runs — resolve it the same way before checking.
-const keyPath = twaManifest.signingKey.path.startsWith('/')
-	? twaManifest.signingKey.path
-	: join(DIR, twaManifest.signingKey.path);
+/**
+ * Make sure a signing key exists *before* building.
+ *
+ * Bubblewrap signs as its last step, so a missing key surfaced as a failure
+ * after a full Gradle build with nothing to show for it. Creating it here costs
+ * a second and turns the common first-run case into something that just works.
+ */
+function ensureSigningKey() {
+	if (existsSync(keystorePath)) return;
 
-if (!existsSync(keyPath)) {
+	const password =
+		process.env.ANDROID_KEYSTORE_PASSWORD ?? process.env.BUBBLEWRAP_KEYSTORE_PASSWORD;
+
+	if (!password) {
+		console.error(
+			`\nNo signing key at ${keystorePath}, and no password to create one with.\n\n` +
+				'Pick a password and keep it — an app is tied to its key permanently:\n' +
+				'  BUBBLEWRAP_KEYSTORE_PASSWORD=... BUBBLEWRAP_KEY_PASSWORD=... make android\n'
+		);
+		process.exit(1);
+	}
+
+	console.log(`\nCreating a signing key at ${keystorePath}…`);
+	mkdirSync(dirname(keystorePath), { recursive: true });
+
+	execFileSync(
+		'keytool',
+		[
+			'-genkeypair',
+			'-keystore',
+			keystorePath,
+			'-alias',
+			keyAlias,
+			'-keyalg',
+			'RSA',
+			'-keysize',
+			'2048',
+			// Play refuses keys that expire before 2033; 10000 days is the
+			// convention and comfortably past it.
+			'-validity',
+			'10000',
+			'-storepass',
+			password,
+			'-keypass',
+			process.env.BUBBLEWRAP_KEY_PASSWORD ?? password,
+			'-dname',
+			`CN=${packageId}, OU=Ontoplano, O=Ontoplano, C=XX`
+		],
+		{ stdio: 'inherit' }
+	);
+
 	console.log(
-		`\nNo signing key at ${keyPath}.\n` +
-			'Bubblewrap will offer to create one. Keep it safe and backed up: Play ties\n' +
-			'an app to its key forever, and losing it means publishing under a new listing.\n'
+		'\nBack this file up somewhere safe. Losing it means republishing under a\n' +
+			'new listing; leaking it lets someone else ship an update to your users.\n'
 	);
 }
 
+ensureSigningKey();
+
+/**
+ * How to invoke Bubblewrap.
+ *
+ * Prefers a global install and falls back to npx, so this works on a machine
+ * that has never installed it — which is most machines, and was the first thing
+ * to fail when someone other than the author ran this.
+ */
+function bubblewrapCommand() {
+	const globallyInstalled = (() => {
+		try {
+			execFileSync('bubblewrap', ['--version'], { stdio: 'ignore' });
+			return true;
+		} catch {
+			return false;
+		}
+	})();
+
+	if (globallyInstalled) return { file: 'bubblewrap', prefix: [] };
+
+	try {
+		execFileSync('npx', ['--version'], { stdio: 'ignore' });
+	} catch {
+		console.error(
+			'Bubblewrap is not installed and npx is unavailable.\n' + '  npm install -g @bubblewrap/cli'
+		);
+		process.exit(1);
+	}
+
+	console.log('Bubblewrap not installed globally; running it through npx.');
+	return { file: 'npx', prefix: ['--yes', '@bubblewrap/cli@latest'] };
+}
+
+/**
+ * Bubblewrap shells out to a JDK and the Android SDK, and its own failure when
+ * they are missing is a Java stack trace. Say it plainly first.
+ */
+function checkToolchain() {
+	const configured = existsSync(join(homedir(), '.bubblewrap', 'config.json'));
+	if (configured) return;
+
+	try {
+		execFileSync('java', ['-version'], { stdio: 'ignore' });
+	} catch {
+		console.error(
+			'\nNo JDK found, and Bubblewrap has no toolchain configured.\n' +
+				'Either install one and point Bubblewrap at it:\n' +
+				'  ~/.bubblewrap/config.json\n' +
+				'  { "jdkPath": "/usr/lib/jvm/java-21-openjdk-amd64", "androidSdkPath": "..." }\n' +
+				'or let Bubblewrap fetch its own on first run — it will offer to.\n' +
+				'See docs/ANDROID.md.\n'
+		);
+	}
+}
+
+const bubblewrap = bubblewrapCommand();
+checkToolchain();
+
 const run = (args) =>
-	execFileSync('bubblewrap', args, { cwd: DIR, stdio: 'inherit', env: process.env });
+	execFileSync(bubblewrap.file, [...bubblewrap.prefix, ...args], {
+		cwd: DIR,
+		stdio: 'inherit',
+		env: process.env
+	});
 
 console.log('\nGenerating the Android project…');
 // --skipVersionUpgrade keeps `update` non-interactive; without it Bubblewrap
