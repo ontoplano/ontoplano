@@ -143,7 +143,7 @@ APK_PORT ?= 8088
 
 # Where the phone downloads from. The first address on this machine, which is
 # the one a phone on the same wifi can reach — not 127.0.0.1.
-LAN_IP := $(shell hostname -I 2>/dev/null | awk '{print $$1}')
+LAN_IP := $(shell ip -4 addr show eth0 | awk '$$1 == "inet" {sub(/\/.*/, "", $$2); print $$2; exit}')
 
 android:
 	@if [ -z "$$ONTOPLANO_DOMAIN" ]; then \
