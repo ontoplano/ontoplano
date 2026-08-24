@@ -82,11 +82,18 @@ npm install -g @bubblewrap/cli     # or: yarn add -D @bubblewrap/cli
 apt install openjdk-21-jdk-headless
 ```
 
-On first run the script creates a signing key — give it a password:
+On first run the script creates a signing key and generates its own password,
+saved beside it as `android.keystore.pass` with owner-only permissions. You are
+never asked for one.
 
-```sh
-BUBBLEWRAP_KEYSTORE_PASSWORD=... BUBBLEWRAP_KEY_PASSWORD=... make android
-```
+That is deliberate rather than lazy: the key file _is_ the secret, and anyone
+who can read the password file can already read the key next to it. A passphrase
+would only matter if the two travelled separately, which is not what happens on
+a machine building its own app. Set `ANDROID_KEYSTORE_PASSWORD` to override, for
+a key from elsewhere or a CI secret.
+
+Back up **both files together** — the key and its password. Losing them means
+republishing under a new listing.
 
 For a JDK and SDK you already have, tell Bubblewrap where they are:
 

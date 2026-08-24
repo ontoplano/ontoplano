@@ -17,6 +17,7 @@
  * ~/.bubblewrap/config.json.
  */
 import { execFileSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
@@ -78,6 +79,7 @@ const keystoreSetting = process.env.ANDROID_KEYSTORE ?? join(DIR, 'android.keyst
 const keystorePath = isAbsolute(keystoreSetting)
 	? keystoreSetting
 	: resolve(process.cwd(), keystoreSetting);
+const passwordPath = `${keystorePath}.pass`;
 const versionName = process.env.ANDROID_VERSION_NAME ?? '1.0.0';
 // Play requires this to increase with every upload and never repeat.
 const versionCode = Number(process.env.ANDROID_VERSION_CODE ?? 1);
@@ -180,29 +182,52 @@ console.log(`Wrote ${manifestPath} for ${origin}`);
  * after a full Gradle build with nothing to show for it. Creating it here costs
  * a second and turns the common first-run case into something that just works.
  */
-function ensureSigningKey() {
-	if (existsSync(keystorePath)) return;
+/**
+ * The password for the signing key.
+ *
+ * Generated once and kept in a file beside the keystore, because asking a human
+ * to invent and remember one buys nothing here: the key file *is* the secret,
+ * and anyone who can read the password file can already read the key sitting
+ * next to it. A passphrase would only matter if the keystore travelled
+ * somewhere the password did not, which is not what happens on a machine
+ * building its own app.
+ *
+ * An explicit ANDROID_KEYSTORE_PASSWORD still wins, for a key that came from
+ * somewhere else or a CI secret.
+ */
+function keystorePassword() {
+	const fromEnv = process.env.ANDROID_KEYSTORE_PASSWORD ?? process.env.BUBBLEWRAP_KEYSTORE_PASSWORD;
+	if (fromEnv) return fromEnv;
 
-	const password =
-		process.env.ANDROID_KEYSTORE_PASSWORD ?? process.env.BUBBLEWRAP_KEYSTORE_PASSWORD;
+	if (existsSync(passwordPath)) return readFileSync(passwordPath, 'utf8').trim();
 
-	if (!password) {
+	if (existsSync(keystorePath)) {
+		// A key with no password on file: created elsewhere, and there is nothing
+		// to guess.
 		console.error(
-			`\nNo signing key at ${keystorePath}, and no password to create one with.\n\n` +
-				'Pick a password and keep it — an app is tied to its key permanently:\n' +
-				'  BUBBLEWRAP_KEYSTORE_PASSWORD=... BUBBLEWRAP_KEY_PASSWORD=... make android\n'
+			`\nThere is a signing key at ${keystorePath} but no password for it at\n` +
+				`${passwordPath}, so this build cannot open it.\n\n` +
+				'If you know the password:\n' +
+				'  ANDROID_KEYSTORE_PASSWORD=... make android\n\n' +
+				'If you do not:\n' +
+				'  make android-keystore-reset\n'
 		);
 		process.exit(1);
 	}
 
-	// keytool's own complaint about this is a Java exception with a stack trace.
-	const keyPassword = process.env.BUBBLEWRAP_KEY_PASSWORD ?? password;
-	if (password.length < 6 || keyPassword.length < 6) {
-		console.error('\nKeystore passwords must be at least 6 characters.\n');
-		process.exit(1);
-	}
+	const generated = randomBytes(24).toString('base64url');
+	mkdirSync(dirname(passwordPath), { recursive: true });
+	// Readable only by this user: it is a key password sitting on disk.
+	writeFileSync(passwordPath, generated + '\n', { mode: 0o600 });
+	console.log(`Generated a signing password and saved it to ${passwordPath}`);
+	return generated;
+}
 
-	console.log(`\nCreating a signing key at ${keystorePath}…`);
+/** Create the signing key if there is not one yet. */
+function ensureSigningKey(password) {
+	if (existsSync(keystorePath)) return;
+
+	console.log(`Creating a signing key at ${keystorePath}…`);
 	mkdirSync(dirname(keystorePath), { recursive: true });
 
 	execFileSync(
@@ -224,20 +249,27 @@ function ensureSigningKey() {
 			'-storepass',
 			password,
 			'-keypass',
-			process.env.BUBBLEWRAP_KEY_PASSWORD ?? password,
+			password,
 			'-dname',
 			`CN=${packageId}, OU=Ontoplano, O=Ontoplano, C=XX`
 		],
-		{ stdio: 'inherit' }
+		{ stdio: ['ignore', 'ignore', 'inherit'] }
 	);
 
 	console.log(
-		'\nBack this file up somewhere safe. Losing it means republishing under a\n' +
-			'new listing; leaking it lets someone else ship an update to your users.\n'
+		`Back up ${keystorePath} and ${passwordPath} together. Losing them means\n` +
+			'republishing under a new listing; leaking them lets someone else ship an\n' +
+			'update to your users.'
 	);
 }
 
-ensureSigningKey();
+const signingPassword = keystorePassword();
+ensureSigningKey(signingPassword);
+
+// Handed to Bubblewrap so it never stops to ask. It signs as its last step, and
+// an interactive prompt there is what turned a build into a guessing game.
+process.env.BUBBLEWRAP_KEYSTORE_PASSWORD = signingPassword;
+process.env.BUBBLEWRAP_KEY_PASSWORD = signingPassword;
 
 /**
  * Locate Bubblewrap without running it.

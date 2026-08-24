@@ -161,15 +161,6 @@ android:
 			echo "  make android ONTOPLANO_ORIGIN=https://plan.example.com"; \
 			exit 1;; \
 	esac
-	@if [ -z "$$BUBBLEWRAP_KEYSTORE_PASSWORD" ] && [ -z "$$ANDROID_KEYSTORE_PASSWORD" ]; then \
-		echo "No keystore password set, so the build would stop and ask for one."; \
-		echo; \
-		echo "  export BUBBLEWRAP_KEYSTORE_PASSWORD=... BUBBLEWRAP_KEY_PASSWORD=..."; \
-		echo; \
-		echo "If you have forgotten the password to an existing key:"; \
-		echo "  make android-keystore-reset      (starts a new one — see below)"; \
-		exit 1; \
-	fi
 	@echo "Building against $(ONTOPLANO_ORIGIN)"
 	ONTOPLANO_ORIGIN="$(ONTOPLANO_ORIGIN)" node scripts/build-twa.mjs
 
@@ -245,14 +236,15 @@ android-fingerprint:
 		exit 1; \
 	fi; \
 	pass=$${ANDROID_KEYSTORE_PASSWORD:-$$BUBBLEWRAP_KEYSTORE_PASSWORD}; \
+	if [ -z "$$pass" ] && [ -f "$$keystore.pass" ]; then pass=$$(cat "$$keystore.pass"); fi; \
 	if [ -n "$$pass" ]; then set -- -storepass "$$pass"; else set --; fi; \
 	fp=$$(keytool -list -v -keystore "$$keystore" \
 		-alias $${ANDROID_KEY_ALIAS:-ontoplano} "$$@" 2>/dev/null \
 		| grep "SHA256:" | head -1 | sed 's/.*SHA256: *//'); \
 	if [ -z "$$fp" ]; then \
 		echo "Could not read the fingerprint from $$keystore."; \
-		echo "Wrong alias, or no store password — set ANDROID_KEYSTORE_PASSWORD"; \
-		echo "to skip the interactive prompt."; \
+		echo "Wrong alias, or no password — the build writes one to $$keystore.pass,"; \
+		echo "or set ANDROID_KEYSTORE_PASSWORD for a key from elsewhere."; \
 		exit 1; \
 	fi; \
 	echo "$$fp"; \
@@ -281,9 +273,11 @@ android-keystore-reset:
 	printf 'Type the word reset to continue: '; \
 	read answer; \
 	[ "$$answer" = reset ] || { echo "Cancelled."; exit 1; }; \
-	mv "$$keystore" "$$keystore.$$(date +%Y%m%d%H%M%S).bak"; \
-	echo "Old key kept alongside as .bak in case the password comes back to you."; \
-	echo "Now run: make android"
+	stamp=$$(date +%Y%m%d%H%M%S); \
+	mv "$$keystore" "$$keystore.$$stamp.bak"; \
+	[ -f "$$keystore.pass" ] && mv "$$keystore.pass" "$$keystore.pass.$$stamp.bak"; \
+	echo "Old key kept alongside as .bak."; \
+	echo "Now run: make android — it will make a new key and its own password."
 
 android-clean:
 	rm -rf android-twa

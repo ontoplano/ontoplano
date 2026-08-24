@@ -56,3 +56,7 @@ android-twa/
 *.keystore
 *.jks
 
+
+# The signing key password lives beside the key; neither belongs in git.
+*.keystore.pass
+*.pass.*.bak
