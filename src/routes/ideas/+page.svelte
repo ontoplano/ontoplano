@@ -2,6 +2,9 @@
 	/* biome-ignore-all assist/source/organizeImports lint/correctness/noUnusedImports lint/correctness/noUnusedVariables lint/style/useConst: Svelte template and rune usage in this file triggers false positives in current Biome diagnostics. */
 	import { enhance } from '$app/forms';
 	import { autofocus } from '$lib/actions/autofocus';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { getAction } from '$lib/shortcuts';
 
@@ -265,60 +268,53 @@
 		</div>
 	{/if}
 
-	{#if showForm}
+	<Modal
+		bind:open={showForm}
+		title={editingId ? 'Edit idea' : 'New idea'}
+		onclose={() => (editingId = null)}
+	>
 		<form
+			id="idea-form"
 			method="post"
 			action={editingId ? '?/update' : '?/create'}
 			use:enhance={() => {
-				return async ({ update }) => {
+				return async ({ update, result }) => {
 					await update();
-					closeForms();
+					if (result.type === 'success') closeForms();
 				};
 			}}
-			use:autofocus
-			class="lift space-y-3 border border-gray-200 bg-white p-4 shadow-card"
 		>
 			{#if editingId}
 				<input type="hidden" name="id" value={editingId} />
 			{/if}
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700">Idea</span>
-				<textarea
-					name="content"
-					required
-					rows="4"
-					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					>{editingId ? (editingIdea()?.content ?? '') : ''}</textarea
-				>
-			</label>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700">Tags</span>
-				<input
-					name="tags"
-					type="text"
-					autocomplete="off"
-					value={editingId ? editingTagString() : ''}
-					placeholder="comma separated, e.g. project, app, music"
-					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				/>
-			</label>
-			<div class="flex items-center gap-2">
-				<button
-					type="submit"
-					class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
-				>
-					{editingId ? 'Update' : 'Save'}
-				</button>
-				<button
-					type="button"
-					onclick={closeForms}
-					class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
-				>
-					Cancel
-				</button>
-			</div>
+
+			<FormGrid>
+				<Field label="Idea" span={12} required>
+					<textarea name="content" required rows="5" class="textarea"
+						>{editingId ? (editingIdea()?.content ?? '') : ''}</textarea
+					>
+				</Field>
+
+				<Field label="Tags" span={12} hint="Comma separated.">
+					<input
+						name="tags"
+						type="text"
+						autocomplete="off"
+						value={editingId ? editingTagString() : ''}
+						placeholder="project, app, music"
+						class="input"
+					/>
+				</Field>
+			</FormGrid>
 		</form>
-	{/if}
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={closeForms}>Cancel</button>
+			<button type="submit" form="idea-form" class="btn btn-primary">
+				{editingId ? 'Save' : 'Save idea'}
+			</button>
+		{/snippet}
+	</Modal>
 
 	{#if filteredIdeas.length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">

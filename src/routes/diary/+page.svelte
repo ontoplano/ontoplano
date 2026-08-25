@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { getAction } from '$lib/shortcuts';
@@ -311,62 +314,62 @@
 		</form>
 	{/if}
 
-	{#if showForm}
+	<Modal
+		bind:open={showForm}
+		title={editingId ? 'Edit entry' : 'New entry'}
+		onclose={() => (editingId = null)}
+	>
 		<form
+			id="entry-form"
 			method="post"
 			action={editingId ? '?/update' : '?/create'}
 			use:enhance={() => {
-				return async ({ update }) => {
+				return async ({ update, result }) => {
 					await update();
-					showForm = false;
-					editingId = null;
+					if (result.type === 'success') {
+						showForm = false;
+						editingId = null;
+					}
 				};
 			}}
-			class="lift space-y-3 border border-gray-200 bg-white p-4 shadow-card"
 		>
 			{#if editingId}
 				<input type="hidden" name="id" value={editingId} />
 			{/if}
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700">Content</span>
-				<textarea
-					name="content"
-					required
-					rows="4"
-					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					>{editingId ? (editingEntry()?.content ?? '') : ''}</textarea
-				>
-			</label>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700">Tags</span>
-				<input
-					name="tags"
-					type="text"
-					value={editingId ? editingTagString() : ''}
-					placeholder="comma separated, e.g. health, work, idea"
-					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				/>
-			</label>
-			<div class="flex items-center gap-2">
-				<button
-					type="submit"
-					class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
-				>
-					{editingId ? 'Update' : 'Post'}
-				</button>
-				<button
-					type="button"
-					onclick={() => {
-						showForm = false;
-						editingId = null;
-					}}
-					class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
-				>
-					Cancel
-				</button>
-			</div>
+
+			<FormGrid>
+				<Field label="Entry" span={12} required>
+					<textarea name="content" required rows="8" class="textarea"
+						>{editingId ? (editingEntry()?.content ?? '') : ''}</textarea
+					>
+				</Field>
+
+				<Field label="Tags" span={12} hint="Comma separated.">
+					<input
+						name="tags"
+						type="text"
+						value={editingId ? editingTagString() : ''}
+						placeholder="health, work, idea"
+						class="input"
+					/>
+				</Field>
+			</FormGrid>
 		</form>
-	{/if}
+
+		{#snippet footer()}
+			<button
+				type="button"
+				class="btn"
+				onclick={() => {
+					showForm = false;
+					editingId = null;
+				}}>Cancel</button
+			>
+			<button type="submit" form="entry-form" class="btn btn-primary">
+				{editingId ? 'Save' : 'Post entry'}
+			</button>
+		{/snippet}
+	</Modal>
 
 	{#if filteredEntries().length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">

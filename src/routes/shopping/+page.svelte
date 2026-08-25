@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { autofocus } from '$lib/actions/autofocus.js';
 	import { getAction } from '$lib/shortcuts';
@@ -185,67 +188,53 @@
 		</div>
 	{/if}
 
-	{#if showForm}
+	<Modal bind:open={showForm} title="New item" size="sm">
 		<form
+			id="item-form"
 			method="POST"
 			action="?/create"
 			use:enhance={() => {
-				return async ({ update }) => {
+				return async ({ update, result }) => {
 					await update();
-					showForm = false;
+					if (result.type === 'success') showForm = false;
 				};
 			}}
-			use:autofocus
-			class="lift border border-gray-200 bg-white p-4 shadow-card"
 		>
-			<div class="space-y-3">
-				<div class="flex gap-3">
-					<input
-						name="name"
-						type="text"
-						autocomplete="off"
-						placeholder="Item name"
-						required
-						class="flex-1 border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					/>
-					<select
-						name="type"
-						required
-						bind:value={newItemType}
-						class="border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					>
+			<FormGrid>
+				<Field label="Item" span={8} required>
+					<input name="name" type="text" autocomplete="off" required class="input" />
+				</Field>
+
+				<Field label="List" span={4}>
+					<select name="type" required bind:value={newItemType} class="select">
 						<option value="replenish">Inventory</option>
 						<option value="someday">Wishlist</option>
 					</select>
-				</div>
+				</Field>
+
 				{#if newItemType === 'replenish'}
-					<select
-						name="shoppingCategoryId"
-						class="border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					>
-						{#each data.shoppingCategories as category (category.id)}
-							<option value={category.id} selected={category.id === defaultShoppingCategoryId}>
-								{category.name}
-							</option>
-						{/each}
-					</select>
+					<Field label="Category" span={12}>
+						<select name="shoppingCategoryId" class="select">
+							{#each data.shoppingCategories as category (category.id)}
+								<option value={category.id} selected={category.id === defaultShoppingCategoryId}>
+									{category.name}
+								</option>
+							{/each}
+						</select>
+					</Field>
 				{/if}
-				<input
-					name="notes"
-					type="text"
-					autocomplete="off"
-					placeholder="Notes (optional)"
-					class="w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				/>
-				<button
-					type="submit"
-					class="bg-gray-900 px-4 py-2 text-sm text-white shadow-sm hover:bg-gray-800"
-				>
-					Add
-				</button>
-			</div>
+
+				<Field label="Notes" span={12}>
+					<input name="notes" type="text" autocomplete="off" class="input" />
+				</Field>
+			</FormGrid>
 		</form>
-	{/if}
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>
+			<button type="submit" form="item-form" class="btn btn-primary">Add item</button>
+		{/snippet}
+	</Modal>
 
 	{#if replenishItems.length > 0}
 		<div>
