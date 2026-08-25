@@ -351,23 +351,30 @@ export function baseGridOptions(
 
 	// A month is a different question: not "when today" but "how does this month
 	// look". Times stop mattering, so it is a day grid rather than a time grid.
-	if (opts.month) {
-		return {
-			view: 'dayGridMonth',
-			date: parseLocalDate(fromStr),
-			height: '100%',
-			headerToolbar: { start: '', center: '', end: '' },
-			dayHeaderFormat: { weekday: 'short' },
-			eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
-			dayMaxEvents: true,
-			firstDay: 1
-		};
-	}
+	const month = opts.month === true;
 
+	/*
+	 * Every key is present in both shapes, always.
+	 *
+	 * The calendar diffs the options object it is handed against the last one
+	 * and applies what changed — so a key that is merely *absent* keeps whatever
+	 * it was set to before. Returning a month object without `duration` left the
+	 * week's `{ days: 7 }` in place, and switching to Month gave a day grid one
+	 * week wide until the page was reloaded.
+	 */
 	return {
-		view: days === 1 ? 'timeGridDay' : 'timeGridWeek',
-		duration: { days },
+		view: month ? 'dayGridMonth' : days === 1 ? 'timeGridDay' : 'timeGridWeek',
+		// What the month view would set for itself; stated here so it survives
+		// arriving from the week.
+		duration: month ? { months: 1 } : { days },
 		date: parseLocalDate(fromStr),
+		firstDay: 1,
+		height: '100%',
+		headerToolbar: { start: '', center: '', end: '' },
+		eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+		// A month cell is one line tall whatever the zoom, so it stacks and then
+		// says "+2 more" instead of measuring.
+		dayMaxEvents: month,
 		allDaySlot: false,
 		slotMinTime: GRID_MIN_TIME,
 		slotMaxTime: GRID_MAX_TIME,
@@ -375,17 +382,17 @@ export function baseGridOptions(
 		snapDuration: GRID_SNAP_DURATION,
 		slotHeight,
 		scrollTime: GRID_MIN_TIME,
-		nowIndicator: true,
+		nowIndicator: !month,
 		// 24-hour, matching every other time in the app — the board and the
 		// tracker both read 07:00. It is also narrower, which is what lets the
 		// hour gutter shrink on a phone.
 		slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
-		height: '100%',
-		eventContent: (info) => (eventFitsText(info.event, slotHeight) ? info.event.title : ''),
-		headerToolbar: { start: '', center: '', end: '' },
-		// One day has room to say which day it is.
-		dayHeaderFormat:
-			days === 1
+		eventContent: month
+			? undefined
+			: (info) => (eventFitsText(info.event, slotHeight) ? info.event.title : ''),
+		dayHeaderFormat: month
+			? { weekday: 'short' }
+			: days === 1
 				? { weekday: 'long', day: 'numeric', month: 'short' }
 				: { weekday: 'short', day: 'numeric' }
 	};
