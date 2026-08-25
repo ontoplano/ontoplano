@@ -387,8 +387,15 @@ export function baseGridOptions(
 		// tracker both read 07:00. It is also narrower, which is what lets the
 		// hour gutter shrink on a phone.
 		slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+		/*
+		 * A month cell says what, not when.
+		 *
+		 * The calendar prefixes every day-grid event with its start time, which is
+		 * a third of the width of a narrow cell spent on something the order
+		 * already tells you. Dropping it is most of what makes a month readable.
+		 */
 		eventContent: month
-			? undefined
+			? (info) => info.event.title
 			: (info) => (eventFitsText(info.event, slotHeight) ? info.event.title : ''),
 		dayHeaderFormat: month
 			? { weekday: 'short' }

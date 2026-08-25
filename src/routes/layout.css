@@ -751,6 +751,24 @@ html .ec .ec-event {
 	line-height: 1.25;
 }
 
+/*
+ * A month is a different density.
+ *
+ * In a time grid a block's height *is* its length, so it can afford padding. In
+ * a month cell every event is one line and there are five of them, so the line
+ * is the whole budget: tighter leading, smaller type, and a hairline between
+ * them instead of a gap.
+ *
+ * `.ec.ec-month-view`, not `.ec .ec-month-view`: the view class lands on the
+ * same element as `.ec`, so the descendant form silently matches nothing.
+ */
+html .ec.ec-month-view .ec-event {
+	padding: 0.0625rem 0.3125rem;
+	font-size: 0.6875rem;
+	line-height: 1.35;
+	margin-bottom: 1px;
+}
+
 html .ec .ec-event .ec-event-time {
 	font-family: var(--font-mono);
 	font-variant-numeric: tabular-nums;
