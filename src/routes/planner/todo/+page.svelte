@@ -1,9 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageServerData, ActionData } from './$types.js';
-	import { autofocus } from '$lib/actions/autofocus.js';
 	import { getAction } from '$lib/shortcuts';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
 	import { RATINGS } from '$lib/ratings.js';
 	import { CLOSED_STATUSES } from '$lib/task-status.js';
@@ -21,6 +24,9 @@
 		interest: null,
 		energy: null
 	});
+
+	/** How many of the folded-away ratings currently carry a value. */
+	const ratingsSet = $derived(Object.values(formRatings).filter((v) => v !== null).length);
 
 	type Todo = (typeof data.todos)[number];
 
@@ -148,25 +154,13 @@
 <div class="space-y-4">
 	<div class="flex items-center justify-between">
 		<div class="flex items-center gap-3">
-			<button
-				onclick={() => (showCompleted = !showCompleted)}
-				class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-			>
+			<button onclick={() => (showCompleted = !showCompleted)} class="btn btn-sm">
 				{showCompleted ? 'Hide completed' : 'Show completed'}
 			</button>
 		</div>
-		<button
-			onclick={() => {
-				if (showForm) {
-					showForm = false;
-					editingId = null;
-				} else {
-					startNew();
-				}
-			}}
-			class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-		>
-			{showForm ? 'Cancel' : 'New Todo'}
+		<button onclick={startNew} class="btn btn-primary btn-sm">
+			New todo
+			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">n</kbd>
 		</button>
 	</div>
 
@@ -176,89 +170,86 @@
 		</div>
 	{/if}
 
-	{#if showForm}
+	<Modal
+		bind:open={showForm}
+		title={editingId ? 'Edit todo' : 'New todo'}
+		onclose={() => (editingId = null)}
+	>
 		{@const editing = editingTodo()}
 		<form
+			id="todo-form"
 			method="post"
 			action={editingId ? '?/update' : '?/create'}
 			use:enhance={() => {
-				return async ({ update }) => {
+				return async ({ update, result }) => {
 					await update();
-					showForm = false;
-					editingId = null;
+					if (result.type === 'success') {
+						showForm = false;
+						editingId = null;
+					}
 				};
 			}}
-			class="lift space-y-3 border border-gray-200 bg-white p-4 shadow-card"
 		>
 			{#if editingId}
 				<input type="hidden" name="id" value={editingId} />
 			{/if}
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700">Title</span>
-				<input
-					use:autofocus
-					name="title"
-					type="text"
-					required
-					autocomplete="off"
-					value={editing?.title ?? ''}
-					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				/>
-			</label>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700">Notes (optional)</span>
-				<textarea
-					name="notes"
-					rows="2"
-					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					>{editing?.notes ?? ''}</textarea
-				>
-			</label>
 
-			<label class="block w-48">
-				<span class="eyebrow text-gray-500">Category</span>
-				<select
-					name="categoryId"
-					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				>
-					<option value="">— none —</option>
-					{#each data.categories as cat (cat.id)}
-						<option value={cat.id} selected={editing?.categoryId === cat.id}>{cat.name}</option>
+			<FormGrid>
+				<Field label="Title" span={12} required>
+					<input
+						name="title"
+						type="text"
+						required
+						autocomplete="off"
+						value={editing?.title ?? ''}
+						class="input"
+					/>
+				</Field>
+
+				<Field label="Category" span={6}>
+					<select name="categoryId" class="select">
+						<option value="">— none —</option>
+						{#each data.categories as cat (cat.id)}
+							<option value={cat.id} selected={editing?.categoryId === cat.id}>{cat.name}</option>
+						{/each}
+					</select>
+				</Field>
+
+				<Field label="Notes" span={12}>
+					<textarea name="notes" rows="3" class="textarea">{editing?.notes ?? ''}</textarea>
+				</Field>
+
+				<!-- Three optional five-point scales at the top of a create form read
+				     as work to do before you may write anything down. -->
+				<MoreOptions label="Urgency, interest, energy" count={ratingsSet}>
+					{#each RATINGS as r (r)}
+						<div class="col-span-12 sm:col-span-4">
+							<RatingPicker rating={r} bind:value={formRatings[r]} />
+						</div>
 					{/each}
-				</select>
-			</label>
-
-			<div class="space-y-2 border border-gray-200 bg-gray-50 p-3">
-				{#each RATINGS as r (r)}
-					<RatingPicker rating={r} bind:value={formRatings[r]} />
-				{/each}
-			</div>
-
-			<div class="flex gap-2">
-				<button
-					type="submit"
-					class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
-				>
-					{editingId ? 'Update' : 'Create'}
-				</button>
-				<button
-					type="button"
-					onclick={() => {
-						showForm = false;
-						editingId = null;
-					}}
-					class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
-				>
-					Cancel
-				</button>
-			</div>
+				</MoreOptions>
+			</FormGrid>
 		</form>
-	{/if}
 
-	{#if delegatingId}
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>
+			<button type="submit" form="todo-form" class="btn btn-primary">
+				{editingId ? 'Save' : 'Create todo'}
+			</button>
+		{/snippet}
+	</Modal>
+
+	<Modal
+		open={delegatingId !== null}
+		onclose={() => (delegatingId = null)}
+		title="Put it on a day"
+		description="It keeps its place in the list and gains a time on the plan."
+		size="sm"
+	>
 		{@const todo = data.todos.find((t: Todo) => t.id === delegatingId)}
 		{#if todo}
 			<form
+				id="delegate-form"
 				method="post"
 				action="?/delegate"
 				use:enhance={() => {
@@ -267,75 +258,45 @@
 						delegatingId = null;
 					};
 				}}
-				class="space-y-3 border border-blue-200 bg-blue-50 p-4 shadow-sm"
 			>
-				<h3 class="text-sm font-medium text-gray-900">Delegate: {todo.title}</h3>
 				<input type="hidden" name="id" value={todo.id} />
-				<div class="flex gap-3">
-					<label class="w-40">
-						<span class="text-sm font-medium text-gray-700">Date</span>
-						<input
-							use:autofocus
-							name="date"
-							type="date"
-							required
-							value={formatDate(new Date())}
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						/>
-					</label>
-					<label class="w-28">
-						<span class="text-sm font-medium text-gray-700">Time</span>
-						<input
-							name="startTime"
-							type="time"
-							required
-							value="09:00"
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						/>
-					</label>
-					<label class="w-24">
-						<span class="text-sm font-medium text-gray-700">Duration</span>
+				<input type="hidden" name="mode" value="category" />
+
+				<p class="mb-3 text-sm font-medium text-gray-900">{todo.title}</p>
+
+				<FormGrid>
+					<Field label="Date" span={6} required>
+						<input name="date" type="date" required value={formatDate(new Date())} class="input" />
+					</Field>
+					<Field label="Time" span={3} required>
+						<input name="startTime" type="time" required value="09:00" class="input tabular" />
+					</Field>
+					<Field label="Minutes" span={3}>
 						<input
 							name="durationMinutes"
 							type="number"
 							min="15"
 							step="15"
 							value="60"
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							class="input tabular"
 						/>
-					</label>
-				</div>
-				<input type="hidden" name="mode" value="category" />
-				<label class="flex-1">
-					<span class="text-sm font-medium text-gray-700">Category</span>
-					<select
-						name="categoryId"
-						required
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					>
-						{#each data.categories as cat (cat.id)}
-							<option value={cat.id}>{cat.name}</option>
-						{/each}
-					</select>
-				</label>
-				<div class="flex gap-2">
-					<button
-						type="submit"
-						class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
-					>
-						Delegate
-					</button>
-					<button
-						type="button"
-						onclick={() => (delegatingId = null)}
-						class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
-					>
-						Cancel
-					</button>
-				</div>
+					</Field>
+					<Field label="Category" span={12} required>
+						<select name="categoryId" required class="select">
+							{#each data.categories as cat (cat.id)}
+								<option value={cat.id}>{cat.name}</option>
+							{/each}
+						</select>
+					</Field>
+				</FormGrid>
 			</form>
 		{/if}
-	{/if}
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (delegatingId = null)}>Cancel</button>
+			<button type="submit" form="delegate-form" class="btn btn-primary">Put on the day</button>
+		{/snippet}
+	</Modal>
 
 	{#if visibleTodos.length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">

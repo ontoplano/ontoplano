@@ -3,8 +3,11 @@
 	import { goto } from '$app/navigation';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
-	import { autofocus } from '$lib/actions/autofocus.js';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
 	import { RATINGS, type Rating } from '$lib/ratings.js';
 	import { STATUSES, STATUS_LABELS, TIMING_LABELS, type Status } from '$lib/task-status.js';
@@ -30,6 +33,9 @@
 		interest: null,
 		energy: null
 	});
+
+	/** How many of the folded-away ratings currently carry a value. */
+	const ratingsSet = $derived(Object.values(formRatings).filter((v) => v !== null).length);
 	let confirmingDelete: string | null = $state(null);
 	let dragging: Card | null = $state(null);
 	let dragOverColumn: Status | null = $state(null);
@@ -403,62 +409,50 @@
 		</span>
 	</div>
 
-	{#if showForm}
+	<Modal bind:open={showForm} title="New card" size="sm">
 		<form
+			id="card-form"
 			method="post"
 			action="?/createTodo"
 			use:enhance={() =>
-				async ({ update }) => {
+				async ({ update, result }) => {
 					await update();
-					showForm = false;
+					if (result.type === 'success') showForm = false;
 				}}
-			class="space-y-3 border border-gray-200 bg-white p-4 shadow-card"
 		>
 			{#if tab === 'today'}
 				<input type="hidden" name="scheduledDate" value={data.date} />
 			{/if}
-			<div class="flex flex-wrap gap-3">
-				<label class="min-w-64 flex-1">
-					<span class="eyebrow text-gray-500">Title</span>
-					<input
-						name="title"
-						required
-						use:autofocus
-						autocomplete="off"
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					/>
-				</label>
-				<label class="w-48">
-					<span class="eyebrow text-gray-500">Category</span>
-					<select
-						name="categoryId"
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					>
+
+			<FormGrid>
+				<Field label="Title" span={12} required>
+					<input name="title" required autocomplete="off" class="input" />
+				</Field>
+
+				<Field label="Category" span={12}>
+					<select name="categoryId" class="select">
 						<option value="">— none —</option>
 						{#each data.categories as cat (cat.id)}
 							<option value={cat.id}>{cat.name}</option>
 						{/each}
 					</select>
-				</label>
-			</div>
-			<div class="space-y-2 border border-gray-200 bg-gray-50 p-3">
-				{#each RATINGS as r (r)}
-					<RatingPicker rating={r} bind:value={formRatings[r]} />
-				{/each}
-			</div>
-			<div class="flex gap-2">
-				<button class="bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-					>Add</button
-				>
-				<button
-					type="button"
-					onclick={() => (showForm = false)}
-					class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-					>Cancel</button
-				>
-			</div>
+				</Field>
+
+				<MoreOptions label="Urgency, interest, energy" count={ratingsSet}>
+					{#each RATINGS as r (r)}
+						<div class="col-span-12">
+							<RatingPicker rating={r} bind:value={formRatings[r]} />
+						</div>
+					{/each}
+				</MoreOptions>
+			</FormGrid>
 		</form>
-	{/if}
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>
+			<button type="submit" form="card-form" class="btn btn-primary">Add card</button>
+		{/snippet}
+	</Modal>
 
 	<div class="flex flex-col gap-3 md:flex-row">
 		<div class="min-w-0 flex-1">
