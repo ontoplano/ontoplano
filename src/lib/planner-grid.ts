@@ -232,6 +232,25 @@ export function buildSlotEvents(
 	return slots.map((s) => slotToEvent(s, mondayStr, categories, opts));
 }
 
+/**
+ * Weekly blocks across a stretch of dates — a month, say.
+ *
+ * `buildSlotEvents` maps a block onto one week; a month view needs each block
+ * on every week it appears in, and the only alignment that cannot be wrong is
+ * the dates the calendar is actually showing. Event ids repeat across weeks,
+ * which is fine: the id names the block, and the occurrence is its date.
+ */
+export function buildSlotEventsForDates(
+	slots: GridSlotInput[],
+	dates: string[],
+	categories: GridCategory[],
+	opts: BuildEventsOptions = {}
+): Calendar.EventInput[] {
+	// One week start per row: a block lands on its own weekday inside it.
+	const weekStarts = dates.filter((_, i) => i % 7 === 0);
+	return weekStarts.flatMap((weekStart) => buildSlotEvents(slots, weekStart, categories, opts));
+}
+
 export function buildExceptionalEvents(
 	exceptionals: GridExceptionalInput[],
 	categories: GridCategory[]
@@ -325,10 +344,25 @@ export const GRID_DAYS_MOBILE = 1;
 
 export function baseGridOptions(
 	fromStr: string,
-	opts: { slotHeight?: number; days?: number } = {}
+	opts: { slotHeight?: number; days?: number; month?: boolean } = {}
 ): Calendar.Options {
 	const slotHeight = opts.slotHeight ?? GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX];
 	const days = opts.days ?? GRID_DAYS_DESKTOP;
+
+	// A month is a different question: not "when today" but "how does this month
+	// look". Times stop mattering, so it is a day grid rather than a time grid.
+	if (opts.month) {
+		return {
+			view: 'dayGridMonth',
+			date: parseLocalDate(fromStr),
+			height: '100%',
+			headerToolbar: { start: '', center: '', end: '' },
+			dayHeaderFormat: { weekday: 'short' },
+			eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+			dayMaxEvents: true,
+			firstDay: 1
+		};
+	}
 
 	return {
 		view: days === 1 ? 'timeGridDay' : 'timeGridWeek',
@@ -355,6 +389,14 @@ export function baseGridOptions(
 				? { weekday: 'long', day: 'numeric', month: 'short' }
 				: { weekday: 'short', day: 'numeric' }
 	};
+}
+
+/** A `YYYY-MM-DD` shifted by whole days, staying a civil date. */
+export function addDaysStr(date: string, days: number): string {
+	const d = parseLocalDate(date);
+	d.setDate(d.getDate() + days);
+	const pad = (n: number) => String(n).padStart(2, '0');
+	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 /** 'HH:MM' or 'HH:MM:SS' as minutes past midnight. */

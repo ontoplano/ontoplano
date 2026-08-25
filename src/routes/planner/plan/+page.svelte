@@ -9,7 +9,6 @@
 	import { browser } from '$app/environment';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types.js';
-	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { autofocus } from '$lib/actions/autofocus.js';
 	import MetaEditor from '$lib/components/MetaEditor.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
@@ -18,11 +17,13 @@
 	import { MAX_INTERVAL, parseRecurrence } from '$lib/recurrence.js';
 	import { parseSlotMeta } from '$lib/meta-keys.js';
 	import { getAction } from '$lib/shortcuts';
-	import { Calendar, TimeGrid, Interaction } from '@event-calendar/core';
+	import { Calendar, DayGrid, TimeGrid, Interaction } from '@event-calendar/core';
 	import '@event-calendar/core/index.css';
 	import {
 		baseGridOptions,
+		addDaysStr,
 		buildSlotEvents,
+		buildSlotEventsForDates,
 		buildExceptionalEvents,
 		placementFromDates,
 		decodeEventId,
@@ -44,16 +45,15 @@
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
-	let viewMode: 'list' | 'grid' = $state(data.view === 'grid' ? 'grid' : 'list');
+	type PlanView = 'day' | 'week' | 'month';
+
+	let viewMode: PlanView = $state(data.view);
 
 	/**
 	 * A 7x24 grid needs roughly 90px per day column to stay readable, so below
-	 * about 700px the week view stops being a week view and becomes seven strips
-	 * of truncated text. On a narrow screen the list is the honest default; the
-	 * grid stays one tap away and comes back in landscape or on a tablet.
-	 *
-	 * Only applied when the URL did not ask for a view explicitly — an explicit
-	 * `?view=grid` is the user saying they want it anyway.
+	 * about 700px a week stops being a week and becomes seven strips of truncated
+	 * text. Narrow screens fall back to the day, unless the URL asked for
+	 * something else — an explicit `?view=week` is the user saying they want it.
 	 */
 	const NARROW_BREAKPOINT = 700;
 
@@ -83,11 +83,15 @@
 	});
 
 	$effect(() => {
-		viewMode = data.view === 'grid' ? 'grid' : 'list';
+		viewMode = data.view;
 	});
 
-	/** One day on a phone, the full week elsewhere. */
-	const gridDays = $derived(narrowScreen ? GRID_DAYS_MOBILE : GRID_DAYS_DESKTOP);
+	/** What the grid actually shows, after the screen width has its say. */
+	const effectiveView = $derived<PlanView>(
+		narrowScreen && viewMode === 'week' && !data.viewExplicit ? 'day' : viewMode
+	);
+
+	const gridDays = $derived(effectiveView === 'day' ? GRID_DAYS_MOBILE : GRID_DAYS_DESKTOP);
 
 	/**
 	 * Which day the single-day grid is showing.
@@ -95,7 +99,13 @@
 	 * Tracks the day tabs, so moving between days and moving the grid are the
 	 * same act rather than two independent cursors.
 	 */
-	const gridFrom = $derived(narrowScreen ? selectedDateStr() : data.range.from);
+	const gridFrom = $derived(effectiveView === 'day' ? selectedDateStr() : data.range.from);
+	/**
+	 * The todo strip starts folded: it is a staging area, not the plan, and open
+	 * by default it pushed the grid down the page on every load.
+	 */
+	let todosOpen = $state(false);
+
 	let prefillTime = $state('09:00');
 	let prefillDuration = $state(60);
 	let gridError: string | null = $state(null);
@@ -240,42 +250,8 @@
 		);
 	}
 
-	function exceptionalSlotsForDay() {
-		const date = selectedDateStr();
-		return data.exceptionals.filter((e: { date: string }) => e.date === date);
-	}
-
-	function catColor(catId: number | null): string {
-		if (!catId) return CATEGORY_FALLBACK_COLOR;
-		const cat = data.categories?.find((c: { id: number }) => c.id === catId);
-		return cat?.color ?? CATEGORY_FALLBACK_COLOR;
-	}
-
 	function slotsForDay(day: number): Slot[] {
 		return data.slots.filter((s: Slot) => s.weekday === day);
-	}
-
-	function slotLabel(slot: (typeof data.slots)[number]): string {
-		if (slot.mode === 'activity' && slot.activityName) return slot.activityName;
-		if (slot.label) return slot.label;
-		if (slot.categoryName) return slot.categoryName;
-		return 'Slot';
-	}
-
-	function computeEndTime(startTime: string, durationMinutes: number): string {
-		const [h, m] = startTime.split(':').map(Number);
-		const total = h * 60 + m + durationMinutes;
-		const eh = Math.floor(total / 60) % 24;
-		const em = total % 60;
-		return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
-	}
-
-	function formatDuration(minutes: number): string {
-		const h = Math.floor(minutes / 60);
-		const m = minutes % 60;
-		if (h === 0) return `${m}min`;
-		if (m === 0) return `${h}h`;
-		return `${h}h ${m}min`;
 	}
 
 	function formatWeekDate(dateStr: string): string {
@@ -658,10 +634,22 @@
 		await invalidateAll();
 	}
 
+	/**
+	 * Which month a six-week grid is showing.
+	 *
+	 * The grid starts on the Monday on or before the first, so its first row can
+	 * belong to the previous month; the fourth row never does.
+	 */
+	function monthLabel(from: string): string {
+		return new Date(`${addDaysStr(from, 21)}T12:00:00`).toLocaleDateString(undefined, {
+			month: 'long',
+			year: 'numeric'
+		});
+	}
+
 	function goToRange(from: string | null) {
-		const parts: string[] = [];
+		const parts: string[] = [`view=${viewMode}`];
 		if (from) parts.push(`from=${from}`);
-		if (viewMode === 'list') parts.push('view=list');
 		goto(`/planner/plan${parts.length ? `?${parts.join('&')}` : ''}`);
 	}
 
@@ -683,13 +671,6 @@
 		} else {
 			selectedIds = new Set([...selectedIds, id]);
 		}
-	}
-
-	function exceptionalLabel(e: (typeof data.exceptionals)[number]): string {
-		if (e.mode === 'activity' && e.activityName) return e.activityName;
-		if (e.label) return e.label;
-		if (e.categoryName) return e.categoryName;
-		return 'Slot';
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -732,12 +713,13 @@
 		e.preventDefault();
 
 		if (action === 'toggle-view') {
-			setView(viewMode === 'grid' ? 'list' : 'grid');
+			setView(viewMode === 'day' ? 'week' : viewMode === 'week' ? 'month' : 'day');
 			return;
 		}
 
 		if (action === 'zoom-in' || action === 'zoom-out' || action === 'zoom-reset') {
-			if (viewMode !== 'grid') return;
+			// Zoom is a time-grid idea; a month has no hour to make taller.
+			if (effectiveView === 'month') return;
 			if (action === 'zoom-reset') setZoom(GRID_DEFAULT_ZOOM_INDEX);
 			else setZoom(zoomIndex + (action === 'zoom-in' ? 1 : -1));
 			return;
@@ -892,10 +874,9 @@
 		return repeat === 'once' ? '?/createExceptional' : '?/create';
 	});
 
-	function setView(mode: 'list' | 'grid') {
+	function setView(mode: PlanView) {
 		viewMode = mode;
-		const parts: string[] = [];
-		if (mode === 'list') parts.push('view=list');
+		const parts: string[] = [`view=${mode}`];
 		if (!data.range.isCurrent) parts.push(`from=${data.range.from}`);
 		const qs = parts.join('&');
 		goto(`/planner/plan${qs ? `?${qs}` : ''}`, {
@@ -937,18 +918,38 @@
 		)
 	);
 
+	/**
+	 * A weekly block means "every week", so a month needs it on each week shown.
+	 * The dates come from the server's own window, which is what the calendar is
+	 * rendering — anything computed separately can drift by a row.
+	 */
 	const gridEvents = $derived([
-		...buildSlotEvents(
+		...buildSlotEventsForDates(
 			data.slots.filter((s: Slot) => !movedSlotIds.has(s.id)),
-			data.range.from,
+			effectiveView === 'month'
+				? data.range.days.map((d: { date: string }) => d.date)
+				: [data.range.from],
 			data.categories,
 			{ suppressedSlotIds }
 		),
 		...buildExceptionalEvents(data.exceptionals, data.categories)
 	]);
 
+	/**
+	 * The month a six-week window belongs to.
+	 *
+	 * The window starts on the Monday on or before the first, so its own first
+	 * date can be in the previous month — handing that to the calendar renders
+	 * the wrong month. Three weeks in is always the right one.
+	 */
+	const monthAnchor = $derived(addDaysStr(data.range.from, 21));
+
 	const gridOptions = $derived({
-		...baseGridOptions(gridFrom, { slotHeight, days: gridDays }),
+		...baseGridOptions(effectiveView === 'month' ? monthAnchor : gridFrom, {
+			slotHeight,
+			days: gridDays,
+			month: effectiveView === 'month'
+		}),
 		events: gridEvents,
 		editable: true,
 		selectable: true,
@@ -1382,23 +1383,20 @@
 			</button>
 			<button onclick={goToNextWeek} class="btn btn-sm" title="Forward 7 days (])">&rarr;</button>
 		</div>
+		<!-- The span you are looking at, in the middle, where the eye already is. -->
+		<div class="flex">
+			{#each [['day', 'Day'], ['week', 'Week'], ['month', 'Month']] as [mode, label] (mode)}
+				<button
+					onclick={() => setView(mode as PlanView)}
+					class="px-3 py-1 text-sm {viewMode === mode
+						? 'bg-gray-900 font-medium text-white hover:bg-gray-800'
+						: 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50'}"
+					title="{label} view (g cycles)">{label}</button
+				>
+			{/each}
+		</div>
+
 		<div class="flex flex-wrap gap-2">
-			<div class="flex">
-				<button
-					onclick={() => setView('list')}
-					class="px-3 py-1 text-sm {viewMode === 'list'
-						? 'bg-gray-900 font-medium text-white hover:bg-gray-800'
-						: 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50'}"
-					title="List view (g)">List</button
-				>
-				<button
-					onclick={() => setView('grid')}
-					class="px-3 py-1 text-sm {viewMode === 'grid'
-						? 'bg-gray-900 font-medium text-white hover:bg-gray-800'
-						: 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50'}"
-					title="Grid view (g)">Grid</button
-				>
-			</div>
 			<button
 				onclick={() => (showForm && repeat === 'once' ? closeForm() : startNew('once'))}
 				class="btn btn-sm border-blue-200 text-blue-600 hover:bg-blue-50"
@@ -1417,9 +1415,15 @@
 	</div>
 
 	<div class="text-center text-sm text-gray-500">
-		{formatWeekDate(data.range.from)} &mdash; {formatWeekDate(data.range.last)}
-		{#if data.range.isCurrent}
-			<span class="text-gray-400">· next 7 days</span>
+		{#if effectiveView === 'month'}
+			{monthLabel(data.range.from)}
+		{:else}
+			{formatWeekDate(data.range.from)} &mdash; {formatWeekDate(data.range.last)}
+			{#if data.range.isCurrent}
+				<span class="text-gray-400">
+					· {effectiveView === 'day' ? 'today' : 'next 7 days'}
+				</span>
+			{/if}
 		{/if}
 	</div>
 
@@ -2094,7 +2098,7 @@
 
 	<!-- Also shown over the day grid, which needs a way to move between days;
 	     the full week grid already shows all seven at once. -->
-	{#if viewMode === 'list' || gridDays === 1}
+	{#if effectiveView === 'day'}
 		<div class="flex gap-1">
 			{#each data.range.days as day, i (day.date)}
 				<button
@@ -2111,222 +2115,24 @@
 		</div>
 	{/if}
 
-	{#if viewMode === 'list'}
-		{#if slotsForDay(selectedWeekday).length === 0 && exceptionalSlotsForDay().length === 0}
-			<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-				No slots for {selectedDayInfo.name}.
-			</div>
-		{:else}
-			{#if slotsForDay(selectedWeekday).length > 0}
-				<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-sm">
-					{#each slotsForDay(selectedWeekday) as slot, i (slot.id)}
-						{@const isSelected = selectedIds.has(slot.id)}
-						{@const suppressed = isSlotSuppressed(slot.id)}
-						<div
-							class="flex items-center gap-4 border-l-4 px-4 py-3 {!slot.active || suppressed
-								? 'opacity-50'
-								: ''} {selectedIndex === i ? 'bg-gray-100' : ''} {isSelected ? 'bg-blue-50' : ''}"
-							style="border-left-color: {catColor(slot.categoryId)}"
-						>
-							{#if multiselect}
-								<button
-									type="button"
-									onclick={() => toggleSlotSelection(slot.id)}
-									class="h-5 w-5 shrink-0 border {isSelected
-										? 'border-blue-500 bg-blue-500'
-										: 'border-gray-400 bg-white'}"
-									aria-label={isSelected ? 'Deselect' : 'Select'}
-								>
-									{#if isSelected}
-										<svg class="h-full w-full text-white" viewBox="0 0 20 20" fill="currentColor">
-											<path
-												fill-rule="evenodd"
-												d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-												clip-rule="evenodd"
-											/>
-										</svg>
-									{/if}
-								</button>
-							{/if}
-							<div
-								class="w-24 shrink-0 font-mono text-sm text-gray-500"
-								title={formatDuration(slot.durationMinutes)}
-							>
-								{slot.startTime} - {computeEndTime(slot.startTime, slot.durationMinutes)}
-							</div>
-							<div class="min-w-0 flex-1">
-								<span class="text-sm font-medium text-gray-900 {suppressed ? 'line-through' : ''}"
-									>{slotLabel(slot)}</span
-								>
-								{#if slot.mode === 'activity' && slot.categoryName}
-									<span class="ml-1 text-xs text-gray-400">{slot.categoryName}</span>
-								{/if}
-								{#if suppressed}
-									<span class="ml-1 text-xs text-amber-600">skipped this day</span>
-								{/if}
-								{#if slot.label && slotLabel(slot) !== slot.label}
-									<p class="truncate text-xs text-gray-500">{slot.label}</p>
-								{/if}
-							</div>
-							<div class="flex shrink-0 items-center gap-2">
-								{#if suppressed}
-									<form method="post" action="?/unsuppress" use:enhance>
-										<input type="hidden" name="slotId" value={slot.id} />
-										<input type="hidden" name="date" value={selectedDateStr()} />
-										<button
-											type="submit"
-											class="border border-amber-200 bg-white px-2 py-1 text-xs text-amber-600 transition hover:bg-amber-50"
-										>
-											Restore
-										</button>
-									</form>
-								{:else}
-									<form method="post" action="?/suppress" use:enhance>
-										<input type="hidden" name="slotId" value={slot.id} />
-										<input type="hidden" name="date" value={selectedDateStr()} />
-										<button
-											type="submit"
-											class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-											title="Skip this slot for this day only"
-										>
-											Skip
-										</button>
-									</form>
-								{/if}
-								<button
-									onclick={() => startEdit(slot)}
-									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-								>
-									<Icon name="edit" /> Edit
-								</button>
-								<form id="toggle-form-{slot.id}" method="post" action="?/toggleActive" use:enhance>
-									<input type="hidden" name="id" value={slot.id} />
-									<input type="hidden" name="active" value={String(slot.active)} />
-									<button
-										type="submit"
-										class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-									>
-										{slot.active ? 'Disable' : 'Enable'}
-									</button>
-								</form>
-								{#if confirmingDelete === `slot-${slot.id}`}
-									<form
-										id="delete-form-{slot.id}"
-										method="post"
-										action="?/delete"
-										use:enhance={() => {
-											return async ({ update }) => {
-												await update();
-												confirmingDelete = null;
-											};
-										}}
-									>
-										<input type="hidden" name="id" value={slot.id} />
-										<button
-											type="submit"
-											class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
-											use:armed
-										>
-											Confirm?
-										</button>
-									</form>
-								{:else}
-									<button
-										type="button"
-										onclick={() => {
-											confirmingDelete = `slot-${slot.id}`;
-										}}
-										class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
-									>
-										<Icon name="trash" /> Delete
-									</button>
-								{/if}
-							</div>
-						</div>
-					{/each}
-				</div>
-			{/if}
-
-			{@const dayExceptionals = exceptionalSlotsForDay()}
-			{#if dayExceptionals.length > 0}
-				<div class="divide-y divide-blue-100 border border-blue-200 bg-blue-50 shadow-sm">
-					<div class="px-4 py-2 text-xs font-medium text-blue-700">One-off blocks for this day</div>
-					{#each dayExceptionals as exc (exc.id)}
-						<div
-							class="flex items-center gap-4 border-l-4 px-4 py-3"
-							style="border-left-color: {catColor(exc.categoryId)}"
-						>
-							<div
-								class="w-24 shrink-0 font-mono text-sm text-gray-500"
-								title={formatDuration(exc.durationMinutes)}
-							>
-								{exc.startTime} - {computeEndTime(exc.startTime, exc.durationMinutes)}
-							</div>
-							<div class="min-w-0 flex-1">
-								<span class="text-sm font-medium text-gray-900">{exceptionalLabel(exc)}</span>
-								{#if exc.mode === 'activity' && exc.categoryName}
-									<span class="ml-1 text-xs text-gray-400">{exc.categoryName}</span>
-								{/if}
-								{#if exc.label && exceptionalLabel(exc) !== exc.label}
-									<p class="truncate text-xs text-gray-500">{exc.label}</p>
-								{/if}
-							</div>
-							<span
-								class="shrink-0 px-2 py-0.5 text-xs font-medium {exc.status === 'todo'
-									? 'bg-gray-100 text-gray-600'
-									: 'bg-blue-100 text-blue-700'}"
-							>
-								{exc.status}
-							</span>
-							<button
-								type="button"
-								onclick={() => startEditExceptional(exc)}
-								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-							>
-								<Icon name="edit" /> Edit
-							</button>
-							{#if confirmingDelete === `exc-${exc.id}`}
-								<form
-									method="post"
-									action="?/deleteExceptional"
-									use:enhance={() => {
-										return async ({ update }) => {
-											await update();
-											confirmingDelete = null;
-										};
-									}}
-								>
-									<input type="hidden" name="id" value={exc.id} />
-									<button
-										type="submit"
-										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
-										use:armed
-									>
-										Confirm?
-									</button>
-								</form>
-							{:else}
-								<button
-									type="button"
-									onclick={() => {
-										confirmingDelete = `exc-${exc.id}`;
-									}}
-									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
-								>
-									<Icon name="trash" /> Delete
-								</button>
-							{/if}
-						</div>
-					{/each}
-				</div>
-			{/if}
-		{/if}
-	{:else}
-		<!-- Undated todos, so one can be dragged straight onto an hour instead of
+	<!-- Undated todos, so one can be dragged straight onto an hour instead of
 		     being scheduled on the board and then found here. -->
-		{#if data.todos.length > 0}
-			<div class="mb-2 flex flex-wrap items-center gap-2">
-				<span class="eyebrow shrink-0 text-gray-500">Todo</span>
+	{#if data.todos.length > 0}
+		<details bind:open={todosOpen} class="mb-2">
+			<summary
+				class="flex cursor-pointer list-none items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+			>
+				<span class="text-xs text-gray-400">{todosOpen ? '▾' : '▸'}</span>
+				<span class="eyebrow text-gray-500">Todo</span>
+				<span class="tabular border border-gray-300 bg-gray-50 px-1 text-xs text-gray-600">
+					{data.todos.length}
+				</span>
+				{#if !todosOpen}
+					<span class="text-xs text-gray-400">drag one onto the grid to give it a time</span>
+				{/if}
+			</summary>
+
+			<div class="mt-2 flex flex-wrap items-center gap-2">
 				{#each data.todos as todo (todo.id)}
 					<button
 						type="button"
@@ -2357,128 +2163,128 @@
 				{/each}
 				<span class="text-xs text-gray-400">drag onto the grid to give it a time</span>
 			</div>
-		{/if}
+		</details>
+	{/if}
 
-		<div
-			class="relative border border-gray-200 bg-white shadow-sm {gridDays === 1
-				? 'h-[62vh]'
-				: 'h-[70vh]'}"
-			use:gridZoomWheel
-			use:selectionSurface
-			ondragover={(e) => {
-				if (dragTodoId === null) return;
-				e.preventDefault();
-				dropPreview = dropTarget(e);
-			}}
-			ondragleave={() => (dropPreview = null)}
-			ondrop={onTodoDrop}
-			role="application"
-		>
-			{#if marqueeRect}
-				<!-- Drawn over the grid rather than inside it, so it can span
+	<div
+		class="relative border border-gray-200 bg-white shadow-sm {gridDays === 1
+			? 'h-[62vh]'
+			: 'h-[70vh]'}"
+		use:gridZoomWheel
+		use:selectionSurface
+		ondragover={(e) => {
+			if (dragTodoId === null) return;
+			e.preventDefault();
+			dropPreview = dropTarget(e);
+		}}
+		ondragleave={() => (dropPreview = null)}
+		ondrop={onTodoDrop}
+		role="application"
+	>
+		{#if marqueeRect}
+			<!-- Drawn over the grid rather than inside it, so it can span
 				     columns without the calendar reflowing anything. -->
-				<div
-					class="pointer-events-none absolute z-30 border-2 border-gray-900 bg-gray-900/10"
-					style="left:{marqueeRect.left}px; top:{marqueeRect.top}px; width:{marqueeRect.width}px; height:{marqueeRect.height}px"
-				></div>
-			{/if}
-
-			{#if undoNotice}
-				<div
-					class="pointer-events-none absolute top-2 left-2 z-30 border border-gray-900 bg-gray-900 px-2 py-1 text-xs text-white"
-				>
-					{undoNotice}
-				</div>
-			{/if}
-
-			{#if selectedEventIds.size > 1}
-				<div
-					class="pointer-events-none absolute bottom-2 left-2 z-30 border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-card"
-				>
-					{selectedEventIds.size} selected · drag one to move them · Esc to clear
-				</div>
-			{/if}
-
-			{#if dropPreview}
-				<!-- Says exactly where it will land, since the grid gives no other
-				     feedback for a drop it does not itself handle. -->
-				<div
-					class="tabular pointer-events-none absolute top-2 right-2 z-20 border border-gray-900 bg-gray-900 px-2 py-1 text-xs text-white"
-				>
-					{dropPreview.date} · {dropPreview.startTime}
-				</div>
-			{/if}
-			{#if browser && widthChecked}
-				<Calendar bind:this={ec} plugins={[TimeGrid, Interaction]} options={gridOptions} />
-			{/if}
-		</div>
-		<div class="mt-1 flex items-center justify-between gap-4">
-			<p class="text-xs text-gray-400">
-				Drag to create · drag a block to move · click it to edit, skip or delete · hold <kbd
-					class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd
-				>
-				while dragging to duplicate, or
-				<kbd class="border border-gray-300 bg-gray-50 px-1">Alt</kbd>
-				to move or resize just this day's occurrence ·
-				<kbd class="border border-gray-300 bg-gray-50 px-1">Shift</kbd>
-				drag to select several, then drag one to move them all ·
-				<kbd class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd>+<kbd
-					class="border border-gray-300 bg-gray-50 px-1">Z</kbd
-				> undoes · snaps to 15min
-			</p>
-			<div class="flex items-center gap-1">
-				<span class="mr-1 text-xs text-gray-400">
-					Zoom (<kbd class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd>+scroll)
-				</span>
-				<button
-					type="button"
-					onclick={() => setZoom(zoomIndex - 1)}
-					disabled={zoomIndex === 0}
-					title="Zoom out (-)"
-					aria-label="Zoom out"
-					class="border border-gray-300 bg-white px-2 py-0.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
-					>&minus;</button
-				>
-				<button
-					type="button"
-					onclick={() => setZoom(GRID_DEFAULT_ZOOM_INDEX)}
-					title="Reset zoom (0)"
-					class="border border-gray-300 bg-white px-2 py-0.5 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
-					>{Math.round((slotHeight / GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX]) * 100)}%</button
-				>
-				<button
-					type="button"
-					onclick={() => setZoom(zoomIndex + 1)}
-					disabled={zoomIndex === GRID_ZOOM_LEVELS.length - 1}
-					title="Zoom in (+)"
-					aria-label="Zoom in"
-					class="border border-gray-300 bg-white px-2 py-0.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
-					>+</button
-				>
-			</div>
-		</div>
-		{#if hovered}
 			<div
-				class="pointer-events-none fixed z-50 max-w-[240px] border border-gray-200 bg-white px-3 py-2 shadow-sm"
-				style:top="{hovered.top}px"
-				style:left="{hovered.left}px"
-				style:transform={hovered.flip ? 'translateX(-100%) translateX(-8px)' : 'translateX(8px)'}
+				class="pointer-events-none absolute z-30 border-2 border-gray-900 bg-gray-900/10"
+				style="left:{marqueeRect.left}px; top:{marqueeRect.top}px; width:{marqueeRect.width}px; height:{marqueeRect.height}px"
+			></div>
+		{/if}
+
+		{#if undoNotice}
+			<div
+				class="pointer-events-none absolute top-2 left-2 z-30 border border-gray-900 bg-gray-900 px-2 py-1 text-xs text-white"
 			>
-				<p class="text-sm font-medium text-gray-900">{hovered.title}</p>
-				<p class="mt-0.5 text-xs text-gray-600">
-					{hovered.timeText} · {hovered.durationText}
-				</p>
-				{#if hovered.categoryName}
-					<p class="text-xs text-gray-500">{hovered.categoryName}</p>
-				{/if}
-				{#if hovered.label}
-					<p class="text-xs text-gray-500">Label: {hovered.label}</p>
-				{/if}
-				{#if hovered.state}
-					<p class="mt-0.5 text-xs font-medium text-gray-400">{hovered.state}</p>
-				{/if}
+				{undoNotice}
 			</div>
 		{/if}
+
+		{#if selectedEventIds.size > 1}
+			<div
+				class="pointer-events-none absolute bottom-2 left-2 z-30 border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-card"
+			>
+				{selectedEventIds.size} selected · drag one to move them · Esc to clear
+			</div>
+		{/if}
+
+		{#if dropPreview}
+			<!-- Says exactly where it will land, since the grid gives no other
+				     feedback for a drop it does not itself handle. -->
+			<div
+				class="tabular pointer-events-none absolute top-2 right-2 z-20 border border-gray-900 bg-gray-900 px-2 py-1 text-xs text-white"
+			>
+				{dropPreview.date} · {dropPreview.startTime}
+			</div>
+		{/if}
+		{#if browser && widthChecked}
+			<Calendar bind:this={ec} plugins={[TimeGrid, DayGrid, Interaction]} options={gridOptions} />
+		{/if}
+	</div>
+	<div class="mt-1 flex items-center justify-between gap-4">
+		<p class="text-xs text-gray-400">
+			Drag to create · drag a block to move · click it to edit, skip or delete · hold <kbd
+				class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd
+			>
+			while dragging to duplicate, or
+			<kbd class="border border-gray-300 bg-gray-50 px-1">Alt</kbd>
+			to move or resize just this day's occurrence ·
+			<kbd class="border border-gray-300 bg-gray-50 px-1">Shift</kbd>
+			drag to select several, then drag one to move them all ·
+			<kbd class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd>+<kbd
+				class="border border-gray-300 bg-gray-50 px-1">Z</kbd
+			> undoes · snaps to 15min
+		</p>
+		<div class="flex items-center gap-1">
+			<span class="mr-1 text-xs text-gray-400">
+				Zoom (<kbd class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd>+scroll)
+			</span>
+			<button
+				type="button"
+				onclick={() => setZoom(zoomIndex - 1)}
+				disabled={zoomIndex === 0}
+				title="Zoom out (-)"
+				aria-label="Zoom out"
+				class="border border-gray-300 bg-white px-2 py-0.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+				>&minus;</button
+			>
+			<button
+				type="button"
+				onclick={() => setZoom(GRID_DEFAULT_ZOOM_INDEX)}
+				title="Reset zoom (0)"
+				class="border border-gray-300 bg-white px-2 py-0.5 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+				>{Math.round((slotHeight / GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX]) * 100)}%</button
+			>
+			<button
+				type="button"
+				onclick={() => setZoom(zoomIndex + 1)}
+				disabled={zoomIndex === GRID_ZOOM_LEVELS.length - 1}
+				title="Zoom in (+)"
+				aria-label="Zoom in"
+				class="border border-gray-300 bg-white px-2 py-0.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+				>+</button
+			>
+		</div>
+	</div>
+	{#if hovered}
+		<div
+			class="pointer-events-none fixed z-50 max-w-[240px] border border-gray-200 bg-white px-3 py-2 shadow-sm"
+			style:top="{hovered.top}px"
+			style:left="{hovered.left}px"
+			style:transform={hovered.flip ? 'translateX(-100%) translateX(-8px)' : 'translateX(8px)'}
+		>
+			<p class="text-sm font-medium text-gray-900">{hovered.title}</p>
+			<p class="mt-0.5 text-xs text-gray-600">
+				{hovered.timeText} · {hovered.durationText}
+			</p>
+			{#if hovered.categoryName}
+				<p class="text-xs text-gray-500">{hovered.categoryName}</p>
+			{/if}
+			{#if hovered.label}
+				<p class="text-xs text-gray-500">Label: {hovered.label}</p>
+			{/if}
+			{#if hovered.state}
+				<p class="mt-0.5 text-xs font-medium text-gray-400">{hovered.state}</p>
+			{/if}
+		</div>
 	{/if}
 
 	<div class="mt-6 border border-gray-200 bg-white shadow-sm">

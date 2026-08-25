@@ -38,8 +38,15 @@ import { addDays } from '$lib/server/week-generator';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-/** Days visible at once. Seven keeps every weekday on screen exactly once. */
-const PLAN_DAYS = 7;
+/**
+ * How much of the plan is on screen.
+ *
+ * A week is the default because that is what the plan *is*. A day is what a
+ * phone can show honestly, and a month is for looking rather than editing —
+ * six rows so every month fits whatever weekday it starts on.
+ */
+const SPAN_DAYS = { day: 1, week: 7, month: 42 } as const;
+type PlanView = keyof typeof SPAN_DAYS;
 
 function formatDate(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -57,6 +64,22 @@ function startOfDay(d: Date): Date {
  * Anchoring on today makes every visible column actionable, and the seven-day
  * span still shows each weekday once, so recurring slots all remain reachable.
  */
+/** A date from the URL, or today. Unclamped — the caller decides. */
+function parseAnchor(param: string | null, today: Date): Date {
+	if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
+		const parsed = new Date(`${param}T00:00:00`);
+		if (!isNaN(parsed.getTime())) return parsed;
+	}
+	return today;
+}
+
+/** The Monday on or before the first of this date's month. */
+function monthGridStart(date: Date): Date {
+	const first = new Date(date.getFullYear(), date.getMonth(), 1);
+	first.setDate(first.getDate() - ((first.getDay() + 6) % 7));
+	return first;
+}
+
 function parseFromParam(param: string | null, today: Date): Date {
 	if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
 		const parsed = new Date(`${param}T00:00:00`);
@@ -103,17 +126,25 @@ function blockFields(formData: FormData) {
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
 
-	// Whether the URL named a view matters: without one the client may pick the
-	// list on a narrow screen, but an explicit choice is always honoured.
+	// Whether the URL named a view matters: without one the client shows a day on
+	// a phone, where a week of columns is seven strips of truncated text.
 	const requestedView = url.searchParams.get('view');
-	const view = requestedView === 'list' ? 'list' : 'grid';
-	const viewExplicit = requestedView === 'list' || requestedView === 'grid';
+	const view: PlanView =
+		requestedView === 'day' || requestedView === 'month' ? requestedView : 'week';
+	const viewExplicit =
+		requestedView === 'day' || requestedView === 'week' || requestedView === 'month';
+	const span = SPAN_DAYS[view];
 
 	const today = startOfDay(ctx.now);
-	const from = parseFromParam(url.searchParams.get('from'), today);
-	const to = addDays(from, PLAN_DAYS);
+	// A month is read more than edited, so it starts where the month does rather
+	// than being clamped forward to today like a plan you are still writing.
+	const from =
+		view === 'month'
+			? monthGridStart(parseAnchor(url.searchParams.get('from'), today))
+			: parseFromParam(url.searchParams.get('from'), today);
+	const to = addDays(from, span);
 
-	const days = Array.from({ length: PLAN_DAYS }, (_, offset) => {
+	const days = Array.from({ length: span }, (_, offset) => {
 		const d = addDays(from, offset);
 		const weekday = (d.getDay() + 6) % 7;
 		return {
@@ -125,17 +156,23 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	});
 
 	// Stepping back is clamped to today rather than hidden, so the button still
-	// returns you to the live window from anywhere ahead of it.
-	const prevFrom = addDays(from, -PLAN_DAYS);
+	// returns you to the live window from anywhere ahead of it. A month may go
+	// backwards: there is nothing to plan there, but plenty to look at.
+	const prevFrom = addDays(from, -span);
 	const range = {
 		from: formatDate(from),
-		last: formatDate(addDays(from, PLAN_DAYS - 1)),
-		isCurrent: formatDate(from) === formatDate(today),
+		last: formatDate(addDays(from, span - 1)),
+		isCurrent:
+			view === 'month'
+				? formatDate(from) === formatDate(monthGridStart(today))
+				: formatDate(from) === formatDate(today),
 		prev:
-			formatDate(from) === formatDate(today)
-				? null
-				: formatDate(prevFrom.getTime() < today.getTime() ? today : prevFrom),
-		next: formatDate(to),
+			view === 'month'
+				? formatDate(monthGridStart(addDays(from, -1)))
+				: formatDate(from) === formatDate(today)
+					? null
+					: formatDate(prevFrom.getTime() < today.getTime() ? today : prevFrom),
+		next: view === 'month' ? formatDate(monthGridStart(addDays(to, 1))) : formatDate(to),
 		days
 	};
 
