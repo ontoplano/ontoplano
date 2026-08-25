@@ -33,6 +33,8 @@ Self-hosted, single SQLite file, no account anywhere but your own.
   and a schedule endpoint they can read. See `docs/PLUGINS.md`.
 - **Phone** — an installable PWA, and an Android app that wraps it
   (`docs/ANDROID.md`).
+- **Telegram** — a bot for the plan, the list and quick capture, on a
+  self-hosted box only (`docs/TELEGRAM.md`).
 
 ## Running it
 
@@ -87,8 +89,9 @@ Three switches worth knowing, all off by default:
   behind a proxy you control; trusting that header unconditionally lets anyone
   forge their address.
 - `ONTOPLANO_HTTPS=true` — adds HSTS. Harmful over plain http, hence opt-in.
-- `ONTOPLANO_SELF_HOST=true` — this is one person's instance: the owner may edit
-  deployment settings from the UI.
+- `ONTOPLANO_SELF_HOST=true` — this is one person's instance. The owner may edit
+  deployment settings from the UI, and the Telegram bot will run; both act for the
+  whole instance, so both are off anywhere else.
 
 Email is optional. With `SMTP_HOST` and `SMTP_FROM` set, password resets and
 address confirmations are sent; without them the message — link included — is

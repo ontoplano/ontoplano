@@ -1,4 +1,5 @@
 <script lang="ts">
+	import QuickCapture from '$lib/components/QuickCapture.svelte';
 	import { enhance } from '$app/forms';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -146,6 +147,10 @@
 			</button>
 		{/if}
 	</div>
+
+	<!-- Phone-first: the reason someone opens this app at a bus stop is to write
+	     one thing down before it evaporates. -->
+	<QuickCapture error={form?.message} />
 
 	{#snippet card_todayTasks()}
 		<div class="lift border border-gray-200 bg-white p-4 shadow-card">

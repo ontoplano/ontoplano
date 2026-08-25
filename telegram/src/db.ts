@@ -14,6 +14,13 @@ client.pragma('foreign_keys = ON');
 
 export const db = drizzle(client, { schema });
 
+/**
+ * The account this instance belongs to.
+ *
+ * Only meaningful on a self-hosted box, which is why `index.ts` refuses to
+ * start anywhere else: with more than one account on the instance, "the first
+ * user" is an arbitrary answer to a question about somebody's private data.
+ */
 export async function getPrimaryUserId(): Promise<string> {
 	const firstUser = db
 		.select({ id: schema.user.id })

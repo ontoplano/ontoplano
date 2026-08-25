@@ -8,7 +8,32 @@ import { registerDiaryCommand } from './commands/diary.js';
 import { registerIdeiaCommand } from './commands/ideia.js';
 import { COMMANDS, registerHelpCommand } from './commands/help.js';
 
-const ALLOWED_USER = 123456789;
+/**
+ * The bot is for a self-hosted instance, and only for one.
+ *
+ * It opens the database file directly and acts as whoever the instance belongs
+ * to; on a shared instance that would be one Telegram account holding the keys
+ * to everybody's data. So it refuses to start unless the deployment says it is
+ * self-hosted — the same gate as deployment settings in the UI, and where
+ * billing will sit.
+ *
+ * `TELEGRAM_ALLOWED_USER` is the numeric Telegram id allowed to talk to it.
+ */
+if (process.env.ONTOPLANO_SELF_HOST !== 'true') {
+	throw new Error(
+		'The Telegram bot runs on self-hosted instances only. Set ONTOPLANO_SELF_HOST=true ' +
+			'in ~/.config/ontoplano/env if this machine is yours alone.'
+	);
+}
+
+const allowedUser = Number(process.env.TELEGRAM_ALLOWED_USER);
+if (!Number.isFinite(allowedUser) || allowedUser <= 0) {
+	throw new Error(
+		'TELEGRAM_ALLOWED_USER not set. It is your numeric Telegram id — the bot answers ' +
+			'nobody else, because it speaks for the whole instance.'
+	);
+}
+
 const token = process.env.TELEGRAM_BOT_TOKEN;
 
 if (!token) {
@@ -18,7 +43,7 @@ if (!token) {
 const bot = new Bot(token);
 
 bot.use(async (ctx, next) => {
-	if (ctx.from?.id !== ALLOWED_USER) return;
+	if (ctx.from?.id !== allowedUser) return;
 	await next();
 });
 
