@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth/minimal';
+import { admin } from 'better-auth/plugins/admin';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { env } from '$env/dynamic/private';
@@ -74,7 +75,22 @@ export const auth = betterAuth({
 			});
 		}
 	},
+	/**
+	 * Roles and impersonation come from better-auth rather than from here.
+	 *
+	 * Borrowing somebody's session safely — a real session row, marked as
+	 * borrowed, with its own short expiry and a way back — is easy to write and
+	 * easy to get subtly wrong. The plugin already does it, and marks the
+	 * session so the app can say so in a banner.
+	 */
 	plugins: [
+		admin({
+			defaultRole: 'member',
+			adminRoles: ['admin'],
+			// An hour is long enough to see what somebody is seeing and short
+			// enough that a forgotten tab is not a standing key to their diary.
+			impersonationSessionDuration: 60 * 60
+		}),
 		sveltekitCookies(getRequestEvent) // make sure this is the last plugin in the array
 	]
 });

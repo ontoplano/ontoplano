@@ -81,10 +81,15 @@
 	const secondaryActive = $derived(secondaryNav.some((item) => isNavActive(item.href)));
 
 	/**
-	 * First run gets no navigation: every other page bounces straight back here
-	 * until it is done, so offering the tabs would only be a loop.
+	 * Screens that carry no navigation.
+	 *
+	 * First run, because every other page bounces straight back to it until it
+	 * is done. The policies, because they have to read the same whether or not
+	 * anybody is signed in.
 	 */
-	const bareScreen = $derived(page.url.pathname === '/welcome');
+	const bareScreen = $derived(
+		page.url.pathname === '/welcome' || page.url.pathname.startsWith('/legal')
+	);
 
 	/** The section being viewed. Its accent fills the active nav tab. */
 	const sectionKey = $derived(sectionFor(page.url.pathname));
@@ -176,6 +181,29 @@
 		class="page-surface relative flex h-[100dvh] flex-col overflow-hidden bg-gray-100 lg:h-auto lg:min-h-screen lg:overflow-visible"
 		style="{categoryStyle()};--section-accent:{section.accent}"
 	>
+		{#if data.impersonatedBy}
+			<!--
+				Loud on purpose. An administrator looking at somebody's account is a
+				thing that has to be visible while it is happening, not only in a log
+				afterwards.
+			-->
+			<div
+				class="relative z-50 flex flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950"
+			>
+				<span>
+					You are signed in as <strong>{data.user.email}</strong> from an administrator account. Everything
+					you do here is theirs.
+				</span>
+				<form method="post" action="/admin/stop">
+					<button
+						class="border border-amber-900 px-2 py-1 text-xs font-semibold hover:bg-amber-400"
+					>
+						Stop
+					</button>
+				</form>
+			</div>
+		{/if}
+
 		<SectionPattern icon={SECTION_GLYPH[sectionKey]} />
 		<header class="relative z-40 bg-chrome shadow-raised" style="padding-top: var(--safe-top)">
 			<div class="mx-auto flex w-full max-w-page items-stretch justify-between px-4 sm:px-6">

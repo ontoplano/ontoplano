@@ -5,6 +5,7 @@ import { dataPoints, dataStreams } from '../db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { stamps } from './time.js';
 import { NotFoundError, ValidationError } from './errors.js';
+import { assertWithinLimit } from './subscriptions.js';
 import { isoInstant, jsonObject, num, oneOf, optionalStr, slug, str } from './validate.js';
 
 export const STREAM_KINDS = ['measurement', 'event', 'counter', 'state'] as const;
@@ -45,6 +46,10 @@ export function upsertStream(
 
 	const nowIso = ctx.now.toISOString();
 	const existing = getStreamBySlug(ctx, values.slug, { throwIfMissing: false });
+
+	// Declaring a stream that already exists is how a plugin starts up, so the
+	// ceiling only applies to a new one.
+	if (!existing) assertWithinLimit(ctx, 'dataStreams');
 
 	if (existing) {
 		const updated = db

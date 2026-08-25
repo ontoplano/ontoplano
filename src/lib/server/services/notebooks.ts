@@ -4,6 +4,7 @@ import { db } from '../db/index.js';
 import { diaryEntries, exceptionalSlots, goals, notebooks, plannerTodos } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError } from './errors.js';
+import { assertWithinLimit } from './subscriptions.js';
 import { stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
 
@@ -186,6 +187,8 @@ export function contentsOf(ctx: Ctx, id: number) {
 }
 
 export function createNotebook(ctx: Ctx, raw: { title: unknown; description?: unknown }): number {
+	assertWithinLimit(ctx, 'notebooks');
+
 	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
 	if (notebookTitled(ctx, title)) throw new ConflictError('A notebook by that name already exists');
 

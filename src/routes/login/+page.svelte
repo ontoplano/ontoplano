@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -112,6 +113,12 @@
 				This is the first account on this instance, so it owns it.
 			</p>
 		{/if}
+
+		<p class="mt-6 border-t border-gray-100 pt-4 text-center text-xs text-gray-400">
+			<a href={resolve('/legal/privacy')} class="hover:text-gray-600">Privacy</a>
+			·
+			<a href={resolve('/legal/terms')} class="hover:text-gray-600">Terms</a>
+		</p>
 
 		{#if mode === 'forgot' && !data.emailConfigured}
 			<p class="mt-3 text-center text-xs text-gray-400">

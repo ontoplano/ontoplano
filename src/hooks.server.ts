@@ -7,6 +7,9 @@ import { ensureUserCategories } from '$lib/server/db/ensure-categories';
 import { DEFAULT_STYLE, DEFAULT_THEME, getStyle, getTheme } from '$lib/server/settings';
 import { clientKey, rateLimit } from '$lib/server/rate-limit';
 import { checkSignUpAllowed, consumeInvite } from '$lib/server/services/registration';
+import { claimFirstAccount } from '$lib/server/services/admin';
+import { startTrial } from '$lib/server/services/subscriptions';
+import { record } from '$lib/server/services/audit';
 import { toJsonError } from '$lib/server/services/errors';
 
 /**
@@ -21,6 +24,15 @@ import { toJsonError } from '$lib/server/services/errors';
  * The invite is only marked used once the account exists, so a sign-up that
  * fails on a taken email does not burn the code.
  */
+/** The client address, where the adapter can work one out. */
+function safeAddress(event: Parameters<Handle>[0]['event']): string | null {
+	try {
+		return event.getClientAddress();
+	} catch {
+		return null;
+	}
+}
+
 function inviteFrom(body: string): unknown {
 	try {
 		const parsed = JSON.parse(body || '{}');
@@ -52,10 +64,18 @@ const handleRegistration: Handle = async ({ event, resolve }) => {
 
 	const response = await resolve(event);
 
-	if (invite && response.status >= 200 && response.status < 300) {
+	if (response.status >= 200 && response.status < 300) {
 		const created = await response.clone().json();
 		const userId = created?.user?.id;
-		if (typeof userId === 'string') consumeInvite(invite.id, userId, now);
+
+		if (typeof userId === 'string') {
+			if (invite) consumeInvite(invite.id, userId, now);
+			// The same two things the form path does, because this is the other
+			// door into the same act.
+			claimFirstAccount(userId);
+			startTrial(userId, now);
+			record(userId, 'registered', { ip: safeAddress(event) });
+		}
 	}
 
 	return response;

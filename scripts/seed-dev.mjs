@@ -825,6 +825,40 @@ const invite = (code, note, usedBy = null) => {
 	);
 };
 
+// --- account history and plan -------------------------------------------------
+
+const audit = (event, detail = {}, daysAgo = 0, actorId = null) => {
+	if (one('select id from audit_events where user_id = ? and event = ?', uid, event)) return;
+	run(
+		'insert into audit_events (user_id, actor_id, event, detail, ip, created_at) values (?, ?, ?, ?, ?, ?)',
+		uid,
+		actorId,
+		event,
+		JSON.stringify(detail),
+		'203.0.113.7',
+		stamp(dayOffset(-daysAgo))
+	);
+};
+
+audit('registered', {}, 60);
+audit('signed_in', {}, 1);
+audit('password_changed', {}, 21);
+audit('data_exported', {}, 9);
+audit('plan_changed', { to: 'pro', status: 'trialing' }, 60);
+
+if (!one('select id from subscriptions where user_id = ?', uid)) {
+	run(
+		`insert into subscriptions
+		 (user_id, plan, status, provider, current_period_end, trial_ends_at, created_at, updated_at)
+		 values (?, 'pro', 'active', 'lemonsqueezy', ?, ?, ?, ?)`,
+		uid,
+		stamp(dayOffset(21)),
+		stamp(dayOffset(-46)),
+		stamp(dayOffset(-60)),
+		stamp(now)
+	);
+}
+
 invite('dev-invite-open-0001', 'for my brother');
 invite('dev-invite-used-0002', 'for Ana', uid);
 

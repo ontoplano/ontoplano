@@ -170,8 +170,18 @@ export function markOnboarded(userId: string): void {
  * ONTOPLANO_SELF_HOST is opt-in rather than opt-out, so a deployment that
  * forgets to set anything is the safe one.
  */
+/**
+ * Whether this deployment is somebody's own box.
+ *
+ * Opt-in, like `isInstanceOwner` below: a deployment that forgets to say is
+ * treated as hosted, which is the answer with the fewer consequences.
+ */
+export function isSelfHosted(): boolean {
+	return process.env.ONTOPLANO_SELF_HOST === 'true';
+}
+
 export function isInstanceOwner(userId: string): boolean {
-	if (process.env.ONTOPLANO_SELF_HOST !== 'true') return false;
+	if (!isSelfHosted()) return false;
 
 	const owner = process.env.ONTOPLANO_OWNER_ID;
 	if (owner) return owner === userId;

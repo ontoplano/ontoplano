@@ -34,6 +34,13 @@ Self-hosted, single SQLite file, no account anywhere but your own.
   a renovation. Entries, tasks and goals can belong to one, and deleting it
   leaves every one of them where it is.
 - **Dashboard** — the cards you choose, in the order you choose.
+- **Administration** — `/admin` for whoever runs the instance: find an account,
+  see its plan and its history, resend a confirmation, hand out the admin role.
+  Signing in as somebody to help them puts an amber banner over every page and a
+  line in _their_ history.
+- **Plans** — free and Pro, with ceilings on the things that pile up rather than
+  on use. A self-hosted instance has no plans, no ceilings and no billing at
+  all. See `docs/BILLING.md`.
 - **Plugins** — scoped API tokens, data streams that external apps push into,
   and a schedule endpoint they can read. See `docs/PLUGINS.md`.
 - **Phone** — an installable PWA, and an Android app that wraps it
@@ -55,8 +62,8 @@ week starts, and offers a starter week you can then argue with.
 
 Config and data live outside the repo and are created on first run:
 
-- `~/.config/ontoplano/config.toml` — bind address, port, database path, and
-  who may register
+- `~/.config/ontoplano/config.toml` — bind address, port, database path, who may
+  register, and whether an account may change its own address
 - `~/.config/ontoplano/env` — `ORIGIN`, `BETTER_AUTH_SECRET`, SMTP, backups
 - `~/.local/share/ontoplano/` — the database
 

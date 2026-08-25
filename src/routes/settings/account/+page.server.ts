@@ -8,6 +8,7 @@ import { deleteAccount, exportAllowance, hoursUntil } from '$lib/server/services
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
 import { listSessions, sessionTokenById } from '$lib/server/services/sessions';
+import { record } from '$lib/server/services/audit';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	return {
@@ -70,6 +71,8 @@ export const actions: Actions = {
 			return authFailure(error, 'Could not change the address');
 		}
 
+		record(user.id, 'email_change_requested', { detail: { to: newEmail } });
+
 		// A verified account approves the move from the address it is leaving; an
 		// unverified one has nothing to approve with, so the link goes to the new
 		// address instead. Either way the swap waits for a click.
@@ -90,7 +93,7 @@ export const actions: Actions = {
 	 * Someone changing their password is often doing it because they think
 	 * somebody else is logged in, so the other sessions go with it.
 	 */
-	changePassword: async ({ request }) => {
+	changePassword: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const currentPassword = formData.get('currentPassword')?.toString() ?? '';
 		const newPassword = formData.get('newPassword')?.toString() ?? '';
@@ -110,6 +113,8 @@ export const actions: Actions = {
 		} catch (error) {
 			return authFailure(error, 'Could not change the password');
 		}
+
+		record(locals.user!.id, 'password_changed');
 
 		return {
 			success: true,
@@ -141,7 +146,9 @@ export const actions: Actions = {
 	 * clicking this has usually decided they do not know who else is logged in,
 	 * and the answer to that is nobody.
 	 */
-	signOutEverywhere: async ({ request }) => {
+	signOutEverywhere: async ({ request, locals }) => {
+		record(locals.user!.id, 'sessions_revoked');
+
 		try {
 			await auth.api.revokeSessions({ headers: request.headers });
 		} catch (error) {
@@ -164,6 +171,9 @@ export const actions: Actions = {
 		if (confirmation.toLowerCase() !== user.email.toLowerCase())
 			return fail(400, { message: 'Type your email address exactly to confirm' });
 
+		// Recorded before the rows go, because the log goes with them — this is
+		// the instance's last note that the account was closed by its owner.
+		record(user.id, 'account_deleted');
 		deleteAccount(user.id);
 
 		// The session row is gone with the account; clear the cookie so the

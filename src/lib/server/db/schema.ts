@@ -673,6 +673,120 @@ export const ideaTags = sqliteTable(
 	]
 );
 
+// --- Billing ---
+
+/**
+ * What an account is entitled to, and why.
+ *
+ * One row per account, created when the trial starts. The provider's columns
+ * are null on a self-hosted instance and on a trial, because neither involves
+ * one; `provider_subscription_id` is what a webhook matches on.
+ *
+ * The row is the record of a commercial relationship rather than the account's
+ * own data, but it is scoped by `user_id` like everything else and goes when
+ * the account does — the provider keeps its own copy, which is the one a
+ * dispute is settled with.
+ */
+export const subscriptions = sqliteTable(
+	'subscriptions',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		plan: text('plan', { enum: ['free', 'pro'] })
+			.notNull()
+			.default('free'),
+		status: text('status', {
+			enum: ['trialing', 'active', 'past_due', 'canceled', 'expired']
+		})
+			.notNull()
+			.default('trialing'),
+		provider: text('provider').notNull().default('none'),
+		providerCustomerId: text('provider_customer_id'),
+		providerSubscriptionId: text('provider_subscription_id'),
+		/** When the current paid period ends, or when the trial does. */
+		currentPeriodEnd: text('current_period_end'),
+		trialEndsAt: text('trial_ends_at'),
+		/** Set when a cancellation is scheduled but the period is still running. */
+		cancelAt: text('cancel_at'),
+		/** Where the provider lets this customer manage their own card. */
+		portalUrl: text('portal_url'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		uniqueIndex('subscriptions_user_unique').on(table.userId),
+		index('subscriptions_provider_idx').on(table.providerSubscriptionId)
+	]
+);
+
+/**
+ * Every webhook the provider has sent, by its own id.
+ *
+ * Providers retry, and a retried "subscription cancelled" applied twice is
+ * harmless while a retried "payment succeeded" is not. Storing the id is what
+ * makes handling one exactly once possible.
+ */
+export const billingEvents = sqliteTable(
+	'billing_events',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		provider: text('provider').notNull(),
+		eventId: text('event_id').notNull(),
+		eventType: text('event_type').notNull(),
+		payload: text('payload').notNull(),
+		/** Null until it has been applied; set when it has. */
+		processedAt: text('processed_at'),
+		error: text('error'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [uniqueIndex('billing_events_unique').on(table.provider, table.eventId)]
+);
+
+// --- Account history ---
+
+/**
+ * What happened to an account, and who did it.
+ *
+ * The events worth being able to answer for later: signing in, changing a
+ * credential, changing a plan, exporting, being impersonated by an admin. The
+ * subject is `user_id`; `actor_id` is who acted, which is the same person
+ * unless an administrator did it on their behalf.
+ *
+ * It is the account's data and goes when the account does. A billing dispute
+ * outlives that in the payment provider's own records, which is where a charge
+ * is evidenced anyway.
+ */
+export const auditEvents = sqliteTable(
+	'audit_events',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		/** Null when the account acted for itself. */
+		actorId: text('actor_id'),
+		event: text('event').notNull(),
+		/** A JSON object of whatever the event needs to be legible later. */
+		detail: text('detail').notNull().default('{}'),
+		ip: text('ip'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('audit_events_user_idx').on(table.userId),
+		index('audit_events_created_idx').on(table.createdAt)
+	]
+);
+
 // --- Instance: invitations ---
 
 /**

@@ -11,8 +11,10 @@
 	const tabs = $derived([
 		{ path: '/settings/account', label: 'Account' } as const,
 		{ path: '/settings/preferences', label: 'Preferences' } as const,
+		...(data.billable ? [{ path: '/settings/billing', label: 'Billing' } as const] : []),
 		{ path: '/settings/integrations', label: 'Integrations' } as const,
-		...(data.canEditInstance ? [{ path: '/settings/instance', label: 'Instance' } as const] : [])
+		...(data.canEditInstance ? [{ path: '/settings/instance', label: 'Instance' } as const] : []),
+		...(data.canAdminister ? [{ path: '/admin', label: 'Administration' } as const] : [])
 	]);
 </script>
 

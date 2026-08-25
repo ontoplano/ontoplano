@@ -14,8 +14,11 @@ export const load: LayoutServerLoad = async (event) => {
 	// means the network is down, so there is nothing to check against.
 	const isOffline = event.url.pathname === '/offline';
 	const isAuthApi = event.url.pathname.startsWith('/api/auth');
+	// The policies have to be readable by somebody deciding whether to sign up,
+	// which is exactly somebody who is not signed in.
+	const isLegal = event.url.pathname.startsWith('/legal');
 
-	if (!event.locals.user && !isLoginPage && !isDemo && !isAuthApi && !isOffline) {
+	if (!event.locals.user && !isLoginPage && !isDemo && !isAuthApi && !isOffline && !isLegal) {
 		return redirect(302, '/login');
 	}
 
@@ -51,6 +54,11 @@ export const load: LayoutServerLoad = async (event) => {
 
 	return {
 		user: event.locals.user ?? null,
+		// Set while an administrator is borrowing this session. The banner it
+		// draws is the whole point: nobody should be able to look at somebody's
+		// diary without the screen saying so.
+		impersonatedBy:
+			(event.locals.session as { impersonatedBy?: string } | undefined)?.impersonatedBy ?? null,
 		categories: userCategories,
 		theme,
 		// The week is the user's, not the instance's.

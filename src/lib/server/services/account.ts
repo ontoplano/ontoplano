@@ -12,7 +12,10 @@ import { eq, type SQL } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { getUserSetting, setUserSetting } from '../settings.js';
+import { PLANS } from '../../plans.js';
+import { record as audit } from './audit.js';
 import { RateLimitedError } from './errors.js';
+import { resolvePlan } from './subscriptions.js';
 import * as schema from '../db/schema.js';
 
 /**
@@ -86,6 +89,10 @@ const USER_TABLES: OwnedTable[] = [
 	owned('taskInstances', schema.taskInstances as never),
 	owned('suppressedSlots', schema.suppressedSlots as never),
 	owned('exceptionalSlots', schema.exceptionalSlots as never),
+	owned('auditEvents', schema.auditEvents as never),
+	// The provider keeps its own copy of the commercial record; this one is the
+	// account's and goes with it.
+	owned('subscriptions', schema.subscriptions as never),
 	// Last of the subjects: entries, todos, goals and blocks all point at it.
 	owned('notebooks', schema.notebooks as never),
 	owned('weeklySlots', schema.weeklySlots as never),
@@ -152,7 +159,24 @@ export type AccountExport = {
  * a person and mean for anything scraping the endpoint in a loop, which is the
  * only other reason to ask for it repeatedly.
  */
+/**
+ * How many exports a day.
+ *
+ * The plan decides; this is the floor a plan cannot go below and what an
+ * instance without billing uses.
+ */
+/**
+ * How many exports a day.
+ *
+ * The plan decides — this is the fallback for an instance that sells nothing,
+ * and the number the free plan happens to use.
+ */
 export const EXPORTS_PER_DAY = 2;
+
+function exportsAllowedFor(userId: string, now: Date): number {
+	const entitlement = resolvePlan(userId, now);
+	return PLANS[entitlement.plan].limits.exportsPerDay ?? EXPORTS_PER_DAY;
+}
 const EXPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const EXPORT_LOG_KEY = 'export.log';
 
@@ -191,7 +215,7 @@ export function hoursUntil(iso: string | null, now: Date = new Date()): string {
 
 export function exportAllowance(userId: string, now: Date = new Date()): ExportAllowance {
 	const log = exportLog(userId, now);
-	const remaining = Math.max(0, EXPORTS_PER_DAY - log.length);
+	const remaining = Math.max(0, exportsAllowedFor(userId, now) - log.length);
 	const oldest = log[0];
 
 	return {
@@ -201,7 +225,7 @@ export function exportAllowance(userId: string, now: Date = new Date()): ExportA
 }
 
 function recordExport(userId: string, now: Date): void {
-	const log = [...exportLog(userId, now), now.toISOString()].slice(-EXPORTS_PER_DAY);
+	const log = [...exportLog(userId, now), now.toISOString()].slice(-exportsAllowedFor(userId, now));
 	setUserSetting(userId, EXPORT_LOG_KEY, JSON.stringify(log));
 }
 
@@ -221,6 +245,7 @@ export function exportAccount(userId: string, now: Date = new Date()): AccountEx
 		);
 
 	recordExport(userId, now);
+	audit(userId, 'data_exported');
 
 	const data: Record<string, unknown[]> = {};
 	for (const table of USER_TABLES) data[table.name] = table.rows(userId);

@@ -1,0 +1,42 @@
+/*
+ * Long-form prose, which the app otherwise has none of.
+ *
+ * Scoped to the policies rather than added to the design system: everywhere
+ * else in ontoplano the text is labels and one-line descriptions, and a
+ * paragraph rhythm there would be a solution to a problem nobody has.
+ */
+.legal h1 {
+	font-size: 1.5rem;
+	font-weight: 700;
+	color: var(--color-gray-900);
+}
+
+.legal h2 {
+	margin-top: 2rem;
+	font-size: 1rem;
+	font-weight: 600;
+	color: var(--color-gray-900);
+}
+
+.legal p,
+.legal li {
+	margin-top: 0.75rem;
+	font-size: 0.9375rem;
+	line-height: 1.65;
+	color: var(--color-gray-700);
+}
+
+.legal ul {
+	list-style: disc;
+	padding-left: 1.25rem;
+}
+
+.legal a {
+	text-decoration: underline;
+}
+
+.legal .updated {
+	margin-top: 0.5rem;
+	font-size: 0.8125rem;
+	color: var(--color-gray-500);
+}

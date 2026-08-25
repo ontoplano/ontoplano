@@ -10,6 +10,9 @@ import {
 	registrationMode
 } from '$lib/server/services/registration';
 import { ServiceError } from '$lib/server/services/errors';
+import { record } from '$lib/server/services/audit';
+import { claimFirstAccount } from '$lib/server/services/admin';
+import { startTrial } from '$lib/server/services/subscriptions';
 
 export const load: PageServerLoad = async (event) => {
 	if (event.locals.user) {
@@ -39,9 +42,11 @@ export const actions: Actions = {
 		const password = formData.get('password')?.toString() ?? '';
 
 		try {
-			await auth.api.signInEmail({
+			const signedIn = await auth.api.signInEmail({
 				body: { email, password }
 			});
+			if (signedIn?.user?.id)
+				record(signedIn.user.id, 'signed_in', { ip: event.getClientAddress() });
 		} catch (error) {
 			if (error instanceof APIError) {
 				return fail(400, { message: error.message || 'Sign in failed' });
@@ -80,7 +85,13 @@ export const actions: Actions = {
 			});
 
 			// Only once the account exists, so a taken address does not burn a code.
-			if (invite && created?.user?.id) consumeInvite(invite.id, created.user.id, now);
+			if (created?.user?.id) {
+				if (invite) consumeInvite(invite.id, created.user.id, now);
+				// An instance with nobody in it hands the first account the keys.
+				claimFirstAccount(created.user.id);
+				startTrial(created.user.id, now);
+				record(created.user.id, 'registered', { ip: event.getClientAddress() });
+			}
 		} catch (error) {
 			if (error instanceof APIError) {
 				return fail(400, { message: error.message || 'Registration failed' });
@@ -122,6 +133,8 @@ export const actions: Actions = {
 	},
 
 	signOut: async (event) => {
+		if (event.locals.user) record(event.locals.user.id, 'signed_out');
+
 		await auth.api.signOut({
 			headers: event.request.headers
 		});

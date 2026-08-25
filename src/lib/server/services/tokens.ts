@@ -6,6 +6,7 @@ import { apiTokens } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { stamps } from './time.js';
 import { ForbiddenError, NotFoundError, UnauthorizedError } from './errors.js';
+import { assertWithinLimit } from './subscriptions.js';
 import { num, str } from './validate.js';
 
 /**
@@ -47,6 +48,8 @@ export function createToken(
 	ctx: Ctx,
 	input: { name: unknown; scopes: unknown; expiresInDays?: unknown }
 ): CreatedToken {
+	assertWithinLimit(ctx, 'apiTokens');
+
 	const name = str(input.name, 'Token name', { max: 60 });
 
 	const requested = Array.isArray(input.scopes)
