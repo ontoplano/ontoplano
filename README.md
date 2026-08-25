@@ -1,161 +1,131 @@
 # ontoplano
 
-A weekly routine dashboard for tracking daily activities across three domains: **duty**, **skill**, and **money**. Also tracks habits, diary entries, and beliefs (memory reconsolidation).
+A planner for a whole week, not just a work day.
 
-## Setup
+You describe the week you intend to have — blocks of time, recurring or one-off,
+each belonging to an area of your life. Ontoplano turns that into the days as
+they arrive, and records what actually happened: what you did, when, how late,
+how it felt. What comes out is the gap between the week you planned and the week
+you had, which is the only thing a planner can honestly tell you.
+
+Around that: goals with real progress, a journal, habits, ideas, a shopping
+list, and an API that lets other apps push data in and read your schedule out.
+
+Self-hosted, single SQLite file, no account anywhere but your own.
+
+## What is in it
+
+- **Plan** — a week grid. Drag to make a block; alt-drag one occurrence to move
+  just that day. Blocks name a category or a specific activity, repeat weekly or
+  on an interval, and can be saved as a scheme to put back later.
+- **Track** — today, as occurrences of the plan. Mark them done, doing, skipped;
+  timing (early, on time, late) is derived from when you finished, never chosen.
+- **Board** — the same day as a kanban, plus everything with no date yet. Drag a
+  card onto a day and it becomes a real block.
+- **Goals** — by horizon, from a day to a year. Link a goal to the tasks that
+  count towards it and the progress bar is your execution log, not a number you
+  typed.
+- **Diary, ideas, habits, shopping** — a journal with free-form tags, quick
+  capture, habits logged per day with a heatmap, and inventory-vs-wishlist
+  shopping.
+- **Dashboard** — the cards you choose, in the order you choose.
+- **Plugins** — scoped API tokens, data streams that external apps push into,
+  and a schedule endpoint they can read. See `docs/PLUGINS.md`.
+- **Phone** — an installable PWA, and an Android app that wraps it
+  (`docs/ANDROID.md`).
+
+## Running it
 
 ```sh
 yarn
-yarn db:push
-npx tsx src/lib/server/db/seed.ts
-yarn dev
+cp .env.example .env      # set ORIGIN and BETTER_AUTH_SECRET
+yarn db:migrate           # create the database
+yarn dev                  # http://localhost:1493
 ```
 
-Config and data directories are created automatically on first run:
+Register at `/login`; the first screen asks for your timezone and which day your
+week starts, and offers a starter week you can then argue with.
 
-- Config: `~/.config/ontoplano/config.toml`
-- Data: `~/.local/share/ontoplano/`
+Config and data live outside the repo and are created on first run:
 
-## Configuration
+- `~/.config/ontoplano/config.toml` — bind address, port, database path
+- `~/.config/ontoplano/env` — `ORIGIN`, `BETTER_AUTH_SECRET`, SMTP, backups
+- `~/.local/share/ontoplano/` — the database
 
-Edit `~/.config/ontoplano/config.toml`:
+Everything a person would want to change — week start, timezone, theme,
+dashboard layout — is a per-account setting under `/settings`, not a config
+file.
 
-```toml
-[server]
-host = "0.0.0.0"
-port = "1493"
+## Keyboard
 
-[database]
-# path = "/custom/path/to/ontoplano.db"
+Every list takes `j`/`k`, every form closes on `Escape`, `n` makes a new one of
+whatever the page is about, and `J`/`K` move between pages. Press `?` on any
+page for its own shortcuts — that list is generated from the code, so it does
+not go stale the way a table in a README does.
 
-[week]
-first_day = "0"
-generate_day = "6"
-```
-
-Copy `.env.example` to `.env` and set `ORIGIN` and `BETTER_AUTH_SECRET`.
-
-## Usage
-
-1. Register at `/login`
-2. Create activities at `/activities`
-3. Plan your week at `/planner`
-4. Track daily execution on `/`
-5. Journal at `/diary`
-6. Track habits at `/habits`
-7. Work on beliefs at `/beliefs`
-
-### Planner grid
-
-`/planner/plan` opens on a weekly calendar grid (press `g` for the list view). Drag on empty space
-to create a slot, drag a slot to move it, and hold `Ctrl` while dragging to duplicate it. Moves and
-resizes snap to 15 minutes.
-
-Activities don't have to exist beforehand: pick **+ New activity...** in the slot form and give it a
-name and a category — it's created together with the slot (an activity with the same name is reused
-rather than duplicated).
-
-Short slots are too thin to show their title, so hover any block for its name, time range, duration,
-category and label. `Ctrl`+scroll (or `+` / `-` / `0`) zooms the grid, and the zoom level is
-remembered per browser.
-
-### Keyboard shortcuts
-
-| Page       | Keys                | Action                                     |
-| ---------- | ------------------- | ------------------------------------------ |
-| Dashboard  | `j`/`k`             | Navigate tasks                             |
-| Dashboard  | `c` `d` `e` `s` `r` | Done, delayed, early, skip, reset          |
-| Dashboard  | `t`                 | Edit scheduled time                        |
-| Dashboard  | `D`                 | Edit duration override                     |
-| Dashboard  | `x`                 | Delete task instance                       |
-| Activities | `j`/`k`             | Navigate list                              |
-| Activities | `n`                 | New activity                               |
-| Activities | `1` `2` `3`         | Toggle filter duty/skill/money             |
-| Planner    | `h`/`l`             | Switch day                                 |
-| Planner    | `j`/`k`             | Navigate slots                             |
-| Planner    | `e`                 | Edit selected slot                         |
-| Planner    | `d`                 | Disable/enable selected slot               |
-| Planner    | `D`                 | Delete selected slot                       |
-| Planner    | `n`                 | New slot (focuses time input)              |
-| Planner    | `[`/`]`             | Previous/next week (can't go past current) |
-| Planner    | `g`                 | Toggle list/grid (calendar) view           |
-| Planner    | Ctrl+drag (grid)    | Duplicate a slot to the drop location      |
-| Planner    | Ctrl+scroll (grid)  | Zoom the grid in/out                       |
-| Planner    | `+`/`-`/`0`         | Zoom in / out / reset (grid)               |
-| Planner    | `v`                 | Toggle multiselect mode                    |
-| Planner    | `Space`             | Toggle slot selection (multiselect)        |
-| Planner    | `x`                 | Delete selected slots (multiselect)        |
-| Planner    | `p`                 | Copy selected to weekdays (multiselect)    |
-| History    | `h`/`l`             | Switch day                                 |
-| History    | `j`/`k`             | Navigate tasks                             |
-| History    | `[`/`]`             | Previous/next week                         |
-| Diary      | `j`/`k`             | Navigate entries                           |
-| Diary      | `n`                 | New entry                                  |
-| Diary      | `e`                 | Edit entry                                 |
-| Habits     | `j`/`k`             | Navigate habits                            |
-| Habits     | `n`                 | New habit                                  |
-| Habits     | `Enter`             | Expand/collapse                            |
-| Beliefs    | `j`/`k`             | Navigate beliefs                           |
-| Beliefs    | `n`                 | New belief                                 |
-| Beliefs    | `Enter`             | Expand/collapse                            |
-| Beliefs    | `e`                 | Edit belief                                |
-| All        | `J`/`K`             | Navigate between pages                     |
-| All        | `Esc`               | Close form                                 |
-
-## Commands
-
-```sh
-yarn dev              # Dev server
-yarn build            # Production build
-yarn preview          # Preview build
-yarn db:push          # Push schema
-yarn db:generate      # Generate migrations
-yarn db:migrate       # Apply migrations
-yarn db:studio        # Drizzle Studio
-yarn test:e2e         # Playwright tests
-yarn lint             # Check formatting + linting
-yarn format           # Auto-format
-```
+The plan grid has a few of its own: `g` toggles grid and list, `[` and `]` move
+a week, `Ctrl`+drag duplicates a block, `Ctrl`+scroll (or `+` / `-` / `0`) zooms.
 
 ## Deployment
 
-### systemd user service
-
-1. Create the production env file at `~/.config/ontoplano/env`:
+A systemd user service, behind whatever proxy you already run:
 
 ```sh
-# App origin URL
-# LAN:      http://<your-lan-ip>:1493
-# External: https://ontoplano.example.com
-ORIGIN=http://192.168.1.50:1493
-
-# Better Auth secret — generate with: openssl rand -hex 16
-BETTER_AUTH_SECRET=your-secret-here
+# ~/.config/ontoplano/env
+ORIGIN=https://ontoplano.example.com     # must be the public origin, or CSRF rejects forms
+BETTER_AUTH_SECRET=…                     # openssl rand -hex 16
 ```
-
-2. Install and start the service:
 
 ```sh
-make install-service
+make install-service     # build, migrate, install and start the unit
+make update              # deploy a new version and restart
 ```
 
-To switch from LAN to an external domain later, edit `~/.config/ontoplano/env`, set `ORIGIN=https://ontoplano.yourdomain.com`, then restart:
+Three switches worth knowing, all off by default:
+
+- `ONTOPLANO_TRUST_PROXY=true` — rate limiting reads `X-Forwarded-For`. Only
+  behind a proxy you control; trusting that header unconditionally lets anyone
+  forge their address.
+- `ONTOPLANO_HTTPS=true` — adds HSTS. Harmful over plain http, hence opt-in.
+- `ONTOPLANO_SELF_HOST=true` — this is one person's instance: the owner may edit
+  deployment settings from the UI.
+
+Email is optional. With `SMTP_HOST` and `SMTP_FROM` set, password resets and
+address confirmations are sent; without them the message — link included — is
+written to the server log, so a single-user install is not forced to run a mail
+server. What it never does is claim to have sent something it did not.
+
+### Backups
+
+`docs/BACKUP.md`. Snapshots cover a bad migration and are taken automatically
+before every one; Litestream replication to an S3-compatible bucket covers a
+dead disk. `scripts/restore-drill.sh` restores into a scratch directory and
+checks the result — do that once before you need it.
+
+### Migrations
+
+`yarn db:generate` → read the SQL → `yarn db:migrate`, which snapshots first.
+`db:push` refuses a real database on purpose: it rebuilds tables to change them
+and has dropped data here before.
+
+## Development
 
 ```sh
-systemctl --user restart ontoplano
+yarn dev              # dev server on 1493
+yarn build            # production build
+yarn check            # svelte-check
+yarn lint             # prettier + eslint
+yarn test:e2e         # Playwright
+make db-snapshot      # a consistent copy, before you do something regrettable
 ```
 
-### Docker
-
-```sh
-make build            # Docker image
-make dev              # Docker dev
-```
-
-## Colors
-
-All UI colors are centralized in `src/lib/colors.ts`. Edit that file to change colors across all routes — navbar, beliefs graph (valence, relations, islands), habits heatmap, category fallbacks, and dashboard section accents.
+Data access lives in `src/lib/server/services/`; routes are adapters that read a
+form, call a service and map errors. A lint rule stops `$lib/server/db` being
+imported under `src/routes/`. Colours live in `src/lib/colors.ts`, form controls
+and buttons in `src/routes/layout.css`. `AGENTS.md` has the conventions in full,
+and `TODO.md` is what is being built next.
 
 ## Stack
 
-SvelteKit · Svelte 5 · SQLite · Drizzle ORM · better-auth · Tailwind CSS v4 · adapter-node
+SvelteKit · Svelte 5 (runes) · SQLite via Drizzle · better-auth · Tailwind CSS v4
+· adapter-node
