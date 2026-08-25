@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import EmptyState from '$lib/components/EmptyState.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -603,7 +605,17 @@
 	{#if filteredItems.length === 0}
 		<div class="py-12 text-center text-sm text-gray-400">
 			{#if data.items.length === 0}
-				No items yet. Add something to buy.
+				<EmptyState
+					icon="shopping"
+					title="The list is empty"
+					description="Inventory is what you keep stocked; the wishlist is what you might buy one day."
+				>
+					{#snippet action()}
+						<button onclick={() => (showForm = true)} class="btn btn-primary">
+							<Icon name="plus" /> New item
+						</button>
+					{/snippet}
+				</EmptyState>
 			{:else}
 				No items match the current filter.
 			{/if}

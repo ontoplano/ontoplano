@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import Field from '$lib/components/Field.svelte';
@@ -205,6 +206,13 @@
 				}
 				break;
 		}
+	}
+
+	function openNewHabit() {
+		editingId = null;
+		confirmingDeleteId = null;
+		resetForm();
+		showForm = true;
 	}
 
 	function resetForm() {
@@ -432,13 +440,25 @@
 
 	{#if filteredHabits().length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-			{typeFilter === 'all'
-				? 'No habits tracked. Add one to start monitoring.'
-				: typeFilter === 'bad'
-					? 'No bad habits tracked.'
-					: typeFilter === 'neutral'
-						? 'No neutral habits tracked.'
-						: 'No good habits tracked.'}
+			{#if typeFilter === 'all'}
+				<EmptyState
+					icon="health"
+					title="Nothing tracked yet"
+					description="A habit is something you want more of, or less of. Log it once a day and the streak does the rest."
+				>
+					{#snippet action()}
+						<button onclick={openNewHabit} class="btn btn-primary">
+							<Icon name="plus" /> New habit
+						</button>
+					{/snippet}
+				</EmptyState>
+			{:else}
+				<EmptyState icon="health" title="Nothing tracked in this filter">
+					{#snippet action()}
+						<button onclick={() => (typeFilter = 'all')} class="btn">Show all habits</button>
+					{/snippet}
+				</EmptyState>
+			{/if}
 		</div>
 	{:else}
 		<div class="space-y-3">

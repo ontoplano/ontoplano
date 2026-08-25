@@ -2,7 +2,9 @@
 	import { enhance } from '$app/forms';
 	import { armed } from '$lib/actions/armed';
 	import { resolve } from '$app/paths';
+	import Card from '$lib/components/Card.svelte';
 	import Field from '$lib/components/Field.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -69,21 +71,20 @@
 		<div class="border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">{notice}</div>
 	{/if}
 
-	<section class="border border-gray-200 bg-white p-6 shadow-card">
-		<div class="flex items-start justify-between gap-4">
-			<div>
-				<h2 class="text-sm font-semibold text-gray-900">Email address</h2>
-				<p class="mt-1 text-sm text-gray-500">
-					You sign in with <span class="font-medium text-gray-900">{data.email}</span>. A new
-					address has to be confirmed by a link before it takes over.
-					{#if !data.emailVerified}
-						<span class="block">This one has not been confirmed yet.</span>
-					{/if}
-				</p>
-			</div>
-			<button onclick={() => (editing = 'email')} class="btn btn-sm shrink-0">Change</button>
-		</div>
-	</section>
+	<Card title="Email address">
+		{#snippet actions()}
+			<button onclick={() => (editing = 'email')} class="btn btn-sm">
+				<Icon name="edit" /> Change
+			</button>
+		{/snippet}
+		<p class="text-sm text-gray-500">
+			You sign in with <span class="font-medium text-gray-900">{data.email}</span>. A new address
+			has to be confirmed by a link before it takes over.
+			{#if !data.emailVerified}
+				<span class="block">This one has not been confirmed yet.</span>
+			{/if}
+		</p>
+	</Card>
 
 	<Modal
 		open={editing === 'email'}
@@ -130,17 +131,16 @@
 		{/snippet}
 	</Modal>
 
-	<section class="border border-gray-200 bg-white p-6 shadow-card">
-		<div class="flex items-start justify-between gap-4">
-			<div>
-				<h2 class="text-sm font-semibold text-gray-900">Password</h2>
-				<p class="mt-1 text-sm text-gray-500">
-					Changing it signs out every other device you are logged in on.
-				</p>
-			</div>
-			<button onclick={() => (editing = 'password')} class="btn btn-sm shrink-0">Change</button>
-		</div>
-	</section>
+	<Card title="Password">
+		{#snippet actions()}
+			<button onclick={() => (editing = 'password')} class="btn btn-sm">
+				<Icon name="edit" /> Change
+			</button>
+		{/snippet}
+		<p class="text-sm text-gray-500">
+			Changing it signs out every other device you are logged in on.
+		</p>
+	</Card>
 
 	<Modal
 		open={editing === 'password'}
@@ -199,32 +199,25 @@
 		{/snippet}
 	</Modal>
 
-	<section class="border border-gray-200 bg-white shadow-card">
-		<div class="flex items-start justify-between gap-4 p-6 pb-4">
-			<div>
-				<h2 class="text-sm font-semibold text-gray-900">Where you are signed in</h2>
-				<p class="mt-1 text-sm text-gray-500">
-					One line per sign-in. Anything you do not recognise, sign out.
-					<kbd class="border border-gray-300 bg-gray-50 px-1">j</kbd>
-					<kbd class="border border-gray-300 bg-gray-50 px-1">k</kbd> to move.
-				</p>
-			</div>
+	<Card
+		title="Where you are signed in"
+		description="One line per sign-in. Anything you do not recognise, sign out."
+		flush
+	>
+		{#snippet actions()}
 			{#if data.sessions.length > 1 && !confirmSignOutAll}
-				<button
-					onclick={() => (confirmSignOutAll = true)}
-					class="shrink-0 border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
+				<button onclick={() => (confirmSignOutAll = true)} class="btn btn-sm"
+					>Sign out everywhere</button
 				>
-					Sign out everywhere
-				</button>
 			{/if}
-		</div>
+		{/snippet}
 
 		{#if confirmSignOutAll}
 			<form
 				method="post"
 				action="?/signOutEverywhere"
 				use:enhance
-				class="mx-6 mb-4 flex items-center gap-2 border border-gray-200 bg-gray-50 px-3 py-2"
+				class="mx-4 mt-4 mb-2 flex items-center gap-2 border border-gray-200 bg-gray-50 px-3 py-2"
 			>
 				<span class="flex-1 text-sm text-gray-700">
 					This signs out every device, including this one.
@@ -298,31 +291,31 @@
 				<p class="px-4 py-3 text-sm text-gray-400">No other sessions.</p>
 			{/each}
 		</div>
-	</section>
+	</Card>
 
-	<section class="border border-gray-200 bg-white p-6 shadow-card">
-		<h2 class="text-sm font-semibold text-gray-900">Export your data</h2>
-		<p class="mt-1 text-sm text-gray-500">
+	<Card title="Export your data">
+		{#snippet actions()}
+			<a href={resolve('/settings/account/export')} download class="btn btn-sm">
+				<Icon name="download" /> Download
+			</a>
+		{/snippet}
+		<p class="text-sm text-gray-500">
 			Everything this account owns, as JSON: plans, tasks, diary, habits, goals, shopping, ideas and
 			settings. The raw rows, so it is complete rather than pretty.
 		</p>
-		<a
-			href={resolve('/settings/account/export')}
-			download
-			class="mt-4 inline-block border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
-		>
-			Download export
-		</a>
-	</section>
+	</Card>
 
-	<section class="border border-red-200 bg-white p-6 shadow-card">
-		<h2 class="text-sm font-semibold text-gray-900">Delete your account</h2>
-		<p class="mt-1 text-sm text-gray-500">
+	<Card title="Delete your account" accent="#b91c1c">
+		{#snippet actions()}
+			<button onclick={() => (confirming = true)} class="btn btn-danger btn-sm">
+				<Icon name="trash" /> Delete account
+			</button>
+		{/snippet}
+		<p class="text-sm text-gray-500">
 			This removes every row belonging to you and cannot be undone. Download an export first if you
 			might want the data back.
 		</p>
-		<button onclick={() => (confirming = true)} class="btn btn-danger mt-4">Delete account</button>
-	</section>
+	</Card>
 
 	<Modal
 		open={confirming}

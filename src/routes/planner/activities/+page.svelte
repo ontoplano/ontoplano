@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import Field from '$lib/components/Field.svelte';
@@ -363,7 +364,17 @@
 			{#if activeFilters.size > 0}
 				No activities match the selected filters.
 			{:else}
-				No activities yet. Create one to get started.
+				<EmptyState
+					icon="planner"
+					title="No activities yet"
+					description="An activity is a named thing you do — gym, Russian, deep work. Blocks on the grid point at these."
+				>
+					{#snippet action()}
+						<button onclick={() => (showForm = true)} class="btn btn-primary">
+							<Icon name="plus" /> New activity
+						</button>
+					{/snippet}
+				</EmptyState>
 			{/if}
 		</div>
 	{:else}

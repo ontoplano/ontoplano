@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import Field from '$lib/components/Field.svelte';
@@ -377,9 +378,19 @@
 	{#if filteredEntries().length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
 			{#if filterTag}
-				No entries with tag #{filterTag}.
+				<EmptyState icon="diary" title="No entries with #{filterTag}" />
 			{:else}
-				No diary entries yet. Write your first one.
+				<EmptyState
+					icon="diary"
+					title="The journal is empty"
+					description="Whatever happened today, in as many or as few words as you like."
+				>
+					{#snippet action()}
+						<button onclick={() => (showForm = true)} class="btn btn-primary">
+							<Icon name="plus" /> New entry
+						</button>
+					{/snippet}
+				</EmptyState>
 			{/if}
 		</div>
 	{:else}

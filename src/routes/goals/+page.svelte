@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
@@ -313,10 +314,26 @@
 	</Modal>
 
 	{#if visible.length === 0 && !showForm}
-		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-400 shadow-card">
-			{data.goals.length === 0
-				? 'No goals yet. A goal is a commitment with a deadline attached — start with a week.'
-				: 'No goals in this area.'}
+		<div class="border border-gray-200 bg-white shadow-card">
+			{#if data.goals.length === 0}
+				<EmptyState
+					icon="goals"
+					title="No goals yet"
+					description="A goal is a commitment with a deadline attached. Start with a week — you can promote it later."
+				>
+					{#snippet action()}
+						<button onclick={openCreate} class="btn btn-primary">
+							<Icon name="plus" /> New goal
+						</button>
+					{/snippet}
+				</EmptyState>
+			{:else}
+				<EmptyState icon="goals" title="No goals in this area">
+					{#snippet action()}
+						<button onclick={() => (areaFilter = null)} class="btn">Show every area</button>
+					{/snippet}
+				</EmptyState>
+			{/if}
 		</div>
 	{/if}
 

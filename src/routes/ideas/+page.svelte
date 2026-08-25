@@ -1,6 +1,7 @@
 <script lang="ts">
 	/* biome-ignore-all assist/source/organizeImports lint/correctness/noUnusedImports lint/correctness/noUnusedVariables lint/style/useConst: Svelte template and rune usage in this file triggers false positives in current Biome diagnostics. */
 	import { enhance } from '$app/forms';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { autofocus } from '$lib/actions/autofocus';
@@ -322,9 +323,19 @@
 	{#if filteredIdeas.length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
 			{#if filterTag || filterApplied !== 'all' || filterFavorite !== 'all'}
-				No ideas match the current filters.
+				<EmptyState icon="ideas" title="No ideas match the current filters" />
 			{:else}
-				No ideas yet. Jot down your first one.
+				<EmptyState
+					icon="ideas"
+					title="Nothing captured yet"
+					description="Ideas are the things you would otherwise forget by the time you sat down."
+				>
+					{#snippet action()}
+						<button onclick={() => (showForm = true)} class="btn btn-primary">
+							<Icon name="plus" /> New idea
+						</button>
+					{/snippet}
+				</EmptyState>
 			{/if}
 		</div>
 	{:else}

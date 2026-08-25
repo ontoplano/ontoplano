@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Card from '$lib/components/Card.svelte';
 	import QuickCapture from '$lib/components/QuickCapture.svelte';
 	import { enhance } from '$app/forms';
 	import { tick } from 'svelte';
@@ -153,14 +154,10 @@
 	<QuickCapture error={form?.message} />
 
 	{#snippet card_todayTasks()}
-		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
-			<div
-				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
-				style="border-top-color: {SECTION_COLORS.planner}"
-			>
-				<h2 class="eyebrow text-gray-500">Today's Tasks</h2>
+		<Card title="Today's Tasks" accent={SECTION_COLORS.planner}>
+			{#snippet actions()}
 				<a href="/planner/track" class="text-xs text-gray-500 hover:text-gray-900"> Open → </a>
-			</div>
+			{/snippet}
 			{#if data.taskSummary.total === 0}
 				<p class="text-sm text-gray-400">No tasks scheduled.</p>
 			{:else}
@@ -219,18 +216,14 @@
 					{/if}
 				</div>
 			{/if}
-		</div>
+		</Card>
 	{/snippet}
 
 	{#snippet card_goals()}
-		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
-			<div
-				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
-				style="border-top-color: {SECTION_COLORS.goals}"
-			>
-				<h2 class="eyebrow text-gray-500">Goals</h2>
+		<Card title="Goals" accent={SECTION_COLORS.goals}>
+			{#snippet actions()}
 				<a href="/goals" class="text-xs text-gray-500 hover:text-gray-900">Open &rarr;</a>
-			</div>
+			{/snippet}
 			{#if data.activeGoals.length === 0}
 				<p class="text-sm text-gray-400">No goals running.</p>
 			{:else}
@@ -266,18 +259,14 @@
 					</p>
 				{/if}
 			{/if}
-		</div>
+		</Card>
 	{/snippet}
 
 	{#snippet card_habits()}
-		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
-			<div
-				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
-				style="border-top-color: {SECTION_COLORS.health}"
-			>
-				<h2 class="eyebrow text-gray-500">Habits</h2>
+		<Card title="Habits" accent={SECTION_COLORS.health}>
+			{#snippet actions()}
 				<a href="/health/habits" class="text-xs text-gray-500 hover:text-gray-900"> Open → </a>
-			</div>
+			{/snippet}
 			{#if data.habitStreaks.length === 0}
 				<p class="text-sm text-gray-400">No habits tracked.</p>
 			{:else}
@@ -304,7 +293,7 @@
 					{/each}
 				</div>
 			{/if}
-		</div>
+		</Card>
 	{/snippet}
 
 	{#snippet card_weekPlan()}
@@ -314,14 +303,10 @@
 		{@const timeSlots = [
 			...new Set(data.weekSlots.map((s: { startTime: string }) => s.startTime))
 		].sort()}
-		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
-			<div
-				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
-				style="border-top-color: {SECTION_COLORS.planner}"
-			>
-				<h2 class="eyebrow text-gray-500">Week Plan</h2>
+		<Card title="Week Plan" accent={SECTION_COLORS.planner}>
+			{#snippet actions()}
 				<a href="/planner/plan" class="text-xs text-gray-500 hover:text-gray-900">Edit →</a>
-			</div>
+			{/snippet}
 			<div class="overflow-x-auto">
 				<table class="w-full text-xs">
 					<thead>
@@ -363,16 +348,12 @@
 					</tbody>
 				</table>
 			</div>
-		</div>
+		</Card>
 	{/snippet}
 
 	{#snippet card_diary()}
-		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
-			<div
-				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
-				style="border-top-color: {SECTION_COLORS.diary}"
-			>
-				<h2 class="eyebrow text-gray-500">Diary</h2>
+		<Card title="Diary" accent={SECTION_COLORS.diary}>
+			{#snippet actions()}
 				<div class="flex items-center gap-3">
 					<a href="/diary" class="text-xs text-gray-500 hover:text-gray-900"> All entries → </a>
 					{#if winsEnabled}
@@ -403,7 +384,7 @@
 						{showDiaryForm ? 'Cancel' : 'New Entry'}
 					</button>
 				</div>
-			</div>
+			{/snippet}
 
 			{#if showDiaryForm}
 				<form
@@ -504,18 +485,14 @@
 			{:else}
 				<p class="text-sm text-gray-400">No diary entries yet.</p>
 			{/if}
-		</div>
+		</Card>
 	{/snippet}
 
 	{#snippet card_shopping()}
-		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
-			<div
-				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
-				style="border-top-color: {SECTION_COLORS.shopping}"
-			>
-				<h2 class="eyebrow text-gray-500">Shopping</h2>
+		<Card title="Shopping" accent={SECTION_COLORS.shopping}>
+			{#snippet actions()}
 				<a href="/shopping" class="text-xs text-gray-500 hover:text-gray-900">Open →</a>
-			</div>
+			{/snippet}
 			{#if data.shoppingToBuy.length === 0}
 				<p class="text-sm text-gray-400">Nothing to buy.</p>
 			{:else}
@@ -537,17 +514,11 @@
 					{/if}
 				</div>
 			{/if}
-		</div>
+		</Card>
 	{/snippet}
 
 	{#snippet card_quickLinks()}
-		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
-			<div
-				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
-				style="border-top-color: {SECTION_COLORS.home}"
-			>
-				<h2 class="eyebrow text-gray-500">Quick Links</h2>
-			</div>
+		<Card title="Quick Links" accent={SECTION_COLORS.home}>
 			<div class="space-y-2">
 				<a href="/planner/track" class="block text-sm text-gray-600 transition hover:text-gray-900"
 					>→ Track tasks</a
@@ -565,20 +536,16 @@
 					>→ Shopping</a
 				>
 			</div>
-		</div>
+		</Card>
 	{/snippet}
 
 	{#snippet card_quote()}
-		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
-			<div
-				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
-				style="border-top-color: {SECTION_COLORS.home}"
-			>
-				<h2 class="eyebrow text-gray-500">Today</h2>
+		<Card title="Today" accent={SECTION_COLORS.home}>
+			{#snippet actions()}
 				<a href="/settings/preferences" class="text-xs text-gray-500 hover:text-gray-900"
 					>Edit &rarr;</a
 				>
-			</div>
+			{/snippet}
 			{#if data.quote}
 				<blockquote class="text-sm text-gray-900 italic">
 					&ldquo;{data.quote.text}&rdquo;
@@ -589,18 +556,14 @@
 			{:else}
 				<p class="text-sm text-gray-400">No quotes yet. Add some in config.</p>
 			{/if}
-		</div>
+		</Card>
 	{/snippet}
 
 	{#snippet card_threeWins()}
-		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
-			<div
-				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
-				style="border-top-color: {SECTION_COLORS.diary}"
-			>
-				<h2 class="eyebrow text-gray-500">Three wins</h2>
+		<Card title="Three wins" accent={SECTION_COLORS.diary}>
+			{#snippet actions()}
 				<span class="text-xs text-gray-400">What went well today</span>
-			</div>
+			{/snippet}
 			<!-- Rows of their own rather than diary prose, so they can be counted later. -->
 			<form method="post" action="?/saveWins" use:enhance class="space-y-2">
 				{#each [1, 2, 3] as position (position)}
@@ -618,7 +581,7 @@
 					Save
 				</button>
 			</form>
-		</div>
+		</Card>
 	{/snippet}
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
