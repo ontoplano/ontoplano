@@ -15,6 +15,7 @@ import {
 	createTodo,
 	demoteInstance,
 	deleteTodo,
+	listForDate as listTodosForDate,
 	listUnscheduled,
 	promoteTodo,
 	reorderTodos,
@@ -124,7 +125,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		ratings: t.ratings
 	});
 
-	const todayCards = occurrences;
+	// A todo given a date is on that day's board — it is what dragging a card
+	// from General to Today means. The Today column used to show occurrences
+	// only, so such a card belonged to neither column and simply vanished.
+	const todayCards = [...occurrences, ...listTodosForDate(ctx, dateStr).map(asCard)];
 	const generalCards = listUnscheduled(ctx).map(asCard);
 
 	return {
