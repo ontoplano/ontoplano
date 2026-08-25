@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray } from 'drizzle-orm';
+import { and, desc, eq, gte } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { habitOccurrences, habits } from '../db/schema.js';
@@ -10,10 +10,9 @@ import { num, oneOf, optionalStr, str } from './validate.js';
 /**
  * Habits are things to do or to avoid, logged one day at a time.
  *
- * `habit_occurrences` has no `user_id` of its own (R05 adds one), so every
- * statement here scopes by the habits the account owns rather than trusting an
- * occurrence id. It is still one statement — never a check followed by an
- * unscoped write.
+ * Occurrences carry their own `user_id`, so every statement here scopes by the
+ * account directly rather than reaching through the habit it belongs to (I1).
+ * It is still one statement — never a check followed by an unscoped write.
  */
 
 export const HABIT_TYPES = ['bad', 'good', 'neutral'] as const;
@@ -121,7 +120,7 @@ export function logOccurrence(
 	if (occurrenceOn(habitId, date)) throw new ConflictError('Already logged for this date');
 
 	db.insert(habitOccurrences)
-		.values({ ...created(ctx), habitId, date, notes })
+		.values({ ...created(ctx), userId: ctx.userId, habitId, date, notes })
 		.run();
 }
 
@@ -132,10 +131,12 @@ export function toggleOccurrence(ctx: Ctx, raw: { habitId: unknown; date: unknow
 	const existing = occurrenceOn(habitId, date);
 
 	if (existing) {
-		db.delete(habitOccurrences).where(eq(habitOccurrences.id, existing.id)).run();
+		db.delete(habitOccurrences)
+			.where(and(eq(habitOccurrences.id, existing.id), eq(habitOccurrences.userId, ctx.userId)))
+			.run();
 	} else {
 		db.insert(habitOccurrences)
-			.values({ ...created(ctx), habitId, date, notes: '' })
+			.values({ ...created(ctx), userId: ctx.userId, habitId, date, notes: '' })
 			.run();
 	}
 }
@@ -144,7 +145,7 @@ export function updateOccurrence(ctx: Ctx, id: number, notes: unknown): void {
 	const res = db
 		.update(habitOccurrences)
 		.set({ notes: optionalStr(notes, 'notes', { max: MAX_NOTES_LENGTH }) })
-		.where(and(eq(habitOccurrences.id, id), inArray(habitOccurrences.habitId, ownedHabitIds(ctx))))
+		.where(and(eq(habitOccurrences.id, id), eq(habitOccurrences.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('occurrence');
@@ -153,7 +154,7 @@ export function updateOccurrence(ctx: Ctx, id: number, notes: unknown): void {
 export function deleteOccurrence(ctx: Ctx, id: number): void {
 	const res = db
 		.delete(habitOccurrences)
-		.where(and(eq(habitOccurrences.id, id), inArray(habitOccurrences.habitId, ownedHabitIds(ctx))))
+		.where(and(eq(habitOccurrences.id, id), eq(habitOccurrences.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('occurrence');
@@ -225,15 +226,6 @@ function ownedHabitId(ctx: Ctx, value: unknown): number {
 
 	if (!owned) throw new NotFoundError('habit');
 	return id;
-}
-
-function ownedHabitIds(ctx: Ctx): number[] {
-	return db
-		.select({ id: habits.id })
-		.from(habits)
-		.where(eq(habits.userId, ctx.userId))
-		.all()
-		.map((h) => h.id);
 }
 
 function occurrenceOn(habitId: number, date: string) {

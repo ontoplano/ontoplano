@@ -230,7 +230,12 @@ const diary = (seq, content, tags = [], forDate = null) => {
 	for (const name of tags) {
 		const tagId = tag(name);
 		if (!one('select id from diary_entry_tags where entry_id = ? and tag_id = ?', id, tagId))
-			run('insert into diary_entry_tags (entry_id, tag_id) values (?, ?)', id, tagId);
+			run(
+				'insert into diary_entry_tags (user_id, entry_id, tag_id) values (?, ?, ?)',
+				uid,
+				id,
+				tagId
+			);
 	}
 	return id;
 };
@@ -250,7 +255,7 @@ const idea = (content, tags = [], extra = {}) => {
 	for (const name of tags) {
 		const tagId = tag(name);
 		if (!one('select id from idea_tags where idea_id = ? and tag_id = ?', id, tagId))
-			run('insert into idea_tags (idea_id, tag_id) values (?, ?)', id, tagId);
+			run('insert into idea_tags (user_id, idea_id, tag_id) values (?, ?, ?)', uid, id, tagId);
 	}
 	return id;
 };
@@ -298,7 +303,8 @@ const logHabit = (habitId, date, notes = '') => {
 	if (one('select id from habit_occurrences where habit_id = ? and date = ?', habitId, date))
 		return;
 	run(
-		'insert into habit_occurrences (habit_id, date, notes) values (?, ?, ?)',
+		'insert into habit_occurrences (user_id, habit_id, date, notes) values (?, ?, ?, ?)',
+		uid,
 		habitId,
 		date,
 		notes
@@ -383,7 +389,8 @@ const linkGoal = (goalId, { slotId = null, todoId = null, activityId = null }) =
 	);
 	if (existing) return existing.id;
 	return run(
-		'insert into goal_links (goal_id, slot_id, todo_id, activity_id) values (?, ?, ?, ?)',
+		'insert into goal_links (user_id, goal_id, slot_id, todo_id, activity_id) values (?, ?, ?, ?, ?)',
+		uid,
 		goalId,
 		slotId,
 		todoId,
@@ -421,8 +428,9 @@ const scheme = (name, slots) => {
 	for (const s of slots) {
 		run(
 			`insert into scheme_slots
-			 (scheme_id, weekday, start_time, duration_minutes, mode, activity_id, label, active)
-			 values (?, ?, ?, ?, 'activity', ?, '', 1)`,
+			 (user_id, scheme_id, weekday, start_time, duration_minutes, mode, activity_id, label, active)
+			 values (?, ?, ?, ?, ?, 'activity', ?, '', 1)`,
+			uid,
 			id,
 			s.weekday,
 			s.startTime,

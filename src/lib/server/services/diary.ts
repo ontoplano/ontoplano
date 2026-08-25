@@ -65,7 +65,7 @@ export function createEntry(
 	const entryId = insertEntry(ctx, content, undefined, ownedNotebookId(ctx, raw.notebookId));
 
 	const tagNames = parseTags(tagInput(raw.tags));
-	if (tagNames.length > 0) linkDiaryTags(entryId, ensureTagIds(tagNames, ctx.userId));
+	if (tagNames.length > 0) linkDiaryTags(entryId, ensureTagIds(tagNames, ctx.userId), ctx.userId);
 
 	return entryId;
 }
@@ -94,7 +94,7 @@ export function createWins(
 
 	const userTags = parseTags(tagInput(raw.tags));
 	const tagIds = ensureTagIds([WINS_TAG, ...userTags.filter((t) => t !== WINS_TAG)], ctx.userId);
-	linkDiaryTags(entryId, tagIds);
+	linkDiaryTags(entryId, tagIds, ctx.userId);
 
 	return entryId;
 }

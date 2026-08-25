@@ -316,6 +316,9 @@ export const diaryEntryTags = sqliteTable(
 	'diary_entry_tags',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
 		entryId: integer('entry_id')
 			.notNull()
 			.references(() => diaryEntries.id, { onDelete: 'cascade' }),
@@ -324,6 +327,7 @@ export const diaryEntryTags = sqliteTable(
 			.references(() => tags.id, { onDelete: 'cascade' })
 	},
 	(table) => [
+		index('diary_entry_tags_user_idx').on(table.userId),
 		index('diary_entry_tags_entry_idx').on(table.entryId),
 		index('diary_entry_tags_tag_idx').on(table.tagId)
 	]
@@ -355,6 +359,9 @@ export const habitOccurrences = sqliteTable(
 	'habit_occurrences',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
 		habitId: integer('habit_id')
 			.notNull()
 			.references(() => habits.id, { onDelete: 'cascade' }),
@@ -365,6 +372,7 @@ export const habitOccurrences = sqliteTable(
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
 	(table) => [
+		index('habit_occurrences_user_idx').on(table.userId),
 		index('habit_occurrences_habit_idx').on(table.habitId),
 		index('habit_occurrences_date_idx').on(table.date)
 	]
@@ -581,6 +589,9 @@ export const schemeSlots = sqliteTable(
 	'scheme_slots',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
 		schemeId: integer('scheme_id')
 			.notNull()
 			.references(() => planningSchemes.id, { onDelete: 'cascade' }),
@@ -593,7 +604,10 @@ export const schemeSlots = sqliteTable(
 		label: text('label').default(''),
 		active: integer('active', { mode: 'boolean' }).notNull().default(true)
 	},
-	(table) => [index('scheme_slots_scheme_idx').on(table.schemeId)]
+	(table) => [
+		index('scheme_slots_user_idx').on(table.userId),
+		index('scheme_slots_scheme_idx').on(table.schemeId)
+	]
 );
 
 export const userSettings = sqliteTable(
@@ -642,6 +656,9 @@ export const ideaTags = sqliteTable(
 	'idea_tags',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
 		ideaId: integer('idea_id')
 			.notNull()
 			.references(() => ideas.id, { onDelete: 'cascade' }),
@@ -650,6 +667,7 @@ export const ideaTags = sqliteTable(
 			.references(() => tags.id, { onDelete: 'cascade' })
 	},
 	(table) => [
+		index('idea_tags_user_idx').on(table.userId),
 		index('idea_tags_idea_idx').on(table.ideaId),
 		index('idea_tags_tag_idx').on(table.tagId)
 	]
@@ -841,6 +859,9 @@ export const goalLinks = sqliteTable(
 	'goal_links',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
 		goalId: integer('goal_id')
 			.notNull()
 			.references(() => goals.id, { onDelete: 'cascade' }),
@@ -849,6 +870,7 @@ export const goalLinks = sqliteTable(
 		activityId: integer('activity_id').references(() => activities.id, { onDelete: 'cascade' })
 	},
 	(table) => [
+		index('goal_links_user_idx').on(table.userId),
 		index('goal_links_goal_idx').on(table.goalId),
 		check(
 			'goal_link_has_exactly_one_target',

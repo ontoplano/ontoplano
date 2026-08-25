@@ -82,7 +82,7 @@ export function createIdea(ctx: Ctx, raw: { content: unknown; tags?: unknown }):
 		.run();
 	const ideaId = Number(result.lastInsertRowid);
 
-	if (tagNames.length > 0) linkIdeaTags(ideaId, ensureTagIds(tagNames, ctx.userId));
+	if (tagNames.length > 0) linkIdeaTags(ideaId, ensureTagIds(tagNames, ctx.userId), ctx.userId);
 
 	return ideaId;
 }

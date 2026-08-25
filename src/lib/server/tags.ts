@@ -3,6 +3,15 @@ import { tags, diaryEntryTags, ideaTags } from '$lib/server/db/schema';
 import { eq, and, notInArray } from 'drizzle-orm';
 
 /**
+ * Tags, and the rows that join them to what they tag.
+ *
+ * Every statement here carries the account in its own `WHERE` (I1). The join
+ * tables used to have no `user_id` at all, so "delete this entry's tags" was a
+ * statement scoped by an id that arrived from a form — correct only for as long
+ * as the caller remembered to check first.
+ */
+
+/**
  * Normalizes raw tag input. Strips leading #, splits on commas/spaces, lowercases, dedupes.
  * All these produce ["tagfoo", "tagbar"]:
  *   "tagfoo, tagbar" | "tagfoo tagbar" | "#tagfoo #tagbar" | "#tagfoo, #tagbar"
@@ -31,17 +40,19 @@ export function ensureTagIds(tagNames: string[], userId: string): number[] {
 	});
 }
 
-export function linkDiaryTags(entryId: number, tagIds: number[]): void {
+export function linkDiaryTags(entryId: number, tagIds: number[], userId: string): void {
 	for (const tagId of tagIds) {
-		db.insert(diaryEntryTags).values({ entryId, tagId }).run();
+		db.insert(diaryEntryTags).values({ userId, entryId, tagId }).run();
 	}
 }
 
 export function replaceDiaryTags(entryId: number, tagNames: string[], userId: string): void {
-	db.delete(diaryEntryTags).where(eq(diaryEntryTags.entryId, entryId)).run();
+	db.delete(diaryEntryTags)
+		.where(and(eq(diaryEntryTags.entryId, entryId), eq(diaryEntryTags.userId, userId)))
+		.run();
+
 	if (tagNames.length > 0) {
-		const tagIds = ensureTagIds(tagNames, userId);
-		linkDiaryTags(entryId, tagIds);
+		linkDiaryTags(entryId, ensureTagIds(tagNames, userId), userId);
 	}
 }
 
@@ -73,16 +84,18 @@ export function cleanupOrphanTags(userId: string): void {
 	}
 }
 
-export function linkIdeaTags(ideaId: number, tagIds: number[]): void {
+export function linkIdeaTags(ideaId: number, tagIds: number[], userId: string): void {
 	for (const tagId of tagIds) {
-		db.insert(ideaTags).values({ ideaId, tagId }).run();
+		db.insert(ideaTags).values({ userId, ideaId, tagId }).run();
 	}
 }
 
 export function replaceIdeaTags(ideaId: number, tagNames: string[], userId: string): void {
-	db.delete(ideaTags).where(eq(ideaTags.ideaId, ideaId)).run();
+	db.delete(ideaTags)
+		.where(and(eq(ideaTags.ideaId, ideaId), eq(ideaTags.userId, userId)))
+		.run();
+
 	if (tagNames.length > 0) {
-		const tagIds = ensureTagIds(tagNames, userId);
-		linkIdeaTags(ideaId, tagIds);
+		linkIdeaTags(ideaId, ensureTagIds(tagNames, userId), userId);
 	}
 }

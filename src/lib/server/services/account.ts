@@ -8,7 +8,7 @@
  * adding a table and forgetting it here is then a compile error, not a silent
  * leak.
  */
-import { eq, inArray, type SQL } from 'drizzle-orm';
+import { eq, type SQL } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { getUserSetting, setUserSetting } from '../settings.js';
@@ -24,11 +24,16 @@ import * as schema from '../db/schema.js';
  */
 type Deleter = Pick<typeof db, 'delete'>;
 
-/** A table owned directly, via its own user_id. */
+/**
+ * A table holding user data.
+ *
+ * Every one of them carries its own `user_id` now — the junction tables were
+ * the exception, and they stopped being one when ownership moved into the row.
+ * There is no second kind of table here any more, which is the point: a build
+ * that adds one and forgets it fails the check below.
+ */
 type OwnedTable = {
 	name: string;
-	/** True when the table carries its own user_id, false when reached via a parent. */
-	direct: boolean;
 	rows: (userId: string) => unknown[];
 	remove: (tx: Deleter, userId: string) => void;
 };
@@ -40,104 +45,43 @@ function owned(name: string, table: never): OwnedTable {
 	const col = () => (table as unknown as { userId: never }).userId;
 	return {
 		name,
-		direct: true,
 		rows: (userId) => db.select().from(table).where(eq(col(), userId)).all(),
 		remove: (tx, userId) => void tx.delete(table).where(eq(col(), userId)).run()
 	};
 }
-
-/** A table reached only through a parent row. */
-function joined(name: string, table: never, idsFor: (userId: string) => number[]): OwnedTable {
-	const idCol = () => (table as unknown as { id: never }).id;
-	return {
-		name,
-		direct: false,
-		rows: (userId) => {
-			const ids = idsFor(userId);
-			return ids.length === 0 ? [] : db.select().from(table).where(inArray(idCol(), ids)).all();
-		},
-		remove: (tx, userId) => {
-			const ids = idsFor(userId);
-			if (ids.length > 0) tx.delete(table).where(inArray(idCol(), ids)).run();
-		}
-	};
-}
-
-const diaryTagIds = (userId: string) =>
-	db
-		.select({ id: schema.diaryEntryTags.id })
-		.from(schema.diaryEntryTags)
-		.innerJoin(schema.diaryEntries, eq(schema.diaryEntryTags.entryId, schema.diaryEntries.id))
-		.where(eq(schema.diaryEntries.userId, userId))
-		.all()
-		.map((r) => r.id);
-
-const ideaTagIds = (userId: string) =>
-	db
-		.select({ id: schema.ideaTags.id })
-		.from(schema.ideaTags)
-		.innerJoin(schema.ideas, eq(schema.ideaTags.ideaId, schema.ideas.id))
-		.where(eq(schema.ideas.userId, userId))
-		.all()
-		.map((r) => r.id);
-
-const goalLinkIds = (userId: string) =>
-	db
-		.select({ id: schema.goalLinks.id })
-		.from(schema.goalLinks)
-		.innerJoin(schema.goals, eq(schema.goalLinks.goalId, schema.goals.id))
-		.where(eq(schema.goals.userId, userId))
-		.all()
-		.map((r) => r.id);
-
-const habitOccurrenceIds = (userId: string) =>
-	db
-		.select({ id: schema.habitOccurrences.id })
-		.from(schema.habitOccurrences)
-		.innerJoin(schema.habits, eq(schema.habitOccurrences.habitId, schema.habits.id))
-		.where(eq(schema.habits.userId, userId))
-		.all()
-		.map((r) => r.id);
-
-const schemeSlotIds = (userId: string) =>
-	db
-		.select({ id: schema.schemeSlots.id })
-		.from(schema.schemeSlots)
-		.innerJoin(schema.planningSchemes, eq(schema.schemeSlots.schemeId, schema.planningSchemes.id))
-		.where(eq(schema.planningSchemes.userId, userId))
-		.all()
-		.map((r) => r.id);
 
 /**
  * Every table holding user data, ordered so deletion runs children first and
  * foreign keys stay satisfied the whole way down.
  *
  * Junction tables are listed rather than left to cascade: cascade behaviour
- * differs per column here, and a missed one leaves orphans behind.
+ * differs per column here, and a missed one leaves orphans behind. Every one of
+ * them carries its own `user_id` now, so an export reads them the same way as
+ * anything else instead of collecting ids through their parents.
  */
 const USER_TABLES: OwnedTable[] = [
 	owned('dailyWins', schema.dailyWins as never),
 	owned('quotes', schema.quotes as never),
-	joined('goalLinks', schema.goalLinks as never, goalLinkIds),
+	owned('goalLinks', schema.goalLinks as never),
 	owned('goals', schema.goals as never),
 	owned('goalAreas', schema.goalAreas as never),
 	owned('dataPoints', schema.dataPoints as never),
 	owned('dataStreams', schema.dataStreams as never),
 	owned('apiTokens', schema.apiTokens as never),
-	joined('ideaTags', schema.ideaTags as never, ideaTagIds),
+	owned('ideaTags', schema.ideaTags as never),
 	owned('ideas', schema.ideas as never),
-	joined('schemeSlots', schema.schemeSlots as never, schemeSlotIds),
+	owned('schemeSlots', schema.schemeSlots as never),
 	owned('planningSchemes', schema.planningSchemes as never),
 	owned('shoppingItems', schema.shoppingItems as never),
 	owned('shoppingCategories', schema.shoppingCategories as never),
 	owned('plannerTodos', schema.plannerTodos as never),
-	joined('diaryEntryTags', schema.diaryEntryTags as never, diaryTagIds),
+	owned('diaryEntryTags', schema.diaryEntryTags as never),
 	// Mentions first: they point at both entries and people.
 	owned('entryPeople', schema.entryPeople as never),
 	owned('people', schema.people as never),
 	owned('diaryEntries', schema.diaryEntries as never),
 	owned('tags', schema.tags as never),
-	joined('habitOccurrences', schema.habitOccurrences as never, habitOccurrenceIds),
+	owned('habitOccurrences', schema.habitOccurrences as never),
 	owned('habits', schema.habits as never),
 	owned('taskInstances', schema.taskInstances as never),
 	owned('suppressedSlots', schema.suppressedSlots as never),
@@ -151,7 +95,7 @@ const USER_TABLES: OwnedTable[] = [
 ];
 
 /**
- * Entries claiming direct ownership of a table that has no user_id.
+ * Tables listed here that have no user_id to scope by.
  *
  * The mistake this catches is silent and expensive: reading a missing column
  * yields undefined, drizzle emits `where  = ?`, and the export or deletion
@@ -159,18 +103,16 @@ const USER_TABLES: OwnedTable[] = [
  * "deleted" rows quietly survive. Checked at import so it cannot ship.
  */
 function misdeclaredTables(): string[] {
-	return USER_TABLES.filter((t) => t.direct)
-		.filter((t) => {
-			const table = (schema as Record<string, unknown>)[t.name] as Record<string, unknown>;
-			return !table || table.userId === undefined;
-		})
-		.map((t) => t.name);
+	return USER_TABLES.filter((t) => {
+		const table = (schema as Record<string, unknown>)[t.name] as Record<string, unknown>;
+		return !table || table.userId === undefined;
+	}).map((t) => t.name);
 }
 
 const misdeclared = misdeclaredTables();
 if (misdeclared.length > 0) {
 	throw new Error(
-		`account.ts declares these as directly owned, but they have no user_id: ${misdeclared.join(', ')}`
+		`account.ts lists these, but they have no user_id to scope by: ${misdeclared.join(', ')}`
 	);
 }
 

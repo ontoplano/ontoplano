@@ -46,6 +46,7 @@ export function saveScheme(ctx: Ctx, rawName: unknown): number {
 			tx.insert(schemeSlots)
 				.values(
 					slots.map((slot) => ({
+						userId: ctx.userId,
 						schemeId,
 						weekday: slot.weekday,
 						startTime: slot.startTime,

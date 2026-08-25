@@ -425,11 +425,19 @@ export function setGoalLinks(
 	const activityIds = ownedIds(links.activityIds, ownedActivityIds(ctx));
 
 	db.transaction((tx) => {
-		tx.delete(goalLinks).where(eq(goalLinks.goalId, id)).run();
-		for (const slotId of slotIds) tx.insert(goalLinks).values({ goalId: id, slotId }).run();
-		for (const todoId of todoIds) tx.insert(goalLinks).values({ goalId: id, todoId }).run();
-		for (const activityId of activityIds)
-			tx.insert(goalLinks).values({ goalId: id, activityId }).run();
+		tx.delete(goalLinks)
+			.where(and(eq(goalLinks.goalId, id), eq(goalLinks.userId, ctx.userId)))
+			.run();
+
+		const link = (values: { slotId?: number; todoId?: number; activityId?: number }) =>
+			tx
+				.insert(goalLinks)
+				.values({ userId: ctx.userId, goalId: id, ...values })
+				.run();
+
+		for (const slotId of slotIds) link({ slotId });
+		for (const todoId of todoIds) link({ todoId });
+		for (const activityId of activityIds) link({ activityId });
 	});
 }
 
