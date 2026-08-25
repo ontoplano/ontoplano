@@ -50,7 +50,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'u', action: 'rate-urgency', description: 'Number keys set urgency' },
 			{ key: 'i', action: 'rate-interest', description: 'Number keys set interest' },
 			{ key: 'y', action: 'rate-energy', description: 'Number keys set energy' },
-			{ key: 'x', action: 'delete', description: 'Delete card (twice to confirm)' }
+			{ key: 'x', action: 'delete', description: 'Ask to delete card' }
 		]
 	},
 
@@ -71,7 +71,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'D', action: 'edit-duration', description: 'Edit duration' },
 			{ key: 'a', action: 'edit-activity', description: 'Edit activity' },
 			{ key: 'l', action: 'edit-label', description: 'Name just this day' },
-			{ key: 'x', action: 'delete', description: 'Delete task' }
+			{ key: 'x', action: 'delete', description: 'Ask to delete task' }
 		]
 	},
 	'/planner/plan': {
@@ -95,7 +95,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'D', action: 'delete', description: 'Delete block' },
 			{ key: 'v', action: 'toggle-multiselect', description: 'Toggle multiselect' },
 			{ key: ' ', action: 'toggle-select', description: 'Select/deselect (multiselect)' },
-			{ key: 'x', action: 'delete-selected', description: 'Delete selected (multiselect)' },
+			{ key: 'x', action: 'delete-selected', description: 'Ask to delete selected' },
 			{ key: 'p', action: 'copy-to-days', description: 'Copy to days (multiselect)' }
 		]
 	},
@@ -136,7 +136,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'e', action: 'edit', description: 'Edit todo' },
 			{ key: 'c', action: 'toggle-done', description: 'Toggle done' },
 			{ key: 'g', action: 'delegate', description: 'Delegate' },
-			{ key: 'x', action: 'delete', description: 'Delete' }
+			{ key: 'x', action: 'delete', description: 'Ask to delete' }
 		]
 	},
 	'/diary': {

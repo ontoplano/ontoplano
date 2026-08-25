@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types.js';
 	import { getAction } from '$lib/shortcuts';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
@@ -125,12 +126,9 @@
 				break;
 			case 'delete':
 				if (visibleTodos.length > 0 && visibleTodos[selectedIndex]) {
+					// Arms the confirmation only. Deleting takes a deliberate click.
 					const todo = visibleTodos[selectedIndex];
-					if (confirmingDelete === todo.id) {
-						const f = document.getElementById(`delete-form-${todo.id}`);
-						if (f instanceof HTMLFormElement) f.requestSubmit();
-						confirmingDelete = null;
-					} else {
+					{
 						confirmingDelete = todo.id;
 					}
 				}
@@ -412,6 +410,7 @@
 								<button
 									type="submit"
 									class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+									use:armed
 								>
 									Confirm?
 								</button>

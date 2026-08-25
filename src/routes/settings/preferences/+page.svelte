@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
 	import { THEMES } from '$lib/theme.js';
 	import type { DashboardCardId } from '$lib/dashboard.js';
@@ -202,7 +203,7 @@
 								<input type="hidden" name="id" value={quote.id} />
 								<button
 									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-									>Confirm?</button
+									use:armed>Confirm?</button
 								>
 								<button
 									type="button"

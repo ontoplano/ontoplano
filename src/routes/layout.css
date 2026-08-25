@@ -151,6 +151,12 @@
 		color: var(--color-gray-900);
 	}
 
+	/* A confirm that has not been on screen long enough to be a decision. */
+	.is-unarmed {
+		opacity: 0.55;
+		cursor: default;
+	}
+
 	.btn-sm {
 		padding: 0.25rem 0.625rem;
 		font-size: 0.75rem;
@@ -439,6 +445,23 @@ html .ec {
 
 .snap-strip > * {
 	scroll-snap-align: start;
+}
+
+/*
+ * A strip that becomes a real grid once there is room for one.
+ *
+ * `.snap-strip` sets `display: flex` from unlayered CSS, which outranks a
+ * `md:grid` utility — so the board's columns stayed flex items sized by their
+ * content, three narrow strips against the left edge of a wide screen with the
+ * rest of the row empty. Stated here, where it can actually win.
+ */
+@media (min-width: 768px) {
+	.snap-strip-grid {
+		display: grid;
+		grid-auto-flow: column;
+		grid-auto-columns: minmax(0, 1fr);
+		overflow-x: visible;
+	}
 }
 
 /*

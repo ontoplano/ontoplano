@@ -297,12 +297,9 @@
 
 		if (e.key === 'x' && card.kind === 'todo') {
 			e.preventDefault();
-			if (confirmingDelete === card.uid) {
-				post('deleteTodo', { kind: 'todo', id: String(card.id) }).then(refresh);
-				confirmingDelete = null;
-			} else {
-				confirmingDelete = card.uid;
-			}
+			// Arms the card's confirmation; the delete itself is a click, and that
+			// button ignores the first moments after it appears.
+			confirmingDelete = card.uid;
 		}
 	}
 
@@ -458,10 +455,7 @@
 		<div class="min-w-0 flex-1">
 			<!-- Below md this is a snapping strip of readable columns rather than a
 			     grid squeezed to fit: a 90px column is not a column. -->
-			<div
-				class="snap-strip md:grid md:gap-3"
-				style="grid-template-columns: repeat({columns.length}, minmax(0, 1fr))"
-			>
+			<div class="snap-strip snap-strip-grid md:gap-3">
 				{#each columns as column, ci (column.status)}
 					<section
 						class="flex min-h-64 w-[78vw] shrink-0 flex-col border bg-gray-50 sm:w-64 md:w-auto {dragOverColumn ===
@@ -547,7 +541,7 @@
 			<!-- The todo list stays visible beside Today so the two can actually
 			     interact: drag one across and it becomes a scheduled task. -->
 			<aside
-				class="w-full shrink-0 border bg-gray-50 md:w-56 {railOver
+				class="w-full shrink-0 border bg-gray-50 md:w-64 lg:w-72 xl:w-80 {railOver
 					? 'border-gray-900'
 					: 'border-gray-200'}"
 				ondragover={(e) => {

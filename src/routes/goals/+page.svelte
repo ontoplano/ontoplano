@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
 	import { autofocus } from '$lib/actions/autofocus.js';
 	import Field from '$lib/components/Field.svelte';
@@ -449,7 +450,7 @@
 									{#if confirmingDelete === goal.id}
 										<form method="post" action="?/remove" use:enhance>
 											<input type="hidden" name="id" value={goal.id} />
-											<button class="border border-red-200 px-2 py-1 text-xs text-red-600"
+											<button class="border border-red-200 px-2 py-1 text-xs text-red-600" use:armed
 												>Confirm?</button
 											>
 										</form>

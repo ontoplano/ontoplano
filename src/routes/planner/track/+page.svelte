@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { armed } from '$lib/actions/armed';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
 	import { autofocus } from '$lib/actions/autofocus.js';
 	import { TIMING_LABELS } from '$lib/task-status.js';
@@ -201,13 +202,10 @@
 				editingLabelId = tasks[selectedIndex].id;
 				break;
 			case 'delete': {
+				// Arms the confirmation and nothing else: a key that deletes on its
+				// second press is a key that deletes by accident.
 				const task = tasks[selectedIndex];
-				if (confirmingDelete === task.id) {
-					const deleteForm = document.getElementById(`delete-form-${task.id}`);
-					if (deleteForm instanceof HTMLFormElement) deleteForm.requestSubmit();
-				} else {
-					confirmingDelete = task.id;
-				}
+				confirmingDelete = task.id;
 				break;
 			}
 			case 'mark-done':
@@ -690,6 +688,7 @@
 								<button
 									type="submit"
 									class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+									use:armed
 								>
 									Confirm?
 								</button>

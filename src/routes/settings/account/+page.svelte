@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { armed } from '$lib/actions/armed';
 	import { resolve } from '$app/paths';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -230,6 +231,7 @@
 				</span>
 				<button
 					class="border border-red-200 bg-white px-3 py-1 text-sm text-red-600 hover:bg-red-50"
+					use:armed
 				>
 					Confirm?
 				</button>
@@ -275,7 +277,7 @@
 								<input type="hidden" name="id" value={s.id} />
 								<button
 									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-									>Confirm?</button
+									use:armed>Confirm?</button
 								>
 								<button
 									type="button"

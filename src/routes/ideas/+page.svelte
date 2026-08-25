@@ -1,6 +1,7 @@
 <script lang="ts">
 	/* biome-ignore-all assist/source/organizeImports lint/correctness/noUnusedImports lint/correctness/noUnusedVariables lint/style/useConst: Svelte template and rune usage in this file triggers false positives in current Biome diagnostics. */
 	import { enhance } from '$app/forms';
+	import { armed } from '$lib/actions/armed';
 	import { autofocus } from '$lib/actions/autofocus';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -372,6 +373,7 @@
 											<button
 												type="submit"
 												class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+												use:armed
 											>
 												Confirm?
 											</button>

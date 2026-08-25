@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { armed } from '$lib/actions/armed';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -533,6 +534,7 @@
 									<button
 										type="submit"
 										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
+										use:armed
 									>
 										Confirm?
 									</button>
@@ -703,6 +705,7 @@
 													<button
 														type="submit"
 														class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+														use:armed
 													>
 														Confirm?
 													</button>

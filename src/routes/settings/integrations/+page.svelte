@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { armed } from '$lib/actions/armed';
 	import { resolve } from '$app/paths';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -205,6 +206,7 @@
 								<button
 									type="submit"
 									class="border border-red-200 px-3 py-1.5 text-sm text-red-600 shadow-sm hover:bg-red-50"
+									use:armed
 								>
 									Confirm?
 								</button>
@@ -297,6 +299,7 @@
 									<button
 										type="submit"
 										class="border border-red-200 px-3 py-1 text-xs text-red-600 shadow-sm hover:bg-red-50"
+										use:armed
 									>
 										Confirm? This deletes {stream.stats.count} points.
 									</button>
