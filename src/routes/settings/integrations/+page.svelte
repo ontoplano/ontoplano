@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { resolve } from '$app/paths';
 	import Field from '$lib/components/Field.svelte';
@@ -69,11 +70,7 @@
 		without shipping any code into ontoplano.
 	</p>
 
-	{#if form?.message}
-		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-			{form.message}
-		</div>
-	{/if}
+	<FormError message={form?.message} />
 
 	{#if newToken}
 		<div class="border border-blue-200 bg-blue-50 p-4">

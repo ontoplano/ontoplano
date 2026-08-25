@@ -233,8 +233,39 @@
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>
-			<button class="btn btn-primary">Add</button>
+			<button class="btn btn-primary"><Icon name="plus" /> Add</button>
 		</form>
+
+		<!-- One at a time is fine for one; nobody types a collection in that way. -->
+		<details class="mt-4 border-t border-gray-200 pt-4">
+			<summary class="cursor-pointer list-none text-sm text-gray-600 hover:text-gray-900">
+				<span class="text-xs text-gray-400">▸</span> Paste a list
+			</summary>
+
+			<form
+				method="post"
+				action="?/importQuotes"
+				use:enhance={() =>
+					async ({ update }) =>
+						update({ reset: true })}
+				class="mt-3 space-y-2"
+			>
+				<label class="block">
+					<span class="eyebrow text-gray-500">One per line</span>
+					<textarea
+						name="quotes"
+						rows="6"
+						class="textarea mt-1"
+						placeholder={'Plans are worthless, but planning is everything. — Eisenhower\nWhat gets measured gets managed -- Drucker\nA quote with nobody to attribute it to'}
+					></textarea>
+				</label>
+				<p class="text-xs text-gray-500">
+					Not CSV: half of all quotes have a comma in them. The author is whatever follows the last
+					dash on the line, and duplicates are skipped.
+				</p>
+				<button class="btn btn-primary"><Icon name="plus" /> Import</button>
+			</form>
+		</details>
 	</section>
 
 	<section class="border border-gray-200 bg-white p-6 shadow-card">

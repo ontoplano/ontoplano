@@ -20,6 +20,10 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 	'/': {
 		label: 'Dashboard',
 		shortcuts: [
+			{ key: 'i', action: 'capture-idea', description: 'Capture an idea' },
+			{ key: 't', action: 'capture-todo', description: 'Capture a todo' },
+			{ key: 'd', action: 'capture-note', description: 'Capture a note' },
+			{ key: 'b', action: 'capture-buy', description: 'Capture something to buy' },
 			{ key: 'n', action: 'new-diary', description: 'New diary entry' },
 			{ key: 'w', action: 'new-wins', description: 'New wins' }
 		]

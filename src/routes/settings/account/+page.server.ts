@@ -3,7 +3,7 @@ import { APIError } from 'better-auth/api';
 import type { Actions, PageServerLoad } from './$types';
 import { auth, verifyPassword } from '$lib/server/auth';
 import { isEmailConfigured } from '$lib/server/email';
-import { deleteAccount } from '$lib/server/services/account';
+import { deleteAccount, exportAllowance, hoursUntil } from '$lib/server/services/account';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
 import { listSessions, sessionTokenById } from '$lib/server/services/sessions';
@@ -16,7 +16,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 		// Both credential changes are confirmed by mail, so the page says up
 		// front when this server has no transport and the link will land in its
 		// log instead.
-		emailConfigured: isEmailConfigured()
+		emailConfigured: isEmailConfigured(),
+		exports: (() => {
+			const allowance = exportAllowance(locals.user!.id);
+			return {
+				remaining: allowance.remaining,
+				unlocksIn: allowance.nextAt ? hoursUntil(allowance.nextAt) : null
+			};
+		})()
 	};
 };
 

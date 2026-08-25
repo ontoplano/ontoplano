@@ -25,6 +25,8 @@
 
 	type Capture = {
 		key: string;
+		/** The keystroke that opens it, shown in the label. */
+		shortcut: string;
 		label: string;
 		icon: IconName;
 		action: string;
@@ -36,6 +38,7 @@
 	const CAPTURES: Capture[] = [
 		{
 			key: 'idea',
+			shortcut: 'i',
 			label: 'Idea',
 			icon: 'ideas',
 			action: '/ideas?/create',
@@ -45,6 +48,7 @@
 		},
 		{
 			key: 'todo',
+			shortcut: 't',
 			label: 'Todo',
 			icon: 'check',
 			action: '/planner/todo?/create',
@@ -54,6 +58,7 @@
 		},
 		{
 			key: 'note',
+			shortcut: 'd',
 			label: 'Note',
 			icon: 'diary',
 			action: '/diary?/create',
@@ -63,6 +68,7 @@
 		},
 		{
 			key: 'buy',
+			shortcut: 'b',
 			label: 'Buy',
 			icon: 'shopping',
 			action: '/shopping?/create',
@@ -73,6 +79,14 @@
 	];
 
 	let open = $state<Capture | null>(null);
+
+	/** Opened by key from the page that hosts this. */
+	export function openByShortcut(key: string): boolean {
+		const match = CAPTURES.find((c) => c.shortcut === key);
+		if (!match) return false;
+		open = match;
+		return true;
+	}
 </script>
 
 {#if inline}
@@ -93,7 +107,10 @@
 				class="lift flex flex-1 flex-col items-center gap-1 border border-gray-200 bg-white px-2 py-3 text-xs text-gray-700 shadow-card"
 			>
 				<Icon name={capture.icon} size={18} />
-				{capture.label}
+				<span>
+					{capture.label}
+					<span class="text-gray-400">({capture.shortcut})</span>
+				</span>
 			</button>
 		{/each}
 	</div>

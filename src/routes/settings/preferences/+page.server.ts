@@ -2,7 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { isStyle, STYLES, STYLE_HINTS, STYLE_LABELS } from '$lib/style';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure, ValidationError } from '$lib/server/services/errors';
-import { createQuote, deleteQuote, listQuotes } from '$lib/server/services/quotes';
+import { createQuote, deleteQuote, importQuotes, listQuotes } from '$lib/server/services/quotes';
 import {
 	DASHBOARD_CARDS,
 	DASHBOARD_LAYOUT_KEY,
@@ -63,6 +63,24 @@ export const actions: Actions = {
 				author: formData.get('author')
 			});
 			return { success: true, action: 'addQuote' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	importQuotes: async ({ request, locals }) => {
+		const formData = await request.formData();
+
+		try {
+			const result = importQuotes(buildCtx(locals.user!.id), formData.get('quotes'));
+			return {
+				success: true,
+				action: 'importQuotes',
+				message:
+					result.skipped > 0
+						? `Added ${result.added}. Skipped ${result.skipped} already there or empty.`
+						: `Added ${result.added}.`
+			};
 		} catch (e) {
 			return toActionFailure(e);
 		}

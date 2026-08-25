@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import FormError from '$lib/components/FormError.svelte';
 	import { goto } from '$app/navigation';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -323,11 +324,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	{#if form?.message}
-		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-			{form.message}
-		</div>
-	{/if}
+	<FormError message={form?.message} />
 
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div class="flex items-center gap-1">

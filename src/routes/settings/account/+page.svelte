@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
@@ -63,9 +64,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	{#if form?.message && !form?.success}
-		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{form.message}</div>
-	{/if}
+	<FormError message={form?.message} />
 
 	{#if notice}
 		<div class="border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">{notice}</div>
@@ -288,14 +287,30 @@
 
 	<Card title="Export your data">
 		{#snippet actions()}
-			<a href={resolve('/settings/account/export')} download class="btn btn-sm">
-				<Icon name="download" /> Download
-			</a>
+			{#if data.exports.remaining > 0}
+				<a href={resolve('/settings/account/export')} download class="btn btn-sm">
+					<Icon name="download" /> Download
+				</a>
+			{:else}
+				<span class="btn btn-sm cursor-not-allowed opacity-50">
+					<Icon name="download" /> Download
+				</span>
+			{/if}
 		{/snippet}
 		<p class="text-sm text-gray-500">
 			Everything this account owns, as JSON: plans, tasks, diary, habits, goals, shopping, ideas and
 			settings. The raw rows, so it is complete rather than pretty.
 		</p>
+
+		{#if data.exports.remaining <= 0}
+			<p class="mt-2 text-sm text-red-600">
+				You have used both of today's exports. The next one unlocks {data.exports.unlocksIn}.
+			</p>
+		{:else if data.exports.remaining === 1}
+			<p class="mt-2 text-sm text-red-600">
+				One export left today. The allowance resets {data.exports.unlocksIn}.
+			</p>
+		{/if}
 	</Card>
 
 	<Card title="Delete your account" accent="#b91c1c">

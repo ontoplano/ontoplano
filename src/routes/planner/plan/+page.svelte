@@ -2,6 +2,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { enhance, deserialize } from '$app/forms';
+	import FormError from '$lib/components/FormError.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
@@ -1422,11 +1423,7 @@
 		{/if}
 	</div>
 
-	{#if form?.message}
-		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-			{form.message}
-		</div>
-	{/if}
+	<FormError message={form?.message} />
 
 	{#if gridError}
 		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

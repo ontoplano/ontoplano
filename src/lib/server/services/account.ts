@@ -11,6 +11,8 @@
 import { eq, inArray, type SQL } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
+import { getUserSetting, setUserSetting } from '../settings.js';
+import { RateLimitedError } from './errors.js';
 import * as schema from '../db/schema.js';
 
 /** A table owned directly, via its own user_id. */
@@ -190,7 +192,67 @@ export type AccountExport = {
  * Deliberately the raw rows rather than a prettied-up shape: an export is for
  * being complete and re-importable, not for reading nicely.
  */
-export function exportAccount(userId: string): AccountExport {
+/**
+ * How many exports are left today, and when the next one unlocks.
+ *
+ * An export is every row this account owns in one file. Two a day is plenty for
+ * a person and mean for anything scraping the endpoint in a loop, which is the
+ * only other reason to ask for it repeatedly.
+ */
+export const EXPORTS_PER_DAY = 2;
+const EXPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
+const EXPORT_LOG_KEY = 'export.log';
+
+export type ExportAllowance = {
+	remaining: number;
+	/** When the oldest export in the window falls out of it. Null when unused. */
+	nextAt: string | null;
+};
+
+function exportLog(userId: string, now: Date): string[] {
+	const raw = getUserSetting(userId, EXPORT_LOG_KEY);
+	if (!raw) return [];
+
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed
+			.filter((v): v is string => typeof v === 'string')
+			.filter((at) => now.getTime() - new Date(at).getTime() < EXPORT_WINDOW_MS)
+			.sort();
+	} catch {
+		return [];
+	}
+}
+
+/** "in about 7 hours", for a message a person reads once and acts on. */
+export function hoursUntil(iso: string | null, now: Date = new Date()): string {
+	if (!iso) return 'shortly';
+	const ms = new Date(iso).getTime() - now.getTime();
+	if (ms <= 0) return 'now';
+
+	const hours = Math.ceil(ms / (60 * 60 * 1000));
+	if (hours <= 1) return 'in under an hour';
+	return `in about ${hours} hours`;
+}
+
+export function exportAllowance(userId: string, now: Date = new Date()): ExportAllowance {
+	const log = exportLog(userId, now);
+	const remaining = Math.max(0, EXPORTS_PER_DAY - log.length);
+	const oldest = log[0];
+
+	return {
+		remaining,
+		nextAt: oldest ? new Date(new Date(oldest).getTime() + EXPORT_WINDOW_MS).toISOString() : null
+	};
+}
+
+function recordExport(userId: string, now: Date): void {
+	const log = [...exportLog(userId, now), now.toISOString()].slice(-EXPORTS_PER_DAY);
+	setUserSetting(userId, EXPORT_LOG_KEY, JSON.stringify(log));
+}
+
+export function exportAccount(userId: string, now: Date = new Date()): AccountExport {
 	const account = db
 		.select({ id: schema.user.id, name: schema.user.name, email: schema.user.email })
 		.from(schema.user)
@@ -199,10 +261,18 @@ export function exportAccount(userId: string): AccountExport {
 
 	if (!account) throw new Error('Account not found');
 
+	const allowance = exportAllowance(userId, now);
+	if (allowance.remaining <= 0)
+		throw new RateLimitedError(
+			`You have used both of today's exports. The next one unlocks ${hoursUntil(allowance.nextAt, now)}.`
+		);
+
+	recordExport(userId, now);
+
 	const data: Record<string, unknown[]> = {};
 	for (const table of USER_TABLES) data[table.name] = table.rows(userId);
 
-	return { exportedAt: new Date().toISOString(), account, data };
+	return { exportedAt: now.toISOString(), account, data };
 }
 
 /**

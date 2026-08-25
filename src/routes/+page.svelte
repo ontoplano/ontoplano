@@ -3,6 +3,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import QuickCapture from '$lib/components/QuickCapture.svelte';
 	import { enhance } from '$app/forms';
+	import FormError from '$lib/components/FormError.svelte';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { SECTION_COLORS, CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
@@ -21,6 +22,8 @@
 	// the cards hold forms and links, and making them permanently draggable
 	// would fight every click you actually meant.
 	let arranging = $state(false);
+	let capture = $state<QuickCapture | undefined>();
+	let captureTiles = $state<QuickCapture | undefined>();
 	let order: DashboardCardId[] = $state([]);
 	let dragging: DashboardCardId | null = $state(null);
 	let dragOver: DashboardCardId | null = $state(null);
@@ -103,6 +106,13 @@
 		)
 			return;
 
+		// Quick capture first: those four keys belong to it wherever it is shown.
+		// Both shapes are mounted; only one is visible, and either will do.
+		if (capture?.openByShortcut(e.key) || captureTiles?.openByShortcut(e.key)) {
+			e.preventDefault();
+			return;
+		}
+
 		const action = getAction('/', e.key);
 		if (!action) return;
 		e.preventDefault();
@@ -142,7 +152,7 @@
 		</h1>
 		{#if !arranging}
 			<div class="flex items-center gap-2">
-				<QuickCapture error={form?.message} inline />
+				<QuickCapture bind:this={capture} error={form?.message} inline />
 				<button onclick={startArranging} class="btn btn-sm">
 					<Icon name="drag" /> Arrange
 				</button>
@@ -152,7 +162,7 @@
 
 	<!-- Phone-first: the reason someone opens this app at a bus stop is to write
 	     one thing down before it evaporates. -->
-	<QuickCapture error={form?.message} />
+	<QuickCapture bind:this={captureTiles} error={form?.message} />
 
 	{#snippet card_todayTasks()}
 		<Card title="Today's Tasks" accent={SECTION_COLORS.planner}>
@@ -653,9 +663,5 @@
 		</div>
 	{/if}
 
-	{#if form?.message}
-		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-			{form.message}
-		</div>
-	{/if}
+	<FormError message={form?.message} />
 </div>

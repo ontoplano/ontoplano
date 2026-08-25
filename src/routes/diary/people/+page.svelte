@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
 	import Card from '$lib/components/Card.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -80,9 +81,7 @@
 		</button>
 	</div>
 
-	{#if form?.message && !form?.success}
-		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{form.message}</div>
-	{/if}
+	<FormError message={form?.message} />
 
 	<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
 		<Card title="Everyone" accent={SECTION_COLORS.diary} flush>

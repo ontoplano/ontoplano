@@ -66,6 +66,13 @@ export class UnauthorizedError extends ServiceError {
 	}
 }
 
+/** Allowed, but not this often. 429, and the message says when to come back. */
+export class RateLimitedError extends ServiceError {
+	constructor(message: string) {
+		super('rate_limited', 429, message);
+	}
+}
+
 export class ForbiddenError extends ServiceError {
 	constructor(message = 'Insufficient scope') {
 		super('forbidden', 403, message);
