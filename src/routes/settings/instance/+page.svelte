@@ -112,6 +112,33 @@
 	</Card>
 
 	<Card
+		title="What an account may change"
+		description="An address is what an account is here — it signs in and it receives the reset link."
+	>
+		<form method="post" action="?/setEmailChange" use:enhance class="space-y-3">
+			<label class="flex cursor-pointer items-start gap-3">
+				<input
+					type="checkbox"
+					name="allowEmailChange"
+					value="true"
+					checked={data.config.account.allowEmailChange}
+					class="mt-1"
+				/>
+				<span>
+					<span class="block text-sm font-medium text-gray-900">
+						Let people move their account to another address
+					</span>
+					<span class="block text-sm text-gray-500">
+						Off by default. The change is still confirmed by a link before it takes effect.
+					</span>
+				</span>
+			</label>
+
+			<button class="btn btn-primary">Save</button>
+		</form>
+	</Card>
+
+	<Card
 		title="Invitations"
 		description="A code somebody types when they create their account. It works once."
 	>

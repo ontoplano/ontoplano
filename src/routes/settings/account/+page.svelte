@@ -72,13 +72,21 @@
 
 	<Card title="Email address">
 		{#snippet actions()}
-			<button onclick={() => (editing = 'email')} class="btn btn-sm">
-				<Icon name="edit" /> Change
-			</button>
+			{#if data.emailChangeAllowed}
+				<button onclick={() => (editing = 'email')} class="btn btn-sm">
+					<Icon name="edit" /> Change
+				</button>
+			{/if}
 		{/snippet}
 		<p class="text-sm text-gray-500">
-			You sign in with <span class="font-medium text-gray-900">{data.email}</span>. A new address
-			has to be confirmed by a link before it takes over.
+			You sign in with <span class="font-medium text-gray-900">{data.email}</span>.
+			{#if data.emailChangeAllowed}
+				A new address has to be confirmed by a link before it takes over.
+			{:else}
+				<!-- Says who to ask, rather than pretending the option is missing
+				     because nobody thought of it. -->
+				Changing it is turned off on this instance; whoever runs it can allow it.
+			{/if}
 			{#if !data.emailVerified}
 				<span class="block">This one has not been confirmed yet.</span>
 			{/if}
@@ -86,7 +94,7 @@
 	</Card>
 
 	<Modal
-		open={editing === 'email'}
+		open={editing === 'email' && data.emailChangeAllowed}
 		error={form?.message}
 		onclose={() => (editing = null)}
 		title="Change your email address"

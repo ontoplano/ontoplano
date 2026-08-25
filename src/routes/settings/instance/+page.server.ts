@@ -46,10 +46,9 @@ export const actions: Actions = {
 
 			const current = loadConfig();
 			saveConfig({
+				...current,
 				server: { host, port },
-				database: { path: current.database.path || DB_PATH },
-				week: current.week,
-				registration: current.registration
+				database: { path: current.database.path || DB_PATH }
 			});
 
 			return { success: true, action: 'save' };
@@ -72,6 +71,20 @@ export const actions: Actions = {
 		} catch (e) {
 			return toActionFailure(e);
 		}
+	},
+
+	setEmailChange: async ({ request, locals }) => {
+		owner(locals.user!.id);
+
+		const formData = await request.formData();
+		const current = loadConfig();
+
+		saveConfig({
+			...current,
+			account: { allowEmailChange: formData.get('allowEmailChange') === 'true' }
+		});
+
+		return { success: true, action: 'setEmailChange' };
 	},
 
 	createInvite: async ({ request, locals }) => {

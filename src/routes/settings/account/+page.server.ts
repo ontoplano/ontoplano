@@ -2,6 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
 import type { Actions, PageServerLoad } from './$types';
 import { auth, verifyPassword } from '$lib/server/auth';
+import { loadConfig } from '$lib/server/config';
 import { isEmailConfigured } from '$lib/server/email';
 import { deleteAccount, exportAllowance, hoursUntil } from '$lib/server/services/account';
 import { buildCtx } from '$lib/server/services/ctx';
@@ -17,6 +18,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		// front when this server has no transport and the link will land in its
 		// log instead.
 		emailConfigured: isEmailConfigured(),
+		// Whether this instance lets an account move to another address at all.
+		emailChangeAllowed: loadConfig().account.allowEmailChange,
 		exports: (() => {
 			const allowance = exportAllowance(locals.user!.id);
 			return {
@@ -36,13 +39,18 @@ function authFailure(error: unknown, fallback: string) {
 
 export const actions: Actions = {
 	/**
-	 * Ask to move the account to another address.
+	 * Ask to move the account to another address, where the instance allows it.
 	 *
 	 * Nothing changes here: better-auth mails a confirmation and the swap
 	 * happens when the link is followed. The current address stays the one that
 	 * signs in until then.
 	 */
 	changeEmail: async ({ request, locals }) => {
+		// The instance decides whether this door exists. Checked here and not only
+		// in the page, because a form can be posted without loading one.
+		if (!loadConfig().account.allowEmailChange)
+			return fail(403, { message: 'This instance does not allow changing your address' });
+
 		const user = locals.user!;
 		const formData = await request.formData();
 		const newEmail = formData.get('newEmail')?.toString()?.trim() ?? '';

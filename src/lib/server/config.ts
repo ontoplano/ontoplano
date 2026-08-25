@@ -57,6 +57,9 @@ generate_day = "6"
 
 [registration]
 mode = "closed"
+
+[account]
+allow_email_change = "false"
 `;
 
 /**
@@ -91,6 +94,16 @@ export interface OntoplanoConfig {
 	registration: {
 		mode: RegistrationMode;
 	};
+	account: {
+		/**
+		 * Whether a person may move their account to another address.
+		 *
+		 * Off unless the instance says otherwise: an email address is what an
+		 * account *is* here — it signs in and it receives the reset link — so
+		 * letting it be changed is the operator's call, not the account holder's.
+		 */
+		allowEmailChange: boolean;
+	};
 }
 
 export function ensureDirectories(): void {
@@ -119,6 +132,9 @@ generate_day = "${config.week.generateDay}"
 
 [registration]
 mode = "${config.registration.mode}"
+
+[account]
+allow_email_change = "${config.account.allowEmailChange}"
 `;
 }
 
@@ -137,6 +153,7 @@ export function loadConfig(): OntoplanoConfig {
 	const database = (parsed.database as Record<string, string>) || {};
 	const week = (parsed.week as Record<string, string>) || {};
 	const registration = (parsed.registration as Record<string, string>) || {};
+	const account = (parsed.account as Record<string, string>) || {};
 
 	return {
 		server: {
@@ -157,6 +174,10 @@ export function loadConfig(): OntoplanoConfig {
 			// An instance whose config predates this setting is closed, not open:
 			// the safe reading of silence.
 			mode: isRegistrationMode(registration.mode) ? registration.mode : 'closed'
+		},
+		account: {
+			// Same reading: anything but an explicit "true" is no.
+			allowEmailChange: account.allow_email_change === 'true'
 		}
 	};
 }
