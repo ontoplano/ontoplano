@@ -4,9 +4,10 @@ import { db } from '../db/index.js';
 import { activities, categories, weeklySlots } from '../db/schema.js';
 import { isOnboarded, markOnboarded, setTimezone, setWeekSettings } from '../settings.js';
 import type { Ctx } from './ctx.js';
+import { parseTimezone } from './preferences.js';
 import { stamps } from './time.js';
 import { ValidationError } from './errors.js';
-import { num, oneOf, str } from './validate.js';
+import { num, oneOf } from './validate.js';
 
 /**
  * First run.
@@ -243,12 +244,3 @@ export function completeFirstRun(ctx: Ctx, raw: FirstRunInput): TemplateKey {
 }
 
 /** A zone name the browser reported, checked against what Intl actually knows. */
-function parseTimezone(value: unknown): string {
-	const tz = str(value, 'timezone', { max: 64 });
-	try {
-		new Intl.DateTimeFormat('en-CA', { timeZone: tz });
-		return tz;
-	} catch {
-		throw new ValidationError('Unknown timezone');
-	}
-}

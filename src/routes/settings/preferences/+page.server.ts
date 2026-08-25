@@ -1,7 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
-import { isStyle, STYLES, STYLE_HINTS, STYLE_LABELS } from '$lib/style';
+import { STYLES, STYLE_HINTS, STYLE_LABELS } from '$lib/style';
 import { buildCtx } from '$lib/server/services/ctx';
-import { toActionFailure, ValidationError } from '$lib/server/services/errors';
+import { toActionFailure } from '$lib/server/services/errors';
 import { createQuote, deleteQuote, importQuotes, listQuotes } from '$lib/server/services/quotes';
 import {
 	DASHBOARD_CARDS,
@@ -17,13 +17,9 @@ import {
 	getTimezone,
 	getUserSetting,
 	getWeekSettings,
-	isTheme,
-	setStyle,
-	setTheme,
-	setTimezone,
-	setUserSetting,
-	setWeekSettings
+	setUserSetting
 } from '$lib/server/settings';
+import { saveWeekPreferences, setUserStyle, setUserTheme } from '$lib/server/services/preferences';
 
 /** Everything on this page belongs to the account, never to the instance (I9). */
 export const load: PageServerLoad = async ({ locals }) => {
@@ -99,11 +95,9 @@ export const actions: Actions = {
 
 	setStyle: async ({ request, locals }) => {
 		const formData = await request.formData();
-		const style = formData.get('style')?.toString() ?? '';
 
 		try {
-			if (!isStyle(style)) throw new ValidationError('Unknown style');
-			setStyle(locals.user!.id, style);
+			setUserStyle(buildCtx(locals.user!.id), formData.get('style'));
 			return { success: true, action: 'setStyle' };
 		} catch (e) {
 			return toActionFailure(e);
@@ -112,11 +106,9 @@ export const actions: Actions = {
 
 	setTheme: async ({ request, locals }) => {
 		const formData = await request.formData();
-		const theme = formData.get('theme')?.toString() ?? '';
 
 		try {
-			if (!isTheme(theme)) throw new ValidationError('Unknown theme');
-			setTheme(locals.user!.id, theme);
+			setUserTheme(buildCtx(locals.user!.id), formData.get('theme'));
 			return { success: true, action: 'setTheme' };
 		} catch (e) {
 			return toActionFailure(e);
@@ -127,26 +119,11 @@ export const actions: Actions = {
 		const formData = await request.formData();
 
 		try {
-			const firstDay = Number(formData.get('firstDay') ?? 0);
-			const generateDay = Number(formData.get('generateDay') ?? 6);
-			const timezone = formData.get('timezone')?.toString()?.trim() ?? '';
-
-			if (!Number.isInteger(firstDay) || firstDay < 0 || firstDay > 6)
-				throw new ValidationError('Invalid first day');
-			if (!Number.isInteger(generateDay) || generateDay < 0 || generateDay > 6)
-				throw new ValidationError('Invalid generate day');
-
-			if (timezone) {
-				try {
-					// Rejected here rather than stored and thrown on every date later.
-					new Intl.DateTimeFormat('en-CA', { timeZone: timezone });
-				} catch {
-					throw new ValidationError('Unknown timezone');
-				}
-				setTimezone(locals.user!.id, timezone);
-			}
-
-			setWeekSettings(locals.user!.id, { firstDay, generateDay });
+			saveWeekPreferences(buildCtx(locals.user!.id), {
+				firstDay: formData.get('firstDay'),
+				generateDay: formData.get('generateDay'),
+				timezone: formData.get('timezone')
+			});
 			return { success: true, action: 'saveWeek' };
 		} catch (e) {
 			return toActionFailure(e);
