@@ -6,15 +6,17 @@
  * makes them callable from a form action, a JSON endpoint, a CLI script, or a
  * test with equal ease.
  */
+import { getTimezone } from '../settings.js';
+
 export interface Ctx {
 	userId: string;
-	/** IANA timezone name. Until per-user timezones land, this is the server's. */
+	/** IANA timezone name: the user's own, or the server's if they never set one. */
 	tz: string;
 	/** Injected so date logic is testable and doesn't drift mid-request. */
 	now: Date;
 }
 
-/** The server's timezone — the fallback until per-user timezones exist (S7). */
+/** The server's timezone — the fallback for an account that never named one. */
 export function serverTimezone(): string {
 	return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 }
@@ -22,7 +24,8 @@ export function serverTimezone(): string {
 export function buildCtx(userId: string, opts: { tz?: string; now?: Date } = {}): Ctx {
 	return {
 		userId,
-		tz: opts.tz ?? serverTimezone(),
+		// The user's own zone when first run captured one; the server's until then.
+		tz: opts.tz ?? getTimezone(userId) ?? serverTimezone(),
 		now: opts.now ?? new Date()
 	};
 }

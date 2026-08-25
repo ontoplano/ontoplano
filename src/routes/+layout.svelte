@@ -122,7 +122,7 @@
 		class="flex min-h-screen flex-col bg-gray-100"
 		style="{categoryStyle()};--section-accent:{section.accent}"
 	>
-		<header class="bg-chrome shadow-raised" style="padding-top: var(--safe-top)">
+		<header class="relative z-40 bg-chrome shadow-raised" style="padding-top: var(--safe-top)">
 			<div class="mx-auto flex w-full max-w-page items-stretch justify-between px-4 sm:px-6">
 				<div class="flex items-stretch gap-6">
 					<a href="/" class="flex items-center text-lg font-bold tracking-tight text-chrome-ink"
@@ -165,7 +165,7 @@
 					</button>
 					{#if menuOpen}
 						<div
-							class="rise absolute top-full right-0 mt-1 w-44 border border-gray-200 bg-white shadow-overlay"
+							class="rise absolute top-full right-0 z-50 mt-1 w-44 border border-gray-200 bg-white shadow-overlay"
 						>
 							<div class="border-b border-gray-200 px-4 py-2">
 								<span class="eyebrow text-gray-500">Theme</span>

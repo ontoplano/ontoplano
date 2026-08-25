@@ -1,0 +1,40 @@
+import { redirect } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
+import { DEFAULT_WEEK, isOnboarded } from '$lib/server/settings';
+import { buildCtx } from '$lib/server/services/ctx';
+import { toActionFailure } from '$lib/server/services/errors';
+import { completeFirstRun, TEMPLATES } from '$lib/server/services/onboarding';
+
+export const load: PageServerLoad = async ({ locals }) => {
+	// Coming back here after setup would offer to seed a second starter week.
+	if (isOnboarded(locals.user!.id)) redirect(302, '/planner/plan');
+
+	return {
+		week: DEFAULT_WEEK,
+		templates: TEMPLATES.map((t) => ({
+			key: t.key,
+			label: t.label,
+			description: t.description,
+			blocks: t.blocks.length
+		}))
+	};
+};
+
+export const actions: Actions = {
+	default: async ({ request, locals }) => {
+		const formData = await request.formData();
+
+		try {
+			completeFirstRun(buildCtx(locals.user!.id), {
+				timezone: formData.get('timezone'),
+				firstDay: formData.get('firstDay'),
+				generateDay: formData.get('generateDay'),
+				template: formData.get('template')
+			});
+		} catch (e) {
+			return toActionFailure(e);
+		}
+
+		redirect(303, '/planner/plan?welcome=1');
+	}
+};

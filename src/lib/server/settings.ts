@@ -100,6 +100,45 @@ export function setWeekSettings(userId: string, week: WeekSettings): void {
 	);
 }
 
+// --- Timezone -----------------------------------------------------------------
+
+/**
+ * The user's IANA timezone, captured at first run from the browser.
+ *
+ * Civil dates — what "today" means, which day a habit was logged on — are
+ * computed in this zone rather than the server's. Stored instants are still
+ * server-local (S7); R07 finishes that half.
+ */
+export const TIMEZONE_KEY = 'user.timezone';
+
+export function getTimezone(userId: string): string | null {
+	const stored = getUserSetting(userId, TIMEZONE_KEY);
+	if (!stored) return null;
+	try {
+		// A bad value would throw on every date format for the rest of the session.
+		new Intl.DateTimeFormat('en-CA', { timeZone: stored });
+		return stored;
+	} catch {
+		return null;
+	}
+}
+
+export function setTimezone(userId: string, tz: string): void {
+	setUserSetting(userId, TIMEZONE_KEY, tz);
+}
+
+// --- First run ------------------------------------------------------------------
+
+export const ONBOARDED_KEY = 'onboarding.done';
+
+export function isOnboarded(userId: string): boolean {
+	return getUserSetting(userId, ONBOARDED_KEY) === 'true';
+}
+
+export function markOnboarded(userId: string): void {
+	setUserSetting(userId, ONBOARDED_KEY, 'true');
+}
+
 // --- Instance ownership --------------------------------------------------------
 
 /**
