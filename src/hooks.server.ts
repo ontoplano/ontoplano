@@ -1,4 +1,4 @@
-import type { Handle } from '@sveltejs/kit';
+import { redirect, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { building } from '$app/environment';
 import { auth } from '$lib/server/auth';
@@ -89,9 +89,36 @@ const handleAuthRateLimit: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
+/**
+ * A form posted after the session ended lands on the login page.
+ *
+ * The signed-out check lives in the root layout's load, and a load does not run
+ * for a form action — the action runs first and its `locals.user` is undefined.
+ * So a page left open overnight answered every submit with "Unexpected error"
+ * instead of saying the obvious thing, which is that you are signed out.
+ *
+ * Everything under `/api` is exempt: those endpoints carry their own token and
+ * answer 401 themselves, and a redirect to an HTML page is not an answer a
+ * plugin can read.
+ */
+const PUBLIC_WRITES = ['/login', '/demo', '/api/auth'];
+
+const handleSignedOutWrites: Handle = ({ event, resolve }) => {
+	const writes = event.request.method !== 'GET' && event.request.method !== 'HEAD';
+	const path = event.url.pathname;
+	const isPublic = PUBLIC_WRITES.some((p) => path === p || path.startsWith(`${p}/`));
+
+	if (writes && !isPublic && !path.startsWith('/api/') && !event.locals.user) {
+		redirect(303, '/login');
+	}
+
+	return resolve(event);
+};
+
 export const handle: Handle = sequence(
 	handleSecurityHeaders,
 	handleAuthRateLimit,
 	handleBetterAuth,
+	handleSignedOutWrites,
 	handleTheme
 );
