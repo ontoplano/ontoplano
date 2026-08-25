@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import {
@@ -314,113 +317,115 @@
 		</div>
 	{/if}
 
-	{#if showForm}
+	<Modal
+		bind:open={showForm}
+		title={editingId ? 'Edit habit' : 'New habit'}
+		onclose={resetForm}
+		size="sm"
+	>
 		{@const editHabit = editingId ? (data.habits as Habit[]).find((h) => h.id === editingId) : null}
 		<form
+			id="habit-form"
 			method="post"
 			action={editingId ? '?/update' : '?/create'}
 			use:enhance={() => {
-				return async ({ update }) => {
+				return async ({ update, result }) => {
 					await update();
-					showForm = false;
-					resetForm();
+					if (result.type === 'success') {
+						showForm = false;
+						resetForm();
+					}
 				};
 			}}
-			class="lift space-y-3 border border-gray-200 bg-white p-4 shadow-card"
 		>
 			{#if editingId}
 				<input type="hidden" name="id" value={editingId} />
 			{/if}
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700">Name</span>
-				<input
-					name="name"
-					type="text"
-					autocomplete="off"
-					required
-					value={editHabit?.name ?? ''}
-					placeholder={newHabitType === 'bad'
-						? 'e.g. smoking, biting nails'
-						: newHabitType === 'neutral'
-							? 'e.g. coffee, naps'
-							: 'e.g. gym, reading'}
-					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				/>
-			</label>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700">Description</span>
-				<input
-					name="description"
-					type="text"
-					autocomplete="off"
-					value={editHabit?.description ?? ''}
-					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				/>
-			</label>
-			<div class="flex gap-4">
-				<label class="flex items-center gap-2">
+			<input type="hidden" name="scheduledDays" value={getScheduledDaysString()} />
+
+			<FormGrid>
+				<Field label="Name" span={12} required>
 					<input
-						type="radio"
-						name="type"
-						value="bad"
-						checked={newHabitType === 'bad'}
-						onchange={() => (newHabitType = 'bad')}
-						class="text-red-600 focus:ring-gray-900"
+						name="name"
+						type="text"
+						autocomplete="off"
+						required
+						value={editHabit?.name ?? ''}
+						placeholder={newHabitType === 'bad'
+							? 'e.g. smoking, biting nails'
+							: newHabitType === 'neutral'
+								? 'e.g. coffee, naps'
+								: 'e.g. gym, reading'}
+						class="input"
 					/>
-					<span class="text-sm text-gray-700">Bad</span>
-				</label>
-				<label class="flex items-center gap-2">
-					<input
-						type="radio"
-						name="type"
-						value="good"
-						checked={newHabitType === 'good'}
-						onchange={() => (newHabitType = 'good')}
-						class="text-blue-600 focus:ring-gray-900"
-					/>
-					<span class="text-sm text-gray-700">Good</span>
-				</label>
-				<label class="flex items-center gap-2">
-					<input
-						type="radio"
-						name="type"
-						value="neutral"
-						checked={newHabitType === 'neutral'}
-						onchange={() => (newHabitType = 'neutral')}
-						class="text-gray-500 focus:ring-gray-900"
-					/>
-					<span class="text-sm text-gray-700">Neutral</span>
-				</label>
-			</div>
-			{#if newHabitType === 'good' || newHabitType === 'neutral'}
-				<div class="space-y-2">
-					<span class="text-sm font-medium text-gray-700">Scheduled Days</span>
-					<div class="flex flex-wrap gap-2">
-						{#each FULL_DAY_LABELS as label, i}
-							<label class="flex items-center gap-1">
+				</Field>
+
+				<Field label="Kind" span={12} hint="A bad habit counts days since the last slip.">
+					<div class="flex gap-2">
+						{#each [['bad', 'Bad'], ['good', 'Good'], ['neutral', 'Neutral']] as [value, label] (value)}
+							<label
+								class="flex-1 cursor-pointer border px-3 py-2 text-center text-sm {newHabitType ===
+								value
+									? 'border-gray-900 bg-gray-900 font-medium text-white'
+									: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+							>
 								<input
-									type="checkbox"
-									checked={scheduledDaysState[i]}
-									onchange={(e) => {
-										scheduledDaysState[i] = (e.target as HTMLInputElement).checked;
-									}}
-									class="border border-gray-300 text-blue-600 focus:ring-gray-900"
+									type="radio"
+									name="type"
+									{value}
+									checked={newHabitType === value}
+									onchange={() => (newHabitType = value as 'bad' | 'good' | 'neutral')}
+									class="sr-only"
 								/>
-								<span class="text-xs text-gray-600">{label}</span>
+								{label}
 							</label>
 						{/each}
 					</div>
-				</div>
-			{/if}
-			<input type="hidden" name="scheduledDays" value={getScheduledDaysString()} />
-			<button
-				type="submit"
-				class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
-			>
-				{editingId ? 'Save' : 'Create'}
-			</button>
+				</Field>
+
+				<Field label="Description" span={12}>
+					<input
+						name="description"
+						type="text"
+						autocomplete="off"
+						value={editHabit?.description ?? ''}
+						class="input"
+					/>
+				</Field>
+
+				{#if newHabitType === 'good' || newHabitType === 'neutral'}
+					<Field label="On which days" span={12} hint="None selected means every day.">
+						<div class="flex flex-wrap gap-1">
+							{#each FULL_DAY_LABELS as label, i (label)}
+								<label
+									class="cursor-pointer border px-2 py-1 text-xs {scheduledDaysState[i]
+										? 'border-gray-900 bg-gray-900 font-medium text-white'
+										: 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}"
+								>
+									<input
+										type="checkbox"
+										checked={scheduledDaysState[i]}
+										onchange={(e) => {
+											scheduledDaysState[i] = (e.target as HTMLInputElement).checked;
+										}}
+										class="sr-only"
+									/>
+									{label}
+								</label>
+							{/each}
+						</div>
+					</Field>
+				{/if}
+			</FormGrid>
 		</form>
-	{/if}
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>
+			<button type="submit" form="habit-form" class="btn btn-primary">
+				{editingId ? 'Save' : 'Create habit'}
+			</button>
+		{/snippet}
+	</Modal>
 
 	{#if filteredHabits().length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">

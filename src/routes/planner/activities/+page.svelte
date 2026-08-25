@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { CATEGORY_FALLBACK_COLOR, CATEGORY_DEFAULT_NEW } from '$lib/colors.js';
@@ -114,15 +117,14 @@
 					nameInput?.focus();
 				});
 			}}
-			class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+			class="btn btn-primary btn-sm"
 		>
-			{showForm ? 'Cancel' : 'New Activity'}
+			New activity
 		</button>
 	</div>
 
-	{#if showCategoryForm}
-		<div class="lift space-y-3 border border-gray-200 bg-white p-4 shadow-card">
-			<div class="text-sm font-semibold text-gray-900">Categories</div>
+	<Modal bind:open={showCategoryForm} title="Categories" size="sm">
+		<div class="space-y-3">
 			<div class="divide-y divide-gray-100">
 				{#each data.categories as cat (cat.id)}
 					<div class="flex items-center gap-3 py-2">
@@ -247,15 +249,14 @@
 					required
 					class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
-				<button
-					type="submit"
-					class="bg-gray-900 px-3 py-1 text-xs font-medium text-white hover:bg-gray-800"
-				>
-					Add
-				</button>
+				<button type="submit" class="btn btn-primary btn-sm">Add</button>
 			</form>
 		</div>
-	{/if}
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (showCategoryForm = false)}>Done</button>
+		{/snippet}
+	</Modal>
 
 	<div class="flex gap-2">
 		{#each data.categories as cat}
@@ -288,75 +289,70 @@
 		</div>
 	{/if}
 
-	{#if showForm}
+	<Modal
+		bind:open={showForm}
+		title={editingId ? 'Edit activity' : 'New activity'}
+		onclose={() => (editingId = null)}
+		size="sm"
+	>
+		{@const editing = editingId ? data.activities.find((a) => a.id === editingId) : null}
 		<form
+			id="activity-form"
 			method="post"
 			action={editingId ? '?/update' : '?/create'}
 			use:enhance={() => {
-				return async ({ update }) => {
+				return async ({ update, result }) => {
 					await update();
-					showForm = false;
-					editingId = null;
+					if (result.type === 'success') {
+						showForm = false;
+						editingId = null;
+					}
 				};
 			}}
-			class="lift space-y-3 border border-gray-200 bg-white p-4 shadow-card"
 		>
 			{#if editingId}
 				<input type="hidden" name="id" value={editingId} />
 			{/if}
-			<div class="flex gap-3">
-				<label class="flex-1">
-					<span class="text-sm font-medium text-gray-700">Name</span>
+
+			<FormGrid>
+				<Field label="Name" span={12} required>
 					<input
-						id="activity-name"
 						name="name"
 						type="text"
 						autocomplete="off"
 						required
-						value={editingId ? (data.activities.find((a) => a.id === editingId)?.name ?? '') : ''}
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						value={editing?.name ?? ''}
+						class="input"
 					/>
-				</label>
-				<label class="w-40">
-					<span class="text-sm font-medium text-gray-700">Category</span>
-					<select
-						name="categoryId"
-						required
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					>
-						{#each data.categories as cat}
-							<option
-								value={cat.id}
-								selected={editingId
-									? data.activities.find((a) => a.id === editingId)?.categoryId === cat.id
-									: false}
-							>
-								{cat.name}
-							</option>
+				</Field>
+
+				<Field label="Category" span={12} required>
+					<select name="categoryId" required class="select">
+						{#each data.categories as cat (cat.id)}
+							<option value={cat.id} selected={editing?.categoryId === cat.id}>{cat.name}</option>
 						{/each}
 					</select>
-				</label>
-			</div>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700">Description</span>
-				<input
-					name="description"
-					type="text"
-					autocomplete="off"
-					value={editingId
-						? (data.activities.find((a) => a.id === editingId)?.description ?? '')
-						: ''}
-					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				/>
-			</label>
-			<button
-				type="submit"
-				class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
-			>
-				{editingId ? 'Update' : 'Create'}
-			</button>
+				</Field>
+
+				<Field label="Description" span={12}>
+					<input
+						name="description"
+						type="text"
+						autocomplete="off"
+						value={editing?.description ?? ''}
+						class="input"
+					/>
+				</Field>
+			</FormGrid>
 		</form>
-	{/if}
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>
+			<button type="submit" form="activity-form" class="btn btn-primary">
+				{editingId ? 'Save' : 'Create activity'}
+			</button>
+		{/snippet}
+	</Modal>
 
 	{#if filteredActivities().length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
