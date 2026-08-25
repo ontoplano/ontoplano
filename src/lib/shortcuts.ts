@@ -58,26 +58,6 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 
-	'/planner/track': {
-		label: 'Track',
-		shortcuts: [
-			{ key: 'j', action: 'navigate-down', description: 'Navigate tasks' },
-			{ key: 'k', action: 'navigate-up', description: 'Navigate tasks' },
-			{ key: 'h', action: 'prev-day', description: 'Switch day' },
-			{ key: 'l', action: 'next-day', description: 'Switch day' },
-			{ key: '[', action: 'prev-week', description: 'Switch week' },
-			{ key: ']', action: 'next-week', description: 'Switch week' },
-			{ key: 'c', action: 'mark-done', description: 'Mark done' },
-			{ key: 'i', action: 'mark-doing', description: 'Mark in progress' },
-			{ key: 's', action: 'mark-skipped', description: 'Mark skipped' },
-			{ key: 'r', action: 'reset-status', description: 'Reset to to-do' },
-			{ key: 't', action: 'edit-time', description: 'Edit time' },
-			{ key: 'D', action: 'edit-duration', description: 'Edit duration' },
-			{ key: 'a', action: 'edit-activity', description: 'Edit activity' },
-			{ key: 'l', action: 'edit-label', description: 'Name just this day' },
-			{ key: 'x', action: 'delete', description: 'Ask to delete task' }
-		]
-	},
 	'/planner/plan': {
 		label: 'Plan',
 		shortcuts: [

@@ -2,14 +2,20 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { ratingsFromForm } from '$lib/ratings';
 import { isStatus, type Status, type Timing } from '$lib/task-status';
-import { listCategories } from '$lib/server/services/activities';
+import { listActivities, listCategories } from '$lib/server/services/activities';
 import { buildCtx, type Ctx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
+import { moveOccurrence } from '$lib/server/services/slots';
 import {
+	deleteInstance,
 	generateForDate,
 	listForDate as listOccurrences,
+	resolveInstanceActivity,
+	setInstanceDuration,
+	setInstanceLabel,
 	setInstanceRatings,
-	setInstanceStatus
+	setInstanceStatus,
+	setInstanceTime
 } from '$lib/server/services/instances';
 import {
 	createTodo,
@@ -78,6 +84,16 @@ export type Card = {
 	categoryName: string | null;
 	categoryColor: string | null;
 	ratings: { urgency: number | null; interest: number | null; energy: number | null };
+	/** How long it takes, so the day can be added up. */
+	durationMinutes: number;
+	/** Blank on a todo; a block's own label, for the editor. */
+	labelOverride: string | null;
+	/** Set when this occurrence belongs to a recurring block. */
+	slotId: number | null;
+	/** What actually happened, when the block only named a category. */
+	mode: 'category' | 'activity' | null;
+	activityId: number | null;
+	activityName: string | null;
 };
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -104,7 +120,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			categoryId: o.categoryId,
 			categoryName: o.categoryName,
 			categoryColor: o.categoryColor,
-			ratings: o.ratings
+			ratings: o.ratings,
+			durationMinutes: o.durationMinutes,
+			labelOverride: o.labelOverride,
+			slotId: o.slotId,
+			mode: o.mode,
+			activityId: o.activityId,
+			activityName: o.activityName
 		})
 	);
 
@@ -122,7 +144,15 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		categoryId: t.categoryId,
 		categoryName: t.categoryName,
 		categoryColor: t.categoryColor,
-		ratings: t.ratings
+		ratings: t.ratings,
+		// A todo has no length until it is put on the grid; 30 minutes is what
+		// promoting one gives it, so the day adds up to the same either way.
+		durationMinutes: 30,
+		labelOverride: null,
+		slotId: null,
+		mode: null,
+		activityId: null,
+		activityName: null
 	});
 
 	// A todo given a date is on that day's board — it is what dragging a card
@@ -131,6 +161,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const todayCards = [...occurrences, ...listTodosForDate(ctx, dateStr).map(asCard)];
 	const generalCards = listUnscheduled(ctx).map(asCard);
 
+	const categoryNames = new Map(listCategories(ctx).map((c) => [c.id, c.name]));
+
 	return {
 		date: dateStr,
 		today: formatDate(ctx.now),
@@ -138,7 +170,16 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		generalCards,
 		categories: listCategories(ctx)
 			.map((c) => ({ id: c.id, name: c.name, color: c.color }))
-			.sort((a, b) => a.name.localeCompare(b.name))
+			.sort((a, b) => a.name.localeCompare(b.name)),
+		// For "which of these was it?" on a block that only named a category.
+		activities: listActivities(ctx, { activeOnly: true })
+			.map((a) => ({
+				id: a.id,
+				name: a.name,
+				categoryId: a.categoryId,
+				categoryName: categoryNames.get(a.categoryId) ?? ''
+			}))
+			.sort((a, b) => a.categoryName.localeCompare(b.categoryName) || a.name.localeCompare(b.name))
 	};
 };
 
@@ -266,6 +307,92 @@ export const actions: Actions = {
 		try {
 			if (target.kind === 'todo') setTodoRatings(ctx, target.id, ratings);
 			else setInstanceRatings(ctx, target.id, ratings);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * Everything about one occurrence, in one submit.
+	 *
+	 * These four used to be four forms on a separate Track page. They are the
+	 * same card as the one on this board, so they are the same card's editor.
+	 */
+	editInstance: async ({ request, locals }) => {
+		const ctx = buildCtx(locals.user!.id);
+		const formData = await request.formData();
+
+		const id = Number(formData.get('id'));
+		const slotId = Number(formData.get('slotId')) || null;
+		const date = formData.get('date')?.toString() ?? '';
+		const startTime = formData.get('startTime')?.toString() ?? '';
+		const durationMinutes = Number(formData.get('durationMinutes')) || 0;
+		const wasTime = formData.get('wasStartTime')?.toString() ?? '';
+		const wasDuration = Number(formData.get('wasDuration')) || 0;
+
+		try {
+			/*
+			 * Retiming one occurrence of a recurring block is not an edit to the
+			 * instance — it is "this week is different", which the app already
+			 * models as a skip on that date plus a one-off at the new time. Writing
+			 * it on the instance alone would leave the plan grid still drawing the
+			 * block at its old hour, which is two answers to one question.
+			 *
+			 * The move replaces the instance, so everything else is applied to the
+			 * one that replaces it.
+			 */
+			const moved = slotId !== null && (startTime !== wasTime || durationMinutes !== wasDuration);
+
+			let target = id;
+
+			if (moved) {
+				const newSlotId = moveOccurrence(ctx, {
+					slotId,
+					fromDate: date,
+					date,
+					startTime,
+					durationMinutes
+				});
+
+				generateForDate(ctx, new Date(`${date}T00:00:00`));
+				const replacement = listOccurrences(ctx, new Date(`${date}T00:00:00`)).find(
+					(o) => o.exceptionalSlotId === newSlotId
+				);
+				if (replacement) target = replacement.id;
+			} else {
+				setInstanceTime(ctx, target, startTime);
+				setInstanceDuration(ctx, target, durationMinutes);
+			}
+
+			setInstanceLabel(ctx, target, formData.get('label'));
+			resolveInstanceActivity(ctx, target, formData.get('activityId'));
+			setInstanceRatings(ctx, target, ratingsFromForm(formData));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** Which activity a category-shaped block turned out to be. */
+	resolveActivity: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			resolveInstanceActivity(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('activityId')
+			);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	deleteInstance: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			deleteInstance(buildCtx(locals.user!.id), Number(formData.get('id')));
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

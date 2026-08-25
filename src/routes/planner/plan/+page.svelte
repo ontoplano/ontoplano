@@ -2181,10 +2181,20 @@
 		</details>
 	{/if}
 
+	<!--
+		A month gets more height than the window, on purpose.
+
+		Six rows inside 70vh is about a hundred pixels each, which fits three
+		events and then says "+2 more" for the rest of what the day holds — the
+		grid ends up describing itself instead of the month. It is taller than the
+		viewport and the page scrolls, which is the trade every calendar makes.
+	-->
 	<div
-		class="relative border border-gray-200 bg-white shadow-sm {gridDays === 1
-			? 'h-[62vh]'
-			: 'h-[70vh]'}"
+		class="relative border border-gray-200 bg-white shadow-sm {effectiveView === 'month'
+			? 'h-[calc(100dvh-12rem)] min-h-[54rem]'
+			: gridDays === 1
+				? 'h-[62vh]'
+				: 'h-[70vh]'}"
 		use:gridZoomWheel
 		use:selectionSurface
 		ondragover={(e) => {

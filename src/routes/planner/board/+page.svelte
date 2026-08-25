@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { armed } from '$lib/actions/armed';
 	import FormError from '$lib/components/FormError.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import { goto } from '$app/navigation';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -37,6 +39,66 @@
 
 	/** How many of the folded-away ratings currently carry a value. */
 	const ratingsSet = $derived(Object.values(formRatings).filter((v) => v !== null).length);
+
+	/**
+	 * The card being edited.
+	 *
+	 * This is what Track was: an occurrence's time, its length, what it actually
+	 * turned out to be, and what to call this one. Same object as the card on the
+	 * board, so it is the same card's editor rather than a second page.
+	 */
+	let editing: Card | null = $state(null);
+	let editRatings: Record<string, number | null> = $state({
+		urgency: null,
+		interest: null,
+		energy: null
+	});
+	const editRatingsSet = $derived(Object.values(editRatings).filter((v) => v !== null).length);
+
+	function openEditor(card: Card) {
+		editing = card;
+		editRatings = { ...card.ratings };
+	}
+
+	/** A finished block that only ever named a category still owes an answer. */
+	function needsResolution(card: Card): boolean {
+		return (
+			card.kind === 'instance' &&
+			card.mode === 'category' &&
+			card.status === 'done' &&
+			!card.activityId
+		);
+	}
+
+	function formatDuration(minutes: number): string {
+		const h = Math.floor(minutes / 60);
+		const m = minutes % 60;
+		if (h === 0) return `${m}m`;
+		return m === 0 ? `${h}h` : `${h}h ${m}m`;
+	}
+
+	/**
+	 * How the day adds up, by category.
+	 *
+	 * The one thing the tracker showed that a column of cards does not: where
+	 * the hours went.
+	 */
+	const dayTotals = $derived.by(() => {
+		const totals = new Map<string, { color: string; minutes: number }>();
+
+		for (const card of data.todayCards) {
+			const name = card.categoryName;
+			if (!name) continue;
+			const current = totals.get(name) ?? {
+				color: card.categoryColor ?? CATEGORY_FALLBACK_COLOR,
+				minutes: 0
+			};
+			current.minutes += card.durationMinutes;
+			totals.set(name, current);
+		}
+
+		return [...totals.entries()].map(([name, v]) => ({ name, ...v }));
+	});
 	let confirmingDelete: string | null = $state(null);
 	let dragging: Card | null = $state(null);
 	let dragOverColumn: Status | null = $state(null);
@@ -215,7 +277,16 @@
 
 		if (e.key === 'Escape') {
 			showForm = false;
+			editing = null;
 			confirmingDelete = null;
+			return;
+		}
+
+		if (e.key === 'Enter') {
+			const card = columns[focusCol]?.cards[focusRow];
+			if (!card) return;
+			e.preventDefault();
+			openEditor(card);
 			return;
 		}
 
@@ -351,7 +422,14 @@
 					class="border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
 					aria-label="Previous day">&larr;</button
 				>
-				<span class="tabular text-sm text-gray-600">{data.date}</span>
+				<button
+					onclick={() => goto('/planner/board')}
+					class="tabular border px-2 py-1 text-sm shadow-sm {data.date === data.today
+						? 'border-gray-900 bg-gray-900 text-white'
+						: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+				>
+					{data.date === data.today ? 'Today' : data.date}
+				</button>
 				<button
 					onclick={() => shiftDay(1)}
 					class="border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
@@ -445,6 +523,149 @@
 		{/snippet}
 	</Modal>
 
+	<!--
+		One card, everything about it.
+
+		A block on the board answers for its own time, length and identity here,
+		which is what the Track page used to be for. A todo has no time yet, so it
+		gets the fields it does have.
+	-->
+	<Modal
+		open={editing !== null}
+		error={form?.message}
+		onclose={() => (editing = null)}
+		title={editing?.title ?? ''}
+		size="sm"
+	>
+		{#if editing}
+			{@const card = editing}
+			<form
+				id="edit-form"
+				method="post"
+				action={card.kind === 'instance' ? '?/editInstance' : '?/setRatings'}
+				use:enhance={() =>
+					async ({ update, result }) => {
+						await update({ reset: false });
+						if (result.type === 'success') editing = null;
+					}}
+			>
+				<input type="hidden" name="id" value={card.id} />
+				<input type="hidden" name="kind" value={card.kind} />
+				{#if card.kind === 'instance'}
+					<!-- What it was before, so the server can tell a retime from a save
+					     that only touched the name. -->
+					<input type="hidden" name="slotId" value={card.slotId ?? ''} />
+					<input type="hidden" name="date" value={card.scheduledDate ?? data.date} />
+					<input type="hidden" name="wasStartTime" value={card.startTime ?? ''} />
+					<input type="hidden" name="wasDuration" value={card.durationMinutes} />
+				{/if}
+
+				<FormGrid>
+					{#if card.kind === 'instance'}
+						<Field
+							label="Called"
+							span={12}
+							hint="This occurrence only. Empty keeps the block's own name."
+						>
+							<input
+								name="label"
+								autocomplete="off"
+								value={card.labelOverride ?? ''}
+								placeholder={card.title}
+								class="input"
+							/>
+						</Field>
+
+						<Field label="Starts" span={6}>
+							<input
+								name="startTime"
+								type="time"
+								value={card.startTime ?? ''}
+								class="input tabular"
+							/>
+						</Field>
+
+						<Field label="Minutes" span={6}>
+							<input
+								name="durationMinutes"
+								type="number"
+								min="5"
+								max="1440"
+								step="5"
+								value={card.durationMinutes}
+								class="input tabular"
+							/>
+						</Field>
+
+						{#if card.mode === 'category'}
+							<Field
+								label="What it was"
+								span={12}
+								hint="This block names a category. Say which activity it turned out to be."
+							>
+								<select name="activityId" class="select">
+									<option value="">— not said —</option>
+									{#each data.activities as activity (activity.id)}
+										<option value={activity.id} selected={card.activityId === activity.id}>
+											{activity.categoryName} · {activity.name}
+										</option>
+									{/each}
+								</select>
+							</Field>
+						{/if}
+					{/if}
+
+					<MoreOptions label="Urgency, interest, energy" count={editRatingsSet}>
+						{#each RATINGS as r (r)}
+							<div class="col-span-12">
+								<RatingPicker rating={r} bind:value={editRatings[r]} />
+							</div>
+						{/each}
+					</MoreOptions>
+				</FormGrid>
+			</form>
+		{/if}
+
+		{#snippet footer()}
+			{#if editing}
+				{@const card = editing}
+				<form
+					method="post"
+					action={card.kind === 'instance' ? '?/deleteInstance' : '?/deleteTodo'}
+					use:enhance={() =>
+						async ({ update }) => {
+							editing = null;
+							await update();
+						}}
+					class="mr-auto"
+				>
+					<input type="hidden" name="id" value={card.id} />
+					<input type="hidden" name="kind" value={card.kind} />
+					<button class="btn btn-danger btn-sm" use:armed>
+						<Icon name="trash" /> Delete
+					</button>
+				</form>
+			{/if}
+			<button type="button" class="btn" onclick={() => (editing = null)}>Cancel</button>
+			<button type="submit" form="edit-form" class="btn btn-primary">Save</button>
+		{/snippet}
+	</Modal>
+
+	{#if tab === 'today' && dayTotals.length > 0}
+		<!-- Where the day goes. The one thing a column of cards cannot show. -->
+		<div
+			class="flex flex-wrap items-center gap-x-5 gap-y-2 border border-gray-200 bg-white px-4 py-2"
+		>
+			{#each dayTotals as total (total.name)}
+				<span class="flex items-center gap-2 text-sm">
+					<span class="h-3 w-1" style="background-color: {total.color}"></span>
+					<span class="text-gray-700">{total.name}</span>
+					<span class="tabular text-gray-500">{formatDuration(total.minutes)}</span>
+				</span>
+			{/each}
+		</div>
+	{/if}
+
 	<div class="flex flex-col gap-3 md:flex-row">
 		<div class="min-w-0 flex-1">
 			<!-- Below md this is a snapping strip of readable columns rather than a
@@ -499,8 +720,33 @@
 											title={card.categoryName ?? 'No category'}
 										></span>
 										<div class="min-w-0 flex-1">
-											<p class="truncate text-sm text-gray-900">{card.title}</p>
+											<div class="flex items-start gap-1">
+												<p class="min-w-0 flex-1 truncate text-sm text-gray-900">{card.title}</p>
+												<button
+													type="button"
+													onclick={(e) => {
+														e.stopPropagation();
+														openEditor(card);
+													}}
+													class="shrink-0 text-gray-300 transition hover:text-gray-900"
+													aria-label="Edit {card.title}"
+												>
+													<Icon name="edit" size={14} />
+												</button>
+											</div>
 											<div class="mt-1 flex flex-wrap items-center gap-2">
+												{#if needsResolution(card)}
+													<button
+														type="button"
+														onclick={(e) => {
+															e.stopPropagation();
+															openEditor(card);
+														}}
+														class="border border-amber-300 bg-amber-50 px-1 text-[10px] text-amber-700"
+													>
+														which activity?
+													</button>
+												{/if}
 												{#if card.startTime}
 													<span class="tabular font-mono text-[10px] text-gray-500"
 														>{card.startTime}</span

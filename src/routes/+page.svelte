@@ -167,7 +167,7 @@
 	{#snippet card_todayTasks()}
 		<Card title="Today's Tasks" accent={SECTION_COLORS.planner}>
 			{#snippet actions()}
-				<a href="/planner/track" class="text-xs text-gray-500 hover:text-gray-900"> Open → </a>
+				<a href="/planner/board" class="text-xs text-gray-500 hover:text-gray-900"> Open → </a>
 			{/snippet}
 			{#if data.taskSummary.total === 0}
 				<p class="text-sm text-gray-400">No tasks scheduled.</p>
@@ -531,8 +531,8 @@
 	{#snippet card_quickLinks()}
 		<Card title="Quick Links" accent={SECTION_COLORS.home}>
 			<div class="space-y-2">
-				<a href="/planner/track" class="block text-sm text-gray-600 transition hover:text-gray-900"
-					>→ Track tasks</a
+				<a href="/planner/board" class="block text-sm text-gray-600 transition hover:text-gray-900"
+					>→ Today's board</a
 				>
 				<a href="/planner/plan" class="block text-sm text-gray-600 transition hover:text-gray-900"
 					>→ Edit weekly plan</a

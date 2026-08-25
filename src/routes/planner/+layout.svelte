@@ -3,10 +3,17 @@
 
 	let { children }: { children: any } = $props();
 
+	/**
+	 * The plan comes first: it is what the section is for. Then today's version
+	 * of it, then what has no day yet, then the vocabulary, then what happened.
+	 *
+	 * Track is gone: it was the same occurrences the board already shows, listed
+	 * instead of arranged, and everything it could do to one of them the board's
+	 * card editor now does.
+	 */
 	const tabs = [
-		{ href: '/planner/board', label: 'Board' },
-		{ href: '/planner/track', label: 'Track' },
 		{ href: '/planner/plan', label: 'Plan' },
+		{ href: '/planner/board', label: 'Board' },
 		{ href: '/planner/todo', label: 'Todo' },
 		{ href: '/planner/activities', label: 'Activities' },
 		{ href: '/planner/history', label: 'History' }
