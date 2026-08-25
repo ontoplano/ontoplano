@@ -15,13 +15,22 @@ import { getUserSetting, setUserSetting } from '../settings.js';
 import { RateLimitedError } from './errors.js';
 import * as schema from '../db/schema.js';
 
+/**
+ * The slice of a connection a removal needs.
+ *
+ * Deletion runs inside a transaction, and a drizzle transaction is not a `db`
+ * — it has no `$client`, so casting one to the other is a lie TypeScript is
+ * right to reject. Naming what is actually used says the true thing instead.
+ */
+type Deleter = Pick<typeof db, 'delete'>;
+
 /** A table owned directly, via its own user_id. */
 type OwnedTable = {
 	name: string;
 	/** True when the table carries its own user_id, false when reached via a parent. */
 	direct: boolean;
 	rows: (userId: string) => unknown[];
-	remove: (tx: typeof db, userId: string) => void;
+	remove: (tx: Deleter, userId: string) => void;
 };
 
 function owned(name: string, table: never): OwnedTable {
@@ -286,7 +295,7 @@ export function exportAccount(userId: string, now: Date = new Date()): AccountEx
  */
 export function deleteAccount(userId: string): void {
 	db.transaction((tx) => {
-		for (const table of USER_TABLES) table.remove(tx as typeof db, userId);
+		for (const table of USER_TABLES) table.remove(tx, userId);
 
 		tx.delete(schema.session)
 			.where(eq(schema.session.userId, userId) as SQL)

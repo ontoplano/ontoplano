@@ -8,7 +8,7 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { tick } from 'svelte';
-	import type { PageServerData, ActionData } from './$types';
+	import type { PageData, ActionData } from './$types';
 	import {
 		HEATMAP_BAD,
 		HEATMAP_GOOD,
@@ -36,7 +36,7 @@
 		notes: string | null;
 	}
 
-	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	let showForm = $state(false);
 	let editingId: number | null = $state(null);
@@ -53,7 +53,7 @@
 	const FULL_DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 	function getFirstDay(): number {
-		return data.config?.week?.firstDay ?? 0;
+		return data.config.week.firstDay;
 	}
 
 	function orderedDayLabels(): string[] {

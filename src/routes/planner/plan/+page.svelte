@@ -110,7 +110,15 @@
 	let prefillDuration = $state(60);
 	let gridError: string | null = $state(null);
 	let createFormEl: HTMLElement | undefined = $state();
-	let ec: { addEvent: (e: unknown) => unknown } | undefined = $state();
+	/**
+	 * The calendar itself, for the one thing done imperatively.
+	 *
+	 * Its published types describe the component as exporting nothing, though
+	 * the component does export the calendar's own API — so the handle is held
+	 * as `unknown` and narrowed once, here, rather than cast at each call.
+	 */
+	let ec: unknown = $state();
+	const calendar = $derived(ec as { addEvent: (e: unknown) => unknown } | undefined);
 
 	const ZOOM_STORAGE_KEY = 'ontoplano:planner-grid-zoom';
 
@@ -979,11 +987,15 @@
 		}
 	}
 
-	function handleGridSelect(info: { start: Date; end: Date; jsEvent?: { shiftKey?: boolean } }) {
+	function handleGridSelect(info: {
+		start: Date;
+		end: Date;
+		jsEvent?: Calendar.DomEvent | Modifiers;
+	}) {
 		// A shift-drag is a selection rectangle, not "create a block here".
 		// The calendar starts its own drag from a pointer event this code cannot
 		// always intercept first, so the intent is re-checked at the end.
-		if (info.jsEvent?.shiftKey || marqueeJustFinished) return;
+		if (modifiers(info.jsEvent).shiftKey || marqueeJustFinished) return;
 
 		const placement = placementFromDates(info.start, info.end);
 		selectOffsetForDate(formatLocalDate(info.start));
@@ -1026,18 +1038,40 @@
 		}
 	}
 
-	async function handleEventDrop(info: {
+	/**
+	 * The keys held down during a drag.
+	 *
+	 * The calendar types `jsEvent` as any DOM event, and most members of that
+	 * union have no modifier keys on them — so they are read through here rather
+	 * than off the union, in the one place that has to know it is a mouse event.
+	 */
+	type Modifiers = { ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean; shiftKey?: boolean };
+
+	const modifiers = (e: Calendar.DomEvent | Modifiers | undefined): Modifiers =>
+		(e ?? {}) as Modifiers;
+
+	/**
+	 * What a drag or a resize hands back.
+	 *
+	 * The part of the calendar's info object this page uses, stated rather than
+	 * imported whole, because these handlers are also called with objects the
+	 * page builds itself when a selection moves.
+	 */
+	type DragInfo = {
 		event: { id: string | number; start: Date; end: Date };
 		revert: () => void;
 		oldEvent?: { start: Date };
-		jsEvent?: { ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean };
-	}) {
-		if (info.jsEvent?.ctrlKey || info.jsEvent?.metaKey) {
+		jsEvent?: Calendar.DomEvent | Modifiers;
+	};
+
+	async function handleEventDrop(info: DragInfo) {
+		const keys = modifiers(info.jsEvent);
+		if (keys.ctrlKey || keys.metaKey) {
 			await duplicateBlock(info);
 			return;
 		}
 		// Alt moves this occurrence only, leaving the recurring block where it is.
-		if (info.jsEvent?.altKey) {
+		if (keys.altKey) {
 			await detachOccurrence(info);
 			return;
 		}
@@ -1059,11 +1093,7 @@
 	 * the whole group lands on the same gridlines the calendar already snapped
 	 * that one to.
 	 */
-	async function moveSelection(info: {
-		event: { id: string | number; start: Date; end: Date };
-		oldEvent?: { start: Date };
-		revert: () => void;
-	}) {
+	async function moveSelection(info: DragInfo) {
 		if (!info.oldEvent) {
 			await handleEventPersist(info);
 			return;
@@ -1147,15 +1177,10 @@
 		await invalidateAll();
 	}
 
-	async function handleEventResize(info: {
-		event: { id: string | number; start: Date; end: Date };
-		revert: () => void;
-		oldEvent?: { start: Date };
-		jsEvent?: { altKey?: boolean };
-	}) {
+	async function handleEventResize(info: DragInfo) {
 		// Alt retimes this occurrence only, leaving the recurring block's own
 		// hours alone — the same bargain alt-drag makes, for the other edge.
-		if (info.jsEvent?.altKey) {
+		if (modifiers(info.jsEvent).altKey) {
 			await detachOccurrence(info);
 			return;
 		}
@@ -1174,11 +1199,7 @@
 	 *
 	 * A one-off has no recurrence to diverge from, so alt on one is just an edit.
 	 */
-	async function detachOccurrence(info: {
-		event: { id: string | number; start: Date; end: Date };
-		oldEvent?: { start: Date };
-		revert: () => void;
-	}) {
+	async function detachOccurrence(info: DragInfo) {
 		const decoded = decodeEventId(info.event.id);
 		if (!decoded) {
 			info.revert();
@@ -1224,10 +1245,7 @@
 		await invalidateAll();
 	}
 
-	async function duplicateBlock(info: {
-		event: { id: string | number; start: Date; end: Date };
-		revert: () => void;
-	}) {
+	async function duplicateBlock(info: DragInfo) {
 		const decoded = decodeEventId(info.event.id);
 		const placement = placementFromDates(info.event.start, info.event.end);
 		const date = formatLocalDate(info.event.start);
@@ -1268,7 +1286,7 @@
 			const [event] = buildSlotEvents([copy], data.range.from, data.categories, {
 				suppressedSlotIds
 			});
-			ec?.addEvent(event);
+			calendar?.addEvent(event);
 			data.slots.push(copy);
 		} else {
 			const copy: Exceptional = {
@@ -1279,15 +1297,12 @@
 				durationMinutes: placement.durationMinutes
 			};
 			const [event] = buildExceptionalEvents([copy], data.categories);
-			ec?.addEvent(event);
+			calendar?.addEvent(event);
 			data.exceptionals.push(copy);
 		}
 	}
 
-	async function handleEventPersist(info: {
-		event: { id: string | number; start: Date; end: Date };
-		revert: () => void;
-	}) {
+	async function handleEventPersist(info: DragInfo) {
 		const decoded = decodeEventId(info.event.id);
 		if (!decoded) {
 			info.revert();

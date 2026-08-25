@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import type { PageServerData } from './$types';
+	import type { PageData } from './$types';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { getAction } from '$lib/shortcuts';
 
-	let { data }: { data: PageServerData } = $props();
+	let { data }: { data: PageData } = $props();
 
 	let selectedDay: number = $state(0);
 	let selectedIndex: number = $state(0);
 
 	function catColor(catId: number | null): string {
 		if (!catId) return CATEGORY_FALLBACK_COLOR;
-		const cat = data.categories?.find((c: { id: number }) => c.id === catId);
+		const cat = data.categories.find((c) => c.id === catId);
 		return cat?.color ?? CATEGORY_FALLBACK_COLOR;
 	}
 
