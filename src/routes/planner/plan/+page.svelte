@@ -1483,9 +1483,7 @@
 				</form>
 
 				<div class="border border-gray-200 bg-white shadow-card">
-					<div
-						class="eyebrow border-b border-gray-200 px-4 py-2.5 text-gray-500"
-					>
+					<div class="eyebrow border-b border-gray-200 px-4 py-2.5 text-gray-500">
 						Saved schemes
 					</div>
 					{#if data.schemes.length === 0}
