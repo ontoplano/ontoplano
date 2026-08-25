@@ -1742,6 +1742,7 @@
 
 	<Modal
 		bind:open={showForm}
+		error={form?.message}
 		onclose={closeForm}
 		size="lg"
 		title={editingBlockId !== null ? 'Edit block' : 'New block'}

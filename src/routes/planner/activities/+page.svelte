@@ -123,7 +123,7 @@
 		</button>
 	</div>
 
-	<Modal bind:open={showCategoryForm} title="Categories" size="sm">
+	<Modal bind:open={showCategoryForm} error={form?.message} title="Categories" size="sm">
 		<div class="space-y-3">
 			<div class="divide-y divide-gray-100">
 				{#each data.categories as cat (cat.id)}
@@ -291,6 +291,7 @@
 
 	<Modal
 		bind:open={showForm}
+		error={form?.message}
 		title={editingId ? 'Edit activity' : 'New activity'}
 		onclose={() => (editingId = null)}
 		size="sm"

@@ -270,6 +270,7 @@
 
 	<Modal
 		bind:open={showForm}
+		error={form?.message}
 		title={editingId ? 'Edit idea' : 'New idea'}
 		onclose={() => (editingId = null)}
 	>

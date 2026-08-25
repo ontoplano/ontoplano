@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import { autofocus } from '$lib/actions/autofocus';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -24,9 +26,6 @@
 	}
 
 	const notice = $derived(form?.success ? form.message : null);
-
-	const INPUT =
-		'mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none';
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (
@@ -81,68 +80,54 @@
 					{/if}
 				</p>
 			</div>
-			{#if editing !== 'email'}
-				<button
-					onclick={() => (editing = 'email')}
-					class="shrink-0 border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
-				>
-					Change
-				</button>
-			{/if}
+			<button onclick={() => (editing = 'email')} class="btn btn-sm shrink-0">Change</button>
 		</div>
+	</section>
 
-		{#if editing === 'email'}
-			{#if !data.emailConfigured}
-				<p class="mt-4 border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
-					This server has no mail configured, so the confirmation link is written to its log.
-				</p>
-			{/if}
-			<form
-				method="post"
-				action="?/changeEmail"
-				use:enhance={() =>
-					async ({ update, result }) => {
-						if (result.type === 'success') editing = null;
-						await update({ reset: result.type === 'success' });
-					}}
-				class="mt-4 max-w-sm space-y-3"
-			>
-				<label class="block">
-					<span class="eyebrow text-gray-500">New address</span>
-					<input
-						name="newEmail"
-						type="email"
-						required
-						autocomplete="email"
-						use:autofocus
-						class={INPUT}
-					/>
-				</label>
-				<label class="block">
-					<span class="eyebrow text-gray-500">Your password</span>
+	<Modal
+		open={editing === 'email'}
+		error={form?.message}
+		onclose={() => (editing = null)}
+		title="Change your email address"
+		description="Nothing changes until the link in the confirmation mail is followed."
+		size="sm"
+	>
+		{#if !data.emailConfigured}
+			<p class="mb-4 border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
+				This server has no mail configured, so the confirmation link is written to its log.
+			</p>
+		{/if}
+		<form
+			id="email-form"
+			method="post"
+			action="?/changeEmail"
+			use:enhance={() =>
+				async ({ update, result }) => {
+					if (result.type === 'success') editing = null;
+					await update({ reset: result.type === 'success' });
+				}}
+		>
+			<FormGrid>
+				<Field label="New address" span={12} required>
+					<input name="newEmail" type="email" required autocomplete="email" class="input" />
+				</Field>
+				<Field label="Your password" span={12} required>
 					<input
 						name="password"
 						type="password"
 						required
 						autocomplete="current-password"
-						class={INPUT}
+						class="input"
 					/>
-				</label>
-				<div class="flex gap-2">
-					<button class="bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">
-						Send confirmation
-					</button>
-					<button
-						type="button"
-						onclick={() => (editing = null)}
-						class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-					>
-						Cancel
-					</button>
-				</div>
-			</form>
-		{/if}
-	</section>
+				</Field>
+			</FormGrid>
+		</form>
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (editing = null)}>Cancel</button>
+			<button type="submit" form="email-form" class="btn btn-primary">Send confirmation</button>
+		{/snippet}
+	</Modal>
 
 	<section class="border border-gray-200 bg-white p-6 shadow-card">
 		<div class="flex items-start justify-between gap-4">
@@ -152,75 +137,66 @@
 					Changing it signs out every other device you are logged in on.
 				</p>
 			</div>
-			{#if editing !== 'password'}
-				<button
-					onclick={() => (editing = 'password')}
-					class="shrink-0 border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
-				>
-					Change
-				</button>
-			{/if}
+			<button onclick={() => (editing = 'password')} class="btn btn-sm shrink-0">Change</button>
 		</div>
+	</section>
 
-		{#if editing === 'password'}
-			<form
-				method="post"
-				action="?/changePassword"
-				use:enhance={() =>
-					async ({ update, result }) => {
-						if (result.type === 'success') editing = null;
-						await update({ reset: result.type === 'success' });
-					}}
-				class="mt-4 max-w-sm space-y-3"
-			>
-				<label class="block">
-					<span class="eyebrow text-gray-500">Current password</span>
+	<Modal
+		open={editing === 'password'}
+		error={form?.message}
+		onclose={() => (editing = null)}
+		title="Change your password"
+		description="Every other signed-in device is signed out."
+		size="sm"
+	>
+		<form
+			id="password-form"
+			method="post"
+			action="?/changePassword"
+			use:enhance={() =>
+				async ({ update, result }) => {
+					if (result.type === 'success') editing = null;
+					await update({ reset: result.type === 'success' });
+				}}
+		>
+			<FormGrid>
+				<Field label="Current password" span={12} required>
 					<input
 						name="currentPassword"
 						type="password"
 						required
 						autocomplete="current-password"
-						use:autofocus
-						class={INPUT}
+						class="input"
 					/>
-				</label>
-				<label class="block">
-					<span class="eyebrow text-gray-500">New password</span>
+				</Field>
+				<Field label="New password" span={12} required>
 					<input
 						name="newPassword"
 						type="password"
 						required
 						minlength="8"
 						autocomplete="new-password"
-						class={INPUT}
+						class="input"
 					/>
-				</label>
-				<label class="block">
-					<span class="eyebrow text-gray-500">New password again</span>
+				</Field>
+				<Field label="New password again" span={12} required>
 					<input
 						name="confirmPassword"
 						type="password"
 						required
 						minlength="8"
 						autocomplete="new-password"
-						class={INPUT}
+						class="input"
 					/>
-				</label>
-				<div class="flex gap-2">
-					<button class="bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">
-						Change password
-					</button>
-					<button
-						type="button"
-						onclick={() => (editing = null)}
-						class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-					>
-						Cancel
-					</button>
-				</div>
-			</form>
-		{/if}
-	</section>
+				</Field>
+			</FormGrid>
+		</form>
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (editing = null)}>Cancel</button>
+			<button type="submit" form="password-form" class="btn btn-primary">Change password</button>
+		{/snippet}
+	</Modal>
 
 	<section class="border border-gray-200 bg-white shadow-card">
 		<div class="flex items-start justify-between gap-4 p-6 pb-4">
@@ -343,35 +319,28 @@
 			This removes every row belonging to you and cannot be undone. Download an export first if you
 			might want the data back.
 		</p>
-
-		{#if !confirming}
-			<button
-				onclick={() => (confirming = true)}
-				class="mt-4 border border-red-200 bg-white px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-			>
-				Delete account
-			</button>
-		{:else}
-			<form method="post" action="?/delete" use:enhance class="mt-4 space-y-3">
-				<label class="block max-w-sm">
-					<span class="eyebrow text-gray-500">Type {data.email} to confirm</span>
-					<input name="email" autocomplete="off" required use:autofocus class={INPUT} />
-				</label>
-				<div class="flex gap-2">
-					<button
-						class="border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 hover:bg-red-100"
-					>
-						Delete permanently
-					</button>
-					<button
-						type="button"
-						onclick={() => (confirming = false)}
-						class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-					>
-						Cancel
-					</button>
-				</div>
-			</form>
-		{/if}
+		<button onclick={() => (confirming = true)} class="btn btn-danger mt-4">Delete account</button>
 	</section>
+
+	<Modal
+		open={confirming}
+		error={form?.message}
+		onclose={() => (confirming = false)}
+		title="Delete your account"
+		description="Every row belonging to you goes with it. This cannot be undone."
+		size="sm"
+	>
+		<form id="delete-form" method="post" action="?/delete" use:enhance>
+			<FormGrid>
+				<Field label="Type {data.email} to confirm" span={12} required>
+					<input name="email" autocomplete="off" required class="input" />
+				</Field>
+			</FormGrid>
+		</form>
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (confirming = false)}>Cancel</button>
+			<button type="submit" form="delete-form" class="btn btn-danger">Delete permanently</button>
+		{/snippet}
+	</Modal>
 </div>

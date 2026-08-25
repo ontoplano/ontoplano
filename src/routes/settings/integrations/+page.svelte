@@ -109,6 +109,7 @@
 
 		<Modal
 			bind:open={showTokenForm}
+			error={form?.message}
 			title="New API token"
 			description="Shown once, at creation. It cannot be recovered afterwards."
 		>

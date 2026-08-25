@@ -172,6 +172,7 @@
 
 	<Modal
 		bind:open={showForm}
+		error={form?.message}
 		title={editingId ? 'Edit todo' : 'New todo'}
 		onclose={() => (editingId = null)}
 	>
@@ -241,6 +242,7 @@
 
 	<Modal
 		open={delegatingId !== null}
+		error={form?.message}
 		onclose={() => (delegatingId = null)}
 		title="Put it on a day"
 		description="It keeps its place in the list and gains a time on the plan."

@@ -138,6 +138,7 @@
 
 	<Modal
 		bind:open={showAreas}
+		error={form?.message}
 		title="Areas"
 		description="Fitness, study, money — whatever you track."
 		size="sm"
@@ -208,6 +209,7 @@
 
 	<Modal
 		bind:open={showForm}
+		error={form?.message}
 		title={editingId ? 'Edit goal' : 'New goal'}
 		onclose={() => (editingId = null)}
 	>
@@ -472,6 +474,7 @@
 
 	<Modal
 		open={linkingId !== null}
+		error={form?.message}
 		onclose={() => (linkingId = null)}
 		title="Linked tasks"
 		description="Linked tasks make progress countable — how many of these actually got done inside the period, instead of a number you type in."

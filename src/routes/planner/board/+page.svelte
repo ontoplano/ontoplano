@@ -409,7 +409,7 @@
 		</span>
 	</div>
 
-	<Modal bind:open={showForm} title="New card" size="sm">
+	<Modal bind:open={showForm} error={form?.message} title="New card" size="sm">
 		<form
 			id="card-form"
 			method="post"

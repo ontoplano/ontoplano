@@ -319,6 +319,7 @@
 
 	<Modal
 		bind:open={showForm}
+		error={form?.message}
 		title={editingId ? 'Edit habit' : 'New habit'}
 		onclose={resetForm}
 		size="sm"

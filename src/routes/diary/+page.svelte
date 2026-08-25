@@ -316,6 +316,7 @@
 
 	<Modal
 		bind:open={showForm}
+		error={form?.message}
 		title={editingId ? 'Edit entry' : 'New entry'}
 		onclose={() => (editingId = null)}
 	>

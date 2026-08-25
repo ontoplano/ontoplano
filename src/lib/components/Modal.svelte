@@ -20,6 +20,9 @@
 		description = '',
 		/** Widths are deliberately few: a form is one column or two, never five. */
 		size = 'md',
+		/** A failed submission's message. Shown here because the page behind is
+		 *  dimmed and inert — an error rendered out there cannot be read. */
+		error = null,
 		onclose,
 		children,
 		footer
@@ -28,6 +31,7 @@
 		title: string;
 		description?: string;
 		size?: 'sm' | 'md' | 'lg';
+		error?: string | null;
 		onclose?: () => void;
 		children: Snippet;
 		footer?: Snippet;
@@ -103,6 +107,11 @@
 			</header>
 
 			<div class="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+				{#if error}
+					<div class="mb-4 border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+						{error}
+					</div>
+				{/if}
 				{@render children()}
 			</div>
 

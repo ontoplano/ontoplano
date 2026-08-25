@@ -188,7 +188,7 @@
 		</div>
 	{/if}
 
-	<Modal bind:open={showForm} title="New item" size="sm">
+	<Modal bind:open={showForm} error={form?.message} title="New item" size="sm">
 		<form
 			id="item-form"
 			method="POST"
