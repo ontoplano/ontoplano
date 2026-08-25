@@ -186,6 +186,30 @@ const todo = (title, extra = {}) => {
 	);
 };
 
+const notebook = (title, description, closed = false) => {
+	const existing = one('select id from notebooks where user_id = ? and title = ?', uid, title);
+	if (existing) return existing.id;
+	return run(
+		`insert into notebooks (user_id, title, description, closed_at, created_at, updated_at)
+		 values (?, ?, ?, ?, ?, ?)`,
+		uid,
+		title,
+		description,
+		closed ? stamp(dayOffset(-20)) : null,
+		stamp(dayOffset(-60)),
+		stamp(now)
+	);
+};
+
+/** Point an already-seeded row at a notebook, by whatever identifies it here. */
+const inNotebook = (table, column, value, notebookId) =>
+	run(
+		`update ${table} set notebook_id = ? where user_id = ? and ${column} = ?`,
+		notebookId,
+		uid,
+		value
+	);
+
 const tag = (name) => {
 	const existing = one('select id from tags where user_id = ? and name = ?', uid, name);
 	if (existing) return existing.id;
@@ -689,6 +713,34 @@ person('Mum', 'family');
 mention(1, ana);
 mention(2, joao);
 mention(4, marina);
+
+diary(5, 'The plumber says the wall can go, but not before the pipes move.', ['home']);
+diary(6, 'Finished The Dispossessed. The two timelines land better than I expected.', ['reading']);
+diary(7, 'Booked the flights. Three days in Lisbon, then the train south.', ['travel']);
+diary(8, 'The leak is fixed. Two weeks and a new bit of ceiling.', ['home']);
+
+// --- notebooks ---------------------------------------------------------------
+
+const kitchen = notebook(
+	'Kitchen renovation',
+	'Quotes, measurements, and whatever the plumber said last.'
+);
+const readingNotebook = notebook('Reading', 'What I am reading, and what I thought of it.');
+const portugal = notebook('Portugal in September', 'Everything for the trip.');
+const leak = notebook('Bathroom leak', 'Two weeks of it. Kept for the invoices.', true);
+
+todo('get three quotes for the counter', { urgency: 3, interest: 2, sortOrder: 7 });
+todo('measure the wall properly', { status: 'done', sortOrder: 8 });
+
+inNotebook('planner_todos', 'title', 'get three quotes for the counter', kitchen);
+inNotebook('planner_todos', 'title', 'measure the wall properly', kitchen);
+inNotebook('planner_todos', 'title', 'plan the trip', portugal);
+inNotebook('diary_entries', 'seq', 5, kitchen);
+inNotebook('diary_entries', 'seq', 4, readingNotebook);
+inNotebook('diary_entries', 'seq', 6, readingNotebook);
+inNotebook('diary_entries', 'seq', 7, portugal);
+inNotebook('diary_entries', 'seq', 8, leak);
+inNotebook('goals', 'title', 'read twelve books', readingNotebook);
 
 idea('A weekly review that writes itself from the tracker', ['product', 'planning'], {
 	favorite: true

@@ -1,7 +1,7 @@
 import { and, desc, eq, max } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { diaryEntries, diaryEntryTags, tags } from '../db/schema.js';
+import { diaryEntries, diaryEntryTags, notebooks, tags } from '../db/schema.js';
 import {
 	cleanupOrphanTags,
 	ensureTagIds,
@@ -11,6 +11,7 @@ import {
 } from '../tags.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
+import { ownedNotebookId } from './notebooks.js';
 import { stamp, stamps } from './time.js';
 import { str } from './validate.js';
 
@@ -30,10 +31,13 @@ export function listEntries(ctx: Ctx) {
 			seq: diaryEntries.seq,
 			content: diaryEntries.content,
 			forDate: diaryEntries.forDate,
+			notebookId: diaryEntries.notebookId,
+			notebookTitle: notebooks.title,
 			createdAt: diaryEntries.createdAt,
 			updatedAt: diaryEntries.updatedAt
 		})
 		.from(diaryEntries)
+		.leftJoin(notebooks, eq(diaryEntries.notebookId, notebooks.id))
 		.where(eq(diaryEntries.userId, ctx.userId))
 		.orderBy(desc(diaryEntries.createdAt))
 		.all();
@@ -53,9 +57,12 @@ export function listTags(ctx: Ctx) {
 	return db.select().from(tags).where(eq(tags.userId, ctx.userId)).orderBy(tags.name).all();
 }
 
-export function createEntry(ctx: Ctx, raw: { content: unknown; tags?: unknown }): number {
+export function createEntry(
+	ctx: Ctx,
+	raw: { content: unknown; tags?: unknown; notebookId?: unknown }
+): number {
 	const content = str(raw.content, 'content', { max: MAX_ENTRY_LENGTH });
-	const entryId = insertEntry(ctx, content);
+	const entryId = insertEntry(ctx, content, undefined, ownedNotebookId(ctx, raw.notebookId));
 
 	const tagNames = parseTags(tagInput(raw.tags));
 	if (tagNames.length > 0) linkDiaryTags(entryId, ensureTagIds(tagNames, ctx.userId));
@@ -71,7 +78,7 @@ export function createEntry(ctx: Ctx, raw: { content: unknown; tags?: unknown })
  */
 export function createWins(
 	ctx: Ctx,
-	raw: { wins: unknown[]; tags?: unknown; forDate?: unknown }
+	raw: { wins: unknown[]; tags?: unknown; forDate?: unknown; notebookId?: unknown }
 ): number {
 	const wins = raw.wins
 		.filter((w) => w !== undefined && w !== null)
@@ -83,7 +90,7 @@ export function createWins(
 
 	const forDate = civilDate(ctx, raw.forDate);
 	const content = wins.map((w, i) => `Win ${i + 1}: ${w}`).join('\n');
-	const entryId = insertEntry(ctx, content, forDate);
+	const entryId = insertEntry(ctx, content, forDate, ownedNotebookId(ctx, raw.notebookId));
 
 	const userTags = parseTags(tagInput(raw.tags));
 	const tagIds = ensureTagIds([WINS_TAG, ...userTags.filter((t) => t !== WINS_TAG)], ctx.userId);
@@ -92,12 +99,16 @@ export function createWins(
 	return entryId;
 }
 
-export function updateEntry(ctx: Ctx, id: number, raw: { content: unknown; tags?: unknown }): void {
+export function updateEntry(
+	ctx: Ctx,
+	id: number,
+	raw: { content: unknown; tags?: unknown; notebookId?: unknown }
+): void {
 	const content = str(raw.content, 'content', { max: MAX_ENTRY_LENGTH });
 
 	const res = db
 		.update(diaryEntries)
-		.set({ content, updatedAt: stamp(ctx) })
+		.set({ content, notebookId: ownedNotebookId(ctx, raw.notebookId), updatedAt: stamp(ctx) })
 		.where(and(eq(diaryEntries.id, id), eq(diaryEntries.userId, ctx.userId)))
 		.run();
 
@@ -119,7 +130,12 @@ export function deleteEntry(ctx: Ctx, id: number): void {
 }
 
 /** `seq` is the account's own numbering, so it counts within the account. */
-function insertEntry(ctx: Ctx, content: string, forDate?: string): number {
+function insertEntry(
+	ctx: Ctx,
+	content: string,
+	forDate?: string,
+	notebookId?: number | null
+): number {
 	const highest =
 		db
 			.select({ value: max(diaryEntries.seq) })
@@ -131,10 +147,10 @@ function insertEntry(ctx: Ctx, content: string, forDate?: string): number {
 		.insert(diaryEntries)
 		.values({
 			...stamps(ctx),
-			...stamps(ctx),
 			userId: ctx.userId,
 			content,
 			seq: highest + 1,
+			notebookId: notebookId ?? null,
 			...(forDate ? { forDate } : {})
 		})
 		.run();

@@ -2,6 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { ratingsFromForm } from '$lib/ratings';
 import { listActivities, listCategories } from '$lib/server/services/activities';
 import { buildCtx } from '$lib/server/services/ctx';
+import { pickableNotebooks } from '$lib/server/services/notebooks';
 import { toActionFailure } from '$lib/server/services/errors';
 import {
 	createTodo,
@@ -19,6 +20,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	return {
 		todos: listTodos(ctx),
 		categories: listCategories(ctx),
+		notebooks: pickableNotebooks(ctx),
 		activities: listActivities(ctx, { activeOnly: true })
 	};
 };
@@ -31,6 +33,7 @@ export const actions: Actions = {
 				title: formData.get('title'),
 				notes: formData.get('notes'),
 				categoryId: formData.get('categoryId'),
+				notebookId: formData.get('notebookId'),
 				scheduledDate: formData.get('scheduledDate'),
 				ratings: ratingsFromForm(formData)
 			});
@@ -47,6 +50,7 @@ export const actions: Actions = {
 				title: formData.get('title'),
 				notes: formData.get('notes'),
 				categoryId: formData.get('categoryId'),
+				notebookId: formData.get('notebookId'),
 				ratings: ratingsFromForm(formData)
 			});
 			return { success: true };

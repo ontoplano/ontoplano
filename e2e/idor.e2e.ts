@@ -225,6 +225,13 @@ test.describe('one account cannot reach another account by id', () => {
 			attack: (id) => ({ path: '/diary/people?/update', form: { id, name: 'taken' } })
 		},
 		{
+			name: 'notebook',
+			page: '/diary/notebooks',
+			payloadKey: 'notebooks',
+			create: { path: '/diary/notebooks?/create', form: { title: "alice's notebook" } },
+			attack: (id) => ({ path: '/diary/notebooks?/update', form: { id, title: 'taken' } })
+		},
+		{
 			name: 'api token',
 			page: '/settings/integrations',
 			payloadKey: 'tokens',

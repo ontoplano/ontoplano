@@ -9,6 +9,7 @@
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import NotebookField from '$lib/components/NotebookField.svelte';
 	import {
 		HORIZONS,
 		HORIZON_LABELS,
@@ -265,6 +266,8 @@
 						{/each}
 					</select>
 				</Field>
+
+				<NotebookField notebooks={data.notebooks} value={editing?.notebookId ?? null} span={4} />
 
 				<Field label="Target" span={4} hint="Optional — leave empty for a yes/no goal">
 					<input

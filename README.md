@@ -30,6 +30,9 @@ Self-hosted, single SQLite file, no account anywhere but your own.
   shopping.
 - **People** — mention someone in an entry and every mention collects on their
   page; a tag cannot do that, because a tag has no identity beyond its spelling.
+- **Notebooks** — a subject you write against with no deadline: a book, a trip,
+  a renovation. Entries, tasks and goals can belong to one, and deleting it
+  leaves every one of them where it is.
 - **Dashboard** — the cards you choose, in the order you choose.
 - **Plugins** — scoped API tokens, data streams that external apps push into,
   and a schedule endpoint they can read. See `docs/PLUGINS.md`.

@@ -14,6 +14,7 @@ import {
 	activities,
 	categories,
 	exceptionalSlots,
+	notebooks,
 	plannerTodos,
 	taskInstances
 } from '../db/schema.js';
@@ -21,6 +22,7 @@ import { isStatus, type Status } from '../../task-status.js';
 import type { RatingValues } from '../../ratings.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
+import { ownedNotebookId } from './notebooks.js';
 import { created, stamp, stamps } from './time.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
 
@@ -34,6 +36,8 @@ export type Todo = {
 	categoryId: number | null;
 	categoryName: string | null;
 	categoryColor: string | null;
+	notebookId: number | null;
+	notebookTitle: string | null;
 	ratings: RatingValues;
 	createdAt: string;
 	updatedAt: string;
@@ -49,6 +53,8 @@ const SELECTION = {
 	categoryId: plannerTodos.categoryId,
 	categoryName: categories.name,
 	categoryColor: categories.color,
+	notebookId: plannerTodos.notebookId,
+	notebookTitle: notebooks.title,
 	urgency: plannerTodos.urgency,
 	interest: plannerTodos.interest,
 	energy: plannerTodos.energy,
@@ -67,6 +73,8 @@ function shape(r: Record<string, unknown>): Todo {
 		categoryId: (r.categoryId as number) ?? null,
 		categoryName: (r.categoryName as string) ?? null,
 		categoryColor: (r.categoryColor as string) ?? null,
+		notebookId: (r.notebookId as number) ?? null,
+		notebookTitle: (r.notebookTitle as string) ?? null,
 		ratings: {
 			urgency: (r.urgency as number) ?? null,
 			interest: (r.interest as number) ?? null,
@@ -83,6 +91,7 @@ export function listTodos(ctx: Ctx): Todo[] {
 		.select(SELECTION)
 		.from(plannerTodos)
 		.leftJoin(categories, eq(plannerTodos.categoryId, categories.id))
+		.leftJoin(notebooks, eq(plannerTodos.notebookId, notebooks.id))
 		.where(eq(plannerTodos.userId, ctx.userId))
 		.orderBy(asc(plannerTodos.sortOrder), asc(plannerTodos.createdAt))
 		.all()
@@ -95,6 +104,7 @@ export function listUnscheduled(ctx: Ctx): Todo[] {
 		.select(SELECTION)
 		.from(plannerTodos)
 		.leftJoin(categories, eq(plannerTodos.categoryId, categories.id))
+		.leftJoin(notebooks, eq(plannerTodos.notebookId, notebooks.id))
 		.where(and(eq(plannerTodos.userId, ctx.userId), isNull(plannerTodos.scheduledDate)))
 		.orderBy(asc(plannerTodos.sortOrder), asc(plannerTodos.createdAt))
 		.all()
@@ -113,6 +123,7 @@ export function listForDate(ctx: Ctx, date: string): Todo[] {
 		.select(SELECTION)
 		.from(plannerTodos)
 		.leftJoin(categories, eq(plannerTodos.categoryId, categories.id))
+		.leftJoin(notebooks, eq(plannerTodos.notebookId, notebooks.id))
 		.where(and(eq(plannerTodos.userId, ctx.userId), eq(plannerTodos.scheduledDate, date)))
 		.orderBy(asc(plannerTodos.sortOrder), asc(plannerTodos.createdAt))
 		.all()
@@ -122,6 +133,7 @@ export function listForDate(ctx: Ctx, date: string): Todo[] {
 		.select(SELECTION)
 		.from(plannerTodos)
 		.leftJoin(categories, eq(plannerTodos.categoryId, categories.id))
+		.leftJoin(notebooks, eq(plannerTodos.notebookId, notebooks.id))
 		.where(
 			and(
 				eq(plannerTodos.userId, ctx.userId),
@@ -200,6 +212,8 @@ export function promoteTodo(
 				mode: 'category',
 				categoryId,
 				label: todo.title,
+				// Scheduling something must not quietly remove it from its subject.
+				notebookId: todo.notebookId,
 				urgency: todo.urgency,
 				interest: todo.interest,
 				energy: todo.energy
@@ -241,6 +255,7 @@ export type TodoInput = {
 	title: unknown;
 	notes?: unknown;
 	categoryId?: unknown;
+	notebookId?: unknown;
 	scheduledDate?: unknown;
 	status?: unknown;
 	ratings?: Partial<RatingValues>;
@@ -255,6 +270,7 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 			title: str(raw.title, 'title', { max: MAX_TITLE_LENGTH }),
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
 			categoryId: ownedCategoryId(ctx, raw.categoryId),
+			notebookId: ownedNotebookId(ctx, raw.notebookId),
 			scheduledDate: optionalDate(raw.scheduledDate),
 			status: isStatus(raw.status) ? raw.status : 'todo',
 			sortOrder: nextSortOrder(ctx),
@@ -272,6 +288,7 @@ export function updateTodo(ctx: Ctx, id: number, raw: TodoInput): void {
 			title: str(raw.title, 'title', { max: MAX_TITLE_LENGTH }),
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
 			categoryId: ownedCategoryId(ctx, raw.categoryId),
+			notebookId: ownedNotebookId(ctx, raw.notebookId),
 			...(raw.ratings ?? {}),
 			updatedAt: stamp(ctx)
 		})
@@ -357,7 +374,7 @@ export function delegateTodo(
 	if (mode === 'activity' && !activityId) throw new ValidationError('Activity required');
 
 	const todo = db
-		.select({ title: plannerTodos.title })
+		.select({ title: plannerTodos.title, notebookId: plannerTodos.notebookId })
 		.from(plannerTodos)
 		.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, ctx.userId)))
 		.get();
@@ -375,7 +392,10 @@ export function delegateTodo(
 				mode,
 				categoryId,
 				activityId,
-				label: todo.title.slice(0, MAX_LABEL_LENGTH)
+				label: todo.title.slice(0, MAX_LABEL_LENGTH),
+				// As with promoting: giving a task a time must not take it out of
+				// the notebook it belongs to.
+				notebookId: todo.notebookId
 			})
 			.run();
 

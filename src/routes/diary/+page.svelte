@@ -6,6 +6,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import Field from '$lib/components/Field.svelte';
+	import NotebookField from '$lib/components/NotebookField.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { tick } from 'svelte';
@@ -370,6 +371,11 @@
 						{/each}
 					</datalist>
 				</Field>
+
+				<NotebookField
+					notebooks={data.notebooks}
+					value={editingId ? (editingEntry()?.notebookId ?? null) : null}
+				/>
 			</FormGrid>
 		</form>
 
@@ -491,6 +497,15 @@
 							<br /><span class="text-xs text-gray-400">
 								Edited: {formatDate(entry.updatedAt)}</span
 							>
+						{/if}
+						{#if entry.notebookId}
+							<a
+								href="{resolve('/diary/notebooks')}?notebook={entry.notebookId}"
+								class="flex items-center gap-1 border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-xs text-gray-700 hover:bg-gray-100"
+							>
+								<Icon name="notebook" size={12} />
+								{entry.notebookTitle}
+							</a>
 						{/if}
 						{#each entry.people as person (person.id)}
 							<a

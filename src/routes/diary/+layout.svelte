@@ -6,12 +6,14 @@
 	let { children }: { children: Snippet } = $props();
 
 	/**
-	 * Two views of the same material: what you wrote, and who it was about.
-	 * People are not a separate section — they are an index into the journal.
+	 * Three views of the same material: what you wrote, who it was about, and
+	 * what subject it belonged to. Neither people nor notebooks are a separate
+	 * section — they are indexes into the journal.
 	 */
 	const tabs = [
 		{ path: '/diary', label: 'Entries' },
-		{ path: '/diary/people', label: 'People' }
+		{ path: '/diary/people', label: 'People' },
+		{ path: '/diary/notebooks', label: 'Notebooks' }
 	] as const;
 </script>
 

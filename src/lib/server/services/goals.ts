@@ -14,6 +14,7 @@ import {
 	goalAreas,
 	goalLinks,
 	goals,
+	notebooks,
 	plannerTodos,
 	taskInstances,
 	weeklySlots
@@ -21,6 +22,7 @@ import {
 import { periodEnd, periodStart, isGoalStatus, isHorizon, type Horizon } from '../../goals.js';
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
+import { ownedNotebookId } from './notebooks.js';
 import { created, stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
 
@@ -39,6 +41,8 @@ export type Goal = {
 	areaId: number | null;
 	areaName: string | null;
 	areaColor: string | null;
+	notebookId: number | null;
+	notebookTitle: string | null;
 	parentId: number | null;
 	title: string;
 	notes: string;
@@ -148,6 +152,8 @@ export function listGoals(ctx: Ctx, opts: { includeClosed?: boolean } = {}): Goa
 			areaId: goals.areaId,
 			areaName: goalAreas.name,
 			areaColor: goalAreas.color,
+			notebookId: goals.notebookId,
+			notebookTitle: notebooks.title,
 			parentId: goals.parentId,
 			title: goals.title,
 			notes: goals.notes,
@@ -162,6 +168,7 @@ export function listGoals(ctx: Ctx, opts: { includeClosed?: boolean } = {}): Goa
 		})
 		.from(goals)
 		.leftJoin(goalAreas, eq(goals.areaId, goalAreas.id))
+		.leftJoin(notebooks, eq(goals.notebookId, notebooks.id))
 		.where(eq(goals.userId, ctx.userId))
 		.orderBy(asc(goals.periodStart), asc(goals.title))
 		.all();
@@ -185,6 +192,8 @@ export function listGoals(ctx: Ctx, opts: { includeClosed?: boolean } = {}): Goa
 				areaId: r.areaId,
 				areaName: r.areaName,
 				areaColor: r.areaColor,
+				notebookId: r.notebookId,
+				notebookTitle: r.notebookTitle,
 				parentId: r.parentId,
 				title: r.title,
 				notes: r.notes ?? '',
@@ -288,6 +297,7 @@ export function createGoal(
 		notes?: unknown;
 		startDate?: unknown;
 		areaId?: unknown;
+		notebookId?: unknown;
 		parentId?: unknown;
 		targetValue?: unknown;
 		unit?: unknown;
@@ -309,6 +319,7 @@ export function createGoal(
 			// the same quarter always agree on where that quarter starts.
 			periodStart: periodStart(horizon, anchor),
 			areaId: ownedAreaId(ctx, raw.areaId),
+			notebookId: ownedNotebookId(ctx, raw.notebookId),
 			parentId: ownedGoalId(ctx, raw.parentId),
 			targetValue: parseTarget(raw.targetValue),
 			unit: optionalStr(raw.unit, 'unit', { max: MAX_UNIT_LENGTH })
@@ -325,6 +336,7 @@ export function updateGoal(
 		title: unknown;
 		notes?: unknown;
 		areaId?: unknown;
+		notebookId?: unknown;
 		targetValue?: unknown;
 		unit?: unknown;
 		horizon?: unknown;
@@ -353,6 +365,7 @@ export function updateGoal(
 			title: str(raw.title, 'title', { max: MAX_TITLE_LENGTH }),
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
 			areaId: ownedAreaId(ctx, raw.areaId),
+			notebookId: ownedNotebookId(ctx, raw.notebookId),
 			targetValue: parseTarget(raw.targetValue),
 			unit: optionalStr(raw.unit, 'unit', { max: MAX_UNIT_LENGTH }),
 			horizon,

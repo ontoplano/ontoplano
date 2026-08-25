@@ -15,6 +15,7 @@ import {
 	setGoalProgress,
 	updateGoal
 } from '$lib/server/services/goals';
+import { pickableNotebooks } from '$lib/server/services/notebooks';
 import { listTodos } from '$lib/server/services/todos';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -23,6 +24,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	return {
 		areas: listAreas(ctx),
+		notebooks: pickableNotebooks(ctx),
 		goals: listGoals(ctx, { includeClosed }),
 		includeClosed,
 		slots: linkableSlots(ctx),
@@ -64,6 +66,7 @@ export const actions: Actions = {
 				notes: formData.get('notes'),
 				startDate: formData.get('startDate'),
 				areaId: formData.get('areaId'),
+				notebookId: formData.get('notebookId'),
 				parentId: formData.get('parentId'),
 				targetValue: formData.get('targetValue'),
 				unit: formData.get('unit')
@@ -81,6 +84,7 @@ export const actions: Actions = {
 				title: formData.get('title'),
 				notes: formData.get('notes'),
 				areaId: formData.get('areaId'),
+				notebookId: formData.get('notebookId'),
 				targetValue: formData.get('targetValue'),
 				unit: formData.get('unit'),
 				horizon: formData.get('horizon'),

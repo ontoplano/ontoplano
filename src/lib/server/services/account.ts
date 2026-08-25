@@ -133,6 +133,8 @@ const USER_TABLES: OwnedTable[] = [
 	owned('taskInstances', schema.taskInstances as never),
 	owned('suppressedSlots', schema.suppressedSlots as never),
 	owned('exceptionalSlots', schema.exceptionalSlots as never),
+	// Last of the subjects: entries, todos, goals and blocks all point at it.
+	owned('notebooks', schema.notebooks as never),
 	owned('weeklySlots', schema.weeklySlots as never),
 	owned('activities', schema.activities as never),
 	owned('categories', schema.categories as never),

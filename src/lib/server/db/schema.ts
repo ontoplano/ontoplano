@@ -178,6 +178,40 @@ export const taskInstances = sqliteTable(
 // --- Diary ---
 
 /**
+ * A notebook is a subject you write against, with no deadline: a book you are
+ * reading, a trip, a renovation.
+ *
+ * Deliberately not a goal — a goal is a commitment with a horizon and a verdict
+ * at the end, and this has neither. It is a place to put things about one
+ * subject, so it owns nothing: entries, todos and goals point at it, and
+ * deleting one leaves all of them where they are.
+ */
+export const notebooks = sqliteTable(
+	'notebooks',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		title: text('title').notNull(),
+		description: text('description').default(''),
+		// Closed rather than deleted: a finished trip should stop cluttering the
+		// list without taking its entries' context with it.
+		closedAt: text('closed_at'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('notebooks_user_idx').on(table.userId),
+		uniqueIndex('notebooks_user_title_unique').on(table.userId, table.title)
+	]
+);
+
+/**
  * People you know, and the entries that mention them.
  *
  * A person is a subject you accumulate a history about, which is what makes
@@ -246,6 +280,7 @@ export const diaryEntries = sqliteTable(
 		seq: integer('seq').notNull().default(0),
 		content: text('content').notNull(),
 		forDate: text('for_date'),
+		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -257,6 +292,7 @@ export const diaryEntries = sqliteTable(
 		index('diary_entries_user_idx').on(table.userId),
 		index('diary_entries_created_idx').on(table.createdAt),
 		index('diary_entries_for_date_idx').on(table.forDate),
+		index('diary_entries_notebook_idx').on(table.notebookId),
 		uniqueIndex('diary_entries_user_seq_unique').on(table.userId, table.seq)
 	]
 );
@@ -380,6 +416,9 @@ export const exceptionalSlots = sqliteTable(
 		activityId: integer('activity_id').references(() => activities.id),
 		label: text('label').default(''),
 		active: integer('active', { mode: 'boolean' }).notNull().default(true),
+		// Carried over when a todo is dragged onto the grid, so scheduling
+		// something does not remove it from the subject it belongs to.
+		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
 		// How pressing, how appealing, how much it will take out of you. Nullable
 		// on purpose: forcing three numbers onto every task is how a system stops
 		// being used by the second week. Columns rather than `meta` JSON because
@@ -394,6 +433,7 @@ export const exceptionalSlots = sqliteTable(
 	},
 	(table) => [
 		index('exceptional_slots_user_date_idx').on(table.userId, table.date),
+		index('exceptional_slots_notebook_idx').on(table.notebookId),
 		check(
 			'exceptional_urgency_range',
 			sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 1 AND 5`
@@ -428,6 +468,7 @@ export const plannerTodos = sqliteTable(
 		notes: text('notes').default(''),
 		completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
 		categoryId: integer('category_id').references(() => categories.id),
+		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
 		// A todo is a task without a date yet. Setting this is what "drag it onto
 		// today" does — the same row acquires a day rather than being copied.
 		scheduledDate: text('scheduled_date'),
@@ -452,6 +493,7 @@ export const plannerTodos = sqliteTable(
 	(table) => [
 		index('planner_todos_user_idx').on(table.userId),
 		index('planner_todos_scheduled_idx').on(table.userId, table.scheduledDate),
+		index('planner_todos_notebook_idx').on(table.notebookId),
 		check('todos_urgency_range', sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 1 AND 5`),
 		check(
 			'todos_interest_range',
@@ -754,6 +796,7 @@ export const goals = sqliteTable(
 			.notNull()
 			.references(() => user.id),
 		areaId: integer('area_id').references(() => goalAreas.id, { onDelete: 'set null' }),
+		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
 		parentId: integer('parent_id'),
 		title: text('title').notNull(),
 		notes: text('notes').default(''),
@@ -781,6 +824,7 @@ export const goals = sqliteTable(
 		index('goals_period_idx').on(table.userId, table.horizon, table.periodStart),
 		index('goals_parent_idx').on(table.parentId),
 		index('goals_area_idx').on(table.areaId),
+		index('goals_notebook_idx').on(table.notebookId),
 		check('goals_target_positive', sql`${table.targetValue} IS NULL OR ${table.targetValue} > 0`)
 	]
 );

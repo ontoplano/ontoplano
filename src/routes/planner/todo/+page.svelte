@@ -10,6 +10,7 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
+	import NotebookField from '$lib/components/NotebookField.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
 	import { RATINGS } from '$lib/ratings.js';
 	import { CLOSED_STATUSES } from '$lib/task-status.js';
@@ -211,6 +212,8 @@
 						{/each}
 					</select>
 				</Field>
+
+				<NotebookField notebooks={data.notebooks} value={editing?.notebookId ?? null} />
 
 				<Field label="Notes" span={12}>
 					<textarea name="notes" rows="3" class="textarea">{editing?.notes ?? ''}</textarea>
