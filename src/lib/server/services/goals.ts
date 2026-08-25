@@ -278,7 +278,7 @@ export function createGoal(
 		title: unknown;
 		horizon: unknown;
 		notes?: unknown;
-		periodAnchor?: unknown;
+		startDate?: unknown;
 		areaId?: unknown;
 		parentId?: unknown;
 		targetValue?: unknown;
@@ -286,11 +286,8 @@ export function createGoal(
 	}
 ): number {
 	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
-	const horizon = raw.horizon;
-	if (!isHorizon(horizon)) throw new ValidationError('Pick a horizon');
-
-	const anchorRaw = raw.periodAnchor ? String(raw.periodAnchor).trim() : '';
-	const anchor = DATE_PATTERN.test(anchorRaw) ? new Date(`${anchorRaw}T00:00:00`) : ctx.now;
+	const horizon = parseHorizon(raw.horizon);
+	const anchor = parseAnchor(raw.startDate) ?? ctx.now;
 
 	const result = db
 		.insert(goals)
@@ -315,8 +312,32 @@ export function createGoal(
 export function updateGoal(
 	ctx: Ctx,
 	id: number,
-	raw: { title: unknown; notes?: unknown; areaId?: unknown; targetValue?: unknown; unit?: unknown }
+	raw: {
+		title: unknown;
+		notes?: unknown;
+		areaId?: unknown;
+		targetValue?: unknown;
+		unit?: unknown;
+		horizon?: unknown;
+		startDate?: unknown;
+	}
 ): void {
+	const current = db
+		.select({ horizon: goals.horizon, periodStart: goals.periodStart })
+		.from(goals)
+		.where(and(eq(goals.id, id), eq(goals.userId, ctx.userId)))
+		.get();
+
+	if (!current) throw new NotFoundError('goal');
+
+	// A week goal that turns out to be a month's work should not have to be
+	// deleted and retyped. Both the horizon and the date it starts from can move
+	// — and either one moving re-aligns the period, since a quarter that began
+	// mid-month is not a quarter.
+	const horizon =
+		raw.horizon === undefined || raw.horizon === null ? current.horizon : parseHorizon(raw.horizon);
+	const anchor = parseAnchor(raw.startDate) ?? new Date(`${current.periodStart}T00:00:00`);
+
 	const res = db
 		.update(goals)
 		.set({
@@ -325,6 +346,8 @@ export function updateGoal(
 			areaId: ownedAreaId(ctx, raw.areaId),
 			targetValue: parseTarget(raw.targetValue),
 			unit: optionalStr(raw.unit, 'unit', { max: MAX_UNIT_LENGTH }),
+			horizon,
+			periodStart: periodStart(horizon, anchor),
 			updatedAt: stamp(ctx)
 		})
 		.where(and(eq(goals.id, id), eq(goals.userId, ctx.userId)))
@@ -466,6 +489,25 @@ function ownedActivityIds(ctx: Ctx): number[] {
 		.where(eq(activities.userId, ctx.userId))
 		.all()
 		.map((r) => r.id);
+}
+
+function parseHorizon(value: unknown): Horizon {
+	if (!isHorizon(value)) throw new ValidationError('Pick a horizon');
+	return value;
+}
+
+/**
+ * The date the user picked, or nothing.
+ *
+ * `periodStart` snaps it to the start of the period it lands in, so two goals
+ * in one quarter agree on where that quarter begins. The form shows which
+ * period the date resolves to rather than describing the snapping.
+ */
+function parseAnchor(value: unknown): Date | null {
+	const raw = value === undefined || value === null ? '' : String(value).trim();
+	if (!raw) return null;
+	if (!DATE_PATTERN.test(raw)) throw new ValidationError('date is malformed');
+	return new Date(`${raw}T00:00:00`);
 }
 
 function parseTarget(value: unknown): number | null {

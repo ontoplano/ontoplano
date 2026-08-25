@@ -8,6 +8,7 @@
 		canNestUnder,
 		describePeriod,
 		formatDate,
+		periodStart,
 		type Horizon
 	} from '$lib/goals.js';
 	import { SECTION_COLORS } from '$lib/colors.js';
@@ -23,6 +24,7 @@
 	let confirmingDelete: number | null = $state(null);
 	let areaFilter: number | null = $state(null);
 	let formHorizon: Horizon = $state('week');
+	let formStart: string = $state('');
 	let selectedIndex = $state(0);
 
 	const accent = SECTION_COLORS.home;
@@ -44,6 +46,13 @@
 	);
 
 	const editing = $derived(editingId ? (data.goals.find((g) => g.id === editingId) ?? null) : null);
+
+	/** Which period the chosen start date lands in, shown next to the field. */
+	const formPeriod = $derived(
+		formStart
+			? describePeriod(formHorizon, periodStart(formHorizon, new Date(`${formStart}T00:00:00`)))
+			: ''
+	);
 	const linking = $derived(linkingId ? (data.goals.find((g) => g.id === linkingId) ?? null) : null);
 
 	function percent(goal: Goal): number | null {
@@ -54,6 +63,20 @@
 		if (goal.progress.total !== null) return `${goal.progress.done} of ${goal.progress.total} done`;
 		if (goal.targetValue) return `${goal.currentValue} / ${goal.targetValue} ${goal.unit}`.trim();
 		return 'No measure set';
+	}
+
+	function openCreate() {
+		editingId = null;
+		formHorizon = 'week';
+		formStart = today();
+		showForm = true;
+	}
+
+	function openEdit(goal: Goal) {
+		editingId = goal.id;
+		formHorizon = goal.horizon;
+		formStart = goal.periodStart;
+		showForm = true;
 	}
 
 	function today(): string {
@@ -77,8 +100,7 @@
 		}
 		if (e.key === 'n') {
 			e.preventDefault();
-			showForm = true;
-			editingId = null;
+			openCreate();
 			return;
 		}
 		if (e.key === 'j' || e.key === 'k') {
@@ -109,10 +131,7 @@
 				Areas
 			</button>
 			<button
-				onclick={() => {
-					showForm = !showForm;
-					editingId = null;
-				}}
+				onclick={() => (showForm ? (showForm = false) : openCreate())}
 				class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800"
 			>
 				{showForm ? 'Cancel' : 'New goal'}
@@ -247,29 +266,32 @@
 				</label>
 			</div>
 
-			{#if !editingId}
-				<div class="flex flex-wrap gap-3">
-					<label class="w-40">
-						<span class="eyebrow text-gray-500">Horizon</span>
-						<select
-							name="horizon"
-							bind:value={formHorizon}
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						>
-							{#each HORIZONS as h (h)}
-								<option value={h}>{HORIZON_LABELS[h]}</option>
-							{/each}
-						</select>
-					</label>
-					<label class="w-44">
-						<span class="eyebrow text-gray-500">Period containing</span>
-						<input
-							name="periodAnchor"
-							type="date"
-							value={today()}
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						/>
-					</label>
+			<div class="flex flex-wrap gap-3">
+				<label class="w-40">
+					<span class="eyebrow text-gray-500">Horizon</span>
+					<select
+						name="horizon"
+						bind:value={formHorizon}
+						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					>
+						{#each HORIZONS as h (h)}
+							<option value={h}>{HORIZON_LABELS[h]}</option>
+						{/each}
+					</select>
+				</label>
+				<label class="w-44">
+					<span class="eyebrow text-gray-500">Starts</span>
+					<input
+						name="startDate"
+						type="date"
+						bind:value={formStart}
+						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					/>
+					{#if formPeriod}
+						<span class="mt-1 block text-xs text-gray-500">Counts for {formPeriod}</span>
+					{/if}
+				</label>
+				{#if !editingId}
 					<label class="w-56">
 						<span class="eyebrow text-gray-500">Part of</span>
 						<select
@@ -282,8 +304,8 @@
 							{/each}
 						</select>
 					</label>
-				</div>
-			{/if}
+				{/if}
+			</div>
 
 			<div class="flex flex-wrap gap-3">
 				<label class="w-28">
@@ -307,16 +329,17 @@
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
 				</label>
-				<label class="min-w-64 flex-1">
-					<span class="eyebrow text-gray-500">Notes</span>
-					<input
-						name="notes"
-						autocomplete="off"
-						value={editing?.notes ?? ''}
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					/>
-				</label>
 			</div>
+
+			<label class="block">
+				<span class="eyebrow text-gray-500">Notes</span>
+				<textarea
+					name="notes"
+					rows="3"
+					value={editing?.notes ?? ''}
+					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+				></textarea>
+			</label>
 
 			<button class="bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">
 				{editingId ? 'Save' : 'Create goal'}
@@ -429,10 +452,7 @@
 											goal.linkedActivityIds.length})
 									</button>
 									<button
-										onclick={() => {
-											editingId = goal.id;
-											showForm = true;
-										}}
+										onclick={() => openEdit(goal)}
 										class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
 										>Edit</button
 									>

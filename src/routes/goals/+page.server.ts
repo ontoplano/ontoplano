@@ -62,7 +62,7 @@ export const actions: Actions = {
 				title: formData.get('title'),
 				horizon: formData.get('horizon'),
 				notes: formData.get('notes'),
-				periodAnchor: formData.get('periodAnchor'),
+				startDate: formData.get('startDate'),
 				areaId: formData.get('areaId'),
 				parentId: formData.get('parentId'),
 				targetValue: formData.get('targetValue'),
@@ -82,7 +82,9 @@ export const actions: Actions = {
 				notes: formData.get('notes'),
 				areaId: formData.get('areaId'),
 				targetValue: formData.get('targetValue'),
-				unit: formData.get('unit')
+				unit: formData.get('unit'),
+				horizon: formData.get('horizon'),
+				startDate: formData.get('startDate')
 			});
 			return { success: true };
 		} catch (e) {
