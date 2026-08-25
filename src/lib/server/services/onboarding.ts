@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { activities, categories, weeklySlots } from '../db/schema.js';
-import { markOnboarded, setTimezone, setWeekSettings } from '../settings.js';
+import { isOnboarded, markOnboarded, setTimezone, setWeekSettings } from '../settings.js';
 import type { Ctx } from './ctx.js';
 import { ValidationError } from './errors.js';
 import { num, oneOf, str } from './validate.js';
@@ -49,21 +49,15 @@ const BASE_CATEGORIES = [
 	{ name: 'personal', color: '#b45309', colorLight: '#fef3c7' }
 ];
 
-const STUDY_CATEGORIES = [
-	{ name: 'study', color: '#1d4ed8', colorLight: '#dbeafe' },
-	{ name: 'health', color: '#0f766e', colorLight: '#ccfbf1' },
-	{ name: 'personal', color: '#b45309', colorLight: '#fef3c7' }
-];
-
 export const TEMPLATES: Template[] = [
 	{
 		key: 'student',
 		label: 'Student',
 		description: 'Lectures in the morning, study blocks after, exercise in between.',
-		categories: STUDY_CATEGORIES,
+		categories: BASE_CATEGORIES,
 		activities: [
-			{ name: 'Lectures', category: 'study' },
-			{ name: 'Study block', category: 'study' },
+			{ name: 'Lectures', category: 'work' },
+			{ name: 'Study block', category: 'work' },
 			{ name: 'Exercise', category: 'health' },
 			{ name: 'Reading', category: 'personal' }
 		],
@@ -127,6 +121,35 @@ export const TEMPLATES: Template[] = [
 		blocks: []
 	}
 ];
+
+/**
+ * Should this account see first run?
+ *
+ * The stored flag is the answer for anyone who has been through it. Accounts
+ * that predate it are recognised by having a plan already: sending someone with
+ * a year of history to a screen offering to seed a starter week would be worse
+ * than never showing it at all.
+ */
+export function needsFirstRun(userId: string): boolean {
+	if (isOnboarded(userId)) return false;
+
+	const hasSlot = db
+		.select({ id: weeklySlots.id })
+		.from(weeklySlots)
+		.where(eq(weeklySlots.userId, userId))
+		.limit(1)
+		.get();
+	if (hasSlot) return false;
+
+	const hasActivity = db
+		.select({ id: activities.id })
+		.from(activities)
+		.where(eq(activities.userId, userId))
+		.limit(1)
+		.get();
+
+	return !hasActivity;
+}
 
 export function templateFor(key: TemplateKey): Template {
 	const found = TEMPLATES.find((t) => t.key === key);

@@ -12,10 +12,12 @@ import {
 } from '$lib/dashboard';
 import {
 	getTheme,
+	getTimezone,
 	getUserSetting,
 	getWeekSettings,
 	isTheme,
 	setTheme,
+	setTimezone,
 	setUserSetting,
 	setWeekSettings
 } from '$lib/server/settings';
@@ -26,6 +28,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		week: getWeekSettings(ctx.userId),
+		timezone: getTimezone(ctx.userId) ?? ctx.tz,
 		theme: getTheme(ctx.userId),
 		cards: DASHBOARD_CARDS,
 		layout: parseLayout(getUserSetting(ctx.userId, DASHBOARD_LAYOUT_KEY)),
@@ -84,18 +87,28 @@ export const actions: Actions = {
 		}
 	},
 
-	/** Which day your week starts on. Yours, not the server's. */
 	saveWeek: async ({ request, locals }) => {
 		const formData = await request.formData();
 
 		try {
 			const firstDay = Number(formData.get('firstDay') ?? 0);
 			const generateDay = Number(formData.get('generateDay') ?? 6);
+			const timezone = formData.get('timezone')?.toString()?.trim() ?? '';
 
 			if (!Number.isInteger(firstDay) || firstDay < 0 || firstDay > 6)
 				throw new ValidationError('Invalid first day');
 			if (!Number.isInteger(generateDay) || generateDay < 0 || generateDay > 6)
 				throw new ValidationError('Invalid generate day');
+
+			if (timezone) {
+				try {
+					// Rejected here rather than stored and thrown on every date later.
+					new Intl.DateTimeFormat('en-CA', { timeZone: timezone });
+				} catch {
+					throw new ValidationError('Unknown timezone');
+				}
+				setTimezone(locals.user!.id, timezone);
+			}
 
 			setWeekSettings(locals.user!.id, { firstDay, generateDay });
 			return { success: true, action: 'saveWeek' };

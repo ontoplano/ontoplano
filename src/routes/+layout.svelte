@@ -66,6 +66,12 @@
 	let moreOpen = $state(false);
 	const secondaryActive = $derived(secondaryNav.some((item) => isNavActive(item.href)));
 
+	/**
+	 * First run gets no navigation: every other page bounces straight back here
+	 * until it is done, so offering the tabs would only be a loop.
+	 */
+	const bareScreen = $derived(page.url.pathname === '/welcome');
+
 	/** The section being viewed. Its accent fills the active nav tab. */
 	const section = $derived(SECTIONS[sectionFor(page.url.pathname)]);
 
@@ -117,7 +123,7 @@
 
 <svelte:window onkeydown={handleGlobalKeydown} onclick={handleClickOutside} />
 
-{#if data.user}
+{#if data.user && !bareScreen}
 	<div
 		class="flex min-h-screen flex-col bg-gray-100"
 		style="{categoryStyle()};--section-accent:{section.accent}"

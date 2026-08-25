@@ -1,4 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
+import { DASHBOARD_LAYOUT_KEY, parseLayout } from '$lib/dashboard';
+import { getUserSetting } from '$lib/server/settings';
 import { buildCtx } from '$lib/server/services/ctx';
 import {
 	createEntry,
@@ -12,7 +14,16 @@ import { toActionFailure } from '$lib/server/services/errors';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
-	return { entries: listEntries(ctx), allTags: listTags(ctx) };
+
+	return {
+		entries: listEntries(ctx),
+		allTags: listTags(ctx),
+		// Three wins is a personal habit, not everyone's: one switch governs it,
+		// and it is the dashboard card in preferences. The gate here used to be a
+		// feature flag that stopped existing when the dashboard became a layout,
+		// which left the composer permanently unreachable.
+		winsEnabled: parseLayout(getUserSetting(ctx.userId, DASHBOARD_LAYOUT_KEY)).includes('threeWins')
+	};
 };
 
 export const actions: Actions = {

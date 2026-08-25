@@ -1,13 +1,13 @@
 import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { DEFAULT_WEEK, isOnboarded } from '$lib/server/settings';
+import { DEFAULT_WEEK } from '$lib/server/settings';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
-import { completeFirstRun, TEMPLATES } from '$lib/server/services/onboarding';
+import { completeFirstRun, needsFirstRun, TEMPLATES } from '$lib/server/services/onboarding';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	// Coming back here after setup would offer to seed a second starter week.
-	if (isOnboarded(locals.user!.id)) redirect(302, '/planner/plan');
+	if (!needsFirstRun(locals.user!.id)) redirect(302, '/planner/plan');
 
 	return {
 		week: DEFAULT_WEEK,

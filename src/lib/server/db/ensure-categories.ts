@@ -2,10 +2,17 @@ import { db } from './index.js';
 import { categories } from './schema.js';
 import { eq } from 'drizzle-orm';
 
+/**
+ * What a brand-new account starts with.
+ *
+ * Not `duty / skill / money`: that is the author's ontology and means nothing
+ * to a stranger. These are renameable like any other category — they exist so
+ * the first block someone drags has somewhere to go.
+ */
 const DEFAULT_CATEGORIES = [
-	{ name: 'duty', color: '#3b82f6', colorLight: '#dbeafe' },
-	{ name: 'skill', color: '#22c55e', colorLight: '#dcfce7' },
-	{ name: 'money', color: '#f59e0b', colorLight: '#fef3c7' }
+	{ name: 'work', color: '#1d4ed8', colorLight: '#dbeafe' },
+	{ name: 'health', color: '#0f766e', colorLight: '#ccfbf1' },
+	{ name: 'personal', color: '#b45309', colorLight: '#fef3c7' }
 ];
 
 export function ensureUserCategories(userId: string): void {

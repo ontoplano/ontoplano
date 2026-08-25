@@ -16,7 +16,7 @@
 	let filterTag: string | null = $state(null);
 	let confirmingDeleteId: number | null = $state(null);
 	let winInputCount = $state(3);
-	const winsEnabled = $derived(Boolean(data.features?.['feature.threeWins']));
+	const winsEnabled = $derived(data.winsEnabled);
 
 	// Tooltip state for #N references
 	let tooltip = $state<{ visible: boolean; x: number; y: number; content: string; date: string }>({

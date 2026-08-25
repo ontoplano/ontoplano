@@ -1,6 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { DEFAULT_THEME, DEFAULT_WEEK, getTheme, getWeekSettings } from '$lib/server/settings';
+import { needsFirstRun } from '$lib/server/services/onboarding';
 import { listCategories } from '$lib/server/services/activities';
 import { buildCtx } from '$lib/server/services/ctx';
 
@@ -16,6 +17,21 @@ export const load: LayoutServerLoad = async (event) => {
 
 	if (!event.locals.user && !isLoginPage && !isDemo && !isAuthApi && !isOffline) {
 		return redirect(302, '/login');
+	}
+
+	// A new account meets first run before anything else: an empty grid is what
+	// a stranger churns on. It asks twice for a timezone and a starting week,
+	// then never appears again.
+	const isWelcome = event.url.pathname === '/welcome';
+	if (
+		event.locals.user &&
+		!isWelcome &&
+		!isDemo &&
+		!isAuthApi &&
+		!event.url.pathname.startsWith('/api/') &&
+		needsFirstRun(event.locals.user.id)
+	) {
+		return redirect(302, '/welcome');
 	}
 
 	let userCategories: { id: number; name: string; color: string; colorLight: string }[] = [];

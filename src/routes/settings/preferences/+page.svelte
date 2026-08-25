@@ -69,7 +69,7 @@
 		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
 	>
 		<div>
-			<h2 class="text-sm font-semibold text-gray-900">Week</h2>
+			<h2 class="text-sm font-semibold text-gray-900">Week and timezone</h2>
 		</div>
 		<div class="flex gap-4">
 			<label class="flex-1">
@@ -95,9 +95,11 @@
 				</select>
 			</label>
 		</div>
-		<button class="bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-			>Save week</button
-		>
+		<label class="block max-w-xs">
+			<span class="eyebrow text-gray-500">Timezone</span>
+			<input name="timezone" value={data.timezone} class="input mt-1" />
+		</label>
+		<button class="btn btn-primary">Save</button>
 	</form>
 
 	<section class="border border-gray-200 bg-white p-6 shadow-card">

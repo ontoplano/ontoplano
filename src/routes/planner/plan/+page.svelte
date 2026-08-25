@@ -2,6 +2,7 @@
 	import { enhance, deserialize } from '$app/forms';
 	import Modal from '$lib/components/Modal.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
+	import { page } from '$app/state';
 	import { browser } from '$app/environment';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types.js';
@@ -173,6 +174,9 @@
 	let recurrenceKind: 'weekly' | 'weeks' | 'days' | 'monthly' = $state('weekly');
 	let recurrenceInterval = $state(2);
 	let recurrenceMonthDay = $state(1);
+	/** Arrived here from first run; dismissed with a click and never stored. */
+	let showWelcome = $state(page.url.searchParams.get('welcome') === '1');
+
 	let formRatings: Record<string, number | null> = $state({
 		urgency: null,
 		interest: null,
@@ -1336,6 +1340,26 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
+	{#if showWelcome}
+		<!-- Shown once, on the way in from first run: the grid's two gestures are
+		     not discoverable by looking at it. -->
+		<div
+			class="rise flex items-start justify-between gap-4 border border-gray-200 bg-white p-4 shadow-card"
+		>
+			<div>
+				<h2 class="text-sm font-semibold text-gray-900">This is your week</h2>
+				<ul class="mt-2 space-y-1 text-sm text-gray-600">
+					<li>Drag across an empty stretch of a day to make a block.</li>
+					<li>
+						Press <kbd class="border border-gray-300 bg-gray-50 px-1">?</kbd> for everything the keyboard
+						can do.
+					</li>
+				</ul>
+			</div>
+			<button type="button" class="btn btn-sm" onclick={() => (showWelcome = false)}>Got it</button>
+		</div>
+	{/if}
+
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<div class="flex items-center gap-2">
 			<button
