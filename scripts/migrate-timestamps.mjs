@@ -109,21 +109,28 @@ function convert(value) {
 	// code that came after this migration.
 	if (/[zZ]$/.test(value) || /[+-]\d{2}:\d{2}$/.test(value)) return null;
 
-	const sqliteStyle = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value);
-	if (sqliteStyle) {
-		// SQLite's CURRENT_TIMESTAMP is UTC already; it only lacks the marker.
-		return `${value.replace(' ', 'T')}.000Z`;
-	}
+	// Two shapes, and they are NOT the same thing.
+	//
+	// "2026-03-30 14:10:07" — a space — came from the column default,
+	// `CURRENT_TIMESTAMP`, which SQLite computes in UTC whatever the machine's
+	// timezone is. It is already the right moment and only lacks the marker;
+	// shifting it would move a correct value by three hours.
+	//
+	// "2026-03-30T14:10:07" — a T — came from the app's `toLocalISOString`,
+	// which wrote the server's wall clock with no zone. That one is genuinely
+	// local and gets converted.
+	const fromDefault = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value);
+	if (fromDefault) return { to: `${value.replace(' ', 'T')}.000Z`, kind: 'marked' };
 
-	const isoish = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(value);
-	if (!isoish) return null;
+	const fromApp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(value);
+	if (!fromApp) return null;
 
 	const naive = new Date(`${value.length === 16 ? `${value}:00` : value}Z`);
 	if (Number.isNaN(naive.getTime())) return null;
 
 	let guess = naive.getTime() - offsetAt(naive, from);
 	guess = naive.getTime() - offsetAt(new Date(guess), from);
-	return new Date(guess).toISOString();
+	return { to: new Date(guess).toISOString(), kind: 'shifted' };
 }
 
 const db = new Database(path);
@@ -135,7 +142,8 @@ const tables = new Set(
 );
 
 let planned = 0;
-const examples = [];
+const counts = { marked: 0, shifted: 0 };
+const examples = { marked: [], shifted: [] };
 
 const work = [];
 for (const [table, columns] of Object.entries(INSTANT_COLUMNS)) {
@@ -157,18 +165,34 @@ for (const [table, columns] of Object.entries(INSTANT_COLUMNS)) {
 
 		for (const row of rows) {
 			const next = convert(row.value);
-			if (!next || next === row.value) continue;
-			work.push({ table, column, rid: row.rid, from: row.value, to: next });
+			if (!next || next.to === row.value) continue;
+			work.push({ table, column, rid: row.rid, from: row.value, to: next.to, kind: next.kind });
 			planned++;
-			if (examples.length < 8) examples.push(`  ${table}.${column}: ${row.value} → ${next}`);
+			counts[next.kind]++;
+			if (examples[next.kind].length < 3)
+				examples[next.kind].push(`    ${table}.${column}: ${row.value} → ${next.to}`);
 		}
 	}
 }
 
+const offsetMinutes = Math.round(-offsetAt(new Date(), from) / 60_000);
+const offsetHours = offsetMinutes / 60;
+const sign = offsetHours >= 0 ? '+' : '';
+
 console.log(`Database: ${path}`);
-console.log(`Reading naive timestamps as: ${from}`);
-console.log(`Values to rewrite: ${planned}`);
-if (examples.length) console.log(examples.join('\n'));
+console.log(`Values to rewrite: ${planned}\n`);
+
+console.log(`  Already UTC, marker added: ${counts.marked}`);
+console.log('  These came from the column default. SQLite computes');
+console.log('  CURRENT_TIMESTAMP in UTC whatever the machine is set to, so the');
+console.log('  moment is already right and shifting it would break it.');
+if (examples.marked.length) console.log(examples.marked.join('\n'));
+
+console.log(`\n  Local ${from}, converted to UTC (${sign}${offsetHours}h): ${counts.shifted}`);
+console.log("  These came from the app's own timestamp, which wrote the server's");
+console.log('  wall clock with no zone on it. This is the half that moves.');
+if (examples.shifted.length) console.log(examples.shifted.join('\n'));
+else console.log('    (none in this database)');
 
 if (!apply) {
 	console.log('\nDry run. Nothing was written. Add --apply when the sample above looks right.');

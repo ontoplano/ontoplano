@@ -7,7 +7,9 @@
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { THEMES } from '$lib/theme.js';
 	import type { SectionKey } from '$lib/colors.js';
+	import SectionPattern from '$lib/components/SectionPattern.svelte';
 	import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
+	import type { IconName } from '$lib/components/Icon.svelte';
 
 	let { children, data }: { children: any; data: LayoutServerData } = $props();
 	let menuOpen = $state(false);
@@ -73,7 +75,19 @@
 	const bareScreen = $derived(page.url.pathname === '/welcome');
 
 	/** The section being viewed. Its accent fills the active nav tab. */
-	const section = $derived(SECTIONS[sectionFor(page.url.pathname)]);
+	const sectionKey = $derived(sectionFor(page.url.pathname));
+	const section = $derived(SECTIONS[sectionKey]);
+
+	/** The glyph tiled behind the page, from the same table as the nav icons. */
+	const SECTION_GLYPH: Record<SectionKey, IconName> = {
+		home: 'home',
+		planner: 'planner',
+		goals: 'goals',
+		diary: 'diary',
+		ideas: 'ideas',
+		health: 'health',
+		shopping: 'shopping'
+	};
 
 	function isNavActive(href: string): boolean {
 		if (href === '/') return page.url.pathname === '/';
@@ -125,9 +139,10 @@
 
 {#if data.user && !bareScreen}
 	<div
-		class="page-surface flex min-h-screen flex-col bg-gray-100"
+		class="page-surface relative flex min-h-screen flex-col bg-gray-100"
 		style="{categoryStyle()};--section-accent:{section.accent}"
 	>
+		<SectionPattern icon={SECTION_GLYPH[sectionKey]} />
 		<header class="relative z-40 bg-chrome shadow-raised" style="padding-top: var(--safe-top)">
 			<div class="mx-auto flex w-full max-w-page items-stretch justify-between px-4 sm:px-6">
 				<div class="flex items-stretch gap-6">
@@ -252,7 +267,7 @@
 		<!-- The bottom bar floats over the page, so the last card needs clearance
 		     or it sits underneath it forever. -->
 		<main
-			class="mx-auto w-full max-w-page flex-1 px-4 py-6 sm:px-6"
+			class="relative z-10 mx-auto w-full max-w-page flex-1 px-4 py-6 sm:px-6"
 			style="padding-bottom: calc(var(--mobile-nav-height) + var(--safe-bottom) + 1.5rem)"
 		>
 			{@render children()}
