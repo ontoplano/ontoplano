@@ -25,6 +25,16 @@
 	--color-chrome-muted: #9aa4b2;
 	--color-chrome-ink: #ffffff;
 
+	/*
+	 * How wide a page may get.
+	 *
+	 * The shell used to cap at 64rem, which on a 2000px display drew the whole
+	 * application as a strip down the middle with black either side. This is
+	 * wide enough to use a large screen and short of the width where a line of
+	 * text stops being readable; the few places that hold prose cap themselves.
+	 */
+	--max-width-page: 110rem;
+
 	/* Flat and close to the surface. Depth separates layers, it does not decorate. */
 	--shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06);
 	--shadow-raised: 0 2px 4px rgb(15 23 42 / 0.06), 0 4px 12px rgb(15 23 42 / 0.08);

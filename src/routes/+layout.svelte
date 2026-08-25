@@ -123,7 +123,7 @@
 		style="{categoryStyle()};--section-accent:{section.accent}"
 	>
 		<header class="bg-chrome shadow-raised" style="padding-top: var(--safe-top)">
-			<div class="mx-auto flex max-w-5xl items-stretch justify-between px-4">
+			<div class="mx-auto flex w-full max-w-page items-stretch justify-between px-4 sm:px-6">
 				<div class="flex items-stretch gap-6">
 					<a href="/" class="flex items-center text-lg font-bold tracking-tight text-chrome-ink"
 						>ontoplano</a
@@ -235,7 +235,7 @@
 		<!-- The bottom bar floats over the page, so the last card needs clearance
 		     or it sits underneath it forever. -->
 		<main
-			class="mx-auto w-full max-w-5xl flex-1 px-4 py-6"
+			class="mx-auto w-full max-w-page flex-1 px-4 py-6 sm:px-6"
 			style="padding-bottom: calc(var(--mobile-nav-height) + var(--safe-bottom) + 1.5rem)"
 		>
 			{@render children()}

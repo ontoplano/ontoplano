@@ -1693,7 +1693,7 @@
 
 	{#if multiselect && selectedIds.size > 0}
 		<div class="fixed right-0 bottom-0 left-0 z-50 border-t border-blue-200 bg-blue-50 px-4 py-2">
-			<div class="mx-auto flex max-w-5xl items-center justify-between">
+			<div class="mx-auto flex w-full max-w-page items-center justify-between">
 				<span class="text-sm font-medium text-blue-900">{selectedIds.size} selected</span>
 				<div class="flex gap-2">
 					<form

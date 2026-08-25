@@ -616,17 +616,17 @@
 		</div>
 	{/snippet}
 
-	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
 		{#each layout as id (id)}
 			{@const card = cardById(id)}
 			{#if card}
 				<!-- Half-width cards pair up on wide screens; full-width ones take the row. -->
 				<div
-					class="{card.width === 'half' ? 'md:col-span-1' : 'md:col-span-2'} {arranging
-						? 'cursor-grab'
-						: ''} {dragging === id ? 'opacity-40' : ''} {arranging && dragOver === id
-						? 'outline-2 outline-gray-900'
-						: ''}"
+					class="{card.width === 'half'
+						? 'md:col-span-1'
+						: 'md:col-span-2 2xl:col-span-3'} {arranging ? 'cursor-grab' : ''} {dragging === id
+						? 'opacity-40'
+						: ''} {arranging && dragOver === id ? 'outline-2 outline-gray-900' : ''}"
 					draggable={arranging}
 					ondragstart={(e) => onDragStart(id, e)}
 					ondragend={() => {
