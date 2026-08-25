@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/widget_page">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/configure_title"
+            android:textColor="@color/widget_text"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:paddingBottom="20dp"
+            android:text="@string/configure_help"
+            android:textColor="@color/widget_dim"
+            android:textSize="13sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/configure_origin_label"
+            android:textColor="@color/widget_dim"
+            android:textSize="12sp" />
+
+        <EditText
+            android:id="@+id/configure_origin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/configure_origin_hint"
+            android:inputType="textUri"
+            android:autofillHints="URI"
+            android:textColor="@color/widget_text"
+            android:textColorHint="@color/widget_dim" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:text="@string/configure_token_label"
+            android:textColor="@color/widget_dim"
+            android:textSize="12sp" />
+
+        <EditText
+            android:id="@+id/configure_token"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/configure_token_hint"
+            android:inputType="textVisiblePassword"
+            android:autofillHints="password"
+            android:textColor="@color/widget_text"
+            android:textColorHint="@color/widget_dim" />
+
+        <Button
+            android:id="@+id/configure_save"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/configure_save" />
+
+        <TextView
+            android:id="@+id/configure_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="12dp"
+            android:textColor="@color/widget_dim"
+            android:textSize="13sp" />
+    </LinearLayout>
+</ScrollView>

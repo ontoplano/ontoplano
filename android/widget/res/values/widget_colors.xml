@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app's own chrome: #111827 with white on it. -->
+<resources>
+    <color name="widget_page">#111827</color>
+    <color name="widget_text">#F9FAFB</color>
+    <color name="widget_dim">#9CA3AF</color>
+    <color name="widget_accent">#93C5FD</color>
+</resources>

@@ -197,3 +197,47 @@ Keep the keystore backed up and out of the repository. Play ties an app to its
 key permanently: a leaked key lets someone else ship an update to your users,
 and a lost one means republishing under a new listing and asking everyone to
 reinstall.
+
+## The home-screen widget
+
+The app carries one native component: a home-screen widget showing today's
+blocks, habits and tasks. It is the one thing a TWA cannot do as a web page — a
+widget is drawn by the launcher, out of process, from a `RemoteViews` tree.
+
+It reads a single endpoint, `/api/v1/today`, with a scoped API token. Blocks,
+habits and tasks arrive together because a widget refreshes on a timer, often
+over mobile data, and three round trips to draw one screen is three chances to
+be half-drawn.
+
+### Putting one on the home screen
+
+1. In the app, go to **Settings → Integrations** and create a token with the
+   **`today:read`** scope and nothing else. A widget sits on a lock screen; it
+   should not carry a key to the diary.
+2. Long-press the home screen, pick **Ontoplano — today**, and drop it.
+3. The configuration screen opens. Paste the address of your instance
+   (`https://plan.example.com`) and the token. Saving checks both before it
+   closes, so a wrong token says so there rather than on the home screen.
+
+Tap the header to open the app, **Refresh** to read again. The launcher also
+refreshes it every half hour, which is the shortest period it honours for a
+widget that wakes itself.
+
+To change the address or the token later: long-press the widget and choose the
+launcher's own "reconfigure" (Android 12 and up), or remove it and place it
+again.
+
+### How it is built
+
+The widget lives in `android/widget/`, outside the generated project, because
+Bubblewrap regenerates `android-twa/app/` from `twa-manifest.json` on every run.
+`scripts/build-twa.mjs` copies it in afterwards and adds the three components to
+the manifest — the provider, the list service and the configuration activity.
+
+`__PACKAGE__` in those sources is replaced with `ANDROID_PACKAGE_NAME` at copy
+time: the classes sit in the app's own package so `R` resolves, and the package
+is still configurable.
+
+They are Java, not Kotlin. The generated project has no Kotlin plugin, and
+adding one to a file that is rewritten on every build is a worse trade than a
+few hundred lines of Java for a screen that draws three lists.

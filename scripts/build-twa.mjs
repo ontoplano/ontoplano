@@ -18,7 +18,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 
@@ -391,6 +391,106 @@ if (cleartext) {
 		console.log('Allowed cleartext traffic, required to reach an http origin');
 	}
 }
+
+/**
+ * Graft the home-screen widget onto the generated project.
+ *
+ * Bubblewrap regenerates `app/` from the manifest on every run, so anything
+ * native has to be re-applied afterwards rather than edited in place. The
+ * sources live in `android/widget/` and are copied in with `__PACKAGE__`
+ * replaced: they sit in the app's own package so `R` resolves, and the package
+ * is configurable.
+ *
+ * Java rather than Kotlin on purpose — the generated project has no Kotlin
+ * plugin, and adding one to a file that is rewritten every build is a worse
+ * trade than writing a few hundred lines of Java.
+ */
+function installWidget() {
+	const source = 'android/widget';
+	if (!existsSync(source)) {
+		console.warn(`No ${source}; the app will build without the home-screen widget.`);
+		return;
+	}
+
+	const substitute = (text) => text.replaceAll('__PACKAGE__', packageId);
+	const mainDir = join(DIR, 'app', 'src', 'main');
+	const javaDir = join(mainDir, 'java', ...packageId.split('.'));
+
+	mkdirSync(javaDir, { recursive: true });
+	for (const file of readdirSync(join(source, 'java')).filter((f) => f.endsWith('.java'))) {
+		writeFileSync(
+			join(javaDir, file),
+			substitute(readFileSync(join(source, 'java', file), 'utf8'))
+		);
+	}
+
+	const resDir = join(source, 'res');
+	for (const kind of readdirSync(resDir)) {
+		const target = join(mainDir, 'res', kind);
+		mkdirSync(target, { recursive: true });
+		for (const file of readdirSync(join(resDir, kind)).filter((f) => f.endsWith('.xml'))) {
+			writeFileSync(join(target, file), substitute(readFileSync(join(resDir, kind, file), 'utf8')));
+		}
+	}
+
+	const manifestXmlPath = join(mainDir, 'AndroidManifest.xml');
+	let xml = readFileSync(manifestXmlPath, 'utf8');
+
+	// The widget reads the instance over the network from the app's own
+	// process. The browser helper library declares this too, but a component
+	// that needs a permission should say so where it lives.
+	if (!xml.includes('android.permission.INTERNET')) {
+		xml = xml.replace(
+			'    <application',
+			'    <uses-permission android:name="android.permission.INTERNET" />\n\n    <application'
+		);
+	}
+
+	// Exported, all three: the launcher sends the update broadcast, binds the
+	// list service, and starts the configuration screen — all from outside this
+	// app. The service is additionally locked to BIND_REMOTEVIEWS, so only the
+	// launcher can bind it.
+	const components = `
+        <receiver
+            android:name=".TodayWidgetProvider"
+            android:label="@string/widget_label"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="app.ontoplano.widget.REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/today_widget_info" />
+        </receiver>
+
+        <service
+            android:name=".TodayWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+
+        <activity
+            android:name=".WidgetConfigureActivity"
+            android:label="@string/configure_title"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+`;
+
+	// Bubblewrap rewrites the manifest on every run, so this is normally a fresh
+	// file — but a build that reuses one must not declare the widget twice.
+	if (!xml.includes('TodayWidgetProvider')) {
+		xml = xml.replace('    </application>', `${components}\n    </application>`);
+	}
+
+	writeFileSync(manifestXmlPath, xml);
+
+	console.log('Added the home-screen widget');
+}
+
+installWidget();
 
 console.log('\nBuilding…');
 run(['build', '--skipPwaValidation']);

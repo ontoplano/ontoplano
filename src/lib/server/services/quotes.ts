@@ -35,7 +35,7 @@ export function createQuote(ctx: Ctx, raw: { text: unknown; author?: unknown }):
 
 	return db
 		.insert(quotes)
-		.values({ ...created(ctx), ...created(ctx), userId: ctx.userId, text, author })
+		.values({ ...created(ctx), userId: ctx.userId, text, author })
 		.returning({ id: quotes.id, text: quotes.text, author: quotes.author })
 		.get();
 }

@@ -799,6 +799,7 @@ win(iso(dayOffset(-1)), 1, 'ran 8km');
 
 apiToken('a-private-plugin on the phone', 'schedule:read,streams:write');
 apiToken('scratch script', 'streams:read');
+apiToken('home-screen widget', 'today:read');
 
 const weight = stream('a-private-plugin.weight', 'Weight', 'number', 'kg', 'line');
 for (let back = 0; back < 30; back += 2) {

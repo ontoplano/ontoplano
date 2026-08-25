@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A section label. Small capitals, like every card label in the web app. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/heading_text"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="10dp"
+    android:paddingBottom="2dp"
+    android:textAllCaps="true"
+    android:letterSpacing="0.08"
+    android:textColor="@color/widget_dim"
+    android:textSize="10sp" />

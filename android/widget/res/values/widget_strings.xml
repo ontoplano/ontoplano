@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_label">Ontoplano — today</string>
+    <string name="widget_description">Today\'s blocks, habits and tasks.</string>
+    <string name="widget_date_format">EEEE d MMM</string>
+    <string name="widget_refresh">Refresh</string>
+    <string name="widget_refresh_description">Read today again</string>
+    <string name="widget_empty">Nothing today.</string>
+    <string name="widget_blocks">Blocks</string>
+    <string name="widget_habits">Habits</string>
+    <string name="widget_tasks">Tasks</string>
+    <string name="widget_done_mark">✓</string>
+    <string name="widget_overdue">overdue</string>
+    <string name="widget_streak">%1$d day streak</string>
+    <string name="widget_not_configured">Tap to say where your instance is.</string>
+    <string name="widget_bad_token">That token was refused. Tap to paste a new one.</string>
+    <string name="widget_unreachable">Could not reach the instance.</string>
+
+    <string name="configure_title">Ontoplano widget</string>
+    <string name="configure_help">The widget reads one address with one token. Make the token in Settings → Integrations with the scope "today:read", so this widget can see today and nothing else.</string>
+    <string name="configure_origin_label">Address</string>
+    <string name="configure_origin_hint">https://plan.example.com</string>
+    <string name="configure_token_label">Token</string>
+    <string name="configure_token_hint">onto_…</string>
+    <string name="configure_save">Save</string>
+    <string name="configure_checking">Checking…</string>
+    <string name="configure_needs_both">Both the address and the token are needed.</string>
+</resources>

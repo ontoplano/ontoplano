@@ -19,6 +19,7 @@ export const SCOPES = {
 	'streams:write': 'Push data points to your streams',
 	'streams:read': 'Read back your stream data',
 	'schedule:read': 'Read your upcoming scheduled tasks',
+	'today:read': "Read today's blocks, habits and tasks — what the phone widget draws",
 	'plugin:declare': 'Describe itself, so its settings are labelled rather than anonymous'
 } as const;
 

@@ -86,7 +86,7 @@ export function today(ctx: Ctx): string {
 export function createHabit(ctx: Ctx, raw: HabitInput): number {
 	const result = db
 		.insert(habits)
-		.values({ ...created(ctx), ...created(ctx), userId: ctx.userId, ...parseHabit(raw) })
+		.values({ ...created(ctx), userId: ctx.userId, ...parseHabit(raw) })
 		.run();
 	return Number(result.lastInsertRowid);
 }
@@ -121,7 +121,7 @@ export function logOccurrence(
 	if (occurrenceOn(habitId, date)) throw new ConflictError('Already logged for this date');
 
 	db.insert(habitOccurrences)
-		.values({ ...created(ctx), ...created(ctx), habitId, date, notes })
+		.values({ ...created(ctx), habitId, date, notes })
 		.run();
 }
 
@@ -135,7 +135,7 @@ export function toggleOccurrence(ctx: Ctx, raw: { habitId: unknown; date: unknow
 		db.delete(habitOccurrences).where(eq(habitOccurrences.id, existing.id)).run();
 	} else {
 		db.insert(habitOccurrences)
-			.values({ ...created(ctx), ...created(ctx), habitId, date, notes: '' })
+			.values({ ...created(ctx), habitId, date, notes: '' })
 			.run();
 	}
 }
@@ -266,6 +266,13 @@ function daysBetween(from: string, to: string): number {
 }
 
 /** Monday is 0 here, which is how `scheduled_days` is stored. */
+/** Whether a habit is one of today's, for anything showing a single day. */
+export function scheduledOn(habit: { scheduledDays: string | null }, date: string): boolean {
+	const days = parseScheduledDays(habit.scheduledDays);
+	// No days chosen means every day; that is what the habits page draws too.
+	return days.length === 0 || days.includes(weekdayOf(date));
+}
+
 function weekdayOf(date: string): number {
 	const dow = new Date(`${date}T12:00:00`).getDay();
 	return dow === 0 ? 6 : dow - 1;

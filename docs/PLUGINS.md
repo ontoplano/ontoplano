@@ -23,6 +23,7 @@ The user creates one at **Settings → Integrations**, choosing scopes:
 | `streams:write` | declare streams, push and delete points |
 | `streams:read`  | read points back                        |
 | `schedule:read` | read upcoming scheduled tasks           |
+| `today:read`    | read today's blocks, habits and tasks   |
 
 Ask for the narrowest set that works. A token with only `streams:write` cannot read
 anything the user has — which is the point, because tokens live on phones.

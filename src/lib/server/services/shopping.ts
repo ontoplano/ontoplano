@@ -63,7 +63,7 @@ export function listCategories(ctx: Ctx) {
 export function createItem(ctx: Ctx, raw: ItemInput): void {
 	const values = parseItem(ctx, raw);
 	db.insert(shoppingItems)
-		.values({ ...stamps(ctx), ...stamps(ctx), userId: ctx.userId, ...values })
+		.values({ ...stamps(ctx), userId: ctx.userId, ...values })
 		.run();
 }
 

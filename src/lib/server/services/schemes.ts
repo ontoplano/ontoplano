@@ -36,7 +36,7 @@ export function saveScheme(ctx: Ctx, rawName: unknown): number {
 	return db.transaction((tx) => {
 		const inserted = tx
 			.insert(planningSchemes)
-			.values({ ...stamps(ctx), ...stamps(ctx), userId: ctx.userId, name })
+			.values({ ...stamps(ctx), userId: ctx.userId, name })
 			.run();
 		const schemeId = Number(inserted.lastInsertRowid);
 
