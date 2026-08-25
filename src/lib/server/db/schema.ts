@@ -177,6 +177,65 @@ export const taskInstances = sqliteTable(
 
 // --- Diary ---
 
+/**
+ * People you know, and the entries that mention them.
+ *
+ * A person is a subject you accumulate a history about, which is what makes
+ * them different from a tag: "everything I wrote that mentions Ana" is a page,
+ * not a filter that happens to work.
+ *
+ * `entry_people` carries its own `user_id` (I1) so a mutation can be scoped in
+ * its own WHERE rather than through a join.
+ */
+export const people = sqliteTable(
+	'people',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull(),
+		relationship: text('relationship', {
+			enum: ['family', 'friend', 'partner', 'professional', 'other']
+		})
+			.notNull()
+			.default('other'),
+		notes: text('notes').default(''),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('people_user_idx').on(table.userId),
+		uniqueIndex('people_user_name_unique').on(table.userId, table.name)
+	]
+);
+
+export const entryPeople = sqliteTable(
+	'entry_people',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		entryId: integer('entry_id')
+			.notNull()
+			.references(() => diaryEntries.id, { onDelete: 'cascade' }),
+		personId: integer('person_id')
+			.notNull()
+			.references(() => people.id, { onDelete: 'cascade' })
+	},
+	(table) => [
+		index('entry_people_user_idx').on(table.userId),
+		index('entry_people_entry_idx').on(table.entryId),
+		index('entry_people_person_idx').on(table.personId),
+		uniqueIndex('entry_people_unique').on(table.entryId, table.personId)
+	]
+);
+
 export const diaryEntries = sqliteTable(
 	'diary_entries',
 	{

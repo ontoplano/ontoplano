@@ -11,13 +11,21 @@ import {
 	updateEntry
 } from '$lib/server/services/diary';
 import { toActionFailure } from '$lib/server/services/errors';
+import { listPeople, peopleForEntries, setEntryPeople } from '$lib/server/services/people';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
 
+	const entries = listEntries(ctx);
+	const mentions = peopleForEntries(
+		ctx,
+		entries.map((e) => e.id)
+	);
+
 	return {
-		entries: listEntries(ctx),
+		entries: entries.map((e) => ({ ...e, people: mentions.get(e.id) ?? [] })),
 		allTags: listTags(ctx),
+		allPeople: listPeople(ctx),
 		// Three wins is a personal habit, not everyone's: one switch governs it,
 		// and it is the dashboard card in preferences. The gate here used to be a
 		// feature flag that stopped existing when the dashboard became a layout,
@@ -30,10 +38,12 @@ export const actions: Actions = {
 	create: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
-			createEntry(buildCtx(locals.user!.id), {
+			const ctx = buildCtx(locals.user!.id);
+			const id = createEntry(ctx, {
 				content: formData.get('content'),
 				tags: formData.get('tags')
 			});
+			setEntryPeople(ctx, id, formData.get('people'));
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);
@@ -62,10 +72,13 @@ export const actions: Actions = {
 	update: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
-			updateEntry(buildCtx(locals.user!.id), Number(formData.get('id')), {
+			const ctx = buildCtx(locals.user!.id);
+			const id = Number(formData.get('id'));
+			updateEntry(ctx, id, {
 				content: formData.get('content'),
 				tags: formData.get('tags')
 			});
+			setEntryPeople(ctx, id, formData.get('people'));
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

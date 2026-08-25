@@ -28,6 +28,8 @@ Self-hosted, single SQLite file, no account anywhere but your own.
 - **Diary, ideas, habits, shopping** — a journal with free-form tags, quick
   capture, habits logged per day with a heatmap, and inventory-vs-wishlist
   shopping.
+- **People** — mention someone in an entry and every mention collects on their
+  page; a tag cannot do that, because a tag has no identity beyond its spelling.
 - **Dashboard** — the cards you choose, in the order you choose.
 - **Plugins** — scoped API tokens, data streams that external apps push into,
   and a schedule endpoint they can read. See `docs/PLUGINS.md`.

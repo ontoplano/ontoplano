@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
@@ -62,6 +63,11 @@
 	function editingEntry() {
 		if (!editingId) return null;
 		return data.entries.find((e) => e.id === editingId) ?? null;
+	}
+
+	function editingPeopleString(): string {
+		const entry = editingEntry();
+		return entry ? entry.people.map((p) => p.name).join(', ') : '';
 	}
 
 	function editingTagString() {
@@ -179,8 +185,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<div class="flex items-center justify-between">
-		<h1 class="text-lg font-bold text-gray-900">Diary</h1>
+	<div class="flex items-center justify-end">
 		<div class="flex items-center gap-2">
 			{#if winsEnabled}
 				<button
@@ -343,7 +348,7 @@
 					>
 				</Field>
 
-				<Field label="Tags" span={12} hint="Comma separated.">
+				<Field label="Tags" span={6} hint="Comma separated.">
 					<input
 						name="tags"
 						type="text"
@@ -351,6 +356,22 @@
 						placeholder="health, work, idea"
 						class="input"
 					/>
+				</Field>
+
+				<Field label="People" span={6} hint="Anyone this was about.">
+					<input
+						name="people"
+						type="text"
+						list="known-people"
+						value={editingId ? editingPeopleString() : ''}
+						placeholder="Ana, João"
+						class="input"
+					/>
+					<datalist id="known-people">
+						{#each data.allPeople as person (person.id)}
+							<option value={person.name}></option>
+						{/each}
+					</datalist>
 				</Field>
 			</FormGrid>
 		</form>
@@ -474,6 +495,14 @@
 								Edited: {formatDate(entry.updatedAt)}</span
 							>
 						{/if}
+						{#each entry.people as person (person.id)}
+							<a
+								href={resolve('/diary/people')}
+								class="border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-xs text-gray-700 hover:bg-gray-100"
+							>
+								{person.name}
+							</a>
+						{/each}
 						{#if entry.tags.length > 0}
 							<div class="flex flex-wrap gap-1">
 								{#each entry.tags as tag (tag.id)}

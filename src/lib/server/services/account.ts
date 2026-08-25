@@ -121,6 +121,9 @@ const USER_TABLES: OwnedTable[] = [
 	owned('shoppingCategories', schema.shoppingCategories as never),
 	owned('plannerTodos', schema.plannerTodos as never),
 	joined('diaryEntryTags', schema.diaryEntryTags as never, diaryTagIds),
+	// Mentions first: they point at both entries and people.
+	owned('entryPeople', schema.entryPeople as never),
+	owned('people', schema.people as never),
 	owned('diaryEntries', schema.diaryEntries as never),
 	owned('tags', schema.tags as never),
 	joined('habitOccurrences', schema.habitOccurrences as never, habitOccurrenceIds),

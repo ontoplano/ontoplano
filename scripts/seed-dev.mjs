@@ -231,6 +231,32 @@ const idea = (content, tags = [], extra = {}) => {
 	return id;
 };
 
+const person = (name, relationship, notes = '') => {
+	const existing = one('select id from people where user_id = ? and name = ?', uid, name);
+	if (existing) return existing.id;
+	return run(
+		`insert into people (user_id, name, relationship, notes, created_at, updated_at)
+		 values (?, ?, ?, ?, ?, ?)`,
+		uid,
+		name,
+		relationship,
+		notes,
+		stamp(now),
+		stamp(now)
+	);
+};
+
+const mention = (entryId, personId) => {
+	if (one('select id from entry_people where entry_id = ? and person_id = ?', entryId, personId))
+		return;
+	run(
+		'insert into entry_people (user_id, entry_id, person_id) values (?, ?, ?)',
+		uid,
+		entryId,
+		personId
+	);
+};
+
 const habit = (name, type, scheduledDays, description = '') => {
 	const existing = one('select id from habits where user_id = ? and name = ?', uid, name);
 	if (existing) return existing.id;
@@ -644,7 +670,7 @@ diary(1, 'Started using the planner properly. Blocked out the mornings for deep 
 	'planning',
 	'work'
 ]);
-diary(2, 'Gym twice this week. The evening slot works better than mornings.', ['health']);
+diary(2, 'Gym twice this week with João. The evening slot works better than mornings.', ['health']);
 diary(
 	3,
 	'Win 1: shipped the export\nWin 2: ran 8km\nWin 3: cooked instead of ordering',
@@ -652,6 +678,17 @@ diary(
 	iso(dayOffset(-1))
 );
 diary(4, 'Reading is slipping. Move it before the phone, not after.', ['reading', 'planning']);
+
+// --- people ------------------------------------------------------------------
+
+const ana = person('Ana', 'partner', 'anniversary in March');
+const joao = person('João', 'friend', 'the one who runs');
+const marina = person('Marina', 'professional', 'runs the Tuesday standup');
+person('Mum', 'family');
+
+mention(1, ana);
+mention(2, joao);
+mention(4, marina);
 
 idea('A weekly review that writes itself from the tracker', ['product', 'planning'], {
 	favorite: true
