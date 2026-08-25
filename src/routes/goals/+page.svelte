@@ -2,6 +2,9 @@
 	import { enhance } from '$app/forms';
 	import type { PageServerData, ActionData } from './$types';
 	import { autofocus } from '$lib/actions/autofocus.js';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 	import {
 		HORIZONS,
 		HORIZON_LABELS,
@@ -118,24 +121,13 @@
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<h1 class="text-lg font-bold text-gray-900">Goals</h1>
 		<div class="flex items-center gap-2">
-			<a
-				href={data.includeClosed ? '/goals' : '/goals?closed=1'}
-				class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
-			>
+			<a href={data.includeClosed ? '/goals' : '/goals?closed=1'} class="btn btn-sm">
 				{data.includeClosed ? 'Hide closed' : 'Show closed'}
 			</a>
-			<button
-				onclick={() => (showAreas = !showAreas)}
-				class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
-			>
-				Areas
-			</button>
-			<button
-				onclick={() => (showForm ? (showForm = false) : openCreate())}
-				class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800"
-			>
-				{showForm ? 'Cancel' : 'New goal'}
-				<kbd class="ml-1 border border-gray-600 bg-gray-800 px-1 text-xs">n</kbd>
+			<button onclick={() => (showAreas = true)} class="btn btn-sm">Areas</button>
+			<button onclick={openCreate} class="btn btn-primary btn-sm">
+				New goal
+				<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">n</kbd>
 			</button>
 		</div>
 	</div>
@@ -144,61 +136,53 @@
 		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{form.message}</div>
 	{/if}
 
-	{#if showAreas}
-		<section class="border border-gray-200 bg-white p-4 shadow-card">
-			<div class="mb-3 flex items-baseline justify-between">
-				<span class="eyebrow text-gray-500">Areas</span>
-				<span class="text-xs text-gray-400">Fitness, study, money — whatever you track.</span>
+	<Modal
+		bind:open={showAreas}
+		title="Areas"
+		description="Fitness, study, money — whatever you track."
+		size="sm"
+	>
+		{#if data.areas.length > 0}
+			<div class="divide-y divide-gray-200 border border-gray-200">
+				{#each data.areas as area (area.id)}
+					<div class="flex items-center gap-3 px-3 py-2">
+						<span class="h-4 w-1 shrink-0" style="background-color: {area.color}"></span>
+						<span class="flex-1 text-sm text-gray-900">{area.name}</span>
+						<form method="post" action="?/deleteArea" use:enhance>
+							<input type="hidden" name="id" value={area.id} />
+							<button class="btn btn-quiet btn-sm">Remove</button>
+						</form>
+					</div>
+				{/each}
 			</div>
-			{#if data.areas.length > 0}
-				<div class="mb-3 divide-y divide-gray-200 border border-gray-200">
-					{#each data.areas as area (area.id)}
-						<div class="flex items-center gap-3 px-3 py-2">
-							<span class="h-4 w-1 shrink-0" style="background-color: {area.color}"></span>
-							<span class="flex-1 text-sm text-gray-900">{area.name}</span>
-							<form method="post" action="?/deleteArea" use:enhance>
-								<input type="hidden" name="id" value={area.id} />
-								<button class="text-xs text-gray-400 hover:text-red-600">Remove</button>
-							</form>
-						</div>
-					{/each}
-				</div>
-			{:else}
-				<p class="mb-3 text-sm text-gray-400">No areas yet.</p>
-			{/if}
-			<form
-				method="post"
-				action="?/createArea"
-				use:enhance={() =>
-					async ({ update }) =>
-						update({ reset: true })}
-				class="flex flex-wrap items-end gap-2"
-			>
-				<label class="flex-1">
-					<span class="eyebrow text-gray-500">New area</span>
-					<input
-						name="name"
-						required
-						autocomplete="off"
-						placeholder="e.g. fitness"
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					/>
-				</label>
-				<label>
-					<span class="eyebrow text-gray-500">Colour</span>
-					<input
-						name="color"
-						type="color"
-						value="#6b7280"
-						class="mt-1 block h-9 w-16 border border-gray-300"
-					/>
-				</label>
-				<button class="bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-					>Add</button
-				>
-			</form>
-		</section>
-	{/if}
+		{:else}
+			<p class="text-sm text-gray-400">No areas yet.</p>
+		{/if}
+
+		<form
+			id="area-form"
+			method="post"
+			action="?/createArea"
+			use:enhance={() =>
+				async ({ update }) =>
+					update({ reset: true })}
+			class="mt-4"
+		>
+			<FormGrid>
+				<Field label="New area" span={8}>
+					<input name="name" required autocomplete="off" placeholder="e.g. fitness" class="input" />
+				</Field>
+				<Field label="Colour" span={4}>
+					<input name="color" type="color" value="#6b7280" class="input h-9 p-1" />
+				</Field>
+			</FormGrid>
+		</form>
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (showAreas = false)}>Done</button>
+			<button type="submit" form="area-form" class="btn btn-primary">Add area</button>
+		{/snippet}
+	</Modal>
 
 	{#if data.areas.length > 0}
 		<div class="flex flex-wrap items-center gap-1 text-xs">
@@ -222,8 +206,13 @@
 		</div>
 	{/if}
 
-	{#if showForm}
+	<Modal
+		bind:open={showForm}
+		title={editingId ? 'Edit goal' : 'New goal'}
+		onclose={() => (editingId = null)}
+	>
 		<form
+			id="goal-form"
 			method="post"
 			action={editingId ? '?/update' : '?/create'}
 			use:enhance={() =>
@@ -234,14 +223,13 @@
 						editingId = null;
 					}
 				}}
-			class="space-y-3 border border-gray-200 bg-white p-4 shadow-card"
 		>
 			{#if editingId}
 				<input type="hidden" name="id" value={editingId} />
 			{/if}
-			<div class="flex flex-wrap gap-3">
-				<label class="min-w-64 flex-1">
-					<span class="eyebrow text-gray-500">Goal</span>
+
+			<FormGrid>
+				<Field label="Goal" span={12} required>
 					<input
 						name="title"
 						required
@@ -249,103 +237,76 @@
 						autocomplete="off"
 						value={editing?.title ?? ''}
 						placeholder="e.g. train three times a week"
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						class="input"
 					/>
-				</label>
-				<label class="w-40">
-					<span class="eyebrow text-gray-500">Area</span>
-					<select
-						name="areaId"
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					>
+				</Field>
+
+				<Field label="Horizon" span={4}>
+					<select name="horizon" bind:value={formHorizon} class="select">
+						{#each HORIZONS as h (h)}
+							<option value={h}>{HORIZON_LABELS[h]}</option>
+						{/each}
+					</select>
+				</Field>
+
+				<Field label="Starts" span={4} hint={formPeriod ? `Counts for ${formPeriod}` : ''}>
+					<input name="startDate" type="date" bind:value={formStart} class="input" />
+				</Field>
+
+				<Field label="Area" span={4}>
+					<select name="areaId" class="select">
 						<option value="">— none —</option>
 						{#each data.areas as area (area.id)}
 							<option value={area.id} selected={editing?.areaId === area.id}>{area.name}</option>
 						{/each}
 					</select>
-				</label>
-			</div>
+				</Field>
 
-			<div class="flex flex-wrap gap-3">
-				<label class="w-40">
-					<span class="eyebrow text-gray-500">Horizon</span>
-					<select
-						name="horizon"
-						bind:value={formHorizon}
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					>
-						{#each HORIZONS as h (h)}
-							<option value={h}>{HORIZON_LABELS[h]}</option>
-						{/each}
-					</select>
-				</label>
-				<label class="w-44">
-					<span class="eyebrow text-gray-500">Starts</span>
-					<input
-						name="startDate"
-						type="date"
-						bind:value={formStart}
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					/>
-					{#if formPeriod}
-						<span class="mt-1 block text-xs text-gray-500">Counts for {formPeriod}</span>
-					{/if}
-				</label>
-				{#if !editingId}
-					<label class="w-56">
-						<span class="eyebrow text-gray-500">Part of</span>
-						<select
-							name="parentId"
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						>
-							<option value="">— standalone —</option>
-							{#each parentOptions as g (g.id)}
-								<option value={g.id}>{HORIZON_LABELS[g.horizon]}: {g.title}</option>
-							{/each}
-						</select>
-					</label>
-				{/if}
-			</div>
-
-			<div class="flex flex-wrap gap-3">
-				<label class="w-28">
-					<span class="eyebrow text-gray-500">Target</span>
+				<Field label="Target" span={4} hint="Optional — leave empty for a yes/no goal">
 					<input
 						name="targetValue"
 						type="number"
 						min="0"
 						step="any"
 						value={editing?.targetValue ?? ''}
-						class="tabular mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						class="input tabular"
 					/>
-				</label>
-				<label class="w-32">
-					<span class="eyebrow text-gray-500">Unit</span>
+				</Field>
+
+				<Field label="Unit" span={4}>
 					<input
 						name="unit"
 						autocomplete="off"
 						placeholder="books, kg, €"
 						value={editing?.unit ?? ''}
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						class="input"
 					/>
-				</label>
-			</div>
+				</Field>
 
-			<label class="block">
-				<span class="eyebrow text-gray-500">Notes</span>
-				<textarea
-					name="notes"
-					rows="3"
-					value={editing?.notes ?? ''}
-					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				></textarea>
-			</label>
+				{#if !editingId}
+					<Field label="Part of" span={4}>
+						<select name="parentId" class="select">
+							<option value="">— standalone —</option>
+							{#each parentOptions as g (g.id)}
+								<option value={g.id}>{HORIZON_LABELS[g.horizon]}: {g.title}</option>
+							{/each}
+						</select>
+					</Field>
+				{/if}
 
-			<button class="bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">
+				<Field label="Notes" span={12}>
+					<textarea name="notes" rows="3" class="textarea" value={editing?.notes ?? ''}></textarea>
+				</Field>
+			</FormGrid>
+		</form>
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>
+			<button type="submit" form="goal-form" class="btn btn-primary">
 				{editingId ? 'Save' : 'Create goal'}
 			</button>
-		</form>
-	{/if}
+		{/snippet}
+	</Modal>
 
 	{#if visible.length === 0 && !showForm}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-400 shadow-card">
@@ -498,85 +459,6 @@
 									{/if}
 								</div>
 							</div>
-
-							{#if linkingId === goal.id && linking}
-								<form
-									method="post"
-									action="?/setLinks"
-									use:enhance={() =>
-										async ({ update }) => {
-											await update();
-											linkingId = null;
-										}}
-									class="mt-3 space-y-2 border border-gray-200 bg-gray-50 p-3"
-								>
-									<input type="hidden" name="id" value={goal.id} />
-									<p class="text-xs text-gray-500">
-										Linked tasks make progress countable — how many of these actually got done
-										inside the period, instead of a number you type in.
-									</p>
-
-									<div class="grid gap-3 md:grid-cols-3">
-										<div>
-											<span class="eyebrow text-gray-500">Activities</span>
-											<div class="mt-1 max-h-40 space-y-1 overflow-y-auto">
-												{#each data.activities as a (a.id)}
-													<label class="flex items-center gap-2 text-xs text-gray-700">
-														<input
-															type="checkbox"
-															name="activityId"
-															value={a.id}
-															checked={linking.linkedActivityIds.includes(a.id)}
-															class="h-3 w-3"
-														/>
-														{a.name}
-													</label>
-												{/each}
-											</div>
-										</div>
-										<div>
-											<span class="eyebrow text-gray-500">Weekly blocks</span>
-											<div class="mt-1 max-h-40 space-y-1 overflow-y-auto">
-												{#each data.slots as s (s.id)}
-													<label class="flex items-center gap-2 text-xs text-gray-700">
-														<input
-															type="checkbox"
-															name="slotId"
-															value={s.id}
-															checked={linking.linkedSlotIds.includes(s.id)}
-															class="h-3 w-3"
-														/>
-														<span class="tabular">{s.startTime}</span>
-														{s.label || `block ${s.id}`}
-													</label>
-												{/each}
-											</div>
-										</div>
-										<div>
-											<span class="eyebrow text-gray-500">Todos</span>
-											<div class="mt-1 max-h-40 space-y-1 overflow-y-auto">
-												{#each data.todos as t (t.id)}
-													<label class="flex items-center gap-2 text-xs text-gray-700">
-														<input
-															type="checkbox"
-															name="todoId"
-															value={t.id}
-															checked={linking.linkedTodoIds.includes(t.id)}
-															class="h-3 w-3"
-														/>
-														{t.title}
-													</label>
-												{/each}
-											</div>
-										</div>
-									</div>
-
-									<button
-										class="bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800"
-										>Save links</button
-									>
-								</form>
-							{/if}
 						</div>
 					{/each}
 
@@ -587,4 +469,93 @@
 			</section>
 		{/each}
 	</div>
+
+	<Modal
+		open={linkingId !== null}
+		onclose={() => (linkingId = null)}
+		title="Linked tasks"
+		description="Linked tasks make progress countable — how many of these actually got done inside the period, instead of a number you type in."
+		size="lg"
+	>
+		{#if linking}
+			<form
+				id="links-form"
+				method="post"
+				action="?/setLinks"
+				use:enhance={() =>
+					async ({ update }) => {
+						await update();
+						linkingId = null;
+					}}
+			>
+				<input type="hidden" name="id" value={linking.id} />
+
+				<div class="grid gap-4 sm:grid-cols-3">
+					<div>
+						<span class="eyebrow text-gray-500">Activities</span>
+						<div class="mt-2 max-h-64 space-y-1 overflow-y-auto">
+							{#each data.activities as a (a.id)}
+								<label class="flex items-center gap-2 text-sm text-gray-700">
+									<input
+										type="checkbox"
+										name="activityId"
+										value={a.id}
+										checked={linking.linkedActivityIds.includes(a.id)}
+										class="h-3 w-3"
+									/>
+									{a.name}
+								</label>
+							{:else}
+								<p class="text-xs text-gray-400">No activities yet.</p>
+							{/each}
+						</div>
+					</div>
+					<div>
+						<span class="eyebrow text-gray-500">Weekly blocks</span>
+						<div class="mt-2 max-h-64 space-y-1 overflow-y-auto">
+							{#each data.slots as sl (sl.id)}
+								<label class="flex items-center gap-2 text-sm text-gray-700">
+									<input
+										type="checkbox"
+										name="slotId"
+										value={sl.id}
+										checked={linking.linkedSlotIds.includes(sl.id)}
+										class="h-3 w-3"
+									/>
+									<span class="tabular">{sl.startTime}</span>
+									{sl.label || `block ${sl.id}`}
+								</label>
+							{:else}
+								<p class="text-xs text-gray-400">No weekly blocks yet.</p>
+							{/each}
+						</div>
+					</div>
+					<div>
+						<span class="eyebrow text-gray-500">Todos</span>
+						<div class="mt-2 max-h-64 space-y-1 overflow-y-auto">
+							{#each data.todos as t (t.id)}
+								<label class="flex items-center gap-2 text-sm text-gray-700">
+									<input
+										type="checkbox"
+										name="todoId"
+										value={t.id}
+										checked={linking.linkedTodoIds.includes(t.id)}
+										class="h-3 w-3"
+									/>
+									{t.title}
+								</label>
+							{:else}
+								<p class="text-xs text-gray-400">No open todos.</p>
+							{/each}
+						</div>
+					</div>
+				</div>
+			</form>
+		{/if}
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (linkingId = null)}>Cancel</button>
+			<button type="submit" form="links-form" class="btn btn-primary">Save links</button>
+		{/snippet}
+	</Modal>
 </div>

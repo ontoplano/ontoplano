@@ -50,6 +50,103 @@
 	line-height: 1;
 }
 
+/*
+ * Form controls and buttons, defined once.
+ *
+ * Every field in the app used to carry the same forty characters of utility
+ * classes, copied by hand, which is how they drifted: a border here, a
+ * different focus ring there, three different paddings on one screen. The
+ * classes below are the vocabulary; a form picks from it and nothing else.
+ */
+@layer components {
+	.input,
+	.select,
+	.textarea {
+		display: block;
+		width: 100%;
+		border: 1px solid var(--color-gray-300);
+		background-color: var(--color-white);
+		padding: 0.5rem 0.75rem;
+		font-size: 0.875rem;
+		line-height: 1.25rem;
+		color: var(--color-gray-900);
+		box-shadow: var(--shadow-card);
+	}
+
+	.input:focus,
+	.select:focus,
+	.textarea:focus {
+		outline: none;
+		border-color: var(--color-gray-900);
+		box-shadow: 0 0 0 1px var(--color-gray-900);
+	}
+
+	.input::placeholder,
+	.textarea::placeholder {
+		color: var(--color-gray-400);
+	}
+
+	.textarea {
+		min-height: 5rem;
+		resize: vertical;
+	}
+
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.375rem;
+		border: 1px solid var(--color-gray-300);
+		background-color: var(--color-white);
+		padding: 0.5rem 1rem;
+		font-size: 0.875rem;
+		color: var(--color-gray-700);
+		box-shadow: var(--shadow-card);
+	}
+
+	.btn:hover {
+		background-color: var(--color-gray-50);
+	}
+
+	.btn-primary {
+		border-color: var(--color-gray-900);
+		background-color: var(--color-gray-900);
+		font-weight: 500;
+		color: var(--color-white);
+	}
+
+	.btn-primary:hover {
+		background-color: var(--color-gray-800);
+	}
+
+	/* Red for destruction only, and never as the only cue — the word says it too. */
+	.btn-danger {
+		border-color: var(--color-red-200);
+		color: var(--color-red-600);
+	}
+
+	.btn-danger:hover {
+		background-color: var(--color-red-50);
+	}
+
+	.btn-quiet {
+		border-color: transparent;
+		background-color: transparent;
+		box-shadow: none;
+		color: var(--color-gray-500);
+	}
+
+	.btn-quiet:hover {
+		background-color: transparent;
+		color: var(--color-gray-900);
+	}
+
+	.btn-sm {
+		padding: 0.25rem 0.625rem;
+		font-size: 0.75rem;
+	}
+}
+
 /* Figures line up in columns when they share a width. */
 .tabular {
 	font-variant-numeric: tabular-nums;
