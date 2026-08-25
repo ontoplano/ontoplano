@@ -11,7 +11,7 @@ import {
 } from '../tags.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
-import { stamp } from './time.js';
+import { stamp, stamps } from './time.js';
 import { str } from './validate.js';
 
 /** Quick capture: a thought, optionally tagged, optionally marked as applied. */
@@ -71,7 +71,14 @@ export function createIdea(ctx: Ctx, raw: { content: unknown; tags?: unknown }):
 
 	const result = db
 		.insert(ideas)
-		.values({ userId: ctx.userId, content, createdAt: now, updatedAt: now })
+		.values({
+			...stamps(ctx),
+			...stamps(ctx),
+			userId: ctx.userId,
+			content,
+			createdAt: now,
+			updatedAt: now
+		})
 		.run();
 	const ideaId = Number(result.lastInsertRowid);
 

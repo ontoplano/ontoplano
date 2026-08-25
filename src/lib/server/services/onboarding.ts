@@ -4,6 +4,7 @@ import { db } from '../db/index.js';
 import { activities, categories, weeklySlots } from '../db/schema.js';
 import { isOnboarded, markOnboarded, setTimezone, setWeekSettings } from '../settings.js';
 import type { Ctx } from './ctx.js';
+import { stamps } from './time.js';
 import { ValidationError } from './errors.js';
 import { num, oneOf, str } from './validate.js';
 
@@ -208,7 +209,12 @@ export function completeFirstRun(ctx: Ctx, raw: FirstRunInput): TemplateKey {
 			if (!categoryId) continue;
 			const inserted = tx
 				.insert(activities)
-				.values({ userId: ctx.userId, name: activity.name, categoryId })
+				.values({
+					...stamps(ctx),
+					userId: ctx.userId,
+					name: activity.name,
+					categoryId
+				})
 				.returning({ id: activities.id })
 				.get();
 			activityIds.set(activity.name, inserted.id);
@@ -219,6 +225,7 @@ export function completeFirstRun(ctx: Ctx, raw: FirstRunInput): TemplateKey {
 			if (!activityId) continue;
 			tx.insert(weeklySlots)
 				.values({
+					...stamps(ctx),
 					userId: ctx.userId,
 					weekday: block.weekday,
 					startTime: block.startTime,

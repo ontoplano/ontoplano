@@ -2,6 +2,14 @@ import type { Ctx } from './services/ctx.js';
 import { generateInstances } from './services/instances.js';
 
 /** Format a Date as 'YYYY-MM-DDTHH:MM:SS' in local time (no UTC conversion). */
+/**
+ * A Date as a naive `YYYY-MM-DDTHH:MM:SS`, with no zone.
+ *
+ * This is for **wall-clock** values only — `task_instances.scheduled_at` and
+ * the day bounds compared against it. Instants are UTC and come from
+ * `services/time.ts`; writing one of those with this function is finding S7
+ * all over again.
+ */
 export function toLocalISOString(d: Date): string {
 	const pad = (n: number) => String(n).padStart(2, '0');
 	return (

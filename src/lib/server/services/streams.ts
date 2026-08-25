@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { dataPoints, dataStreams } from '../db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
+import { stamps } from './time.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { isoInstant, jsonObject, num, oneOf, optionalStr, slug, str } from './validate.js';
 
@@ -66,7 +67,14 @@ export function upsertStream(
 
 	const created = db
 		.insert(dataStreams)
-		.values({ ...values, userId: ctx.userId, createdAt: nowIso, updatedAt: nowIso })
+		.values({
+			...stamps(ctx),
+			...stamps(ctx),
+			...values,
+			userId: ctx.userId,
+			createdAt: nowIso,
+			updatedAt: nowIso
+		})
 		.returning()
 		.get();
 

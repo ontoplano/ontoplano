@@ -4,6 +4,7 @@ import { and, desc, eq, isNull } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { apiTokens } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
+import { stamps } from './time.js';
 import { ForbiddenError, NotFoundError, UnauthorizedError } from './errors.js';
 import { num, str } from './validate.js';
 
@@ -77,6 +78,8 @@ export function createToken(
 	const row = db
 		.insert(apiTokens)
 		.values({
+			...stamps(ctx),
+			...stamps(ctx),
 			userId: ctx.userId,
 			name,
 			tokenHash: hashToken(plaintext),

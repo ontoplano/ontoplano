@@ -21,7 +21,7 @@ import {
 import { periodEnd, periodStart, isGoalStatus, isHorizon, type Horizon } from '../../goals.js';
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
-import { stamp } from './time.js';
+import { created, stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
 
 export type GoalArea = { id: number; name: string; color: string; sortOrder: number };
@@ -258,7 +258,15 @@ export function createArea(ctx: Ctx, raw: { name: unknown; color?: unknown }): n
 
 	if (clash) throw new ConflictError('You already have an area with that name');
 
-	const result = db.insert(goalAreas).values({ userId: ctx.userId, name, color }).run();
+	const result = db
+		.insert(goalAreas)
+		.values({
+			...created(ctx),
+			userId: ctx.userId,
+			name,
+			color
+		})
+		.run();
 	return Number(result.lastInsertRowid);
 }
 
@@ -292,6 +300,7 @@ export function createGoal(
 	const result = db
 		.insert(goals)
 		.values({
+			...stamps(ctx),
 			userId: ctx.userId,
 			title,
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),

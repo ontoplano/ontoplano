@@ -17,7 +17,7 @@ import {
 } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
-import { stamp } from './time.js';
+import { created, stamp, stamps } from './time.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
 
 /**
@@ -171,6 +171,7 @@ export function createSlot(ctx: Ctx, raw: BlockInput & { weekday: unknown }): nu
 	const inserted = db
 		.insert(weeklySlots)
 		.values({
+			...stamps(ctx),
 			userId: ctx.userId,
 			weekday,
 			...placement,
@@ -267,6 +268,7 @@ export function copySlotsToWeekdays(ctx: Ctx, ids: number[], days: number[]): vo
 				if (day === slot.weekday) continue;
 				tx.insert(weeklySlots)
 					.values({
+						...stamps(ctx),
 						userId: ctx.userId,
 						weekday: day,
 						startTime: slot.startTime,
@@ -321,6 +323,7 @@ export function createExceptional(ctx: Ctx, raw: BlockInput & { date: unknown })
 	const inserted = db
 		.insert(exceptionalSlots)
 		.values({
+			...created(ctx),
 			userId: ctx.userId,
 			date,
 			...placement,
@@ -465,6 +468,7 @@ export function moveOccurrence(
 		const moved = tx
 			.insert(exceptionalSlots)
 			.values({
+				...created(ctx),
 				userId: ctx.userId,
 				date,
 				startTime,
@@ -516,6 +520,7 @@ export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: un
 		db.transaction((tx) => {
 			tx.insert(weeklySlots)
 				.values({
+					...stamps(ctx),
 					userId: ctx.userId,
 					// The date it sits on decides which weekday it repeats on.
 					weekday: (new Date(`${one.date}T00:00:00`).getDay() + 6) % 7,
@@ -553,6 +558,7 @@ export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: un
 	db.transaction((tx) => {
 		tx.insert(exceptionalSlots)
 			.values({
+				...created(ctx),
 				userId: ctx.userId,
 				date,
 				startTime: slot.startTime,
@@ -750,7 +756,12 @@ function resolveActivityId(ctx: Ctx, raw: BlockInput): number | null {
 
 	return db
 		.insert(activities)
-		.values({ userId: ctx.userId, name, categoryId })
+		.values({
+			...stamps(ctx),
+			userId: ctx.userId,
+			name,
+			categoryId
+		})
 		.returning({ id: activities.id })
 		.get().id;
 }

@@ -4,7 +4,7 @@ import { db } from '../db/index.js';
 import { shoppingCategories, shoppingItems } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
-import { stamp } from './time.js';
+import { stamp, stamps } from './time.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
 
 /**
@@ -63,7 +63,7 @@ export function listCategories(ctx: Ctx) {
 export function createItem(ctx: Ctx, raw: ItemInput): void {
 	const values = parseItem(ctx, raw);
 	db.insert(shoppingItems)
-		.values({ userId: ctx.userId, ...values })
+		.values({ ...stamps(ctx), ...stamps(ctx), userId: ctx.userId, ...values })
 		.run();
 }
 

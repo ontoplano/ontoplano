@@ -45,8 +45,15 @@ export const TIMING_LABELS: Record<Timing, string> = {
  */
 export const TIMING_GRACE_MINUTES = 15;
 
-export function timingFor(scheduledAt: string, completedAt: string): Timing {
-	const planned = new Date(scheduledAt).getTime();
+export function timingFor(
+	scheduledAt: string,
+	completedAt: string,
+	plannedInstant?: number
+): Timing {
+	// `scheduledAt` is a wall-clock time, `completedAt` an instant. The caller
+	// resolves the first against the user's zone and passes it in; without that
+	// the two are only comparable for someone in the server's zone.
+	const planned = plannedInstant ?? new Date(scheduledAt).getTime();
 	const actual = new Date(completedAt).getTime();
 	if (!Number.isFinite(planned) || !Number.isFinite(actual)) return 'on_time';
 

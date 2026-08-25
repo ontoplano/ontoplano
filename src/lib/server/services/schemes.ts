@@ -5,7 +5,7 @@ import { planningSchemes, schemeSlots, weeklySlots } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError } from './errors.js';
 import { clearWeeklyPlanIn } from './slots.js';
-import { stamp } from './time.js';
+import { stamp, stamps } from './time.js';
 import { str } from './validate.js';
 
 /**
@@ -34,7 +34,10 @@ export function saveScheme(ctx: Ctx, rawName: unknown): number {
 	if (schemeNamed(ctx, name)) throw new ConflictError('A scheme with this name already exists');
 
 	return db.transaction((tx) => {
-		const inserted = tx.insert(planningSchemes).values({ userId: ctx.userId, name }).run();
+		const inserted = tx
+			.insert(planningSchemes)
+			.values({ ...stamps(ctx), ...stamps(ctx), userId: ctx.userId, name })
+			.run();
 		const schemeId = Number(inserted.lastInsertRowid);
 
 		const slots = tx.select().from(weeklySlots).where(eq(weeklySlots.userId, ctx.userId)).all();

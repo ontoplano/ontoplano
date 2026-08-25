@@ -15,7 +15,8 @@ import { db } from '../db/index.js';
 import { isStatus, timingFor } from '../../task-status.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
-import { stamp } from './time.js';
+// `created` is also a local counter in this file, hence the alias.
+import { created as createdStamp, stamp } from './time.js';
 import { num, optionalStr, str } from './validate.js';
 import {
 	activities,
@@ -167,6 +168,7 @@ export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 
 			db.insert(taskInstances)
 				.values({
+					...createdStamp(ctx),
 					userId: ctx.userId,
 					slotId: slot.id,
 					scheduledAt: atLocal(dateStr, slot.startTime),
@@ -203,6 +205,7 @@ export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 
 		db.insert(taskInstances)
 			.values({
+				...createdStamp(ctx),
 				userId: ctx.userId,
 				exceptionalSlotId: one.id,
 				scheduledAt: atLocal(one.date, one.startTime),

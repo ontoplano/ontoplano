@@ -3,6 +3,7 @@ import { and, desc, eq, gte, inArray } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { habitOccurrences, habits } from '../db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
+import { created } from './time.js';
 import { ConflictError, NotFoundError } from './errors.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
 
@@ -85,7 +86,7 @@ export function today(ctx: Ctx): string {
 export function createHabit(ctx: Ctx, raw: HabitInput): number {
 	const result = db
 		.insert(habits)
-		.values({ userId: ctx.userId, ...parseHabit(raw) })
+		.values({ ...created(ctx), ...created(ctx), userId: ctx.userId, ...parseHabit(raw) })
 		.run();
 	return Number(result.lastInsertRowid);
 }
@@ -119,7 +120,9 @@ export function logOccurrence(
 
 	if (occurrenceOn(habitId, date)) throw new ConflictError('Already logged for this date');
 
-	db.insert(habitOccurrences).values({ habitId, date, notes }).run();
+	db.insert(habitOccurrences)
+		.values({ ...created(ctx), ...created(ctx), habitId, date, notes })
+		.run();
 }
 
 /** Clicking a day in the heatmap: log it, or take it back. */
@@ -131,7 +134,9 @@ export function toggleOccurrence(ctx: Ctx, raw: { habitId: unknown; date: unknow
 	if (existing) {
 		db.delete(habitOccurrences).where(eq(habitOccurrences.id, existing.id)).run();
 	} else {
-		db.insert(habitOccurrences).values({ habitId, date, notes: '' }).run();
+		db.insert(habitOccurrences)
+			.values({ ...created(ctx), ...created(ctx), habitId, date, notes: '' })
+			.run();
 	}
 }
 

@@ -21,7 +21,7 @@ import { isStatus, type Status } from '../../task-status.js';
 import type { RatingValues } from '../../ratings.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
-import { stamp } from './time.js';
+import { created, stamp, stamps } from './time.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
 
 export type Todo = {
@@ -192,6 +192,7 @@ export function promoteTodo(
 		const slot = tx
 			.insert(exceptionalSlots)
 			.values({
+				...created(ctx),
 				userId: ctx.userId,
 				date: input.date,
 				startTime: input.startTime,
@@ -208,6 +209,7 @@ export function promoteTodo(
 
 		tx.insert(taskInstances)
 			.values({
+				...created(ctx),
 				userId: ctx.userId,
 				exceptionalSlotId: slot.id,
 				scheduledAt: `${input.date}T${input.startTime}:00`,
@@ -248,6 +250,7 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 	const result = db
 		.insert(plannerTodos)
 		.values({
+			...stamps(ctx),
 			userId: ctx.userId,
 			title: str(raw.title, 'title', { max: MAX_TITLE_LENGTH }),
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
@@ -364,6 +367,7 @@ export function delegateTodo(
 	db.transaction((tx) => {
 		tx.insert(exceptionalSlots)
 			.values({
+				...created(ctx),
 				userId: ctx.userId,
 				date,
 				startTime,
@@ -486,6 +490,7 @@ export function demoteInstance(ctx: Ctx, instanceId: number): void {
 	db.transaction((tx) => {
 		tx.insert(plannerTodos)
 			.values({
+				...stamps(ctx),
 				userId: ctx.userId,
 				title: instance.label || 'Untitled',
 				notes: instance.notes ?? '',

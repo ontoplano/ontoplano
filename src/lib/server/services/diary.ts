@@ -11,7 +11,7 @@ import {
 } from '../tags.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
-import { stamp } from './time.js';
+import { stamp, stamps } from './time.js';
 import { str } from './validate.js';
 
 /** The journal: free text, free-form tags, one running number per account. */
@@ -129,7 +129,14 @@ function insertEntry(ctx: Ctx, content: string, forDate?: string): number {
 
 	const result = db
 		.insert(diaryEntries)
-		.values({ userId: ctx.userId, content, seq: highest + 1, ...(forDate ? { forDate } : {}) })
+		.values({
+			...stamps(ctx),
+			...stamps(ctx),
+			userId: ctx.userId,
+			content,
+			seq: highest + 1,
+			...(forDate ? { forDate } : {})
+		})
 		.run();
 
 	return Number(result.lastInsertRowid);

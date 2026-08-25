@@ -3,6 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { dailyWins } from '../db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
+import { created, stamps } from './time.js';
 import { str } from './validate.js';
 
 /**
@@ -51,6 +52,8 @@ export function saveWins(ctx: Ctx, raw: { forDate?: unknown; contents: unknown[]
 			if (content)
 				tx.insert(dailyWins)
 					.values({
+						...created(ctx),
+						...stamps(ctx),
 						userId: ctx.userId,
 						forDate,
 						position,

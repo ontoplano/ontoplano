@@ -3,6 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { quotes } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
+import { created } from './time.js';
 import { NotFoundError } from './errors.js';
 import { optionalStr, str } from './validate.js';
 
@@ -34,7 +35,7 @@ export function createQuote(ctx: Ctx, raw: { text: unknown; author?: unknown }):
 
 	return db
 		.insert(quotes)
-		.values({ userId: ctx.userId, text, author })
+		.values({ ...created(ctx), ...created(ctx), userId: ctx.userId, text, author })
 		.returning({ id: quotes.id, text: quotes.text, author: quotes.author })
 		.get();
 }

@@ -5,7 +5,7 @@ import { db } from '../db/index.js';
 import { activities, categories, taskInstances, weeklySlots } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
-import { stamp } from './time.js';
+import { stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
 
 /**
@@ -60,6 +60,8 @@ export function createActivity(
 	const result = db
 		.insert(activities)
 		.values({
+			...stamps(ctx),
+			...stamps(ctx),
 			userId: ctx.userId,
 			name: str(raw.name, 'name', { max: MAX_NAME_LENGTH }),
 			categoryId: requireCategory(ctx, raw.categoryId),
@@ -133,7 +135,13 @@ export function createCategory(ctx: Ctx, raw: { name: unknown; color?: unknown }
 
 	const result = db
 		.insert(categories)
-		.values({ userId: ctx.userId, name, color, colorLight: lightVariant(color) })
+		.values({
+			...stamps(ctx),
+			userId: ctx.userId,
+			name,
+			color,
+			colorLight: lightVariant(color)
+		})
 		.run();
 
 	return Number(result.lastInsertRowid);
