@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm';
 
 import { db } from './db/index.js';
 import { user, userSettings } from './db/schema.js';
+import { STYLES, isStyle, type Style } from '../style.js';
 import { THEMES, type Theme } from '../theme.js';
 
 export function getUserSetting(userId: string, key: string): string | null {
@@ -57,6 +58,23 @@ export function getTheme(userId: string): Theme {
 
 export function setTheme(userId: string, theme: Theme): void {
 	setUserSetting(userId, THEME_KEY, theme);
+}
+
+// --- Layout style ------------------------------------------------------------
+
+export { STYLES };
+export type { Style };
+
+export const STYLE_KEY = 'ui.style';
+export const DEFAULT_STYLE: Style = 'sober';
+
+export function getStyle(userId: string): Style {
+	const stored = getUserSetting(userId, STYLE_KEY);
+	return isStyle(stored) ? stored : DEFAULT_STYLE;
+}
+
+export function setStyle(userId: string, style: Style): void {
+	setUserSetting(userId, STYLE_KEY, style);
 }
 
 // --- Week ---------------------------------------------------------------------

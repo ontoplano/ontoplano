@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -443,7 +444,7 @@
 									}}
 									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
 								>
-									Edit
+									<Icon name="edit" /> Edit
 								</button>
 								<button
 									type="button"
@@ -452,7 +453,7 @@
 									}}
 									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
 								>
-									Delete
+									<Icon name="trash" /> Delete
 								</button>
 							{/if}
 						</div>

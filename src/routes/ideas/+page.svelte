@@ -1,6 +1,7 @@
 <script lang="ts">
 	/* biome-ignore-all assist/source/organizeImports lint/correctness/noUnusedImports lint/correctness/noUnusedVariables lint/style/useConst: Svelte template and rune usage in this file triggers false positives in current Biome diagnostics. */
 	import { enhance } from '$app/forms';
+	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { autofocus } from '$lib/actions/autofocus';
 	import Field from '$lib/components/Field.svelte';
@@ -392,7 +393,7 @@
 											onclick={() => openIdeaForm(idea.id)}
 											class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
 										>
-											Edit
+											<Icon name="edit" /> Edit
 										</button>
 										<button
 											type="button"
@@ -401,7 +402,7 @@
 											}}
 											class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
 										>
-											Delete
+											<Icon name="trash" /> Delete
 										</button>
 									{/if}
 								</div>

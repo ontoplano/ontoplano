@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types.js';
 	import { getAction } from '$lib/shortcuts';
@@ -157,7 +158,7 @@
 			</button>
 		</div>
 		<button onclick={startNew} class="btn btn-primary btn-sm">
-			New todo
+			<Icon name="plus" /> New todo
 			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">n</kbd>
 		</button>
 	</div>
@@ -392,7 +393,7 @@
 							onclick={() => startEdit(todo)}
 							class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
 						>
-							Edit
+							<Icon name="edit" /> Edit
 						</button>
 						{#if confirmingDelete === todo.id}
 							<form
@@ -432,7 +433,7 @@
 								}}
 								class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
 							>
-								Delete
+								<Icon name="trash" /> Delete
 							</button>
 						{/if}
 					</div>

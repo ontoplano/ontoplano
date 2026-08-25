@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
 	import { THEMES } from '$lib/theme.js';
@@ -215,7 +216,8 @@
 							<button
 								type="button"
 								onclick={() => (confirmRemove = quote.id)}
-								class="text-xs text-gray-400 hover:text-red-600">Remove</button
+								class="text-xs text-gray-400 hover:text-red-600"
+								><Icon name="trash" /> Remove</button
 							>
 						{/if}
 					</div>
@@ -253,6 +255,39 @@
 			<button class="bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
 				>Add</button
 			>
+		</form>
+	</section>
+
+	<section class="border border-gray-200 bg-white p-6 shadow-card">
+		<div class="mb-4">
+			<h2 class="text-sm font-semibold text-gray-900">Style</h2>
+			<p class="mt-1 text-sm text-gray-500">The shape of things, apart from light and dark.</p>
+		</div>
+
+		<form
+			method="post"
+			action="?/setStyle"
+			use:enhance={({ formData }) => {
+				// <html> is outside the component tree, so `update()` will not touch it.
+				const chosen = formData.get('style')?.toString();
+				if (chosen) document.documentElement.dataset.style = chosen;
+				return async ({ update }) => update({ reset: false });
+			}}
+			class="grid gap-3 sm:grid-cols-2"
+		>
+			{#each data.styles as option (option.key)}
+				<button
+					type="submit"
+					name="style"
+					value={option.key}
+					class="border p-4 text-left {data.style === option.key
+						? 'border-gray-900 bg-gray-50'
+						: 'border-gray-300 bg-white hover:bg-gray-50'}"
+				>
+					<span class="block text-sm font-semibold text-gray-900">{option.label}</span>
+					<span class="mt-1 block text-xs text-gray-500">{option.hint}</span>
+				</button>
+			{/each}
 		</form>
 	</section>
 

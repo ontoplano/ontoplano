@@ -4,7 +4,7 @@ import { building } from '$app/environment';
 import { auth } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { ensureUserCategories } from '$lib/server/db/ensure-categories';
-import { DEFAULT_THEME, getTheme } from '$lib/server/settings';
+import { DEFAULT_STYLE, DEFAULT_THEME, getStyle, getTheme } from '$lib/server/settings';
 import { clientKey, rateLimit } from '$lib/server/rate-limit';
 
 const handleBetterAuth: Handle = async ({ event, resolve }) => {
@@ -28,9 +28,11 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
  */
 const handleTheme: Handle = ({ event, resolve }) => {
 	const theme = event.locals.user ? getTheme(event.locals.user.id) : DEFAULT_THEME;
+	const style = event.locals.user ? getStyle(event.locals.user.id) : DEFAULT_STYLE;
 
 	return resolve(event, {
-		transformPageChunk: ({ html }) => html.replace('%ontoplano.theme%', theme)
+		transformPageChunk: ({ html }) =>
+			html.replace('%ontoplano.theme%', theme).replace('%ontoplano.style%', style)
 	});
 };
 

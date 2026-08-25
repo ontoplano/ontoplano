@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { enhance, deserialize } from '$app/forms';
 	import Modal from '$lib/components/Modal.svelte';
@@ -1594,7 +1595,7 @@
 												}}
 												class="border border-red-200 bg-white px-3 py-2 text-sm text-red-600 shadow-sm transition hover:bg-red-50"
 											>
-												Delete
+												<Icon name="trash" /> Delete
 											</button>
 										{/if}
 									</div>
@@ -2097,7 +2098,7 @@
 									onclick={() => (confirmingFormDelete = true)}
 									class="btn btn-danger btn-sm"
 								>
-									Delete
+									<Icon name="trash" /> Delete
 								</button>
 							{/if}
 						</div>
@@ -2219,7 +2220,7 @@
 									onclick={() => startEdit(slot)}
 									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
 								>
-									Edit
+									<Icon name="edit" /> Edit
 								</button>
 								<form id="toggle-form-{slot.id}" method="post" action="?/toggleActive" use:enhance>
 									<input type="hidden" name="id" value={slot.id} />
@@ -2260,7 +2261,7 @@
 										}}
 										class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
 									>
-										Delete
+										<Icon name="trash" /> Delete
 									</button>
 								{/if}
 							</div>
@@ -2305,7 +2306,7 @@
 								onclick={() => startEditExceptional(exc)}
 								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
 							>
-								Edit
+								<Icon name="edit" /> Edit
 							</button>
 							{#if confirmingDelete === `exc-${exc.id}`}
 								<form
@@ -2335,7 +2336,7 @@
 									}}
 									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
 								>
-									Delete
+									<Icon name="trash" /> Delete
 								</button>
 							{/if}
 						</div>

@@ -41,11 +41,74 @@
 	--shadow-overlay: 0 8px 24px rgb(15 23 42 / 0.12), 0 2px 6px rgb(15 23 42 / 0.08);
 }
 
-/* No rounded corners anywhere */
-*,
-*::before,
-*::after {
+/*
+ * Corners.
+ *
+ * The sober style — the default — has none anywhere, which is why this is a
+ * blanket rule rather than something each component remembers. The playful
+ * style opts back in, so the rule is scoped to everything that is not it.
+ */
+html:not([data-style='playful']) *,
+html:not([data-style='playful']) *::before,
+html:not([data-style='playful']) *::after {
 	border-radius: 0 !important;
+}
+
+/*
+ * The playful style.
+ *
+ * Rounded, shadowless, and colour allowed onto the chrome: the section accent
+ * tints its own headers instead of being a 2px rule. The sober rule that
+ * category colour outranks chrome colour still holds *within* a section — the
+ * tint is pale enough that a category block sits on top of it, not under it.
+ */
+html[data-style='playful'] {
+	--radius: 0.5rem;
+	--shadow-card: none;
+	--shadow-raised: none;
+	--shadow-overlay: 0 0 0 1px rgb(15 23 42 / 0.08);
+}
+
+html[data-style='playful'] .btn,
+html[data-style='playful'] .input,
+html[data-style='playful'] .select,
+html[data-style='playful'] .textarea,
+html[data-style='playful'] input,
+html[data-style='playful'] select,
+html[data-style='playful'] textarea,
+html[data-style='playful'] kbd {
+	border-radius: var(--radius);
+}
+
+/* Cards, panels and dialogs: the surfaces, not the text inside them. */
+html[data-style='playful'] .shadow-card,
+html[data-style='playful'] .shadow-raised,
+html[data-style='playful'] .shadow-overlay,
+html[data-style='playful'] section,
+html[data-style='playful'] aside,
+html[data-style='playful'] article,
+html[data-style='playful'] dialog > div {
+	border-radius: calc(var(--radius) * 1.5);
+}
+
+html[data-style='playful'] .shadow-card,
+html[data-style='playful'] .shadow-raised {
+	box-shadow: none;
+}
+
+/* A section's own colour, at the strength chrome can carry. */
+html[data-style='playful'] .section-tint {
+	background-color: color-mix(in srgb, var(--section-accent) 10%, transparent);
+	border-color: color-mix(in srgb, var(--section-accent) 35%, transparent);
+}
+
+html[data-style='playful'] .page-surface {
+	background-color: color-mix(in srgb, var(--section-accent) 5%, var(--color-gray-100));
+}
+
+/* The header takes the section's colour rather than staying near-black. */
+html[data-style='playful'] .bg-chrome {
+	background-color: color-mix(in srgb, var(--section-accent) 78%, #0b1220);
 }
 
 /*

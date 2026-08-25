@@ -1,4 +1,5 @@
 import type { Actions, PageServerLoad } from './$types';
+import { isStyle, STYLES, STYLE_HINTS, STYLE_LABELS } from '$lib/style';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure, ValidationError } from '$lib/server/services/errors';
 import { createQuote, deleteQuote, listQuotes } from '$lib/server/services/quotes';
@@ -11,11 +12,13 @@ import {
 	type DashboardCardId
 } from '$lib/dashboard';
 import {
+	getStyle,
 	getTheme,
 	getTimezone,
 	getUserSetting,
 	getWeekSettings,
 	isTheme,
+	setStyle,
 	setTheme,
 	setTimezone,
 	setUserSetting,
@@ -30,9 +33,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 		week: getWeekSettings(ctx.userId),
 		timezone: getTimezone(ctx.userId) ?? ctx.tz,
 		theme: getTheme(ctx.userId),
+		style: getStyle(ctx.userId),
 		cards: DASHBOARD_CARDS,
 		layout: parseLayout(getUserSetting(ctx.userId, DASHBOARD_LAYOUT_KEY)),
-		quotes: listQuotes(ctx)
+		quotes: listQuotes(ctx),
+		styles: STYLES.map((key) => ({ key, label: STYLE_LABELS[key], hint: STYLE_HINTS[key] }))
 	};
 };
 
@@ -69,6 +74,19 @@ export const actions: Actions = {
 		try {
 			deleteQuote(buildCtx(locals.user!.id), Number(formData.get('id')));
 			return { success: true, action: 'deleteQuote' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	setStyle: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const style = formData.get('style')?.toString() ?? '';
+
+		try {
+			if (!isStyle(style)) throw new ValidationError('Unknown style');
+			setStyle(locals.user!.id, style);
+			return { success: true, action: 'setStyle' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

@@ -150,7 +150,7 @@
 	{#snippet card_todayTasks()}
 		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
-				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
 				style="border-top-color: {SECTION_COLORS.planner}"
 			>
 				<h2 class="eyebrow text-gray-500">Today's Tasks</h2>
@@ -220,7 +220,7 @@
 	{#snippet card_goals()}
 		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
-				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
 				style="border-top-color: {SECTION_COLORS.goals}"
 			>
 				<h2 class="eyebrow text-gray-500">Goals</h2>
@@ -267,7 +267,7 @@
 	{#snippet card_habits()}
 		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
-				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
 				style="border-top-color: {SECTION_COLORS.health}"
 			>
 				<h2 class="eyebrow text-gray-500">Habits</h2>
@@ -311,7 +311,7 @@
 		].sort()}
 		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
-				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
 				style="border-top-color: {SECTION_COLORS.planner}"
 			>
 				<h2 class="eyebrow text-gray-500">Week Plan</h2>
@@ -364,7 +364,7 @@
 	{#snippet card_diary()}
 		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
-				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
 				style="border-top-color: {SECTION_COLORS.diary}"
 			>
 				<h2 class="eyebrow text-gray-500">Diary</h2>
@@ -505,7 +505,7 @@
 	{#snippet card_shopping()}
 		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
-				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
 				style="border-top-color: {SECTION_COLORS.shopping}"
 			>
 				<h2 class="eyebrow text-gray-500">Shopping</h2>
@@ -538,7 +538,7 @@
 	{#snippet card_quickLinks()}
 		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
-				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
 				style="border-top-color: {SECTION_COLORS.home}"
 			>
 				<h2 class="eyebrow text-gray-500">Quick Links</h2>
@@ -566,7 +566,7 @@
 	{#snippet card_quote()}
 		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
-				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
 				style="border-top-color: {SECTION_COLORS.home}"
 			>
 				<h2 class="eyebrow text-gray-500">Today</h2>
@@ -590,7 +590,7 @@
 	{#snippet card_threeWins()}
 		<div class="lift border border-gray-200 bg-white p-4 shadow-card">
 			<div
-				class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
+				class="section-tint -mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
 				style="border-top-color: {SECTION_COLORS.diary}"
 			>
 				<h2 class="eyebrow text-gray-500">Three wins</h2>

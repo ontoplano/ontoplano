@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
 	import { autofocus } from '$lib/actions/autofocus.js';
@@ -127,7 +128,7 @@
 			</a>
 			<button onclick={() => (showAreas = true)} class="btn btn-sm">Areas</button>
 			<button onclick={openCreate} class="btn btn-primary btn-sm">
-				New goal
+				<Icon name="plus" /> New goal
 				<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">n</kbd>
 			</button>
 		</div>
@@ -152,7 +153,7 @@
 						<span class="flex-1 text-sm text-gray-900">{area.name}</span>
 						<form method="post" action="?/deleteArea" use:enhance>
 							<input type="hidden" name="id" value={area.id} />
-							<button class="btn btn-quiet btn-sm">Remove</button>
+							<button class="btn btn-quiet btn-sm"><Icon name="trash" /> Remove</button>
 						</form>
 					</div>
 				{/each}
@@ -418,7 +419,7 @@
 									<button
 										onclick={() => openEdit(goal)}
 										class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
-										>Edit</button
+										><Icon name="edit" /> Edit</button
 									>
 									{#if goal.status === 'open'}
 										<form method="post" action="?/close" use:enhance>
@@ -457,7 +458,8 @@
 									{:else}
 										<button
 											onclick={() => (confirmingDelete = goal.id)}
-											class="text-xs text-gray-400 hover:text-red-600">Delete</button
+											class="text-xs text-gray-400 hover:text-red-600"
+											><Icon name="trash" /> Delete</button
 										>
 									{/if}
 								</div>

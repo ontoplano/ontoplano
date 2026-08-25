@@ -125,7 +125,7 @@
 
 {#if data.user && !bareScreen}
 	<div
-		class="flex min-h-screen flex-col bg-gray-100"
+		class="page-surface flex min-h-screen flex-col bg-gray-100"
 		style="{categoryStyle()};--section-accent:{section.accent}"
 	>
 		<header class="relative z-40 bg-chrome shadow-raised" style="padding-top: var(--safe-top)">
@@ -143,11 +143,22 @@
 							     neutral so the fill is the thing that reads. -->
 							<a
 								href={item.href}
-								class="flex items-center border-b-2 px-3 py-4 text-sm transition-colors {active
+								class="flex items-center gap-1.5 border-b-2 px-3 py-4 text-sm transition-colors {active
 									? 'font-semibold text-chrome-ink'
 									: 'border-transparent font-medium text-chrome-muted hover:text-chrome-ink'}"
 								style={active ? `border-color: ${SECTIONS[item.section].accent}` : ''}
 							>
+								<svg
+									class="h-4 w-4"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.75"
+									stroke-linecap="square"
+									aria-hidden="true"
+								>
+									<path d={item.icon} />
+								</svg>
 								{item.label}
 							</a>
 						{/each}
