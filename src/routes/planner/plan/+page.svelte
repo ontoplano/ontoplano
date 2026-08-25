@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance, deserialize } from '$app/forms';
+	import Modal from '$lib/components/Modal.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { browser } from '$app/environment';
 	import { tick } from 'svelte';
@@ -7,6 +8,7 @@
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { autofocus } from '$lib/actions/autofocus.js';
 	import MetaEditor from '$lib/components/MetaEditor.svelte';
+	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
 	import { RATINGS } from '$lib/ratings.js';
 	import { MAX_INTERVAL, parseRecurrence } from '$lib/recurrence.js';
@@ -176,6 +178,9 @@
 		interest: null,
 		energy: null
 	});
+
+	/** How many of the folded-away ratings currently carry a value. */
+	const ratingsSet = $derived(Object.values(formRatings).filter((v) => v !== null).length);
 	let slotMode: 'category' | 'activity' = $state('activity');
 	let activityChoice = $state(NEW_ACTIVITY);
 	// Offset into the visible window (0 = the day it starts on, i.e. today by
@@ -1735,13 +1740,14 @@
 		</div>
 	{/if}
 
-	{#if showForm}
-		<div
-			bind:this={createFormEl}
-			class="space-y-3 border bg-white p-4 shadow-sm {repeat === 'once'
-				? 'border-blue-200'
-				: 'border-gray-200'}"
-		>
+	<Modal
+		bind:open={showForm}
+		onclose={closeForm}
+		size="lg"
+		title={editingBlockId !== null ? 'Edit block' : 'New block'}
+		description={repeat === 'once' ? 'Happens once, on one day.' : 'Repeats every week.'}
+	>
+		<div bind:this={createFormEl} class="space-y-3">
 			<form
 				id="block-form"
 				method="post"
@@ -1994,94 +2000,92 @@
 					</div>
 				{/if}
 
-				<div class="space-y-2 border border-gray-200 bg-gray-50 p-3">
+				<MoreOptions label="Urgency, interest, energy" count={ratingsSet}>
 					{#each RATINGS as r (r)}
-						<RatingPicker rating={r} bind:value={formRatings[r]} />
+						<div class="col-span-12 sm:col-span-4">
+							<RatingPicker rating={r} bind:value={formRatings[r]} />
+						</div>
 					{/each}
-				</div>
+				</MoreOptions>
 
 				<MetaEditor initial={parseSlotMeta(editingBlock?.meta)} plugins={data.plugins} />
 			</form>
 
-			<div class="flex flex-wrap items-center gap-2 border-t border-gray-200 pt-3">
-				<button
-					type="submit"
-					form="block-form"
-					class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
-				>
-					{editingKind ? 'Save' : repeat === 'once' ? 'Add one-off' : 'Add weekly block'}
-				</button>
-				<button
-					type="button"
-					onclick={closeForm}
-					class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
-				>
-					Cancel
-				</button>
-
-				{#if editingKind === 'slot' && editingBlockId !== null}
-					<!-- Skipping and deleting are different intentions on a recurring block:
+			<!-- Skip and delete belong to a block that already exists; a new one has
+			     nothing to show here. -->
+			{#if editingKind}
+				<div class="flex flex-wrap items-center gap-2 border-t border-gray-200 pt-3">
+					{#if editingKind === 'slot' && editingBlockId !== null}
+						<!-- Skipping and deleting are different intentions on a recurring block:
 					     one drops a single occurrence, the other stops it happening at all.
 					     The skip is reversible from the same spot, so a misclick costs nothing. -->
-					{@const skipped = isSlotSuppressed(editingBlockId)}
-					<form
-						method="post"
-						action={skipped ? '?/unsuppress' : '?/suppress'}
-						use:enhance={() =>
-							async ({ update }) =>
-								update()}
-					>
-						<input type="hidden" name="slotId" value={editingBlockId} />
-						<input type="hidden" name="date" value={selectedDateStr()} />
-						<button
-							type="submit"
-							title={skipped
-								? 'Put this occurrence back'
-								: 'Drop just this one occurrence; the block still repeats'}
-							class="border px-3 py-2 text-sm transition {skipped
-								? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
-								: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+						{@const skipped = isSlotSuppressed(editingBlockId)}
+						<form
+							method="post"
+							action={skipped ? '?/unsuppress' : '?/suppress'}
+							use:enhance={() =>
+								async ({ update }) =>
+									update()}
 						>
-							{skipped ? 'Restore' : 'Skip'} on {formatWeekDate(selectedDateStr())}
-						</button>
-					</form>
-				{/if}
-
-				{#if editingKind}
-					<div class="ml-auto">
-						{#if confirmingFormDelete}
-							<form
-								method="post"
-								action={editingKind === 'slot' ? '?/delete' : '?/deleteExceptional'}
-								use:enhance={() => {
-									return async ({ update }) => {
-										await update();
-										closeForm();
-									};
-								}}
-							>
-								<input type="hidden" name="id" value={editingBlockId} />
-								<button
-									type="submit"
-									class="border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100"
-								>
-									{editingKind === 'slot' ? 'Delete every week — confirm?' : 'Delete — confirm?'}
-								</button>
-							</form>
-						{:else}
+							<input type="hidden" name="slotId" value={editingBlockId} />
+							<input type="hidden" name="date" value={selectedDateStr()} />
 							<button
-								type="button"
-								onclick={() => (confirmingFormDelete = true)}
-								class="border border-red-200 bg-white px-3 py-2 text-sm text-red-600 transition hover:bg-red-50"
+								type="submit"
+								title={skipped
+									? 'Put this occurrence back'
+									: 'Drop just this one occurrence; the block still repeats'}
+								class="border px-3 py-2 text-sm transition {skipped
+									? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
+									: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
 							>
-								Delete
+								{skipped ? 'Restore' : 'Skip'} on {formatWeekDate(selectedDateStr())}
 							</button>
-						{/if}
-					</div>
-				{/if}
-			</div>
+						</form>
+					{/if}
+
+					{#if editingKind}
+						<div class="ml-auto">
+							{#if confirmingFormDelete}
+								<form
+									method="post"
+									action={editingKind === 'slot' ? '?/delete' : '?/deleteExceptional'}
+									use:enhance={() => {
+										return async ({ update }) => {
+											await update();
+											closeForm();
+										};
+									}}
+								>
+									<input type="hidden" name="id" value={editingBlockId} />
+									<button
+										type="submit"
+										class="border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100"
+									>
+										{editingKind === 'slot' ? 'Delete every week — confirm?' : 'Delete — confirm?'}
+									</button>
+								</form>
+							{:else}
+								<button
+									type="button"
+									onclick={() => (confirmingFormDelete = true)}
+									class="btn btn-danger btn-sm"
+								>
+									Delete
+								</button>
+							{/if}
+						</div>
+					{/if}
+				</div>
+			{/if}
 		</div>
-	{/if}
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={closeForm}>Cancel</button>
+			<button type="submit" form="block-form" class="btn btn-primary">
+				{editingKind ? 'Save block' : repeat === 'once' ? 'Add one-off' : 'Add weekly block'}
+			</button>
+		{/snippet}
+	</Modal>
 
 	<!-- Also shown over the day grid, which needs a way to move between days;
 	     the full week grid already shows all seven at once. -->
