@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import { autofocus } from '$lib/actions/autofocus';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -100,86 +102,74 @@
 	<section class="border border-gray-200 bg-white shadow-card">
 		<header class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
 			<h2 class="text-sm font-semibold text-gray-900">API tokens</h2>
-			<button
-				type="button"
-				onclick={() => (showTokenForm = !showTokenForm)}
-				class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
-			>
+			<button type="button" onclick={() => (showTokenForm = true)} class="btn btn-sm">
 				New token <kbd class="ml-1 border border-gray-300 bg-gray-50 px-1">n</kbd>
 			</button>
 		</header>
 
-		{#if showTokenForm}
+		<Modal
+			bind:open={showTokenForm}
+			title="New API token"
+			description="Shown once, at creation. It cannot be recovered afterwards."
+		>
 			<form
+				id="token-form"
 				method="post"
 				action="?/createToken"
 				use:enhance={() =>
-					async ({ update }) => {
+					async ({ update, result }) => {
 						await update();
-						showTokenForm = false;
+						if (result.type === 'success') showTokenForm = false;
 					}}
-				use:autofocus
-				class="space-y-4 border-b border-gray-200 bg-gray-50 px-4 py-4"
 			>
-				<label class="block">
-					<span class="text-sm font-medium text-gray-700">Name</span>
-					<input
-						name="name"
-						type="text"
-						required
-						maxlength="60"
-						placeholder="a-private-plugin on my phone"
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					/>
-				</label>
+				<FormGrid>
+					<Field label="Name" span={8} required>
+						<input
+							name="name"
+							type="text"
+							required
+							maxlength="60"
+							placeholder="a-private-plugin on my phone"
+							class="input"
+						/>
+					</Field>
 
-				<fieldset>
-					<legend class="text-sm font-medium text-gray-700">Scopes</legend>
-					<p class="mb-2 text-xs text-gray-500">
-						Grant only what the app needs. A token with no read scope cannot see your data.
-					</p>
-					<div class="space-y-1">
-						{#each data.scopes as scope (scope.key)}
-							<label class="flex items-start gap-2 text-sm text-gray-700">
-								<input type="checkbox" name="scopes" value={scope.key} class="mt-1" />
-								<span>
-									<code class="font-mono text-xs">{scope.key}</code>
-									<span class="text-gray-500"> — {scope.description}</span>
-								</span>
-							</label>
-						{/each}
-					</div>
-				</fieldset>
+					<Field label="Expires in" span={4} hint="Days. Empty means never.">
+						<input
+							name="expiresInDays"
+							type="number"
+							min="1"
+							max="3650"
+							placeholder="never"
+							class="input tabular"
+						/>
+					</Field>
 
-				<label class="block w-48">
-					<span class="text-sm font-medium text-gray-700">Expires in (days)</span>
-					<input
-						name="expiresInDays"
-						type="number"
-						min="1"
-						max="3650"
-						placeholder="never"
-						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					/>
-				</label>
-
-				<div class="flex gap-2">
-					<button
-						type="submit"
-						class="bg-gray-900 px-3 py-2 text-sm text-white shadow-sm hover:bg-gray-800"
-					>
-						Create token
-					</button>
-					<button
-						type="button"
-						onclick={() => (showTokenForm = false)}
-						class="border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
-					>
-						Cancel <kbd class="ml-1 border border-gray-300 bg-gray-50 px-1">Esc</kbd>
-					</button>
-				</div>
+					<fieldset class="col-span-12">
+						<legend class="eyebrow text-gray-500">Scopes</legend>
+						<p class="mt-1 mb-2 text-xs text-gray-500">
+							Grant only what the app needs. A token with no read scope cannot see your data.
+						</p>
+						<div class="space-y-1">
+							{#each data.scopes as scope (scope.key)}
+								<label class="flex items-start gap-2 text-sm text-gray-700">
+									<input type="checkbox" name="scopes" value={scope.key} class="mt-1" />
+									<span>
+										<code class="font-mono text-xs">{scope.key}</code>
+										<span class="text-gray-500"> — {scope.description}</span>
+									</span>
+								</label>
+							{/each}
+						</div>
+					</fieldset>
+				</FormGrid>
 			</form>
-		{/if}
+
+			{#snippet footer()}
+				<button type="button" class="btn" onclick={() => (showTokenForm = false)}>Cancel</button>
+				<button type="submit" form="token-form" class="btn btn-primary">Create token</button>
+			{/snippet}
+		</Modal>
 
 		{#if data.tokens.length === 0}
 			<p class="px-4 py-6 text-sm text-gray-500">
