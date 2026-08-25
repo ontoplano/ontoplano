@@ -74,6 +74,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
+	<h1 class="text-lg font-bold text-gray-900">People</h1>
 	<div class="flex flex-wrap items-center justify-end gap-3">
 		<button onclick={openCreate} class="btn btn-primary btn-sm">
 			<Icon name="plus" /> New person

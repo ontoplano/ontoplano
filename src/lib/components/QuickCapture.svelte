@@ -90,16 +90,19 @@
 </script>
 
 {#if inline}
-	<div class="hidden items-center gap-2 md:flex">
+	<div class="hidden items-center gap-2 lg:flex">
 		{#each CAPTURES as capture (capture.key)}
 			<button type="button" onclick={() => (open = capture)} class="btn btn-sm">
 				<Icon name={capture.icon} />
 				{capture.label}
+				<!-- `kbd-hint` so a touch screen wide enough for this row still drops
+				     it: a keystroke is noise where there is no keyboard. -->
+				<span class="kbd-hint text-gray-400">({capture.shortcut})</span>
 			</button>
 		{/each}
 	</div>
 {:else}
-	<div class="flex gap-2 md:hidden">
+	<div class="flex gap-2 lg:hidden">
 		{#each CAPTURES as capture (capture.key)}
 			<button
 				type="button"
@@ -107,10 +110,9 @@
 				class="lift flex flex-1 flex-col items-center gap-1 border border-gray-200 bg-white px-2 py-3 text-xs text-gray-700 shadow-card"
 			>
 				<Icon name={capture.icon} size={18} />
-				<span>
-					{capture.label}
-					<span class="text-gray-400">({capture.shortcut})</span>
-				</span>
+				<!-- No keystroke here: this is the phone, where there is no keyboard
+				     to press it on. The desktop row above says it instead. -->
+				<span>{capture.label}</span>
 			</button>
 		{/each}
 	</div>

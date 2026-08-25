@@ -2,7 +2,7 @@
 	import './layout.css';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { THEMES } from '$lib/theme.js';
@@ -25,10 +25,10 @@
 
 	const nav: { href: string; label: string; section: SectionKey; icon: string }[] = [
 		// `icon` is an SVG path drawn at 24x24. Inline rather than an icon package:
-		// seven glyphs is not worth a dependency that ships to a webview.
+		// nine glyphs is not worth a dependency that ships to a webview.
 		{ href: '/', label: 'Home', section: 'home', icon: 'M3 10.5 12 3l9 7.5V21H3z' },
 		{
-			href: '/planner/board',
+			href: '/planner/plan',
 			label: 'Planner',
 			section: 'planner',
 			icon: 'M4 5h16v16H4zM4 9h16M9 9v12M15 9v12'
@@ -39,6 +39,18 @@
 			label: 'Diary',
 			section: 'diary',
 			icon: 'M5 3h14v18H5zM9 3v18M12 8h4M12 12h4'
+		},
+		{
+			href: '/diary/people',
+			label: 'People',
+			section: 'diary',
+			icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a8 8 0 0 1 16 0'
+		},
+		{
+			href: '/diary/notebooks',
+			label: 'Notebooks',
+			section: 'diary',
+			icon: 'M7 4h12v17H7zM7 8H4M7 12H4M7 16H4'
 		},
 		{
 			href: '/ideas',
@@ -91,7 +103,10 @@
 
 	function isNavActive(href: string): boolean {
 		if (href === '/') return page.url.pathname === '/';
-		if (href === '/planner/track') return page.url.pathname.startsWith('/planner');
+		// People and notebooks sit beside the journal in the bar, not under it, so
+		// Diary means the entries and nothing else.
+		if (href === '/diary') return page.url.pathname === '/diary';
+		if (href === '/planner/plan') return page.url.pathname.startsWith('/planner');
 		if (href === '/goals') return page.url.pathname.startsWith('/goals');
 		if (href === '/health/habits') return page.url.pathname.startsWith('/health');
 		return page.url.pathname === href;
@@ -125,6 +140,17 @@
 		}
 	}
 
+	/**
+	 * The scrolling element, on a phone.
+	 *
+	 * With the window frozen, SvelteKit's scroll handling has nothing to move —
+	 * so a new page would otherwise open halfway down where the last one was
+	 * left.
+	 */
+	let scroller: HTMLElement | undefined = $state();
+
+	afterNavigate(() => scroller?.scrollTo({ top: 0 }));
+
 	function handleClickOutside(e: MouseEvent) {
 		if (menuOpen) {
 			const target = e.target as HTMLElement;
@@ -138,8 +164,16 @@
 <svelte:window onkeydown={handleGlobalKeydown} onclick={handleClickOutside} />
 
 {#if data.user && !bareScreen}
+	<!--
+		On a phone this is an app shell: the window itself never scrolls, only the
+		main area does, and the bottom bar is the last row of a full-height column.
+		A `position: fixed` bar is anchored to the layout viewport, so when the
+		browser's address bar slides back in on an upward scroll the bar goes with
+		it — off the bottom of the screen. This keeps it on screen because it is
+		part of the screen. Above `md` the page scrolls normally again.
+	-->
 	<div
-		class="page-surface relative flex min-h-screen flex-col bg-gray-100"
+		class="page-surface relative flex h-[100dvh] flex-col overflow-hidden bg-gray-100 lg:h-auto lg:min-h-screen lg:overflow-visible"
 		style="{categoryStyle()};--section-accent:{section.accent}"
 	>
 		<SectionPattern icon={SECTION_GLYPH[sectionKey]} />
@@ -149,9 +183,9 @@
 					<a href="/" class="flex items-center text-lg font-bold tracking-tight text-chrome-ink"
 						>ontoplano</a
 					>
-					<!-- The word-nav needs more width than a phone has; below md the
-					     bottom bar takes over. -->
-					<nav class="hidden md:flex">
+					<!-- Nine sections of words need about a thousand pixels; below `lg`
+					     the bottom bar takes over, which also covers a tablet. -->
+					<nav class="hidden lg:flex">
 						{#each nav as item (item.href)}
 							{@const active = isNavActive(item.href)}
 							<!-- Active tab is a solid block of its section colour; the rest stay
@@ -179,7 +213,7 @@
 						{/each}
 					</nav>
 				</div>
-				<div class="menu-container relative hidden items-center gap-3 md:flex">
+				<div class="menu-container relative hidden items-center gap-3 lg:flex">
 					<span class="text-sm text-chrome-muted">{data.user.name}</span>
 					<button
 						onclick={() => (menuOpen = !menuOpen)}
@@ -264,11 +298,9 @@
 				</div>
 			</div>
 		</header>
-		<!-- The bottom bar floats over the page, so the last card needs clearance
-		     or it sits underneath it forever. -->
 		<main
-			class="relative z-10 mx-auto w-full max-w-page flex-1 px-4 py-6 sm:px-6"
-			style="padding-bottom: calc(var(--mobile-nav-height) + var(--safe-bottom) + 1.5rem)"
+			bind:this={scroller}
+			class="relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:overflow-visible"
 		>
 			{@render children()}
 		</main>
@@ -276,7 +308,7 @@
 		<!-- Thumb-zone navigation. Primary actions belong where a thumb rests,
 		     not in a corner reachable only by shifting grip. -->
 		<nav
-			class="fixed inset-x-0 bottom-0 z-40 border-t border-chrome-line bg-chrome md:hidden"
+			class="relative z-40 shrink-0 border-t border-chrome-line bg-chrome lg:hidden"
 			style="padding-bottom: var(--safe-bottom)"
 			aria-label="Primary"
 		>
@@ -341,12 +373,12 @@
 			<!-- A sheet rather than a dropdown: it opens upward from the bar that
 			     spawned it, which is also where the thumb already is. -->
 			<button
-				class="fixed inset-0 z-40 bg-black/40 md:hidden"
+				class="fixed inset-0 z-40 bg-black/40 lg:hidden"
 				onclick={() => (moreOpen = false)}
 				aria-label="Close menu"
 			></button>
 			<div
-				class="rise fixed inset-x-0 z-50 border-t border-gray-200 bg-white md:hidden"
+				class="rise fixed inset-x-0 z-50 border-t border-gray-200 bg-white lg:hidden"
 				style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom))"
 			>
 				<div class="divide-y divide-gray-200">
