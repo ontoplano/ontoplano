@@ -55,13 +55,19 @@ week starts, and offers a starter week you can then argue with.
 
 Config and data live outside the repo and are created on first run:
 
-- `~/.config/ontoplano/config.toml` — bind address, port, database path
+- `~/.config/ontoplano/config.toml` — bind address, port, database path, and
+  who may register
 - `~/.config/ontoplano/env` — `ORIGIN`, `BETTER_AUTH_SECRET`, SMTP, backups
 - `~/.local/share/ontoplano/` — the database
 
 Everything a person would want to change — week start, timezone, theme,
 dashboard layout — is a per-account setting under `/settings`, not a config
 file.
+
+**Registration is closed by default.** The first account is always allowed —
+it is the one that owns the instance — and after that, `/settings/instance`
+decides whether anybody else can make one: closed, by invitation, or open. An
+invitation is a code that works once, and the page makes and revokes them.
 
 ## Keyboard
 

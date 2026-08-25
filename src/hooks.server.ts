@@ -6,6 +6,60 @@ import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { ensureUserCategories } from '$lib/server/db/ensure-categories';
 import { DEFAULT_STYLE, DEFAULT_THEME, getStyle, getTheme } from '$lib/server/settings';
 import { clientKey, rateLimit } from '$lib/server/rate-limit';
+import { checkSignUpAllowed, consumeInvite } from '$lib/server/services/registration';
+import { toJsonError } from '$lib/server/services/errors';
+
+/**
+ * Registration control, at the one door there is.
+ *
+ * Sign-up is better-auth's endpoint, so the check cannot live in a route: it
+ * goes here, in front of it. An instance is `closed` by default — the common
+ * deployment is one person on one box, and an open sign-up form there is an
+ * invitation to squat it — and the first account is always allowed in, or a
+ * fresh install could never be used.
+ *
+ * The invite is only marked used once the account exists, so a sign-up that
+ * fails on a taken email does not burn the code.
+ */
+function inviteFrom(body: string): unknown {
+	try {
+		const parsed = JSON.parse(body || '{}');
+		return typeof parsed === 'object' && parsed !== null ? parsed.invite : '';
+	} catch {
+		return '';
+	}
+}
+
+const handleRegistration: Handle = async ({ event, resolve }) => {
+	if (event.request.method !== 'POST' || !event.url.pathname.startsWith('/api/auth/sign-up')) {
+		return resolve(event);
+	}
+
+	// The body is read here and handed on: a request body can only be consumed
+	// once, so what better-auth receives has to be a copy.
+	const raw = await event.request.text();
+	event.request = new Request(event.request, { body: raw });
+
+	const code = inviteFrom(raw);
+
+	const now = new Date();
+	let invite: { id: number } | null;
+	try {
+		invite = checkSignUpAllowed(code, now).invite;
+	} catch (e) {
+		return toJsonError(e);
+	}
+
+	const response = await resolve(event);
+
+	if (invite && response.status >= 200 && response.status < 300) {
+		const created = await response.clone().json();
+		const userId = created?.user?.id;
+		if (typeof userId === 'string') consumeInvite(invite.id, userId, now);
+	}
+
+	return response;
+};
 
 const handleBetterAuth: Handle = async ({ event, resolve }) => {
 	const session = await auth.api.getSession({ headers: event.request.headers });
@@ -118,6 +172,7 @@ const handleSignedOutWrites: Handle = ({ event, resolve }) => {
 export const handle: Handle = sequence(
 	handleSecurityHeaders,
 	handleAuthRateLimit,
+	handleRegistration,
 	handleBetterAuth,
 	handleSignedOutWrites,
 	handleTheme

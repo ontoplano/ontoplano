@@ -55,6 +55,16 @@ html:not([data-style='playful']) *::after {
 }
 
 /*
+ * Except a radio button.
+ *
+ * Its roundness is not decoration: it is the only thing telling you that these
+ * options are one-of rather than any-of. A square radio is a checkbox that lies.
+ */
+input[type='radio'] {
+	border-radius: 100% !important;
+}
+
+/*
  * The playful style.
  *
  * Rounded, shadowless, and colour allowed onto the chrome. Two rules keep it
@@ -497,12 +507,25 @@ html[data-theme='dark'] {
  * leaves a white field carrying light inherited text. Bind the controls to the
  * tokens instead, once, for both themes.
  */
-input,
+input:not([type='checkbox']):not([type='radio']),
 select,
 textarea,
 option {
 	background-color: var(--color-white);
 	color: var(--color-gray-900);
+}
+
+/*
+ * Checkboxes and radios are excluded above on purpose.
+ *
+ * @tailwindcss/forms draws their checked state *as* a background colour, so a
+ * blanket `background-color: white` painted over the tick and left a control
+ * that could be on with nothing to show for it.
+ */
+input[type='checkbox']:checked,
+input[type='radio']:checked {
+	background-color: var(--color-gray-900);
+	border-color: var(--color-gray-900);
 }
 
 /*

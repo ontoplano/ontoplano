@@ -673,6 +673,34 @@ export const ideaTags = sqliteTable(
 	]
 );
 
+// --- Instance: invitations ---
+
+/**
+ * An invitation to create an account here.
+ *
+ * Instance data, not account data: it belongs to whoever runs the server, and
+ * it outlives the account that issued it. That is why `created_by` and
+ * `used_by` are plain ids with no foreign key — an invite must not stop an
+ * account from being deleted, and a used invite is a record of what happened
+ * rather than a link to somebody.
+ */
+export const invites = sqliteTable(
+	'invites',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		code: text('code').notNull(),
+		note: text('note').default(''),
+		createdBy: text('created_by').notNull(),
+		expiresAt: text('expires_at'),
+		usedAt: text('used_at'),
+		usedBy: text('used_by'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [uniqueIndex('invites_code_unique').on(table.code)]
+);
+
 // --- Plugin platform: API tokens ---
 //
 // Tokens are how external apps (a-private-plugin, scripts, future plugins) talk to

@@ -809,6 +809,25 @@ apiToken('a-private-plugin on the phone', 'schedule:read,streams:write');
 apiToken('scratch script', 'streams:read');
 apiToken('home-screen widget', 'today:read');
 
+// Instance data rather than the user's, but the settings page is a screen too:
+// one invitation outstanding, one already spent.
+const invite = (code, note, usedBy = null) => {
+	if (one('select id from invites where code = ?', code)) return;
+	run(
+		`insert into invites (code, note, created_by, expires_at, used_at, used_by, created_at)
+		 values (?, ?, ?, null, ?, ?, ?)`,
+		code,
+		note,
+		uid,
+		usedBy ? stamp(dayOffset(-2)) : null,
+		usedBy,
+		stamp(dayOffset(-10))
+	);
+};
+
+invite('dev-invite-open-0001', 'for my brother');
+invite('dev-invite-used-0002', 'for Ana', uid);
+
 const weight = stream('a-private-plugin.weight', 'Weight', 'number', 'kg', 'line');
 for (let back = 0; back < 30; back += 2) {
 	const d = dayOffset(-back);

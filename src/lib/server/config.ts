@@ -3,7 +3,15 @@ import { join } from 'node:path';
 import { homedir } from 'node:os';
 
 const home = homedir();
-export const CONFIG_DIR = join(home, '.config', 'ontoplano');
+
+/**
+ * Where the instance's own settings live.
+ *
+ * Overridable so a second instance — or a test run — does not read the config
+ * of whoever is logged into the machine. The tests used to do exactly that,
+ * which meant a suite could pass or fail depending on a file outside the repo.
+ */
+export const CONFIG_DIR = process.env.ONTOPLANO_CONFIG_DIR || join(home, '.config', 'ontoplano');
 export const DATA_DIR = join(home, '.local', 'share', 'ontoplano');
 export const CONFIG_FILE = join(CONFIG_DIR, 'config.toml');
 export const DB_PATH = join(DATA_DIR, 'ontoplano.db');
@@ -46,7 +54,27 @@ port = "1493"
 [week]
 first_day = "0"
 generate_day = "6"
+
+[registration]
+mode = "closed"
 `;
+
+/**
+ * Who may create an account here.
+ *
+ * `open` is a public sign-up page. `invite` asks for a code the owner handed
+ * out. `closed` is the default, because the common deployment is one person on
+ * one box and an open registration form there is an invitation to squat it.
+ *
+ * The first account is always allowed whatever this says — otherwise a fresh
+ * install could never be used.
+ */
+export const REGISTRATION_MODES = ['open', 'invite', 'closed'] as const;
+export type RegistrationMode = (typeof REGISTRATION_MODES)[number];
+
+export function isRegistrationMode(value: unknown): value is RegistrationMode {
+	return typeof value === 'string' && (REGISTRATION_MODES as readonly string[]).includes(value);
+}
 
 export interface OntoplanoConfig {
 	server: {
@@ -59,6 +87,9 @@ export interface OntoplanoConfig {
 	week: {
 		firstDay: number;
 		generateDay: number;
+	};
+	registration: {
+		mode: RegistrationMode;
 	};
 }
 
@@ -85,6 +116,9 @@ ${config.database.path !== DB_PATH ? `path = "${config.database.path}"` : ''}
 [week]
 first_day = "${config.week.firstDay}"
 generate_day = "${config.week.generateDay}"
+
+[registration]
+mode = "${config.registration.mode}"
 `;
 }
 
@@ -102,6 +136,7 @@ export function loadConfig(): OntoplanoConfig {
 	const server = (parsed.server as Record<string, string>) || {};
 	const database = (parsed.database as Record<string, string>) || {};
 	const week = (parsed.week as Record<string, string>) || {};
+	const registration = (parsed.registration as Record<string, string>) || {};
 
 	return {
 		server: {
@@ -117,6 +152,11 @@ export function loadConfig(): OntoplanoConfig {
 		week: {
 			firstDay: parseInt(week.first_day || '0', 10),
 			generateDay: parseInt(week.generate_day || '6', 10)
+		},
+		registration: {
+			// An instance whose config predates this setting is closed, not open:
+			// the safe reading of silence.
+			mode: isRegistrationMode(registration.mode) ? registration.mode : 'closed'
 		}
 	};
 }

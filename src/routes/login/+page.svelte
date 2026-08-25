@@ -3,7 +3,15 @@
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
-	let mode: 'login' | 'register' | 'forgot' = $state('login');
+	// Null means "whatever this instance opens on": the first account lands on
+	// the register form, everybody else on sign-in.
+	type Tab = 'login' | 'register' | 'forgot';
+
+	// Which form opens. Read once on purpose: an instance with no accounts opens
+	// on register, because there is nobody to sign in as yet, and after that the
+	// choice is the visitor's.
+	// svelte-ignore state_referenced_locally
+	let mode: Tab = $state(data.isFirstAccount ? 'register' : 'login');
 </script>
 
 <div class="flex min-h-screen items-center justify-center bg-gray-50">
@@ -27,6 +35,18 @@
 			action={mode === 'login' ? '?/signIn' : mode === 'register' ? '?/signUp' : '?/requestReset'}
 			use:enhance
 		>
+			{#if mode === 'register' && data.needsInvite}
+				<label class="mb-3 block">
+					<span class="text-sm font-medium text-gray-700">Invitation code</span>
+					<input
+						name="invite"
+						type="text"
+						required
+						autocomplete="off"
+						class="tabular mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					/>
+				</label>
+			{/if}
 			{#if mode === 'register'}
 				<label class="mb-3 block">
 					<span class="text-sm font-medium text-gray-700">Name</span>
@@ -69,11 +89,13 @@
 
 		<p class="mt-4 text-center text-sm text-gray-500">
 			{#if mode === 'login'}
-				No account?
-				<button class="font-medium text-gray-900 underline" onclick={() => (mode = 'register')}>
-					Register
-				</button>
-				&middot;
+				{#if data.canRegister}
+					No account?
+					<button class="font-medium text-gray-900 underline" onclick={() => (mode = 'register')}>
+						Register
+					</button>
+					&middot;
+				{/if}
 				<button class="font-medium text-gray-900 underline" onclick={() => (mode = 'forgot')}>
 					Forgot password
 				</button>
@@ -84,6 +106,12 @@
 				</button>
 			{/if}
 		</p>
+
+		{#if mode === 'register' && data.isFirstAccount}
+			<p class="mt-3 text-center text-xs text-gray-400">
+				This is the first account on this instance, so it owns it.
+			</p>
+		{/if}
 
 		{#if mode === 'forgot' && !data.emailConfigured}
 			<p class="mt-3 text-center text-xs text-gray-400">

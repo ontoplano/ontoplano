@@ -3,6 +3,13 @@ import type { Actions, PageServerLoad } from './$types';
 import { auth } from '$lib/server/auth';
 import { APIError } from 'better-auth/api';
 import { isEmailConfigured } from '$lib/server/email';
+import {
+	checkSignUpAllowed,
+	consumeInvite,
+	instanceIsEmpty,
+	registrationMode
+} from '$lib/server/services/registration';
+import { ServiceError } from '$lib/server/services/errors';
 
 export const load: PageServerLoad = async (event) => {
 	if (event.locals.user) {
@@ -10,7 +17,19 @@ export const load: PageServerLoad = async (event) => {
 	}
 	// The reset form says so up front when the server cannot send mail, rather
 	// than claiming a link is on its way.
-	return { emailConfigured: isEmailConfigured() };
+	//
+	// `canRegister` decides whether the page offers registration at all: a
+	// closed instance showing a "Register" link is a form that only ever says
+	// no. The first account is always allowed, or a fresh install is unusable.
+	const mode = registrationMode();
+	const first = instanceIsEmpty();
+
+	return {
+		emailConfigured: isEmailConfigured(),
+		canRegister: first || mode !== 'closed',
+		needsInvite: !first && mode === 'invite',
+		isFirstAccount: first
+	};
 };
 
 export const actions: Actions = {
@@ -33,16 +52,35 @@ export const actions: Actions = {
 
 		return redirect(302, '/');
 	},
+	/**
+	 * Register, if this instance is taking anybody.
+	 *
+	 * The check is repeated here rather than left to the hook in
+	 * `hooks.server.ts`: this action calls better-auth in-process, so the
+	 * request never passes the hook. Two doors, one rule.
+	 */
 	signUp: async (event) => {
 		const formData = await event.request.formData();
 		const email = formData.get('email')?.toString() ?? '';
 		const password = formData.get('password')?.toString() ?? '';
 		const name = formData.get('name')?.toString() ?? '';
+		const now = new Date();
+
+		let invite;
+		try {
+			invite = checkSignUpAllowed(formData.get('invite'), now).invite;
+		} catch (error) {
+			if (error instanceof ServiceError) return fail(403, { message: error.message });
+			return fail(500, { message: 'Unexpected error' });
+		}
 
 		try {
-			await auth.api.signUpEmail({
+			const created = await auth.api.signUpEmail({
 				body: { email, password, name }
 			});
+
+			// Only once the account exists, so a taken address does not burn a code.
+			if (invite && created?.user?.id) consumeInvite(invite.id, created.user.id, now);
 		} catch (error) {
 			if (error instanceof APIError) {
 				return fail(400, { message: error.message || 'Registration failed' });

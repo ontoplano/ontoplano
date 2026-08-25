@@ -6,15 +6,27 @@ import { join } from 'node:path';
  * The tests get their own database.
  *
  * Without this the suite booted against `~/.local/share/ontoplano/ontoplano.db`
- * — a real one, on whichever machine ran it. `globalSetup` creates the schema in
- * a throwaway file and the server is pointed at it.
+ * — a real one, on whichever machine ran it. `e2e/prepare.mjs` creates the
+ * schema in a throwaway file and the server is pointed at it.
  */
 const TEST_DB = process.env.PLAYWRIGHT_DB ?? join(tmpdir(), 'ontoplano-e2e.db');
 
+/**
+ * And their own instance config.
+ *
+ * Registration is closed by default, so a suite that reads the developer's
+ * config file would pass or fail on what that file happens to say.
+ * `e2e/prepare.mjs` writes an open one here.
+ */
+export const TEST_CONFIG_DIR =
+	process.env.PLAYWRIGHT_CONFIG_DIR ?? join(tmpdir(), 'ontoplano-e2e-config');
+
 export default defineConfig({
-	globalSetup: './e2e/setup.ts',
 	webServer: {
-		command: 'npm run build && npm run preview',
+		// The preparation is part of the command on purpose: `globalSetup` runs
+		// after the server, which meant the server opened the database that was
+		// about to be deleted. See `e2e/prepare.mjs`.
+		command: 'node e2e/prepare.mjs && npm run build && npm run preview',
 		port: 4173,
 		reuseExistingServer: !process.env.CI,
 		env: {
@@ -22,9 +34,29 @@ export default defineConfig({
 			ORIGIN: 'http://localhost:4173',
 			BETTER_AUTH_SECRET: 'playwright-secret-playwright-secret',
 			// Keep the tests off whatever the developer's own config says.
+			ONTOPLANO_CONFIG_DIR: TEST_CONFIG_DIR,
+			// The instance-owner pages only exist on a self-hosted instance, and
+			// they are part of what the suite checks.
+			ONTOPLANO_SELF_HOST: 'true',
+			// So a test can present itself as a distinct client and not spend the
+			// whole suite's share of the sign-in rate limit.
+			ONTOPLANO_TRUST_PROXY: 'true',
 			XDG_CONFIG_HOME: join(homedir(), '.config')
 		}
 	},
 	use: { baseURL: 'http://localhost:4173' },
-	testMatch: '**/*.e2e.{ts,js}'
+	testMatch: '**/*.e2e.{ts,js}',
+
+	/*
+	 * The registration tests go last, on their own.
+	 *
+	 * They change an instance-wide setting — who may create an account — by
+	 * rewriting the config file the server reads. Every other test registers
+	 * one, so the two cannot overlap: this makes "everything else" a project
+	 * that must finish first.
+	 */
+	projects: [
+		{ name: 'app', testIgnore: '**/registration.e2e.ts' },
+		{ name: 'registration', testMatch: '**/registration.e2e.ts', dependencies: ['app'] }
+	]
 });
