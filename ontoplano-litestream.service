@@ -1,0 +1,15 @@
+[Unit]
+Description=Litestream replication for ontoplano
+After=network.target
+# Replication is independent of the app: it replicates the file, not the
+# process, so it keeps running while ontoplano restarts.
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/litestream replicate -config %h/.config/litestream.yml
+Restart=always
+RestartSec=5
+EnvironmentFile=%h/.config/ontoplano/env
+
+[Install]
+WantedBy=default.target

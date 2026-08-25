@@ -12,7 +12,7 @@
 		"format": "prettier --write .",
 		"test:e2e": "playwright test",
 		"test": "npm run test:e2e",
-		"db:push": "drizzle-kit push",
+		"db:push": "node scripts/guard-push.mjs && drizzle-kit push",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "node scripts/migrate.mjs",
 		"db:snapshot": "node scripts/db-snapshot.mjs",

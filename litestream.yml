@@ -1,0 +1,32 @@
+# Continuous replication for the ontoplano database.
+#
+# Litestream ships the WAL to a replica as it is written, so the recovery point
+# is seconds rather than "whenever the last snapshot ran". Both replicas below
+# are independent: keep the local one for a fast restore after a bad migration,
+# and the S3 one for the case where the disk is gone.
+#
+# `make backup-install` expands the variables and writes this to
+# ~/.config/litestream.yml. Values come from ~/.config/ontoplano/env.
+
+dbs:
+  - path: ${ONTOPLANO_DB_PATH}
+    replicas:
+      # A second copy on this machine. Instant to restore from, and useless if
+      # the disk dies — which is what the S3 replica is for.
+      - type: file
+        path: ${ONTOPLANO_BACKUP_DIR}
+        retention: 720h # 30 days
+        snapshot-interval: 6h
+
+      # Any S3-compatible bucket: AWS, Backblaze B2, Cloudflare R2, MinIO,
+      # Hetzner. Leave LITESTREAM_S3_BUCKET unset to run local-only.
+      - type: s3
+        bucket: ${LITESTREAM_S3_BUCKET}
+        path: ontoplano
+        endpoint: ${LITESTREAM_S3_ENDPOINT}
+        region: ${LITESTREAM_S3_REGION}
+        access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
+        secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
+        retention: 720h # 30 days
+        snapshot-interval: 6h
+        sync-interval: 10s

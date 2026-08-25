@@ -1,4 +1,4 @@
-.PHONY: dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -16,6 +16,9 @@ start: build
 
 # ─── Database ─────────────────────────────────────────────────────────────────
 
+# Local development only. `push` rebuilds tables to change them and has
+# produced a wrong migration three times; production goes through
+# generate → review → db-migrate. The guard refuses the production database.
 db-push:
 	yarn db:push
 
@@ -35,6 +38,31 @@ db-snapshot:
 
 db-studio:
 	yarn db:studio
+
+# ─── Backups ──────────────────────────────────────────────────────────────────
+#
+# Snapshots live beside the database and cover a bad migration; replication
+# ships the WAL offsite and covers a dead disk. See docs/BACKUP.md.
+
+backup-install:
+	@command -v litestream >/dev/null || { echo "litestream is not installed — see docs/BACKUP.md"; exit 1; }
+	@set -a; . $$HOME/.config/ontoplano/env; set +a; \
+		mkdir -p "$$ONTOPLANO_BACKUP_DIR"; \
+		envsubst < litestream.yml > $$HOME/.config/litestream.yml
+	@mkdir -p ~/.config/systemd/user
+	@envsubst < ontoplano-litestream.service > ~/.config/systemd/user/ontoplano-litestream.service
+	@systemctl --user daemon-reload
+	@systemctl --user enable ontoplano-litestream
+	@systemctl --user restart ontoplano-litestream
+	@echo "Replication running. Check: make backup-status"
+
+backup-status:
+	@systemctl --user --no-pager status ontoplano-litestream | head -5 || true
+	@litestream generations -config $$HOME/.config/litestream.yml
+
+# A backup nobody has restored is a hypothesis.
+backup-drill:
+	@scripts/restore-drill.sh
 
 db:
 	sqlite3 ~/.local/share/ontoplano/ontoplano.db
