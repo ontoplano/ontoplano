@@ -107,20 +107,16 @@
 <div class="space-y-4">
 	<div class="flex items-center justify-end">
 		<div class="flex items-center gap-2">
-			<button
-				onclick={() => navigateWeek('prev')}
-				class="border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-				title="Previous week ([)">&larr;</button
+			<button onclick={() => navigateWeek('prev')} class="btn btn-sm" title="Previous week ([)"
+				>&larr;</button
 			>
 			<span
 				class="border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 shadow-sm"
 			>
 				W{data.weekMeta.weekNumber}, {data.weekMeta.weekYear}
 			</span>
-			<button
-				onclick={() => navigateWeek('next')}
-				class="border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-				title="Next week (])">&rarr;</button
+			<button onclick={() => navigateWeek('next')} class="btn btn-sm" title="Next week (])"
+				>&rarr;</button
 			>
 		</div>
 	</div>

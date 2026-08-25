@@ -1379,11 +1379,7 @@
 			>
 				Today
 			</button>
-			<button
-				onclick={goToNextWeek}
-				class="border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-				title="Forward 7 days (])">&rarr;</button
-			>
+			<button onclick={goToNextWeek} class="btn btn-sm" title="Forward 7 days (])">&rarr;</button>
 		</div>
 		<div class="flex flex-wrap gap-2">
 			<div class="flex">
@@ -1404,14 +1400,14 @@
 			</div>
 			<button
 				onclick={() => (showForm && repeat === 'once' ? closeForm() : startNew('once'))}
-				class="border border-blue-200 bg-white px-3 py-1 text-sm text-blue-600 shadow-sm transition hover:bg-blue-50"
+				class="btn btn-sm border-blue-200 text-blue-600 hover:bg-blue-50"
 				title="One-off block (N)"
 			>
 				{showForm && repeat === 'once' ? 'Cancel' : '+ One-off'}
 			</button>
 			<button
 				onclick={() => (showForm && repeat === 'weekly' ? closeForm() : startNew('weekly'))}
-				class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+				class="btn btn-sm"
 				title="Weekly block (n)"
 			>
 				{showForm && repeat === 'weekly' ? 'Cancel' : '+ Weekly'}
@@ -1438,7 +1434,7 @@
 		</div>
 	{/if}
 
-	<div class="border border-gray-200 bg-white shadow-sm">
+	<div class="border border-gray-200 bg-white shadow-card">
 		<button
 			type="button"
 			onclick={() => {
@@ -1449,7 +1445,7 @@
 					confirmingClearAll = false;
 				}
 			}}
-			class="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium text-gray-900 hover:bg-gray-50"
+			class="eyebrow flex w-full items-center justify-between px-4 py-3 text-left text-gray-500 hover:bg-gray-50"
 		>
 			<span>Schemes</span>
 			<span class="text-xs text-gray-500">{schemesExpanded ? 'Hide' : 'Show'}</span>
@@ -1482,18 +1478,13 @@
 							use:autofocus
 							class="flex-1 border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
-						<button
-							type="submit"
-							class="bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800"
-						>
-							Save
-						</button>
+						<button type="submit" class="btn btn-primary"> Save </button>
 					</div>
 				</form>
 
-				<div class="border border-gray-200 bg-white shadow-sm">
+				<div class="border border-gray-200 bg-white shadow-card">
 					<div
-						class="border-b border-gray-200 px-4 py-2 text-xs font-medium tracking-wide text-gray-500 uppercase"
+						class="eyebrow border-b border-gray-200 px-4 py-2.5 text-gray-500"
 					>
 						Saved schemes
 					</div>
@@ -1514,12 +1505,7 @@
 												required
 												class="w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 											/>
-											<button
-												type="submit"
-												class="border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-											>
-												Rename
-											</button>
+											<button type="submit" class="btn"> Rename </button>
 										</div>
 									</form>
 									<div class="flex shrink-0 items-center gap-2">
@@ -1537,7 +1523,7 @@
 											{#if confirmingLoadSchemeId === scheme.id}
 												<button
 													type="submit"
-													class="border border-blue-200 bg-white px-3 py-2 text-sm text-blue-600 shadow-sm transition hover:bg-blue-50"
+													class="btn border-blue-200 text-blue-600 hover:bg-blue-50"
 												>
 													This will replace your current plan. Continue?
 												</button>
@@ -1549,7 +1535,7 @@
 														confirmingDeleteSchemeId = null;
 														confirmingClearAll = false;
 													}}
-													class="border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+													class="btn"
 												>
 													Load
 												</button>
@@ -1580,7 +1566,7 @@
 												<button
 													type="button"
 													onclick={() => (confirmingDeleteSchemeId = null)}
-													class="border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+													class="btn"
 												>
 													Cancel
 												</button>
@@ -1593,7 +1579,7 @@
 													confirmingLoadSchemeId = null;
 													confirmingClearAll = false;
 												}}
-												class="border border-red-200 bg-white px-3 py-2 text-sm text-red-600 shadow-sm transition hover:bg-red-50"
+												class="btn btn-danger"
 											>
 												<Icon name="trash" /> Delete
 											</button>
@@ -1626,11 +1612,7 @@
 									Yes, clear all
 								</button>
 							</form>
-							<button
-								type="button"
-								onclick={() => (confirmingClearAll = false)}
-								class="border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
-							>
+							<button type="button" onclick={() => (confirmingClearAll = false)} class="btn">
 								Cancel
 							</button>
 						</div>
@@ -1642,7 +1624,7 @@
 								confirmingLoadSchemeId = null;
 								confirmingDeleteSchemeId = null;
 							}}
-							class="border border-red-200 bg-white px-3 py-2 text-sm text-red-600 shadow-sm transition hover:bg-red-50"
+							class="btn btn-danger"
 						>
 							Clear all slots
 						</button>

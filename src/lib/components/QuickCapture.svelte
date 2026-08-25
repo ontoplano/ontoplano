@@ -12,11 +12,16 @@
 	 * New. Four buttons at the top of the dashboard, one tap each, and the thing
 	 * is written where it belongs.
 	 *
-	 * Phone-only by design: on a desktop the sections are one click away in the
-	 * nav, and the row would be clutter. It posts to the same actions the pages
-	 * do, so there is no second write path to keep correct.
+	 * On a phone it is a row of tiles at the top of the dashboard; on a desktop
+	 * the same four sit inline in the header, where they cost one line and save
+	 * a page load. Both post to the same actions the pages do, so there is no
+	 * second write path to keep correct.
 	 */
-	let { error = null }: { error?: string | null } = $props();
+	let {
+		error = null,
+		/** The desktop shape: a row of small buttons rather than tiles. */
+		inline = false
+	}: { error?: string | null; inline?: boolean } = $props();
 
 	type Capture = {
 		key: string;
@@ -70,18 +75,29 @@
 	let open = $state<Capture | null>(null);
 </script>
 
-<div class="flex gap-2 md:hidden">
-	{#each CAPTURES as capture (capture.key)}
-		<button
-			type="button"
-			onclick={() => (open = capture)}
-			class="lift flex flex-1 flex-col items-center gap-1 border border-gray-200 bg-white px-2 py-3 text-xs text-gray-700 shadow-card"
-		>
-			<Icon name={capture.icon} size={18} />
-			{capture.label}
-		</button>
-	{/each}
-</div>
+{#if inline}
+	<div class="hidden items-center gap-2 md:flex">
+		{#each CAPTURES as capture (capture.key)}
+			<button type="button" onclick={() => (open = capture)} class="btn btn-sm">
+				<Icon name={capture.icon} />
+				{capture.label}
+			</button>
+		{/each}
+	</div>
+{:else}
+	<div class="flex gap-2 md:hidden">
+		{#each CAPTURES as capture (capture.key)}
+			<button
+				type="button"
+				onclick={() => (open = capture)}
+				class="lift flex flex-1 flex-col items-center gap-1 border border-gray-200 bg-white px-2 py-3 text-xs text-gray-700 shadow-card"
+			>
+				<Icon name={capture.icon} size={18} />
+				{capture.label}
+			</button>
+		{/each}
+	</div>
+{/if}
 
 <Modal
 	open={open !== null}

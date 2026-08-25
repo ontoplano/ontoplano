@@ -415,10 +415,7 @@
 												value={goal.currentValue}
 												class="tabular w-20 border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 											/>
-											<button
-												class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
-												>Update</button
-											>
+											<button class="btn btn-sm">Update</button>
 										</form>
 									{/if}
 								</div>
@@ -426,16 +423,14 @@
 								<div class="flex shrink-0 items-center gap-2">
 									<button
 										onclick={() => (linkingId = linkingId === goal.id ? null : goal.id)}
-										class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
+										class="btn btn-sm"
 										title="Choose which tasks count towards this"
 									>
 										Tasks ({goal.linkedSlotIds.length +
 											goal.linkedTodoIds.length +
 											goal.linkedActivityIds.length})
 									</button>
-									<button
-										onclick={() => openEdit(goal)}
-										class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
+									<button onclick={() => openEdit(goal)} class="btn btn-sm"
 										><Icon name="edit" /> Edit</button
 									>
 									{#if goal.status === 'open'}

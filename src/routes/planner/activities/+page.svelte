@@ -106,7 +106,7 @@
 					newCatColor = CATEGORY_DEFAULT_NEW;
 				}
 			}}
-			class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+			class="btn btn-sm"
 		>
 			{showCategoryForm ? 'Hide Categories' : 'Manage Categories'}
 		</button>
@@ -219,7 +219,7 @@
 									onclick={() => {
 										confirmingDelete = `cat-${cat.id}`;
 									}}
-									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+									class="btn btn-danger btn-sm"
 								>
 									<Icon name="trash" /> Delete
 								</button>

@@ -48,9 +48,7 @@
 				/>
 			</label>
 		</div>
-		<button class="bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-			>Save deployment</button
-		>
+		<button class="btn btn-primary">Save deployment</button>
 	</form>
 
 	<section class="border border-gray-200 bg-white p-6 shadow-card">

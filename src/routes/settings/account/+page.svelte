@@ -268,10 +268,7 @@
 								class="flex items-center gap-2"
 							>
 								<input type="hidden" name="id" value={s.id} />
-								<button
-									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-									use:armed>Confirm?</button
-								>
+								<button class="btn btn-danger btn-sm" use:armed>Confirm?</button>
 								<button
 									type="button"
 									onclick={() => (confirmRevoke = null)}
@@ -279,11 +276,7 @@
 								>
 							</form>
 						{:else}
-							<button
-								onclick={() => (confirmRevoke = s.id)}
-								class="border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
-								>Sign out</button
-							>
+							<button onclick={() => (confirmRevoke = s.id)} class="btn btn-sm">Sign out</button>
 						{/if}
 					{/if}
 				</div>

@@ -190,7 +190,7 @@
 						editingId = null;
 						winInputCount = 3;
 					}}
-					class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+					class="btn btn-sm"
 				>
 					{showWinsForm ? 'Cancel' : 'New Wins'}
 				</button>
@@ -206,7 +206,7 @@
 						ta?.focus();
 					});
 				}}
-				class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+				class="btn btn-sm"
 			>
 				{showForm ? 'Cancel' : 'New Entry'}
 			</button>
@@ -297,19 +297,14 @@
 				/>
 			</label>
 			<div class="flex items-center gap-2">
-				<button
-					type="submit"
-					class="bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
-				>
-					Save Wins
-				</button>
+				<button type="submit" class="btn btn-primary"> Save Wins </button>
 				<button
 					type="button"
 					onclick={() => {
 						showWinsForm = false;
 						winInputCount = 3;
 					}}
-					class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+					class="btn"
 				>
 					Cancel
 				</button>

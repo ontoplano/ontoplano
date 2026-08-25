@@ -85,11 +85,7 @@
 					class="flex-1 overflow-x-auto border border-blue-200 bg-white px-3 py-2 font-mono text-xs text-gray-900"
 					>{newToken.plaintext}</code
 				>
-				<button
-					type="button"
-					onclick={() => copyToken(newToken.plaintext)}
-					class="border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
-				>
+				<button type="button" onclick={() => copyToken(newToken.plaintext)} class="btn">
 					{copied ? 'Copied' : 'Copy'}
 				</button>
 			</div>
@@ -285,12 +281,7 @@
 								<input type="checkbox" name="showOnDashboard" checked={stream.showOnDashboard} />
 								Dashboard
 							</label>
-							<button
-								type="submit"
-								class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
-							>
-								Save
-							</button>
+							<button type="submit" class="btn btn-sm"> Save </button>
 						</form>
 						<div class="mt-2">
 							{#if confirmDeleteStream === stream.id}

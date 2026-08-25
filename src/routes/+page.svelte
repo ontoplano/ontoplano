@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Card from '$lib/components/Card.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import QuickCapture from '$lib/components/QuickCapture.svelte';
 	import { enhance } from '$app/forms';
 	import { tick } from 'svelte';
@@ -135,17 +136,17 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-6">
-	<div class="flex items-center justify-between">
+	<div class="flex flex-wrap items-center justify-between gap-3">
 		<h1 class="text-lg font-bold text-gray-900">
 			{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
 		</h1>
 		{#if !arranging}
-			<button
-				onclick={startArranging}
-				class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
-			>
-				Arrange
-			</button>
+			<div class="flex items-center gap-2">
+				<QuickCapture error={form?.message} inline />
+				<button onclick={startArranging} class="btn btn-sm">
+					<Icon name="drag" /> Arrange
+				</button>
+			</div>
 		{/if}
 	</div>
 
@@ -577,9 +578,7 @@
 						/>
 					</div>
 				{/each}
-				<button class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800">
-					Save
-				</button>
+				<button class="btn btn-primary btn-sm"> Save </button>
 			</form>
 		</Card>
 	{/snippet}

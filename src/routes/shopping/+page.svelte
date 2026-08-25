@@ -175,10 +175,7 @@
 				{showSnoozed ? 'Hide' : 'Show'} snoozed
 				<kbd class="border border-gray-300 bg-gray-50 px-1">s</kbd>
 			</button>
-			<button
-				onclick={() => (showForm ? (showForm = false) : openCreateForm())}
-				class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
-			>
+			<button onclick={() => (showForm ? (showForm = false) : openCreateForm())} class="btn btn-sm">
 				{showForm ? 'Cancel' : 'Add item'}
 				<kbd class="border border-gray-300 bg-gray-50 px-1">n</kbd>
 			</button>
@@ -313,13 +310,7 @@
 									>
 										Save
 									</button>
-									<button
-										type="button"
-										onclick={cancelEdit}
-										class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
-									>
-										Cancel
-									</button>
+									<button type="button" onclick={cancelEdit} class="btn btn-sm"> Cancel </button>
 								</form>
 							{:else}
 								<div class="min-w-0 flex-1">
@@ -488,13 +479,7 @@
 								>
 									Save
 								</button>
-								<button
-									type="button"
-									onclick={cancelEdit}
-									class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
-								>
-									Cancel
-								</button>
+								<button type="button" onclick={cancelEdit} class="btn btn-sm"> Cancel </button>
 							</form>
 						{:else}
 							{#if item.snoozed}

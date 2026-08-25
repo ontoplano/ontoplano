@@ -134,12 +134,7 @@
 							<span class="text-sm font-medium text-gray-900">{card.label}</span>
 							<p class="text-xs text-gray-500">{card.description}</p>
 						</div>
-						<button
-							type="button"
-							onclick={() => toggle(id)}
-							class="border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
-							>Hide</button
-						>
+						<button type="button" onclick={() => toggle(id)} class="btn btn-sm">Hide</button>
 					</div>
 				{/if}
 			{/each}
@@ -152,24 +147,13 @@
 						<span class="text-sm font-medium text-gray-900">{card.label}</span>
 						<p class="text-xs text-gray-500">{card.description}</p>
 					</div>
-					<button
-						type="button"
-						onclick={() => toggle(card.id)}
-						class="border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
-						>Show</button
-					>
+					<button type="button" onclick={() => toggle(card.id)} class="btn btn-sm">Show</button>
 				</div>
 			{/each}
 
 			<div class="flex gap-2 pt-1">
-				<button class="bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-					>Save layout</button
-				>
-				<button
-					formaction="?/resetLayout"
-					class="border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-					>Reset to defaults</button
-				>
+				<button class="btn btn-primary">Save layout</button>
+				<button formaction="?/resetLayout" class="btn">Reset to defaults</button>
 			</div>
 		</form>
 	</section>
@@ -202,10 +186,7 @@
 								class="flex items-center gap-2"
 							>
 								<input type="hidden" name="id" value={quote.id} />
-								<button
-									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-									use:armed>Confirm?</button
-								>
+								<button class="btn btn-danger btn-sm" use:armed>Confirm?</button>
 								<button
 									type="button"
 									onclick={() => (confirmRemove = null)}
@@ -252,9 +233,7 @@
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>
-			<button class="bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-				>Add</button
-			>
+			<button class="btn btn-primary">Add</button>
 		</form>
 	</section>
 

@@ -361,10 +361,7 @@
 					aria-label="Next day">&rarr;</button
 				>
 			{/if}
-			<button
-				onclick={openForm}
-				class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800"
-			>
+			<button onclick={openForm} class="btn btn-primary btn-sm">
 				New <kbd class="ml-1 border border-gray-600 bg-gray-800 px-1 text-xs">n</kbd>
 			</button>
 		</div>

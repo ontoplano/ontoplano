@@ -268,7 +268,7 @@
 					nameInput?.focus();
 				});
 			}}
-			class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50"
+			class="btn btn-sm"
 		>
 			{showForm ? 'Cancel' : 'New Habit'}
 		</button>
