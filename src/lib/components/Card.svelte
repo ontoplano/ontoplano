@@ -33,12 +33,19 @@
 	} = $props();
 </script>
 
-<section class="border border-gray-200 bg-white shadow-card">
+<!--
+	The accent is a custom property rather than a border written here, because
+	where it is drawn is the style's business: a rule across the top of a square
+	card, a stripe down the side of a rounded one. See `.card-accent`.
+-->
+<section
+	class="border border-gray-200 bg-white shadow-card {accent ? 'card-accent' : ''}"
+	style={accent ? `--card-accent: ${accent}` : ''}
+>
 	<!-- The actions do not shrink, so on a phone a long title and a button
 	     side by side left the title one word wide. Below `sm` they stack. -->
 	<header
 		class="section-tint flex flex-col gap-2 border-b border-gray-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
-		style={accent ? `border-top: 2px solid ${accent}` : ''}
 	>
 		<div class="min-w-0">
 			<h2 class="eyebrow text-gray-500">{title}</h2>

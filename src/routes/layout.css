@@ -370,6 +370,25 @@ html[data-style='playful'] .section-pattern {
 }
 
 /*
+ * A card's section colour.
+ *
+ * The colour is set on the card as `--card-accent`; where it is drawn belongs
+ * to the style. Sober draws a rule across the top, squarely, because that is
+ * what a square card wants. Playful draws it down the left instead — a rule
+ * across the top of a rounded card is a straight line with a curve at each end
+ * and reads as a mistake, while a stripe down the side follows the corner the
+ * way the selected entry in the diary does.
+ */
+.card-accent {
+	border-top: 2px solid var(--card-accent);
+}
+
+html[data-style='playful'] .card-accent {
+	border-top: 1px solid var(--color-gray-200);
+	border-left: 4px solid var(--card-accent);
+}
+
+/*
  * Rendered Markdown, in an entry or a note.
  *
  * Tailwind's reset takes the browser's own heading and list styles away, which

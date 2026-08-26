@@ -341,10 +341,12 @@
 
 	<div class="space-y-4">
 		{#each byHorizon as column (column.horizon)}
-			<section class="border border-gray-200 bg-white p-4 shadow-card">
+			<section
+				class="card-accent border border-gray-200 bg-white p-4 shadow-card"
+				style="--card-accent: {accent}"
+			>
 				<div
-					class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-t-2 border-b border-b-gray-200 px-4 py-2"
-					style="border-top-color: {accent}"
+					class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-b border-b-gray-200 px-4 py-2"
 				>
 					<span class="eyebrow text-gray-500">{HORIZON_LABELS[column.horizon]}</span>
 					<span class="tabular text-xs text-gray-400">{column.goals.length}</span>
