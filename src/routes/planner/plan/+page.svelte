@@ -357,23 +357,38 @@
 	}
 
 	/**
-	 * Where a drop landed on the grid, in calendar terms.
+	 * Where a drop or a tap landed on the grid, in calendar terms.
 	 *
 	 * The calendar has no external-drop support, so this reads the geometry
 	 * back: which day column the pointer is over, and how far down the body it
 	 * fell. Returns null when the pointer is outside the grid, which is how a
 	 * drop onto the toolbar or the page margin gets ignored rather than
 	 * scheduling something at a guessed time.
+	 *
+	 * The column is found by horizontal position rather than by what was under
+	 * the pointer, because the events are drawn in a layer of their own beside
+	 * the day columns rather than inside them — landing on an existing block
+	 * used to find no day at all and silently do nothing.
 	 */
-	function dropTarget(e: DragEvent): { date: string; startTime: string } | null {
-		const dayEl = (e.target as HTMLElement | null)?.closest('.ec-day:not(.ec-sidebar)');
-		const bodyEl = (e.target as HTMLElement | null)?.closest('.ec-body');
-		if (!dayEl || !bodyEl) return null;
+	function dropTarget(e: {
+		target: EventTarget | null;
+		clientX: number;
+		clientY: number;
+	}): { date: string; startTime: string } | null {
+		const root = (e.target as HTMLElement | null)?.closest('.ec');
+		const bodyEl = root?.querySelector('.ec-body');
+		if (!bodyEl) return null;
+
+		const bodyRect = bodyEl.getBoundingClientRect();
+		if (bodyRect.height === 0) return null;
 
 		// The day columns in the body, in order, matched against the dates the
 		// grid is currently showing.
 		const columns = [...bodyEl.querySelectorAll('.ec-day:not(.ec-sidebar)')];
-		const index = columns.indexOf(dayEl);
+		const index = columns.findIndex((c) => {
+			const r = c.getBoundingClientRect();
+			return e.clientX >= r.left && e.clientX <= r.right;
+		});
 		if (index === -1) return null;
 
 		const days =
@@ -381,12 +396,9 @@
 		const date = days[index];
 		if (!date) return null;
 
-		const rect = dayEl.getBoundingClientRect();
-		if (rect.height === 0) return null;
-
 		const minMinutes = timeToMinutes(GRID_MIN_TIME);
 		const span = timeToMinutes(GRID_MAX_TIME) - minMinutes;
-		const fraction = Math.min(Math.max((e.clientY - rect.top) / rect.height, 0), 1);
+		const fraction = Math.min(Math.max((e.clientY - bodyRect.top) / bodyRect.height, 0), 1);
 
 		// Snapped to the same step a drag uses, so a dropped todo lands on the
 		// same gridlines as everything else.
@@ -399,6 +411,70 @@
 	let dragTodoId: number | null = $state(null);
 	let dropPreview: { date: string; startTime: string } | null = $state(null);
 
+	/**
+	 * The same thing as a drag, for a finger.
+	 *
+	 * HTML5 drag-and-drop does not exist on touch, so the rail's whole purpose —
+	 * put this todo at that hour — was unreachable on a phone while the hint
+	 * cheerfully said to drag one. Tapping a todo arms it and the next tap on
+	 * the grid places it. It works with a mouse too, which is one behaviour
+	 * fewer to explain.
+	 */
+	let placingTodoId: number | null = $state(null);
+	const placingTodo = $derived(data.todos.find((t: { id: number }) => t.id === placingTodoId));
+
+	async function scheduleTodoAt(todoId: number, target: { date: string; startTime: string }) {
+		const body = new FormData();
+		body.set('todoId', String(todoId));
+		body.set('date', target.date);
+		body.set('startTime', target.startTime);
+		body.set('durationMinutes', '30');
+
+		const result = await postGridAction('scheduleTodo', body, 'Could not schedule that todo.');
+		if (!result) return;
+		await invalidateAll();
+	}
+
+	/**
+	 * Placing beats every other reading of a tap on the grid.
+	 *
+	 * It has to be pointer events rather than `click`: an existing block is
+	 * draggable, and the calendar swallows the pointer to start its own drag, so
+	 * a tap that lands on one never becomes a click at all. Capture-phase, and
+	 * propagation stopped, so the calendar does not also read the tap as "make a
+	 * block here".
+	 *
+	 * The down/up pair with a movement threshold is what keeps a scroll from
+	 * counting as a placement — a finger dragging the grid up is not choosing a
+	 * time.
+	 */
+	let placeStart: { x: number; y: number } | null = null;
+	const PLACE_SLOP = 10;
+
+	function onGridPointerDown(e: PointerEvent) {
+		if (placingTodoId === null) return;
+		placeStart = { x: e.clientX, y: e.clientY };
+		e.stopPropagation();
+	}
+
+	async function onGridPointerUp(e: PointerEvent) {
+		const start = placeStart;
+		placeStart = null;
+		if (placingTodoId === null || !start) return;
+		if (Math.abs(e.clientX - start.x) > PLACE_SLOP || Math.abs(e.clientY - start.y) > PLACE_SLOP)
+			return;
+
+		const target = dropTarget(e);
+		if (!target) return;
+
+		e.preventDefault();
+		e.stopPropagation();
+
+		const todoId = placingTodoId;
+		placingTodoId = null;
+		await scheduleTodoAt(todoId, target);
+	}
+
 	async function onTodoDrop(e: DragEvent) {
 		e.preventDefault();
 		const todoId = dragTodoId;
@@ -409,15 +485,7 @@
 		const target = dropTarget(e);
 		if (!target) return;
 
-		const body = new FormData();
-		body.set('todoId', String(todoId));
-		body.set('date', target.date);
-		body.set('startTime', target.startTime);
-		body.set('durationMinutes', '30');
-
-		const result = await postGridAction('scheduleTodo', body, 'Could not schedule that todo.');
-		if (!result) return;
-		await invalidateAll();
+		await scheduleTodoAt(todoId, target);
 	}
 
 	/* ── Multi-select ──────────────────────────────────────────────────────────
@@ -1379,31 +1447,41 @@
 		</div>
 	{/if}
 
+	<!--
+		Three groups of full-size buttons is three stacked rows on a phone, which
+		spent two hundred pixels before the grid began. The buttons are compact
+		below `sm` so where-you-are and what-shape-you-want share one line, and
+		the two ways to add a block share the next with the date.
+	-->
 	<div class="flex flex-wrap items-center justify-between gap-2">
-		<div class="flex items-center gap-2">
+		<div class="flex items-center gap-1 sm:gap-2">
 			<button
 				onclick={goToPrevWeek}
 				disabled={!data.range.prev}
-				class="border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+				class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 sm:text-sm"
 				title={data.range.prev ? 'Back 7 days ([)' : 'Already starting today'}>&larr;</button
 			>
 			<button
 				onclick={goToToday}
 				disabled={data.range.isCurrent}
-				class="border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed"
+				class="border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed sm:px-3 sm:text-sm"
 				class:border-gray-900={data.range.isCurrent}
 				class:text-gray-900={data.range.isCurrent}
 			>
 				Today
 			</button>
-			<button onclick={goToNextWeek} class="btn btn-sm" title="Forward 7 days (])">&rarr;</button>
+			<button
+				onclick={goToNextWeek}
+				class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50 sm:text-sm"
+				title="Forward 7 days (])">&rarr;</button
+			>
 		</div>
 		<!-- The span you are looking at, in the middle, where the eye already is. -->
 		<div class="flex">
 			{#each [['day', 'Day'], ['week', 'Week'], ['month', 'Month']] as [mode, label] (mode)}
 				<button
 					onclick={() => setView(mode as PlanView)}
-					class="px-3 py-1 text-sm {viewMode === mode
+					class="px-2 py-1 text-xs sm:px-3 sm:text-sm {effectiveView === mode
 						? 'bg-gray-900 font-medium text-white hover:bg-gray-800'
 						: 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50'}"
 					title="{label} view (g cycles)">{label}</button
@@ -1411,25 +1489,36 @@
 			{/each}
 		</div>
 
-		<div class="flex flex-wrap gap-2">
-			<button
-				onclick={() => (showForm && repeat === 'once' ? closeForm() : startNew('once'))}
-				class="btn btn-sm border-blue-200 text-blue-600 hover:bg-blue-50"
-				title="One-off block (N)"
-			>
-				{showForm && repeat === 'once' ? 'Cancel' : '+ One-off'}
-			</button>
-			<button
-				onclick={() => (showForm && repeat === 'weekly' ? closeForm() : startNew('weekly'))}
-				class="btn btn-sm"
-				title="Weekly block (n)"
-			>
-				{showForm && repeat === 'weekly' ? 'Cancel' : '+ Weekly'}
-			</button>
+		<!-- On a phone this shares its line with the date; on a wide screen the
+		     date has the middle to itself, as before. -->
+		<div class="flex flex-1 items-center justify-between gap-2 sm:flex-none sm:justify-end">
+			<span class="text-xs text-gray-500 sm:hidden">
+				{#if effectiveView === 'month'}
+					{monthLabel(data.range.from)}
+				{:else}
+					{formatWeekDate(data.range.from)} &mdash; {formatWeekDate(data.range.last)}
+				{/if}
+			</span>
+			<div class="flex gap-2">
+				<button
+					onclick={() => (showForm && repeat === 'once' ? closeForm() : startNew('once'))}
+					class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-600 shadow-sm transition hover:bg-blue-50 sm:text-sm"
+					title="One-off block (N)"
+				>
+					{showForm && repeat === 'once' ? 'Cancel' : '+ One-off'}
+				</button>
+				<button
+					onclick={() => (showForm && repeat === 'weekly' ? closeForm() : startNew('weekly'))}
+					class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50 sm:text-sm"
+					title="Weekly block (n)"
+				>
+					{showForm && repeat === 'weekly' ? 'Cancel' : '+ Weekly'}
+				</button>
+			</div>
 		</div>
 	</div>
 
-	<div class="text-center text-sm text-gray-500">
+	<div class="hidden text-center text-sm text-gray-500 sm:block">
 		{#if effectiveView === 'month'}
 			{monthLabel(data.range.from)}
 		{:else}
@@ -2143,7 +2232,10 @@
 					{data.todos.length}
 				</span>
 				{#if !todosOpen}
-					<span class="text-xs text-gray-400">drag one onto the grid to give it a time</span>
+					<span class="hidden text-xs text-gray-400 sm:inline">
+						drag one onto the grid to give it a time
+					</span>
+					<span class="text-xs text-gray-400 sm:hidden">tap one, then tap a time</span>
 				{/if}
 			</summary>
 
@@ -2152,7 +2244,9 @@
 					<button
 						type="button"
 						draggable="true"
+						onclick={() => (placingTodoId = placingTodoId === todo.id ? null : todo.id)}
 						ondragstart={(e) => {
+							placingTodoId = null;
 							dragTodoId = todo.id;
 							e.dataTransfer?.setData('text/plain', String(todo.id));
 							if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
@@ -2161,11 +2255,12 @@
 							dragTodoId = null;
 							dropPreview = null;
 						}}
-						class="lift cursor-grab border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 shadow-card {dragTodoId ===
-						todo.id
+						class="lift cursor-grab border px-2 py-1 text-xs shadow-card {placingTodoId === todo.id
+							? 'border-gray-900 bg-gray-900 text-white'
+							: 'border-gray-200 bg-white text-gray-700'} {dragTodoId === todo.id
 							? 'opacity-40'
 							: ''}"
-						title="Drag onto the grid to schedule it"
+						title="Drag onto the grid, or tap and then tap a time"
 					>
 						{#if todo.categoryColor}
 							<span
@@ -2176,7 +2271,21 @@
 						{todo.title}
 					</button>
 				{/each}
-				<span class="text-xs text-gray-400">drag onto the grid to give it a time</span>
+				{#if placingTodo}
+					<span class="text-xs text-gray-600">
+						now tap a time for “{placingTodo.title}”
+					</span>
+					<button
+						type="button"
+						class="text-xs text-gray-400 underline"
+						onclick={() => (placingTodoId = null)}>cancel</button
+					>
+				{:else}
+					<span class="hidden text-xs text-gray-400 sm:inline">
+						drag onto the grid to give it a time
+					</span>
+					<span class="text-xs text-gray-400 sm:hidden">tap one, then tap a time</span>
+				{/if}
 			</div>
 		</details>
 	{/if}
@@ -2204,6 +2313,8 @@
 		}}
 		ondragleave={() => (dropPreview = null)}
 		ondrop={onTodoDrop}
+		onpointerdowncapture={onGridPointerDown}
+		onpointerupcapture={onGridPointerUp}
 		role="application"
 	>
 		{#if marqueeRect}
