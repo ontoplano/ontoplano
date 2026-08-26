@@ -109,6 +109,28 @@
 		<button class="btn btn-primary">Save</button>
 	</form>
 
+	<!-- One currency per account: a shopping list in three is a spreadsheet. -->
+	<form
+		method="post"
+		action="?/saveCurrency"
+		use:enhance
+		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
+	>
+		<div>
+			<h2 class="text-sm font-semibold text-gray-900">Money</h2>
+			<p class="mt-1 text-sm text-gray-500">What prices on the shopping list are in.</p>
+		</div>
+		<label class="block max-w-[10rem]">
+			<span class="eyebrow text-gray-500">Currency</span>
+			<select name="currency" class="select mt-1">
+				{#each data.currencies as code (code)}
+					<option value={code} selected={data.currency === code}>{code}</option>
+				{/each}
+			</select>
+		</label>
+		<button class="btn btn-primary">Save</button>
+	</form>
+
 	<!--
 		The hours the planner draws.
 

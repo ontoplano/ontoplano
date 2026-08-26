@@ -11,6 +11,7 @@
 	import { autofocus } from '$lib/actions/autofocus.js';
 	import { getAction } from '$lib/shortcuts';
 	import { keepInView } from '$lib/actions/keep-in-view';
+	import { formatMoney } from '$lib/money';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -21,12 +22,24 @@
 	let editType = $state('');
 	let editShoppingCategoryId: number | null = $state(null);
 	let editNotes = $state('');
+	let editPrice = $state('');
 	let filterType = $state<'all' | 'someday' | 'replenish'>('all');
 	let newItemType = $state<'replenish' | 'someday'>('replenish');
 	let showBought = $state(false);
 	let showSnoozed = $state(false);
 	let confirmingDelete: number | null = $state(null);
 	let showCategories = $state(false);
+
+	/**
+	 * What the list will cost, near enough.
+	 *
+	 * Only what is still to buy, only what has a price, and said as "about" —
+	 * a total assembled from remembered prices is an estimate and pretending
+	 * otherwise is how somebody gets a surprise at the till.
+	 */
+	const needed = $derived(data.items.filter((i) => !i.bought && !i.snoozed));
+	const totalCents = $derived(needed.reduce((sum, i) => sum + (i.priceCents ?? 0), 0));
+	const pricedCount = $derived(needed.filter((i) => i.priceCents !== null).length);
 
 	let defaultShoppingCategoryId = $derived.by(() => {
 		const otherCategory = data.shoppingCategories.find((category) => category.name === 'Other');
@@ -73,6 +86,7 @@
 		editType = item.type;
 		editShoppingCategoryId = item.shoppingCategoryId;
 		editNotes = item.notes ?? '';
+		editPrice = item.priceCents === null ? '' : (item.priceCents / 100).toFixed(2);
 	}
 
 	function cancelEdit() {
@@ -81,6 +95,7 @@
 		editType = '';
 		editShoppingCategoryId = null;
 		editNotes = '';
+		editPrice = '';
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -186,6 +201,20 @@
 		</div>
 	</div>
 
+	{#if totalCents > 0}
+		<p class="text-sm text-gray-500">
+			About <span class="tabular font-medium text-gray-900"
+				>{formatMoney(totalCents, data.currency)}</span
+			>
+			for what is still to buy
+			{#if pricedCount < needed.length}
+				<span class="text-xs text-gray-400">
+					· {needed.length - pricedCount} of them have no price yet
+				</span>
+			{/if}
+		</p>
+	{/if}
+
 	<FormError message={form?.message} />
 
 	<!-- Adding something already on the list puts it back on it; say so, or the
@@ -232,8 +261,14 @@
 					</Field>
 				{/if}
 
-				<Field label="Notes" span={12}>
+				<Field label="Notes" span={8}>
 					<input name="notes" type="text" autocomplete="off" class="input" />
+				</Field>
+
+				<!-- What it costs, roughly. Prices move and shops disagree, which is
+				     why the list says "about" and never claims a receipt. -->
+				<Field label="About" span={4} hint="What it usually costs.">
+					<input name="price" type="text" inputmode="decimal" autocomplete="off" class="input" />
 				</Field>
 			</FormGrid>
 		</form>
@@ -315,6 +350,16 @@
 													{/each}
 												</select>
 											{/if}
+											<input
+												name="price"
+												type="text"
+												inputmode="decimal"
+												autocomplete="off"
+												bind:value={editPrice}
+												placeholder="Price"
+												aria-label="Price"
+												class="w-20 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+											/>
 											<input
 												name="notes"
 												type="text"
@@ -494,6 +539,16 @@
 										{/each}
 									</select>
 								{/if}
+								<input
+									name="price"
+									type="text"
+									inputmode="decimal"
+									autocomplete="off"
+									bind:value={editPrice}
+									placeholder="Price"
+									aria-label="Price"
+									class="w-20 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								/>
 								<input
 									name="notes"
 									type="text"

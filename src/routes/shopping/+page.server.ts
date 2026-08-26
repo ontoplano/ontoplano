@@ -1,6 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
+import { getCurrency } from '$lib/server/settings';
 import {
 	createCategory,
 	createItem,
@@ -16,7 +17,11 @@ import {
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
-	return { items: listItems(ctx), shoppingCategories: listCategories(ctx) };
+	return {
+		items: listItems(ctx),
+		shoppingCategories: listCategories(ctx),
+		currency: getCurrency(ctx.userId)
+	};
 };
 
 /** Every action here is the same shape: read the form, call the service, map errors. */
@@ -48,6 +53,7 @@ export const actions: Actions = {
 				name,
 				type: formData.get('type'),
 				notes: formData.get('notes'),
+				price: formData.get('price'),
 				shoppingCategoryId: formData.get('shoppingCategoryId')
 			});
 
@@ -70,6 +76,7 @@ export const actions: Actions = {
 				name: formData.get('name'),
 				type: formData.get('type'),
 				notes: formData.get('notes'),
+				price: formData.get('price'),
 				shoppingCategoryId: formData.get('shoppingCategoryId')
 			});
 			return { success: true };

@@ -4,6 +4,7 @@ import { db } from './db/index.js';
 import { user, userSettings } from './db/schema.js';
 import { STYLES, isStyle, type Style } from '../style.js';
 import { THEMES, type Theme } from '../theme.js';
+import { DEFAULT_CURRENCY, isCurrency, type Currency } from '../money.js';
 
 export function getUserSetting(userId: string, key: string): string | null {
 	const row = db
@@ -151,6 +152,25 @@ export function getGridHours(userId: string): GridHours {
 export function setGridHours(userId: string, hours: GridHours): void {
 	setUserSetting(userId, GRID_START_KEY, String(hours.start));
 	setUserSetting(userId, GRID_END_KEY, String(hours.end));
+}
+
+// --- Currency -------------------------------------------------------------------
+
+/**
+ * The one currency prices are in.
+ *
+ * One per account rather than per item: a shopping list in three currencies is
+ * a spreadsheet, and nobody has asked for that.
+ */
+export const CURRENCY_KEY = 'shopping.currency';
+
+export function getCurrency(userId: string): Currency {
+	const stored = getUserSetting(userId, CURRENCY_KEY);
+	return isCurrency(stored) ? stored : DEFAULT_CURRENCY;
+}
+
+export function setCurrency(userId: string, currency: Currency): void {
+	setUserSetting(userId, CURRENCY_KEY, currency);
 }
 
 // --- Timezone -----------------------------------------------------------------

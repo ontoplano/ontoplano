@@ -6,6 +6,8 @@ import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
+import { parseMoney } from '../../money.js';
+import { getCurrency } from '../settings.js';
 
 /**
  * Two lists that share a table: `replenish` is stock you keep, `someday` is a
@@ -23,6 +25,7 @@ export type ItemInput = {
 	name: unknown;
 	type: unknown;
 	notes?: unknown;
+	price?: unknown;
 	shoppingCategoryId?: unknown;
 };
 
@@ -36,6 +39,7 @@ export function listItems(ctx: Ctx) {
 			shoppingCategoryName: shoppingCategories.name,
 			notes: shoppingItems.notes,
 			bought: shoppingItems.bought,
+			priceCents: shoppingItems.priceCents,
 			boughtAt: shoppingItems.boughtAt,
 			snoozed: shoppingItems.snoozed,
 			createdAt: shoppingItems.createdAt
@@ -222,7 +226,10 @@ function parseItem(ctx: Ctx, raw: ItemInput) {
 		name: str(raw.name, 'name', { max: MAX_NAME_LENGTH }),
 		type: oneOf(raw.type, 'type', ITEM_TYPES),
 		notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
-		shoppingCategoryId: parseCategoryId(ctx, raw.shoppingCategoryId)
+		shoppingCategoryId: parseCategoryId(ctx, raw.shoppingCategoryId),
+		// Typed as money, stored as an integer. A blank field means nobody has
+		// said what it costs, which is different from saying it is free.
+		priceCents: parseMoney(raw.price, getCurrency(ctx.userId))
 	};
 }
 

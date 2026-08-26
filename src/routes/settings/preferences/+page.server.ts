@@ -3,6 +3,8 @@ import { STYLES, STYLE_HINTS, STYLE_LABELS } from '$lib/style';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
 import { createQuote, deleteQuote, importQuotes, listQuotes } from '$lib/server/services/quotes';
+import { CURRENCIES, isCurrency } from '$lib/money';
+import { fail } from '@sveltejs/kit';
 import {
 	DASHBOARD_CARDS,
 	DASHBOARD_LAYOUT_KEY,
@@ -12,12 +14,14 @@ import {
 	type DashboardCardId
 } from '$lib/dashboard';
 import {
+	getCurrency,
 	getGridHours,
 	getStyle,
 	getTheme,
 	getTimezone,
 	getUserSetting,
 	getWeekSettings,
+	setCurrency,
 	setUserSetting
 } from '$lib/server/settings';
 import {
@@ -34,6 +38,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	return {
 		week: getWeekSettings(ctx.userId),
 		gridHours: getGridHours(ctx.userId),
+		currency: getCurrency(ctx.userId),
+		currencies: CURRENCIES,
 		timezone: getTimezone(ctx.userId) ?? ctx.tz,
 		theme: getTheme(ctx.userId),
 		style: getStyle(ctx.userId),
@@ -45,6 +51,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
+	saveCurrency: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const chosen = formData.get('currency');
+		if (!isCurrency(chosen)) return fail(400, { message: 'Unknown currency' });
+
+		setCurrency(locals.user!.id, chosen);
+		return { success: true, action: 'saveCurrency' };
+	},
+
 	saveGridHours: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
