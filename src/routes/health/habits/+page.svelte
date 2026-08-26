@@ -248,8 +248,9 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<div class="flex items-center justify-between">
-		<div></div>
+	<!-- The filters and "New habit" share a line: the button used to have a row
+	     of its own with an empty spacer beside it. -->
+	<div class="flex flex-wrap items-center gap-2">
 		<button
 			onclick={() => {
 				if (showForm && !editingId) {
@@ -269,13 +270,10 @@
 					nameInput?.focus();
 				});
 			}}
-			class="btn btn-sm"
+			class="btn btn-sm order-last ml-auto"
 		>
 			{showForm ? 'Cancel' : 'New habit'}
 		</button>
-	</div>
-
-	<div class="flex gap-2">
 		<button
 			onclick={() => {
 				typeFilter = 'all';

@@ -157,7 +157,7 @@
 			}}
 			class="btn btn-sm"
 		>
-			{showForm ? 'Cancel' : 'New Idea'}
+			{showForm ? 'Cancel' : 'New idea'}
 		</button>
 	</div>
 
@@ -169,7 +169,7 @@
 						filterTag = filterTag === tag.name ? null : tag.name;
 						selectedIndex = 0;
 					}}
-					class="border px-2 py-0.5 text-xs transition {filterTag === tag.name
+					class="chip {filterTag === tag.name
 						? 'border-indigo-500 bg-indigo-50 text-indigo-700'
 						: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
 				>
@@ -198,7 +198,7 @@
 					filterApplied = 'all';
 					selectedIndex = 0;
 				}}
-				class="border px-2 py-0.5 text-xs transition {filterApplied === 'all'
+				class="chip {filterApplied === 'all'
 					? 'border-indigo-500 bg-indigo-50 text-indigo-700'
 					: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
 			>
@@ -209,7 +209,7 @@
 					filterApplied = 'applied';
 					selectedIndex = 0;
 				}}
-				class="border px-2 py-0.5 text-xs transition {filterApplied === 'applied'
+				class="chip {filterApplied === 'applied'
 					? 'border-indigo-500 bg-indigo-50 text-indigo-700'
 					: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
 			>
@@ -220,7 +220,7 @@
 					filterApplied = 'not-applied';
 					selectedIndex = 0;
 				}}
-				class="border px-2 py-0.5 text-xs transition {filterApplied === 'not-applied'
+				class="chip {filterApplied === 'not-applied'
 					? 'border-indigo-500 bg-indigo-50 text-indigo-700'
 					: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
 			>
@@ -235,7 +235,7 @@
 					filterFavorite = 'all';
 					selectedIndex = 0;
 				}}
-				class="border px-2 py-0.5 text-xs transition {filterFavorite === 'all'
+				class="chip {filterFavorite === 'all'
 					? 'border-amber-500 bg-amber-50 text-amber-700'
 					: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
 			>
@@ -246,7 +246,7 @@
 					filterFavorite = 'favorite';
 					selectedIndex = 0;
 				}}
-				class="border px-2 py-0.5 text-xs transition {filterFavorite === 'favorite'
+				class="chip {filterFavorite === 'favorite'
 					? 'border-amber-500 bg-amber-50 text-amber-700'
 					: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
 			>
@@ -257,7 +257,7 @@
 					filterFavorite = 'not-favorite';
 					selectedIndex = 0;
 				}}
-				class="border px-2 py-0.5 text-xs transition {filterFavorite === 'not-favorite'
+				class="chip {filterFavorite === 'not-favorite'
 					? 'border-amber-500 bg-amber-50 text-amber-700'
 					: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
 			>
@@ -419,8 +419,11 @@
 								</div>
 							</div>
 
-							<div class="mt-2 flex items-start justify-between gap-3">
-								<div class="flex items-center gap-2">
+							<!-- Date, tags and the applied toggle share a line and have to wrap
+							     as one row; nested un-wrapping rows put the button in the middle
+							     of the tags on a phone. -->
+							<div class="mt-2 flex flex-wrap items-center gap-2">
+								<div class="flex flex-wrap items-center gap-2">
 									<span class="text-xs text-gray-400">{formatDate(idea.createdAt)}</span>
 									{#if idea.updatedAt !== idea.createdAt}
 										<span class="text-xs text-gray-400">· edited {formatDate(idea.updatedAt)}</span>
@@ -433,7 +436,7 @@
 														filterTag = tag.name;
 														selectedIndex = 0;
 													}}
-													class="border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-xs text-gray-600 transition hover:bg-gray-100"
+													class="chip"
 												>
 													#{tag.name}
 												</button>
@@ -445,6 +448,7 @@
 								<form
 									method="post"
 									action="?/toggleApplied"
+									class="ml-auto"
 									data-applied-toggle-id={idea.id}
 									use:enhance={() => {
 										return async ({ update }) => {

@@ -187,9 +187,11 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<h1 class="text-lg font-bold text-gray-900">Diary</h1>
-	<div class="flex items-center justify-end">
-		<div class="flex items-center gap-2">
+	<!-- Title and its buttons on one line, as everywhere else — the button had a
+	     row of its own, which is a lot of a phone screen to spend on nothing. -->
+	<div class="flex flex-wrap items-center justify-between gap-3">
+		<h1 class="text-lg font-bold text-gray-900">Diary</h1>
+		<div class="flex flex-wrap items-center gap-2">
 			{#if winsEnabled}
 				<button
 					onclick={() => {
@@ -200,7 +202,7 @@
 					}}
 					class="btn btn-sm"
 				>
-					{showWinsForm ? 'Cancel' : 'New Wins'}
+					{showWinsForm ? 'Cancel' : 'New wins'}
 				</button>
 			{/if}
 			<button
@@ -229,9 +231,9 @@
 						filterTag = filterTag === tag.name ? null : tag.name;
 						selectedIndex = 0;
 					}}
-					class="border px-2 py-0.5 text-xs transition {filterTag === tag.name
+					class="chip {filterTag === tag.name
 						? 'border-amber-500 bg-amber-50 text-amber-700'
-						: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
+						: 'text-gray-500 hover:text-gray-700'}"
 				>
 					#{tag.name}
 				</button>
@@ -242,7 +244,7 @@
 						filterTag = null;
 						selectedIndex = 0;
 					}}
-					class="border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-400 transition hover:text-gray-600"
+					class="chip text-gray-400 hover:text-gray-600"
 				>
 					clear
 				</button>
@@ -429,13 +431,50 @@
 						? 'border-l-4 border-l-amber-300/60 ring-2 ring-amber-400 ring-inset'
 						: ''}"
 				>
-					<!-- Edit and Delete do not shrink; side by side with the text on a
-					     phone they left it a column one word wide. -->
-					<div
-						class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
-					>
-						<p class="text-sm text-gray-900">{@html renderMarkdown(entry.content)}</p>
-						<div class="flex flex-wrap items-center justify-end gap-2 sm:shrink-0">
+					<p class="mb-2 text-sm text-gray-900">{@html renderMarkdown(entry.content)}</p>
+
+					<!--
+						One footer row: what the entry is on the left, what you can do to it
+						on the right. Edit and Delete used to sit beside the writing and
+						refuse to shrink, which on a phone left the writing a column one
+						word wide — and cost a whole row of height on any screen.
+					-->
+					<div class="flex flex-wrap items-center gap-2">
+						<!-- The number entries are referred to by, as `#12` in another
+						     entry's text. It was in the corner, which put it under the
+						     buttons once they moved down here. -->
+						<span class="tabular text-xs font-medium text-gray-900">#{entry.seq}</span>
+						<span class="text-xs text-gray-400">{formatDate(entry.createdAt)}</span>
+						{#if entry.forDate}
+							<span class="text-xs font-medium text-amber-600">for {entry.forDate}</span>
+						{/if}
+						{#if entry.updatedAt !== entry.createdAt}
+							<span class="text-xs text-gray-400">· edited {formatDate(entry.updatedAt)}</span>
+						{/if}
+						{#if entry.notebookId}
+							<a href="{resolve('/diary/notebooks')}?notebook={entry.notebookId}" class="chip">
+								<Icon name="notebook" size={12} />
+								{entry.notebookTitle}
+							</a>
+						{/if}
+						{#each entry.people as person (person.id)}
+							<a href={resolve('/diary/people')} class="chip">
+								{person.name}
+							</a>
+						{/each}
+						{#each entry.tags as tag (tag.id)}
+							<button
+								onclick={() => {
+									filterTag = tag.name;
+									selectedIndex = 0;
+								}}
+								class="chip"
+							>
+								#{tag.name}
+							</button>
+						{/each}
+
+						<div class="ml-auto flex flex-wrap items-center gap-2">
 							{#if confirmingDeleteId === entry.id}
 								<form
 									method="post"
@@ -493,54 +532,6 @@
 							{/if}
 						</div>
 					</div>
-					<!-- Date, notebook, people and tags all live here, so it has to wrap;
-					     `pr-6` keeps the last chip clear of the entry number. -->
-					<div class="flex flex-wrap items-center gap-2 pr-6">
-						<span class="text-xs text-gray-400">{formatDate(entry.createdAt)}</span>
-						{#if entry.forDate}
-							<span class="text-xs font-medium text-amber-600">for {entry.forDate}</span>
-						{/if}
-						{#if entry.updatedAt !== entry.createdAt}
-							<br /><span class="text-xs text-gray-400">
-								Edited: {formatDate(entry.updatedAt)}</span
-							>
-						{/if}
-						{#if entry.notebookId}
-							<a
-								href="{resolve('/diary/notebooks')}?notebook={entry.notebookId}"
-								class="flex items-center gap-1 border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-xs text-gray-700 hover:bg-gray-100"
-							>
-								<Icon name="notebook" size={12} />
-								{entry.notebookTitle}
-							</a>
-						{/if}
-						{#each entry.people as person (person.id)}
-							<a
-								href={resolve('/diary/people')}
-								class="border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-xs text-gray-700 hover:bg-gray-100"
-							>
-								{person.name}
-							</a>
-						{/each}
-						{#if entry.tags.length > 0}
-							<div class="flex flex-wrap gap-1">
-								{#each entry.tags as tag (tag.id)}
-									<button
-										onclick={() => {
-											filterTag = tag.name;
-											selectedIndex = 0;
-										}}
-										class="border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-xs text-gray-600 transition hover:bg-gray-100"
-									>
-										#{tag.name}
-									</button>
-								{/each}
-							</div>
-						{/if}
-					</div>
-					<span class="absolute right-2 bottom-1.5 text-[10px] text-black tabular-nums"
-						>#{entry.seq}</span
-					>
 				</div>
 			{/each}
 		</div>
