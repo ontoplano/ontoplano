@@ -236,175 +236,189 @@
 	{#if replenishItems.length > 0}
 		<div>
 			<h2 class="mb-2 text-sm font-bold text-gray-500">Inventory</h2>
-			<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
+			<!--
+				One category per card, flowing into columns.
+
+				As one tall list this was a metre of scrolling with a name at the left
+				edge and its buttons a screen-width away at the right. Columns rather
+				than a grid because the categories are of wildly different lengths and
+				a grid would leave a row as tall as its longest cell.
+			-->
+			<div class="gap-4 lg:columns-2 xl:columns-3 2xl:columns-4">
 				{#each replenishByCategory as category (category.name)}
-					<h3 class="mt-3 mb-1 px-1 text-xs font-medium tracking-wide text-gray-400 uppercase">
-						{category.name}
-					</h3>
-					{#each category.items as item (item.id)}
-						{@const globalIdx = filteredItems.indexOf(item)}
-						<div
-							class="flex items-center gap-4 px-4 py-3 {item.snoozed
-								? 'bg-gray-50 opacity-50'
-								: item.bought
-									? 'bg-blue-50'
-									: 'bg-red-50'} {globalIdx === selectedIndex
-								? 'ring-2 ring-gray-400 ring-inset'
-								: ''}"
-						>
-							{#if editingId === item.id}
-								<form
-									method="POST"
-									action="?/update"
-									use:enhance={() => {
-										return async ({ update }) => {
-											await update();
-											cancelEdit();
-										};
-									}}
-									use:autofocus
-									class="flex flex-1 items-center gap-2"
+					<section class="mb-4 break-inside-avoid border border-gray-200 bg-white shadow-card">
+						<h3 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">
+							{category.name}
+						</h3>
+						<div class="divide-y divide-gray-200">
+							{#each category.items as item (item.id)}
+								{@const globalIdx = filteredItems.indexOf(item)}
+								<div
+									class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 {item.snoozed
+										? 'bg-gray-50 opacity-50'
+										: item.bought
+											? 'bg-blue-50'
+											: 'bg-red-50'} {globalIdx === selectedIndex
+										? 'ring-2 ring-gray-400 ring-inset'
+										: ''}"
 								>
-									<input type="hidden" name="id" value={item.id} />
-									<input
-										name="name"
-										type="text"
-										autocomplete="off"
-										bind:value={editName}
-										required
-										class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-									/>
-									<select
-										name="type"
-										bind:value={editType}
-										class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-									>
-										<option value="replenish">Inventory</option>
-										<option value="someday">Wishlist</option>
-									</select>
-									{#if editType === 'replenish'}
-										<select
-											name="shoppingCategoryId"
-											bind:value={editShoppingCategoryId}
-											class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+									{#if editingId === item.id}
+										<form
+											method="POST"
+											action="?/update"
+											use:enhance={() => {
+												return async ({ update }) => {
+													await update();
+													cancelEdit();
+												};
+											}}
+											use:autofocus
+											class="flex flex-1 items-center gap-2"
 										>
-											{#each data.shoppingCategories as categoryOption (categoryOption.id)}
-												<option value={categoryOption.id}>{categoryOption.name}</option>
-											{/each}
-										</select>
-									{/if}
-									<input
-										name="notes"
-										type="text"
-										autocomplete="off"
-										bind:value={editNotes}
-										placeholder="Notes"
-										class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-									/>
-									<button
-										type="submit"
-										class="bg-gray-900 px-2 py-1 text-xs text-white hover:bg-gray-800"
-									>
-										Save
-									</button>
-									<button type="button" onclick={cancelEdit} class="btn btn-sm"> Cancel </button>
-								</form>
-							{:else}
-								<div class="min-w-0 flex-1">
-									<span class="text-sm text-gray-900">{item.name}</span>
-									{#if item.notes}
-										<span class="ml-2 text-xs text-gray-400">{item.notes}</span>
+											<input type="hidden" name="id" value={item.id} />
+											<input
+												name="name"
+												type="text"
+												autocomplete="off"
+												bind:value={editName}
+												required
+												class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+											/>
+											<select
+												name="type"
+												bind:value={editType}
+												class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+											>
+												<option value="replenish">Inventory</option>
+												<option value="someday">Wishlist</option>
+											</select>
+											{#if editType === 'replenish'}
+												<select
+													name="shoppingCategoryId"
+													bind:value={editShoppingCategoryId}
+													class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+												>
+													{#each data.shoppingCategories as categoryOption (categoryOption.id)}
+														<option value={categoryOption.id}>{categoryOption.name}</option>
+													{/each}
+												</select>
+											{/if}
+											<input
+												name="notes"
+												type="text"
+												autocomplete="off"
+												bind:value={editNotes}
+												placeholder="Notes"
+												class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+											/>
+											<button
+												type="submit"
+												class="bg-gray-900 px-2 py-1 text-xs text-white hover:bg-gray-800"
+											>
+												Save
+											</button>
+											<button type="button" onclick={cancelEdit} class="btn btn-sm">
+												Cancel
+											</button>
+										</form>
+									{:else}
+										<div class="min-w-0 flex-1">
+											<span class="text-sm text-gray-900">{item.name}</span>
+											{#if item.notes}
+												<span class="ml-2 text-xs text-gray-400">{item.notes}</span>
+											{/if}
+										</div>
+										{#if item.snoozed}
+											<form method="POST" action="?/toggleSnoozed" use:enhance>
+												<input type="hidden" name="id" value={item.id} />
+												<button
+													type="submit"
+													class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 shadow-sm hover:bg-gray-50"
+												>
+													Unshelve
+												</button>
+											</form>
+										{:else if item.bought}
+											<form method="POST" action="?/restock" use:enhance>
+												<input type="hidden" name="id" value={item.id} />
+												<button
+													type="submit"
+													class="border border-orange-200 bg-white px-2 py-1 text-xs text-orange-600 shadow-sm hover:bg-orange-50"
+												>
+													Need to buy
+												</button>
+											</form>
+										{:else}
+											<form method="POST" action="?/toggleBought" use:enhance>
+												<input type="hidden" name="id" value={item.id} />
+												<button
+													type="submit"
+													class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-600 shadow-sm hover:bg-blue-50"
+												>
+													Got it
+												</button>
+											</form>
+											<form method="POST" action="?/toggleSnoozed" use:enhance>
+												<input type="hidden" name="id" value={item.id} />
+												<button
+													type="submit"
+													class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500 shadow-sm hover:bg-gray-50"
+												>
+													Not now
+												</button>
+											</form>
+										{/if}
+										<button
+											onclick={() => startEdit(item)}
+											class="text-xs text-gray-400 hover:text-gray-700"
+										>
+											edit
+										</button>
+										{#if confirmingDelete === item.id}
+											<form
+												method="POST"
+												action="?/delete"
+												use:enhance={() => {
+													return async ({ update }) => {
+														await update();
+														confirmingDelete = null;
+													};
+												}}
+											>
+												<input type="hidden" name="id" value={item.id} />
+												<button
+													type="submit"
+													class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+													use:armed
+												>
+													Confirm?
+												</button>
+											</form>
+											<button
+												type="button"
+												onclick={() => {
+													confirmingDelete = null;
+												}}
+												class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+											>
+												Cancel
+											</button>
+										{:else}
+											<button
+												type="button"
+												onclick={() => {
+													confirmingDelete = item.id;
+												}}
+												class="text-xs text-gray-400 hover:text-red-500"
+											>
+												&times;
+											</button>
+										{/if}
 									{/if}
 								</div>
-								{#if item.snoozed}
-									<form method="POST" action="?/toggleSnoozed" use:enhance>
-										<input type="hidden" name="id" value={item.id} />
-										<button
-											type="submit"
-											class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 shadow-sm hover:bg-gray-50"
-										>
-											Unshelve
-										</button>
-									</form>
-								{:else if item.bought}
-									<form method="POST" action="?/restock" use:enhance>
-										<input type="hidden" name="id" value={item.id} />
-										<button
-											type="submit"
-											class="border border-orange-200 bg-white px-2 py-1 text-xs text-orange-600 shadow-sm hover:bg-orange-50"
-										>
-											Need to buy
-										</button>
-									</form>
-								{:else}
-									<form method="POST" action="?/toggleBought" use:enhance>
-										<input type="hidden" name="id" value={item.id} />
-										<button
-											type="submit"
-											class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-600 shadow-sm hover:bg-blue-50"
-										>
-											Got it
-										</button>
-									</form>
-									<form method="POST" action="?/toggleSnoozed" use:enhance>
-										<input type="hidden" name="id" value={item.id} />
-										<button
-											type="submit"
-											class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500 shadow-sm hover:bg-gray-50"
-										>
-											Not now
-										</button>
-									</form>
-								{/if}
-								<button
-									onclick={() => startEdit(item)}
-									class="text-xs text-gray-400 hover:text-gray-700"
-								>
-									edit
-								</button>
-								{#if confirmingDelete === item.id}
-									<form
-										method="POST"
-										action="?/delete"
-										use:enhance={() => {
-											return async ({ update }) => {
-												await update();
-												confirmingDelete = null;
-											};
-										}}
-									>
-										<input type="hidden" name="id" value={item.id} />
-										<button
-											type="submit"
-											class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
-											use:armed
-										>
-											Confirm?
-										</button>
-									</form>
-									<button
-										type="button"
-										onclick={() => {
-											confirmingDelete = null;
-										}}
-										class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-									>
-										Cancel
-									</button>
-								{:else}
-									<button
-										type="button"
-										onclick={() => {
-											confirmingDelete = item.id;
-										}}
-										class="text-xs text-gray-400 hover:text-red-500"
-									>
-										&times;
-									</button>
-								{/if}
-							{/if}
+							{/each}
 						</div>
-					{/each}
+					</section>
 				{/each}
 			</div>
 		</div>
@@ -413,11 +427,16 @@
 	{#if somedayItems.length > 0}
 		<div>
 			<h2 class="mb-2 text-sm font-bold text-gray-500">Wishlist</h2>
-			<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
+			<!-- The same column width as a category, so the two halves of the page
+			     line up instead of one running the full width of the screen. -->
+			<div
+				class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card lg:w-1/2 xl:w-1/3 2xl:w-1/4"
+			>
 				{#each somedayItems as item, i (item.id)}
 					{@const globalIdx = filteredItems.indexOf(item)}
 					<div
-						class="flex items-center gap-4 px-4 py-3 {globalIdx === selectedIndex
+						class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 {globalIdx ===
+						selectedIndex
 							? 'bg-gray-50'
 							: ''} {item.snoozed ? 'opacity-50' : ''}"
 					>
