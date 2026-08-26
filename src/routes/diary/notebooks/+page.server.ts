@@ -1,4 +1,4 @@
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
 import { createEntry, deleteEntry, updateEntry } from '$lib/server/services/diary';
@@ -8,23 +8,37 @@ import {
 	createNotebook,
 	deleteNotebook,
 	listNotebooks,
+	listOrphanedNotes,
 	setNotebookClosed,
 	updateNotebook
 } from '$lib/server/services/notebooks';
 
+/** The query value that stands for the orphaned notes rather than a notebook. */
+const ORPHANED = 'orphaned';
+
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
-	const asked = Number(url.searchParams.get('notebook'));
+	const asked = url.searchParams.get('notebook');
 	const notebooks = listNotebooks(ctx);
+	const orphaned = listOrphanedNotes(ctx);
 
 	// Opening the page with nothing chosen should still show something, so the
-	// first notebook stands in until you pick another.
-	const selected =
-		Number.isFinite(asked) && asked > 0 ? asked : (notebooks.find((n) => !n.closedAt)?.id ?? null);
+	// first notebook stands in until you pick another — or the orphaned notes,
+	// if that is all there is.
+	const askedId = Number(asked);
+	const wantsOrphaned = asked === ORPHANED;
+	const fallback = notebooks.find((n) => !n.closedAt)?.id ?? null;
+	const selected = wantsOrphaned
+		? null
+		: Number.isFinite(askedId) && askedId > 0
+			? askedId
+			: fallback;
 
 	return {
 		notebooks,
 		selected,
+		orphaned,
+		orphanedSelected: wantsOrphaned || (selected === null && orphaned.length > 0),
 		contents: selected ? contentsOf(ctx, selected) : null
 	};
 };
@@ -107,9 +121,13 @@ export const actions: Actions = {
 	updateEntry: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
+			// Absent for a note whose notebook was deleted: editing one must not
+			// adopt it into whatever notebook happens to be on screen.
+			const notebookId = Number(formData.get('notebookId')) || null;
+
 			updateEntry(buildCtx(locals.user!.id), Number(formData.get('id')), {
 				content: formData.get('content'),
-				notebookId: Number(formData.get('notebookId'))
+				notebookId
 			});
 			return { success: true, action: 'updateEntry' };
 		} catch (e) {
@@ -131,9 +149,13 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			deleteNotebook(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);
 		}
+
+		// The URL still names the notebook that was just deleted, and reloading
+		// it would answer 404 — correctly, and unhelpfully, to the person who
+		// deleted it.
+		redirect(303, '/diary/notebooks');
 	}
 };

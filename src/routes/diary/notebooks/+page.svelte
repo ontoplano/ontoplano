@@ -22,7 +22,7 @@
 
 	let showForm = $state(false);
 	let editingId = $state<number | null>(null);
-	let confirmDelete = $state<number | null>(null);
+	let confirmingDelete = $state(false);
 	let editingNoteId = $state<number | null>(null);
 	let confirmDeleteNote = $state<number | null>(null);
 
@@ -31,6 +31,35 @@
 	);
 	const selected = $derived(data.notebooks.find((n) => n.id === data.selected) ?? null);
 	const contents = $derived(data.contents);
+	const orphaned = $derived(data.orphaned);
+	const showingOrphans = $derived(data.orphanedSelected && !selected);
+
+	/**
+	 * Notes, tasks and goals as tabs rather than three stacked lists.
+	 *
+	 * A notebook with a dozen notes pushed its tasks below the fold, so the two
+	 * halves of "everything about this" could not be seen together at all.
+	 */
+	type Tab = 'notes' | 'tasks' | 'goals';
+	let tab = $state<Tab>('notes');
+
+	// Whichever notebook you move to opens on its notes, not on whichever tab
+	// the last one happened to be showing.
+	$effect(() => {
+		void data.selected;
+		void data.orphanedSelected;
+		tab = 'notes';
+	});
+
+	const tabs = $derived<{ key: Tab; label: string; count: number }[]>([
+		{ key: 'notes', label: 'Notes', count: contents?.entries.length ?? orphaned.length },
+		{
+			key: 'tasks',
+			label: 'Tasks',
+			count: (contents?.todos.length ?? 0) + (contents?.blocks.length ?? 0)
+		},
+		{ key: 'goals', label: 'Goals', count: contents?.goals.length ?? 0 }
+	]);
 
 	function openCreate() {
 		editingId = null;
@@ -53,7 +82,7 @@
 		if (e.key === 'Escape') {
 			showForm = false;
 			editingId = null;
-			confirmDelete = null;
+			confirmingDelete = false;
 			return;
 		}
 		if (e.key === 'n') {
@@ -154,54 +183,67 @@
 							</form>
 						</div>
 					{/each}
+
+					<!-- A notebook of its own, and only when there is something in it. -->
+					{#if orphaned.length > 0}
+						<a
+							href="{resolve('/diary/notebooks')}?notebook=orphaned"
+							class="block px-4 py-3 text-sm hover:underline {showingOrphans ? 'bg-gray-100' : ''}"
+						>
+							<span class="text-gray-900">Notes without a notebook</span>
+							<span class="block truncate text-xs text-gray-500">
+								{orphaned.length}
+								{orphaned.length === 1 ? 'note' : 'notes'} · their notebook was deleted
+							</span>
+						</a>
+					{/if}
 				</div>
 			{/if}
 		</Card>
 
 		<Card
-			title={selected ? selected.title : 'Nothing chosen'}
-			description={selected
-				? (selected.description ?? '')
-				: 'Pick a notebook to see everything that belongs to it.'}
+			title={showingOrphans ? 'Notes without a notebook' : (selected?.title ?? 'Nothing chosen')}
+			description={showingOrphans
+				? 'Their notebook was deleted. The writing was kept — it is not part of the journal, so it waits here.'
+				: selected
+					? (selected.description ?? '')
+					: 'Pick a notebook to see everything that belongs to it.'}
 			accent={SECTION_COLORS.diary}
 			flush
 		>
 			{#snippet actions()}
 				{#if selected}
-					{#if confirmDelete === selected.id}
-						<span class="hidden text-xs text-gray-500 sm:inline">
-							Its entries, tasks and goals stay where they are.
-						</span>
-						<form
-							method="post"
-							action="?/delete"
-							use:enhance={() =>
-								async ({ update }) => {
-									confirmDelete = null;
-									await update();
-								}}
-							class="flex items-center gap-1"
-						>
-							<input type="hidden" name="id" value={selected.id} />
-							<button type="button" onclick={() => (confirmDelete = null)} class="btn btn-sm">
-								Cancel
-							</button>
-							<button class="btn btn-danger btn-sm" use:armed>Yes, delete</button>
-						</form>
-					{:else}
-						<button onclick={() => (confirmDelete = selected.id)} class="btn btn-danger btn-sm">
-							<Icon name="trash" /> Delete
-						</button>
-					{/if}
+					<!-- The confirmation is a dialog, not a second button in the same
+					     place: a two-step delete that puts "Yes" where "Delete" was is a
+					     double-click away from destroying something. -->
+					<button onclick={() => (confirmingDelete = true)} class="btn btn-danger btn-sm">
+						<Icon name="trash" /> Delete
+					</button>
 				{/if}
 			{/snippet}
 
-			{#if !selected || !contents}
+			{#if showingOrphans}
+				{@render noteList(orphaned, null)}
+			{:else if !selected || !contents}
 				<EmptyState icon="notebook" title="Nothing chosen" />
 			{:else}
-				<section>
-					<h3 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">Entries</h3>
+				<!-- Everything about this notebook, one kind at a time. -->
+				<div class="snap-strip gap-1 border-b border-gray-200 px-2 md:flex">
+					{#each tabs as t (t.key)}
+						<button
+							onclick={() => (tab = t.key)}
+							class="px-3 py-2 text-sm font-medium whitespace-nowrap transition {tab === t.key
+								? 'border-b-2 text-gray-900'
+								: 'text-gray-500 hover:text-gray-700'}"
+							style={tab === t.key ? `border-color: ${SECTION_COLORS.diary}` : ''}
+						>
+							{t.label}
+							<span class="tabular ml-1 text-xs text-gray-400">{t.count}</span>
+						</button>
+					{/each}
+				</div>
 
+				{#if tab === 'notes'}
 					<!-- Writing about the kitchen renovation used to mean going to the
 					     Diary and remembering to pick the notebook from a dropdown. -->
 					<form
@@ -213,13 +255,13 @@
 							}}
 						class="border-b border-gray-200 px-4 py-3"
 					>
-						<input type="hidden" name="notebookId" value={selected?.id} />
+						<input type="hidden" name="notebookId" value={selected.id} />
 						<textarea
 							name="content"
 							rows="2"
 							required
 							use:autogrow
-							placeholder="Write a note about {selected?.title ?? 'this notebook'}"
+							placeholder="Write a note about {selected.title}"
 							class="textarea"
 						></textarea>
 						<div class="mt-2 flex justify-end">
@@ -227,95 +269,8 @@
 						</div>
 					</form>
 
-					{#if contents.entries.length === 0}
-						<p class="px-4 py-3 text-sm text-gray-500">Nothing written here yet.</p>
-					{:else}
-						<div class="divide-y divide-gray-200">
-							{#each contents.entries as entry (entry.id)}
-								<article class="px-4 py-3">
-									{#if editingNoteId === entry.id}
-										<form
-											method="post"
-											action="?/updateEntry"
-											use:enhance={() =>
-												async ({ update, result }) => {
-													await update();
-													if (result.type === 'success') editingNoteId = null;
-												}}
-										>
-											<input type="hidden" name="id" value={entry.id} />
-											<input type="hidden" name="notebookId" value={selected?.id} />
-											<textarea name="content" rows="4" required use:autogrow class="textarea"
-												>{entry.content}</textarea
-											>
-											<div class="mt-2 flex justify-end gap-2">
-												<button
-													type="button"
-													class="btn btn-sm"
-													onclick={() => (editingNoteId = null)}>Cancel</button
-												>
-												<button class="btn btn-primary btn-sm">Save</button>
-											</div>
-										</form>
-									{:else}
-										<div class="md text-sm text-gray-900">
-											<!-- `renderMarkdown` escapes every character of the input before it emits a
-											     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
-											<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-											{@html renderMarkdown(entry.content)}
-										</div>
-										<div class="mt-1 flex flex-wrap items-center gap-2">
-											<span class="tabular text-xs text-gray-400">
-												#{entry.seq} · {when(entry.createdAt)}
-											</span>
-
-											<!-- A note lives only here now, so this is the only place it
-											     can be corrected or thrown away. -->
-											<div class="ml-auto flex items-center gap-2">
-												<button
-													onclick={() => (editingNoteId = entry.id)}
-													class="btn btn-sm"
-													title="Edit this note"
-													aria-label="Edit this note"><Icon name="edit" /></button
-												>
-												{#if confirmDeleteNote === entry.id}
-													<form
-														method="post"
-														action="?/deleteEntry"
-														use:enhance={() =>
-															async ({ update }) => {
-																await update();
-																confirmDeleteNote = null;
-															}}
-														class="flex items-center gap-2"
-													>
-														<input type="hidden" name="id" value={entry.id} />
-														<button
-															type="button"
-															class="btn btn-sm"
-															onclick={() => (confirmDeleteNote = null)}>Cancel</button
-														>
-														<button class="btn btn-danger btn-sm" use:armed>Yes, delete</button>
-													</form>
-												{:else}
-													<button
-														onclick={() => (confirmDeleteNote = entry.id)}
-														class="btn btn-danger btn-sm"
-														title="Delete this note"
-														aria-label="Delete this note"><Icon name="trash" /></button
-													>
-												{/if}
-											</div>
-										</div>
-									{/if}
-								</article>
-							{/each}
-						</div>
-					{/if}
-				</section>
-
-				<section>
-					<h3 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">Tasks</h3>
+					{@render noteList(contents.entries, selected.id)}
+				{:else if tab === 'tasks'}
 					{#if contents.blocks.length === 0 && contents.todos.length === 0}
 						<p class="px-4 py-3 text-sm text-gray-500">Nothing to do for this yet.</p>
 					{:else}
@@ -346,37 +301,128 @@
 							{/each}
 						</ul>
 					{/if}
-				</section>
-
-				<section>
-					<h3 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">Goals</h3>
-					{#if contents.goals.length === 0}
-						<p class="px-4 py-3 text-sm text-gray-500">
-							No goal points at this notebook. It does not need one.
-						</p>
-					{:else}
-						<ul class="divide-y divide-gray-200">
-							{#each contents.goals as goal (goal.id)}
-								<li class="flex items-center gap-3 px-4 py-2 text-sm">
-									<Icon name="goals" class="shrink-0 text-gray-400" />
-									<a
-										href={resolve('/goals')}
-										class="min-w-0 flex-1 truncate text-gray-900 hover:underline"
-									>
-										{goal.title}
-									</a>
-									<span class="tabular shrink-0 text-xs text-gray-400">
-										{HORIZON_LABELS[goal.horizon]} · {goal.periodStart}
-									</span>
-								</li>
-							{/each}
-						</ul>
-					{/if}
-				</section>
+				{:else if contents.goals.length === 0}
+					<p class="px-4 py-3 text-sm text-gray-500">
+						No goal points at this notebook. It does not need one.
+					</p>
+				{:else}
+					<ul class="divide-y divide-gray-200">
+						{#each contents.goals as goal (goal.id)}
+							<li class="flex items-center gap-3 px-4 py-2 text-sm">
+								<Icon name="goals" class="shrink-0 text-gray-400" />
+								<a
+									href={resolve('/goals')}
+									class="min-w-0 flex-1 truncate text-gray-900 hover:underline"
+								>
+									{goal.title}
+								</a>
+								<span class="tabular shrink-0 text-xs text-gray-400">
+									{HORIZON_LABELS[goal.horizon]} · {goal.periodStart}
+								</span>
+							</li>
+						{/each}
+					</ul>
+				{/if}
 			{/if}
 		</Card>
 	</div>
 </div>
+
+<!--
+	One note, and the two things you can do to it.
+	
+	`notebookId` is null for a note whose notebook was deleted: editing one must
+	not quietly adopt it into whatever notebook is on screen.
+-->
+{#snippet noteList(
+	entries: { id: number; seq: number | null; content: string; createdAt: string }[],
+	notebookId: number | null
+)}
+	{#if entries.length === 0}
+		<p class="px-4 py-3 text-sm text-gray-500">Nothing written here yet.</p>
+	{:else}
+		<div class="divide-y divide-gray-200">
+			{#each entries as entry (entry.id)}
+				<article class="px-4 py-3">
+					{#if editingNoteId === entry.id}
+						<form
+							method="post"
+							action="?/updateEntry"
+							use:enhance={() =>
+								async ({ update, result }) => {
+									await update();
+									if (result.type === 'success') editingNoteId = null;
+								}}
+						>
+							<input type="hidden" name="id" value={entry.id} />
+							{#if notebookId !== null}
+								<input type="hidden" name="notebookId" value={notebookId} />
+							{/if}
+							<textarea name="content" rows="4" required use:autogrow class="textarea"
+								>{entry.content}</textarea
+							>
+							<div class="mt-2 flex justify-end gap-2">
+								<button type="button" class="btn btn-sm" onclick={() => (editingNoteId = null)}
+									>Cancel</button
+								>
+								<button class="btn btn-primary btn-sm">Save</button>
+							</div>
+						</form>
+					{:else}
+						<div class="md text-sm text-gray-900">
+							<!-- `renderMarkdown` escapes every character of the input before it emits a
+							     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+							{@html renderMarkdown(entry.content)}
+						</div>
+						<div class="mt-1 flex flex-wrap items-center gap-2">
+							<span class="tabular text-xs text-gray-400">
+								{#if entry.seq !== null}<span>#{entry.seq} ·</span>
+								{/if}{when(entry.createdAt)}
+							</span>
+
+							<div class="ml-auto flex items-center gap-2">
+								<button
+									onclick={() => (editingNoteId = entry.id)}
+									class="btn btn-sm"
+									title="Edit this note"
+									aria-label="Edit this note"><Icon name="edit" /></button
+								>
+								{#if confirmDeleteNote === entry.id}
+									<form
+										method="post"
+										action="?/deleteEntry"
+										use:enhance={() =>
+											async ({ update }) => {
+												await update();
+												confirmDeleteNote = null;
+											}}
+										class="flex items-center gap-2"
+									>
+										<input type="hidden" name="id" value={entry.id} />
+										<button
+											type="button"
+											class="btn btn-sm"
+											onclick={() => (confirmDeleteNote = null)}>Cancel</button
+										>
+										<button class="btn btn-danger btn-sm" use:armed>Yes, delete</button>
+									</form>
+								{:else}
+									<button
+										onclick={() => (confirmDeleteNote = entry.id)}
+										class="btn btn-danger btn-sm"
+										title="Delete this note"
+										aria-label="Delete this note"><Icon name="trash" /></button
+									>
+								{/if}
+							</div>
+						</div>
+					{/if}
+				</article>
+			{/each}
+		</div>
+	{/if}
+{/snippet}
 
 <Modal
 	bind:open={showForm}
@@ -427,5 +473,43 @@
 		<button type="submit" form="notebook-form" class="btn btn-primary">
 			{editingId ? 'Save' : 'Create notebook'}
 		</button>
+	{/snippet}
+</Modal>
+
+<!--
+	Deleting a notebook, at arm's length.
+
+	The old confirmation replaced the Delete button with "Yes, delete" in the
+	same pixels, so a double-click destroyed the notebook. A dialog puts the
+	answer somewhere the cursor is not, and leaves room to say plainly what
+	survives.
+-->
+<Modal
+	bind:open={confirmingDelete}
+	title="Delete this notebook?"
+	description={selected ? `“${selected.title}” will be gone.` : ''}
+	size="sm"
+>
+	<p class="text-sm text-gray-600">
+		Its notes, tasks and goals will not be deleted. The tasks and goals stay where they are, in the
+		planner and in Goals; the notes move to <strong class="font-medium text-gray-900"
+			>Notes without a notebook</strong
+		>, at the bottom of the list.
+	</p>
+
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={() => (confirmingDelete = false)}>Cancel</button>
+		<form
+			method="post"
+			action="?/delete"
+			use:enhance={() =>
+				async ({ update }) => {
+					confirmingDelete = false;
+					await update();
+				}}
+		>
+			<input type="hidden" name="id" value={selected?.id} />
+			<button class="btn btn-danger" use:armed>Delete the notebook</button>
+		</form>
 	{/snippet}
 </Modal>
