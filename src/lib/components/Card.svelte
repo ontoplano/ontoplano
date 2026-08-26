@@ -48,19 +48,25 @@
 	class="flex flex-col border border-gray-200 bg-white shadow-card {accent ? 'card-accent' : ''}"
 	style={accent ? `--card-accent: ${accent}` : ''}
 >
-	<!-- The actions do not shrink, so on a phone a long title and a button
-	     side by side left the title one word wide. Below `sm` they stack. -->
+	<!--
+		The actions wrap under the title when they do not fit, and only then.
+
+		They used to stack below `sm` unconditionally, which cost a row on every
+		dashboard card to put "Open →" under a one-word heading. `flex-wrap` with
+		a growing title does the same job when it is needed and nothing when it
+		is not.
+	-->
 	<header
-		class="section-tint flex flex-col gap-2 border-b border-gray-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
+		class="section-tint flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-gray-200 px-4 py-3"
 	>
-		<div class="min-w-0">
+		<div class="min-w-0 flex-1">
 			<h2 class="eyebrow text-gray-500">{title}</h2>
 			{#if description}
 				<p class="mt-1.5 text-sm text-gray-500">{description}</p>
 			{/if}
 		</div>
 		{#if actions}
-			<div class="flex flex-wrap items-center gap-2 sm:shrink-0">
+			<div class="flex flex-wrap items-center gap-2">
 				{@render actions()}
 			</div>
 		{/if}
