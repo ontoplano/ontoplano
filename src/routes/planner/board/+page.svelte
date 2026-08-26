@@ -108,6 +108,9 @@
 	/** The rail beside Today always shows the todo list, whatever the tab. */
 	const railCards = $derived(data.generalCards);
 
+	/** Only on a phone; a wide screen shows the filters without asking. */
+	let filtersOpen = $state(false);
+
 	function visible(status: Status): Card[] {
 		let out = cards.filter((c) => c.status === status);
 
@@ -399,7 +402,7 @@
 
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div class="flex items-center gap-1">
-			{#each [{ v: 'today', l: 'Today' }, { v: 'general', l: 'Todo' }] as t (t.v)}
+			{#each [{ v: 'today', l: 'Today' }, { v: 'general', l: 'Anytime' }] as t (t.v)}
 				<button
 					onclick={() => {
 						tab = t.v as typeof tab;
@@ -442,7 +445,19 @@
 		</div>
 	</div>
 
-	<div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+	<!-- Sort, energy and the rest are three rows on a phone before a single card.
+	     They fold behind one button there and stay open on a wide screen. -->
+	<button
+		onclick={() => (filtersOpen = !filtersOpen)}
+		class="btn btn-sm sm:hidden"
+		aria-expanded={filtersOpen}
+	>
+		{filtersOpen ? 'Hide filters' : 'Filters'}
+	</button>
+
+	<div
+		class="{filtersOpen ? 'flex' : 'hidden'} flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:flex"
+	>
 		<div class="flex items-center gap-1">
 			<span class="eyebrow text-gray-500">Sort</span>
 			{#each [{ v: 'default', l: 'Default' }, { v: 'urgency', l: 'Urgency' }, { v: 'interest', l: 'Interest' }, { v: 'energy', l: 'Energy' }] as opt (opt.v)}
@@ -794,7 +809,9 @@
 				<header
 					class="flex items-center justify-between border-b border-gray-200 bg-white px-3 py-2"
 				>
-					<span class="eyebrow text-gray-500">Todo</span>
+					<!-- Not "Todo": the status column beside it is "To do", and two
+					     columns a word apart meaning different things is a puzzle. -->
+					<span class="eyebrow text-gray-500">Anytime</span>
 					<span class="tabular text-xs text-gray-400">{railCards.length}</span>
 				</header>
 				<div class="space-y-2 p-2">
