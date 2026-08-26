@@ -118,6 +118,7 @@
 	}
 
 	import { GLOBAL_SHORTCUTS } from '$lib/shortcuts';
+	import Icon from '$lib/components/Icon.svelte';
 
 	function handleGlobalKeydown(e: KeyboardEvent) {
 		if (
@@ -430,15 +431,24 @@
 							{item.label}
 						</a>
 					{/each}
+					<!-- Icons like every other row: five with and two without read as a
+					     list that ran out of care. -->
 					<a
 						href="/settings/account"
 						onclick={() => (moreOpen = false)}
-						class="block px-4 py-3 text-sm text-gray-900">Settings</a
+						class="flex items-center gap-3 px-4 py-3 text-sm text-gray-900"
 					>
+						<Icon name="settings" class="h-5 w-5 text-gray-400" />
+						Settings
+					</a>
 					<form method="post" action="/login?/signOut" use:enhance>
-						<button type="submit" class="w-full px-4 py-3 text-left text-sm text-gray-900"
-							>Sign out</button
+						<button
+							type="submit"
+							class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-900"
 						>
+							<Icon name="sign-out" class="h-5 w-5 text-gray-400" />
+							Sign out
+						</button>
 					</form>
 				</div>
 			</div>

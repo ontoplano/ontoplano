@@ -1705,7 +1705,7 @@
 				<div class="border-t border-gray-200 pt-4">
 					{#if confirmingClearAll}
 						<div class="flex items-center gap-3">
-							<span class="text-sm text-red-600">Delete all slots?</span>
+							<span class="text-sm text-red-600">Delete every block?</span>
 							<form
 								method="post"
 								action="?/clearAll"
