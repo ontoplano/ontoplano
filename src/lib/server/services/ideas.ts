@@ -158,7 +158,8 @@ function ownedIdea(ctx: Ctx, id: number) {
 function optionalTagInput(value: unknown): string {
 	if (value === undefined || value === null) return '';
 	const s = String(value).trim();
-	if (s.length > MAX_TAGS_LENGTH) throw new ValidationError('too many tags');
+	if (s.length > MAX_TAGS_LENGTH)
+		throw new ValidationError('That is more tags than one idea can carry');
 	return s;
 }
 
@@ -167,6 +168,6 @@ function optionalNote(value: unknown): string | null {
 	const s = String(value).trim();
 	if (!s) return null;
 	if (s.length > MAX_NOTE_LENGTH)
-		throw new ValidationError(`note must be at most ${MAX_NOTE_LENGTH} characters`);
+		throw new ValidationError(`The note has to be ${MAX_NOTE_LENGTH} characters or fewer`);
 	return s;
 }

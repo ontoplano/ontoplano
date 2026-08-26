@@ -8,18 +8,31 @@ import { ValidationError } from './errors.js';
  * Every validator enforces a bound — no unbounded strings reach the database.
  */
 
+/**
+ * The field name, at the start of a sentence.
+ *
+ * Callers pass what the field is called on screen — `target`, `first day` —
+ * so the message reads as English rather than as a variable name.
+ */
+function Field(field: string): string {
+	return field.charAt(0).toUpperCase() + field.slice(1);
+}
+
 export function str(
 	value: unknown,
 	field: string,
 	opts: { max: number; min?: number; pattern?: RegExp; trim?: boolean }
 ): string {
-	if (typeof value !== 'string') throw new ValidationError(`${field} must be a string`);
+	// A non-string only arrives from a form that did not send the field at all,
+	// which to the person filling it in is the same as leaving it empty.
+	if (typeof value !== 'string') throw new ValidationError(`${Field(field)} is required`);
 	const s = opts.trim === false ? value : value.trim();
 	const min = opts.min ?? 1;
-	if (s.length < min) throw new ValidationError(`${field} is required`);
+	if (s.length < min) throw new ValidationError(`${Field(field)} is required`);
 	if (s.length > opts.max)
-		throw new ValidationError(`${field} must be at most ${opts.max} characters`);
-	if (opts.pattern && !opts.pattern.test(s)) throw new ValidationError(`${field} is malformed`);
+		throw new ValidationError(`${Field(field)} has to be ${opts.max} characters or fewer`);
+	if (opts.pattern && !opts.pattern.test(s))
+		throw new ValidationError(`That is not a ${field} this understands`);
 	return s;
 }
 
@@ -39,26 +52,36 @@ export function num(
 ): number {
 	const n = typeof value === 'string' ? Number(value) : value;
 	if (typeof n !== 'number' || !Number.isFinite(n))
-		throw new ValidationError(`${field} must be a number`);
-	if (opts.int && !Number.isInteger(n)) throw new ValidationError(`${field} must be an integer`);
-	if (opts.min !== undefined && n < opts.min)
-		throw new ValidationError(`${field} must be at least ${opts.min}`);
+		throw new ValidationError(`${Field(field)} has to be a number`);
+	if (opts.int && !Number.isInteger(n))
+		throw new ValidationError(`${Field(field)} has to be a whole number`);
+	if (opts.min !== undefined && n < opts.min) {
+		// A minimum below one is a way of saying "not zero, not negative", and
+		// printing it gave "target must be at least 0.000001".
+		throw new ValidationError(
+			opts.min > 0 && opts.min < 1
+				? `${Field(field)} has to be more than zero`
+				: `${Field(field)} has to be ${opts.min} or more`
+		);
+	}
 	if (opts.max !== undefined && n > opts.max)
-		throw new ValidationError(`${field} must be at most ${opts.max}`);
+		throw new ValidationError(`${Field(field)} has to be ${opts.max} or less`);
 	return n;
 }
 
 export function oneOf<T extends string>(value: unknown, field: string, allowed: readonly T[]): T {
+	// The allowed values are the database's words, not the reader's, so they
+	// stay out of the message.
 	if (typeof value !== 'string' || !allowed.includes(value as T))
-		throw new ValidationError(`${field} must be one of: ${allowed.join(', ')}`);
+		throw new ValidationError(`${Field(field)} is not one of the choices`);
 	return value as T;
 }
 
 /** Parse an ISO-8601 instant and normalise it to UTC with a trailing Z. */
 export function isoInstant(value: unknown, field: string): string {
-	if (typeof value !== 'string') throw new ValidationError(`${field} must be an ISO-8601 string`);
+	if (typeof value !== 'string') throw new ValidationError(`${Field(field)} has to be a time`);
 	const d = new Date(value);
-	if (isNaN(d.getTime())) throw new ValidationError(`${field} is not a valid ISO-8601 instant`);
+	if (isNaN(d.getTime())) throw new ValidationError(`${Field(field)} is not a time this can read`);
 	return d.toISOString();
 }
 

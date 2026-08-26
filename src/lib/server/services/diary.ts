@@ -195,7 +195,8 @@ function insertEntry(
 function tagInput(value: unknown): string {
 	if (value === undefined || value === null) return '';
 	const s = String(value).trim();
-	if (s.length > MAX_TAGS_LENGTH) throw new ValidationError('too many tags');
+	if (s.length > MAX_TAGS_LENGTH)
+		throw new ValidationError('That is more tags than one entry can carry');
 	return s;
 }
 
