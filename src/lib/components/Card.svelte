@@ -38,8 +38,14 @@
 	where it is drawn is the style's business: a rule across the top of a square
 	card, a stripe down the side of a rounded one. See `.card-accent`.
 -->
+<!--
+	A column, so a card can pin something to its own bottom edge rather than to
+	the end of its content. A card in a grid row is already as tall as the
+	tallest card beside it; without this its body stopped where the content did
+	and the space below belonged to nothing.
+-->
 <section
-	class="border border-gray-200 bg-white shadow-card {accent ? 'card-accent' : ''}"
+	class="flex flex-col border border-gray-200 bg-white shadow-card {accent ? 'card-accent' : ''}"
 	style={accent ? `--card-accent: ${accent}` : ''}
 >
 	<!-- The actions do not shrink, so on a phone a long title and a button
@@ -60,7 +66,7 @@
 		{/if}
 	</header>
 
-	<div class={flush ? '' : 'p-4'}>
+	<div class={flush ? 'flex-1' : 'flex-1 p-4'}>
 		{@render children()}
 	</div>
 </section>

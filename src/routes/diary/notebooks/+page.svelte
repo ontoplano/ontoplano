@@ -141,7 +141,7 @@
 					{/snippet}
 				</EmptyState>
 			{:else}
-				<div class="divide-y divide-gray-200">
+				<div class="flex h-full flex-col divide-y divide-gray-200">
 					{#each data.notebooks as notebook (notebook.id)}
 						<div
 							class="flex items-center gap-3 px-4 py-3 {notebook.id === data.selected
@@ -184,11 +184,17 @@
 						</div>
 					{/each}
 
-					<!-- A notebook of its own, and only when there is something in it. -->
+					<!--
+						A notebook of its own, and only when there is something in it. `mt-auto`
+						pins it to the bottom of the card rather than to the end of the list:
+						it is not one more notebook in the same sequence as the others.
+					-->
 					{#if orphaned.length > 0}
 						<a
 							href="{resolve('/diary/notebooks')}?notebook=orphaned"
-							class="block px-4 py-3 text-sm hover:underline {showingOrphans ? 'bg-gray-100' : ''}"
+							class="mt-auto block px-4 py-3 text-sm hover:underline {showingOrphans
+								? 'bg-gray-100'
+								: ''}"
 						>
 							<span class="text-gray-900">Notes without a notebook</span>
 							<span class="block truncate text-xs text-gray-500">
