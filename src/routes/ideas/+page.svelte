@@ -191,81 +191,84 @@
 		</div>
 	{/if}
 
-	<div class="flex flex-wrap items-center gap-3">
-		<div class="flex flex-wrap items-center gap-2">
-			<span class="text-xs font-medium tracking-wide text-gray-400 uppercase">Applied</span>
-			<button
-				onclick={() => {
-					filterApplied = 'all';
-					selectedIndex = 0;
-				}}
-				class="chip {filterApplied === 'all'
-					? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-					: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
-			>
-				All
-			</button>
-			<button
-				onclick={() => {
-					filterApplied = 'applied';
-					selectedIndex = 0;
-				}}
-				class="chip {filterApplied === 'applied'
-					? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-					: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
-			>
-				Applied
-			</button>
-			<button
-				onclick={() => {
-					filterApplied = 'not-applied';
-					selectedIndex = 0;
-				}}
-				class="chip {filterApplied === 'not-applied'
-					? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-					: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
-			>
-				Not Applied
-			</button>
-		</div>
+	<!-- Two rows of filters over an empty list is chrome with nothing to act on. -->
+	{#if data.ideas.length > 0}
+		<div class="flex flex-wrap items-center gap-3">
+			<div class="flex flex-wrap items-center gap-2">
+				<span class="text-xs font-medium tracking-wide text-gray-400 uppercase">Applied</span>
+				<button
+					onclick={() => {
+						filterApplied = 'all';
+						selectedIndex = 0;
+					}}
+					class="chip {filterApplied === 'all'
+						? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+						: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
+				>
+					All
+				</button>
+				<button
+					onclick={() => {
+						filterApplied = 'applied';
+						selectedIndex = 0;
+					}}
+					class="chip {filterApplied === 'applied'
+						? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+						: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
+				>
+					Applied
+				</button>
+				<button
+					onclick={() => {
+						filterApplied = 'not-applied';
+						selectedIndex = 0;
+					}}
+					class="chip {filterApplied === 'not-applied'
+						? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+						: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
+				>
+					Not Applied
+				</button>
+			</div>
 
-		<div class="flex flex-wrap items-center gap-2">
-			<span class="text-xs font-medium tracking-wide text-gray-400 uppercase">Favorite</span>
-			<button
-				onclick={() => {
-					filterFavorite = 'all';
-					selectedIndex = 0;
-				}}
-				class="chip {filterFavorite === 'all'
-					? 'border-amber-500 bg-amber-50 text-amber-700'
-					: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
-			>
-				All
-			</button>
-			<button
-				onclick={() => {
-					filterFavorite = 'favorite';
-					selectedIndex = 0;
-				}}
-				class="chip {filterFavorite === 'favorite'
-					? 'border-amber-500 bg-amber-50 text-amber-700'
-					: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
-			>
-				Favorites
-			</button>
-			<button
-				onclick={() => {
-					filterFavorite = 'not-favorite';
-					selectedIndex = 0;
-				}}
-				class="chip {filterFavorite === 'not-favorite'
-					? 'border-amber-500 bg-amber-50 text-amber-700'
-					: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
-			>
-				Not Favorite
-			</button>
+			<div class="flex flex-wrap items-center gap-2">
+				<span class="text-xs font-medium tracking-wide text-gray-400 uppercase">Favorite</span>
+				<button
+					onclick={() => {
+						filterFavorite = 'all';
+						selectedIndex = 0;
+					}}
+					class="chip {filterFavorite === 'all'
+						? 'border-amber-500 bg-amber-50 text-amber-700'
+						: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
+				>
+					All
+				</button>
+				<button
+					onclick={() => {
+						filterFavorite = 'favorite';
+						selectedIndex = 0;
+					}}
+					class="chip {filterFavorite === 'favorite'
+						? 'border-amber-500 bg-amber-50 text-amber-700'
+						: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
+				>
+					Favorites
+				</button>
+				<button
+					onclick={() => {
+						filterFavorite = 'not-favorite';
+						selectedIndex = 0;
+					}}
+					class="chip {filterFavorite === 'not-favorite'
+						? 'border-amber-500 bg-amber-50 text-amber-700'
+						: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
+				>
+					Not Favorite
+				</button>
+			</div>
 		</div>
-	</div>
+	{/if}
 
 	<FormError message={form?.message} />
 

@@ -126,10 +126,14 @@
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<h1 class="text-lg font-bold text-gray-900">Goals</h1>
 		<div class="flex items-center gap-2">
-			<a href={data.includeClosed ? '/goals' : '/goals?closed=1'} class="btn btn-sm">
-				{data.includeClosed ? 'Hide closed' : 'Show closed'}
-			</a>
-			<button onclick={() => (showAreas = true)} class="btn btn-sm">Areas</button>
+			<!-- Nothing to filter and nothing to file: an account with no goals is
+			     offered one button, which is the one that helps. -->
+			{#if data.goals.length > 0}
+				<a href={data.includeClosed ? '/goals' : '/goals?closed=1'} class="btn btn-sm">
+					{data.includeClosed ? 'Hide closed' : 'Show closed'}
+				</a>
+				<button onclick={() => (showAreas = true)} class="btn btn-sm">Areas</button>
+			{/if}
 			<button onclick={openCreate} class="btn btn-primary btn-sm">
 				<Icon name="plus" /> New goal
 				<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">n</kbd>
