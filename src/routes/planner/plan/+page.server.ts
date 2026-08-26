@@ -180,7 +180,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		// So the metadata editor can say which plugin reads which key.
 		plugins: listManifests(ctx.userId).map((m) => ({ name: m.name, metaKeys: m.metaKeys })),
 		// Undated todos, so one can be dragged straight onto an hour.
-		todos: listUnscheduled(ctx),
+		todos: listUnscheduled(ctx, { openOnly: true }),
 		slots: listWeeklySlots(ctx),
 		range,
 		view,

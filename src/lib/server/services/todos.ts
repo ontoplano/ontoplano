@@ -7,7 +7,7 @@
  * dragging a card onto Today does — the same row acquires a day rather than
  * being copied into a second table, so nothing has to be kept in sync.
  */
-import { and, asc, eq, isNull, or } from 'drizzle-orm';
+import { and, asc, eq, isNull, notInArray, or } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import {
@@ -18,7 +18,7 @@ import {
 	plannerTodos,
 	taskInstances
 } from '../db/schema.js';
-import { isStatus, type Status } from '../../task-status.js';
+import { CLOSED_STATUSES, isStatus, type Status } from '../../task-status.js';
 import type { RatingValues } from '../../ratings.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
@@ -98,14 +98,27 @@ export function listTodos(ctx: Ctx): Todo[] {
 		.map(shape);
 }
 
-/** The general list: todos not pulled onto a particular day. */
-export function listUnscheduled(ctx: Ctx): Todo[] {
+/**
+ * The general list: todos not pulled onto a particular day.
+ *
+ * `openOnly` drops the ones already finished or skipped. The board wants them
+ * — its Done column is where they live — but anywhere that offers a todo to be
+ * *scheduled* wants only the ones still waiting, because asking somebody when
+ * they will do a thing they already did is nonsense.
+ */
+export function listUnscheduled(ctx: Ctx, options: { openOnly?: boolean } = {}): Todo[] {
 	return db
 		.select(SELECTION)
 		.from(plannerTodos)
 		.leftJoin(categories, eq(plannerTodos.categoryId, categories.id))
 		.leftJoin(notebooks, eq(plannerTodos.notebookId, notebooks.id))
-		.where(and(eq(plannerTodos.userId, ctx.userId), isNull(plannerTodos.scheduledDate)))
+		.where(
+			and(
+				eq(plannerTodos.userId, ctx.userId),
+				isNull(plannerTodos.scheduledDate),
+				options.openOnly ? notInArray(plannerTodos.status, [...CLOSED_STATUSES]) : undefined
+			)
+		)
 		.orderBy(asc(plannerTodos.sortOrder), asc(plannerTodos.createdAt))
 		.all()
 		.map(shape);
