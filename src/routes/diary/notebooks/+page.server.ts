@@ -1,5 +1,7 @@
+import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
+import { createEntry } from '$lib/server/services/diary';
 import { toActionFailure } from '$lib/server/services/errors';
 import {
 	contentsOf,
@@ -63,6 +65,32 @@ export const actions: Actions = {
 				formData.get('closed') === 'true'
 			);
 			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * Write a note against this notebook, here.
+	 *
+	 * The entry is an ordinary diary entry with the notebook set — the same row
+	 * the Diary page writes — because a notebook is a subject you write about,
+	 * not a second journal. What was missing was only the place to type it:
+	 * writing about the kitchen renovation meant going to Diary and remembering
+	 * to pick the notebook from a dropdown.
+	 */
+	addEntry: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const notebookId = Number(formData.get('notebookId'));
+		if (!notebookId) return fail(400, { message: 'No notebook chosen' });
+
+		try {
+			createEntry(buildCtx(locals.user!.id), {
+				content: formData.get('content'),
+				tags: formData.get('tags'),
+				notebookId
+			});
+			return { success: true, action: 'addEntry' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

@@ -195,10 +195,33 @@
 			{:else}
 				<section>
 					<h3 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">Entries</h3>
+
+					<!-- Writing about the kitchen renovation used to mean going to the
+					     Diary and remembering to pick the notebook from a dropdown. -->
+					<form
+						method="post"
+						action="?/addEntry"
+						use:enhance={() =>
+							async ({ update, result }) => {
+								await update({ reset: result.type === 'success' });
+							}}
+						class="border-b border-gray-200 px-4 py-3"
+					>
+						<input type="hidden" name="notebookId" value={selected?.id} />
+						<textarea
+							name="content"
+							rows="2"
+							required
+							placeholder="Write a note about {selected?.title ?? 'this notebook'}"
+							class="textarea"
+						></textarea>
+						<div class="mt-2 flex justify-end">
+							<button class="btn btn-primary btn-sm"><Icon name="plus" /> Add note</button>
+						</div>
+					</form>
+
 					{#if contents.entries.length === 0}
-						<p class="px-4 py-3 text-sm text-gray-500">
-							Nothing written here yet. Pick this notebook when you write an entry.
-						</p>
+						<p class="px-4 py-3 text-sm text-gray-500">Nothing written here yet.</p>
 					{:else}
 						<div class="divide-y divide-gray-200">
 							{#each contents.entries as entry (entry.id)}
