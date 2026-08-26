@@ -30,7 +30,7 @@ export const actions: Actions = {
 	},
 
 	/** Send the confirmation link again, for somebody who never got the first. */
-	resendVerification: async ({ locals, params, request }) => {
+	resendVerification: async ({ locals, params }) => {
 		requireAdmin(locals.user!.id);
 
 		try {
