@@ -14,8 +14,7 @@ export type DashboardCardId =
 	| 'diary'
 	| 'shopping'
 	| 'quote'
-	| 'threeWins'
-	| 'quickLinks';
+	| 'threeWins';
 
 export type DashboardCard = {
 	id: DashboardCardId;
@@ -83,13 +82,6 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 		description: 'What is left to buy.',
 		defaultOn: true,
 		width: 'full'
-	},
-	{
-		id: 'quickLinks',
-		label: 'Quick links',
-		description: 'Shortcuts to the other sections.',
-		defaultOn: true,
-		width: 'half'
 	}
 ];
 

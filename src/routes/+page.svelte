@@ -164,13 +164,28 @@
 	     one thing down before it evaporates. -->
 	<QuickCapture bind:this={captureTiles} error={form?.message} />
 
+	<!--
+	An empty card says what the thing is for and offers the way in.
+
+	"No goals running." on its own is a dead end on the one screen a new
+	account opens first.
+-->
+	{#snippet nothingYet(text: string, href: string, action: string)}
+		<p class="text-sm text-gray-500">{text}</p>
+		<a {href} class="btn btn-sm mt-3 inline-flex">{action}</a>
+	{/snippet}
+
 	{#snippet card_todayTasks()}
 		<Card title="Today's Tasks" accent={SECTION_COLORS.planner}>
 			{#snippet actions()}
 				<a href="/planner/board" class="text-xs text-gray-500 hover:text-gray-900"> Open → </a>
 			{/snippet}
 			{#if data.taskSummary.total === 0}
-				<p class="text-sm text-gray-400">No tasks scheduled.</p>
+				{@render nothingYet(
+					'Nothing is planned for today. A block is a time you have given to something.',
+					'/planner/plan',
+					'Open the plan'
+				)}
 			{:else}
 				<div class="flex items-baseline gap-3">
 					<span class="text-2xl font-bold text-gray-900">
@@ -236,7 +251,11 @@
 				<a href="/goals" class="text-xs text-gray-500 hover:text-gray-900">Open &rarr;</a>
 			{/snippet}
 			{#if data.activeGoals.length === 0}
-				<p class="text-sm text-gray-400">No goals running.</p>
+				{@render nothingYet(
+					'No goals for this period. A goal is a commitment with a date attached.',
+					'/goals',
+					'New goal'
+				)}
 			{:else}
 				<ul class="space-y-2">
 					{#each data.activeGoals.slice(0, GOAL_PREVIEW) as goal (goal.id)}
@@ -279,7 +298,11 @@
 				<a href="/health/habits" class="text-xs text-gray-500 hover:text-gray-900"> Open → </a>
 			{/snippet}
 			{#if data.habitStreaks.length === 0}
-				<p class="text-sm text-gray-400">No habits tracked.</p>
+				{@render nothingYet(
+					'Nothing tracked yet. A habit is something you want to do — or stop doing — most days.',
+					'/health/habits',
+					'New habit'
+				)}
 			{:else}
 				<div class="space-y-2">
 					{#each data.habitStreaks as habit (habit.id)}
@@ -494,7 +517,11 @@
 					</div>
 				</div>
 			{:else}
-				<p class="text-sm text-gray-400">No diary entries yet.</p>
+				{@render nothingYet(
+					'Nothing written yet. Whatever happened today, in as many or as few words as you like.',
+					'/diary',
+					'New entry'
+				)}
 			{/if}
 		</Card>
 	{/snippet}
@@ -505,7 +532,11 @@
 				<a href="/shopping" class="text-xs text-gray-500 hover:text-gray-900">Open →</a>
 			{/snippet}
 			{#if data.shoppingToBuy.length === 0}
-				<p class="text-sm text-gray-400">Nothing to buy.</p>
+				{@render nothingYet(
+					'Nothing to buy. The list keeps what you are out of and what you might want one day.',
+					'/shopping',
+					'Add an item'
+				)}
 			{:else}
 				<div class="space-y-1">
 					{#each data.shoppingToBuy.slice(0, 8) as item (item.id)}
@@ -525,28 +556,6 @@
 					{/if}
 				</div>
 			{/if}
-		</Card>
-	{/snippet}
-
-	{#snippet card_quickLinks()}
-		<Card title="Quick Links" accent={SECTION_COLORS.home}>
-			<div class="space-y-2">
-				<a href="/planner/board" class="block text-sm text-gray-600 transition hover:text-gray-900"
-					>→ Today's board</a
-				>
-				<a href="/planner/plan" class="block text-sm text-gray-600 transition hover:text-gray-900"
-					>→ Edit weekly plan</a
-				>
-				<a href="/diary" class="block text-sm text-gray-600 transition hover:text-gray-900"
-					>→ Diary</a
-				>
-				<a href="/health/habits" class="block text-sm text-gray-600 transition hover:text-gray-900"
-					>→ Habits</a
-				>
-				<a href="/shopping" class="block text-sm text-gray-600 transition hover:text-gray-900"
-					>→ Shopping</a
-				>
-			</div>
 		</Card>
 	{/snippet}
 
@@ -593,7 +602,12 @@
 		</Card>
 	{/snippet}
 
-	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+	<!--
+		`grid-flow-dense` so a half-width card fills a gap a full-width one left
+		beside it. On a sparse account, where most cards are one line, the
+		difference is a screen of empty space or none.
+	-->
+	<div class="grid grid-flow-row-dense grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
 		{#each layout as id (id)}
 			{@const card = cardById(id)}
 			{#if card}
@@ -629,7 +643,6 @@
 					{:else if id === 'weekPlan'}{@render card_weekPlan()}
 					{:else if id === 'diary'}{@render card_diary()}
 					{:else if id === 'shopping'}{@render card_shopping()}
-					{:else if id === 'quickLinks'}{@render card_quickLinks()}
 					{:else if id === 'quote'}{@render card_quote()}
 					{:else if id === 'threeWins'}{@render card_threeWins()}
 					{/if}
