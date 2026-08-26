@@ -278,6 +278,16 @@ export const diaryEntries = sqliteTable(
 			.notNull()
 			.references(() => user.id),
 		seq: integer('seq').notNull().default(0),
+		/**
+		 * The notebook's own numbering, for an entry that belongs to one.
+		 *
+		 * `seq` counts every piece of writing in the account, which is what the
+		 * diary's `#12` references mean. A note inside a notebook is numbered by
+		 * that notebook instead — the fourth note about the kitchen is #4, not
+		 * #36 — so it is a second number rather than a different one. Null for
+		 * anything with no notebook.
+		 */
+		notebookSeq: integer('notebook_seq'),
 		content: text('content').notNull(),
 		forDate: text('for_date'),
 		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
@@ -293,7 +303,10 @@ export const diaryEntries = sqliteTable(
 		index('diary_entries_created_idx').on(table.createdAt),
 		index('diary_entries_for_date_idx').on(table.forDate),
 		index('diary_entries_notebook_idx').on(table.notebookId),
-		uniqueIndex('diary_entries_user_seq_unique').on(table.userId, table.seq)
+		uniqueIndex('diary_entries_user_seq_unique').on(table.userId, table.seq),
+		// SQLite treats NULLs as distinct, so every entry outside a notebook is
+		// exempt and the numbering inside one cannot collide.
+		uniqueIndex('diary_entries_notebook_seq_unique').on(table.notebookId, table.notebookSeq)
 	]
 );
 

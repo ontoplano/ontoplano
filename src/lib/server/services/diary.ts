@@ -133,33 +133,53 @@ export function deleteEntry(ctx: Ctx, id: number): void {
 	cleanupOrphanTags(ctx.userId);
 }
 
-/** `seq` is the account's own numbering, so it counts within the account. */
+/**
+ * Two numbers, both counted at the moment of writing.
+ *
+ * `seq` is the account's own numbering — every piece of writing it holds, which
+ * is what a `#12` reference means. `notebookSeq` is the notebook's, so the
+ * fourth note about the kitchen is #4 rather than #36. Both are read and then
+ * written, so the whole thing is one transaction: without it two writes landing
+ * together would read the same highest number and the second would be rejected
+ * by the unique index.
+ */
 function insertEntry(
 	ctx: Ctx,
 	content: string,
 	forDate?: string,
 	notebookId?: number | null
 ): number {
-	const highest =
-		db
-			.select({ value: max(diaryEntries.seq) })
-			.from(diaryEntries)
-			.where(eq(diaryEntries.userId, ctx.userId))
-			.get()?.value ?? 0;
+	return db.transaction((tx) => {
+		const highest =
+			tx
+				.select({ value: max(diaryEntries.seq) })
+				.from(diaryEntries)
+				.where(eq(diaryEntries.userId, ctx.userId))
+				.get()?.value ?? 0;
 
-	const result = db
-		.insert(diaryEntries)
-		.values({
-			...stamps(ctx),
-			userId: ctx.userId,
-			content,
-			seq: highest + 1,
-			notebookId: notebookId ?? null,
-			...(forDate ? { forDate } : {})
-		})
-		.run();
+		const highestInNotebook = notebookId
+			? (tx
+					.select({ value: max(diaryEntries.notebookSeq) })
+					.from(diaryEntries)
+					.where(eq(diaryEntries.notebookId, notebookId))
+					.get()?.value ?? 0)
+			: null;
 
-	return Number(result.lastInsertRowid);
+		const result = tx
+			.insert(diaryEntries)
+			.values({
+				...stamps(ctx),
+				userId: ctx.userId,
+				content,
+				seq: highest + 1,
+				notebookId: notebookId ?? null,
+				notebookSeq: highestInNotebook === null ? null : highestInNotebook + 1,
+				...(forDate ? { forDate } : {})
+			})
+			.run();
+
+		return Number(result.lastInsertRowid);
+	});
 }
 
 function tagInput(value: unknown): string {

@@ -137,7 +137,9 @@ export function contentsOf(ctx: Ctx, id: number) {
 		entries: db
 			.select({
 				id: diaryEntries.id,
-				seq: diaryEntries.seq,
+				// The notebook's own numbering; `seq` counts the whole account and
+				// means nothing to somebody reading one notebook.
+				seq: diaryEntries.notebookSeq,
 				content: diaryEntries.content,
 				forDate: diaryEntries.forDate,
 				createdAt: diaryEntries.createdAt
