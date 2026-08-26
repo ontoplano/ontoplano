@@ -1,7 +1,7 @@
-import { and, desc, eq, max } from 'drizzle-orm';
+import { and, desc, eq, isNull, max } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { diaryEntries, diaryEntryTags, notebooks, tags } from '../db/schema.js';
+import { diaryEntries, diaryEntryTags, tags } from '../db/schema.js';
 import {
 	cleanupOrphanTags,
 	ensureTagIds,
@@ -24,6 +24,13 @@ export const MAX_TAGS_LENGTH = 500;
 /** The tag that marks a three-wins entry, so they can be found again. */
 export const WINS_TAG = '3w';
 
+/**
+ * The journal, and only the journal.
+ *
+ * A note written against a notebook is stored in this table — one kind of
+ * writing, one place to keep it — but it is not a diary entry and does not
+ * belong in the diary. It appears on its notebook and nowhere else.
+ */
 export function listEntries(ctx: Ctx) {
 	const entries = db
 		.select({
@@ -31,14 +38,11 @@ export function listEntries(ctx: Ctx) {
 			seq: diaryEntries.seq,
 			content: diaryEntries.content,
 			forDate: diaryEntries.forDate,
-			notebookId: diaryEntries.notebookId,
-			notebookTitle: notebooks.title,
 			createdAt: diaryEntries.createdAt,
 			updatedAt: diaryEntries.updatedAt
 		})
 		.from(diaryEntries)
-		.leftJoin(notebooks, eq(diaryEntries.notebookId, notebooks.id))
-		.where(eq(diaryEntries.userId, ctx.userId))
+		.where(and(eq(diaryEntries.userId, ctx.userId), isNull(diaryEntries.notebookId)))
 		.orderBy(desc(diaryEntries.createdAt))
 		.all();
 

@@ -2,11 +2,11 @@
 	import { enhance } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
 	import { resolve } from '$app/paths';
+	import { renderMarkdown } from '$lib/markdown';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import Field from '$lib/components/Field.svelte';
-	import NotebookField from '$lib/components/NotebookField.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { tick } from 'svelte';
@@ -39,22 +39,6 @@
 			map.set(entry.seq, { content: entry.content, createdAt: entry.createdAt });
 		}
 		return map;
-	}
-
-	function renderMarkdown(text: string): string {
-		let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-		html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-		html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-		html = html.replace(/_(.+?)_/g, '<em>$1</em>');
-		html = html.replace(/`(.+?)`/g, '<code>$1</code>');
-		html = html.replace(/~~(.+?)~~/g, '<s>$1</s>');
-		// Turn #N (numeric) into diary entry reference links
-		html = html.replace(
-			/(^|[\s(])#(\d+)\b/g,
-			'$1<a class="diary-ref" data-seq="$2" href="#diary-$2">#$2</a>'
-		);
-		html = html.replace(/\n/g, '<br>');
-		return html;
 	}
 
 	function filteredEntries() {
@@ -374,11 +358,6 @@
 						{/each}
 					</datalist>
 				</Field>
-
-				<NotebookField
-					notebooks={data.notebooks}
-					value={editingId ? (editingEntry()?.notebookId ?? null) : null}
-				/>
 			</FormGrid>
 		</form>
 
@@ -431,7 +410,12 @@
 						? 'border-l-4 border-l-amber-300/60 ring-2 ring-amber-400 ring-inset'
 						: ''}"
 				>
-					<p class="mb-2 text-sm text-gray-900">{@html renderMarkdown(entry.content)}</p>
+					<div class="md mb-2 text-sm text-gray-900">
+						<!-- `renderMarkdown` escapes every character of the input before it emits a
+						     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html renderMarkdown(entry.content)}
+					</div>
 
 					<!--
 						One footer row: what the entry is on the left, what you can do to it
@@ -450,12 +434,6 @@
 						{/if}
 						{#if entry.updatedAt !== entry.createdAt}
 							<span class="text-xs text-gray-400">· edited {formatDate(entry.updatedAt)}</span>
-						{/if}
-						{#if entry.notebookId}
-							<a href="{resolve('/diary/notebooks')}?notebook={entry.notebookId}" class="chip">
-								<Icon name="notebook" size={12} />
-								{entry.notebookTitle}
-							</a>
 						{/if}
 						{#each entry.people as person (person.id)}
 							<a href={resolve('/diary/people')} class="chip">
@@ -506,6 +484,8 @@
 								</button>
 							{:else}
 								<button
+									title="Edit"
+									aria-label="Edit"
 									onclick={() => {
 										editingId = entry.id;
 										showForm = true;
@@ -518,16 +498,18 @@
 									}}
 									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
 								>
-									<Icon name="edit" /> Edit
+									<Icon name="edit" />
 								</button>
 								<button
+									title="Delete"
+									aria-label="Delete"
 									type="button"
 									onclick={() => {
 										confirmingDeleteId = entry.id;
 									}}
 									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
 								>
-									<Icon name="trash" /> Delete
+									<Icon name="trash" />
 								</button>
 							{/if}
 						</div>

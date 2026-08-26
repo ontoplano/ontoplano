@@ -12,6 +12,7 @@
 	import { SECTION_COLORS } from '$lib/colors';
 	import { HORIZON_LABELS } from '$lib/goals';
 	import { STATUS_LABELS } from '$lib/task-status';
+	import { renderMarkdown } from '$lib/markdown';
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -21,6 +22,8 @@
 	let showForm = $state(false);
 	let editingId = $state<number | null>(null);
 	let confirmDelete = $state<number | null>(null);
+	let editingNoteId = $state<number | null>(null);
+	let confirmDeleteNote = $state<number | null>(null);
 
 	const editing = $derived(
 		editingId ? (data.notebooks.find((n) => n.id === editingId) ?? null) : null
@@ -156,7 +159,9 @@
 
 		<Card
 			title={selected ? selected.title : 'Nothing chosen'}
-			description={selected?.description || 'Pick a notebook to see everything that belongs to it.'}
+			description={selected
+				? (selected.description ?? '')
+				: 'Pick a notebook to see everything that belongs to it.'}
 			accent={SECTION_COLORS.diary}
 			flush
 		>
@@ -226,12 +231,81 @@
 						<div class="divide-y divide-gray-200">
 							{#each contents.entries as entry (entry.id)}
 								<article class="px-4 py-3">
-									<p class="line-clamp-4 text-sm whitespace-pre-wrap text-gray-900">
-										{entry.content}
-									</p>
-									<p class="tabular mt-1 text-xs text-gray-400">
-										#{entry.seq} · {when(entry.createdAt)}
-									</p>
+									{#if editingNoteId === entry.id}
+										<form
+											method="post"
+											action="?/updateEntry"
+											use:enhance={() =>
+												async ({ update, result }) => {
+													await update();
+													if (result.type === 'success') editingNoteId = null;
+												}}
+										>
+											<input type="hidden" name="id" value={entry.id} />
+											<input type="hidden" name="notebookId" value={selected?.id} />
+											<textarea name="content" rows="4" required class="textarea"
+												>{entry.content}</textarea
+											>
+											<div class="mt-2 flex justify-end gap-2">
+												<button
+													type="button"
+													class="btn btn-sm"
+													onclick={() => (editingNoteId = null)}>Cancel</button
+												>
+												<button class="btn btn-primary btn-sm">Save</button>
+											</div>
+										</form>
+									{:else}
+										<div class="md text-sm text-gray-900">
+											<!-- `renderMarkdown` escapes every character of the input before it emits a
+											     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
+											<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+											{@html renderMarkdown(entry.content)}
+										</div>
+										<div class="mt-1 flex flex-wrap items-center gap-2">
+											<span class="tabular text-xs text-gray-400">
+												#{entry.seq} · {when(entry.createdAt)}
+											</span>
+
+											<!-- A note lives only here now, so this is the only place it
+											     can be corrected or thrown away. -->
+											<div class="ml-auto flex items-center gap-2">
+												<button
+													onclick={() => (editingNoteId = entry.id)}
+													class="btn btn-sm"
+													title="Edit this note"
+													aria-label="Edit this note"><Icon name="edit" /></button
+												>
+												{#if confirmDeleteNote === entry.id}
+													<form
+														method="post"
+														action="?/deleteEntry"
+														use:enhance={() =>
+															async ({ update }) => {
+																await update();
+																confirmDeleteNote = null;
+															}}
+														class="flex items-center gap-2"
+													>
+														<input type="hidden" name="id" value={entry.id} />
+														<button
+															type="button"
+															class="btn btn-sm"
+															onclick={() => (confirmDeleteNote = null)}>Cancel</button
+														>
+														<button class="btn btn-danger btn-sm" use:armed>Yes, delete</button>
+													</form>
+												{:else}
+													<button
+														onclick={() => (confirmDeleteNote = entry.id)}
+														class="btn btn-danger btn-sm"
+														title="Delete this note"
+														aria-label="Delete this note"><Icon name="trash" /></button
+													>
+												{/if}
+											</div>
+										</div>
+									{/if}
 								</article>
 							{/each}
 						</div>

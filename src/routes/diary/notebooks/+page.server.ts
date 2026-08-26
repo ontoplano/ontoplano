@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
-import { createEntry } from '$lib/server/services/diary';
+import { createEntry, deleteEntry, updateEntry } from '$lib/server/services/diary';
 import { toActionFailure } from '$lib/server/services/errors';
 import {
 	contentsOf,
@@ -91,6 +91,37 @@ export const actions: Actions = {
 				notebookId
 			});
 			return { success: true, action: 'addEntry' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * Edit a note, and delete one.
+	 *
+	 * Notes do not appear in the Diary, so this is the only place they can be
+	 * changed — without these a note written here could never be corrected.
+	 * `notebookId` goes back in on the way through, so editing a note does not
+	 * quietly take it out of its notebook.
+	 */
+	updateEntry: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			updateEntry(buildCtx(locals.user!.id), Number(formData.get('id')), {
+				content: formData.get('content'),
+				notebookId: Number(formData.get('notebookId'))
+			});
+			return { success: true, action: 'updateEntry' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	deleteEntry: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			deleteEntry(buildCtx(locals.user!.id), Number(formData.get('id')));
+			return { success: true, action: 'deleteEntry' };
 		} catch (e) {
 			return toActionFailure(e);
 		}
