@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
 import type { Actions, PageServerLoad } from './$types';
-import { auth, takeVerificationLink } from '$lib/server/auth';
+import { auth, sendVerificationFor } from '$lib/server/auth';
 import { accountById, requireAdmin, setRole } from '$lib/server/services/admin';
 import { listForSubject, record } from '$lib/server/services/audit';
 import { toActionFailure } from '$lib/server/services/errors';
@@ -35,10 +35,7 @@ export const actions: Actions = {
 
 		try {
 			const account = accountById(params.id);
-			await auth.api.sendVerificationEmail({
-				body: { email: account.email },
-				headers: request.headers
-			});
+			const { delivered, url } = await sendVerificationFor(account.email);
 
 			record(params.id, 'verification_resent', { actorId: locals.user!.id });
 
@@ -47,10 +44,10 @@ export const actions: Actions = {
 			return {
 				success: true,
 				action: 'resendVerification',
-				message: isEmailConfigured()
+				message: delivered
 					? `Confirmation email sent to ${account.email}.`
 					: `Nothing was emailed — this instance has no mail server. Send ${account.email} this link yourself; it confirms their address.`,
-				link: takeVerificationLink(account.email)
+				link: delivered ? null : url
 			};
 		} catch (e) {
 			if (e instanceof APIError) return fail(400, { message: e.message });

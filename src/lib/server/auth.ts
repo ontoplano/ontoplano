@@ -1,27 +1,15 @@
 import { betterAuth } from 'better-auth/minimal';
+import { createEmailVerificationToken } from 'better-auth/api';
 import { admin } from 'better-auth/plugins/admin';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { env } from '$env/dynamic/private';
 import { getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
-import { isEmailConfigured, sendEmail } from '$lib/server/email';
+import { sendEmail } from '$lib/server/email';
 
-/**
- * The last confirmation link for an address, on a server that cannot send it.
- *
- * With no SMTP the link goes to the log, which is no help to an administrator
- * looking at a web page and no help at all to the person waiting for it. Kept
- * only when there is no transport, and removed as soon as it is read, so the
- * link is handed over once rather than sitting in memory.
- */
-const unsentVerificationLinks = new Map<string, string>();
-
-export function takeVerificationLink(email: string): string | null {
-	const url = unsentVerificationLinks.get(email) ?? null;
-	unsentVerificationLinks.delete(email);
-	return url;
-}
+const VERIFICATION_SUBJECT = 'Confirm your ontoplano address';
+const verificationBody = (url: string) => `Confirm this address belongs to you:\n\n${url}\n`;
 
 /**
  * Verification is asked for but not enforced.
@@ -84,12 +72,10 @@ export const auth = betterAuth({
 		sendOnSignUp: true,
 		autoSignInAfterVerification: true,
 		sendVerificationEmail: async ({ user, url }) => {
-			if (!isEmailConfigured()) unsentVerificationLinks.set(user.email, url);
-
 			await sendEmail({
 				to: user.email,
-				subject: 'Confirm your ontoplano address',
-				text: `Confirm this address belongs to you:\n\n${url}\n`
+				subject: VERIFICATION_SUBJECT,
+				text: verificationBody(url)
 			});
 		}
 	},
@@ -112,6 +98,39 @@ export const auth = betterAuth({
 		sveltekitCookies(getRequestEvent) // make sure this is the last plugin in the array
 	]
 });
+
+/**
+ * Ask an account to confirm its address, on somebody else's behalf.
+ *
+ * `auth.api.sendVerificationEmail` refuses outright when a session is present
+ * whose address is not the one being verified — "Email mismatch" — which is
+ * every time an administrator resends somebody else's link. So the token is
+ * minted here, exactly as sign-up mints it, and the same message goes out.
+ *
+ * The URL comes back either way: with no mail server there is nothing to
+ * announce as sent, and an administrator holding the link can pass it on.
+ */
+export async function sendVerificationFor(email: string): Promise<{
+	delivered: boolean;
+	url: string;
+}> {
+	const ctx = await auth.$context;
+	const token = await createEmailVerificationToken(
+		ctx.secret,
+		email,
+		undefined,
+		ctx.options.emailVerification?.expiresIn
+	);
+	const url = `${ctx.baseURL}/verify-email?token=${token}&callbackURL=${encodeURIComponent('/')}`;
+
+	const { delivered } = await sendEmail({
+		to: email,
+		subject: VERIFICATION_SUBJECT,
+		text: verificationBody(url)
+	});
+
+	return { delivered, url };
+}
 
 /**
  * Does this password belong to this account?
