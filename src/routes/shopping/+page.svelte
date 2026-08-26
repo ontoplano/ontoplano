@@ -10,6 +10,7 @@
 	import type { PageServerData, ActionData } from './$types';
 	import { autofocus } from '$lib/actions/autofocus.js';
 	import { getAction } from '$lib/shortcuts';
+	import { keepInView } from '$lib/actions/keep-in-view';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -254,6 +255,7 @@
 							{#each category.items as item (item.id)}
 								{@const globalIdx = filteredItems.indexOf(item)}
 								<div
+									use:keepInView={globalIdx === selectedIndex}
 									class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 {item.snoozed
 										? 'bg-gray-50 opacity-50'
 										: item.bought
@@ -435,6 +437,7 @@
 				{#each somedayItems as item, i (item.id)}
 					{@const globalIdx = filteredItems.indexOf(item)}
 					<div
+						use:keepInView={globalIdx === selectedIndex}
 						class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 {globalIdx ===
 						selectedIndex
 							? 'bg-gray-50'

@@ -11,6 +11,7 @@
 	import { RELATIONSHIPS, RELATIONSHIP_LABELS } from '$lib/people';
 	import { SECTION_COLORS } from '$lib/colors';
 	import type { PageServerData, ActionData } from './$types';
+	import { keepInView } from '$lib/actions/keep-in-view';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -105,6 +106,7 @@
 						<!-- Two buttons and a count beside a name is more than a phone has
 						     room for; below `sm` they go under it. -->
 						<div
+							use:keepInView={selectedIndex === i}
 							class="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 {selectedIndex ===
 							i
 								? 'bg-gray-100 ring-2 ring-gray-900 ring-inset'

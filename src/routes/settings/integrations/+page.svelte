@@ -8,6 +8,7 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
+	import { keepInView } from '$lib/actions/keep-in-view';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -174,6 +175,7 @@
 			<ul class="divide-y divide-gray-200">
 				{#each data.tokens as token, i (token.id)}
 					<li
+						use:keepInView={selectedIndex === i}
 						class="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 {selectedIndex ===
 						i
 							? 'ring-2 ring-gray-900 ring-inset'

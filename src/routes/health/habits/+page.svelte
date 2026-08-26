@@ -18,6 +18,7 @@
 		HABIT_NEUTRAL_ACCENT
 	} from '$lib/colors.js';
 	import { getAction } from '$lib/shortcuts';
+	import { keepInView } from '$lib/actions/keep-in-view';
 
 	interface Habit {
 		id: number;
@@ -463,6 +464,7 @@
 				{@const isBad = habit.type === 'bad'}
 				{@const isNeutral = habit.type === 'neutral'}
 				<div
+					use:keepInView={i === selectedHabitIndex}
 					class="border border-gray-200 bg-white shadow-card {i === selectedHabitIndex
 						? 'ring-2 ring-gray-900 ring-inset'
 						: ''}"

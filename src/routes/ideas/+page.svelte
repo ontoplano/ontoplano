@@ -11,6 +11,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { getAction } from '$lib/shortcuts';
+	import { keepInView } from '$lib/actions/keep-in-view';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -339,6 +340,7 @@
 		<div class="space-y-3">
 			{#each filteredIdeas as idea, i (idea.id)}
 				<div
+					use:keepInView={i === clampedSelectedIndex}
 					class="lift relative border border-gray-200 bg-white p-4 shadow-card transition-all {i ===
 					clampedSelectedIndex
 						? 'border-l-4 border-l-indigo-300/60 ring-2 ring-indigo-400 ring-inset'

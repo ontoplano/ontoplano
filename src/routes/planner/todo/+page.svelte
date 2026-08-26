@@ -14,6 +14,7 @@
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
 	import { RATINGS } from '$lib/ratings.js';
 	import { CLOSED_STATUSES } from '$lib/task-status.js';
+	import { keepInView } from '$lib/actions/keep-in-view';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -307,6 +308,7 @@
 		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
 			{#each visibleTodos as todo, i (todo.id)}
 				<div
+					use:keepInView={selectedIndex === i}
 					class="flex items-start gap-4 px-4 py-3 {selectedIndex === i
 						? 'ring-2 ring-gray-900 ring-inset'
 						: ''} {isDone(todo) ? 'opacity-50' : ''}"

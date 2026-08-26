@@ -11,6 +11,7 @@
 	import type { PageServerData, ActionData } from './$types';
 	import { CATEGORY_FALLBACK_COLOR, CATEGORY_DEFAULT_NEW } from '$lib/colors.js';
 	import { getAction } from '$lib/shortcuts';
+	import { keepInView } from '$lib/actions/keep-in-view';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -382,6 +383,7 @@
 		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
 			{#each filteredActivities() as activity, i}
 				<div
+					use:keepInView={i === selectedIndex}
 					class="flex flex-col gap-2 px-4 py-3 transition-colors sm:flex-row sm:items-center sm:gap-4 {i ===
 					selectedIndex
 						? 'ring-2 ring-gray-900 ring-inset'

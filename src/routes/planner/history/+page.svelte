@@ -3,6 +3,7 @@
 	import type { PageData } from './$types';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { getAction } from '$lib/shortcuts';
+	import { keepInView } from '$lib/actions/keep-in-view';
 
 	let { data }: { data: PageData } = $props();
 
@@ -171,6 +172,7 @@
 		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
 			{#each instancesForDay(selectedDay) as inst, i (inst.id)}
 				<div
+					use:keepInView={selectedIndex === i}
 					class="flex items-center gap-4 border-l-4 px-4 py-3 {selectedIndex === i
 						? 'bg-gray-100'
 						: ''}"
