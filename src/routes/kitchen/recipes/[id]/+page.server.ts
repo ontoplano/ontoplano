@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
 import { NotFoundError } from '$lib/server/services/errors';
+import { listCategories } from '$lib/server/services/activities';
 import { edibleItems, getRecipe, ingredientsOf } from '$lib/server/services/recipes';
 import { recipeActions } from '../actions';
 
@@ -15,7 +16,10 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			recipe: getRecipe(ctx, id),
 			ingredients: ingredientsOf(ctx, id),
 			// Everything that could be an ingredient, for the combobox.
-			pantry: edibleItems(ctx)
+			pantry: edibleItems(ctx),
+			// For putting it on a day: a meal is a block like any other.
+			categories: listCategories(ctx),
+			today: new Date(ctx.now).toISOString().slice(0, 10)
 		};
 	} catch (e) {
 		if (e instanceof NotFoundError) error(404, 'Recipe not found');

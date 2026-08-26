@@ -16,6 +16,7 @@
 	let editing = $state(false);
 	let confirmingDelete = $state(false);
 	let cooking = $state(false);
+	let scheduling = $state(false);
 
 	const missing = $derived(data.ingredients.filter((i) => !i.inStock));
 
@@ -40,6 +41,7 @@
 			editing = false;
 			confirmingDelete = false;
 			cooking = false;
+			scheduling = false;
 		}
 	}
 </script>
@@ -64,6 +66,9 @@
 		</div>
 
 		<div class="flex flex-wrap items-center gap-2">
+			<button onclick={() => (scheduling = true)} class="btn btn-sm">
+				<Icon name="calendar" /> Put it on a day
+			</button>
 			<button onclick={() => (cooking = true)} class="btn btn-primary btn-sm">
 				<Icon name="check" /> Cooked it
 			</button>
@@ -318,5 +323,62 @@
 			<input type="hidden" name="id" value={data.recipe.id} />
 			<button class="btn btn-danger" use:armed>Delete the recipe</button>
 		</form>
+	{/snippet}
+</Modal>
+
+<!--
+	A meal is a block on the planner grid with the recipe attached, not an entry
+	in a second calendar. That is why dinner turns up beside deep work, and why
+	"what does this week need" is a join.
+-->
+<Modal
+	bind:open={scheduling}
+	error={form?.message}
+	title="Put it on a day"
+	description="It becomes a block on the plan, like anything else you give time to."
+	size="sm"
+>
+	<form
+		id="schedule-form"
+		method="post"
+		action="?/schedule"
+		use:enhance={() =>
+			async ({ update, result }) => {
+				await update({ reset: false });
+				if (result.type === 'success') scheduling = false;
+			}}
+	>
+		<input type="hidden" name="recipeId" value={data.recipe.id} />
+		<input type="hidden" name="label" value={data.recipe.title} />
+		<FormGrid>
+			<Field label="Day" span={6} required>
+				<input name="date" type="date" required value={data.today} class="input" />
+			</Field>
+			<Field label="At" span={6} required>
+				<input name="startTime" type="time" required value="19:00" class="input" />
+			</Field>
+			<Field label="For" span={6} hint="Minutes.">
+				<input
+					name="durationMinutes"
+					type="number"
+					min="5"
+					step="5"
+					value={data.recipe.minutes ?? 45}
+					class="input"
+				/>
+			</Field>
+			<Field label="Counts as" span={6}>
+				<select name="categoryId" class="select">
+					{#each data.categories as category (category.id)}
+						<option value={category.id}>{category.name}</option>
+					{/each}
+				</select>
+			</Field>
+		</FormGrid>
+	</form>
+
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={() => (scheduling = false)}>Cancel</button>
+		<button type="submit" form="schedule-form" class="btn btn-primary">Put it on the plan</button>
 	{/snippet}
 </Modal>

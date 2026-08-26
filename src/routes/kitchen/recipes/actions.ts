@@ -2,6 +2,8 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from '@sveltejs/kit';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
+import { createExceptional } from '$lib/server/services/slots';
+import { listCategories } from '$lib/server/services/activities';
 import {
 	addIngredient,
 	cooked,
@@ -91,6 +93,37 @@ export const recipeActions = {
 
 			cooked(buildCtx(locals.user!.id), Number(formData.get('id')), ranOut);
 			return { success: true, action: 'cooked', ranOut: ranOut.length };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * Put a recipe on a day.
+	 *
+	 * It becomes an ordinary block on the planner grid with the recipe attached,
+	 * which is what makes dinner show up beside deep work and what makes "what
+	 * does this week need" a join rather than a second calendar.
+	 */
+	schedule: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const ctx = buildCtx(locals.user!.id);
+
+		try {
+			const category = Number(formData.get('categoryId')) || listCategories(ctx)[0]?.id;
+			if (!category) return fail(400, { message: 'No category to put it in yet' });
+
+			createExceptional(ctx, {
+				date: formData.get('date'),
+				startTime: formData.get('startTime'),
+				durationMinutes: formData.get('durationMinutes'),
+				mode: 'category',
+				categoryId: category,
+				label: formData.get('label'),
+				recipeId: formData.get('recipeId')
+			});
+
+			return { success: true, action: 'schedule' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

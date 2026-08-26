@@ -11,6 +11,7 @@ import {
 	activities,
 	categories,
 	exceptionalSlots,
+	recipes,
 	suppressedSlots,
 	taskInstances,
 	weeklySlots
@@ -316,7 +317,10 @@ type TxLike = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 // --- One-off blocks -----------------------------------------------------------
 
-export function createExceptional(ctx: Ctx, raw: BlockInput & { date: unknown }): number {
+export function createExceptional(
+	ctx: Ctx,
+	raw: BlockInput & { date: unknown; recipeId?: unknown }
+): number {
 	const placement = parseBlock(ctx, raw);
 	const date = requiredDate(raw.date);
 
@@ -327,6 +331,10 @@ export function createExceptional(ctx: Ctx, raw: BlockInput & { date: unknown })
 			userId: ctx.userId,
 			date,
 			...placement,
+			// A meal is a block with something to cook attached, which is why it
+			// appears on the plan next to everything else rather than on a
+			// calendar of its own.
+			recipeId: ownedRecipeId(ctx, raw.recipeId),
 			...(raw.ratings ?? {}),
 			meta: raw.meta ?? '{}'
 		})
@@ -729,6 +737,21 @@ function parseBlock(ctx: Ctx, raw: BlockInput) {
 	if (mode === 'activity' && !activityId) throw new ValidationError('Activity required');
 
 	return { startTime, durationMinutes, mode, categoryId, activityId, label };
+}
+
+/** A recipe id from a form is a number until it is checked against the owner. */
+function ownedRecipeId(ctx: Ctx, value: unknown): number | null {
+	if (value === undefined || value === null || value === '') return null;
+
+	const id = num(value, 'recipe', { int: true, min: 1 });
+	const owned = db
+		.select({ id: recipes.id })
+		.from(recipes)
+		.where(and(eq(recipes.id, id), eq(recipes.userId, ctx.userId)))
+		.get();
+
+	if (!owned) throw new NotFoundError('recipe');
+	return owned.id;
 }
 
 /**

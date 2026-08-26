@@ -40,6 +40,7 @@
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<h1 class="text-lg font-bold text-gray-900">Recipes</h1>
 		<div class="flex flex-wrap items-center gap-2">
+			<a href={resolve('/kitchen/meals')} class="btn btn-sm">This week's meals</a>
 			{#if data.recipes.length > 0}
 				<button onclick={() => (onlyMakeable = !onlyMakeable)} class="btn btn-sm">
 					{onlyMakeable ? 'Show all' : 'What I can make now'}
