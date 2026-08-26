@@ -6,12 +6,14 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
+	import { autogrow } from '$lib/actions/autogrow';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { getAction } from '$lib/shortcuts';
+	import { keepInView } from '$lib/actions/keep-in-view';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -328,7 +330,7 @@
 
 			<FormGrid>
 				<Field label="Entry" span={12} required>
-					<textarea name="content" required rows="8" class="textarea"
+					<textarea name="content" required rows="8" use:autogrow class="textarea"
 						>{editingId ? (editingEntry()?.content ?? '') : ''}</textarea
 					>
 				</Field>
@@ -404,6 +406,7 @@
 		>
 			{#each filteredEntries() as entry, i (entry.id)}
 				<div
+					use:keepInView={i === selectedIndex}
 					id="diary-{entry.seq}"
 					class="lift relative border border-gray-200 bg-white p-4 shadow-card transition-all {i ===
 					selectedIndex

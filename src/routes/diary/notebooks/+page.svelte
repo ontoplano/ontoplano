@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
+	import { autogrow } from '$lib/actions/autogrow';
 	import Card from '$lib/components/Card.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
@@ -217,6 +218,7 @@
 							name="content"
 							rows="2"
 							required
+							use:autogrow
 							placeholder="Write a note about {selected?.title ?? 'this notebook'}"
 							class="textarea"
 						></textarea>
@@ -243,7 +245,7 @@
 										>
 											<input type="hidden" name="id" value={entry.id} />
 											<input type="hidden" name="notebookId" value={selected?.id} />
-											<textarea name="content" rows="4" required class="textarea"
+											<textarea name="content" rows="4" required use:autogrow class="textarea"
 												>{entry.content}</textarea
 											>
 											<div class="mt-2 flex justify-end gap-2">
