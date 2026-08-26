@@ -12,6 +12,8 @@
 	const priced = $derived(toBuy.filter((n) => n.priceCents !== null));
 	const totalCents = $derived(priced.reduce((sum, n) => sum + (n.priceCents ?? 0), 0));
 
+	// Plain `Date` on purpose: these are read once and thrown away, never held
+	// in state, so there is nothing for `SvelteDate` to make reactive.
 	function dayName(iso: string): string {
 		return new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, {
 			weekday: 'short',
@@ -21,6 +23,7 @@
 	}
 
 	function shift(days: number): string {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const d = new Date(`${data.from}T12:00:00`);
 		d.setDate(d.getDate() + days);
 		return d.toISOString().slice(0, 10);

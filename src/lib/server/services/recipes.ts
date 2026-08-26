@@ -459,6 +459,37 @@ export function neededBetween(ctx: Ctx, from: string, to: string): Needed[] {
 	return [...byItem.values()];
 }
 
+/**
+ * The meals planned between two dates.
+ *
+ * A meal is a one-off block with a recipe on it. Weekly blocks with recipes
+ * exist too, but they repeat forever and putting them on a dated calendar would
+ * mean expanding them; `neededBetween` counts them, and this lists what was
+ * deliberately put on a day.
+ */
+export function mealsBetween(ctx: Ctx, from: string, to: string) {
+	return db
+		.select({
+			id: exceptionalSlots.id,
+			date: exceptionalSlots.date,
+			startTime: exceptionalSlots.startTime,
+			recipeId: exceptionalSlots.recipeId,
+			title: recipes.title,
+			minutes: recipes.minutes
+		})
+		.from(exceptionalSlots)
+		.innerJoin(recipes, eq(exceptionalSlots.recipeId, recipes.id))
+		.where(
+			and(
+				eq(exceptionalSlots.userId, ctx.userId),
+				sql`${exceptionalSlots.date} >= ${from}`,
+				sql`${exceptionalSlots.date} <= ${to}`
+			)
+		)
+		.orderBy(asc(exceptionalSlots.date), asc(exceptionalSlots.startTime))
+		.all();
+}
+
 /** Recipes ordered by how much of them you already have. */
 export function withMissingCounts(ctx: Ctx) {
 	const counts = db

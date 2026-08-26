@@ -1,10 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
-import { neededBetween } from '$lib/server/services/recipes';
+import { mealsBetween, neededBetween } from '$lib/server/services/recipes';
 import { getCurrency } from '$lib/server/settings';
-import { db } from '$lib/server/db';
-import { and, eq, sql } from 'drizzle-orm';
-import { exceptionalSlots, recipes } from '$lib/server/db/schema';
 
 /** The seven days from a date, as `YYYY-MM-DD`. */
 function week(fromISO: string): string[] {
@@ -20,37 +17,15 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
 
 	const today = new Date(ctx.now).toISOString().slice(0, 10);
-	const from = url.searchParams.get('from') ?? today;
-	const days = week(from);
+	const days = week(url.searchParams.get('from') ?? today);
 	const to = days[days.length - 1];
-
-	const meals = db
-		.select({
-			id: exceptionalSlots.id,
-			date: exceptionalSlots.date,
-			startTime: exceptionalSlots.startTime,
-			recipeId: exceptionalSlots.recipeId,
-			title: recipes.title,
-			minutes: recipes.minutes
-		})
-		.from(exceptionalSlots)
-		.innerJoin(recipes, eq(exceptionalSlots.recipeId, recipes.id))
-		.where(
-			and(
-				eq(exceptionalSlots.userId, ctx.userId),
-				sql`${exceptionalSlots.date} >= ${days[0]}`,
-				sql`${exceptionalSlots.date} <= ${to}`
-			)
-		)
-		.orderBy(exceptionalSlots.date, exceptionalSlots.startTime)
-		.all();
 
 	return {
 		days,
 		today,
 		from: days[0],
 		to,
-		meals,
+		meals: mealsBetween(ctx, days[0], to),
 		needed: neededBetween(ctx, days[0], to),
 		currency: getCurrency(ctx.userId)
 	};
