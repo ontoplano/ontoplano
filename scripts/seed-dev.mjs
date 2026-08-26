@@ -486,6 +486,13 @@ const apiToken = (name, scopes) => {
 	return id;
 };
 
+/**
+ * `kind` and `display` must be values from the schema's own enums —
+ * `measurement`/`event`/`counter`/`state` and `line_chart`/`bar_chart`/… —
+ * because SQLite does not enforce them. Seeding `number` and `line` wrote rows
+ * no renderer matched, so every stream fell back to a bare list of points and
+ * the charts were never seen in development.
+ */
 const stream = (slug, name, kind, unit, display) => {
 	const existing = one('select id from data_streams where user_id = ? and slug = ?', uid, slug);
 	if (existing) return existing.id;
@@ -862,13 +869,13 @@ if (!one('select id from subscriptions where user_id = ?', uid)) {
 invite('dev-invite-open-0001', 'for my brother');
 invite('dev-invite-used-0002', 'for Ana', uid);
 
-const weight = stream('a-private-plugin.weight', 'Weight', 'number', 'kg', 'line');
+const weight = stream('a-private-plugin.weight', 'Weight', 'measurement', 'kg', 'line_chart');
 for (let back = 0; back < 30; back += 2) {
 	const d = dayOffset(-back);
 	point(weight, stamp(d), iso(d), Number((78 + Math.sin(back / 4) * 1.2).toFixed(1)));
 }
 
-const sleep = stream('a-private-plugin.sleep', 'Sleep', 'number', 'h', 'bar');
+const sleep = stream('a-private-plugin.sleep', 'Sleep', 'measurement', 'h', 'bar_chart');
 for (let back = 0; back < 14; back++) {
 	const d = dayOffset(-back);
 	point(sleep, stamp(d), iso(d), Number((6.4 + ((back * 7) % 5) / 4).toFixed(1)));

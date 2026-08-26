@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
+	import Card from '$lib/components/Card.svelte';
 	import { resolve } from '$app/paths';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -93,13 +94,12 @@
 	{/if}
 
 	<!-- API tokens -->
-	<section class="border border-gray-200 bg-white shadow-card">
-		<header class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-			<h2 class="text-sm font-semibold text-gray-900">API tokens</h2>
+	<Card title="API tokens" flush>
+		{#snippet actions()}
 			<button type="button" onclick={() => (showTokenForm = true)} class="btn btn-sm">
 				New token <kbd class="ml-1 border border-gray-300 bg-gray-50 px-1">n</kbd>
 			</button>
-		</header>
+		{/snippet}
 
 		<Modal
 			bind:open={showTokenForm}
@@ -174,7 +174,8 @@
 			<ul class="divide-y divide-gray-200">
 				{#each data.tokens as token, i (token.id)}
 					<li
-						class="flex items-center gap-4 px-4 py-3 {selectedIndex === i
+						class="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 {selectedIndex ===
+						i
 							? 'ring-2 ring-gray-900 ring-inset'
 							: ''}"
 					>
@@ -193,41 +194,40 @@
 								{/if}
 							</p>
 						</div>
-						{#if confirmRevoke === token.id}
-							<form method="post" action="?/revokeToken" use:enhance>
-								<input type="hidden" name="id" value={token.id} />
+						<div class="flex justify-end sm:shrink-0">
+							{#if confirmRevoke === token.id}
+								<form method="post" action="?/revokeToken" use:enhance>
+									<input type="hidden" name="id" value={token.id} />
+									<button
+										type="submit"
+										class="border border-red-200 px-3 py-1.5 text-sm text-red-600 shadow-sm hover:bg-red-50"
+										use:armed
+									>
+										Confirm?
+									</button>
+								</form>
+							{:else}
 								<button
-									type="submit"
+									type="button"
+									onclick={() => (confirmRevoke = token.id)}
 									class="border border-red-200 px-3 py-1.5 text-sm text-red-600 shadow-sm hover:bg-red-50"
-									use:armed
 								>
-									Confirm?
+									Revoke
 								</button>
-							</form>
-						{:else}
-							<button
-								type="button"
-								onclick={() => (confirmRevoke = token.id)}
-								class="border border-red-200 px-3 py-1.5 text-sm text-red-600 shadow-sm hover:bg-red-50"
-							>
-								Revoke
-							</button>
-						{/if}
+							{/if}
+						</div>
 					</li>
 				{/each}
 			</ul>
 		{/if}
-	</section>
+	</Card>
 
 	<!-- Data streams -->
-	<section class="border border-gray-200 bg-white shadow-card">
-		<header class="border-b border-gray-200 px-4 py-3">
-			<h2 class="text-sm font-semibold text-gray-900">Data streams</h2>
-			<p class="mt-1 text-xs text-gray-500">
-				Created automatically when an external app declares one. You choose how each is displayed.
-			</p>
-		</header>
-
+	<Card
+		title="Data streams"
+		description="Created automatically when an external app declares one. You choose how each is displayed."
+		flush
+	>
 		{#if data.streams.length === 0}
 			<div class="space-y-2 px-4 py-6 text-sm text-gray-500">
 				<p>No streams yet.</p>
@@ -247,10 +247,12 @@
 							method="post"
 							action="?/updateStream"
 							use:enhance
-							class="flex flex-wrap items-center gap-4"
+							class="flex flex-wrap items-center gap-x-4 gap-y-2"
 						>
 							<input type="hidden" name="id" value={stream.id} />
-							<div class="min-w-0 flex-1">
+							<!-- `basis-full` below `sm`: three controls that will not shrink
+							     had left the name one character per line. -->
+							<div class="min-w-0 flex-1 basis-full sm:basis-0">
 								<a
 									href={resolve('/data/[slug]', { slug: stream.slug })}
 									class="text-sm font-medium text-gray-900 underline underline-offset-2"
@@ -306,7 +308,7 @@
 				{/each}
 			</ul>
 		{/if}
-	</section>
+	</Card>
 
 	<p class="text-xs text-gray-500">
 		Writing a plugin? See <code class="font-mono">docs/PLUGINS.md</code> in the repository.
