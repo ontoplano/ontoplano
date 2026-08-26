@@ -25,11 +25,16 @@ export const actions: Actions = {
 		const formData = await request.formData();
 
 		try {
+			// "Skip" is the same submission with the empty week, under its own name:
+			// a submit button called `template` would be sent alongside the radio
+			// rather than instead of it.
+			const skipped = formData.get('skip') !== null;
+
 			completeFirstRun(buildCtx(locals.user!.id), {
 				timezone: formData.get('timezone'),
 				firstDay: formData.get('firstDay'),
 				generateDay: formData.get('generateDay'),
-				template: formData.get('template')
+				template: skipped ? 'blank' : formData.get('template')
 			});
 		} catch (e) {
 			return toActionFailure(e);

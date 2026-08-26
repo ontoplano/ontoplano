@@ -186,6 +186,14 @@
 
 	<FormError message={form?.message} />
 
+	<!-- Adding something already on the list puts it back on it; say so, or the
+	     row it changed is somewhere off screen and nothing appears to happen. -->
+	{#if form?.notice}
+		<div class="border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
+			{form.notice}
+		</div>
+	{/if}
+
 	<Modal bind:open={showForm} error={form?.message} title="New item" size="sm">
 		<form
 			id="item-form"

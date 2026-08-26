@@ -79,7 +79,15 @@
 			</div>
 		</section>
 
-		<div class="flex justify-end">
+		<!--
+			A way past it. Everything on this page is a default that can be changed
+			later, so somebody who does not want to answer two questions on their
+			first minute should not have to.
+		-->
+		<div class="flex flex-wrap items-center justify-end gap-3">
+			<button type="submit" name="skip" value="1" class="btn">
+				Skip — I'll set this up later
+			</button>
 			<button class="btn btn-primary">Start planning</button>
 		</div>
 	</form>

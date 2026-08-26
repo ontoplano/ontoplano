@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { shoppingCategories, shoppingItems } from '../db/schema.js';
@@ -60,11 +60,43 @@ export function listCategories(ctx: Ctx) {
 		.all();
 }
 
-export function createItem(ctx: Ctx, raw: ItemInput): void {
+/**
+ * Adding something already on the list puts it back on it.
+ *
+ * Typing "milk" twice used to give two rows named milk with no hint that one
+ * was already there, which is never what somebody meant: they either forgot, or
+ * they bought it last week and need it again. Either way the answer is one row,
+ * marked as needed.
+ *
+ * Returns whether it was a name already held, so the page can say so.
+ */
+export function createItem(ctx: Ctx, raw: ItemInput): { alreadyHad: boolean } {
 	const values = parseItem(ctx, raw);
+
+	const existing = db
+		.select({ id: shoppingItems.id })
+		.from(shoppingItems)
+		.where(
+			and(
+				eq(shoppingItems.userId, ctx.userId),
+				sql`lower(${shoppingItems.name}) = lower(${values.name})`
+			)
+		)
+		.get();
+
+	if (existing) {
+		db.update(shoppingItems)
+			.set({ bought: false, boughtAt: null, snoozed: false, updatedAt: stamp(ctx) })
+			.where(and(eq(shoppingItems.id, existing.id), eq(shoppingItems.userId, ctx.userId)))
+			.run();
+		return { alreadyHad: true };
+	}
+
 	db.insert(shoppingItems)
 		.values({ ...stamps(ctx), userId: ctx.userId, ...values })
 		.run();
+
+	return { alreadyHad: false };
 }
 
 export function updateItem(ctx: Ctx, id: number, raw: ItemInput): void {

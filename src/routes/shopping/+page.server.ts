@@ -22,13 +22,21 @@ export const actions: Actions = {
 	create: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
-			createItem(buildCtx(locals.user!.id), {
-				name: formData.get('name'),
+			const name = formData.get('name');
+			const { alreadyHad } = createItem(buildCtx(locals.user!.id), {
+				name,
 				type: formData.get('type'),
 				notes: formData.get('notes'),
 				shoppingCategoryId: formData.get('shoppingCategoryId')
 			});
-			return { success: true };
+
+			return {
+				success: true,
+				action: 'create',
+				notice: alreadyHad
+					? `${String(name).trim()} was already on the list, so it is back on it.`
+					: null
+			};
 		} catch (e) {
 			return toActionFailure(e);
 		}
