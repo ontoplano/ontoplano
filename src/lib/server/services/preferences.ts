@@ -1,4 +1,11 @@
-import { isTheme, setTheme, setStyle, setTimezone, setWeekSettings } from '../settings.js';
+import {
+	isTheme,
+	setGridHours,
+	setTheme,
+	setStyle,
+	setTimezone,
+	setWeekSettings
+} from '../settings.js';
 import { isStyle } from '../../style.js';
 import type { Ctx } from './ctx.js';
 import { ValidationError } from './errors.js';
@@ -45,6 +52,21 @@ export function saveWeekPreferences(
 	if (timezone.trim()) setTimezone(ctx.userId, parseTimezone(timezone));
 
 	setWeekSettings(ctx.userId, { firstDay, generateDay });
+}
+
+/**
+ * The stretch of the day the planner grid draws.
+ *
+ * Whole hours, and the end has to be after the start — a grid from 18 to 6 is
+ * not a short day, it is a pair of numbers that renders nothing.
+ */
+export function saveGridHours(ctx: Ctx, raw: { start: unknown; end: unknown }): void {
+	const start = num(raw.start, 'start hour', { int: true, min: 0, max: 23 });
+	const end = num(raw.end, 'end hour', { int: true, min: 1, max: 24 });
+
+	if (end <= start) throw new ValidationError('The day has to end after it starts');
+
+	setGridHours(ctx.userId, { start, end });
 }
 
 /** Rejected here rather than stored and thrown on every date afterwards. */

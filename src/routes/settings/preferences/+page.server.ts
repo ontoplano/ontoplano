@@ -12,6 +12,7 @@ import {
 	type DashboardCardId
 } from '$lib/dashboard';
 import {
+	getGridHours,
 	getStyle,
 	getTheme,
 	getTimezone,
@@ -19,7 +20,12 @@ import {
 	getWeekSettings,
 	setUserSetting
 } from '$lib/server/settings';
-import { saveWeekPreferences, setUserStyle, setUserTheme } from '$lib/server/services/preferences';
+import {
+	saveGridHours,
+	saveWeekPreferences,
+	setUserStyle,
+	setUserTheme
+} from '$lib/server/services/preferences';
 
 /** Everything on this page belongs to the account, never to the instance (I9). */
 export const load: PageServerLoad = async ({ locals }) => {
@@ -27,6 +33,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		week: getWeekSettings(ctx.userId),
+		gridHours: getGridHours(ctx.userId),
 		timezone: getTimezone(ctx.userId) ?? ctx.tz,
 		theme: getTheme(ctx.userId),
 		style: getStyle(ctx.userId),
@@ -38,6 +45,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
+	saveGridHours: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			saveGridHours(buildCtx(locals.user!.id), {
+				start: formData.get('start'),
+				end: formData.get('end')
+			});
+			return { success: true, action: 'saveGridHours' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	setLayout: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const ids = formData.getAll('card').map((v) => String(v)) as DashboardCardId[];

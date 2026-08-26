@@ -118,6 +118,41 @@ export function setWeekSettings(userId: string, week: WeekSettings): void {
 	);
 }
 
+// --- Planner hours ---------------------------------------------------------------
+
+/**
+ * The stretch of the day the planner grid draws.
+ *
+ * Six in the morning to midnight is a reasonable default and a poor law: a
+ * baker's day starts at four and a night shift ends after it. Stored as whole
+ * hours, because the gridlines are hourly and a start of 06:20 would only ever
+ * be a way to make the labels ugly.
+ */
+export const GRID_START_KEY = 'planner.grid_start_hour';
+export const GRID_END_KEY = 'planner.grid_end_hour';
+
+export type GridHours = { start: number; end: number };
+export const DEFAULT_GRID_HOURS: GridHours = { start: 6, end: 24 };
+
+function hour(raw: string | null, fallback: number, max: number): number {
+	const n = Number(raw);
+	return Number.isInteger(n) && n >= 0 && n <= max ? n : fallback;
+}
+
+export function getGridHours(userId: string): GridHours {
+	const start = hour(getUserSetting(userId, GRID_START_KEY), DEFAULT_GRID_HOURS.start, 23);
+	const end = hour(getUserSetting(userId, GRID_END_KEY), DEFAULT_GRID_HOURS.end, 24);
+
+	// A stored pair that does not make a day is not worth honouring; the grid
+	// would render nothing at all and look broken rather than misconfigured.
+	return end > start ? { start, end } : DEFAULT_GRID_HOURS;
+}
+
+export function setGridHours(userId: string, hours: GridHours): void {
+	setUserSetting(userId, GRID_START_KEY, String(hours.start));
+	setUserSetting(userId, GRID_END_KEY, String(hours.end));
+}
+
 // --- Timezone -----------------------------------------------------------------
 
 /**

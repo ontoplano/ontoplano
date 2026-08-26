@@ -1,8 +1,20 @@
 import type { Calendar } from '@event-calendar/core';
 import { CATEGORY_FALLBACK_COLOR } from './colors.js';
 
+/**
+ * The default stretch of the day, when the account has not said otherwise.
+ *
+ * Six to midnight covers a normal waking day without spending a third of the
+ * grid on hours nobody plans in. It is only the default: `baseGridOptions`
+ * takes whatever the account chose in its preferences.
+ */
 export const GRID_MIN_TIME = '06:00:00';
 export const GRID_MAX_TIME = '24:00:00';
+
+/** `6` → `'06:00:00'`, for a stored whole hour. */
+export function hourToTime(hour: number): string {
+	return `${String(hour).padStart(2, '0')}:00:00`;
+}
 export const GRID_SLOT_DURATION = '00:30:00';
 export const GRID_SLOT_MINUTES = 30;
 // Drag/resize/select step. Independent from GRID_SLOT_DURATION so the gridlines stay
@@ -344,10 +356,18 @@ export const GRID_DAYS_MOBILE = 1;
 
 export function baseGridOptions(
 	fromStr: string,
-	opts: { slotHeight?: number; days?: number; month?: boolean } = {}
+	opts: {
+		slotHeight?: number;
+		days?: number;
+		month?: boolean;
+		minTime?: string;
+		maxTime?: string;
+	} = {}
 ): Calendar.Options {
 	const slotHeight = opts.slotHeight ?? GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX];
 	const days = opts.days ?? GRID_DAYS_DESKTOP;
+	const minTime = opts.minTime ?? GRID_MIN_TIME;
+	const maxTime = opts.maxTime ?? GRID_MAX_TIME;
 
 	// A month is a different question: not "when today" but "how does this month
 	// look". Times stop mattering, so it is a day grid rather than a time grid.
@@ -376,12 +396,12 @@ export function baseGridOptions(
 		// says "+2 more" instead of measuring.
 		dayMaxEvents: month,
 		allDaySlot: false,
-		slotMinTime: GRID_MIN_TIME,
-		slotMaxTime: GRID_MAX_TIME,
+		slotMinTime: minTime,
+		slotMaxTime: maxTime,
 		slotDuration: GRID_SLOT_DURATION,
 		snapDuration: GRID_SNAP_DURATION,
 		slotHeight,
-		scrollTime: GRID_MIN_TIME,
+		scrollTime: minTime,
 		nowIndicator: !month,
 		// 24-hour, matching every other time in the app — the board and the
 		// tracker both read 07:00. It is also narrower, which is what lets the

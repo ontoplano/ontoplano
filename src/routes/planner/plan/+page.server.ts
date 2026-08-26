@@ -35,6 +35,7 @@ import {
 } from '$lib/server/services/slots';
 import { listUnscheduled, promoteTodo } from '$lib/server/services/todos';
 import { addDays } from '$lib/server/week-generator';
+import { getGridHours } from '$lib/server/settings';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -179,6 +180,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	return {
 		// So the metadata editor can say which plugin reads which key.
 		plugins: listManifests(ctx.userId).map((m) => ({ name: m.name, metaKeys: m.metaKeys })),
+		// The stretch of the day this account asked the grid to draw.
+		gridHours: getGridHours(ctx.userId),
 		// Undated todos, so one can be dragged straight onto an hour.
 		todos: listUnscheduled(ctx, { openOnly: true }),
 		slots: listWeeklySlots(ctx),

@@ -33,6 +33,11 @@
 
 	const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
+	/** 24-hour, like every other time in the app; 24 is the end of the day. */
+	function hourLabel(h: number): string {
+		return `${String(h).padStart(2, '0')}:00`;
+	}
+
 	// Removing a quote is destructive, so it takes two clicks like every other
 	// delete in the app.
 	let confirmRemove = $state<number | null>(null);
@@ -101,6 +106,46 @@
 			<span class="eyebrow text-gray-500">Timezone</span>
 			<input name="timezone" value={data.timezone} class="input mt-1" />
 		</label>
+		<button class="btn btn-primary">Save</button>
+	</form>
+
+	<!--
+		The hours the planner draws.
+
+		Six to midnight is a reasonable default and a poor law: a baker's day
+		starts at four and a night shift ends after it.
+	-->
+	<form
+		method="post"
+		action="?/saveGridHours"
+		use:enhance
+		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
+	>
+		<div>
+			<h2 class="text-sm font-semibold text-gray-900">Planner hours</h2>
+			<p class="mt-1 text-sm text-gray-500">
+				The stretch of the day the day and week grids show. Anything outside it is still there — it
+				just is not drawn.
+			</p>
+		</div>
+		<div class="flex gap-4">
+			<label class="flex-1 sm:max-w-[10rem]">
+				<span class="eyebrow text-gray-500">Day starts at</span>
+				<select name="start" class="select mt-1">
+					{#each Array.from({ length: 24 }, (_, h) => h) as h (h)}
+						<option value={h} selected={data.gridHours.start === h}>{hourLabel(h)}</option>
+					{/each}
+				</select>
+			</label>
+			<label class="flex-1 sm:max-w-[10rem]">
+				<span class="eyebrow text-gray-500">Day ends at</span>
+				<select name="end" class="select mt-1">
+					{#each Array.from({ length: 24 }, (_, h) => h + 1) as h (h)}
+						<option value={h} selected={data.gridHours.end === h}>{hourLabel(h)}</option>
+					{/each}
+				</select>
+			</label>
+		</div>
 		<button class="btn btn-primary">Save</button>
 	</form>
 

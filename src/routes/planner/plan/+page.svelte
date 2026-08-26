@@ -34,8 +34,7 @@
 		GRID_DEFAULT_ZOOM_INDEX,
 		GRID_DAYS_DESKTOP,
 		GRID_DAYS_MOBILE,
-		GRID_MIN_TIME,
-		GRID_MAX_TIME,
+		hourToTime,
 		GRID_SNAP_DURATION,
 		timeToMinutes,
 		minutesToTime,
@@ -92,6 +91,11 @@
 	);
 
 	const gridDays = $derived(effectiveView === 'day' ? GRID_DAYS_MOBILE : GRID_DAYS_DESKTOP);
+
+	// The hours the account asked for, in Preferences. The geometry the drop
+	// target reads back has to agree with what the calendar was told to draw.
+	const gridMinTime = $derived(hourToTime(data.gridHours.start));
+	const gridMaxTime = $derived(hourToTime(data.gridHours.end));
 
 	/**
 	 * Which day the single-day grid is showing.
@@ -396,8 +400,8 @@
 		const date = days[index];
 		if (!date) return null;
 
-		const minMinutes = timeToMinutes(GRID_MIN_TIME);
-		const span = timeToMinutes(GRID_MAX_TIME) - minMinutes;
+		const minMinutes = timeToMinutes(gridMinTime);
+		const span = timeToMinutes(gridMaxTime) - minMinutes;
 		const fraction = Math.min(Math.max((e.clientY - bodyRect.top) / bodyRect.height, 0), 1);
 
 		// Snapped to the same step a drag uses, so a dropped todo lands on the
@@ -1022,6 +1026,8 @@
 
 	const gridOptions = $derived({
 		...baseGridOptions(effectiveView === 'month' ? monthAnchor : gridFrom, {
+			minTime: gridMinTime,
+			maxTime: gridMaxTime,
 			slotHeight,
 			days: gridDays,
 			month: effectiveView === 'month'
