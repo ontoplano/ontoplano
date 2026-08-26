@@ -30,6 +30,10 @@ export const WINS_TAG = '3w';
  * A note written against a notebook is stored in this table — one kind of
  * writing, one place to keep it — but it is not a diary entry and does not
  * belong in the diary. It appears on its notebook and nowhere else.
+ *
+ * A note whose notebook was deleted keeps its notebook number, so it is
+ * excluded too: it goes to the orphaned notes on the Notebooks page rather
+ * than turning into a journal entry the day the renovation ends.
  */
 export function listEntries(ctx: Ctx) {
 	const entries = db
@@ -42,7 +46,13 @@ export function listEntries(ctx: Ctx) {
 			updatedAt: diaryEntries.updatedAt
 		})
 		.from(diaryEntries)
-		.where(and(eq(diaryEntries.userId, ctx.userId), isNull(diaryEntries.notebookId)))
+		.where(
+			and(
+				eq(diaryEntries.userId, ctx.userId),
+				isNull(diaryEntries.notebookId),
+				isNull(diaryEntries.notebookSeq)
+			)
+		)
 		.orderBy(desc(diaryEntries.createdAt))
 		.all();
 

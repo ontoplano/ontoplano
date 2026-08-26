@@ -1,4 +1,4 @@
-import { and, count, desc, eq, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { diaryEntries, exceptionalSlots, goals, notebooks, plannerTodos } from '../db/schema.js';
@@ -106,6 +106,34 @@ export function listNotebooks(ctx: Ctx): Notebook[] {
 		.orderBy(notebooks.closedAt, notebooks.title)
 		.all()
 		.map((n) => ({ ...n, description: n.description ?? '', ...(totals.get(n.id) ?? NOTHING) }));
+}
+
+/**
+ * Notes whose notebook was deleted.
+ *
+ * They have a notebook number and no notebook, which is exactly what being
+ * orphaned means, so no extra column records it. The page shows them as a
+ * notebook of their own, and only when there are any.
+ */
+export function listOrphanedNotes(ctx: Ctx) {
+	return db
+		.select({
+			id: diaryEntries.id,
+			seq: diaryEntries.seq,
+			content: diaryEntries.content,
+			forDate: diaryEntries.forDate,
+			createdAt: diaryEntries.createdAt
+		})
+		.from(diaryEntries)
+		.where(
+			and(
+				eq(diaryEntries.userId, ctx.userId),
+				isNull(diaryEntries.notebookId),
+				isNotNull(diaryEntries.notebookSeq)
+			)
+		)
+		.orderBy(desc(diaryEntries.createdAt))
+		.all();
 }
 
 export function getNotebook(ctx: Ctx, id: number): Notebook {
@@ -248,6 +276,11 @@ export function setNotebookClosed(ctx: Ctx, id: number, closed: boolean): void {
  * added by `ALTER TABLE`, which SQLite gives no delete action, so an unlinked
  * delete would simply fail. Cutting them explicitly also says what should
  * happen — the entries and tasks survive, they just stop belonging anywhere.
+ *
+ * `notebookSeq` is deliberately left behind. An entry with a notebook number
+ * and no notebook is one whose notebook was deleted, and that is what puts it
+ * in `listOrphanedNotes` rather than back in the diary — a note about a
+ * renovation does not become a journal entry because the renovation is over.
  */
 export function deleteNotebook(ctx: Ctx, id: number): void {
 	db.transaction((tx) => {

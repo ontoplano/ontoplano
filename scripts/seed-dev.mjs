@@ -202,13 +202,50 @@ const notebook = (title, description, closed = false) => {
 };
 
 /** Point an already-seeded row at a notebook, by whatever identifies it here. */
-const inNotebook = (table, column, value, notebookId) =>
+const inNotebook = (table, column, value, notebookId) => {
 	run(
 		`update ${table} set notebook_id = ? where user_id = ? and ${column} = ?`,
 		notebookId,
 		uid,
 		value
 	);
+
+	// A note is numbered by its notebook as well as by the account.
+	if (table === 'diary_entries')
+		run(
+			`update diary_entries set notebook_seq = (
+				select count(*) from diary_entries AS earlier
+				where earlier.notebook_id = ? and earlier.id <= diary_entries.id
+			) where user_id = ? and ${column} = ?`,
+			notebookId,
+			uid,
+			value
+		);
+};
+
+/**
+ * A note whose notebook was deleted.
+ *
+ * It has a notebook number and no notebook, which is what puts it in "Notes
+ * without a notebook" rather than in the journal. Seeded so that section is
+ * visible in development, where nobody has deleted anything.
+ */
+const orphanNote = (content) => {
+	const existing = one(
+		'select id from diary_entries where user_id = ? and content = ?',
+		uid,
+		content
+	);
+	if (existing) return existing.id;
+
+	const seq = (one('select max(seq) v from diary_entries where user_id = ?', uid)?.v ?? 0) + 1;
+	return run(
+		'insert into diary_entries (user_id, seq, content, notebook_seq) values (?, ?, ?, 1)',
+		uid,
+		seq,
+		content
+	);
+};
 
 const tag = (name) => {
 	const existing = one('select id from tags where user_id = ? and name = ?', uid, name);
@@ -756,6 +793,8 @@ inNotebook('diary_entries', 'seq', 6, readingNotebook);
 inNotebook('diary_entries', 'seq', 7, portugal);
 inNotebook('diary_entries', 'seq', 8, leak);
 inNotebook('goals', 'title', 'read twelve books', readingNotebook);
+
+orphanNote('The old flat: the landlord kept the deposit over the scuffed floor.');
 
 idea('A weekly review that writes itself from the tracker', ['product', 'planning'], {
 	favorite: true
