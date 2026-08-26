@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
 import type { Actions, PageServerLoad } from './$types';
-import { auth } from '$lib/server/auth';
+import { auth, takeVerificationLink } from '$lib/server/auth';
 import { accountById, requireAdmin, setRole } from '$lib/server/services/admin';
 import { listForSubject, record } from '$lib/server/services/audit';
 import { toActionFailure } from '$lib/server/services/errors';
@@ -42,12 +42,15 @@ export const actions: Actions = {
 
 			record(params.id, 'verification_resent', { actorId: locals.user!.id });
 
+			// With no mail server there is nothing to announce as sent. Hand the
+			// administrator the link instead, so they can pass it on themselves.
 			return {
 				success: true,
 				action: 'resendVerification',
 				message: isEmailConfigured()
-					? `Sent again to ${account.email}.`
-					: 'This server has no mail configured, so the link went to its log.'
+					? `Confirmation email sent to ${account.email}.`
+					: `Nothing was emailed — this instance has no mail server. Send ${account.email} this link yourself; it confirms their address.`,
+				link: takeVerificationLink(account.email)
 			};
 		} catch (e) {
 			if (e instanceof APIError) return fail(400, { message: e.message });

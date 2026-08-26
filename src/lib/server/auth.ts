@@ -5,7 +5,23 @@ import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { env } from '$env/dynamic/private';
 import { getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
-import { sendEmail } from '$lib/server/email';
+import { isEmailConfigured, sendEmail } from '$lib/server/email';
+
+/**
+ * The last confirmation link for an address, on a server that cannot send it.
+ *
+ * With no SMTP the link goes to the log, which is no help to an administrator
+ * looking at a web page and no help at all to the person waiting for it. Kept
+ * only when there is no transport, and removed as soon as it is read, so the
+ * link is handed over once rather than sitting in memory.
+ */
+const unsentVerificationLinks = new Map<string, string>();
+
+export function takeVerificationLink(email: string): string | null {
+	const url = unsentVerificationLinks.get(email) ?? null;
+	unsentVerificationLinks.delete(email);
+	return url;
+}
 
 /**
  * Verification is asked for but not enforced.
@@ -68,6 +84,8 @@ export const auth = betterAuth({
 		sendOnSignUp: true,
 		autoSignInAfterVerification: true,
 		sendVerificationEmail: async ({ user, url }) => {
+			if (!isEmailConfigured()) unsentVerificationLinks.set(user.email, url);
+
 			await sendEmail({
 				to: user.email,
 				subject: 'Confirm your ontoplano address',

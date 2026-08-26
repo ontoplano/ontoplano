@@ -27,11 +27,18 @@
 	}
 </script>
 
-<FormError message={form?.message} />
+<!-- Only one of these, ever: `FormError` renders any message it is given, so
+     handing it a successful one printed the same sentence twice, once in red. -->
+<FormError message={form?.success ? null : form?.message} />
 
 {#if form?.success && form.message}
 	<div class="border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
-		{form.message}
+		<p>{form.message}</p>
+		{#if form.link}
+			<p class="tabular mt-2 border border-blue-200 bg-white px-2 py-1 text-xs break-all">
+				{form.link}
+			</p>
+		{/if}
 	</div>
 {/if}
 
@@ -63,7 +70,10 @@
 		<div class="mt-4 flex flex-wrap gap-2 border-t border-gray-200 pt-4">
 			{#if !data.account.emailVerified}
 				<form method="post" action="?/resendVerification" use:enhance>
-					<button class="btn btn-sm"><Icon name="link" /> Resend confirmation</button>
+					<button class="btn btn-sm">
+						<Icon name="link" />
+						{data.emailConfigured ? 'Resend confirmation' : 'Get confirmation link'}
+					</button>
 				</form>
 			{/if}
 
@@ -94,8 +104,8 @@
 
 		{#if !data.emailConfigured}
 			<p class="mt-3 text-xs text-gray-400">
-				This server has no mail configured, so a confirmation link is written to its log rather than
-				sent.
+				This instance has no mail server, so nothing can be emailed. Asking for a confirmation shows
+				you the link to pass on yourself.
 			</p>
 		{/if}
 	</Card>
