@@ -12,6 +12,10 @@
 	import { getAction } from '$lib/shortcuts';
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import { formatMoney } from '$lib/money';
+	import { invalidateAll } from '$app/navigation';
+	import type { SubmitFunction } from '@sveltejs/kit';
+	import { flush, remember, restore, ticks, type Tick } from '$lib/offline-ticks.svelte';
+	import { untrack } from 'svelte';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -31,13 +35,79 @@
 	let showCategories = $state(false);
 
 	/**
+	 * Ticking things off in a shop, where there is no signal.
+	 *
+	 * The list is the one screen people use with no bars — a basement, a queue,
+	 * a train — so it is cached, and what you tick while offline is remembered
+	 * and sent when the phone finds a signal again. See `offline-ticks`.
+	 */
+	let online = $state(true);
+
+	const tick =
+		(action: Tick['action']): SubmitFunction =>
+		({ formData, cancel }) => {
+			if (online) return;
+
+			const id = Number(formData.get('id'));
+			cancel();
+			remember({ id, action });
+		};
+
+	/** What the rows should look like once the pending ticks are applied. */
+	const items = $derived(
+		data.items.map((item) => {
+			const waiting = ticks.pending.filter((t) => t.id === item.id);
+			if (waiting.length === 0) return item;
+
+			let { bought, snoozed } = item;
+			for (const t of waiting) {
+				if (t.action === 'toggleBought') bought = !bought;
+				if (t.action === 'toggleSnoozed') snoozed = !snoozed;
+				if (t.action === 'restock') bought = false;
+			}
+			return { ...item, bought, snoozed };
+		})
+	);
+
+	$effect(() => {
+		const send = async () => {
+			if (ticks.pending.length > 0 && (await flush()) > 0) await invalidateAll();
+		};
+		const wentOnline = async () => {
+			online = true;
+			await send();
+		};
+		const wentOffline = () => (online = false);
+
+		// `untrack`, because this reads and writes the very state the effect would
+		// otherwise depend on: reading `ticks.pending` made it re-run after every
+		// flush, re-register the listeners and send the queue again.
+		untrack(() => {
+			restore();
+			online = navigator.onLine;
+			// Anything waiting from a previous session goes now — but only if there
+			// is something to send it over. Announcing "online" here is how a page
+			// loaded in a basement decided it had a signal.
+			if (online) void send();
+		});
+
+		window.addEventListener('online', wentOnline);
+		window.addEventListener('offline', wentOffline);
+
+		return () => {
+			window.removeEventListener('online', wentOnline);
+			window.removeEventListener('offline', wentOffline);
+		};
+	});
+
+	/**
 	 * What the list will cost, near enough.
 	 *
 	 * Only what is still to buy, only what has a price, and said as "about" —
 	 * a total assembled from remembered prices is an estimate and pretending
 	 * otherwise is how somebody gets a surprise at the till.
 	 */
-	const needed = $derived(data.items.filter((i) => !i.bought && !i.snoozed));
+	const needed = $derived(items.filter((i) => !i.bought && !i.snoozed));
 	const totalCents = $derived(needed.reduce((sum, i) => sum + (i.priceCents ?? 0), 0));
 	const pricedCount = $derived(needed.filter((i) => i.priceCents !== null).length);
 
@@ -47,7 +117,7 @@
 	});
 
 	let filteredItems = $derived(
-		data.items.filter((item) => {
+		items.filter((item) => {
 			if (!showSnoozed && item.snoozed) return false;
 			if (!showBought && item.bought && item.type === 'someday') return false;
 			if (filterType === 'all') return true;
@@ -200,6 +270,20 @@
 			</button>
 		</div>
 	</div>
+
+	{#if !online || ticks.pending.length > 0}
+		<div class="border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+			{#if !online}
+				No connection. This is the list as it was when you last had one —
+			{/if}
+			{#if ticks.pending.length > 0}
+				{ticks.pending.length}
+				{ticks.pending.length === 1 ? 'change is' : 'changes are'} waiting to be sent.
+			{:else}
+				what you tick will be sent when you are back.
+			{/if}
+		</div>
+	{/if}
 
 	{#if totalCents > 0}
 		<p class="text-sm text-gray-500">
@@ -386,7 +470,11 @@
 											{/if}
 										</div>
 										{#if item.snoozed}
-											<form method="POST" action="?/toggleSnoozed" use:enhance>
+											<form
+												method="POST"
+												action="?/toggleSnoozed"
+												use:enhance={tick('toggleSnoozed')}
+											>
 												<input type="hidden" name="id" value={item.id} />
 												<button
 													type="submit"
@@ -396,7 +484,7 @@
 												</button>
 											</form>
 										{:else if item.bought}
-											<form method="POST" action="?/restock" use:enhance>
+											<form method="POST" action="?/restock" use:enhance={tick('restock')}>
 												<input type="hidden" name="id" value={item.id} />
 												<button
 													type="submit"
@@ -406,7 +494,11 @@
 												</button>
 											</form>
 										{:else}
-											<form method="POST" action="?/toggleBought" use:enhance>
+											<form
+												method="POST"
+												action="?/toggleBought"
+												use:enhance={tick('toggleBought')}
+											>
 												<input type="hidden" name="id" value={item.id} />
 												<button
 													type="submit"
@@ -415,7 +507,11 @@
 													Got it
 												</button>
 											</form>
-											<form method="POST" action="?/toggleSnoozed" use:enhance>
+											<form
+												method="POST"
+												action="?/toggleSnoozed"
+												use:enhance={tick('toggleSnoozed')}
+											>
 												<input type="hidden" name="id" value={item.id} />
 												<button
 													type="submit"
@@ -489,7 +585,7 @@
 			<div
 				class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card lg:w-1/2 xl:w-1/3 2xl:w-1/4"
 			>
-				{#each somedayItems as item, i (item.id)}
+				{#each somedayItems as item (item.id)}
 					{@const globalIdx = filteredItems.indexOf(item)}
 					<div
 						use:keepInView={globalIdx === selectedIndex}
@@ -573,7 +669,7 @@
 										<span class="ml-2 text-xs text-gray-400">{item.notes}</span>
 									{/if}
 								</div>
-								<form method="POST" action="?/toggleSnoozed" use:enhance>
+								<form method="POST" action="?/toggleSnoozed" use:enhance={tick('toggleSnoozed')}>
 									<input type="hidden" name="id" value={item.id} />
 									<button
 										type="submit"
@@ -583,7 +679,7 @@
 									</button>
 								</form>
 							{:else}
-								<form method="POST" action="?/toggleBought" use:enhance>
+								<form method="POST" action="?/toggleBought" use:enhance={tick('toggleBought')}>
 									<input type="hidden" name="id" value={item.id} />
 									<button
 										type="submit"
@@ -607,7 +703,7 @@
 									{/if}
 								</div>
 								{#if !item.bought}
-									<form method="POST" action="?/toggleSnoozed" use:enhance>
+									<form method="POST" action="?/toggleSnoozed" use:enhance={tick('toggleSnoozed')}>
 										<input type="hidden" name="id" value={item.id} />
 										<button
 											type="submit"
@@ -673,7 +769,7 @@
 
 	{#if filteredItems.length === 0}
 		<div class="py-12 text-center text-sm text-gray-400">
-			{#if data.items.length === 0}
+			{#if items.length === 0}
 				<EmptyState
 					icon="shopping"
 					title="The list is empty"
