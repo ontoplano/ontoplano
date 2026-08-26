@@ -101,8 +101,11 @@
 			{:else}
 				<div class="divide-y divide-gray-200">
 					{#each data.people as person, i (person.id)}
+						<!-- Two buttons and a count beside a name is more than a phone has
+						     room for; below `sm` they go under it. -->
 						<div
-							class="flex items-center gap-4 px-4 py-3 {selectedIndex === i
+							class="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 {selectedIndex ===
+							i
 								? 'bg-gray-100 ring-2 ring-gray-900 ring-inset'
 								: ''}"
 						>
@@ -119,37 +122,39 @@
 								{/if}
 							</a>
 
-							<span class="tabular shrink-0 text-xs text-gray-400">
-								{person.mentions}
-								{person.mentions === 1 ? 'mention' : 'mentions'}
-							</span>
+							<div class="flex flex-wrap items-center gap-2 sm:shrink-0 sm:gap-4">
+								<span class="tabular text-xs text-gray-400">
+									{person.mentions}
+									{person.mentions === 1 ? 'mention' : 'mentions'}
+								</span>
 
-							<button onclick={() => openEdit(person)} class="btn btn-sm">
-								<Icon name="edit" /> Edit
-							</button>
-
-							{#if confirmDelete === person.id}
-								<form
-									method="post"
-									action="?/delete"
-									use:enhance={() =>
-										async ({ update }) => {
-											confirmDelete = null;
-											await update();
-										}}
-									class="flex items-center gap-1"
-								>
-									<input type="hidden" name="id" value={person.id} />
-									<button type="button" onclick={() => (confirmDelete = null)} class="btn btn-sm"
-										>Cancel</button
-									>
-									<button class="btn btn-danger btn-sm" use:armed>Yes, delete</button>
-								</form>
-							{:else}
-								<button onclick={() => (confirmDelete = person.id)} class="btn btn-danger btn-sm">
-									<Icon name="trash" /> Delete
+								<button onclick={() => openEdit(person)} class="btn btn-sm">
+									<Icon name="edit" /> Edit
 								</button>
-							{/if}
+
+								{#if confirmDelete === person.id}
+									<form
+										method="post"
+										action="?/delete"
+										use:enhance={() =>
+											async ({ update }) => {
+												confirmDelete = null;
+												await update();
+											}}
+										class="flex items-center gap-1"
+									>
+										<input type="hidden" name="id" value={person.id} />
+										<button type="button" onclick={() => (confirmDelete = null)} class="btn btn-sm"
+											>Cancel</button
+										>
+										<button class="btn btn-danger btn-sm" use:armed>Yes, delete</button>
+									</form>
+								{:else}
+									<button onclick={() => (confirmDelete = person.id)} class="btn btn-danger btn-sm">
+										<Icon name="trash" /> Delete
+									</button>
+								{/if}
+							</div>
 						</div>
 					{/each}
 				</div>

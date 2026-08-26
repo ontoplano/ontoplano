@@ -392,7 +392,7 @@
 						}}
 						class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50"
 					>
-						{showDiaryForm ? 'Cancel' : 'New Entry'}
+						{showDiaryForm ? 'Cancel' : 'New entry'}
 					</button>
 				</div>
 			{/snippet}

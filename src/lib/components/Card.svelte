@@ -34,8 +34,10 @@
 </script>
 
 <section class="border border-gray-200 bg-white shadow-card">
+	<!-- The actions do not shrink, so on a phone a long title and a button
+	     side by side left the title one word wide. Below `sm` they stack. -->
 	<header
-		class="section-tint flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-3"
+		class="section-tint flex flex-col gap-2 border-b border-gray-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
 		style={accent ? `border-top: 2px solid ${accent}` : ''}
 	>
 		<div class="min-w-0">
@@ -45,7 +47,7 @@
 			{/if}
 		</div>
 		{#if actions}
-			<div class="flex shrink-0 items-center gap-2">
+			<div class="flex flex-wrap items-center gap-2 sm:shrink-0">
 				{@render actions()}
 			</div>
 		{/if}

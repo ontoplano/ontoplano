@@ -378,7 +378,8 @@
 		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
 			{#each filteredActivities() as activity, i}
 				<div
-					class="flex items-center gap-4 px-4 py-3 transition-colors {i === selectedIndex
+					class="flex flex-col gap-2 px-4 py-3 transition-colors sm:flex-row sm:items-center sm:gap-4 {i ===
+					selectedIndex
 						? 'ring-2 ring-gray-900 ring-inset'
 						: ''} {!activity.active ? 'opacity-50' : ''}"
 					style="border-left: 4px solid {catColor(activity.categoryId)}"
@@ -395,7 +396,7 @@
 						{/if}
 					</div>
 
-					<div class="flex shrink-0 items-center gap-2">
+					<div class="flex flex-wrap items-center gap-2 sm:shrink-0">
 						<button
 							onclick={() => {
 								editingId = activity.id;

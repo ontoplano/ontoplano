@@ -354,75 +354,80 @@
 					{#each column.goals as goal (goal.id)}
 						{@const pct = percent(goal)}
 						<div class="py-3">
-							<div class="flex items-start gap-3">
-								<span
-									class="mt-1 h-4 w-1 shrink-0"
-									style="background-color: {goal.areaColor ?? '#d1d5db'}"
-									title={goal.areaName ?? 'No area'}
-								></span>
+							<!-- The buttons do not shrink, so on a phone they used to squeeze
+							     the title into a one-word-per-line ribbon. Below `sm` they go
+							     underneath instead. -->
+							<div class="flex flex-col gap-3 sm:flex-row sm:items-start">
+								<div class="flex min-w-0 flex-1 items-start gap-3">
+									<span
+										class="mt-1 h-4 w-1 shrink-0"
+										style="background-color: {goal.areaColor ?? '#d1d5db'}"
+										title={goal.areaName ?? 'No area'}
+									></span>
 
-								<div class="min-w-0 flex-1">
-									<div class="flex flex-wrap items-baseline gap-2">
-										<span
-											class="text-sm font-medium text-gray-900 {goal.status !== 'open'
-												? 'line-through opacity-60'
-												: ''}">{goal.title}</span
-										>
-										<span class="tabular text-xs text-gray-400"
-											>{describePeriod(goal.horizon, goal.periodStart)}</span
-										>
-										{#if goal.parentId}
-											{@const parent = data.goals.find((g) => g.id === goal.parentId)}
-											{#if parent}
-												<span class="text-xs text-gray-400">part of “{parent.title}”</span>
+									<div class="min-w-0 flex-1">
+										<div class="flex flex-wrap items-baseline gap-2">
+											<span
+												class="text-sm font-medium text-gray-900 {goal.status !== 'open'
+													? 'line-through opacity-60'
+													: ''}">{goal.title}</span
+											>
+											<span class="tabular text-xs text-gray-400"
+												>{describePeriod(goal.horizon, goal.periodStart)}</span
+											>
+											{#if goal.parentId}
+												{@const parent = data.goals.find((g) => g.id === goal.parentId)}
+												{#if parent}
+													<span class="text-xs text-gray-400">part of “{parent.title}”</span>
+												{/if}
 											{/if}
-										{/if}
-										{#if goal.status !== 'open'}
-											<span class="eyebrow text-gray-500">{goal.status}</span>
-										{/if}
-									</div>
-
-									{#if goal.notes}
-										<p class="mt-0.5 text-xs text-gray-500">{goal.notes}</p>
-									{/if}
-
-									<div class="mt-2 flex items-center gap-3">
-										<div class="h-1.5 w-40 shrink-0 bg-gray-200">
-											{#if pct !== null}
-												<div
-													class="h-full"
-													style="width: {pct}%; background-color: {goal.areaColor ?? accent}"
-												></div>
+											{#if goal.status !== 'open'}
+												<span class="eyebrow text-gray-500">{goal.status}</span>
 											{/if}
 										</div>
-										<span class="tabular text-xs text-gray-500">
-											{progressLabel(goal)}{pct !== null ? ` · ${pct}%` : ''}
-										</span>
-									</div>
 
-									{#if goal.progress.total === null && goal.targetValue}
-										<!-- Nothing linked, so progress is self-reported. -->
-										<form
-											method="post"
-											action="?/setProgress"
-											use:enhance
-											class="mt-2 flex items-center gap-2"
-										>
-											<input type="hidden" name="id" value={goal.id} />
-											<input
-												name="currentValue"
-												type="number"
-												min="0"
-												step="any"
-												value={goal.currentValue}
-												class="tabular w-20 border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-											/>
-											<button class="btn btn-sm">Update</button>
-										</form>
-									{/if}
+										{#if goal.notes}
+											<p class="mt-0.5 text-xs text-gray-500">{goal.notes}</p>
+										{/if}
+
+										<div class="mt-2 flex items-center gap-3">
+											<div class="h-1.5 w-24 shrink-0 bg-gray-200 sm:w-40">
+												{#if pct !== null}
+													<div
+														class="h-full"
+														style="width: {pct}%; background-color: {goal.areaColor ?? accent}"
+													></div>
+												{/if}
+											</div>
+											<span class="tabular text-xs text-gray-500">
+												{progressLabel(goal)}{pct !== null ? ` · ${pct}%` : ''}
+											</span>
+										</div>
+
+										{#if goal.progress.total === null && goal.targetValue}
+											<!-- Nothing linked, so progress is self-reported. -->
+											<form
+												method="post"
+												action="?/setProgress"
+												use:enhance
+												class="mt-2 flex items-center gap-2"
+											>
+												<input type="hidden" name="id" value={goal.id} />
+												<input
+													name="currentValue"
+													type="number"
+													min="0"
+													step="any"
+													value={goal.currentValue}
+													class="tabular w-20 border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+												/>
+												<button class="btn btn-sm">Update</button>
+											</form>
+										{/if}
+									</div>
 								</div>
 
-								<div class="flex shrink-0 items-center gap-2">
+								<div class="flex flex-wrap items-center gap-2 sm:shrink-0">
 									<button
 										onclick={() => (linkingId = linkingId === goal.id ? null : goal.id)}
 										class="btn btn-sm"

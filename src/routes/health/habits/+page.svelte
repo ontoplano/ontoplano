@@ -271,7 +271,7 @@
 			}}
 			class="btn btn-sm"
 		>
-			{showForm ? 'Cancel' : 'New Habit'}
+			{showForm ? 'Cancel' : 'New habit'}
 		</button>
 	</div>
 
@@ -474,7 +474,7 @@
 							? HABIT_NEUTRAL_ACCENT
 							: HABIT_GOOD_ACCENT}"
 				>
-					<div class="flex items-center gap-4 px-4 py-3">
+					<div class="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
 						<div class="min-w-0 flex-1">
 							<div class="flex items-center gap-2">
 								<span class="text-sm font-medium text-gray-900">{habit.name}</span>
@@ -495,7 +495,7 @@
 							{/if}
 						</div>
 
-						<div class="flex shrink-0 items-center gap-2">
+						<div class="flex flex-wrap items-center gap-2 sm:shrink-0">
 							{#if todayLogged}
 								<span
 									class="border {isBad

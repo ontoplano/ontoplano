@@ -364,9 +364,12 @@
 						</form>
 
 						<div class="min-w-0 flex-1">
-							<div class="flex items-start justify-between gap-4">
+							<!-- Buttons beside the text squeeze it to a ribbon on a phone. -->
+							<div
+								class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
+							>
 								<p class="text-sm whitespace-pre-wrap text-gray-900">{idea.content}</p>
-								<div class="flex shrink-0 items-center gap-2">
+								<div class="flex flex-wrap items-center justify-end gap-2 sm:shrink-0">
 									{#if confirmingDeleteId === idea.id}
 										<form
 											method="post"

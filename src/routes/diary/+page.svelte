@@ -216,7 +216,7 @@
 				}}
 				class="btn btn-sm"
 			>
-				{showForm ? 'Cancel' : 'New Entry'}
+				{showForm ? 'Cancel' : 'New entry'}
 			</button>
 		</div>
 	</div>
@@ -429,9 +429,13 @@
 						? 'border-l-4 border-l-amber-300/60 ring-2 ring-amber-400 ring-inset'
 						: ''}"
 				>
-					<div class="mb-2 flex items-start justify-between gap-4">
+					<!-- Edit and Delete do not shrink; side by side with the text on a
+					     phone they left it a column one word wide. -->
+					<div
+						class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
+					>
 						<p class="text-sm text-gray-900">{@html renderMarkdown(entry.content)}</p>
-						<div class="flex shrink-0 items-center gap-2">
+						<div class="flex flex-wrap items-center justify-end gap-2 sm:shrink-0">
 							{#if confirmingDeleteId === entry.id}
 								<form
 									method="post"
@@ -489,7 +493,9 @@
 							{/if}
 						</div>
 					</div>
-					<div class="flex items-center gap-2">
+					<!-- Date, notebook, people and tags all live here, so it has to wrap;
+					     `pr-6` keeps the last chip clear of the entry number. -->
+					<div class="flex flex-wrap items-center gap-2 pr-6">
 						<span class="text-xs text-gray-400">{formatDate(entry.createdAt)}</span>
 						{#if entry.forDate}
 							<span class="text-xs font-medium text-amber-600">for {entry.forDate}</span>

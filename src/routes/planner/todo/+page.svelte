@@ -307,135 +307,149 @@
 		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
 			{#each visibleTodos as todo, i (todo.id)}
 				<div
-					class="flex items-center gap-4 px-4 py-3 {selectedIndex === i
+					class="flex items-start gap-4 px-4 py-3 {selectedIndex === i
 						? 'ring-2 ring-gray-900 ring-inset'
 						: ''} {isDone(todo) ? 'opacity-50' : ''}"
 				>
 					<form id="toggle-form-{todo.id}" method="post" action="?/setStatus" use:enhance>
 						<input type="hidden" name="id" value={todo.id} />
 						<input type="hidden" name="status" value={isDone(todo) ? 'todo' : 'done'} />
+						<!--
+							The box is 20px; the thing you tap is 44. A touch screen gives
+							every button a 44px minimum height, which stretched a 20px-wide
+							square into a tall rectangle — so the target is the button and
+							the square is drawn inside it.
+						-->
 						<button
 							type="submit"
-							class="flex h-5 w-5 shrink-0 items-center justify-center border {isDone(todo)
-								? 'border-gray-400 bg-gray-400'
-								: 'border-gray-400 bg-white'}"
+							class="-m-1 flex shrink-0 items-center justify-center p-1 pointer-coarse:w-11"
 							aria-label={isDone(todo) ? 'Mark incomplete' : 'Mark complete'}
 						>
-							{#if isDone(todo)}
-								<svg class="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor">
-									<path
-										fill-rule="evenodd"
-										d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-										clip-rule="evenodd"
-									/>
-								</svg>
-							{/if}
+							<span
+								class="flex h-5 w-5 items-center justify-center border {isDone(todo)
+									? 'border-gray-400 bg-gray-400'
+									: 'border-gray-400 bg-white'}"
+							>
+								{#if isDone(todo)}
+									<svg class="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor">
+										<path
+											fill-rule="evenodd"
+											d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+											clip-rule="evenodd"
+										/>
+									</svg>
+								{/if}
+							</span>
 						</button>
 					</form>
 
-					<div class="min-w-0 flex-1">
-						<div class="flex items-center gap-2">
-							{#if todo.categoryColor}
-								<span
-									class="h-3 w-1 shrink-0"
-									style="background-color: {todo.categoryColor}"
-									title={todo.categoryName}
-								></span>
-							{/if}
-							<span class="text-sm font-medium text-gray-900 {isDone(todo) ? 'line-through' : ''}"
-								>{todo.title}</span
-							>
-							<RatingBadges values={todo.ratings} />
-							{#if todo.scheduledDate}
-								<span
-									class="tabular border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
-									title="Pulled onto this day"
+					<!-- Title and buttons side by side needs about 500px. Below `sm` the
+					     buttons go under the title instead of over it. -->
+					<div class="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+						<div class="min-w-0 flex-1">
+							<div class="flex flex-wrap items-center gap-2">
+								{#if todo.categoryColor}
+									<span
+										class="h-3 w-1 shrink-0"
+										style="background-color: {todo.categoryColor}"
+										title={todo.categoryName}
+									></span>
+								{/if}
+								<span class="text-sm font-medium text-gray-900 {isDone(todo) ? 'line-through' : ''}"
+									>{todo.title}</span
 								>
-									{todo.scheduledDate}
-								</span>
+								<RatingBadges values={todo.ratings} />
+								{#if todo.scheduledDate}
+									<span
+										class="tabular border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
+										title="Pulled onto this day"
+									>
+										{todo.scheduledDate}
+									</span>
+								{/if}
+							</div>
+							{#if todo.notes}
+								<p class="truncate text-xs text-gray-500">{todo.notes}</p>
 							{/if}
 						</div>
-						{#if todo.notes}
-							<p class="truncate text-xs text-gray-500">{todo.notes}</p>
-						{/if}
-					</div>
 
-					<div class="flex shrink-0 items-center gap-2">
-						{#if !isDone(todo)}
-							<!-- One column changes; nothing is copied anywhere. -->
-							<form method="post" action="?/schedule" use:enhance>
-								<input type="hidden" name="id" value={todo.id} />
-								<input
-									type="hidden"
-									name="scheduledDate"
-									value={todo.scheduledDate ? '' : todayStr()}
-								/>
+						<div class="flex flex-wrap items-center gap-2 sm:shrink-0">
+							{#if !isDone(todo)}
+								<!-- One column changes; nothing is copied anywhere. -->
+								<form method="post" action="?/schedule" use:enhance>
+									<input type="hidden" name="id" value={todo.id} />
+									<input
+										type="hidden"
+										name="scheduledDate"
+										value={todo.scheduledDate ? '' : todayStr()}
+									/>
+									<button
+										type="submit"
+										class="border px-2 py-1 text-xs transition {todo.scheduledDate
+											? 'border-gray-900 bg-gray-900 text-white'
+											: 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}"
+										title={todo.scheduledDate ? 'Put back on the general list' : 'Pull onto today'}
+									>
+										{todo.scheduledDate ? 'On a day' : 'Today'}
+									</button>
+								</form>
+							{/if}
+							{#if !isDone(todo)}
 								<button
-									type="submit"
-									class="border px-2 py-1 text-xs transition {todo.scheduledDate
-										? 'border-gray-900 bg-gray-900 text-white'
-										: 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}"
-									title={todo.scheduledDate ? 'Put back on the general list' : 'Pull onto today'}
+									onclick={() => startDelegate(todo)}
+									class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-600 transition hover:bg-blue-50"
 								>
-									{todo.scheduledDate ? 'On a day' : 'Today'}
+									Delegate
 								</button>
-							</form>
-						{/if}
-						{#if !isDone(todo)}
+							{/if}
 							<button
-								onclick={() => startDelegate(todo)}
-								class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-600 transition hover:bg-blue-50"
-							>
-								Delegate
-							</button>
-						{/if}
-						<button
-							onclick={() => startEdit(todo)}
-							class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-						>
-							<Icon name="edit" /> Edit
-						</button>
-						{#if confirmingDelete === todo.id}
-							<form
-								id="delete-form-{todo.id}"
-								method="post"
-								action="?/delete"
-								use:enhance={() => {
-									return async ({ update }) => {
-										await update();
-										confirmingDelete = null;
-									};
-								}}
-							>
-								<input type="hidden" name="id" value={todo.id} />
-								<button
-									type="submit"
-									class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
-									use:armed
-								>
-									Confirm?
-								</button>
-							</form>
-							<button
-								type="button"
-								onclick={() => {
-									confirmingDelete = null;
-								}}
+								onclick={() => startEdit(todo)}
 								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
 							>
-								Cancel
+								<Icon name="edit" /> Edit
 							</button>
-						{:else}
-							<button
-								type="button"
-								onclick={() => {
-									confirmingDelete = todo.id;
-								}}
-								class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
-							>
-								<Icon name="trash" /> Delete
-							</button>
-						{/if}
+							{#if confirmingDelete === todo.id}
+								<form
+									id="delete-form-{todo.id}"
+									method="post"
+									action="?/delete"
+									use:enhance={() => {
+										return async ({ update }) => {
+											await update();
+											confirmingDelete = null;
+										};
+									}}
+								>
+									<input type="hidden" name="id" value={todo.id} />
+									<button
+										type="submit"
+										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+										use:armed
+									>
+										Confirm?
+									</button>
+								</form>
+								<button
+									type="button"
+									onclick={() => {
+										confirmingDelete = null;
+									}}
+									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+								>
+									Cancel
+								</button>
+							{:else}
+								<button
+									type="button"
+									onclick={() => {
+										confirmingDelete = todo.id;
+									}}
+									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+								>
+									<Icon name="trash" /> Delete
+								</button>
+							{/if}
+						</div>
 					</div>
 				</div>
 			{/each}
