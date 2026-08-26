@@ -437,8 +437,11 @@
 											goal.linkedTodoIds.length +
 											goal.linkedActivityIds.length})
 									</button>
-									<button onclick={() => openEdit(goal)} class="btn btn-sm"
-										><Icon name="edit" /> Edit</button
+									<button
+										title="Edit"
+										aria-label="Edit"
+										onclick={() => openEdit(goal)}
+										class="btn btn-sm"><Icon name="edit" /></button
 									>
 									{#if goal.status === 'open'}
 										<form method="post" action="?/close" use:enhance>
@@ -476,9 +479,10 @@
 										</form>
 									{:else}
 										<button
+											title="Delete"
+											aria-label="Delete"
 											onclick={() => (confirmingDelete = goal.id)}
-											class="text-xs text-gray-400 hover:text-red-600"
-											><Icon name="trash" /> Delete</button
+											class="text-xs text-gray-400 hover:text-red-600"><Icon name="trash" /></button
 										>
 									{/if}
 								</div>

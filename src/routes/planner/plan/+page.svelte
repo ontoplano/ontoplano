@@ -1676,6 +1676,8 @@
 											</div>
 										{:else}
 											<button
+												title="Delete"
+												aria-label="Delete"
 												type="button"
 												onclick={() => {
 													confirmingDeleteSchemeId = scheme.id;
@@ -1684,7 +1686,7 @@
 												}}
 												class="btn btn-danger"
 											>
-												<Icon name="trash" /> Delete
+												<Icon name="trash" />
 											</button>
 										{/if}
 									</div>
@@ -2179,11 +2181,13 @@
 								</form>
 							{:else}
 								<button
+									title="Delete"
+									aria-label="Delete"
 									type="button"
 									onclick={() => (confirmingFormDelete = true)}
 									class="btn btn-danger btn-sm"
 								>
-									<Icon name="trash" /> Delete
+									<Icon name="trash" />
 								</button>
 							{/if}
 						</div>

@@ -129,8 +129,13 @@
 									{person.mentions === 1 ? 'mention' : 'mentions'}
 								</span>
 
-								<button onclick={() => openEdit(person)} class="btn btn-sm">
-									<Icon name="edit" /> Edit
+								<button
+									title="Edit"
+									aria-label="Edit"
+									onclick={() => openEdit(person)}
+									class="btn btn-sm"
+								>
+									<Icon name="edit" />
 								</button>
 
 								{#if confirmDelete === person.id}
@@ -151,8 +156,13 @@
 										<button class="btn btn-danger btn-sm" use:armed>Yes, delete</button>
 									</form>
 								{:else}
-									<button onclick={() => (confirmDelete = person.id)} class="btn btn-danger btn-sm">
-										<Icon name="trash" /> Delete
+									<button
+										title="Delete"
+										aria-label="Delete"
+										onclick={() => (confirmDelete = person.id)}
+										class="btn btn-danger btn-sm"
+									>
+										<Icon name="trash" />
 									</button>
 								{/if}
 							</div>

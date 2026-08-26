@@ -530,10 +530,12 @@
 								</form>
 							{/if}
 							<button
+								title="Edit"
+								aria-label="Edit"
 								onclick={() => startEdit(habit)}
 								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
 							>
-								<Icon name="edit" /> Edit
+								<Icon name="edit" />
 							</button>
 							<button
 								onclick={() => {
@@ -557,12 +559,14 @@
 								</form>
 							{:else}
 								<button
+									title="Delete"
+									aria-label="Delete"
 									onclick={() => {
 										confirmingDeleteId = habit.id;
 									}}
 									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
 								>
-									<Icon name="trash" /> Delete
+									<Icon name="trash" />
 								</button>
 							{/if}
 						</div>

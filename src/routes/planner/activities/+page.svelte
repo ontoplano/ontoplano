@@ -180,10 +180,12 @@
 							></span>
 							<span class="flex-1 text-sm text-gray-900">{cat.name}</span>
 							<button
+								title="Edit"
+								aria-label="Edit"
 								onclick={() => (editingCategoryId = cat.id)}
 								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
 							>
-								<Icon name="edit" /> Edit
+								<Icon name="edit" />
 							</button>
 							{#if confirmingDelete === `cat-${cat.id}`}
 								<form
@@ -216,13 +218,15 @@
 								</button>
 							{:else}
 								<button
+									title="Delete"
+									aria-label="Delete"
 									type="button"
 									onclick={() => {
 										confirmingDelete = `cat-${cat.id}`;
 									}}
 									class="btn btn-danger btn-sm"
 								>
-									<Icon name="trash" /> Delete
+									<Icon name="trash" />
 								</button>
 							{/if}
 						{/if}
@@ -398,6 +402,8 @@
 
 					<div class="flex flex-wrap items-center gap-2 sm:shrink-0">
 						<button
+							title="Edit"
+							aria-label="Edit"
 							onclick={() => {
 								editingId = activity.id;
 								showForm = true;
@@ -408,7 +414,7 @@
 							}}
 							class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
 						>
-							<Icon name="edit" /> Edit
+							<Icon name="edit" />
 						</button>
 						<form method="post" action="?/toggleActive" use:enhance>
 							<input type="hidden" name="id" value={activity.id} />
@@ -451,6 +457,7 @@
 							</button>
 						{:else}
 							<button
+								aria-label="Delete"
 								type="button"
 								onclick={() => {
 									if (!activity.hasReferences) confirmingDelete = `act-${activity.id}`;
@@ -463,7 +470,7 @@
 									? 'Cannot delete: referenced by planner or history'
 									: 'Delete activity'}
 							>
-								<Icon name="trash" /> Delete
+								<Icon name="trash" />
 							</button>
 						{/if}
 					</div>
