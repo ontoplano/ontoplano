@@ -34,12 +34,44 @@ export const load: PageServerLoad = async ({ locals }) => {
 		id: o.id,
 		kind: o.kind,
 		startTime: o.startTime,
+		durationMinutes: o.durationMinutes,
 		name: o.title,
 		status: o.status,
 		timing: o.timing,
 		categoryName: o.categoryName,
 		categoryColor: o.categoryColor
 	}));
+
+	/**
+	 * The block you are in, or the next one.
+	 *
+	 * The card above this used to open with "0 / 11 · 11 to go" — a number about
+	 * the past, at the top of the screen somebody opens to find out what to do
+	 * next. This is the answer to the question they came with.
+	 */
+	const nowMinutes = ctx.now.getHours() * 60 + ctx.now.getMinutes();
+	const minutesOf = (time: string) => {
+		const [h, m] = time.split(':').map(Number);
+		return h * 60 + (m || 0);
+	};
+
+	const open = todayTasks.filter((t) => t.status === 'todo' || t.status === 'doing');
+	const current =
+		open.find((t) => {
+			const from = minutesOf(t.startTime);
+			return nowMinutes >= from && nowMinutes < from + (t.durationMinutes ?? 30);
+		}) ?? null;
+	const next = current ? null : (open.find((t) => minutesOf(t.startTime) >= nowMinutes) ?? null);
+
+	const now = current
+		? {
+				task: current,
+				state: 'now' as const,
+				minutes: minutesOf(current.startTime) + (current.durationMinutes ?? 30) - nowMinutes
+			}
+		: next
+			? { task: next, state: 'next' as const, minutes: minutesOf(next.startTime) - nowMinutes }
+			: null;
 
 	const done = todayTasks.filter((t) => t.status === 'done');
 	const taskSummary = {
@@ -67,6 +99,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		lastEntry: latestEntry(ctx),
 		allTags: listTags(ctx).map((t) => ({ id: t.id, name: t.name })),
 		taskSummary,
+		now,
 		todayTasks,
 		/** Still to be done today, in the order they come up. */
 		tasksTodo: todayTasks.filter((t) => t.status === 'todo' || t.status === 'doing'),

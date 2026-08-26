@@ -175,6 +175,52 @@
 		<a {href} class="btn btn-sm mt-3 inline-flex">{action}</a>
 	{/snippet}
 
+	<!--
+		What is happening now, above everything else.
+
+		The dashboard used to open with "0 / 11 · 11 to go" — a score about the
+		past at the top of the screen somebody opens to ask what to do next. The
+		count is still there; it is just no longer the answer.
+	-->
+	{#if data.now}
+		{@const { task, state, minutes } = data.now}
+		<section
+			class="card-accent flex flex-col border border-gray-200 bg-white p-4 shadow-card sm:flex-row sm:items-center sm:gap-6"
+			style="--card-accent: {task.categoryColor ?? SECTION_COLORS.planner}"
+		>
+			<div class="min-w-0 flex-1">
+				<span class="eyebrow text-gray-500">
+					{state === 'now' ? 'Now' : 'Next'}
+				</span>
+				<p class="mt-1 text-xl font-bold text-gray-900">{task.name}</p>
+				<p class="mt-1 text-sm text-gray-500">
+					<span class="tabular">{task.startTime}</span>
+					{#if task.categoryName}· {task.categoryName}{/if}
+					·
+					{#if state === 'now'}
+						{minutes} {minutes === 1 ? 'minute' : 'minutes'} left
+					{:else if minutes < 60}
+						in {minutes} {minutes === 1 ? 'minute' : 'minutes'}
+					{:else}
+						in {Math.round(minutes / 60)} {Math.round(minutes / 60) === 1 ? 'hour' : 'hours'}
+					{/if}
+				</p>
+			</div>
+
+			<form
+				method="post"
+				action="/planner/board?/setStatus"
+				use:enhance
+				class="mt-3 shrink-0 sm:mt-0"
+			>
+				<input type="hidden" name="id" value={task.id} />
+				<input type="hidden" name="kind" value={task.kind} />
+				<input type="hidden" name="status" value="done" />
+				<button class="btn btn-primary"><Icon name="check" /> Done</button>
+			</form>
+		</section>
+	{/if}
+
 	{#snippet card_todayTasks()}
 		<Card title="Today's Tasks" accent={SECTION_COLORS.planner}>
 			{#snippet actions()}
