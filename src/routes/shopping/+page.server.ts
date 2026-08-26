@@ -2,9 +2,11 @@ import type { Actions, PageServerLoad } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
 import {
+	createCategory,
 	createItem,
 	deleteItem,
 	listCategories,
+	setCategoryFood,
 	listItems,
 	restockItem,
 	toggleBought,
@@ -19,6 +21,25 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 /** Every action here is the same shape: read the form, call the service, map errors. */
 export const actions: Actions = {
+	/** Which categories hold food, and therefore what can be an ingredient. */
+	saveCategories: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const ctx = buildCtx(locals.user!.id);
+
+		try {
+			const food = new Set(formData.getAll('food').map((v) => Number(v)));
+			for (const category of listCategories(ctx))
+				setCategoryFood(ctx, category.id, food.has(category.id));
+
+			const fresh = String(formData.get('newCategory') ?? '').trim();
+			if (fresh) createCategory(ctx, { name: fresh, isFood: formData.get('newIsFood') === 'true' });
+
+			return { success: true, action: 'saveCategories' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	create: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {

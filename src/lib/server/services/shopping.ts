@@ -52,12 +52,63 @@ export function listCategories(ctx: Ctx) {
 		.select({
 			id: shoppingCategories.id,
 			name: shoppingCategories.name,
+			isFood: shoppingCategories.isFood,
 			sortOrder: shoppingCategories.sortOrder
 		})
 		.from(shoppingCategories)
 		.where(eq(shoppingCategories.userId, ctx.userId))
 		.orderBy(shoppingCategories.sortOrder)
 		.all();
+}
+
+export function createCategory(ctx: Ctx, raw: { name: unknown; isFood?: unknown }): number {
+	const name = str(raw.name, 'name', { max: 60 });
+
+	const existing = db
+		.select({ id: shoppingCategories.id })
+		.from(shoppingCategories)
+		.where(
+			and(
+				eq(shoppingCategories.userId, ctx.userId),
+				sql`lower(${shoppingCategories.name}) = lower(${name})`
+			)
+		)
+		.get();
+	if (existing) throw new ValidationError('There is already a category with that name');
+
+	const last =
+		db
+			.select({ value: sql<number>`max(${shoppingCategories.sortOrder})` })
+			.from(shoppingCategories)
+			.where(eq(shoppingCategories.userId, ctx.userId))
+			.get()?.value ?? 0;
+
+	return db
+		.insert(shoppingCategories)
+		.values({
+			userId: ctx.userId,
+			name,
+			isFood: raw.isFood === true || raw.isFood === 'true',
+			sortOrder: last + 1
+		})
+		.returning({ id: shoppingCategories.id })
+		.get().id;
+}
+
+/**
+ * Whether things in this category can be an ingredient.
+ *
+ * One tick per category rather than per item: otherwise every tin of tomatoes
+ * has to be marked by hand, and the television has to be marked as not.
+ */
+export function setCategoryFood(ctx: Ctx, id: number, isFood: boolean): void {
+	const res = db
+		.update(shoppingCategories)
+		.set({ isFood })
+		.where(and(eq(shoppingCategories.id, id), eq(shoppingCategories.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('category');
 }
 
 /**

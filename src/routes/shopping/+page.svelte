@@ -26,6 +26,7 @@
 	let showBought = $state(false);
 	let showSnoozed = $state(false);
 	let confirmingDelete: number | null = $state(null);
+	let showCategories = $state(false);
 
 	let defaultShoppingCategoryId = $derived.by(() => {
 		const otherCategory = data.shoppingCategories.find((category) => category.name === 'Other');
@@ -177,6 +178,7 @@
 				{showSnoozed ? 'Hide' : 'Show'} snoozed
 				<kbd class="border border-gray-300 bg-gray-50 px-1">s</kbd>
 			</button>
+			<button onclick={() => (showCategories = true)} class="btn btn-sm">Categories</button>
 			<button onclick={() => (showForm ? (showForm = false) : openCreateForm())} class="btn btn-sm">
 				{showForm ? 'Cancel' : 'Add item'}
 				<kbd class="border border-gray-300 bg-gray-50 px-1">n</kbd>
@@ -634,3 +636,57 @@
 		</div>
 	{/if}
 </div>
+
+<!--
+	Which categories hold food.
+
+	The category decides what can be an ingredient, so this is the one screen
+	that makes recipes work — and it is one tick per category, done once, not a
+	label on every tin of tomatoes.
+-->
+<Modal
+	bind:open={showCategories}
+	error={form?.message}
+	title="Categories"
+	description="Tick the ones that hold food. Only those can be ingredients in a recipe."
+	size="sm"
+>
+	<form
+		id="categories-form"
+		method="post"
+		action="?/saveCategories"
+		use:enhance={() =>
+			async ({ update, result }) => {
+				await update({ reset: false });
+				if (result.type === 'success') showCategories = false;
+			}}
+		class="space-y-3"
+	>
+		<ul class="space-y-1">
+			{#each data.shoppingCategories as category (category.id)}
+				<li>
+					<label class="flex items-center gap-2 text-sm text-gray-900">
+						<input type="checkbox" name="food" value={category.id} checked={category.isFood} />
+						{category.name}
+					</label>
+				</li>
+			{/each}
+		</ul>
+
+		<div class="border-t border-gray-200 pt-3">
+			<label class="block">
+				<span class="eyebrow text-gray-500">New category</span>
+				<input name="newCategory" autocomplete="off" placeholder="Frozen" class="input mt-1" />
+			</label>
+			<label class="mt-2 flex items-center gap-2 text-sm text-gray-600">
+				<input type="checkbox" name="newIsFood" value="true" />
+				It holds food
+			</label>
+		</div>
+	</form>
+
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={() => (showCategories = false)}>Cancel</button>
+		<button type="submit" form="categories-form" class="btn btn-primary">Save</button>
+	{/snippet}
+</Modal>

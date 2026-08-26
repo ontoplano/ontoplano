@@ -927,4 +927,115 @@ manifest(
 	JSON.stringify(['alarm', 'remind_min'])
 );
 
+// --- Recipes ------------------------------------------------------------------
+//
+// The loop this app is for: a recipe is a list of shopping items, a meal is a
+// block with a recipe on it, and what the week needs minus what is in the
+// cupboard is the shopping list.
+
+const shoppingCategoryNamed = (name) =>
+	one('select id from shopping_categories where user_id = ? and name = ?', uid, name);
+
+// Pantry and fresh hold food; household does not.
+for (const [name, isFood] of [
+	['pantry', 1],
+	['fresh', 1],
+	['household', 0]
+]) {
+	const found = shoppingCategoryNamed(name);
+	if (found)
+		db.prepare('update shopping_categories set is_food = ? where id = ?').run(isFood, found.id);
+}
+
+const priced = (name, cents) => {
+	const item = one('select id from shopping_items where user_id = ? and name = ?', uid, name);
+	if (item)
+		db.prepare('update shopping_items set price_cents = ? where id = ?').run(cents, item.id);
+};
+
+priced('coffee beans', 890);
+priced('olive oil', 640);
+priced('rice', 320);
+priced('milk', 180);
+priced('tomatoes', 250);
+priced('eggs', 410);
+
+const recipe = (title, extra = {}) => {
+	const existing = one('select id from recipes where user_id = ? and title = ?', uid, title);
+	if (existing) return existing.id;
+	return run(
+		`insert into recipes (user_id, title, method, servings, minutes, source, last_cooked_at)
+		 values (?, ?, ?, ?, ?, ?, ?)`,
+		uid,
+		title,
+		extra.method ?? '',
+		extra.servings ?? null,
+		extra.minutes ?? null,
+		extra.source ?? '',
+		extra.lastCookedAt ?? null
+	);
+};
+
+const ingredient = (recipeId, itemName, quantity, unit, note = '') => {
+	let item = one('select id from shopping_items where user_id = ? and name = ?', uid, itemName);
+	if (!item) {
+		const pantry = shoppingCategoryNamed('pantry');
+		const id = run(
+			`insert into shopping_items (user_id, name, type, shopping_category_id, bought)
+			 values (?, ?, 'replenish', ?, 0)`,
+			uid,
+			itemName,
+			pantry?.id ?? null
+		);
+		item = { id };
+	}
+	if (one('select id from recipe_items where recipe_id = ? and item_id = ?', recipeId, item.id))
+		return;
+	run(
+		'insert into recipe_items (user_id, recipe_id, item_id, quantity, unit, note) values (?, ?, ?, ?, ?, ?)',
+		uid,
+		recipeId,
+		item.id,
+		quantity,
+		unit,
+		note
+	);
+};
+
+const tomatoPasta = recipe('Tomato pasta', {
+	servings: 2,
+	minutes: 25,
+	lastCookedAt: stamp(dayOffset(-4)),
+	method:
+		'## While the water boils\n\n1. Halve the tomatoes.\n2. Warm the oil, add the garlic, wait for the smell.\n\n## Then\n\n- Tomatoes in, salt, ten minutes.\n- Pasta in the sauce, never the other way round.'
+});
+ingredient(tomatoPasta, 'tomatoes', 400, 'g');
+ingredient(tomatoPasta, 'olive oil', 2, 'tbsp');
+ingredient(tomatoPasta, 'pasta', 200, 'g');
+ingredient(tomatoPasta, 'garlic', 2, 'cloves', 'sliced thin');
+
+const omelette = recipe('Omelette', {
+	servings: 1,
+	minutes: 10,
+	method: 'Beat the eggs badly. Hot pan, cold butter, do not stir after the first ten seconds.'
+});
+ingredient(omelette, 'eggs', 3, '');
+ingredient(omelette, 'olive oil', 1, 'tbsp');
+
+const riceAndBeans = recipe('Rice and beans', {
+	servings: 4,
+	minutes: 45,
+	source: 'my mother',
+	method:
+		'# Sunday\n\nSoak the beans the night before. Everything else is patience.\n\n- [ ] soak overnight\n- [ ] onion and garlic first'
+});
+ingredient(riceAndBeans, 'rice', 300, 'g');
+ingredient(riceAndBeans, 'black beans', 400, 'g');
+ingredient(riceAndBeans, 'garlic', 3, 'cloves');
+
+// A meal is a block with a recipe on it, on the grid with everything else.
+const dinner = one("select id from weekly_slots where user_id = ? and label = 'cooking'", uid);
+if (dinner)
+	db.prepare('update weekly_slots set recipe_id = ? where id = ?').run(tomatoPasta, dinner.id);
+
 console.log(`seeded synthetic data for ${user.email ?? uid}`);

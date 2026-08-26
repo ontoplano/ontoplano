@@ -66,6 +66,12 @@
 			label: 'Shopping',
 			section: 'shopping',
 			icon: 'M4 7h16l-1.5 12h-13zM9 7V5a3 3 0 0 1 6 0v2'
+		},
+		{
+			href: '/kitchen/recipes',
+			label: 'Recipes',
+			section: 'kitchen',
+			icon: 'M8 3v8a3 3 0 0 0 6 0V3M11 11v10M17 3c-1.5 2-2 3.5-2 6v3h4V9c0-2.5-.5-4-2-6zM17 12v9'
 		}
 	];
 
@@ -105,7 +111,8 @@
 		diary: 'diary',
 		ideas: 'ideas',
 		health: 'health',
-		shopping: 'shopping'
+		shopping: 'shopping',
+		kitchen: 'shopping'
 	};
 
 	function isNavActive(href: string): boolean {

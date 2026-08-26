@@ -85,6 +85,15 @@ export const weeklySlots = sqliteTable(
 		// plugins via the schedule API — e.g. { "alarm": "true", "remind_min": "5" }.
 		// Stored as a JSON object of string→string. See services/meta.ts.
 		meta: text('meta').notNull().default('{}'),
+		/**
+		 * The recipe this block is for, when it is a meal.
+		 *
+		 * A meal is not a second kind of scheduling — it is a block on the same
+		 * grid with something to cook attached, which is why the plan shows dinner
+		 * next to deep work and why "what does this week need" is a join.
+		 */
+		recipeId: integer('recipe_id').references(() => recipes.id, { onDelete: 'set null' }),
+
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -448,6 +457,9 @@ export const exceptionalSlots = sqliteTable(
 		interest: integer('interest'),
 		energy: integer('energy'),
 		meta: text('meta').notNull().default('{}'),
+
+		/** The recipe this block is for, when it is a meal. See `weekly_slots`. */
+		recipeId: integer('recipe_id').references(() => recipes.id, { onDelete: 'set null' }),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
@@ -534,6 +546,14 @@ export const shoppingCategories = sqliteTable(
 			.notNull()
 			.references(() => user.id),
 		name: text('name').notNull(),
+		/**
+		 * Whether things in this category can be an ingredient.
+		 *
+		 * The category decides, not the item — otherwise every tin of tomatoes
+		 * has to be marked by hand and the television has to be marked as not.
+		 * Ticked once per category, in settings.
+		 */
+		isFood: integer('is_food', { mode: 'boolean' }).notNull().default(false),
 		sortOrder: integer('sort_order').notNull().default(0),
 		createdAt: text('created_at')
 			.notNull()
@@ -558,6 +578,14 @@ export const shoppingItems = sqliteTable(
 		notes: text('notes').default(''),
 		bought: integer('bought', { mode: 'boolean' }).notNull().default(false),
 		boughtAt: text('bought_at'),
+		/**
+		 * The last known price, in the smallest unit of the account's currency.
+		 *
+		 * Not a truth — shops disagree and prices move — which is why the UI says
+		 * "about" and offers to update it when something is ticked as bought.
+		 * Null means nobody has said.
+		 */
+		priceCents: integer('price_cents'),
 		snoozed: integer('snoozed', { mode: 'boolean' }).notNull().default(false),
 		createdAt: text('created_at')
 			.notNull()
@@ -572,6 +600,87 @@ export const shoppingItems = sqliteTable(
 		index('shopping_items_bought_idx').on(table.bought),
 		index('shopping_items_snoozed_idx').on(table.snoozed),
 		index('shopping_items_category_idx').on(table.shoppingCategoryId)
+	]
+);
+
+// --- Recipes ---
+
+/**
+ * Something you cook.
+ *
+ * The reason it is here rather than in a cookbook app is the loop it closes:
+ * a recipe is put on a day like anything else, and what the week's meals need
+ * minus what is already in the cupboard is the shopping list. A recipe on its
+ * own is worth less than the fifth-best free cookbook; the link to the plan and
+ * the list is the whole point.
+ */
+export const recipes = sqliteTable(
+	'recipes',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		title: text('title').notNull(),
+		/** Free text, rendered as Markdown like a diary entry. */
+		method: text('method').notNull().default(''),
+		notes: text('notes').default(''),
+		servings: integer('servings'),
+		minutes: integer('minutes'),
+		/** Where it came from, when it was pasted from somewhere. */
+		source: text('source').default(''),
+		lastCookedAt: text('last_cooked_at'),
+		archivedAt: text('archived_at'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('recipes_user_idx').on(table.userId),
+		check('recipes_servings_positive', sql`${table.servings} IS NULL OR ${table.servings} > 0`),
+		check('recipes_minutes_positive', sql`${table.minutes} IS NULL OR ${table.minutes} > 0`)
+	]
+);
+
+/**
+ * An ingredient: a shopping item, an amount, and how it is prepared.
+ *
+ * It points at `shopping_items` rather than holding a name of its own, which is
+ * what makes "what does this week need" a join rather than a text-matching
+ * problem. Writing a recipe therefore fills the shopping list as a side effect,
+ * which is the only way any of this stays current.
+ *
+ * `unit` is free text and `quantity` is a plain number. No conversion: 100ml of
+ * onion is not a thing, and a list that says "2 tbsp, 100 ml" is honest where a
+ * total would be invented.
+ */
+export const recipeItems = sqliteTable(
+	'recipe_items',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		recipeId: integer('recipe_id')
+			.notNull()
+			.references(() => recipes.id, { onDelete: 'cascade' }),
+		itemId: integer('item_id')
+			.notNull()
+			.references(() => shoppingItems.id, { onDelete: 'cascade' }),
+		quantity: real('quantity'),
+		unit: text('unit').default(''),
+		note: text('note').default(''),
+		sortOrder: integer('sort_order').notNull().default(0)
+	},
+	(table) => [
+		index('recipe_items_user_idx').on(table.userId),
+		index('recipe_items_recipe_idx').on(table.recipeId),
+		index('recipe_items_item_idx').on(table.itemId),
+		uniqueIndex('recipe_items_unique').on(table.recipeId, table.itemId),
+		check('recipe_items_quantity_positive', sql`${table.quantity} IS NULL OR ${table.quantity} > 0`)
 	]
 );
 
