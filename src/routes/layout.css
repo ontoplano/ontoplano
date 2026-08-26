@@ -509,6 +509,47 @@ html[data-style='playful'] .card-accent {
 	text-underline-offset: 2px;
 }
 
+/*
+ * Text the user typed wraps rather than pushing the page around.
+ *
+ * A notebook called `Supercalifragilisticexpialidocious…` with no spaces made
+ * its row wider than the phone; the app shell does not scroll sideways, so the
+ * Edit and Close buttons beside it simply could not be reached.
+ *
+ * `anywhere` rather than `break-word` on purpose: only `anywhere` counts when
+ * the browser works out how narrow a flex item is allowed to be, which is the
+ * half that stops the row from growing. Neither breaks a word that fits, so
+ * ordinary text is untouched.
+ */
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+li,
+dd,
+dt,
+td,
+th,
+blockquote,
+figcaption,
+label,
+a,
+span {
+	overflow-wrap: anywhere;
+}
+
+/* Except where a broken word would be worse than an overflowing one. */
+kbd,
+code,
+pre,
+.tabular,
+.eyebrow {
+	overflow-wrap: normal;
+}
+
 /* Figures line up in columns when they share a width. */
 .tabular {
 	font-variant-numeric: tabular-nums;
