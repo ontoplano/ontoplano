@@ -9,6 +9,8 @@
 	import type { SectionKey } from '$lib/colors.js';
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
 	import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
+	import CommandPalette from '$lib/components/CommandPalette.svelte';
+	import { palette } from '$lib/palette.svelte';
 	import type { IconName } from '$lib/components/Icon.svelte';
 
 	let { children, data }: { children: any; data: LayoutServerData } = $props();
@@ -243,6 +245,16 @@
 					</nav>
 				</div>
 				<div class="menu-container relative hidden items-center gap-3 lg:flex">
+					<!-- A keyboard-only feature is an invisible one. The box says the app
+					     can be searched; ⌘K is for after you know that. -->
+					<button
+						onclick={() => (palette.open = true)}
+						class="flex items-center gap-2 border border-chrome-line bg-chrome-raised px-3 py-1.5 text-sm text-chrome-muted transition hover:text-chrome-ink hover:brightness-125"
+					>
+						<Icon name="search" size={14} />
+						Search
+						<kbd class="kbd-hint border border-chrome-line px-1 text-xs">⌘K</kbd>
+					</button>
 					<span class="text-sm text-chrome-muted">{data.user.name}</span>
 					<button
 						onclick={() => (menuOpen = !menuOpen)}
@@ -431,6 +443,17 @@
 							{item.label}
 						</a>
 					{/each}
+					<button
+						type="button"
+						onclick={() => {
+							moreOpen = false;
+							palette.open = true;
+						}}
+						class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-900"
+					>
+						<Icon name="search" class="h-5 w-5 text-gray-400" />
+						Search
+					</button>
 					<!-- Icons like every other row: five with and two without read as a
 					     list that ran out of care. -->
 					<a
@@ -454,6 +477,7 @@
 			</div>
 		{/if}
 		<ShortcutHelp />
+		<CommandPalette />
 	</div>
 {:else}
 	{@render children()}

@@ -1,0 +1,268 @@
+/**
+ * One box over everything the account owns.
+ *
+ * The app had grown nine places to put a sentence and no way to find one
+ * again: remembering which section something is in is not a feature. This
+ * queries each table for the same substring and returns the hits grouped by
+ * what they are.
+ *
+ * `LIKE` rather than FTS5 on purpose. It is one index scan per table on a few
+ * thousand rows, which is nothing, and it keeps the schema free of a second
+ * copy of every piece of text. When somebody has fifty thousand notes this
+ * becomes an FTS5 table and the shape of this file does not change.
+ */
+import { and, desc, eq, like, or, sql } from 'drizzle-orm';
+
+import { db } from '../db/index.js';
+import {
+	activities,
+	diaryEntries,
+	exceptionalSlots,
+	goals,
+	ideas,
+	notebooks,
+	people,
+	plannerTodos,
+	shoppingItems,
+	weeklySlots
+} from '../db/schema.js';
+import { KIND_LABELS, MIN_QUERY, SEARCH_KINDS, type Hit, type SearchKind } from '../../search.js';
+import type { Ctx } from './ctx.js';
+import { str } from './validate.js';
+
+export { KIND_LABELS, MIN_QUERY, SEARCH_KINDS, type Hit, type SearchKind } from '../../search.js';
+
+const PER_KIND = 6;
+
+/**
+ * The line the match is on, trimmed to something that fits a result row.
+ *
+ * Showing the first line of a long note when the match is in the last one is
+ * worse than showing nothing: the reader cannot see why it matched.
+ */
+function snippetOf(text: string, needle: string, max = 120): string {
+	const flat = text.replace(/\s+/g, ' ').trim();
+	const at = flat.toLowerCase().indexOf(needle.toLowerCase());
+	if (at === -1) return flat.slice(0, max);
+
+	const from = Math.max(0, at - 30);
+	const cut = flat.slice(from, from + max);
+	return (from > 0 ? '…' : '') + cut + (from + max < flat.length ? '…' : '');
+}
+
+function firstLine(text: string, max = 80): string {
+	const line = text.replace(/\s+/g, ' ').trim();
+	return line.length > max ? line.slice(0, max) + '…' : line;
+}
+
+export function search(ctx: Ctx, raw: unknown): Hit[] {
+	const q = String(raw ?? '').trim();
+	if (q.length < MIN_QUERY) return [];
+
+	// Bounded before it reaches a query, like every other string (I8).
+	const query = str(q, 'search', { max: 200 });
+	const pattern = `%${query.replace(/[%_]/g, (c) => `\\${c}`)}%`;
+	const matches = (column: Parameters<typeof like>[0]) => like(column, pattern);
+
+	const hits: Hit[] = [];
+
+	// --- what you wrote ---------------------------------------------------------
+	for (const row of db
+		.select({
+			id: diaryEntries.id,
+			seq: diaryEntries.seq,
+			content: diaryEntries.content,
+			notebookId: diaryEntries.notebookId,
+			notebookTitle: notebooks.title
+		})
+		.from(diaryEntries)
+		.leftJoin(notebooks, eq(diaryEntries.notebookId, notebooks.id))
+		.where(and(eq(diaryEntries.userId, ctx.userId), matches(diaryEntries.content)))
+		.orderBy(desc(diaryEntries.createdAt))
+		.limit(PER_KIND * 2)
+		.all()) {
+		const inNotebook = row.notebookId !== null;
+		// The title is what you wrote. Two notes in the same notebook titled by
+		// the notebook are indistinguishable, and `#11` says nothing at all.
+		hits.push({
+			kind: inNotebook ? 'note' : 'entry',
+			id: row.id,
+			title: firstLine(row.content),
+			snippet: inNotebook
+				? `in ${row.notebookTitle} · ${snippetOf(row.content, query, 90)}`
+				: `#${row.seq} · ${snippetOf(row.content, query, 100)}`,
+			href: inNotebook ? `/diary/notebooks/${row.notebookId}` : `/diary#diary-${row.seq}`
+		});
+	}
+
+	for (const row of db
+		.select({ id: notebooks.id, title: notebooks.title, description: notebooks.description })
+		.from(notebooks)
+		.where(
+			and(
+				eq(notebooks.userId, ctx.userId),
+				or(matches(notebooks.title), matches(notebooks.description ?? sql`''`))
+			)
+		)
+		.limit(PER_KIND)
+		.all())
+		hits.push({
+			kind: 'notebook',
+			id: row.id,
+			title: row.title,
+			snippet: firstLine(row.description ?? ''),
+			href: `/diary/notebooks/${row.id}`
+		});
+
+	for (const row of db
+		.select({ id: ideas.id, content: ideas.content })
+		.from(ideas)
+		.where(and(eq(ideas.userId, ctx.userId), matches(ideas.content)))
+		.orderBy(desc(ideas.createdAt))
+		.limit(PER_KIND)
+		.all())
+		hits.push({
+			kind: 'idea',
+			id: row.id,
+			title: firstLine(row.content),
+			snippet: '',
+			href: '/ideas'
+		});
+
+	// --- what you have to do ----------------------------------------------------
+	for (const row of db
+		.select({ id: plannerTodos.id, title: plannerTodos.title, notes: plannerTodos.notes })
+		.from(plannerTodos)
+		.where(
+			and(
+				eq(plannerTodos.userId, ctx.userId),
+				or(matches(plannerTodos.title), matches(plannerTodos.notes ?? sql`''`))
+			)
+		)
+		.limit(PER_KIND)
+		.all())
+		hits.push({
+			kind: 'todo',
+			id: row.id,
+			title: row.title,
+			snippet: firstLine(row.notes ?? ''),
+			href: '/planner/todo'
+		});
+
+	for (const row of db
+		.select({ id: weeklySlots.id, label: weeklySlots.label, startTime: weeklySlots.startTime })
+		.from(weeklySlots)
+		.where(and(eq(weeklySlots.userId, ctx.userId), matches(weeklySlots.label ?? sql`''`)))
+		.limit(PER_KIND)
+		.all())
+		hits.push({
+			kind: 'block',
+			id: row.id,
+			title: row.label || 'Untitled',
+			snippet: `every week at ${row.startTime}`,
+			href: '/planner/plan'
+		});
+
+	for (const row of db
+		.select({
+			id: exceptionalSlots.id,
+			label: exceptionalSlots.label,
+			date: exceptionalSlots.date,
+			startTime: exceptionalSlots.startTime
+		})
+		.from(exceptionalSlots)
+		.where(and(eq(exceptionalSlots.userId, ctx.userId), matches(exceptionalSlots.label ?? sql`''`)))
+		.orderBy(desc(exceptionalSlots.date))
+		.limit(PER_KIND)
+		.all())
+		hits.push({
+			kind: 'block',
+			id: row.id,
+			title: row.label || 'Untitled',
+			snippet: `${row.date} at ${row.startTime}`,
+			href: `/planner/plan?from=${row.date}`
+		});
+
+	// --- what you are aiming at -------------------------------------------------
+	for (const row of db
+		.select({ id: goals.id, title: goals.title, notes: goals.notes })
+		.from(goals)
+		.where(
+			and(eq(goals.userId, ctx.userId), or(matches(goals.title), matches(goals.notes ?? sql`''`)))
+		)
+		.limit(PER_KIND)
+		.all())
+		hits.push({
+			kind: 'goal',
+			id: row.id,
+			title: row.title,
+			snippet: firstLine(row.notes ?? ''),
+			href: '/goals'
+		});
+
+	// --- everything else --------------------------------------------------------
+	for (const row of db
+		.select({ id: people.id, name: people.name, notes: people.notes })
+		.from(people)
+		.where(
+			and(eq(people.userId, ctx.userId), or(matches(people.name), matches(people.notes ?? sql`''`)))
+		)
+		.limit(PER_KIND)
+		.all())
+		hits.push({
+			kind: 'person',
+			id: row.id,
+			title: row.name,
+			snippet: firstLine(row.notes ?? ''),
+			href: `/diary/people?person=${row.id}`
+		});
+
+	for (const row of db
+		.select({ id: shoppingItems.id, name: shoppingItems.name, notes: shoppingItems.notes })
+		.from(shoppingItems)
+		.where(
+			and(
+				eq(shoppingItems.userId, ctx.userId),
+				or(matches(shoppingItems.name), matches(shoppingItems.notes ?? sql`''`))
+			)
+		)
+		.limit(PER_KIND)
+		.all())
+		hits.push({
+			kind: 'shopping',
+			id: row.id,
+			title: row.name,
+			snippet: firstLine(row.notes ?? ''),
+			href: '/shopping'
+		});
+
+	for (const row of db
+		.select({ id: activities.id, name: activities.name, description: activities.description })
+		.from(activities)
+		.where(
+			and(
+				eq(activities.userId, ctx.userId),
+				or(matches(activities.name), matches(activities.description ?? sql`''`))
+			)
+		)
+		.limit(PER_KIND)
+		.all())
+		hits.push({
+			kind: 'activity',
+			id: row.id,
+			title: row.name,
+			snippet: firstLine(row.description ?? ''),
+			href: '/planner/activities'
+		});
+
+	return hits;
+}
+
+/** The same hits, in the order the kinds are listed, for rendering. */
+export function grouped(hits: Hit[]): { kind: SearchKind; label: string; hits: Hit[] }[] {
+	return SEARCH_KINDS.map((kind) => ({
+		kind,
+		label: KIND_LABELS[kind],
+		hits: hits.filter((h) => h.kind === kind)
+	})).filter((g) => g.hits.length > 0);
+}
