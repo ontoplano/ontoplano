@@ -159,7 +159,7 @@ function slotDisplayLabel(
 	if (item.mode === 'activity' && item.activityName) return item.activityName;
 	if (item.label) return item.label;
 	if (item.categoryName) return item.categoryName;
-	return 'Slot';
+	return 'Untitled';
 }
 
 function slotToEvent(

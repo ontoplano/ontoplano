@@ -58,10 +58,15 @@
 		}
 	}
 
-	/** "12 entries · 3 tasks · 1 goal", with nothing said about what is empty. */
+	/**
+	 * "12 notes · 3 tasks · 1 goal", with nothing said about what is empty.
+	 *
+	 * Notes, not entries: writing in a notebook is a note and writing in the
+	 * diary is an entry, and the tab above this list already says so.
+	 */
 	function tally(n: Notebook): string {
 		const parts: string[] = [];
-		if (n.entries) parts.push(`${n.entries} ${n.entries === 1 ? 'entry' : 'entries'}`);
+		if (n.entries) parts.push(`${n.entries} ${n.entries === 1 ? 'note' : 'notes'}`);
 		if (n.tasks) parts.push(`${n.tasks} ${n.tasks === 1 ? 'task' : 'tasks'}`);
 		if (n.goals) parts.push(`${n.goals} ${n.goals === 1 ? 'goal' : 'goals'}`);
 		return parts.join(' · ') || 'nothing in it yet';
@@ -75,7 +80,7 @@
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<p class="max-w-prose text-sm text-gray-500">
 			A subject you write against with no deadline — a book you are reading, a trip, a renovation.
-			Entries, tasks and goals can belong to one, and everything about it collects here.
+			Notes, tasks and goals can belong to one, and everything about it collects here.
 		</p>
 		<button onclick={openCreate} class="btn btn-primary btn-sm">
 			<Icon name="plus" /> New notebook
@@ -91,7 +96,7 @@
 				<EmptyState
 					icon="notebook"
 					title="No notebooks yet"
-					description="Start one for something you will keep coming back to, and point entries, tasks and goals at it."
+					description="Start one for something you will keep coming back to, and point notes, tasks and goals at it."
 				>
 					{#snippet action()}
 						<button onclick={openCreate} class="btn btn-primary">
