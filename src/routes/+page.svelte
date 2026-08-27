@@ -214,7 +214,7 @@
 				class="mt-3 shrink-0 sm:mt-0"
 			>
 				<input type="hidden" name="id" value={task.id} />
-				<input type="hidden" name="kind" value={task.kind} />
+				<input type="hidden" name="kind" value="instance" />
 				<input type="hidden" name="status" value="done" />
 				<button class="btn btn-primary"><Icon name="check" /> Done</button>
 			</form>
@@ -247,6 +247,22 @@
 					<ul class="mt-3 divide-y divide-gray-100 border-t border-gray-100">
 						{#each data.tasksTodo.slice(0, TODO_PREVIEW) as task (`${task.kind}-${task.id}`)}
 							<li class="flex items-center gap-3 py-1.5">
+								<!-- Finishing something from the screen you are already on. It
+								     used to be a list you could only read. -->
+								<form method="post" action="/planner/board?/setStatus" use:enhance>
+									<input type="hidden" name="id" value={task.id} />
+									<input type="hidden" name="kind" value="instance" />
+									<input type="hidden" name="status" value="done" />
+									<button
+										class="-m-1 flex shrink-0 items-center justify-center p-1 pointer-coarse:w-11"
+										title="Done"
+										aria-label="Mark {task.name} done"
+									>
+										<span
+											class="flex h-4 w-4 items-center justify-center border border-gray-400 bg-white"
+										></span>
+									</button>
+								</form>
 								<span
 									class="w-1 shrink-0 self-stretch"
 									style="background-color: {task.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
@@ -314,18 +330,20 @@
 								title={goal.areaName ?? 'No area'}
 							></span>
 							<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{goal.title}</span>
-							<span class="h-1.5 w-16 shrink-0 bg-gray-200">
-								{#if pct !== null}
+							<!-- Nothing to count, nothing to draw: an empty track reads as
+							     zero progress rather than as no measure. -->
+							{#if pct !== null}
+								<span class="h-1.5 w-16 shrink-0 bg-gray-200">
 									<span
 										class="block h-full"
 										style="width: {pct}%; background-color: {goal.areaColor ??
 											SECTION_COLORS.goals}"
 									></span>
-								{/if}
-							</span>
-							<span class="tabular w-10 shrink-0 text-right text-xs text-gray-500"
-								>{pct === null ? '—' : `${pct}%`}</span
-							>
+								</span>
+								<span class="tabular w-10 shrink-0 text-right text-xs text-gray-500">{pct}%</span>
+							{:else}
+								<span class="shrink-0 text-xs text-gray-400">no measure</span>
+							{/if}
 						</li>
 					{/each}
 				</ul>
