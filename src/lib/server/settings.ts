@@ -1,3 +1,4 @@
+import { DEFAULT_PRICING, type Pricing } from '../plans.js';
 import { and, eq } from 'drizzle-orm';
 
 import { db } from './db/index.js';
@@ -233,6 +234,32 @@ export function markOnboarded(userId: string): void {
  */
 export function isSelfHosted(): boolean {
 	return process.env.ONTOPLANO_SELF_HOST === 'true';
+}
+
+/**
+ * What this instance charges, and how its trial runs.
+ *
+ * From the environment rather than compiled in, because a price is not a fact
+ * about the software — the person running the instance decides it, and changing
+ * it should not be a deploy. The defaults are argued for in
+ * `notes/competition-studies/pricing.md`.
+ */
+export function pricing(): Pricing {
+	const int = (name: string, fallback: number) => {
+		const raw = Number(process.env[name]);
+		return Number.isFinite(raw) && raw >= 0 ? Math.round(raw) : fallback;
+	};
+
+	return {
+		monthlyCents: int('ONTOPLANO_PRICE_MONTHLY_CENTS', DEFAULT_PRICING.monthlyCents),
+		yearlyCents: int('ONTOPLANO_PRICE_YEARLY_CENTS', DEFAULT_PRICING.yearlyCents),
+		currency: process.env.ONTOPLANO_PRICE_CURRENCY || DEFAULT_PRICING.currency,
+		// Bounded: a trial has to span two weekly reviews to show what the app is
+		// for, and one longer than a season is not a trial.
+		trialDays: Math.min(Math.max(int('ONTOPLANO_TRIAL_DAYS', DEFAULT_PRICING.trialDays), 0), 90),
+		trialRequiresCard: process.env.ONTOPLANO_TRIAL_REQUIRES_CARD !== 'false',
+		provider: process.env.ONTOPLANO_PAYMENT_PROVIDER || DEFAULT_PRICING.provider
+	};
 }
 
 export function isInstanceOwner(userId: string): boolean {

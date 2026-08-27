@@ -62,9 +62,9 @@
 		instance is configured with. It sees your address and the text of those messages.
 	</li>
 	<li>
-		<strong>Payment.</strong> If you subscribe, Lemon Squeezy handles the transaction as merchant of record.
-		They see your billing details; this instance never does, and stores only the identifiers it needs
-		to know your subscription is alive.
+		<strong>Payment.</strong> If you subscribe, {data.provider} handles the transaction as merchant of
+		record. They see your billing details; this instance never does, and stores only the identifiers it
+		needs to know your subscription is alive.
 	</li>
 	<li>
 		<strong>Plugins.</strong> Anything you connect with an API token sees exactly the scopes you gave

@@ -2,7 +2,6 @@ import { and, count, eq } from 'drizzle-orm';
 
 import {
 	PLANS,
-	TRIAL_DAYS,
 	isPlanId,
 	isSubscriptionStatus,
 	type LimitKey,
@@ -10,8 +9,8 @@ import {
 	type SubscriptionStatus
 } from '../../plans.js';
 import { db } from '../db/index.js';
-import { apiTokens, dataStreams, notebooks, people, subscriptions } from '../db/schema.js';
-import { isSelfHosted } from '../settings.js';
+import { apiTokens, dataStreams, subscriptions } from '../db/schema.js';
+import { isSelfHosted, pricing } from '../settings.js';
 import { record } from './audit.js';
 import type { Ctx } from './ctx.js';
 import { ForbiddenError } from './errors.js';
@@ -29,7 +28,7 @@ export type Entitlement = {
 	plan: PlanId;
 	status: SubscriptionStatus;
 	/** Where the answer came from, for a page that has to explain itself. */
-	source: 'self-hosted' | 'trial' | 'subscription' | 'lapsed' | 'free';
+	source: 'self-hosted' | 'trial' | 'subscription' | 'lapsed' | 'none';
 	/** End of the trial or of the paid period, whichever is running. */
 	until: string | null;
 	/** True while a cancellation is scheduled and the period is still running. */
@@ -51,9 +50,9 @@ export function resolvePlan(userId: string, now = new Date()): Entitlement {
 	if (isSelfHosted()) return SELF_HOSTED;
 
 	const row = db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).get();
-	if (!row) return { ...freeEntitlement() };
+	if (!row) return { ...unsubscribed() };
 
-	const plan = isPlanId(row.plan) ? row.plan : 'free';
+	const plan = isPlanId(row.plan) ? row.plan : 'none';
 	const status = isSubscriptionStatus(row.status) ? row.status : 'expired';
 	const nowIso = now.toISOString();
 
@@ -70,7 +69,7 @@ export function resolvePlan(userId: string, now = new Date()): Entitlement {
 				endingAt: null,
 				billable: true
 			};
-		return { ...freeEntitlement(), source: 'lapsed' };
+		return { ...unsubscribed(), source: 'lapsed' };
 	}
 
 	if (status === 'active' || status === 'past_due') {
@@ -86,7 +85,7 @@ export function resolvePlan(userId: string, now = new Date()): Entitlement {
 				endingAt: row.cancelAt,
 				billable: true
 			};
-		return { ...freeEntitlement(), source: 'lapsed' };
+		return { ...unsubscribed(), source: 'lapsed' };
 	}
 
 	// Cancelled or expired: the paid period may still be running.
@@ -100,14 +99,21 @@ export function resolvePlan(userId: string, now = new Date()): Entitlement {
 			billable: true
 		};
 
-	return { ...freeEntitlement(), source: 'lapsed' };
+	return { ...unsubscribed(), source: 'lapsed' };
 }
 
-function freeEntitlement(): Entitlement {
+/**
+ * Nobody is paying and nobody is on trial.
+ *
+ * Not a tier — an account in this state keeps everything it wrote and can still
+ * read and export it, because the data is the person's. It just cannot be added
+ * to. The free option is self-hosting, which is a different thing entirely.
+ */
+function unsubscribed(): Entitlement {
 	return {
-		plan: 'free',
+		plan: 'none',
 		status: 'expired',
-		source: 'free',
+		source: 'none',
 		until: null,
 		endingAt: null,
 		billable: true
@@ -131,7 +137,7 @@ export function startTrial(userId: string, now = new Date()): void {
 
 	if (existing) return;
 
-	const endsAt = new Date(now.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+	const endsAt = new Date(now.getTime() + pricing().trialDays * 24 * 60 * 60 * 1000).toISOString();
 
 	db.insert(subscriptions)
 		.values({
@@ -217,13 +223,10 @@ export function userIdForSubscription(provider: string, subscriptionId: string):
 
 /** How many of a thing this account already has. */
 export function usage(userId: string): Record<LimitKey, number> {
-	const countOf = (
-		table: typeof notebooks | typeof people | typeof apiTokens | typeof dataStreams
-	) => db.select({ n: count() }).from(table).where(eq(table.userId, userId)).get()?.n ?? 0;
+	const countOf = (table: typeof apiTokens | typeof dataStreams) =>
+		db.select({ n: count() }).from(table).where(eq(table.userId, userId)).get()?.n ?? 0;
 
 	return {
-		notebooks: countOf(notebooks),
-		people: countOf(people),
 		apiTokens: countOf(apiTokens),
 		dataStreams: countOf(dataStreams),
 		// Not a stored count: the export log answers this one, and the account

@@ -816,9 +816,9 @@ export const subscriptions = sqliteTable(
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id),
-		plan: text('plan', { enum: ['free', 'pro'] })
+		plan: text('plan', { enum: ['none', 'pro'] })
 			.notNull()
-			.default('free'),
+			.default('none'),
 		status: text('status', {
 			enum: ['trialing', 'active', 'past_due', 'canceled', 'expired']
 		})

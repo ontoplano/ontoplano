@@ -1,24 +1,25 @@
 /**
  * What a plan is.
  *
- * An object rather than an `isPro` boolean, because the question is never
- * "is this account paying" — it is "how many of these may it have", and the
- * answer has to be readable in one place when it changes.
+ * There is one, and there is self-hosting.
  *
- * Limits are counts of things that accumulate. Nothing here limits *use*: a
- * planner that stops working on the 200th block is not a smaller plan, it is a
- * broken one.
+ * The old shape had a free tier with ceilings — three notebooks, twenty-five
+ * people — which existed to make it uncomfortable enough to pay. That is the
+ * standard model and it is the wrong one here, for two reasons. A hard paywall
+ * converts about five times better than freemium in this category, and, more
+ * to the point, *this app already has a free tier and it is a better one than
+ * any competitor's*: the source is open and it self-hosts. Free means you run
+ * it; paid means somebody else does.
+ *
+ * So the ceilings that survive are about abuse rather than tiering — an export
+ * is expensive to generate and an API token is a key. Nothing here limits the
+ * planner itself: a planner that stops working on the 200th block is not a
+ * smaller plan, it is a broken one.
  */
-export const PLAN_IDS = ['free', 'pro'] as const;
+export const PLAN_IDS = ['none', 'pro'] as const;
 export type PlanId = (typeof PLAN_IDS)[number];
 
-export const LIMIT_KEYS = [
-	'notebooks',
-	'people',
-	'apiTokens',
-	'dataStreams',
-	'exportsPerDay'
-] as const;
+export const LIMIT_KEYS = ['apiTokens', 'dataStreams', 'exportsPerDay'] as const;
 export type LimitKey = (typeof LIMIT_KEYS)[number];
 
 /** `null` is no limit. */
@@ -26,33 +27,30 @@ export type Plan = {
 	id: PlanId;
 	label: string;
 	blurb: string;
-	/** Monthly, in cents, in the currency the provider is configured with. */
-	priceCents: number;
 	limits: Record<LimitKey, number | null>;
 };
 
 export const PLANS: Record<PlanId, Plan> = {
-	free: {
-		id: 'free',
-		label: 'Free',
-		blurb: 'The whole planner, with a ceiling on the things that pile up.',
-		priceCents: 0,
+	/**
+	 * Not a tier. What an account is when nobody is paying and nobody is on
+	 * trial: it can still be read and exported, because the data is the
+	 * person's, but it cannot be added to.
+	 */
+	none: {
+		id: 'none',
+		label: 'Not subscribed',
+		blurb: 'Everything you wrote is still here, and still exportable.',
 		limits: {
-			notebooks: 3,
-			people: 25,
-			apiTokens: 1,
-			dataStreams: 2,
+			apiTokens: 0,
+			dataStreams: 0,
 			exportsPerDay: 2
 		}
 	},
 	pro: {
 		id: 'pro',
-		label: 'Pro',
-		blurb: 'The same planner without the ceilings, and more room to plug things into it.',
-		priceCents: 500,
+		label: 'Ontoplano',
+		blurb: 'The whole thing, hosted, backed up and kept running.',
 		limits: {
-			notebooks: null,
-			people: null,
 			apiTokens: 20,
 			dataStreams: 50,
 			exportsPerDay: 10
@@ -61,8 +59,6 @@ export const PLANS: Record<PlanId, Plan> = {
 };
 
 export const LIMIT_LABELS: Record<LimitKey, string> = {
-	notebooks: 'Notebooks',
-	people: 'People',
 	apiTokens: 'API tokens',
 	dataStreams: 'Data streams',
 	exportsPerDay: 'Exports per day'
@@ -86,9 +82,51 @@ export function isSubscriptionStatus(value: unknown): value is SubscriptionStatu
 	return typeof value === 'string' && (SUBSCRIPTION_STATUSES as readonly string[]).includes(value);
 }
 
-/** Days a new account gets on Pro without being asked for a card. */
-export const TRIAL_DAYS = 14;
+/**
+ * What the subscription costs and how the trial runs.
+ *
+ * Set by whoever runs the instance rather than compiled in, because a price is
+ * not a fact about the software. The defaults are the ones argued for in
+ * `notes/competition-studies/pricing.md`: the three closest competitors all sit
+ * between $20 and $30 a year, and fourteen days is the shortest trial that can
+ * contain two weekly reviews — which is the loop the whole app is built around.
+ */
+export type Pricing = {
+	/** Monthly, in cents, in `currency`. */
+	monthlyCents: number;
+	/** A year, in cents. Zero hides the annual option. */
+	yearlyCents: number;
+	currency: string;
+	trialDays: number;
+	/** Whether the trial asks for a card up front. */
+	trialRequiresCard: boolean;
+	/** Named on the terms page, because a merchant of record has to be. */
+	provider: string;
+};
 
-export function formatPrice(cents: number): string {
-	return cents === 0 ? 'free' : `$${(cents / 100).toFixed(2)}/month`;
+export const DEFAULT_PRICING: Pricing = {
+	monthlyCents: 500,
+	yearlyCents: 3000,
+	currency: 'USD',
+	trialDays: 14,
+	trialRequiresCard: true,
+	provider: 'Lemon Squeezy'
+};
+
+export function formatPrice(cents: number, currency = 'USD'): string {
+	const symbol = currency === 'USD' ? '$' : `${currency} `;
+	return `${symbol}${(cents / 100).toFixed(2)}`;
+}
+
+/** "$30.00 a year — $2.50 a month" and the saving, for the one place it is sold. */
+export function describeYearly(pricing: Pricing): string | null {
+	if (pricing.yearlyCents <= 0 || pricing.monthlyCents <= 0) return null;
+
+	const perMonth = pricing.yearlyCents / 12;
+	const saving = Math.round((1 - perMonth / pricing.monthlyCents) * 100);
+
+	return `${formatPrice(pricing.yearlyCents, pricing.currency)} a year — ${formatPrice(
+		Math.round(perMonth),
+		pricing.currency
+	)} a month, ${saving}% off`;
 }

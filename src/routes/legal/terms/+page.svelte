@@ -34,17 +34,25 @@
 	export still works.
 </p>
 
-<h2>Paying, if you do</h2>
+<h2>Paying</h2>
 <p>
-	New accounts get {data.trialDays} days of Pro without a card. After that, Pro is a monthly subscription
-	handled by Lemon Squeezy as merchant of record — they take the payment, issue the invoice, and handle
-	the tax.
+	A new account gets {data.trialDays} days free{data.trialRequiresCard
+		? ', and is asked for a card at the start so the subscription can begin when the trial ends'
+		: ' and is not asked for a card'}. It costs {data.monthly} a month{#if data.yearly}, or {data.yearly}{/if}.
+	Payment is handled by {data.provider} as merchant of record — they take the payment, issue the invoice
+	and handle the tax.
 </p>
+{#if data.trialRequiresCard}
+	<p>
+		You will be emailed two days before the first charge, and you can cancel in one click from
+		inside the app up to the moment it happens.
+	</p>
+{/if}
 <p>
-	Cancel any time; the plan runs to the end of the period you paid for. When it ends the account
-	returns to the free plan.
-	<strong>Nothing is deleted.</strong> Anything above a free-plan ceiling stays where it is and stays
-	readable — you simply cannot add more of that kind until you are back under it or back on Pro.
+	Cancel any time; the subscription runs to the end of the period you paid for.
+	<strong>Nothing is deleted when it ends.</strong> Everything you wrote stays where it is, stays readable
+	and stays exportable — you simply cannot add more until you subscribe again. And because the source
+	is open, you can always run your own copy instead and take the export with you.
 </p>
 <p>
 	If a charge was wrong, write to {data.contactEmail} and it will be refunded. That is a promise rather

@@ -5,7 +5,6 @@ import { db } from '../db/index.js';
 import { diaryEntries, entryPeople, people } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
-import { assertWithinLimit } from './subscriptions.js';
 import { stamps } from './time.js';
 import { optionalStr, str } from './validate.js';
 
@@ -71,8 +70,6 @@ export function createPerson(
 	ctx: Ctx,
 	raw: { name: unknown; relationship?: unknown; notes?: unknown }
 ): number {
-	assertWithinLimit(ctx, 'people');
-
 	const name = str(raw.name, 'name', { max: MAX_NAME_LENGTH });
 	if (personNamed(ctx, name)) throw new ConflictError('Somebody by that name already exists');
 

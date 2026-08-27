@@ -198,7 +198,7 @@ export function handleWebhook(rawBody: string, eventId: string, now = new Date()
 	applySubscription(
 		resolved,
 		{
-			plan: status === 'expired' ? 'free' : plan,
+			plan: status === 'expired' ? 'none' : plan,
 			status,
 			provider: PROVIDER,
 			providerCustomerId: attributes.customer_id ? String(attributes.customer_id) : null,
@@ -252,7 +252,7 @@ export async function reconcile(now = new Date()): Promise<{ expired: number; ch
 
 	for (const row of lapsed) {
 		db.update(subscriptions)
-			.set({ plan: 'free', status: 'expired', updatedAt: nowIso })
+			.set({ plan: 'none', status: 'expired', updatedAt: nowIso })
 			.where(eq(subscriptions.id, row.id))
 			.run();
 	}
@@ -294,7 +294,7 @@ export async function reconcile(now = new Date()): Promise<{ expired: number; ch
 			applySubscription(
 				row.userId,
 				{
-					plan: status === 'expired' ? 'free' : 'pro',
+					plan: status === 'expired' ? 'none' : 'pro',
 					status,
 					provider: PROVIDER,
 					providerCustomerId: attributes.customer_id ? String(attributes.customer_id) : null,

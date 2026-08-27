@@ -26,7 +26,7 @@ test('a self-hosted instance has no payment provider to talk to', async ({ playw
 	await request.dispose();
 });
 
-test('the billing page says there is nothing to pay', async ({ playwright }) => {
+test('a self-hosted instance has no billing page at all', async ({ playwright }) => {
 	const request = await playwright.request.newContext({ baseURL: ORIGIN });
 	const email = `bill-${Date.now()}@example.test`;
 
@@ -47,9 +47,17 @@ test('the billing page says there is nothing to pay', async ({ playwright }) => 
 		form: { timezone: 'America/Sao_Paulo', firstDay: '0', generateDay: '6', template: 'blank' }
 	});
 
+	/*
+	 * Not a page saying "nothing to pay" — no page. Somebody running this on
+	 * their own machine who is shown a billing screen has just been told the
+	 * free version is a demo, and it is not: it is the whole thing.
+	 */
 	const page = await request.get('/settings/billing', { headers: { Cookie: cookie } });
-	expect(page.status()).toBe(200);
-	expect(await page.text()).toContain('self-hosted instance');
+	expect(page.status()).toBe(404);
+
+	// And nothing links to it, so it is not a page you can only reach by URL.
+	const settings = await request.get('/settings/account', { headers: { Cookie: cookie } });
+	expect(await settings.text()).not.toContain('/settings/billing');
 
 	await request.dispose();
 });

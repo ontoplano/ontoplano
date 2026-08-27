@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { LIMIT_KEYS, PLANS } from '$lib/plans';
-import { isSelfHosted } from '$lib/server/settings';
+import { isSelfHosted, pricing } from '$lib/server/settings';
 import { buildCtx } from '$lib/server/services/ctx';
 import { exportAllowance } from '$lib/server/services/account';
 import { resolvePlan, usage } from '$lib/server/services/subscriptions';
@@ -23,11 +23,16 @@ export const load: PageServerLoad = async ({ locals }) => {
 	counts.exportsPerDay =
 		(PLANS[entitlement.plan].limits.exportsPerDay ?? 0) - exportAllowance(ctx.userId).remaining;
 
+	// A self-hosted instance sells nothing, so this page is not there at all.
+	// Somebody running the software on their own machine who is shown "Upgrade
+	// to Pro" has just been told the free version is a demo. It is not.
+	if (isSelfHosted()) error(404, 'Not found');
+
 	return {
 		entitlement,
-		selfHosted: isSelfHosted(),
+		pricing: pricing(),
 		configured: isBillingConfigured(),
-		plans: Object.values(PLANS),
+		plans: Object.values(PLANS).filter((p) => p.id === 'pro'),
 		limitKeys: LIMIT_KEYS,
 		usage: counts,
 		checkout:
