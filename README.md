@@ -111,6 +111,21 @@ Three switches worth knowing, all off by default:
   deployment settings from the UI, and the Telegram bot will run; both act for the
   whole instance, so both are off anywhere else.
 
+Signing in with Google or GitHub is optional too, and off unless the
+credentials are there:
+
+```sh
+GOOGLE_CLIENT_ID=… ; GOOGLE_CLIENT_SECRET=…
+GITHUB_CLIENT_ID=… ; GITHUB_CLIENT_SECRET=…
+```
+
+Set the callback to `https://your-host/api/auth/callback/<provider>`. Only
+providers with both halves configured appear on the sign-in page, because a
+button that comes back with "invalid client" is worse than no button. Apple and
+X are deliberately not here: Apple needs a paid developer account and a client
+secret that must be re-signed twice a year, and X's OAuth sits behind their paid
+API tiers.
+
 Email is optional. With `SMTP_HOST` and `SMTP_FROM` set, password resets and
 address confirmations are sent; without them the message — link included — is
 written to the server log, so a single-user install is not forced to run a mail

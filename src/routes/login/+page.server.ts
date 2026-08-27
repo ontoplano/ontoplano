@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { auth } from '$lib/server/auth';
+import { auth, configuredSocialProviders } from '$lib/server/auth';
 import { APIError } from 'better-auth/api';
 import { isEmailConfigured } from '$lib/server/email';
 import {
@@ -31,7 +31,9 @@ export const load: PageServerLoad = async (event) => {
 		emailConfigured: isEmailConfigured(),
 		canRegister: first || mode !== 'closed',
 		needsInvite: !first && mode === 'invite',
-		isFirstAccount: first
+		isFirstAccount: first,
+		/** Only the ones this instance actually has credentials for. */
+		social: configuredSocialProviders()
 	};
 };
 

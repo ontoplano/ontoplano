@@ -7,6 +7,7 @@ import { env } from '$env/dynamic/private';
 import { getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
 import { sendEmail } from '$lib/server/email';
+import { configuredProviders, type SocialProvider } from '$lib/social';
 
 const VERIFICATION_SUBJECT = 'Confirm your ontoplano address';
 const verificationBody = (url: string) => `Confirm this address belongs to you:\n\n${url}\n`;
@@ -21,10 +22,53 @@ const verificationBody = (url: string) => `Confirm this address belongs to you:\
  */
 const REQUIRE_VERIFIED_EMAIL = process.env.ONTOPLANO_REQUIRE_VERIFIED_EMAIL === 'true';
 
+/**
+ * Which social sign-ins this instance actually has credentials for.
+ *
+ * A button that opens a provider and comes back with "invalid client" is worse
+ * than no button, so an instance offers exactly what it is configured for and
+ * nothing else. Apple and X are deliberately absent: Apple needs a paid
+ * developer account and a client secret that has to be re-signed twice a year,
+ * and X's OAuth now sits behind their paid API tiers. Both are a day's work
+ * with an ongoing cost; Google and GitHub are ten minutes each and free.
+ */
+export function configuredSocialProviders(): SocialProvider[] {
+	return configuredProviders(process.env);
+}
+
+function socialProviderConfig() {
+	const config: Record<string, { clientId: string; clientSecret: string }> = {};
+
+	for (const id of configuredSocialProviders()) {
+		config[id] = {
+			clientId: process.env[`${id.toUpperCase()}_CLIENT_ID`]!,
+			clientSecret: process.env[`${id.toUpperCase()}_CLIENT_SECRET`]!
+		};
+	}
+
+	return config;
+}
+
 export const auth = betterAuth({
 	baseURL: env.ORIGIN,
 	secret: env.BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: 'sqlite' }),
+	socialProviders: socialProviderConfig(),
+	account: {
+		accountLinking: {
+			/**
+			 * Same address, same account.
+			 *
+			 * Somebody who signed up with a password and later presses "Sign in with
+			 * Google" on the same address means to get into their own account, not to
+			 * make a second one. Only enabled for providers that verify the address
+			 * themselves, which both of these do — otherwise it is a way to claim
+			 * somebody's account by asserting their email.
+			 */
+			enabled: true,
+			trustedProviders: ['google', 'github']
+		}
+	},
 	emailAndPassword: {
 		enabled: true,
 		requireEmailVerification: REQUIRE_VERIFIED_EMAIL,
