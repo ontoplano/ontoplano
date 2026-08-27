@@ -1,13 +1,19 @@
 [Unit]
 Description=Ontoplano - Weekly Routine Dashboard
 After=network.target
+# In [Unit], not [Service]: systemd moved these in v229 and ignores them
+# quietly in the old place. Without it, five restarts in ten seconds and the
+# unit gives up for good — which is how a box is dead at 3am with a clean log.
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 WorkingDirectory=${HOME}/.local/share/ontoplano/app
 ExecStart=/usr/bin/node build/index.js
-Restart=on-failure
-RestartSec=5
+# Always, not on-failure: a clean exit nobody asked for is still the app being
+# down, and that is the one this has to survive.
+Restart=always
+RestartSec=2
 Environment=NODE_ENV=production
 Environment=HOST=0.0.0.0
 Environment=PORT=1493

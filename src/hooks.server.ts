@@ -1,4 +1,4 @@
-import { redirect, type Handle } from '@sveltejs/kit';
+import { redirect, type Handle, type HandleServerError } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { building } from '$app/environment';
 import { auth } from '$lib/server/auth';
@@ -197,3 +197,77 @@ export const handle: Handle = sequence(
 	handleSignedOutWrites,
 	handleTheme
 );
+
+/**
+ * What happened, when something goes wrong.
+ *
+ * A 500 used to reach the error page and leave nothing behind: no stack, no way
+ * to tie the page somebody was looking at to a line in a log. The id is shown
+ * on the error page, so "it broke and it said a3f9c1" is a search rather than a
+ * conversation.
+ */
+export const handleError: HandleServerError = ({ error, event, status }) => {
+	// 404s are not incidents; logging every one buries the ones that matter.
+	if (status === 404) return { message: 'Not found' };
+
+	const id = crypto.randomUUID().slice(0, 6);
+
+	console.error(
+		JSON.stringify({
+			at: new Date().toISOString(),
+			level: 'error',
+			id,
+			method: event.request.method,
+			path: event.url.pathname,
+			user: event.locals.user?.id ?? null,
+			message: error instanceof Error ? error.message : String(error),
+			stack: error instanceof Error ? error.stack : undefined
+		})
+	);
+
+	return { message: 'Something went wrong on our side.', id };
+};
+
+/**
+ * A note before dying.
+ *
+ * The dev server fell over more than once with nothing in `journalctl` and
+ * nothing in the console — because a process that exits on an unhandled
+ * rejection says nothing on its way out. These do not stop the exit; they make
+ * sure it is not silent, which is the difference between a bug you can chase
+ * and one you can only re-encounter.
+ *
+ * Registered once, guarded because SvelteKit imports this module in more than
+ * one context.
+ */
+declare global {
+	// eslint-disable-next-line no-var
+	var __ontoplanoDeathWatch: boolean | undefined;
+}
+
+if (!building && !globalThis.__ontoplanoDeathWatch) {
+	globalThis.__ontoplanoDeathWatch = true;
+
+	const note = (kind: string, detail: unknown) =>
+		console.error(
+			JSON.stringify({
+				at: new Date().toISOString(),
+				level: 'fatal',
+				kind,
+				message: detail instanceof Error ? detail.message : String(detail),
+				stack: detail instanceof Error ? detail.stack : undefined
+			})
+		);
+
+	process.on('uncaughtException', (error) => {
+		note('uncaughtException', error);
+		// Node's default is to exit; keeping that, having said why.
+		process.exit(1);
+	});
+
+	process.on('unhandledRejection', (reason) => note('unhandledRejection', reason));
+	process.on('SIGTERM', () => {
+		note('SIGTERM', 'asked to stop');
+		process.exit(0);
+	});
+}

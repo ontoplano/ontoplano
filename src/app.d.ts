@@ -12,7 +12,16 @@ declare global {
 			session?: Session;
 		}
 
-		// interface Error {}
+		/**
+		 * What `handleError` hands to the error page.
+		 *
+		 * The id ties the page somebody is looking at to a line in the log, so a
+		 * bug report is a search rather than a conversation.
+		 */
+		interface Error {
+			message: string;
+			id?: string;
+		}
 		// interface PageData {}
 		// interface PageState {}
 		// interface Platform {}
