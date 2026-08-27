@@ -4,11 +4,22 @@
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { getAction } from '$lib/shortcuts';
 	import { keepInView } from '$lib/actions/keep-in-view';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 
 	let { data }: { data: PageData } = $props();
 
 	let selectedDay: number = $state(0);
 	let selectedIndex: number = $state(0);
+
+	/**
+	 * Filters, because a week of history is a hundred rows.
+	 *
+	 * The two questions somebody actually brings to this page are "where did my
+	 * time go" — one category at a time — and "what did I keep not doing", which
+	 * is the skipped rows and nothing else.
+	 */
+	let categoryFilter: number | 'all' = $state('all');
+	let statusFilter: string = $state('all');
 
 	function catColor(catId: number | null): string {
 		if (!catId) return CATEGORY_FALLBACK_COLOR;
@@ -24,8 +35,19 @@
 	};
 
 	function instancesForDay(day: number) {
-		return data.instancesByDay[day] ?? [];
+		return (data.instancesByDay[day] ?? []).filter(
+			(inst) =>
+				(categoryFilter === 'all' || inst.categoryId === categoryFilter) &&
+				(statusFilter === 'all' || inst.status === statusFilter)
+		);
 	}
+
+	/** How many a day holds before the filters, so the strip still says the truth. */
+	function countForDay(day: number) {
+		return (data.instancesByDay[day] ?? []).length;
+	}
+
+	const filtering = $derived(categoryFilter !== 'all' || statusFilter !== 'all');
 
 	function instanceLabel(inst: {
 		slotMode: string | null;
@@ -147,9 +169,46 @@
 		</div>
 	{/if}
 
+	<div class="flex flex-wrap items-center gap-2">
+		<select
+			bind:value={categoryFilter}
+			class="input w-auto py-1 pr-8 text-xs"
+			aria-label="Filter by category"
+		>
+			<option value="all">Every category</option>
+			{#each data.categories as cat (cat.id)}
+				<option value={cat.id}>{cat.name}</option>
+			{/each}
+		</select>
+
+		<select
+			bind:value={statusFilter}
+			class="input w-auto py-1 pr-8 text-xs"
+			aria-label="Filter by status"
+		>
+			<option value="all">Whatever happened</option>
+			<option value="done">Done</option>
+			<option value="skipped">Skipped</option>
+			<option value="todo">Never touched</option>
+		</select>
+
+		{#if filtering}
+			<button
+				type="button"
+				class="btn btn-sm"
+				onclick={() => {
+					categoryFilter = 'all';
+					statusFilter = 'all';
+				}}
+			>
+				Clear
+			</button>
+		{/if}
+	</div>
+
 	<div class="flex gap-1">
 		{#each data.weekdays as day, i (i)}
-			{@const count = instancesForDay(i).length}
+			{@const count = filtering ? instancesForDay(i).length : countForDay(i)}
 			<button
 				onclick={() => (selectedDay = i)}
 				class="flex-1 border px-2 py-2 text-center text-xs font-medium transition {selectedDay === i
@@ -165,8 +224,14 @@
 	</div>
 
 	{#if instancesForDay(selectedDay).length === 0}
-		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-			No tasks recorded for {data.weekdays[selectedDay]}.
+		<div class="border border-gray-200 bg-white shadow-sm">
+			<EmptyState
+				icon="clock"
+				title={filtering
+					? `Nothing matches on ${data.weekdays[selectedDay]}`
+					: `No tasks recorded for ${data.weekdays[selectedDay]}`}
+				description={filtering ? 'Try clearing the filters, or another day.' : ''}
+			/>
 		</div>
 	{:else}
 		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
