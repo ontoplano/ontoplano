@@ -9,7 +9,7 @@ import {
 	type DashboardCardId
 } from '$lib/dashboard';
 import { getUserSetting, setUserSetting } from '$lib/server/settings';
-import { describeYearly, formatPrice } from '$lib/plans';
+import { formatPrice } from '$lib/plans';
 import { pricing } from '$lib/server/settings';
 import { instanceIsEmpty, registrationMode } from '$lib/server/services/registration';
 import { buildCtx } from '$lib/server/services/ctx';
@@ -37,12 +37,20 @@ export const load: PageServerLoad = async ({ locals }) => {
 		return {
 			landing: {
 				price: formatPrice(price.monthlyCents, price.currency),
-				yearly: describeYearly(price),
+				yearly: formatPrice(price.yearlyCents, price.currency) + ' a year',
 				trialDays: price.trialDays,
 				trialRequiresCard: price.trialRequiresCard,
 				canRegister: instanceIsEmpty() || registrationMode() !== 'closed',
-				/** The address people actually type, for the sentence about plugins. */
-				host: new URL(process.env.ORIGIN ?? 'https://ontoplano.app').host
+				/**
+				 * The annual price as a per-month figure, which is the one to lead
+				 * with — it is the offer worth taking and the one worth funding.
+				 */
+				yearlyPerMonth:
+					price.yearlyCents > 0
+						? formatPrice(Math.round(price.yearlyCents / 12), price.currency)
+						: null,
+				/** Dropped in when there is a file. Until then the page draws a frame. */
+				videoSrc: process.env.ONTOPLANO_DEMO_VIDEO || null
 			}
 		};
 	}
