@@ -36,10 +36,28 @@ export const actions: Actions = {
 			for (const category of listCategories(ctx))
 				setCategoryFood(ctx, category.id, food.has(category.id));
 
-			const fresh = String(formData.get('newCategory') ?? '').trim();
-			if (fresh) createCategory(ctx, { name: fresh, isFood: formData.get('newIsFood') === 'true' });
-
 			return { success: true, action: 'saveCategories' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * Making a category is its own act, and needs its own action.
+	 *
+	 * It used to be a second pair of fields inside `saveCategories`, so one Save
+	 * meant two things. Splitting the form was right and left this behind: the
+	 * new form posted here and there was nothing here to post to, so the dialog
+	 * simply did nothing and said nothing about it.
+	 */
+	createCategory: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			createCategory(buildCtx(locals.user!.id), {
+				name: formData.get('name'),
+				isFood: formData.get('isFood') === 'true'
+			});
+			return { success: true, action: 'createCategory' };
 		} catch (e) {
 			return toActionFailure(e);
 		}
