@@ -223,6 +223,25 @@ html[data-style='playful'] .section-pattern {
 	opacity: 0.07;
 }
 
+/*
+ * A little more of it in the dark.
+ *
+ * The same opacity over a dark ground is a fainter mark than over a light one —
+ * there is simply less contrast available between the accent and near-black
+ * than between the accent and near-white. A nudge, not a doubling: it is still
+ * meant to read as texture.
+ */
+html[data-theme='dark'] .section-pattern,
+html[data-theme='dark'][data-style='playful'] .section-pattern {
+	opacity: 0.1;
+}
+
+@media (prefers-color-scheme: dark) {
+	html:not([data-theme='light']) .section-pattern {
+		opacity: 0.1;
+	}
+}
+
 @media (prefers-reduced-motion: no-preference) {
 	.section-pattern {
 		transition: opacity 240ms ease;
@@ -724,14 +743,40 @@ option {
 /*
  * Checkboxes and radios are excluded above on purpose.
  *
- * @tailwindcss/forms draws their checked state *as* a background colour, so a
- * blanket `background-color: white` painted over the tick and left a control
- * that could be on with nothing to show for it.
+ * @tailwindcss/forms draws their checked state *as* a background colour with a
+ * white tick painted on it, so a blanket `background-color: white` painted over
+ * the tick, and a background bound to `--color-gray-900` went near-white in
+ * dark mode — a white tick on a white box, which is a control that is on with
+ * nothing to show for it either way.
+ *
+ * So the "on" colour does not invert. It is a blue dark enough for a white tick
+ * on any ground, and the same blue in both themes, which is what a form control
+ * wants: recognisable, not themed.
  */
+:root {
+	--control-on: #1d4ed8;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+	background-color: transparent;
+	border-color: var(--color-gray-400);
+}
+
 input[type='checkbox']:checked,
 input[type='radio']:checked {
-	background-color: var(--color-gray-900);
-	border-color: var(--color-gray-900);
+	background-color: var(--control-on);
+	border-color: var(--control-on);
+}
+
+/*
+ * A checkbox stays a rounded square, even where everything else is a pill.
+ *
+ * At 16px the playful radius turns it into a circle, and a circle means
+ * one-of. A checkbox that looks like a radio lies about how many you may pick.
+ */
+html[data-style='playful'] input[type='checkbox'] {
+	border-radius: 0.25rem;
 }
 
 /*
