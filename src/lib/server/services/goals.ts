@@ -11,6 +11,7 @@ import { and, asc, eq, gte, inArray, lt } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import {
 	activities,
+	categories,
 	goalAreas,
 	goalLinks,
 	goals,
@@ -25,6 +26,7 @@ import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { ownedNotebookId } from './notebooks.js';
 import { created, stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
+import { blockName } from '../../planner-grid.js';
 
 export type GoalArea = { id: number; name: string; color: string; sortOrder: number };
 
@@ -228,20 +230,32 @@ export function listActiveOn(ctx: Ctx, date: string): Goal[] {
 	);
 }
 
-/** Weekly slots a goal can be linked to, for the picker. */
+/**
+ * The blocks a goal can be linked to, each with the name it goes by.
+ *
+ * The name follows the same rule as the grid — activity, then label, then
+ * category — because a list that showed the label alone printed "block 47" for
+ * every block that had never been given one, which is most of them.
+ */
 export function linkableSlots(ctx: Ctx) {
 	return db
 		.select({
 			id: weeklySlots.id,
 			label: weeklySlots.label,
+			mode: weeklySlots.mode,
 			weekday: weeklySlots.weekday,
 			startTime: weeklySlots.startTime,
-			activityId: weeklySlots.activityId
+			activityId: weeklySlots.activityId,
+			activityName: activities.name,
+			categoryName: categories.name
 		})
 		.from(weeklySlots)
+		.leftJoin(activities, eq(weeklySlots.activityId, activities.id))
+		.leftJoin(categories, eq(weeklySlots.categoryId, categories.id))
 		.where(and(eq(weeklySlots.userId, ctx.userId), eq(weeklySlots.active, true)))
 		.orderBy(asc(weeklySlots.weekday), asc(weeklySlots.startTime))
-		.all();
+		.all()
+		.map((slot) => ({ ...slot, name: blockName(slot) }));
 }
 
 // --- Mutations ----------------------------------------------------------------

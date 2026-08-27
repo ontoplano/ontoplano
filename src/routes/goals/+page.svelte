@@ -396,15 +396,18 @@
 											<p class="mt-0.5 text-xs text-gray-500">{goal.notes}</p>
 										{/if}
 
+										<!-- No bar without a measure. An empty track under a goal with
+										     nothing to count reads as "0%", which is a claim about
+										     progress rather than the absence of one. -->
 										<div class="mt-2 flex items-center gap-3">
-											<div class="h-1.5 w-24 shrink-0 bg-gray-200 sm:w-40">
-												{#if pct !== null}
+											{#if pct !== null}
+												<div class="h-1.5 w-24 shrink-0 bg-gray-200 sm:w-40">
 													<div
 														class="h-full"
 														style="width: {pct}%; background-color: {goal.areaColor ?? accent}"
 													></div>
-												{/if}
-											</div>
+												</div>
+											{/if}
 											<span class="tabular text-xs text-gray-500">
 												{progressLabel(goal)}{pct !== null ? ` · ${pct}%` : ''}
 											</span>
@@ -558,7 +561,7 @@
 										class="h-3 w-3"
 									/>
 									<span class="tabular">{sl.startTime}</span>
-									{sl.label || `block ${sl.id}`}
+									{sl.name}
 								</label>
 							{:else}
 								<p class="text-xs text-gray-400">No weekly blocks yet.</p>

@@ -153,7 +153,15 @@ export function contrastText(hex: string): string {
 	return luminance > 0.6 ? '#111827' : '#ffffff';
 }
 
-function slotDisplayLabel(
+/**
+ * What a block is called, in one place.
+ *
+ * A block is named by what it *is* before what somebody typed on it: an
+ * activity has a name, and a block that only names a category is that category.
+ * The label is the exception, not the rule, which is why a list that showed
+ * only labels ended up printing "block 47".
+ */
+export function blockName(
 	item: Pick<GridSlotInput, 'mode' | 'activityName' | 'label' | 'categoryName'>
 ): string {
 	if (item.mode === 'activity' && item.activityName) return item.activityName;
@@ -185,7 +193,7 @@ function slotToEvent(
 		id: encodeEventId('slot', slot.id),
 		start,
 		end,
-		title: slotDisplayLabel(slot),
+		title: blockName(slot),
 		backgroundColor: bg,
 		textColor: contrastText(bg),
 		editable,
@@ -217,7 +225,7 @@ function exceptionalToEvent(
 		id: encodeEventId('exceptional', exc.id),
 		start,
 		end,
-		title: slotDisplayLabel(exc),
+		title: blockName(exc),
 		backgroundColor: bg,
 		textColor: contrastText(bg),
 		editable: true,
