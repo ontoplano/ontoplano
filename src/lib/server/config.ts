@@ -60,6 +60,9 @@ mode = "closed"
 
 [account]
 allow_email_change = "false"
+
+[ui]
+undo_seconds = "5"
 `;
 
 /**
@@ -104,6 +107,10 @@ export interface OntoplanoConfig {
 		 */
 		allowEmailChange: boolean;
 	};
+	ui: {
+		/** Seconds a delete waits, undoably, before it happens. Zero turns it off. */
+		undoSeconds: number;
+	};
 }
 
 export function ensureDirectories(): void {
@@ -135,6 +142,9 @@ mode = "${config.registration.mode}"
 
 [account]
 allow_email_change = "${config.account.allowEmailChange}"
+
+[ui]
+undo_seconds = "${config.ui.undoSeconds}"
 `;
 }
 
@@ -154,6 +164,7 @@ export function loadConfig(): OntoplanoConfig {
 	const week = (parsed.week as Record<string, string>) || {};
 	const registration = (parsed.registration as Record<string, string>) || {};
 	const account = (parsed.account as Record<string, string>) || {};
+	const ui = (parsed.ui as Record<string, string>) || {};
 
 	return {
 		server: {
@@ -178,6 +189,20 @@ export function loadConfig(): OntoplanoConfig {
 		account: {
 			// Same reading: anything but an explicit "true" is no.
 			allowEmailChange: account.allow_email_change === 'true'
+		},
+		ui: {
+			/*
+			 * How long a delete waits before it happens.
+			 *
+			 * The confirmation still asks — that is the deliberate half. This is the
+			 * accident half: the seconds between saying yes and meaning it, during
+			 * which "Undo" costs nothing because the row has not gone anywhere.
+			 *
+			 * Zero turns it off and deletes immediately. Bounded at a minute, since
+			 * a delete that has not happened yet is a delete somebody can lose by
+			 * closing the tab.
+			 */
+			undoSeconds: Math.min(Math.max(parseInt(ui.undo_seconds || '5', 10) || 0, 0), 60)
 		}
 	};
 }

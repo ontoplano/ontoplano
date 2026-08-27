@@ -14,6 +14,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { flush, remember, restore, ticks, type Tick } from '$lib/offline-ticks.svelte';
+	import { deleteLater, isLeaving } from '$lib/undo.svelte';
 	import { untrack } from 'svelte';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -32,6 +33,29 @@
 	let confirmingDelete: number | null = $state(null);
 	let showCategories = $state(false);
 	let addingCategory = $state(false);
+
+	/**
+	 * Confirm, then five seconds to change your mind.
+	 *
+	 * The dialog still asks — that is the deliberate half. This is the accident
+	 * half: the row leaves the screen at once and the request waits, so Undo
+	 * costs nothing because nothing has happened yet.
+	 */
+	const deferDelete =
+		(id: number, name: string): SubmitFunction =>
+		({ action, formData, cancel }) => {
+			cancel();
+			confirmingDelete = null;
+			deleteLater(`item:${id}`, name, () => {
+				// The header asks for the action's result rather than a redirect,
+				// which is what `enhance` would have done had it submitted.
+				void fetch(action, {
+					method: 'POST',
+					body: formData,
+					headers: { 'x-sveltekit-action': 'true' }
+				}).then(() => invalidateAll());
+			});
+		};
 
 	/**
 	 * Ticking things off in a shop, where there is no signal.
@@ -117,6 +141,7 @@
 
 	let filteredItems = $derived(
 		items.filter((item) => {
+			if (isLeaving(`item:${item.id}`)) return false;
 			if (!showSnoozed && item.snoozed) return false;
 			if (!showBought && item.bought && item.type === 'someday') return false;
 			if (filterType === 'all') return true;
@@ -487,12 +512,7 @@
 										<form
 											method="POST"
 											action="?/delete"
-											use:enhance={() => {
-												return async ({ update }) => {
-													await update();
-													confirmingDelete = null;
-												};
-											}}
+											use:enhance={deferDelete(item.id, item.name)}
 										>
 											<input type="hidden" name="id" value={item.id} />
 											<button
@@ -608,16 +628,7 @@
 							aria-label="Edit {item.name}"><Icon name="edit" /></button
 						>
 						{#if confirmingDelete === item.id}
-							<form
-								method="POST"
-								action="?/delete"
-								use:enhance={() => {
-									return async ({ update }) => {
-										await update();
-										confirmingDelete = null;
-									};
-								}}
-							>
+							<form method="POST" action="?/delete" use:enhance={deferDelete(item.id, item.name)}>
 								<input type="hidden" name="id" value={item.id} />
 								<button
 									type="submit"

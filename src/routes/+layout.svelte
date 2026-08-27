@@ -10,6 +10,8 @@
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
 	import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
+	import UndoToast from '$lib/components/UndoToast.svelte';
+	import { undo } from '$lib/undo.svelte';
 	import { palette } from '$lib/palette.svelte';
 	import type { IconName } from '$lib/components/Icon.svelte';
 
@@ -207,6 +209,11 @@
 	let key = $state('Ctrl');
 	$effect(() => {
 		key = commandKey();
+	});
+
+	// How long a delete waits before it happens, from the instance's config.
+	$effect(() => {
+		undo.seconds = data.undoSeconds;
 	});
 </script>
 
@@ -519,6 +526,7 @@
 		{/if}
 		<ShortcutHelp />
 		<CommandPalette />
+		<UndoToast />
 	</div>
 {:else}
 	{@render children()}

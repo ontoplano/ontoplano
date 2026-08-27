@@ -4,6 +4,7 @@ import { DEFAULT_THEME, DEFAULT_WEEK, getTheme, getWeekSettings } from '$lib/ser
 import { needsFirstRun } from '$lib/server/services/onboarding';
 import { listCategories } from '$lib/server/services/activities';
 import { buildCtx } from '$lib/server/services/ctx';
+import { loadConfig } from '$lib/server/config';
 
 export const load: LayoutServerLoad = async (event) => {
 	// Anything under /login, not just /login itself — /login/reset is where a
@@ -62,6 +63,8 @@ export const load: LayoutServerLoad = async (event) => {
 		categories: userCategories,
 		theme,
 		// The week is the user's, not the instance's.
-		config: { week }
+		config: { week },
+		// How long a delete waits before it happens. The instance's call.
+		undoSeconds: loadConfig().ui.undoSeconds
 	};
 };
