@@ -716,6 +716,17 @@
 
 						<div class="flex-1 space-y-2 p-2">
 							{#each column.cards as card, ri (card.uid)}
+								<!-- Whether the second line has anything on it at all. -->
+								{@const badges =
+									needsResolution(card) ||
+									(card.kind === 'todo' &&
+										!!card.scheduledDate &&
+										card.scheduledDate < data.date) ||
+									(!!card.timing && card.kind === 'instance') ||
+									card.goals.length > 0 ||
+									card.ratings.urgency != null ||
+									card.ratings.interest != null ||
+									card.ratings.energy != null}
 								<article
 									draggable="true"
 									ondragstart={(e) => onDragStart(card, e)}
@@ -729,19 +740,30 @@
 									onkeydown={() => {}}
 									role="button"
 									tabindex="0"
-									class="cursor-grab border bg-white p-2 shadow-card {focusCol === ci &&
+									class="cursor-grab border bg-white px-2 py-1.5 shadow-card {focusCol === ci &&
 									focusRow === ri
 										? 'ring-2 ring-gray-900 ring-inset'
 										: ''} {dragging?.uid === card.uid ? 'opacity-40' : ''} border-gray-200"
 								>
 									<div class="flex items-start gap-2">
 										<span
-											class="mt-0.5 h-3 w-1 shrink-0"
+											class="mt-1 h-3 w-1 shrink-0"
 											style="background-color: {card.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
 											title={card.categoryName ?? 'No category'}
 										></span>
 										<div class="min-w-0 flex-1">
-											<div class="flex items-start gap-1">
+											<!--
+												The time belongs beside the title, not under it.
+												This card used to spend four lines on a title, a gap, a
+												time and a row of badges, so a column held five of them
+												on a laptop. A card with nothing to say is one line now.
+											-->
+											<div class="flex items-baseline gap-1.5">
+												{#if card.startTime}
+													<span class="tabular shrink-0 font-mono text-[10px] text-gray-500">
+														{card.startTime}
+													</span>
+												{/if}
 												<p class="min-w-0 flex-1 truncate text-sm text-gray-900">{card.title}</p>
 												<button
 													type="button"
@@ -749,73 +771,70 @@
 														e.stopPropagation();
 														openEditor(card);
 													}}
-													class="shrink-0 text-gray-300 transition hover:text-gray-900"
+													class="shrink-0 self-start text-gray-500 transition hover:text-gray-900"
 													aria-label="Edit {card.title}"
 												>
 													<Icon name="edit" size={14} />
 												</button>
 											</div>
-											<div class="mt-1 flex flex-wrap items-center gap-2">
-												{#if needsResolution(card)}
-													<button
-														type="button"
-														onclick={(e) => {
-															e.stopPropagation();
-															openEditor(card);
-														}}
-														class="border border-amber-300 bg-amber-50 px-1 text-[10px] text-amber-700"
-													>
-														which activity?
-													</button>
-												{/if}
-												{#if card.startTime}
-													<span class="tabular font-mono text-[10px] text-gray-500"
-														>{card.startTime}</span
-													>
-												{/if}
-												{#if card.kind === 'todo' && card.scheduledDate && card.scheduledDate < data.date}
-													<span class="text-[10px] text-gray-500">carried over</span>
-												{/if}
-												<!--
+											{#if badges}
+												<div class="mt-0.5 flex flex-wrap items-center gap-2">
+													{#if needsResolution(card)}
+														<button
+															type="button"
+															onclick={(e) => {
+																e.stopPropagation();
+																openEditor(card);
+															}}
+															class="border border-amber-300 bg-amber-50 px-1 text-[10px] text-amber-700"
+														>
+															which activity?
+														</button>
+													{/if}
+													{#if card.kind === 'todo' && card.scheduledDate && card.scheduledDate < data.date}
+														<span class="text-[10px] text-gray-500">carried over</span>
+													{/if}
+													<!--
 													Ticking a whole day off at bedtime marks everything late,
 													which is true of the tick and false of the doing. The badge
 													is the correction: click it and it cycles early → on time →
 													late, no form.
 												-->
-												{#if card.timing && card.kind === 'instance'}
-													{@const next =
-														card.timing === 'late'
-															? 'early'
-															: card.timing === 'early'
-																? 'on_time'
-																: 'late'}
-													<form method="post" action="?/setTiming" use:enhance>
-														<input type="hidden" name="id" value={card.id} />
-														<input type="hidden" name="timing" value={next} />
-														<button
-															class="text-[10px] text-gray-500 underline decoration-dotted underline-offset-2 hover:text-gray-900"
-															title="Actually {TIMING_LABELS[next]} — click to change"
-														>
-															{TIMING_LABELS[card.timing]}
-														</button>
-													</form>
-												{/if}
-												<RatingBadges values={card.ratings} />
-												<!--
+													{#if card.timing && card.kind === 'instance'}
+														{@const next =
+															card.timing === 'late'
+																? 'early'
+																: card.timing === 'early'
+																	? 'on_time'
+																	: 'late'}
+														<form method="post" action="?/setTiming" use:enhance>
+															<input type="hidden" name="id" value={card.id} />
+															<input type="hidden" name="timing" value={next} />
+															<button
+																class="text-[10px] text-gray-500 underline decoration-dotted underline-offset-2 hover:text-gray-900"
+																title="Actually {TIMING_LABELS[next]} — click to change"
+															>
+																{TIMING_LABELS[card.timing]}
+															</button>
+														</form>
+													{/if}
+													<RatingBadges values={card.ratings} />
+													<!--
 													Why this card exists, in one glyph. A kanban card is
 													scanned rather than read, so the goal's name would cost
 													more room than it is worth here — the editor spells it
 													out, and so does the todo list.
 												-->
-												{#if card.goals.length}
-													<span
-														class="text-gray-500"
-														title={card.goals.map((g) => g.title).join(' · ')}
-													>
-														<Icon name="goals" size={11} />
-													</span>
-												{/if}
-											</div>
+													{#if card.goals.length}
+														<span
+															class="text-gray-500"
+															title={card.goals.map((g) => g.title).join(' · ')}
+														>
+															<Icon name="goals" size={11} />
+														</span>
+													{/if}
+												</div>
+											{/if}
 										</div>
 									</div>
 								</article>
