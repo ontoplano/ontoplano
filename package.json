@@ -11,13 +11,14 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"test:e2e": "playwright test",
-		"test": "npm run test:e2e",
+		"test": "npm run test:unit && npm run test:e2e",
 		"db:push": "node scripts/guard-push.mjs && drizzle-kit push",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "node scripts/migrate.mjs",
 		"db:snapshot": "node scripts/db-snapshot.mjs",
 		"db:studio": "drizzle-kit studio",
-		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes"
+		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes",
+		"test:unit": "vitest run"
 	},
 	"private": true,
 	"type": "module",
@@ -54,7 +55,8 @@
 		"tailwindcss": "^4.1.18",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.57.0",
-		"vite": "^7.3.1"
+		"vite": "^7.3.1",
+		"vitest": "^4.1.11"
 	},
 	"keywords": [
 		"svelte"
@@ -65,5 +67,8 @@
 		"@fontsource-variable/jetbrains-mono": "^5.3.0",
 		"better-sqlite3": "^12.6.2",
 		"nodemailer": "^9.0.5"
+	},
+	"resolutions": {
+		"vite": "^7.3.1"
 	}
 }
