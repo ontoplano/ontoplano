@@ -9,7 +9,13 @@ StartLimitIntervalSec=0
 [Service]
 Type=simple
 WorkingDirectory=${HOME}/.local/share/ontoplano/app
-ExecStart=/usr/bin/node build/index.js
+# Substituted by `make install-service` with the node that built node_modules.
+#
+# It used to say /usr/bin/node, which is a different binary from the one on a
+# developer's PATH the moment nvm or NodeSource is involved — and better-sqlite3
+# is compiled against one ABI. The result is a unit that crash-loops with
+# ERR_DLOPEN_FAILED while `node build/index.js` by hand works perfectly.
+ExecStart=${NODE_BIN} build/index.js
 # Always, not on-failure: a clean exit nobody asked for is still the app being
 # down, and that is the one this has to survive.
 Restart=always

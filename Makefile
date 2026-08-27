@@ -136,10 +136,31 @@ up-server: db-migrate
 up: up-server up-phone
 	@echo "Everything updated."
 
+# The node the service will run, resolved at install time.
+#
+# Whatever built node_modules is the only node that can load them: better-sqlite3
+# is a native module, and Node's ABI changes between majors. Hardcoding
+# /usr/bin/node in the unit meant a box with nvm, or with NodeSource beside
+# Ubuntu's nodejs, built against one and ran against the other.
+NODE_BIN := $(shell command -v node)
+
 install-service: deploy
 	@echo "Installing ontoplano systemd service..."
+	@[ -n "$(NODE_BIN)" ] || { echo "No node on PATH — nothing to put in the unit."; exit 1; }
+	@# Fails here, with the reason, rather than as a crash loop at 3am.
+	@cd $(PROD_DIR) && $(NODE_BIN) -e "require('better-sqlite3')" 2>/dev/null || { \
+		echo; \
+		echo "better-sqlite3 will not load under $(NODE_BIN) ($$($(NODE_BIN) -v))."; \
+		echo "It was compiled against a different Node. Rebuild it with the same one:"; \
+		echo "  rm -rf node_modules && yarn install && make install-service"; \
+		echo; \
+		echo "If there is more than one node here, that is the cause:"; \
+		echo "  which -a node"; \
+		exit 1; \
+	}
 	@mkdir -p ~/.config/systemd/user
-	@envsubst < ontoplano.service > ~/.config/systemd/user/ontoplano.service
+	@NODE_BIN="$(NODE_BIN)" envsubst < ontoplano.service > ~/.config/systemd/user/ontoplano.service
+	@echo "The service will run $(NODE_BIN) ($$($(NODE_BIN) -v))"
 	@systemctl --user daemon-reload
 	@systemctl --user enable ontoplano
 	@systemctl --user start ontoplano
