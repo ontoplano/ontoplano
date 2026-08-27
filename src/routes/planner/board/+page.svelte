@@ -402,7 +402,7 @@
 
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div class="flex items-center gap-1">
-			{#each [{ v: 'today', l: 'Today' }, { v: 'general', l: 'Anytime' }] as t (t.v)}
+			{#each [{ v: 'today', l: 'Today' }, { v: 'general', l: 'Todo' }] as t (t.v)}
 				<button
 					onclick={() => {
 						tab = t.v as typeof tab;
@@ -770,9 +770,29 @@
 												{#if card.kind === 'todo' && card.scheduledDate && card.scheduledDate < data.date}
 													<span class="text-[10px] text-gray-500">carried over</span>
 												{/if}
-												{#if card.timing === 'early' || card.timing === 'late'}
-													<span class="text-[10px] text-gray-500">{TIMING_LABELS[card.timing]}</span
-													>
+												<!--
+													Ticking a whole day off at bedtime marks everything late,
+													which is true of the tick and false of the doing. The badge
+													is the correction: click it and it cycles early → on time →
+													late, no form.
+												-->
+												{#if card.timing && card.kind === 'instance'}
+													{@const next =
+														card.timing === 'late'
+															? 'early'
+															: card.timing === 'early'
+																? 'on_time'
+																: 'late'}
+													<form method="post" action="?/setTiming" use:enhance>
+														<input type="hidden" name="id" value={card.id} />
+														<input type="hidden" name="timing" value={next} />
+														<button
+															class="text-[10px] text-gray-500 underline decoration-dotted underline-offset-2 hover:text-gray-900"
+															title="Actually {TIMING_LABELS[next]} — click to change"
+														>
+															{TIMING_LABELS[card.timing]}
+														</button>
+													</form>
 												{/if}
 												<RatingBadges values={card.ratings} />
 											</div>
@@ -809,10 +829,9 @@
 				<header
 					class="flex items-center justify-between border-b border-gray-200 bg-white px-3 py-2"
 				>
-					<!-- The same undated tasks the plan and `/planner/todo` call Anytime.
-					     The status column beside it is "Pending", so the two no longer
-					     read as the same word. -->
-					<span class="eyebrow text-gray-500">Anytime</span>
+					<!-- Todo, like the tab and the plan's rail. The status column beside
+					     it is "Pending", which is what stops the two reading as one word. -->
+					<span class="eyebrow text-gray-500">Todo</span>
 					<span class="tabular text-xs text-gray-400">{railCards.length}</span>
 				</header>
 				<div class="space-y-2 p-2">

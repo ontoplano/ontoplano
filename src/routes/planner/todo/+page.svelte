@@ -161,7 +161,7 @@
 			</button>
 		</div>
 		<button onclick={startNew} class="btn btn-primary btn-sm">
-			<Icon name="plus" /> New task
+			<Icon name="plus" /> New todo
 			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">n</kbd>
 		</button>
 	</div>
@@ -171,7 +171,7 @@
 	<Modal
 		bind:open={showForm}
 		error={form?.message}
-		title={editingId ? 'Edit task' : 'New task'}
+		title={editingId ? 'Edit todo' : 'New todo'}
 		onclose={() => (editingId = null)}
 	>
 		{@const editing = editingTodo()}

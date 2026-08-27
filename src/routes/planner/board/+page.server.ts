@@ -15,6 +15,7 @@ import {
 	setInstanceLabel,
 	setInstanceRatings,
 	setInstanceStatus,
+	setInstanceTiming,
 	setInstanceTime
 } from '$lib/server/services/instances';
 import {
@@ -204,6 +205,21 @@ export const actions: Actions = {
 			if (target.kind === 'instance') setInstanceStatus(ctx, target.id, status);
 			else setTodoStatus(ctx, target.id, status);
 			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** Correct when something actually happened. See `setInstanceTiming`. */
+	setTiming: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			setInstanceTiming(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('timing')
+			);
+			return { success: true, action: 'setTiming' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

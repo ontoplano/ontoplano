@@ -2237,8 +2237,7 @@
 				class="flex cursor-pointer list-none items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
 			>
 				<span class="text-xs text-gray-400">{todosOpen ? '▾' : '▸'}</span>
-				<!-- The same undated todos the board calls "Anytime". -->
-				<span class="eyebrow text-gray-500">Anytime</span>
+				<span class="eyebrow text-gray-500">Todo</span>
 				<span class="tabular border border-gray-300 bg-gray-50 px-1 text-xs text-gray-600">
 					{data.todos.length}
 				</span>
