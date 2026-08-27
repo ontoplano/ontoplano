@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { ratingsFromForm } from '$lib/ratings';
 import { isStatus, type Status, type Timing } from '$lib/task-status';
 import { listActivities, listCategories } from '$lib/server/services/activities';
+import { goalBacklinks, type GoalBacklink } from '$lib/server/services/backlinks';
 import { buildCtx, type Ctx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
 import { moveOccurrence } from '$lib/server/services/slots';
@@ -95,6 +96,12 @@ export type Card = {
 	mode: 'category' | 'activity' | null;
 	activityId: number | null;
 	activityName: string | null;
+	/**
+	 * The goals this card serves. A block earns them through its slot or its
+	 * activity, a todo directly — three routes to the same question, which is
+	 * why the board answers it here rather than in the markup.
+	 */
+	goals: GoalBacklink[];
 };
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -103,6 +110,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const dateStr = formatDate(date);
 
 	generateForDate(ctx, date);
+
+	const links = goalBacklinks(ctx);
+	/** Dedupe: a block whose slot and whose activity both serve a goal names it once. */
+	const merge = (...lists: (GoalBacklink[] | undefined)[]): GoalBacklink[] => {
+		const seen = new Map<number, GoalBacklink>();
+		for (const list of lists) for (const goal of list ?? []) seen.set(goal.id, goal);
+		return [...seen.values()].sort((a, b) => a.title.localeCompare(b.title));
+	};
 
 	const occurrences = listOccurrences(ctx, date).map(
 		(o, i): Card => ({
@@ -127,7 +142,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			slotId: o.slotId,
 			mode: o.mode,
 			activityId: o.activityId,
-			activityName: o.activityName
+			activityName: o.activityName,
+			goals: merge(
+				o.slotId === null ? undefined : links.slots[o.slotId],
+				o.activityId === null ? undefined : links.activities[o.activityId]
+			)
 		})
 	);
 
@@ -153,7 +172,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		slotId: null,
 		mode: null,
 		activityId: null,
-		activityName: null
+		activityName: null,
+		goals: merge(links.todos[t.id])
 	});
 
 	// A todo given a date is on that day's board — it is what dragging a card

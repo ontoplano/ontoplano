@@ -9,6 +9,7 @@
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
+	import Backlinks from '$lib/components/Backlinks.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
@@ -554,6 +555,11 @@
 	>
 		{#if editing}
 			{@const card = editing}
+			{#if card.goals.length}
+				<div class="mb-3">
+					<Backlinks goals={card.goals} />
+				</div>
+			{/if}
 			<form
 				id="edit-form"
 				method="post"
@@ -795,6 +801,20 @@
 													</form>
 												{/if}
 												<RatingBadges values={card.ratings} />
+												<!--
+													Why this card exists, in one glyph. A kanban card is
+													scanned rather than read, so the goal's name would cost
+													more room than it is worth here — the editor spells it
+													out, and so does the todo list.
+												-->
+												{#if card.goals.length}
+													<span
+														class="text-gray-500"
+														title={card.goals.map((g) => g.title).join(' · ')}
+													>
+														<Icon name="goals" size={11} />
+													</span>
+												{/if}
 											</div>
 										</div>
 									</div>

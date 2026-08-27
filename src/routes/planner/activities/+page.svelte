@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Backlinks from '$lib/components/Backlinks.svelte';
 	import { enhance } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -393,13 +394,21 @@
 					<div class="min-w-0 flex-1">
 						<div class="flex items-center gap-2">
 							<span class="text-sm font-medium text-gray-900">{activity.name}</span>
-							<span class="text-xs font-medium" style="color: {catColor(activity.categoryId)}"
-								>{activity.categoryName}</span
-							>
+							<!-- The colour is the mark; the name is in ink. A category colour
+							     is the user's to choose, so it cannot be relied on to be
+							     readable as text on either theme's ground. -->
+							<span class="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
+								<span
+									class="h-2.5 w-0.5 rounded-full"
+									style="background-color: {catColor(activity.categoryId)}"
+								></span>
+								{activity.categoryName}
+							</span>
 						</div>
 						{#if activity.description}
 							<p class="truncate text-xs text-gray-500">{activity.description}</p>
 						{/if}
+						<Backlinks goals={data.goalLinks.activities[activity.id]} />
 					</div>
 
 					<div class="flex flex-wrap items-center gap-2 sm:shrink-0">

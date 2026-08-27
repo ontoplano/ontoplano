@@ -1,6 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
 import { ratingsFromForm } from '$lib/ratings';
 import { listActivities, listCategories } from '$lib/server/services/activities';
+import { goalBacklinks } from '$lib/server/services/backlinks';
 import { buildCtx } from '$lib/server/services/ctx';
 import { pickableNotebooks } from '$lib/server/services/notebooks';
 import { toActionFailure } from '$lib/server/services/errors';
@@ -21,7 +22,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		todos: listTodos(ctx),
 		categories: listCategories(ctx),
 		notebooks: pickableNotebooks(ctx),
-		activities: listActivities(ctx, { activeOnly: true })
+		activities: listActivities(ctx, { activeOnly: true }),
+		goalLinks: goalBacklinks(ctx)
 	};
 };
 

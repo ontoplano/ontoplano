@@ -10,12 +10,17 @@ import {
 	updateActivity,
 	updateCategory
 } from '$lib/server/services/activities';
+import { goalBacklinks } from '$lib/server/services/backlinks';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
-	return { activities: listActivitiesWithUsage(ctx), categories: listCategories(ctx) };
+	return {
+		activities: listActivitiesWithUsage(ctx),
+		categories: listCategories(ctx),
+		goalLinks: goalBacklinks(ctx)
+	};
 };
 
 export const actions: Actions = {

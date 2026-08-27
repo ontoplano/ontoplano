@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Backlinks from '$lib/components/Backlinks.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -380,6 +381,12 @@
 							{#if todo.notes}
 								<p class="truncate text-xs text-gray-500">{todo.notes}</p>
 							{/if}
+							<Backlinks
+								goals={data.goalLinks.todos[todo.id]}
+								notebook={todo.notebookId && todo.notebookTitle
+									? { id: todo.notebookId, title: todo.notebookTitle }
+									: null}
+							/>
 						</div>
 
 						<div class="flex flex-wrap items-center gap-2 sm:shrink-0">

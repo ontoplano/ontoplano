@@ -359,7 +359,8 @@
 				<div class="divide-y divide-gray-200">
 					{#each column.goals as goal (goal.id)}
 						{@const pct = percent(goal)}
-						<div class="py-3">
+						<!-- Named so anything that belongs to this goal can link straight at it. -->
+						<div id="goal-{goal.id}" class="py-3 target:bg-yellow-50">
 							<!-- The buttons do not shrink, so on a phone they used to squeeze
 							     the title into a one-word-per-line ribbon. Below `sm` they go
 							     underneath instead. -->
