@@ -16,6 +16,7 @@ import { listActiveOn } from '$lib/server/services/goals';
 import { listHabits, today as todayOf } from '$lib/server/services/habits';
 import { generateForDate, listForDate } from '$lib/server/services/instances';
 import { listQuotes } from '$lib/server/services/quotes';
+import { reviewPending } from '$lib/server/services/review';
 import { listToBuy } from '$lib/server/services/shopping';
 import { listActiveWeeklySlots } from '$lib/server/services/slots';
 import { listWins, saveWins } from '$lib/server/services/wins';
@@ -110,6 +111,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			streak: h.streak
 		})),
 		shoppingToBuy: listToBuy(ctx),
+		/** Set when last week had blocks in it and nobody has written it up yet. */
+		pendingReview: reviewPending(ctx),
 		weekSlots: listActiveWeeklySlots(ctx),
 		today
 	};

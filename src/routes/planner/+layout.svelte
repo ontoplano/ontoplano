@@ -10,13 +10,17 @@
 	 * Track is gone: it was the same occurrences the board already shows, listed
 	 * instead of arranged, and everything it could do to one of them the board's
 	 * card editor now does.
+	 *
+	 * Review comes after History for the same reason: History is the record and
+	 * Review is what you do with it.
 	 */
 	const tabs = [
 		{ href: '/planner/plan', label: 'Plan' },
 		{ href: '/planner/board', label: 'Board' },
 		{ href: '/planner/todo', label: 'Todo' },
 		{ href: '/planner/activities', label: 'Activities' },
-		{ href: '/planner/history', label: 'History' }
+		{ href: '/planner/history', label: 'History' },
+		{ href: '/planner/review', label: 'Review' }
 	];
 
 	function isActive(href: string): boolean {

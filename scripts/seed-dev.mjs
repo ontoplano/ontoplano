@@ -1038,4 +1038,41 @@ const dinner = one("select id from weekly_slots where user_id = ? and label = 'c
 if (dinner)
 	db.prepare('update weekly_slots set recipe_id = ? where id = ?').run(tomatoPasta, dinner.id);
 
+// --- The week before last, closed ------------------------------------------------
+//
+// Two reviews, so the dashboard's "last week is still open" prompt has
+// something to be quiet about *and* the review page has a written-up week to
+// page back to. Last week is deliberately left unwritten: that is the state
+// the prompt exists for.
+
+const mondayBefore = (weeksAgo) => {
+	const d = new Date(now);
+	d.setDate(d.getDate() - ((d.getDay() + 6) % 7) - 7 * weeksAgo);
+	return iso(d);
+};
+
+const reviewLine = (weekStart, position, content) => {
+	const existing = one(
+		'select id from weekly_reviews where user_id = ? and week_start = ? and position = ?',
+		uid,
+		weekStart,
+		position
+	);
+	if (existing) return existing.id;
+	return run(
+		'insert into weekly_reviews (user_id, week_start, position, content) values (?, ?, ?, ?)',
+		uid,
+		weekStart,
+		position,
+		content
+	);
+};
+
+reviewLine(mondayBefore(2), 1, 'Mornings held. Everything before ten actually happened.');
+reviewLine(mondayBefore(2), 2, 'Thursday went sideways and took Friday with it.');
+reviewLine(mondayBefore(2), 3, 'Stop putting deep work after lunch.');
+
+reviewLine(mondayBefore(3), 1, 'Cooked at home five nights out of seven.');
+reviewLine(mondayBefore(3), 2, 'Read almost nothing.');
+
 console.log(`seeded synthetic data for ${user.email ?? uid}`);

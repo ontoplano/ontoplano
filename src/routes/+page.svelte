@@ -176,6 +176,28 @@
 	{/snippet}
 
 	<!--
+		Last week, if nobody has closed it.
+
+		The review page existed for a week before this line did, and in that week
+		nothing ever asked anybody to open it — which was the exact complaint that
+		made the page worth building. One line, above the fold, only while there is
+		a finished week with something in it and no write-up.
+	-->
+	{#if data.pendingReview}
+		<a
+			href="/planner/review?week={data.pendingReview.weekStart}"
+			class="flex items-center gap-3 border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:bg-gray-50"
+		>
+			<span class="text-gray-500"><Icon name="clock" size={16} /></span>
+			<span class="min-w-0 flex-1 text-sm text-gray-900">
+				Last week is still open — {data.pendingReview.planned} blocks, no write-up.
+			</span>
+			<span class="shrink-0 text-xs text-gray-500">Review it</span>
+			<Icon name="chevron-right" size={14} />
+		</a>
+	{/if}
+
+	<!--
 		What is happening now, above everything else.
 
 		The dashboard used to open with "0 / 11 · 11 to go" — a score about the

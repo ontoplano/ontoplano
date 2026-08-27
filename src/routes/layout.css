@@ -376,6 +376,28 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		color: var(--color-gray-900);
 	}
 
+	/*
+	 * A button you cannot press should not look like one you can.
+	 *
+	 * Nothing in this file said anything about `:disabled`, so a disabled
+	 * primary button rendered as a solid black button that silently ignores
+	 * clicks — the worst of both, since the only way to discover it was dead was
+	 * to press it. Dimmed and un-hoverable, in one place, for every button in
+	 * the app.
+	 */
+	button:disabled,
+	.btn:disabled,
+	button[aria-disabled='true'] {
+		cursor: not-allowed;
+		opacity: 0.4;
+		box-shadow: none;
+	}
+
+	button:disabled:hover,
+	.btn:disabled:hover {
+		background-color: inherit;
+	}
+
 	/* A confirm that has not been on screen long enough to be a decision. */
 	.is-unarmed {
 		opacity: 0.55;

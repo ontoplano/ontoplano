@@ -166,3 +166,29 @@ test('text stands off its background, on every theme', async ({ page }) => {
 
 	expect(found, 'text nobody can comfortably read').toEqual([]);
 });
+
+test('a button you cannot press does not look like one you can', async ({ page }) => {
+	await register(page, `disabled-${Date.now()}@test.invalid`);
+
+	// The review's carry button is disabled until something is ticked, which is
+	// the general case: a form whose action needs a selection. Onboarding filled
+	// *this* week, and the page defaults to the last one, so ask for this one.
+	const today = new Date().toISOString().slice(0, 10);
+	await page.goto(`/planner/review?week=${today}`, { waitUntil: 'networkidle' });
+
+	const carry = page.getByRole('button', { name: /carry into the todo list/i });
+	await expect(carry).toBeVisible();
+
+	for (const { theme, style } of COMBINATIONS) {
+		await paint(page, theme, style);
+		const look = await carry.evaluate((el) => ({
+			disabled: (el as HTMLButtonElement).disabled,
+			opacity: parseFloat(getComputedStyle(el).opacity),
+			cursor: getComputedStyle(el).cursor
+		}));
+
+		expect(look.disabled, `${theme}/${style}: expected the button to be disabled`).toBe(true);
+		expect(look.opacity, `${theme}/${style}: a dead button at full strength`).toBeLessThan(0.7);
+		expect(look.cursor).toBe('not-allowed');
+	}
+});

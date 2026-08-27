@@ -23,6 +23,7 @@ const ROUTES = [
 	'/planner/todo',
 	'/planner/activities',
 	'/planner/history',
+	'/planner/review',
 	'/goals',
 	'/diary',
 	'/diary/notebooks',

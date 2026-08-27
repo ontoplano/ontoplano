@@ -1195,6 +1195,40 @@ export const dailyWins = sqliteTable(
 	]
 );
 
+/**
+ * What a week came to.
+ *
+ * `/planner/history` has always held the numbers and nothing ever asked anyone
+ * to look at them, which is the difference between a tracker and a habit. A
+ * review is written once per week and is the only thing in the app that is
+ * *about* a stretch of time rather than a moment in it.
+ *
+ * Three lines, positioned like the daily wins, because a page that offers a
+ * blank textarea for "how was your week" gets used twice.
+ */
+export const weeklyReviews = sqliteTable(
+	'weekly_reviews',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		weekStart: text('week_start').notNull(), // YYYY-MM-DD, always a Monday
+		position: integer('position').notNull(), // 1-based, so "line 2" stays line 2
+		content: text('content').notNull(),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('weekly_reviews_user_week_idx').on(table.userId, table.weekStart),
+		uniqueIndex('weekly_reviews_slot_unique').on(table.userId, table.weekStart, table.position)
+	]
+);
+
 // --- Plugin manifests -----------------------------------------------------------
 
 /**

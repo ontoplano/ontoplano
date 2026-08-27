@@ -51,4 +51,10 @@ export async function register(page: Page, email: string, name = 'Smoke Test'): 
 		await page.getByRole('button', { name: 'Start planning' }).click();
 		await page.waitForTimeout(1500);
 	}
+
+	// And then the dashboard, which is where a person goes next and which is
+	// what generates the current week's occurrences from the template that
+	// onboarding just installed. Without this the account has weekly slots and
+	// no blocks, which is a state nobody using the app is ever in for long.
+	await page.goto('/', { waitUntil: 'networkidle' });
 }
