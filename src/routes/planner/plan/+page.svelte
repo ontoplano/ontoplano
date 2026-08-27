@@ -2426,8 +2426,15 @@
 			<Calendar bind:this={ec} plugins={[TimeGrid, DayGrid, Interaction]} options={gridOptions} />
 		{/if}
 	</div>
-	<div class="mt-1 flex items-center justify-between gap-4">
-		<p class="text-xs text-gray-500">
+	<div class="mt-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+		<!--
+			All of this is mouse-and-keyboard advice — drag, Ctrl, scroll — so a
+			touch screen has no use for it, and `kbd-hint` is what hides a thing on a
+			coarse pointer. It was squeezing the zoom control beside it into a
+			one-letter-per-line ribbon on a phone, to say something the phone cannot
+			do.
+		-->
+		<p class="kbd-hint min-w-0 flex-1 text-xs text-gray-500">
 			Drag to create · drag a block to move · click it to edit, skip or delete · hold <kbd
 				class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Ctrl</kbd
 			>
@@ -2440,9 +2447,13 @@
 				class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Z</kbd
 			> undoes · snaps to 15min
 		</p>
-		<div class="flex items-center gap-1">
-			<span class="mr-1 text-xs text-gray-500">
-				Zoom (<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Ctrl</kbd>+scroll)
+		<div class="flex shrink-0 items-center gap-1">
+			<span class="mr-1 text-xs whitespace-nowrap text-gray-500">
+				Zoom
+				<span class="kbd-hint"
+					>(<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Ctrl</kbd
+					>+scroll)</span
+				>
 			</span>
 			<button
 				type="button"
