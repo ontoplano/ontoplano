@@ -4,6 +4,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
+	import { autofocus } from '$lib/actions/autofocus';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -31,6 +32,8 @@
 	let showBought = $state(false);
 	let showSnoozed = $state(false);
 	let confirmingDelete: number | null = $state(null);
+	/** The item whose "what did you pay" box is open. */
+	let pricing: number | null = $state(null);
 	let showCategories = $state(false);
 	let addingCategory = $state(false);
 
@@ -251,6 +254,72 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
+<!--
+	What something has actually cost, over time.
+
+	The item's own price is a last-known guess and gets overwritten; this is the
+	sentence nobody else's app shows you. It appears from the second purchase,
+	because "it cost 1.60" is already on the row.
+-->
+{#snippet drift(item: { id: number })}
+	{#if data.drifts[item.id]}
+		{@const d = data.drifts[item.id]}
+		<span
+			class="ml-2 text-xs {d.percent > 0 ? 'text-amber-700' : 'text-gray-500'}"
+			title="{d.points} purchases recorded"
+		>
+			{formatMoney(d.fromCents, data.currency)} → {formatMoney(d.toCents, data.currency)}
+			({d.percent > 0 ? '+' : ''}{d.percent}%)
+		</span>
+	{/if}
+{/snippet}
+
+<!--
+	What you paid, asked afterwards.
+
+	Never part of the tick: that happens in an aisle, one press, often offline.
+	Prices are for when you are home with the bought list in front of you.
+-->
+{#snippet paidPrompt(item: { id: number; name: string; bought: boolean })}
+	{#if item.bought}
+		{#if pricing === item.id}
+			<form
+				method="POST"
+				action="?/paid"
+				use:enhance={() => {
+					return async ({ update }) => {
+						await update({ reset: true });
+						pricing = null;
+					};
+				}}
+				class="flex items-center gap-1"
+			>
+				<input type="hidden" name="id" value={item.id} />
+				<input
+					name="paid"
+					inputmode="decimal"
+					use:autofocus
+					placeholder="1.60"
+					aria-label="What you paid for {item.name}"
+					class="input w-20 px-2 py-1 text-xs"
+				/>
+				<button class="btn btn-sm" title="Save" aria-label="Save what you paid">
+					<Icon name="check" size={14} />
+				</button>
+			</form>
+		{:else}
+			<button
+				type="button"
+				onclick={() => (pricing = item.id)}
+				class="text-xs text-gray-500 hover:text-gray-900"
+				title="Record what you paid"
+			>
+				paid?
+			</button>
+		{/if}
+	{/if}
+{/snippet}
+
 <div class="space-y-4">
 	<div class="flex items-center justify-between">
 		<h1 class="text-lg font-bold text-gray-900">Shopping List</h1>
@@ -453,7 +522,9 @@
 										{#if item.notes}
 											<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
 										{/if}
+										{@render drift(item)}
 									</div>
+									{@render paidPrompt(item)}
 									{#if item.snoozed}
 										<form
 											method="POST"
@@ -575,7 +646,9 @@
 								{#if item.notes}
 									<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
 								{/if}
+								{@render drift(item)}
 							</div>
+							{@render paidPrompt(item)}
 							<form method="POST" action="?/toggleSnoozed" use:enhance={tick('toggleSnoozed')}>
 								<input type="hidden" name="id" value={item.id} />
 								<button

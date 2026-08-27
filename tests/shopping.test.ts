@@ -76,3 +76,64 @@ describe('ownership', () => {
 		expect(() => shopping.deleteItem(theirs, item.id)).toThrow();
 	});
 });
+
+describe('what you actually paid', () => {
+	test('a tick with no number records nothing', () => {
+		shopping.createItem(ctx, { name: 'bread', type: 'replenish' });
+		const id = shopping.listItems(ctx).find((i) => i.name === 'bread')!.id;
+		shopping.toggleBought(ctx, id);
+
+		expect(shopping.priceHistory(ctx, id)).toEqual([]);
+	});
+
+	test('a tick with a number records it, and updates the "about"', () => {
+		shopping.createItem(ctx, { name: 'oat milk', type: 'replenish' });
+		const id = shopping.listItems(ctx).find((i) => i.name === 'oat milk')!.id;
+		shopping.toggleBought(ctx, id, { paid: '1.20' });
+
+		expect(shopping.priceHistory(ctx, id)).toEqual([{ priceCents: 120, forDate: '2026-08-26' }]);
+		expect(shopping.listItems(ctx).find((i) => i.id === id)?.priceCents).toBe(120);
+	});
+
+	test('unticking records nothing — you did not buy it twice', () => {
+		shopping.createItem(ctx, { name: 'butter', type: 'replenish' });
+		const id = shopping.listItems(ctx).find((i) => i.name === 'butter')!.id;
+		shopping.toggleBought(ctx, id, { paid: '2.00' });
+		shopping.toggleBought(ctx, id, { paid: '9.99' });
+
+		expect(shopping.priceHistory(ctx, id)).toHaveLength(1);
+	});
+
+	test('the drift needs two prices before it says anything', () => {
+		shopping.createItem(ctx, { name: 'coffee', type: 'replenish' });
+		const id = shopping.listItems(ctx).find((i) => i.name === 'coffee')!.id;
+		shopping.toggleBought(ctx, id, { paid: '4.00' });
+		expect(shopping.priceDrift(ctx, id)).toBeNull();
+
+		shopping.toggleBought(ctx, id);
+		shopping.toggleBought(ctx, id, { paid: '5.00' });
+
+		const drift = shopping.priceDrift(ctx, id)!;
+		expect(drift.from.priceCents).toBe(400);
+		expect(drift.to.priceCents).toBe(500);
+		expect(drift.percent).toBe(25);
+	});
+
+	test('a falling price reads as a fall', () => {
+		shopping.createItem(ctx, { name: 'flour', type: 'replenish' });
+		const id = shopping.listItems(ctx).find((i) => i.name === 'flour')!.id;
+		shopping.toggleBought(ctx, id, { paid: '2.00' });
+		shopping.toggleBought(ctx, id);
+		shopping.toggleBought(ctx, id, { paid: '1.50' });
+
+		expect(shopping.priceDrift(ctx, id)!.percent).toBe(-25);
+	});
+
+	test("a stranger cannot read another account's prices", () => {
+		shopping.createItem(ctx, { name: 'saffron', type: 'replenish' });
+		const id = shopping.listItems(ctx).find((i) => i.name === 'saffron')!.id;
+		shopping.toggleBought(ctx, id, { paid: '12.00' });
+
+		expect(() => shopping.priceHistory(theirs, id)).toThrow();
+	});
+});

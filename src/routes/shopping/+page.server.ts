@@ -9,6 +9,8 @@ import {
 	listCategories,
 	setCategoryFood,
 	listItems,
+	priceDrifts,
+	recordPaid,
 	restockItem,
 	toggleBought,
 	toggleSnoozed,
@@ -19,6 +21,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
 	return {
 		items: listItems(ctx),
+		/** How each price has moved, for the ones bought more than once. */
+		drifts: priceDrifts(ctx),
 		shoppingCategories: listCategories(ctx),
 		currency: getCurrency(ctx.userId)
 	};
@@ -108,6 +112,17 @@ export const actions: Actions = {
 		try {
 			toggleBought(buildCtx(locals.user!.id), Number(formData.get('id')));
 			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** What you actually paid. Never part of the tick, which has to stay one press. */
+	paid: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			recordPaid(buildCtx(locals.user!.id), Number(formData.get('id')), formData.get('paid'));
+			return { success: true, action: 'paid' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

@@ -1,8 +1,8 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { shoppingCategories, shoppingItems } from '../db/schema.js';
-import type { Ctx } from './ctx.js';
+import { pricePoints, shoppingCategories, shoppingItems } from '../db/schema.js';
+import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
@@ -175,14 +175,145 @@ export function deleteItem(ctx: Ctx, id: number): void {
 	if (res.changes === 0) throw new NotFoundError('item');
 }
 
-export function toggleBought(ctx: Ctx, id: number): void {
+export function toggleBought(ctx: Ctx, id: number, raw: { paid?: unknown } = {}): void {
 	const item = ownedItem(ctx, id);
 	const now = stamp(ctx);
+	const buying = !item.bought;
 
 	db.update(shoppingItems)
-		.set({ bought: !item.bought, boughtAt: item.bought ? null : now, updatedAt: now })
+		.set({ bought: buying, boughtAt: buying ? now : null, updatedAt: now })
 		.where(and(eq(shoppingItems.id, id), eq(shoppingItems.userId, ctx.userId)))
 		.run();
+
+	// A price given at the same time is the same act, but the tick never waits
+	// for one: it happens in a supermarket aisle, one press, often offline.
+	if (buying && raw.paid !== undefined && raw.paid !== null && raw.paid !== '')
+		recordPaid(ctx, id, raw.paid);
+}
+
+/**
+ * What you actually paid.
+ *
+ * The item's own `priceCents` is a *last known* price and gets overwritten,
+ * which answers "what will this shop cost" and nothing over time. A row per
+ * purchase answers the other question — milk has gone from 1.20 to 1.60 this
+ * year, which nobody else's app will tell you.
+ *
+ * Only written when somebody says a number. A chart built out of guesses is
+ * worse than no chart.
+ */
+export function recordPaid(ctx: Ctx, id: number, raw: unknown): void {
+	ownedItem(ctx, id);
+
+	const paid = parseMoney(raw, getCurrency(ctx.userId));
+	if (paid === null) throw new ValidationError('That is not a price this understands');
+
+	db.transaction((tx) => {
+		tx.insert(pricePoints)
+			.values({
+				userId: ctx.userId,
+				itemId: id,
+				priceCents: paid,
+				forDate: localDateOf(ctx.now, ctx.tz)
+			})
+			.run();
+
+		// A confirmed price is the best "about" there is.
+		tx.update(shoppingItems)
+			.set({ priceCents: paid, updatedAt: stamp(ctx) })
+			.where(and(eq(shoppingItems.id, id), eq(shoppingItems.userId, ctx.userId)))
+			.run();
+	});
+}
+
+export type PricePoint = { priceCents: number; forDate: string };
+
+/** Everything ever paid for one item, oldest first. */
+export function priceHistory(ctx: Ctx, id: number): PricePoint[] {
+	ownedItem(ctx, id);
+
+	return db
+		.select({ priceCents: pricePoints.priceCents, forDate: pricePoints.forDate })
+		.from(pricePoints)
+		.where(and(eq(pricePoints.itemId, id), eq(pricePoints.userId, ctx.userId)))
+		.orderBy(asc(pricePoints.forDate), asc(pricePoints.id))
+		.all();
+}
+
+/**
+ * How every price has moved, in one query.
+ *
+ * An account has a few hundred of these at most, so folding them here beats a
+ * query per row on a list that draws forty items.
+ */
+export function priceDrifts(
+	ctx: Ctx
+): Record<number, { fromCents: number; toCents: number; percent: number; points: number }> {
+	const rows = db
+		.select({
+			itemId: pricePoints.itemId,
+			priceCents: pricePoints.priceCents,
+			forDate: pricePoints.forDate
+		})
+		.from(pricePoints)
+		.where(eq(pricePoints.userId, ctx.userId))
+		.orderBy(asc(pricePoints.forDate), asc(pricePoints.id))
+		.all();
+
+	const first = new Map<number, number>();
+	const last = new Map<number, number>();
+	const count = new Map<number, number>();
+
+	for (const row of rows) {
+		if (!first.has(row.itemId)) first.set(row.itemId, row.priceCents);
+		last.set(row.itemId, row.priceCents);
+		count.set(row.itemId, (count.get(row.itemId) ?? 0) + 1);
+	}
+
+	const out: Record<
+		number,
+		{ fromCents: number; toCents: number; percent: number; points: number }
+	> = {};
+
+	for (const [itemId, from] of first) {
+		const to = last.get(itemId)!;
+		const points = count.get(itemId)!;
+		// One price is what the item already says; two is the first thing worth
+		// reading.
+		if (points < 2 || from === 0) continue;
+		out[itemId] = {
+			fromCents: from,
+			toCents: to,
+			percent: Math.round(((to - from) / from) * 100),
+			points
+		};
+	}
+
+	return out;
+}
+
+/**
+ * How a price has moved, in the one sentence worth reading.
+ *
+ * Null until there are two prices to compare, because "it cost 1.60" is
+ * already on the item and saying it twice is not insight.
+ */
+export function priceDrift(
+	ctx: Ctx,
+	id: number
+): { from: PricePoint; to: PricePoint; percent: number } | null {
+	const points = priceHistory(ctx, id);
+	if (points.length < 2) return null;
+
+	const from = points[0];
+	const to = points[points.length - 1];
+	if (from.priceCents === 0) return null;
+
+	return {
+		from,
+		to,
+		percent: Math.round(((to.priceCents - from.priceCents) / from.priceCents) * 100)
+	};
 }
 
 /** Put a replenish item back on the list; a wishlist item has nothing to restock. */

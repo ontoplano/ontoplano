@@ -1118,4 +1118,34 @@ shoppingItem('a proper armchair', 'someday', { categoryId: household });
 age('ideas', { column: 'content', value: 'A newsletter about bread, maybe' }, monthsAgo(5));
 age('shopping_items', { column: 'name', value: 'a proper armchair' }, monthsAgo(9));
 
+// --- What things have actually cost -----------------------------------------------
+//
+// Two purchases of the same thing at different prices, so the shopping list has
+// a drift to show. One point says nothing; the sentence starts at two.
+
+const pricePoint = (itemName, cents, when) => {
+	const item = one('select id from shopping_items where user_id = ? and name = ?', uid, itemName);
+	if (!item) return;
+	const already = one(
+		'select id from price_points where user_id = ? and item_id = ? and for_date = ?',
+		uid,
+		item.id,
+		when
+	);
+	if (already) return;
+	run(
+		'insert into price_points (user_id, item_id, price_cents, for_date) values (?, ?, ?, ?)',
+		uid,
+		item.id,
+		cents,
+		when
+	);
+	db.prepare('update shopping_items set price_cents = ? where id = ?').run(cents, item.id);
+};
+
+pricePoint('coffee beans', 720, iso(dayOffset(-190)));
+pricePoint('coffee beans', 890, iso(dayOffset(-40)));
+pricePoint('olive oil', 640, iso(dayOffset(-120)));
+pricePoint('olive oil', 590, iso(dayOffset(-15)));
+
 console.log(`seeded synthetic data for ${user.email ?? uid}`);

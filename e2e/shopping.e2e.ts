@@ -54,3 +54,51 @@ test('a category that holds food makes ingredients possible', async ({ page }) =
 	await page.goto('/kitchen/recipes', { waitUntil: 'networkidle' });
 	await expect(page.getByText(/no shopping category holds food/i)).toHaveCount(0);
 });
+
+test('what you actually paid, and how it has moved', async ({ page }) => {
+	await register(page, `prices-${Date.now()}@test.invalid`);
+	await page.goto('/shopping', { waitUntil: 'networkidle' });
+
+	await page.getByRole('button', { name: /add item/i }).click();
+	const dialog = page.locator('dialog[open]');
+	await dialog.locator('input[name=name]').fill('oat milk');
+	await dialog.locator('input[name=name]').press('Enter');
+	await expect(page.getByText('oat milk')).toBeVisible();
+
+	// Ticking never asks for a price: it happens in an aisle, one press.
+	await page
+		.getByRole('button', { name: /got it/i })
+		.first()
+		.click();
+	await expect(page.getByText('paid?').first()).toBeVisible();
+
+	// The price is the optional second act.
+	await page.getByText('paid?').first().click();
+	await page.locator('input[name=paid]').fill('1.20');
+	await page.getByRole('button', { name: /save what you paid/i }).click();
+	await page.waitForTimeout(400);
+
+	// One price says nothing yet — it is already on the row.
+	await expect(page.getByText('→')).toHaveCount(0);
+
+	// Put it back on the list and buy it again, dearer.
+	await page.getByRole('button', { name: /show bought/i }).click();
+	await page.waitForTimeout(300);
+	await page
+		.getByRole('button', { name: /need to buy/i })
+		.first()
+		.click();
+	await page.waitForTimeout(400);
+	await page
+		.getByRole('button', { name: /got it/i })
+		.first()
+		.click();
+	await page.waitForTimeout(400);
+
+	await page.getByText('paid?').first().click();
+	await page.locator('input[name=paid]').fill('1.60');
+	await page.getByRole('button', { name: /save what you paid/i }).click();
+
+	await expect(page.getByText(/→/)).toBeVisible();
+	await expect(page.getByText(/\+33%/)).toBeVisible();
+});

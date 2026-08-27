@@ -1196,6 +1196,41 @@ export const dailyWins = sqliteTable(
 );
 
 /**
+ * What something cost, when you bought it.
+ *
+ * `shopping_items.price_cents` is a *last known* price — useful for "what will
+ * this shop cost" and useless for anything over time, because it is overwritten.
+ * A row per purchase is the other question: milk has gone from 1.20 to 1.60
+ * this year, and nobody else's app will tell you that.
+ *
+ * Written only when somebody actually says what they paid. A price nobody
+ * confirmed is a guess, and a chart built out of guesses is worse than no
+ * chart.
+ */
+export const pricePoints = sqliteTable(
+	'price_points',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		itemId: integer('item_id')
+			.notNull()
+			.references(() => shoppingItems.id, { onDelete: 'cascade' }),
+		priceCents: integer('price_cents').notNull(),
+		/** The day it was bought, not the instant it was typed in. */
+		forDate: text('for_date').notNull(),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('price_points_user_item_idx').on(table.userId, table.itemId),
+		index('price_points_date_idx').on(table.forDate)
+	]
+);
+
+/**
  * What a week came to.
  *
  * `/planner/history` has always held the numbers and nothing ever asked anyone
