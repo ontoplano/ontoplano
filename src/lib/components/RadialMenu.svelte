@@ -343,15 +343,24 @@
 		</div>
 
 		{#if footer}
-			<!-- Settings and signing out are not rooms, but they were on the menu
-			     this replaced and they have to stay somewhere a thumb can reach. -->
+			<!--
+				Settings and signing out are not rooms, but they were on the menu this
+				replaced and have to stay somewhere a thumb can reach.
+
+				Deaf until the opening tap is over. The click that belongs to that tap
+				arrives after the pie is already drawn, and the footer sits near the
+				bottom of the screen — which is where the handle is — so tapping "Go
+				to" was landing on Sign out.
+			-->
 			<!--
 				Hung off the ring rather than off the screen: anchored to the bottom
 				it landed on the two lower wedges, because the clamp that keeps the
 				pie clear of the navigation bar reserves exactly the same strip.
 			-->
 			<div
-				class="pointer-events-auto absolute inset-x-0 flex flex-wrap items-center justify-center gap-2 px-3"
+				class="absolute inset-x-0 flex flex-wrap items-center justify-center gap-2 px-3 {swallowClick
+					? 'pointer-events-none'
+					: 'pointer-events-auto'}"
 				style="top: {centre.y + OUTER + 14}px"
 			>
 				{@render footer()}

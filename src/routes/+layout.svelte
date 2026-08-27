@@ -85,18 +85,6 @@
 	];
 
 	/**
-	 * The bottom bar holds four; the rest live behind More.
-	 *
-	 * Four is what fits at 360px without the labels truncating, and a bar you
-	 * cannot read the labels on is just a row of mystery glyphs.
-	 */
-	const PRIMARY_NAV_COUNT = 4;
-	const primaryNav = $derived(nav.slice(0, PRIMARY_NAV_COUNT));
-	const secondaryNav = $derived(nav.slice(PRIMARY_NAV_COUNT));
-
-	const secondaryActive = $derived(secondaryNav.some((item) => isNavActive(item.href)));
-
-	/**
 	 * Screens that carry no navigation.
 	 *
 	 * First run, because every other page bounces straight back to it until it
@@ -120,8 +108,29 @@
 		ideas: 'ideas',
 		health: 'health',
 		shopping: 'shopping',
-		kitchen: 'shopping'
+		kitchen: 'utensils'
 	};
+
+	/**
+	 * The glyph behind the page, where the section is not specific enough.
+	 *
+	 * People and Notebooks both belong to the Diary section, so keying the
+	 * background off the section alone drew a journal behind all three — and the
+	 * whole point of the wash is that a room looks like itself. Longest prefix
+	 * wins, so `/diary/notebooks` beats `/diary`.
+	 */
+	const ROUTE_GLYPH: [string, IconName][] = [
+		['/diary/notebooks', 'notebook'],
+		['/diary/people', 'user'],
+		['/kitchen/recipes', 'utensils'],
+		['/kitchen/meals', 'utensils']
+	];
+
+	const pageGlyph = $derived(
+		ROUTE_GLYPH.filter(([prefix]) => page.url.pathname.startsWith(prefix)).sort(
+			(a, b) => b[0].length - a[0].length
+		)[0]?.[1] ?? SECTION_GLYPH[sectionKey]
+	);
 
 	function isNavActive(href: string): boolean {
 		if (href === '/') return page.url.pathname === '/';
@@ -261,7 +270,7 @@
 			</div>
 		{/if}
 
-		<SectionPattern icon={SECTION_GLYPH[sectionKey]} />
+		<SectionPattern icon={pageGlyph} />
 		<header class="relative z-40 bg-chrome shadow-raised" style="padding-top: var(--safe-top)">
 			<div class="mx-auto flex w-full max-w-page items-stretch justify-between px-4 sm:px-6">
 				<div class="flex min-w-0 items-stretch gap-4 min-[1460px]:gap-6">
@@ -451,73 +460,34 @@
 		</main>
 
 		<!--
-			Capture, under the thumb.
+			Two doors, and nothing else.
 
-			Bottom-centre and floating clear of the bar, because writing something
-			down is the thing you do most often and the one you are least willing to
-			go looking for. Press and flick, or tap and pick.
+			The bar used to be four sections and a menu, which is a list you read
+			every time. Both pies do the same job better — one for writing something
+			down, one for going somewhere — and once you have used them for a week
+			the four shortcuts are four things in the way. Press either and drag into
+			a wedge; tap it and the pie waits.
 		-->
-		<button
-			onpointerdown={(e) => pie?.summon(e)}
-			class="capture-trigger"
-			class:is-open={pieOpen}
-			aria-label="Write something down"
-			title="Write something down"
-		>
-			<Icon name="plus" size={22} />
-		</button>
-
-		<!-- Thumb-zone navigation. Primary actions belong where a thumb rests,
-		     not in a corner reachable only by shifting grip. -->
 		<nav
 			class="relative z-40 shrink-0 border-t border-chrome-line bg-chrome lg:hidden"
 			style="padding-bottom: var(--safe-bottom)"
 			aria-label="Primary"
 		>
 			<div class="flex" style="height: var(--mobile-nav-height)">
-				{#each primaryNav as item (item.href)}
-					{@const active = isNavActive(item.href)}
-					<a
-						href={item.href}
-						class="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] {active
-							? 'font-semibold text-chrome-ink'
-							: 'text-chrome-muted'}"
-						aria-current={active ? 'page' : undefined}
-					>
-						<svg
-							class="h-5 w-5"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.75"
-							stroke-linecap="square"
-							aria-hidden="true"
-						>
-							<path d={item.icon} />
-						</svg>
-						{item.label}
-						<span
-							class="h-0.5 w-6"
-							style="background-color: {active ? SECTIONS[item.section].accent : 'transparent'}"
-						></span>
-					</a>
-				{/each}
+				<button
+					onpointerdown={(e) => pie?.summon(e)}
+					class="pie-handle flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] {pieOpen
+						? 'font-semibold text-chrome-ink'
+						: 'text-chrome-muted'}"
+					aria-label="Write something down"
+				>
+					<Icon name="plus" size={22} />
+					Write
+				</button>
 
-				<!--
-					The rest of the app, as a pie.
-
-					Press it and drag up into a wedge; let go. This was a sheet you had
-					to open, read and then tap, which is three acts for something you do
-					twenty times a day — and the pie is the shape Estevão asked for: a
-					button you slide from towards whichever room you want.
-
-					The chevron is the affordance. A flat row of dots said "there is a
-					list behind me"; this one says "pull".
-				-->
 				<button
 					onpointerdown={(e) => rooms?.summon(e)}
-					class="pie-handle flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] {secondaryActive ||
-					roomsOpen
+					class="pie-handle flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] {roomsOpen
 						? 'font-semibold text-chrome-ink'
 						: 'text-chrome-muted'}"
 					aria-label="Go to a section"
@@ -534,10 +504,6 @@
 						<path d="M6 14l6-6 6 6" />
 					</svg>
 					Go to
-					<span
-						class="h-0.5 w-6"
-						style="background-color: {secondaryActive ? 'currentColor' : 'transparent'}"
-					></span>
 				</button>
 			</div>
 		</nav>
@@ -555,62 +521,16 @@
 
 <style>
 	/*
-	 * The thumb trigger.
-	 *
-	 * Floating clear of the navigation bar rather than in it: the bar is five
-	 * destinations and this is not a destination, and a sixth slot at 390px
-	 * would squeeze all six. `touch-action: none` so a flick out of it is a
-	 * gesture rather than a page scroll.
-	 */
-	.capture-trigger {
-		position: fixed;
-		bottom: calc(var(--mobile-nav-height) + var(--safe-bottom) + 0.75rem);
-		left: 50%;
-		z-index: 45;
-		display: flex;
-		height: 3.25rem;
-		width: 3.25rem;
-		translate: -50% 0;
-		align-items: center;
-		justify-content: center;
-		border-radius: 9999px;
-		border: 1px solid var(--color-chrome);
-		background-color: var(--color-chrome);
-		color: var(--color-chrome-ink);
-		box-shadow: var(--shadow-overlay);
-		transition: opacity 120ms ease;
-	}
-
-	/*
 	 * Every handle a pie hangs off.
 	 *
 	 * A press-and-hold on one of these is the gesture; without `touch-action`
 	 * and `user-select` the browser reads it as a scroll or a text selection,
 	 * takes it over, and the release never reaches the menu.
 	 */
-	.capture-trigger,
 	.pie-handle {
 		touch-action: none;
 		user-select: none;
 		-webkit-user-select: none;
 		-webkit-touch-callout: none;
-	}
-
-	/*
-	 * Phones only. A Tailwind `lg:hidden` on the element loses to the scoped
-	 * rule above — same one-class specificity, and Svelte's scoping adds a
-	 * second class — so the button showed up in the middle of a 1440px screen.
-	 * The breakpoint belongs with the rest of its layout.
-	 */
-	@media (min-width: 1024px) {
-		.capture-trigger {
-			display: none;
-		}
-	}
-
-	/* Out of the way of the menu it just opened. */
-	.capture-trigger.is-open {
-		opacity: 0;
-		pointer-events: none;
 	}
 </style>

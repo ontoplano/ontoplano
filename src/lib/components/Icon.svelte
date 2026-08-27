@@ -56,6 +56,8 @@
 		plug: 'M9 3v6M15 3v6M7 9h10v3a5 5 0 0 1-10 0zM12 17v4',
 		note: 'M5 4h11l3 3v13H5zM8 10h8M8 14h6',
 		notebook: 'M7 4h12v17H7zM7 8H4M7 12H4M7 16H4',
+		// A fork and a knife: the kitchen, which was borrowing the shopping bag.
+		utensils: 'M8 3v8a3 3 0 0 0 6 0V3M11 11v10M17 3c-1.5 2-2 3.5-2 6v3h4V9c0-2.5-.5-4-2-6zM17 12v9',
 		flame: 'M12 3c3 4 5 5.5 5 9a5 5 0 0 1-10 0c0-2 1-3 2-4 .5 2 1.5 2.5 2 2.5 .5-2-1-5 1-7.5z',
 		'sign-out': 'M15 4h5v16h-5M12 8l4 4-4 4M16 12H4'
 	} as const;
