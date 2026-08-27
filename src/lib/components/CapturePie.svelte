@@ -2,7 +2,6 @@
 	import { enhance } from '$app/forms';
 	import { autofocus } from '$lib/actions/autofocus';
 	import { CAPTURES, type Capture } from '$lib/capture';
-	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import RadialMenu from '$lib/components/RadialMenu.svelte';
 

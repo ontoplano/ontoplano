@@ -22,6 +22,9 @@
 	let cookMode = $state(false);
 	let pasting = $state(false);
 
+	/** Three lines that show the shape without explaining it. */
+	const PASTE_EXAMPLE = '300 g rice\n2 onions, finely chopped\n1/2 tsp salt';
+
 	const missing = $derived(data.ingredients.filter((i) => !i.inStock));
 
 	/**
@@ -223,7 +226,7 @@
 								name="list"
 								rows="6"
 								use:autofocus
-								placeholder={'300 g rice\n2 onions, finely chopped\n1/2 tsp salt'}
+								placeholder={PASTE_EXAMPLE}
 								class="textarea mt-1"
 							></textarea>
 						</label>

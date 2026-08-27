@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import type { ActionData, PageData } from './$types';
 	import Card from '$lib/components/Card.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -76,7 +77,10 @@
 				class="btn btn-sm"
 				title="Previous week"
 				aria-label="Previous week"
-				onclick={() => goto(`/planner/review?week=${data.week.prev}`)}
+				onclick={() =>
+					// The route is resolved; the rule cannot see through the query string.
+					// eslint-disable-next-line svelte/no-navigation-without-resolve
+					goto(`${resolve('/planner/review')}?week=${data.week.prev}`)}
 			>
 				<Icon name="chevron-left" size={16} />
 			</button>
@@ -84,7 +88,10 @@
 				class="btn btn-sm"
 				title="Next week"
 				aria-label="Next week"
-				onclick={() => goto(`/planner/review?week=${data.week.next}`)}
+				onclick={() =>
+					// The route is resolved; the rule cannot see through the query string.
+					// eslint-disable-next-line svelte/no-navigation-without-resolve
+					goto(`${resolve('/planner/review')}?week=${data.week.next}`)}
 			>
 				<Icon name="chevron-right" size={16} />
 			</button>
@@ -155,7 +162,7 @@
 						{#each data.goals as goal (goal.id)}
 							<li class="flex items-center gap-2 text-sm">
 								<a
-									href="/goals#goal-{goal.id}"
+									href="{resolve('/goals')}#goal-{goal.id}"
 									class="min-w-0 flex-1 truncate text-gray-700 hover:text-gray-900 hover:underline"
 								>
 									{goal.title}

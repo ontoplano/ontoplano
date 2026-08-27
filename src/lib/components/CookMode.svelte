@@ -161,9 +161,9 @@
 				{/if}
 
 				{#if methodHtml}
-					<!-- `renderMarkdown` escapes everything before it emits a tag. -->
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					<div bind:this={body} class="md cook text-xl leading-relaxed text-gray-900">
+						<!-- `renderMarkdown` escapes everything before it emits a tag. -->
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 						{@html methodHtml}
 					</div>
 				{:else}

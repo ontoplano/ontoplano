@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { getAction } from '$lib/shortcuts';
@@ -84,7 +85,9 @@
 
 	function navigateWeek(direction: 'prev' | 'next') {
 		const target = direction === 'prev' ? data.weekMeta.prevWeek : data.weekMeta.nextWeek;
-		goto(`/planner/history?week=${target}`);
+		// The route is resolved; the rule cannot see through the query string.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		goto(`${resolve('/planner/history')}?week=${target}`);
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
