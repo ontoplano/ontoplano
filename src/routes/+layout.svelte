@@ -323,7 +323,7 @@
 							class="rise absolute top-full right-0 z-50 mt-1 w-44 border border-gray-200 bg-white shadow-overlay"
 						>
 							<div class="border-b border-gray-200 px-4 py-2">
-								<span class="eyebrow text-gray-500">Theme</span>
+								<span class="eyebrow text-gray-600">Theme</span>
 								<form
 									method="post"
 									action="/settings/preferences?/setTheme"
@@ -478,7 +478,7 @@
 							class="flex items-center gap-3 px-4 py-3 text-sm text-gray-900"
 						>
 							<svg
-								class="h-5 w-5 text-gray-400"
+								class="h-5 w-5 text-gray-500"
 								viewBox="0 0 24 24"
 								fill="none"
 								stroke="currentColor"
@@ -499,7 +499,7 @@
 						}}
 						class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-900"
 					>
-						<Icon name="search" class="h-5 w-5 text-gray-400" />
+						<Icon name="search" class="h-5 w-5 text-gray-500" />
 						Search
 					</button>
 					<!-- Icons like every other row: five with and two without read as a
@@ -509,7 +509,7 @@
 						onclick={() => (moreOpen = false)}
 						class="flex items-center gap-3 px-4 py-3 text-sm text-gray-900"
 					>
-						<Icon name="settings" class="h-5 w-5 text-gray-400" />
+						<Icon name="settings" class="h-5 w-5 text-gray-500" />
 						Settings
 					</a>
 					<form method="post" action="/login?/signOut" use:enhance>
@@ -517,7 +517,7 @@
 							type="submit"
 							class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-900"
 						>
-							<Icon name="sign-out" class="h-5 w-5 text-gray-400" />
+							<Icon name="sign-out" class="h-5 w-5 text-gray-500" />
 							Sign out
 						</button>
 					</form>

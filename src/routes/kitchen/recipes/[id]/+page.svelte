@@ -89,7 +89,7 @@
 	<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
 		<section class="flex flex-col border border-gray-200 bg-white shadow-card">
 			<header class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-				<h2 class="eyebrow text-gray-500">Ingredients</h2>
+				<h2 class="eyebrow text-gray-600">Ingredients</h2>
 				{#if missing.length > 0}
 					<span class="text-xs text-amber-700">{missing.length} not in the cupboard</span>
 				{/if}
@@ -105,7 +105,7 @@
 							<span class="min-w-0 flex-1 text-gray-900">
 								{ingredient.name}
 								{#if ingredient.note}
-									<span class="text-xs text-gray-400">· {ingredient.note}</span>
+									<span class="text-xs text-gray-500">· {ingredient.note}</span>
 								{/if}
 							</span>
 							{#if !ingredient.inStock}
@@ -114,7 +114,7 @@
 							<form method="post" action="?/removeIngredient" use:enhance>
 								<input type="hidden" name="id" value={ingredient.id} />
 								<button
-									class="text-xs text-gray-400 hover:text-red-600"
+									class="text-xs text-gray-500 hover:text-red-600"
 									title="Remove"
 									aria-label="Remove">&times;</button
 								>
@@ -171,7 +171,7 @@
 					</datalist>
 					<button class="btn btn-sm"><Icon name="plus" /> Add</button>
 				</div>
-				<p class="mt-2 text-xs text-gray-400">
+				<p class="mt-2 text-xs text-gray-500">
 					Anything new goes onto the shopping list as something you do not have.
 				</p>
 			</form>
@@ -179,7 +179,7 @@
 
 		<section class="border border-gray-200 bg-white shadow-card">
 			<header class="border-b border-gray-200 px-4 py-3">
-				<h2 class="eyebrow text-gray-500">Method</h2>
+				<h2 class="eyebrow text-gray-600">Method</h2>
 			</header>
 			<div class="p-4">
 				{#if data.recipe.method}
@@ -189,7 +189,7 @@
 						{@html renderMarkdown(data.recipe.method)}
 					</div>
 				{:else}
-					<p class="text-sm text-gray-400">
+					<p class="text-sm text-gray-500">
 						Nothing written yet. <button
 							onclick={() => (editing = true)}
 							class="underline hover:text-gray-600">Write it</button
@@ -198,7 +198,7 @@
 				{/if}
 
 				{#if data.recipe.source}
-					<p class="mt-4 border-t border-gray-200 pt-3 text-xs text-gray-400">
+					<p class="mt-4 border-t border-gray-200 pt-3 text-xs text-gray-500">
 						From {data.recipe.source}
 					</p>
 				{/if}

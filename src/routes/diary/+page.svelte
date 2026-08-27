@@ -230,7 +230,7 @@
 						filterTag = null;
 						selectedIndex = 0;
 					}}
-					class="chip text-gray-400 hover:text-gray-600"
+					class="chip text-gray-500 hover:text-gray-600"
 				>
 					clear
 				</button>
@@ -431,12 +431,12 @@
 						     entry's text. It was in the corner, which put it under the
 						     buttons once they moved down here. -->
 						<span class="tabular text-xs font-medium text-gray-900">#{entry.seq}</span>
-						<span class="text-xs text-gray-400">{formatDate(entry.createdAt)}</span>
+						<span class="text-xs text-gray-500">{formatDate(entry.createdAt)}</span>
 						{#if entry.forDate}
 							<span class="text-xs font-medium text-amber-600">for {entry.forDate}</span>
 						{/if}
 						{#if entry.updatedAt !== entry.createdAt}
-							<span class="text-xs text-gray-400">· edited {formatDate(entry.updatedAt)}</span>
+							<span class="text-xs text-gray-500">· edited {formatDate(entry.updatedAt)}</span>
 						{/if}
 						{#each entry.people as person (person.id)}
 							<a href={resolve('/diary/people')} class="chip">

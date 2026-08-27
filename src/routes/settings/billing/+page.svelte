@@ -68,7 +68,7 @@
 						<Icon name="arrow-right" /> Go Pro
 					</a>
 					{#if !data.configured}
-						<p class="mt-2 text-xs text-gray-400">
+						<p class="mt-2 text-xs text-gray-500">
 							This instance has no payment provider configured, so that link goes nowhere yet.
 						</p>
 					{/if}
@@ -91,7 +91,7 @@
 						{#if limit === null}
 							<!-- No bar: a full one against no ceiling reads as "you are at
 							     the limit", which is the opposite of what it means. -->
-							<p class="mt-0.5 text-xs text-gray-400">no limit on this plan</p>
+							<p class="mt-0.5 text-xs text-gray-500">no limit on this plan</p>
 						{:else}
 							<div class="mt-1 h-1.5 w-full bg-gray-200">
 								<div

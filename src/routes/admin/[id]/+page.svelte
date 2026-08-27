@@ -103,7 +103,7 @@
 		</div>
 
 		{#if !data.emailConfigured}
-			<p class="mt-3 text-xs text-gray-400">
+			<p class="mt-3 text-xs text-gray-500">
 				This instance has no mail server, so nothing can be emailed. Asking for a confirmation shows
 				you the link to pass on yourself.
 			</p>
@@ -126,7 +126,7 @@
 								<span class="block text-xs text-gray-500">{describe(event.detail)}</span>
 							{/if}
 						</span>
-						<span class="tabular shrink-0 text-xs text-gray-400">{when(event.createdAt)}</span>
+						<span class="tabular shrink-0 text-xs text-gray-500">{when(event.createdAt)}</span>
 					</div>
 				{/each}
 			</div>

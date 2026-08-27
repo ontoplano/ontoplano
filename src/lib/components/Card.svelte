@@ -60,7 +60,7 @@
 		class="section-tint flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-gray-200 px-4 py-3"
 	>
 		<div class="min-w-0 flex-1">
-			<h2 class="eyebrow text-gray-500">{title}</h2>
+			<h2 class="eyebrow text-gray-600">{title}</h2>
 			{#if description}
 				<p class="mt-1.5 text-sm text-gray-500">{description}</p>
 			{/if}

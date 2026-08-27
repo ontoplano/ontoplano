@@ -100,7 +100,7 @@
 
 					<span class="mt-2 block text-xs">
 						{#if recipe.ingredients === 0}
-							<span class="text-gray-400">nothing in it yet</span>
+							<span class="text-gray-500">nothing in it yet</span>
 						{:else if recipe.missing === 0}
 							<span class="text-teal-700">you have everything</span>
 						{:else}

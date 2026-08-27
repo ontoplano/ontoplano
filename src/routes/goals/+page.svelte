@@ -164,7 +164,7 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="text-sm text-gray-400">No areas yet.</p>
+			<p class="text-sm text-gray-500">No areas yet.</p>
 		{/if}
 
 		<form
@@ -352,8 +352,8 @@
 				<div
 					class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-b border-b-gray-200 px-4 py-2"
 				>
-					<span class="eyebrow text-gray-500">{HORIZON_LABELS[column.horizon]}</span>
-					<span class="tabular text-xs text-gray-400">{column.goals.length}</span>
+					<span class="eyebrow text-gray-600">{HORIZON_LABELS[column.horizon]}</span>
+					<span class="tabular text-xs text-gray-500">{column.goals.length}</span>
 				</div>
 
 				<div class="divide-y divide-gray-200">
@@ -378,17 +378,17 @@
 													? 'line-through opacity-60'
 													: ''}">{goal.title}</span
 											>
-											<span class="tabular text-xs text-gray-400"
+											<span class="tabular text-xs text-gray-500"
 												>{describePeriod(goal.horizon, goal.periodStart)}</span
 											>
 											{#if goal.parentId}
 												{@const parent = data.goals.find((g) => g.id === goal.parentId)}
 												{#if parent}
-													<span class="text-xs text-gray-400">part of “{parent.title}”</span>
+													<span class="text-xs text-gray-500">part of “{parent.title}”</span>
 												{/if}
 											{/if}
 											{#if goal.status !== 'open'}
-												<span class="eyebrow text-gray-500">{goal.status}</span>
+												<span class="eyebrow text-gray-600">{goal.status}</span>
 											{/if}
 										</div>
 
@@ -491,7 +491,7 @@
 											title="Delete"
 											aria-label="Delete"
 											onclick={() => (confirmingDelete = goal.id)}
-											class="text-xs text-gray-400 hover:text-red-600"><Icon name="trash" /></button
+											class="text-xs text-gray-500 hover:text-red-600"><Icon name="trash" /></button
 										>
 									{/if}
 								</div>
@@ -500,7 +500,7 @@
 					{/each}
 
 					{#if column.goals.length === 0}
-						<p class="py-3 text-xs text-gray-400">Nothing at this horizon.</p>
+						<p class="py-3 text-xs text-gray-500">Nothing at this horizon.</p>
 					{/if}
 				</div>
 			</section>
@@ -530,7 +530,7 @@
 
 				<div class="grid gap-4 sm:grid-cols-3">
 					<div>
-						<span class="eyebrow text-gray-500">Activities</span>
+						<span class="eyebrow text-gray-600">Activities</span>
 						<div class="mt-2 max-h-64 space-y-1 overflow-y-auto">
 							{#each data.activities as a (a.id)}
 								<label class="flex items-center gap-2 text-sm text-gray-700">
@@ -544,12 +544,12 @@
 									{a.name}
 								</label>
 							{:else}
-								<p class="text-xs text-gray-400">No activities yet.</p>
+								<p class="text-xs text-gray-500">No activities yet.</p>
 							{/each}
 						</div>
 					</div>
 					<div>
-						<span class="eyebrow text-gray-500">Weekly blocks</span>
+						<span class="eyebrow text-gray-600">Weekly blocks</span>
 						<div class="mt-2 max-h-64 space-y-1 overflow-y-auto">
 							{#each data.slots as sl (sl.id)}
 								<label class="flex items-center gap-2 text-sm text-gray-700">
@@ -564,12 +564,12 @@
 									{sl.name}
 								</label>
 							{:else}
-								<p class="text-xs text-gray-400">No weekly blocks yet.</p>
+								<p class="text-xs text-gray-500">No weekly blocks yet.</p>
 							{/each}
 						</div>
 					</div>
 					<div>
-						<span class="eyebrow text-gray-500">Todos</span>
+						<span class="eyebrow text-gray-600">Todos</span>
 						<div class="mt-2 max-h-64 space-y-1 overflow-y-auto">
 							{#each data.todos as t (t.id)}
 								<label class="flex items-center gap-2 text-sm text-gray-700">
@@ -583,7 +583,7 @@
 									{t.title}
 								</label>
 							{:else}
-								<p class="text-xs text-gray-400">No open todos.</p>
+								<p class="text-xs text-gray-500">No open todos.</p>
 							{/each}
 						</div>
 					</div>

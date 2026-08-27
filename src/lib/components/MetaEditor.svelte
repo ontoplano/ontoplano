@@ -131,7 +131,7 @@
 						>
 							<span class="font-mono">{s.key}</span>
 							{#if s.usedBy}
-								<span class="text-[10px] text-gray-400">· {s.usedBy}</span>
+								<span class="text-[10px] text-gray-500">· {s.usedBy}</span>
 							{/if}
 						</button>
 					{/if}

@@ -142,7 +142,7 @@
 				<span class="text-gray-500">{data.summary.skipped} skipped</span>
 			{/if}
 			{#if data.summary.todo > 0}
-				<span class="text-gray-400">{data.summary.todo} to do</span>
+				<span class="text-gray-500">{data.summary.todo} to do</span>
 			{/if}
 		</div>
 	{/if}
@@ -190,7 +190,7 @@
 					<div class="min-w-0 flex-1">
 						<span class="text-sm font-medium text-gray-900">{instanceLabel(inst)}</span>
 						{#if inst.slotMode === 'activity' && inst.categoryName}
-							<span class="ml-1 text-xs text-gray-400">{inst.categoryName}</span>
+							<span class="ml-1 text-xs text-gray-500">{inst.categoryName}</span>
 						{/if}
 						{#if inst.slotLabel && instanceLabel(inst) !== inst.slotLabel}
 							<p class="truncate text-xs text-gray-500">{inst.slotLabel}</p>

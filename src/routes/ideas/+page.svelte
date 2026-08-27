@@ -183,7 +183,7 @@
 						filterTag = null;
 						selectedIndex = 0;
 					}}
-					class="border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-400 transition hover:text-gray-600"
+					class="border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-500 transition hover:text-gray-600"
 				>
 					clear
 				</button>
@@ -195,7 +195,7 @@
 	{#if data.ideas.length > 0}
 		<div class="flex flex-wrap items-center gap-3">
 			<div class="flex flex-wrap items-center gap-2">
-				<span class="text-xs font-medium tracking-wide text-gray-400 uppercase">Applied</span>
+				<span class="text-xs font-medium tracking-wide text-gray-500 uppercase">Applied</span>
 				<button
 					onclick={() => {
 						filterApplied = 'all';
@@ -232,7 +232,7 @@
 			</div>
 
 			<div class="flex flex-wrap items-center gap-2">
-				<span class="text-xs font-medium tracking-wide text-gray-400 uppercase">Favorite</span>
+				<span class="text-xs font-medium tracking-wide text-gray-500 uppercase">Favorite</span>
 				<button
 					onclick={() => {
 						filterFavorite = 'all';
@@ -433,9 +433,9 @@
 							     of the tags on a phone. -->
 							<div class="mt-2 flex flex-wrap items-center gap-2">
 								<div class="flex flex-wrap items-center gap-2">
-									<span class="text-xs text-gray-400">{formatDate(idea.createdAt)}</span>
+									<span class="text-xs text-gray-500">{formatDate(idea.createdAt)}</span>
 									{#if idea.updatedAt !== idea.createdAt}
-										<span class="text-xs text-gray-400">· edited {formatDate(idea.updatedAt)}</span>
+										<span class="text-xs text-gray-500">· edited {formatDate(idea.updatedAt)}</span>
 									{/if}
 									{#if idea.tags.length > 0}
 										<div class="flex flex-wrap gap-1">

@@ -485,13 +485,13 @@
 											: `${habit.streak} day streak`}
 									</span>
 								{/if}
-								<span class="text-xs text-gray-400">{occ.length} total</span>
+								<span class="text-xs text-gray-500">{occ.length} total</span>
 							</div>
 							{#if habit.description}
 								<p class="truncate text-xs text-gray-500">{habit.description}</p>
 							{/if}
 							{#if !isBad}
-								<p class="text-xs text-gray-400">{formatScheduledDays(habit.scheduledDays)}</p>
+								<p class="text-xs text-gray-500">{formatScheduledDays(habit.scheduledDays)}</p>
 							{/if}
 						</div>
 
@@ -602,14 +602,14 @@
 									{/each}
 									<div class="ml-1 flex flex-col gap-px">
 										{#each orderedDayLabels() as label}
-											<span class="flex h-2.5 items-center text-[9px] leading-none text-gray-400"
+											<span class="flex h-2.5 items-center text-[9px] leading-none text-gray-500"
 												>{label}</span
 											>
 										{/each}
 									</div>
 								</div>
 							</div>
-							<div class="mt-2 flex items-center gap-2 text-xs text-gray-400">
+							<div class="mt-2 flex items-center gap-2 text-xs text-gray-500">
 								<span>Less</span>
 								<div class="flex gap-px">
 									<div
@@ -747,7 +747,7 @@
 													onclick={() => {
 														confirmingOccurrenceDelete = occurrence.id;
 													}}
-													class="text-xs text-gray-400 transition hover:text-red-500"
+													class="text-xs text-gray-500 transition hover:text-red-500"
 												>
 													&times;
 												</button>
@@ -755,7 +755,7 @@
 										</div>
 									{/each}
 									{#if occ.length > 10}
-										<div class="py-1.5 text-xs text-gray-400">
+										<div class="py-1.5 text-xs text-gray-500">
 											and {occ.length - 10} more...
 										</div>
 									{/if}

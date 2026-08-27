@@ -45,7 +45,7 @@
 			<h1 class="mt-1 text-lg font-bold text-gray-900">
 				{data.notebook.title}
 				{#if data.notebook.closedAt}
-					<span class="eyebrow ml-2 align-middle text-gray-400">closed</span>
+					<span class="eyebrow ml-2 align-middle text-gray-500">closed</span>
 				{/if}
 			</h1>
 			{#if data.notebook.description}

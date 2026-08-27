@@ -97,7 +97,7 @@
 				{capture.label}
 				<!-- `kbd-hint` so a touch screen wide enough for this row still drops
 				     it: a keystroke is noise where there is no keyboard. -->
-				<span class="kbd-hint text-gray-400">({capture.shortcut})</span>
+				<span class="kbd-hint text-gray-500">({capture.shortcut})</span>
 			</button>
 		{/each}
 	</div>

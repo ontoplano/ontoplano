@@ -19,10 +19,23 @@
 	 * that ramp inverts, and inverting it would make the header the brightest
 	 * thing on a dark screen.
 	 */
+	/*
+	 * The muted text step, defined by what it has to survive.
+	 *
+	 * Tailwind's own gray-500 is 4.8:1 on white, which sounds fine and is not:
+	 * almost nothing in this app sits on white. It sits on the page surface,
+	 * which is gray-100 with a wash of the section's hue, and there the same
+	 * colour drops to 3.8:1. This is the lightest gray that still clears 4.5:1
+	 * on the tinted surface — and gray-400 is no longer a text colour at all,
+	 * because there is no ground on this site where it clears anything.
+	 */
+	--color-gray-500: #5c6470;
+	--color-slate-500: #5c6470;
+
 	--color-chrome: #111827;
 	--color-chrome-raised: #1f2937;
 	--color-chrome-line: #374151;
-	--color-chrome-muted: #9aa4b2;
+	--color-chrome-muted: #c5cddb;
 	--color-chrome-ink: #ffffff;
 
 	/*
@@ -179,9 +192,21 @@ html[data-style='playful'] .section-tint {
 	border-color: color-mix(in srgb, var(--section-accent) 35%, transparent);
 }
 
-/* The header takes the section's colour rather than staying near-black. */
+/*
+ * The header takes the section's colour rather than staying near-black.
+ *
+ * Its *lightness* is pinned, though, and that matters more than it sounds.
+ * Mixing the accent with black by percentage gives a different brightness for
+ * every section — a yellow header came out far lighter than a blue one — and
+ * the header's text colour is fixed, so the pale sections had nav labels at
+ * around 3:1. Relative colour syntax keeps the accent's hue and chroma and
+ * forces one lightness, so every room is unmistakably its own colour and every
+ * one of them takes the same ink.
+ */
 html[data-style='playful'] .bg-chrome {
-	background-color: color-mix(in srgb, var(--section-accent) 78%, #0b1220);
+	/* For browsers without relative colour syntax: darker than it used to be. */
+	background-color: color-mix(in srgb, var(--section-accent) 40%, #0b1220);
+	background-color: oklch(from var(--section-accent) 0.3 c h);
 }
 
 /*
@@ -560,12 +585,18 @@ span {
 	overflow-wrap: anywhere;
 }
 
-/* Except where a broken word would be worse than an overflowing one. */
+/*
+ * Except where a broken word would be worse than an overflowing one: a key, a
+ * fragment of code, a column of figures.
+ *
+ * `.eyebrow` is deliberately *not* here. It is the class a card's title uses,
+ * and a card titled with somebody's notebook name grew wider than the phone,
+ * taking Delete and Close off the screen with it.
+ */
 kbd,
 code,
 pre,
-.tabular,
-.eyebrow {
+.tabular {
 	overflow-wrap: normal;
 }
 
@@ -636,7 +667,7 @@ html[data-theme='dark'] {
 	--color-chrome: #0a0d12;
 	--color-chrome-raised: #171b22;
 	--color-chrome-line: #2a3039;
-	--color-chrome-muted: #8b94a3;
+	--color-chrome-muted: #c5cddb;
 	--color-chrome-ink: #f2f5fa;
 
 	--color-white: #101317;
@@ -683,7 +714,7 @@ html[data-theme='dark'] {
 		--color-chrome: #0a0d12;
 		--color-chrome-raised: #171b22;
 		--color-chrome-line: #2a3039;
-		--color-chrome-muted: #8b94a3;
+		--color-chrome-muted: #c5cddb;
 		--color-chrome-ink: #f2f5fa;
 
 		--color-white: #101317;

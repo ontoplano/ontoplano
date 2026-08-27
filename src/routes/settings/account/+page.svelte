@@ -279,7 +279,7 @@
 								<button
 									type="button"
 									onclick={() => (confirmRevoke = null)}
-									class="text-xs text-gray-400 hover:text-gray-900">Cancel</button
+									class="text-xs text-gray-500 hover:text-gray-900">Cancel</button
 								>
 							</form>
 						{:else}
@@ -288,7 +288,7 @@
 					{/if}
 				</div>
 			{:else}
-				<p class="px-4 py-3 text-sm text-gray-400">No other sessions.</p>
+				<p class="px-4 py-3 text-sm text-gray-500">No other sessions.</p>
 			{/each}
 		</div>
 	</Card>

@@ -117,7 +117,7 @@
 								class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
 							>
 								{person.name}
-								<span class="eyebrow ml-2 text-gray-400">
+								<span class="eyebrow ml-2 text-gray-500">
 									{RELATIONSHIP_LABELS[person.relationship]}
 								</span>
 								{#if person.notes}
@@ -126,7 +126,7 @@
 							</a>
 
 							<div class="flex flex-wrap items-center gap-2 sm:shrink-0 sm:gap-4">
-								<span class="tabular text-xs text-gray-400">
+								<span class="tabular text-xs text-gray-500">
 									{person.mentions}
 									{person.mentions === 1 ? 'mention' : 'mentions'}
 								</span>
@@ -195,7 +195,7 @@
 					{#each data.entries as entry (entry.id)}
 						<article class="px-4 py-3">
 							<p class="text-sm whitespace-pre-wrap text-gray-900">{entry.content}</p>
-							<p class="tabular mt-1 text-xs text-gray-400">
+							<p class="tabular mt-1 text-xs text-gray-500">
 								{when(entry.createdAt)}{#if entry.forDate}&nbsp;· for {entry.forDate}{/if}
 							</p>
 						</article>

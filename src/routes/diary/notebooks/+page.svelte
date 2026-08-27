@@ -118,7 +118,7 @@
 							>
 								<span class:text-gray-500={notebook.closedAt}>{notebook.title}</span>
 								{#if notebook.closedAt}
-									<span class="eyebrow ml-2 text-gray-400">closed</span>
+									<span class="eyebrow ml-2 text-gray-500">closed</span>
 								{/if}
 								<span class="block truncate text-xs text-gray-500">{tally(notebook)}</span>
 							</a>

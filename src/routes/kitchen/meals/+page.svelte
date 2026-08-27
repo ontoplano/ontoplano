@@ -52,9 +52,9 @@
 					? 'ring-2 ring-gray-900 ring-inset'
 					: ''}"
 			>
-				<h2 class="eyebrow text-gray-500">{dayName(day)}</h2>
+				<h2 class="eyebrow text-gray-600">{dayName(day)}</h2>
 				{#if onThisDay.length === 0}
-					<p class="mt-2 text-xs text-gray-400">—</p>
+					<p class="mt-2 text-xs text-gray-500">—</p>
 				{:else}
 					<ul class="mt-2 space-y-1">
 						{#each onThisDay as meal (meal.id)}
@@ -64,7 +64,7 @@
 									class="block text-sm text-gray-900 hover:underline"
 								>
 									{meal.title}
-									<span class="tabular block text-xs text-gray-400">{meal.startTime}</span>
+									<span class="tabular block text-xs text-gray-500">{meal.startTime}</span>
 								</a>
 							</li>
 						{/each}
@@ -90,14 +90,14 @@
 				<header
 					class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-3"
 				>
-					<h2 class="eyebrow text-gray-500">To buy</h2>
+					<h2 class="eyebrow text-gray-600">To buy</h2>
 					{#if totalCents > 0}
 						<span class="text-xs text-gray-500">
 							about <span class="tabular font-medium text-gray-900"
 								>{formatMoney(totalCents, data.currency)}</span
 							>
 							{#if priced.length < toBuy.length}
-								<span class="text-gray-400">· {toBuy.length - priced.length} unpriced</span>
+								<span class="text-gray-500">· {toBuy.length - priced.length} unpriced</span>
 							{/if}
 						</span>
 					{/if}
@@ -113,11 +113,11 @@
 								{#if item.amounts.length > 0}
 									<span class="tabular ml-2 text-xs text-gray-500">{item.amounts.join(', ')}</span>
 								{/if}
-								<span class="block text-xs text-gray-400">for {item.recipes.join(', ')}</span>
+								<span class="block text-xs text-gray-500">for {item.recipes.join(', ')}</span>
 							</li>
 						{/each}
 					</ul>
-					<p class="border-t border-gray-200 px-4 py-2 text-xs text-gray-400">
+					<p class="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
 						These are already on the shopping list — anything not in the cupboard is.
 					</p>
 				{/if}
@@ -125,7 +125,7 @@
 
 			<section class="border border-gray-200 bg-white shadow-card">
 				<header class="border-b border-gray-200 px-4 py-3">
-					<h2 class="eyebrow text-gray-500">Already have</h2>
+					<h2 class="eyebrow text-gray-600">Already have</h2>
 				</header>
 				{#if have.length === 0}
 					<p class="px-4 py-3 text-sm text-gray-500">Nothing yet.</p>
@@ -135,7 +135,7 @@
 							<li class="px-4 py-2 text-sm text-gray-500">
 								{item.name}
 								{#if item.amounts.length > 0}
-									<span class="tabular ml-2 text-xs text-gray-400">{item.amounts.join(', ')}</span>
+									<span class="tabular ml-2 text-xs text-gray-500">{item.amounts.join(', ')}</span>
 								{/if}
 							</li>
 						{/each}

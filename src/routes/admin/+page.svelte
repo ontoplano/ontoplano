@@ -62,7 +62,7 @@
 							</span>
 						</a>
 
-						<span class="eyebrow shrink-0 text-gray-400">{account.role}</span>
+						<span class="eyebrow shrink-0 text-gray-500">{account.role}</span>
 
 						{#if account.role === 'member'}
 							<form method="post" action="?/setRole" use:enhance class="shrink-0">
@@ -94,7 +94,7 @@
 							<span class="text-gray-900">{event.event.replaceAll('_', ' ')}</span>
 							<span class="block truncate text-xs text-gray-500">{event.email}</span>
 						</span>
-						<span class="shrink-0 text-xs text-gray-400">{ago(event.createdAt)}</span>
+						<span class="shrink-0 text-xs text-gray-500">{ago(event.createdAt)}</span>
 					</div>
 				{/each}
 			</div>
@@ -102,7 +102,7 @@
 	</Card>
 </div>
 
-<p class="text-xs text-gray-400">
+<p class="text-xs text-gray-500">
 	Roles: {ROLES.join(', ')}. An administrator cannot change their own — the instance would be left
 	with nobody who can promote anyone.
 </p>

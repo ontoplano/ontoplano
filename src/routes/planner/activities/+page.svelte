@@ -169,7 +169,7 @@
 								<button
 									type="button"
 									onclick={() => (editingCategoryId = null)}
-									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-400 hover:text-gray-600"
+									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500 hover:text-gray-600"
 								>
 									Cancel
 								</button>
@@ -274,7 +274,7 @@
 				onclick={() => toggleFilter(cat.id)}
 				class="border px-2 py-1 text-xs font-medium transition {activeFilters.has(cat.id)
 					? 'border-2 bg-white'
-					: 'border-gray-200 bg-white text-gray-400 hover:text-gray-600'}"
+					: 'border-gray-200 bg-white text-gray-500 hover:text-gray-600'}"
 				style={activeFilters.has(cat.id) ? `border-color: ${cat.color}; color: ${cat.color}` : ''}
 			>
 				{cat.name}
@@ -286,7 +286,7 @@
 					activeFilters = new Set();
 					selectedIndex = 0;
 				}}
-				class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-400 transition hover:text-gray-600"
+				class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500 transition hover:text-gray-600"
 			>
 				clear
 			</button>

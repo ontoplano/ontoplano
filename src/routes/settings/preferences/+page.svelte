@@ -80,7 +80,7 @@
 		</div>
 		<div class="flex gap-4">
 			<label class="flex-1">
-				<span class="eyebrow text-gray-500">First day of week</span>
+				<span class="eyebrow text-gray-600">First day of week</span>
 				<select
 					name="firstDay"
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -91,7 +91,7 @@
 				</select>
 			</label>
 			<label class="flex-1">
-				<span class="eyebrow text-gray-500">Generate tasks on</span>
+				<span class="eyebrow text-gray-600">Generate tasks on</span>
 				<select
 					name="generateDay"
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -103,7 +103,7 @@
 			</label>
 		</div>
 		<label class="block max-w-xs">
-			<span class="eyebrow text-gray-500">Timezone</span>
+			<span class="eyebrow text-gray-600">Timezone</span>
 			<input name="timezone" value={data.timezone} class="input mt-1" />
 		</label>
 		<button class="btn btn-primary">Save</button>
@@ -121,7 +121,7 @@
 			<p class="mt-1 text-sm text-gray-500">What prices on the shopping list are in.</p>
 		</div>
 		<label class="block max-w-[10rem]">
-			<span class="eyebrow text-gray-500">Currency</span>
+			<span class="eyebrow text-gray-600">Currency</span>
 			<select name="currency" class="select mt-1">
 				{#each data.currencies as code (code)}
 					<option value={code} selected={data.currency === code}>{code}</option>
@@ -152,7 +152,7 @@
 		</div>
 		<div class="flex gap-4">
 			<label class="flex-1 sm:max-w-[10rem]">
-				<span class="eyebrow text-gray-500">Day starts at</span>
+				<span class="eyebrow text-gray-600">Day starts at</span>
 				<select name="start" class="select mt-1">
 					{#each Array.from({ length: 24 }, (_, h) => h) as h (h)}
 						<option value={h} selected={data.gridHours.start === h}>{hourLabel(h)}</option>
@@ -160,7 +160,7 @@
 				</select>
 			</label>
 			<label class="flex-1 sm:max-w-[10rem]">
-				<span class="eyebrow text-gray-500">Day ends at</span>
+				<span class="eyebrow text-gray-600">Day ends at</span>
 				<select name="end" class="select mt-1">
 					{#each Array.from({ length: 24 }, (_, h) => h + 1) as h (h)}
 						<option value={h} selected={data.gridHours.end === h}>{hourLabel(h)}</option>
@@ -187,13 +187,13 @@
 							<button
 								type="button"
 								onclick={() => shift(id, -1)}
-								class="text-xs leading-none text-gray-400 hover:text-gray-900"
+								class="text-xs leading-none text-gray-500 hover:text-gray-900"
 								aria-label="Move {card.label} up">&uarr;</button
 							>
 							<button
 								type="button"
 								onclick={() => shift(id, 1)}
-								class="text-xs leading-none text-gray-400 hover:text-gray-900"
+								class="text-xs leading-none text-gray-500 hover:text-gray-900"
 								aria-label="Move {card.label} down">&darr;</button
 							>
 						</div>
@@ -257,14 +257,14 @@
 								<button
 									type="button"
 									onclick={() => (confirmRemove = null)}
-									class="text-xs text-gray-400 hover:text-gray-900">Cancel</button
+									class="text-xs text-gray-500 hover:text-gray-900">Cancel</button
 								>
 							</form>
 						{:else}
 							<button
 								type="button"
 								onclick={() => (confirmRemove = quote.id)}
-								class="text-xs text-gray-400 hover:text-red-600"
+								class="text-xs text-gray-500 hover:text-red-600"
 								><Icon name="trash" /> Remove</button
 							>
 						{/if}
@@ -272,7 +272,7 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="mb-3 text-sm text-gray-400">No quotes yet.</p>
+			<p class="mb-3 text-sm text-gray-500">No quotes yet.</p>
 		{/if}
 
 		<form
@@ -284,7 +284,7 @@
 			class="flex flex-wrap items-end gap-2"
 		>
 			<label class="min-w-64 flex-1">
-				<span class="eyebrow text-gray-500">Quote</span>
+				<span class="eyebrow text-gray-600">Quote</span>
 				<input
 					name="text"
 					required
@@ -293,7 +293,7 @@
 				/>
 			</label>
 			<label class="w-44">
-				<span class="eyebrow text-gray-500">Author</span>
+				<span class="eyebrow text-gray-600">Author</span>
 				<input
 					name="author"
 					autocomplete="off"
@@ -306,7 +306,7 @@
 		<!-- One at a time is fine for one; nobody types a collection in that way. -->
 		<details class="mt-4 border-t border-gray-200 pt-4">
 			<summary class="cursor-pointer list-none text-sm text-gray-600 hover:text-gray-900">
-				<span class="text-xs text-gray-400">▸</span> Paste a list
+				<span class="text-xs text-gray-500">▸</span> Paste a list
 			</summary>
 
 			<form
@@ -318,7 +318,7 @@
 				class="mt-3 space-y-2"
 			>
 				<label class="block">
-					<span class="eyebrow text-gray-500">One per line</span>
+					<span class="eyebrow text-gray-600">One per line</span>
 					<textarea
 						name="quotes"
 						rows="6"

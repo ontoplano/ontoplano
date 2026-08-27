@@ -143,7 +143,7 @@
 		description="A code somebody types when they create their account. It works once."
 	>
 		{#snippet actions()}
-			<span class="eyebrow text-gray-400">{open.length} open</span>
+			<span class="eyebrow text-gray-600">{open.length} open</span>
 		{/snippet}
 
 		{#if fresh}
@@ -193,7 +193,7 @@
 					<div class="flex items-center gap-3 py-2 text-sm">
 						<span class="min-w-0 flex-1">
 							<span class="text-gray-900">{invite.note || 'No note'}</span>
-							<span class="block text-xs text-gray-400">
+							<span class="block text-xs text-gray-500">
 								made {when(invite.createdAt)}
 								{#if invite.usedAt}
 									· used {when(invite.usedAt)}
@@ -204,7 +204,7 @@
 						</span>
 
 						{#if invite.usedAt}
-							<span class="eyebrow shrink-0 text-gray-400">used</span>
+							<span class="eyebrow shrink-0 text-gray-500">used</span>
 						{:else if confirmRevoke === invite.id}
 							<form
 								method="post"

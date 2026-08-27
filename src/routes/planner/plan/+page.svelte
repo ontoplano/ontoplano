@@ -1444,8 +1444,8 @@
 				<ul class="mt-2 space-y-1 text-sm text-gray-600">
 					<li>Drag across an empty stretch of a day to make a block.</li>
 					<li>
-						Press <kbd class="border border-gray-300 bg-gray-50 px-1">?</kbd> for everything the keyboard
-						can do.
+						Press <kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">?</kbd> for everything
+						the keyboard can do.
 					</li>
 				</ul>
 			</div>
@@ -1530,7 +1530,7 @@
 		{:else}
 			{formatWeekDate(data.range.from)} &mdash; {formatWeekDate(data.range.last)}
 			{#if data.range.isCurrent}
-				<span class="text-gray-400">
+				<span class="text-gray-500">
 					· {effectiveView === 'day' ? 'today' : 'next 7 days'}
 				</span>
 			{/if}
@@ -1766,7 +1766,7 @@
 					{#each data.weekdays as day, i (i)}
 						<label
 							class="flex items-center gap-1.5 px-2 py-1 text-sm {selectedWeekday === i
-								? 'cursor-not-allowed text-gray-400'
+								? 'cursor-not-allowed text-gray-500'
 								: 'cursor-pointer text-gray-700 hover:bg-gray-50'}"
 						>
 							<input
@@ -2236,16 +2236,18 @@
 			<summary
 				class="flex cursor-pointer list-none items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
 			>
-				<span class="text-xs text-gray-400">{todosOpen ? '▾' : '▸'}</span>
-				<span class="eyebrow text-gray-500">Todo</span>
-				<span class="tabular border border-gray-300 bg-gray-50 px-1 text-xs text-gray-600">
+				<span class="text-xs text-gray-500">{todosOpen ? '▾' : '▸'}</span>
+				<span class="eyebrow text-gray-600">Todo</span>
+				<span
+					class="tabular border border-gray-300 bg-gray-50 px-1 text-xs text-gray-600 text-gray-700"
+				>
 					{data.todos.length}
 				</span>
 				{#if !todosOpen}
-					<span class="hidden text-xs text-gray-400 sm:inline">
+					<span class="hidden text-xs text-gray-500 sm:inline">
 						drag one onto the grid to give it a time
 					</span>
-					<span class="text-xs text-gray-400 sm:hidden">tap one, then tap a time</span>
+					<span class="text-xs text-gray-500 sm:hidden">tap one, then tap a time</span>
 				{/if}
 			</summary>
 
@@ -2287,14 +2289,14 @@
 					</span>
 					<button
 						type="button"
-						class="text-xs text-gray-400 underline"
+						class="text-xs text-gray-500 underline"
 						onclick={() => (placingTodoId = null)}>cancel</button
 					>
 				{:else}
-					<span class="hidden text-xs text-gray-400 sm:inline">
+					<span class="hidden text-xs text-gray-500 sm:inline">
 						drag onto the grid to give it a time
 					</span>
-					<span class="text-xs text-gray-400 sm:hidden">tap one, then tap a time</span>
+					<span class="text-xs text-gray-500 sm:hidden">tap one, then tap a time</span>
 				{/if}
 			</div>
 		</details>
@@ -2366,22 +2368,22 @@
 		{/if}
 	</div>
 	<div class="mt-1 flex items-center justify-between gap-4">
-		<p class="text-xs text-gray-400">
+		<p class="text-xs text-gray-500">
 			Drag to create · drag a block to move · click it to edit, skip or delete · hold <kbd
-				class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd
+				class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Ctrl</kbd
 			>
 			while dragging to duplicate, or
-			<kbd class="border border-gray-300 bg-gray-50 px-1">Alt</kbd>
+			<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Alt</kbd>
 			to move or resize just this day's occurrence ·
-			<kbd class="border border-gray-300 bg-gray-50 px-1">Shift</kbd>
+			<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Shift</kbd>
 			drag to select several, then drag one to move them all ·
-			<kbd class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd>+<kbd
-				class="border border-gray-300 bg-gray-50 px-1">Z</kbd
+			<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Ctrl</kbd>+<kbd
+				class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Z</kbd
 			> undoes · snaps to 15min
 		</p>
 		<div class="flex items-center gap-1">
-			<span class="mr-1 text-xs text-gray-400">
-				Zoom (<kbd class="border border-gray-300 bg-gray-50 px-1">Ctrl</kbd>+scroll)
+			<span class="mr-1 text-xs text-gray-500">
+				Zoom (<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Ctrl</kbd>+scroll)
 			</span>
 			<button
 				type="button"
@@ -2428,7 +2430,7 @@
 				<p class="text-xs text-gray-500">Label: {hovered.label}</p>
 			{/if}
 			{#if hovered.state}
-				<p class="mt-0.5 text-xs font-medium text-gray-400">{hovered.state}</p>
+				<p class="mt-0.5 text-xs font-medium text-gray-500">{hovered.state}</p>
 			{/if}
 		</div>
 	{/if}
@@ -2440,7 +2442,7 @@
 			class="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
 		>
 			Import CSV
-			<span class="text-xs text-gray-400">{showCsvImport ? '▲' : '▼'}</span>
+			<span class="text-xs text-gray-500">{showCsvImport ? '▲' : '▼'}</span>
 		</button>
 		{#if showCsvImport}
 			<form

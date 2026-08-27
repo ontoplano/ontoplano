@@ -34,8 +34,8 @@
 </script>
 
 <label class="col-span-12 block {SPANS[span]}">
-	<span class="eyebrow text-gray-500">
-		{label}{#if required}<span class="text-gray-400"> *</span>{/if}
+	<span class="eyebrow text-gray-600">
+		{label}{#if required}<span class="text-gray-500"> *</span>{/if}
 	</span>
 	<span class="mt-1 block">
 		{@render children()}

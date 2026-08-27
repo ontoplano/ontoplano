@@ -37,7 +37,7 @@
 				role="status"
 			>
 				<span class="min-w-0 flex-1 truncate">Deleted {item.label}</span>
-				<span class="tabular shrink-0 text-xs text-gray-400">{left}s</span>
+				<span class="tabular shrink-0 text-xs text-gray-500">{left}s</span>
 				<button
 					onclick={() => takeBack(item.id)}
 					class="shrink-0 font-medium text-white underline underline-offset-2"

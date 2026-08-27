@@ -261,7 +261,7 @@
 					? 'border border-orange-200 bg-orange-50 text-orange-700'
 					: 'border border-gray-300 bg-white text-gray-700'}"
 			>
-				Wishlist <kbd class="border border-gray-300 bg-gray-50 px-1">1</kbd>
+				Wishlist <kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">1</kbd>
 			</button>
 			<button
 				onclick={() => (filterType = filterType === 'replenish' ? 'all' : 'replenish')}
@@ -269,7 +269,7 @@
 					? 'border border-cyan-200 bg-cyan-50 text-cyan-700'
 					: 'border border-gray-300 bg-white text-gray-700'}"
 			>
-				Inventory <kbd class="border border-gray-300 bg-gray-50 px-1">2</kbd>
+				Inventory <kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">2</kbd>
 			</button>
 			<button
 				onclick={() => (showBought = !showBought)}
@@ -278,7 +278,7 @@
 					: 'border border-gray-300 bg-white text-gray-500'}"
 			>
 				{showBought ? 'Hide' : 'Show'} bought
-				<kbd class="border border-gray-300 bg-gray-50 px-1">b</kbd>
+				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">b</kbd>
 			</button>
 			<button
 				onclick={() => (showSnoozed = !showSnoozed)}
@@ -287,12 +287,12 @@
 					: 'border border-gray-300 bg-white text-gray-500'}"
 			>
 				{showSnoozed ? 'Hide' : 'Show'} snoozed
-				<kbd class="border border-gray-300 bg-gray-50 px-1">s</kbd>
+				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">s</kbd>
 			</button>
 			<button onclick={() => (showCategories = true)} class="btn btn-sm">Categories</button>
 			<button onclick={() => (showForm ? (showForm = false) : openCreateForm())} class="btn btn-sm">
 				{showForm ? 'Cancel' : 'Add item'}
-				<kbd class="border border-gray-300 bg-gray-50 px-1">n</kbd>
+				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">n</kbd>
 			</button>
 		</div>
 	</div>
@@ -318,7 +318,7 @@
 			>
 			for what is still to buy
 			{#if pricedCount < needed.length}
-				<span class="text-xs text-gray-400">
+				<span class="text-xs text-gray-500">
 					· {needed.length - pricedCount} of them have no price yet
 				</span>
 			{/if}
@@ -451,7 +451,7 @@
 									<div class="min-w-0 flex-1">
 										<span class="text-sm text-gray-900">{item.name}</span>
 										{#if item.notes}
-											<span class="ml-2 text-xs text-gray-400">{item.notes}</span>
+											<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
 										{/if}
 									</div>
 									{#if item.snoozed}
@@ -504,7 +504,7 @@
 									{/if}
 									<button
 										onclick={() => startEdit(item)}
-										class="text-gray-400 hover:text-gray-700"
+										class="text-gray-500 hover:text-gray-700"
 										title="Edit"
 										aria-label="Edit {item.name}"><Icon name="edit" /></button
 									>
@@ -538,7 +538,7 @@
 											onclick={() => {
 												confirmingDelete = item.id;
 											}}
-											class="text-gray-400 hover:text-red-500"
+											class="text-gray-500 hover:text-red-500"
 											title="Delete"
 											aria-label="Delete {item.name}"><Icon name="trash" /></button
 										>
@@ -573,7 +573,7 @@
 							<div class="min-w-0 flex-1">
 								<span class="text-sm text-gray-900">{item.name}</span>
 								{#if item.notes}
-									<span class="ml-2 text-xs text-gray-400">{item.notes}</span>
+									<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
 								{/if}
 							</div>
 							<form method="POST" action="?/toggleSnoozed" use:enhance={tick('toggleSnoozed')}>
@@ -601,12 +601,12 @@
 							</form>
 							<div class="min-w-0 flex-1">
 								<span
-									class="text-sm {item.bought ? 'text-gray-400 line-through' : 'text-gray-900'}"
+									class="text-sm {item.bought ? 'text-gray-500 line-through' : 'text-gray-900'}"
 								>
 									{item.name}
 								</span>
 								{#if item.notes}
-									<span class="ml-2 text-xs text-gray-400">{item.notes}</span>
+									<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
 								{/if}
 							</div>
 							{#if !item.bought}
@@ -623,7 +623,7 @@
 						{/if}
 						<button
 							onclick={() => startEdit(item)}
-							class="text-gray-400 hover:text-gray-700"
+							class="text-gray-500 hover:text-gray-700"
 							title="Edit"
 							aria-label="Edit {item.name}"><Icon name="edit" /></button
 						>
@@ -653,7 +653,7 @@
 								onclick={() => {
 									confirmingDelete = item.id;
 								}}
-								class="text-gray-400 hover:text-red-500"
+								class="text-gray-500 hover:text-red-500"
 								title="Delete"
 								aria-label="Delete {item.name}"><Icon name="trash" /></button
 							>
@@ -665,7 +665,7 @@
 	{/if}
 
 	{#if filteredItems.length === 0}
-		<div class="py-12 text-center text-sm text-gray-400">
+		<div class="py-12 text-center text-sm text-gray-500">
 			{#if items.length === 0}
 				<EmptyState
 					icon="shopping"
@@ -754,7 +754,7 @@
 			class="mt-2"
 		>
 			<label class="block">
-				<span class="eyebrow text-gray-500">New category</span>
+				<span class="eyebrow text-gray-600">New category</span>
 				<input name="name" required autocomplete="off" placeholder="Frozen" class="input mt-1" />
 			</label>
 			<div class="mt-2 flex flex-wrap items-center justify-between gap-2">

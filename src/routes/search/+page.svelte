@@ -48,7 +48,7 @@
 				<section class="mb-4 break-inside-avoid border border-gray-200 bg-white shadow-card">
 					<h2 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">
 						{group.label}
-						<span class="tabular ml-1 text-xs text-gray-400">{group.hits.length}</span>
+						<span class="tabular ml-1 text-xs text-gray-500">{group.hits.length}</span>
 					</h2>
 					<div class="divide-y divide-gray-200">
 						{#each group.hits as hit (`${hit.kind}-${hit.id}`)}

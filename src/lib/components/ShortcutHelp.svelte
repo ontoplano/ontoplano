@@ -30,7 +30,7 @@
 		<div class="mb-2 w-72 border border-gray-200 bg-white p-4 shadow-sm">
 			<div class="mb-3 flex items-center justify-between">
 				<h3 class="text-sm font-bold text-gray-900">Keyboard Shortcuts</h3>
-				<button onclick={() => (show = false)} class="text-xs text-gray-400 hover:text-gray-600">
+				<button onclick={() => (show = false)} class="text-xs text-gray-500 hover:text-gray-600">
 					close
 				</button>
 			</div>
@@ -41,7 +41,9 @@
 					<div class="space-y-0.5">
 						{#each pageDisplay as s}
 							<div class="flex items-center justify-between text-xs">
-								<kbd class="border border-gray-300 bg-gray-50 px-1 font-mono">{s.displayKey}</kbd>
+								<kbd class="border border-gray-300 bg-gray-50 px-1 font-mono text-gray-700"
+									>{s.displayKey}</kbd
+								>
 								<span class="text-gray-600">{s.description}</span>
 							</div>
 						{/each}
@@ -54,7 +56,7 @@
 				<div class="space-y-0.5">
 					{#each GLOBAL_SHORTCUTS as s}
 						<div class="flex items-center justify-between text-xs">
-							<kbd class="border border-gray-300 bg-gray-50 px-1 font-mono"
+							<kbd class="border border-gray-300 bg-gray-50 px-1 font-mono text-gray-700"
 								>{s.key === 'Escape' ? 'Esc' : s.key}</kbd
 							>
 							<span class="text-gray-600">{s.description}</span>

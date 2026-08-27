@@ -25,7 +25,7 @@
 			<form method="post" action="?/reset" use:enhance>
 				<input type="hidden" name="token" value={data.token} />
 				<label class="mb-3 block">
-					<span class="eyebrow text-gray-500">New password</span>
+					<span class="eyebrow text-gray-600">New password</span>
 					<input
 						name="password"
 						type="password"
@@ -36,7 +36,7 @@
 					/>
 				</label>
 				<label class="mb-4 block">
-					<span class="eyebrow text-gray-500">Confirm</span>
+					<span class="eyebrow text-gray-600">Confirm</span>
 					<input
 						name="confirm"
 						type="password"

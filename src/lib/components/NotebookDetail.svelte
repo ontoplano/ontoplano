@@ -92,7 +92,7 @@
 				style={tab === t.key ? `border-color: ${SECTION_COLORS.diary}` : ''}
 			>
 				{t.label}
-				<span class="tabular ml-1 text-xs text-gray-400">{t.count}</span>
+				<span class="tabular ml-1 text-xs text-gray-500">{t.count}</span>
 			</button>
 		{/each}
 	</div>
@@ -131,9 +131,9 @@
 			<ul class="divide-y divide-gray-200">
 				{#each contents.blocks as block (`b${block.id}`)}
 					<li class="flex items-center gap-3 px-4 py-2 text-sm">
-						<Icon name="calendar" class="shrink-0 text-gray-400" />
+						<Icon name="calendar" class="shrink-0 text-gray-500" />
 						<span class="min-w-0 flex-1 truncate text-gray-900">{block.label}</span>
-						<span class="tabular shrink-0 text-xs text-gray-400">
+						<span class="tabular shrink-0 text-xs text-gray-500">
 							{block.date}
 							{block.startTime}
 						</span>
@@ -141,14 +141,14 @@
 				{/each}
 				{#each contents.todos as todo (`t${todo.id}`)}
 					<li class="flex items-center gap-3 px-4 py-2 text-sm">
-						<Icon name="check" class="shrink-0 text-gray-400" />
+						<Icon name="check" class="shrink-0 text-gray-500" />
 						<span
 							class="min-w-0 flex-1 truncate text-gray-900"
 							class:line-through={todo.status === 'done'}
 						>
 							{todo.title}
 						</span>
-						<span class="shrink-0 text-xs text-gray-400">
+						<span class="shrink-0 text-xs text-gray-500">
 							{todo.scheduledDate ?? STATUS_LABELS[todo.status]}
 						</span>
 					</li>
@@ -163,11 +163,11 @@
 		<ul class="divide-y divide-gray-200">
 			{#each contents.goals as goal (goal.id)}
 				<li class="flex items-center gap-3 px-4 py-2 text-sm">
-					<Icon name="goals" class="shrink-0 text-gray-400" />
+					<Icon name="goals" class="shrink-0 text-gray-500" />
 					<a href={resolve('/goals')} class="min-w-0 flex-1 truncate text-gray-900 hover:underline">
 						{goal.title}
 					</a>
-					<span class="tabular shrink-0 text-xs text-gray-400">
+					<span class="tabular shrink-0 text-xs text-gray-500">
 						{HORIZON_LABELS[goal.horizon]} · {goal.periodStart}
 					</span>
 				</li>
@@ -224,7 +224,7 @@
 							{@html renderMarkdown(entry.content)}
 						</div>
 						<div class="mt-1 flex flex-wrap items-center gap-2">
-							<span class="tabular text-xs text-gray-400">
+							<span class="tabular text-xs text-gray-500">
 								{entry.seq === null ? '' : `#${entry.seq} · `}{when(entry.createdAt)}
 							</span>
 

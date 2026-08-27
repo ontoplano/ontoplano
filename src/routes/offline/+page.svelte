@@ -7,7 +7,7 @@
 
 <div class="flex min-h-screen items-center justify-center bg-gray-100 p-6">
 	<div class="w-full max-w-sm border border-gray-200 bg-white p-6 shadow-card">
-		<span class="eyebrow text-gray-500">No connection</span>
+		<span class="eyebrow text-gray-600">No connection</span>
 		<p class="mt-2 text-sm text-gray-700">
 			Ontoplano needs the network for this page. Anything you already opened is still readable.
 		</p>

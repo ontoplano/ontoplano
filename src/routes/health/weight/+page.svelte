@@ -5,7 +5,7 @@
 </script>
 
 <div class="border border-gray-200 bg-white p-6 shadow-card">
-	<span class="eyebrow text-gray-500">Weight</span>
+	<span class="eyebrow text-gray-600">Weight</span>
 	<p class="mt-2 text-sm text-gray-700">
 		Weight readings arrive as a data stream rather than being read out of another app's database, so
 		they belong to your account and work on any machine.

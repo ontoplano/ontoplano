@@ -459,7 +459,7 @@
 		class="{filtersOpen ? 'flex' : 'hidden'} flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:flex"
 	>
 		<div class="flex items-center gap-1">
-			<span class="eyebrow text-gray-500">Sort</span>
+			<span class="eyebrow text-gray-600">Sort</span>
 			{#each [{ v: 'default', l: 'Default' }, { v: 'urgency', l: 'Urgency' }, { v: 'interest', l: 'Interest' }, { v: 'energy', l: 'Energy' }] as opt (opt.v)}
 				<button
 					onclick={() => (sortBy = opt.v as typeof sortBy)}
@@ -471,7 +471,7 @@
 		</div>
 
 		<div class="flex items-center gap-1">
-			<span class="eyebrow text-gray-500">Energy up to</span>
+			<span class="eyebrow text-gray-600">Energy up to</span>
 			{#each [1, 2, 3, 4, 5] as n (n)}
 				<button
 					onclick={() => (maxEnergy = maxEnergy === n ? null : n)}
@@ -487,7 +487,7 @@
 			Show skipped
 		</label>
 
-		<span class="kbd-hint text-gray-400">
+		<span class="kbd-hint text-gray-500">
 			Number keys set <strong class="font-semibold text-gray-600">{ratingKey}</strong> — u / i / y to
 			switch
 		</span>
@@ -704,8 +704,8 @@
 						<header
 							class="flex items-center justify-between border-b border-gray-200 bg-white px-3 py-2"
 						>
-							<span class="eyebrow text-gray-500">{STATUS_LABELS[column.status]}</span>
-							<span class="tabular text-xs text-gray-400">{column.cards.length}</span>
+							<span class="eyebrow text-gray-600">{STATUS_LABELS[column.status]}</span>
+							<span class="tabular text-xs text-gray-500">{column.cards.length}</span>
 						</header>
 
 						<div class="flex-1 space-y-2 p-2">
@@ -802,7 +802,7 @@
 							{/each}
 
 							{#if column.cards.length === 0}
-								<p class="px-1 py-4 text-center text-xs text-gray-400">
+								<p class="px-1 py-4 text-center text-xs text-gray-500">
 									{dragOverColumn === column.status ? 'Drop here' : 'Nothing here'}
 								</p>
 							{/if}
@@ -831,8 +831,8 @@
 				>
 					<!-- Todo, like the tab and the plan's rail. The status column beside
 					     it is "Pending", which is what stops the two reading as one word. -->
-					<span class="eyebrow text-gray-500">Todo</span>
-					<span class="tabular text-xs text-gray-400">{railCards.length}</span>
+					<span class="eyebrow text-gray-600">Todo</span>
+					<span class="tabular text-xs text-gray-500">{railCards.length}</span>
 				</header>
 				<div class="space-y-2 p-2">
 					{#each railCards as card (card.uid)}
@@ -861,7 +861,7 @@
 					{/each}
 
 					{#if railCards.length === 0}
-						<p class="px-1 py-6 text-center text-xs text-gray-400">
+						<p class="px-1 py-6 text-center text-xs text-gray-500">
 							{railOver ? 'Drop to send back' : 'Nothing waiting'}
 						</p>
 					{/if}
@@ -870,17 +870,17 @@
 		{/if}
 	</div>
 
-	<p class="kbd-hint text-xs text-gray-400">
-		<kbd class="border border-gray-300 bg-gray-50 px-1">h</kbd>
-		<kbd class="border border-gray-300 bg-gray-50 px-1">j</kbd>
-		<kbd class="border border-gray-300 bg-gray-50 px-1">k</kbd>
-		<kbd class="border border-gray-300 bg-gray-50 px-1">l</kbd> move ·
-		<kbd class="border border-gray-300 bg-gray-50 px-1">H</kbd>
-		<kbd class="border border-gray-300 bg-gray-50 px-1">L</kbd> carry card ·
-		<kbd class="border border-gray-300 bg-gray-50 px-1">c</kbd> done ·
-		<kbd class="border border-gray-300 bg-gray-50 px-1">t</kbd> today ·
-		<kbd class="border border-gray-300 bg-gray-50 px-1">g</kbd> switch tab ·
-		<kbd class="border border-gray-300 bg-gray-50 px-1">1-5</kbd> rate ·
-		<kbd class="border border-gray-300 bg-gray-50 px-1">x</kbd> delete
+	<p class="kbd-hint text-xs text-gray-500">
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">h</kbd>
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">j</kbd>
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">k</kbd>
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">l</kbd> move ·
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">H</kbd>
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">L</kbd> carry card ·
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">c</kbd> done ·
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">t</kbd> today ·
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">g</kbd> switch tab ·
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">1-5</kbd> rate ·
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">x</kbd> delete
 	</p>
 </div>

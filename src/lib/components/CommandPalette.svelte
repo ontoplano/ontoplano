@@ -158,33 +158,35 @@
 						class="flex items-center gap-3 px-4 py-2.5 text-sm {i === cursor ? 'bg-gray-100' : ''}"
 					>
 						{#if row.sort === 'place'}
-							<Icon name={row.place.icon} class="shrink-0 text-gray-400" />
+							<Icon name={row.place.icon} class="shrink-0 text-gray-500" />
 							<span class="text-gray-900">{row.place.label}</span>
 							{#if row.place.group}
-								<span class="text-xs text-gray-400">{row.place.group}</span>
+								<span class="text-xs text-gray-500">{row.place.group}</span>
 							{/if}
 						{:else}
 							<Icon name="tag" class="shrink-0 text-gray-300" />
 							<span class="min-w-0 flex-1 truncate text-gray-900">{row.hit.title}</span>
-							<span class="eyebrow shrink-0 text-gray-400">{KIND_LABELS[row.hit.kind]}</span>
+							<span class="eyebrow shrink-0 text-gray-500">{KIND_LABELS[row.hit.kind]}</span>
 						{/if}
 					</a>
 				{/each}
 				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 
 				{#if rows.length === 0}
-					<p class="px-4 py-6 text-center text-sm text-gray-400">
+					<p class="px-4 py-6 text-center text-sm text-gray-500">
 						{query.trim().length < MIN_QUERY ? 'Type to search' : 'Nothing matches'}
 					</p>
 				{/if}
 			</div>
 
 			<div
-				class="kbd-hint flex items-center gap-3 border-t border-gray-200 px-4 py-2 text-xs text-gray-400"
+				class="kbd-hint flex items-center gap-3 border-t border-gray-200 px-4 py-2 text-xs text-gray-500"
 			>
-				<span><kbd class="border border-gray-300 bg-gray-50 px-1">↑↓</kbd> move</span>
-				<span><kbd class="border border-gray-300 bg-gray-50 px-1">↵</kbd> open</span>
-				<span><kbd class="border border-gray-300 bg-gray-50 px-1">esc</kbd> close</span>
+				<span><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">↑↓</kbd> move</span>
+				<span><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">↵</kbd> open</span>
+				<span
+					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">esc</kbd> close</span
+				>
 			</div>
 		</div>
 	</div>

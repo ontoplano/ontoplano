@@ -71,7 +71,7 @@
 						/>
 						<span class="block text-sm font-semibold text-gray-900">{t.label}</span>
 						<span class="mt-1 block text-xs text-gray-500">{t.description}</span>
-						<span class="tabular mt-2 block text-xs text-gray-400">
+						<span class="tabular mt-2 block text-xs text-gray-500">
 							{t.blocks === 0 ? 'No blocks' : `${t.blocks} blocks`}
 						</span>
 					</label>

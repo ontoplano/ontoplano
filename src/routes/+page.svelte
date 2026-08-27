@@ -189,7 +189,7 @@
 			style="--card-accent: {task.categoryColor ?? SECTION_COLORS.planner}"
 		>
 			<div class="min-w-0 flex-1">
-				<span class="eyebrow text-gray-500">
+				<span class="eyebrow text-gray-600">
 					{state === 'now' ? 'Now' : 'Next'}
 				</span>
 				<p class="mt-1 text-xl font-bold text-gray-900">{task.name}</p>
@@ -236,7 +236,7 @@
 				<div class="flex items-baseline gap-3">
 					<span class="text-2xl font-bold text-gray-900">
 						{data.taskSummary.done}
-						<span class="text-sm font-normal text-gray-400">/ {data.taskSummary.total}</span>
+						<span class="text-sm font-normal text-gray-500">/ {data.taskSummary.total}</span>
 					</span>
 					<span class="text-xs text-gray-500">
 						{data.tasksTodo.length === 0 ? 'nothing left today' : `${data.tasksTodo.length} to go`}
@@ -280,7 +280,7 @@
 						{/each}
 					</ul>
 					{#if data.tasksTodo.length > TODO_PREVIEW}
-						<p class="mt-1 text-xs text-gray-400">
+						<p class="mt-1 text-xs text-gray-500">
 							+{data.tasksTodo.length - TODO_PREVIEW} more
 						</p>
 					{/if}
@@ -342,13 +342,13 @@
 								</span>
 								<span class="tabular w-10 shrink-0 text-right text-xs text-gray-500">{pct}%</span>
 							{:else}
-								<span class="shrink-0 text-xs text-gray-400">no measure</span>
+								<span class="shrink-0 text-xs text-gray-500">no measure</span>
 							{/if}
 						</li>
 					{/each}
 				</ul>
 				{#if data.activeGoals.length > GOAL_PREVIEW}
-					<p class="mt-2 text-xs text-gray-400">
+					<p class="mt-2 text-xs text-gray-500">
 						+{data.activeGoals.length - GOAL_PREVIEW} more
 					</p>
 				{/if}
@@ -380,10 +380,10 @@
 									: habit.type === 'neutral'
 										? habit.streak > 0
 											? 'text-gray-600'
-											: 'text-gray-400'
+											: 'text-gray-500'
 										: habit.streak > 0
 											? 'text-blue-600'
-											: 'text-gray-400'}"
+											: 'text-gray-500'}"
 							>
 								{habit.streak}d
 							</span>
@@ -430,13 +430,25 @@
 									)}
 									<td class="px-1 py-0.5 {day === todayIndex ? 'bg-gray-50' : ''}">
 										{#each slots as slot}
+											<!--
+												The category colour is a mark beside the label, not the
+												label's own ink. As text at 12px it was only as readable
+												as the colour happened to be — a pale category was
+												unreadable on a light page and a deep one on a dark page,
+												and it is the user who picks the colour.
+											-->
 											<div
-												class="truncate leading-tight"
+												class="flex items-center gap-1 leading-tight text-gray-700"
 												title="{time} - {slot.activityName || slot.label || slot.categoryName}"
-												style="color: {slot.categoryColor || '#6b7280'}"
 											>
-												<span class="text-gray-400">{time.slice(0, 5)}</span>
-												{slot.activityName || slot.label || slot.categoryName}
+												<span
+													class="h-2.5 w-0.5 shrink-0 rounded-full"
+													style="background-color: {slot.categoryColor || '#6b7280'}"
+												></span>
+												<span class="shrink-0 text-gray-500">{time.slice(0, 5)}</span>
+												<span class="truncate"
+													>{slot.activityName || slot.label || slot.categoryName}</span
+												>
 											</div>
 										{/each}
 									</td>
@@ -469,7 +481,7 @@
 							class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50"
 						>
 							{showWinsForm ? 'Cancel' : 'Wins'}
-							<kbd class="border border-gray-300 bg-gray-50 px-1">w</kbd>
+							<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">w</kbd>
 						</button>
 					{/if}
 					<button
@@ -572,7 +584,7 @@
 						{truncate(data.lastEntry.content, 300)}
 					</p>
 					<div class="mt-2 flex items-center gap-2">
-						<span class="text-xs text-gray-400">{formatDate(data.lastEntry.createdAt)}</span>
+						<span class="text-xs text-gray-500">{formatDate(data.lastEntry.createdAt)}</span>
 						{#each data.lastEntry.tags as tag (tag.id)}
 							<span class="border border-gray-200 px-1.5 py-0.5 text-xs text-gray-500"
 								>{tag.name}</span
@@ -616,7 +628,7 @@
 						</div>
 					{/each}
 					{#if data.shoppingToBuy.length > 8}
-						<span class="text-xs text-gray-400">+{data.shoppingToBuy.length - 8} more</span>
+						<span class="text-xs text-gray-500">+{data.shoppingToBuy.length - 8} more</span>
 					{/if}
 				</div>
 			{/if}
@@ -638,7 +650,7 @@
 					<p class="mt-1 text-xs text-gray-500">&mdash; {data.quote.author}</p>
 				{/if}
 			{:else}
-				<p class="text-sm text-gray-400">No quotes yet. Add some in config.</p>
+				<p class="text-sm text-gray-500">No quotes yet. Add some in config.</p>
 			{/if}
 		</Card>
 	{/snippet}
@@ -646,13 +658,13 @@
 	{#snippet card_threeWins()}
 		<Card title="Three wins" accent={SECTION_COLORS.diary}>
 			{#snippet actions()}
-				<span class="text-xs text-gray-400">What went well today</span>
+				<span class="text-xs text-gray-500">What went well today</span>
 			{/snippet}
 			<!-- Rows of their own rather than diary prose, so they can be counted later. -->
 			<form method="post" action="?/saveWins" use:enhance class="space-y-2">
 				{#each [1, 2, 3] as position (position)}
 					<div class="flex items-center gap-2">
-						<span class="tabular w-4 shrink-0 text-xs text-gray-400">{position}</span>
+						<span class="tabular w-4 shrink-0 text-xs text-gray-500">{position}</span>
 						<input
 							name="win_{position}"
 							autocomplete="off"
@@ -695,7 +707,7 @@
 						<div
 							class="mb-1 flex items-center justify-between border border-gray-300 bg-gray-100 px-2 py-1"
 						>
-							<span class="eyebrow text-gray-500">{card.label}</span>
+							<span class="eyebrow text-gray-600">{card.label}</span>
 							<button onclick={() => hideCard(id)} class="text-xs text-gray-500 hover:text-gray-900"
 								>Hide</button
 							>

@@ -98,7 +98,7 @@
 	<Card title="API tokens" flush>
 		{#snippet actions()}
 			<button type="button" onclick={() => (showTokenForm = true)} class="btn btn-sm">
-				New token <kbd class="ml-1 border border-gray-300 bg-gray-50 px-1">n</kbd>
+				New token <kbd class="ml-1 border border-gray-300 bg-gray-50 px-1 text-gray-700">n</kbd>
 			</button>
 		{/snippet}
 
@@ -142,7 +142,7 @@
 					</Field>
 
 					<fieldset class="col-span-12">
-						<legend class="eyebrow text-gray-500">Scopes</legend>
+						<legend class="eyebrow text-gray-600">Scopes</legend>
 						<p class="mt-1 mb-2 text-xs text-gray-500">
 							Grant only what the app needs. A token with no read scope cannot see your data.
 						</p>
