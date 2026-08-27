@@ -6,6 +6,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
+	import { armed } from '$lib/actions/armed';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -41,6 +42,15 @@
 			day: 'numeric'
 		});
 	}
+
+	/** The stale row whose "let it go" has been armed. Nothing deletes on one press. */
+	let dropping = $state<string | null>(null);
+
+	const SORT_LABELS: Record<string, string> = {
+		todo: 'Todo',
+		idea: 'Idea',
+		shopping: 'Someday'
+	};
 
 	function lineAt(position: number): string {
 		return data.lines.find((l) => l.position === position)?.content ?? '';
@@ -216,6 +226,78 @@
 				</form>
 			{/if}
 		</Card>
+
+		<!--
+			Things that never ended.
+
+			Todos, ideas and someday-items only accumulate, and nothing in the app
+			had ever asked whether they were still real. This lives in the review
+			rather than on a page of its own: a second ritual is a second thing to
+			remember, and not remembering is the entire problem.
+		-->
+		{#if data.stale.length > 0}
+			<Card
+				title="Still here"
+				description="Nobody has touched these in {data.staleMonths} months. Are they real?"
+				accent="var(--section-accent)"
+				flush
+			>
+				<ul class="divide-y divide-gray-200">
+					{#each data.stale as thing (`${thing.sort}-${thing.id}`)}
+						{@const uid = `${thing.sort}-${thing.id}`}
+						<li class="flex flex-wrap items-center gap-3 px-4 py-2">
+							<span class="chip shrink-0 text-gray-600">{SORT_LABELS[thing.sort]}</span>
+							<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{thing.title}</span>
+							<span class="tabular shrink-0 text-xs text-gray-500">{thing.since}</span>
+
+							<form method="post" action="?/keepStale" use:enhance class="shrink-0">
+								<input type="hidden" name="sort" value={thing.sort} />
+								<input type="hidden" name="id" value={thing.id} />
+								<button type="submit" class="btn btn-sm">Still real</button>
+							</form>
+
+							<!-- Two presses, and the second one is not where the first was:
+							     an accidental double-click must never destroy anything. -->
+							{#if dropping === uid}
+								<form
+									method="post"
+									action="?/dropStale"
+									use:enhance={() => {
+										return async ({ update }) => {
+											await update();
+											dropping = null;
+										};
+									}}
+									class="flex shrink-0 items-center gap-2"
+								>
+									<input type="hidden" name="sort" value={thing.sort} />
+									<input type="hidden" name="id" value={thing.id} />
+									<!-- Keep comes first, so it is what lands under a cursor that
+									     was on the bin. `armed` covers the rest: the confirm is
+									     inert until it has been on screen long enough to read. -->
+									<button type="button" class="btn btn-sm" onclick={() => (dropping = null)}>
+										Keep
+									</button>
+									<button type="submit" class="btn btn-danger btn-sm" use:armed>
+										Delete it?
+									</button>
+								</form>
+							{:else}
+								<button
+									type="button"
+									class="btn btn-sm shrink-0"
+									onclick={() => (dropping = uid)}
+									title="Let it go"
+									aria-label="Let {thing.title} go"
+								>
+									<Icon name="trash" size={14} />
+								</button>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			</Card>
+		{/if}
 
 		<!-- The part worth reading in a year. -->
 		<Card

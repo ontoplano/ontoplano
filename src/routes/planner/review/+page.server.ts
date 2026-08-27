@@ -1,6 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
-import { toActionFailure } from '$lib/server/services/errors';
+import { toActionFailure, ValidationError } from '$lib/server/services/errors';
 import {
 	carryIntoTodos,
 	goalsTouched,
@@ -10,6 +10,7 @@ import {
 	saveLines,
 	weekStartOf
 } from '$lib/server/services/review';
+import { dropStale, keepStale, listStale, STALE_MONTHS } from '$lib/server/services/stale';
 import { addDays, getISOWeekNumber, getISOWeekYear } from '$lib/server/week-generator';
 
 function dateString(d: Date): string {
@@ -31,22 +32,33 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	const monday = new Date(weekStart + 'T00:00:00');
 	const { reading, loose } = readWeek(ctx, weekStart);
+	const isCurrent = weekStart === weekStartOf(dateString(ctx.now), ctx.now);
 
 	return {
 		reading,
 		loose,
 		goals: goalsTouched(ctx, weekStart),
 		lines: listLines(ctx, weekStart),
+		/** Things nothing has ever asked about. Only offered on a finished week. */
+		stale: isCurrent ? [] : listStale(ctx),
+		staleMonths: STALE_MONTHS,
 		linesPerReview: LINES_PER_REVIEW,
 		week: {
 			number: getISOWeekNumber(monday),
 			year: getISOWeekYear(monday),
 			prev: dateString(addDays(monday, -7)),
 			next: dateString(addDays(monday, 7)),
-			isCurrent: weekStart === weekStartOf(dateString(ctx.now), ctx.now)
+			isCurrent
 		}
 	};
 };
+
+/** Which table a stale row came from. Anything else is not a table. */
+function sortOf(raw: FormDataEntryValue | null): 'todo' | 'idea' | 'shopping' {
+	const v = String(raw ?? '');
+	if (v === 'todo' || v === 'idea' || v === 'shopping') return v;
+	throw new ValidationError('Unknown kind');
+}
 
 export const actions: Actions = {
 	saveLines: async ({ request, locals }) => {
@@ -56,6 +68,34 @@ export const actions: Actions = {
 				weekStart: formData.get('weekStart'),
 				contents: formData.getAll('line')
 			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	keepStale: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			keepStale(
+				buildCtx(locals.user!.id),
+				sortOf(formData.get('sort')),
+				Number(formData.get('id'))
+			);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	dropStale: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			dropStale(
+				buildCtx(locals.user!.id),
+				sortOf(formData.get('sort')),
+				Number(formData.get('id'))
+			);
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

@@ -416,7 +416,7 @@
 		-->
 		<button
 			onpointerdown={(e) => pie?.summon(e)}
-			class="capture-trigger lg:hidden"
+			class="capture-trigger"
 			class:is-open={pieOpen}
 			aria-label="Write something down"
 			title="Write something down"
@@ -590,6 +590,18 @@
 		box-shadow: var(--shadow-overlay);
 		touch-action: none;
 		transition: opacity 120ms ease;
+	}
+
+	/*
+	 * Phones only. A Tailwind `lg:hidden` on the element loses to the scoped
+	 * rule above — same one-class specificity, and Svelte's scoping adds a
+	 * second class — so the button showed up in the middle of a 1440px screen.
+	 * The breakpoint belongs with the rest of its layout.
+	 */
+	@media (min-width: 1024px) {
+		.capture-trigger {
+			display: none;
+		}
 	}
 
 	/* Out of the way of the menu it just opened. */

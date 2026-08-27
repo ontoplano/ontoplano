@@ -1075,4 +1075,47 @@ reviewLine(mondayBefore(2), 3, 'Stop putting deep work after lunch.');
 reviewLine(mondayBefore(3), 1, 'Cooked at home five nights out of seven.');
 reviewLine(mondayBefore(3), 2, 'Read almost nothing.');
 
+// --- Things that never ended ------------------------------------------------------
+//
+// So the review's "Still here" section has something to ask about. Backdated
+// rather than created old, because the row's own timestamp is what the query
+// reads.
+
+const monthsAgo = (n) => {
+	const d = new Date(now);
+	d.setMonth(d.getMonth() - n);
+	return `${iso(d)} 09:00:00`;
+};
+
+const age = (table, match, when) => {
+	const row = one(
+		`select id from ${table} where user_id = ? and ${match.column} = ?`,
+		uid,
+		match.value
+	);
+	if (row) db.prepare(`update ${table} set updated_at = ? where id = ?`).run(when, row.id);
+};
+
+const forgottenTodo = one(
+	'select id from planner_todos where user_id = ? and title = ?',
+	uid,
+	'learn a bit of woodworking'
+);
+if (!forgottenTodo)
+	run(
+		'insert into planner_todos (user_id, title, status, sort_order, created_at, updated_at) values (?, ?, ?, ?, ?, ?)',
+		uid,
+		'learn a bit of woodworking',
+		'todo',
+		9000,
+		monthsAgo(7),
+		monthsAgo(7)
+	);
+
+idea('A newsletter about bread, maybe', ['someday']);
+shoppingItem('a proper armchair', 'someday', { categoryId: household });
+
+age('ideas', { column: 'content', value: 'A newsletter about bread, maybe' }, monthsAgo(5));
+age('shopping_items', { column: 'name', value: 'a proper armchair' }, monthsAgo(9));
+
 console.log(`seeded synthetic data for ${user.email ?? uid}`);

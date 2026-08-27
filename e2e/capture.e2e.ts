@@ -122,3 +122,22 @@ test('letting go in the hole does nothing at all', async ({ page }) => {
 	await expect(page.locator('dialog[open]')).toHaveCount(0);
 	await expect(page.getByText('cancel')).toBeHidden();
 });
+
+test('the thumb trigger is for thumbs, and the header one is for cursors', async ({ page }) => {
+	await register(page, `pie-where-${Date.now()}@test.invalid`);
+	await page.goto('/', { waitUntil: 'networkidle' });
+
+	const triggers = page.getByRole('button', { name: /write something down/i });
+
+	// A scoped rule beat the Tailwind `lg:hidden` it was written beside once, and
+	// a 3.25rem black circle appeared in the middle of a 1440px screen.
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await expect(triggers).toHaveCount(1);
+	const wide = await triggers.first().boundingBox();
+	expect(wide!.width).toBeLessThan(48);
+
+	await page.setViewportSize({ width: 390, height: 844 });
+	await expect(triggers).toHaveCount(1);
+	const narrow = await triggers.first().boundingBox();
+	expect(narrow!.y).toBeGreaterThan(500);
+});
