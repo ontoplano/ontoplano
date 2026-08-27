@@ -29,8 +29,8 @@
 </script>
 
 <div class="space-y-4">
-	<div class="flex items-center justify-between">
-		<h1 class="text-lg font-bold text-gray-900">Weekly Planner</h1>
+	<div class="flex flex-wrap items-center justify-between gap-3">
+		<h1 class="shrink-0 text-lg font-bold text-gray-900">Weekly Planner</h1>
 	</div>
 
 	<div class="snap-strip gap-1 border-b border-gray-200 md:flex">

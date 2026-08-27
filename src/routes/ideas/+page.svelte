@@ -146,8 +146,8 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<div class="flex items-center justify-between">
-		<h1 class="text-lg font-bold text-gray-900">Ideas</h1>
+	<div class="flex flex-wrap items-center justify-between gap-3">
+		<h1 class="shrink-0 text-lg font-bold text-gray-900">Ideas</h1>
 		<button
 			onclick={() => {
 				if (showForm) {

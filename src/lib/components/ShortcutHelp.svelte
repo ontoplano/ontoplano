@@ -25,7 +25,16 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="kbd-hint fixed right-4 bottom-4 z-50">
+<!--
+	Clear of the phone's navigation bar.
+
+	`kbd-hint` hides this on a coarse pointer, so a real phone never sees it —
+	but a narrow window on a laptop has a fine pointer *and* the bottom bar, and
+	there the button sat on top of the last item in it.
+-->
+<div
+	class="kbd-hint fixed right-4 bottom-[calc(var(--mobile-nav-height)+var(--safe-bottom)+1rem)] z-50 lg:bottom-4"
+>
 	{#if show}
 		<div class="mb-2 w-72 border border-gray-200 bg-white p-4 shadow-sm">
 			<div class="mb-3 flex items-center justify-between">

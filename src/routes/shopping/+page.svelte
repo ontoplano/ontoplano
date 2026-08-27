@@ -321,8 +321,11 @@
 {/snippet}
 
 <div class="space-y-4">
-	<div class="flex items-center justify-between">
-		<h1 class="text-lg font-bold text-gray-900">Shopping List</h1>
+	<!-- The title does not shrink. A row of buttons that can wrap will squeeze a
+	     heading into one word per line before it wraps itself, which is how
+	     "Shopping List" became three lines on a phone. -->
+	<div class="flex flex-wrap items-center justify-between gap-3">
+		<h1 class="shrink-0 text-lg font-bold text-gray-900">Shopping List</h1>
 		<div class="flex flex-wrap items-center gap-2">
 			<button
 				onclick={() => (filterType = filterType === 'someday' ? 'all' : 'someday')}

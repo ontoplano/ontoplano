@@ -140,3 +140,41 @@ test('a long unbroken name does not push its controls off the screen', async ({ 
 
 	expect(escaped, 'controls pushed off the right edge').toEqual([]);
 });
+
+test('a page title is never squeezed into one word per line', async ({ page }) => {
+	await register(page, `titles-${Date.now()}@test.invalid`);
+	await page.setViewportSize({ width: 390, height: 844 });
+
+	/**
+	 * The first complaint anybody made about this app was that a row of buttons
+	 * squeezed the text beside it into a vertical ribbon. A heading in a flex row
+	 * with a wrapping button group will always lose that fight unless it is told
+	 * not to shrink, and every section's header is built that way.
+	 */
+	const squeezed: string[] = [];
+
+	for (const route of ROUTES) {
+		await page.goto(route, { waitUntil: 'networkidle' });
+
+		const bad = await page.evaluate(() => {
+			const out: string[] = [];
+			for (const h of document.querySelectorAll('h1, h2')) {
+				const text = h.textContent?.trim() ?? '';
+				if (!text || text.split(/\s+/).length < 2) continue;
+
+				const cs = getComputedStyle(h);
+				const line = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2;
+				const lines = Math.round(h.getBoundingClientRect().height / line);
+
+				// Two lines is a long title on a narrow screen. Three or more, for a
+				// heading of a few words, means it is being squeezed rather than wrapped.
+				if (lines > 2 && text.split(/\s+/).length <= 4) out.push(`${text} — ${lines} lines`);
+			}
+			return out;
+		});
+
+		squeezed.push(...bad.map((b) => `${route}: ${b}`));
+	}
+
+	expect(squeezed, 'headings crushed by whatever sits beside them').toEqual([]);
+});
