@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
 	import { enhance } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
@@ -14,6 +15,48 @@
 
 	let editing = $state<'email' | 'password' | null>(null);
 	let confirming = $state(false);
+
+	let downloading = $state(false);
+	/** Held after a successful export, so a double-click cannot spend two. */
+	let cooling = $state(false);
+	let exportError: string | null = $state(null);
+
+	const COOLDOWN_MS = 5000;
+
+	async function download() {
+		if (downloading || cooling) return;
+
+		downloading = true;
+		exportError = null;
+
+		try {
+			const res = await fetch(resolve('/settings/account/export'));
+
+			if (!res.ok) {
+				const body = await res.json().catch(() => null);
+				exportError = body?.message ?? 'The export did not come back. Try again in a moment.';
+				return;
+			}
+
+			// A blob rather than a navigation, so we know when it actually arrived.
+			const blob = await res.blob();
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = `ontoplano-export-${new Date().toISOString().slice(0, 10)}.json`;
+			link.click();
+			URL.revokeObjectURL(url);
+
+			cooling = true;
+			setTimeout(() => (cooling = false), COOLDOWN_MS);
+		} catch {
+			exportError = 'The export did not come back. Check your connection and try again.';
+		} finally {
+			downloading = false;
+			// The allowance has changed on the server; say so without a reload.
+			await invalidateAll();
+		}
+	}
 	let confirmRevoke = $state<string | null>(null);
 	let confirmSignOutAll = $state(false);
 	let selected = $state(-1);
@@ -295,28 +338,51 @@
 
 	<Card title="Export your data">
 		{#snippet actions()}
-			{#if data.exports.remaining > 0}
-				<a href={resolve('/settings/account/export')} download class="btn btn-sm">
-					<Icon name="download" /> Download
-				</a>
-			{:else}
-				<span class="btn btn-sm cursor-not-allowed opacity-50">
-					<Icon name="download" /> Download
-				</span>
-			{/if}
+			<!--
+				Fetched rather than linked.
+
+				A plain `<a download>` never re-renders the page, so the allowance kept
+				saying two left until you reloaded — and there was nothing to stop a
+				double-click spending both. This knows exactly when the file has
+				arrived: it refreshes the count then, and holds the button for five
+				seconds so the second click of a double lands on nothing.
+			-->
+			<button
+				type="button"
+				onclick={download}
+				disabled={data.exports.remaining <= 0 || downloading || cooling}
+				class="btn btn-sm"
+			>
+				<Icon name="download" />
+				{downloading ? 'Preparing…' : 'Download'}
+			</button>
 		{/snippet}
 		<p class="text-sm text-gray-500">
 			Everything this account owns, as JSON: plans, tasks, diary, habits, goals, shopping, ideas and
 			settings. The raw rows, so it is complete rather than pretty.
 		</p>
 
-		{#if data.exports.remaining <= 0}
+		<!--
+			Always says where you stand, rather than only warning near the end.
+
+			A limit you only hear about when you hit it feels like a trap; a count
+			you can see is just a fact. It also means the number visibly changes the
+			moment an export lands, which is the thing that was broken.
+		-->
+		{#if exportError}
+			<p class="mt-2 text-sm text-red-600">{exportError}</p>
+		{:else if data.exports.remaining <= 0}
 			<p class="mt-2 text-sm text-red-600">
-				You have used both of today's exports. The next one unlocks {data.exports.unlocksIn}.
+				No exports left today — this plan allows {data.exports.allowed} a day. The next one unlocks
+				{data.exports.unlocksIn}.
 			</p>
-		{:else if data.exports.remaining === 1}
-			<p class="mt-2 text-sm text-red-600">
-				One export left today. The allowance resets {data.exports.unlocksIn}.
+		{:else}
+			<p class="mt-2 text-sm {data.exports.remaining === 1 ? 'text-amber-700' : 'text-gray-500'}">
+				{data.exports.remaining} of {data.exports.allowed}
+				{data.exports.allowed === 1 ? 'export' : 'exports'} left today.
+				{#if data.exports.unlocksIn}
+					The allowance resets {data.exports.unlocksIn}.
+				{/if}
 			</p>
 		{/if}
 	</Card>

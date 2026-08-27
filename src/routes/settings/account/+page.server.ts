@@ -4,7 +4,12 @@ import type { Actions, PageServerLoad } from './$types';
 import { auth, verifyPassword } from '$lib/server/auth';
 import { loadConfig } from '$lib/server/config';
 import { isEmailConfigured } from '$lib/server/email';
-import { deleteAccount, exportAllowance, hoursUntil } from '$lib/server/services/account';
+import {
+	deleteAccount,
+	exportAllowance,
+	exportsAllowedFor,
+	hoursUntil
+} from '$lib/server/services/account';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
 import { listSessions, sessionTokenById } from '$lib/server/services/sessions';
@@ -25,6 +30,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			const allowance = exportAllowance(locals.user!.id);
 			return {
 				remaining: allowance.remaining,
+				/** So the message can say "two a day" rather than assuming it. */
+				allowed: exportsAllowedFor(locals.user!.id),
 				unlocksIn: allowance.nextAt ? hoursUntil(allowance.nextAt) : null
 			};
 		})()

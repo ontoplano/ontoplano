@@ -173,7 +173,8 @@ export type AccountExport = {
  */
 export const EXPORTS_PER_DAY = 2;
 
-function exportsAllowedFor(userId: string, now: Date): number {
+/** How many exports this account's plan allows in a day. */
+export function exportsAllowedFor(userId: string, now: Date = new Date()): number {
 	const entitlement = resolvePlan(userId, now);
 	return PLANS[entitlement.plan].limits.exportsPerDay ?? EXPORTS_PER_DAY;
 }
