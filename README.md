@@ -131,6 +131,9 @@ address confirmations are sent; without them the message — link included — i
 written to the server log, so a single-user install is not forced to run a mail
 server. What it never does is claim to have sent something it did not.
 
+Putting it on a public box — firewall, TLS, rate limits, watching and backups —
+is `docs/VPS.md`, written to be worked top to bottom in one sitting.
+
 ### Backups
 
 `docs/BACKUP.md`. Snapshots cover a bad migration and are taken automatically
