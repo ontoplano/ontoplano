@@ -53,6 +53,31 @@
 		shopping: 'Someday'
 	};
 
+	/**
+	 * The week's leftovers, under the day they belong to.
+	 *
+	 * A flat list with a date on the right is a list you have to read twice to
+	 * see the shape of: three things on Tuesday and nothing on Thursday is the
+	 * useful fact, and it only shows up when the days are headings.
+	 */
+	const looseByDay = $derived(
+		Object.values(
+			data.loose.reduce<Record<string, { date: string; label: string; items: typeof data.loose }>>(
+				(acc, item) => {
+					(acc[item.date] ??= {
+						date: item.date,
+						label: new Date(item.date + 'T00:00:00').toLocaleDateString('en-US', {
+							weekday: 'long'
+						}),
+						items: []
+					}).items.push(item);
+					return acc;
+				},
+				{}
+			)
+		).sort((a, b) => a.date.localeCompare(b.date))
+	);
+
 	function lineAt(position: number): string {
 		return data.lines.find((l) => l.position === position)?.content ?? '';
 	}
@@ -193,30 +218,35 @@
 				<form method="post" action="?/carry" use:enhance>
 					<input type="hidden" name="weekStart" value={data.reading.weekStart} />
 
-					<ul class="divide-y divide-gray-200">
-						{#each data.loose as item (item.id)}
-							<li>
-								<label class="flex cursor-pointer items-center gap-3 px-4 py-2 hover:bg-gray-50">
-									<input
-										type="checkbox"
-										name="instanceId"
-										value={item.id}
-										checked={carrying.includes(item.id)}
-										onchange={() => toggle(item.id)}
-									/>
-									<span
-										class="h-3 w-1 shrink-0 rounded-full"
-										style="background-color: {item.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
-									></span>
-									<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{item.title}</span>
-									<span class="tabular shrink-0 text-xs text-gray-500">{pretty(item.date)}</span>
-									{#if item.status === 'skipped'}
-										<span class="shrink-0 text-xs text-gray-500">skipped</span>
-									{/if}
-								</label>
-							</li>
-						{/each}
-					</ul>
+					{#each looseByDay as day (day.date)}
+						<div class="eyebrow border-y border-gray-200 bg-gray-50 px-4 py-1.5 text-gray-600">
+							{day.label}
+						</div>
+						<ul class="divide-y divide-gray-200">
+							{#each day.items as item (item.id)}
+								<li>
+									<label class="flex cursor-pointer items-center gap-3 px-4 py-2 hover:bg-gray-50">
+										<input
+											type="checkbox"
+											name="instanceId"
+											value={item.id}
+											checked={carrying.includes(item.id)}
+											onchange={() => toggle(item.id)}
+										/>
+										<span
+											class="h-3 w-1 shrink-0 rounded-full"
+											style="background-color: {item.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
+										></span>
+										<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{item.title}</span>
+										<span class="tabular shrink-0 text-xs text-gray-500">{pretty(item.date)}</span>
+										{#if item.status === 'skipped'}
+											<span class="shrink-0 text-xs text-gray-500">skipped</span>
+										{/if}
+									</label>
+								</li>
+							{/each}
+						</ul>
+					{/each}
 
 					<div class="flex items-center justify-between gap-3 border-t border-gray-200 px-4 py-3">
 						<span class="text-xs text-gray-500">
@@ -256,6 +286,18 @@
 							<span class="chip shrink-0 text-gray-600">{SORT_LABELS[thing.sort]}</span>
 							<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{thing.title}</span>
 							<span class="tabular shrink-0 text-xs text-gray-500">{thing.since}</span>
+
+							<!-- Half of what has sat here for three months is not undecided,
+							     it is finished and never ticked. Only a todo has a done state. -->
+							{#if thing.sort === 'todo'}
+								<form method="post" action="?/completeStale" use:enhance class="shrink-0">
+									<input type="hidden" name="sort" value={thing.sort} />
+									<input type="hidden" name="id" value={thing.id} />
+									<button type="submit" class="btn btn-sm">
+										<Icon name="check" size={14} /> Done
+									</button>
+								</form>
+							{/if}
 
 							<form method="post" action="?/keepStale" use:enhance class="shrink-0">
 								<input type="hidden" name="sort" value={thing.sort} />
@@ -337,5 +379,39 @@
 				</div>
 			</form>
 		</Card>
+		<!--
+			Where the three lines go.
+
+			They were written into a row and never read again unless you happened to
+			navigate back to that exact week — and a thing you write and never see is
+			a thing you stop writing. This is the running account: the last couple of
+			months of weeks, in one place, each linked to its own review.
+		-->
+		{#if data.past.length > 0}
+			<Card
+				title="What you wrote before"
+				description="The weeks behind this one. This is where the three lines end up."
+				accent="var(--section-accent)"
+				flush
+			>
+				<ul class="divide-y divide-gray-200">
+					{#each data.past as week (week.weekStart)}
+						<li class="px-4 py-3">
+							<a
+								href="{resolve('/planner/review')}?week={week.weekStart}"
+								class="tabular text-xs text-gray-500 hover:text-gray-900 hover:underline"
+							>
+								{pretty(week.weekStart)}
+							</a>
+							<ul class="mt-1 space-y-0.5">
+								{#each week.lines as line, i (i)}
+									<li class="text-sm text-gray-900">{line}</li>
+								{/each}
+							</ul>
+						</li>
+					{/each}
+				</ul>
+			</Card>
+		{/if}
 	{/if}
 </div>

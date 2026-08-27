@@ -128,6 +128,28 @@ export function keepStale(ctx: Ctx, sort: StaleThing['sort'], id: number): boole
 }
 
 /**
+ * "Done, actually."
+ *
+ * Half of what has been sitting there for three months is not undecided — it is
+ * finished and never ticked. Offering only "still real" and "delete" made the
+ * honest answer impossible, so the list quietly taught you to lie about it.
+ *
+ * Only a todo can be done; an idea and a someday-item have no such state, so
+ * for those this does nothing and the caller keeps its other two answers.
+ */
+export function completeStale(ctx: Ctx, sort: StaleThing['sort'], id: number): boolean {
+	if (sort !== 'todo') return false;
+
+	return (
+		db
+			.update(plannerTodos)
+			.set({ status: 'done', updatedAt: stamp(ctx) })
+			.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, ctx.userId)))
+			.run().changes > 0
+	);
+}
+
+/**
  * "Let it go."
  *
  * Scoped to the account in the same statement, so an id belonging to somebody

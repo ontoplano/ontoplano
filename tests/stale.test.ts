@@ -86,6 +86,20 @@ describe('answering the question', () => {
 		expect(s.todos.listTodos(ctx).find((t) => t.id === ancient)?.title).toBe('learn the ukulele');
 	});
 
+	test('"done, actually" closes it rather than deleting it', () => {
+		const id = s.todos.createTodo(old, { title: 'renew the insurance' });
+		expect(s.stale.completeStale(ctx, 'todo', id)).toBe(true);
+
+		expect(s.stale.listStale(ctx).map((t) => t.title)).not.toContain('renew the insurance');
+		expect(s.todos.listTodos(ctx).find((t) => t.id === id)?.status).toBe('done');
+	});
+
+	test('an idea has no done state, so it keeps its other two answers', () => {
+		const idea = s.ideas.createIdea(old, { content: 'not a task at all' });
+		expect(s.stale.completeStale(ctx, 'idea', idea)).toBe(false);
+		expect(s.stale.listStale(ctx).map((t) => t.title)).toContain('not a task at all');
+	});
+
 	test('"let it go" removes it', () => {
 		expect(s.stale.dropStale(ctx, 'idea', ancientIdea)).toBe(true);
 		expect(s.ideas.listIdeas(ctx).find((i) => i.id === ancientIdea)).toBeUndefined();

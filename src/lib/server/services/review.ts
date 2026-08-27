@@ -1,4 +1,4 @@
-import { and, eq, gte, lt } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, lt } from 'drizzle-orm';
 
 import { blockName } from '../../planner-grid.js';
 import { db } from '../db/index.js';
@@ -208,6 +208,45 @@ export function saveLines(ctx: Ctx, raw: { weekStart: unknown; contents: unknown
 			}
 		}
 	});
+}
+
+/**
+ * Everything ever written, newest week first.
+ *
+ * Three lines a week is the only running account of a year that this app keeps,
+ * and until now they went into a row and stayed there: you could read last
+ * week's by looking at last week, and everything before that by clicking back
+ * fifty times. A thing you write and never see again is a thing you stop
+ * writing.
+ */
+export function pastLines(
+	ctx: Ctx,
+	options: { limit?: number; before?: string } = {}
+): { weekStart: string; lines: string[] }[] {
+	const rows = db
+		.select({
+			weekStart: weeklyReviews.weekStart,
+			position: weeklyReviews.position,
+			content: weeklyReviews.content
+		})
+		.from(weeklyReviews)
+		.where(
+			and(
+				eq(weeklyReviews.userId, ctx.userId),
+				options.before ? lt(weeklyReviews.weekStart, options.before) : undefined
+			)
+		)
+		.orderBy(desc(weeklyReviews.weekStart), asc(weeklyReviews.position))
+		.all();
+
+	const weeks: { weekStart: string; lines: string[] }[] = [];
+	for (const row of rows) {
+		const last = weeks[weeks.length - 1];
+		if (last && last.weekStart === row.weekStart) last.lines.push(row.content);
+		else weeks.push({ weekStart: row.weekStart, lines: [row.content] });
+	}
+
+	return options.limit ? weeks.slice(0, options.limit) : weeks;
 }
 
 /**

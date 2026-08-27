@@ -6,11 +6,18 @@ import {
 	goalsTouched,
 	LINES_PER_REVIEW,
 	listLines,
+	pastLines,
 	readWeek,
 	saveLines,
 	weekStartOf
 } from '$lib/server/services/review';
-import { dropStale, keepStale, listStale, STALE_MONTHS } from '$lib/server/services/stale';
+import {
+	completeStale,
+	dropStale,
+	keepStale,
+	listStale,
+	STALE_MONTHS
+} from '$lib/server/services/stale';
 import { addDays, getISOWeekNumber, getISOWeekYear } from '$lib/server/week-generator';
 
 function dateString(d: Date): string {
@@ -39,6 +46,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		loose,
 		goals: goalsTouched(ctx, weekStart),
 		lines: listLines(ctx, weekStart),
+		/** What you wrote in the weeks before this one, so it is not written into a void. */
+		past: pastLines(ctx, { limit: 8, before: weekStart }),
 		/** Things nothing has ever asked about. Only offered on a finished week. */
 		stale: isCurrent ? [] : listStale(ctx),
 		staleMonths: STALE_MONTHS,
@@ -78,6 +87,20 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			keepStale(
+				buildCtx(locals.user!.id),
+				sortOf(formData.get('sort')),
+				Number(formData.get('id'))
+			);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	completeStale: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			completeStale(
 				buildCtx(locals.user!.id),
 				sortOf(formData.get('sort')),
 				Number(formData.get('id'))
