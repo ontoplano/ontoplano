@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
@@ -272,7 +273,7 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="mb-3 text-sm text-gray-500">No quotes yet.</p>
+			<EmptyState icon="note" title="No quotes yet" compact />
 		{/if}
 
 		<form

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
@@ -301,8 +302,14 @@
 	</Modal>
 
 	{#if visibleTodos.length === 0}
-		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-			{showCompleted ? 'Nothing here yet.' : 'Nothing waiting.'}
+		<div class="border border-gray-200 bg-white shadow-sm">
+			<EmptyState
+				icon="check"
+				title={showCompleted ? 'Nothing here yet' : 'Nothing waiting'}
+				description={showCompleted
+					? 'Anything you finish shows up here.'
+					: 'A todo is a task with no day on it. Put one here and drag it onto the board when it has a home.'}
+			/>
 		</div>
 	{:else}
 		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">

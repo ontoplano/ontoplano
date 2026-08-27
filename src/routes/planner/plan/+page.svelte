@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/Icon.svelte';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { enhance, deserialize } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
@@ -1598,7 +1599,9 @@
 						Saved schemes
 					</div>
 					{#if data.schemes.length === 0}
-						<div class="px-4 py-6 text-sm text-gray-500">No schemes saved yet.</div>
+						<div class="px-3">
+							<EmptyState icon="calendar" title="No schemes saved yet" compact />
+						</div>
 					{:else}
 						<div class="divide-y divide-gray-200">
 							{#each data.schemes as scheme (scheme.id)}

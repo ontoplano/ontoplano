@@ -164,7 +164,7 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="text-sm text-gray-500">No areas yet.</p>
+			<EmptyState icon="tag" title="No areas yet" compact />
 		{/if}
 
 		<form
@@ -544,7 +544,7 @@
 									{a.name}
 								</label>
 							{:else}
-								<p class="text-xs text-gray-500">No activities yet.</p>
+								<EmptyState icon="planner" title="No activities yet" compact />
 							{/each}
 						</div>
 					</div>
@@ -564,7 +564,7 @@
 									{sl.name}
 								</label>
 							{:else}
-								<p class="text-xs text-gray-500">No weekly blocks yet.</p>
+								<EmptyState icon="calendar" title="No weekly blocks yet" compact />
 							{/each}
 						</div>
 					</div>

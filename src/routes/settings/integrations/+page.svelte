@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
 	import Card from '$lib/components/Card.svelte';
@@ -168,9 +169,9 @@
 		</Modal>
 
 		{#if data.tokens.length === 0}
-			<p class="px-4 py-6 text-sm text-gray-500">
-				No tokens yet. Create one to let an external app talk to ontoplano.
-			</p>
+			<div class="px-3">
+				<EmptyState icon="key" title="No tokens yet — create one to let another app in" compact />
+			</div>
 		{:else}
 			<ul class="divide-y divide-gray-200">
 				{#each data.tokens as token, i (token.id)}
@@ -232,7 +233,7 @@
 	>
 		{#if data.streams.length === 0}
 			<div class="space-y-2 px-4 py-6 text-sm text-gray-500">
-				<p>No streams yet.</p>
+				<EmptyState icon="plug" title="No streams yet" compact />
 				<p class="text-xs">
 					An app declares a stream by POSTing to
 					<code class="border border-gray-200 bg-gray-50 px-1 font-mono text-xs"

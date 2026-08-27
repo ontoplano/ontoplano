@@ -1,4 +1,6 @@
 <script lang="ts">
+	import EmptyState from '$lib/components/EmptyState.svelte';
+
 	/**
 	 * Generic renderers for data streams.
 	 *
@@ -150,14 +152,18 @@
 </script>
 
 {#if points.length === 0}
-	<p class="px-4 py-8 text-center text-sm text-gray-500">
-		No data yet. Once the producing app pushes points, they'll appear here.
-	</p>
+	<EmptyState
+		icon="plug"
+		title="No data yet"
+		description="Once the app producing this stream pushes points, they appear here."
+	/>
 {:else if display === 'line_chart'}
 	{#if numeric.length === 0}
-		<p class="px-4 py-8 text-center text-sm text-gray-500">
-			This stream has no numeric values to chart.
-		</p>
+		<EmptyState
+			icon="plug"
+			title="Nothing here can be charted"
+			description="This stream has no numeric values in it."
+		/>
 	{:else}
 		<div class="overflow-x-auto p-4">
 			<svg viewBox="0 0 {WIDTH} {HEIGHT}" class="h-auto w-full min-w-[480px]" role="img">

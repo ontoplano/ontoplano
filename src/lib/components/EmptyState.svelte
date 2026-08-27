@@ -14,27 +14,41 @@
 		icon,
 		title,
 		description = '',
+		compact = false,
 		action
 	}: {
 		icon: IconName;
 		title: string;
 		description?: string;
+		/**
+		 * For emptiness inside something else — a panel, a dropdown, one column of
+		 * a form. The full version is a page's whole answer and is far too much
+		 * furniture for a list of four checkboxes that happens to have none.
+		 */
+		compact?: boolean;
 		/** The button that ends the emptiness. */
 		action?: Snippet;
 	} = $props();
 </script>
 
-<div class="flex flex-col items-center gap-3 px-6 py-12 text-center">
-	<span class="text-gray-300">
-		<Icon name={icon} size={32} />
-	</span>
-	<div>
-		<p class="text-sm font-medium text-gray-900">{title}</p>
-		{#if description}
-			<p class="mx-auto mt-1 max-w-sm text-sm text-gray-500">{description}</p>
+{#if compact}
+	<p class="flex items-center gap-2 px-1 py-3 text-sm text-gray-500">
+		<Icon name={icon} size={14} />
+		<span>{title}</span>
+	</p>
+{:else}
+	<div class="flex flex-col items-center gap-3 px-6 py-12 text-center">
+		<span class="text-gray-400">
+			<Icon name={icon} size={32} />
+		</span>
+		<div>
+			<p class="text-sm font-medium text-gray-900">{title}</p>
+			{#if description}
+				<p class="mx-auto mt-1 max-w-sm text-sm text-gray-500">{description}</p>
+			{/if}
+		</div>
+		{#if action}
+			<div class="mt-1">{@render action()}</div>
 		{/if}
 	</div>
-	{#if action}
-		<div class="mt-1">{@render action()}</div>
-	{/if}
-</div>
+{/if}
