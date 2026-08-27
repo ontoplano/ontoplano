@@ -9,6 +9,9 @@ import {
 	type DashboardCardId
 } from '$lib/dashboard';
 import { getUserSetting, setUserSetting } from '$lib/server/settings';
+import { describeYearly, formatPrice } from '$lib/plans';
+import { pricing } from '$lib/server/settings';
+import { instanceIsEmpty, registrationMode } from '$lib/server/services/registration';
 import { buildCtx } from '$lib/server/services/ctx';
 import { createEntry, latestEntry, listTags } from '$lib/server/services/diary';
 import { toActionFailure } from '$lib/server/services/errors';
@@ -23,7 +26,26 @@ import { listWins, saveWins } from '$lib/server/services/wins';
 import { generateCurrentWeek } from '$lib/server/week-generator';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	const ctx = buildCtx(locals.user!.id);
+	/*
+	 * Signed out, this is the pitch rather than the dashboard.
+	 *
+	 * None of the work below applies — there is no account to generate a week
+	 * for — so it returns early rather than guarding twenty fields.
+	 */
+	if (!locals.user) {
+		const price = pricing();
+		return {
+			landing: {
+				price: formatPrice(price.monthlyCents, price.currency),
+				yearly: describeYearly(price),
+				trialDays: price.trialDays,
+				trialRequiresCard: price.trialRequiresCard,
+				canRegister: instanceIsEmpty() || registrationMode() !== 'closed'
+			}
+		};
+	}
+
+	const ctx = buildCtx(locals.user.id);
 	const today = todayOf(ctx);
 
 	generateCurrentWeek(ctx);
@@ -88,6 +110,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	};
 
 	return {
+		/** Null here is what tells the page it is the dashboard rather than the pitch. */
+		landing: null,
 		// A layout the user has never set falls back to the registry defaults, so
 		// a new account meets a sensible dashboard rather than an empty one.
 		layout: parseLayout(getUserSetting(ctx.userId, DASHBOARD_LAYOUT_KEY)),

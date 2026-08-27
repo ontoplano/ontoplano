@@ -1,7 +1,16 @@
 import { expect, test } from '@playwright/test';
 
-test('redirects unauthenticated users to /login', async ({ page }) => {
+test('the front page is the pitch, not a redirect to the sign-in form', async ({ page }) => {
+	// It used to redirect. Asking a stranger to commit before they know what
+	// this is was the shortest possible funnel and the wrong one; every *other*
+	// route still sends them here.
 	await page.goto('/');
+	await expect(page).toHaveURL('/');
+	await expect(page.getByRole('link', { name: /run it yourself/i })).toBeVisible();
+});
+
+test('but every other route still redirects to /login', async ({ page }) => {
+	await page.goto('/goals');
 	await expect(page).toHaveURL('/login');
 });
 

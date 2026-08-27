@@ -18,8 +18,20 @@ export const load: LayoutServerLoad = async (event) => {
 	// The policies have to be readable by somebody deciding whether to sign up,
 	// which is exactly somebody who is not signed in.
 	const isLegal = event.url.pathname.startsWith('/legal');
+	// The front page is the pitch when nobody is signed in. Sending a stranger
+	// straight to a sign-in form asks them to commit before they know what this
+	// is, which is the shortest possible funnel and the wrong one.
+	const isLanding = event.url.pathname === '/';
 
-	if (!event.locals.user && !isLoginPage && !isDemo && !isAuthApi && !isOffline && !isLegal) {
+	if (
+		!event.locals.user &&
+		!isLoginPage &&
+		!isDemo &&
+		!isAuthApi &&
+		!isOffline &&
+		!isLegal &&
+		!isLanding
+	) {
 		return redirect(302, '/login');
 	}
 
