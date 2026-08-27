@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import { autogrow } from '$lib/actions/autogrow';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -115,17 +116,32 @@
 	{/if}
 </div>
 
-<Modal bind:open={showForm} error={form?.message} title="New recipe" size="sm">
+<Modal bind:open={showForm} error={form?.message} title="New recipe">
+	<!-- Everything the editor has. Making somebody create a title and then
+	     immediately press Edit to write the recipe is two steps for one act. -->
 	<form id="recipe-form" method="post" action="?/create" use:enhance>
 		<FormGrid>
 			<Field label="What it is" span={12} required>
 				<input name="title" required autocomplete="off" class="input" />
 			</Field>
-			<Field label="Serves" span={6}>
+			<Field label="Serves" span={4}>
 				<input name="servings" type="number" min="1" class="input" />
 			</Field>
-			<Field label="Minutes" span={6}>
+			<Field label="Minutes" span={4}>
 				<input name="minutes" type="number" min="1" class="input" />
+			</Field>
+			<Field label="Where it came from" span={4}>
+				<input name="source" autocomplete="off" class="input" />
+			</Field>
+			<Field
+				label="Method"
+				span={12}
+				hint="Markdown: headings, lists, numbers. Ingredients come after."
+			>
+				<textarea name="method" rows="8" use:autogrow class="textarea"></textarea>
+			</Field>
+			<Field label="Notes" span={12}>
+				<textarea name="notes" rows="2" class="textarea"></textarea>
 			</Field>
 		</FormGrid>
 	</form>

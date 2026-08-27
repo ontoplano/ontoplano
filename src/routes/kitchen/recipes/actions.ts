@@ -23,18 +23,27 @@ import {
 export const recipeActions = {
 	create: async ({ request, locals }) => {
 		const formData = await request.formData();
+
+		// The redirect is outside the `try`. SvelteKit signals one by throwing,
+		// and a `catch` that turns everything into a failure turned a successful
+		// create into "Unexpected error" — with the recipe made and the caller
+		// told it had not been.
+		let id: number;
 		try {
-			const id = createRecipe(buildCtx(locals.user!.id), {
+			id = createRecipe(buildCtx(locals.user!.id), {
 				title: formData.get('title'),
+				method: formData.get('method'),
+				notes: formData.get('notes'),
 				servings: formData.get('servings'),
-				minutes: formData.get('minutes')
+				minutes: formData.get('minutes'),
+				source: formData.get('source')
 			});
-			// Straight into the new recipe: the next thing anybody does is write it.
-			redirect(303, `/kitchen/recipes/${id}`);
 		} catch (e) {
-			if (e instanceof Response) throw e;
 			return toActionFailure(e);
 		}
+
+		// Straight into the new recipe: the next thing anybody does is write it.
+		redirect(303, `/kitchen/recipes/${id}`);
 	},
 
 	update: async ({ request, locals }) => {
