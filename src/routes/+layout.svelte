@@ -22,6 +22,7 @@
 	let pie = $state<CapturePie | undefined>();
 	let rooms = $state<NavPie | undefined>();
 	let pieOpen = $state(false);
+	let roomsOpen = $state(false);
 
 	function categoryStyle(): string {
 		return data.categories
@@ -92,7 +93,6 @@
 	const primaryNav = $derived(nav.slice(0, PRIMARY_NAV_COUNT));
 	const secondaryNav = $derived(nav.slice(PRIMARY_NAV_COUNT));
 
-	let moreOpen = $state(false);
 	const secondaryActive = $derived(secondaryNav.some((item) => isNavActive(item.href)));
 
 	/**
@@ -341,7 +341,7 @@
 					-->
 					<button
 						onpointerdown={(e) => rooms?.summon(e)}
-						class="flex h-8 w-8 items-center justify-center border border-chrome-line bg-chrome-raised text-chrome-muted shadow-sm transition hover:text-chrome-ink hover:brightness-125"
+						class="pie-handle flex h-8 w-8 items-center justify-center border border-chrome-line bg-chrome-raised text-chrome-muted shadow-sm transition hover:text-chrome-ink hover:brightness-125"
 						aria-label="Jump to a section"
 						title="Jump to a section"
 					>
@@ -352,7 +352,7 @@
 					     having decided where you are going. -->
 					<button
 						onpointerdown={(e) => pie?.summon(e)}
-						class="flex h-8 w-8 items-center justify-center border border-chrome-line bg-chrome-raised text-chrome-muted shadow-sm transition hover:text-chrome-ink hover:brightness-125"
+						class="pie-handle flex h-8 w-8 items-center justify-center border border-chrome-line bg-chrome-raised text-chrome-muted shadow-sm transition hover:text-chrome-ink hover:brightness-125"
 						aria-label="Write something down"
 						title="Write something down"
 					>
@@ -502,13 +502,24 @@
 					</a>
 				{/each}
 
+				<!--
+					The rest of the app, as a pie.
+
+					Press it and drag up into a wedge; let go. This was a sheet you had
+					to open, read and then tap, which is three acts for something you do
+					twenty times a day — and the pie is the shape Estevão asked for: a
+					button you slide from towards whichever room you want.
+
+					The chevron is the affordance. A flat row of dots said "there is a
+					list behind me"; this one says "pull".
+				-->
 				<button
-					onclick={() => (moreOpen = !moreOpen)}
-					class="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] {secondaryActive ||
-					moreOpen
+					onpointerdown={(e) => rooms?.summon(e)}
+					class="pie-handle flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] {secondaryActive ||
+					roomsOpen
 						? 'font-semibold text-chrome-ink'
 						: 'text-chrome-muted'}"
-					aria-expanded={moreOpen}
+					aria-label="Go to a section"
 				>
 					<svg
 						class="h-5 w-5"
@@ -519,9 +530,9 @@
 						stroke-linecap="square"
 						aria-hidden="true"
 					>
-						<path d="M5 12h.01M12 12h.01M19 12h.01" />
+						<path d="M6 14l6-6 6 6" />
 					</svg>
-					More
+					Go to
 					<span
 						class="h-0.5 w-6"
 						style="background-color: {secondaryActive ? 'currentColor' : 'transparent'}"
@@ -530,76 +541,10 @@
 			</div>
 		</nav>
 
-		{#if moreOpen}
-			<!-- A sheet rather than a dropdown: it opens upward from the bar that
-			     spawned it, which is also where the thumb already is. -->
-			<button
-				class="fixed inset-0 z-40 bg-black/40 lg:hidden"
-				onclick={() => (moreOpen = false)}
-				aria-label="Close menu"
-			></button>
-			<div
-				class="rise fixed inset-x-0 z-50 border-t border-gray-200 bg-white lg:hidden"
-				style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom))"
-			>
-				<div class="divide-y divide-gray-200">
-					{#each secondaryNav as item (item.href)}
-						<a
-							href={item.href}
-							onclick={() => (moreOpen = false)}
-							class="flex items-center gap-3 px-4 py-3 text-sm text-gray-900"
-						>
-							<svg
-								class="h-5 w-5 text-gray-500"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.75"
-								stroke-linecap="square"
-								aria-hidden="true"
-							>
-								<path d={item.icon} />
-							</svg>
-							{item.label}
-						</a>
-					{/each}
-					<button
-						type="button"
-						onclick={() => {
-							moreOpen = false;
-							palette.open = true;
-						}}
-						class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-900"
-					>
-						<Icon name="search" class="h-5 w-5 text-gray-500" />
-						Search
-					</button>
-					<!-- Icons like every other row: five with and two without read as a
-					     list that ran out of care. -->
-					<a
-						href="/settings/account"
-						onclick={() => (moreOpen = false)}
-						class="flex items-center gap-3 px-4 py-3 text-sm text-gray-900"
-					>
-						<Icon name="settings" class="h-5 w-5 text-gray-500" />
-						Settings
-					</a>
-					<form method="post" action="/login?/signOut" use:enhance>
-						<button
-							type="submit"
-							class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-900"
-						>
-							<Icon name="sign-out" class="h-5 w-5 text-gray-500" />
-							Sign out
-						</button>
-					</form>
-				</div>
-			</div>
-		{/if}
 		<ShortcutHelp />
 		<CommandPalette />
 		<CapturePie bind:this={pie} onopenchange={(v) => (pieOpen = v)} />
-		<NavPie bind:this={rooms} />
+		<NavPie bind:this={rooms} onopenchange={(v) => (roomsOpen = v)} />
 		<UndoToast />
 	</div>
 {:else}
@@ -631,8 +576,22 @@
 		background-color: var(--color-chrome);
 		color: var(--color-chrome-ink);
 		box-shadow: var(--shadow-overlay);
-		touch-action: none;
 		transition: opacity 120ms ease;
+	}
+
+	/*
+	 * Every handle a pie hangs off.
+	 *
+	 * A press-and-hold on one of these is the gesture; without `touch-action`
+	 * and `user-select` the browser reads it as a scroll or a text selection,
+	 * takes it over, and the release never reaches the menu.
+	 */
+	.capture-trigger,
+	.pie-handle {
+		touch-action: none;
+		user-select: none;
+		-webkit-user-select: none;
+		-webkit-touch-callout: none;
 	}
 
 	/*
