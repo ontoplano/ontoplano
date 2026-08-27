@@ -161,3 +161,61 @@ test('the section pie lands you in the room', async ({ page }) => {
 	await page.locator('.pie').getByText('Shopping', { exact: true }).click();
 	await page.waitForURL(/\/shopping/);
 });
+
+test.describe('with a finger', () => {
+	test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+
+	test('a tap opens the pie and it stays open', async ({ page }) => {
+		await register(page, `touch-tap-${Date.now()}@test.invalid`);
+		await page.goto('/', { waitUntil: 'networkidle' });
+
+		/**
+		 * A tap is pointerdown, pointerup, *then* a click — and the click landed
+		 * on the backdrop the pie had just put under the finger, so the menu
+		 * opened and shut in the same gesture. From the outside it simply refused
+		 * to open.
+		 */
+		const box = (await (await trigger(page)).boundingBox())!;
+		await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+
+		await expect(page.getByText('cancel')).toBeVisible();
+		await page.waitForTimeout(400);
+		await expect(page.getByText('cancel')).toBeVisible();
+	});
+
+	test('the pie is not text you can select', async ({ page }) => {
+		await register(page, `touch-select-${Date.now()}@test.invalid`);
+		await page.goto('/', { waitUntil: 'networkidle' });
+
+		const box = (await (await trigger(page)).boundingBox())!;
+		await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+		await expect(page.getByText('cancel')).toBeVisible();
+
+		// A long press over a wedge used to start a text selection, which took the
+		// gesture away and left the release doing nothing.
+		const style = await page.locator('.pie-layer').evaluate((el) => {
+			const cs = getComputedStyle(el);
+			return { select: cs.userSelect || cs.webkitUserSelect, touch: cs.touchAction };
+		});
+		expect(style.select).toBe('none');
+		expect(style.touch).toBe('none');
+	});
+
+	test('the section pie is on the phone, where it was asked for', async ({ page }) => {
+		await register(page, `touch-nav-${Date.now()}@test.invalid`);
+		await page.goto('/', { waitUntil: 'networkidle' });
+
+		const jump = page.getByRole('button', { name: /go to a section/i });
+		const box = (await jump.boundingBox())!;
+		await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+
+		for (const room of ['Planner', 'Goals', 'Diary', 'Shopping']) {
+			await expect(page.locator('.pie').getByText(room, { exact: true })).toBeVisible();
+		}
+
+		// Settings and signing out were on the sheet this replaced; they cannot
+		// have gone anywhere.
+		await expect(page.getByRole('link', { name: /settings/i })).toBeVisible();
+		await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
+	});
+});

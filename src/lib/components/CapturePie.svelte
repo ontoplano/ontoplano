@@ -43,6 +43,13 @@
 	 * notes.
 	 */
 	export function summon(e: PointerEvent) {
+		// Take the gesture before the browser can. Without this a press-and-hold
+		// on a phone becomes a text selection or a scroll, and the release that
+		// should have chosen a wedge never reaches us.
+		e.preventDefault();
+		const button = e.currentTarget as Element | null;
+		button?.setPointerCapture?.(e.pointerId);
+
 		// The pie opens under the finger, not under the button: on a phone the
 		// button is at the very bottom of the screen and a menu drawn there would
 		// be half off it.

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 
 	/**
@@ -29,6 +30,8 @@
 		dragging = false,
 		/** Screen the pie must stay clear of — a fixed navigation bar, usually. */
 		bottomInset = 0,
+		/** Rare things that belong on the same menu but not in the ring. */
+		footer,
 		onselect,
 		onclose
 	}: {
@@ -37,6 +40,7 @@
 		origin?: { x: number; y: number };
 		dragging?: boolean;
 		bottomInset?: number;
+		footer?: Snippet;
 		onselect: (key: string) => void;
 		onclose: () => void;
 	} = $props();
@@ -51,6 +55,19 @@
 	let held = $state(false);
 
 	/**
+	 * The click that belongs to the press that opened this.
+	 *
+	 * A tap is pointerdown, pointerup, *then* a click — and by the time the click
+	 * lands the pie is already open underneath the finger, so it hit the backdrop
+	 * and shut again instantly. From the outside the menu simply refused to open.
+	 * The first click after a tap-open belongs to that tap and is swallowed.
+	 */
+	let swallowClick = $state(false);
+
+	/** How far the pointer has travelled since the gesture began. */
+	let travelled = $state(0);
+
+	/**
 	 * The pie is placed where the gesture began, then pushed back on screen.
 	 *
 	 * A menu that opens half off the edge is a menu with three reachable wedges,
@@ -61,6 +78,8 @@
 		if (!open) {
 			active = -1;
 			held = false;
+			swallowClick = false;
+			travelled = 0;
 			return;
 		}
 		const margin = OUTER + PAD;
@@ -69,6 +88,7 @@
 			y: Math.min(Math.max(origin.y, margin), window.innerHeight - margin - bottomInset)
 		};
 		held = dragging;
+		travelled = 0;
 	});
 
 	/** Which wedge a point falls in, or -1 for the hole. */
@@ -86,24 +106,75 @@
 
 	function onmove(e: PointerEvent) {
 		if (!open) return;
+		travelled = Math.max(travelled, Math.hypot(e.clientX - origin.x, e.clientY - origin.y));
 		active = wedgeAt(e.clientX, e.clientY);
+	}
+
+	/** A press that never went anywhere is a tap, not a gesture. */
+	const DRAG_THRESHOLD = 16;
+
+	/**
+	 * Every click the pie accepts has to survive this first.
+	 *
+	 * The tap that opens the menu is followed by a click, and by then the pie is
+	 * already under the finger — so the click chose whichever wedge the trigger
+	 * happened to sit inside, and a tap on the capture button silently wrote a
+	 * note. The backdrop, the wedges and the hole all go through here.
+	 */
+	function afterOpening(fn: () => void): void {
+		if (swallowClick) {
+			swallowClick = false;
+			return;
+		}
+		fn();
 	}
 
 	function onup(e: PointerEvent) {
 		if (!open) return;
 
 		if (held) {
-			const moved = Math.hypot(e.clientX - origin.x, e.clientY - origin.y);
+			const moved = Math.max(travelled, Math.hypot(e.clientX - origin.x, e.clientY - origin.y));
 			held = false;
 			// A tap is not a gesture. Leave the pie open and wait for a click,
 			// which is what somebody meeting it for the first time will do.
-			if (moved < 16) {
+			if (moved < DRAG_THRESHOLD) {
 				active = -1;
+				swallowClick = true;
 				return;
 			}
 		}
 
 		const chosen = wedgeAt(e.clientX, e.clientY);
+		if (chosen >= 0) onselect(items[chosen].key);
+		else onclose();
+	}
+
+	/**
+	 * A finger that never got to let go.
+	 *
+	 * A long press on a touch screen makes the browser take the gesture over —
+	 * text selection, the callout menu, a scroll — and when it does, `pointerup`
+	 * never arrives. The pie was left open with a selection box drawn across a
+	 * wedge and nothing happened on release, which is precisely what a menu must
+	 * not do. `touch-action` and `user-select` below stop most of it; this
+	 * finishes the gesture with whatever was under the finger when it was taken
+	 * away, so a press that reached a wedge still counts.
+	 */
+	function oncancel() {
+		if (!open) return;
+
+		// A tap on a touch screen can end in a cancel rather than an up, and a tap
+		// must not choose anything: the finger is still sitting on the trigger,
+		// which is inside whichever wedge happens to be nearest it.
+		if (held && travelled < DRAG_THRESHOLD) {
+			held = false;
+			active = -1;
+			swallowClick = true;
+			return;
+		}
+
+		const chosen = active;
+		held = false;
 		if (chosen >= 0) onselect(items[chosen].key);
 		else onclose();
 	}
@@ -164,7 +235,12 @@
 	const size = (OUTER + PAD) * 2;
 </script>
 
-<svelte:window onpointermove={onmove} onpointerup={onup} onkeydown={onkey} />
+<svelte:window
+	onpointermove={onmove}
+	onpointerup={onup}
+	onpointercancel={oncancel}
+	onkeydown={onkey}
+/>
 
 {#if open}
 	<!--
@@ -173,12 +249,16 @@
 		showModal() steals that. Nothing else on the app draws above z-50 outside
 		a dialog, and the backdrop below catches every stray click.
 	-->
-	<div class="fixed inset-0 z-[60]" role="presentation">
+	<div
+		class="pie-layer fixed inset-0 z-[60]"
+		role="presentation"
+		oncontextmenu={(e) => e.preventDefault()}
+	>
 		<button
 			type="button"
 			class="absolute inset-0 h-full w-full bg-black/40"
 			aria-label="Close"
-			onclick={onclose}
+			onclick={() => afterOpening(onclose)}
 		></button>
 
 		<div
@@ -212,7 +292,7 @@
 						class="pointer-events-auto cursor-pointer transition-opacity"
 						style="opacity: {active === -1 || on ? 1 : 0.45}"
 						onpointerenter={() => (active = i)}
-						onclick={() => onselect(item.key)}
+						onclick={() => afterOpening(() => onselect(item.key))}
 						role="menuitem"
 						tabindex="-1"
 					>
@@ -250,7 +330,7 @@
 					stroke-width="1.5"
 					style="pointer-events: auto"
 					onpointerenter={() => (active = -1)}
-					onclick={onclose}
+					onclick={() => afterOpening(onclose)}
 					role="presentation"
 				/>
 				<text
@@ -261,12 +341,42 @@
 				>
 			</svg>
 		</div>
+
+		{#if footer}
+			<!-- Settings and signing out are not rooms, but they were on the menu
+			     this replaced and they have to stay somewhere a thumb can reach. -->
+			<!--
+				Hung off the ring rather than off the screen: anchored to the bottom
+				it landed on the two lower wedges, because the clamp that keeps the
+				pie clear of the navigation bar reserves exactly the same strip.
+			-->
+			<div
+				class="pointer-events-auto absolute inset-x-0 flex flex-wrap items-center justify-center gap-2 px-3"
+				style="top: {centre.y + OUTER + 14}px"
+			>
+				{@render footer()}
+			</div>
+		{/if}
 	</div>
 {/if}
 
 <style>
 	/* Grows out of the point it was summoned from, so the gesture and the menu
 	   are visibly the same act. */
+	/*
+	 * Nothing here is text you select or a page you scroll.
+	 *
+	 * Without these a press-and-hold on a phone starts a text selection over
+	 * whichever wedge label is under the finger: a box appears around the word,
+	 * the browser takes the gesture, and the release selects nothing.
+	 */
+	.pie-layer {
+		touch-action: none;
+		user-select: none;
+		-webkit-user-select: none;
+		-webkit-touch-callout: none;
+	}
+
 	.pie {
 		animation: bloom 140ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
 		filter: drop-shadow(0 8px 24px rgb(0 0 0 / 0.35));
