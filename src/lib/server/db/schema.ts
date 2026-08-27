@@ -1196,6 +1196,44 @@ export const dailyWins = sqliteTable(
 );
 
 /**
+ * A calendar somebody else controls.
+ *
+ * A plan that ignores the calendar you do not control is fiction: the meetings
+ * happen whether or not this app knows about them. Read-only and one-way on
+ * purpose — every calendar worth subscribing to publishes an `.ics` (Google
+ * calls it the "secret address in iCal format"), which means no OAuth, no
+ * tokens to keep safe, and nobody in the path but the server already hosting
+ * the calendar.
+ *
+ * The file itself is kept rather than the events it contains. It is a few
+ * hundred kilobytes at most, expanding it is cheap, and a second copy of
+ * somebody else's calendar in our own tables would be a second thing to keep
+ * correct.
+ */
+export const calendarFeeds = sqliteTable(
+	'calendar_feeds',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull(),
+		url: text('url').notNull(),
+		/** Drawn in this, so two calendars are told apart at a glance. */
+		color: text('color').notNull().default('#6b7280'),
+		/** The last file fetched, whole. Null until the first successful fetch. */
+		body: text('body'),
+		fetchedAt: text('fetched_at'),
+		/** What went wrong last time, shown on the page rather than swallowed. */
+		lastError: text('last_error'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [index('calendar_feeds_user_idx').on(table.userId)]
+);
+
+/**
  * A nudge at a time.
  *
  * The app only helps on the days you remember to open it, which is why most

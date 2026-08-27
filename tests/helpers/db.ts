@@ -17,7 +17,21 @@ import { join } from 'node:path';
 export const OWNER = 'user-under-test';
 export const STRANGER = 'somebody-else';
 
-export function makeDatabase(): { path: string; remove: () => void } {
+export type TestDatabase = {
+	path: string;
+	remove: () => void;
+	/**
+	 * A statement run straight against the file.
+	 *
+	 * For the handful of setups a service deliberately has no method for — a
+	 * calendar body that only arrives over the network, a row backdated past
+	 * what any caller could ask for. Not a way around the service layer in a
+	 * test that is about the service layer.
+	 */
+	exec: (sql: string, ...args: unknown[]) => void;
+};
+
+export function makeDatabase(): TestDatabase {
 	const dir = mkdtempSync(join(tmpdir(), 'ontoplano-test-'));
 	const path = join(dir, 'unit.db');
 
@@ -27,7 +41,18 @@ export function makeDatabase(): { path: string; remove: () => void } {
 	});
 
 	process.env.DATABASE_URL = path;
-	return { path, remove: () => rmSync(dir, { recursive: true, force: true }) };
+
+	return {
+		path,
+		remove: () => rmSync(dir, { recursive: true, force: true }),
+		exec: (sql, ...args) => {
+			// eslint-disable-next-line @typescript-eslint/no-require-imports
+			const Database = require('better-sqlite3');
+			const db = new Database(path);
+			db.prepare(sql).run(...args);
+			db.close();
+		}
+	};
 }
 
 /** The two accounts every service test needs to exist. */

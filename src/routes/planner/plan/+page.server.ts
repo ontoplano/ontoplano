@@ -9,6 +9,14 @@ import { ServiceError, toActionFailure } from '$lib/server/services/errors';
 import { metaFromFormData, metaPatchFromFormData } from '$lib/server/services/meta';
 import { listManifests } from '$lib/server/services/plugins';
 import {
+	addFeed,
+	listFeeds,
+	refreshFeed,
+	refreshStale,
+	removeFeed,
+	subscribedEvents
+} from '$lib/server/services/calendars';
+import {
 	applyScheme,
 	deleteScheme,
 	listSchemes,
@@ -147,6 +155,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			: parseFromParam(url.searchParams.get('from'), today);
 	const to = addDays(from, span);
 
+	// Before anything is read, so a stale copy is not what gets drawn. A failure
+	// is written to the feed's row rather than thrown; the planner is not going
+	// down because somebody's calendar server is.
+	await refreshStale(ctx);
+
 	const days = Array.from({ length: span }, (_, offset) => {
 		const d = addDays(from, offset);
 		const weekday = (d.getDay() + 6) % 7;
@@ -198,7 +211,16 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		weekdays: WEEKDAYS,
 		today: formatDate(today),
 		suppressions: listSuppressions(ctx, formatDate(from), formatDate(to)),
-		exceptionals: listExceptionals(ctx, formatDate(from), formatDate(to))
+		exceptionals: listExceptionals(ctx, formatDate(from), formatDate(to)),
+		/**
+		 * Calendars somebody else controls, drawn where they will get in the way.
+		 *
+		 * Refreshed here rather than by a scheduler: a feed is only worth fetching
+		 * for somebody who is looking at it, and a self-hosted box should not need
+		 * a background job kept alive to make the planner honest.
+		 */
+		feeds: listFeeds(ctx),
+		subscribed: subscribedEvents(ctx, from, to)
 	};
 };
 
@@ -288,6 +310,32 @@ export const actions: Actions = {
 	clearAll: async ({ locals }) => {
 		try {
 			clearWeeklyPlan(buildCtx(locals.user!.id));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	addCalendar: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			const id = addFeed(buildCtx(locals.user!.id), {
+				name: formData.get('name'),
+				url: formData.get('url'),
+				color: formData.get('color')
+			});
+			// Fetch it now, so adding one shows whether the address works.
+			await refreshFeed(buildCtx(locals.user!.id), id);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	removeCalendar: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			removeFeed(buildCtx(locals.user!.id), Number(formData.get('id')));
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

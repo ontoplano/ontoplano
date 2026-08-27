@@ -243,6 +243,42 @@ function exceptionalToEvent(
 	};
 }
 
+/**
+ * Somebody else's calendar, drawn where it will get in the way.
+ *
+ * Read-only and immovable, because it is not ours to move: dragging one would
+ * be a lie the moment the next fetch overwrote it. Faded and outlined rather
+ * than filled, so the week reads as "these are yours, and these are the
+ * meetings around them" at a glance.
+ */
+export function buildSubscribedEvents(
+	events: {
+		uid: string;
+		summary: string;
+		start: string;
+		end: string;
+		allDay: boolean;
+		color: string;
+		feedName: string;
+	}[]
+): Calendar.EventInput[] {
+	return events.map((event) => ({
+		id: `ics:${event.uid}`,
+		start: new Date(event.start),
+		end: new Date(event.end),
+		allDay: event.allDay,
+		title: event.summary,
+		backgroundColor: 'transparent',
+		textColor: event.color,
+		borderColor: event.color,
+		editable: false,
+		startEditable: false,
+		durationEditable: false,
+		classNames: ['og-event', 'og-event--subscribed'],
+		extendedProps: { kind: 'subscribed', feedName: event.feedName }
+	}));
+}
+
 export function buildSlotEvents(
 	slots: GridSlotInput[],
 	mondayStr: string,

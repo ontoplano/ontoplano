@@ -464,6 +464,27 @@ html[data-style='playful'] .card-accent {
  * chapter title.
  */
 /*
+ * A meeting from somebody else's calendar.
+ *
+ * Outlined rather than filled, and never solid, so a week reads at a glance as
+ * "these are yours, and these are the things happening around them". It is
+ * also the honest drawing: nothing here can be moved, because the next fetch
+ * would put it back.
+ */
+.og-event--subscribed {
+	/* A wash of the calendar's own colour rather than nothing: a fifteen-minute
+	   meeting drawn as an empty dashed sliver reads as a rendering fault. */
+	background-color: color-mix(in srgb, currentColor 14%, transparent) !important;
+	border-style: dashed !important;
+	border-width: 1.5px !important;
+	cursor: default !important;
+}
+
+.og-event--subscribed:hover {
+	opacity: 1;
+}
+
+/*
  * Cook mode fills the screen.
  *
  * A `<dialog>` is centred and sized to its content by default, and cook mode

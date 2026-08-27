@@ -26,6 +26,7 @@
 		buildSlotEvents,
 		buildSlotEventsForDates,
 		buildExceptionalEvents,
+		buildSubscribedEvents,
 		placementFromDates,
 		decodeEventId,
 		weekdayToDate,
@@ -1014,7 +1015,10 @@
 			data.categories,
 			{ suppressedSlotIds }
 		),
-		...buildExceptionalEvents(data.exceptionals, data.categories)
+		...buildExceptionalEvents(data.exceptionals, data.categories),
+		// Somebody else's meetings, drawn where they get in the way and immovable
+		// because they are not ours to move.
+		...buildSubscribedEvents(data.subscribed)
 	]);
 
 	/**
@@ -1704,6 +1708,99 @@
 							{/each}
 						</div>
 					{/if}
+				</div>
+
+				<!--
+					Calendars somebody else controls.
+
+					Read-only and one-way on purpose: an `.ics` address needs no OAuth
+					and stores no token that could be stolen, and it is the one thing
+					Google, Outlook, Fastmail and Nextcloud all agree on. In Google
+					Calendar it is Settings → your calendar → "Secret address in iCal
+					format".
+				-->
+				<div class="border border-gray-200 bg-white shadow-card">
+					<div class="eyebrow border-b border-gray-200 px-4 py-2.5 text-gray-500">
+						Calendars you subscribe to
+					</div>
+
+					{#if data.feeds.length === 0}
+						<div class="px-3">
+							<EmptyState icon="calendar" title="No calendars subscribed yet" compact />
+						</div>
+					{:else}
+						<ul class="divide-y divide-gray-200">
+							{#each data.feeds as feed (feed.id)}
+								<li class="flex flex-wrap items-center gap-3 px-4 py-3">
+									<span class="h-3 w-1 shrink-0 rounded-full" style="background-color: {feed.color}"
+									></span>
+									<div class="min-w-0 flex-1">
+										<p class="truncate text-sm text-gray-900">{feed.name}</p>
+										{#if feed.lastError}
+											<p class="truncate text-xs text-amber-700">
+												Last fetch failed: {feed.lastError}
+											</p>
+										{:else if feed.fetchedAt}
+											<p class="text-xs text-gray-500">
+												Read {feed.fetchedAt.slice(0, 16).replace('T', ' ')}
+											</p>
+										{/if}
+									</div>
+									<form method="post" action="?/removeCalendar" use:enhance class="shrink-0">
+										<input type="hidden" name="id" value={feed.id} />
+										<button
+											class="btn btn-danger btn-sm"
+											title="Stop subscribing"
+											aria-label="Stop subscribing to {feed.name}"
+											use:armed
+										>
+											<Icon name="trash" size={14} />
+										</button>
+									</form>
+								</li>
+							{/each}
+						</ul>
+					{/if}
+
+					<form
+						method="post"
+						action="?/addCalendar"
+						use:enhance
+						class="border-t border-gray-200 p-4"
+					>
+						<div class="flex flex-wrap gap-2">
+							<input
+								name="name"
+								placeholder="Work"
+								autocomplete="off"
+								required
+								class="input w-32"
+								aria-label="What to call it"
+							/>
+							<input
+								name="url"
+								type="url"
+								placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"
+								required
+								class="input min-w-0 flex-1"
+								aria-label="The calendar's iCal address"
+							/>
+							<input
+								name="color"
+								type="color"
+								value="#6b7280"
+								class="h-10 w-12 border border-gray-300"
+								aria-label="Colour"
+							/>
+							<button class="btn btn-primary" title="Subscribe" aria-label="Subscribe">
+								<Icon name="plus" />
+							</button>
+						</div>
+						<p class="mt-2 text-xs text-gray-500">
+							In Google Calendar: Settings → the calendar → “Secret address in iCal format”.
+							Read-only — nothing here is ever written back.
+						</p>
+					</form>
 				</div>
 
 				<!--
