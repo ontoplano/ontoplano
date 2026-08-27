@@ -10,6 +10,7 @@
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
 	import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
 	import CapturePie from '$lib/components/CapturePie.svelte';
+	import NavPie from '$lib/components/NavPie.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import UndoToast from '$lib/components/UndoToast.svelte';
 	import { undo } from '$lib/undo.svelte';
@@ -19,6 +20,7 @@
 	let { children, data }: { children: any; data: LayoutServerData } = $props();
 	let menuOpen = $state(false);
 	let pie = $state<CapturePie | undefined>();
+	let rooms = $state<NavPie | undefined>();
 	let pieOpen = $state(false);
 
 	function categoryStyle(): string {
@@ -261,20 +263,31 @@
 		<SectionPattern icon={SECTION_GLYPH[sectionKey]} />
 		<header class="relative z-40 bg-chrome shadow-raised" style="padding-top: var(--safe-top)">
 			<div class="mx-auto flex w-full max-w-page items-stretch justify-between px-4 sm:px-6">
-				<div class="flex items-stretch gap-6">
-					<a href="/" class="flex items-center text-lg font-bold tracking-tight text-chrome-ink"
+				<div class="flex min-w-0 items-stretch gap-4 min-[1460px]:gap-6">
+					<a
+						href="/"
+						class="flex shrink-0 items-center text-lg font-bold tracking-tight whitespace-nowrap text-chrome-ink"
 						>ontoplano</a
 					>
-					<!-- Nine sections of words need about a thousand pixels; below `lg`
-					     the bottom bar takes over, which also covers a tablet. -->
-					<nav class="hidden lg:flex">
+					<!--
+						Ten sections of words need about a thousand pixels; below `lg` the
+						bottom bar takes over, which also covers a tablet.
+
+						`nowrap` and a scroll of its own because the bar is at the width
+						where the next feature has nowhere to go: without them the links
+						wrapped into two lines the moment the header grew a button, and a
+						navigation that reflows as you add to it is a navigation that will
+						break again.
+					-->
+					<nav class="hidden min-w-0 overflow-x-auto lg:flex">
 						{#each nav as item (item.href)}
 							{@const active = isNavActive(item.href)}
 							<!-- Active tab is a solid block of its section colour; the rest stay
 							     neutral so the fill is the thing that reads. -->
 							<a
 								href={item.href}
-								class="flex items-center gap-1.5 border-b-2 px-3 py-4 text-sm transition-colors {active
+								title={item.label}
+								class="flex shrink-0 items-center gap-1 border-b-2 px-1.5 py-4 text-sm whitespace-nowrap transition-colors min-[1460px]:gap-1.5 min-[1460px]:px-3 {active
 									? 'font-semibold text-chrome-ink'
 									: 'border-transparent font-medium text-chrome-muted hover:text-chrome-ink'}"
 								style={active ? `border-color: ${SECTIONS[item.section].accent}` : ''}
@@ -290,12 +303,21 @@
 								>
 									<path d={item.icon} />
 								</svg>
-								{item.label}
+								<!--
+									Ten first-class sections, squeezed rather than grouped. Every
+									one of these is somewhere you go, and burying four of them
+									behind a "Write" menu to save a hundred pixels makes them
+									harder to find rather than easier. Words from 1280px up; below
+									that the glyphs carry it, with `title` saying the word.
+								-->
+								<span class="hidden xl:inline">{item.label}</span>
 							</a>
 						{/each}
 					</nav>
 				</div>
-				<div class="menu-container relative hidden items-center gap-3 lg:flex">
+				<div
+					class="menu-container relative hidden shrink-0 items-center gap-2 min-[1460px]:gap-3 lg:flex"
+				>
 					<!-- A keyboard-only feature is an invisible one. The box says the app
 					     can be searched; the shortcut is for after you know that. -->
 					<button
@@ -304,8 +326,28 @@
 					>
 						<Icon name="search" size={14} />
 						Search
-						<kbd class="kbd-hint border border-chrome-line px-1 text-xs">{key} K</kbd>
+						<kbd
+							class="kbd-hint hidden border border-chrome-line px-1 text-xs min-[1460px]:inline-block"
+							>{key} K</kbd
+						>
 					</button>
+					<!--
+						The rooms, as a pie.
+
+						The bar above tells you where you are and ⌘K is faster once you
+						know it exists; this is the one for a hand on the mouse. Alongside
+						the bar on purpose — if the bar goes untouched for a fortnight it
+						can go, and if it does not, nothing was lost.
+					-->
+					<button
+						onpointerdown={(e) => rooms?.summon(e)}
+						class="flex h-8 w-8 items-center justify-center border border-chrome-line bg-chrome-raised text-chrome-muted shadow-sm transition hover:text-chrome-ink hover:brightness-125"
+						aria-label="Jump to a section"
+						title="Jump to a section"
+					>
+						<Icon name="drag" size={16} />
+					</button>
+
 					<!-- Capture, beside search: the two things you reach for without
 					     having decided where you are going. -->
 					<button
@@ -557,6 +599,7 @@
 		<ShortcutHelp />
 		<CommandPalette />
 		<CapturePie bind:this={pie} onopenchange={(v) => (pieOpen = v)} />
+		<NavPie bind:this={rooms} />
 		<UndoToast />
 	</div>
 {:else}

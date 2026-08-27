@@ -141,3 +141,23 @@ test('the thumb trigger is for thumbs, and the header one is for cursors', async
 	const narrow = await triggers.first().boundingBox();
 	expect(narrow!.y).toBeGreaterThan(500);
 });
+
+test('the section pie lands you in the room', async ({ page }) => {
+	await register(page, `nav-pie-${Date.now()}@test.invalid`);
+	await page.goto('/', { waitUntil: 'networkidle' });
+
+	const jump = page.getByRole('button', { name: /jump to a section/i });
+	const box = await jump.boundingBox();
+	await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+	await page.mouse.down();
+	await page.mouse.up();
+
+	// Eight rooms, every one of them named.
+	await expect(page.getByText('cancel')).toBeVisible();
+	for (const room of ['Home', 'Planner', 'Goals', 'Diary', 'Ideas', 'Health', 'Shopping']) {
+		await expect(page.locator('.pie').getByText(room, { exact: true })).toBeVisible();
+	}
+
+	await page.locator('.pie').getByText('Shopping', { exact: true }).click();
+	await page.waitForURL(/\/shopping/);
+});
