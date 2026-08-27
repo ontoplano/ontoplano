@@ -99,6 +99,8 @@ test('a pasted list becomes the ingredients', async ({ page }) => {
 	await expect(page.getByText('Ingredients:', { exact: true })).toHaveCount(0);
 
 	// And the new ones are on the shopping list, which is the point of the loop.
+	// The item's own row and the "used in" backlink both name it now, so this
+	// asks for the row rather than the word.
 	await page.goto('/shopping', { waitUntil: 'networkidle' });
-	await expect(page.getByText('pearl barley')).toBeVisible();
+	await expect(page.getByText('pearl barley').first()).toBeVisible();
 });

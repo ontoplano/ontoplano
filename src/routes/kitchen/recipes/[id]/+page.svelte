@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
@@ -21,6 +22,7 @@
 	let scheduling = $state(false);
 	let cookMode = $state(false);
 	let pasting = $state(false);
+	let nameBox: HTMLInputElement | undefined = $state();
 
 	/** Three lines that show the shape without explaining it. */
 	const PASTE_EXAMPLE = '300 g rice\n2 onions, finely chopped\n1/2 tsp salt';
@@ -152,7 +154,14 @@
 				use:enhance={() =>
 					async ({ update, result }) => {
 						await update({ reset: result.type === 'success' });
-						if (result.type === 'success') ingredientName = '';
+						if (result.type !== 'success') return;
+
+						ingredientName = '';
+						// Straight back to the name box: writing a recipe is typing
+						// fifteen of these, and reaching for the mouse between each one is
+						// the reason the fifteenth never gets typed.
+						await tick();
+						nameBox?.focus();
 					}}
 				class="border-t border-gray-200 px-4 py-3"
 			>
@@ -176,6 +185,7 @@
 					/>
 					<input
 						name="name"
+						bind:this={nameBox}
 						bind:value={ingredientName}
 						list="pantry"
 						required

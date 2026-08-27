@@ -70,10 +70,10 @@ test('what you actually paid, and how it has moved', async ({ page }) => {
 		.getByRole('button', { name: /got it/i })
 		.first()
 		.click();
-	await expect(page.getByText('paid?').first()).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Set price' }).first()).toBeVisible();
 
 	// The price is the optional second act.
-	await page.getByText('paid?').first().click();
+	await page.getByRole('button', { name: 'Set price' }).first().click();
 	await page.locator('input[name=paid]').fill('1.20');
 	await page.getByRole('button', { name: /save what you paid/i }).click();
 	await page.waitForTimeout(400);
@@ -95,7 +95,7 @@ test('what you actually paid, and how it has moved', async ({ page }) => {
 		.click();
 	await page.waitForTimeout(400);
 
-	await page.getByText('paid?').first().click();
+	await page.getByRole('button', { name: 'Set price' }).first().click();
 	await page.locator('input[name=paid]').fill('1.60');
 	await page.getByRole('button', { name: /save what you paid/i }).click();
 

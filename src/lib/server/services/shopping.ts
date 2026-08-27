@@ -206,7 +206,8 @@ export function recordPaid(ctx: Ctx, id: number, raw: unknown): void {
 	ownedItem(ctx, id);
 
 	const paid = parseMoney(raw, getCurrency(ctx.userId));
-	if (paid === null) throw new ValidationError('That is not a price this understands');
+	// Plain, and it shows the shape rather than describing it.
+	if (paid === null) throw new ValidationError('Enter a price like 3.50');
 
 	db.transaction((tx) => {
 		tx.insert(pricePoints)

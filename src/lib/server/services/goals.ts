@@ -550,7 +550,7 @@ function parseHorizon(value: unknown): Horizon {
 function parseAnchor(value: unknown): Date | null {
 	const raw = value === undefined || value === null ? '' : String(value).trim();
 	if (!raw) return null;
-	if (!DATE_PATTERN.test(raw)) throw new ValidationError('That is not a date this understands');
+	if (!DATE_PATTERN.test(raw)) throw new ValidationError('Enter a date like 2026-08-27');
 	return new Date(`${raw}T00:00:00`);
 }
 

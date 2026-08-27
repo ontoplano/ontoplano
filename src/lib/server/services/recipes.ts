@@ -405,6 +405,28 @@ export function importIngredients(ctx: Ctx, recipeId: number, text: unknown): nu
 	return added;
 }
 
+/**
+ * Which recipes use each shopping item.
+ *
+ * The other half of the link. A recipe has always listed its ingredients; the
+ * ingredient had no idea it was one, so the shopping list could not tell you
+ * why the olive oil is on it — which is exactly the question you have while
+ * deciding whether to buy more.
+ */
+export function recipesByItem(ctx: Ctx): Record<number, { id: number; title: string }[]> {
+	const rows = db
+		.select({ itemId: recipeItems.itemId, id: recipes.id, title: recipes.title })
+		.from(recipeItems)
+		.innerJoin(recipes, eq(recipeItems.recipeId, recipes.id))
+		.where(and(eq(recipeItems.userId, ctx.userId), isNull(recipes.archivedAt)))
+		.orderBy(asc(recipes.title))
+		.all();
+
+	const out: Record<number, { id: number; title: string }[]> = {};
+	for (const row of rows) (out[row.itemId] ??= []).push({ id: row.id, title: row.title });
+	return out;
+}
+
 export function removeIngredient(ctx: Ctx, id: number): void {
 	const res = db
 		.delete(recipeItems)

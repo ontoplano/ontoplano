@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -34,6 +35,13 @@
 	let confirmingDelete: number | null = $state(null);
 	/** The item whose "what did you pay" box is open. */
 	let pricing: number | null = $state(null);
+	/** That box's own failure, so it cannot outlive the box. */
+	let priceError: string | null = $state(null);
+
+	function closePricing() {
+		pricing = null;
+		priceError = null;
+	}
 	let showCategories = $state(false);
 	let addingCategory = $state(false);
 
@@ -280,16 +288,49 @@
 	Never part of the tick: that happens in an aisle, one press, often offline.
 	Prices are for when you are home with the bought list in front of you.
 -->
+<!--
+	Why this is on the list.
+
+	A recipe has always listed its ingredients; the ingredient had no idea it was
+	one, so the shopping list could not answer "what do I need the olive oil for"
+	— which is the question you have while deciding whether to buy more.
+-->
+{#snippet usedIn(item: { id: number })}
+	{#if (data.usedIn[item.id] ?? []).length > 0}
+		<span class="ml-2 inline-flex flex-wrap items-center gap-1 align-middle">
+			<Icon name="utensils" size={12} class="text-gray-500" />
+			{#each data.usedIn[item.id] as recipe, i (recipe.id)}
+				<a
+					href="{resolve('/kitchen/recipes')}/{recipe.id}"
+					class="text-xs text-gray-500 hover:text-gray-900 hover:underline"
+				>
+					{recipe.title}{#if i < data.usedIn[item.id].length - 1}<span aria-hidden="true">,</span
+						>{/if}
+				</a>
+			{/each}
+		</span>
+	{/if}
+{/snippet}
+
 {#snippet paidPrompt(item: { id: number; name: string; bought: boolean })}
 	{#if item.bought}
 		{#if pricing === item.id}
+			<!--
+				Its own error, not the page's.
+
+				`form.message` is whatever the last action said, and it outlives the
+				thing that said it: a rejected price was still on screen when you next
+				opened the edit dialog, attached to an item it had nothing to do with.
+				A small form that can fail keeps its own failure.
+			-->
 			<form
 				method="POST"
 				action="?/paid"
 				use:enhance={() => {
-					return async ({ update }) => {
+					return async ({ update, result }) => {
+						priceError = result.type === 'failure' ? String(result.data?.message ?? '') : null;
 						await update({ reset: true });
-						pricing = null;
+						if (result.type === 'success') pricing = null;
 					};
 				}}
 				class="flex items-center gap-1"
@@ -299,6 +340,13 @@
 					name="paid"
 					inputmode="decimal"
 					use:autofocus
+					onkeydown={(e) => {
+						// Escape closes it. There was no way out of this box at all.
+						if (e.key === 'Escape') {
+							e.preventDefault();
+							closePricing();
+						}
+					}}
 					placeholder="1.60"
 					aria-label="What you paid for {item.name}"
 					class="input w-20 px-2 py-1 text-xs"
@@ -306,6 +354,18 @@
 				<button class="btn btn-sm" title="Save" aria-label="Save what you paid">
 					<Icon name="check" size={14} />
 				</button>
+				<button
+					type="button"
+					class="btn btn-sm"
+					onclick={closePricing}
+					title="Cancel"
+					aria-label="Cancel"
+				>
+					<Icon name="close" size={14} />
+				</button>
+				{#if priceError}
+					<span class="text-xs text-red-600">{priceError}</span>
+				{/if}
 			</form>
 		{:else}
 			<button
@@ -314,7 +374,7 @@
 				class="text-xs text-gray-500 hover:text-gray-900"
 				title="Record what you paid"
 			>
-				paid?
+				Set price
 			</button>
 		{/if}
 	{/if}
@@ -526,6 +586,7 @@
 											<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
 										{/if}
 										{@render drift(item)}
+										{@render usedIn(item)}
 									</div>
 									{@render paidPrompt(item)}
 									{#if item.snoozed}
@@ -650,6 +711,7 @@
 									<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
 								{/if}
 								{@render drift(item)}
+								{@render usedIn(item)}
 							</div>
 							{@render paidPrompt(item)}
 							<form method="POST" action="?/toggleSnoozed" use:enhance={tick('toggleSnoozed')}>

@@ -1,6 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
+import { recipesByItem } from '$lib/server/services/recipes';
 import { getCurrency } from '$lib/server/settings';
 import {
 	createCategory,
@@ -21,6 +22,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
 	return {
 		items: listItems(ctx),
+		/** Which recipes use each item — the other half of the ingredient link. */
+		usedIn: recipesByItem(ctx),
 		/** How each price has moved, for the ones bought more than once. */
 		drifts: priceDrifts(ctx),
 		shoppingCategories: listCategories(ctx),
