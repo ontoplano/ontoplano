@@ -55,7 +55,7 @@ function parseWhen(raw: unknown, ctx: Ctx): string {
 	const value = str(raw, 'time', { max: 40 });
 	// What `<input type="datetime-local">` sends, with or without seconds.
 	const match = value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})(:\d{2})?$/);
-	if (!match) throw new ValidationError('Pick a date and a time');
+	if (!match) throw new ValidationError('Invalid time');
 
 	const when = `${match[1]}T${match[2]}:00`;
 	const limit = new Date(ctx.now);

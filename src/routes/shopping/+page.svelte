@@ -328,7 +328,15 @@
 				action="?/paid"
 				use:enhance={() => {
 					return async ({ update, result }) => {
-						priceError = result.type === 'failure' ? String(result.data?.message ?? '') : null;
+						// A failure stops here. Calling `update()` would also hand it to the
+						// page's `form` prop, and the banner at the top of the list would
+						// say the same thing a second time, next to a form it is not about.
+						if (result.type === 'failure') {
+							priceError = String(result.data?.message ?? 'Invalid price');
+							return;
+						}
+
+						priceError = null;
 						await update({ reset: true });
 						if (result.type === 'success') pricing = null;
 					};

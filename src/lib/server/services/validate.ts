@@ -31,9 +31,7 @@ export function str(
 	if (s.length < min) throw new ValidationError(`${Field(field)} is required`);
 	if (s.length > opts.max)
 		throw new ValidationError(`${Field(field)} has to be ${opts.max} characters or fewer`);
-	if (opts.pattern && !opts.pattern.test(s))
-		// Say what is wrong with the value, not that we failed to understand it.
-		throw new ValidationError(`That ${field} is not in a shape this accepts`);
+	if (opts.pattern && !opts.pattern.test(s)) throw new ValidationError(`Invalid ${field}`);
 	return s;
 }
 

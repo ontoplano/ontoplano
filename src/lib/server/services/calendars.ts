@@ -72,7 +72,7 @@ function parseUrl(raw: unknown): string {
 	try {
 		url = new URL(normalised);
 	} catch {
-		throw new ValidationError('That is not a web address');
+		throw new ValidationError('Invalid address');
 	}
 
 	if (url.protocol !== 'https:' && url.protocol !== 'http:')
