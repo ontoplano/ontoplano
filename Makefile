@@ -1,7 +1,7 @@
 -include instance.env
 ONTOPLANO_HOST ?= ontoplano.com
 
-.PHONY: up up-phone up-server android-lan android-check dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: up up-phone up-server android-lan android-check doctor dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -143,6 +143,43 @@ up: up-server up-phone
 # /usr/bin/node in the unit meant a box with nvm, or with NodeSource beside
 # Ubuntu's nodejs, built against one and ran against the other.
 NODE_BIN := $(shell command -v node)
+
+# ─── Which node is which ─────────────────────────────────────────────────────
+#
+# Three nodes can disagree on one box — the one your shell finds, the one that
+# compiled better-sqlite3, and the one systemd runs — and the symptom of any
+# disagreement is the same unhelpful ERR_DLOPEN_FAILED. This prints all three.
+doctor:
+	@# Walking PATH by hand rather than `type -a`: make runs recipes with
+	@# /bin/sh, and `type -a -P` is a bash builtin.
+	@echo "Nodes on PATH, in the order the shell finds them:"
+	@echo "$$PATH" | tr ':' '\n' | while read -r d; do \
+		[ -x "$$d/node" ] && printf '  %-44s %s\n' "$$d/node" "$$("$$d/node" -v 2>/dev/null)"; \
+	done; true
+	@echo
+	@printf 'The one that would be used now: %s (%s)\n' \
+		"$(NODE_BIN)" "$$($(NODE_BIN) -v 2>/dev/null || echo unknown)"
+	@printf 'Needs to be v20.19 or newer, because Vite 7 says so.\n'
+	@echo
+	@unit=$$HOME/.config/systemd/user/ontoplano.service; \
+	if [ -f "$$unit" ]; then \
+		exe=$$(sed -n 's/^ExecStart=\([^ ]*\).*/\1/p' "$$unit"); \
+		printf 'The one systemd runs:            %s (%s)\n' \
+			"$$exe" "$$($$exe -v 2>/dev/null || echo 'missing')"; \
+	else \
+		echo "No unit installed yet."; \
+	fi
+	@echo
+	@for dir in . $(PROD_DIR); do \
+		if [ -d "$$dir/node_modules" ]; then \
+			if (cd "$$dir" && $(NODE_BIN) -e "require('better-sqlite3')" 2>/dev/null); then \
+				echo "better-sqlite3 in $$dir loads under $(NODE_BIN)."; \
+			else \
+				echo "better-sqlite3 in $$dir does NOT load under $(NODE_BIN)."; \
+				echo "  rm -rf $$dir/node_modules && yarn install && make install-service"; \
+			fi; \
+		fi; \
+	done
 
 install-service: deploy
 	@echo "Installing ontoplano systemd service..."
