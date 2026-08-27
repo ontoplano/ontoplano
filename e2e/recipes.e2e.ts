@@ -74,3 +74,31 @@ test('cook mode covers the page and gives it back', async ({ page }) => {
 	await page.keyboard.press('Escape');
 	await expect(method).toBeHidden();
 });
+
+test('a pasted list becomes the ingredients', async ({ page }) => {
+	await register(page, `paste-${Date.now()}@test.invalid`);
+	await makeRecipe(page, 'Pearl barley stew');
+
+	await page.getByRole('button', { name: /paste a list/i }).click();
+	await page
+		.locator('textarea[name=list]')
+		.fill(
+			['Ingredients:', '', '- 300 g pearl barley', '- 2 carrots, diced', '1/2 tsp thyme'].join('\n')
+		);
+	await page.getByRole('button', { name: /add them/i }).click();
+
+	await expect(page.getByText('Added 3 of them.')).toBeVisible();
+
+	// Every readable line, and neither the heading nor the blank. Scoped to the
+	// ingredient list, because the recipe is called "Pearl barley stew" and a
+	// page-wide search for "pearl barley" would have found the title.
+	const list = page.locator('section', { has: page.getByRole('heading', { name: 'Ingredients' }) });
+	for (const name of ['pearl barley', 'carrots', 'thyme']) {
+		await expect(list.getByText(name, { exact: false }).first()).toBeVisible();
+	}
+	await expect(page.getByText('Ingredients:', { exact: true })).toHaveCount(0);
+
+	// And the new ones are on the shopping list, which is the point of the loop.
+	await page.goto('/shopping', { waitUntil: 'networkidle' });
+	await expect(page.getByText('pearl barley')).toBeVisible();
+});

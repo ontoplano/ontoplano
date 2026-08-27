@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
+	import { autofocus } from '$lib/actions/autofocus';
 	import { autogrow } from '$lib/actions/autogrow';
 	import Field from '$lib/components/Field.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -19,6 +20,7 @@
 	let cooking = $state(false);
 	let scheduling = $state(false);
 	let cookMode = $state(false);
+	let pasting = $state(false);
 
 	const missing = $derived(data.ingredients.filter((i) => !i.inStock));
 
@@ -190,6 +192,60 @@
 					Anything new goes onto the shopping list as something you do not have.
 				</p>
 			</form>
+
+			<!--
+				Or paste the whole list.
+
+				Every recipe on the internet is a list of lines, and typing them back
+				one field at a time is the reason a recipe never gets written down.
+				Behind a disclosure because it is the second way to do the same
+				thing, and one form has one button.
+			-->
+			<div class="border-t border-gray-200 px-4 py-3">
+				{#if !pasting}
+					<button onclick={() => (pasting = true)} class="btn btn-sm">
+						<Icon name="copy" /> Paste a list
+					</button>
+				{:else}
+					<form
+						method="post"
+						action="?/importIngredients"
+						use:enhance={() =>
+							async ({ update, result }) => {
+								await update({ reset: true });
+								if (result.type === 'success') pasting = false;
+							}}
+					>
+						<input type="hidden" name="recipeId" value={data.recipe.id} />
+						<label class="block">
+							<span class="eyebrow text-gray-600">Paste the ingredients</span>
+							<textarea
+								name="list"
+								rows="6"
+								use:autofocus
+								placeholder={'300 g rice\n2 onions, finely chopped\n1/2 tsp salt'}
+								class="textarea mt-1"
+							></textarea>
+						</label>
+						<p class="mt-2 text-xs text-gray-500">
+							One per line. Bullets, numbers and headings are ignored; anything after a comma
+							becomes a note.
+						</p>
+						<div class="mt-2 flex items-center justify-end gap-2">
+							<button type="button" class="btn btn-sm" onclick={() => (pasting = false)}>
+								Cancel
+							</button>
+							<button class="btn btn-primary btn-sm" title="Add them" aria-label="Add them">
+								<Icon name="plus" />
+							</button>
+						</div>
+					</form>
+				{/if}
+
+				{#if form?.added}
+					<p class="mt-2 text-xs text-gray-600">Added {form.added} of them.</p>
+				{/if}
+			</div>
 		</section>
 
 		<section class="border border-gray-200 bg-white shadow-card">

@@ -13,6 +13,7 @@
  */
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
+import { parseLines } from '../../ingredient-lines.js';
 import { db } from '../db/index.js';
 import {
 	exceptionalSlots,
@@ -365,6 +366,43 @@ export function addIngredient(
 			}
 		})
 		.run();
+}
+
+/**
+ * A pasted ingredient list, added in one go.
+ *
+ * Every recipe on the internet is a list of lines, and typing them back one
+ * combobox at a time is the reason a recipe never gets written down. Anything
+ * the parser cannot make sense of is skipped rather than guessed at, and
+ * anything that is not already a shopping item becomes one — which is the same
+ * thing typing a new name into the field does, and the reason the shopping list
+ * stays current without anybody maintaining it.
+ *
+ * Returns how many lines became ingredients, so the page can say so.
+ */
+export function importIngredients(ctx: Ctx, recipeId: number, text: unknown): number {
+	assertOwnedRecipe(ctx, recipeId);
+
+	const lines = parseLines(str(text, 'list', { max: 10_000, min: 0 }));
+
+	let added = 0;
+	db.transaction(() => {
+		for (const line of lines) {
+			try {
+				addIngredient(ctx, recipeId, {
+					name: line.name,
+					quantity: line.quantity ?? '',
+					unit: line.unit,
+					note: line.note
+				});
+				added += 1;
+			} catch {
+				// One unreadable line should not lose the other nineteen.
+			}
+		}
+	});
+
+	return added;
 }
 
 export function removeIngredient(ctx: Ctx, id: number): void {

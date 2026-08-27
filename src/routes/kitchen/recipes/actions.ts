@@ -9,6 +9,7 @@ import {
 	cooked,
 	createRecipe,
 	deleteRecipe,
+	importIngredients,
 	removeIngredient,
 	setArchived,
 	updateRecipe
@@ -58,6 +59,20 @@ export const recipeActions = {
 				source: formData.get('source')
 			});
 			return { success: true, action: 'update' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	importIngredients: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			const added = importIngredients(
+				buildCtx(locals.user!.id),
+				Number(formData.get('recipeId')),
+				formData.get('list')
+			);
+			return { success: true, added };
 		} catch (e) {
 			return toActionFailure(e);
 		}

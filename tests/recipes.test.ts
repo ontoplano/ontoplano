@@ -121,3 +121,55 @@ describe('cooking', () => {
 		expect(s.shopping.listItems(ctx).find((i) => i.id === eggs.id)!.bought).toBe(false);
 	});
 });
+
+describe('a pasted ingredient list', () => {
+	test('becomes ingredients, and shopping items for anything new', () => {
+		const id = s.recipes.createRecipe(ctx, { title: 'Pasted stew' });
+		const before = s.shopping.listItems(ctx).length;
+
+		const added = s.recipes.importIngredients(
+			ctx,
+			id,
+			`Ingredients:
+
+- 300 g pearl barley
+- 2 carrots, diced
+- 1/2 tsp thyme`
+		);
+
+		expect(added).toBe(3);
+
+		const names = s.recipes.ingredientsOf(ctx, id).map((i) => i.name);
+		expect(names).toEqual(expect.arrayContaining(['pearl barley', 'carrots', 'thyme']));
+		expect(s.shopping.listItems(ctx).length).toBeGreaterThan(before);
+	});
+
+	test('quantities, units and notes survive the trip', () => {
+		const id = s.recipes.createRecipe(ctx, { title: 'Precise stew' });
+		s.recipes.importIngredients(ctx, id, '3 cloves garlic, crushed');
+
+		const [only] = s.recipes.ingredientsOf(ctx, id);
+		expect(only.quantity).toBe(3);
+		expect(only.unit).toBe('cloves');
+		expect(only.note).toBe('crushed');
+	});
+
+	test('an unreadable line does not lose the readable ones', () => {
+		const id = s.recipes.createRecipe(ctx, { title: 'Messy stew' });
+		const added = s.recipes.importIngredients(ctx, id, '\n\nFor the base:\n300 g\n2 onions\n');
+
+		expect(added).toBe(1);
+		expect(s.recipes.ingredientsOf(ctx, id).map((i) => i.name)).toEqual(['onions']);
+	});
+
+	test('nothing pasted adds nothing', () => {
+		const id = s.recipes.createRecipe(ctx, { title: 'Empty stew' });
+		expect(s.recipes.importIngredients(ctx, id, '')).toBe(0);
+	});
+
+	test("and it cannot be aimed at somebody else's recipe", () => {
+		const mine = s.recipes.createRecipe(ctx, { title: 'Not yours' });
+		expect(() => s.recipes.importIngredients(theirs, mine, '2 onions')).toThrow();
+		expect(s.recipes.ingredientsOf(ctx, mine)).toEqual([]);
+	});
+});
