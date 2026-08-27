@@ -128,6 +128,7 @@
 
 	import { GLOBAL_SHORTCUTS } from '$lib/shortcuts';
 	import Icon from '$lib/components/Icon.svelte';
+	import { dev } from '$app/environment';
 
 	function handleGlobalKeydown(e: KeyboardEvent) {
 		if (
@@ -174,6 +175,31 @@
 			}
 		}
 	}
+
+	/**
+	 * Get rid of a service worker left over from before it was turned off in dev.
+	 *
+	 * Vite's module URLs carry a version that changes when the dev server
+	 * restarts. A worker that had cached a page kept serving HTML pointing at
+	 * modules that no longer existed: every import failed, nothing hydrated, the
+	 * offline fallback appeared and the page reloaded into the same state
+	 * forever — with nothing in the server log, because none of it reached the
+	 * server. Registration is off in dev now, but a browser that already has one
+	 * keeps it until somebody says otherwise.
+	 */
+	$effect(() => {
+		if (!dev || typeof navigator === 'undefined' || !navigator.serviceWorker) return;
+
+		void navigator.serviceWorker.getRegistrations().then(async (registrations) => {
+			if (registrations.length === 0) return;
+
+			await Promise.all(registrations.map((r) => r.unregister()));
+			if (typeof caches !== 'undefined')
+				await caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))));
+
+			location.reload();
+		});
+	});
 </script>
 
 <svelte:window onkeydown={handleGlobalKeydown} onclick={handleClickOutside} />

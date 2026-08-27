@@ -18,6 +18,21 @@ const config = {
 		adapter: adapter(),
 
 		/*
+		 * No service worker while developing.
+		 *
+		 * Vite serves modules at URLs with a version query, and those change
+		 * whenever the dev server restarts. A worker that had cached a page kept
+		 * handing back HTML pointing at modules that no longer existed: every
+		 * import failed, the client never hydrated, the offline fallback appeared
+		 * and the page reloaded into the same state forever — with nothing in the
+		 * server log, because none of it reached the server.
+		 *
+		 * It is a production concern anyway. `npm run build && npm run preview`
+		 * is where to test it.
+		 */
+		serviceWorker: { register: false },
+
+		/*
 		 * CSP is configured here rather than as a header in hooks, because
 		 * SvelteKit emits an inline bootstrap script and only it knows the hash.
 		 * A hand-written `script-src 'self'` blocks that script: the page still
