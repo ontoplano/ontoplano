@@ -1196,6 +1196,56 @@ export const dailyWins = sqliteTable(
 );
 
 /**
+ * A nudge at a time.
+ *
+ * The app only helps on the days you remember to open it, which is why most
+ * people who try a planner stop in week two. A reminder is the one thing that
+ * reaches out rather than waiting to be visited.
+ *
+ * Deliberately a row rather than a rule on the block: a rule would have to be
+ * evaluated everywhere, and a row can be delivered by anything with the
+ * database — the page you have open, and the Telegram bot on a self-hosted box,
+ * which is the only delivery that works while the app is closed and does not
+ * put anybody else in the path.
+ */
+export const reminders = sqliteTable(
+	'reminders',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		/** What it is about. `free` is a reminder that is only itself. */
+		subjectKind: text('subject_kind', { enum: ['instance', 'todo', 'free'] })
+			.notNull()
+			.default('free'),
+		subjectId: integer('subject_id'),
+		/**
+		 * Wall-clock, like `task_instances.scheduled_at` — not an instant.
+		 *
+		 * "Remind me at ten to nine" means ten to nine wherever you are, and a
+		 * reminder that shifts by an hour because you flew somewhere is a reminder
+		 * that is wrong. Compared against the local time in the account's zone.
+		 */
+		remindAt: text('remind_at').notNull(),
+		message: text('message').notNull(),
+		/** Set the moment something showed it to somebody, so nothing fires twice. */
+		deliveredAt: text('delivered_at'),
+		/** Set when the person acknowledged it. */
+		dismissedAt: text('dismissed_at'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('reminders_user_idx').on(table.userId),
+		// The delivery query is "mine, due, undelivered", and it runs every minute.
+		index('reminders_due_idx').on(table.userId, table.deliveredAt, table.remindAt),
+		index('reminders_subject_idx').on(table.subjectKind, table.subjectId)
+	]
+);
+
+/**
  * What something cost, when you bought it.
  *
  * `shopping_items.price_cents` is a *last known* price — useful for "what will

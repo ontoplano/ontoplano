@@ -11,6 +11,7 @@
 	import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
 	import CapturePie from '$lib/components/CapturePie.svelte';
 	import NavPie from '$lib/components/NavPie.svelte';
+	import Reminders from '$lib/components/Reminders.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import UndoToast from '$lib/components/UndoToast.svelte';
 	import { undo } from '$lib/undo.svelte';
@@ -545,6 +546,7 @@
 		<CommandPalette />
 		<CapturePie bind:this={pie} onopenchange={(v) => (pieOpen = v)} />
 		<NavPie bind:this={rooms} onopenchange={(v) => (roomsOpen = v)} />
+		<Reminders />
 		<UndoToast />
 	</div>
 {:else}

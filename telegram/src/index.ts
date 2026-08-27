@@ -7,6 +7,7 @@ import { registerTodoCommand } from './commands/todo.js';
 import { registerDiaryCommand } from './commands/diary.js';
 import { registerIdeiaCommand } from './commands/ideia.js';
 import { COMMANDS, registerHelpCommand } from './commands/help.js';
+import { startReminders } from './reminders.js';
 
 /**
  * The bot is for a self-hosted instance, and only for one.
@@ -77,5 +78,8 @@ bot.catch((error) => {
 bot.api
 	.setMyCommands(COMMANDS.map(({ command, description }) => ({ command, description })))
 	.catch((error: unknown) => console.error('Failed to publish command list:', error));
+
+// Reminders are the one thing the bot does without being spoken to first.
+startReminders(bot, allowedUser);
 
 bot.start();

@@ -6,6 +6,7 @@ import { listActivities, listCategories } from '$lib/server/services/activities'
 import { goalBacklinks, type GoalBacklink } from '$lib/server/services/backlinks';
 import { buildCtx, type Ctx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
+import { createReminder, deleteReminder, listReminders } from '$lib/server/services/reminders';
 import { moveOccurrence } from '$lib/server/services/slots';
 import {
 	deleteInstance,
@@ -192,6 +193,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		categories: listCategories(ctx)
 			.map((c) => ({ id: c.id, name: c.name, color: c.color }))
 			.sort((a, b) => a.name.localeCompare(b.name)),
+		/** Reminders already set, keyed by the block they belong to. */
+		reminders: listReminders(ctx)
+			.filter((r) => r.subjectKind === 'instance' && r.subjectId !== null)
+			.reduce<Record<number, { id: number; remindAt: string }[]>>((acc, r) => {
+				(acc[r.subjectId!] ??= []).push({ id: r.id, remindAt: r.remindAt });
+				return acc;
+			}, {}),
 		// For "which of these was it?" on a block that only named a category.
 		activities: listActivities(ctx, { activeOnly: true })
 			.map((a) => ({
@@ -355,6 +363,31 @@ export const actions: Actions = {
 	 * These four used to be four forms on a separate Track page. They are the
 	 * same card as the one on this board, so they are the same card's editor.
 	 */
+	/** "Remind me before this one." A lead time, not a clock reading. */
+	remind: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			createReminder(buildCtx(locals.user!.id), {
+				subjectKind: 'instance',
+				subjectId: formData.get('id'),
+				at: formData.get('minutes')
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	unremind: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			deleteReminder(buildCtx(locals.user!.id), Number(formData.get('reminderId')));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	editInstance: async ({ request, locals }) => {
 		const ctx = buildCtx(locals.user!.id);
 		const formData = await request.formData();

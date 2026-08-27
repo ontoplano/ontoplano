@@ -1148,4 +1148,42 @@ pricePoint('coffee beans', 890, iso(dayOffset(-40)));
 pricePoint('olive oil', 640, iso(dayOffset(-120)));
 pricePoint('olive oil', 590, iso(dayOffset(-15)));
 
+// --- Reminders --------------------------------------------------------------------
+//
+// One already overdue, so the dashboard has something to deliver the moment you
+// open it, and one later today that has not gone off yet.
+
+const zone =
+	one("select value from user_settings where user_id = ? and key = 'user.timezone'", uid)?.value ||
+	'UTC';
+
+const localStamp = (offsetMinutes) => {
+	const at = new Date(Date.now() + offsetMinutes * 60_000);
+	const formatted = new Intl.DateTimeFormat('sv-SE', {
+		timeZone: zone,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
+		hour12: false
+	}).format(at);
+	return `${formatted.replace(' ', 'T')}:00`;
+};
+
+const reminder = (offsetMinutes, message) => {
+	const existing = one('select id from reminders where user_id = ? and message = ?', uid, message);
+	if (existing) return existing.id;
+	return run(
+		'insert into reminders (user_id, subject_kind, remind_at, message) values (?, ?, ?, ?)',
+		uid,
+		'free',
+		localStamp(offsetMinutes),
+		message
+	);
+};
+
+reminder(-8, 'take the bread out of the oven');
+reminder(180, 'call the landlord back');
+
 console.log(`seeded synthetic data for ${user.email ?? uid}`);

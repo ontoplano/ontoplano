@@ -560,6 +560,45 @@
 					<Backlinks goals={card.goals} />
 				</div>
 			{/if}
+
+			<!--
+				A nudge before it starts.
+
+				Its own form, because setting a reminder and editing the block are two
+				acts. A lead time rather than a clock reading, because "ten minutes
+				before" is how anybody describes a reminder about something already on
+				a calendar.
+			-->
+			{#if card.kind === 'instance' && card.startTime}
+				{@const set = data.reminders[card.id] ?? []}
+				<div class="mb-3 flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3">
+					<span class="eyebrow shrink-0 text-gray-600">Remind me</span>
+					{#each [5, 10, 30, 60] as minutes (minutes)}
+						<form method="post" action="?/remind" use:enhance>
+							<input type="hidden" name="id" value={card.id} />
+							<input type="hidden" name="minutes" value={minutes} />
+							<button class="btn btn-sm">
+								{minutes < 60 ? `${minutes} min` : '1 hour'} before
+							</button>
+						</form>
+					{/each}
+
+					{#each set as reminder (reminder.id)}
+						<form method="post" action="?/unremind" use:enhance class="flex items-center">
+							<input type="hidden" name="reminderId" value={reminder.id} />
+							<button
+								class="chip flex items-center gap-1 text-gray-700"
+								title="Remove this reminder"
+								aria-label="Remove the reminder at {reminder.remindAt.slice(11, 16)}"
+							>
+								<Icon name="clock" size={12} />
+								<span class="tabular">{reminder.remindAt.slice(11, 16)}</span>
+								<Icon name="close" size={12} />
+							</button>
+						</form>
+					{/each}
+				</div>
+			{/if}
 			<form
 				id="edit-form"
 				method="post"
