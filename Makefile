@@ -1,4 +1,4 @@
-.PHONY: dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: up up-phone up-server dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -114,6 +114,24 @@ update: deploy
 	@echo "Restarting ontoplano service..."
 	@systemctl --user restart ontoplano
 	@echo "Update complete. Check: systemctl --user status ontoplano"
+
+# ─── The two things you actually run ─────────────────────────────────────────
+#
+# Both of these existed as pairs of commands typed in the right order, which is
+# a thing to get wrong at the end of a long day. `up` is the one to reach for.
+
+up-phone: android android-install
+	@echo "Phone updated."
+
+up-server: db-migrate
+	@echo "Restarting ontoplano service…"
+	@systemctl --user restart ontoplano
+	@echo "Server updated. Check: systemctl --user status ontoplano"
+
+# Server first on purpose: the phone is a shell around the server's pages, so a
+# phone built against a server that has not migrated yet opens onto errors.
+up: up-server up-phone
+	@echo "Everything updated."
 
 install-service: deploy
 	@echo "Installing ontoplano systemd service..."
