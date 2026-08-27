@@ -8,6 +8,7 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import CookMode from '$lib/components/CookMode.svelte';
 	import { renderMarkdown } from '$lib/markdown';
 	import type { PageServerData, ActionData } from './$types';
 
@@ -17,6 +18,7 @@
 	let confirmingDelete = $state(false);
 	let cooking = $state(false);
 	let scheduling = $state(false);
+	let cookMode = $state(false);
 
 	const missing = $derived(data.ingredients.filter((i) => !i.inStock));
 
@@ -42,11 +44,21 @@
 			confirmingDelete = false;
 			cooking = false;
 			scheduling = false;
+			cookMode = false;
 		}
 	}
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
+
+{#if cookMode}
+	<CookMode
+		title={data.recipe.title}
+		ingredients={data.ingredients}
+		methodHtml={data.recipe.method ? renderMarkdown(data.recipe.method) : ''}
+		onclose={() => (cookMode = false)}
+	/>
+{/if}
 
 <div class="space-y-4">
 	<div class="flex flex-wrap items-start justify-between gap-3">
@@ -66,6 +78,9 @@
 		</div>
 
 		<div class="flex flex-wrap items-center gap-2">
+			<button onclick={() => (cookMode = true)} class="btn btn-sm" title="Cook it now">
+				<Icon name="flame" /> Cook
+			</button>
 			<button onclick={() => (scheduling = true)} class="btn btn-sm">
 				<Icon name="calendar" /> Put it on a day
 			</button>
