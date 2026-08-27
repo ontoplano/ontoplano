@@ -41,6 +41,8 @@ export default defineConfig({
 			// So a test can present itself as a distinct client and not spend the
 			// whole suite's share of the sign-in rate limit.
 			ONTOPLANO_TRUST_PROXY: 'true',
+			// `/healthz` only discloses disk and memory to a probe that knows this.
+			ONTOPLANO_HEALTH_TOKEN: 'playwright-health-token',
 			XDG_CONFIG_HOME: join(homedir(), '.config')
 		}
 	},

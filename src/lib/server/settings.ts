@@ -273,3 +273,15 @@ export function isInstanceOwner(userId: string): boolean {
 	const first = db.select({ id: user.id }).from(user).orderBy(user.createdAt).limit(1).get();
 	return first?.id === userId;
 }
+
+/**
+ * The shared secret that lets a probe see disk and memory on `/healthz`.
+ *
+ * Unset means the endpoint stays as bare as it has always been. An empty
+ * string is treated as unset rather than as a token that matches an empty
+ * header, which is the failure this returns `null` to avoid.
+ */
+export function healthToken(): string | null {
+	const value = process.env.ONTOPLANO_HEALTH_TOKEN;
+	return value && value.length > 0 ? value : null;
+}

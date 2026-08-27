@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
-import { db } from '$lib/server/db';
-import { sql } from 'drizzle-orm';
+import { databaseReachable, resources, tokenMatches, warnings } from '$lib/server/services/health';
+import { healthToken } from '$lib/server/settings';
 
 /**
  * Is this box alive, and is it actually able to work?
@@ -13,26 +13,35 @@ import { sql } from 'drizzle-orm';
  * No session and no auth, because whatever is watching this is not logged in
  * and should not have to be. It says nothing an attacker could not learn by
  * loading the login page.
+ *
+ * The disk and memory numbers are the exception, and they are behind a token.
+ * "This box is 94% full" is a sentence that tells somebody exactly which
+ * attack is cheap today, so it is for the machine that is watching and nobody
+ * else. Set `ONTOPLANO_HEALTH_TOKEN` and send it as `x-health-token` or
+ * `?token=`; without one configured, nothing is ever disclosed.
  */
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ request, url }) => {
 	const started = Date.now();
 
-	let ok = true;
-	let database = 'ok';
+	const want = healthToken();
+	const given = request.headers.get('x-health-token') ?? url.searchParams.get('token');
+	const trusted = tokenMatches(want, given);
 
-	try {
-		db.get(sql`select 1`);
-	} catch (error) {
-		ok = false;
-		database = error instanceof Error ? error.message.slice(0, 200) : 'unavailable';
-	}
+	const database = databaseReachable();
+	const ok = database === 'ok';
+
+	// The resource numbers never decide `ok`. A disk at 90% is something to be
+	// woken up about; it is not a reason to tell a load balancer to take the
+	// site out of rotation while it is still serving every request correctly.
+	const detail = trusted ? resources() : null;
 
 	return new Response(
 		JSON.stringify({
 			ok,
 			database,
 			uptimeSeconds: Math.round(process.uptime()),
-			checkedInMs: Date.now() - started
+			checkedInMs: Date.now() - started,
+			...(detail ? { resources: detail, warnings: warnings(detail) } : {})
 		}),
 		{
 			status: ok ? 200 : 503,
