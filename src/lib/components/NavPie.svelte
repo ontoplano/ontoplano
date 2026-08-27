@@ -1,8 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
-	import Icon from '$lib/components/Icon.svelte';
-	import { palette } from '$lib/palette.svelte';
 	import { ROOMS, roomFor } from '$lib/sections-nav';
 	import RadialMenu from '$lib/components/RadialMenu.svelte';
 
@@ -37,8 +34,7 @@
 		if (window.innerWidth >= 1024) return 0;
 		const style = getComputedStyle(document.documentElement);
 		const px = (name: string) => parseFloat(style.getPropertyValue(name)) || 0;
-		// The bar, plus the footer row that hangs below the ring.
-		return px('--mobile-nav-height') + px('--safe-bottom') + 60;
+		return px('--mobile-nav-height') + px('--safe-bottom') + 16;
 	}
 
 	const wedges = ROOMS.map((r) => ({ key: r.key, label: r.label, icon: r.icon, color: r.color }));
@@ -74,38 +70,6 @@
 	{origin}
 	{dragging}
 	bottomInset={inset}
-	{footer}
 	onselect={enter}
 	onclose={() => (open = false)}
 />
-
-<!--
-	Not rooms, but they were on the menu the pie replaced and a thumb still has to
-	reach them. Below the ring rather than in it: a wedge is somewhere you go, and
-	signing out is not.
--->
-{#snippet footer()}
-	<button
-		type="button"
-		onclick={() => (palette.open = true)}
-		class="flex items-center gap-2 border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-card"
-	>
-		<Icon name="search" size={16} /> Search
-	</button>
-	<a
-		href="/settings/account"
-		class="flex items-center gap-2 border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-card"
-	>
-		<Icon name="settings" size={16} /> Settings
-	</a>
-	<form method="post" action="/login?/signOut" use:enhance>
-		<button
-			type="submit"
-			class="flex items-center gap-2 border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-card"
-			title="Sign out"
-			aria-label="Sign out"
-		>
-			<Icon name="sign-out" size={16} />
-		</button>
-	</form>
-{/snippet}

@@ -213,9 +213,10 @@ test.describe('with a finger', () => {
 			await expect(page.locator('.pie').getByText(room, { exact: true })).toBeVisible();
 		}
 
-		// Settings and signing out were on the sheet this replaced; they cannot
-		// have gone anywhere.
-		await expect(page.getByRole('link', { name: /settings/i })).toBeVisible();
-		await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
+		// Settings and search are not wedges — they are destinations, and they sit
+		// in the bar beside the two pies rather than hanging off one.
+		await page.keyboard.press('Escape');
+		await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Search' })).toBeVisible();
 	});
 });

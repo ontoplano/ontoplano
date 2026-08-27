@@ -1,6 +1,7 @@
 <script lang="ts">
 	import './layout.css';
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { afterNavigate, goto } from '$app/navigation';
 	import type { LayoutServerData } from './$types';
@@ -460,13 +461,13 @@
 		</main>
 
 		<!--
-			Two doors, and nothing else.
+			Four icons, and no words.
 
-			The bar used to be four sections and a menu, which is a list you read
-			every time. Both pies do the same job better — one for writing something
-			down, one for going somewhere — and once you have used them for a week
-			the four shortcuts are four things in the way. Press either and drag into
-			a wedge; tap it and the pie waits.
+			Settings and search used to hang off the pie itself, where they could not
+			be dragged to and — after a mouse tap left the swallow flag set — could
+			not be clicked either. They are not wedges; they are destinations, and
+			they belong in the bar with the two pies. Icons alone, because four
+			labels at 390px is four truncations.
 		-->
 		<nav
 			class="relative z-40 shrink-0 border-t border-chrome-line bg-chrome lg:hidden"
@@ -474,26 +475,37 @@
 			aria-label="Primary"
 		>
 			<div class="flex" style="height: var(--mobile-nav-height)">
-				<button
-					onpointerdown={(e) => pie?.summon(e)}
-					class="pie-handle flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] {pieOpen
-						? 'font-semibold text-chrome-ink'
+				<a
+					href={resolve('/settings/account')}
+					class="flex flex-1 items-center justify-center {page.url.pathname.startsWith('/settings')
+						? 'text-chrome-ink'
 						: 'text-chrome-muted'}"
-					aria-label="Write something down"
+					aria-label="Settings"
+					title="Settings"
 				>
-					<Icon name="plus" size={22} />
-					Write
+					<Icon name="settings" size={22} />
+				</a>
+
+				<button
+					type="button"
+					onclick={() => (palette.open = true)}
+					class="flex flex-1 items-center justify-center text-chrome-muted"
+					aria-label="Search"
+					title="Search"
+				>
+					<Icon name="search" size={22} />
 				</button>
 
 				<button
 					onpointerdown={(e) => rooms?.summon(e)}
-					class="pie-handle flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] {roomsOpen
-						? 'font-semibold text-chrome-ink'
+					class="pie-handle flex flex-1 items-center justify-center {roomsOpen
+						? 'text-chrome-ink'
 						: 'text-chrome-muted'}"
 					aria-label="Go to a section"
+					title="Go to a section"
 				>
 					<svg
-						class="h-5 w-5"
+						class="h-6 w-6"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
@@ -503,7 +515,17 @@
 					>
 						<path d="M6 14l6-6 6 6" />
 					</svg>
-					Go to
+				</button>
+
+				<button
+					onpointerdown={(e) => pie?.summon(e)}
+					class="pie-handle flex flex-1 items-center justify-center {pieOpen
+						? 'text-chrome-ink'
+						: 'text-chrome-muted'}"
+					aria-label="Write something down"
+					title="Write something down"
+				>
+					<Icon name="plus" size={24} />
 				</button>
 			</div>
 		</nav>
