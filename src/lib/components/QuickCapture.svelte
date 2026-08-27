@@ -3,6 +3,7 @@
 	import { autofocus } from '$lib/actions/autofocus';
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import { CAPTURES, captureByShortcut, type Capture } from '$lib/capture';
 
 	/**
 	 * Capture, on a phone.
@@ -23,66 +24,11 @@
 		inline = false
 	}: { error?: string | null; inline?: boolean } = $props();
 
-	type Capture = {
-		key: string;
-		/** The keystroke that opens it, shown in the label. */
-		shortcut: string;
-		label: string;
-		icon: IconName;
-		action: string;
-		field: string;
-		placeholder: string;
-		multiline: boolean;
-	};
-
-	const CAPTURES: Capture[] = [
-		{
-			key: 'idea',
-			shortcut: 'i',
-			label: 'Idea',
-			icon: 'ideas',
-			action: '/ideas?/create',
-			field: 'content',
-			placeholder: 'the thing you would otherwise forget',
-			multiline: true
-		},
-		{
-			key: 'todo',
-			shortcut: 't',
-			label: 'Todo',
-			icon: 'check',
-			action: '/planner/todo?/create',
-			field: 'title',
-			placeholder: 'something to do, no date yet',
-			multiline: false
-		},
-		{
-			key: 'note',
-			shortcut: 'd',
-			label: 'Note',
-			icon: 'diary',
-			action: '/diary?/create',
-			field: 'content',
-			placeholder: "what happened, or what you're thinking",
-			multiline: true
-		},
-		{
-			key: 'buy',
-			shortcut: 'b',
-			label: 'Buy',
-			icon: 'shopping',
-			action: '/shopping?/create',
-			field: 'name',
-			placeholder: 'something to pick up',
-			multiline: false
-		}
-	];
-
 	let open = $state<Capture | null>(null);
 
 	/** Opened by key from the page that hosts this. */
 	export function openByShortcut(key: string): boolean {
-		const match = CAPTURES.find((c) => c.shortcut === key);
+		const match = captureByShortcut(key);
 		if (!match) return false;
 		open = match;
 		return true;

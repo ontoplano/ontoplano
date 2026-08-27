@@ -9,6 +9,7 @@
 	import type { SectionKey } from '$lib/colors.js';
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
 	import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
+	import CapturePie from '$lib/components/CapturePie.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import UndoToast from '$lib/components/UndoToast.svelte';
 	import { undo } from '$lib/undo.svelte';
@@ -17,6 +18,8 @@
 
 	let { children, data }: { children: any; data: LayoutServerData } = $props();
 	let menuOpen = $state(false);
+	let pie = $state<CapturePie | undefined>();
+	let pieOpen = $state(false);
 
 	function categoryStyle(): string {
 		return data.categories
@@ -303,6 +306,16 @@
 						Search
 						<kbd class="kbd-hint border border-chrome-line px-1 text-xs">{key} K</kbd>
 					</button>
+					<!-- Capture, beside search: the two things you reach for without
+					     having decided where you are going. -->
+					<button
+						onpointerdown={(e) => pie?.summon(e)}
+						class="flex h-8 w-8 items-center justify-center border border-chrome-line bg-chrome-raised text-chrome-muted shadow-sm transition hover:text-chrome-ink hover:brightness-125"
+						aria-label="Write something down"
+						title="Write something down"
+					>
+						<Icon name="plus" size={16} />
+					</button>
 					<span class="text-sm text-chrome-muted">{data.user.name}</span>
 					<button
 						onclick={() => (menuOpen = !menuOpen)}
@@ -393,6 +406,23 @@
 		>
 			{@render children()}
 		</main>
+
+		<!--
+			Capture, under the thumb.
+
+			Bottom-centre and floating clear of the bar, because writing something
+			down is the thing you do most often and the one you are least willing to
+			go looking for. Press and flick, or tap and pick.
+		-->
+		<button
+			onpointerdown={(e) => pie?.summon(e)}
+			class="capture-trigger lg:hidden"
+			class:is-open={pieOpen}
+			aria-label="Write something down"
+			title="Write something down"
+		>
+			<Icon name="plus" size={22} />
+		</button>
 
 		<!-- Thumb-zone navigation. Primary actions belong where a thumb rests,
 		     not in a corner reachable only by shifting grip. -->
@@ -526,8 +556,45 @@
 		{/if}
 		<ShortcutHelp />
 		<CommandPalette />
+		<CapturePie bind:this={pie} onopenchange={(v) => (pieOpen = v)} />
 		<UndoToast />
 	</div>
 {:else}
 	{@render children()}
 {/if}
+
+<style>
+	/*
+	 * The thumb trigger.
+	 *
+	 * Floating clear of the navigation bar rather than in it: the bar is five
+	 * destinations and this is not a destination, and a sixth slot at 390px
+	 * would squeeze all six. `touch-action: none` so a flick out of it is a
+	 * gesture rather than a page scroll.
+	 */
+	.capture-trigger {
+		position: fixed;
+		bottom: calc(var(--mobile-nav-height) + var(--safe-bottom) + 0.75rem);
+		left: 50%;
+		z-index: 45;
+		display: flex;
+		height: 3.25rem;
+		width: 3.25rem;
+		translate: -50% 0;
+		align-items: center;
+		justify-content: center;
+		border-radius: 9999px;
+		border: 1px solid var(--color-chrome);
+		background-color: var(--color-chrome);
+		color: var(--color-chrome-ink);
+		box-shadow: var(--shadow-overlay);
+		touch-action: none;
+		transition: opacity 120ms ease;
+	}
+
+	/* Out of the way of the menu it just opened. */
+	.capture-trigger.is-open {
+		opacity: 0;
+		pointer-events: none;
+	}
+</style>
