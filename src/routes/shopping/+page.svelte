@@ -31,6 +31,7 @@
 	let showSnoozed = $state(false);
 	let confirmingDelete: number | null = $state(null);
 	let showCategories = $state(false);
+	let addingCategory = $state(false);
 
 	/**
 	 * Ticking things off in a shop, where there is no signal.
@@ -478,10 +479,10 @@
 									{/if}
 									<button
 										onclick={() => startEdit(item)}
-										class="text-xs text-gray-400 hover:text-gray-700"
+										class="text-gray-400 hover:text-gray-700"
+										title="Edit"
+										aria-label="Edit {item.name}"><Icon name="edit" /></button
 									>
-										edit
-									</button>
 									{#if confirmingDelete === item.id}
 										<form
 											method="POST"
@@ -517,10 +518,10 @@
 											onclick={() => {
 												confirmingDelete = item.id;
 											}}
-											class="text-xs text-gray-400 hover:text-red-500"
+											class="text-gray-400 hover:text-red-500"
+											title="Delete"
+											aria-label="Delete {item.name}"><Icon name="trash" /></button
 										>
-											&times;
-										</button>
 									{/if}
 								</div>
 							{/each}
@@ -602,10 +603,10 @@
 						{/if}
 						<button
 							onclick={() => startEdit(item)}
-							class="text-xs text-gray-400 hover:text-gray-700"
+							class="text-gray-400 hover:text-gray-700"
+							title="Edit"
+							aria-label="Edit {item.name}"><Icon name="edit" /></button
 						>
-							edit
-						</button>
 						{#if confirmingDelete === item.id}
 							<form
 								method="POST"
@@ -641,10 +642,10 @@
 								onclick={() => {
 									confirmingDelete = item.id;
 								}}
-								class="text-xs text-gray-400 hover:text-red-500"
+								class="text-gray-400 hover:text-red-500"
+								title="Delete"
+								aria-label="Delete {item.name}"><Icon name="trash" /></button
 							>
-								&times;
-							</button>
 						{/if}
 					</div>
 				{/each}
@@ -708,36 +709,61 @@
 				</li>
 			{/each}
 		</ul>
-	</form>
-
-	<!-- Its own form and its own button: making a category and saying which
-	     categories hold food are two acts, and one Save cannot mean both. -->
-	<form
-		method="post"
-		action="?/createCategory"
-		use:enhance={() =>
-			async ({ update, result }) => {
-				await update({ reset: result.type === 'success' });
-			}}
-		class="mt-4 border-t border-gray-200 pt-4"
-	>
-		<label class="block">
-			<span class="eyebrow text-gray-500">New category</span>
-			<input name="name" required autocomplete="off" placeholder="Frozen" class="input mt-1" />
-		</label>
-		<div class="mt-2 flex flex-wrap items-center justify-between gap-2">
-			<label class="flex items-center gap-2 text-sm text-gray-600">
-				<input type="checkbox" name="isFood" value="true" />
-				It holds food
-			</label>
-			<button class="btn btn-sm"><Icon name="plus" /> Add category</button>
+		<div class="mt-3 flex justify-end">
+			<button
+				type="submit"
+				form="categories-form"
+				class="btn btn-primary btn-sm"
+				title="Save"
+				aria-label="Save which categories hold food"><Icon name="check" /></button
+			>
 		</div>
 	</form>
 
+	<!-- Its own form and its own button, behind a disclosure: making a category
+	     and saying which categories hold food are two acts, and one Save cannot
+	     mean both. -->
+	<div class="mt-4 border-t border-gray-200 pt-4">
+		{#if !addingCategory}
+			<button onclick={() => (addingCategory = true)} class="btn btn-sm">
+				<Icon name="plus" /> New category
+			</button>
+		{/if}
+	</div>
+
+	{#if addingCategory}
+		<form
+			method="post"
+			action="?/createCategory"
+			use:enhance={() =>
+				async ({ update, result }) => {
+					await update({ reset: result.type === 'success' });
+					if (result.type === 'success') addingCategory = false;
+				}}
+			class="mt-2"
+		>
+			<label class="block">
+				<span class="eyebrow text-gray-500">New category</span>
+				<input name="name" required autocomplete="off" placeholder="Frozen" class="input mt-1" />
+			</label>
+			<div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+				<label class="flex items-center gap-2 text-sm text-gray-600">
+					<input type="checkbox" name="isFood" value="true" />
+					It holds food
+				</label>
+				<div class="flex items-center gap-2">
+					<button type="button" class="btn btn-sm" onclick={() => (addingCategory = false)}>
+						Cancel
+					</button>
+					<button class="btn btn-primary btn-sm" title="Add" aria-label="Add the category">
+						<Icon name="plus" />
+					</button>
+				</div>
+			</div>
+		</form>
+	{/if}
+
 	{#snippet footer()}
 		<button type="button" class="btn" onclick={() => (showCategories = false)}>Close</button>
-		<button type="submit" form="categories-form" class="btn btn-primary"
-			>Save what holds food</button
-		>
 	{/snippet}
 </Modal>
