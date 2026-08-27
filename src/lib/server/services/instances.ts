@@ -12,7 +12,7 @@ import { and, asc, eq, gte, lt } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 
 import { db } from '../db/index.js';
-import { isStatus, timingFor } from '../../task-status.js';
+import { isStatus, isTiming, timingFor } from '../../task-status.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 // `created` is also a local counter in this file, hence the alias.
@@ -405,6 +405,26 @@ const TIME_PATTERN = /^\d{2}:\d{2}$/;
  * skipping a category-mode task also forgets which activity it turned out to
  * be, since that answer belonged to the attempt.
  */
+/**
+ * Say when it actually happened, rather than when the clock says you said so.
+ *
+ * Marking a day's work done at the end of the day makes everything "late",
+ * which is true of the tick and false of the doing. This is the correction, and
+ * it is one click on the badge rather than an edit form.
+ */
+export function setInstanceTiming(ctx: Ctx, id: number, raw: unknown): void {
+	const timing = raw === '' || raw === null || raw === undefined ? null : raw;
+	if (timing !== null && !isTiming(timing)) throw new ValidationError('Unknown timing');
+
+	const res = db
+		.update(taskInstances)
+		.set({ timing })
+		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('task');
+}
+
 export function setInstanceStatus(ctx: Ctx, id: number, rawStatus: unknown): void {
 	if (!isStatus(rawStatus)) throw new ValidationError('Invalid status');
 	const status = rawStatus;

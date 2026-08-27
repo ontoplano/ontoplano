@@ -129,6 +129,7 @@
 	import { GLOBAL_SHORTCUTS } from '$lib/shortcuts';
 	import Icon from '$lib/components/Icon.svelte';
 	import { dev } from '$app/environment';
+	import { commandKey } from '$lib/platform';
 
 	function handleGlobalKeydown(e: KeyboardEvent) {
 		if (
@@ -199,6 +200,13 @@
 
 			location.reload();
 		});
+	});
+
+	// Reads the keyboard on hydration; `Ctrl` until then, which is the
+	// commoner answer.
+	let key = $state('Ctrl');
+	$effect(() => {
+		key = commandKey();
 	});
 </script>
 
@@ -279,14 +287,14 @@
 				</div>
 				<div class="menu-container relative hidden items-center gap-3 lg:flex">
 					<!-- A keyboard-only feature is an invisible one. The box says the app
-					     can be searched; ⌘K is for after you know that. -->
+					     can be searched; the shortcut is for after you know that. -->
 					<button
 						onclick={() => (palette.open = true)}
 						class="flex items-center gap-2 border border-chrome-line bg-chrome-raised px-3 py-1.5 text-sm text-chrome-muted transition hover:text-chrome-ink hover:brightness-125"
 					>
 						<Icon name="search" size={14} />
 						Search
-						<kbd class="kbd-hint border border-chrome-line px-1 text-xs">⌘K</kbd>
+						<kbd class="kbd-hint border border-chrome-line px-1 text-xs">{key} K</kbd>
 					</button>
 					<span class="text-sm text-chrome-muted">{data.user.name}</span>
 					<button

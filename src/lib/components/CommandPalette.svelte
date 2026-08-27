@@ -54,6 +54,15 @@
 			return;
 		}
 
+		// `/` as well, because Ctrl+K is the browser's own search box in Firefox
+		// and this should not be a fight over a key. Only when nothing is being
+		// typed into, which is the same guard every other shortcut here uses.
+		if (!palette.open && e.key === '/' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
+			e.preventDefault();
+			show();
+			return;
+		}
+
 		if (!palette.open) return;
 
 		if (e.key === 'Escape') {
