@@ -809,8 +809,9 @@
 				<header
 					class="flex items-center justify-between border-b border-gray-200 bg-white px-3 py-2"
 				>
-					<!-- Not "Todo": the status column beside it is "To do", and two
-					     columns a word apart meaning different things is a puzzle. -->
+					<!-- The same undated tasks the plan and `/planner/todo` call Anytime.
+					     The status column beside it is "Pending", so the two no longer
+					     read as the same word. -->
 					<span class="eyebrow text-gray-500">Anytime</span>
 					<span class="tabular text-xs text-gray-400">{railCards.length}</span>
 				</header>

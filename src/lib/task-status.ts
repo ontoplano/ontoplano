@@ -24,7 +24,10 @@ export function isTiming(value: unknown): value is Timing {
 }
 
 export const STATUS_LABELS: Record<Status, string> = {
-	todo: 'To do',
+	// "Pending" rather than "To do": the board's other column is the list of
+	// undated tasks, and two columns a word apart meaning different things is a
+	// puzzle. That list is "Anytime" everywhere; this is the state a task is in.
+	todo: 'Pending',
 	doing: 'Doing',
 	done: 'Done',
 	skipped: 'Skipped'

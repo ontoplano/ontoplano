@@ -14,7 +14,8 @@
 	const tabs = [
 		{ href: '/planner/plan', label: 'Plan' },
 		{ href: '/planner/board', label: 'Board' },
-		{ href: '/planner/todo', label: 'Todo' },
+		// The same undated tasks the board and the plan call "Anytime".
+		{ href: '/planner/todo', label: 'Anytime' },
 		{ href: '/planner/activities', label: 'Activities' },
 		{ href: '/planner/history', label: 'History' }
 	];

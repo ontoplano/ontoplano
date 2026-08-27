@@ -161,7 +161,7 @@
 			</button>
 		</div>
 		<button onclick={startNew} class="btn btn-primary btn-sm">
-			<Icon name="plus" /> New todo
+			<Icon name="plus" /> New task
 			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">n</kbd>
 		</button>
 	</div>
@@ -171,7 +171,7 @@
 	<Modal
 		bind:open={showForm}
 		error={form?.message}
-		title={editingId ? 'Edit todo' : 'New todo'}
+		title={editingId ? 'Edit task' : 'New task'}
 		onclose={() => (editingId = null)}
 	>
 		{@const editing = editingTodo()}
@@ -302,7 +302,7 @@
 
 	{#if visibleTodos.length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-			{showCompleted ? 'No todos yet.' : 'No pending todos.'}
+			{showCompleted ? 'Nothing here yet.' : 'Nothing waiting.'}
 		</div>
 	{:else}
 		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">

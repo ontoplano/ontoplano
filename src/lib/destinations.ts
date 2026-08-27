@@ -19,7 +19,7 @@ export const DESTINATIONS: Destination[] = [
 
 	{ label: 'Plan', group: 'Planner', href: '/planner/plan', icon: 'planner' },
 	{ label: 'Board', group: 'Planner', href: '/planner/board', icon: 'planner' },
-	{ label: 'Todo', group: 'Planner', href: '/planner/todo', icon: 'check' },
+	{ label: 'Anytime', group: 'Planner', href: '/planner/todo', icon: 'check' },
 	{ label: 'Activities', group: 'Planner', href: '/planner/activities', icon: 'tag' },
 	{ label: 'History', group: 'Planner', href: '/planner/history', icon: 'clock' },
 
