@@ -1,12 +1,20 @@
 <script lang="ts">
 	import { page } from '$app/state';
 
-	let { children }: { children: any } = $props();
+	let { children, data }: { children: any; data: { streams: { slug: string; name: string }[] } } =
+		$props();
 
-	const tabs = [
+	/**
+	 * Habits, and then whatever this account measures.
+	 *
+	 * "Weight" was a hardcoded tab, which told every stranger the app had
+	 * opinions about their body and was empty for almost all of them. Weight is
+	 * one data stream that one producer pushes; it earns a tab by existing.
+	 */
+	const tabs = $derived([
 		{ href: '/health/habits', label: 'Habits' },
-		{ href: '/health/weight', label: 'Weight' }
-	];
+		...data.streams.map((s) => ({ href: `/data/${s.slug}`, label: s.name }))
+	]);
 
 	function isActive(href: string): boolean {
 		return page.url.pathname === href;

@@ -30,7 +30,6 @@ const ROUTES = [
 	'/diary/people',
 	'/ideas',
 	'/health/habits',
-	'/health/weight',
 	'/shopping',
 	'/kitchen/recipes',
 	'/kitchen/meals',

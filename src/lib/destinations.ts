@@ -32,7 +32,6 @@ export const DESTINATIONS: Destination[] = [
 	{ label: 'Ideas', group: 'Writing', href: '/ideas', icon: 'ideas' },
 
 	{ label: 'Habits', group: 'Health', href: '/health/habits', icon: 'health' },
-	{ label: 'Weight', group: 'Health', href: '/health/weight', icon: 'health' },
 
 	{ label: 'Shopping', group: 'Kitchen', href: '/shopping', icon: 'shopping' },
 	{ label: 'Recipes', group: 'Kitchen', href: '/kitchen/recipes', icon: 'shopping' },
