@@ -8,8 +8,20 @@ ONTOPLANO_HOST ?= ontoplano.com
 dev:
 	yarn dev --port 1493
 
+# Node sizes its heap from the machine's RAM, and on a 1GB VPS that lands at
+# about 470MB — which is where the adapter-node step ran out. Raising the cap
+# above physical memory is deliberate: swap carries the difference, slowly, and
+# the build finishes instead of dying at 53 seconds with a core dump.
 build:
-	yarn build
+	@heap=$$(free -m 2>/dev/null | awk '/^Mem:/ {print $$2}'); \
+	if [ -n "$(NODE_OPTIONS)" ]; then \
+		yarn build; \
+	elif [ -n "$$heap" ] && [ "$$heap" -lt 2000 ]; then \
+		echo "Small box ($${heap}MB of RAM): giving the build a 2GB heap and letting swap take it."; \
+		NODE_OPTIONS=--max-old-space-size=2048 yarn build; \
+	else \
+		yarn build; \
+	fi
 
 preview:
 	yarn preview
