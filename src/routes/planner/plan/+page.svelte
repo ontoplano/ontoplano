@@ -232,6 +232,7 @@
 	let confirmingLoadSchemeId: number | null = $state(null);
 	let confirmingDeleteSchemeId: number | null = $state(null);
 	let confirmingClearAll = $state(false);
+	let confirmingTemplate: string | null = $state(null);
 	let showCsvImport = $state(false);
 
 	let timeInput: HTMLInputElement | undefined = $state(undefined);
@@ -1703,6 +1704,61 @@
 							{/each}
 						</div>
 					{/if}
+				</div>
+
+				<!--
+					The starter weeks, still available.
+
+					These were offered once during onboarding and then never again, so
+					anybody who skipped that step — or whose life changed in March — had
+					no way back to them. Same three weeks, same application, behind the
+					same confirmation as loading a scheme, because it replaces the plan.
+				-->
+				<div class="border border-gray-200 bg-white shadow-card">
+					<div class="eyebrow border-b border-gray-200 px-4 py-2.5 text-gray-500">
+						Start from a template
+					</div>
+					<div class="divide-y divide-gray-200">
+						{#each data.templates as template (template.key)}
+							<div class="flex items-center gap-4 px-4 py-3">
+								<div class="min-w-0 flex-1">
+									<p class="text-sm font-medium text-gray-900">{template.label}</p>
+									<p class="text-xs text-gray-500">{template.description}</p>
+								</div>
+								<form
+									method="post"
+									action="?/applyTemplate"
+									use:enhance={() => {
+										return async ({ update }) => {
+											await update();
+											confirmingTemplate = null;
+										};
+									}}
+									class="shrink-0"
+								>
+									<input type="hidden" name="key" value={template.key} />
+									{#if confirmingTemplate === template.key}
+										<button type="submit" class="btn btn-danger" use:armed>
+											This replaces your plan. Continue?
+										</button>
+									{:else}
+										<button
+											type="button"
+											onclick={() => {
+												confirmingTemplate = template.key;
+												confirmingLoadSchemeId = null;
+												confirmingDeleteSchemeId = null;
+												confirmingClearAll = false;
+											}}
+											class="btn"
+										>
+											Use
+										</button>
+									{/if}
+								</form>
+							</div>
+						{/each}
+					</div>
 				</div>
 
 				<div class="border-t border-gray-200 pt-4">

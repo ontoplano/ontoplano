@@ -1,4 +1,6 @@
 import { fail } from '@sveltejs/kit';
+import { applyTemplate, TEMPLATE_KEYS, TEMPLATES } from '$lib/server/services/onboarding';
+import { oneOf } from '$lib/server/services/validate';
 import type { Actions, PageServerLoad } from './$types';
 import { ratingsFromForm } from '$lib/ratings';
 import { listActivities, listCategories } from '$lib/server/services/activities';
@@ -191,6 +193,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		categories: listCategories(ctx),
 		activities: listActivities(ctx, { activeOnly: true }),
 		schemes: listSchemes(ctx),
+		// The starter weeks onboarding offers, offered again.
+		templates: TEMPLATES.map((t) => ({ key: t.key, label: t.label, description: t.description })),
 		weekdays: WEEKDAYS,
 		today: formatDate(today),
 		suppressions: listSuppressions(ctx, formatDate(from), formatDate(to)),
@@ -284,6 +288,22 @@ export const actions: Actions = {
 	clearAll: async ({ locals }) => {
 		try {
 			clearWeeklyPlan(buildCtx(locals.user!.id));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	applyTemplate: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			applyTemplate(
+				buildCtx(locals.user!.id),
+				oneOf(formData.get('key'), 'template', TEMPLATE_KEYS),
+				{
+					replacePlan: true
+				}
+			);
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

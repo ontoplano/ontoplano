@@ -5,6 +5,7 @@ import { activities, categories, weeklySlots } from '../db/schema.js';
 import { isOnboarded, markOnboarded, setTimezone, setWeekSettings } from '../settings.js';
 import type { Ctx } from './ctx.js';
 import { parseTimezone } from './preferences.js';
+import { clearWeeklyPlanIn } from './slots.js';
 import { stamps } from './time.js';
 import { ValidationError } from './errors.js';
 import { num, oneOf } from './validate.js';
@@ -180,46 +181,73 @@ export function completeFirstRun(ctx: Ctx, raw: FirstRunInput): TemplateKey {
 			? 6
 			: num(raw.generateDay, 'generate day', { int: true, min: 0, max: 6 });
 	const key = oneOf(raw.template, 'template', TEMPLATE_KEYS);
-	const template = templateFor(key);
 
 	setTimezone(ctx.userId, timezone);
 	setWeekSettings(ctx.userId, { firstDay, generateDay });
 
-	db.transaction((tx) => {
-		const existing = tx
-			.select({ id: categories.id, name: categories.name })
-			.from(categories)
-			.where(eq(categories.userId, ctx.userId))
-			.all();
+	applyTemplate(ctx, key, { replacePlan: false });
 
-		const byName = new Map(existing.map((c) => [c.name.toLowerCase(), c.id]));
+	markOnboarded(ctx.userId);
+	return key;
+}
+
+/**
+ * Put a starter week in, whenever somebody wants one.
+ *
+ * These templates were only ever offered during first run, and then never seen
+ * again — so somebody who skipped onboarding, or whose life changed in March,
+ * had no way back to them. This is the same application, callable later.
+ *
+ * Everything is matched by name, so applying a template twice does not give you
+ * two categories called "work" and two activities called "Study block". The
+ * blocks are the exception: `replacePlan` clears the weekly plan first, because
+ * merging one timetable into another produces a week that is neither.
+ */
+export function applyTemplate(ctx: Ctx, key: TemplateKey, options: { replacePlan: boolean }): void {
+	const template = templateFor(key);
+
+	db.transaction((tx) => {
+		const byName = new Map(
+			tx
+				.select({ id: categories.id, name: categories.name })
+				.from(categories)
+				.where(eq(categories.userId, ctx.userId))
+				.all()
+				.map((c: { id: number; name: string }) => [c.name.toLowerCase(), c.id])
+		);
 
 		for (const cat of template.categories) {
-			if (byName.has(cat.name)) continue;
+			if (byName.has(cat.name.toLowerCase())) continue;
 			const inserted = tx
 				.insert(categories)
 				.values({ userId: ctx.userId, ...cat })
 				.returning({ id: categories.id })
 				.get();
-			byName.set(cat.name, inserted.id);
+			byName.set(cat.name.toLowerCase(), inserted.id);
 		}
 
-		const activityIds = new Map<string, number>();
+		const activityIds = new Map<string, number>(
+			tx
+				.select({ id: activities.id, name: activities.name })
+				.from(activities)
+				.where(eq(activities.userId, ctx.userId))
+				.all()
+				.map((a: { id: number; name: string }) => [a.name, a.id])
+		);
+
 		for (const activity of template.activities) {
-			const categoryId = byName.get(activity.category);
+			if (activityIds.has(activity.name)) continue;
+			const categoryId = byName.get(activity.category.toLowerCase());
 			if (!categoryId) continue;
 			const inserted = tx
 				.insert(activities)
-				.values({
-					...stamps(ctx),
-					userId: ctx.userId,
-					name: activity.name,
-					categoryId
-				})
+				.values({ ...stamps(ctx), userId: ctx.userId, name: activity.name, categoryId })
 				.returning({ id: activities.id })
 				.get();
 			activityIds.set(activity.name, inserted.id);
 		}
+
+		if (options.replacePlan) clearWeeklyPlanIn(tx, ctx);
 
 		for (const block of template.blocks) {
 			const activityId = activityIds.get(block.activity);
@@ -238,9 +266,6 @@ export function completeFirstRun(ctx: Ctx, raw: FirstRunInput): TemplateKey {
 				.run();
 		}
 	});
-
-	markOnboarded(ctx.userId);
-	return key;
 }
 
 /** A zone name the browser reported, checked against what Intl actually knows. */
