@@ -1,4 +1,7 @@
-.PHONY: up up-phone up-server dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+-include instance.env
+ONTOPLANO_HOST ?= ontoplano.com
+
+.PHONY: up up-phone up-server android-lan android-check dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -191,11 +194,15 @@ APK_PORT ?= 8088
 # the one a phone on the same wifi can reach — not 127.0.0.1.
 LAN_IP := $(shell ip -4 addr show eth0 | awk '$$1 == "inet" {sub(/\/.*/, "", $$2); print $$2; exit}')
 
-# The address the app opens. Defaults to this machine on the app's port, which
-# is what a phone on the same wifi can reach. Override for a real deployment:
-#   ONTOPLANO_ORIGIN=https://plan.example.com make android
+# The address the app opens.
+#
+# The hosted instance, so `make up-phone` reinstalls the real app rather than
+# one bound to whatever address this laptop had that day. A TWA is bound to one
+# origin at build time — there is no switching it afterwards — so this is the
+# decision the build makes, and it is the same name everything else in the repo
+# uses. For a build against this machine over wifi, `make android-lan`.
 APP_PORT ?= 1493
-ONTOPLANO_ORIGIN ?= http://$(LAN_IP):$(APP_PORT)
+ONTOPLANO_ORIGIN ?= https://$(ONTOPLANO_HOST)
 
 android:
 	@# Catches an empty LAN_IP, which would otherwise build an app pointed at
@@ -209,6 +216,35 @@ android:
 	esac
 	@echo "Building against $(ONTOPLANO_ORIGIN)"
 	ONTOPLANO_ORIGIN="$(ONTOPLANO_ORIGIN)" node scripts/build-twa.mjs
+	@$(MAKE) -s android-check
+
+# Against this machine over wifi, for working on the phone without deploying.
+android-lan:
+	@$(MAKE) android ONTOPLANO_ORIGIN=http://$(LAN_IP):$(APP_PORT)
+
+# Does the server agree that this app is allowed to drop its URL bar?
+#
+# The single most common TWA complaint is "it works but it looks like a
+# browser", and the cause is always the same: the site is not serving this
+# keystore's fingerprint at /.well-known/assetlinks.json. That is invisible
+# until the app is installed, so it is worth asking the server now.
+android-check:
+	@case "$(ONTOPLANO_ORIGIN)" in https://*) ;; *) exit 0;; esac; \
+	fp=$$($(MAKE) -s android-fingerprint 2>/dev/null | head -1); \
+	body=$$(curl -fsS -m 10 "$(ONTOPLANO_ORIGIN)/.well-known/assetlinks.json" 2>/dev/null); \
+	if [ -z "$$body" ]; then \
+		echo; \
+		echo "Warning: $(ONTOPLANO_ORIGIN)/.well-known/assetlinks.json did not answer."; \
+		echo "The app will work and will show a URL bar."; \
+	elif [ -n "$$fp" ] && ! echo "$$body" | grep -qiF "$$fp"; then \
+		echo; \
+		echo "Warning: the server is not serving this keystore's fingerprint."; \
+		echo "On the server, in ~/.config/ontoplano/env:"; \
+		echo "  ANDROID_CERT_FINGERPRINTS=$$fp"; \
+		echo "then: systemctl --user restart ontoplano"; \
+	else \
+		echo "Server confirms this app: the URL bar will be hidden."; \
+	fi
 
 # Straight onto a phone over USB or wireless debugging.
 android-install: $(APK)
