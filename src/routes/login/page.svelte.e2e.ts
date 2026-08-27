@@ -6,7 +6,7 @@ test('the front page is the pitch, not a redirect to the sign-in form', async ({
 	// route still sends them here.
 	await page.goto('/');
 	await expect(page).toHaveURL('/');
-	await expect(page.getByRole('link', { name: /run it yourself/i })).toBeVisible();
+	await expect(page.getByRole('link', { name: /read the code/i })).toBeVisible();
 });
 
 test('but every other route still redirects to /login', async ({ page }) => {

@@ -4,7 +4,7 @@ import { building } from '$app/environment';
 import { auth } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { ensureUserCategories } from '$lib/server/db/ensure-categories';
-import { DEFAULT_STYLE, DEFAULT_THEME, getStyle, getTheme } from '$lib/server/settings';
+import { DEFAULT_THEME, getStyle, getTheme } from '$lib/server/settings';
 import { clientKey, rateLimit } from '$lib/server/rate-limit';
 import { checkSignUpAllowed, consumeInvite } from '$lib/server/services/registration';
 import { claimFirstAccount } from '$lib/server/services/admin';
@@ -102,7 +102,15 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
  */
 const handleTheme: Handle = ({ event, resolve }) => {
 	const theme = event.locals.user ? getTheme(event.locals.user.id) : DEFAULT_THEME;
-	const style = event.locals.user ? getStyle(event.locals.user.id) : DEFAULT_STYLE;
+	/*
+	 * A stranger gets the playful one.
+	 *
+	 * `sober` is the right default for somebody who has chosen this app and now
+	 * has to look at it for an hour a day. It is the wrong first impression: the
+	 * front page in flat grey looks like a form. Signed in, the account's own
+	 * setting wins as it always did.
+	 */
+	const style = event.locals.user ? getStyle(event.locals.user.id) : 'playful';
 
 	return resolve(event, {
 		transformPageChunk: ({ html }) =>

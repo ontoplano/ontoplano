@@ -40,7 +40,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 				yearly: describeYearly(price),
 				trialDays: price.trialDays,
 				trialRequiresCard: price.trialRequiresCard,
-				canRegister: instanceIsEmpty() || registrationMode() !== 'closed'
+				canRegister: instanceIsEmpty() || registrationMode() !== 'closed',
+				/** The address people actually type, for the sentence about plugins. */
+				host: new URL(process.env.ORIGIN ?? 'https://ontoplano.app').host
 			}
 		};
 	}
