@@ -248,17 +248,53 @@
 						</ul>
 					{/each}
 
-					<div class="flex items-center justify-between gap-3 border-t border-gray-200 px-4 py-3">
+					<!--
+						Three answers, because there are three.
+
+						Carrying into the todo list was the only one on offer and it is the
+						least common: most of what is in this list on a Sunday either
+						happened and was never ticked, or was never going to happen and you
+						have made your peace with it. One answer made the review a chore
+						with one wrong option.
+					-->
+					<div
+						class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-4 py-3"
+					>
 						<span class="text-xs text-gray-500">
 							{#if form?.carried}
 								Carried {form.carried} into the todo list.
+							{:else if form?.resolved}
+								{form.resolved} settled.
 							{:else}
 								{carrying.length} selected
 							{/if}
 						</span>
-						<button type="submit" class="btn btn-primary btn-sm" disabled={carrying.length === 0}>
-							Carry into the todo list
-						</button>
+
+						<div class="flex flex-wrap items-center gap-2">
+							<button
+								type="submit"
+								formaction="?/resolve"
+								name="status"
+								value="done"
+								class="btn btn-sm"
+								disabled={carrying.length === 0}
+							>
+								<Icon name="check" size={14} /> Done after all
+							</button>
+							<button
+								type="submit"
+								formaction="?/resolve"
+								name="status"
+								value="skipped"
+								class="btn btn-sm"
+								disabled={carrying.length === 0}
+							>
+								<Icon name="skip" size={14} /> Skipped
+							</button>
+							<button type="submit" class="btn btn-primary btn-sm" disabled={carrying.length === 0}>
+								Carry into the todo list
+							</button>
+						</div>
 					</div>
 				</form>
 			{/if}

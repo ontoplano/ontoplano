@@ -8,6 +8,7 @@ import {
 	listLines,
 	pastLines,
 	readWeek,
+	resolveLoose,
 	saveLines,
 	weekStartOf
 } from '$lib/server/services/review';
@@ -120,6 +121,25 @@ export const actions: Actions = {
 				Number(formData.get('id'))
 			);
 			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** Done, or skipped — the two answers that are not "carry it forward". */
+	resolve: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			const raw = String(formData.get('status') ?? '');
+			if (raw !== 'done' && raw !== 'skipped') throw new ValidationError('Invalid status');
+
+			const resolved = resolveLoose(
+				buildCtx(locals.user!.id),
+				weekStartOf(formData.get('weekStart'), new Date()),
+				formData.getAll('instanceId'),
+				raw
+			);
+			return { success: true, resolved };
 		} catch (e) {
 			return toActionFailure(e);
 		}

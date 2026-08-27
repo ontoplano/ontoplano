@@ -5,7 +5,7 @@ import { db } from '../db/index.js';
 import { goals, weeklyReviews } from '../db/schema.js';
 import { addDays, getMonday } from '../week-generator.js';
 import type { Ctx } from './ctx.js';
-import { listInstances } from './instances.js';
+import { listInstances, setInstanceStatus } from './instances.js';
 import { createTodo } from './todos.js';
 import { stamp, stamps } from './time.js';
 import { str } from './validate.js';
@@ -297,4 +297,34 @@ export function reviewPending(ctx: Ctx): { weekStart: string; planned: number } 
 	if (reading.planned === 0) return null;
 
 	return { weekStart: lastMonday, planned: reading.planned };
+}
+
+/**
+ * Say what actually happened to the ones that did not.
+ *
+ * Carrying into the todo list was the only answer on offer, and it is the least
+ * common one. Most of what is sitting in that list on a Sunday either happened
+ * and was never ticked, or was never going to happen and you have made your
+ * peace with it. Offering only "carry it" made the review a chore with one
+ * wrong answer.
+ *
+ * Ids are checked against the week's own loose list rather than trusted, which
+ * makes this ownership-safe by construction: an id from another account is not
+ * in that list, so nothing happens and nothing says so (I3).
+ */
+export function resolveLoose(
+	ctx: Ctx,
+	weekStart: string,
+	rawIds: unknown[],
+	status: 'done' | 'skipped'
+): number {
+	const wanted = new Set(rawIds.map((v) => Number(v)).filter((n) => Number.isInteger(n) && n > 0));
+	if (wanted.size === 0) return 0;
+
+	const { loose } = readWeek(ctx, weekStart);
+	const mine = loose.filter((l) => wanted.has(l.id));
+
+	for (const item of mine) setInstanceStatus(ctx, item.id, status);
+
+	return mine.length;
 }

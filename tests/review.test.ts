@@ -179,3 +179,32 @@ describe('carrying the unfinished forward', () => {
 		expect(s.review.carryIntoTodos(ctx, MONDAY, [999_999])).toBe(0);
 	});
 });
+
+describe('saying what actually happened', () => {
+	test('a block can be marked done from the review', () => {
+		const { loose } = s.review.readWeek(ctx, MONDAY);
+		const target = loose[0];
+
+		expect(s.review.resolveLoose(ctx, MONDAY, [target.id], 'done')).toBe(1);
+
+		const after = s.review.readWeek(ctx, MONDAY);
+		expect(after.loose.some((l) => l.id === target.id)).toBe(false);
+		expect(after.reading.done).toBeGreaterThan(0);
+	});
+
+	test('or skipped, which is a different fact about the week', () => {
+		const { loose } = s.review.readWeek(ctx, MONDAY);
+		const target = loose[0];
+
+		expect(s.review.resolveLoose(ctx, MONDAY, [target.id], 'skipped')).toBe(1);
+		expect(s.review.readWeek(ctx, MONDAY).reading.skipped).toBeGreaterThan(0);
+	});
+
+	test('an id from another account resolves nothing', () => {
+		const { loose } = s.review.readWeek(ctx, MONDAY);
+		if (loose.length === 0) return;
+
+		expect(s.review.resolveLoose(theirs, MONDAY, [loose[0].id], 'done')).toBe(0);
+		expect(s.review.readWeek(ctx, MONDAY).loose.some((l) => l.id === loose[0].id)).toBe(true);
+	});
+});
