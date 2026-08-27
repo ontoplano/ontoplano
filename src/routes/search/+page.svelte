@@ -27,13 +27,25 @@
 			class="input"
 			aria-label="Search"
 		/>
+		<!--
+			The syntax, where somebody will meet it.
+
+			A feature nobody is told about is a feature for the person who wrote it.
+			Two examples cost one line and teach the whole thing.
+		-->
+		<p class="mt-1.5 text-xs text-gray-500">
+			Narrow it: <code class="rounded bg-gray-100 px-1">todo:</code>,
+			<code class="rounded bg-gray-100 px-1">goal:</code>,
+			<code class="rounded bg-gray-100 px-1">note:</code> — or
+			<code class="rounded bg-gray-100 px-1">in:kitchen</code> for one notebook.
+		</p>
 	</form>
 
 	{#if data.q.trim().length < MIN_QUERY}
 		<EmptyState
 			icon="tag"
 			title="What are you looking for?"
-			description="Notes, diary entries, todos, blocks, goals, ideas, people, shopping and activities — all of it at once."
+			description="Notes, diary entries, todos, blocks, goals, ideas, people, shopping and activities — all of it at once, or one kind at a time."
 		/>
 	{:else if total === 0}
 		<EmptyState icon="tag" title="Nothing matches “{data.q}”" />

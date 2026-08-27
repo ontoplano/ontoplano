@@ -187,6 +187,12 @@
 				<span
 					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">esc</kbd> close</span
 				>
+				<!-- The same syntax the search page teaches, where somebody typing is
+				     most likely to want it. -->
+				<span class="ml-auto"
+					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">todo:</kbd>
+					<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">in:</kbd> narrow</span
+				>
 			</div>
 		</div>
 	</div>

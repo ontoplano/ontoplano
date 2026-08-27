@@ -26,11 +26,25 @@ import {
 	shoppingItems,
 	weeklySlots
 } from '../db/schema.js';
-import { KIND_LABELS, MIN_QUERY, SEARCH_KINDS, type Hit, type SearchKind } from '../../search.js';
+import {
+	KIND_LABELS,
+	MIN_QUERY,
+	parseQuery,
+	SEARCH_KINDS,
+	type Hit,
+	type SearchKind
+} from '../../search.js';
 import type { Ctx } from './ctx.js';
 import { str } from './validate.js';
 
-export { KIND_LABELS, MIN_QUERY, SEARCH_KINDS, type Hit, type SearchKind } from '../../search.js';
+export {
+	KIND_LABELS,
+	MIN_QUERY,
+	parseQuery,
+	SEARCH_KINDS,
+	type Hit,
+	type SearchKind
+} from '../../search.js';
 
 const PER_KIND = 6;
 
@@ -55,16 +69,55 @@ function firstLine(text: string, max = 80): string {
 	return line.length > max ? line.slice(0, max) + '…' : line;
 }
 
+/** The kinds a notebook can hold. `in:` cannot narrow to the others. */
+const SCOPABLE: SearchKind[] = ['note', 'todo', 'block', 'goal'];
+
 export function search(ctx: Ctx, raw: unknown): Hit[] {
-	const q = String(raw ?? '').trim();
+	const parsed = parseQuery(String(raw ?? ''));
+	const q = parsed.text.trim();
 	if (q.length < MIN_QUERY) return [];
 
 	// Bounded before it reaches a query, like every other string (I8).
 	const query = str(q, 'search', { max: 200 });
-	const pattern = `%${query.replace(/[%_]/g, (c) => `\\${c}`)}%`;
+	const escape = (v: string) => v.replace(/[%_]/g, (c) => `\\${c}`);
+	const pattern = `%${escape(query)}%`;
 	const matches = (column: Parameters<typeof like>[0]) => like(column, pattern);
 
+	/**
+	 * `in:kitchen` scopes to one notebook, matched by prefix so three letters of
+	 * it will do. A name that matches nothing scopes to nothing, which is the
+	 * honest answer to a search inside a notebook that does not exist.
+	 */
+	const scope =
+		parsed.notebook === null
+			? null
+			: (db
+					.select({ id: notebooks.id })
+					.from(notebooks)
+					.where(
+						and(
+							eq(notebooks.userId, ctx.userId),
+							like(notebooks.title, `${escape(parsed.notebook)}%`)
+						)
+					)
+					.limit(1)
+					.get()?.id ?? -1);
+
+	/**
+	 * A prefix narrows before the query runs rather than after.
+	 *
+	 * Filtering the finished list would still cost nine table scans to throw
+	 * eight of them away, and the whole point of typing `todo:` is that you
+	 * already know where the thing is.
+	 */
+	const wants = (kind: SearchKind) =>
+		(parsed.kinds === null || parsed.kinds.includes(kind)) &&
+		(scope === null || SCOPABLE.includes(kind));
+
 	const hits: Hit[] = [];
+	const found = (hit: Hit) => {
+		if (wants(hit.kind)) hits.push(hit);
+	};
 
 	// --- what you wrote ---------------------------------------------------------
 	for (const row of db
@@ -77,14 +130,20 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 		})
 		.from(diaryEntries)
 		.leftJoin(notebooks, eq(diaryEntries.notebookId, notebooks.id))
-		.where(and(eq(diaryEntries.userId, ctx.userId), matches(diaryEntries.content)))
+		.where(
+			and(
+				eq(diaryEntries.userId, ctx.userId),
+				matches(diaryEntries.content),
+				scope === null ? undefined : eq(diaryEntries.notebookId, scope)
+			)
+		)
 		.orderBy(desc(diaryEntries.createdAt))
 		.limit(PER_KIND * 2)
 		.all()) {
 		const inNotebook = row.notebookId !== null;
 		// The title is what you wrote. Two notes in the same notebook titled by
 		// the notebook are indistinguishable, and `#11` says nothing at all.
-		hits.push({
+		found({
 			kind: inNotebook ? 'note' : 'entry',
 			id: row.id,
 			title: firstLine(row.content),
@@ -106,7 +165,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 		)
 		.limit(PER_KIND)
 		.all())
-		hits.push({
+		found({
 			kind: 'notebook',
 			id: row.id,
 			title: row.title,
@@ -121,7 +180,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 		.orderBy(desc(ideas.createdAt))
 		.limit(PER_KIND)
 		.all())
-		hits.push({
+		found({
 			kind: 'idea',
 			id: row.id,
 			title: firstLine(row.content),
@@ -136,12 +195,13 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 		.where(
 			and(
 				eq(plannerTodos.userId, ctx.userId),
-				or(matches(plannerTodos.title), matches(plannerTodos.notes ?? sql`''`))
+				or(matches(plannerTodos.title), matches(plannerTodos.notes ?? sql`''`)),
+				scope === null ? undefined : eq(plannerTodos.notebookId, scope)
 			)
 		)
 		.limit(PER_KIND)
 		.all())
-		hits.push({
+		found({
 			kind: 'todo',
 			id: row.id,
 			title: row.title,
@@ -155,7 +215,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 		.where(and(eq(weeklySlots.userId, ctx.userId), matches(weeklySlots.label ?? sql`''`)))
 		.limit(PER_KIND)
 		.all())
-		hits.push({
+		found({
 			kind: 'block',
 			id: row.id,
 			title: row.label || 'Untitled',
@@ -171,11 +231,17 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			startTime: exceptionalSlots.startTime
 		})
 		.from(exceptionalSlots)
-		.where(and(eq(exceptionalSlots.userId, ctx.userId), matches(exceptionalSlots.label ?? sql`''`)))
+		.where(
+			and(
+				eq(exceptionalSlots.userId, ctx.userId),
+				matches(exceptionalSlots.label ?? sql`''`),
+				scope === null ? undefined : eq(exceptionalSlots.notebookId, scope)
+			)
+		)
 		.orderBy(desc(exceptionalSlots.date))
 		.limit(PER_KIND)
 		.all())
-		hits.push({
+		found({
 			kind: 'block',
 			id: row.id,
 			title: row.label || 'Untitled',
@@ -188,11 +254,15 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 		.select({ id: goals.id, title: goals.title, notes: goals.notes })
 		.from(goals)
 		.where(
-			and(eq(goals.userId, ctx.userId), or(matches(goals.title), matches(goals.notes ?? sql`''`)))
+			and(
+				eq(goals.userId, ctx.userId),
+				or(matches(goals.title), matches(goals.notes ?? sql`''`)),
+				scope === null ? undefined : eq(goals.notebookId, scope)
+			)
 		)
 		.limit(PER_KIND)
 		.all())
-		hits.push({
+		found({
 			kind: 'goal',
 			id: row.id,
 			title: row.title,
@@ -209,7 +279,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 		)
 		.limit(PER_KIND)
 		.all())
-		hits.push({
+		found({
 			kind: 'person',
 			id: row.id,
 			title: row.name,
@@ -228,7 +298,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 		)
 		.limit(PER_KIND)
 		.all())
-		hits.push({
+		found({
 			kind: 'shopping',
 			id: row.id,
 			title: row.name,
@@ -247,7 +317,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 		)
 		.limit(PER_KIND)
 		.all())
-		hits.push({
+		found({
 			kind: 'activity',
 			id: row.id,
 			title: row.name,
