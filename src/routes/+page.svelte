@@ -35,6 +35,25 @@
 		arranging = true;
 	}
 
+	/**
+	 * Moving a card without a mouse.
+	 *
+	 * Arrange mode was HTML5 drag-and-drop, which does not exist on a touch
+	 * screen at all — so on a phone the mode opened, said "drag the cards to
+	 * reorder them", and then could not be used. Two buttons work with a thumb,
+	 * with a keyboard, and with a screen reader, and for eight cards they are
+	 * quicker than dragging anyway.
+	 */
+	function move(id: DashboardCardId, delta: number) {
+		const from = order.indexOf(id);
+		const to = from + delta;
+		if (from === -1 || to < 0 || to >= order.length) return;
+
+		const next = [...order];
+		next.splice(to, 0, ...next.splice(from, 1));
+		order = next;
+	}
+
 	function onDragStart(id: DashboardCardId, e: DragEvent) {
 		dragging = id;
 		if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
@@ -229,17 +248,29 @@
 				</p>
 			</div>
 
-			<form
-				method="post"
-				action="/planner/board?/setStatus"
-				use:enhance
-				class="mt-3 shrink-0 sm:mt-0"
-			>
-				<input type="hidden" name="id" value={task.id} />
-				<input type="hidden" name="kind" value="instance" />
-				<input type="hidden" name="status" value="done" />
-				<button class="btn btn-primary"><Icon name="check" /> Done</button>
-			</form>
+			<!--
+				Two answers, because there are two.
+
+				A block you planned and did not do is not a failure the app should
+				make you argue with: some weeks the gym does not happen, and saying so
+				is the honest input. Leaving only "Done" meant the only way to tell
+				the truth was to say nothing, which is how a tracker starts lying.
+			-->
+			<div class="mt-3 flex shrink-0 items-center gap-2 sm:mt-0">
+				<form method="post" action="/planner/board?/setStatus" use:enhance>
+					<input type="hidden" name="id" value={task.id} />
+					<input type="hidden" name="kind" value="instance" />
+					<input type="hidden" name="status" value="done" />
+					<button class="btn btn-primary"><Icon name="check" /> Done</button>
+				</form>
+
+				<form method="post" action="/planner/board?/setStatus" use:enhance>
+					<input type="hidden" name="id" value={task.id} />
+					<input type="hidden" name="kind" value="instance" />
+					<input type="hidden" name="status" value="skipped" />
+					<button class="btn"><Icon name="skip" /> Skipped</button>
+				</form>
+			</div>
 		</section>
 	{/if}
 
@@ -727,12 +758,36 @@
 				>
 					{#if arranging}
 						<div
-							class="mb-1 flex items-center justify-between border border-gray-300 bg-gray-100 px-2 py-1"
+							class="mb-1 flex items-center justify-between gap-2 border border-gray-300 bg-gray-100 px-2 py-1"
 						>
-							<span class="eyebrow text-gray-600">{card.label}</span>
-							<button onclick={() => hideCard(id)} class="text-xs text-gray-500 hover:text-gray-900"
-								>Hide</button
-							>
+							<span class="eyebrow min-w-0 truncate text-gray-600">{card.label}</span>
+							<div class="flex shrink-0 items-center gap-1">
+								<button
+									onclick={() => move(id, -1)}
+									disabled={order.indexOf(id) === 0}
+									class="p-1 text-gray-600 hover:text-gray-900"
+									title="Move up"
+									aria-label="Move {card.label} up"
+								>
+									<Icon name="chevron-up" size={16} />
+								</button>
+								<button
+									onclick={() => move(id, 1)}
+									disabled={order.indexOf(id) === order.length - 1}
+									class="p-1 text-gray-600 hover:text-gray-900"
+									title="Move down"
+									aria-label="Move {card.label} down"
+								>
+									<Icon name="chevron-down" size={16} />
+								</button>
+								<button
+									onclick={() => hideCard(id)}
+									class="text-xs text-gray-500 hover:text-gray-900"
+									title="Hide this card"
+								>
+									Hide
+								</button>
+							</div>
 						</div>
 					{/if}
 					{#if id === 'todayTasks'}{@render card_todayTasks()}
@@ -751,7 +806,9 @@
 
 	{#if arranging}
 		<div class="flex flex-wrap items-center gap-2 border border-gray-200 bg-white p-3 shadow-card">
-			<span class="text-xs text-gray-500">Drag the cards to reorder them.</span>
+			<span class="text-xs text-gray-500">
+				Move the cards with the arrows<span class="kbd-hint">, or drag them</span>.
+			</span>
 			{#each data.cards.filter((c) => !order.includes(c.id)) as card (card.id)}
 				<button
 					onclick={() => (order = [...order, card.id])}
