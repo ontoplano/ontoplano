@@ -133,6 +133,16 @@
 							{#if !ingredient.inStock}
 								<span class="chip text-amber-700">to buy</span>
 							{/if}
+							<!-- Every ingredient is a shopping item; this is the way to it,
+							     for when you want to check the price or tick it off. -->
+							<a
+								href={resolve('/shopping')}
+								class="shrink-0 text-gray-500 hover:text-gray-900"
+								title="Find {ingredient.name} on the shopping list"
+								aria-label="Find {ingredient.name} on the shopping list"
+							>
+								<Icon name="shopping" size={14} />
+							</a>
 							<form method="post" action="?/removeIngredient" use:enhance>
 								<input type="hidden" name="id" value={ingredient.id} />
 								<button
