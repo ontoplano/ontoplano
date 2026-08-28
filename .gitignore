@@ -29,7 +29,6 @@ test-results
 # Scratch files
 blie
 pass.py
-/todo
 # OpenCode
 .opencode
 
@@ -70,13 +69,16 @@ my-publishing-studies/competition.md
 # Working files and machine-specific overrides. Present on a working checkout,
 # not part of the product, and not anybody else's business.
 #
-# The leading slashes matter and are not tidiness: a bare `server/` matches a
-# directory of that name at ANY depth, so it also swallowed `src/lib/server/` —
-# and every new file added there stopped appearing in `git status`. Two of them
-# were missing from the repository before anybody noticed.
-/server/
-/development/
+# The leading slashes matter and are not tidiness: an unanchored pattern
+# matches a directory of that name at ANY depth — back when this repo was named
+# `server/`, the bare pattern also swallowed `src/lib/server/`, and every new
+# file added there stopped appearing in `git status`. Two of them were missing
+# from the repository before anybody noticed.
+/the-deployment-repo/
+/a-private-repo/
 /local.mk
 AGENTS.md
 TODO.md
 CLAUDE.md
+/todo
+/todo.md
