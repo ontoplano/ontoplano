@@ -65,23 +65,13 @@ android-twa/
 temp/
 my-publishing-studies/competition.md
 
-# ── Kept on disk, kept out of the repo ───────────────────────────────────────
+# ── Local only ───────────────────────────────────────────────────────────────
 #
-# Two ignored directories, each its own git repository, each with a reason:
-#
-#   server/       how THIS deployment is built — firewall, mail, backups. Not a
-#                 secret exactly; a map, and one that only helps an attacker.
-#   development/  how this is BEING built — the queue, the planning, the notes
-#                 written straight to the agent. Nobody else's business.
-#
-# Both are still here and still used every day. They have their own history in
-# their own private repos, because these files are worth versioning; they are
-# just not worth publishing. A public repo ships its whole history.
-#
-# AGENTS.md and TODO.md at the root are symlinks into development/, so the
-# things that expect them there still find them.
+# Working files and machine-specific overrides. Present on a working checkout,
+# not part of the product, and not anybody else's business.
 server/
 development/
+local.mk
 AGENTS.md
 TODO.md
 CLAUDE.md

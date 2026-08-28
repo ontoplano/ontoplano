@@ -6,9 +6,26 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { ROLES } from '$lib/roles';
+	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+
+	/**
+	 * Which row is asking to be sure.
+	 *
+	 * Promoting somebody hands them every account on the instance, and the
+	 * button sits in a list you scroll — so it arms first, and the confirming
+	 * button is `armed` so a double-click cannot land on it.
+	 */
+	let changing = $state<string | null>(null);
+
+	const confirmed = () => {
+		return async ({ update }: { update: () => Promise<void> }) => {
+			changing = null;
+			await update();
+		};
+	};
 
 	function when(iso: string): string {
 		return new Date(iso).toLocaleDateString(undefined, {
@@ -48,7 +65,10 @@
 		{:else}
 			<div class="divide-y divide-gray-200">
 				{#each data.accounts as account (account.id)}
-					<div class="flex items-center gap-3 px-4 py-3">
+					<div
+						class="account-row flex items-center gap-3 px-4 py-3"
+						class:is-admin={account.role === 'admin' || account.isOwner}
+					>
 						<a
 							href="{resolve('/admin')}/{account.id}"
 							class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
@@ -62,20 +82,47 @@
 							</span>
 						</a>
 
-						<span class="eyebrow shrink-0 text-gray-500">{account.role}</span>
+						{#if account.isOwner}
+							<span class="badge-role badge-owner shrink-0">owner</span>
+						{:else if account.role === 'admin'}
+							<span class="badge-role badge-admin shrink-0">admin</span>
+						{:else}
+							<span class="eyebrow shrink-0 text-gray-500">{account.role}</span>
+						{/if}
 
-						{#if account.role === 'member'}
-							<form method="post" action="?/setRole" use:enhance class="shrink-0">
+						{#if account.id === data.me}
+							<!-- Your own keys are not yours to take: an instance whose last
+							     administrator demoted themselves has nobody who can undo it. -->
+							<span class="shrink-0 text-xs text-gray-500">you</span>
+						{:else if account.isOwner}
+							<span class="shrink-0 text-xs text-gray-500">always an admin</span>
+						{:else if changing === account.id}
+							<form
+								method="post"
+								action="?/setRole"
+								use:enhance={confirmed}
+								class="flex shrink-0 gap-2"
+							>
 								<input type="hidden" name="id" value={account.id} />
-								<input type="hidden" name="role" value="admin" />
-								<button class="btn btn-sm">Make admin</button>
+								<input
+									type="hidden"
+									name="role"
+									value={account.role === 'member' ? 'admin' : 'member'}
+								/>
+								<button class="btn btn-sm btn-danger" use:armed>
+									{account.role === 'member' ? 'Yes, make admin' : 'Yes, remove admin'}
+								</button>
+								<button type="button" class="btn btn-sm" onclick={() => (changing = null)}>
+									Cancel
+								</button>
 							</form>
 						{:else}
-							<form method="post" action="?/setRole" use:enhance class="shrink-0">
-								<input type="hidden" name="id" value={account.id} />
-								<input type="hidden" name="role" value="member" />
-								<button class="btn btn-sm">Remove admin</button>
-							</form>
+							<!-- Two steps, because an administrator can read and change every
+							     account on the instance, and the button sits in a list you
+							     scroll. -->
+							<button class="btn btn-sm shrink-0" onclick={() => (changing = account.id)}>
+								{account.role === 'member' ? 'Make admin' : 'Remove admin'}
+							</button>
 						{/if}
 					</div>
 				{/each}
@@ -106,3 +153,37 @@
 	Roles: {ROLES.join(', ')}. An administrator cannot change their own — the instance would be left
 	with nobody who can promote anyone.
 </p>
+
+<style>
+	/*
+	 * Administrators are the handful of accounts that can act on the others, so
+	 * "who has the keys" should be answerable by looking rather than by reading.
+	 *
+	 * A rule down the side rather than a wash: a 6% tint is invisible on the
+	 * dark theme and a heavier one is muddy on the light. A border is the same
+	 * weight in both, and it is the idiom the cards already use.
+	 */
+	.account-row.is-admin {
+		box-shadow: inset 3px 0 0 var(--section-accent);
+		background-color: color-mix(in srgb, var(--section-accent) 10%, transparent);
+	}
+
+	.badge-role {
+		border-radius: var(--radius-sm, 0);
+		padding: 0.1rem 0.45rem;
+		font-size: 0.7rem;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	.badge-admin {
+		border: 1px solid color-mix(in srgb, var(--section-accent) 45%, transparent);
+		color: var(--section-accent);
+	}
+
+	.badge-owner {
+		background-color: var(--section-accent);
+		color: var(--color-white);
+	}
+</style>

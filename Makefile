@@ -1,11 +1,12 @@
-# The private, gitignored server/ repo names the instance this builds against.
-# Absent on a fresh clone, which is why the default below exists.
+# Local overrides, if there are any.
+#
+# Anything specific to one machine or one deployment — where to deploy, which
+# host, which origin the phone app is built against — belongs in `local.mk`,
+# which is not tracked. This file is only the parts that are true for anybody
+# who clones the repository.
 -include local.mk
-# The instance this repo builds and deploys against. local.mk
-# overrides it; this is only the fallback for a checkout without one.
-ONTOPLANO_HOST ?= ontoplano.com
 
-.PHONY: up up-phone up-server deploy deploy-local deploy-check deploy-imports restart-server deploy-imports android-lan android-check doctor dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: up-phone deploy-local android-lan android-check doctor dev build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -137,67 +138,8 @@ update: deploy-local
 	@systemctl --user restart ontoplano
 	@echo "Update complete. Check: systemctl --user status ontoplano"
 
-# ─── The two things you actually run ─────────────────────────────────────────
-#
-# Both of these existed as pairs of commands typed in the right order, which is
-# a thing to get wrong at the end of a long day. `up` is the one to reach for.
-
 up-phone: android android-install
-	@echo "Phone updated."
-
-# From your laptop, over ssh. The server-side half of `up`.
-up-server: deploy
-	@echo "Server updated."
-
-# Server first on purpose: the phone is a shell around the server's pages, so a
-# phone built against a server that has not migrated yet opens onto errors.
-up: up-server up-phone
-	@echo "Everything updated."
-
-# The node the service will run, resolved at install time.
-#
-# Whatever built node_modules is the only node that can load them: better-sqlite3
-# is a native module, and Node's ABI changes between majors. Hardcoding
-# /usr/bin/node in the unit meant a box with nvm, or with NodeSource beside
-# Ubuntu's nodejs, built against one and ran against the other.
-NODE_BIN := $(shell command -v node)
-
-# ─── Which node is which ─────────────────────────────────────────────────────
-#
-# Three nodes can disagree on one box — the one your shell finds, the one that
-# compiled better-sqlite3, and the one systemd runs — and the symptom of any
-# disagreement is the same unhelpful ERR_DLOPEN_FAILED. This prints all three.
-doctor:
-	@# Walking PATH by hand rather than `type -a`: make runs recipes with
-	@# /bin/sh, and `type -a -P` is a bash builtin.
-	@echo "Nodes on PATH, in the order the shell finds them:"
-	@echo "$$PATH" | tr ':' '\n' | while read -r d; do \
-		[ -x "$$d/node" ] && printf '  %-44s %s\n' "$$d/node" "$$("$$d/node" -v 2>/dev/null)"; \
-	done; true
-	@echo
-	@printf 'The one that would be used now: %s (%s)\n' \
-		"$(NODE_BIN)" "$$($(NODE_BIN) -v 2>/dev/null || echo unknown)"
-	@printf 'Needs to be v20.19 or newer, because Vite 7 says so.\n'
-	@echo
-	@unit=$$HOME/.config/systemd/user/ontoplano.service; \
-	if [ -f "$$unit" ]; then \
-		exe=$$(sed -n 's/^ExecStart=\([^ ]*\).*/\1/p' "$$unit"); \
-		printf 'The one systemd runs:            %s (%s)\n' \
-			"$$exe" "$$($$exe -v 2>/dev/null || echo 'missing')"; \
-	else \
-		echo "No unit installed yet."; \
-	fi
-	@echo
-	@for dir in . $(PROD_DIR); do \
-		if [ -d "$$dir/node_modules" ]; then \
-			if (cd "$$dir" && $(NODE_BIN) -e "require('better-sqlite3')" 2>/dev/null); then \
-				echo "better-sqlite3 in $$dir loads under $(NODE_BIN)."; \
-			else \
-				echo "better-sqlite3 in $$dir does NOT load under $(NODE_BIN)."; \
-				echo "  rm -rf $$dir/node_modules && yarn install && make install-service"; \
-			fi; \
-		fi; \
-	done
+	@echo "Phone updated against $(ONTOPLANO_ORIGIN)."
 
 install-service: deploy-local
 	@echo "Installing ontoplano systemd service..."
@@ -268,17 +210,20 @@ APK_PORT ?= 8088
 
 # Where the phone downloads from. The first address on this machine, which is
 # the one a phone on the same wifi can reach — not 127.0.0.1.
-LAN_IP := $(shell ip -4 addr show eth0 | awk '$$1 == "inet" {sub(/\/.*/, "", $$2); print $$2; exit}')
+# Whichever address this machine would use to reach the outside world, which is
+# the one a phone on the same wifi can reach. Asking the routing table rather
+# than naming an interface, which would be one machine’s network card.
+LAN_IP := $(shell ip route get 1.1.1.1 2>/dev/null | awk '{print $$7; exit}')
 
 # The address the app opens.
 #
-# The hosted instance, so `make up-phone` reinstalls the real app rather than
-# one bound to whatever address this laptop had that day. A TWA is bound to one
-# origin at build time — there is no switching it afterwards — so this is the
-# decision the build makes, and it is the same name everything else in the repo
-# uses. For a build against this machine over wifi, `make android-lan`.
+# A TWA is bound to one origin at build time and there is no switching it
+# afterwards, so there is no sensible default: set ONTOPLANO_ORIGIN in local.mk
+# for the instance you deploy, or use `make android-lan` to build against this
+# machine over wifi.
 APP_PORT ?= 1493
 ONTOPLANO_ORIGIN ?= https://$(ONTOPLANO_HOST)
+ONTOPLANO_HOST ?=
 
 android:
 	@# Catches an empty LAN_IP, which would otherwise build an app pointed at

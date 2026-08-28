@@ -1,4 +1,4 @@
-import { and, count, desc, eq, like, or } from 'drizzle-orm';
+import { and, count, desc, eq, like, or, sql } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { session, user } from '../db/auth.schema.js';
@@ -38,6 +38,12 @@ export type Account = {
 	sessions: number;
 	/** What they are entitled to right now, in the words the billing page uses. */
 	plan: string;
+	/**
+	 * Whoever installed this instance, who is an administrator whatever the
+	 * `role` column says. Worth marking, because demoting them would appear to
+	 * work and change nothing.
+	 */
+	isOwner: boolean;
 };
 
 export function roleOf(userId: string): Role {
@@ -89,7 +95,10 @@ export function searchAccounts(query: string, limit = 25): Account[] {
 					// page usually wants to see.
 					undefined
 		)
-		.orderBy(desc(user.createdAt))
+		// Administrators first. They are the handful of accounts that can do
+		// anything to the others, so "who has the keys" should be answerable by
+		// looking at the top of the list rather than by reading all of it.
+		.orderBy(sql`case when ${user.role} = 'admin' then 0 else 1 end`, desc(user.createdAt))
 		.limit(limit)
 		.all();
 
@@ -101,7 +110,8 @@ export function searchAccounts(query: string, limit = 25): Account[] {
 		role: isRole(row.role) ? row.role : 'member',
 		createdAt: new Date(row.createdAt).toISOString(),
 		sessions: sessionCount(row.id),
-		plan: describePlan(row.id)
+		plan: describePlan(row.id),
+		isOwner: isInstanceOwner(row.id)
 	}));
 }
 
@@ -129,7 +139,8 @@ export function accountById(id: string): Account {
 		role: isRole(row.role) ? row.role : 'member',
 		createdAt: new Date(row.createdAt).toISOString(),
 		sessions: sessionCount(row.id),
-		plan: describePlan(row.id)
+		plan: describePlan(row.id),
+		isOwner: isInstanceOwner(row.id)
 	};
 }
 
@@ -144,7 +155,19 @@ export function setRole(actorId: string, subjectId: string, raw: unknown): void 
 
 	const role = str(raw, 'role', { max: 20 });
 	if (!isRole(role)) throw new ValidationError('Unknown role');
+
+	// You cannot take your own keys away. An instance whose last administrator
+	// demoted themselves has nobody who can undo it, and the mistake is one
+	// click from the button that does the legitimate thing.
 	if (actorId === subjectId) throw new ValidationError('Change somebody else, not yourself');
+
+	// And you cannot take the owner's, because you would not be taking anything:
+	// whoever installed the instance is an administrator by virtue of being
+	// first, whatever this column says. Letting the change succeed would show a
+	// "member" badge on somebody who still has every power.
+	if (isInstanceOwner(subjectId) && role !== 'admin') {
+		throw new ValidationError('This account owns the instance and is always an administrator');
+	}
 
 	const result = db.update(user).set({ role }).where(eq(user.id, subjectId)).run();
 	if (result.changes === 0) throw new NotFoundError('account');

@@ -2,13 +2,16 @@ import type { Actions, PageServerLoad } from './$types';
 import { recentEvents, searchAccounts, setRole } from '$lib/server/services/admin';
 import { toActionFailure } from '$lib/server/services/errors';
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
 	const query = url.searchParams.get('q') ?? '';
 
 	return {
 		query,
 		accounts: searchAccounts(query),
-		events: recentEvents()
+		events: recentEvents(),
+		// So the page can leave your own row alone rather than offering a button
+		// the server will refuse.
+		me: locals.user!.id
 	};
 };
 

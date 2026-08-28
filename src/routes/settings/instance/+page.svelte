@@ -185,6 +185,20 @@
 		title="Who can register"
 		description="An instance on the open internet with sign-up left open is one that somebody else will use."
 	>
+		{#if data.effectiveRegistration !== data.config.registration.mode}
+			<!--
+				The bug this fixes: the radios showed the file while the environment
+				was forcing something else, so the page said "Closed" on an instance
+				anybody could join. What is stored and what is in force are two
+				different facts and the page has to show both.
+			-->
+			<p class="mb-4 border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+				<strong>{data.effectiveRegistration}</strong> right now, set in the server's environment —
+				{#if data.staging}ONTOPLANO_STAGING{:else}ONTOPLANO_REGISTRATION{/if} overrides what is chosen
+				here. These buttons are what will apply once it is unset.
+			</p>
+		{/if}
+
 		<form method="post" action="?/setRegistration" use:enhance class="space-y-3">
 			{#each REGISTRATION_MODES as mode (mode.key)}
 				<label class="flex cursor-pointer items-start gap-3">
