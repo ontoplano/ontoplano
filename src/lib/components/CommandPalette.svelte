@@ -134,7 +134,7 @@
 {#if palette.open}
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div
-		class="fixed inset-0 z-50 flex items-start justify-center bg-gray-900/40 px-4 pt-[12vh]"
+		class="fixed inset-0 z-50 flex items-start justify-center bg-scrim px-4 pt-[12vh]"
 		onclick={(e) => e.target === e.currentTarget && hide()}
 	>
 		<div class="w-full max-w-xl border border-gray-200 bg-white shadow-overlay" role="dialog">

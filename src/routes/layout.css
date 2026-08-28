@@ -48,6 +48,19 @@
 	 */
 	--max-width-page: 110rem;
 
+	/*
+	 * The dimmer behind an overlay.
+	 *
+	 * Its own token because it must not ride the ramp. The gray ramp inverts in
+	 * dark mode and so do `white` and `black` — which turned `bg-black/40`, the
+	 * scrim under the pie menu, into white at 40% on a dark page: a flashbang
+	 * every time somebody opened the menu they open most often. A scrim is not a
+	 * colour that flips with the theme, it is a fill that always darkens; the
+	 * dark value is heavier because 40% black over an already dark page reads as
+	 * nothing at all.
+	 */
+	--color-scrim: rgb(15 23 42 / 0.45);
+
 	/* Flat and close to the surface. Depth separates layers, it does not decorate. */
 	--shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06);
 	--shadow-raised: 0 2px 4px rgb(15 23 42 / 0.06), 0 4px 12px rgb(15 23 42 / 0.08);
@@ -809,7 +822,9 @@ html[data-theme='dark'] {
 	--color-slate-800: #dfe4ec;
 	--color-slate-900: #f2f5fa;
 
-	/* Tinted backdrops are fills, so they darken rather than invert. */
+	/* Fills, not ramp colours: they darken rather than invert. */
+	--color-scrim: rgb(0 0 0 / 0.66);
+
 	--color-red-50: #2b1417;
 	--color-blue-50: #101f33;
 	--color-green-50: #10251a;
@@ -856,7 +871,9 @@ html[data-theme='dark'] {
 		--color-slate-800: #dfe4ec;
 		--color-slate-900: #f2f5fa;
 
-		/* Tinted backdrops are fills, so they darken rather than invert. */
+		/* Fills, not ramp colours: they darken rather than invert. */
+		--color-scrim: rgb(0 0 0 / 0.66);
+
 		--color-red-50: #2b1417;
 		--color-blue-50: #101f33;
 		--color-green-50: #10251a;

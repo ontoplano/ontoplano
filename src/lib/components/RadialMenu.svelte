@@ -250,9 +250,14 @@
 		role="presentation"
 		oncontextmenu={(e) => e.preventDefault()}
 	>
+		<!--
+			bg-scrim, never bg-black/40: `black` and `white` invert with the ramp in
+			dark mode, so that scrim was white at 40% over a dark page — a flashbang
+			on the menu people open most.
+		-->
 		<button
 			type="button"
-			class="absolute inset-0 h-full w-full bg-black/40"
+			class="absolute inset-0 h-full w-full bg-scrim"
 			aria-label="Close"
 			onclick={() => afterOpening(onclose)}
 		></button>
