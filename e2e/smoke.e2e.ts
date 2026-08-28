@@ -110,6 +110,14 @@ for (const shape of ['desktop', 'mobile'] as const) {
 	});
 }
 
+test('a new account gets the playful style, not the sober one', async ({ page }) => {
+	// The default used to be `sober`, which is the style the app was built in —
+	// a reason about the past rather than about the person arriving. What a new
+	// account should see is the version the landing page promised.
+	await register(page, `style-${Date.now()}@example.test`);
+	await expect(page.locator('html')).toHaveAttribute('data-style', 'playful');
+});
+
 test('a long unbroken name does not push its controls off the screen', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await register(page, `longword-${Date.now()}@test.invalid`);

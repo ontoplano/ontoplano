@@ -67,3 +67,9 @@ my-publishing-studies/competition.md
 
 # Answers and thinking, not part of the repository.
 /notes/
+
+# Everything about the box this runs on: its firewall, its mail ports, its
+# backups, the other machines that watch it. A private repo of its own, because
+# how one particular server is built is not a fact the public repo should carry.
+# See server/README.md.
+server/

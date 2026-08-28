@@ -18,11 +18,28 @@ export const PASSWORD = 'smoke-test-password';
  */
 let clients = 0;
 
-export async function register(page: Page, email: string, name = 'Smoke Test'): Promise<void> {
+/**
+ * Workers do not share the counter, so without the worker index two of them
+ * hand out the same address and the account-creation limit — which is per
+ * address and tight on purpose — fails a test that has nothing to do with it.
+ */
+const WORKER = Number(process.env.TEST_PARALLEL_INDEX ?? 0);
+
+/**
+ * A distinct address per account, for any test that makes one.
+ *
+ * Not decoration: account creation is rate limited per address, tightly and on
+ * purpose, so a fixture that registers nine accounts from one address is
+ * testing the rate limiter. It is also nearer the truth — nine people do not
+ * sign up from one machine in four seconds.
+ */
+export function clientAddress(): string {
 	clients += 1;
-	await page.setExtraHTTPHeaders({
-		'x-forwarded-for': `10.42.${Math.floor(clients / 250)}.${(clients % 250) + 1}`
-	});
+	return `10.${42 + WORKER}.${Math.floor(clients / 250)}.${(clients % 250) + 1}`;
+}
+
+export async function register(page: Page, email: string, name = 'Smoke Test'): Promise<void> {
+	await page.setExtraHTTPHeaders({ 'x-forwarded-for': clientAddress() });
 
 	await page.goto('/login', { waitUntil: 'networkidle' });
 

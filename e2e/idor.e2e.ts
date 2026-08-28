@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
+import { clientAddress } from './helpers/account';
 
 /**
  * The IDOR suite.
@@ -19,7 +20,7 @@ type Account = { email: string; cookie: string };
 
 async function register(request: APIRequestContext, email: string): Promise<Account> {
 	const res = await request.post('/api/auth/sign-up/email', {
-		headers: { Origin: ORIGIN },
+		headers: { Origin: ORIGIN, 'x-forwarded-for': clientAddress() },
 		data: { email, password: 'hunter2hunter2', name: email.split('@')[0] }
 	});
 	expect(res.ok(), `registering ${email}: ${res.status()} ${await res.text()}`).toBeTruthy();

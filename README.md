@@ -131,8 +131,17 @@ address confirmations are sent; without them the message — link included — i
 written to the server log, so a single-user install is not forced to run a mail
 server. What it never does is claim to have sent something it did not.
 
-Putting it on a public box — firewall, TLS, rate limits, watching and backups —
-is `docs/VPS.md`, written to be worked top to bottom in one sitting.
+Putting it on a public box means four things and no more: run it as a service
+that survives logout (`make install-service`), keep it on `127.0.0.1` behind a
+reverse proxy that terminates TLS, set `ORIGIN` to exactly what the address bar
+will say — it is the only CSRF defence here, and a wrong one rejects every form
+post with nothing in the log to explain it — and point something off the box at
+`/healthz`, which touches the database before answering.
+
+`/healthz` will also report disk, memory, load and database size to a request
+carrying `ONTOPLANO_HEALTH_TOKEN`, and nothing to anyone else. Storage is the
+one that creeps up on a small machine: SQLite only grows, and a snapshot copies
+the whole file beside itself.
 
 ### Backups
 

@@ -68,7 +68,18 @@ export { STYLES };
 export type { Style };
 
 export const STYLE_KEY = 'ui.style';
-export const DEFAULT_STYLE: Style = 'sober';
+
+/**
+ * Playful, not sober.
+ *
+ * Sober was the default because it was the style the app was built in, which is
+ * a reason about the past rather than about the person arriving. What a new
+ * account should see is the version the landing page just promised — colour on
+ * the chrome, rooms that look like rooms — and somebody who finds it too much
+ * has the switch in Settings. The severe one is the taste you acquire, not the
+ * one you are handed.
+ */
+export const DEFAULT_STYLE: Style = 'playful';
 
 export function getStyle(userId: string): Style {
 	const stored = getUserSetting(userId, STYLE_KEY);

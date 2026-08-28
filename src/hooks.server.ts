@@ -5,7 +5,7 @@ import { auth } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { ensureUserCategories } from '$lib/server/db/ensure-categories';
 import { DEFAULT_THEME, getStyle, getTheme } from '$lib/server/settings';
-import { clientKey, rateLimit } from '$lib/server/rate-limit';
+import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
 import { checkSignUpAllowed, consumeInvite } from '$lib/server/services/registration';
 import { claimFirstAccount } from '$lib/server/services/admin';
 import { startTrial } from '$lib/server/services/subscriptions';
@@ -47,8 +47,23 @@ const handleRegistration: Handle = async ({ event, resolve }) => {
 		return resolve(event);
 	}
 
-	// The body is read here and handed on: a request body can only be consumed
-	// once, so what better-auth receives has to be a copy.
+	// Two doors into the same act, one rule: the form action in
+	// `routes/login/+page.server.ts` calls better-auth in-process and never
+	// reaches this hook, so it asks the same question for itself.
+	const budget = signUpBudget(clientKey(event.request, event.getClientAddress));
+	if (!budget.allowed) {
+		return new Response(
+			JSON.stringify({ message: 'Too many accounts from here. Try again later.' }),
+			{
+				status: 429,
+				headers: {
+					'content-type': 'application/json',
+					'Retry-After': String(budget.retryAfterSeconds)
+				}
+			}
+		);
+	}
+
 	const raw = await event.request.text();
 	event.request = new Request(event.request, { body: raw });
 

@@ -9,6 +9,7 @@ import {
 	instanceIsEmpty,
 	registrationMode
 } from '$lib/server/services/registration';
+import { clientKey, signUpBudget } from '$lib/server/rate-limit';
 import { ServiceError } from '$lib/server/services/errors';
 import { record } from '$lib/server/services/audit';
 import { claimFirstAccount } from '$lib/server/services/admin';
@@ -67,6 +68,13 @@ export const actions: Actions = {
 	 * request never passes the hook. Two doors, one rule.
 	 */
 	signUp: async (event) => {
+		// The same budget the hook applies to `/api/auth/sign-up`. Two doors,
+		// one rule — and this one does not pass the hook at all.
+		const budget = signUpBudget(clientKey(event.request, event.getClientAddress));
+		if (!budget.allowed) {
+			return fail(429, { message: 'Too many accounts from here. Try again later.' });
+		}
+
 		const formData = await event.request.formData();
 		const email = formData.get('email')?.toString() ?? '';
 		const password = formData.get('password')?.toString() ?? '';

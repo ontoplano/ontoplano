@@ -1,10 +1,11 @@
 /**
  * Layout styles: the shape of the interface, independent of light and dark.
  *
- * `sober` is the default this app was designed around — square corners, flat
- * shadows, colour reserved for the user's own categories. `playful` is for
- * people who find that severe: rounded corners, no shadows, and section colour
- * allowed onto the chrome.
+ * `playful` is the default: rounded corners, no shadows, and section colour
+ * allowed onto the chrome — the app looking like the thing the landing page
+ * describes. `sober` is for people who find that too much: square corners, flat
+ * shadows, colour reserved for the user's own categories. It is the style the
+ * app was originally built in, which is why it reads as the plain one.
  *
  * Two, deliberately. A third would need a reason beyond "why not".
  */
