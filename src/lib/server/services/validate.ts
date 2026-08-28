@@ -3,7 +3,7 @@ import { ValidationError } from './errors.js';
 /**
  * Small hand-rolled validators.
  *
- * `AGENTS.md` says prefer stdlib over new packages, and the surface we need is
+ * The convention here prefers the standard library over new packages, and the surface we need is
  * narrow enough that a schema library would be more dependency than value.
  * Every validator enforces a bound — no unbounded strings reach the database.
  */

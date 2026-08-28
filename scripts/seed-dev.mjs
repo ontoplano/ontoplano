@@ -7,7 +7,7 @@
  *
  * **Every feature that stores something seeds it here.** A section that is
  * empty in the dev database is a screen nobody ever sees in a used state — see
- * the rule in `AGENTS.md`.
+ * the rule in `CONTRIBUTING.md`.
  *
  * Usage:
  *   node scripts/seed-dev.mjs <path-to-dev.db> [email]
@@ -801,7 +801,7 @@ idea('A weekly review that writes itself from the tracker', ['product', 'plannin
 });
 idea('Meal plan should generate the shopping list', ['product'], {
 	applied: true,
-	appliedNote: 'v2 in TODO.md'
+	appliedNote: 'the v2 milestone'
 });
 idea('Colour the week grid by energy rather than category', ['ui']);
 idea('Keyboard shortcut to jump straight to today', ['ui'], { favorite: true });

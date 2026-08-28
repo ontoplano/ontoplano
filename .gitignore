@@ -81,7 +81,7 @@ server/
 # here and still used — it is just nobody else's business, and a public repo
 # ships its whole history.
 #
-# CONTRIBUTING.md carries the parts of AGENTS.md that a contributor needs.
+# CONTRIBUTING.md carries the parts a contributor actually needs.
 TODO.md
 AGENTS.md
 CLAUDE.md
