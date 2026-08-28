@@ -65,31 +65,23 @@ android-twa/
 temp/
 my-publishing-studies/competition.md
 
-# Answers and thinking, not part of the repository.
-/notes/
-
-# Everything about the box this runs on: its firewall, its mail ports, its
-# backups, the other machines that watch it. A private repo of its own, because
-# how one particular server is built is not a fact the public repo should carry.
-# See server/README.md.
-server/
-
 # ── Kept on disk, kept out of the repo ───────────────────────────────────────
 #
-# These are how this is being built rather than what is being built: the queue,
-# the planning, the working notes, the agent instructions. All of it is still
-# here and still used — it is just nobody else's business, and a public repo
-# ships its whole history.
+# Two ignored directories, each its own git repository, each with a reason:
 #
-# CONTRIBUTING.md carries the parts a contributor actually needs.
-TODO.md
+#   server/       how THIS deployment is built — firewall, mail, backups. Not a
+#                 secret exactly; a map, and one that only helps an attacker.
+#   development/  how this is BEING built — the queue, the planning, the notes
+#                 written straight to the agent. Nobody else's business.
+#
+# Both are still here and still used every day. They have their own history in
+# their own private repos, because these files are worth versioning; they are
+# just not worth publishing. A public repo ships its whole history.
+#
+# AGENTS.md and TODO.md at the root are symlinks into development/, so the
+# things that expect them there still find them.
+server/
+development/
 AGENTS.md
+TODO.md
 CLAUDE.md
-notes/
-publishing-plan/
-docs/product-plan.md
-
-# Notes written straight to the agent. The most "how this was made" thing here.
-nextpromp
-toprompt.md
-*promp*
