@@ -69,9 +69,14 @@ my-publishing-studies/competition.md
 #
 # Working files and machine-specific overrides. Present on a working checkout,
 # not part of the product, and not anybody else's business.
-server/
-development/
-local.mk
+#
+# The leading slashes matter and are not tidiness: a bare `server/` matches a
+# directory of that name at ANY depth, so it also swallowed `src/lib/server/` —
+# and every new file added there stopped appearing in `git status`. Two of them
+# were missing from the repository before anybody noticed.
+/server/
+/development/
+/local.mk
 AGENTS.md
 TODO.md
 CLAUDE.md
