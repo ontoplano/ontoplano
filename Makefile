@@ -1,9 +1,11 @@
 # The private, gitignored server/ repo names the instance this builds against.
 # Absent on a fresh clone, which is why the default below exists.
 -include local.mk
+# The instance this repo builds and deploys against. local.mk
+# overrides it; this is only the fallback for a checkout without one.
 ONTOPLANO_HOST ?= ontoplano.com
 
-.PHONY: up up-phone up-server android-lan android-check doctor dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: up up-phone up-server deploy deploy-local deploy-check android-lan android-check doctor dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -118,7 +120,10 @@ logs:
 
 PROD_DIR = $(HOME)/.local/share/ontoplano/app
 
-deploy: build db-migrate
+# Installing on the machine you are already sitting at. `deploy` below is the
+# one for the server; this is what `install-service` builds on, and what you
+# want when the box and the checkout are the same box.
+deploy-local: build db-migrate
 	@echo "Deploying to $(PROD_DIR)..."
 	@mkdir -p $(PROD_DIR)
 	@rm -rf $(PROD_DIR)/build
@@ -127,7 +132,7 @@ deploy: build db-migrate
 	@rsync -a --delete node_modules $(PROD_DIR)/
 	@echo "Deploy complete."
 
-update: deploy
+update: deploy-local
 	@echo "Restarting ontoplano service..."
 	@systemctl --user restart ontoplano
 	@echo "Update complete. Check: systemctl --user status ontoplano"
@@ -140,10 +145,9 @@ update: deploy
 up-phone: android android-install
 	@echo "Phone updated."
 
-up-server: db-migrate
-	@echo "Restarting ontoplano service…"
-	@systemctl --user restart ontoplano
-	@echo "Server updated. Check: systemctl --user status ontoplano"
+# From your laptop, over ssh. The server-side half of `up`.
+up-server: deploy
+	@echo "Server updated."
 
 # Server first on purpose: the phone is a shell around the server's pages, so a
 # phone built against a server that has not migrated yet opens onto errors.
@@ -195,7 +199,7 @@ doctor:
 		fi; \
 	done
 
-install-service: deploy
+install-service: deploy-local
 	@echo "Installing ontoplano systemd service..."
 	@[ -n "$(NODE_BIN)" ] || { echo "No node on PATH — nothing to put in the unit."; exit 1; }
 	@# Fails here, with the reason, rather than as a crash loop at 3am.

@@ -11,7 +11,7 @@
 	 *
 	 * This is the one: a bordered surface, a header rule in the section's colour, a
 	 * label in small capitals, an optional sentence under it, and room on the right
-	 * for whatever acts on the card. `AGENTS.md` already said card labels are
+	 * for whatever acts on the card. the convention already said card labels are
 	 * `.eyebrow`; the other two were drift.
 	 */
 	let {

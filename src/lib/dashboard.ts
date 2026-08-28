@@ -3,7 +3,7 @@
  *
  * The registry is the single list of what exists; a user's layout is a stored
  * subset plus an order. Anything personal or opinionated ships off by default,
- * which is what the publishing intent in AGENTS.md requires — a new user should
+ * which is what this being other people's software requires — a new user should
  * meet a dashboard that makes sense, not one full of someone else's habits.
  */
 export type DashboardCardId =

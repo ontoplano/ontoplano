@@ -7,7 +7,7 @@ import { toJsonError } from '$lib/server/services/errors';
  * The account's data as a JSON download.
  *
  * A +server route rather than a form action, because the answer is a file
- * rather than a page — the "no +server routes" convention in AGENTS.md is
+ * rather than a page — the "no +server routes" convention is
  * about mutations, and this reads.
  */
 export const GET: RequestHandler = async ({ locals }) => {

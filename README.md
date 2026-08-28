@@ -170,8 +170,8 @@ make db-snapshot      # a consistent copy, before you do something regrettable
 Data access lives in `src/lib/server/services/`; routes are adapters that read a
 form, call a service and map errors. A lint rule stops `$lib/server/db` being
 imported under `src/routes/`. Colours live in `src/lib/colors.ts`, form controls
-and buttons in `src/routes/layout.css`. `AGENTS.md` has the conventions in full,
-and `TODO.md` is what is being built next.
+and buttons in `src/routes/layout.css`. `CONTRIBUTING.md` has the conventions
+that are not obvious from the code, and the reasons for them.
 
 ## Stack
 

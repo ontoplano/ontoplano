@@ -44,7 +44,7 @@ export default defineConfig(
 								'**/lib/server/db/*'
 							],
 							message:
-								'Routes do not query the database. Call a service in $lib/server/services instead (see the planning notes/90-AGENT-BRIEF.md, I2).'
+								'Routes do not query the database. Call a service in $lib/server/services instead (CONTRIBUTING.md, I2).'
 						}
 					]
 				}

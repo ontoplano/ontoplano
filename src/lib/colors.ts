@@ -36,7 +36,7 @@ export const NAV_DROPDOWN_ITEM = 'text-gray-700 hover:bg-gray-50';
  * usable hue circle collapses to blue-ish versus yellow-ish. So they are spread
  * by lightness as well as hue, and colour is never the only cue: every filled
  * band is also labelled in words. Nothing here encodes good/bad, which is the
- * case the red/blue rule in AGENTS.md actually governs.
+ * case the red/blue rule actually governs.
  */
 export type SectionKey =
 	| 'home'

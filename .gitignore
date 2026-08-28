@@ -73,3 +73,18 @@ my-publishing-studies/competition.md
 # how one particular server is built is not a fact the public repo should carry.
 # See server/README.md.
 server/
+
+# ── Kept on disk, kept out of the repo ───────────────────────────────────────
+#
+# These are how this is being built rather than what is being built: the queue,
+# the planning, the working notes, the agent instructions. All of it is still
+# here and still used — it is just nobody else's business, and a public repo
+# ships its whole history.
+#
+# CONTRIBUTING.md carries the parts of AGENTS.md that a contributor needs.
+TODO.md
+AGENTS.md
+CLAUDE.md
+notes/
+the planning notes/
+docs/product-plan.md

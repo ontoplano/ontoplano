@@ -7,7 +7,7 @@ behaviour comes from the service worker the web app already has.
 
 The trade is that native APIs are limited to what the web platform offers. If
 push notifications, biometric lock or home-screen widgets become requirements,
-that is the point to revisit Capacitor — see `the planning notes/05-mobile-strategy.md`,
+that is the point to revisit Capacitor —
 which also notes that a bundled Capacitor build needs a JSON API first, since a
 static bundle has no server to run the current form actions against.
 
