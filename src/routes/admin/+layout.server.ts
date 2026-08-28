@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { isAdmin } from '$lib/server/services/admin';
+import { isInstanceOwner, isSelfHosted } from '$lib/server/settings';
 
 /**
  * Everything under /admin, behind one check.
@@ -11,5 +12,13 @@ import { isAdmin } from '$lib/server/services/admin';
  */
 export const load: LayoutServerLoad = async ({ locals }) => {
 	if (!isAdmin(locals.user!.id)) error(404, 'Not found');
-	return {};
+
+	// The same three flags the settings layout loads, because this area draws
+	// the same tab row: without them Administration is a page you can reach and
+	// not leave.
+	return {
+		canEditInstance: isInstanceOwner(locals.user!.id),
+		canAdminister: true,
+		billable: !isSelfHosted()
+	};
 };
