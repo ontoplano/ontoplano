@@ -2,12 +2,13 @@ import { randomBytes } from 'node:crypto';
 
 import { and, count, desc, eq, isNull } from 'drizzle-orm';
 
-import { loadConfig, saveConfig, type RegistrationMode } from '../config.js';
+import { isRegistrationMode, loadConfig, saveConfig, type RegistrationMode } from '../config.js';
 import { db } from '../db/index.js';
 import { invites } from '../db/schema.js';
 import { user } from '../db/auth.schema.js';
 import { ForbiddenError, NotFoundError, ValidationError } from './errors.js';
 import { optionalStr, str } from './validate.js';
+import { isStaging } from '../settings.js';
 
 /**
  * Who is allowed to create an account here.
@@ -31,7 +32,23 @@ export type Invite = {
 	usedBy: string | null;
 };
 
+/**
+ * Who may create an account here.
+ *
+ * The environment wins over the config file, and staging wins over the default,
+ * in that order. Both exist because the config file is written from the web
+ * page: on a box you administer over ssh, being able to open registration
+ * without logging in — or before there is anybody to log in as — is the
+ * difference between a deploy and an afternoon.
+ *
+ * `ONTOPLANO_REGISTRATION=open|invite|closed` is the explicit form and beats
+ * everything. `ONTOPLANO_STAGING=true` implies open, because a staging instance
+ * nobody can sign up to is not staging anything.
+ */
 export function registrationMode(): RegistrationMode {
+	const fromEnv = process.env.ONTOPLANO_REGISTRATION;
+	if (isRegistrationMode(fromEnv)) return fromEnv;
+	if (isStaging()) return 'open';
 	return loadConfig().registration.mode;
 }
 

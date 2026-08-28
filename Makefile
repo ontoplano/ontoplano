@@ -5,7 +5,7 @@
 # overrides it; this is only the fallback for a checkout without one.
 ONTOPLANO_HOST ?= ontoplano.com
 
-.PHONY: up up-phone up-server deploy deploy-local deploy-check deploy-imports deploy-imports android-lan android-check doctor dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: up up-phone up-server deploy deploy-local deploy-check deploy-imports restart-server deploy-imports android-lan android-check doctor dev build preview start stop clean install-service uninstall-service update deploy db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 

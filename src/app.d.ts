@@ -6,6 +6,14 @@ import type { Session, User } from 'better-auth';
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
 declare global {
+	// Baked in by `define` in vite.config.ts, and read by
+	// `$lib/server/services/version`. Inside `declare global` because this file
+	// has imports, which makes it a module — a top-level `declare const` here
+	// would be scoped to the module and invisible everywhere else.
+	const __APP_VERSION__: string;
+	const __APP_COMMIT__: string;
+	const __APP_BUILT_AT__: string;
+
 	namespace App {
 		interface Locals {
 			user?: User;

@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { LIMITS, resources, tokenMatches, warnings } from '../src/lib/server/services/health';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { makeDatabase } from './helpers/db';
+import type { Resources } from '../src/lib/server/services/health';
 
 /**
  * The probe the box's watcher reads.
@@ -8,43 +9,55 @@ import { LIMITS, resources, tokenMatches, warnings } from '../src/lib/server/ser
  * happens to be doing — so it asserts the shape and the arithmetic, which is
  * where the bugs in something like this live: a percentage the wrong way round
  * reads as a healthy disk right up until the disk is full.
+ *
+ * `health` opens the database when it is imported, so the import is dynamic:
+ * a static one is hoisted above `makeDatabase()` and finds no directory.
  */
+const database = makeDatabase();
+afterAll(() => database.remove());
+
+let health: typeof import('../src/lib/server/services/health');
+let base: Resources;
+
+beforeAll(async () => {
+	health = await import('../src/lib/server/services/health');
+	base = health.resources();
+});
+
 describe('resources', () => {
-	const r = resources();
+	const r = () => base;
 
 	it('reports a plausible disk', () => {
-		expect(r.diskFreeMb).toBeGreaterThan(0);
-		expect(r.diskUsedPercent).toBeGreaterThanOrEqual(0);
-		expect(r.diskUsedPercent).toBeLessThanOrEqual(100);
+		expect(r().diskFreeMb).toBeGreaterThan(0);
+		expect(r().diskUsedPercent).toBeGreaterThanOrEqual(0);
+		expect(r().diskUsedPercent).toBeLessThanOrEqual(100);
 	});
 
 	it('reports memory as used, not as free', () => {
 		// The one that has been written backwards in every monitoring script
 		// ever: a box with plenty of memory must not report 95% used.
-		expect(r.memoryUsedPercent).toBeGreaterThanOrEqual(0);
-		expect(r.memoryUsedPercent).toBeLessThanOrEqual(100);
-		expect(r.memoryFreeMb).toBeGreaterThan(0);
+		expect(r().memoryUsedPercent).toBeGreaterThanOrEqual(0);
+		expect(r().memoryUsedPercent).toBeLessThanOrEqual(100);
+		expect(r().memoryFreeMb).toBeGreaterThan(0);
 	});
 
 	it('survives a database file that is not there', () => {
 		// `loadConfig()` points at a path that may not exist in a fresh checkout,
 		// and a probe that throws is worse than a probe that says zero.
-		expect(r.databaseMb).toBeGreaterThanOrEqual(0);
-		expect(r.load1).toBeGreaterThanOrEqual(0);
+		expect(r().databaseMb).toBeGreaterThanOrEqual(0);
+		expect(r().load1).toBeGreaterThanOrEqual(0);
 	});
 });
 
 describe('warnings', () => {
-	const base = resources();
-
 	it('says nothing when there is nothing to say', () => {
-		expect(warnings({ ...base, diskUsedPercent: 40, memoryUsedPercent: 50 })).toEqual([]);
+		expect(health.warnings({ ...base, diskUsedPercent: 40, memoryUsedPercent: 50 })).toEqual([]);
 	});
 
 	it('names the disk, with the number, once it is over the line', () => {
-		const said = warnings({
+		const said = health.warnings({
 			...base,
-			diskUsedPercent: LIMITS.diskUsedPercent,
+			diskUsedPercent: health.LIMITS.diskUsedPercent,
 			diskFreeMb: 900,
 			memoryUsedPercent: 10
 		});
@@ -58,14 +71,14 @@ describe('warnings', () => {
 		// is 139GB free, which is not a problem, and a watcher that says it is
 		// gets muted before the day it is right.
 		expect(
-			warnings({ ...base, diskUsedPercent: 91, diskFreeMb: 139_000, memoryUsedPercent: 10 })
+			health.warnings({ ...base, diskUsedPercent: 91, diskFreeMb: 139_000, memoryUsedPercent: 10 })
 		).toEqual([]);
 	});
 
 	it('shouts about a small disk before the percentage looks alarming', () => {
 		// 2.8GB free on a 24GB disk is 88% — under the percentage limit, and one
 		// snapshot away from a database that cannot write.
-		const said = warnings({
+		const said = health.warnings({
 			...base,
 			diskUsedPercent: 88,
 			diskFreeMb: 1800,
@@ -76,27 +89,32 @@ describe('warnings', () => {
 	});
 
 	it('names memory separately, so one alert is not two problems', () => {
-		const said = warnings({ ...base, diskUsedPercent: 99, diskFreeMb: 100, memoryUsedPercent: 99 });
+		const said = health.warnings({
+			...base,
+			diskUsedPercent: 99,
+			diskFreeMb: 100,
+			memoryUsedPercent: 99
+		});
 		expect(said).toHaveLength(2);
 	});
 });
 
 describe('tokenMatches', () => {
 	it('matches an identical token', () => {
-		expect(tokenMatches('sekrit', 'sekrit')).toBe(true);
+		expect(health.tokenMatches('sekrit', 'sekrit')).toBe(true);
 	});
 
 	it('refuses when the instance has no token configured', () => {
 		// Otherwise an instance that forgot to set one would disclose to anybody
 		// who also sent nothing.
-		expect(tokenMatches(null, null)).toBe(false);
-		expect(tokenMatches(null, 'anything')).toBe(false);
+		expect(health.tokenMatches(null, null)).toBe(false);
+		expect(health.tokenMatches(null, 'anything')).toBe(false);
 	});
 
 	it('refuses a missing, wrong, or differently sized token', () => {
-		expect(tokenMatches('sekrit', null)).toBe(false);
-		expect(tokenMatches('sekrit', 'sekrix')).toBe(false);
-		expect(tokenMatches('sekrit', 'sekrit-and-more')).toBe(false);
-		expect(tokenMatches('sekrit', '')).toBe(false);
+		expect(health.tokenMatches('sekrit', null)).toBe(false);
+		expect(health.tokenMatches('sekrit', 'sekrix')).toBe(false);
+		expect(health.tokenMatches('sekrit', 'sekrit-and-more')).toBe(false);
+		expect(health.tokenMatches('sekrit', '')).toBe(false);
 	});
 });

@@ -59,7 +59,10 @@
 		// A fork and a knife: the kitchen, which was borrowing the shopping bag.
 		utensils: 'M8 3v8a3 3 0 0 0 6 0V3M11 11v10M17 3c-1.5 2-2 3.5-2 6v3h4V9c0-2.5-.5-4-2-6zM17 12v9',
 		flame: 'M12 3c3 4 5 5.5 5 9a5 5 0 0 1-10 0c0-2 1-3 2-4 .5 2 1.5 2.5 2 2.5 .5-2-1-5 1-7.5z',
-		'sign-out': 'M15 4h5v16h-5M12 8l4 4-4 4M16 12H4'
+		'sign-out': 'M15 4h5v16h-5M12 8l4 4-4 4M16 12H4',
+		// A triangle with a bang in it. Only for the staging band so far, which
+		// is the one message on this app that has to be impossible to miss.
+		warning: 'M12 4l9 16H3zM12 10v4M12 17h.01'
 	} as const;
 
 	export type IconName = keyof typeof ICONS;

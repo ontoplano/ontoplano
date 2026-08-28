@@ -141,3 +141,27 @@ test('an invitation works exactly once', async ({ playwright }) => {
 
 	await request.dispose();
 });
+
+/**
+ * What is running, on the page that reports it.
+ *
+ * Here rather than in the smoke suite because the instance page belongs to the
+ * instance owner, which is the *first* account — and by the time the smoke
+ * suite runs, that is some other test's account. This project already has the
+ * owner's cookie.
+ *
+ * The version, commit and build time are baked in by `define` in
+ * vite.config.ts, so nothing short of a real build proves they arrive at all.
+ */
+test('the instance page says what version is running', async ({ request }) => {
+	const cookie = await signInAsOwner(request);
+
+	const res = await request.get('/settings/instance', { headers: { cookie } });
+	expect(res.ok(), `the owner should see the instance page: ${res.status()}`).toBeTruthy();
+
+	const html = await res.text();
+	expect(html).toContain('What is running');
+	expect(html).toContain('Registration, in force');
+	// Whatever package.json says — this checks the value arrived, not what it is.
+	expect(html).toMatch(/data-testid="app-version"[^>]*>\s*\d+\.\d+\.\d+/);
+});

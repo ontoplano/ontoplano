@@ -8,6 +8,7 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { REGISTRATION_MODES } from '$lib/registration';
+	import StagingBand from '$lib/components/StagingBand.svelte';
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -34,6 +35,43 @@
 		}
 	}
 
+	/** "3 minutes ago", down to the granularity anybody reads at a glance. */
+	function ago(iso: string): string {
+		const seconds = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+		if (seconds < 90) return `${seconds}s ago`;
+		const minutes = Math.round(seconds / 60);
+		if (minutes < 90) return `${minutes} min ago`;
+		const hours = Math.round(minutes / 60);
+		if (hours < 36) return `${hours}h ago`;
+		return `${Math.round(hours / 24)} days ago`;
+	}
+
+	function exactly(iso: string): string {
+		return new Date(iso).toLocaleString(undefined, {
+			day: 'numeric',
+			month: 'short',
+			hour: '2-digit',
+			minute: '2-digit'
+		});
+	}
+
+	/**
+	 * Did the running process start from the build it is reporting?
+	 *
+	 * A build newer than the process means the deploy did not restart anything —
+	 * the failure mode of every deploy script ever written, and one that looks
+	 * exactly like success.
+	 *
+	 * The minute of slack is not politeness. In development both timestamps come
+	 * from the same process seconds apart, in either order, and clocks on two
+	 * machines are never exactly equal. A minute is far below the gap that
+	 * matters, which is a deploy that visibly did nothing.
+	 */
+	const SLACK_MS = 60_000;
+	const restartedIntoThisBuild = $derived(
+		new Date(data.build.startedAt).getTime() >= new Date(data.build.builtAt).getTime() - SLACK_MS
+	);
+
 	function when(iso: string | null): string {
 		if (!iso) return '';
 		return new Date(iso).toLocaleDateString(undefined, {
@@ -46,6 +84,63 @@
 
 <div class="space-y-4">
 	<FormError message={form?.message} />
+
+	{#if data.staging}
+		<StagingBand
+			detail="ONTOPLANO_STAGING=true in the server's environment. Unset it and restart to close the doors."
+		/>
+	{/if}
+
+	<Card
+		title="What is running"
+		description="Whether the last deploy is the thing answering right now."
+	>
+		<dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+			<div>
+				<dt class="text-sm text-gray-500">Version</dt>
+				<dd class="tabular text-lg font-semibold text-gray-900" data-testid="app-version">
+					{data.build.version}
+					<span class="text-sm font-normal text-gray-500">({data.build.commit})</span>
+				</dd>
+			</div>
+
+			<div>
+				<dt class="text-sm text-gray-500">Built</dt>
+				<dd class="text-sm text-gray-900">
+					{ago(data.build.builtAt)}
+					<span class="text-gray-500">· {exactly(data.build.builtAt)}</span>
+				</dd>
+			</div>
+
+			<div>
+				<dt class="text-sm text-gray-500">Running since</dt>
+				<dd class="text-sm text-gray-900">
+					{ago(data.build.startedAt)}
+					<span class="text-gray-500">· {exactly(data.build.startedAt)}</span>
+				</dd>
+			</div>
+
+			<div>
+				<dt class="text-sm text-gray-500">Registration, in force</dt>
+				<dd class="text-sm text-gray-900">
+					{data.effectiveRegistration}
+					{#if data.effectiveRegistration !== data.config.registration.mode}
+						<span class="text-amber-700"
+							>· the environment overrides the setting below ({data.config.registration.mode})</span
+						>
+					{/if}
+				</dd>
+			</div>
+		</dl>
+
+		{#if !restartedIntoThisBuild}
+			<p class="mt-4 border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+				This process is older than the build it is reporting, which means the last deploy copied the
+				files and never restarted the service. Nothing new is running.
+				<code class="tabular">make restart-server</code>
+			</p>
+		{/if}
+	</Card>
 
 	{#if form?.success && form.action !== 'createInvite'}
 		<div class="border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">Saved.</div>

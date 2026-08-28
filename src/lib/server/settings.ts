@@ -248,6 +248,24 @@ export function isSelfHosted(): boolean {
 }
 
 /**
+ * Is this instance a staging one — not the real thing?
+ *
+ * Staging in the general sense: a copy people are invited to try, running with
+ * the doors open in a way production is not. It is deliberately a single
+ * environment variable rather than a config-file setting, because the switch
+ * belongs to whoever runs the box and not to whoever is logged into it.
+ *
+ * It changes two things and says so everywhere. Registration opens, so people
+ * can be let in without invite codes; and every page that could mislead
+ * somebody about which instance they are on carries a band saying it. That
+ * second half is the important one: the failure this exists to prevent is
+ * leaving the flag set on the real instance and not noticing for a week.
+ */
+export function isStaging(): boolean {
+	return process.env.ONTOPLANO_STAGING === 'true';
+}
+
+/**
  * What this instance charges, and how its trial runs.
  *
  * From the environment rather than compiled in, because a price is not a fact

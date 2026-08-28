@@ -1,11 +1,13 @@
 import { error } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { loadConfig, saveConfig, DB_PATH, isRegistrationMode } from '$lib/server/config';
-import { isInstanceOwner } from '$lib/server/settings';
+import { isInstanceOwner, isStaging } from '$lib/server/settings';
+import { build } from '$lib/server/services/version';
 import { toActionFailure, ValidationError } from '$lib/server/services/errors';
 import {
 	createInvite,
 	listInvites,
+	registrationMode,
 	revokeInvite,
 	setRegistrationMode
 } from '$lib/server/services/registration';
@@ -21,7 +23,17 @@ import {
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!isInstanceOwner(locals.user!.id)) error(404, 'Not found');
 
-	return { config: loadConfig(), invites: listInvites() };
+	return {
+		config: loadConfig(),
+		invites: listInvites(),
+		// What is running, so "did my deploy land" is answerable from here rather
+		// than from an ssh session.
+		build: build(),
+		staging: isStaging(),
+		// The file says one thing and the environment may say another; the page
+		// should show what is actually in force, not what is written down.
+		effectiveRegistration: registrationMode()
+	};
 };
 
 /** The owner check is repeated per action, not inherited from the load. */
