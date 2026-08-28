@@ -43,7 +43,10 @@ export default defineConfig({
 			ONTOPLANO_TRUST_PROXY: 'true',
 			// `/healthz` only discloses disk and memory to a probe that knows this.
 			ONTOPLANO_HEALTH_TOKEN: 'playwright-health-token',
-			XDG_CONFIG_HOME: join(homedir(), '.config')
+			XDG_CONFIG_HOME: join(homedir(), '.config'),
+			// The administration page reads fail2ban's log; `e2e/prepare.mjs`
+			// writes this one, so the test does not need the real thing.
+			ONTOPLANO_FAIL2BAN_LOG: join(tmpdir(), 'ontoplano-e2e-fail2ban.log')
 		}
 	},
 	use: { baseURL: 'http://localhost:4173' },
@@ -58,7 +61,10 @@ export default defineConfig({
 	 * that must finish first.
 	 */
 	projects: [
-		{ name: 'app', testIgnore: '**/registration.e2e.ts' },
-		{ name: 'registration', testMatch: '**/registration.e2e.ts', dependencies: ['app'] }
+		{ name: 'app', testIgnore: '**/{registration,admin}.e2e.ts' },
+		// The administrator is the oldest account, so this cannot run until
+		// something has made accounts.
+		{ name: 'admin', testMatch: '**/admin.e2e.ts', dependencies: ['app'] },
+		{ name: 'registration', testMatch: '**/registration.e2e.ts', dependencies: ['app', 'admin'] }
 	]
 });

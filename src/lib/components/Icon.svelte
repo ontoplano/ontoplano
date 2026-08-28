@@ -62,7 +62,8 @@
 		'sign-out': 'M15 4h5v16h-5M12 8l4 4-4 4M16 12H4',
 		// A triangle with a bang in it. Only for the staging band so far, which
 		// is the one message on this app that has to be impossible to miss.
-		warning: 'M12 4l9 16H3zM12 10v4M12 17h.01'
+		warning: 'M12 4l9 16H3zM12 10v4M12 17h.01',
+		shield: 'M12 3l8 3v6c0 4.4-3.2 7.5-8 9-4.8-1.5-8-4.6-8-9V6z'
 	} as const;
 
 	export type IconName = keyof typeof ICONS;

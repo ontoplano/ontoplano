@@ -1,5 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
 import { recentEvents, searchAccounts, setRole } from '$lib/server/services/admin';
+import { protection } from '$lib/server/services/protection';
 import { toActionFailure } from '$lib/server/services/errors';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
@@ -9,6 +10,9 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		query,
 		accounts: searchAccounts(query),
 		events: recentEvents(),
+		// What the layer in front of the app has been doing. Read from fail2ban's
+		// log, and honest about not being able to read it.
+		protection: protection(),
 		// So the page can leave your own row alone rather than offering a button
 		// the server will refuse.
 		me: locals.user!.id

@@ -130,23 +130,63 @@
 		{/if}
 	</Card>
 
-	<Card title="Lately" description="Every account's history in one column, newest first." flush>
-		{#if data.events.length === 0}
-			<EmptyState icon="clock" title="Nothing recorded yet" />
-		{:else}
-			<div class="divide-y divide-gray-200">
-				{#each data.events as event (event.id)}
-					<div class="flex items-baseline gap-2 px-4 py-2 text-sm">
-						<span class="min-w-0 flex-1 truncate">
-							<span class="text-gray-900">{event.event.replaceAll('_', ' ')}</span>
-							<span class="block truncate text-xs text-gray-500">{event.email}</span>
-						</span>
-						<span class="shrink-0 text-xs text-gray-500">{ago(event.createdAt)}</span>
-					</div>
-				{/each}
-			</div>
-		{/if}
-	</Card>
+	<!-- The narrow column: what happened, and what was stopped before it could. -->
+	<div class="space-y-4">
+		<Card title="Lately" description="Every account's history in one column, newest first." flush>
+			{#if data.events.length === 0}
+				<EmptyState icon="clock" title="Nothing recorded yet" />
+			{:else}
+				<div class="divide-y divide-gray-200">
+					{#each data.events as event (event.id)}
+						<div class="flex items-baseline gap-2 px-4 py-2 text-sm">
+							<span class="min-w-0 flex-1 truncate">
+								<span class="text-gray-900">{event.event.replaceAll('_', ' ')}</span>
+								<span class="block truncate text-xs text-gray-500">{event.email}</span>
+							</span>
+							<span class="shrink-0 text-xs text-gray-500">{ago(event.createdAt)}</span>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</Card>
+
+		<!--
+			The layer in front of the app, in the one place somebody looks after
+			"is anything happening". Everything else on this page is something the
+			app did; this is what never reached it.
+		-->
+		<Card title="Blocked" description="What fail2ban has turned away." flush>
+			{#if !data.protection.readable}
+				<div class="px-4 py-3 text-sm text-gray-500">
+					<p class="text-gray-900">Nothing to read here yet.</p>
+					<p class="mt-1">
+						This instance cannot see <code class="text-xs">{data.protection.path}</code>. On Debian
+						and Ubuntu that file belongs to the <code class="text-xs">adm</code> group:
+					</p>
+					<pre class="mt-2 overflow-x-auto text-xs">sudo usermod -aG adm $(whoami)</pre>
+					<p class="mt-1">Then restart the app.</p>
+				</div>
+			{:else if data.protection.recent.length === 0}
+				<EmptyState icon="shield" title="Nobody has been turned away" />
+			{:else}
+				<p class="border-b border-gray-200 px-4 py-2 text-xs text-gray-500">
+					{data.protection.today}
+					{data.protection.today === 1 ? 'address' : 'addresses'} blocked today
+				</p>
+				<div class="divide-y divide-gray-200">
+					{#each data.protection.recent as ban (ban.at + ban.address)}
+						<div class="flex items-baseline gap-2 px-4 py-2 text-sm">
+							<span class="min-w-0 flex-1 truncate">
+								<span class="tabular text-gray-900">{ban.address}</span>
+								<span class="block truncate text-xs text-gray-500">{ban.jail}</span>
+							</span>
+							<span class="shrink-0 text-xs text-gray-500">{ago(ban.at)}</span>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</Card>
+	</div>
 </div>
 
 <p class="text-xs text-gray-500">

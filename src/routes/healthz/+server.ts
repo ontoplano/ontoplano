@@ -1,5 +1,6 @@
 import type { RequestHandler } from './$types';
 import { databaseReachable, resources, tokenMatches, warnings } from '$lib/server/services/health';
+import { build } from '$lib/server/services/version';
 import { healthToken } from '$lib/server/settings';
 
 /**
@@ -41,7 +42,10 @@ export const GET: RequestHandler = async ({ request, url }) => {
 			database,
 			uptimeSeconds: Math.round(process.uptime()),
 			checkedInMs: Date.now() - started,
-			...(detail ? { resources: detail, warnings: warnings(detail) } : {})
+			// Which build is answering, for the same audience as the numbers: the
+			// machine watching this wants to say "still on 0.2.0" without an ssh
+			// session, and a version string tells a stranger which bugs to try.
+			...(detail ? { resources: detail, warnings: warnings(detail), build: build() } : {})
 		}),
 		{
 			status: ok ? 200 : 503,

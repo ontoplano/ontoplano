@@ -14,8 +14,10 @@ test('says it is alive, and nothing else, to a stranger', async ({ request }) =>
 	expect(body.ok).toBe(true);
 	expect(body.database).toBe('ok');
 
-	// Disk and memory are what an attacker would most like to know.
+	// Disk and memory are what an attacker would most like to know. The version
+	// is the next thing: it names which bugs are worth trying.
 	expect(body.resources).toBeUndefined();
+	expect(body.build).toBeUndefined();
 	expect(JSON.stringify(body)).not.toContain('diskFreeMb');
 });
 
@@ -30,6 +32,9 @@ test('shows the box to a probe holding the token', async ({ request }) => {
 	expect(body.resources.diskUsedPercent).toBeLessThanOrEqual(100);
 	expect(body.resources.memoryFreeMb).toBeGreaterThan(0);
 	expect(Array.isArray(body.warnings)).toBe(true);
+
+	// And which build is answering, so the bot can say it without an ssh session.
+	expect(body.build.version).toMatch(/^\d+\.\d+\.\d+$/);
 });
 
 test('a wrong token is the same as no token', async ({ request }) => {
