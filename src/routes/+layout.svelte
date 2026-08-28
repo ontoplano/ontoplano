@@ -124,7 +124,12 @@
 		['/diary/notebooks', 'notebook'],
 		['/diary/people', 'user'],
 		['/kitchen/recipes', 'utensils'],
-		['/kitchen/meals', 'utensils']
+		['/kitchen/meals', 'utensils'],
+		// Settings belongs to no room, so it fell through to home — and the
+		// account page was tiled with houses.
+		['/settings', 'user'],
+		['/settings/instance', 'settings'],
+		['/admin', 'shield']
 	];
 
 	const pageGlyph = $derived(
@@ -475,15 +480,20 @@
 			aria-label="Primary"
 		>
 			<div class="flex" style="height: var(--mobile-nav-height)">
+				<!--
+					The account, so it wears a person. It used to wear the settings
+					glyph, which was a sun with rays: on a phone bar, next to search
+					and a plus, that reads as a brightness control and nothing else.
+				-->
 				<a
 					href={resolve('/settings/account')}
 					class="flex flex-1 items-center justify-center {page.url.pathname.startsWith('/settings')
 						? 'text-chrome-ink'
 						: 'text-chrome-muted'}"
-					aria-label="Settings"
-					title="Settings"
+					aria-label="Account"
+					title="Account"
 				>
-					<Icon name="settings" size={22} />
+					<Icon name="user" size={22} />
 				</a>
 
 				<button

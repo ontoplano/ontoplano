@@ -42,8 +42,11 @@
 		ideas: 'M9 21h6M10 18h4M12 3a6 6 0 0 1 4 10.5V16H8v-2.5A6 6 0 0 1 12 3z',
 		health: 'M3 12h4l2 6 4-14 2 8h6',
 		shopping: 'M4 7h16l-1.5 12h-13zM9 7V5a3 3 0 0 1 6 0v2',
+		// A gear. What was here was a disc with eight rays coming off it, which is
+		// the universal symbol for screen brightness — and it sat in the mobile
+		// bar as the way into the account.
 		settings:
-			'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM12 3v2M12 19v2M5 5l1.5 1.5M17.5 17.5L19 19M3 12h2M19 12h2M5 19l1.5-1.5M17.5 6.5L19 5',
+			'M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM10.4 3h3.2l.4 2.2 1.7 1 2.1-.7 1.6 2.8-1.7 1.4a6.4 6.4 0 0 1 0 2.6l1.7 1.4-1.6 2.8-2.1-.7-1.7 1-.4 2.2h-3.2l-.4-2.2-1.7-1-2.1.7-1.6-2.8 1.7-1.4a6.4 6.4 0 0 1 0-2.6L4.6 8.3l1.6-2.8 2.1.7 1.7-1z',
 
 		// things
 		calendar: 'M4 6h16v15H4zM4 10h16M8 3v4M16 3v4',
