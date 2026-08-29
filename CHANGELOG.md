@@ -20,6 +20,10 @@ rest. Versions follow `package.json`.
 - Granting an API token now reads as sentences — "Read everything on your
   calendar for the days ahead" — instead of scope codes, in the form and on
   every token's row.
+- When a page breaks in your browser, it can offer to send the technical
+  details to your server's log — only if the instance turns the feature on,
+  only after you say yes, asked once. What is sent is what broke, never what
+  you wrote.
 
 ## 0.6.2 — 2026-08-29
 

@@ -23,8 +23,7 @@
 
 	// The sentence a scope was granted as, everywhere a scope is shown — the
 	// key is for the developer, the sentence is for the owner of the data.
-	const scopeSentence = (key: string) =>
-		data.scopes.find((s) => s.key === key)?.description ?? key;
+	const scopeSentence = (key: string) => data.scopes.find((s) => s.key === key)?.description ?? key;
 
 	function closeForms() {
 		showTokenForm = false;

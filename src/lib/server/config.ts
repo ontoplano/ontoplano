@@ -61,6 +61,9 @@ mode = "closed"
 [account]
 allow_email_change = "false"
 
+[reports]
+client_errors = "false"
+
 [ui]
 undo_seconds = "5"
 `;
@@ -107,6 +110,16 @@ export interface OntoplanoConfig {
 		 */
 		allowEmailChange: boolean;
 	};
+	reports: {
+		/**
+		 * Whether the app may ask people to send in client-side errors.
+		 *
+		 * Off by default: a stack trace is somebody's data leaving their browser,
+		 * so the instance opts in, and then each person is asked once and can say
+		 * no. Nothing is ever sent before both have said yes.
+		 */
+		clientErrors: boolean;
+	};
 	ui: {
 		/** Seconds a delete waits, undoably, before it happens. Zero turns it off. */
 		undoSeconds: number;
@@ -143,6 +156,9 @@ mode = "${config.registration.mode}"
 [account]
 allow_email_change = "${config.account.allowEmailChange}"
 
+[reports]
+client_errors = "${config.reports.clientErrors}"
+
 [ui]
 undo_seconds = "${config.ui.undoSeconds}"
 `;
@@ -164,6 +180,7 @@ export function loadConfig(): OntoplanoConfig {
 	const week = (parsed.week as Record<string, string>) || {};
 	const registration = (parsed.registration as Record<string, string>) || {};
 	const account = (parsed.account as Record<string, string>) || {};
+	const reports = (parsed.reports as Record<string, string>) || {};
 	const ui = (parsed.ui as Record<string, string>) || {};
 
 	return {
@@ -189,6 +206,10 @@ export function loadConfig(): OntoplanoConfig {
 		account: {
 			// Same reading: anything but an explicit "true" is no.
 			allowEmailChange: account.allow_email_change === 'true'
+		},
+		reports: {
+			// And again: silence is no.
+			clientErrors: reports.client_errors === 'true'
 		},
 		ui: {
 			/*

@@ -15,6 +15,7 @@
 	import Reminders from '$lib/components/Reminders.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import UndoToast from '$lib/components/UndoToast.svelte';
+	import ClientErrorPrompt from '$lib/components/ClientErrorPrompt.svelte';
 	import { undo } from '$lib/undo.svelte';
 	import { palette } from '$lib/palette.svelte';
 	import type { IconName } from '$lib/components/Icon.svelte';
@@ -281,10 +282,7 @@
 		{/if}
 
 		<SectionPattern icon={pageGlyph} />
-		<header
-			class="relative z-40 bg-chrome shadow-raised"
-			style="padding-top: var(--safe-top)"
-		>
+		<header class="relative z-40 bg-chrome shadow-raised" style="padding-top: var(--safe-top)">
 			<div class="mx-auto flex w-full max-w-page items-stretch justify-between px-4 sm:px-6">
 				<div class="flex min-w-0 items-stretch gap-4 min-[1460px]:gap-6">
 					<a
@@ -570,6 +568,9 @@
 		<NavPie bind:this={rooms} onopenchange={(v) => (roomsOpen = v)} />
 		<Reminders />
 		<UndoToast />
+		{#if data.clientErrorReports !== 'off'}
+			<ClientErrorPrompt state={data.clientErrorReports} />
+		{/if}
 	</div>
 {:else}
 	{@render children()}

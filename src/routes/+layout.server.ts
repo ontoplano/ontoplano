@@ -1,6 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { DEFAULT_THEME, DEFAULT_WEEK, getTheme, getWeekSettings } from '$lib/server/settings';
+import { clientErrorState } from '$lib/server/services/client-errors';
 import { needsFirstRun } from '$lib/server/services/onboarding';
 import { listCategories } from '$lib/server/services/activities';
 import { buildCtx } from '$lib/server/services/ctx';
@@ -77,6 +78,9 @@ export const load: LayoutServerLoad = async (event) => {
 		// The week is the user's, not the instance's.
 		config: { week },
 		// How long a delete waits before it happens. The instance's call.
-		undoSeconds: loadConfig().ui.undoSeconds
+		undoSeconds: loadConfig().ui.undoSeconds,
+		// Whether the page may offer to send client-side errors: 'off' unless
+		// the instance enabled it, then the account's own once-asked answer.
+		clientErrorReports: event.locals.user ? clientErrorState(event.locals.user.id) : 'off'
 	};
 };

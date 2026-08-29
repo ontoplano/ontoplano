@@ -260,6 +260,34 @@
 	</Card>
 
 	<Card
+		title="Error reports"
+		description="When a page breaks in somebody's browser, the server normally never hears about it."
+	>
+		<form method="post" action="?/setClientErrors" use:enhance class="space-y-3">
+			<label class="flex cursor-pointer items-start gap-3">
+				<input
+					type="checkbox"
+					name="clientErrors"
+					value="true"
+					checked={data.config.reports.clientErrors}
+					class="mt-1"
+				/>
+				<span>
+					<span class="block text-sm font-medium text-gray-900">
+						Offer to send what broke to this server's log
+					</span>
+					<span class="block text-sm text-gray-500">
+						Off by default. Each person is asked once, in the page, and can say never; nothing is
+						sent without their yes. What is sent is what broke — never what they wrote.
+					</span>
+				</span>
+			</label>
+
+			<button class="btn btn-primary">Save</button>
+		</form>
+	</Card>
+
+	<Card
 		title="Invitations"
 		description="A code somebody types when they create their account. It works once."
 	>

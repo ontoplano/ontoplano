@@ -99,6 +99,20 @@ export const actions: Actions = {
 		return { success: true, action: 'setEmailChange' };
 	},
 
+	setClientErrors: async ({ request, locals }) => {
+		owner(locals.user!.id);
+
+		const formData = await request.formData();
+		const current = loadConfig();
+
+		saveConfig({
+			...current,
+			reports: { clientErrors: formData.get('clientErrors') === 'true' }
+		});
+
+		return { success: true, action: 'setClientErrors' };
+	},
+
 	createInvite: async ({ request, locals }) => {
 		const userId = owner(locals.user!.id);
 		const formData = await request.formData();
