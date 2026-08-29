@@ -61,6 +61,17 @@
 	 */
 	--color-scrim: rgb(15 23 42 / 0.45);
 
+	/*
+	 * What the pointer resting on something looks like.
+	 *
+	 * A translucent ink laid *over* whatever is there — background-image, not
+	 * background-color — so a row that is already tinted (bought, snoozed,
+	 * overdue) darkens on hover instead of losing its state colour. Like the
+	 * scrim it must not ride the ramp: it always deepens, so the dark theme
+	 * uses light ink.
+	 */
+	--hover-wash: rgb(15 23 42 / 0.05);
+
 	/* Flat and close to the surface. Depth separates layers, it does not decorate. */
 	--shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06);
 	--shadow-raised: 0 2px 4px rgb(15 23 42 / 0.06), 0 4px 12px rgb(15 23 42 / 0.08);
@@ -313,6 +324,23 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 }
 
 /*
+ * A page's opening sentence.
+ *
+ * Bare muted text floating on the page surface read as unfinished — no anchor,
+ * low contrast, nothing saying it belongs to this section. The rule in the
+ * section's own colour ties it to the page, and the ink is a step darker than
+ * the muted gray it used to be set in.
+ */
+.page-intro {
+	max-width: 65ch;
+	border-left: 3px solid color-mix(in srgb, var(--section-accent, var(--color-gray-400)) 55%, transparent);
+	padding-left: 0.75rem;
+	font-size: 0.875rem;
+	line-height: 1.5;
+	color: var(--color-gray-600);
+}
+
+/*
  * Form controls and buttons, defined once.
  *
  * Every field in the app used to carry the same forty characters of utility
@@ -333,6 +361,12 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		line-height: 1.25rem;
 		color: var(--color-gray-900);
 		box-shadow: var(--shadow-card);
+	}
+
+	.input:hover:not(:focus),
+	.select:hover:not(:focus),
+	.textarea:hover:not(:focus) {
+		border-color: var(--color-gray-400);
 	}
 
 	.input:focus,
@@ -364,10 +398,29 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		font-size: 0.875rem;
 		color: var(--color-gray-700);
 		box-shadow: var(--shadow-card);
+		transition:
+			background-color 120ms ease,
+			border-color 120ms ease,
+			color 120ms ease,
+			box-shadow 120ms ease,
+			translate 120ms ease;
 	}
 
+	/*
+	 * Hover is felt, not just seen: the button rises a pixel and its shadow
+	 * deepens, then pressing sets it back down. `translate` rather than
+	 * `transform` so it composes with anything a component transforms itself.
+	 */
 	.btn:hover {
 		background-color: var(--color-gray-50);
+		border-color: var(--color-gray-400);
+		translate: 0 -1px;
+		box-shadow: var(--shadow-raised);
+	}
+
+	.btn:active {
+		translate: 0 0;
+		box-shadow: var(--shadow-card);
 	}
 
 	.btn-primary {
@@ -379,6 +432,7 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 
 	.btn-primary:hover {
 		background-color: var(--color-gray-800);
+		border-color: var(--color-gray-800);
 	}
 
 	/* Red for destruction only, and never as the only cue — the word says it too. */
@@ -389,6 +443,7 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 
 	.btn-danger:hover {
 		background-color: var(--color-red-50);
+		border-color: var(--color-red-300);
 	}
 
 	.btn-quiet {
@@ -399,8 +454,11 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 	}
 
 	.btn-quiet:hover {
-		background-color: transparent;
+		background-color: var(--color-gray-100);
+		border-color: transparent;
 		color: var(--color-gray-900);
+		box-shadow: none;
+		translate: 0 0;
 	}
 
 	/*
@@ -455,10 +513,37 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		font-size: 0.75rem;
 		line-height: 1rem;
 		color: var(--color-gray-600);
+		transition:
+			background-color 120ms ease,
+			border-color 120ms ease,
+			translate 120ms ease;
 	}
 
 	.chip:hover {
 		background-color: var(--color-gray-100);
+		border-color: var(--color-gray-400);
+		translate: 0 -1px;
+	}
+
+	/* The keycap on a button joins in when its button is hovered. */
+	.btn:hover kbd {
+		border-color: var(--color-gray-500);
+		color: var(--color-gray-900);
+	}
+}
+
+/*
+ * The pointer resting on a row says so.
+ *
+ * Every list in the app is a `divide-y` stack, so this is the one place hover
+ * feedback for all of them lives. An overlay rather than a background swap, so
+ * a row that is already tinted — bought, snoozed, overdue — deepens instead of
+ * losing its state colour. Scoped to hover-capable pointers; a phone finger
+ * has no resting state and would only see rows flash after taps.
+ */
+@media (hover: hover) {
+	.divide-y > *:hover {
+		background-image: linear-gradient(var(--hover-wash), var(--hover-wash));
 	}
 }
 
@@ -536,6 +621,17 @@ html[data-style='playful'] .card-accent {
 		opacity: 1;
 		transform: none;
 		transition: none;
+	}
+
+	/* The hover lift is motion too. The colour changes stay. */
+	.btn,
+	.chip {
+		transition: none;
+	}
+
+	.btn:hover,
+	.chip:hover {
+		translate: 0 0;
 	}
 }
 
@@ -838,6 +934,7 @@ html[data-theme='dark'] {
 
 	/* Fills, not ramp colours: they darken rather than invert. */
 	--color-scrim: rgb(0 0 0 / 0.66);
+	--hover-wash: rgb(255 255 255 / 0.06);
 
 	--color-red-50: #2b1417;
 	--color-blue-50: #101f33;

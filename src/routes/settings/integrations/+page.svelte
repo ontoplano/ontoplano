@@ -68,7 +68,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-6">
-	<p class="text-sm text-gray-500">
+	<p class="page-intro">
 		Connect external apps. They push data in as <em>streams</em> and can read your upcoming schedule —
 		without shipping any code into ontoplano.
 	</p>

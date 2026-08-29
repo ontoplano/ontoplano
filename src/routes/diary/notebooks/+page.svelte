@@ -78,7 +78,7 @@
 <div class="space-y-4">
 	<h1 class="text-lg font-bold text-gray-900">Notebooks</h1>
 	<div class="flex flex-wrap items-center justify-between gap-3">
-		<p class="max-w-prose text-sm text-gray-500">
+		<p class="page-intro">
 			A subject you write against with no deadline — a book you are reading, a trip, a renovation.
 			Notes, tasks and goals can belong to one, and everything about it collects here.
 		</p>
