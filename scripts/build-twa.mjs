@@ -412,7 +412,10 @@ function installWidget() {
 		return;
 	}
 
-	const substitute = (text) => text.replaceAll('__PACKAGE__', packageId);
+	// __ORIGIN__ is the instance this build is bound to: the widget's Connect
+	// button opens it, so out of the box the widget points where the app does.
+	const substitute = (text) =>
+		text.replaceAll('__PACKAGE__', packageId).replaceAll('__ORIGIN__', parsed.origin);
 	const mainDir = join(DIR, 'app', 'src', 'main');
 	const javaDir = join(mainDir, 'java', ...packageId.split('.'));
 
@@ -472,9 +475,19 @@ function installWidget() {
         <activity
             android:name=".WidgetConfigureActivity"
             android:label="@string/configure_title"
+            android:launchMode="singleTask"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+            <!-- The way back from the browser: the connect page hands the
+                 widget its key on this link. singleTask above is what makes it
+                 land in the instance the launcher opened, widget id intact. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="ontoplano" android:host="widget" />
             </intent-filter>
         </activity>
 `;

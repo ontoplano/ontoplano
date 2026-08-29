@@ -853,7 +853,7 @@ win(iso(dayOffset(-1)), 1, 'ran 8km');
 
 apiToken('a-private-plugin on the phone', 'schedule:read,streams:write');
 apiToken('scratch script', 'streams:read');
-apiToken('home-screen widget', 'today:read');
+apiToken('Phone widget', 'today:read');
 
 // Instance data rather than the user's, but the settings page is a screen too:
 // one invitation outstanding, one already spent.

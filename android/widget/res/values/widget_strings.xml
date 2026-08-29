@@ -12,17 +12,19 @@
     <string name="widget_done_mark">✓</string>
     <string name="widget_overdue">overdue</string>
     <string name="widget_streak">%1$d day streak</string>
-    <string name="widget_not_configured">Tap to say where your instance is.</string>
-    <string name="widget_bad_token">That token was refused. Tap to paste a new one.</string>
+    <string name="widget_not_configured">Tap to connect the widget.</string>
+    <string name="widget_bad_token">The instance refused this widget. Tap to reconnect.</string>
     <string name="widget_unreachable">Could not reach the instance.</string>
 
     <string name="configure_title">Ontoplano widget</string>
-    <string name="configure_help">The widget reads one address with one token. Make the token in Settings → Integrations with the scope "today:read", so this widget can see today and nothing else.</string>
-    <string name="configure_origin_label">Address</string>
-    <string name="configure_origin_hint">https://plan.example.com</string>
-    <string name="configure_token_label">Token</string>
-    <string name="configure_token_hint">onto_…</string>
-    <string name="configure_save">Save</string>
+    <string name="configure_help">Connect opens your instance in the browser; one tap there and the widget is connected. It can read today\'s plan and nothing else.</string>
+    <string name="configure_connect">Connect</string>
+    <string name="configure_waiting">Finish in the browser — this screen completes by itself.</string>
     <string name="configure_checking">Checking…</string>
-    <string name="configure_needs_both">Both the address and the token are needed.</string>
+    <string name="configure_origin_label">Instance address</string>
+    <string name="configure_origin_hint">https://plan.example.com</string>
+    <string name="configure_default_origin">__ORIGIN__</string>
+    <string name="configure_needs_address">Say which instance to connect to.</string>
+    <string name="configure_no_browser">No browser on this phone can open the instance.</string>
+    <string name="configure_bad_link">That link was missing its key. Try Connect again.</string>
 </resources>

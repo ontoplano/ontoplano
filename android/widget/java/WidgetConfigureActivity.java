@@ -2,7 +2,9 @@ package __PACKAGE__;
 
 import android.app.Activity;
 import android.appwidget.AppWidgetManager;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -13,15 +15,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Where the widget is told which instance to read, and with what token.
+ * Where the widget is connected to an instance.
  *
- * A TWA has no native settings screen — the app is the website — so this is the
- * one piece of native UI the app has. It opens when the widget is placed, and
- * again from the widget itself when it has nothing to show.
+ * Nobody types a token here. Connect opens the instance in the browser — where
+ * a session already exists, because the app is that browser — the page mints a
+ * key scoped to today alone, and comes back on the ontoplano://widget link
+ * with the key aboard. The activity is singleTask so that return lands in this
+ * same instance, keeping the widget id the launcher gave us.
  *
- * The token is a scoped one from Settings → Integrations, with `today:read` and
- * nothing else: a widget sitting on a lock screen should not carry a key to the
- * diary.
+ * The address field stays, prefilled with the instance this app was built for:
+ * somebody self-hosting can point the widget somewhere else without a rebuild.
  */
 public class WidgetConfigureActivity extends Activity {
     /** Set when the widget itself opened this, rather than the launcher placing one. */
@@ -30,13 +33,16 @@ public class WidgetConfigureActivity extends Activity {
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private int widgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
 
+    private EditText origin;
+    private TextView status;
+
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         setContentView(R.layout.widget_configure);
 
         // Placing a widget and cancelling must leave nothing behind, so the
-        // result is set to cancelled until Save says otherwise.
+        // result is set to cancelled until the connection says otherwise.
         setResult(RESULT_CANCELED);
 
         Bundle extras = getIntent().getExtras();
@@ -45,50 +51,95 @@ public class WidgetConfigureActivity extends Activity {
                     AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
         }
 
-        final EditText origin = findViewById(R.id.configure_origin);
-        final EditText token = findViewById(R.id.configure_token);
-        final TextView status = findViewById(R.id.configure_status);
-        Button save = findViewById(R.id.configure_save);
+        origin = findViewById(R.id.configure_origin);
+        status = findViewById(R.id.configure_status);
+        Button connect = findViewById(R.id.configure_connect);
 
-        origin.setText(WidgetSettings.origin(this));
-        token.setText(WidgetSettings.token(this));
+        String saved = WidgetSettings.origin(this);
+        origin.setText(saved.isEmpty() ? getString(R.string.configure_default_origin) : saved);
 
-        save.setOnClickListener(new View.OnClickListener() {
+        connect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                final String originText = origin.getText().toString().trim();
-                final String tokenText = token.getText().toString().trim();
-
-                if (originText.isEmpty() || tokenText.isEmpty()) {
-                    status.setText(R.string.configure_needs_both);
+                String address = normalize(origin.getText().toString());
+                if (address.isEmpty()) {
+                    status.setText(R.string.configure_needs_address);
                     return;
                 }
 
-                status.setText(R.string.configure_checking);
-                WidgetSettings.save(WidgetConfigureActivity.this, originText, tokenText);
+                try {
+                    startActivity(new Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse(address + "/settings/integrations/widget")));
+                    status.setText(R.string.configure_waiting);
+                } catch (ActivityNotFoundException e) {
+                    status.setText(R.string.configure_no_browser);
+                }
+            }
+        });
 
-                // Saved first, then checked: the check reads what was saved, and
-                // a wrong token that is written down is easier to correct than
-                // one that vanished when the check failed.
-                worker.execute(new Runnable() {
+        handleReturn(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleReturn(intent);
+    }
+
+    /**
+     * The way back: ontoplano://widget?origin=…&token=….
+     *
+     * Any app on the phone could register this scheme and catch the same link,
+     * which is why the key it carries can read today's list and nothing else.
+     */
+    private void handleReturn(Intent intent) {
+        Uri data = intent.getData();
+        if (data == null || !"widget".equals(data.getHost())) {
+            return;
+        }
+
+        String linkOrigin = data.getQueryParameter("origin");
+        String token = data.getQueryParameter("token");
+        if (linkOrigin == null || linkOrigin.isEmpty() || token == null || token.isEmpty()) {
+            status.setText(R.string.configure_bad_link);
+            return;
+        }
+
+        status.setText(R.string.configure_checking);
+        WidgetSettings.save(this, linkOrigin, token);
+
+        // Saved first, then checked: the check reads what was saved, and a key
+        // that is written down is easier to replace than one that vanished when
+        // the check failed.
+        worker.execute(new Runnable() {
+            @Override
+            public void run() {
+                final TodayClient.Result result = TodayClient.fetch(WidgetConfigureActivity.this);
+                runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        final TodayClient.Result result =
-                                TodayClient.fetch(WidgetConfigureActivity.this);
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (result.error != null) {
-                                    status.setText(result.error);
-                                    return;
-                                }
-                                finishWithSuccess();
-                            }
-                        });
+                        if (result.error != null) {
+                            status.setText(result.error);
+                            return;
+                        }
+                        finishWithSuccess();
                     }
                 });
             }
         });
+    }
+
+    /** A pasted address arrives with trailing slashes and no scheme more often than not. */
+    private static String normalize(String address) {
+        String trimmed = address.trim();
+        while (trimmed.endsWith("/")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        if (!trimmed.isEmpty() && !trimmed.contains("://")) {
+            trimmed = "https://" + trimmed;
+        }
+        return trimmed;
     }
 
     @Override

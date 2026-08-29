@@ -211,19 +211,24 @@ be half-drawn.
 
 ### Putting one on the home screen
 
-1. In the app, go to **Settings → Integrations** and create a token with the
-   **`today:read`** scope and nothing else. A widget sits on a lock screen; it
-   should not carry a key to the diary.
-2. Long-press the home screen, pick **Ontoplano — today**, and drop it.
-3. The configuration screen opens. Paste the address of your instance
-   (`https://plan.example.com`) and the token. Saving checks both before it
-   closes, so a wrong token says so there rather than on the home screen.
+1. Long-press the home screen, pick **Ontoplano — today**, and drop it.
+2. The setup screen opens. Tap **Connect**: it opens your instance in the
+   browser — already signed in, since the app is that browser — where one tap
+   mints the widget its own key and hands it straight back over
+   `ontoplano://widget`. Nobody sees or pastes a token.
+
+The key is scoped to **`today:read`** and nothing else: a widget sits on a
+lock screen; it should not carry a key to the diary. It appears under
+**Settings → Integrations** as "Phone widget", where revoking it disconnects
+the widget. The address field on the setup screen is prefilled with the
+instance the app was built for; somebody self-hosting can point it elsewhere
+before tapping Connect.
 
 Tap the header to open the app, **Refresh** to read again. The launcher also
 refreshes it every half hour, which is the shortest period it honours for a
 widget that wakes itself.
 
-To change the address or the token later: long-press the widget and choose the
+To reconnect or change the address later: long-press the widget and choose the
 launcher's own "reconfigure" (Android 12 and up), or remove it and place it
 again.
 
@@ -236,7 +241,8 @@ the manifest — the provider, the list service and the configuration activity.
 
 `__PACKAGE__` in those sources is replaced with `ANDROID_PACKAGE_NAME` at copy
 time: the classes sit in the app's own package so `R` resolves, and the package
-is still configurable.
+is still configurable. `__ORIGIN__` is replaced with the origin the build is
+bound to, so the widget's Connect button opens the same instance the app does.
 
 They are Java, not Kotlin. The generated project has no Kotlin plugin, and
 adding one to a file that is rewritten on every build is a worse trade than a
