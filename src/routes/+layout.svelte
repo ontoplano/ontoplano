@@ -18,8 +18,12 @@
 	import { undo } from '$lib/undo.svelte';
 	import { palette } from '$lib/palette.svelte';
 	import type { IconName } from '$lib/components/Icon.svelte';
+	import { suppressAutofill } from '$lib/autofill';
 
 	let { children, data }: { children: any; data: LayoutServerData } = $props();
+
+	// Autofill is opt-in: see $lib/autofill. Once, for every form the app ever mounts.
+	$effect(() => suppressAutofill(document.body));
 	let menuOpen = $state(false);
 	let pie = $state<CapturePie | undefined>();
 	let rooms = $state<NavPie | undefined>();
@@ -305,7 +309,7 @@
 								title={item.label}
 								class="flex shrink-0 items-center gap-1 border-b-2 px-1.5 py-4 text-sm whitespace-nowrap transition-colors min-[1460px]:gap-1.5 min-[1460px]:px-3 {active
 									? 'font-semibold text-chrome-ink'
-									: 'border-transparent font-medium text-chrome-muted hover:text-chrome-ink'}"
+									: 'border-transparent font-medium text-chrome-muted hover:border-chrome-line hover:text-chrome-ink'}"
 								style={active ? `border-color: ${SECTIONS[item.section].accent}` : ''}
 							>
 								<svg
@@ -335,15 +339,17 @@
 					class="menu-container relative hidden shrink-0 items-center gap-2 min-[1460px]:gap-3 lg:flex"
 				>
 					<!-- A keyboard-only feature is an invisible one. The box says the app
-					     can be searched; the shortcut is for after you know that. -->
+					     can be searched; the shortcut is for after you know that.
+					     As wide as the space allows: a search box the size of its own
+					     word reads as an afterthought on a 2000px header. -->
 					<button
 						onclick={() => (palette.open = true)}
-						class="flex items-center gap-2 border border-chrome-line bg-chrome-raised px-3 py-1.5 text-sm text-chrome-muted transition hover:text-chrome-ink hover:brightness-125"
+						class="flex w-40 items-center gap-2 border border-chrome-line bg-chrome-raised px-3 py-1.5 text-sm text-chrome-muted transition hover:text-chrome-ink hover:brightness-125 min-[1460px]:w-72 xl:w-56"
 					>
 						<Icon name="search" size={14} />
 						Search
 						<kbd
-							class="kbd-hint hidden border border-chrome-line px-1 text-xs min-[1460px]:inline-block"
+							class="kbd-hint ml-auto hidden border border-chrome-line px-1 text-xs min-[1460px]:inline-block"
 							>{key} K</kbd
 						>
 					</button>
