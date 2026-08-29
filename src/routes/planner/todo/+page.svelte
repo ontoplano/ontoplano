@@ -7,7 +7,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types.js';
-	import { getAction } from '$lib/shortcuts';
+	import { getAction, keyFor } from '$lib/shortcuts';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -167,7 +167,7 @@
 		</div>
 		<button onclick={startNew} class="btn btn-primary btn-sm">
 			<Icon name="plus" /> New todo
-			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">n</kbd>
+			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">{keyFor('/planner/todo', 'new')}</kbd>
 		</button>
 	</div>
 
