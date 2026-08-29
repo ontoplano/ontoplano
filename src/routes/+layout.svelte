@@ -3,7 +3,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { afterNavigate, goto, onNavigate } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { THEMES } from '$lib/theme.js';
@@ -24,27 +24,6 @@
 
 	// Autofill is opt-in: see $lib/autofill. Once, for every form the app ever mounts.
 	$effect(() => suppressAutofill(document.body));
-
-	/**
-	 * Pages cross-fade instead of blinking.
-	 *
-	 * The browser's own view transitions, so this is a screenshot morph, not a
-	 * framework feature: the old page fades down as the new one rises, and the
-	 * chrome — which layout.css names — holds still through it. Browsers
-	 * without the API, and people who asked for less motion, get the plain
-	 * swap they always had.
-	 */
-	onNavigate((navigation) => {
-		if (!document.startViewTransition) return;
-		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-		return new Promise((resolve) => {
-			document.startViewTransition(async () => {
-				resolve();
-				await navigation.complete.catch(() => {});
-			});
-		});
-	});
 	let menuOpen = $state(false);
 	let pie = $state<CapturePie | undefined>();
 	let rooms = $state<NavPie | undefined>();
@@ -303,7 +282,7 @@
 
 		<SectionPattern icon={pageGlyph} />
 		<header
-			class="vt-chrome-top relative z-40 bg-chrome shadow-raised"
+			class="relative z-40 bg-chrome shadow-raised"
 			style="padding-top: var(--safe-top)"
 		>
 			<div class="mx-auto flex w-full max-w-page items-stretch justify-between px-4 sm:px-6">
@@ -490,9 +469,16 @@
 		</header>
 		<main
 			bind:this={scroller}
-			class="relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:overflow-visible"
+			class="relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto px-4 pt-6 pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+1.5rem)] sm:px-6 lg:overflow-visible lg:pb-6"
 		>
-			{@render children()}
+			<!-- Keyed so arriving on a page replays its entrance. The movement is
+			     transform alone — an opacity animation here is a flash of the page
+			     background on every navigation, which was tried and hated. -->
+			{#key page.url.pathname}
+				<div class="page-enter">
+					{@render children()}
+				</div>
+			{/key}
 		</main>
 
 		<!--

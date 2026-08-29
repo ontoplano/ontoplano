@@ -4,6 +4,13 @@ What changed for somebody using the app, newest first. One entry per
 user-visible change, written when the change is made — the git log has the
 rest. Versions follow `package.json`.
 
+## 0.6.1 — 2026-08-29
+
+- Changing pages no longer flashes dark — the cross-fade is gone; the new page
+  takes a small step up instead.
+- The phone's bottom bar can no longer scroll away, be pushed off, or vanish
+  after a refresh: it is glued to the viewport.
+
 ## 0.6.0 — 2026-08-29
 
 - Moving between pages cross-fades instead of blinking; the bars hold still

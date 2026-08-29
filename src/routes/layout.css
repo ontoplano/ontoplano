@@ -917,34 +917,24 @@ pre,
 	}
 
 	/*
-	 * Navigation is a cross-fade, not a blink.
+	 * A page arrives with a small upward step.
 	 *
-	 * The shell starts a browser view transition on every navigation; these
-	 * rules say what it looks like — the old page falls away fast, the new one
-	 * rises in the same motion `.rise` uses everywhere else. The chrome is
-	 * named so it holds still while the page changes under it: the bars are
-	 * the room, not the furniture.
+	 * Movement only, never opacity: view transitions were tried here and their
+	 * cross-fade let the dark page background flash through on every
+	 * navigation. A transform cannot dim anything, so the worst this can be is
+	 * subtle.
 	 */
-	::view-transition-old(root) {
-		animation: vt-out 90ms ease both;
-	}
-
-	::view-transition-new(root) {
-		animation: rise 180ms ease-out both;
-	}
-
-	@keyframes vt-out {
+	@keyframes page-enter {
+		from {
+			transform: translateY(6px);
+		}
 		to {
-			opacity: 0;
+			transform: none;
 		}
 	}
 
-	.vt-chrome-top {
-		view-transition-name: chrome-top;
-	}
-
-	.vt-chrome-bottom {
-		view-transition-name: chrome-bottom;
+	.page-enter {
+		animation: page-enter 160ms ease-out both;
 	}
 }
 
