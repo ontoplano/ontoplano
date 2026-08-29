@@ -399,34 +399,34 @@
 		<div class="flex flex-wrap items-center gap-2">
 			<button
 				onclick={() => (filterType = filterType === 'someday' ? 'all' : 'someday')}
-				class="px-2 py-1 text-xs shadow-sm {filterType === 'someday'
-					? 'border border-orange-200 bg-orange-50 text-orange-700'
-					: 'border border-gray-300 bg-white text-gray-700'}"
+				aria-pressed={filterType === 'someday'}
+				class="btn btn-sm {filterType === 'someday'
+					? 'border-orange-200 bg-orange-50 text-orange-700'
+					: ''}"
 			>
 				Wishlist <kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">1</kbd>
 			</button>
 			<button
 				onclick={() => (filterType = filterType === 'replenish' ? 'all' : 'replenish')}
-				class="px-2 py-1 text-xs shadow-sm {filterType === 'replenish'
-					? 'border border-cyan-200 bg-cyan-50 text-cyan-700'
-					: 'border border-gray-300 bg-white text-gray-700'}"
+				aria-pressed={filterType === 'replenish'}
+				class="btn btn-sm {filterType === 'replenish'
+					? 'border-cyan-200 bg-cyan-50 text-cyan-700'
+					: ''}"
 			>
 				Inventory <kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">2</kbd>
 			</button>
 			<button
 				onclick={() => (showBought = !showBought)}
-				class="px-2 py-1 text-xs shadow-sm {showBought
-					? 'border border-gray-400 bg-gray-100 text-gray-700'
-					: 'border border-gray-300 bg-white text-gray-500'}"
+				aria-pressed={showBought}
+				class="btn btn-sm {showBought ? '' : 'text-gray-500'}"
 			>
 				{showBought ? 'Hide' : 'Show'} bought
 				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">b</kbd>
 			</button>
 			<button
 				onclick={() => (showSnoozed = !showSnoozed)}
-				class="px-2 py-1 text-xs shadow-sm {showSnoozed
-					? 'border border-gray-400 bg-gray-100 text-gray-700'
-					: 'border border-gray-300 bg-white text-gray-500'}"
+				aria-pressed={showSnoozed}
+				class="btn btn-sm {showSnoozed ? '' : 'text-gray-500'}"
 			>
 				{showSnoozed ? 'Hide' : 'Show'} snoozed
 				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">s</kbd>

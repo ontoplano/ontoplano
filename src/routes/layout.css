@@ -533,20 +533,47 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		border-color: var(--color-gray-500);
 		color: var(--color-gray-900);
 	}
+
+	/*
+	 * A toggle that is on says so through the same vocabulary everywhere.
+	 * Pages that tint their active filters (wishlist orange, inventory cyan)
+	 * override with utilities, which win over this layer.
+	 */
+	.btn[aria-pressed='true'] {
+		border-color: var(--color-gray-400);
+		background-color: var(--color-gray-100);
+		color: var(--color-gray-900);
+	}
 }
 
 /*
- * The pointer resting on a row says so.
+ * The pointer resting on a row says so — and it fades in, not snaps.
  *
  * Every list in the app is a `divide-y` stack, so this is the one place hover
- * feedback for all of them lives. An overlay rather than a background swap, so
- * a row that is already tinted — bought, snoozed, overdue — deepens instead of
- * losing its state colour. Scoped to hover-capable pointers; a phone finger
- * has no resting state and would only see rows flash after taps.
+ * feedback for all of them lives. An ::after overlay rather than a background
+ * swap, twice over: a row that is already tinted — bought, snoozed, overdue —
+ * deepens instead of losing its state colour, and an overlay's opacity can
+ * transition where a background-image cannot. Scoped to hover-capable
+ * pointers; a phone finger has no resting state and would only see rows flash
+ * after taps.
  */
 @media (hover: hover) {
-	.divide-y > *:hover {
-		background-image: linear-gradient(var(--hover-wash), var(--hover-wash));
+	.divide-y > * {
+		position: relative;
+	}
+
+	.divide-y > *::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background: var(--hover-wash);
+		opacity: 0;
+		transition: opacity 120ms ease;
+	}
+
+	.divide-y > *:hover::after {
+		opacity: 1;
 	}
 }
 

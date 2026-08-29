@@ -21,9 +21,9 @@
 			{#each ranges as days (days)}
 				<a
 					href="{resolve('/data/[slug]', { slug: data.stream.slug })}?days={days}"
-					class="border px-2 py-1 text-xs shadow-sm {data.rangeDays === days
+					class="btn btn-sm {data.rangeDays === days
 						? 'border-gray-900 bg-gray-900 text-white'
-						: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+						: ''}"
 				>
 					{days}d
 				</a>
