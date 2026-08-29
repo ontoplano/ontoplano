@@ -19,14 +19,15 @@ const verificationMail = (url: string) =>
 	});
 
 /**
- * Verification is asked for but not enforced.
+ * Verification is asked for but never blocks the sign-in itself.
  *
- * Requiring a verified address before sign-in would lock out every existing
- * account the moment this shipped, and would make the app unusable on a
- * self-hosted install with no SMTP. So the mail goes out and the banner nags;
- * turning it into a hard gate is a deployment decision, not a default.
+ * When `ONTOPLANO_REQUIRE_VERIFIED_EMAIL=true`, the gate lives in
+ * hooks.server.ts instead of here: the person signs IN, and everything they
+ * reach is the page that says the address is unverified, with a resend
+ * button. better-auth's own hard gate would answer the login form with an
+ * error and strand them outside — no session, no resend, nothing to do but
+ * dig through a mailbox for a link that may never have arrived.
  */
-const REQUIRE_VERIFIED_EMAIL = process.env.ONTOPLANO_REQUIRE_VERIFIED_EMAIL === 'true';
 
 /**
  * Which social sign-ins this instance actually has credentials for.
@@ -77,7 +78,7 @@ export const auth = betterAuth({
 	},
 	emailAndPassword: {
 		enabled: true,
-		requireEmailVerification: REQUIRE_VERIFIED_EMAIL,
+		requireEmailVerification: false,
 		// Short-lived, because a reset link in a mailbox is a standing key to the
 		// account.
 		resetPasswordTokenExpiresIn: 60 * 60,

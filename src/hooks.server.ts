@@ -8,7 +8,7 @@ import { DEFAULT_THEME, getStyle, getTheme } from '$lib/server/settings';
 import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
 import { checkSignUpAllowed, consumeInvite } from '$lib/server/services/registration';
 import { claimFirstAccount } from '$lib/server/services/admin';
-import { startTrial } from '$lib/server/services/subscriptions';
+import { onboardEntitlement } from '$lib/server/services/billing';
 import { record } from '$lib/server/services/audit';
 import { toJsonError } from '$lib/server/services/errors';
 
@@ -116,10 +116,11 @@ const handleRegistration: Handle = async ({ event, resolve }) => {
 
 		if (typeof userId === 'string') {
 			if (invite) consumeInvite(invite.id, userId, now);
-			// The same two things the form path does, because this is the other
-			// door into the same act.
+			// The same things the form path does, because this is the other
+			// door into the same act. A card-first account starts on nothing
+			// and meets the billing page on its first navigation.
 			claimFirstAccount(userId);
-			startTrial(userId, now);
+			onboardEntitlement(userId, Boolean(invite), now);
 			record(userId, 'registered', { ip: safeAddress(event) });
 		}
 	}
@@ -173,6 +174,23 @@ const handleTheme: Handle = ({ event, resolve }) => {
  */
 const handleSecurityHeaders: Handle = async ({ event, resolve }) => {
 	const response = await resolve(event);
+
+	// The one page allowed to load the payment provider's script. Paddle's
+	// overlay checkout is their JS on our page framing their origin — that is
+	// what "the provider handles the card" means in the web flow — and /buy
+	// exists so the rest of the app never widens its CSP for it.
+	if (event.url.pathname === '/buy') {
+		const csp = response.headers.get('content-security-policy');
+		if (csp) {
+			response.headers.set(
+				'content-security-policy',
+				csp
+					.replace('script-src', 'script-src https://cdn.paddle.com')
+					.replace('connect-src', 'connect-src https://*.paddle.com https://*.paddle.io') +
+					"; frame-src 'self' https://*.paddle.com https://*.paddle.io"
+			);
+		}
+	}
 
 	response.headers.set('X-Content-Type-Options', 'nosniff');
 	response.headers.set('X-Frame-Options', 'DENY');
@@ -229,6 +247,37 @@ const handleAuthRateLimit: Handle = async ({ event, resolve }) => {
  * answer 401 themselves, and a redirect to an HTML page is not an answer a
  * plugin can read.
  */
+/**
+ * The verified-address gate, when the deployment asks for one.
+ *
+ * `ONTOPLANO_REQUIRE_VERIFIED_EMAIL=true` does not block the sign-in — it
+ * narrows the signed-in world: an unverified account lands on the page that
+ * says the address is unverified and offers a resend, and every other page
+ * leads back there. The mail's own verify link (under /api/auth) stays
+ * reachable, or the link could never do its work.
+ */
+const REQUIRE_VERIFIED_EMAIL = process.env.ONTOPLANO_REQUIRE_VERIFIED_EMAIL === 'true';
+const VERIFY_EXEMPT = [
+	'/login',
+	'/api',
+	'/healthz',
+	'/privacy',
+	'/terms',
+	'/favicon.svg',
+	'/icons',
+	'/manifest.webmanifest'
+];
+
+const handleUnverified: Handle = ({ event, resolve }) => {
+	if (!REQUIRE_VERIFIED_EMAIL || !event.locals.user || event.locals.user.emailVerified) {
+		return resolve(event);
+	}
+	const path = event.url.pathname;
+	const exempt = VERIFY_EXEMPT.some((p) => path === p || path.startsWith(`${p}/`));
+	if (!exempt) redirect(303, '/login/verify');
+	return resolve(event);
+};
+
 const PUBLIC_WRITES = ['/login', '/demo', '/api/auth'];
 
 const handleSignedOutWrites: Handle = ({ event, resolve }) => {
@@ -249,6 +298,7 @@ export const handle: Handle = sequence(
 	handleAuthRateLimit,
 	handleRegistration,
 	handleBetterAuth,
+	handleUnverified,
 	handleSignedOutWrites,
 	handleTheme
 );

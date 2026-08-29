@@ -40,9 +40,14 @@ export const load: LayoutServerLoad = async (event) => {
 	// a stranger churns on. It asks twice for a timezone and a starting week,
 	// then never appears again.
 	const isWelcome = event.url.pathname === '/welcome';
+	// The unverified page sits outside first-run on purpose: when the
+	// verified-address gate is on, /welcome itself bounces to /login/verify,
+	// and first-run sending it back again is a loop, not an onboarding.
+	const isVerifyHold = event.url.pathname === '/login/verify';
 	if (
 		event.locals.user &&
 		!isWelcome &&
+		!isVerifyHold &&
 		!isDemo &&
 		!isAuthApi &&
 		!event.url.pathname.startsWith('/api/') &&
