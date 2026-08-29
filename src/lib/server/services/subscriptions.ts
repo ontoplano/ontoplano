@@ -127,7 +127,7 @@ function unsubscribed(): Entitlement {
  * Fourteen days of Pro without a card, because a planner is not something you
  * can judge in an afternoon — the point of it only shows up in the second week.
  */
-export function startTrial(userId: string, now = new Date()): void {
+export function startTrial(userId: string, now = new Date(), actorId?: string): void {
 	if (isSelfHosted()) return;
 
 	const existing = db
@@ -153,7 +153,10 @@ export function startTrial(userId: string, now = new Date()): void {
 		})
 		.run();
 
-	record(userId, 'plan_changed', { detail: { to: 'pro', status: 'trialing', until: endsAt } });
+	record(userId, 'plan_changed', {
+		actorId,
+		detail: { to: 'pro', status: 'trialing', until: endsAt }
+	});
 }
 
 /**

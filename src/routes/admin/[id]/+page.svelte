@@ -69,6 +69,17 @@
 		</dl>
 
 		<div class="mt-4 flex flex-wrap gap-2 border-t border-gray-200 pt-4">
+			{#if data.account.canGrantTrial}
+				<!-- Only for an account with no plan history at all — one that
+				     predates billing. Not offered otherwise: a second trial is
+				     a discount, and discounts belong to the payment provider. -->
+				<form method="post" action="?/grantTrial" use:enhance>
+					<button class="btn btn-sm">
+						<Icon name="calendar" /> Start a trial
+					</button>
+				</form>
+			{/if}
+
 			{#if !data.account.emailVerified}
 				<form method="post" action="?/resendVerification" use:enhance>
 					<button class="btn btn-sm">

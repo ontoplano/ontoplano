@@ -2,11 +2,11 @@ import { and, count, desc, eq, like, or, sql } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { session, user } from '../db/auth.schema.js';
-import { auditEvents } from '../db/schema.js';
+import { auditEvents, subscriptions } from '../db/schema.js';
 import { ROLES, type Role } from '../../roles.js';
-import { isInstanceOwner } from '../settings.js';
+import { isInstanceOwner, isSelfHosted } from '../settings.js';
 import { record } from './audit.js';
-import { resolvePlan } from './subscriptions.js';
+import { resolvePlan, startTrial } from './subscriptions.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { str } from './validate.js';
 
@@ -44,6 +44,8 @@ export type Account = {
 	 * work and change nothing.
 	 */
 	isOwner: boolean;
+	/** Hosted instance, no plan history: the one case an admin may start a trial. */
+	canGrantTrial?: boolean;
 };
 
 export function roleOf(userId: string): Role {
@@ -140,8 +142,38 @@ export function accountById(id: string): Account {
 		createdAt: new Date(row.createdAt).toISOString(),
 		sessions: sessionCount(row.id),
 		plan: describePlan(row.id),
-		isOwner: isInstanceOwner(row.id)
+		isOwner: isInstanceOwner(row.id),
+		canGrantTrial: !isSelfHosted() && !hasPlanHistory(row.id)
 	};
+}
+
+/**
+ * Hand an account its trial, by an administrator's hand.
+ *
+ * For the account that predates billing: created while the instance ran as
+ * self-hosted, so it has no subscription row, and the moment plans are
+ * enforced it would freeze at "none". Only such accounts qualify — giving a
+ * lapsed account another trial is a discount, and discounts belong to the
+ * payment provider, not to a button here.
+ */
+export function grantTrial(actorId: string, subjectId: string, now = new Date()): void {
+	requireAdmin(actorId);
+
+	if (isSelfHosted()) throw new ValidationError('A self-hosted instance has no plans');
+	if (hasPlanHistory(subjectId))
+		throw new ValidationError('This account already has a plan history');
+
+	startTrial(subjectId, now, actorId);
+}
+
+function hasPlanHistory(userId: string): boolean {
+	return (
+		db
+			.select({ id: subscriptions.id })
+			.from(subscriptions)
+			.where(eq(subscriptions.userId, userId))
+			.get() !== undefined
+	);
 }
 
 /**

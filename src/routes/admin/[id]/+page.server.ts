@@ -2,7 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
 import type { Actions, PageServerLoad } from './$types';
 import { auth, sendVerificationFor } from '$lib/server/auth';
-import { accountById, requireAdmin, setRole } from '$lib/server/services/admin';
+import { accountById, grantTrial, requireAdmin, setRole } from '$lib/server/services/admin';
 import { listForSubject, record } from '$lib/server/services/audit';
 import { toActionFailure } from '$lib/server/services/errors';
 import { isEmailConfigured } from '$lib/server/email';
@@ -24,6 +24,16 @@ export const actions: Actions = {
 		try {
 			setRole(locals.user!.id, params.id, formData.get('role'));
 			return { success: true, action: 'setRole' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** A trial for an account that predates billing — see grantTrial. */
+	grantTrial: async ({ locals, params }) => {
+		try {
+			grantTrial(locals.user!.id, params.id);
+			return { success: true, action: 'grantTrial' };
 		} catch (e) {
 			return toActionFailure(e);
 		}
