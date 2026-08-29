@@ -17,6 +17,9 @@ rest. Versions follow `package.json`.
   longer more budget.
 - Two days before a trial ends, a mail says so — what happens next, and where
   to cancel — so the first charge is never a surprise.
+- Granting an API token now reads as sentences — "Read everything on your
+  calendar for the days ahead" — instead of scope codes, in the form and on
+  every token's row.
 
 ## 0.6.2 — 2026-08-29
 

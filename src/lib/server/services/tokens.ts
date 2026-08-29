@@ -15,13 +15,18 @@ import { num, str } from './validate.js';
  * Deliberately narrow: a-private-plugin running on a phone needs to push weight
  * readings and read the schedule to set alarms. It must not be able to read
  * the diary if that phone is ever compromised.
+ *
+ * Each description is the sentence the person agrees to — "read everything on
+ * your calendar", not `schedule:read`. A grant is consent, and consent given
+ * to a string of jargon is not informed; the key is for the developer and the
+ * docs, the sentence is for the owner of the data.
  */
 export const SCOPES = {
-	'streams:write': 'Push data points to your streams',
-	'streams:read': 'Read back your stream data',
-	'schedule:read': 'Read your upcoming scheduled tasks',
-	'today:read': "Read today's blocks, habits and tasks — what the phone widget draws",
-	'plugin:declare': 'Describe itself, so its settings are labelled rather than anonymous'
+	'streams:write': 'Send readings into your data streams, and create new streams',
+	'streams:read': 'Read everything your data streams have ever recorded',
+	'schedule:read': 'Read everything on your calendar for the days ahead',
+	'today:read': "See today's blocks, habits and tasks — what the phone widget shows",
+	'plugin:declare': 'Name and describe itself on your integrations page'
 } as const;
 
 export type Scope = keyof typeof SCOPES;

@@ -21,6 +21,11 @@
 
 	const newToken = $derived(form?.success && form.action === 'createToken' ? form.token : null);
 
+	// The sentence a scope was granted as, everywhere a scope is shown — the
+	// key is for the developer, the sentence is for the owner of the data.
+	const scopeSentence = (key: string) =>
+		data.scopes.find((s) => s.key === key)?.description ?? key;
+
 	function closeForms() {
 		showTokenForm = false;
 		confirmRevoke = null;
@@ -90,7 +95,7 @@
 				</button>
 			</div>
 			<p class="mt-2 text-xs text-blue-800">
-				Scopes: {newToken.scopes.join(', ')}
+				It may: {newToken.scopes.map(scopeSentence).join(' · ')}
 			</p>
 		</div>
 	{/if}
@@ -145,17 +150,17 @@
 					</Field>
 
 					<fieldset class="col-span-12">
-						<legend class="eyebrow text-gray-600">Scopes</legend>
+						<legend class="eyebrow text-gray-600">What this token may do</legend>
 						<p class="mt-1 mb-2 text-xs text-gray-500">
-							Grant only what the app needs. A token with no read scope cannot see your data.
+							Grant only what the app needs. Anything unticked stays out of reach.
 						</p>
 						<div class="space-y-1">
 							{#each data.scopes as scope (scope.key)}
 								<label class="flex items-start gap-2 text-sm text-gray-700">
 									<input type="checkbox" name="scopes" value={scope.key} class="mt-1" />
 									<span>
-										<code class="font-mono text-xs">{scope.key}</code>
-										<span class="text-gray-500"> — {scope.description}</span>
+										{scope.description}
+										<code class="ml-1 font-mono text-xs text-gray-500">{scope.key}</code>
 									</span>
 								</label>
 							{/each}
@@ -188,7 +193,7 @@
 							<p class="truncate text-sm font-medium text-gray-900">{token.name}</p>
 							<p class="mt-0.5 font-mono text-xs text-gray-500">{token.prefix}…</p>
 							<p class="mt-1 text-xs text-gray-500">
-								{token.scopes.join(', ') || 'no scopes'}
+								{token.scopes.map(scopeSentence).join(' · ') || 'no scopes'}
 								{#if token.lastUsedAt}
 									· last used {token.lastUsedAt.slice(0, 16).replace('T', ' ')}
 								{:else}
