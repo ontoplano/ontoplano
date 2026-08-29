@@ -12,9 +12,12 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-const sendEmail = vi.fn(async () => ({ delivered: true }));
+type Mail = { to: string; subject: string; text: string };
+const sendEmail = vi.fn<(email: Mail) => Promise<{ delivered: boolean }>>(async () => ({
+	delivered: true
+}));
 vi.mock('../src/lib/server/email', () => ({
-	sendEmail: (...args: unknown[]) => sendEmail(...args),
+	sendEmail: (email: Mail) => sendEmail(email),
 	isEmailConfigured: () => true
 }));
 
@@ -49,7 +52,7 @@ describe('who is told', () => {
 		expect(await billing.sendTrialEndingNotices(now)).toBe(1);
 		expect(sendEmail).toHaveBeenCalledTimes(1);
 
-		const mail = sendEmail.mock.calls[0][0] as { to: string; subject: string; text: string };
+		const mail = sendEmail.mock.calls[0][0];
 		expect(mail.to).toBe('owner@test.invalid');
 		expect(mail.subject).toMatch(/trial ends/);
 
@@ -74,7 +77,7 @@ describe('who is told', () => {
 
 		await billing.sendTrialEndingNotices(now);
 
-		const texts = sendEmail.mock.calls.map((c) => (c[0] as { text: string }).text);
+		const texts = sendEmail.mock.calls.map((c) => c[0].text);
 		expect(texts.find((t) => t.includes('charge'))).toBeTruthy();
 		expect(texts.find((t) => t.includes('nothing new can be added'))).toBeTruthy();
 	});
