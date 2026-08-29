@@ -9,7 +9,7 @@
  * key — comes from the environment, because a committed twa-manifest.json with
  * someone's domain baked in is wrong for every other deployment.
  *
- *   ONTOPLANO_DOMAIN=plan.example.com \
+ *   ONTOPLANO_ORIGIN=https://plan.example.com \
  *   ANDROID_PACKAGE_NAME=app.ontoplano.twa \
  *   node scripts/build-twa.mjs
  *
@@ -28,14 +28,10 @@ const DIR = 'android-twa';
  * The origin the app opens.
  *
  * ONTOPLANO_ORIGIN takes a full origin including scheme and port, which is what
- * a self-hosted instance on a LAN looks like: http://192.168.1.50:1493.
- * ONTOPLANO_DOMAIN remains for the ordinary https case.
+ * a self-hosted instance on a LAN looks like: http://192.168.1.50:1493 — and
+ * https://plan.example.com for the ordinary case. One name, everywhere.
  */
-const rawOrigin = process.env.ONTOPLANO_ORIGIN
-	? process.env.ONTOPLANO_ORIGIN
-	: process.env.ONTOPLANO_DOMAIN
-		? `https://${process.env.ONTOPLANO_DOMAIN}`
-		: null;
+const rawOrigin = process.env.ONTOPLANO_ORIGIN || null;
 
 if (!rawOrigin) {
 	console.error(
@@ -91,7 +87,7 @@ const origin = `${scheme}://${domain}`;
  * Normally the deployed site. Separated from `origin` so a build machine that
  * cannot reach the public domain — CI, or a laptop before the first deploy —
  * can point at a locally running server. It changes only where bytes are
- * fetched from; the app is still bound to ONTOPLANO_DOMAIN.
+ * fetched from; the app is still bound to ONTOPLANO_ORIGIN.
  */
 const assetOrigin = process.env.ONTOPLANO_ASSET_ORIGIN ?? origin;
 

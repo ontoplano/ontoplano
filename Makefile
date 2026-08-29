@@ -1,9 +1,12 @@
-# Local overrides, if there are any.
+# Defaults first, overrides second.
 #
-# Anything specific to one machine or one deployment — where to deploy, which
-# host, which origin the phone app is built against — belongs in `local.mk`,
-# which is not tracked. This file is only the parts that are true for anybody
+# defaults.env is the one place a default value lives — no `?=` fallbacks
+# scattered through this file. Anything specific to one machine or one
+# deployment — where to deploy, which host, which origin the phone app is
+# built against — belongs in `local.mk`, which is not tracked and loads
+# after, so it wins. This file is only the parts that are true for anybody
 # who clones the repository.
+include defaults.env
 -include local.mk
 
 # Pinned, because the include above runs first and make's default goal is the
@@ -283,7 +286,6 @@ uninstall-telegram-service:
 
 APK := android-twa/app-release-signed.apk
 AAB := android-twa/app-release-bundle.aab
-APK_PORT ?= 8088
 
 # Where the phone downloads from. The first address on this machine, which is
 # the one a phone on the same wifi can reach — not 127.0.0.1.
@@ -295,18 +297,16 @@ LAN_IP := $(shell ip route get 1.1.1.1 2>/dev/null | awk '{print $$7; exit}')
 # The address the app opens.
 #
 # A TWA is bound to one origin at build time and there is no switching it
-# afterwards, so there is no sensible default: set ONTOPLANO_ORIGIN in local.mk
-# for the instance you deploy, or use `make android-lan` to build against this
-# machine over wifi.
-APP_PORT ?= 1493
-ONTOPLANO_ORIGIN ?= https://$(ONTOPLANO_HOST)
-ONTOPLANO_HOST ?=
+# afterwards, so there is no sensible default and none in defaults.env: set
+# ONTOPLANO_ORIGIN in local.mk for the instance you deploy, or use
+# `make android-lan` to build against this machine over wifi.
 
 android:
-	@# Catches an empty LAN_IP, which would otherwise build an app pointed at
-	@# "http://:1493" and fail confusingly on the phone rather than here.
+	@# Catches an empty or host-less ONTOPLANO_ORIGIN, which would otherwise
+	@# build an app pointed at nothing and fail confusingly on the phone
+	@# rather than here.
 	@case "$(ONTOPLANO_ORIGIN)" in \
-		*://:*|*://) \
+		""|*://:*|*://) \
 			echo "ONTOPLANO_ORIGIN has no host: $(ONTOPLANO_ORIGIN)"; \
 			echo "LAN_IP came back empty. Either fix it or pass an origin:"; \
 			echo "  make android ONTOPLANO_ORIGIN=https://plan.example.com"; \
@@ -410,7 +410,7 @@ android-share: $(APK)
 # which the app shows a URL bar.
 android-fingerprint:
 	@command -v keytool >/dev/null || { echo "keytool not found — install a JDK."; exit 1; }
-	@keystore=$${ANDROID_KEYSTORE:-android-twa/android.keystore}; \
+	@keystore="$(ANDROID_KEYSTORE)"; \
 	if [ ! -f "$$keystore" ]; then \
 		echo "No keystore at $$keystore. Build once with 'make android' first."; \
 		exit 1; \
@@ -419,7 +419,7 @@ android-fingerprint:
 	if [ -z "$$pass" ] && [ -f "$$keystore.pass" ]; then pass=$$(cat "$$keystore.pass"); fi; \
 	if [ -n "$$pass" ]; then set -- -storepass "$$pass"; else set --; fi; \
 	fp=$$(keytool -list -v -keystore "$$keystore" \
-		-alias $${ANDROID_KEY_ALIAS:-ontoplano} "$$@" 2>/dev/null \
+		-alias "$(ANDROID_KEY_ALIAS)" "$$@" 2>/dev/null \
 		| grep "SHA256:" | head -1 | sed 's/.*SHA256: *//'); \
 	if [ -z "$$fp" ]; then \
 		echo "Could not read the fingerprint from $$keystore."; \
@@ -438,7 +438,7 @@ android-fingerprint:
 # Removing the app is the only way past a signing-key change.
 android-uninstall:
 	@command -v adb >/dev/null || { echo "adb not found."; exit 1; }
-	adb uninstall $${ANDROID_PACKAGE_NAME:-app.ontoplano.twa}
+	adb uninstall "$(ANDROID_PACKAGE_NAME)"
 
 # Start a new signing key, when the old one's password is lost.
 #
@@ -446,7 +446,7 @@ android-uninstall:
 # key forever, and a new key means a new Play listing that existing users will
 # not receive updates from.
 android-keystore-reset:
-	@keystore=$${ANDROID_KEYSTORE:-android-twa/android.keystore}; \
+	@keystore="$(ANDROID_KEYSTORE)"; \
 	if [ ! -f "$$keystore" ]; then echo "No keystore at $$keystore — nothing to reset."; exit 0; fi; \
 	echo "This deletes $$keystore and the app can no longer update the copy"; \
 	echo "installed on any phone — you will need 'make android-uninstall' there."; \
@@ -464,7 +464,7 @@ android-clean:
 
 $(APK):
 	@echo "$(APK) does not exist yet. Build it with:"
-	@echo "  ONTOPLANO_DOMAIN=plan.example.com make android"
+	@echo "  ONTOPLANO_ORIGIN=https://plan.example.com make android"
 	@exit 1
 
 

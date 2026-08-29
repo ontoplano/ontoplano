@@ -11,6 +11,13 @@ rest. Versions follow `package.json`.
   token-created notice keep their contrast in both themes.
 - The new-token form lists each permission by its name first, with the plain
   sentence after it.
+- The self-host Telegram bot now reads `ONTOPLANO_TELEGRAM_BOT_TOKEN` and
+  `ONTOPLANO_TELEGRAM_ALLOWED_USER` — names no operator can confuse with an
+  ops bot's. The old names stop working; rename the two lines in
+  `~/.config/ontoplano/env`.
+- The Android build takes `ONTOPLANO_ORIGIN` only; `ONTOPLANO_DOMAIN` is
+  retired. Tooling defaults (ports, keystore path, package name) moved into
+  `defaults.env` at the repo root — one place to look, no `make` fallbacks.
 - Every mail the app sends — address confirmation, password reset, address
   change, the trial notice — now shares one designed template: a quiet card,
   one button, and the raw link printed under it, because a button that hides

@@ -57,8 +57,8 @@ Everything in `android-twa/` is generated and gitignored, including
 
 | Variable                         | Meaning                                                        |
 | -------------------------------- | -------------------------------------------------------------- |
-| `ONTOPLANO_DOMAIN`               | **Required.** The domain the app opens. A TWA is bound to one. |
-| `ONTOPLANO_ASSET_ORIGIN`         | Where icons are read while building. Defaults to the domain.   |
+| `ONTOPLANO_ORIGIN`               | **Required.** The origin the app opens. A TWA is bound to one. |
+| `ONTOPLANO_ASSET_ORIGIN`         | Where icons are read while building. Defaults to the origin.   |
 | `ANDROID_PACKAGE_NAME`           | Defaults to `app.ontoplano.twa`. Permanent once published.     |
 | `ANDROID_VERSION_NAME` / `_CODE` | The code must increase on every upload and never repeat.       |
 | `ANDROID_KEYSTORE`               | Signing key path. Defaults to `android-twa/android.keystore`.  |
@@ -67,7 +67,7 @@ Everything in `android-twa/` is generated and gitignored, including
 `ONTOPLANO_ASSET_ORIGIN` exists so a machine that cannot reach the public domain
 — CI, or a laptop before the first deploy — can point at a locally running
 server. It changes only where bytes are fetched from while generating the
-project; the app is still bound to `ONTOPLANO_DOMAIN`.
+project; the app is still bound to `ONTOPLANO_ORIGIN`.
 
 ### Prerequisites
 
