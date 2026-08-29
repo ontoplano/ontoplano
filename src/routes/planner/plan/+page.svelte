@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Banner from '$lib/components/Banner.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { armed } from '$lib/actions/armed';
@@ -1546,9 +1547,7 @@
 	<FormError message={form?.message} />
 
 	{#if gridError}
-		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-			{gridError}
-		</div>
+		<Banner kind="error" message={gridError} />
 	{/if}
 
 	<div class="border border-gray-200 bg-white shadow-card">
@@ -1778,6 +1777,7 @@
 								aria-label="What to call it"
 							/>
 							<input
+								autocomplete="off"
 								name="url"
 								type="url"
 								placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"
@@ -2105,6 +2105,7 @@
 							<label class="flex items-center gap-2 text-sm text-gray-700">
 								Every
 								<input
+									autocomplete="off"
 									name="recurrenceInterval"
 									type="number"
 									min="1"
@@ -2119,6 +2120,7 @@
 							<label class="flex items-center gap-2 text-sm text-gray-700">
 								Day
 								<input
+									autocomplete="off"
 									name="recurrenceMonthDay"
 									type="number"
 									min="1"
@@ -2156,6 +2158,7 @@
 						<label class="w-40">
 							<span class="text-sm font-medium text-gray-700">Date</span>
 							<input
+								autocomplete="off"
 								name="date"
 								type="date"
 								required
@@ -2168,6 +2171,7 @@
 					<label class="w-28">
 						<span class="text-sm font-medium text-gray-700">Time</span>
 						<input
+							autocomplete="off"
 							bind:this={timeInput}
 							name="startTime"
 							type="time"
@@ -2179,6 +2183,7 @@
 					<label class="w-24">
 						<span class="text-sm font-medium text-gray-700">Duration</span>
 						<input
+							autocomplete="off"
 							name="durationMinutes"
 							type="number"
 							min="15"

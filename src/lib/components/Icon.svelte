@@ -63,9 +63,13 @@
 		utensils: 'M8 3v8a3 3 0 0 0 6 0V3M11 11v10M17 3c-1.5 2-2 3.5-2 6v3h4V9c0-2.5-.5-4-2-6zM17 12v9',
 		flame: 'M12 3c3 4 5 5.5 5 9a5 5 0 0 1-10 0c0-2 1-3 2-4 .5 2 1.5 2.5 2 2.5 .5-2-1-5 1-7.5z',
 		'sign-out': 'M15 4h5v16h-5M12 8l4 4-4 4M16 12H4',
-		// A triangle with a bang in it. Only for the staging band so far, which
-		// is the one message on this app that has to be impossible to miss.
+		// A triangle with a bang in it: the staging band, and anything else that
+		// has to be impossible to miss.
 		warning: 'M12 4l9 16H3zM12 10v4M12 17h.01',
+		// A circle with a bang: something went wrong with what you just did.
+		error: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 8v5M12 16h.01',
+		// A circle with an i: a quiet aside, not a problem.
+		info: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 11v5M12 8h.01',
 		shield: 'M12 3l8 3v6c0 4.4-3.2 7.5-8 9-4.8-1.5-8-4.6-8-9V6z'
 	} as const;
 

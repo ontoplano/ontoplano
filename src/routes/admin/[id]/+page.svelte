@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Banner from '$lib/components/Banner.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -32,14 +33,14 @@
 <FormError message={form?.success ? null : form?.message} />
 
 {#if form?.success && form.message}
-	<div class="border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
+	<Banner kind="success">
 		<p>{form.message}</p>
 		{#if form.link}
-			<p class="tabular mt-2 border border-blue-200 bg-white px-2 py-1 text-xs break-all">
+			<p class="tabular mt-2 border border-gray-200 bg-white px-2 py-1 text-xs break-all">
 				{form.link}
 			</p>
 		{/if}
-	</div>
+	</Banner>
 {/if}
 
 <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageServerData, ActionData } from './$types';
+	import Banner from '$lib/components/Banner.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 
@@ -29,14 +30,14 @@
 	</div>
 
 	{#if form?.message}
-		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{form.message}</div>
+		<Banner kind="error" message={form.message} />
 	{/if}
 
 	<form method="post" use:enhance class="space-y-6">
 		<section class="border border-gray-200 bg-white p-6 shadow-card">
 			<FormGrid>
 				<Field label="Your timezone" span={6} hint="Used for what counts as today.">
-					<input name="timezone" bind:value={timezone} required class="input" />
+					<input autocomplete="off" name="timezone" bind:value={timezone} required class="input" />
 				</Field>
 				<Field label="Your week starts on" span={6}>
 					<select name="firstDay" class="select">

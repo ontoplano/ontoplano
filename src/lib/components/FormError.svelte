@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Banner from '$lib/components/Banner.svelte';
+
 	/**
 	 * A failed submission's message, on the page.
 	 *
@@ -28,5 +30,5 @@
 </script>
 
 {#if message && !dialogOpen}
-	<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{message}</div>
+	<Banner kind="error" {message} />
 {/if}

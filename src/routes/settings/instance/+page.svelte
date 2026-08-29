@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { armed } from '$lib/actions/armed';
+	import Banner from '$lib/components/Banner.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
@@ -134,16 +135,18 @@
 		</dl>
 
 		{#if !restartedIntoThisBuild}
-			<p class="mt-4 border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-				This process is older than the build it is reporting, which means the last deploy copied the
-				files and never restarted the service. Nothing new is running.
-				<code class="tabular">make restart-server</code>
-			</p>
+			<div class="mt-4">
+				<Banner kind="warning">
+					This process is older than the build it is reporting, which means the last deploy copied
+					the files and never restarted the service. Nothing new is running.
+					<code class="tabular">make restart-server</code>
+				</Banner>
+			</div>
 		{/if}
 	</Card>
 
 	{#if form?.success && form.action !== 'createInvite'}
-		<div class="border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">Saved.</div>
+		<Banner kind="success" message="Saved." />
 	{/if}
 
 	<div class="grid gap-4 lg:grid-cols-2">
@@ -151,11 +154,18 @@
 			<form method="post" action="?/save" use:enhance>
 				<FormGrid>
 					<Field label="Host" span={8}>
-						<input name="host" type="text" value={data.config.server.host} class="input" />
+						<input
+							autocomplete="off"
+							name="host"
+							type="text"
+							value={data.config.server.host}
+							class="input"
+						/>
 					</Field>
 
 					<Field label="Port" span={4}>
 						<input
+							autocomplete="off"
 							name="port"
 							type="number"
 							min="1"
@@ -192,11 +202,13 @@
 				anybody could join. What is stored and what is in force are two
 				different facts and the page has to show both.
 			-->
-			<p class="mb-4 border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-				<strong>{data.effectiveRegistration}</strong> right now, set in the server's environment —
-				{#if data.staging}ONTOPLANO_STAGING{:else}ONTOPLANO_REGISTRATION{/if} overrides what is chosen
-				here. These buttons are what will apply once it is unset.
-			</p>
+			<div class="mb-4">
+				<Banner kind="warning">
+					<strong>{data.effectiveRegistration}</strong> right now, set in the server's environment —
+					{#if data.staging}ONTOPLANO_STAGING{:else}ONTOPLANO_REGISTRATION{/if} overrides what is chosen
+					here. These buttons are what will apply once it is unset.
+				</Banner>
+			</div>
 		{/if}
 
 		<form method="post" action="?/setRegistration" use:enhance class="space-y-3">
@@ -279,7 +291,14 @@
 				</Field>
 
 				<Field label="Expires in" span={4} hint="Days. Leave empty for no expiry.">
-					<input name="expiresInDays" type="number" min="1" max="365" class="input tabular" />
+					<input
+						autocomplete="off"
+						name="expiresInDays"
+						type="number"
+						min="1"
+						max="365"
+						class="input tabular"
+					/>
 				</Field>
 			</FormGrid>
 

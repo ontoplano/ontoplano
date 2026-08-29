@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tick, type Snippet } from 'svelte';
+	import Banner from '$lib/components/Banner.svelte';
 
 	/**
 	 * A modal dialog.
@@ -108,9 +109,7 @@
 
 			<div class="min-h-0 flex-1 overflow-y-auto px-5 py-4">
 				{#if error}
-					<div class="mb-4 border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-						{error}
-					</div>
+					<div class="mb-4"><Banner kind="error" message={error} /></div>
 				{/if}
 				{@render children()}
 			</div>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import Banner from '$lib/components/Banner.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -345,6 +346,7 @@
 			>
 				<input type="hidden" name="id" value={item.id} />
 				<input
+					autocomplete="off"
 					name="paid"
 					inputmode="decimal"
 					use:autofocus
@@ -470,9 +472,7 @@
 	<!-- Adding something already on the list puts it back on it; say so, or the
 	     row it changed is somewhere off screen and nothing appears to happen. -->
 	{#if form?.notice}
-		<div class="border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
-			{form.notice}
-		</div>
+		<Banner kind="info" message={form.notice} />
 	{/if}
 
 	<!-- Editing happens here too. It used to happen in the row: six controls

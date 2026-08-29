@@ -40,7 +40,8 @@ test('shows error on invalid login', async ({ page }) => {
 	await page.locator('input[name="password"]').fill('wrongpassword');
 	await page.locator('button[type="submit"]').click();
 
-	await expect(page.locator('.text-red-700, .bg-red-50')).toBeVisible();
+	await expect(page.getByRole('alert')).toBeVisible();
+	await expect(page.getByRole('alert')).toContainText(/invalid/i);
 });
 
 test('protects /activities route', async ({ page }) => {

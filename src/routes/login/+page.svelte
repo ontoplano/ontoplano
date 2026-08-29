@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { createAuthClient } from 'better-auth/svelte';
 	import { SOCIAL_GLYPHS, SOCIAL_LABELS, type SocialProvider } from '$lib/social';
+	import Banner from '$lib/components/Banner.svelte';
 	import StagingBand from '$lib/components/StagingBand.svelte';
 	import type { PageServerData, ActionData } from './$types';
 
@@ -38,16 +39,12 @@
 			<div class="mb-5"><StagingBand /></div>
 		{/if}
 
-		{#if form?.message}
-			<div class="mb-4 border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-				{form.message}
-			</div>
+		{#if form?.message && !form?.success}
+			<div class="mb-4"><Banner kind="error" message={form.message} /></div>
 		{/if}
 
 		{#if form?.success && form.action === 'requestReset'}
-			<div class="mb-4 border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-				{form.message}
-			</div>
+			<div class="mb-4"><Banner kind="success" message={form.message} /></div>
 		{/if}
 
 		<form
@@ -74,6 +71,7 @@
 						name="name"
 						type="text"
 						required
+						autocomplete="name"
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
 				</label>
@@ -84,6 +82,7 @@
 					name="email"
 					type="email"
 					required
+					autocomplete="email"
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>
@@ -95,6 +94,7 @@
 						type="password"
 						required
 						minlength="3"
+						autocomplete={mode === 'register' ? 'new-password' : 'current-password'}
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
 				</label>

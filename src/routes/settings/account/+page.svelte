@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import { enhance } from '$app/forms';
+	import Banner from '$lib/components/Banner.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { resolve } from '$app/paths';
@@ -110,7 +111,7 @@
 	<FormError message={form?.message} />
 
 	{#if notice}
-		<div class="border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">{notice}</div>
+		<Banner kind="success" message={notice} />
 	{/if}
 
 	<Card title="Email address">

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
+	import Banner from '$lib/components/Banner.svelte';
 
 	/**
 	 * This is not the real instance.
@@ -13,36 +13,13 @@
 	let { detail = '' }: { detail?: string } = $props();
 </script>
 
-<div class="staging-band">
-	<Icon name="warning" size={16} />
-	<p>
-		<strong>Staging.</strong> This instance is for trying things out. Accounts are open to anyone
-		with the address, and the data here is not promised to survive.
-		{#if detail}<span class="detail">{detail}</span>{/if}
-	</p>
-</div>
+<Banner kind="warning">
+	<strong>Staging.</strong> Accounts here are open to anyone with the address, and the data is not
+	promised to survive.
+	{#if detail}<span class="detail">{detail}</span>{/if}
+</Banner>
 
 <style>
-	.staging-band {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.6rem;
-		border: 1px solid color-mix(in srgb, var(--color-amber-600, #d97706) 45%, transparent);
-		border-left: 4px solid var(--color-amber-600, #d97706);
-		border-radius: var(--radius-sm, 0);
-		background-color: color-mix(in srgb, var(--color-amber-600, #d97706) 8%, var(--color-white));
-		padding: 0.7rem 0.9rem;
-		font-size: 0.875rem;
-		line-height: 1.45;
-		color: var(--color-gray-900);
-	}
-
-	.staging-band :global(svg) {
-		flex: none;
-		margin-top: 0.15rem;
-		color: var(--color-amber-700, #b45309);
-	}
-
 	.detail {
 		color: var(--color-gray-600);
 	}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Banner from '$lib/components/Banner.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
@@ -59,15 +60,11 @@
 
 <div class="space-y-4">
 	{#if form?.message}
-		<div class="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-			{form.message}
-		</div>
+		<Banner kind="error" message={form.message} />
 	{/if}
 
 	{#if form?.success && form.action === 'setLayout'}
-		<div class="border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
-			Dashboard layout saved.
-		</div>
+		<Banner kind="success" message="Dashboard layout saved." />
 	{/if}
 
 	<form
@@ -105,7 +102,7 @@
 		</div>
 		<label class="block max-w-xs">
 			<span class="eyebrow text-gray-600">Timezone</span>
-			<input name="timezone" value={data.timezone} class="input mt-1" />
+			<input autocomplete="off" name="timezone" value={data.timezone} class="input mt-1" />
 		</label>
 		<button class="btn btn-primary">Save</button>
 	</form>

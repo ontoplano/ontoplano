@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageServerData, ActionData } from './$types';
+	import Banner from '$lib/components/Banner.svelte';
 	import { autofocus } from '$lib/actions/autofocus.js';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -11,9 +12,7 @@
 		<h1 class="mb-6 text-xl font-bold tracking-tight text-gray-900">Choose a new password</h1>
 
 		{#if form?.message}
-			<div class="mb-4 border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-				{form.message}
-			</div>
+			<div class="mb-4"><Banner kind="error" message={form.message} /></div>
 		{/if}
 
 		{#if data.invalid}
@@ -31,6 +30,7 @@
 						type="password"
 						required
 						minlength="8"
+						autocomplete="new-password"
 						use:autofocus
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
@@ -42,6 +42,7 @@
 						type="password"
 						required
 						minlength="8"
+						autocomplete="new-password"
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
 				</label>
