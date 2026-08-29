@@ -43,7 +43,7 @@ make telegram-logs             # follow it
 | `/ideia`      | Save an idea: `/ideia meal plan → list`          |
 | `/help`       | This list                                        |
 
-`TELEGRAM.md` at the repo root is the plain list to paste into BotFather's
+`telegram/COMMANDS.md` is the plain list to paste into BotFather's
 `/setcommands`.
 
 ## If it ever grows

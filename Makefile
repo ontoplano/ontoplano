@@ -27,7 +27,7 @@ dev:
 	@mkdir -p ~/.config/systemd/user
 	@REPO_DIR="$(CURDIR)" NODE_BIN="$(NODE_BIN)" NODE_DIR="$$(dirname "$(NODE_BIN)")" \
 		YARN_BIN="$(YARN_BIN)" DATABASE_URL="$${DATABASE_URL:-}" \
-		envsubst < ontoplano-dev.service > ~/.config/systemd/user/ontoplano-dev.service
+		envsubst < systemd/ontoplano-dev.service > ~/.config/systemd/user/ontoplano-dev.service
 	@systemctl --user daemon-reload
 	@mark=$$(mktemp); systemctl --user restart ontoplano-dev; \
 	sleep 2; \
@@ -114,7 +114,7 @@ backup-install:
 		mkdir -p "$$ONTOPLANO_BACKUP_DIR"; \
 		envsubst < litestream.yml > $$HOME/.config/litestream.yml
 	@mkdir -p ~/.config/systemd/user
-	@envsubst < ontoplano-litestream.service > ~/.config/systemd/user/ontoplano-litestream.service
+	@envsubst < systemd/ontoplano-litestream.service > ~/.config/systemd/user/ontoplano-litestream.service
 	@systemctl --user daemon-reload
 	@systemctl --user enable ontoplano-litestream
 	@systemctl --user restart ontoplano-litestream
@@ -200,7 +200,7 @@ install-service: deploy-local
 		exit 1; \
 	}
 	@mkdir -p ~/.config/systemd/user
-	@NODE_BIN="$(NODE_BIN)" envsubst < ontoplano.service > ~/.config/systemd/user/ontoplano.service
+	@NODE_BIN="$(NODE_BIN)" envsubst < systemd/ontoplano.service > ~/.config/systemd/user/ontoplano.service
 	@echo "The service will run $(NODE_BIN) ($$($(NODE_BIN) -v))"
 	@systemctl --user daemon-reload
 	@systemctl --user enable ontoplano
@@ -228,7 +228,7 @@ telegram-logs:
 install-telegram-service: telegram-install
 	@echo "Installing ontoplano-telegram systemd service..."
 	@mkdir -p ~/.config/systemd/user
-	@envsubst < ontoplano-telegram.service > ~/.config/systemd/user/ontoplano-telegram.service
+	@envsubst < systemd/ontoplano-telegram.service > ~/.config/systemd/user/ontoplano-telegram.service
 	@systemctl --user daemon-reload
 	@systemctl --user enable ontoplano-telegram
 	@systemctl --user start ontoplano-telegram

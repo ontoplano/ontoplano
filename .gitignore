@@ -28,7 +28,6 @@ test-results
 *.db
 # Scratch files
 blie
-pass.py
 # OpenCode
 .opencode
 
@@ -43,7 +42,6 @@ telegram/node_modules
 .claude/
 
 # envsubst output from the .service templates
-ontoplano-prod.service
 
 # Android (TWA)
 # The generated Gradle project is build output — `node scripts/build-twa.mjs`
@@ -81,5 +79,3 @@ my-publishing-studies/competition.md
 AGENTS.md
 TODO.md
 CLAUDE.md
-/todo
-/todo.md
