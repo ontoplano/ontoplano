@@ -10,7 +10,13 @@
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
+# The dev server on this machine runs against the real database — the default
+# path is the very one guard-push refuses to touch. So starting it takes a
+# snapshot first (VACUUM INTO, WAL-safe; the script keeps the last 10 per
+# label), and then just starts. A backup needs no ceremony, only doing —
+# `deploy` is the one that stops to ask.
 dev:
+	@yarn -s db:snapshot dev
 	yarn dev --port 1493
 
 # Node sizes its heap from the machine's RAM, and on a 1GB VPS that lands at
