@@ -4,6 +4,14 @@ What changed for somebody using the app, newest first. One entry per
 user-visible change, written when the change is made — the git log has the
 rest. Versions follow `package.json`.
 
+## 0.8.0 — 2026-08-29
+
+- The shopping list has an API: read it, add to it, tick things bought — with
+  two new token scopes granted in plain sentences like the rest.
+- `examples/onto-household.mjs`: the household plugin. Two people, two tokens,
+  one shared shopping list — kept equal over webhooks, across two different
+  instances if that is where the two people live.
+
 ## 0.7.0 — 2026-08-29
 
 - A data stream can keep a retention window — "keep 90 days" — set by the app

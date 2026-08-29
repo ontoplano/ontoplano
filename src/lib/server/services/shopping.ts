@@ -130,7 +130,7 @@ export function createItem(ctx: Ctx, raw: ItemInput): { alreadyHad: boolean } {
 	const values = parseItem(ctx, raw);
 
 	const existing = db
-		.select({ id: shoppingItems.id })
+		.select({ id: shoppingItems.id, bought: shoppingItems.bought, snoozed: shoppingItems.snoozed })
 		.from(shoppingItems)
 		.where(
 			and(
@@ -145,7 +145,11 @@ export function createItem(ctx: Ctx, raw: ItemInput): { alreadyHad: boolean } {
 			.set({ bought: false, boughtAt: null, snoozed: false, updatedAt: stamp(ctx) })
 			.where(and(eq(shoppingItems.id, existing.id), eq(shoppingItems.userId, ctx.userId)))
 			.run();
-		emit(ctx, 'shopping.added', { id: existing.id, name: values.name });
+		// The event fires on the edge: only if this actually put the item back on
+		// the list. Re-adding something already waiting changes nothing, and a
+		// webhook for it would let two synced lists ping-pong forever.
+		if (existing.bought || existing.snoozed)
+			emit(ctx, 'shopping.added', { id: existing.id, name: values.name });
 		return { alreadyHad: true };
 	}
 
@@ -195,6 +199,41 @@ export function toggleBought(ctx: Ctx, id: number, raw: { paid?: unknown } = {})
 		recordPaid(ctx, id, raw.paid);
 
 	if (buying) emit(ctx, 'shopping.bought', { id, name: item.name });
+}
+
+/**
+ * Set bought to a stated value — the API's verb, where the page's is a toggle.
+ *
+ * Idempotent on purpose: a plugin mirroring two lists says "this is bought"
+ * and must be able to say it twice. Only a transition fires the webhook, so a
+ * pair of synced lists settles instead of ping-ponging.
+ */
+export function setBought(ctx: Ctx, id: number, bought: boolean): { changed: boolean } {
+	const item = ownedItem(ctx, id);
+	if (item.bought === bought) return { changed: false };
+	toggleBought(ctx, id);
+	return { changed: true };
+}
+
+/**
+ * A category id for a name, creating the category if it is new.
+ *
+ * For the API, where a producer says "Dairy" and should not have to make a
+ * second request to find out what number that is.
+ */
+export function ensureCategoryId(ctx: Ctx, name: unknown): number {
+	const wanted = str(name, 'category', { max: 60 });
+	const existing = db
+		.select({ id: shoppingCategories.id })
+		.from(shoppingCategories)
+		.where(
+			and(
+				eq(shoppingCategories.userId, ctx.userId),
+				sql`lower(${shoppingCategories.name}) = lower(${wanted})`
+			)
+		)
+		.get();
+	return existing?.id ?? createCategory(ctx, { name: wanted });
 }
 
 /**

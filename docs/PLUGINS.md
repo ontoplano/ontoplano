@@ -18,13 +18,15 @@ upcoming planner slots to decide when to ring.
 
 The user creates one at **Settings → Integrations**, choosing scopes:
 
-| Scope           | Grants                                  |
-| --------------- | --------------------------------------- |
-| `streams:write` | declare streams, push and delete points |
-| `streams:read`  | read points back                        |
-| `schedule:read` | read upcoming scheduled tasks           |
-| `today:read`    | read today's blocks, habits and tasks   |
+| Scope             | Grants                                                        |
+| ----------------- | ------------------------------------------------------------- |
+| `streams:write`   | declare streams, push and delete points                       |
+| `streams:read`    | read points back                                              |
+| `schedule:read`   | read upcoming scheduled tasks                                 |
+| `today:read`      | read today's blocks, habits and tasks                         |
 | `webhooks:manage` | subscribe addresses to events, and manage those subscriptions |
+| `shopping:read`   | read the shopping list                                        |
+| `shopping:write`  | add items, set them bought                                    |
 
 Ask for the narrowest set that works. A token with only `streams:write` cannot read
 anything the user has — which is the point, because tokens live on phones.
@@ -210,7 +212,7 @@ X-Ontoplano-Signature: sha256=<hmac>
 
 Verify the signature: HMAC-SHA256 of the raw body with your subscription's `secret`,
 hex, prefixed `sha256=`. Payloads are deliberately thin — the id, and the one-line label
-where the thing *is* its label (a todo's title, an item's name, an idea). A diary entry
+where the thing _is_ its label (a todo's title, an item's name, an idea). A diary entry
 announces only its id; content never leaves the app.
 
 Delivery is best-effort and says so: one attempt, five seconds, no queue, at-most-once.
@@ -220,6 +222,25 @@ it. `GET /api/v1/webhooks` lists yours; `DELETE /api/v1/webhooks/<id>` unsubscri
 
 On a hosted instance the address must be reachable from the internet — private and
 loopback addresses are refused. Self-hosted instances may point anywhere.
+
+### The shopping list
+
+```http
+GET  /api/v1/shopping                          → { "items": [...] }        (shopping:read)
+POST /api/v1/shopping/items                    { "name": "Milk", "category": "Dairy" }
+POST /api/v1/shopping/items/<id>/bought        { "bought": true }
+```
+
+Adding a held name puts it back on the list instead of duplicating (the
+response says `already_had`); `category` is a name, created if new; `bought`
+is a state, not a toggle — saying it twice is safe. Shopping webhook events
+fire only on transitions, so a mirror that echoes changes back settles
+instead of looping.
+
+**The worked example lives in `examples/onto-household.mjs`**: one script,
+two tokens, and a household shares a shopping list — across two different
+instances if that is where the two people live. It is ~150 lines and uses
+nothing above: scoped tokens, the shopping API, self-managed webhooks.
 
 ---
 
