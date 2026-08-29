@@ -988,11 +988,57 @@ html[data-theme='dark'] {
 	--color-scrim: rgb(0 0 0 / 0.66);
 	--hover-wash: rgb(255 255 255 / 0.06);
 
+	/*
+	 * The colored ramps invert like the grays: 50–300 become washes and
+	 * lines that darken, 600–900 become inks that lighten — otherwise
+	 * `text-red-600` on `bg-red-50` is red on red in the dark theme.
+	 * 400/500 stay at their defaults; they read against either ground.
+	 * amber-950 also stays: it sits on an un-inverted bg-amber-500.
+	 */
 	--color-red-50: #2b1417;
+	--color-red-100: #3c191d;
+	--color-red-200: #5b2228;
+	--color-red-300: #7c2d35;
+	--color-red-600: #f87171;
+	--color-red-700: #fca5a5;
+	--color-red-800: #fecaca;
+	--color-red-900: #fee2e2;
+
 	--color-blue-50: #101f33;
+	--color-blue-100: #152742;
+	--color-blue-200: #1d3557;
+	--color-blue-300: #274a79;
+	--color-blue-600: #60a5fa;
+	--color-blue-700: #93c5fd;
+	--color-blue-800: #bfdbfe;
+	--color-blue-900: #dbeafe;
+
 	--color-green-50: #10251a;
+	--color-green-100: #163022;
+	--color-green-200: #1e4230;
+	--color-green-300: #2a5a41;
+	--color-green-600: #4ade80;
+	--color-green-700: #86efac;
+	--color-green-800: #bbf7d0;
+	--color-green-900: #dcfce7;
+
 	--color-yellow-50: #2a2110;
+	--color-yellow-100: #3a2d15;
+	--color-yellow-200: #52401d;
+	--color-yellow-300: #6f5626;
+	--color-yellow-600: #facc15;
+	--color-yellow-700: #fde047;
+	--color-yellow-800: #fef08a;
+	--color-yellow-900: #fef9c3;
+
 	--color-amber-50: #2a2110;
+	--color-amber-100: #3a2d15;
+	--color-amber-200: #52401d;
+	--color-amber-300: #6f5626;
+	--color-amber-600: #fbbf24;
+	--color-amber-700: #fcd34d;
+	--color-amber-800: #fde68a;
+	--color-amber-900: #fef3c7;
 
 	--shadow-card: 0 1px 2px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
 	--shadow-raised: 0 2px 4px rgb(0 0 0 / 0.5), 0 4px 12px rgb(0 0 0 / 0.45);

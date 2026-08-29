@@ -6,6 +6,9 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- In the dark theme, red text no longer lands on a red background: the colored
+  palettes now invert like the grays, so error tones, revoke buttons, and the
+  token-created notice keep their contrast in both themes.
 - Every mail the app sends — address confirmation, password reset, address
   change, the trial notice — now shares one designed template: a quiet card,
   one button, and the raw link printed under it, because a button that hides
