@@ -336,7 +336,8 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
  */
 .page-intro {
 	max-width: 65ch;
-	border-left: 3px solid color-mix(in srgb, var(--section-accent, var(--color-gray-400)) 55%, transparent);
+	border-left: 3px solid
+		color-mix(in srgb, var(--section-accent, var(--color-gray-400)) 55%, transparent);
 	padding-left: 0.75rem;
 	font-size: 0.875rem;
 	line-height: 1.5;
@@ -913,6 +914,37 @@ pre,
 
 	.rise {
 		animation: rise 180ms ease-out both;
+	}
+
+	/*
+	 * Navigation is a cross-fade, not a blink.
+	 *
+	 * The shell starts a browser view transition on every navigation; these
+	 * rules say what it looks like — the old page falls away fast, the new one
+	 * rises in the same motion `.rise` uses everywhere else. The chrome is
+	 * named so it holds still while the page changes under it: the bars are
+	 * the room, not the furniture.
+	 */
+	::view-transition-old(root) {
+		animation: vt-out 90ms ease both;
+	}
+
+	::view-transition-new(root) {
+		animation: rise 180ms ease-out both;
+	}
+
+	@keyframes vt-out {
+		to {
+			opacity: 0;
+		}
+	}
+
+	.vt-chrome-top {
+		view-transition-name: chrome-top;
+	}
+
+	.vt-chrome-bottom {
+		view-transition-name: chrome-bottom;
 	}
 }
 

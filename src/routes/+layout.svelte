@@ -3,7 +3,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { afterNavigate, goto } from '$app/navigation';
+	import { afterNavigate, goto, onNavigate } from '$app/navigation';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { THEMES } from '$lib/theme.js';
@@ -24,6 +24,27 @@
 
 	// Autofill is opt-in: see $lib/autofill. Once, for every form the app ever mounts.
 	$effect(() => suppressAutofill(document.body));
+
+	/**
+	 * Pages cross-fade instead of blinking.
+	 *
+	 * The browser's own view transitions, so this is a screenshot morph, not a
+	 * framework feature: the old page fades down as the new one rises, and the
+	 * chrome — which layout.css names — holds still through it. Browsers
+	 * without the API, and people who asked for less motion, get the plain
+	 * swap they always had.
+	 */
+	onNavigate((navigation) => {
+		if (!document.startViewTransition) return;
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+		return new Promise((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete.catch(() => {});
+			});
+		});
+	});
 	let menuOpen = $state(false);
 	let pie = $state<CapturePie | undefined>();
 	let rooms = $state<NavPie | undefined>();
@@ -281,7 +302,10 @@
 		{/if}
 
 		<SectionPattern icon={pageGlyph} />
-		<header class="relative z-40 bg-chrome shadow-raised" style="padding-top: var(--safe-top)">
+		<header
+			class="vt-chrome-top relative z-40 bg-chrome shadow-raised"
+			style="padding-top: var(--safe-top)"
+		>
 			<div class="mx-auto flex w-full max-w-page items-stretch justify-between px-4 sm:px-6">
 				<div class="flex min-w-0 items-stretch gap-4 min-[1460px]:gap-6">
 					<a
@@ -344,7 +368,7 @@
 					     word reads as an afterthought on a 2000px header. -->
 					<button
 						onclick={() => (palette.open = true)}
-						class="flex w-40 items-center gap-2 border border-chrome-line bg-chrome-raised px-3 py-1.5 text-sm text-chrome-muted transition hover:text-chrome-ink hover:brightness-125 min-[1460px]:w-72 xl:w-56"
+						class="flex w-40 items-center gap-2 border border-chrome-line bg-chrome-raised px-3 py-1.5 text-sm text-chrome-muted transition hover:text-chrome-ink hover:brightness-125 min-[1460px]:w-72"
 					>
 						<Icon name="search" size={14} />
 						Search
@@ -481,7 +505,7 @@
 			labels at 390px is four truncations.
 		-->
 		<nav
-			class="relative z-40 shrink-0 border-t border-chrome-line bg-chrome lg:hidden"
+			class="vt-chrome-bottom relative z-40 shrink-0 border-t border-chrome-line bg-chrome lg:hidden"
 			style="padding-bottom: var(--safe-bottom)"
 			aria-label="Primary"
 		>
