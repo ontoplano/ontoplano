@@ -4,6 +4,22 @@ What changed for somebody using the app, newest first. One entry per
 user-visible change, written when the change is made — the git log has the
 rest. Versions follow `package.json`.
 
+## 0.8.1 — 2026-08-29
+
+- The integrations page now states the limits — reads and writes per minute,
+  per token and per account — and its "writing a plugin" pointer is a real
+  link to the docs on GitHub.
+- An administrator can start a trial for an account that has no plan history —
+  the accounts that predate billing on an instance that turns it on.
+- The Android widget's connect screen is readable again (it had been drawing
+  under the status bar, in a fifteen-year-old theme), and placing the widget
+  from the launcher now completes instead of leaving nothing on the
+  homescreen. Rebuild the app to get it.
+- Running the test suite no longer rewrites the machine's real
+  `~/.config/ontoplano/config.toml`.
+- The boot migration check no longer refuses a database that started on
+  `db:push` and was adopted into migrations later.
+
 ## 0.8.0 — 2026-08-29
 
 - The shopping list has an API: read it, add to it, tick things bought — with
