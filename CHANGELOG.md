@@ -9,6 +9,8 @@ rest. Versions follow `package.json`.
 - In the dark theme, red text no longer lands on a red background: the colored
   palettes now invert like the grays, so error tones, revoke buttons, and the
   token-created notice keep their contrast in both themes.
+- The new-token form lists each permission by its name first, with the plain
+  sentence after it.
 - Every mail the app sends — address confirmation, password reset, address
   change, the trial notice — now shares one designed template: a quiet card,
   one button, and the raw link printed under it, because a button that hides

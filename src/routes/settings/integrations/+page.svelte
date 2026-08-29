@@ -169,8 +169,8 @@
 								<label class="flex items-start gap-2 text-sm text-gray-700">
 									<input type="checkbox" name="scopes" value={scope.key} class="mt-1" />
 									<span>
-										{scope.description}
-										<code class="ml-1 font-mono text-xs text-gray-500">{scope.key}</code>
+										<code class="font-mono text-xs text-gray-900">{scope.key}</code>
+										<span class="text-gray-500">— {scope.description}</span>
 									</span>
 								</label>
 							{/each}
