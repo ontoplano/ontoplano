@@ -58,11 +58,18 @@ function getTransport(): { transport: Transporter; config: Config } | null {
 
 	// Rebuild if the environment changed under us; otherwise reuse the pool.
 	if (!transporter || JSON.stringify(config) !== JSON.stringify(configured)) {
+		// A postfix on this same box presents its public-name certificate, and
+		// "localhost" can never match it — so opportunistic STARTTLS refused
+		// every mail with a hostname mismatch. The wire never leaves the
+		// machine, so verifying it buys nothing: on loopback the certificate
+		// name is not checked. Any real remote host is verified as before.
+		const loopback = ['localhost', '127.0.0.1', '::1'].includes(config.host);
 		transporter = createTransport({
 			host: config.host,
 			port: config.port,
 			secure: config.secure,
-			auth: config.user ? { user: config.user, pass: config.pass } : undefined
+			auth: config.user ? { user: config.user, pass: config.pass } : undefined,
+			...(loopback ? { tls: { rejectUnauthorized: false } } : {})
 		});
 		configured = config;
 	}
