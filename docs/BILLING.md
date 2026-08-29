@@ -13,13 +13,16 @@ deployment settings follow.
   the 200th block is not a smaller plan, it is a broken one.
 - **`resolvePlan(userId)`** in `services/subscriptions.ts` is the only question
   anything asks. It answers with the plan, the status, where the answer came from
-  (`self-hosted`, `trial`, `subscription`, `lapsed`, `free`) and until when.
+  (`self-hosted`, `trial`, `subscription`, `invited`, `lapsed`, `none`) and
+  until when.
 - **Ceilings are enforced in the service layer**, at the moment a thing is
   created — `assertWithinLimit(ctx, 'notebooks')` — so the API has the same
   ceiling the form does.
-- **A new account gets 14 days of Pro** with no card. When it runs out the
-  account is on Free. Nothing is deleted: whatever is over a Free ceiling stays
-  where it is and stays readable, and only _adding more of that kind_ is refused.
+- **A new account gets 14 days of Pro.** On a selling instance the card comes
+  first — see "Trials take the card first" below; elsewhere the internal
+  no-card trial starts at signup. When it runs out nothing is deleted:
+  whatever is over a ceiling stays where it is and stays readable, and only
+  _adding more of that kind_ is refused.
 
 ## The provider
 
@@ -32,24 +35,41 @@ keys — which one the instance talks to follows from the API key alone
 
 Set these on the server:
 
-| Variable                   | What it is                                                      |
-| -------------------------- | --------------------------------------------------------------- |
-| `PADDLE_API_KEY`           | An API key. Checkout creation and the nightly reconcile use it. |
-| `PADDLE_WEBHOOK_SECRET`    | The secret of the notification destination you create there.    |
-| `PADDLE_CHECKOUT_URL`      | The hosted checkout page (Paddle > Checkout > Hosted checkout — a `pay.paddle.io/checkout/hsc_…` link). |
-| `PADDLE_PRICE_ID_MONTHLY`  | The Pro monthly price (`pri_…`).                                |
-| `PADDLE_PRICE_ID_YEARLY`   | Optional. Adds a "year at once" button.                         |
+| Variable                  | What it is                                                          |
+| ------------------------- | ------------------------------------------------------------------- |
+| `PADDLE_API_KEY`          | An API key. Checkout creation and the nightly reconcile use it.     |
+| `PADDLE_WEBHOOK_SECRET`   | The secret of the notification destination you create there.        |
+| `PADDLE_CLIENT_TOKEN`     | A client-side token (`test_`/`live_`) — safe to expose; Paddle.js on `/buy` initializes with it. |
+| `PADDLE_PRICE_ID_MONTHLY` | The Pro monthly price (`pri_…`), with the 14-day trial on it.       |
+| `PADDLE_PRICE_ID_YEARLY`  | Optional. Adds a "year at once" button.                             |
 
 Point the notification destination at `https://your-instance/api/billing/paddle`
-and subscribe to the `subscription.*` and `transaction.completed` events. Two
-dashboard prerequisites: a **default payment link** must be set (Paddle >
-Checkout settings — sandbox accepts localhost) or transactions cannot be
-created at all, and the **hosted checkout** page is what lets the app sell
-without loading Paddle.js into its own strict CSP.
+and subscribe to the `subscription.*` and `transaction.completed` events. One
+dashboard prerequisite rides along: the **default payment link** (Paddle >
+Checkout settings) must be set — `https://your-instance/buy` is the right
+value — or transactions cannot be created at all.
 
 "Go Pro" is an action, not a static link: the server creates a transaction
 with the account id in `custom_data` — what every later webhook matches on —
-and redirects to the hosted checkout with that transaction loaded.
+and redirects to `/buy`, the one page allowed to load Paddle.js (the CSP is
+widened for exactly that route in hooks.server.ts). The overlay checkout
+opens itself from the `_ptxn` parameter. Paddle's own *hosted* checkout is
+not used: it is gated behind approval on live accounts, and /buy is the same
+overlay without the gate.
+
+### Trials take the card first
+
+On an instance that sells (and unless `ONTOPLANO_TRIAL_REQUIRES_CARD=false`),
+a fresh open-registration account gets **no** internal trial: it lands on the
+billing page, the button says "Start your free 14 days", and the fourteen
+days live on the Paddle price (`trial_period`, card required). Nothing is
+charged at checkout; the first charge lands when the trial ends, the page
+and the mail both say so, and the trial-ending notice two days out carries
+the cancel link. An account let in by **invitation code** gets Pro with no
+billing UI at all (`provider: 'invited'`) — the alpha deal. Known caveat,
+accepted for now: a lapsed account that re-subscribes gets the price's trial
+again; if serial trials ever matter, returning accounts need a no-trial
+price.
 
 ### Three rules
 

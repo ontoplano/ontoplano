@@ -13,10 +13,17 @@
  */
 import { createHmac, randomUUID } from 'node:crypto';
 
-process.env.PADDLE_API_KEY ??= 'pdl_sdbx_apikey_' + 'x'.repeat(20);
-process.env.PADDLE_WEBHOOK_SECRET ??= 'a-test-secret';
-process.env.PADDLE_CHECKOUT_URL ??= 'https://pay.paddle.io/checkout/hsc_test';
-process.env.PADDLE_PRICE_ID_MONTHLY ??= 'pri_test_monthly';
+// Assigned for empty as well as absent: a shell that exports PADDLE_API_KEY=
+// with no value (an env file with a blank line) must not fail the fixtures.
+const fixtureEnv: Record<string, string> = {
+	PADDLE_API_KEY: 'pdl_sdbx_apikey_' + 'x'.repeat(20),
+	PADDLE_WEBHOOK_SECRET: 'a-test-secret',
+	PADDLE_CLIENT_TOKEN: 'test_clienttoken',
+	PADDLE_PRICE_ID_MONTHLY: 'pri_test_monthly'
+};
+for (const [key, value] of Object.entries(fixtureEnv)) {
+	if (!process.env[key]) process.env[key] = value;
+}
 delete process.env.ONTOPLANO_SELF_HOST;
 
 const { db } = await import('../src/lib/server/db/index.js');
@@ -39,6 +46,7 @@ function sign(body: string, secret = 'a-test-secret', at = Date.now()): string {
 	return `ts=${ts};h1=${h1}`;
 }
 
+const runTag = randomUUID().slice(0, 8);
 const userId = `check-${randomUUID()}`;
 db.insert(user)
 	.values({
@@ -73,9 +81,9 @@ const body = JSON.stringify({
 	event_type: 'subscription.activated',
 	occurred_at: new Date().toISOString(),
 	data: {
-		id: 'sub_01check',
+		id: `sub_01${runTag}`,
 		status: 'active',
-		customer_id: 'ctm_01check',
+		customer_id: `ctm_01${runTag}`,
 		custom_data: { user_id: userId },
 		current_billing_period: {
 			starts_at: new Date().toISOString(),
@@ -140,9 +148,9 @@ const paid = JSON.stringify({
 	event_id: `evt_${randomUUID().replaceAll('-', '')}`,
 	event_type: 'transaction.completed',
 	data: {
-		id: 'txn_01check',
-		subscription_id: 'sub_02check',
-		customer_id: 'ctm_02check',
+		id: `txn_01${runTag}`,
+		subscription_id: `sub_02${runTag}`,
+		customer_id: `ctm_02${runTag}`,
 		custom_data: { user_id: otherUser },
 		billing_period: {
 			starts_at: new Date().toISOString(),
@@ -163,9 +171,9 @@ const noCustom = JSON.stringify({
 	event_id: `evt_${randomUUID().replaceAll('-', '')}`,
 	event_type: 'subscription.updated',
 	data: {
-		id: 'sub_02check',
+		id: `sub_02${runTag}`,
 		status: 'past_due',
-		customer_id: 'ctm_02check',
+		customer_id: `ctm_02${runTag}`,
 		custom_data: null,
 		current_billing_period: null,
 		next_billed_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
@@ -186,9 +194,9 @@ const canceled = JSON.stringify({
 	event_id: `evt_${randomUUID().replaceAll('-', '')}`,
 	event_type: 'subscription.canceled',
 	data: {
-		id: 'sub_01check',
+		id: `sub_01${runTag}`,
 		status: 'canceled',
-		customer_id: 'ctm_01check',
+		customer_id: `ctm_01${runTag}`,
 		custom_data: { user_id: userId },
 		current_billing_period: null,
 		canceled_at: new Date(Date.now() - 1000).toISOString(),

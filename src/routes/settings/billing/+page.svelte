@@ -64,16 +64,25 @@
 			<div class="mt-4">
 				<FormError message={form?.message} />
 				{#if data.configured}
+					{@const trialFirst = data.pricing.trialRequiresCard && data.entitlement.plan === 'none'}
 					<!-- Full page post on purpose: the answer is a redirect to the
 					     provider's checkout, which enhance would swallow. -->
 					<form method="post" action="?/checkout" class="flex items-center gap-2">
 						<button class="btn btn-primary" name="interval" value="monthly">
-							<Icon name="arrow-right" /> Go Pro
+							<Icon name="arrow-right" />
+							{trialFirst ? `Start your free ${data.pricing.trialDays} days` : 'Go Pro'}
 						</button>
 						{#if data.yearly}
 							<button class="btn" name="interval" value="yearly"> A year at once </button>
 						{/if}
 					</form>
+					{#if trialFirst}
+						<p class="mt-2 text-xs text-gray-500">
+							Card now, nothing charged today. The first charge comes after the
+							{data.pricing.trialDays} days, a mail warns you two days before, and cancelling before that
+							date costs nothing.
+						</p>
+					{/if}
 				{:else}
 					<p class="mt-2 text-xs text-gray-500">
 						This instance has no payment provider configured yet, so there is nothing to buy.

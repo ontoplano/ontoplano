@@ -14,7 +14,7 @@ import { clientKey, signUpBudget } from '$lib/server/rate-limit';
 import { ServiceError } from '$lib/server/services/errors';
 import { record } from '$lib/server/services/audit';
 import { claimFirstAccount } from '$lib/server/services/admin';
-import { startTrial } from '$lib/server/services/subscriptions';
+import { onboardEntitlement } from '$lib/server/services/billing';
 
 export const load: PageServerLoad = async (event) => {
 	if (event.locals.user) {
@@ -92,6 +92,11 @@ export const actions: Actions = {
 			return fail(500, { message: 'Unexpected error' });
 		}
 
+		// Where the fresh account goes. Card-first onboarding sends it to the
+		// billing page — the fourteen days begin at the checkout. (Decided in
+		// the try, used after it: `redirect` throws, and a throw inside this
+		// try reads as a failed registration.)
+		let landing = '/';
 		try {
 			const created = await auth.api.signUpEmail({
 				body: { email, password, name }
@@ -102,8 +107,11 @@ export const actions: Actions = {
 				if (invite) consumeInvite(invite.id, created.user.id, now);
 				// An instance with nobody in it hands the first account the keys.
 				claimFirstAccount(created.user.id);
-				startTrial(created.user.id, now);
+				const onboarding = onboardEntitlement(created.user.id, Boolean(invite), now);
 				record(created.user.id, 'registered', { ip: event.getClientAddress() });
+				// (The verified-address gate, when on, intercepts with its own
+				// page first — the right order anyway.)
+				if (onboarding === 'checkout') landing = '/settings/billing';
 			}
 		} catch (error) {
 			if (error instanceof APIError) {
@@ -112,7 +120,7 @@ export const actions: Actions = {
 			return fail(500, { message: 'Unexpected error' });
 		}
 
-		return redirect(302, '/');
+		return redirect(302, landing);
 	},
 	/**
 	 * Ask for a reset link.

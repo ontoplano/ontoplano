@@ -29,7 +29,7 @@ export type Entitlement = {
 	plan: PlanId;
 	status: SubscriptionStatus;
 	/** Where the answer came from, for a page that has to explain itself. */
-	source: 'self-hosted' | 'trial' | 'subscription' | 'lapsed' | 'none';
+	source: 'self-hosted' | 'trial' | 'subscription' | 'invited' | 'lapsed' | 'none';
 	/** End of the trial or of the paid period, whichever is running. */
 	until: string | null;
 	/** True while a cancellation is scheduled and the period is still running. */
@@ -57,10 +57,18 @@ export function resolvePlan(userId: string, now = new Date()): Entitlement {
 	const status = isSubscriptionStatus(row.status) ? row.status : 'expired';
 	const nowIso = now.toISOString();
 
+	// An alpha account, let in by invitation code: full access, no billing
+	// anywhere in its interface, no end date until the operator says so.
+	if (row.provider === 'invited' && status === 'active') {
+		return { plan: 'pro', status, source: 'invited', until: null, endingAt: null, billable: false };
+	}
+
 	// A trial that has run out is not a trial, whatever the row still says: the
 	// nightly reconcile catches up eventually, and a read must not wait for it.
 	if (status === 'trialing') {
-		const ends = row.trialEndsAt;
+		// A provider-side trial (card on file) carries its end as the billing
+		// period; the internal no-card trial stamps trialEndsAt itself.
+		const ends = row.trialEndsAt ?? row.currentPeriodEnd;
 		if (ends && ends > nowIso)
 			return {
 				plan,
@@ -175,6 +183,8 @@ export function applySubscription(
 		providerSubscriptionId?: string | null;
 		currentPeriodEnd?: string | null;
 		cancelAt?: string | null;
+		/** Set for a provider-side trial, so the trial-ending mail knows when. */
+		trialEndsAt?: string | null;
 	},
 	now = new Date()
 ): void {
@@ -192,6 +202,7 @@ export function applySubscription(
 		providerSubscriptionId: input.providerSubscriptionId ?? null,
 		currentPeriodEnd: input.currentPeriodEnd ?? null,
 		cancelAt: input.cancelAt ?? null,
+		...(input.trialEndsAt !== undefined ? { trialEndsAt: input.trialEndsAt } : {}),
 		updatedAt: now.toISOString()
 	};
 

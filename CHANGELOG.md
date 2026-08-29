@@ -6,6 +6,24 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- Registration follows the instance's mode. Open, on an instance that sells:
+  the card comes first — a fresh account lands on billing, the button says
+  "Start your free 14 days", checkout keeps the card without charging it
+  (the page, the checkout and the mail all say when the first charge is),
+  and the trial lives at the provider. Invitation-only: the register page
+  says it is a closed alpha, that accounts made now are real and their data
+  is kept — and invited accounts get full access with no billing anywhere.
+- Checkout is the app's own /buy page now (the one page allowed to load
+  Paddle.js), so selling live does not depend on Paddle approving hosted
+  checkouts. `PADDLE_CLIENT_TOKEN` replaces `PADDLE_CHECKOUT_URL`.
+- An unverified account signs in instead of bouncing off an error: it lands
+  on a page that says the address is unconfirmed and can resend the mail,
+  once a minute, with the button counting the cooldown down. The gate is
+  the deployment's choice (`ONTOPLANO_REQUIRE_VERIFIED_EMAIL=true`).
+- Mail through the box's own postfix works again: opportunistic TLS on
+  localhost was refusing the server's public-name certificate, which no
+  loopback connection can ever match — every verification mail failed with
+  a hostname mismatch.
 - `make deploy` builds on a laptop whose dev database may be behind the
   migration being shipped — the boot-time migration check no longer runs
   during a build, only when a server actually starts. Deploy migrates the

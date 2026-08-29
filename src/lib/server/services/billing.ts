@@ -8,8 +8,8 @@ import { billingEvents, subscriptions } from '../db/schema.js';
 import { user } from '../db/auth.schema.js';
 import { renderEmail } from '../email-template.js';
 import { sendLogged } from './mail-log.js';
-import { isSelfHosted } from '../settings.js';
-import { applySubscription } from './subscriptions.js';
+import { isSelfHosted, pricing } from '../settings.js';
+import { applySubscription, startTrial } from './subscriptions.js';
 import { ValidationError } from './errors.js';
 
 /**
@@ -45,8 +45,8 @@ const SIGNATURE_MAX_AGE_SECONDS = 5 * 60;
 type Config = {
 	apiKey: string;
 	webhookSecret: string;
-	/** The dashboard-created hosted checkout page (pay.paddle.io/checkout/hsc_…). */
-	checkoutUrl: string;
+	/** The Paddle.js client-side token (test_/live_) — safe in a page, made for it. */
+	clientToken: string;
 	priceMonthly: string;
 	priceYearly: string;
 };
@@ -55,7 +55,7 @@ function config(): Config {
 	return {
 		apiKey: process.env.PADDLE_API_KEY ?? '',
 		webhookSecret: process.env.PADDLE_WEBHOOK_SECRET ?? '',
-		checkoutUrl: process.env.PADDLE_CHECKOUT_URL ?? '',
+		clientToken: process.env.PADDLE_CLIENT_TOKEN ?? '',
 		priceMonthly: process.env.PADDLE_PRICE_ID_MONTHLY ?? '',
 		priceYearly: process.env.PADDLE_PRICE_ID_YEARLY ?? ''
 	};
@@ -71,8 +71,20 @@ function apiBase(): string {
 /** Whether this instance can actually sell anything. */
 export function isBillingConfigured(): boolean {
 	if (isSelfHosted()) return false;
-	const { apiKey, webhookSecret, checkoutUrl, priceMonthly } = config();
-	return apiKey !== '' && webhookSecret !== '' && checkoutUrl !== '' && priceMonthly !== '';
+	const { apiKey, webhookSecret, clientToken, priceMonthly } = config();
+	return apiKey !== '' && webhookSecret !== '' && clientToken !== '' && priceMonthly !== '';
+}
+
+/** What the /buy page needs to start Paddle.js — null when there is no selling. */
+export function paddleClientConfig(): {
+	token: string;
+	environment: 'sandbox' | 'production';
+} | null {
+	if (!isBillingConfigured()) return null;
+	return {
+		token: config().clientToken,
+		environment: config().apiKey.startsWith('pdl_sdbx_') ? 'sandbox' : 'production'
+	};
 }
 
 export function hasYearlyPrice(): boolean {
@@ -86,15 +98,17 @@ export function hasYearlyPrice(): boolean {
  * button is an action: a transaction is created with the id in custom_data —
  * which is what every later webhook matches on, because the address on the
  * receipt is the provider's business and may not be the one they signed in
- * with — and the customer lands on the hosted checkout page with that
- * transaction loaded.
+ * with — and the customer lands on /buy with that transaction loaded.
+ * Our own page, not Paddle's hosted checkout: the hosted one is gated
+ * behind approval on live accounts, and /buy is the same overlay without
+ * the gate.
  */
 export async function createCheckout(
 	userId: string,
 	interval: 'monthly' | 'yearly' = 'monthly'
 ): Promise<string> {
 	if (!isBillingConfigured()) throw new ValidationError('Billing is not configured here');
-	const { apiKey, checkoutUrl, priceMonthly, priceYearly } = config();
+	const { apiKey, priceMonthly, priceYearly } = config();
 	const priceId = interval === 'yearly' && priceYearly ? priceYearly : priceMonthly;
 
 	const response = await fetch(`${apiBase()}/transactions`, {
@@ -119,9 +133,8 @@ export async function createCheckout(
 	if (!transactionId)
 		throw new ValidationError('The payment provider answered strangely. Try again.');
 
-	const url = new URL(checkoutUrl);
-	url.searchParams.set('transaction_id', transactionId);
-	return url.toString();
+	// Relative on purpose: the page is ours. Paddle.js reads _ptxn itself.
+	return `/buy?_ptxn=${transactionId}`;
 }
 
 /**
@@ -209,6 +222,30 @@ export function mapStatus(raw: unknown): SubscriptionStatus {
 		default:
 			return 'expired';
 	}
+}
+
+/**
+ * What a brand-new account is entitled to, decided once at registration.
+ *
+ * Invited: the alpha deal — Pro, no billing UI, until the operator changes
+ * it. Open registration on a selling instance with card-first trials:
+ * nothing yet — the fourteen days start at the provider's checkout, card in
+ * hand, and the caller sends the person there. Everything else (an instance
+ * that sells but does not require the card, mainly): the internal no-card
+ * trial, as before.
+ */
+export function onboardEntitlement(
+	userId: string,
+	invited: boolean,
+	now = new Date()
+): 'invited' | 'checkout' | 'trial' {
+	if (invited) {
+		applySubscription(userId, { plan: 'pro', status: 'active', provider: 'invited' }, now);
+		return 'invited';
+	}
+	if (isBillingConfigured() && pricing().trialRequiresCard) return 'checkout';
+	startTrial(userId, now);
+	return 'trial';
 }
 
 export type WebhookOutcome =
@@ -337,7 +374,10 @@ export function handleWebhook(
 			providerCustomerId: data.customer_id ? String(data.customer_id) : null,
 			providerSubscriptionId: subscriptionId,
 			currentPeriodEnd: iso(period.ends_at ?? data.next_billed_at ?? data.canceled_at),
-			cancelAt: change && String(change.action) === 'cancel' ? iso(change.effective_at) : null
+			cancelAt: change && String(change.action) === 'cancel' ? iso(change.effective_at) : null,
+			// A card-first trial lives at the provider; its end is the billing
+			// period's end, and the trial-ending mail needs it here.
+			trialEndsAt: status === 'trialing' ? iso(period.ends_at ?? data.next_billed_at) : null
 		},
 		now
 	);
@@ -427,7 +467,8 @@ export async function reconcile(
 					providerCustomerId: data.customer_id ? String(data.customer_id) : null,
 					providerSubscriptionId: String(data.id ?? row.providerSubscriptionId),
 					currentPeriodEnd: iso(period.ends_at ?? data.next_billed_at ?? data.canceled_at),
-					cancelAt: change && String(change.action) === 'cancel' ? iso(change.effective_at) : null
+					cancelAt: change && String(change.action) === 'cancel' ? iso(change.effective_at) : null,
+					trialEndsAt: status === 'trialing' ? iso(period.ends_at ?? data.next_billed_at) : null
 				},
 				now
 			);
