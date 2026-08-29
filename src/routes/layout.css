@@ -180,9 +180,12 @@ html[data-style='playful'] article {
  * little triangles in every corner of every card. `clip` rather than `hidden`
  * because clip does not make a scroll container, so sticky headers inside the
  * planner keep working; `position: fixed` content is unaffected either way.
+ *
+ * NOT `.shadow-raised`: the site header wears it, and clipping the header
+ * swallowed the account dropdown that opens below it. Raised surfaces are
+ * chrome and hover states, not the cards whose corners this exists for.
  */
 html[data-style='playful'] .shadow-card,
-html[data-style='playful'] .shadow-raised,
 html[data-style='playful'] section,
 html[data-style='playful'] aside,
 html[data-style='playful'] article,
