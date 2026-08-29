@@ -16,4 +16,7 @@ import { reconcile } from '../src/lib/server/services/billing.js';
 
 const result = await reconcile();
 
-console.log(`billing: ${result.expired} lapsed, ${result.checked} checked against the provider`);
+console.log(
+	`billing: ${result.expired} lapsed, ${result.checked} checked against the provider, ` +
+		`${result.noticed} told their trial ends soon`
+);

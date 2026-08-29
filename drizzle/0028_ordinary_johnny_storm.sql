@@ -1,0 +1,1 @@
+ALTER TABLE `subscriptions` ADD `trial_notice_sent_at` text;

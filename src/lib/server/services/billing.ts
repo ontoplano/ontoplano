@@ -1,11 +1,12 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-import { and, eq, isNull, lt, or } from 'drizzle-orm';
+import { and, eq, gt, isNull, lt, lte, or } from 'drizzle-orm';
 
 import { isPlanId, type PlanId, type SubscriptionStatus } from '../../plans.js';
 import { db } from '../db/index.js';
 import { billingEvents, subscriptions } from '../db/schema.js';
 import { user } from '../db/auth.schema.js';
+import { isEmailConfigured, sendEmail } from '../email.js';
 import { isSelfHosted } from '../settings.js';
 import { applySubscription } from './subscriptions.js';
 import { ValidationError } from './errors.js';
@@ -228,8 +229,13 @@ export function handleWebhook(rawBody: string, eventId: string, now = new Date()
  * and compared — a webhook that never arrived leaves nothing to notice, and
  * this is the noticing.
  */
-export async function reconcile(now = new Date()): Promise<{ expired: number; checked: number }> {
+export async function reconcile(
+	now = new Date()
+): Promise<{ expired: number; checked: number; noticed: number }> {
 	const nowIso = now.toISOString();
+
+	// Before anything lapses: the warning has to precede the consequence.
+	const noticed = await sendTrialEndingNotices(now);
 
 	const lapsed = db
 		.select({ id: subscriptions.id, userId: subscriptions.userId })
@@ -258,7 +264,7 @@ export async function reconcile(now = new Date()): Promise<{ expired: number; ch
 	}
 
 	const { apiKey } = config();
-	if (!apiKey) return { expired: lapsed.length, checked: 0 };
+	if (!apiKey) return { expired: lapsed.length, checked: 0, noticed };
 
 	const live = db
 		.select({
@@ -311,7 +317,78 @@ export async function reconcile(now = new Date()): Promise<{ expired: number; ch
 		}
 	}
 
-	return { expired: lapsed.length, checked };
+	return { expired: lapsed.length, checked, noticed };
+}
+
+/**
+ * The mail two days before the trial becomes a charge.
+ *
+ * Not optional, and not marketing: a person who forgot their trial and meets
+ * the receipt first becomes a chargeback and a one-star review. Sent once per
+ * account — the stamp is a column, so a retried run cannot send it twice — and
+ * only while the trial is actually still running.
+ *
+ * A transient send failure leaves the stamp unset so tomorrow's run retries;
+ * an instance with no SMTP at all stamps anyway, because the alternative is
+ * logging the same unsendable mail every night forever.
+ */
+const TRIAL_NOTICE_DAYS = 2;
+
+export async function sendTrialEndingNotices(now = new Date()): Promise<number> {
+	const nowIso = now.toISOString();
+	const horizon = new Date(now.getTime() + TRIAL_NOTICE_DAYS * 86400_000).toISOString();
+
+	const due = db
+		.select({
+			id: subscriptions.id,
+			userId: subscriptions.userId,
+			trialEndsAt: subscriptions.trialEndsAt,
+			providerSubscriptionId: subscriptions.providerSubscriptionId,
+			email: user.email
+		})
+		.from(subscriptions)
+		.innerJoin(user, eq(user.id, subscriptions.userId))
+		.where(
+			and(
+				eq(subscriptions.status, 'trialing'),
+				isNull(subscriptions.trialNoticeSentAt),
+				gt(subscriptions.trialEndsAt, nowIso),
+				lte(subscriptions.trialEndsAt, horizon)
+			)
+		)
+		.all();
+
+	let sent = 0;
+
+	for (const row of due) {
+		const ends = new Date(row.trialEndsAt!).toISOString().slice(0, 10);
+		const origin = process.env.ORIGIN ?? '';
+		const manage = origin ? `${origin}/settings/billing` : 'the billing page in your settings';
+
+		const hasCard = Boolean(row.providerSubscriptionId);
+		const consequence = hasCard
+			? `your subscription starts and the first charge happens then. If you would rather stop, cancel before that date and you will not be charged`
+			: `everything you wrote stays yours and stays readable, but nothing new can be added until you subscribe`;
+
+		const result = await sendEmail({
+			to: row.email,
+			subject: `Your ontoplano trial ends on ${ends}`,
+			text:
+				`Your trial ends on ${ends} — ${consequence}.\n\n` +
+				`Manage it here: ${manage}\n\n` +
+				`Questions? Just reply to this message.`
+		});
+
+		if (result.delivered || !isEmailConfigured()) {
+			db.update(subscriptions)
+				.set({ trialNoticeSentAt: nowIso, updatedAt: nowIso })
+				.where(eq(subscriptions.id, row.id))
+				.run();
+			if (result.delivered) sent += 1;
+		}
+	}
+
+	return sent;
 }
 
 function userIdFromSubscription(subscriptionId: string): string | null {

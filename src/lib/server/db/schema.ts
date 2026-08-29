@@ -830,6 +830,8 @@ export const subscriptions = sqliteTable(
 		/** When the current paid period ends, or when the trial does. */
 		currentPeriodEnd: text('current_period_end'),
 		trialEndsAt: text('trial_ends_at'),
+		/** When the "your trial ends soon" mail went out, so it goes out once. */
+		trialNoticeSentAt: text('trial_notice_sent_at'),
 		/** Set when a cancellation is scheduled but the period is still running. */
 		cancelAt: text('cancel_at'),
 		/** Where the provider lets this customer manage their own card. */

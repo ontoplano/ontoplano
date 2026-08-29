@@ -15,6 +15,8 @@ rest. Versions follow `package.json`.
   with the limit named.
 - The API budget is now per account as well as per token: more tokens are no
   longer more budget.
+- Two days before a trial ends, a mail says so — what happens next, and where
+  to cancel — so the first charge is never a surprise.
 
 ## 0.6.2 — 2026-08-29
 

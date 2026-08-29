@@ -55,6 +55,12 @@ subscribe to the `subscription_*` events.
 It marks anything whose period has run out as expired, and — with an API key —
 fetches every live subscription and corrects drift. Safe to run twice.
 
+It also sends the trial-ending mail: two days before a trial runs out, once per
+account, through the same SMTP-or-log path as everything else. This one is not a
+courtesy — a person who forgot their trial and meets the receipt first is a
+chargeback. If SMTP is not configured the mail is logged and still marked sent,
+so the log is not repeated nightly; configure SMTP before opening the doors.
+
 ## Checking it works
 
 `scripts/check-billing.ts` exercises the parts the e2e suite cannot, because
