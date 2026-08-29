@@ -6,16 +6,54 @@
 # who clones the repository.
 -include local.mk
 
-.PHONY: up-phone deploy-local android-lan android-check doctor dev build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
-# The dev server on this machine runs against the real database — the default
-# path is the very one guard-push refuses to touch. So starting it takes a
-# snapshot first (VACUUM INTO, WAL-safe; the script keeps the last 10 per
-# label), and then just starts. A backup needs no ceremony, only doing —
-# `deploy` is the one that stops to ask.
+# Resolved here too, so the public Makefile works without a local.mk.
+NODE_BIN ?= $(shell command -v node)
+YARN_BIN ?= $(shell command -v yarn)
+
+# The dev server runs as a systemd user service, so `make dev` hands the shell
+# straight back instead of holding it hostage. The unit snapshots the database
+# before every start (ExecStartPre — the database here is the real one, and the
+# backup must happen however the unit is started), keeping the last 10. No
+# prompt: a backup needs no ceremony, only doing — `deploy` is the one that
+# stops to ask. `dev-fg` is the old foreground behaviour, for when you want
+# vite's output in the terminal you are sitting at.
 dev:
+	@[ -n "$(NODE_BIN)" ] || { echo "no node on PATH"; exit 1; }
+	@[ -n "$(YARN_BIN)" ] || { echo "no yarn on PATH"; exit 1; }
+	@mkdir -p ~/.config/systemd/user
+	@REPO_DIR="$(CURDIR)" NODE_BIN="$(NODE_BIN)" NODE_DIR="$$(dirname "$(NODE_BIN)")" \
+		YARN_BIN="$(YARN_BIN)" DATABASE_URL="$${DATABASE_URL:-}" \
+		envsubst < ontoplano-dev.service > ~/.config/systemd/user/ontoplano-dev.service
+	@systemctl --user daemon-reload
+	@mark=$$(mktemp); systemctl --user restart ontoplano-dev; \
+	sleep 2; \
+	if systemctl --user is-active --quiet ontoplano-dev; then \
+		db="$${DATABASE_URL:-$$HOME/.local/share/ontoplano/ontoplano.db}"; \
+		snap=$$(find "$$db".dev-* -newer "$$mark" 2>/dev/null | head -1); rm -f "$$mark"; \
+		if [ -n "$$snap" ]; then echo "snapshotted: $$snap"; \
+		else echo "no fresh snapshot found beside $$db — check make dev-logs"; fi; \
+		echo "dev server running at http://localhost:1493"; \
+		echo "  make dev-logs to follow it, make dev-stop to stop it"; \
+	else \
+		rm -f "$$mark"; \
+		echo "the dev server did not come up:"; \
+		journalctl --user -u ontoplano-dev -n 20 --no-pager; \
+		exit 1; \
+	fi
+
+dev-stop:
+	@systemctl --user stop ontoplano-dev
+	@echo "stopped."
+
+dev-logs:
+	journalctl --user -u ontoplano-dev -f
+
+# The dev server in this terminal, the old way. Snapshots first, like the unit.
+dev-fg:
 	@yarn -s db:snapshot dev
 	yarn dev --port 1493
 

@@ -1,0 +1,27 @@
+[Unit]
+Description=Ontoplano dev server (vite, against this machine's database)
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+# Substituted by `make dev` from wherever the checkout lives.
+WorkingDirectory=${REPO_DIR}
+# The database this serves is the real one on this machine, so every start
+# snapshots it first — however the unit was started, not only through make.
+# The copy lands beside the database as .dev-<stamp>; the last 10 are kept.
+ExecStartPre=${NODE_BIN} scripts/db-snapshot.mjs dev
+ExecStart=${YARN_BIN} dev --port 1493
+# on-failure, not always: `make dev-stop` and a deliberate exit stay stopped.
+# A dev server that resurrects itself is the shell hijack again, once removed.
+Restart=on-failure
+RestartSec=2
+# yarn re-execs node from PATH, and a user unit's PATH knows nothing about
+# nvm — so the directory of the node that make found goes first.
+Environment=PATH=${NODE_DIR}:/usr/local/bin:/usr/bin:/bin
+# Empty when make dev was run without one; an empty value falls through to
+# the default path everywhere it is read.
+Environment=DATABASE_URL=${DATABASE_URL}
+
+[Install]
+WantedBy=default.target
