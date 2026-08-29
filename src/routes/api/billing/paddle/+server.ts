@@ -8,7 +8,7 @@ import {
 import { toJsonError } from '$lib/server/services/errors';
 
 /**
- * Where Lemon Squeezy tells us what happened.
+ * Where Paddle tells us what happened.
  *
  * Unauthenticated by design — the signature is the authentication. The raw body
  * is read as text and hashed before anything parses it, because re-serialising
@@ -28,11 +28,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		return new Response('Bad signature', { status: 401 });
 	}
 
-	// Their own id for this delivery, which is what makes it idempotent.
-	const eventId = request.headers.get('x-event-id') ?? hashOf(raw);
-
 	try {
-		const outcome = handleWebhook(raw, eventId);
+		// Paddle's own event id rides in the body; the hash is only the
+		// fallback that keeps "apply once" true for a body without one.
+		const outcome = handleWebhook(raw, hashOf(raw));
 		return Response.json(outcome);
 	} catch (e) {
 		return toJsonError(e);

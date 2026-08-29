@@ -6,6 +6,13 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- The payment provider is Paddle now — Lemon Squeezy could not pay out to
+  Brazil. "Go Pro" became a button instead of a link (the server mints a
+  checkout with the account id attached and sends the browser there), a
+  yearly price can sit beside the monthly one, and "Manage payment" opens a
+  fresh Paddle portal session each time. Sandbox and live follow from the
+  API key alone. Existing subscriptions and trials are untouched; the five
+  `PADDLE_*` values in `docs/BILLING.md` replace the `LEMONSQUEEZY_*` ones.
 - Mail that fails to send is no longer a silence: every failure is recorded,
   counted as a `/healthz` warning (which is what the off-box watchers alert
   on), and listed on the administration page with a retry for mail worth

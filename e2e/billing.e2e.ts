@@ -15,9 +15,9 @@ const ORIGIN = 'http://localhost:4173';
 test('a self-hosted instance has no payment provider to talk to', async ({ playwright }) => {
 	const request = await playwright.request.newContext({ baseURL: ORIGIN });
 
-	const hook = await request.post('/api/billing/lemonsqueezy', {
+	const hook = await request.post('/api/billing/paddle', {
 		headers: { Origin: ORIGIN },
-		data: { meta: { event_name: 'subscription_created' } }
+		data: { event_type: 'subscription.created' }
 	});
 
 	// Not 401: an instance that sells nothing does not have a webhook endpoint

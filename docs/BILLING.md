@@ -23,19 +23,33 @@ deployment settings follow.
 
 ## The provider
 
-Lemon Squeezy, as merchant of record: they take the payment, issue the invoice
-and handle the tax, which is what a solo founder selling worldwide wants.
+Paddle, as merchant of record: they take the payment, issue the invoice and
+handle the tax, which is what a solo founder selling worldwide wants. (Lemon
+Squeezy came first; it pays sellers through Stripe Connect, which cannot pay
+out to Brazil.) Sandbox and live are separate Paddle accounts with separate
+keys — which one the instance talks to follows from the API key alone
+(`pdl_sdbx_…` keys reach `sandbox-api.paddle.com`).
 
 Set these on the server:
 
-| Variable                      | What it is                                            |
-| ----------------------------- | ----------------------------------------------------- |
-| `LEMONSQUEEZY_CHECKOUT_URL`   | The buy link for the Pro variant.                     |
-| `LEMONSQUEEZY_WEBHOOK_SECRET` | The signing secret from the webhook you create there. |
-| `LEMONSQUEEZY_API_KEY`        | Optional. Only the nightly reconcile uses it.         |
+| Variable                   | What it is                                                      |
+| -------------------------- | --------------------------------------------------------------- |
+| `PADDLE_API_KEY`           | An API key. Checkout creation and the nightly reconcile use it. |
+| `PADDLE_WEBHOOK_SECRET`    | The secret of the notification destination you create there.    |
+| `PADDLE_CHECKOUT_URL`      | The hosted checkout page (Paddle > Checkout > Hosted checkout — a `pay.paddle.io/checkout/hsc_…` link). |
+| `PADDLE_PRICE_ID_MONTHLY`  | The Pro monthly price (`pri_…`).                                |
+| `PADDLE_PRICE_ID_YEARLY`   | Optional. Adds a "year at once" button.                         |
 
-Point the webhook at `https://your-instance/api/billing/lemonsqueezy` and
-subscribe to the `subscription_*` events.
+Point the notification destination at `https://your-instance/api/billing/paddle`
+and subscribe to the `subscription.*` and `transaction.completed` events. Two
+dashboard prerequisites: a **default payment link** must be set (Paddle >
+Checkout settings — sandbox accepts localhost) or transactions cannot be
+created at all, and the **hosted checkout** page is what lets the app sell
+without loading Paddle.js into its own strict CSP.
+
+"Go Pro" is an action, not a static link: the server creates a transaction
+with the account id in `custom_data` — what every later webhook matches on —
+and redirects to the hosted checkout with that transaction loaded.
 
 ### Three rules
 
@@ -74,11 +88,14 @@ DATABASE_URL=/tmp/billing-check.db yarn db:migrate
 DATABASE_URL=/tmp/billing-check.db npx tsx scripts/check-billing.ts
 ```
 
-A forged signature is refused, a real one is applied, a retry is not applied
-twice, a trial that has run out reads as lapsed, and an expired subscription
-drops to Free.
+A forged signature is refused, a real one is applied (including through a
+secret rotation's second `h1`), a stale timestamp is treated as a replay, a
+retry keyed by Paddle's own `event_id` is not applied twice,
+`transaction.completed` alone can bind a subscription to an account, and a
+canceled subscription past its period drops off Pro.
 
-**Not verified against a live Lemon Squeezy account.** The signature check, the
+**Not verified against a live Paddle account.** The signature check, the
 idempotency and the status mapping are tested against fixtures; the shape of a
-real payload and the remote reconcile call are written from their documentation.
-Make one real test purchase before you open the doors.
+real payload and the remote calls are written from Paddle's documentation.
+Walk the whole path in the sandbox — checkout, webhook, cancel — before the
+live account sells anything.

@@ -121,7 +121,7 @@ export const DEFAULT_PRICING: Pricing = {
 	currency: 'USD',
 	trialDays: 14,
 	trialRequiresCard: true,
-	provider: 'Lemon Squeezy'
+	provider: 'Paddle'
 };
 
 export function formatPrice(cents: number, currency = 'USD'): string {

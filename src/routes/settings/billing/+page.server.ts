@@ -1,11 +1,17 @@
-import { error } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
+import { error, redirect } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
 import { LIMIT_KEYS, PLANS } from '$lib/plans';
 import { isSelfHosted, pricing } from '$lib/server/settings';
 import { buildCtx } from '$lib/server/services/ctx';
 import { exportAllowance } from '$lib/server/services/account';
 import { resolvePlan, usage } from '$lib/server/services/subscriptions';
-import { checkoutUrl, portalUrl, isBillingConfigured } from '$lib/server/services/billing';
+import {
+	createCheckout,
+	hasYearlyPrice,
+	portalUrl,
+	isBillingConfigured
+} from '$lib/server/services/billing';
+import { toActionFailure } from '$lib/server/services/errors';
 
 /**
  * What this account is on, and what it is using.
@@ -35,10 +41,26 @@ export const load: PageServerLoad = async ({ locals }) => {
 		plans: Object.values(PLANS).filter((p) => p.id === 'pro'),
 		limitKeys: LIMIT_KEYS,
 		usage: counts,
-		checkout:
-			entitlement.plan === 'pro' && entitlement.source === 'subscription'
-				? null
-				: checkoutUrl(ctx.userId),
-		portal: entitlement.source === 'subscription' ? portalUrl(ctx.userId) : null
+		// Paddle mints a checkout per transaction, so buying is an action, not
+		// a link — this only says whether the button belongs on the page.
+		canCheckout: !(entitlement.plan === 'pro' && entitlement.source === 'subscription'),
+		yearly: hasYearlyPrice(),
+		// A fresh portal session per look: the links carry a short-lived token
+		// and the provider says not to store them.
+		portal: entitlement.source === 'subscription' ? await portalUrl(ctx.userId) : null
 	};
+};
+
+export const actions: Actions = {
+	checkout: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const interval = formData.get('interval') === 'yearly' ? 'yearly' : 'monthly';
+		let url: string;
+		try {
+			url = await createCheckout(locals.user!.id, interval);
+		} catch (e) {
+			return toActionFailure(e);
+		}
+		redirect(303, url);
+	}
 };

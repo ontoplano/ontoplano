@@ -3,7 +3,7 @@
  *
  * Webhooks are the source of truth, and a webhook that never arrived leaves no
  * trace to notice. This is the noticing: anything whose paid period or trial
- * has run out is marked expired, and — when `LEMONSQUEEZY_API_KEY` is set —
+ * has run out is marked expired, and — when `PADDLE_API_KEY` is set —
  * every subscription the provider still knows about is fetched and compared.
  *
  * From cron, once a day:

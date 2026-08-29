@@ -13,11 +13,12 @@ import { applySubscription } from './subscriptions.js';
 import { ValidationError } from './errors.js';
 
 /**
- * Lemon Squeezy, and the rules for talking to it.
+ * Paddle, and the rules for talking to it.
  *
  * They are merchant of record, which is the whole reason: a solo founder
  * selling worldwide does not want to be the one who owes VAT in twenty
- * countries.
+ * countries. (Lemon Squeezy came first and could not pay out to Brazil —
+ * it pays sellers through Stripe Connect, which does not reach here.)
  *
  * Three rules, and they are the ones that make billing survivable:
  *
@@ -27,97 +28,184 @@ import { ValidationError } from './errors.js';
  *    retry — and they do retry — is applied exactly once.
  *  - A nightly pass catches what webhooks missed, because a webhook that never
  *    arrived leaves no trace to notice.
+ *
+ * Sandbox and live are entirely separate Paddle accounts; which one this
+ * instance talks to is decided by the API key alone (pdl_sdbx_… keys reach
+ * sandbox-api.paddle.com), so there is no mode flag to forget.
  */
 
-export const PROVIDER = 'lemonsqueezy';
+export const PROVIDER = 'paddle';
 
-/** The signature header Lemon Squeezy sends. */
-export const SIGNATURE_HEADER = 'x-signature';
+/** The signature header Paddle sends: `ts=1671552777;h1=eb4d…`. */
+export const SIGNATURE_HEADER = 'paddle-signature';
+
+/** A signature older than this is replayed, not late. Paddle sends promptly. */
+const SIGNATURE_MAX_AGE_SECONDS = 5 * 60;
 
 type Config = {
-	checkoutUrl: string;
-	webhookSecret: string;
 	apiKey: string;
+	webhookSecret: string;
+	/** The dashboard-created hosted checkout page (pay.paddle.io/checkout/hsc_…). */
+	checkoutUrl: string;
+	priceMonthly: string;
+	priceYearly: string;
 };
 
 function config(): Config {
 	return {
-		checkoutUrl: process.env.LEMONSQUEEZY_CHECKOUT_URL ?? '',
-		webhookSecret: process.env.LEMONSQUEEZY_WEBHOOK_SECRET ?? '',
-		apiKey: process.env.LEMONSQUEEZY_API_KEY ?? ''
+		apiKey: process.env.PADDLE_API_KEY ?? '',
+		webhookSecret: process.env.PADDLE_WEBHOOK_SECRET ?? '',
+		checkoutUrl: process.env.PADDLE_CHECKOUT_URL ?? '',
+		priceMonthly: process.env.PADDLE_PRICE_ID_MONTHLY ?? '',
+		priceYearly: process.env.PADDLE_PRICE_ID_YEARLY ?? ''
 	};
+}
+
+/** Which Paddle answers this key — the prefix says, so nothing else has to. */
+function apiBase(): string {
+	return config().apiKey.startsWith('pdl_sdbx_')
+		? 'https://sandbox-api.paddle.com'
+		: 'https://api.paddle.com';
 }
 
 /** Whether this instance can actually sell anything. */
 export function isBillingConfigured(): boolean {
 	if (isSelfHosted()) return false;
-	const { checkoutUrl, webhookSecret } = config();
-	return checkoutUrl !== '' && webhookSecret !== '';
+	const { apiKey, webhookSecret, checkoutUrl, priceMonthly } = config();
+	return apiKey !== '' && webhookSecret !== '' && checkoutUrl !== '' && priceMonthly !== '';
+}
+
+export function hasYearlyPrice(): boolean {
+	return config().priceYearly !== '';
 }
 
 /**
- * Where to send somebody who wants to pay.
+ * Mint a checkout for one account, right now.
  *
- * The account id rides along as custom data, which is what a webhook matches
- * on: the address on the receipt is the provider's business and may not be the
- * one they signed in with.
+ * Paddle has no static buy link that can carry our account id, so the buy
+ * button is an action: a transaction is created with the id in custom_data —
+ * which is what every later webhook matches on, because the address on the
+ * receipt is the provider's business and may not be the one they signed in
+ * with — and the customer lands on the hosted checkout page with that
+ * transaction loaded.
  */
-export function checkoutUrl(userId: string): string | null {
-	const { checkoutUrl: base } = config();
-	if (!isBillingConfigured()) return null;
+export async function createCheckout(
+	userId: string,
+	interval: 'monthly' | 'yearly' = 'monthly'
+): Promise<string> {
+	if (!isBillingConfigured()) throw new ValidationError('Billing is not configured here');
+	const { apiKey, checkoutUrl, priceMonthly, priceYearly } = config();
+	const priceId = interval === 'yearly' && priceYearly ? priceYearly : priceMonthly;
 
-	const url = new URL(base);
-	url.searchParams.set('checkout[custom][user_id]', userId);
+	const response = await fetch(`${apiBase()}/transactions`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${apiKey}`
+		},
+		body: JSON.stringify({
+			items: [{ price_id: priceId, quantity: 1 }],
+			custom_data: { user_id: userId }
+		})
+	});
 
-	const account = db.select({ email: user.email }).from(user).where(eq(user.id, userId)).get();
-	if (account) url.searchParams.set('checkout[email]', account.email);
+	if (!response.ok) {
+		console.error('billing: could not create a checkout', response.status, await response.text());
+		throw new ValidationError('The payment provider did not answer. Try again in a minute.');
+	}
 
+	const body = (await response.json()) as { data?: { id?: string } };
+	const transactionId = body.data?.id;
+	if (!transactionId)
+		throw new ValidationError('The payment provider answered strangely. Try again.');
+
+	const url = new URL(checkoutUrl);
+	url.searchParams.set('transaction_id', transactionId);
 	return url.toString();
 }
 
-/** Where an existing customer manages their own card, as the provider told us. */
-export function portalUrl(userId: string): string | null {
+/**
+ * Where an existing customer manages their card or cancels.
+ *
+ * Portal links carry a short-lived token and are not to be stored, so a fresh
+ * session is created each time somebody looks at the billing page. Null when
+ * there is nothing to manage or the provider does not answer — the page just
+ * drops the button.
+ */
+export async function portalUrl(userId: string): Promise<string | null> {
+	const { apiKey } = config();
 	const row = db
-		.select({ portalUrl: subscriptions.portalUrl })
+		.select({ customerId: subscriptions.providerCustomerId })
 		.from(subscriptions)
 		.where(eq(subscriptions.userId, userId))
 		.get();
+	if (!apiKey || !row?.customerId) return null;
 
-	return row?.portalUrl ?? null;
+	try {
+		const response = await fetch(`${apiBase()}/customers/${row.customerId}/portal-sessions`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+			body: '{}'
+		});
+		if (!response.ok) return null;
+		const body = (await response.json()) as {
+			data?: { urls?: { general?: { overview?: string } } };
+		};
+		return body.data?.urls?.general?.overview ?? null;
+	} catch {
+		return null;
+	}
 }
 
 /**
  * Is this really from them?
  *
- * HMAC-SHA256 of the raw body with the webhook secret, compared in constant
- * time. The *raw* body: re-serialising the JSON first would change a byte
- * somewhere and the comparison would fail for a reason nobody could see.
+ * `Paddle-Signature: ts=…;h1=…` — HMAC-SHA256 of `ts:rawBody` with the
+ * endpoint's secret, compared in constant time. The *raw* body:
+ * re-serialising the JSON first would change a byte somewhere and the
+ * comparison would fail for a reason nobody could see. More than one h1 can
+ * appear while a secret is being rotated; any of them passing is a pass.
  */
-export function verifySignature(rawBody: string, signature: string | null): boolean {
+export function verifySignature(
+	rawBody: string,
+	signature: string | null,
+	now = new Date()
+): boolean {
 	const { webhookSecret } = config();
 	if (!webhookSecret || !signature) return false;
 
-	const expected = createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
-	const given = signature.trim();
+	let ts = '';
+	const given: string[] = [];
+	for (const part of signature.split(';')) {
+		const [key, value] = part.split('=', 2);
+		if (key?.trim() === 'ts') ts = (value ?? '').trim();
+		if (key?.trim() === 'h1' && value) given.push(value.trim());
+	}
+	if (!ts || given.length === 0) return false;
 
-	if (expected.length !== given.length) return false;
-	return timingSafeEqual(Buffer.from(expected, 'utf8'), Buffer.from(given, 'utf8'));
+	const age = Math.abs(now.getTime() / 1000 - Number(ts));
+	if (!Number.isFinite(age) || age > SIGNATURE_MAX_AGE_SECONDS) return false;
+
+	const expected = createHmac('sha256', webhookSecret).update(`${ts}:${rawBody}`).digest('hex');
+	return given.some(
+		(h) =>
+			h.length === expected.length &&
+			timingSafeEqual(Buffer.from(expected, 'utf8'), Buffer.from(h, 'utf8'))
+	);
 }
 
-/** What Lemon Squeezy's statuses mean here. */
+/** What Paddle's statuses mean here. Paused is not entitled to anything. */
 export function mapStatus(raw: unknown): SubscriptionStatus {
 	switch (String(raw)) {
-		case 'on_trial':
+		case 'trialing':
 			return 'trialing';
 		case 'active':
 			return 'active';
 		case 'past_due':
-		case 'unpaid':
 			return 'past_due';
-		case 'cancelled':
+		case 'canceled':
 			return 'canceled';
-		case 'expired':
-			return 'expired';
+		case 'paused':
 		default:
 			return 'expired';
 	}
@@ -132,8 +220,19 @@ export type WebhookOutcome =
  *
  * The event is written down before it is applied, and the unique index on
  * (provider, event id) is what makes "exactly once" true rather than intended.
+ *
+ * Two event families matter. `subscription.*` carries the subscription
+ * entity itself. `transaction.completed` is handled too because it is the
+ * one place our own custom_data is certain to arrive — it is set on the
+ * transaction the checkout was minted from — so the very first payment can
+ * bind subscription to account even if the subscription events carry no
+ * custom_data of their own.
  */
-export function handleWebhook(rawBody: string, eventId: string, now = new Date()): WebhookOutcome {
+export function handleWebhook(
+	rawBody: string,
+	fallbackId: string,
+	now = new Date()
+): WebhookOutcome {
 	let payload: Record<string, unknown>;
 	try {
 		payload = JSON.parse(rawBody);
@@ -141,9 +240,10 @@ export function handleWebhook(rawBody: string, eventId: string, now = new Date()
 		throw new ValidationError('Body is not JSON');
 	}
 
-	const meta = (payload.meta ?? {}) as Record<string, unknown>;
-	const eventName = String(meta.event_name ?? '');
-	const custom = (meta.custom_data ?? {}) as Record<string, unknown>;
+	const eventName = String(payload.event_type ?? '');
+	const eventId =
+		typeof payload.event_id === 'string' && payload.event_id ? payload.event_id : fallbackId;
+	const data = (payload.data ?? {}) as Record<string, unknown>;
 
 	const existing = db
 		.select({ id: billingEvents.id, processedAt: billingEvents.processedAt })
@@ -175,27 +275,58 @@ export function handleWebhook(rawBody: string, eventId: string, now = new Date()
 			.where(eq(billingEvents.id, rowId))
 			.run();
 
-	if (!eventName.startsWith('subscription_')) {
+	const custom = (data.custom_data ?? {}) as Record<string, unknown>;
+	const customUserId = typeof custom.user_id === 'string' ? custom.user_id : null;
+
+	if (eventName === 'transaction.completed') {
+		// A payment landed. The subscription events say the rest; this one
+		// exists to bind subscription id to account via the transaction's
+		// custom_data, and to flip the plan on without waiting for them.
+		const subscriptionId = String(data.subscription_id ?? '');
+		const resolved = customUserId ?? userIdFromSubscription(subscriptionId);
+		if (!subscriptionId || !resolved) {
+			markDone(subscriptionId ? 'no account for this transaction' : undefined);
+			return subscriptionId
+				? { applied: false, reason: 'unknown_account', event: eventName }
+				: { applied: false, reason: 'ignored', event: eventName };
+		}
+
+		const period = (data.billing_period ?? {}) as Record<string, unknown>;
+		applySubscription(
+			resolved,
+			{
+				plan: 'pro',
+				status: 'active',
+				provider: PROVIDER,
+				providerCustomerId: data.customer_id ? String(data.customer_id) : null,
+				providerSubscriptionId: subscriptionId,
+				currentPeriodEnd: iso(period.ends_at)
+			},
+			now
+		);
+		markDone();
+		return { applied: true, userId: resolved, event: eventName };
+	}
+
+	if (!eventName.startsWith('subscription.')) {
 		markDone();
 		return { applied: false, reason: 'ignored', event: eventName };
 	}
 
-	const data = (payload.data ?? {}) as Record<string, unknown>;
-	const attributes = (data.attributes ?? {}) as Record<string, unknown>;
-	const urls = (attributes.urls ?? {}) as Record<string, unknown>;
-
-	const userId = typeof custom.user_id === 'string' ? custom.user_id : null;
-	const resolved = userId ?? userIdFromSubscription(String(data.id ?? ''));
+	const subscriptionId = String(data.id ?? '');
+	const resolved = customUserId ?? userIdFromSubscription(subscriptionId);
 
 	if (!resolved) {
 		markDone('no account for this subscription');
 		return { applied: false, reason: 'unknown_account', event: eventName };
 	}
 
-	const status = mapStatus(attributes.status);
-	// Cancelled but still inside the paid period is still Pro: the provider
-	// keeps `ends_at` for exactly that.
+	const status = mapStatus(data.status);
+	// Cancelled but still inside the paid period is still Pro: the period end
+	// keeps that true, and `scheduled_change` says when the axe falls.
 	const plan: PlanId = isPlanId(custom.plan) ? custom.plan : 'pro';
+	const period = (data.current_billing_period ?? {}) as Record<string, unknown>;
+	const change = (data.scheduled_change ?? null) as Record<string, unknown> | null;
 
 	applySubscription(
 		resolved,
@@ -203,19 +334,13 @@ export function handleWebhook(rawBody: string, eventId: string, now = new Date()
 			plan: status === 'expired' ? 'none' : plan,
 			status,
 			provider: PROVIDER,
-			providerCustomerId: attributes.customer_id ? String(attributes.customer_id) : null,
-			providerSubscriptionId: String(data.id ?? ''),
-			currentPeriodEnd: iso(attributes.renews_at ?? attributes.ends_at),
-			cancelAt: attributes.cancelled ? iso(attributes.ends_at) : null
+			providerCustomerId: data.customer_id ? String(data.customer_id) : null,
+			providerSubscriptionId: subscriptionId,
+			currentPeriodEnd: iso(period.ends_at ?? data.next_billed_at ?? data.canceled_at),
+			cancelAt: change && String(change.action) === 'cancel' ? iso(change.effective_at) : null
 		},
 		now
 	);
-
-	if (typeof urls.customer_portal === 'string')
-		db.update(subscriptions)
-			.set({ portalUrl: urls.customer_portal })
-			.where(eq(subscriptions.userId, resolved))
-			.run();
 
 	markDone();
 	return { applied: true, userId: resolved, event: eventName };
@@ -281,22 +406,17 @@ export async function reconcile(
 
 	for (const row of live) {
 		try {
-			const response = await fetch(
-				`https://api.lemonsqueezy.com/v1/subscriptions/${row.providerSubscriptionId}`,
-				{
-					headers: {
-						Accept: 'application/vnd.api+json',
-						Authorization: `Bearer ${apiKey}`
-					}
-				}
-			);
+			const response = await fetch(`${apiBase()}/subscriptions/${row.providerSubscriptionId}`, {
+				headers: { Authorization: `Bearer ${apiKey}` }
+			});
 
 			if (!response.ok) continue;
 
-			const body = (await response.json()) as Record<string, unknown>;
-			const data = (body.data ?? {}) as Record<string, unknown>;
-			const attributes = (data.attributes ?? {}) as Record<string, unknown>;
-			const status = mapStatus(attributes.status);
+			const body = (await response.json()) as { data?: Record<string, unknown> };
+			const data = body.data ?? {};
+			const status = mapStatus(data.status);
+			const period = (data.current_billing_period ?? {}) as Record<string, unknown>;
+			const change = (data.scheduled_change ?? null) as Record<string, unknown> | null;
 
 			applySubscription(
 				row.userId,
@@ -304,10 +424,10 @@ export async function reconcile(
 					plan: status === 'expired' ? 'none' : 'pro',
 					status,
 					provider: PROVIDER,
-					providerCustomerId: attributes.customer_id ? String(attributes.customer_id) : null,
+					providerCustomerId: data.customer_id ? String(data.customer_id) : null,
 					providerSubscriptionId: String(data.id ?? row.providerSubscriptionId),
-					currentPeriodEnd: iso(attributes.renews_at ?? attributes.ends_at),
-					cancelAt: attributes.cancelled ? iso(attributes.ends_at) : null
+					currentPeriodEnd: iso(period.ends_at ?? data.next_billed_at ?? data.canceled_at),
+					cancelAt: change && String(change.action) === 'cancel' ? iso(change.effective_at) : null
 				},
 				now
 			);
@@ -329,9 +449,8 @@ export async function reconcile(
  * account — the stamp is a column, so a retried run cannot send it twice — and
  * only while the trial is actually still running.
  *
- * A transient send failure leaves the stamp unset so tomorrow's run retries;
- * an instance with no SMTP at all stamps anyway, because the alternative is
- * logging the same unsendable mail every night forever.
+ * A transient send failure leaves the stamp unset so tomorrow's run retries,
+ * and the failure sits on /admin and in the /healthz warnings meanwhile.
  */
 const TRIAL_NOTICE_DAYS = 2;
 

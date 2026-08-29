@@ -1,10 +1,11 @@
 <script lang="ts">
 	import Card from '$lib/components/Card.svelte';
+	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { LIMIT_LABELS, describeYearly, formatPrice } from '$lib/plans';
-	import type { PageServerData } from './$types';
+	import type { ActionData, PageServerData } from './$types';
 
-	let { data }: { data: PageServerData } = $props();
+	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	function when(iso: string | null): string {
 		if (!iso) return '';
@@ -59,14 +60,23 @@
 			{/if}
 		</div>
 
-		{#if data.checkout}
+		{#if data.canCheckout}
 			<div class="mt-4">
-				<a href={data.checkout} class="btn btn-primary" rel="external">
-					<Icon name="arrow-right" /> Go Pro
-				</a>
-				{#if !data.configured}
+				<FormError message={form?.message} />
+				{#if data.configured}
+					<!-- Full page post on purpose: the answer is a redirect to the
+					     provider's checkout, which enhance would swallow. -->
+					<form method="post" action="?/checkout" class="flex items-center gap-2">
+						<button class="btn btn-primary" name="interval" value="monthly">
+							<Icon name="arrow-right" /> Go Pro
+						</button>
+						{#if data.yearly}
+							<button class="btn" name="interval" value="yearly"> A year at once </button>
+						{/if}
+					</form>
+				{:else}
 					<p class="mt-2 text-xs text-gray-500">
-						This instance has no payment provider configured, so that link goes nowhere yet.
+						This instance has no payment provider configured yet, so there is nothing to buy.
 					</p>
 				{/if}
 			</div>

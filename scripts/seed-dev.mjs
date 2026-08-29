@@ -909,7 +909,7 @@ if (!one('select id from subscriptions where user_id = ?', uid)) {
 	run(
 		`insert into subscriptions
 		 (user_id, plan, status, provider, current_period_end, trial_ends_at, created_at, updated_at)
-		 values (?, 'pro', 'active', 'lemonsqueezy', ?, ?, ?, ?)`,
+		 values (?, 'pro', 'active', 'paddle', ?, ?, ?, ?)`,
 		uid,
 		stamp(dayOffset(21)),
 		stamp(dayOffset(-46)),
