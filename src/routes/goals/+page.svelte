@@ -259,7 +259,13 @@
 				</Field>
 
 				<Field label="Starts" span={4} hint={formPeriod ? `Counts for ${formPeriod}` : ''}>
-					<input name="startDate" type="date" bind:value={formStart} class="input" />
+					<input
+						autocomplete="off"
+						name="startDate"
+						type="date"
+						bind:value={formStart}
+						class="input"
+					/>
 				</Field>
 
 				<Field label="Area" span={4}>
@@ -275,6 +281,7 @@
 
 				<Field label="Target" span={4} hint="Optional — leave empty for a yes/no goal">
 					<input
+						autocomplete="off"
 						name="targetValue"
 						type="number"
 						min="0"
@@ -424,6 +431,7 @@
 											>
 												<input type="hidden" name="id" value={goal.id} />
 												<input
+													autocomplete="off"
 													name="currentValue"
 													type="number"
 													min="0"

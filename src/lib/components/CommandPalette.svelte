@@ -139,6 +139,7 @@
 	>
 		<div class="w-full max-w-xl border border-gray-200 bg-white shadow-overlay" role="dialog">
 			<input
+				autocomplete="off"
 				bind:this={input}
 				bind:value={query}
 				placeholder="Go anywhere, or find anything"

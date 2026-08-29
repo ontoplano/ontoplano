@@ -273,13 +273,28 @@
 
 				<FormGrid>
 					<Field label="Date" span={6} required>
-						<input name="date" type="date" required value={formatDate(new Date())} class="input" />
+						<input
+							autocomplete="off"
+							name="date"
+							type="date"
+							required
+							value={formatDate(new Date())}
+							class="input"
+						/>
 					</Field>
 					<Field label="Time" span={3} required>
-						<input name="startTime" type="time" required value="09:00" class="input tabular" />
+						<input
+							autocomplete="off"
+							name="startTime"
+							type="time"
+							required
+							value="09:00"
+							class="input tabular"
+						/>
 					</Field>
 					<Field label="Minutes" span={3}>
 						<input
+							autocomplete="off"
 							name="durationMinutes"
 							type="number"
 							min="15"
@@ -400,6 +415,7 @@
 								>
 									<input type="hidden" name="todoId" value={todo.id} />
 									<input
+										autocomplete="off"
 										type="datetime-local"
 										name="at"
 										required

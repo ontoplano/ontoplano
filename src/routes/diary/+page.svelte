@@ -256,6 +256,7 @@
 			<div class="flex items-center justify-between">
 				<span class="text-sm font-medium text-gray-700">Wins</span>
 				<input
+					autocomplete="off"
 					name="forDate"
 					type="date"
 					value={new Date().toISOString().slice(0, 10)}
@@ -264,6 +265,7 @@
 			</div>
 			{#each { length: winInputCount } as _, i}
 				<input
+					autocomplete="off"
 					name="win_{i}"
 					type="text"
 					placeholder="Win {i + 1}"
@@ -282,6 +284,7 @@
 			<label class="block">
 				<span class="text-sm font-medium text-gray-700">Tags</span>
 				<input
+					autocomplete="off"
 					name="tags"
 					type="text"
 					placeholder="optional extra tags"
@@ -337,6 +340,7 @@
 
 				<Field label="Tags" span={6} hint="Comma separated.">
 					<input
+						autocomplete="off"
 						name="tags"
 						type="text"
 						value={editingId ? editingTagString() : ''}
@@ -347,6 +351,7 @@
 
 				<Field label="People" span={6} hint="Anyone this was about.">
 					<input
+						autocomplete="off"
 						name="people"
 						type="text"
 						list="known-people"

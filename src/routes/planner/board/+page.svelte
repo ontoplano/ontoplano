@@ -638,6 +638,7 @@
 
 						<Field label="Starts" span={6}>
 							<input
+								autocomplete="off"
 								name="startTime"
 								type="time"
 								value={card.startTime ?? ''}
@@ -647,6 +648,7 @@
 
 						<Field label="Minutes" span={6}>
 							<input
+								autocomplete="off"
 								name="durationMinutes"
 								type="number"
 								min="5"

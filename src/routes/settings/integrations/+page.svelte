@@ -122,6 +122,7 @@
 				<FormGrid>
 					<Field label="Name" span={8} required>
 						<input
+							autocomplete="off"
 							name="name"
 							type="text"
 							required
@@ -133,6 +134,7 @@
 
 					<Field label="Expires in" span={4} hint="Days. Empty means never.">
 						<input
+							autocomplete="off"
 							name="expiresInDays"
 							type="number"
 							min="1"

@@ -125,10 +125,10 @@
 				<input name="title" required autocomplete="off" class="input" />
 			</Field>
 			<Field label="Serves" span={4}>
-				<input name="servings" type="number" min="1" class="input" />
+				<input autocomplete="off" name="servings" type="number" min="1" class="input" />
 			</Field>
 			<Field label="Minutes" span={4}>
-				<input name="minutes" type="number" min="1" class="input" />
+				<input autocomplete="off" name="minutes" type="number" min="1" class="input" />
 			</Field>
 			<Field label="Where it came from" span={4}>
 				<input name="source" autocomplete="off" class="input" />

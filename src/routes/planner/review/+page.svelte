@@ -395,6 +395,7 @@
 
 				{#each { length: data.linesPerReview }, i (i)}
 					<input
+						autocomplete="off"
 						type="text"
 						name="line"
 						value={lineAt(i + 1)}

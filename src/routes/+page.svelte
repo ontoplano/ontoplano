@@ -585,6 +585,7 @@
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						></textarea>
 						<input
+							autocomplete="off"
 							name="tags"
 							type="text"
 							placeholder="Tags (comma-separated)"
@@ -614,6 +615,7 @@
 						<div class="flex items-center justify-between">
 							<span class="text-sm font-medium text-gray-700">3 Wins</span>
 							<input
+								autocomplete="off"
 								name="forDate"
 								type="date"
 								value={new Date().toISOString().slice(0, 10)}
@@ -621,18 +623,21 @@
 							/>
 						</div>
 						<input
+							autocomplete="off"
 							name="win_0"
 							type="text"
 							placeholder="Win 1"
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
 						<input
+							autocomplete="off"
 							name="win_1"
 							type="text"
 							placeholder="Win 2"
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
 						<input
+							autocomplete="off"
 							name="win_2"
 							type="text"
 							placeholder="Win 3"

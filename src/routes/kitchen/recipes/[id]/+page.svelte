@@ -178,6 +178,7 @@
 				<input type="hidden" name="recipeId" value={data.recipe.id} />
 				<div class="flex flex-wrap gap-2">
 					<input
+						autocomplete="off"
 						name="quantity"
 						type="number"
 						step="any"
@@ -319,6 +320,7 @@
 			</Field>
 			<Field label="Serves" span={4}>
 				<input
+					autocomplete="off"
 					name="servings"
 					type="number"
 					min="1"
@@ -328,6 +330,7 @@
 			</Field>
 			<Field label="Minutes" span={4}>
 				<input
+					autocomplete="off"
 					name="minutes"
 					type="number"
 					min="1"
@@ -446,13 +449,28 @@
 		<input type="hidden" name="label" value={data.recipe.title} />
 		<FormGrid>
 			<Field label="Day" span={6} required>
-				<input name="date" type="date" required value={data.today} class="input" />
+				<input
+					autocomplete="off"
+					name="date"
+					type="date"
+					required
+					value={data.today}
+					class="input"
+				/>
 			</Field>
 			<Field label="At" span={6} required>
-				<input name="startTime" type="time" required value="19:00" class="input" />
+				<input
+					autocomplete="off"
+					name="startTime"
+					type="time"
+					required
+					value="19:00"
+					class="input"
+				/>
 			</Field>
 			<Field label="For" span={6} hint="Minutes.">
 				<input
+					autocomplete="off"
 					name="durationMinutes"
 					type="number"
 					min="5"

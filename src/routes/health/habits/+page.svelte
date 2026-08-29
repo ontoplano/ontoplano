@@ -647,6 +647,7 @@
 							<div class="mt-3 flex items-center gap-2">
 								<span class="text-xs font-medium text-gray-500">Log past entry:</span>
 								<input
+									autocomplete="off"
 									type="date"
 									bind:value={backdateInput}
 									max={data.today}
