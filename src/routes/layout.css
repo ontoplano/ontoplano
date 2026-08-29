@@ -161,6 +161,24 @@ html[data-style='playful'] article {
 	border-radius: var(--radius-md);
 }
 
+/*
+ * A rounded surface clips its own children.
+ *
+ * A filled bar sitting flush against a card's edge — a header, a tinted row —
+ * keeps its square corners, and without this they poked past the curve as
+ * little triangles in every corner of every card. `clip` rather than `hidden`
+ * because clip does not make a scroll container, so sticky headers inside the
+ * planner keep working; `position: fixed` content is unaffected either way.
+ */
+html[data-style='playful'] .shadow-card,
+html[data-style='playful'] .shadow-raised,
+html[data-style='playful'] section,
+html[data-style='playful'] aside,
+html[data-style='playful'] article,
+html[data-style='playful'] dialog > div {
+	overflow: clip;
+}
+
 html[data-style='playful'] dialog > div,
 html[data-style='playful'] .shadow-overlay {
 	border-radius: var(--radius-lg);
@@ -187,17 +205,13 @@ html[data-style='playful'] svg {
 	border-radius: 0;
 }
 
-/* A card's own first and last rows follow its corners, so the fill stops
-   where the card does. */
-html[data-style='playful'] .divide-y > *:first-child {
-	border-top-left-radius: var(--radius-md);
-	border-top-right-radius: var(--radius-md);
-}
-
-html[data-style='playful'] .divide-y > *:last-child {
-	border-bottom-left-radius: var(--radius-md);
-	border-bottom-right-radius: var(--radius-md);
-}
+/*
+ * Rows used to round their own first and last children to follow the card's
+ * corners, which was wrong twice: a list that started below a header grew
+ * rounded corners mid-card, and a rounded row inside an equally rounded
+ * border left a hairline sliver. The surfaces clip now (above), so a row can
+ * stay honestly square and the corner is the card's business.
+ */
 
 /* A section's own colour, at the strength chrome can carry. */
 html[data-style='playful'] .section-tint {
