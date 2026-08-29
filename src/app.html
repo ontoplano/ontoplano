@@ -5,7 +5,13 @@
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
 		<link rel="apple-touch-icon" href="%sveltekit.assets%/icons/apple-touch-icon.png" />
 		<link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
-		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<!-- interactive-widget makes the layout viewport shrink when the software
+		     keyboard opens. Without it 100dvh keeps the keyboard's height, so a
+		     bottom-sheet form's Save button sits behind the keys. -->
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+		/>
 		<!-- Matches the header chrome, so the Android status bar and the app do not
 		     meet at a visible seam. -->
 		<meta name="theme-color" content="#111827" />
