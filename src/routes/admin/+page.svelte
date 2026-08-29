@@ -5,7 +5,6 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import { ROLES } from '$lib/roles';
 	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
 
@@ -188,11 +187,6 @@
 		</Card>
 	</div>
 </div>
-
-<p class="text-xs text-gray-500">
-	Roles: {ROLES.join(', ')}. An administrator cannot change their own — the instance would be left
-	with nobody who can promote anyone.
-</p>
 
 <style>
 	/*
