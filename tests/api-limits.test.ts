@@ -101,6 +101,23 @@ describe('writes are budgeted separately', () => {
 	});
 });
 
+describe('the account has a ceiling above its tokens', () => {
+	test('a fresh token cannot restore a spent account', () => {
+		// `theirs` has spent most of STRANGER's account budget above. Two more
+		// tokens: the first may exhaust its own per-token budget, but the second
+		// must be stopped by the account ceiling well before its token one.
+		const other = { userId: STRANGER, now: new Date('2026-08-27T09:05:00'), tz: 'UTC' };
+		const t2 = s.tokens.createToken(other, { name: 't2', scopes: ['today:read'] }).plaintext;
+		const t3 = s.tokens.createToken(other, { name: 't3', scopes: ['today:read'] }).plaintext;
+
+		knockUntilRefused(t2);
+		const got = knockUntilRefused(t3);
+
+		expect(got).toBeGreaterThan(0);
+		expect(got).toBeLessThan(240);
+	});
+});
+
 describe('what it will read', () => {
 	test('a body far larger than any real payload is refused before parsing', async () => {
 		const event = {

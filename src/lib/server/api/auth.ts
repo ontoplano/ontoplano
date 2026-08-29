@@ -24,6 +24,17 @@ const READ_LIMIT = 240;
 const WRITE_LIMIT = 60;
 const WINDOW_MS = 60_000;
 
+/**
+ * And above the tokens, the account.
+ *
+ * The per-token budget multiplies: twenty tokens at 240 reads a minute is
+ * 4,800, all billed to one account and one disk. This ceiling is what the
+ * account may do in total, however many keys it cuts — generous enough that
+ * no honest set of producers meets it.
+ */
+const ACCOUNT_READ_LIMIT = 600;
+const ACCOUNT_WRITE_LIMIT = 150;
+
 function isWrite(method: string): boolean {
 	return method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS';
 }
@@ -49,14 +60,21 @@ export function authenticateApi(
 		requireScope(token, scope);
 
 		const write = isWrite(event.request.method);
-		const { allowed, retryAfterSeconds } = rateLimit(
+		const perToken = rateLimit(
 			`api:${token.tokenId}:${write ? 'w' : 'r'}`,
 			write ? WRITE_LIMIT : READ_LIMIT,
 			WINDOW_MS
 		);
+		const perAccount = rateLimit(
+			`api:acct:${token.userId}:${write ? 'w' : 'r'}`,
+			write ? ACCOUNT_WRITE_LIMIT : ACCOUNT_READ_LIMIT,
+			WINDOW_MS
+		);
 
-		if (!allowed)
+		if (!perToken.allowed || !perAccount.allowed) {
+			const retryAfterSeconds = Math.max(perToken.retryAfterSeconds, perAccount.retryAfterSeconds);
 			throw new RateLimitedError(`Too many requests. Try again in ${retryAfterSeconds} seconds.`);
+		}
 
 		return { ctx: buildCtx(token.userId, { now }), via: 'token' };
 	}
