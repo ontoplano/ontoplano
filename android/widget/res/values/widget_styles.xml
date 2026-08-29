@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The configure screen's own theme. The app itself is Theme.Translucent —
+    right for a TWA shell, but it inherits the 2009 "Theme": gray gradient
+    buttons, orange focus rings, a field you cannot read. This screen is the
+    one piece of native UI a person actually looks at, so it gets Material,
+    dark to match the app's chrome, accent on the focused field.
+-->
+<resources>
+    <style name="WidgetConfigureTheme" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/widget_page</item>
+        <item name="android:colorAccent">@color/widget_accent</item>
+        <item name="android:statusBarColor">@color/widget_page</item>
+        <item name="android:navigationBarColor">@color/widget_page</item>
+    </style>
+</resources>

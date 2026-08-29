@@ -475,14 +475,18 @@ function installWidget() {
         <activity
             android:name=".WidgetConfigureActivity"
             android:label="@string/configure_title"
+            android:theme="@style/WidgetConfigureTheme"
             android:launchMode="singleTask"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
             <!-- The way back from the browser: the connect page hands the
-                 widget its key on this link. singleTask above is what makes it
-                 land in the instance the launcher opened, widget id intact. -->
+                 widget its key on this link. When the launcher started this
+                 screen for a result, singleTask is ignored and the link opens
+                 a second instance — that one just saves the key, and the
+                 waiting instance notices in onResume and answers the
+                 launcher. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
