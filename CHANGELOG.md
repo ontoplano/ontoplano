@@ -17,6 +17,8 @@ rest. Versions follow `package.json`.
   homescreen. Rebuild the app to get it.
 - Running the test suite no longer rewrites the machine's real
   `~/.config/ontoplano/config.toml`.
+- Bare `make` prints what exists instead of starting whatever the local
+  deploy include defines first.
 - The boot migration check no longer refuses a database that started on
   `db:push` and was adopted into migrations later.
 

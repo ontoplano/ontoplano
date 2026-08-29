@@ -6,7 +6,40 @@
 # who clones the repository.
 -include local.mk
 
-.PHONY: up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+# Pinned, because the include above runs first and make's default goal is the
+# first target it parses — a local.mk that defines a deploy target would make
+# bare `make` start a deploy. Bare `make` says what exists and touches nothing.
+.DEFAULT_GOAL := help
+
+help:
+	@printf '\033[1montoplano\033[0m — bare `make` only prints this.\n'
+	@echo
+	@printf '\033[1mdevelop\033[0m\n'
+	@echo "  dev / dev-stop / dev-logs   the dev server, as a user service (dev-fg holds the terminal)"
+	@echo "  lint · format               prettier+eslint, prettier --write"
+	@echo "  test                        the Playwright e2e suite (yarn test for units)"
+	@echo
+	@printf '\033[1mdatabase\033[0m\n'
+	@echo "  db-generate                 write a migration from the schema diff"
+	@echo "  db-migrate                  apply migrations (snapshots first)"
+	@echo "  db-snapshot                 a consistent copy, before something regrettable"
+	@echo "  db-seed                     synthetic data for the dev account"
+	@echo
+	@printf '\033[1mrun it for real\033[0m\n'
+	@echo "  build · preview             production build, and serve it locally"
+	@echo "  install-service / update    the systemd user service: first install, then updates"
+	@echo "  backup-install              Litestream replication (backup-status, backup-drill)"
+	@echo
+	@printf '\033[1mphone & bot\033[0m\n'
+	@echo "  android                     build the APK (android-install / android-share to get it on)"
+	@echo "  android-lan                 an APK pointed at this machine, over wifi"
+	@echo "  telegram-install            the bot on a self-hosted box (telegram-dev to try it)"
+	@if [ -f local.mk ]; then echo; \
+		printf '\033[1mthis instance (local.mk)\033[0m\n'; \
+		echo "  deploy · restart-server · up   see local.mk — these touch the real server"; \
+	fi
+
+.PHONY: help up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
