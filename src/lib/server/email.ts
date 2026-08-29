@@ -18,6 +18,8 @@ export type Email = {
 	to: string;
 	subject: string;
 	text: string;
+	/** The templated body (email-template.ts); the text stays the log's copy. */
+	html?: string;
 };
 
 type Config = {
@@ -94,7 +96,8 @@ export async function sendEmail(email: Email): Promise<SendResult> {
 			from: ready.config.from,
 			to: email.to,
 			subject: email.subject,
-			text: email.text
+			text: email.text,
+			html: email.html
 		});
 		return { delivered: true };
 	} catch (e) {

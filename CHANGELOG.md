@@ -4,6 +4,14 @@ What changed for somebody using the app, newest first. One entry per
 user-visible change, written when the change is made — the git log has the
 rest. Versions follow `package.json`.
 
+## 0.8.2 — 2026-08-29
+
+- Every mail the app sends — address confirmation, password reset, address
+  change, the trial notice — now shares one designed template: a quiet card,
+  one button, and the raw link printed under it, because a button that hides
+  its destination is what phishing looks like. The plain-text part (and the
+  no-SMTP log path) carries the same words and the same link as before.
+
 ## 0.8.1 — 2026-08-29
 
 - The integrations page now states the limits — reads and writes per minute,

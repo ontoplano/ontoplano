@@ -7,6 +7,7 @@ import { db } from '../db/index.js';
 import { billingEvents, subscriptions } from '../db/schema.js';
 import { user } from '../db/auth.schema.js';
 import { isEmailConfigured, sendEmail } from '../email.js';
+import { renderEmail } from '../email-template.js';
 import { isSelfHosted } from '../settings.js';
 import { applySubscription } from './subscriptions.js';
 import { ValidationError } from './errors.js';
@@ -372,11 +373,17 @@ export async function sendTrialEndingNotices(now = new Date()): Promise<number> 
 
 		const result = await sendEmail({
 			to: row.email,
-			subject: `Your ontoplano trial ends on ${ends}`,
-			text:
-				`Your trial ends on ${ends} — ${consequence}.\n\n` +
-				`Manage it here: ${manage}\n\n` +
-				`Questions? Just reply to this message.`
+			...renderEmail({
+				subject: `Your ontoplano trial ends on ${ends}`,
+				lines: [`Your trial ends on ${ends} — ${consequence}.`],
+				action: origin
+					? { label: 'Manage your plan', url: `${origin}/settings/billing` }
+					: undefined,
+				small: [
+					...(origin ? [] : [`Manage it on ${manage}.`]),
+					'Questions? Just reply to this message.'
+				]
+			})
 		});
 
 		if (result.delivered || !isEmailConfigured()) {

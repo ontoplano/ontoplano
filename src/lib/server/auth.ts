@@ -7,10 +7,16 @@ import { env } from '$env/dynamic/private';
 import { getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
 import { sendEmail } from '$lib/server/email';
+import { renderEmail } from '$lib/server/email-template';
 import { configuredProviders, type SocialProvider } from '$lib/social';
 
-const VERIFICATION_SUBJECT = 'Confirm your ontoplano address';
-const verificationBody = (url: string) => `Confirm this address belongs to you:\n\n${url}\n`;
+const verificationMail = (url: string) =>
+	renderEmail({
+		subject: 'Confirm your ontoplano address',
+		lines: ['Confirm this address belongs to you.'],
+		action: { label: 'Confirm address', url },
+		small: ["If you didn't create an ontoplano account, ignore this message."]
+	});
 
 /**
  * Verification is asked for but not enforced.
@@ -78,12 +84,15 @@ export const auth = betterAuth({
 		sendResetPassword: async ({ user, url }) => {
 			await sendEmail({
 				to: user.email,
-				subject: 'Reset your ontoplano password',
-				text:
-					`Someone asked to reset the password for this ontoplano account.\n\n` +
-					`${url}\n\n` +
-					`The link works once and expires in an hour. If this wasn't you, ` +
-					`nothing has changed and you can ignore this message.`
+				...renderEmail({
+					subject: 'Reset your ontoplano password',
+					lines: ['Someone asked to reset the password for this ontoplano account.'],
+					action: { label: 'Choose a new password', url },
+					small: [
+						"The link works once and expires in an hour. If this wasn't you, " +
+							'nothing has changed and you can ignore this message.'
+					]
+				})
 			});
 		}
 	},
@@ -101,13 +110,16 @@ export const auth = betterAuth({
 			sendChangeEmailVerification: async ({ user, newEmail, url }) => {
 				await sendEmail({
 					to: user.email,
-					subject: 'Confirm the new address for your ontoplano account',
-					text:
-						`Someone asked to change this account's address to ${newEmail}.\n\n` +
-						`${url}\n\n` +
-						`Until you follow that link and confirm the new address, ` +
-						`nothing changes and you keep signing in with this one. If this ` +
-						`wasn't you, ignore this message and change your password.`
+					...renderEmail({
+						subject: 'Confirm the new address for your ontoplano account',
+						lines: [`Someone asked to change this account's address to ${newEmail}.`],
+						action: { label: 'Approve the change', url },
+						small: [
+							'Until you follow that link and confirm the new address, nothing ' +
+								'changes and you keep signing in with this one. If this ' +
+								"wasn't you, ignore this message and change your password."
+						]
+					})
 				});
 			}
 		}
@@ -118,8 +130,7 @@ export const auth = betterAuth({
 		sendVerificationEmail: async ({ user, url }) => {
 			await sendEmail({
 				to: user.email,
-				subject: VERIFICATION_SUBJECT,
-				text: verificationBody(url)
+				...verificationMail(url)
 			});
 		}
 	},
@@ -169,8 +180,7 @@ export async function sendVerificationFor(email: string): Promise<{
 
 	const { delivered } = await sendEmail({
 		to: email,
-		subject: VERIFICATION_SUBJECT,
-		text: verificationBody(url)
+		...verificationMail(url)
 	});
 
 	return { delivered, url };
