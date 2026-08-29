@@ -14,6 +14,7 @@
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
 	import { RATINGS, type Rating } from '$lib/ratings.js';
+	import { getAction, keyFor } from '$lib/shortcuts';
 	import { STATUSES, STATUS_LABELS, TIMING_LABELS, type Status } from '$lib/task-status.js';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 
@@ -286,96 +287,102 @@
 			return;
 		}
 
-		if (e.key === 'Enter') {
-			const card = columns[focusCol]?.cards[focusRow];
-			if (!card) return;
-			e.preventDefault();
-			openEditor(card);
-			return;
-		}
+		// Every other key answers to the registry in $lib/shortcuts.ts — the
+		// binding lives there, only the behaviour lives here.
+		const action = getAction('/planner/board', e.key);
+		if (!action) return;
 
-		if (e.key === 'n') {
-			e.preventDefault();
-			openForm();
-			return;
-		}
-
-		if (e.key === 'g') {
-			e.preventDefault();
-			tab = tab === 'today' ? 'general' : 'today';
-			focusRow = 0;
-			return;
-		}
-
-		if (e.key === 'h' || e.key === 'l') {
-			e.preventDefault();
-			const next = e.key === 'l' ? focusCol + 1 : focusCol - 1;
-			focusCol = Math.min(Math.max(next, 0), columns.length - 1);
-			focusRow = Math.min(focusRow, Math.max(columns[focusCol].cards.length - 1, 0));
-			return;
-		}
-
-		if (e.key === 'j' || e.key === 'k') {
-			e.preventDefault();
-			const len = columns[focusCol]?.cards.length ?? 0;
-			if (len === 0) return;
-			focusRow = Math.min(Math.max(focusRow + (e.key === 'j' ? 1 : -1), 0), len - 1);
-			return;
+		switch (action) {
+			case 'edit': {
+				const card = columns[focusCol]?.cards[focusRow];
+				if (!card) return;
+				e.preventDefault();
+				openEditor(card);
+				return;
+			}
+			case 'new':
+				e.preventDefault();
+				openForm();
+				return;
+			case 'switch-tab':
+				e.preventDefault();
+				tab = tab === 'today' ? 'general' : 'today';
+				focusRow = 0;
+				return;
+			case 'prev-column':
+			case 'next-column': {
+				e.preventDefault();
+				const next = action === 'next-column' ? focusCol + 1 : focusCol - 1;
+				focusCol = Math.min(Math.max(next, 0), columns.length - 1);
+				focusRow = Math.min(focusRow, Math.max(columns[focusCol].cards.length - 1, 0));
+				return;
+			}
+			case 'next-card':
+			case 'prev-card': {
+				e.preventDefault();
+				const len = columns[focusCol]?.cards.length ?? 0;
+				if (len === 0) return;
+				focusRow = Math.min(Math.max(focusRow + (action === 'next-card' ? 1 : -1), 0), len - 1);
+				return;
+			}
 		}
 
 		const card = focusedCard;
 		if (!card) return;
 
-		// Shift+H/L carries the focused card to the neighbouring column, which is
-		// the keyboard's version of a drag.
-		if (e.key === 'H' || e.key === 'L') {
-			e.preventDefault();
-			const delta = e.key === 'L' ? 1 : -1;
-			const target = columns[focusCol + delta];
-			if (target) {
-				move(card, target.status);
-				focusCol += delta;
-				focusRow = 0;
+		switch (action) {
+			// Carrying the focused card to the neighbouring column is the
+			// keyboard's version of a drag.
+			case 'carry-left':
+			case 'carry-right': {
+				e.preventDefault();
+				const delta = action === 'carry-right' ? 1 : -1;
+				const target = columns[focusCol + delta];
+				if (target) {
+					move(card, target.status);
+					focusCol += delta;
+					focusRow = 0;
+				}
+				return;
 			}
-			return;
-		}
-
-		if (e.key >= '1' && e.key <= '5') {
-			e.preventDefault();
-			// Cycles urgency by default; interest and energy sit behind u/i/e.
-			const value = Number(e.key);
-			post('setRatings', {
-				kind: card.kind,
-				id: String(card.id),
-				[ratingKey]: String(value)
-			}).then(refresh);
-			return;
-		}
-
-		if (e.key === 'u' || e.key === 'i' || e.key === 'y') {
-			e.preventDefault();
-			ratingKey = e.key === 'u' ? 'urgency' : e.key === 'i' ? 'interest' : 'energy';
-			return;
-		}
-
-		if (e.key === 'c') {
-			e.preventDefault();
-			move(card, card.status === 'done' ? 'todo' : 'done');
-			return;
-		}
-
-		if (e.key === 't') {
-			e.preventDefault();
-			if (card.kind === 'todo') promote(card, data.date, card.status);
-			else demote(card);
-			return;
-		}
-
-		if (e.key === 'x' && card.kind === 'todo') {
-			e.preventDefault();
-			// Arms the card's confirmation; the delete itself is a click, and that
-			// button ignores the first moments after it appears.
-			confirmingDelete = card.uid;
+			case 'rate': {
+				e.preventDefault();
+				// Cycles urgency by default; interest and energy sit behind u/i/y.
+				const value = Number(e.key);
+				post('setRatings', {
+					kind: card.kind,
+					id: String(card.id),
+					[ratingKey]: String(value)
+				}).then(refresh);
+				return;
+			}
+			case 'rate-urgency':
+			case 'rate-interest':
+			case 'rate-energy':
+				e.preventDefault();
+				ratingKey =
+					action === 'rate-urgency'
+						? 'urgency'
+						: action === 'rate-interest'
+							? 'interest'
+							: 'energy';
+				return;
+			case 'toggle-done':
+				e.preventDefault();
+				move(card, card.status === 'done' ? 'todo' : 'done');
+				return;
+			case 'toggle-today':
+				e.preventDefault();
+				if (card.kind === 'todo') promote(card, data.date, card.status);
+				else demote(card);
+				return;
+			case 'delete':
+				if (card.kind !== 'todo') return;
+				e.preventDefault();
+				// Arms the card's confirmation; the delete itself is a click, and that
+				// button ignores the first moments after it appears.
+				confirmingDelete = card.uid;
+				return;
 		}
 	}
 
@@ -441,7 +448,9 @@
 				>
 			{/if}
 			<button onclick={openForm} class="btn btn-primary btn-sm">
-				New <kbd class="ml-1 border border-gray-600 bg-gray-800 px-1 text-xs">n</kbd>
+				New <kbd class="ml-1 border border-gray-600 bg-gray-800 px-1 text-xs"
+					>{keyFor('/planner/board', 'new')}</kbd
+				>
 			</button>
 		</div>
 	</div>
@@ -951,16 +960,41 @@
 	</div>
 
 	<p class="kbd-hint text-xs text-gray-500">
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">h</kbd>
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">j</kbd>
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">k</kbd>
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">l</kbd> move ·
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">H</kbd>
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">L</kbd> carry card ·
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">c</kbd> done ·
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">t</kbd> today ·
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">g</kbd> switch tab ·
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+			>{keyFor('/planner/board', 'prev-column')}</kbd
+		>
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+			>{keyFor('/planner/board', 'next-card')}</kbd
+		>
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+			>{keyFor('/planner/board', 'prev-card')}</kbd
+		>
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+			>{keyFor('/planner/board', 'next-column')}</kbd
+		>
+		move ·
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+			>{keyFor('/planner/board', 'carry-left')}</kbd
+		>
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+			>{keyFor('/planner/board', 'carry-right')}</kbd
+		>
+		carry card ·
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+			>{keyFor('/planner/board', 'toggle-done')}</kbd
+		>
+		done ·
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+			>{keyFor('/planner/board', 'toggle-today')}</kbd
+		>
+		today ·
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+			>{keyFor('/planner/board', 'switch-tab')}</kbd
+		>
+		switch tab ·
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">1-5</kbd> rate ·
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">x</kbd> delete
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+			>{keyFor('/planner/board', 'delete')}</kbd
+		> delete
 	</p>
 </div>

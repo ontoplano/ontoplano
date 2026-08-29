@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
@@ -51,15 +52,19 @@
 			confirmDelete = null;
 			return;
 		}
-		if (e.key === 'n') {
+		const action = getAction('/diary/people', e.key);
+		if (action === 'new') {
 			e.preventDefault();
 			openCreate();
 		}
-		if (e.key === 'j' || e.key === 'k') {
+		if (action === 'navigate-down' || action === 'navigate-up') {
 			e.preventDefault();
 			const max = data.people.length - 1;
 			if (max < 0) return;
-			selectedIndex = Math.min(Math.max(selectedIndex + (e.key === 'j' ? 1 : -1), 0), max);
+			selectedIndex = Math.min(
+				Math.max(selectedIndex + (action === 'navigate-down' ? 1 : -1), 0),
+				max
+			);
 		}
 	}
 
@@ -80,7 +85,9 @@
 		<h1 class="text-lg font-bold text-gray-900">People</h1>
 		<button onclick={openCreate} class="btn btn-primary btn-sm">
 			<Icon name="plus" /> New person
-			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">n</kbd>
+			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
+				>{keyFor('/diary/people', 'new')}</kbd
+			>
 		</button>
 	</div>
 

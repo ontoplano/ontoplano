@@ -11,7 +11,7 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
-	import { getAction } from '$lib/shortcuts';
+	import { getAction, keyFor } from '$lib/shortcuts';
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import { formatMoney } from '$lib/money';
 	import { invalidateAll } from '$app/navigation';
@@ -404,7 +404,9 @@
 					? 'border-orange-200 bg-orange-50 text-orange-700'
 					: ''}"
 			>
-				Wishlist <kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">1</kbd>
+				Wishlist <kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+					>{keyFor('/shopping', 'filter-someday')}</kbd
+				>
 			</button>
 			<button
 				onclick={() => (filterType = filterType === 'replenish' ? 'all' : 'replenish')}
@@ -413,7 +415,9 @@
 					? 'border-cyan-200 bg-cyan-50 text-cyan-700'
 					: ''}"
 			>
-				Inventory <kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">2</kbd>
+				Inventory <kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+					>{keyFor('/shopping', 'filter-replenish')}</kbd
+				>
 			</button>
 			<button
 				onclick={() => (showBought = !showBought)}
@@ -421,7 +425,9 @@
 				class="btn btn-sm {showBought ? '' : 'text-gray-500'}"
 			>
 				{showBought ? 'Hide' : 'Show'} bought
-				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">b</kbd>
+				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+					>{keyFor('/shopping', 'toggle-show-bought')}</kbd
+				>
 			</button>
 			<button
 				onclick={() => (showSnoozed = !showSnoozed)}
@@ -429,12 +435,16 @@
 				class="btn btn-sm {showSnoozed ? '' : 'text-gray-500'}"
 			>
 				{showSnoozed ? 'Hide' : 'Show'} snoozed
-				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">s</kbd>
+				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+					>{keyFor('/shopping', 'toggle-show-snoozed')}</kbd
+				>
 			</button>
 			<button onclick={() => (showCategories = true)} class="btn btn-sm">Categories</button>
 			<button onclick={() => (showForm ? (showForm = false) : openCreateForm())} class="btn btn-sm">
 				{showForm ? 'Cancel' : 'Add item'}
-				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">n</kbd>
+				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+					>{keyFor('/shopping', 'new')}</kbd
+				>
 			</button>
 		</div>
 	</div>

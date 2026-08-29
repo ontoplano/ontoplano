@@ -50,7 +50,12 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 't', action: 'toggle-today', description: 'Pull onto today / put back' },
 			{ key: 'g', action: 'switch-tab', description: 'Switch Today / General' },
 			{ key: 'n', action: 'new', description: 'New card' },
-			{ key: '1', action: 'rate', description: 'Set the active rating 1-5' },
+			{ key: 'Enter', action: 'edit', description: 'Open the card' },
+			{ key: '1', action: 'rate', description: 'Set the active rating' },
+			{ key: '2', action: 'rate', description: 'Set the active rating' },
+			{ key: '3', action: 'rate', description: 'Set the active rating' },
+			{ key: '4', action: 'rate', description: 'Set the active rating' },
+			{ key: '5', action: 'rate', description: 'Set the active rating' },
 			{ key: 'u', action: 'rate-urgency', description: 'Number keys set urgency' },
 			{ key: 'i', action: 'rate-interest', description: 'Number keys set interest' },
 			{ key: 'y', action: 'rate-energy', description: 'Number keys set energy' },
@@ -167,8 +172,53 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'n', action: 'new', description: 'New habit' },
 			{ key: 'Enter', action: 'toggle-expand', description: 'Expand/collapse' }
 		]
+	},
+	'/diary/notebooks': {
+		label: 'Notebooks',
+		shortcuts: [{ key: 'n', action: 'new', description: 'New notebook' }]
+	},
+	'/diary/people': {
+		label: 'People',
+		shortcuts: [
+			{ key: 'j', action: 'navigate-down', description: 'Navigate people' },
+			{ key: 'k', action: 'navigate-up', description: 'Navigate people' },
+			{ key: 'n', action: 'new', description: 'New person' }
+		]
+	},
+	'/kitchen/recipes': {
+		label: 'Recipes',
+		shortcuts: [{ key: 'n', action: 'new', description: 'New recipe' }]
+	},
+	'/settings/account': {
+		label: 'Account',
+		shortcuts: [
+			{ key: 'j', action: 'navigate-down', description: 'Navigate sessions' },
+			{ key: 'k', action: 'navigate-up', description: 'Navigate sessions' }
+		]
+	},
+	'/settings/integrations': {
+		label: 'Integrations',
+		shortcuts: [
+			{ key: 'j', action: 'navigate-down', description: 'Navigate tokens' },
+			{ key: 'k', action: 'navigate-up', description: 'Navigate tokens' },
+			{ key: 'n', action: 'new', description: 'New token' }
+		]
 	}
 };
+
+/**
+ * The key that triggers an action on a page, for a `<kbd>` hint.
+ *
+ * Markup asks the registry instead of repeating the letter, so a rebinding
+ * changes the hint with it. Asking for an action a page does not register is
+ * a mistake worth failing loudly on — a silent fallback here is exactly the
+ * drift this file exists to end.
+ */
+export function keyFor(pagePath: string, action: string): string {
+	const binding = PAGE_SHORTCUTS[pagePath]?.shortcuts.find((s) => s.action === action);
+	if (!binding) throw new Error(`No '${action}' binding registered for ${pagePath}`);
+	return displayKey(binding.key);
+}
 
 /**
  * Look up the action slug for a key press on a given page.

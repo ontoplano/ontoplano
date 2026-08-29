@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -106,16 +107,17 @@
 			confirmingDelete = null;
 			return;
 		}
-		if (e.key === 'n') {
+		const action = getAction('/goals', e.key);
+		if (action === 'new') {
 			e.preventDefault();
 			openCreate();
 			return;
 		}
-		if (e.key === 'j' || e.key === 'k') {
+		if (action === 'next' || action === 'prev') {
 			e.preventDefault();
 			const max = visible.length - 1;
 			if (max < 0) return;
-			selectedIndex = Math.min(Math.max(selectedIndex + (e.key === 'j' ? 1 : -1), 0), max);
+			selectedIndex = Math.min(Math.max(selectedIndex + (action === 'next' ? 1 : -1), 0), max);
 		}
 	}
 </script>
@@ -136,7 +138,7 @@
 			{/if}
 			<button onclick={openCreate} class="btn btn-primary btn-sm">
 				<Icon name="plus" /> New goal
-				<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">n</kbd>
+				<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">{keyFor('/goals', 'new')}</kbd>
 			</button>
 		</div>
 	</div>

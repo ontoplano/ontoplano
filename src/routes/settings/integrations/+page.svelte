@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$app/forms';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -60,16 +61,17 @@
 			closeForms();
 			return;
 		}
-		if (e.key === 'n' && !showTokenForm) {
+		const action = getAction('/settings/integrations', e.key);
+		if (action === 'new' && !showTokenForm) {
 			e.preventDefault();
 			showTokenForm = true;
 			return;
 		}
-		if (e.key === 'j') {
+		if (action === 'navigate-down') {
 			e.preventDefault();
 			selectedIndex = Math.min(selectedIndex + 1, data.tokens.length - 1);
 		}
-		if (e.key === 'k') {
+		if (action === 'navigate-up') {
 			e.preventDefault();
 			selectedIndex = Math.max(selectedIndex - 1, 0);
 		}
@@ -110,7 +112,9 @@
 	<Card title="API tokens" flush>
 		{#snippet actions()}
 			<button type="button" onclick={() => (showTokenForm = true)} class="btn btn-sm">
-				New token <kbd class="ml-1 border border-gray-300 bg-gray-50 px-1 text-gray-700">n</kbd>
+				New token <kbd class="ml-1 border border-gray-300 bg-gray-50 px-1 text-gray-700"
+					>{keyFor('/settings/integrations', 'new')}</kbd
+				>
 			</button>
 		{/snippet}
 

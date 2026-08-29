@@ -28,6 +28,9 @@ rest. Versions follow `package.json`.
   todo added or finished, an idea captured, something added to or bought off
   the shopping list. Signed deliveries, thin payloads (a diary entry announces
   only its id), managed on the integrations page or over the API.
+- The `?` shortcut sheet now knows every page's keys — notebooks, people,
+  recipes and the settings pages included — because pages and their hints read
+  the same registry the sheet does, so they can no longer disagree.
 
 ## 0.6.2 — 2026-08-29
 

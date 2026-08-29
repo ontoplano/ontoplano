@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
@@ -52,7 +53,7 @@
 			confirmingDelete = false;
 			return;
 		}
-		if (e.key === 'n') {
+		if (getAction('/diary/notebooks', e.key) === 'new') {
 			e.preventDefault();
 			openCreate();
 		}
@@ -84,7 +85,9 @@
 		</p>
 		<button onclick={openCreate} class="btn btn-primary btn-sm">
 			<Icon name="plus" /> New notebook
-			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">n</kbd>
+			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
+				>{keyFor('/diary/notebooks', 'new')}</kbd
+			>
 		</button>
 	</div>
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAction } from '$lib/shortcuts';
 	import { invalidateAll } from '$app/navigation';
 	import { enhance } from '$app/forms';
 	import Banner from '$lib/components/Banner.svelte';
@@ -94,11 +95,12 @@
 
 		if (editing || confirming) return;
 
-		if (e.key === 'j') {
+		const action = getAction('/settings/account', e.key);
+		if (action === 'navigate-down') {
 			e.preventDefault();
 			selected = Math.min(selected + 1, data.sessions.length - 1);
 		}
-		if (e.key === 'k') {
+		if (action === 'navigate-up') {
 			e.preventDefault();
 			selected = Math.max(selected - 1, 0);
 		}

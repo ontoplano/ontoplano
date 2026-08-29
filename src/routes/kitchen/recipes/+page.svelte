@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { autogrow } from '$lib/actions/autogrow';
@@ -28,7 +29,7 @@
 			return;
 
 		if (e.key === 'Escape') showForm = false;
-		if (e.key === 'n') {
+		if (getAction('/kitchen/recipes', e.key) === 'new') {
 			e.preventDefault();
 			showForm = true;
 		}
@@ -49,7 +50,9 @@
 			{/if}
 			<button onclick={() => (showForm = true)} class="btn btn-primary btn-sm">
 				<Icon name="plus" /> New recipe
-				<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">n</kbd>
+				<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
+					>{keyFor('/kitchen/recipes', 'new')}</kbd
+				>
 			</button>
 		</div>
 	</div>

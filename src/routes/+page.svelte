@@ -11,7 +11,7 @@
 	import { cardById, type DashboardCardId } from '$lib/dashboard.js';
 	import { deserialize } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
-	import { getAction } from '$lib/shortcuts';
+	import { getAction, keyFor } from '$lib/shortcuts';
 
 	/** Keep the card a card: the tracker is one click away for the full list. */
 	const TODO_PREVIEW = 5;
@@ -550,7 +550,9 @@
 								class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50"
 							>
 								{showWinsForm ? 'Cancel' : 'Wins'}
-								<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">w</kbd>
+								<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+									>{keyFor('/', 'new-wins')}</kbd
+								>
 							</button>
 						{/if}
 						<button
