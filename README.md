@@ -42,7 +42,12 @@ Self-hosted, single SQLite file, no account anywhere but your own.
   on use. A self-hosted instance has no plans, no ceilings and no billing at
   all. See `docs/BILLING.md`.
 - **Plugins** — scoped API tokens, data streams that external apps push into,
-  and a schedule endpoint they can read. See `docs/PLUGINS.md`.
+  webhooks they can subscribe, and schedule and shopping endpoints they can
+  read and write. See `docs/PLUGINS.md`.
+- **Share a list with your partner** — `examples/onto-household.mjs` keeps two
+  accounts' shopping lists equal over webhooks: add milk on one phone, it is
+  on both; tick it in the aisle, it is bought on both. Works across two
+  separate instances.
 - **Phone** — an installable PWA, and an Android app that wraps it
   (`docs/ANDROID.md`).
 - **Telegram** — a bot for the plan, the list and quick capture, on a
