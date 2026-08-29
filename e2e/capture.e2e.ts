@@ -216,7 +216,7 @@ test.describe('with a finger', () => {
 		// Settings and search are not wedges — they are destinations, and they sit
 		// in the bar beside the two pies rather than hanging off one.
 		await page.keyboard.press('Escape');
-		await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible();
+		await expect(page.getByRole('link', { name: 'Account' })).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Search' })).toBeVisible();
 	});
 });
