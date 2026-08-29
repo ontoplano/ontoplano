@@ -490,8 +490,16 @@
 			they belong in the bar with the two pies. Icons alone, because four
 			labels at 390px is four truncations.
 		-->
+		<!--
+			Fixed to the viewport, on purpose. It used to be the last row of the
+			full-height column, which meant anything that made the column taller
+			than the screen — a root scroll the browser sneaks in to reveal a
+			focused input, a viewport-height misreading in the webview — pushed
+			it off the bottom or clipped it away entirely. A fixed element cannot
+			be pushed by any of that; the main area pads its bottom to match.
+		-->
 		<nav
-			class="vt-chrome-bottom relative z-40 shrink-0 border-t border-chrome-line bg-chrome lg:hidden"
+			class="fixed inset-x-0 bottom-0 z-40 border-t border-chrome-line bg-chrome lg:hidden"
 			style="padding-bottom: var(--safe-bottom)"
 			aria-label="Primary"
 		>
