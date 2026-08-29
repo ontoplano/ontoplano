@@ -4,6 +4,14 @@ What changed for somebody using the app, newest first. One entry per
 user-visible change, written when the change is made — the git log has the
 rest. Versions follow `package.json`.
 
+## 0.6.2 — 2026-08-29
+
+- The server writes one log line per request (method, path, status, duration,
+  request id), and a 500's "Something went wrong (abc123)" now names the same
+  id as that request's log line.
+- The app refuses to start against a database that is missing migrations, and
+  says which command to run — instead of failing one query in twenty for weeks.
+
 ## 0.6.1 — 2026-08-29
 
 - Changing pages no longer flashes dark — the cross-fade is gone; the new page

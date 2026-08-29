@@ -42,6 +42,37 @@ function inviteFrom(body: string): unknown {
 	}
 }
 
+/**
+ * One JSON line per request.
+ *
+ * The thing you actually want when somebody says "it broke around lunchtime":
+ * grep-able, with a duration and a request id the error log shares. Outermost
+ * in the sequence so the duration covers everything, including the other hooks.
+ * Immutable assets are skipped — they are the build, not the traffic.
+ */
+const handleRequestLog: Handle = async ({ event, resolve }) => {
+	if (event.url.pathname.startsWith('/_app/')) return resolve(event);
+
+	event.locals.rid = crypto.randomUUID().slice(0, 6);
+	const startedAt = Date.now();
+	const response = await resolve(event);
+
+	console.log(
+		JSON.stringify({
+			at: new Date().toISOString(),
+			level: 'info',
+			id: event.locals.rid,
+			method: event.request.method,
+			path: event.url.pathname,
+			status: response.status,
+			ms: Date.now() - startedAt,
+			user: event.locals.user?.id ?? null
+		})
+	);
+
+	return response;
+};
+
 const handleRegistration: Handle = async ({ event, resolve }) => {
 	if (event.request.method !== 'POST' || !event.url.pathname.startsWith('/api/auth/sign-up')) {
 		return resolve(event);
@@ -213,6 +244,7 @@ const handleSignedOutWrites: Handle = ({ event, resolve }) => {
 };
 
 export const handle: Handle = sequence(
+	handleRequestLog,
 	handleSecurityHeaders,
 	handleAuthRateLimit,
 	handleRegistration,
@@ -233,7 +265,9 @@ export const handleError: HandleServerError = ({ error, event, status }) => {
 	// 404s are not incidents; logging every one buries the ones that matter.
 	if (status === 404) return { message: 'Not found' };
 
-	const id = crypto.randomUUID().slice(0, 6);
+	// The same id the request line carries, so the error and its request are
+	// one grep. Assets skip the logging hook and get their own.
+	const id = event.locals.rid ?? crypto.randomUUID().slice(0, 6);
 
 	console.error(
 		JSON.stringify({

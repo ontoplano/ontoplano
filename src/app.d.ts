@@ -18,6 +18,8 @@ declare global {
 		interface Locals {
 			user?: User;
 			session?: Session;
+			/** Request id: stamped by the logging hook, echoed by the error page. */
+			rid?: string;
 		}
 
 		/**
