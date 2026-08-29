@@ -18,7 +18,7 @@ import { startReminders } from './reminders.js';
  * self-hosted — the same gate as deployment settings in the UI, and where
  * billing will sit.
  *
- * `TELEGRAM_ALLOWED_USER` is the numeric Telegram id allowed to talk to it.
+ * `ONTOPLANO_TELEGRAM_ALLOWED_USER` is the numeric Telegram id allowed to talk to it.
  */
 if (process.env.ONTOPLANO_SELF_HOST !== 'true') {
 	throw new Error(
@@ -27,18 +27,18 @@ if (process.env.ONTOPLANO_SELF_HOST !== 'true') {
 	);
 }
 
-const allowedUser = Number(process.env.TELEGRAM_ALLOWED_USER);
+const allowedUser = Number(process.env.ONTOPLANO_TELEGRAM_ALLOWED_USER);
 if (!Number.isFinite(allowedUser) || allowedUser <= 0) {
 	throw new Error(
-		'TELEGRAM_ALLOWED_USER not set. It is your numeric Telegram id — the bot answers ' +
+		'ONTOPLANO_TELEGRAM_ALLOWED_USER not set. It is your numeric Telegram id — the bot answers ' +
 			'nobody else, because it speaks for the whole instance.'
 	);
 }
 
-const token = process.env.TELEGRAM_BOT_TOKEN;
+const token = process.env.ONTOPLANO_TELEGRAM_BOT_TOKEN;
 
 if (!token) {
-	throw new Error('TELEGRAM_BOT_TOKEN not set');
+	throw new Error('ONTOPLANO_TELEGRAM_BOT_TOKEN not set');
 }
 
 const bot = new Bot(token);

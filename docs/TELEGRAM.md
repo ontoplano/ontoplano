@@ -16,8 +16,8 @@ ontoplano simply does not run it.
 ```sh
 # ~/.config/ontoplano/env
 ONTOPLANO_SELF_HOST=true
-TELEGRAM_BOT_TOKEN=…            # from @BotFather
-TELEGRAM_ALLOWED_USER=123456789      # your numeric Telegram id; the bot ignores everyone else
+ONTOPLANO_TELEGRAM_BOT_TOKEN=…      # from @BotFather
+ONTOPLANO_TELEGRAM_ALLOWED_USER=123456789  # your numeric Telegram id; the bot ignores everyone else
 ```
 
 Ask [@userinfobot](https://t.me/userinfobot) for your id.
