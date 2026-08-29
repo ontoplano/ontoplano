@@ -50,16 +50,20 @@ export function assertMigrated(client: Database.Database, path: string): void {
 	}
 
 	const applied = client
-		.prepare(`SELECT count(*) AS n, max(created_at) AS latest FROM __drizzle_migrations`)
-		.get() as { n: number; latest: number | string | null };
+		.prepare(`SELECT max(created_at) AS latest FROM __drizzle_migrations`)
+		.get() as { latest: number | string | null };
 
+	// The newest timestamp is the whole comparison, because it is the one
+	// drizzle's migrator itself makes: it applies every journal entry newer
+	// than max(created_at) and nothing else. Counting rows is stricter than
+	// the migrator — a database that started on `db:push` and was adopted into
+	// migrations later has fewer rows than the journal forever, while being
+	// exactly up to date.
 	const newest = entries[entries.length - 1];
-	const behind = applied.n < entries.length || Number(applied.latest ?? 0) < newest.when;
 
-	if (behind) {
+	if (Number(applied.latest ?? 0) < newest.when) {
 		throw new Error(
-			`The database at ${path} is behind the code: ${applied.n} of ${entries.length} ` +
-				`migrations applied (code expects up to ${newest.tag}). ` +
+			`The database at ${path} is behind the code (it expects up to ${newest.tag}). ` +
 				`Run \`yarn db:migrate\`, or set ONTOPLANO_SKIP_MIGRATION_CHECK=true to serve anyway.`
 		);
 	}

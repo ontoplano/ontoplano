@@ -46,6 +46,23 @@ describe('assertMigrated', () => {
 		expect(() => assertMigrated(db, ':memory:')).not.toThrow();
 	});
 
+	it('accepts a database adopted into migrations late (few rows, newest timestamp)', () => {
+		// A database that started on `db:push` and joined migrations later has
+		// fewer rows than the journal forever, and drizzle's migrator — which
+		// only compares the newest timestamp — is content. So is this check.
+		const db = new Database(':memory:');
+		db.exec(`CREATE TABLE user (id text PRIMARY KEY)`);
+		db.exec(
+			`CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY, hash text NOT NULL, created_at numeric)`
+		);
+		const newest = journal.entries[journal.entries.length - 1];
+		db.prepare(`INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)`).run(
+			newest.tag,
+			newest.when
+		);
+		expect(() => assertMigrated(db, ':memory:')).not.toThrow();
+	});
+
 	it('steps aside when told to', () => {
 		process.env.ONTOPLANO_SKIP_MIGRATION_CHECK = 'true';
 		const db = new Database(':memory:');
