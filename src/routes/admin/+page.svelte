@@ -26,6 +26,24 @@
 		};
 	};
 
+	/** Which failed mail is asking to be dropped. */
+	let dismissing = $state<number | null>(null);
+
+	const confirmedDismiss = () => {
+		return async ({ update }: { update: () => Promise<void> }) => {
+			dismissing = null;
+			await update();
+		};
+	};
+
+	const KIND_LABELS: Record<string, string> = {
+		verification: 'Address confirmation',
+		'password-reset': 'Password reset',
+		'address-change': 'Address change',
+		'trial-notice': 'Trial notice'
+	};
+	const kindLabel = (kind: string) => KIND_LABELS[kind] ?? kind;
+
 	function when(iso: string): string {
 		return new Date(iso).toLocaleDateString(undefined, {
 			day: 'numeric',
@@ -129,8 +147,61 @@
 		{/if}
 	</Card>
 
-	<!-- The narrow column: what happened, and what was stopped before it could. -->
+	<!-- The narrow column: what went wrong, what happened, what was stopped. -->
 	<div class="space-y-4">
+		{#if data.mailFailures.length > 0}
+			<!-- Only rendered when something is wrong: an empty "all mail fine"
+			     card would train the eye to skip this spot. The same open rows
+			     make /healthz warn, which is what the watchers alert on. -->
+			<Card title="Mail that did not go out" description="The watchers are told; this is the fix.">
+				<div class="divide-y divide-gray-200">
+					{#each data.mailFailures as failure (failure.id)}
+						<div class="flex items-center gap-2 py-2 text-sm">
+							<div class="min-w-0 flex-1">
+								<p class="truncate text-gray-900">
+									{kindLabel(failure.kind)}
+									<span class="text-gray-500">→ {failure.toEmail}</span>
+								</p>
+								<p class="mt-0.5 truncate text-xs text-red-600">{failure.error}</p>
+								<p class="mt-0.5 text-xs text-gray-500">
+									{failure.attempts}
+									{failure.attempts === 1 ? 'attempt' : 'attempts'} · last {ago(
+										failure.lastAttemptAt
+									)}
+								</p>
+							</div>
+							<div class="flex shrink-0 items-center gap-1">
+								{#if failure.retryable}
+									<form method="post" action="?/retryMail" use:enhance>
+										<input type="hidden" name="id" value={failure.id} />
+										<button class="btn btn-sm btn-quiet" title="Send it again, as it was">
+											<Icon name="undo" />
+										</button>
+									</form>
+								{/if}
+								{#if dismissing === failure.id}
+									<form method="post" action="?/dismissMail" use:enhance={confirmedDismiss}>
+										<input type="hidden" name="id" value={failure.id} />
+										<button class="btn btn-sm btn-danger" use:armed>Confirm?</button>
+									</form>
+								{:else}
+									<button
+										class="btn btn-sm btn-quiet"
+										title={failure.retryable
+											? 'Drop it without sending'
+											: 'Its link has expired — a fresh request is the fix. Drop this record.'}
+										onclick={() => (dismissing = failure.id)}
+									>
+										<Icon name="close" />
+									</button>
+								{/if}
+							</div>
+						</div>
+					{/each}
+				</div>
+			</Card>
+		{/if}
+
 		<Card title="Lately" description="Every account's history in one column, newest first." flush>
 			{#if data.events.length === 0}
 				<EmptyState icon="clock" title="Nothing recorded yet" />

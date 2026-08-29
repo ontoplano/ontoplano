@@ -6,8 +6,8 @@ import { isPlanId, type PlanId, type SubscriptionStatus } from '../../plans.js';
 import { db } from '../db/index.js';
 import { billingEvents, subscriptions } from '../db/schema.js';
 import { user } from '../db/auth.schema.js';
-import { isEmailConfigured, sendEmail } from '../email.js';
 import { renderEmail } from '../email-template.js';
+import { sendLogged } from './mail-log.js';
 import { isSelfHosted } from '../settings.js';
 import { applySubscription } from './subscriptions.js';
 import { ValidationError } from './errors.js';
@@ -371,27 +371,36 @@ export async function sendTrialEndingNotices(now = new Date()): Promise<number> 
 			? `your subscription starts and the first charge happens then. If you would rather stop, cancel before that date and you will not be charged`
 			: `everything you wrote stays yours and stays readable, but nothing new can be added until you subscribe`;
 
-		const result = await sendEmail({
-			to: row.email,
-			...renderEmail({
-				subject: `Your ontoplano trial ends on ${ends}`,
-				lines: [`Your trial ends on ${ends} — ${consequence}.`],
-				action: origin
-					? { label: 'Manage your plan', url: `${origin}/settings/billing` }
-					: undefined,
-				small: [
-					...(origin ? [] : [`Manage it on ${manage}.`]),
-					'Questions? Just reply to this message.'
-				]
-			})
-		});
+		const result = await sendLogged(
+			'trial-notice',
+			{
+				to: row.email,
+				...renderEmail({
+					subject: `Your ontoplano trial ends on ${ends}`,
+					lines: [`Your trial ends on ${ends} — ${consequence}.`],
+					action: origin
+						? { label: 'Manage your plan', url: `${origin}/settings/billing` }
+						: undefined,
+					small: [
+						...(origin ? [] : [`Manage it on ${manage}.`]),
+						'Questions? Just reply to this message.'
+					]
+				})
+			},
+			// The one mail money depends on: kept for retry, and a box with no
+			// SMTP at all is a failure here, not a lifestyle.
+			{ retryable: true, trackUnconfigured: true }
+		);
 
-		if (result.delivered || !isEmailConfigured()) {
+		// Stamped only when it actually went. Undelivered stays unstamped, so
+		// the next nightly reconcile tries again — and the failure row is
+		// already on /admin and in the /healthz warnings meanwhile.
+		if (result.delivered) {
 			db.update(subscriptions)
 				.set({ trialNoticeSentAt: nowIso, updatedAt: nowIso })
 				.where(eq(subscriptions.id, row.id))
 				.run();
-			if (result.delivered) sent += 1;
+			sent += 1;
 		}
 	}
 

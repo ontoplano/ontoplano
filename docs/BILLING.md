@@ -58,8 +58,11 @@ fetches every live subscription and corrects drift. Safe to run twice.
 It also sends the trial-ending mail: two days before a trial runs out, once per
 account, through the same SMTP-or-log path as everything else. This one is not a
 courtesy — a person who forgot their trial and meets the receipt first is a
-chargeback. If SMTP is not configured the mail is logged and still marked sent,
-so the log is not repeated nightly; configure SMTP before opening the doors.
+chargeback. It is marked sent only when it actually went: an undelivered notice
+stays due (the next nightly run tries again), lands on `/admin` under "Mail that
+did not go out" with a retry button, and raises a `/healthz` warning the
+watchers alert on. Configure SMTP before opening the doors anyway — a notice
+that spends its whole two-day window failing was still never read in time.
 
 ## Checking it works
 

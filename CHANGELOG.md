@@ -6,6 +6,12 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- Mail that fails to send is no longer a silence: every failure is recorded,
+  counted as a `/healthz` warning (which is what the off-box watchers alert
+  on), and listed on the administration page with a retry for mail worth
+  re-sending and a dismiss for expired links. The trial-ending notice is now
+  marked sent only when it actually went — an undelivered one is retried by
+  the next nightly reconcile instead of being stamped and forgotten.
 - In the dark theme, red text no longer lands on a red background: the colored
   palettes now invert like the grays, so error tones, revoke buttons, and the
   token-created notice keep their contrast in both themes.

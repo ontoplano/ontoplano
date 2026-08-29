@@ -1200,4 +1200,42 @@ const reminder = (offsetMinutes, message) => {
 reminder(-8, 'take the bread out of the oven');
 reminder(180, 'call the landlord back');
 
+// --- mail that did not go out (the /admin card and the /healthz warning) --------
+
+const mailFailure = (kind, toEmail, subject, error, bodyText) => {
+	const existing = one(
+		'select id from mail_failures where kind = ? and to_email = ? and resolved_at is null',
+		kind,
+		toEmail
+	);
+	if (existing) return existing.id;
+	return run(
+		`insert into mail_failures (kind, to_email, subject, error, attempts, body_text, created_at, last_attempt_at)
+		 values (?, ?, ?, ?, ?, ?, ?, ?)`,
+		kind,
+		toEmail,
+		subject,
+		error,
+		kind === 'trial-notice' ? 3 : 1,
+		bodyText,
+		stamp(new Date(now.getTime() - 26 * 3600_000)),
+		stamp(new Date(now.getTime() - 2 * 3600_000))
+	);
+};
+
+mailFailure(
+	'trial-notice',
+	'marina@semotina.user',
+	'Your ontoplano trial ends on ' + iso(new Date(now.getTime() + 2 * 86400_000)),
+	'connect ECONNREFUSED 127.0.0.1:25',
+	'Your trial ends in two days — everything you wrote stays yours and stays readable.'
+);
+mailFailure(
+	'verification',
+	'joao@semotina.user',
+	'Confirm your ontoplano address',
+	'454 4.7.1 Relay access denied',
+	null
+);
+
 console.log(`seeded synthetic data for ${user.email ?? uid}`);

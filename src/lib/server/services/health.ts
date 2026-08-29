@@ -4,6 +4,7 @@ import { statSync, statfsSync } from 'node:fs';
 import { sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { loadConfig } from '$lib/server/config';
+import { openFailureCount } from './mail-log.js';
 
 /**
  * Can this process actually reach the database?
@@ -131,6 +132,21 @@ export function warnings(r: Resources = resources()): string[] {
 	}
 	if (r.memoryUsedPercent >= LIMITS.memoryUsedPercent) {
 		out.push(`memory ${r.memoryUsedPercent}% used, ${r.memoryFreeMb}MB free`);
+	}
+	// Failed mail belongs here because this is the channel somebody is already
+	// watching: the guard timer and the off-box watcher alert on a warning
+	// appearing, so a broken mailer reaches a phone instead of only a log.
+	try {
+		const failed = openFailureCount();
+		if (failed > 0) {
+			out.push(
+				failed === 1
+					? 'one mail failed to send — /admin lists it'
+					: `${failed} mails failed to send — /admin lists them`
+			);
+		}
+	} catch {
+		// A database mid-migration must not take the probe down with it.
 	}
 	return out;
 }

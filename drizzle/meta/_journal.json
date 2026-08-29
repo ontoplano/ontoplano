@@ -211,6 +211,13 @@
       "when": 1787987945657,
       "tag": "0029_fearless_talisman",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "6",
+      "when": 1788039817795,
+      "tag": "0030_mail-failures",
+      "breakpoints": true
     }
   ]
 }

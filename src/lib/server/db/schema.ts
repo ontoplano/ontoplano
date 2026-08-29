@@ -1433,3 +1433,42 @@ export const pluginManifests = sqliteTable(
 		index('plugin_manifests_user_idx').on(table.userId)
 	]
 );
+
+// --- Instance: outbound mail that could not be sent ---
+
+/**
+ * Every mail the app failed to deliver, so a broken mailer is a visible,
+ * retryable fact instead of a silence. `/healthz` counts the open rows as a
+ * warning (which is what the off-box watchers alert on) and `/admin` lists
+ * them. A row resolves when a later send to the same address for the same
+ * kind succeeds, when a retry succeeds, or when an administrator dismisses it.
+ *
+ * The body is stored only for mail worth re-sending later (the trial notice).
+ * Auth mail — verification, reset, address change — carries links that expire
+ * within the hour, so those rows record the failure and nothing else; the fix
+ * is a fresh request, not a replay.
+ */
+export const mailFailures = sqliteTable(
+	'mail_failures',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		kind: text('kind', {
+			enum: ['verification', 'password-reset', 'address-change', 'trial-notice']
+		}).notNull(),
+		toEmail: text('to_email').notNull(),
+		subject: text('subject').notNull(),
+		/** What sending reported, trimmed — shown verbatim on /admin. */
+		error: text('error').notNull(),
+		attempts: integer('attempts').notNull().default(1),
+		bodyText: text('body_text'),
+		bodyHtml: text('body_html'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		lastAttemptAt: text('last_attempt_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		resolvedAt: text('resolved_at')
+	},
+	(table) => [index('mail_failures_open_idx').on(table.resolvedAt)]
+);

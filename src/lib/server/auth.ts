@@ -6,7 +6,7 @@ import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { env } from '$env/dynamic/private';
 import { getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
-import { sendEmail } from '$lib/server/email';
+import { sendLogged } from '$lib/server/services/mail-log';
 import { renderEmail } from '$lib/server/email-template';
 import { configuredProviders, type SocialProvider } from '$lib/social';
 
@@ -82,7 +82,7 @@ export const auth = betterAuth({
 		// account.
 		resetPasswordTokenExpiresIn: 60 * 60,
 		sendResetPassword: async ({ user, url }) => {
-			await sendEmail({
+			await sendLogged('password-reset', {
 				to: user.email,
 				...renderEmail({
 					subject: 'Reset your ontoplano password',
@@ -108,7 +108,7 @@ export const auth = betterAuth({
 			 * an attacker's mailbox without access to both.
 			 */
 			sendChangeEmailVerification: async ({ user, newEmail, url }) => {
-				await sendEmail({
+				await sendLogged('address-change', {
 					to: user.email,
 					...renderEmail({
 						subject: 'Confirm the new address for your ontoplano account',
@@ -128,7 +128,7 @@ export const auth = betterAuth({
 		sendOnSignUp: true,
 		autoSignInAfterVerification: true,
 		sendVerificationEmail: async ({ user, url }) => {
-			await sendEmail({
+			await sendLogged('verification', {
 				to: user.email,
 				...verificationMail(url)
 			});
@@ -178,7 +178,7 @@ export async function sendVerificationFor(email: string): Promise<{
 	);
 	const url = `${ctx.baseURL}/verify-email?token=${token}&callbackURL=${encodeURIComponent('/')}`;
 
-	const { delivered } = await sendEmail({
+	const { delivered } = await sendLogged('verification', {
 		to: email,
 		...verificationMail(url)
 	});
