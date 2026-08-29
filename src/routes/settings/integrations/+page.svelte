@@ -348,7 +348,8 @@
 	<!-- Webhooks -->
 	<Card
 		title="Webhooks"
-		description="An address of yours that is told when things happen here — new todos, ticks, ideas. The other half of plugins: streams push data in, webhooks let your programs listen."
+		description="A URL of yours that is told when things happen here — new todos, ticks, ideas.
+Streams push data in, webhooks let your programs listen."
 		flush
 	>
 		{#snippet actions()}
@@ -485,7 +486,22 @@
 		{/if}
 	</Card>
 
-	<p class="text-xs text-gray-500">
-		Writing a plugin? See <code class="font-mono">docs/PLUGINS.md</code> in the repository.
-	</p>
+	<div class="space-y-1 text-xs text-gray-500">
+		<p>
+			The limits: a token may make 240 reads and 60 writes a minute, and all your tokens together
+			share 600 and 150 — more tokens is not more budget. Stored data points count against your
+			plan, and a stream with retention set keeps only those days.
+		</p>
+		<p>
+			Writing a plugin? See
+			<a
+				href="https://github.com/ontoplano/ontoplano/blob/master/docs/PLUGINS.md"
+				rel="external"
+				class="underline underline-offset-2 hover:text-gray-900"
+			>
+				docs/PLUGINS.md
+			</a>
+			on GitHub.
+		</p>
+	</div>
 </div>

@@ -62,7 +62,8 @@
 		<div class="min-w-0 flex-1">
 			<h2 class="eyebrow text-gray-600">{title}</h2>
 			{#if description}
-				<p class="mt-1.5 text-sm text-gray-500">{description}</p>
+				<!-- pre-line: a description may break itself onto a second line with \n. -->
+				<p class="mt-1.5 text-sm whitespace-pre-line text-gray-500">{description}</p>
 			{/if}
 		</div>
 		{#if actions}
