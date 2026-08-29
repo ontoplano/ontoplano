@@ -530,13 +530,13 @@ const apiToken = (name, scopes) => {
  * no renderer matched, so every stream fell back to a bare list of points and
  * the charts were never seen in development.
  */
-const stream = (slug, name, kind, unit, display) => {
+const stream = (slug, name, kind, unit, display, retentionDays = null) => {
 	const existing = one('select id from data_streams where user_id = ? and slug = ?', uid, slug);
 	if (existing) return existing.id;
 	return run(
 		`insert into data_streams
-		 (user_id, slug, name, source, kind, unit, display, config, show_on_dashboard, created_at, updated_at)
-		 values (?, ?, ?, ?, ?, ?, ?, '{}', 1, ?, ?)`,
+		 (user_id, slug, name, source, kind, unit, display, config, show_on_dashboard, retention_days, created_at, updated_at)
+		 values (?, ?, ?, ?, ?, ?, ?, '{}', 1, ?, ?, ?)`,
 		uid,
 		slug,
 		name,
@@ -544,6 +544,7 @@ const stream = (slug, name, kind, unit, display) => {
 		kind,
 		unit,
 		display,
+		retentionDays,
 		stamp(now),
 		stamp(now)
 	);
@@ -914,7 +915,8 @@ for (let back = 0; back < 30; back += 2) {
 	point(weight, stamp(d), iso(d), Number((78 + Math.sin(back / 4) * 1.2).toFixed(1)));
 }
 
-const sleep = stream('a-private-plugin.sleep', 'Sleep', 'measurement', 'h', 'bar_chart');
+// One stream with a retention window, so the settings page shows it in use.
+const sleep = stream('a-private-plugin.sleep', 'Sleep', 'measurement', 'h', 'bar_chart', 365);
 for (let back = 0; back < 14; back++) {
 	const d = dayOffset(-back);
 	point(sleep, stamp(d), iso(d), Number((6.4 + ((back * 7) % 5) / 4).toFixed(1)));

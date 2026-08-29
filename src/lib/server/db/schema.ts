@@ -992,6 +992,9 @@ export const dataStreams = sqliteTable(
 			.default('list'),
 		config: text('config').notNull().default('{}'),
 		showOnDashboard: integer('show_on_dashboard', { mode: 'boolean' }).notNull().default(false),
+		// How many days of points to keep. Null keeps everything; the sweep in
+		// services/streams.ts deletes what is past this, nightly and on push.
+		retentionDays: integer('retention_days'),
 		archivedAt: text('archived_at'),
 		createdAt: text('created_at').notNull(),
 		updatedAt: text('updated_at').notNull()

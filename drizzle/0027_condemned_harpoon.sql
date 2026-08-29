@@ -1,0 +1,1 @@
+ALTER TABLE `data_streams` ADD `retention_days` integer;

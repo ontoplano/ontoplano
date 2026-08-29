@@ -285,6 +285,21 @@
 								<input type="checkbox" name="showOnDashboard" checked={stream.showOnDashboard} />
 								Dashboard
 							</label>
+							<label
+								class="flex items-center gap-1.5 text-sm text-gray-700"
+								title="Points older than this are deleted, nightly. Leave empty to keep everything."
+							>
+								Keep
+								<input
+									type="number"
+									name="retentionDays"
+									min="1"
+									max="3650"
+									value={stream.retentionDays ?? ''}
+									class="w-16 border border-gray-300 px-2 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								/>
+								days
+							</label>
 							<button type="submit" class="btn btn-sm"> Save </button>
 						</form>
 						<div class="mt-2">

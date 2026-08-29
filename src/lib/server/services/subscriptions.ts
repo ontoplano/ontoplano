@@ -1,6 +1,7 @@
 import { and, count, eq } from 'drizzle-orm';
 
 import {
+	LIMIT_LABELS,
 	PLANS,
 	isPlanId,
 	isSubscriptionStatus,
@@ -9,7 +10,7 @@ import {
 	type SubscriptionStatus
 } from '../../plans.js';
 import { db } from '../db/index.js';
-import { apiTokens, dataStreams, subscriptions } from '../db/schema.js';
+import { apiTokens, dataPoints, dataStreams, subscriptions } from '../db/schema.js';
 import { isSelfHosted, pricing } from '../settings.js';
 import { record } from './audit.js';
 import type { Ctx } from './ctx.js';
@@ -223,12 +224,13 @@ export function userIdForSubscription(provider: string, subscriptionId: string):
 
 /** How many of a thing this account already has. */
 export function usage(userId: string): Record<LimitKey, number> {
-	const countOf = (table: typeof apiTokens | typeof dataStreams) =>
+	const countOf = (table: typeof apiTokens | typeof dataStreams | typeof dataPoints) =>
 		db.select({ n: count() }).from(table).where(eq(table.userId, userId)).get()?.n ?? 0;
 
 	return {
 		apiTokens: countOf(apiTokens),
 		dataStreams: countOf(dataStreams),
+		dataPoints: countOf(dataPoints),
 		// Not a stored count: the export log answers this one, and the account
 		// service already owns that question.
 		exportsPerDay: 0
@@ -245,15 +247,16 @@ export function limitOf(plan: PlanId, key: LimitKey): number | null {
  * Called by the service that owns the thing, not by the route: a limit checked
  * in a form is a limit that the API does not have.
  */
-export function assertWithinLimit(ctx: Ctx, key: LimitKey): void {
+export function assertWithinLimit(ctx: Ctx, key: LimitKey, adding = 1): void {
 	const entitlement = resolvePlan(ctx.userId, ctx.now);
 	const limit = limitOf(entitlement.plan, key);
 	if (limit === null) return;
 
 	const current = usage(ctx.userId)[key];
-	if (current < limit) return;
+	if (current + adding <= limit) return;
 
 	throw new ForbiddenError(
-		`Your plan allows ${limit} ${key === 'apiTokens' ? 'API tokens' : key}. Nothing has been deleted — upgrading raises the limit.`
+		`Your plan allows ${limit.toLocaleString('en-US')} ${LIMIT_LABELS[key].toLowerCase()}. ` +
+			`Nothing has been deleted — upgrading raises the limit.`
 	);
 }

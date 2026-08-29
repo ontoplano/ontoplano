@@ -4,6 +4,18 @@ What changed for somebody using the app, newest first. One entry per
 user-visible change, written when the change is made — the git log has the
 rest. Versions follow `package.json`.
 
+## 0.7.0 — 2026-08-29
+
+- A data stream can keep a retention window — "keep 90 days" — set by the app
+  that owns it or on the integrations page. Older points are deleted nightly
+  and as new ones arrive; an empty window keeps everything, which stays the
+  default.
+- Stored data points now count against the plan's storage ceiling, shown on the
+  billing page like the others. A push that would cross it is refused whole,
+  with the limit named.
+- The API budget is now per account as well as per token: more tokens are no
+  longer more budget.
+
 ## 0.6.2 — 2026-08-29
 
 - The server writes one log line per request (method, path, status, duration,

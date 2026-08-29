@@ -300,6 +300,42 @@ export const handleError: HandleServerError = ({ error, event, status }) => {
 declare global {
 	// eslint-disable-next-line no-var
 	var __ontoplanoDeathWatch: boolean | undefined;
+	// eslint-disable-next-line no-var
+	var __ontoplanoSweep: ReturnType<typeof setInterval> | undefined;
+}
+
+/**
+ * The nightly sweep, as a timer in the one process there is.
+ *
+ * Per-stream retention cannot wait for its account to visit, and this app is a
+ * single long-running node process with no cron of its own — so the process
+ * carries the timer. Once at boot (a deploy must not postpone an overdue
+ * sweep by a day) and then daily. Guarded like the death watch, because
+ * SvelteKit imports this module in more than one context.
+ */
+if (!building && !globalThis.__ontoplanoSweep) {
+	const sweep = async () => {
+		try {
+			const { sweepAllStreams } = await import('$lib/server/services/streams');
+			const { streams, deleted } = sweepAllStreams();
+			if (deleted > 0) {
+				console.log(
+					JSON.stringify({
+						at: new Date().toISOString(),
+						level: 'info',
+						message: `Retention sweep: ${deleted} points deleted across ${streams} streams`
+					})
+				);
+			}
+		} catch (e) {
+			console.error('Retention sweep failed:', e);
+		}
+	};
+
+	globalThis.__ontoplanoSweep = setInterval(sweep, 24 * 60 * 60 * 1000);
+	// Never keep an otherwise-done process alive for a sweep.
+	globalThis.__ontoplanoSweep.unref?.();
+	void sweep();
 }
 
 if (!building && !globalThis.__ontoplanoDeathWatch) {

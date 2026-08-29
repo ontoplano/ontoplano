@@ -71,7 +71,8 @@ export const actions: Actions = {
 			updateStreamDisplay(ctx, Number(formData.get('id')), {
 				display: formData.get('display'),
 				name: formData.get('name'),
-				showOnDashboard: formData.get('showOnDashboard') === 'on'
+				showOnDashboard: formData.get('showOnDashboard') === 'on',
+				retentionDays: formData.get('retentionDays')
 			});
 			return { success: true, action: 'updateStream' };
 		} catch (e) {

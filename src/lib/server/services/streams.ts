@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray, lte } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNotNull, lt, lte } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { dataPoints, dataStreams } from '../db/schema.js';
@@ -44,6 +44,13 @@ export function upsertStream(
 		config: jsonObject(input.config, 'config', MAX_CONFIG_BYTES)
 	};
 
+	// Absent means "leave it alone", not "forever": a producer redeclaring its
+	// stream at startup must not wipe a retention the person set in the UI.
+	const retentionDays =
+		input.retention_days === undefined
+			? undefined
+			: retentionDaysOf(input.retention_days, 'retention_days');
+
 	const nowIso = ctx.now.toISOString();
 	const existing = getStreamBySlug(ctx, values.slug, { throwIfMissing: false });
 
@@ -61,6 +68,7 @@ export function upsertStream(
 				unit: values.unit,
 				display: values.display,
 				config: values.config,
+				...(retentionDays !== undefined ? { retentionDays } : {}),
 				archivedAt: null,
 				updatedAt: nowIso
 			})
@@ -76,6 +84,7 @@ export function upsertStream(
 			...stamps(ctx),
 			...stamps(ctx),
 			...values,
+			retentionDays: retentionDays ?? null,
 			userId: ctx.userId,
 			createdAt: nowIso,
 			updatedAt: nowIso
@@ -84,6 +93,12 @@ export function upsertStream(
 		.get();
 
 	return { stream: created, created: true };
+}
+
+/** Days of points to keep; null (or '') is forever. */
+function retentionDaysOf(value: unknown, field: string): number | null {
+	if (value === null || value === '') return null;
+	return num(value, field, { min: 1, max: 3650, int: true });
 }
 
 export function listStreams(ctx: Ctx, opts: { includeArchived?: boolean } = {}): Stream[] {
@@ -113,12 +128,14 @@ export function getStreamBySlug(
 export function updateStreamDisplay(
 	ctx: Ctx,
 	id: number,
-	input: { display?: unknown; name?: unknown; showOnDashboard?: unknown }
+	input: { display?: unknown; name?: unknown; showOnDashboard?: unknown; retentionDays?: unknown }
 ): void {
 	const patch: Record<string, unknown> = { updatedAt: ctx.now.toISOString() };
 	if (input.display !== undefined) patch.display = oneOf(input.display, 'display', STREAM_DISPLAYS);
 	if (input.name !== undefined) patch.name = str(input.name, 'name', { max: 80 });
 	if (input.showOnDashboard !== undefined) patch.showOnDashboard = Boolean(input.showOnDashboard);
+	if (input.retentionDays !== undefined)
+		patch.retentionDays = retentionDaysOf(input.retentionDays, 'Retention');
 
 	const res = db
 		.update(dataStreams)
@@ -251,6 +268,10 @@ export function pushPoints(ctx: Ctx, streamSlug: string, rawPoints: unknown): Pu
 	const fresh = deduped.filter((p) => !existing.has(p.externalId));
 	const nowIso = ctx.now.toISOString();
 
+	// The storage ceiling. The rate limit bounds requests; this bounds rows —
+	// which is the number the disk actually cares about.
+	if (fresh.length > 0) assertWithinLimit(ctx, 'dataPoints', fresh.length);
+
 	if (fresh.length > 0) {
 		db.insert(dataPoints)
 			.values(
@@ -274,6 +295,10 @@ export function pushPoints(ctx: Ctx, streamSlug: string, rawPoints: unknown): Pu
 			.set({ updatedAt: nowIso })
 			.where(and(eq(dataStreams.id, stream.id), eq(dataStreams.userId, ctx.userId)))
 			.run();
+
+		// Retention is enforced where the growth happens, not only by the nightly
+		// sweep — a stream pushed to every minute never carries a day of excess.
+		if (stream.retentionDays) sweepStream(stream.id, stream.retentionDays, ctx.now);
 	}
 
 	return {
@@ -342,6 +367,41 @@ export function streamStats(ctx: Ctx, streamId: number): StreamStats {
 	};
 }
 
+// --- Retention ---
+
+/** Delete one stream's points older than its retention window. */
+function sweepStream(streamId: number, retentionDays: number, now: Date): number {
+	const cutoff = new Date(now.getTime() - retentionDays * 86400_000).toISOString();
+	// `at` is UTC ISO-8601 text, so lexicographic order is time order.
+	const res = db
+		.delete(dataPoints)
+		.where(and(eq(dataPoints.streamId, streamId), lt(dataPoints.at, cutoff)))
+		.run();
+	return res.changes;
+}
+
+/**
+ * The nightly sweep: every stream with a retention window, all accounts.
+ *
+ * Instance-wide by design — retention is the account's own setting, but
+ * enforcing it cannot depend on the account visiting. Called from the server's
+ * daily timer, and cheap when nothing is due: one indexed select, then one
+ * bounded delete per stream that keeps a window.
+ */
+export function sweepAllStreams(now = new Date()): { streams: number; deleted: number } {
+	const due = db
+		.select({ id: dataStreams.id, retentionDays: dataStreams.retentionDays })
+		.from(dataStreams)
+		.where(isNotNull(dataStreams.retentionDays))
+		.all();
+
+	let deleted = 0;
+	for (const stream of due) {
+		deleted += sweepStream(stream.id, stream.retentionDays!, now);
+	}
+	return { streams: due.length, deleted };
+}
+
 /** Serialise a point for the API — snake_case, matching the documented contract. */
 export function serialisePoint(p: DataPoint) {
 	return {
@@ -361,6 +421,7 @@ export function serialiseStream(s: Stream) {
 		kind: s.kind,
 		unit: s.unit,
 		display: s.display,
+		retention_days: s.retentionDays,
 		archived: Boolean(s.archivedAt),
 		created_at: s.createdAt,
 		updated_at: s.updatedAt

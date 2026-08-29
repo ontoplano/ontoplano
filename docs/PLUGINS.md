@@ -75,6 +75,12 @@ Namespace your slug with your app name (`yourapp.thing`). Lowercase, dots and da
 `display` picks the built-in renderer: `line_chart`, `calendar_heatmap`, `latest_value`,
 `bar_chart`, `list`. The user can change it later; don't fight them for it.
 
+`retention_days` (optional, 1–3650) asks the server to keep only that many days of
+points: older ones are deleted, nightly and on push. Omit it to leave the setting
+alone — the user can set it in the app, and a redeclare at startup must not wipe
+their choice. Send `null` explicitly to mean "keep everything". A high-frequency
+stream should set this; nobody wants minute-by-minute readings from two years ago.
+
 ### Push points
 
 ```http
@@ -91,6 +97,13 @@ POST /api/v1/streams/a-private-plugin.weight/points
 ```
 
 Up to 500 points per request.
+
+Budgets, so one producer cannot crowd out the rest: each token gets 240 reads and 60
+writes a minute, and the account as a whole gets 600 and 150 across all its tokens —
+more keys are not more budget. A 429 carries `Retry-After`; honour it. Stored points
+are also counted against the plan's storage ceiling, and a batch that would cross it
+is refused whole with a `plan_limit` error — set `retention_days` and the problem
+never comes up.
 
 ### The one rule that matters: `external_id`
 

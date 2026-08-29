@@ -19,7 +19,7 @@
 export const PLAN_IDS = ['none', 'pro'] as const;
 export type PlanId = (typeof PLAN_IDS)[number];
 
-export const LIMIT_KEYS = ['apiTokens', 'dataStreams', 'exportsPerDay'] as const;
+export const LIMIT_KEYS = ['apiTokens', 'dataStreams', 'dataPoints', 'exportsPerDay'] as const;
 export type LimitKey = (typeof LIMIT_KEYS)[number];
 
 /** `null` is no limit. */
@@ -43,6 +43,7 @@ export const PLANS: Record<PlanId, Plan> = {
 		limits: {
 			apiTokens: 0,
 			dataStreams: 0,
+			dataPoints: 0,
 			exportsPerDay: 2
 		}
 	},
@@ -53,6 +54,15 @@ export const PLANS: Record<PlanId, Plan> = {
 		limits: {
 			apiTokens: 20,
 			dataStreams: 50,
+			/*
+			 * The storage ceiling. Rate limits bound requests, not rows: a producer
+			 * inside its write budget can add 86,400 points a day forever, and this
+			 * is the number that stops that from being how the disk fills. A million
+			 * points is on the order of 150MB — years of any sane producer — so
+			 * nobody hits it by using the app; a runaway hits it in weeks instead of
+			 * taking the instance down.
+			 */
+			dataPoints: 1_000_000,
 			exportsPerDay: 10
 		}
 	}
@@ -61,6 +71,7 @@ export const PLANS: Record<PlanId, Plan> = {
 export const LIMIT_LABELS: Record<LimitKey, string> = {
 	apiTokens: 'API tokens',
 	dataStreams: 'Data streams',
+	dataPoints: 'Stored data points',
 	exportsPerDay: 'Exports per day'
 };
 
