@@ -6,6 +6,14 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- `make deploy` builds on a laptop whose dev database may be behind the
+  migration being shipped — the boot-time migration check no longer runs
+  during a build, only when a server actually starts. Deploy migrates the
+  server itself, as it always did; nobody migrates by hand.
+- The admin page's fail2ban hint now names the command that actually fixes
+  it: after joining `adm`, the lingering systemd _user manager_ keeps its
+  old groups forever, so `sudo systemctl restart user@$(id -u)` — restarting
+  the app alone changes nothing.
 - The payment provider is Paddle now — Lemon Squeezy could not pay out to
   Brazil. "Go Pro" became a button instead of a link (the server mints a
   checkout with the account id attached and sends the browser there), a
