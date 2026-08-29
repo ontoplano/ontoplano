@@ -27,7 +27,9 @@ export function assertMigrated(client: Database.Database, path: string): void {
 		.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'user'`)
 		.get();
 	const migrationsTable = client
-		.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = '__drizzle_migrations'`)
+		.prepare(
+			`SELECT name FROM sqlite_master WHERE type = 'table' AND name = '__drizzle_migrations'`
+		)
 		.get();
 
 	if (!migrationsTable) {
