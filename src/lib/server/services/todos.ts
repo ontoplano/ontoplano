@@ -24,6 +24,7 @@ import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { ownedNotebookId } from './notebooks.js';
 import { created, stamp, stamps } from './time.js';
+import { emit } from './webhooks.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
 
 export type Todo = {
@@ -275,12 +276,13 @@ export type TodoInput = {
 };
 
 export function createTodo(ctx: Ctx, raw: TodoInput): number {
+	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
 	const result = db
 		.insert(plannerTodos)
 		.values({
 			...stamps(ctx),
 			userId: ctx.userId,
-			title: str(raw.title, 'title', { max: MAX_TITLE_LENGTH }),
+			title,
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
 			categoryId: ownedCategoryId(ctx, raw.categoryId),
 			notebookId: ownedNotebookId(ctx, raw.notebookId),
@@ -291,7 +293,9 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 		})
 		.run();
 
-	return Number(result.lastInsertRowid);
+	const id = Number(result.lastInsertRowid);
+	emit(ctx, 'todo.created', { id, title });
+	return id;
 }
 
 export function updateTodo(ctx: Ctx, id: number, raw: TodoInput): void {
@@ -327,6 +331,7 @@ export function setTodoStatus(ctx: Ctx, id: number, status: unknown): void {
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('todo');
+	if (status === 'done') emit(ctx, 'todo.completed', { id });
 }
 
 /**

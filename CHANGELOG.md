@@ -24,6 +24,10 @@ rest. Versions follow `package.json`.
   details to your server's log — only if the instance turns the feature on,
   only after you say yes, asked once. What is sent is what broke, never what
   you wrote.
+- Webhooks: subscribe an address of yours to be told when things happen — a
+  todo added or finished, an idea captured, something added to or bought off
+  the shopping list. Signed deliveries, thin payloads (a diary entry announces
+  only its id), managed on the integrations page or over the API.
 
 ## 0.6.2 — 2026-08-29
 

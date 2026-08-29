@@ -12,6 +12,7 @@ import {
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';
+import { emit } from './webhooks.js';
 import { str } from './validate.js';
 
 /** Quick capture: a thought, optionally tagged, optionally marked as applied. */
@@ -84,6 +85,9 @@ export function createIdea(ctx: Ctx, raw: { content: unknown; tags?: unknown }):
 
 	if (tagNames.length > 0) linkIdeaTags(ideaId, ensureTagIds(tagNames, ctx.userId), ctx.userId);
 
+	// An idea is its own one-line label, which is why it rides along where a
+	// diary entry would send only its id.
+	emit(ctx, 'idea.created', { id: ideaId, content });
 	return ideaId;
 }
 

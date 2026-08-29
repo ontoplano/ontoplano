@@ -13,6 +13,7 @@ import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { ownedNotebookId } from './notebooks.js';
 import { stamp, stamps } from './time.js';
+import { emit } from './webhooks.js';
 import { str } from './validate.js';
 
 /** The journal: free text, free-form tags, one running number per account. */
@@ -81,6 +82,8 @@ export function createEntry(
 	const tagNames = parseTags(tagInput(raw.tags));
 	if (tagNames.length > 0) linkDiaryTags(entryId, ensureTagIds(tagNames, ctx.userId), ctx.userId);
 
+	// The id and nothing else: a diary entry's content never leaves the app.
+	emit(ctx, 'diary.created', { id: entryId });
 	return entryId;
 }
 

@@ -24,6 +24,7 @@ The user creates one at **Settings → Integrations**, choosing scopes:
 | `streams:read`  | read points back                        |
 | `schedule:read` | read upcoming scheduled tasks           |
 | `today:read`    | read today's blocks, habits and tasks   |
+| `webhooks:manage` | subscribe addresses to events, and manage those subscriptions |
 
 Ask for the narrowest set that works. A token with only `streams:write` cannot read
 anything the user has — which is the point, because tokens live on phones.
@@ -181,6 +182,44 @@ soft_alarm_when: category == "duty"
 and resolves each occurrence against that at sync time. If you find yourself wanting
 ontoplano to store a field that only your app understands, that's the signal to keep it on
 your side instead.
+
+---
+
+## 3½. Webhooks: hearing about things
+
+Streams push data in; webhooks let your program hear about things happening, without
+running any code inside ontoplano. Subscribe an address (scope `webhooks:manage`, or on
+the integrations page), and matching events are POSTed to it:
+
+```http
+POST /api/v1/webhooks
+{ "url": "https://example.com/hook", "events": ["shopping.added", "shopping.bought"] }
+
+→ 201 { "id": 3, "secret": "whsec_…", "events": [...], ... }
+```
+
+Events: `todo.created` `todo.completed` `idea.created` `diary.created` `shopping.added`
+`shopping.bought`. A delivery looks like:
+
+```http
+POST <your url>
+X-Ontoplano-Event: shopping.added
+X-Ontoplano-Signature: sha256=<hmac>
+{ "event": "shopping.added", "at": "2026-08-29T12:00:00Z", "data": { "id": 12, "name": "Milk" } }
+```
+
+Verify the signature: HMAC-SHA256 of the raw body with your subscription's `secret`,
+hex, prefixed `sha256=`. Payloads are deliberately thin — the id, and the one-line label
+where the thing *is* its label (a todo's title, an item's name, an idea). A diary entry
+announces only its id; content never leaves the app.
+
+Delivery is best-effort and says so: one attempt, five seconds, no queue, at-most-once.
+Answer with a 2xx quickly and do your work afterwards. An address that fails ten times
+in a row is given up on — the row says so, and "Try again" (or resubscribing) re-arms
+it. `GET /api/v1/webhooks` lists yours; `DELETE /api/v1/webhooks/<id>` unsubscribes.
+
+On a hosted instance the address must be reachable from the internet — private and
+loopback addresses are refused. Self-hosted instances may point anywhere.
 
 ---
 

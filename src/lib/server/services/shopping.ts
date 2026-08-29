@@ -5,6 +5,7 @@ import { pricePoints, shoppingCategories, shoppingItems } from '../db/schema.js'
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';
+import { emit } from './webhooks.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
 import { parseMoney } from '../../money.js';
 import { getCurrency } from '../settings.js';
@@ -144,13 +145,16 @@ export function createItem(ctx: Ctx, raw: ItemInput): { alreadyHad: boolean } {
 			.set({ bought: false, boughtAt: null, snoozed: false, updatedAt: stamp(ctx) })
 			.where(and(eq(shoppingItems.id, existing.id), eq(shoppingItems.userId, ctx.userId)))
 			.run();
+		emit(ctx, 'shopping.added', { id: existing.id, name: values.name });
 		return { alreadyHad: true };
 	}
 
-	db.insert(shoppingItems)
+	const result = db
+		.insert(shoppingItems)
 		.values({ ...stamps(ctx), userId: ctx.userId, ...values })
 		.run();
 
+	emit(ctx, 'shopping.added', { id: Number(result.lastInsertRowid), name: values.name });
 	return { alreadyHad: false };
 }
 
@@ -189,6 +193,8 @@ export function toggleBought(ctx: Ctx, id: number, raw: { paid?: unknown } = {})
 	// for one: it happens in a supermarket aisle, one press, often offline.
 	if (buying && raw.paid !== undefined && raw.paid !== null && raw.paid !== '')
 		recordPaid(ctx, id, raw.paid);
+
+	if (buying) emit(ctx, 'shopping.bought', { id, name: item.name });
 }
 
 /**
@@ -340,6 +346,7 @@ function ownedItem(ctx: Ctx, id: number) {
 	const row = db
 		.select({
 			id: shoppingItems.id,
+			name: shoppingItems.name,
 			type: shoppingItems.type,
 			bought: shoppingItems.bought,
 			snoozed: shoppingItems.snoozed

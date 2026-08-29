@@ -853,6 +853,18 @@ win(iso(dayOffset(-1)), 1, 'ran 8km');
 // --- the plugin platform --------------------------------------------------------------
 
 apiToken('a-private-plugin on the phone', 'schedule:read,streams:write');
+
+// One webhook subscription, so the integrations page shows the card in use.
+if (!one('select id from webhook_subscriptions where user_id = ?', uid)) {
+	run(
+		`insert into webhook_subscriptions (user_id, url, events, secret, created_at, updated_at)
+		 values (?, 'https://example.com/ontoplano-hook', 'shopping.added,shopping.bought', ?, ?, ?)`,
+		uid,
+		`whsec_${randomBytes(24).toString('hex')}`,
+		stamp(now),
+		stamp(now)
+	);
+}
 apiToken('scratch script', 'streams:read');
 apiToken('Phone widget', 'today:read');
 

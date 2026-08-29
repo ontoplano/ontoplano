@@ -14,8 +14,11 @@
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	let showTokenForm = $state(false);
+	let showWebhookForm = $state(false);
 	let confirmRevoke = $state<number | null>(null);
 	let confirmDeleteStream = $state<number | null>(null);
+	let confirmDeleteWebhook = $state<number | null>(null);
+	let revealedSecret = $state<number | null>(null);
 	let selectedIndex = $state(-1);
 	let copied = $state(false);
 
@@ -27,9 +30,13 @@
 
 	function closeForms() {
 		showTokenForm = false;
+		showWebhookForm = false;
 		confirmRevoke = null;
 		confirmDeleteStream = null;
+		confirmDeleteWebhook = null;
 	}
+
+	const eventLabel = (key: string) => data.webhookEvents.find((e) => e.key === key)?.label ?? key;
 
 	async function copyToken(value: string) {
 		try {
@@ -327,6 +334,146 @@
 									Delete stream
 								</button>
 							{/if}
+						</div>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+	</Card>
+
+	<!-- Webhooks -->
+	<Card
+		title="Webhooks"
+		description="An address of yours that is told when things happen here — new todos, ticks, ideas. The other half of plugins: streams push data in, webhooks let your programs listen."
+		flush
+	>
+		{#snippet actions()}
+			<button type="button" onclick={() => (showWebhookForm = true)} class="btn btn-sm">
+				New webhook
+			</button>
+		{/snippet}
+
+		<Modal
+			bind:open={showWebhookForm}
+			error={form?.message}
+			title="New webhook"
+			description="Each delivery is signed with a secret, shown on the row, so your receiver can check it is really this server."
+		>
+			<form
+				id="webhook-form"
+				method="post"
+				action="?/createWebhook"
+				use:enhance={() =>
+					async ({ update, result }) => {
+						await update();
+						if (result.type === 'success') showWebhookForm = false;
+					}}
+			>
+				<FormGrid>
+					<Field label="Address" span={12} required>
+						<input
+							autocomplete="off"
+							name="url"
+							type="url"
+							required
+							maxlength="300"
+							placeholder="https://example.com/ontoplano-hook"
+							class="input"
+						/>
+					</Field>
+
+					<fieldset class="col-span-12">
+						<legend class="eyebrow text-gray-600">Tell it when</legend>
+						<div class="mt-1 space-y-1">
+							{#each data.webhookEvents as event (event.key)}
+								<label class="flex items-start gap-2 text-sm text-gray-700">
+									<input type="checkbox" name="events" value={event.key} class="mt-1" />
+									<span>
+										{event.label}
+										<code class="ml-1 font-mono text-xs text-gray-500">{event.key}</code>
+									</span>
+								</label>
+							{/each}
+						</div>
+					</fieldset>
+				</FormGrid>
+			</form>
+
+			{#snippet footer()}
+				<button type="button" class="btn" onclick={() => (showWebhookForm = false)}>Cancel</button>
+				<button type="submit" form="webhook-form" class="btn btn-primary">Create webhook</button>
+			{/snippet}
+		</Modal>
+
+		{#if data.webhooks.length === 0}
+			<div class="px-3">
+				<EmptyState
+					icon="plug"
+					title="No webhooks yet — add an address to be told when things happen"
+					compact
+				/>
+			</div>
+		{:else}
+			<ul class="divide-y divide-gray-200">
+				{#each data.webhooks as hook (hook.id)}
+					<li class="px-4 py-3">
+						<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+							<div class="min-w-0 flex-1 basis-full sm:basis-0">
+								<p class="text-sm font-medium break-all text-gray-900">{hook.url}</p>
+								<p class="mt-1 text-xs text-gray-500">
+									When {hook.events.map(eventLabel).join(', or ')}
+									{#if hook.disabled}
+										· <span class="font-medium">gave up after repeated failures</span>
+									{:else if hook.lastDeliveryAt}
+										· last delivery {hook.lastDeliveryAt.slice(0, 16).replace('T', ' ')}
+										{hook.lastStatus ? `(${hook.lastStatus})` : '(unreachable)'}
+									{:else}
+										· nothing delivered yet
+									{/if}
+								</p>
+								<p class="mt-1 text-xs text-gray-500">
+									Secret:
+									{#if revealedSecret === hook.id}
+										<code class="font-mono break-all">{hook.secret}</code>
+									{:else}
+										<button
+											type="button"
+											class="underline underline-offset-2"
+											onclick={() => (revealedSecret = hook.id)}
+										>
+											show
+										</button>
+									{/if}
+								</p>
+							</div>
+							<div class="flex shrink-0 items-center gap-2">
+								{#if hook.disabled}
+									<form method="post" action="?/reviveWebhook" use:enhance>
+										<input type="hidden" name="id" value={hook.id} />
+										<button type="submit" class="btn btn-sm">Try again</button>
+									</form>
+								{/if}
+								{#if confirmDeleteWebhook === hook.id}
+									<form method="post" action="?/deleteWebhook" use:enhance>
+										<input type="hidden" name="id" value={hook.id} />
+										<button
+											type="submit"
+											class="border border-red-200 px-3 py-1.5 text-sm text-red-600 shadow-sm hover:bg-red-50"
+											use:armed
+										>
+											Confirm?
+										</button>
+									</form>
+								{:else}
+									<button
+										type="button"
+										onclick={() => (confirmDeleteWebhook = hook.id)}
+										class="border border-red-200 px-3 py-1.5 text-sm text-red-600 shadow-sm hover:bg-red-50"
+									>
+										Delete
+									</button>
+								{/if}
+							</div>
 						</div>
 					</li>
 				{/each}

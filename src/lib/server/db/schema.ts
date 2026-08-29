@@ -969,6 +969,37 @@ export const apiTokens = sqliteTable(
 	]
 );
 
+/**
+ * Webhook subscriptions — the other half of the plugin platform.
+ *
+ * Streams let an external program push data in; this lets one hear about
+ * things happening, without running any code inside the process. A
+ * subscription is an address, the events it wants, and a secret the delivery
+ * is signed with so the receiver can check it is really us.
+ */
+export const webhookSubscriptions = sqliteTable(
+	'webhook_subscriptions',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		url: text('url').notNull(),
+		/** Comma-separated event names from services/webhooks.ts. */
+		events: text('events').notNull(),
+		/** Plaintext by necessity: deliveries are signed with it. */
+		secret: text('secret').notNull(),
+		lastDeliveryAt: text('last_delivery_at'),
+		lastStatus: integer('last_status'),
+		failCount: integer('fail_count').notNull().default(0),
+		/** Set when consecutive failures give up on the address. */
+		disabledAt: text('disabled_at'),
+		createdAt: text('created_at').notNull(),
+		updatedAt: text('updated_at').notNull()
+	},
+	(table) => [index('webhook_subscriptions_user_idx').on(table.userId)]
+);
+
 // --- Plugin platform: data streams ---
 //
 // A "plugin" that produces data (a smart scale, a sleep tracker, a script)

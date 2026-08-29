@@ -71,6 +71,7 @@ const USER_TABLES: OwnedTable[] = [
 	owned('dataPoints', schema.dataPoints as never),
 	owned('dataStreams', schema.dataStreams as never),
 	owned('apiTokens', schema.apiTokens as never),
+	owned('webhookSubscriptions', schema.webhookSubscriptions as never),
 	owned('ideaTags', schema.ideaTags as never),
 	owned('ideas', schema.ideas as never),
 	owned('schemeSlots', schema.schemeSlots as never),

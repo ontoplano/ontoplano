@@ -16,6 +16,14 @@ import {
 	listTokens,
 	revokeToken
 } from '$lib/server/services/tokens';
+import {
+	WEBHOOK_EVENTS,
+	WEBHOOK_EVENT_LABELS,
+	createSubscription,
+	deleteSubscription,
+	listSubscriptions,
+	reviveSubscription
+} from '$lib/server/services/webhooks';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
@@ -28,6 +36,16 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		})),
 		scopes: ALL_SCOPES.map((key) => ({ key, description: SCOPES[key] })),
 		displays: STREAM_DISPLAYS,
+		webhooks: listSubscriptions(ctx).map((s) => ({
+			id: s.id,
+			url: s.url,
+			events: s.events.split(',').filter(Boolean),
+			secret: s.secret,
+			lastDeliveryAt: s.lastDeliveryAt,
+			lastStatus: s.lastStatus,
+			disabled: Boolean(s.disabledAt)
+		})),
+		webhookEvents: WEBHOOK_EVENTS.map((key) => ({ key, label: WEBHOOK_EVENT_LABELS[key] })),
 		origin: url.origin
 	};
 };
@@ -87,6 +105,45 @@ export const actions: Actions = {
 		try {
 			deleteStream(ctx, Number(formData.get('id')));
 			return { success: true, action: 'deleteStream' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	createWebhook: async ({ request, locals }) => {
+		const ctx = buildCtx(locals.user!.id);
+		const formData = await request.formData();
+
+		try {
+			createSubscription(ctx, {
+				url: formData.get('url'),
+				events: formData.getAll('events')
+			});
+			return { success: true, action: 'createWebhook' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	deleteWebhook: async ({ request, locals }) => {
+		const ctx = buildCtx(locals.user!.id);
+		const formData = await request.formData();
+
+		try {
+			deleteSubscription(ctx, Number(formData.get('id')));
+			return { success: true, action: 'deleteWebhook' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	reviveWebhook: async ({ request, locals }) => {
+		const ctx = buildCtx(locals.user!.id);
+		const formData = await request.formData();
+
+		try {
+			reviveSubscription(ctx, Number(formData.get('id')));
+			return { success: true, action: 'reviveWebhook' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

@@ -241,6 +241,16 @@ test.describe('one account cannot reach another account by id', () => {
 				form: { name: "alice's token", scopes: 'schedule:read' }
 			},
 			attack: (id) => ({ path: '/settings/integrations?/revokeToken', form: { id } })
+		},
+		{
+			name: 'webhook',
+			page: '/settings/integrations',
+			payloadKey: 'webhooks',
+			create: {
+				path: '/settings/integrations?/createWebhook',
+				form: { url: 'https://example.com/alices-hook', events: 'todo.created' }
+			},
+			attack: (id) => ({ path: '/settings/integrations?/deleteWebhook', form: { id } })
 		}
 	];
 

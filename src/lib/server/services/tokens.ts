@@ -26,7 +26,8 @@ export const SCOPES = {
 	'streams:read': 'Read everything your data streams have ever recorded',
 	'schedule:read': 'Read everything on your calendar for the days ahead',
 	'today:read': "See today's blocks, habits and tasks — what the phone widget shows",
-	'plugin:declare': 'Name and describe itself on your integrations page'
+	'plugin:declare': 'Name and describe itself on your integrations page',
+	'webhooks:manage': 'Ask to be told when things happen — and manage those subscriptions'
 } as const;
 
 export type Scope = keyof typeof SCOPES;
