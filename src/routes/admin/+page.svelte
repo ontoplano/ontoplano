@@ -233,8 +233,13 @@
 						This instance cannot see <code class="text-xs">{data.protection.path}</code>. On Debian
 						and Ubuntu that file belongs to the <code class="text-xs">adm</code> group:
 					</p>
-					<pre class="mt-2 overflow-x-auto text-xs">sudo usermod -aG adm $(whoami)</pre>
-					<p class="mt-1">Then restart the app.</p>
+					<pre class="mt-2 overflow-x-auto text-xs">sudo usermod -aG adm $(whoami)
+sudo systemctl restart user@$(id -u)</pre>
+					<p class="mt-1">
+						The second command matters even after the first is long done: the user manager that
+						spawns this app keeps the groups it started with — and with lingering on, it never
+						restarts on its own. Restarting only the app is not enough.
+					</p>
 				</div>
 			{:else if data.protection.recent.length === 0}
 				<EmptyState icon="shield" title="Nobody has been turned away" />
