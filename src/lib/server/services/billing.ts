@@ -354,7 +354,20 @@ export async function changeInterval(
 	const priceId = interval === 'yearly' ? priceYearly : priceMonthly;
 	if (!priceId) throw new ValidationError('This instance does not sell that cycle');
 
-	const trialing = standing.status === 'trialing';
+	// The provider's word on trialing, not our row's: a $0 trial payment used
+	// to flip the local status to active, and the wrong answer here is a 400.
+	let trialing = standing.status === 'trialing';
+	try {
+		const current = await fetch(`${apiBase()}/subscriptions/${standing.subscriptionId}`, {
+			headers: { Authorization: `Bearer ${apiKey}` }
+		});
+		if (current.ok) {
+			const body = (await current.json()) as { data?: { status?: string } };
+			trialing = body.data?.status === 'trialing';
+		}
+	} catch {
+		// The PATCH below will say no if this guess is wrong.
+	}
 	const response = await fetch(`${apiBase()}/subscriptions/${standing.subscriptionId}`, {
 		method: 'PATCH',
 		headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
@@ -466,19 +479,24 @@ export function handleWebhook(
 				: { applied: false, reason: 'ignored', event: eventName };
 		}
 
-		const period = (data.billing_period ?? {}) as Record<string, unknown>;
-		applySubscription(
-			resolved,
-			{
-				plan: 'pro',
-				status: 'active',
-				provider: PROVIDER,
-				providerCustomerId: data.customer_id ? String(data.customer_id) : null,
-				providerSubscriptionId: subscriptionId,
-				currentPeriodEnd: iso(period.ends_at)
-			},
-			now
-		);
+		// Bind only. The subscription events carry the truthful status —
+		// a $0 trial payment also "completes", and stamping active over
+		// trialing here is how a trial was once told to prorate a switch.
+		if (!userIdFromSubscription(subscriptionId)) {
+			const period = (data.billing_period ?? {}) as Record<string, unknown>;
+			applySubscription(
+				resolved,
+				{
+					plan: 'pro',
+					status: 'active',
+					provider: PROVIDER,
+					providerCustomerId: data.customer_id ? String(data.customer_id) : null,
+					providerSubscriptionId: subscriptionId,
+					currentPeriodEnd: iso(period.ends_at)
+				},
+				now
+			);
+		}
 		markDone();
 		return { applied: true, userId: resolved, event: eventName };
 	}

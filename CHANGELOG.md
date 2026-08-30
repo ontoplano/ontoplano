@@ -6,6 +6,12 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- Switching cycle works during the card-first trial — the $0 trial payment
+  had marked the subscription active locally, so the switch sent the wrong
+  proration mode and the provider refused it. Downgrading to monthly now
+  asks once, with the price difference named; upgrading stays one click.
+- A first, cold visit no longer flashes unstyled wreckage before the page:
+  the CSS ships inline with the HTML.
 - The signup funnel is one straight line: every landing CTA opens the
   register form directly (the hero also grew a plain Sign in button, and
   the price card is clickable), and a fresh account goes register → confirm

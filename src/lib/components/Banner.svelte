@@ -40,7 +40,7 @@
 		border-left: 4px solid var(--accent);
 		border-radius: var(--radius-sm, 0);
 		background-color: color-mix(in srgb, var(--accent) 8%, var(--color-white));
-		padding: 0.7rem 0.9rem;
+		padding: 0.85rem 1.1rem;
 		font-size: 0.875rem;
 		line-height: 1.45;
 		color: var(--color-gray-900);

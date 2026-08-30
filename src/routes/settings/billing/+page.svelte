@@ -29,6 +29,9 @@
 	const current = $derived(data.plans.find((p) => p.id === data.entitlement.plan) ?? data.plans[0]);
 	const yearlyLine = $derived(describeYearly(data.pricing));
 
+	/** Downgrading asks once — twelve months of monthly costs more. */
+	let confirmMonthly = $state(false);
+
 	/**
 	 * Coming back from checkout, the webhook may still be a few seconds out —
 	 * the page keeps asking until the plan flips, so nobody stares at buy
@@ -107,7 +110,7 @@
 			{/if}
 		</div>
 
-		<FormError message={form?.message} />
+		<div class="mt-3"><FormError message={form?.message} /></div>
 
 		{#if form && 'switched' in form && form.switched}
 			<div class="mt-3">
@@ -126,11 +129,33 @@
 				</button>
 			</form>
 		{:else if data.hasProviderSub && data.interval === 'year'}
-			<form method="post" action="?/switchInterval" use:enhance class="mt-4">
-				<button name="interval" value="monthly" class="btn btn-sm btn-quiet">
+			{#if confirmMonthly}
+				<div class="mt-4 flex flex-wrap items-center gap-2">
+					<span class="text-sm text-gray-700">
+						Monthly is {formatPrice(data.pricing.monthlyCents * 12, data.pricing.currency)} over a year
+						— {formatPrice(
+							data.pricing.monthlyCents * 12 - data.pricing.yearlyCents,
+							data.pricing.currency
+						)} more for the same thing.
+					</span>
+					<form method="post" action="?/switchInterval" use:enhance>
+						<button name="interval" value="monthly" class="btn btn-sm btn-danger">
+							Switch anyway
+						</button>
+					</form>
+					<button type="button" class="btn btn-sm" onclick={() => (confirmMonthly = false)}>
+						Keep yearly
+					</button>
+				</div>
+			{:else}
+				<button
+					type="button"
+					class="btn btn-sm btn-quiet mt-4"
+					onclick={() => (confirmMonthly = true)}
+				>
 					Switch to monthly
 				</button>
-			</form>
+			{/if}
 		{/if}
 
 		{#if data.canCheckout}

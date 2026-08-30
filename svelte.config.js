@@ -15,6 +15,11 @@ const config = {
 		}
 	},
 	kit: {
+		// All CSS inlined into the HTML: a first, cold visit was rendering the
+		// page before the stylesheet arrived — a giant unstyled section glyph
+		// and a bare link, then the real page. An app this size is one person's
+		// tool; a bigger HTML beats a flash of wreckage.
+		inlineStyleThreshold: 1024 * 1024,
 		adapter: adapter(),
 
 		/*

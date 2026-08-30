@@ -76,7 +76,7 @@
 
 	{#if data.needed.length === 0}
 		<EmptyState
-			icon="shopping"
+			icon="utensils"
 			title="No meals planned this week"
 			description="Put a recipe on a day and what it needs turns up here, minus what is already in the cupboard."
 		>

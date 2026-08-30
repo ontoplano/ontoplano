@@ -71,7 +71,7 @@
 
 	{#if data.recipes.length === 0}
 		<EmptyState
-			icon="shopping"
+			icon="utensils"
 			title="No recipes yet"
 			description="Write one, put it on a day, and the shopping list fills itself with what it needs."
 		>
@@ -82,7 +82,7 @@
 			{/snippet}
 		</EmptyState>
 	{:else if visible.length === 0}
-		<EmptyState icon="shopping" title="Nothing you can make right now">
+		<EmptyState icon="utensils" title="Nothing you can make right now">
 			{#snippet action()}
 				<button onclick={() => (onlyMakeable = false)} class="btn">Show all recipes</button>
 			{/snippet}
