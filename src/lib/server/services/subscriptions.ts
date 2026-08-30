@@ -218,6 +218,31 @@ export function applySubscription(
 		record(userId, 'plan_changed', { detail: { to: input.plan, status: input.status } });
 }
 
+/** Whether this account ever held any plan — trial, invite or subscription. */
+export function hasPlanHistory(userId: string): boolean {
+	return Boolean(
+		db
+			.select({ id: subscriptions.id })
+			.from(subscriptions)
+			.where(eq(subscriptions.userId, userId))
+			.get()
+	);
+}
+
+/** The provider subscription still standing, if any — id and its customer. */
+export function activeProviderSubscription(
+	userId: string
+): { subscriptionId: string; customerId: string | null; status: string } | null {
+	const row = db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).get();
+	if (!row?.providerSubscriptionId) return null;
+	if (!['trialing', 'active', 'past_due'].includes(row.status)) return null;
+	return {
+		subscriptionId: row.providerSubscriptionId,
+		customerId: row.providerCustomerId,
+		status: row.status
+	};
+}
+
 /** The account a provider subscription belongs to, for a webhook. */
 export function userIdForSubscription(provider: string, subscriptionId: string): string | null {
 	const row = db

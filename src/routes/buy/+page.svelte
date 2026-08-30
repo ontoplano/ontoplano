@@ -33,33 +33,17 @@
 			checkout?: { settings?: { displayMode?: string; successUrl?: string } };
 		}): void;
 	}
-
-	function when(iso: string): string {
-		return new Date(iso).toLocaleDateString(undefined, {
-			day: 'numeric',
-			month: 'long',
-			year: 'numeric'
-		});
-	}
 </script>
 
 <div class="flex min-h-screen items-center justify-center bg-gray-100">
-	<div class="w-full max-w-md border border-gray-200 bg-white p-8 shadow-card">
-		<h1 class="mb-4 text-xl font-bold tracking-tight text-gray-900">
-			Your {data.trialDays} days start now
-		</h1>
-		<p class="text-sm text-gray-700">
-			<strong class="text-gray-900">You will not be charged today.</strong> The card is kept and the
-			first charge happens on {when(data.firstChargeOn)} — a mail arrives two days before, with the cancel
-			link in it. Cancel before that date and you pay nothing.
-		</p>
+	<div class="w-full max-w-md p-8 text-center">
 		{#if failed}
-			<p class="mt-4 text-sm text-red-600">
+			<p class="text-sm text-red-600">
 				The payment window could not load — an ad blocker sometimes takes it down. Allow this page,
 				or try another browser.
 			</p>
 		{:else}
-			<p class="mt-4 text-xs text-gray-500">The secure payment window is opening…</p>
+			<p class="text-sm text-gray-500">Opening the secure payment window…</p>
 		{/if}
 		<p class="mt-6 text-xs text-gray-500">
 			<a href={resolve('/settings/billing')} class="underline">Back to billing</a>

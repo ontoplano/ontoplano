@@ -20,6 +20,9 @@ export const load: PageServerLoad = async (event) => {
 	if (event.locals.user) {
 		return redirect(302, '/');
 	}
+	// Landing CTAs land straight on the register form (?register) — one step
+	// fewer between "I want this" and the first field.
+	const openRegister = event.url.searchParams.has('register');
 	// The reset form says so up front when the server cannot send mail, rather
 	// than claiming a link is on its way.
 	//
@@ -31,6 +34,7 @@ export const load: PageServerLoad = async (event) => {
 
 	return {
 		emailConfigured: isEmailConfigured(),
+		openRegister,
 		canRegister: first || mode !== 'closed',
 		needsInvite: !first && mode === 'invite',
 		isFirstAccount: first,
@@ -111,7 +115,7 @@ export const actions: Actions = {
 				record(created.user.id, 'registered', { ip: event.getClientAddress() });
 				// (The verified-address gate, when on, intercepts with its own
 				// page first — the right order anyway.)
-				if (onboarding === 'checkout') landing = '/settings/billing';
+				if (onboarding === 'checkout') landing = '/start';
 			}
 		} catch (error) {
 			if (error instanceof APIError) {

@@ -8,7 +8,7 @@ import { DEFAULT_THEME, getStyle, getTheme } from '$lib/server/settings';
 import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
 import { checkSignUpAllowed, consumeInvite } from '$lib/server/services/registration';
 import { claimFirstAccount } from '$lib/server/services/admin';
-import { onboardEntitlement } from '$lib/server/services/billing';
+import { needsBillingHold, onboardEntitlement } from '$lib/server/services/billing';
 import { record } from '$lib/server/services/audit';
 import { toJsonError } from '$lib/server/services/errors';
 
@@ -281,6 +281,37 @@ const handleUnverified: Handle = ({ event, resolve }) => {
 	return resolve(event);
 };
 
+/**
+ * The billing hold: card-first onboarding, made a straight line.
+ *
+ * A verified account on a selling instance that has never held any plan is
+ * mid-funnel — register, confirm, card. Everything else leads to /start
+ * until the checkout happened; nobody has to find the billing page by hand.
+ */
+const HOLD_EXEMPT = [
+	'/start',
+	'/buy',
+	'/settings/billing',
+	'/login',
+	'/legal',
+	'/api',
+	'/healthz',
+	'/favicon.svg',
+	'/icons',
+	'/manifest.webmanifest',
+	'/admin/stop',
+	'/demo'
+];
+
+const handleNeedsBilling: Handle = ({ event, resolve }) => {
+	if (!event.locals.user || !event.locals.user.emailVerified) return resolve(event);
+	const path = event.url.pathname;
+	if (HOLD_EXEMPT.some((p) => path === p || path.startsWith(`${p}/`))) return resolve(event);
+	if (!needsBillingHold(event.locals.user.id)) return resolve(event);
+	redirect(303, '/start');
+	return resolve(event);
+};
+
 const PUBLIC_WRITES = ['/login', '/demo', '/api/auth'];
 
 const handleSignedOutWrites: Handle = ({ event, resolve }) => {
@@ -302,6 +333,7 @@ export const handle: Handle = sequence(
 	handleRegistration,
 	handleBetterAuth,
 	handleUnverified,
+	handleNeedsBilling,
 	handleSignedOutWrites,
 	handleTheme
 );

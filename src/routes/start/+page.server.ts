@@ -1,0 +1,45 @@
+import { error, redirect } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
+import {
+	createCheckout,
+	displayPricing,
+	hasYearlyPrice,
+	isBillingConfigured,
+	needsBillingHold
+} from '$lib/server/services/billing';
+import { toActionFailure } from '$lib/server/services/errors';
+
+/**
+ * The card step of the funnel: register → confirm → here.
+ *
+ * The billing-hold gate in hooks.server.ts routes a verified account with no
+ * plan yet to this page, so the terms are read BEFORE any payment window
+ * opens — /buy is just the overlay's backdrop. Yearly leads; it is the one
+ * worth taking.
+ */
+export const load: PageServerLoad = async ({ locals }) => {
+	if (!locals.user) redirect(302, '/login');
+	if (!isBillingConfigured()) error(404, 'Not found');
+	if (!needsBillingHold(locals.user.id)) redirect(302, '/settings/billing');
+
+	const pricing = await displayPricing();
+	return {
+		pricing,
+		yearly: hasYearlyPrice(),
+		firstChargeOn: new Date(Date.now() + pricing.trialDays * 86400_000).toISOString().slice(0, 10)
+	};
+};
+
+export const actions: Actions = {
+	checkout: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const interval = formData.get('interval') === 'monthly' ? 'monthly' : 'yearly';
+		let url: string;
+		try {
+			url = await createCheckout(locals.user!.id, interval);
+		} catch (e) {
+			return toActionFailure(e);
+		}
+		redirect(303, url);
+	}
+};

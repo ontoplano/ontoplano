@@ -98,8 +98,7 @@
 	 * anybody is signed in.
 	 */
 	const bareScreen = $derived(
-		page.url.pathname === '/welcome' ||
-			page.url.pathname === '/login/verify' ||
+		['/welcome', '/login/verify', '/start', '/buy'].includes(page.url.pathname) ||
 			page.url.pathname.startsWith('/legal')
 	);
 

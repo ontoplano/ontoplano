@@ -40,10 +40,10 @@ export const load: LayoutServerLoad = async (event) => {
 	// a stranger churns on. It asks twice for a timezone and a starting week,
 	// then never appears again.
 	const isWelcome = event.url.pathname === '/welcome';
-	// The unverified page sits outside first-run on purpose: when the
-	// verified-address gate is on, /welcome itself bounces to /login/verify,
-	// and first-run sending it back again is a loop, not an onboarding.
-	const isVerifyHold = event.url.pathname === '/login/verify';
+	// The hold pages sit outside first-run on purpose: the gates in
+	// hooks.server.ts bounce /welcome to them, and first-run sending the
+	// visitor back again is a loop, not an onboarding.
+	const isVerifyHold = ['/login/verify', '/start', '/buy'].includes(event.url.pathname);
 	if (
 		event.locals.user &&
 		!isWelcome &&

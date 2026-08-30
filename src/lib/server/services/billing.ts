@@ -9,7 +9,12 @@ import { user } from '../db/auth.schema.js';
 import { renderEmail } from '../email-template.js';
 import { sendLogged } from './mail-log.js';
 import { isSelfHosted, pricing } from '../settings.js';
-import { applySubscription, startTrial } from './subscriptions.js';
+import {
+	activeProviderSubscription,
+	applySubscription,
+	hasPlanHistory,
+	startTrial
+} from './subscriptions.js';
 import { ValidationError } from './errors.js';
 
 /**
@@ -301,6 +306,84 @@ export function onboardEntitlement(
 	if (isBillingConfigured() && pricing().trialRequiresCard) return 'checkout';
 	startTrial(userId, now);
 	return 'trial';
+}
+
+/**
+ * Whether this account is mid-funnel: registered, verified, and still owed
+ * its card-first checkout. Everything routes to /start until it happens.
+ */
+export function needsBillingHold(userId: string): boolean {
+	if (!isBillingConfigured() || !pricing().trialRequiresCard) return false;
+	return !hasPlanHistory(userId);
+}
+
+/** Which cycle the standing subscription bills on, asked of the provider. */
+export async function currentInterval(userId: string): Promise<'month' | 'year' | null> {
+	const standing = activeProviderSubscription(userId);
+	if (!standing) return null;
+	try {
+		const response = await fetch(`${apiBase()}/subscriptions/${standing.subscriptionId}`, {
+			headers: { Authorization: `Bearer ${config().apiKey}` }
+		});
+		if (!response.ok) return null;
+		const body = (await response.json()) as {
+			data?: { status?: string; items?: { price?: { billing_cycle?: { interval?: string } } }[] };
+		};
+		const interval = body.data?.items?.[0]?.price?.billing_cycle?.interval;
+		return interval === 'year' ? 'year' : interval === 'month' ? 'month' : null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Move the standing subscription to the other cycle, in place.
+ *
+ * The one-click upgrade: no cancel-and-rebuy, no second trial. Mid-trial
+ * nothing is billed (the new cycle starts when the trial does); on a paid
+ * subscription the difference is prorated immediately, which is the honest
+ * way to sell an upgrade. The webhook writes the outcome back as always.
+ */
+export async function changeInterval(
+	userId: string,
+	interval: 'monthly' | 'yearly'
+): Promise<void> {
+	const standing = activeProviderSubscription(userId);
+	if (!standing) throw new ValidationError('There is no subscription to change');
+	const { apiKey, priceMonthly, priceYearly } = config();
+	const priceId = interval === 'yearly' ? priceYearly : priceMonthly;
+	if (!priceId) throw new ValidationError('This instance does not sell that cycle');
+
+	const trialing = standing.status === 'trialing';
+	const response = await fetch(`${apiBase()}/subscriptions/${standing.subscriptionId}`, {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+		body: JSON.stringify({
+			items: [{ price_id: priceId, quantity: 1 }],
+			proration_billing_mode: trialing ? 'do_not_bill' : 'prorated_immediately'
+		})
+	});
+	if (!response.ok) {
+		console.error('billing: could not change interval', response.status, await response.text());
+		throw new ValidationError(
+			'The payment provider did not accept the change. Try again in a minute.'
+		);
+	}
+
+	// The webhook confirms it; this only refreshes what the page shows now.
+	const body = (await response.json()) as { data?: Record<string, unknown> };
+	const data = body.data ?? {};
+	const status = mapStatus(data.status);
+	const period = (data.current_billing_period ?? {}) as Record<string, unknown>;
+	applySubscription(userId, {
+		plan: status === 'expired' ? 'none' : 'pro',
+		status,
+		provider: PROVIDER,
+		providerCustomerId: data.customer_id ? String(data.customer_id) : standing.customerId,
+		providerSubscriptionId: String(data.id ?? standing.subscriptionId),
+		currentPeriodEnd: iso(period.ends_at ?? data.next_billed_at),
+		trialEndsAt: status === 'trialing' ? iso(period.ends_at ?? data.next_billed_at) : null
+	});
 }
 
 export type WebhookOutcome =

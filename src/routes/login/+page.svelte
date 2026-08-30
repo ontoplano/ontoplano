@@ -28,7 +28,7 @@
 	// on register, because there is nobody to sign in as yet, and after that the
 	// choice is the visitor's.
 	// svelte-ignore state_referenced_locally
-	let mode: Tab = $state(data.isFirstAccount ? 'register' : 'login');
+	let mode: Tab = $state(data.isFirstAccount || data.openRegister ? 'register' : 'login');
 </script>
 
 <div class="flex min-h-screen items-center justify-center bg-gray-50">
