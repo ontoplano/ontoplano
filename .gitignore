@@ -74,6 +74,7 @@ my-publishing-studies/competition.md
 # from the repository before anybody noticed.
 /the-deployment-repo/
 /a-private-repo/
+/a-private-repo/
 /the-fleet-repo/
 /local.mk
 AGENTS.md
