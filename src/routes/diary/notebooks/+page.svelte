@@ -115,8 +115,16 @@
 								? 'bg-gray-100'
 								: ''}"
 						>
+							<!--
+								Picking a notebook fills the column beside it, which is what a
+								two-column page is for. It used to leave for the notebook's own
+								page instead, so the right-hand column could be looked at and
+								never changed — the only way to see a second notebook there was
+								to come back and pick again. The full page is reached from that
+								column now (Open, above), where the thing it opens is.
+							-->
 							<a
-								href={resolve('/diary/notebooks/[id]', { id: String(notebook.id) })}
+								href="{resolve('/diary/notebooks')}?notebook={notebook.id}"
 								class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
 							>
 								<span class:text-gray-500={notebook.closedAt}>{notebook.title}</span>
@@ -186,6 +194,14 @@
 		>
 			{#snippet actions()}
 				{#if selected}
+					<!-- The way to the notebook's own page, from the column that is
+					     showing it. The list on the left chooses what appears here. -->
+					<a
+						href={resolve('/diary/notebooks/[id]', { id: String(selected.id) })}
+						class="btn btn-sm"
+					>
+						Open <Icon name="arrow-right" />
+					</a>
 					<!-- The confirmation is a dialog, not a second button in the same
 					     place: a two-step delete that puts "Yes" where "Delete" was is a
 					     double-click away from destroying something. -->
