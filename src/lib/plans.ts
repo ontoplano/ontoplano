@@ -116,8 +116,8 @@ export type Pricing = {
 };
 
 export const DEFAULT_PRICING: Pricing = {
-	monthlyCents: 500,
-	yearlyCents: 3000,
+	monthlyCents: 490,
+	yearlyCents: 2990,
 	currency: 'USD',
 	trialDays: 14,
 	trialRequiresCard: true,

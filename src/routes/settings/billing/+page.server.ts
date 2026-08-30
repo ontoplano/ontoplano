@@ -1,12 +1,13 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { LIMIT_KEYS, PLANS } from '$lib/plans';
-import { isSelfHosted, pricing } from '$lib/server/settings';
+import { isSelfHosted } from '$lib/server/settings';
 import { buildCtx } from '$lib/server/services/ctx';
 import { exportAllowance } from '$lib/server/services/account';
 import { resolvePlan, usage } from '$lib/server/services/subscriptions';
 import {
 	createCheckout,
+	displayPricing,
 	hasYearlyPrice,
 	portalUrl,
 	isBillingConfigured
@@ -36,7 +37,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		entitlement,
-		pricing: pricing(),
+		pricing: await displayPricing(),
 		configured: isBillingConfigured(),
 		plans: Object.values(PLANS).filter((p) => p.id === 'pro'),
 		limitKeys: LIMIT_KEYS,

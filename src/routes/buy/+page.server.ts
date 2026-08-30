@@ -1,7 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { paddleClientConfig } from '$lib/server/services/billing';
-import { pricing } from '$lib/server/settings';
+import { displayPricing, paddleClientConfig } from '$lib/server/services/billing';
 
 /**
  * The one page that loads the payment provider's script.
@@ -18,7 +17,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	if (!paddle) error(404, 'Not found');
 	if (!url.searchParams.get('_ptxn')) redirect(302, '/settings/billing');
 
-	const { trialDays } = pricing();
+	const { trialDays } = await displayPricing();
 	const firstCharge = new Date(Date.now() + trialDays * 86400_000);
 
 	return {

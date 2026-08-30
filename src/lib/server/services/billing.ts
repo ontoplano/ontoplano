@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 
 import { and, eq, gt, isNull, lt, lte, or } from 'drizzle-orm';
 
-import { isPlanId, type PlanId, type SubscriptionStatus } from '../../plans.js';
+import { isPlanId, type PlanId, type Pricing, type SubscriptionStatus } from '../../plans.js';
 import { db } from '../db/index.js';
 import { billingEvents, subscriptions } from '../db/schema.js';
 import { user } from '../db/auth.schema.js';
@@ -73,6 +73,61 @@ export function isBillingConfigured(): boolean {
 	if (isSelfHosted()) return false;
 	const { apiKey, webhookSecret, clientToken, priceMonthly } = config();
 	return apiKey !== '' && webhookSecret !== '' && clientToken !== '' && priceMonthly !== '';
+}
+
+/**
+ * What the price IS, asked of the one place that charges it.
+ *
+ * Once billing is configured, Paddle's price entities are the source of
+ * truth — amount, currency and the trial length all live on them — and the
+ * env numbers are only what an instance quotes before it sells. Cached for
+ * ten minutes: the landing page asks on every visit and the answer changes
+ * once a year.
+ */
+let priceCache: { at: number; value: Pricing } | null = null;
+
+export async function displayPricing(): Promise<Pricing> {
+	const base = pricing();
+	if (!isBillingConfigured()) return base;
+	if (priceCache && Date.now() - priceCache.at < 10 * 60_000) return priceCache.value;
+
+	const { apiKey, priceMonthly, priceYearly } = config();
+	type PriceEntity = {
+		unit_price?: { amount?: string; currency_code?: string };
+		trial_period?: { interval?: string; frequency?: number } | null;
+	};
+	const fetchPrice = async (id: string): Promise<PriceEntity | null> => {
+		const response = await fetch(`${apiBase()}/prices/${id}`, {
+			headers: { Authorization: `Bearer ${apiKey}` }
+		});
+		if (!response.ok) return null;
+		const body = (await response.json()) as { data?: PriceEntity };
+		return body.data ?? null;
+	};
+
+	try {
+		const monthly = await fetchPrice(priceMonthly);
+		const yearly = priceYearly ? await fetchPrice(priceYearly) : null;
+		const monthlyAmount = Number(monthly?.unit_price?.amount);
+		const yearlyAmount = Number(yearly?.unit_price?.amount);
+		const trial = monthly?.trial_period;
+		const value: Pricing = {
+			...base,
+			monthlyCents: Number.isFinite(monthlyAmount) ? monthlyAmount : base.monthlyCents,
+			yearlyCents: Number.isFinite(yearlyAmount) ? yearlyAmount : base.yearlyCents,
+			currency: monthly?.unit_price?.currency_code ?? base.currency,
+			trialDays:
+				trial && trial.interval === 'day' && Number.isFinite(Number(trial.frequency))
+					? Number(trial.frequency)
+					: base.trialDays
+		};
+		priceCache = { at: Date.now(), value };
+		return value;
+	} catch {
+		// The provider being unreachable is the reconcile's problem, not the
+		// landing page's: quote the fallback rather than 500 on a visitor.
+		return base;
+	}
 }
 
 /** What the /buy page needs to start Paddle.js — null when there is no selling. */

@@ -6,6 +6,14 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- The price is $4.90 a month / $29.90 a year, and the app quotes it from the
+  provider's own price entities (cached ten minutes) — the number on the
+  landing and billing pages is the number that gets charged, from one place.
+- The confirm-your-address page lost the navbar and most of its words, and
+  an administrator inside an unverified account can press Stop again — the
+  verified-address gate was swallowing the way out.
+- The recipes and shopping notices ("no food category yet", "no connection")
+  moved into the one banner format instead of their own amber boxes.
 - Registration follows the instance's mode. Open, on an instance that sells:
   the card comes first — a fresh account lands on billing, the button says
   "Start your free 14 days", checkout keeps the card without charging it

@@ -10,7 +10,7 @@ import {
 } from '$lib/dashboard';
 import { getUserSetting, setUserSetting } from '$lib/server/settings';
 import { formatPrice } from '$lib/plans';
-import { pricing } from '$lib/server/settings';
+import { displayPricing } from '$lib/server/services/billing';
 import { instanceIsEmpty, registrationMode } from '$lib/server/services/registration';
 import { buildCtx } from '$lib/server/services/ctx';
 import { createEntry, latestEntry, listTags } from '$lib/server/services/diary';
@@ -33,7 +33,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	 * for — so it returns early rather than guarding twenty fields.
 	 */
 	if (!locals.user) {
-		const price = pricing();
+		const price = await displayPricing();
 		return {
 			landing: {
 				price: formatPrice(price.monthlyCents, price.currency),
