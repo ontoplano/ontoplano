@@ -69,7 +69,9 @@ export const CAPTURES: Capture[] = [
 		icon: 'shopping',
 		color: SECTION_COLORS.shopping,
 		action: '/shopping?/create',
-		field: 'name',
+		// `label`, not `name`: a field a browser reads as a person's name is one
+		// it offers the saved address for. See tests/autofill-field-names.test.ts.
+		field: 'label',
 		placeholder: 'something to pick up',
 		multiline: false,
 		hide: 'shopping'

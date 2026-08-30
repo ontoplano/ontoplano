@@ -222,3 +222,27 @@ test.describe('with a finger', () => {
 		await expect(page.getByRole('button', { name: 'Search' })).toBeVisible();
 	});
 });
+
+/**
+ * And the one that writes into a different section.
+ *
+ * Buy posts to the shopping list rather than to the planner, with its own
+ * field name — which is exactly the kind of thing a rename breaks silently:
+ * the dialog submits, the action reads a field that is not there, and the
+ * only symptom is that nothing was added.
+ */
+test('the Buy capture actually puts something on the shopping list', async ({ page }) => {
+	await register(page, `capture-buy-${Date.now()}@test.invalid`);
+	await page.goto('/', { waitUntil: 'networkidle' });
+
+	await page.getByRole('button', { name: /^Buy/ }).first().click();
+	// Not `.first()` — Buy's form leads with a hidden field saying which list.
+	await page
+		.locator('#capture-form input:not([type=hidden]), #capture-form textarea')
+		.first()
+		.fill('oat milk');
+	await page.getByRole('button', { name: 'Save' }).click();
+
+	await page.goto('/shopping', { waitUntil: 'networkidle' });
+	await expect(page.getByText('oat milk')).toBeVisible();
+});
