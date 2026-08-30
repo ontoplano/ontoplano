@@ -1,7 +1,13 @@
 import type { RequestEvent } from '@sveltejs/kit';
 
+import { paymentHoldFor } from '../services/access.js';
 import { buildCtx, type Ctx } from '../services/ctx.js';
-import { RateLimitedError, UnauthorizedError, ValidationError } from '../services/errors.js';
+import {
+	RateLimitedError,
+	ServiceError,
+	UnauthorizedError,
+	ValidationError
+} from '../services/errors.js';
 import { rateLimit } from '../rate-limit.js';
 import { authenticateToken, requireScope, type Scope } from '../services/tokens.js';
 
@@ -76,14 +82,39 @@ export function authenticateApi(
 			throw new RateLimitedError(`Too many requests. Try again in ${retryAfterSeconds} seconds.`);
 		}
 
+		assertNoPaymentHold(token.userId);
 		return { ctx: buildCtx(token.userId, { now }), via: 'token' };
 	}
 
 	if (event.locals.user) {
+		assertNoPaymentHold(event.locals.user.id);
 		return { ctx: buildCtx(event.locals.user.id, { now }), via: 'session' };
 	}
 
 	throw new UnauthorizedError('Provide a bearer token or sign in');
+}
+
+/**
+ * The account's payment holds apply to its plugins too.
+ *
+ * Decided in services/access.ts, same as the page gate — a token is the
+ * account, and an expired account does not keep producing through a side
+ * door. 402, so a producer can tell "renew" apart from "bad token".
+ */
+function assertNoPaymentHold(userId: string): void {
+	const hold = paymentHoldFor(userId);
+	if (hold === 'expired')
+		throw new ServiceError(
+			'payment_required',
+			402,
+			'The subscription has ended — renew to keep using the API'
+		);
+	if (hold === 'billing')
+		throw new ServiceError(
+			'payment_required',
+			402,
+			'The account has not finished setting up billing'
+		);
 }
 
 /**

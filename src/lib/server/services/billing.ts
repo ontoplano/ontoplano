@@ -308,15 +308,6 @@ export function onboardEntitlement(
 	return 'trial';
 }
 
-/**
- * Whether this account is mid-funnel: registered, verified, and still owed
- * its card-first checkout. Everything routes to /start until it happens.
- */
-export function needsBillingHold(userId: string): boolean {
-	if (!isBillingConfigured() || !pricing().trialRequiresCard) return false;
-	return !hasPlanHistory(userId);
-}
-
 /** Which cycle the standing subscription bills on, asked of the provider. */
 export async function currentInterval(userId: string): Promise<'month' | 'year' | null> {
 	const standing = activeProviderSubscription(userId);

@@ -8,7 +8,8 @@ import { DEFAULT_THEME, getStyle, getTheme } from '$lib/server/settings';
 import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
 import { checkSignUpAllowed, consumeInvite } from '$lib/server/services/registration';
 import { claimFirstAccount } from '$lib/server/services/admin';
-import { needsBillingHold, onboardEntitlement } from '$lib/server/services/billing';
+import { onboardEntitlement } from '$lib/server/services/billing';
+import { accessHoldFor, holdDestination } from '$lib/server/services/access';
 import { record } from '$lib/server/services/audit';
 import { toJsonError } from '$lib/server/services/errors';
 
@@ -248,52 +249,25 @@ const handleAuthRateLimit: Handle = async ({ event, resolve }) => {
  * plugin can read.
  */
 /**
- * The verified-address gate, when the deployment asks for one.
+ * The account-level holds, enforced at the one door.
  *
- * `ONTOPLANO_REQUIRE_VERIFIED_EMAIL=true` does not block the sign-in — it
- * narrows the signed-in world: an unverified account lands on the page that
- * says the address is unverified and offers a resend, and every other page
- * leads back there. The mail's own verify link (under /api/auth) stays
- * reachable, or the link could never do its work.
- */
-const REQUIRE_VERIFIED_EMAIL = process.env.ONTOPLANO_REQUIRE_VERIFIED_EMAIL === 'true';
-const VERIFY_EXEMPT = [
-	'/login',
-	'/api',
-	'/healthz',
-	'/privacy',
-	'/terms',
-	'/favicon.svg',
-	'/icons',
-	'/manifest.webmanifest',
-	// The impersonation escape hatch: an administrator inside an unverified
-	// account must always be able to give it back.
-	'/admin/stop'
-];
-
-const handleUnverified: Handle = ({ event, resolve }) => {
-	if (!REQUIRE_VERIFIED_EMAIL || !event.locals.user || event.locals.user.emailVerified) {
-		return resolve(event);
-	}
-	const path = event.url.pathname;
-	const exempt = VERIFY_EXEMPT.some((p) => path === p || path.startsWith(`${p}/`));
-	if (!exempt) redirect(303, '/login/verify');
-	return resolve(event);
-};
-
-/**
- * The billing hold: card-first onboarding, made a straight line.
- *
- * A verified account on a selling instance that has never held any plan is
- * mid-funnel — register, confirm, card. Everything else leads to /start
- * until the checkout happened; nobody has to find the billing page by hand.
+ * Which holds exist and when they apply is `services/access.ts`'s business —
+ * this hook only walks a held browser to the right page. One exempt list:
+ * the hold pages themselves, the auth machinery (the verify link must stay
+ * clickable, the impersonation stop must always work), the export (an
+ * expired account's data stays its own), and the public plumbing. /api is
+ * exempt HERE because the API door runs the same check itself and answers
+ * in JSON instead of a redirect.
  */
 const HOLD_EXEMPT = [
 	'/start',
 	'/buy',
 	'/settings/billing',
+	'/settings/account/export',
 	'/login',
 	'/legal',
+	'/privacy',
+	'/terms',
 	'/api',
 	'/healthz',
 	'/favicon.svg',
@@ -303,12 +277,12 @@ const HOLD_EXEMPT = [
 	'/demo'
 ];
 
-const handleNeedsBilling: Handle = ({ event, resolve }) => {
-	if (!event.locals.user || !event.locals.user.emailVerified) return resolve(event);
+const handleAccessHolds: Handle = ({ event, resolve }) => {
+	if (!event.locals.user) return resolve(event);
 	const path = event.url.pathname;
 	if (HOLD_EXEMPT.some((p) => path === p || path.startsWith(`${p}/`))) return resolve(event);
-	if (!needsBillingHold(event.locals.user.id)) return resolve(event);
-	redirect(303, '/start');
+	const hold = accessHoldFor(event.locals.user);
+	if (hold) redirect(303, holdDestination(hold));
 	return resolve(event);
 };
 
@@ -332,8 +306,7 @@ export const handle: Handle = sequence(
 	handleAuthRateLimit,
 	handleRegistration,
 	handleBetterAuth,
-	handleUnverified,
-	handleNeedsBilling,
+	handleAccessHolds,
 	handleSignedOutWrites,
 	handleTheme
 );

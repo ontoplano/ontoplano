@@ -1,5 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
 import { STYLES, STYLE_HINTS, STYLE_LABELS } from '$lib/style';
+import { clientErrorState, setClientErrorConsent } from '$lib/server/services/client-errors';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
 import { createQuote, deleteQuote, importQuotes, listQuotes } from '$lib/server/services/quotes';
@@ -36,6 +37,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
 
 	return {
+		errorReports: clientErrorState(ctx.userId),
 		week: getWeekSettings(ctx.userId),
 		gridHours: getGridHours(ctx.userId),
 		currency: getCurrency(ctx.userId),
@@ -51,6 +53,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
+	setErrorReports: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			setClientErrorConsent(buildCtx(locals.user!.id), formData.get('decision'));
+			return { success: true, action: 'setErrorReports' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
 	saveCurrency: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const chosen = formData.get('currency');

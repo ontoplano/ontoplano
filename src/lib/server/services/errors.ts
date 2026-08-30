@@ -13,6 +13,7 @@ export type ErrorCode =
 	| 'not_found'
 	| 'conflict'
 	| 'plan_limit'
+	| 'payment_required'
 	| 'unauthorized'
 	| 'forbidden'
 	| 'rate_limited'

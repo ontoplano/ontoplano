@@ -6,6 +6,19 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- An expired subscription now holds the whole account, the way an
+  unconfirmed address does: every page leads to the wall that says the data
+  is kept, offers renewal (yearly leading) and the JSON export (twice a day,
+  the button disarming itself against double-clicks) — and API tokens stop
+  with a 402, so plugins end when the subscription does. All three holds —
+  verify, card, expiry — are decided in one service that the page gate and
+  the API door both ask, so future code cannot forget one.
+- The card page polls until the webhook lands, so coming back from a paid
+  checkout never shows a stale offer; it also carries a light/dark toggle.
+  The admin end-plan control shows the current expiration date and its
+  button stopped wrapping; the cycle-switch confirmations read plainly
+  ("Switched to yearly billing."); the error-report prompt says the choice
+  is changeable in Preferences, where a control for it now lives.
 - Switching cycle works during the card-first trial — the $0 trial payment
   had marked the subscription active locally, so the switch sent the wrong
   proration mode and the provider refused it. Downgrading to monthly now

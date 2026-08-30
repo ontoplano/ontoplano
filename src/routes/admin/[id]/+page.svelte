@@ -85,8 +85,16 @@
 				     ahead stretches a test trial. Local dates only, provider
 				     billing untouched. -->
 				<form method="post" action="?/setPlanEnd" use:enhance class="flex items-center gap-2">
-					<input type="date" name="endsAt" required class="input input-sm" />
-					<button class="btn btn-sm"><Icon name="clock" /> End plan then</button>
+					<input
+						type="date"
+						name="endsAt"
+						required
+						value={data.account.planEndsAt ? data.account.planEndsAt.slice(0, 10) : ''}
+						class="input input-sm"
+					/>
+					<button class="btn btn-sm shrink-0 whitespace-nowrap">
+						<Icon name="clock" /> End plan then
+					</button>
 				</form>
 			{/if}
 

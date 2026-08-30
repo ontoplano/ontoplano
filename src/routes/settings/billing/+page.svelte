@@ -116,7 +116,9 @@
 			<div class="mt-3">
 				<Banner
 					kind="success"
-					message={form.switched === 'yearly' ? 'Yearly it is.' : 'Back to monthly.'}
+					message={form.switched === 'yearly'
+						? 'Switched to yearly billing.'
+						: 'Switched to monthly billing.'}
 				/>
 			</div>
 		{/if}

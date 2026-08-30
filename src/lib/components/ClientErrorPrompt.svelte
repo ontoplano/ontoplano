@@ -88,7 +88,7 @@
 				<Icon name="error" size={16} />
 				<span>
 					Something went wrong on this page. Send the technical details here, so it can be fixed?
-					Only what broke is sent — never what you wrote.
+					Only what broke is sent — never what you wrote. Changeable any time in Preferences.
 				</span>
 			</p>
 			<div class="mt-3 flex justify-end gap-3">

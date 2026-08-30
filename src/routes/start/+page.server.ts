@@ -4,10 +4,12 @@ import {
 	createCheckout,
 	displayPricing,
 	hasYearlyPrice,
-	isBillingConfigured,
-	needsBillingHold
+	isBillingConfigured
 } from '$lib/server/services/billing';
-import { toActionFailure } from '$lib/server/services/errors';
+import { paymentHoldFor } from '$lib/server/services/access';
+import { exportAllowance } from '$lib/server/services/account';
+import { isTheme, setTheme } from '$lib/server/settings';
+import { toActionFailure, ValidationError } from '$lib/server/services/errors';
 
 /**
  * The card step of the funnel: register → confirm → here.
@@ -20,12 +22,17 @@ import { toActionFailure } from '$lib/server/services/errors';
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) redirect(302, '/login');
 	if (!isBillingConfigured()) error(404, 'Not found');
-	if (!needsBillingHold(locals.user.id)) redirect(302, '/settings/billing');
+	const hold = paymentHoldFor(locals.user.id);
+	if (!hold) redirect(302, '/settings/billing');
 
 	const pricing = await displayPricing();
 	return {
+		// 'billing' is the card step of registration; 'expired' is the wall a
+		// lapsed account meets — data kept, renew or take it with you.
+		mode: hold,
 		pricing,
 		yearly: hasYearlyPrice(),
+		exportsLeft: hold === 'expired' ? exportAllowance(locals.user.id).remaining : 0,
 		firstChargeOn: new Date(Date.now() + pricing.trialDays * 86400_000).toISOString().slice(0, 10)
 	};
 };
@@ -41,5 +48,13 @@ export const actions: Actions = {
 			return toActionFailure(e);
 		}
 		redirect(303, url);
+	},
+	/** The hold pages sit outside preferences, so the toggle lives here too. */
+	theme: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const theme = formData.get('theme')?.toString() ?? '';
+		if (!isTheme(theme)) return toActionFailure(new ValidationError('Unknown theme'));
+		setTheme(locals.user!.id, theme);
+		return { themed: theme };
 	}
 };

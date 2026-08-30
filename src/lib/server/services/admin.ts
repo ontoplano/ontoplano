@@ -48,6 +48,8 @@ export type Account = {
 	canGrantTrial?: boolean;
 	/** Hosted instance with a plan: the operator may move its end date. */
 	canEndPlan?: boolean;
+	/** When that plan runs out, if a date is set. */
+	planEndsAt?: string | null;
 };
 
 export function roleOf(userId: string): Role {
@@ -158,7 +160,8 @@ export function accountById(id: string): Account {
 		plan: describePlan(row.id),
 		isOwner: isInstanceOwner(row.id),
 		canGrantTrial: !isSelfHosted() && !hasPlanHistory(row.id),
-		canEndPlan: !isSelfHosted() && hasPlanHistory(row.id)
+		canEndPlan: !isSelfHosted() && hasPlanHistory(row.id),
+		planEndsAt: planEndsAt(row.id)
 	};
 }
 
@@ -213,6 +216,19 @@ export function setPlanEnd(actorId: string, subjectId: string, endsAt: string): 
 		.where(eq(subscriptions.id, row.id))
 		.run();
 	record(subjectId, 'plan_end_set', { actorId, detail: { endsAt: iso } });
+}
+
+/** When the current plan runs out, for the operator's clock. */
+function planEndsAt(userId: string): string | null {
+	const row = db
+		.select({
+			currentPeriodEnd: subscriptions.currentPeriodEnd,
+			trialEndsAt: subscriptions.trialEndsAt
+		})
+		.from(subscriptions)
+		.where(eq(subscriptions.userId, userId))
+		.get();
+	return row?.currentPeriodEnd ?? row?.trialEndsAt ?? null;
 }
 
 function hasPlanHistory(userId: string): boolean {

@@ -399,4 +399,28 @@
 			{/each}
 		</form>
 	</section>
+
+	{#if data.errorReports !== 'off'}
+		<section class="border border-gray-200 bg-white p-5 shadow-card">
+			<h2 class="text-sm font-semibold text-gray-900">Error reports</h2>
+			<p class="mt-1 text-sm text-gray-500">
+				When a page breaks, send the technical details to this server's log. Only what broke — never
+				what you wrote.
+			</p>
+			<form method="post" action="?/setErrorReports" use:enhance class="mt-3 flex gap-2">
+				{#each [['yes', 'Send'], ['no', 'Never']] as [value, label] (value)}
+					<button
+						type="submit"
+						name="decision"
+						{value}
+						class="border px-4 py-2 text-sm shadow-sm {data.errorReports === value
+							? 'border-gray-900 bg-gray-900 font-semibold text-white'
+							: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+					>
+						{label}
+					</button>
+				{/each}
+			</form>
+		</section>
+	{/if}
 </div>
