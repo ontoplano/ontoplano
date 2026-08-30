@@ -154,4 +154,80 @@ describe('the metadata a block carries', () => {
 	test('an emptied value removes the key rather than storing a blank', () => {
 		expect(JSON.parse(meta.serialiseMeta({ room: 'B12', tutor: '' }))).toEqual({ room: 'B12' });
 	});
+
+	test('refuses a key or value too long to belong in a column', () => {
+		expect(() => meta.serialiseMeta({ ['k'.repeat(200)]: 'x' })).toThrow(/longer than/);
+		expect(() => meta.serialiseMeta({ room: 'x'.repeat(5000) })).toThrow(/longer than/);
+	});
+
+	test('refuses a value that is not something a label could show', () => {
+		expect(() => meta.serialiseMeta({ room: { floor: 2 } })).toThrow(/must be a string/);
+	});
+
+	test('and a block that carries far too many pairs', () => {
+		// Metadata is a handful of notes on a block, not a table of its own.
+		const many: Record<string, string> = {};
+		for (let i = 0; i < 100; i++) many[`k${i}`] = 'x';
+		expect(() => meta.serialiseMeta(many)).toThrow(/at most/);
+	});
+});
+
+describe('the metadata a form submits', () => {
+	/** The parallel `metaKey`/`metaValue` lists a repeatable editor produces. */
+	function form(pairs: [string, string][], extra?: Record<string, string>) {
+		const data = new FormData();
+		for (const [key, value] of pairs) {
+			data.append('metaKey', key);
+			data.append('metaValue', value);
+		}
+		for (const [k, v] of Object.entries(extra ?? {})) data.set(k, v);
+		return data;
+	}
+
+	test('reads the pairs off in order', () => {
+		expect(
+			JSON.parse(
+				meta.metaFromFormData(
+					form([
+						['room', 'B12'],
+						['tutor', 'Ana']
+					])
+				)
+			)
+		).toEqual({ room: 'B12', tutor: 'Ana' });
+	});
+
+	test('skips a row where nobody typed a key', () => {
+		expect(JSON.parse(meta.metaFromFormData(form([['', 'orphaned']])))).toEqual({});
+	});
+
+	test('a key with no value clears that key', () => {
+		expect(JSON.parse(meta.metaFromFormData(form([['room', '']])))).toEqual({});
+	});
+
+	test('a drag that posts only a placement leaves metadata alone', () => {
+		// This is the distinction that matters. Drag and resize post to the same
+		// update action with the placement fields only; returning `{}` would
+		// silently wipe a block's alarm settings every time it was moved.
+		const dragged = new FormData();
+		dragged.set('weekday', '2');
+		dragged.set('startTime', '09:00');
+
+		expect(meta.metaPatchFromFormData(dragged)).toBeUndefined();
+	});
+
+	test('but a form that cleared its last pair says so explicitly', () => {
+		// An empty `metaKey` is still present in the payload, and reads as `{}`.
+		expect(meta.metaPatchFromFormData(form([['', '']]))).toBe('{}');
+
+		const marked = new FormData();
+		marked.set('metaPresent', '1');
+		expect(meta.metaPatchFromFormData(marked)).toBe('{}');
+	});
+
+	test('and a form that submitted pairs patches them', () => {
+		expect(JSON.parse(meta.metaPatchFromFormData(form([['room', 'B12']]))!)).toEqual({
+			room: 'B12'
+		});
+	});
 });

@@ -146,3 +146,56 @@ describe('what the box blocked', () => {
 		expect(out.recent.map((b) => b.address)).toEqual(['198.51.100.2']);
 	});
 });
+
+/**
+ * Letting somebody back in, and keeping somebody out.
+ *
+ * The app runs as an unprivileged user and fail2ban does not, so these buttons
+ * cross a privilege boundary through one root helper with a wildcard-free
+ * sudoers rule. The rules that make that safe are: nothing goes through a
+ * shell, and an instance that has not been set up for it offers no buttons at
+ * all rather than buttons that fail.
+ */
+describe('the buttons beside a ban', () => {
+	const original = process.env.ONTOPLANO_BAN_CONTROL;
+
+	afterEach(() => {
+		if (original === undefined) delete process.env.ONTOPLANO_BAN_CONTROL;
+		else process.env.ONTOPLANO_BAN_CONTROL = original;
+	});
+
+	async function load() {
+		return import('../src/lib/server/services/protection.js');
+	}
+
+	it('are absent on an instance that has not been set up for them', async () => {
+		delete process.env.ONTOPLANO_BAN_CONTROL;
+		const protection = await load();
+
+		expect(protection.banControlEnabled()).toBe(false);
+		// The page shows the bans and no buttons, rather than buttons that fail.
+		expect(protection.permanentlyBlocked()).toEqual([]);
+	});
+
+	it('refuse to run at all when they are not enabled', async () => {
+		delete process.env.ONTOPLANO_BAN_CONTROL;
+		const protection = await load();
+
+		// Not merely hidden: the action itself refuses, so a posted form cannot
+		// reach the helper by skipping the page.
+		expect(() => protection.unban('sshd', '203.0.113.9')).toThrow(/not enabled/);
+		expect(() => protection.blockForever('203.0.113.9')).toThrow(/not enabled/);
+		expect(() => protection.unblockForever('203.0.113.9')).toThrow(/not enabled/);
+	});
+
+	it('are off unless the box says exactly so', async () => {
+		const protection = await load();
+		for (const value of ['', 'false', '1', 'yes', 'TRUE']) {
+			process.env.ONTOPLANO_BAN_CONTROL = value;
+			expect(protection.banControlEnabled(), value).toBe(false);
+		}
+
+		process.env.ONTOPLANO_BAN_CONTROL = 'true';
+		expect(protection.banControlEnabled()).toBe(true);
+	});
+});
