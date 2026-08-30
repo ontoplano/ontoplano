@@ -37,14 +37,36 @@ export type Ban = {
 	jail: string;
 	address: string;
 	at: string;
+	/** Why this jail bans, in words — what the address actually did. */
+	reason: string;
 };
+
+/*
+ * What tripping each jail means. The log only names the jail, and a jail name
+ * is configuration, not an explanation — "ontoplano-web" says nothing about
+ * WHY an address is gone. These match the jails the-setup-script and the mail
+ * setup put on the box; an unknown jail falls back to naming itself.
+ */
+const REASONS: Record<string, string> = {
+	'ontoplano-web': 'hammered the site with errors — 60 failed requests in a minute is a scanner',
+	sshd: 'guessed at SSH logins',
+	'sshd-ddos': 'flooded the SSH port',
+	recidive: 'kept coming back after earlier bans, so banned for longer',
+	postfix: 'sent garbage to the mail server',
+	'postfix-sasl': 'guessed at mail passwords (SMTP)',
+	dovecot: 'guessed at mailbox passwords (IMAP/POP)'
+};
+
+function reasonFor(jail: string): string {
+	return REASONS[jail] ?? `tripped the ${jail} jail`;
+}
 
 export type Protection = {
 	/** False when the file is missing or the group is not set — not "no bans". */
 	readable: boolean;
 	path: string;
-	/** Bans since midnight, local time, which is how a person reads "today". */
-	today: number;
+	/** Bans in the last 24 hours — a rolling day, not since midnight. */
+	lastDay: number;
 	recent: Ban[];
 };
 
@@ -83,25 +105,25 @@ const BAN = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*\[([^\]]+)\] Ban ([0-9a-fA-
 
 export function protection(limit = 8): Protection {
 	const text = tail(LOG, TAIL_BYTES);
-	if (text === null) return { readable: false, path: LOG, today: 0, recent: [] };
+	if (text === null) return { readable: false, path: LOG, lastDay: 0, recent: [] };
 
 	const bans: Ban[] = [];
 	for (const line of text.split('\n')) {
 		const m = BAN.exec(line);
-		if (m) bans.push({ at: m[1], jail: m[2], address: m[3] });
+		if (m) bans.push({ at: m[1], jail: m[2], address: m[3], reason: reasonFor(m[2]) });
 	}
 
-	// The log's timestamps are local time with no zone, which is what
-	// `toISOString` on a local midnight compares against once it is sliced back
-	// to the same shape.
-	const midnight = new Date();
-	midnight.setHours(0, 0, 0, 0);
-	const startOfDay = local(midnight);
+	// A rolling 24 hours, not "since midnight": a count of zero above a ban
+	// made minutes ago (just before midnight) reads as the page lying. The
+	// log's timestamps are local time with no zone, so the cutoff is written
+	// the same way. Distinct addresses, not ban lines — one scanner rebanned
+	// every half hour is still one address.
+	const cutoff = local(new Date(Date.now() - 24 * 60 * 60 * 1000));
 
 	return {
 		readable: true,
 		path: LOG,
-		today: bans.filter((b) => b.at >= startOfDay).length,
+		lastDay: new Set(bans.filter((b) => b.at >= cutoff).map((b) => b.address)).size,
 		recent: bans.slice(-limit).reverse()
 	};
 }

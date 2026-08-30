@@ -6,6 +6,11 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- The admin Blocked card now says what each banned address did ("guessed at
+  SSH logins", "hammered the site with errors") instead of naming a jail,
+  and counts addresses over the last 24 hours — it used to count since
+  midnight, and could say "0 blocked today" right above a ban made minutes
+  ago.
 - Coming back after cancelling carries over whatever is left of the trial:
   resubscribe with four days left and the checkout says — and bills — four
   days, not a fresh fourteen; with nothing left, it says billed today. And

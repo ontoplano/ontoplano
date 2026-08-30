@@ -245,15 +245,15 @@ sudo systemctl restart user@$(id -u)</pre>
 				<EmptyState icon="shield" title="Nobody has been turned away" />
 			{:else}
 				<p class="border-b border-gray-200 px-4 py-2 text-xs text-gray-500">
-					{data.protection.today}
-					{data.protection.today === 1 ? 'address' : 'addresses'} blocked today
+					{data.protection.lastDay}
+					{data.protection.lastDay === 1 ? 'address' : 'addresses'} blocked in the last 24 hours
 				</p>
 				<div class="divide-y divide-gray-200">
 					{#each data.protection.recent as ban (ban.at + ban.address)}
 						<div class="flex items-baseline gap-2 px-4 py-2 text-sm">
-							<span class="min-w-0 flex-1 truncate">
+							<span class="min-w-0 flex-1">
 								<span class="tabular text-gray-900">{ban.address}</span>
-								<span class="block truncate text-xs text-gray-500">{ban.jail}</span>
+								<span class="block text-xs text-gray-500">{ban.reason}</span>
 							</span>
 							<span class="shrink-0 text-xs text-gray-500">{ago(ban.at)}</span>
 						</div>

@@ -44,13 +44,23 @@ function today(time: string): string {
 	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${time}`;
 }
 
+/** A full local timestamp some milliseconds ago — it may cross midnight. */
+function ago(ms: number): string {
+	const d = new Date(Date.now() - ms);
+	const pad = (n: number) => String(n).padStart(2, '0');
+	return (
+		`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` +
+		`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+	);
+}
+
 describe('what the box blocked', () => {
 	it('is honest about a log it cannot read', async () => {
 		const out = await read(null);
 		expect(out.readable).toBe(false);
 		expect(out.recent).toEqual([]);
-		// Not "0 blocked today": the page says something else entirely for this.
-		expect(out.today).toBe(0);
+		// Not "0 blocked": the page says something else entirely for this.
+		expect(out.lastDay).toBe(0);
 	});
 
 	it('reads bans, and only bans', async () => {
@@ -69,18 +79,51 @@ describe('what the box blocked', () => {
 		expect(out.recent[0].jail).toBe('sshd');
 	});
 
-	it('counts today, not the whole log', async () => {
+	it('counts the last 24 hours, not the whole log', async () => {
 		const out = await read(
 			[
 				line('2020-01-01 09:00:00', 'ontoplano-web', 'Ban', '203.0.113.1'),
-				line(today('09:00:00'), 'ontoplano-web', 'Ban', '203.0.113.2'),
-				line(today('10:00:00'), 'sshd', 'Ban', '2001:db8::1'),
+				line(ago(60 * 60 * 1000), 'ontoplano-web', 'Ban', '203.0.113.2'),
+				line(ago(30 * 60 * 1000), 'sshd', 'Ban', '2001:db8::1'),
 				''
 			].join('\n')
 		);
 
-		expect(out.today).toBe(2);
+		expect(out.lastDay).toBe(2);
 		expect(out.recent).toHaveLength(3);
+	});
+
+	it('counts a ban made minutes ago even when midnight has passed since', async () => {
+		// The bug this guards: "0 addresses blocked today" printed above a row
+		// saying "just now", because the count started at midnight and the ban
+		// did not. A rolling day cannot have that seam — this timestamp lands
+		// on yesterday's date whenever the test runs before 00:10.
+		const out = await read(line(ago(10 * 60 * 1000), 'ontoplano-web', 'Ban', '203.0.113.4') + '\n');
+		expect(out.lastDay).toBe(1);
+	});
+
+	it('counts addresses, not ban lines', async () => {
+		// One scanner rebanned every half hour is still one scanner.
+		const out = await read(
+			[
+				line(ago(90 * 60 * 1000), 'ontoplano-web', 'Ban', '203.0.113.4'),
+				line(ago(30 * 60 * 1000), 'ontoplano-web', 'Ban', '203.0.113.4'),
+				''
+			].join('\n')
+		);
+		expect(out.lastDay).toBe(1);
+	});
+
+	it('says what each address did, not which jail it tripped', async () => {
+		const out = await read(
+			[
+				line(ago(60_000), 'sshd', 'Ban', '198.51.100.2'),
+				line(ago(30_000), 'made-up-jail', 'Ban', '203.0.113.9'),
+				''
+			].join('\n')
+		);
+		expect(out.recent[0].reason).toBe('tripped the made-up-jail jail');
+		expect(out.recent[1].reason).toContain('SSH');
 	});
 
 	it('shows the newest first, and no more than asked for', async () => {
