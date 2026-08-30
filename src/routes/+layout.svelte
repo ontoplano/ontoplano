@@ -17,6 +17,7 @@
 	import Reminders from '$lib/components/Reminders.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import UndoToast from '$lib/components/UndoToast.svelte';
+	import Notifications from '$lib/components/Notifications.svelte';
 	import ClientErrorPrompt from '$lib/components/ClientErrorPrompt.svelte';
 	import { undo } from '$lib/undo.svelte';
 	import { palette } from '$lib/palette.svelte';
@@ -688,6 +689,7 @@
 		<NavPie bind:this={rooms} onopenchange={(v) => (roomsOpen = v)} hidden={data.hiddenSections} />
 		<Reminders />
 		<UndoToast />
+		<Notifications />
 		{#if data.clientErrorReports !== 'off'}
 			<ClientErrorPrompt state={data.clientErrorReports} />
 		{/if}

@@ -1,15 +1,14 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { settingsForm } from '$lib/actions/settings-form';
-	import Banner from '$lib/components/Banner.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
-	import type { PageServerData, ActionData } from './$types';
+	import type { PageServerData } from './$types';
 	import { THEMES } from '$lib/theme.js';
 	import type { DashboardCardId } from '$lib/dashboard.js';
 
-	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+	let { data }: { data: PageServerData } = $props();
 
 	// Local copy so a card can be toggled and reordered before saving.
 	let layout: DashboardCardId[] = $state([...data.layout]);
@@ -60,22 +59,10 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	{#if form?.message}
-		<Banner kind="error" message={form.message} />
-	{/if}
-
-	{#if form?.success && form.action === 'setLayout'}
-		<Banner kind="success" message="Dashboard layout saved." />
-	{/if}
-
-	{#if form?.success && form.action === 'setSections'}
-		<Banner kind="success" message="Sections saved." />
-	{/if}
-
 	<form
 		method="post"
 		action="?/saveWeek"
-		use:settingsForm
+		use:settingsForm={{ notice: 'Week saved.' }}
 		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
 	>
 		<div>
@@ -116,7 +103,7 @@
 	<form
 		method="post"
 		action="?/saveCurrency"
-		use:settingsForm
+		use:settingsForm={{ notice: 'Currency saved.' }}
 		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
 	>
 		<div>
@@ -143,7 +130,7 @@
 	<form
 		method="post"
 		action="?/saveGridHours"
-		use:settingsForm
+		use:settingsForm={{ notice: 'Planner hours saved.' }}
 		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
 	>
 		<div>
@@ -183,7 +170,12 @@
 			</p>
 		</div>
 
-		<form method="post" action="?/setSections" use:settingsForm class="space-y-2">
+		<form
+			method="post"
+			action="?/setSections"
+			use:settingsForm={{ notice: 'Sections saved.' }}
+			class="space-y-2"
+		>
 			<div class="grid gap-2 sm:grid-cols-2">
 				{#each data.sections as section (section.id)}
 					<label
@@ -211,7 +203,12 @@
 			<p class="mt-1 text-sm text-gray-500">Which cards appear, and in what order.</p>
 		</div>
 
-		<form method="post" action="?/setLayout" use:settingsForm class="space-y-2">
+		<form
+			method="post"
+			action="?/setLayout"
+			use:settingsForm={{ notice: 'Dashboard layout saved.' }}
+			class="space-y-2"
+		>
 			{#each layout as id (id)}
 				{@const card = data.cards.find((c) => c.id === id)}
 				{#if card}
@@ -443,7 +440,12 @@
 				When a page breaks, send the technical details to this server's log. Only what broke — never
 				what you wrote.
 			</p>
-			<form method="post" action="?/setErrorReports" use:settingsForm class="mt-3 flex gap-2">
+			<form
+				method="post"
+				action="?/setErrorReports"
+				use:settingsForm={{ notice: 'Saved.' }}
+				class="mt-3 flex gap-2"
+			>
 				{#each [['yes', 'Send'], ['no', 'Never']] as [value, label] (value)}
 					<button
 						type="submit"

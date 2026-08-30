@@ -146,13 +146,9 @@
 		{/if}
 	</Card>
 
-	{#if form?.success && form.action !== 'createInvite'}
-		<Banner kind="success" message="Saved." />
-	{/if}
-
 	<div class="grid gap-4 lg:grid-cols-2">
 		<Card title="Deployment" description="Where the server listens. Takes effect on restart.">
-			<form method="post" action="?/save" use:settingsForm>
+			<form method="post" action="?/save" use:settingsForm={{ notice: 'Deployment saved.' }}>
 				<FormGrid>
 					<Field label="Host" span={8}>
 						<input
@@ -212,7 +208,12 @@
 			</div>
 		{/if}
 
-		<form method="post" action="?/setRegistration" use:settingsForm class="space-y-3">
+		<form
+			method="post"
+			action="?/setRegistration"
+			use:settingsForm={{ notice: 'Registration saved.' }}
+			class="space-y-3"
+		>
 			{#each REGISTRATION_MODES as mode (mode.key)}
 				<label class="flex cursor-pointer items-start gap-3">
 					<input
@@ -237,7 +238,12 @@
 		title="What an account may change"
 		description="An address is what an account is here — it signs in and it receives the reset link."
 	>
-		<form method="post" action="?/setEmailChange" use:settingsForm class="space-y-3">
+		<form
+			method="post"
+			action="?/setEmailChange"
+			use:settingsForm={{ notice: 'Saved.' }}
+			class="space-y-3"
+		>
 			<label class="flex cursor-pointer items-start gap-3">
 				<input
 					type="checkbox"
@@ -264,7 +270,12 @@
 		title="Error reports"
 		description="When a page breaks in somebody's browser, the server normally never hears about it."
 	>
-		<form method="post" action="?/setClientErrors" use:settingsForm class="space-y-3">
+		<form
+			method="post"
+			action="?/setClientErrors"
+			use:settingsForm={{ notice: 'Saved.' }}
+			class="space-y-3"
+		>
 			<label class="flex cursor-pointer items-start gap-3">
 				<input
 					type="checkbox"

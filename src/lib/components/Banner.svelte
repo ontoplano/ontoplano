@@ -46,6 +46,13 @@
 		color: var(--color-gray-900);
 	}
 
+	/* The text takes the room, so anything beside it — a dismiss button — sits
+	   at the far edge rather than against the words. */
+	.body {
+		flex: 1;
+		min-width: 0;
+	}
+
 	.banner :global(svg) {
 		flex: none;
 		margin-top: 0.15rem;
@@ -56,8 +63,17 @@
 		--accent: var(--color-red-600, #dc2626);
 	}
 
+	/*
+	 * Blue, not green.
+	 *
+	 * The person this is built for is colourblind, and red-against-green is the
+	 * pair that carries no information for him — which is the whole job of the
+	 * accent on a message that is either "done" or "did not happen". Blue for
+	 * good and red for bad, here as in the alerts the boxes send. The tick and
+	 * the words carry it too; the colour is never the only signal.
+	 */
 	.success {
-		--accent: var(--color-green-600, #16a34a);
+		--accent: var(--color-blue-600, #2563eb);
 	}
 
 	.warning {
