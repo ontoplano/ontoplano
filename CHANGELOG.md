@@ -6,6 +6,15 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- Your export now includes your recipes, your written weekly reviews, your
+  reminders, your subscribed calendars and what you have paid for things.
+  They were being left out, which made the promise that you can take your
+  data with you not quite true. Deleting an account clears them too.
+- A diary entry's number is never given to another entry, even after the
+  newest one is deleted — so a `#12` written months ago still means what it
+  meant.
+- A block can no longer be saved at a time like `25:00`.
+
 - Registration confirms your address before it asks for a card, not after.
 - A password needs eight characters with a letter and either a number or a
   symbol — checked wherever a new one is set, and said in the form rather
