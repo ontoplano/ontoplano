@@ -49,6 +49,18 @@ type Template = {
 const WEEKDAYS = [0, 1, 2, 3, 4];
 
 /**
+ * Every starter week has to put something on every day of the week — including
+ * both weekend days, which is what these templates used to get wrong.
+ *
+ * Onboarding's whole promise is "a populated week in three minutes", and the
+ * day it populates first is today. Somebody signing up on a Saturday got the
+ * Remote worker week, whose only weekend block was on Sunday, and landed on a
+ * dashboard that said nothing was planned — on their first day, before they
+ * had seen the app do anything. `onboarding.test.ts` refuses a template with
+ * an empty day so this cannot come back by somebody tuning a schedule.
+ */
+
+/**
  * Colours are drawn from the section palette: deep enough for white text, and
  * spread by lightness as well as hue so they stay distinct without relying on
  * red versus green.
@@ -86,6 +98,10 @@ export const TEMPLATES: Template[] = [
 			})),
 			{ weekday: 1, startTime: '18:00', durationMinutes: 60, activity: 'Exercise' },
 			{ weekday: 3, startTime: '18:00', durationMinutes: 60, activity: 'Exercise' },
+			// Both weekend days, not one. A starter week with an empty Saturday
+			// is an empty first day for everybody who signs up on a Saturday —
+			// see the note above WEEKDAYS.
+			{ weekday: 5, startTime: '11:00', durationMinutes: 60, activity: 'Exercise' },
 			{ weekday: 6, startTime: '10:00', durationMinutes: 90, activity: 'Reading' }
 		]
 	},
@@ -119,7 +135,8 @@ export const TEMPLATES: Template[] = [
 				durationMinutes: 30,
 				activity: 'Walk'
 			})),
-			{ weekday: 5, startTime: '11:00', durationMinutes: 90, activity: 'Cook' }
+			{ weekday: 5, startTime: '11:00', durationMinutes: 90, activity: 'Cook' },
+			{ weekday: 6, startTime: '10:00', durationMinutes: 60, activity: 'Walk' }
 		]
 	},
 	{

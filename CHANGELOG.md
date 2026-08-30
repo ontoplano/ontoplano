@@ -6,6 +6,10 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- Signing up at the weekend no longer lands on an empty day. The starter
+  weeks each left one weekend day blank — Student had no Saturday, Remote
+  worker no Sunday — so the week onboarding promises to fill arrived empty
+  for anybody who joined on the wrong day. Both are filled.
 - `x` on the board asks about deleting a card again. It had stopped doing
   anything at all: the key armed a confirmation that nothing on screen drew
   any more, while the shortcut sheet went on offering it. The card now asks
