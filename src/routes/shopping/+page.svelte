@@ -450,7 +450,7 @@
 	</div>
 
 	{#if !online || ticks.pending.length > 0}
-		<div class="border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+		<Banner kind="warning">
 			{#if !online}
 				No connection. This is the list as it was when you last had one —
 			{/if}
@@ -460,7 +460,7 @@
 			{:else}
 				what you tick will be sent when you are back.
 			{/if}
-		</div>
+		</Banner>
 	{/if}
 
 	{#if totalCents > 0}

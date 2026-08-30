@@ -3,6 +3,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { autogrow } from '$lib/actions/autogrow';
+	import Banner from '$lib/components/Banner.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -62,10 +63,10 @@
 	{#if !data.hasFoodCategory}
 		<!-- Without one, every ingredient field would refuse everything typed
 		     into it, which is a worse first impression than a sentence. -->
-		<div class="border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-			No shopping category holds food yet, so nothing can be an ingredient.
+		<Banner kind="warning">
+			No food category yet.
 			<a href={resolve('/shopping')} class="underline">Tick one on the shopping list.</a>
-		</div>
+		</Banner>
 	{/if}
 
 	{#if data.recipes.length === 0}
