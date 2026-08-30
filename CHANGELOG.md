@@ -6,6 +6,24 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- What just happened is said where you are looking. Confirmations and failures
+  arrive in the corner of the screen instead of at the top of the page, so
+  saving something from the bottom of a long settings page no longer answers
+  four screens away. A confirmation leaves after five seconds; a failure waits
+  to be dismissed.
+- The keyboard no longer offers saved passwords, cards and addresses on
+  ordinary fields. Chrome reads a field called "name" as a person's name
+  whatever the page says, so none of them are called that any more.
+- Picking a notebook fills the panel beside it. It used to leave for the
+  notebook's own page, so that panel could be looked at and never changed.
+- A dialog that fills a phone screen has square corners, instead of showing
+  the page behind it at four points.
+- `/admin` shows the errors people chose to report — with the page, the
+  browser and the stack — instead of writing them only to a log nobody reads.
+  Blocked addresses say how long they are blocked for, and the history is a
+  contained list with older entries and a refresh.
+- The demo says what it is, and says you can open it on your phone.
+
 - Saving a settings form no longer empties it. Turning a section off cleared
   every other box until the page finished reloading — the setting was always
   saved, the screen just stopped showing it for a moment. The same was one
