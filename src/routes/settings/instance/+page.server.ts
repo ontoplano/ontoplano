@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { loadConfig, saveConfig, DB_PATH, isRegistrationMode } from '$lib/server/config';
+import { loadConfig, saveConfig, isRegistrationMode } from '$lib/server/config';
 import { isStaging } from '$lib/server/settings';
 import { canEditInstance } from '$lib/server/services/admin';
 import { build } from '$lib/server/services/version';
@@ -44,31 +44,15 @@ function owner(userId: string): string {
 }
 
 export const actions: Actions = {
-	save: async ({ request, locals }) => {
-		owner(locals.user!.id);
-
-		const formData = await request.formData();
-
-		try {
-			const host = formData.get('host')?.toString()?.trim() ?? '';
-			const port = Number(formData.get('port') || 1493);
-
-			if (!host) throw new ValidationError('Host is required');
-			if (!Number.isInteger(port) || port < 1 || port > 65535)
-				throw new ValidationError('Port must be between 1 and 65535');
-
-			const current = loadConfig();
-			saveConfig({
-				...current,
-				server: { host, port },
-				database: { path: current.database.path || DB_PATH }
-			});
-
-			return { success: true, action: 'save' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	/*
+	 * There is no `save` action here any more.
+	 *
+	 * The host and port were editable from this page, and changing the address
+	 * a running instance listens on, from inside that instance, has no good
+	 * outcome: a wrong value takes the app off the air and the way back is a
+	 * text editor and a restart on the box. They are shown, in config.toml they
+	 * are set.
+	 */
 
 	setRegistration: async ({ request, locals }) => {
 		owner(locals.user!.id);

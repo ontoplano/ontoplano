@@ -147,36 +147,22 @@
 	</Card>
 
 	<div class="grid gap-4 lg:grid-cols-2">
-		<Card title="Deployment" description="Where the server listens. Takes effect on restart.">
-			<form method="post" action="?/save" use:settingsForm={{ notice: 'Deployment saved.' }}>
-				<FormGrid>
-					<Field label="Host" span={8}>
-						<input
-							autocomplete="off"
-							name="host"
-							type="text"
-							value={data.config.server.host}
-							class="input"
-						/>
-					</Field>
-
-					<Field label="Port" span={4}>
-						<input
-							autocomplete="off"
-							name="port"
-							type="number"
-							min="1"
-							max="65535"
-							value={data.config.server.port}
-							class="input tabular"
-						/>
-					</Field>
-				</FormGrid>
-
-				<div class="mt-4">
-					<button class="btn btn-primary">Save deployment</button>
-				</div>
-			</form>
+		<!--
+			Read, not edit.
+			
+			The host and port were fields here, and there is no moment at which
+			somebody signed into a running instance wants to change the address it
+			is listening on from inside that instance: a wrong value takes the app
+			off the air, and the way back is a text editor and a restart on the
+			box. It is a fact about the deployment, like the database path beside
+			it, so it is shown the same way.
+		-->
+		<Card title="Deployment" description="Where the server listens. Set in config.toml.">
+			<p
+				class="tabular border border-gray-200 bg-gray-50 px-3 py-2 text-sm break-all text-gray-700"
+			>
+				{data.config.server.host}:{data.config.server.port}
+			</p>
 		</Card>
 
 		<Card title="Database" description="Where your data is stored. Change it in config.toml.">
