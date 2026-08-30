@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import Banner from '$lib/components/Banner.svelte';
 	import { describeYearly, formatPrice } from '$lib/plans';
 	import type { PageServerData, ActionData } from './$types';
@@ -98,7 +99,7 @@
 		{#if data.mode === 'expired'}
 			{#if data.exportsLeft > 0}
 				<a
-					href="/settings/account/export"
+					href={resolve('/settings/account/export')}
 					data-sveltekit-preload-data="off"
 					class="mt-3 block w-full border border-gray-300 px-4 py-2.5 text-center text-sm text-gray-700 transition hover:bg-gray-50 {exporting
 						? 'pointer-events-none opacity-50'
