@@ -182,3 +182,13 @@ that are not obvious from the code, and the reasons for them.
 
 SvelteKit · Svelte 5 (runes) · SQLite via Drizzle · better-auth · Tailwind CSS v4
 · adapter-node
+
+## The name
+
+Fork it, run it, host it for other people, charge for it — that is what the
+self-hosting instructions above are for, and none of it needs asking.
+
+The one thing that is not yours to take is the name. "ontoplano" and the mark
+are not covered by the code's licence: run your fork under a name of your own,
+and say plainly that it is built on this one. [`TRADEMARKS.md`](TRADEMARKS.md)
+is the whole of it, and it is short.

@@ -80,6 +80,14 @@
 	retention period.
 </p>
 
+<h2>The name</h2>
+<p>
+	Ontoplano's source is open and you are welcome to run your own copy of it — that is what the
+	software is for. The name <strong>ontoplano</strong> and its mark are not part of that: a fork runs
+	under a name of its own, and may say factually what it is built on. Nothing here stops you building
+	or selling; it stops a copy being mistaken for this one.
+</p>
+
 <h2>The boring part</h2>
 <p>
 	The software is provided as it is, without warranty. Liability, where it cannot be excluded, is
