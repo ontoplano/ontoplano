@@ -16,7 +16,8 @@ import {
 	isBillingConfigured
 } from '$lib/server/services/billing';
 import { activeProviderSubscription } from '$lib/server/services/subscriptions';
-import { toActionFailure } from '$lib/server/services/errors';
+import { RateLimitedError, toActionFailure } from '$lib/server/services/errors';
+import { rateLimit } from '$lib/server/rate-limit';
 
 /**
  * What this account is on, and what it is using.
@@ -83,6 +84,14 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const interval = formData.get('interval') === 'monthly' ? 'monthly' : 'yearly';
 		try {
+			// Twice a day: every switch moves real billing and sends provider
+			// mail, and flipping back and forth is a spam machine, not a plan.
+			const budget = rateLimit(`billing-switch:${locals.user!.id}`, 2, 24 * 60 * 60 * 1000);
+			if (!budget.allowed) {
+				throw new RateLimitedError(
+					'The billing cycle was already changed twice today — it can change again tomorrow.'
+				);
+			}
 			await changeInterval(locals.user!.id, interval);
 		} catch (e) {
 			return toActionFailure(e);
