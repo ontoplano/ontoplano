@@ -2,6 +2,7 @@ import { and, desc, eq, isNull, max } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { diaryEntries, diaryEntryTags, tags } from '../db/schema.js';
+import { getUserSetting, setUserSetting } from '../settings.js';
 import {
 	cleanupOrphanTags,
 	ensureTagIds,
@@ -156,6 +157,9 @@ export function deleteEntry(ctx: Ctx, id: number): void {
  * together would read the same highest number and the second would be rejected
  * by the unique index.
  */
+/** Where the account's highest-ever entry number is remembered. */
+const SEQ_MARK_KEY = 'diary.seq.highest';
+
 function insertEntry(
 	ctx: Ctx,
 	content: string,
@@ -163,12 +167,21 @@ function insertEntry(
 	notebookId?: number | null
 ): number {
 	return db.transaction((tx) => {
-		const highest =
+		// The high-water mark, not the highest number still present.
+		//
+		// `max(seq) + 1` gives a number back as soon as the newest entry is
+		// deleted, and then a `#12` written in some other entry months ago
+		// silently points at a different piece of writing. A reference that can
+		// change what it refers to is not a reference.
+		const present =
 			tx
 				.select({ value: max(diaryEntries.seq) })
 				.from(diaryEntries)
 				.where(eq(diaryEntries.userId, ctx.userId))
 				.get()?.value ?? 0;
+		const everUsed = Number(getUserSetting(ctx.userId, SEQ_MARK_KEY) ?? 0);
+		const highest = Math.max(present, everUsed);
+		setUserSetting(ctx.userId, SEQ_MARK_KEY, String(highest + 1));
 
 		const highestInNotebook = notebookId
 			? (tx
@@ -220,7 +233,10 @@ export function latestEntry(ctx: Ctx) {
 		})
 		.from(diaryEntries)
 		.where(eq(diaryEntries.userId, ctx.userId))
-		.orderBy(desc(diaryEntries.createdAt))
+		// The id breaks the tie. Two entries written in the same second — which
+		// is a normal afternoon, not a rare race — otherwise made "the latest
+		// one" whichever the database happened to return first.
+		.orderBy(desc(diaryEntries.createdAt), desc(diaryEntries.id))
 		.limit(1)
 		.get();
 

@@ -63,6 +63,20 @@ function owned(name: string, table: never): OwnedTable {
  * anything else instead of collecting ids through their parents.
  */
 const USER_TABLES: OwnedTable[] = [
+	// Ordered so a table that points at another comes first.
+	//
+	// These seven were carrying a user_id and being handled by neither the
+	// export nor the deletion — found by asserting `unaccountedTables()` for
+	// the first time. Recipes and the written reviews are the ones that matter:
+	// the terms promise you can take your data with you, and those are as much
+	// somebody's writing as the diary is.
+	owned('recipeItems', schema.recipeItems as never),
+	owned('recipes', schema.recipes as never),
+	owned('pricePoints', schema.pricePoints as never),
+	owned('weeklyReviews', schema.weeklyReviews as never),
+	owned('reminders', schema.reminders as never),
+	owned('calendarFeeds', schema.calendarFeeds as never),
+	owned('pluginManifests', schema.pluginManifests as never),
 	owned('dailyWins', schema.dailyWins as never),
 	owned('quotes', schema.quotes as never),
 	owned('goalLinks', schema.goalLinks as never),
@@ -133,6 +147,11 @@ if (misdeclared.length > 0) {
 export function unaccountedTables(): string[] {
 	const known = new Set(USER_TABLES.map((t) => t.name));
 	const authOwned = new Set(['user', 'session', 'account', 'verification']);
+	// Handled deliberately and differently: an error report is operational
+	// exhaust rather than the account's data, so it is not exported — and the
+	// name is taken off it on deletion rather than the row going, because a
+	// stack trace with nobody's name on it is still a bug worth fixing.
+	authOwned.add('clientErrors');
 	return Object.entries(schema)
 		.filter(([name, table]) => {
 			if (known.has(name) || authOwned.has(name)) return false;
@@ -265,6 +284,13 @@ export function exportAccount(userId: string, now: Date = new Date()): AccountEx
 export function deleteAccount(userId: string): void {
 	db.transaction((tx) => {
 		for (const table of USER_TABLES) table.remove(tx, userId);
+
+		// Not deleted, disowned. The report stops being anybody's the moment
+		// the account goes; the crash it describes is still worth fixing.
+		tx.update(schema.clientErrors)
+			.set({ userId: null })
+			.where(eq(schema.clientErrors.userId, userId) as SQL)
+			.run();
 
 		tx.delete(schema.session)
 			.where(eq(schema.session.userId, userId) as SQL)

@@ -84,7 +84,11 @@ export default defineConfig({
 			// raise them when a sweep raises the real figure, and never lower
 			// them to turn a red build green — the point is to notice the change
 			// that took cover away, on the day it happens.
-			thresholds: { lines: 43, functions: 38, statements: 40, branches: 32 }
+			//
+			// 30 Aug: 45.9% → 64.6% lines, after covering the services that had
+			// nothing. Three real bugs fell out of writing them, which is the
+			// argument for the number going up rather than the number itself.
+			thresholds: { lines: 62, functions: 62, statements: 59, branches: 47 }
 		}
 	}
 });
