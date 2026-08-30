@@ -94,7 +94,7 @@ export default defineConfig({
 			// them to turn a red build green — the point is to notice the change
 			// that took cover away, on the day it happens.
 			//
-			// 30 Aug: 45.9% → 78.3% lines, after covering the services that had
+			// 30 Aug: 45.9% → 79.2% lines, after covering the services that had
 			// nothing, then the planner arithmetic and the client modules worth
 			// testing. Six real bugs fell out of writing them, which is the
 			// argument for the number going up rather than the number itself.
@@ -103,7 +103,7 @@ export default defineConfig({
 			// fixtures by scripts/check-billing.ts, which this provider cannot
 			// see) and email.ts (SMTP). Covering those here would mean mocking
 			// the two things whose real behaviour is the entire question.
-			thresholds: { lines: 77, functions: 79, statements: 74, branches: 61 }
+			thresholds: { lines: 78, functions: 80, statements: 75, branches: 62 }
 		}
 	}
 });

@@ -14,6 +14,10 @@ rest. Versions follow `package.json`.
   newest one is deleted — so a `#12` written months ago still means what it
   meant.
 - A block can no longer be saved at a time like `25:00`.
+- Keyboard hints print `⌘` on an Apple keyboard again. Browsers that have
+  stopped answering the question return an empty answer rather than none,
+  which the check walked straight past — so a Mac was being told to press a
+  key it does not have.
 
 - Registration confirms your address before it asks for a card, not after.
 - A password needs eight characters with a letter and either a number or a
