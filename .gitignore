@@ -83,3 +83,6 @@ CLAUDE.md
 
 # Estevão's own review list — his file, not the repo's.
 a-working-file
+
+# Coverage reports (yarn test:coverage)
+coverage/

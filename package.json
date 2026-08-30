@@ -19,7 +19,8 @@
 		"db:studio": "drizzle-kit studio",
 		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes",
 		"test:unit": "vitest run",
-		"icons": "node scripts/build-icons.mjs"
+		"icons": "node scripts/build-icons.mjs",
+		"test:coverage": "vitest run --coverage"
 	},
 	"private": true,
 	"type": "module",
@@ -40,6 +41,7 @@
 		"@types/better-sqlite3": "^7.6.13",
 		"@types/node": "^22",
 		"@types/nodemailer": "^8.0.1",
+		"@vitest/coverage-v8": "^4.1.11",
 		"better-auth": "~1.4.21",
 		"drizzle-kit": "^0.31.8",
 		"eslint": "^10.0.3",

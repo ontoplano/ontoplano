@@ -30,6 +30,41 @@ export default defineConfig({
 		env: {
 			ONTOPLANO_SELF_HOST: 'true',
 			ONTOPLANO_CONFIG_DIR: mkdtempSync(join(tmpdir(), 'ontoplano-test-config-'))
+		},
+
+		/*
+		 * A number, so "did the fix come with a test" stops being discipline.
+		 *
+		 * `yarn test:coverage` prints a table and writes `coverage/`. The
+		 * thresholds are the floor, not the target: they are set a little under
+		 * where the suite is today, so the build fails when a change *lowers*
+		 * coverage and nobody has to argue about whether 71% is good.
+		 * Raise them when a sweep raises the real number — never lower them to
+		 * make a red build green.
+		 *
+		 * Rules and services only. Route files and components are exercised by
+		 * Playwright, which this provider cannot see, so counting them here
+		 * would report a low number about code that is in fact well covered —
+		 * a number that lies is worse than no number.
+		 */
+		coverage: {
+			provider: 'v8',
+			reporter: ['text-summary', 'html', 'json-summary'],
+			reportsDirectory: 'coverage',
+			include: ['src/lib/**/*.ts'],
+			exclude: [
+				'**/*.test.ts',
+				'**/*.d.ts',
+				// Schema and migrations describe shape; there is nothing to cover.
+				'src/lib/server/db/**',
+				// Wired at boot and driven by the e2e suite, not by unit tests.
+				'src/lib/server/auth.ts'
+			],
+			// Today's numbers, rounded down a little. A ratchet, not a wish:
+			// raise them when a sweep raises the real figure, and never lower
+			// them to turn a red build green — the point is to notice the change
+			// that took cover away, on the day it happens.
+			thresholds: { lines: 43, functions: 38, statements: 40, branches: 32 }
 		}
 	}
 });

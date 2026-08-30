@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TEMPLATES, TEMPLATE_KEYS } from './onboarding.js';
+import { TEMPLATES, TEMPLATE_KEYS } from './onboarding-templates.js';
 
 /**
  * What a starter week has to be true of.
