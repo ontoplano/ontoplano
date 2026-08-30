@@ -462,13 +462,85 @@
 	let placeStart: { x: number; y: number } | null = null;
 	const PLACE_SLOP = 10;
 
+	/* ── Press and hold, on a finger ────────────────────────────────────────────
+	 *
+	 * The grid's way of making a block is to drag out a shape on empty space,
+	 * and on a touch screen that gesture belongs to the page: a finger dragging
+	 * the grid is scrolling, so there was no way at all to create a block by
+	 * touching the calendar. The hint under it said "drag to create" to a phone
+	 * that could not.
+	 *
+	 * A press that stays still is the one gesture a scroll cannot be mistaken
+	 * for. Hold for `HOLD_MS` on empty grid and the new-block form opens on the
+	 * day and hour under the finger, exactly as a drag does with a mouse.
+	 *
+	 * Cancelled by movement, by lifting early, and by the pointer being taken
+	 * away — and it never arms on an existing block, which has its own gestures.
+	 */
+	const HOLD_MS = 450;
+	const HOLD_SLOP = 12;
+	let holdTimer: ReturnType<typeof setTimeout> | null = null;
+	let holdFrom: { x: number; y: number } | null = null;
+	/** Set when a hold created something, so the release is not read again. */
+	let holdFired = false;
+
+	function cancelHold() {
+		if (holdTimer !== null) clearTimeout(holdTimer);
+		holdTimer = null;
+		holdFrom = null;
+	}
+
+	function armHold(e: PointerEvent) {
+		if (e.pointerType !== 'touch') return;
+		// An existing block answers to its own press; only empty grid creates.
+		if ((e.target as HTMLElement | null)?.closest('.ec-event')) return;
+
+		const target = dropTarget(e);
+		if (!target) return;
+
+		holdFrom = { x: e.clientX, y: e.clientY };
+		holdFired = false;
+		holdTimer = setTimeout(() => {
+			holdTimer = null;
+			holdFrom = null;
+			holdFired = true;
+			selectOffsetForDate(target.date);
+			prefillTime = target.startTime;
+			prefillDuration = timeToMinutes(GRID_SNAP_DURATION) * 2;
+			startNew(repeat);
+			tick().then(() => createFormEl?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
+		}, HOLD_MS);
+	}
+
+	function onGridPointerMove(e: PointerEvent) {
+		if (!holdFrom) return;
+		if (
+			Math.abs(e.clientX - holdFrom.x) > HOLD_SLOP ||
+			Math.abs(e.clientY - holdFrom.y) > HOLD_SLOP
+		)
+			cancelHold();
+	}
+
 	function onGridPointerDown(e: PointerEvent) {
-		if (placingTodoId === null) return;
+		if (placingTodoId === null) {
+			armHold(e);
+			return;
+		}
+		cancelHold();
 		placeStart = { x: e.clientX, y: e.clientY };
 		e.stopPropagation();
 	}
 
 	async function onGridPointerUp(e: PointerEvent) {
+		cancelHold();
+		if (holdFired) {
+			// The form is already open on this spot; the release must not also
+			// reach the calendar as a tap.
+			holdFired = false;
+			e.preventDefault();
+			e.stopPropagation();
+			return;
+		}
 		const start = placeStart;
 		placeStart = null;
 		if (placingTodoId === null || !start) return;
@@ -2469,6 +2541,8 @@
 		ondrop={onTodoDrop}
 		onpointerdowncapture={onGridPointerDown}
 		onpointerupcapture={onGridPointerUp}
+		onpointermovecapture={onGridPointerMove}
+		onpointercancelcapture={cancelHold}
 		role="application"
 	>
 		{#if marqueeRect}
@@ -2517,6 +2591,12 @@
 			one-letter-per-line ribbon on a phone, to say something the phone cannot
 			do.
 		-->
+		<!-- The touch equivalent, said where a touch screen will see it — the
+		     line below is hidden on a coarse pointer, and used to be the only
+		     place the grid explained how to make a block. -->
+		<p class="hidden text-xs text-gray-500 [@media(pointer:coarse)]:block">
+			Press and hold on the grid to add a block there.
+		</p>
 		<p class="kbd-hint min-w-0 flex-1 text-xs text-gray-500">
 			Drag to create · drag a block to move · click it to edit, skip or delete · hold <kbd
 				class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Ctrl</kbd
