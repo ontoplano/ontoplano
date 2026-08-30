@@ -57,6 +57,10 @@
 	let dragStartAt = 0;
 
 	function sheetDown(e: PointerEvent) {
+		// Not when the gesture starts on a control. The header doubles as the
+		// drag handle, and capturing the pointer here swallowed the tap on the
+		// back arrow sitting inside it — the button was drawn, and did nothing.
+		if ((e.target as Element | null)?.closest('button')) return;
 		draggingSheet = true;
 		dragStartY = e.clientY;
 		dragStartAt = performance.now();
@@ -131,17 +135,48 @@
 			class:snapping={!draggingSheet}
 			style="transform: translateY({Math.round(dragY)}px)"
 		>
-			<div
-				class="sheet-handle sm:hidden"
+			<!--
+				The phone header: a back arrow and the title, the way a screen in an
+				app is headed. It doubles as the drag handle, so the sheet gesture
+				still dismisses the short ones.
+			-->
+			<header
+				class="flex items-center gap-2 border-b border-gray-200 px-3 py-3 sm:hidden"
 				style="touch-action: none"
 				onpointerdown={sheetDown}
 				onpointermove={sheetMove}
 				onpointerup={sheetUp}
 				onpointercancel={sheetUp}
 			>
-				<div class="mx-auto h-1 w-10 bg-gray-300"></div>
-			</div>
-			<header class="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4">
+				<button
+					type="button"
+					onclick={handleClose}
+					aria-label="Back"
+					class="-ml-1 flex h-9 w-9 shrink-0 items-center justify-center text-gray-700"
+				>
+					<svg
+						class="h-6 w-6"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.75"
+						stroke-linecap="square"
+						aria-hidden="true"
+					>
+						<path d="M15 5l-7 7 7 7" />
+					</svg>
+				</button>
+				<div class="min-w-0">
+					<h2 class="truncate text-base font-semibold text-gray-900">{title}</h2>
+					{#if description}
+						<p class="truncate text-xs text-gray-500">{description}</p>
+					{/if}
+				</div>
+			</header>
+
+			<header
+				class="hidden items-start justify-between gap-4 border-b border-gray-200 px-5 py-4 sm:flex"
+			>
 				<div>
 					<h2 class="text-sm font-semibold text-gray-900">{title}</h2>
 					{#if description}
@@ -158,7 +193,7 @@
 				</button>
 			</header>
 
-			<div class="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+			<div class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 sm:px-5">
 				{#if error}
 					<div class="mb-4"><Banner kind="error" message={error} /></div>
 				{/if}
@@ -185,9 +220,10 @@
 	 */
 	dialog {
 		position: fixed;
-		inset: auto 0 0 0;
+		inset: 0;
 		width: 100%;
 		max-width: 100%;
+		height: 100dvh;
 		max-height: 100dvh;
 		margin: 0;
 		border: 0;
@@ -200,20 +236,22 @@
 		background: rgb(17 24 39 / 0.45);
 	}
 
+	/*
+	 * The phone: the whole screen, edge to edge, no floating card. The safe area
+	 * at the top is the notch; without it the back arrow sits under the clock.
+	 */
 	.panel {
 		display: flex;
 		flex-direction: column;
+		height: 100dvh;
 		max-height: 100dvh;
+		border: 0;
+		padding-top: var(--safe-top, 0px);
 	}
 
 	/* The spring back after a drag that was not far enough to close. */
 	.panel.snapping {
 		transition: transform 180ms cubic-bezier(0.2, 0.9, 0.3, 1.15);
-	}
-
-	.sheet-handle {
-		padding: 0.625rem 0 0.375rem;
-		cursor: grab;
 	}
 
 	@media (max-width: 639px) {
@@ -234,10 +272,14 @@
 			inset: 0;
 			margin: auto;
 			width: min(100% - 2rem, var(--modal-width));
+			height: auto;
 		}
 
 		.panel {
+			height: auto;
 			max-height: 85dvh;
+			border-width: 1px;
+			padding-top: 0;
 		}
 	}
 </style>

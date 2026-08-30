@@ -40,19 +40,35 @@ test('the phone bar carries home and the raised pie; nothing pulls to refresh', 
 	await expect(page.locator('svg text', { hasText: 'Home' })).toHaveCount(0);
 });
 
-test('a dialog on the phone is a sheet with a handle', async ({ page }) => {
+test('a dialog on the phone is a screen with a back arrow', async ({ page }) => {
 	await register(page, `sheet-${Date.now()}@test.invalid`);
 	await page.goto('/', { waitUntil: 'networkidle' });
 
 	// The capture tiles at the top of the phone dashboard open the shared
-	// Modal, which below `sm` must present as a bottom sheet.
+	// Modal, which below `sm` must present as a screen, not a floating card.
 	await page.getByRole('button', { name: 'Idea' }).first().click();
 	const dialog = page.locator('dialog[open]');
 	await expect(dialog).toBeVisible();
-	await expect(dialog.locator('.sheet-handle')).toBeVisible();
+	// A back arrow where a back arrow belongs, not an × in a corner.
+	await expect(dialog.getByRole('button', { name: 'Back' })).toBeVisible();
 
-	// It hugs the bottom edge, not the middle of the screen.
+	// It takes the screen: full width, top to bottom.
 	const box = await dialog.locator('.panel').boundingBox();
 	expect(box).toBeTruthy();
-	expect(box!.y + box!.height).toBeGreaterThan(830);
+	expect(box!.width).toBeGreaterThan(380);
+	expect(box!.height).toBeGreaterThan(800);
+
+	// And the back arrow closes it.
+	await dialog.getByRole('button', { name: 'Back' }).click();
+	await expect(page.locator('dialog[open]')).toHaveCount(0);
+});
+
+test('the phone has no top bar — the bottom one carries everything', async ({ page }) => {
+	await register(page, `topbar-${Date.now()}@test.invalid`);
+	await page.goto('/planner/plan', { waitUntil: 'networkidle' });
+
+	// The wordmark header is desktop-only now: on a phone it spent a strip of
+	// a small screen saying the app's own name.
+	await expect(page.locator('header a', { hasText: 'ontoplano' })).toBeHidden();
+	await expect(page.locator('nav[aria-label="Primary"]')).toBeVisible();
 });

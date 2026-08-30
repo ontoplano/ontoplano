@@ -6,6 +6,8 @@
 	import { enhance, deserialize } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { browser } from '$app/environment';
@@ -2139,24 +2141,25 @@
 					</div>
 				{/if}
 
-				<div class="flex gap-3">
+				<!--
+					The grid, not hand-picked widths.
+
+					These rows used to be `flex` with `w-36`/`w-28`/`w-24` on the
+					labels, which squeezed three controls side by side on a 390px
+					screen and wrapped every label into two lines. FormGrid stacks
+					them full width below `sm` and lines them up above it.
+				-->
+				<FormGrid>
 					{#if repeat === 'weekly'}
-						<label class="w-36">
-							<span class="text-sm font-medium text-gray-700">Day</span>
-							<select
-								name="weekday"
-								required
-								bind:value={formWeekday}
-								class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-							>
+						<Field label="Day" span={4} required>
+							<select name="weekday" required bind:value={formWeekday} class="select">
 								{#each data.weekdays as day, i (i)}
 									<option value={i}>{day}</option>
 								{/each}
 							</select>
-						</label>
+						</Field>
 					{:else}
-						<label class="w-40">
-							<span class="text-sm font-medium text-gray-700">Date</span>
+						<Field label="Date" span={4} required>
 							<input
 								autocomplete="off"
 								name="date"
@@ -2164,12 +2167,11 @@
 								required
 								min={data.today}
 								bind:value={formDate}
-								class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								class="input"
 							/>
-						</label>
+						</Field>
 					{/if}
-					<label class="w-28">
-						<span class="text-sm font-medium text-gray-700">Time</span>
+					<Field label="Time" span={4} required>
 						<input
 							autocomplete="off"
 							bind:this={timeInput}
@@ -2177,11 +2179,10 @@
 							type="time"
 							required
 							value={editingBlock?.startTime ?? prefillTime}
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							class="input"
 						/>
-					</label>
-					<label class="w-24">
-						<span class="text-sm font-medium text-gray-700">Duration</span>
+					</Field>
+					<Field label="Duration" span={4} hint="minutes">
 						<input
 							autocomplete="off"
 							name="durationMinutes"
@@ -2189,96 +2190,77 @@
 							min="15"
 							step="15"
 							value={editingBlock?.durationMinutes ?? prefillDuration}
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							class="input"
 						/>
-					</label>
-				</div>
+					</Field>
+				</FormGrid>
 
-				<div class="flex gap-3">
-					<label class="w-36">
-						<span class="text-sm font-medium text-gray-700">Mode</span>
-						<select
-							name="mode"
-							required
-							bind:value={slotMode}
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						>
+				<FormGrid>
+					<Field label="Mode" span={4} required>
+						<select name="mode" required bind:value={slotMode} class="select">
 							<option value="activity">Activity</option>
 							<option value="category">Category</option>
 						</select>
-					</label>
+					</Field>
 					{#if slotMode === 'category'}
-						<label class="flex-1">
-							<span class="text-sm font-medium text-gray-700">Category</span>
-							<select
-								name="categoryId"
-								required
-								class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-							>
+						<Field label="Category" span={4} required>
+							<select name="categoryId" required class="select">
 								{#each data.categories as cat (cat.id)}
 									<option value={cat.id} selected={editingBlock?.categoryId === cat.id}
 										>{cat.name}</option
 									>
 								{/each}
 							</select>
-						</label>
+						</Field>
 					{:else}
-						<label class="flex-1">
-							<span class="text-sm font-medium text-gray-700">Activity</span>
-							<select
-								name="activityId"
-								required
-								bind:value={activityChoice}
-								class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-							>
+						<Field label="Activity" span={4} required>
+							<select name="activityId" required bind:value={activityChoice} class="select">
 								{#each data.activities as act (act.id)}
 									<option value={String(act.id)}>{act.name}</option>
 								{/each}
 								<option value={NEW_ACTIVITY}>+ New activity...</option>
 							</select>
-						</label>
+						</Field>
 					{/if}
-					<label class="flex-1">
-						<span class="text-sm font-medium text-gray-700">
-							Label {slotMode === 'category' ? '' : '(optional)'}
-						</span>
+					<Field
+						label="Label"
+						span={4}
+						hint={slotMode === 'category' ? '' : 'optional'}
+						required={slotMode === 'category'}
+					>
 						<input
 							name="label"
 							type="text"
 							autocomplete="off"
 							placeholder={slotMode === 'category' ? 'e.g. dentist' : ''}
 							value={editingBlock?.label ?? ''}
-							class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							class="input"
 						/>
-					</label>
-				</div>
+					</Field>
+				</FormGrid>
 
 				{#if slotMode === 'activity' && activityChoice === NEW_ACTIVITY}
-					<div class="flex gap-3 border border-gray-200 bg-gray-50 p-3">
-						<label class="flex-1">
-							<span class="text-sm font-medium text-gray-700">New activity name</span>
-							<input
-								name="newActivityName"
-								type="text"
-								required
-								autocomplete="off"
-								use:autofocus
-								placeholder="e.g. learn russian"
-								class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-							/>
-						</label>
-						<label class="w-44">
-							<span class="text-sm font-medium text-gray-700">Its category</span>
-							<select
-								name="newActivityCategoryId"
-								required
-								class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-							>
-								{#each data.categories as cat (cat.id)}
-									<option value={cat.id}>{cat.name}</option>
-								{/each}
-							</select>
-						</label>
+					<div class="border border-gray-200 bg-gray-50 p-3">
+						<FormGrid>
+							<Field label="New activity" span={8} required>
+								<input
+									name="newActivityName"
+									type="text"
+									required
+									autocomplete="off"
+									use:autofocus
+									placeholder="e.g. learn russian"
+									class="input"
+								/>
+							</Field>
+							<Field label="Its category" span={4} required>
+								<select name="newActivityCategoryId" required class="select">
+									{#each data.categories as cat (cat.id)}
+										<option value={cat.id}>{cat.name}</option>
+									{/each}
+								</select>
+							</Field>
+						</FormGrid>
 					</div>
 				{/if}
 
