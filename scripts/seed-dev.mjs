@@ -225,24 +225,35 @@ const notebook = (title, description, closed = false) => {
 
 /** Point an already-seeded row at a notebook, by whatever identifies it here. */
 const inNotebook = (table, column, value, notebookId) => {
+	// The number goes with the notebook: (notebook_id, notebook_seq) is unique,
+	// so carrying an old number into a new notebook collides with whatever
+	// already holds it there. Cleared in the same statement that moves it.
 	run(
-		`update ${table} set notebook_id = ? where user_id = ? and ${column} = ?`,
+		`update ${table} set notebook_id = ?${table === 'diary_entries' ? ', notebook_seq = null' : ''} where user_id = ? and ${column} = ?`,
 		notebookId,
 		uid,
 		value
 	);
 
-	// A note is numbered by its notebook as well as by the account.
-	if (table === 'diary_entries')
+	// A note is numbered by its notebook as well as by the account, and the
+	// pair is unique. Numbering only the row just moved collides as soon as a
+	// notebook holds more than one: the count it lands on is already taken.
+	// So the whole notebook is renumbered, cleared first — an UPDATE walks the
+	// rows one at a time and would otherwise trip over a number it has not
+	// reached yet.
+	if (table === 'diary_entries') {
 		run(
-			`update diary_entries set notebook_seq = (
-				select count(*) from diary_entries AS earlier
-				where earlier.notebook_id = ? and earlier.id <= diary_entries.id
-			) where user_id = ? and ${column} = ?`,
-			notebookId,
+			'update diary_entries set notebook_seq = null where user_id = ? and notebook_id = ?',
 			uid,
-			value
+			notebookId
 		);
+		const inBook = db
+			.prepare('select id from diary_entries where user_id = ? and notebook_id = ? order by id')
+			.all(uid, notebookId);
+		inBook.forEach((row, i) => {
+			db.prepare('update diary_entries set notebook_seq = ? where id = ?').run(i + 1, row.id);
+		});
+	}
 };
 
 /**
@@ -1278,5 +1289,177 @@ mailFailure(
 	'454 4.7.1 Relay access denied',
 	null
 );
+
+// --- Two months of somebody actually using it ---------------------------------
+//
+// Everything above builds an account with one of each thing in it, which is
+// what a developer needs and not what a visitor should meet. The demo is
+// somebody's first look at the app, and an account with four diary entries and
+// no completed anything reads as abandoned — the planner's whole argument is
+// the record it builds up, and there was nothing to look at.
+//
+// So this fills the last nine weeks in: occurrences that were kept, moved and
+// missed, habits with gaps in them, notes long enough to be worth reading, a
+// review written most weeks, and todos finished at the time they were
+// finished. Deterministic, because a demo that reshuffles itself every hour is
+// one nobody can point at twice.
+
+/** A small deterministic generator, so the seeded past is the same every run. */
+let seedState = 20260830;
+const rand = () => {
+	seedState = (seedState * 1664525 + 1013904223) % 4294967296;
+	return seedState / 4294967296;
+};
+const pick = (list) => list[Math.floor(rand() * list.length)];
+
+const HISTORY_WEEKS = 9;
+const dayAt = (daysAgo) => {
+	const d = new Date(now);
+	d.setDate(d.getDate() - daysAgo);
+	return d;
+};
+
+// The weekly plan as it stands, which is what the past is generated from: the
+// blocks somebody has been keeping are the blocks they have.
+const plannedSlots = db
+	.prepare(
+		'select id, weekday, start_time as startTime from weekly_slots where user_id = ? and active = 1'
+	)
+	.all(uid);
+
+let kept = 0;
+for (let daysAgo = 1; daysAgo <= HISTORY_WEEKS * 7; daysAgo++) {
+	const day = dayAt(daysAgo);
+	const weekday = (day.getDay() + 6) % 7;
+	const date = iso(day);
+
+	for (const s of plannedSlots) {
+		if (s.weekday !== weekday) continue;
+		const roll = rand();
+		// Most of it happened. A tenth was missed, and a few of the last days
+		// are still open, which is what an account in use looks like — not a
+		// wall of green.
+		const status = roll < 0.78 ? 'done' : roll < 0.9 ? 'skipped' : daysAgo < 4 ? 'todo' : 'done';
+		const timing =
+			status === 'done' ? pick(['on_time', 'on_time', 'on_time', 'early', 'late']) : null;
+		instance(s.id, `${date}T${s.startTime}:00`, status, {
+			timing,
+			completedAt: status === 'done' ? `${date}T${s.startTime}:00` : null
+		});
+		if (status === 'done') kept++;
+	}
+}
+
+// Habits over the same window. A run with holes in it, because a heatmap that
+// is solid says nothing and a habit nobody ever breaks is not a habit.
+for (let daysAgo = 1; daysAgo <= HISTORY_WEEKS * 7; daysAgo++) {
+	const date = iso(dayAt(daysAgo));
+	const dow = (dayAt(daysAgo).getDay() + 6) % 7;
+	if (rand() < 0.82) logHabit(water, date);
+	if (dow < 5 && rand() < 0.66) logHabit(reading, date);
+	if (rand() < 0.24) logHabit(doomscroll, date);
+	if (rand() < 0.7) logHabit(coffee, date);
+}
+
+// Notes worth opening. The ones above are one line each, which is a demo of a
+// text field rather than of a notebook.
+const longNotes = [
+	[
+		9,
+		readingNotebook,
+		21,
+		`Finished Piranesi. Two evenings, which is not how I meant to read it.
+
+The trick of it is that the narrator is entirely reliable and entirely wrong, and you work out the second thing about sixty pages before he does. That gap is the whole book. Most unreliable narrators lie to you; this one is honest about a world he has misunderstood, which is much closer to how being wrong actually feels.
+
+Worth keeping: the diary form does a lot of the work. He is writing things down to hold onto them, which is the same reason I am.`
+	],
+	[
+		10,
+		kitchen,
+		34,
+		`Three quotes in, and they disagree about the wall rather than the price.
+
+The first two want to move the pipes and rebuild; the third says the wall is not structural and the pipes can be boxed in for a fifth of it. He is either right or about to cost me a ceiling.
+
+Ringing the building manager on Monday to find out which. Nothing gets ordered until that is answered — the counter is the expensive part and it is cut to whatever the wall ends up being.`
+	],
+	[
+		11,
+		portugal,
+		12,
+		`Route settled: three nights Lisbon, train to Évora, two nights, then down to the coast.
+
+The train south only runs twice a day and the afternoon one arrives after everything closes, so it has to be the 09:20. That fixes the Évora morning and everything else falls out of it.
+
+Still open: whether to keep the last two days loose. Every trip I have planned to the hour I have then spent rearranging.`
+	],
+	[
+		12,
+		null,
+		45,
+		`A month of doing this properly, so: what has actually changed.
+
+Mornings hold. The block before ten is the only one I never move, and it is the only reason anything long ever gets finished. Afternoons are still fiction — I plan two hours of deep work at 14:00 and spend it on mail, every time. That block should be admin and I should stop pretending.
+
+The shopping list turned out to be the thing I use most, which I did not expect. It is the only part that goes in my pocket.`
+	]
+];
+
+for (const [seq, book, daysAgo, content] of longNotes) {
+	diary(seq, content, [], iso(dayAt(daysAgo)));
+	if (book) inNotebook('diary_entries', 'seq', seq, book);
+}
+
+// Somebody who has been here two months has written up most of their weeks.
+const REVIEWS = [
+	[
+		4,
+		[
+			'Kept the mornings four days out of five.',
+			'Lost Wednesday to the plumber.',
+			'Move admin off the afternoon block — it never survives.'
+		]
+	],
+	[5, ['Cooked six nights. The meal plan is doing the work.', 'Reading fell over completely.']],
+	[
+		6,
+		[
+			'Best week so far — nothing moved.',
+			'Two evenings back on the gym.',
+			'Keep the 18:00 slot, it is the only one that sticks.'
+		]
+	],
+	[7, ['Travel week, so most of it did not happen and that was the plan.', 'Wrote nothing. Fine.']],
+	[8, ['Back to it. Slow start, better by Thursday.', 'The trip notes were worth keeping.']]
+];
+for (const [weeksAgo, lines] of REVIEWS) {
+	lines.forEach((line, i) => reviewLine(mondayBefore(weeksAgo), i + 1, line));
+}
+
+// Things finished, at the time they were finished. Without these the todo list
+// has only what is still open, which makes it look like nothing ever gets done.
+const FINISHED = [
+	['ring the building manager about the pipes', 6],
+	['book the Évora train', 11],
+	['return the drill', 15],
+	['pick a paint for the hallway', 19],
+	['cancel the old gym membership', 24],
+	['back up the photos off the phone', 31],
+	['sort out the standing desk cable mess', 38],
+	['find a dentist that answers the phone', 46],
+	['read the tenancy agreement properly', 52]
+];
+for (const [title, daysAgo] of FINISHED) {
+	const id = todo(title, { status: 'done', sortOrder: 9500 });
+	const when = `${iso(dayAt(daysAgo))} 18:00:00`;
+	db.prepare('update planner_todos set status = ?, completed = 1, updated_at = ? where id = ?').run(
+		'done',
+		when,
+		id
+	);
+}
+
+console.log(`  ${HISTORY_WEEKS} weeks of history: ${kept} blocks kept`);
 
 console.log(`seeded synthetic data for ${user.email ?? uid}`);
