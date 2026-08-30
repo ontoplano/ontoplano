@@ -11,9 +11,13 @@
 export function commandKey(): string {
 	if (typeof navigator === 'undefined') return 'Ctrl';
 
+	// `||`, not `??`. `navigator.platform` is deprecated, and a deprecated web
+	// API is emptied rather than deleted — the browsers that have stopped
+	// answering return `''`, which `??` walks straight past. That left an iPhone
+	// reading `Ctrl`, which is the one platform this exists to get right.
 	const platform =
-		(navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform ??
-		navigator.platform ??
+		(navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform ||
+		navigator.platform ||
 		navigator.userAgent;
 
 	return /mac|iphone|ipad|ipod/i.test(platform) ? '⌘' : 'Ctrl';

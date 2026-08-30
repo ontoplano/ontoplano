@@ -17,6 +17,15 @@ export default defineConfig({
 	test: {
 		include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
 		exclude: ['**/node_modules/**', '**/*.e2e.ts'],
+		/*
+		 * Node by default; a browser only where a test needs one.
+		 *
+		 * Most of what is worth testing here is server code, and a DOM for all of
+		 * it would be a second or two on every run for nothing. The handful of
+		 * client modules that ARE worth testing — the autofill suppression above
+		 * all, which has now been "fixed" three times — say so with a
+		 * `@vitest-environment happy-dom` docblock at the top of the file.
+		 */
 		environment: 'node',
 		globals: false,
 		// A self-hosted instance has no plan ceilings, which is what a test wants:
@@ -85,10 +94,16 @@ export default defineConfig({
 			// them to turn a red build green — the point is to notice the change
 			// that took cover away, on the day it happens.
 			//
-			// 30 Aug: 45.9% → 64.6% lines, after covering the services that had
-			// nothing. Three real bugs fell out of writing them, which is the
+			// 30 Aug: 45.9% → 78.3% lines, after covering the services that had
+			// nothing, then the planner arithmetic and the client modules worth
+			// testing. Six real bugs fell out of writing them, which is the
 			// argument for the number going up rather than the number itself.
-			thresholds: { lines: 66, functions: 66, statements: 63, branches: 52 }
+			//
+			// What is deliberately still low: billing.ts (checked against Paddle
+			// fixtures by scripts/check-billing.ts, which this provider cannot
+			// see) and email.ts (SMTP). Covering those here would mean mocking
+			// the two things whose real behaviour is the entire question.
+			thresholds: { lines: 77, functions: 79, statements: 74, branches: 61 }
 		}
 	}
 });
