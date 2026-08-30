@@ -287,7 +287,7 @@
 					autocomplete="off"
 					name="tags"
 					type="text"
-					placeholder="optional extra tags"
+					placeholder="tags, commas or spaces"
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>
@@ -338,7 +338,7 @@
 					>
 				</Field>
 
-				<Field label="Tags" span={6} hint="Comma separated.">
+				<Field label="Tags" span={6} hint="Separate with commas or spaces. A leading # is fine.">
 					<input
 						autocomplete="off"
 						name="tags"

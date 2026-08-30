@@ -300,7 +300,7 @@
 					>
 				</Field>
 
-				<Field label="Tags" span={12} hint="Comma separated.">
+				<Field label="Tags" span={12} hint="Separate with commas or spaces. A leading # is fine.">
 					<input
 						name="tags"
 						type="text"

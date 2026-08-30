@@ -6,9 +6,19 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- The expired account's "Download your data" button works on the first tap.
+  It was a link into an export endpoint, which the router tried to treat as
+  a page — so the first tap raised an error instead of downloading and only
+  the second appeared to work, spending two of the day's two exports on one
+  double-tap. It is a form now, and it disarms for the gesture.
+- First run asks how the app should look, alongside the timezone and the
+  starting week, and repaints as you choose. The card page dropped its own
+  theme links and its sign-out reads plainly.
+- Tag fields say what they accept: commas or spaces, and a leading # is fine.
 - The phone bar was redrawn: Home sits in it as its own button and the
-  section pie rises out of the middle in a raised bump — and the pie (on
-  desktop too) no longer spends a wedge on Home.
+  section pie rises out of the middle in a round, larger bump — and the pie
+  (on desktop too) no longer spends a wedge on Home. On the phone it opens
+  centred and above the hand, so no room hides behind a thumb.
 - Installed as an app, dragging a list past its top no longer reloads the
   page: the browser's pull-to-refresh is off, while the native elastic
   stretch stays. Short pages also lost a little pointless scroll tail.
@@ -39,8 +49,7 @@ rest. Versions follow `package.json`.
   verify, card, expiry — are decided in one service that the page gate and
   the API door both ask, so future code cannot forget one.
 - The card page polls until the webhook lands, so coming back from a paid
-  checkout never shows a stale offer; it also carries a light/dark toggle.
-  The admin end-plan control shows the current expiration date and its
+  checkout never shows a stale offer. The admin end-plan control shows the current expiration date and its
   button stopped wrapping; the cycle-switch confirmations read plainly
   ("Switched to yearly billing."); the error-report prompt says the choice
   is changeable in Preferences, where a control for it now lives.
