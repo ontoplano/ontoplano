@@ -82,6 +82,8 @@ CLAUDE.md
 /.mcp.json
 
 # Estevão's own review list — his file, not the repo's.
+# Estevao's review list. It lives in a-private-repo (tracked there) and
+# is symlinked in here, so the public repo never carries it.
 a-working-file
 
 # Coverage reports (yarn test:coverage)
