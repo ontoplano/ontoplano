@@ -67,6 +67,10 @@
 		<Banner kind="success" message="Dashboard layout saved." />
 	{/if}
 
+	{#if form?.success && form.action === 'setSections'}
+		<Banner kind="success" message="Sections saved." />
+	{/if}
+
 	<form
 		method="post"
 		action="?/saveWeek"
@@ -168,6 +172,37 @@
 		</div>
 		<button class="btn btn-primary">Save</button>
 	</form>
+
+	<section class="border border-gray-200 bg-white p-6 shadow-card">
+		<div class="mb-4">
+			<h2 class="text-sm font-semibold text-gray-900">Sections</h2>
+			<p class="mt-1 text-sm text-gray-500">
+				Which parts of the app appear in the menus. A section you turn off is only put away — its
+				pages still open from a link and everything in it is kept.
+			</p>
+		</div>
+
+		<form method="post" action="?/setSections" use:enhance class="space-y-2">
+			<div class="grid gap-2 sm:grid-cols-2">
+				{#each data.sections as section (section.id)}
+					<label
+						class="flex cursor-pointer items-center gap-3 border border-gray-200 px-3 py-2 text-sm text-gray-900"
+					>
+						<input
+							type="checkbox"
+							name="section"
+							value={section.id}
+							checked={!data.hiddenSections.includes(section.id)}
+							class="accent-gray-900"
+						/>
+						{section.label}
+					</label>
+				{/each}
+			</div>
+			<p class="text-xs text-gray-500">Home and the planner are always on.</p>
+			<button class="btn btn-primary">Save sections</button>
+		</form>
+	</section>
 
 	<section class="border border-gray-200 bg-white p-6 shadow-card">
 		<div class="mb-4">

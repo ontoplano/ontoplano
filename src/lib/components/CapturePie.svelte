@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { autofocus } from '$lib/actions/autofocus';
-	import { CAPTURES, type Capture } from '$lib/capture';
+	import { CAPTURES, visibleCaptures, type Capture } from '$lib/capture';
 	import Modal from '$lib/components/Modal.svelte';
 	import RadialMenu from '$lib/components/RadialMenu.svelte';
 
@@ -19,7 +19,10 @@
 	 * times an hour; this happens more often, which is why it is the pie's first
 	 * job rather than its second.
 	 */
-	let { onopenchange }: { onopenchange?: (open: boolean) => void } = $props();
+	let {
+		onopenchange,
+		hidden = []
+	}: { onopenchange?: (open: boolean) => void; hidden?: readonly string[] } = $props();
 
 	let open = $state(false);
 	let dragging = $state(false);
@@ -27,12 +30,14 @@
 	let writing = $state<Capture | null>(null);
 	let inset = $state(0);
 
-	const wedges = CAPTURES.map((c) => ({
-		key: c.key,
-		label: c.label,
-		icon: c.icon,
-		color: c.color
-	}));
+	const wedges = $derived(
+		visibleCaptures(hidden).map((c) => ({
+			key: c.key,
+			label: c.label,
+			icon: c.icon,
+			color: c.color
+		}))
+	);
 
 	/**
 	 * Opened by whichever trigger the shell is showing.

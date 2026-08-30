@@ -3,7 +3,7 @@
 	import { autofocus } from '$lib/actions/autofocus';
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import { CAPTURES, captureByShortcut, type Capture } from '$lib/capture';
+	import { captureByShortcut, visibleCaptures, type Capture } from '$lib/capture';
 
 	/**
 	 * Capture, on a phone.
@@ -21,15 +21,20 @@
 	let {
 		error = null,
 		/** The desktop shape: a row of small buttons rather than tiles. */
-		inline = false
-	}: { error?: string | null; inline?: boolean } = $props();
+		inline = false,
+		hidden = []
+	}: { error?: string | null; inline?: boolean; hidden?: readonly string[] } = $props();
+
+	const captures = $derived(visibleCaptures(hidden));
 
 	let open = $state<Capture | null>(null);
 
 	/** Opened by key from the page that hosts this. */
 	export function openByShortcut(key: string): boolean {
 		const match = captureByShortcut(key);
-		if (!match) return false;
+		// A hidden section's keystroke is off with its buttons — a shortcut
+		// that writes into a room the menus say is not there is a haunting.
+		if (!match || captures.every((c) => c.key !== match.key)) return false;
 		open = match;
 		return true;
 	}
@@ -37,7 +42,7 @@
 
 {#if inline}
 	<div class="hidden items-center gap-2 lg:flex">
-		{#each CAPTURES as capture (capture.key)}
+		{#each captures as capture (capture.key)}
 			<button type="button" onclick={() => (open = capture)} class="btn btn-sm">
 				<Icon name={capture.icon} />
 				{capture.label}
@@ -49,7 +54,7 @@
 	</div>
 {:else}
 	<div class="flex gap-2 lg:hidden">
-		{#each CAPTURES as capture (capture.key)}
+		{#each captures as capture (capture.key)}
 			<button
 				type="button"
 				onclick={() => (open = capture)}

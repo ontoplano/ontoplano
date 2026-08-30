@@ -1,5 +1,6 @@
 import { SECTION_COLORS } from '$lib/colors';
 import type { IconName } from '$lib/components/Icon.svelte';
+import type { HideableSection } from '$lib/sections';
 
 /**
  * The four things worth writing down before they evaporate.
@@ -21,6 +22,8 @@ export type Capture = {
 	field: string;
 	placeholder: string;
 	multiline: boolean;
+	/** The section this writes into. A hidden section takes its wedge with it. */
+	hide?: HideableSection;
 };
 
 export const CAPTURES: Capture[] = [
@@ -33,7 +36,8 @@ export const CAPTURES: Capture[] = [
 		action: '/ideas?/create',
 		field: 'content',
 		placeholder: 'the thing you would otherwise forget',
-		multiline: true
+		multiline: true,
+		hide: 'ideas'
 	},
 	{
 		key: 'todo',
@@ -55,7 +59,8 @@ export const CAPTURES: Capture[] = [
 		action: '/diary?/create',
 		field: 'content',
 		placeholder: "what happened, or what you're thinking",
-		multiline: true
+		multiline: true,
+		hide: 'diary'
 	},
 	{
 		key: 'buy',
@@ -66,9 +71,15 @@ export const CAPTURES: Capture[] = [
 		action: '/shopping?/create',
 		field: 'name',
 		placeholder: 'something to pick up',
-		multiline: false
+		multiline: false,
+		hide: 'shopping'
 	}
 ];
+
+/** The captures left once an account's hidden sections are taken out. */
+export function visibleCaptures(hidden: readonly string[]): Capture[] {
+	return CAPTURES.filter((c) => !c.hide || !hidden.includes(c.hide));
+}
 
 export function captureByShortcut(key: string): Capture | undefined {
 	return CAPTURES.find((c) => c.shortcut === key);

@@ -183,7 +183,12 @@
 			</h1>
 			{#if !arranging}
 				<div class="flex items-center gap-2">
-					<QuickCapture bind:this={capture} error={form?.message} inline />
+					<QuickCapture
+						bind:this={capture}
+						error={form?.message}
+						hidden={data.hiddenSections ?? []}
+						inline
+					/>
 					<button onclick={startArranging} class="btn btn-sm">
 						<Icon name="drag" /> Arrange
 					</button>
@@ -193,7 +198,11 @@
 
 		<!-- Phone-first: the reason someone opens this app at a bus stop is to write
 	     one thing down before it evaporates. -->
-		<QuickCapture bind:this={captureTiles} error={form?.message} />
+		<QuickCapture
+			bind:this={captureTiles}
+			error={form?.message}
+			hidden={data.hiddenSections ?? []}
+		/>
 
 		<!--
 	An empty card says what the thing is for and offers the way in.

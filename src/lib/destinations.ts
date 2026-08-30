@@ -5,6 +5,7 @@
  * renderings of this list rather than three lists that drift apart.
  */
 import type { IconName } from '$lib/components/Icon.svelte';
+import type { HideableSection } from '$lib/sections';
 
 export type Destination = {
 	label: string;
@@ -12,6 +13,8 @@ export type Destination = {
 	group: string;
 	href: string;
 	icon: IconName;
+	/** The preference toggle that puts this row away, if any. */
+	hide?: HideableSection;
 };
 
 export const DESTINATIONS: Destination[] = [
@@ -24,18 +27,30 @@ export const DESTINATIONS: Destination[] = [
 	{ label: 'History', group: 'Planner', href: '/planner/history', icon: 'clock' },
 	{ label: 'Review', group: 'Planner', href: '/planner/review', icon: 'check' },
 
-	{ label: 'Goals', group: '', href: '/goals', icon: 'goals' },
+	{ label: 'Goals', group: '', href: '/goals', icon: 'goals', hide: 'goals' },
 
-	{ label: 'Diary', group: 'Writing', href: '/diary', icon: 'diary' },
-	{ label: 'Notebooks', group: 'Writing', href: '/diary/notebooks', icon: 'notebook' },
-	{ label: 'People', group: 'Writing', href: '/diary/people', icon: 'user' },
-	{ label: 'Ideas', group: 'Writing', href: '/ideas', icon: 'ideas' },
+	{ label: 'Diary', group: 'Writing', href: '/diary', icon: 'diary', hide: 'diary' },
+	{
+		label: 'Notebooks',
+		group: 'Writing',
+		href: '/diary/notebooks',
+		icon: 'notebook',
+		hide: 'notebooks'
+	},
+	{ label: 'People', group: 'Writing', href: '/diary/people', icon: 'user', hide: 'people' },
+	{ label: 'Ideas', group: 'Writing', href: '/ideas', icon: 'ideas', hide: 'ideas' },
 
-	{ label: 'Habits', group: 'Health', href: '/health/habits', icon: 'health' },
+	{ label: 'Habits', group: 'Health', href: '/health/habits', icon: 'health', hide: 'health' },
 
-	{ label: 'Shopping', group: 'Kitchen', href: '/shopping', icon: 'shopping' },
-	{ label: 'Recipes', group: 'Kitchen', href: '/kitchen/recipes', icon: 'shopping' },
-	{ label: 'Meals', group: 'Kitchen', href: '/kitchen/meals', icon: 'calendar' },
+	{ label: 'Shopping', group: 'Kitchen', href: '/shopping', icon: 'shopping', hide: 'shopping' },
+	{
+		label: 'Recipes',
+		group: 'Kitchen',
+		href: '/kitchen/recipes',
+		icon: 'shopping',
+		hide: 'recipes'
+	},
+	{ label: 'Meals', group: 'Kitchen', href: '/kitchen/meals', icon: 'calendar', hide: 'recipes' },
 
 	{ label: 'Account', group: 'Settings', href: '/settings/account', icon: 'settings' },
 	{ label: 'Preferences', group: 'Settings', href: '/settings/preferences', icon: 'settings' },
@@ -65,8 +80,9 @@ export function matchScore(haystack: string, needle: string): number | null {
 	return 100 - gaps;
 }
 
-export function findDestinations(query: string): Destination[] {
-	return DESTINATIONS.map((d) => ({ d, score: matchScore(`${d.group} ${d.label}`.trim(), query) }))
+export function findDestinations(query: string, hidden: readonly string[] = []): Destination[] {
+	return DESTINATIONS.filter((d) => !d.hide || !hidden.includes(d.hide))
+		.map((d) => ({ d, score: matchScore(`${d.group} ${d.label}`.trim(), query) }))
 		.filter((r): r is { d: Destination; score: number } => r.score !== null)
 		.sort((a, b) => b.score - a.score)
 		.map((r) => r.d);

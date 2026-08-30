@@ -16,7 +16,24 @@
 	 * people leave in week one, and the honest way to find out is to use both for
 	 * a fortnight and see which one goes untouched.
 	 */
-	let { onopenchange }: { onopenchange?: (open: boolean) => void } = $props();
+	let {
+		onopenchange,
+		hidden = []
+	}: { onopenchange?: (open: boolean) => void; hidden?: readonly string[] } = $props();
+
+	/**
+	 * Which preference toggle closes each room. Diary is the room's own page —
+	 * People and Notebooks keep their navbar tabs even when it is away, so
+	 * only the door this pie opens decides.
+	 */
+	const ROOM_HIDE: Record<string, string> = {
+		goals: 'goals',
+		diary: 'diary',
+		ideas: 'ideas',
+		health: 'health',
+		shopping: 'shopping',
+		kitchen: 'recipes'
+	};
 
 	let open = $state(false);
 	let dragging = $state(false);
@@ -37,7 +54,14 @@
 		return px('--mobile-nav-height') + px('--safe-bottom') + 16;
 	}
 
-	const wedges = ROOMS.map((r) => ({ key: r.key, label: r.label, icon: r.icon, color: r.color }));
+	const wedges = $derived(
+		ROOMS.filter((r) => !hidden.includes(ROOM_HIDE[r.key] ?? '')).map((r) => ({
+			key: r.key,
+			label: r.label,
+			icon: r.icon,
+			color: r.color
+		}))
+	);
 
 	export function summon(e: PointerEvent) {
 		// Take the gesture before the browser can. Without this a press-and-hold

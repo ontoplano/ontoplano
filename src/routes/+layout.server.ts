@@ -1,6 +1,13 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { DEFAULT_THEME, DEFAULT_WEEK, getTheme, getWeekSettings } from '$lib/server/settings';
+import {
+	DEFAULT_THEME,
+	DEFAULT_WEEK,
+	getHiddenSections,
+	getTheme,
+	getWeekSettings
+} from '$lib/server/settings';
+import type { HideableSection } from '$lib/sections';
 import { clientErrorState } from '$lib/server/services/client-errors';
 import { needsFirstRun } from '$lib/server/services/onboarding';
 import { listCategories } from '$lib/server/services/activities';
@@ -59,6 +66,7 @@ export const load: LayoutServerLoad = async (event) => {
 	let userCategories: { id: number; name: string; color: string; colorLight: string }[] = [];
 	let theme = DEFAULT_THEME;
 	let week = DEFAULT_WEEK;
+	let hiddenSections: HideableSection[] = [];
 	if (event.locals.user) {
 		const ctx = buildCtx(event.locals.user.id);
 		userCategories = listCategories(ctx).map((c) => ({
@@ -69,6 +77,7 @@ export const load: LayoutServerLoad = async (event) => {
 		}));
 		theme = getTheme(ctx.userId);
 		week = getWeekSettings(ctx.userId);
+		hiddenSections = getHiddenSections(ctx.userId);
 	}
 
 	return {
@@ -80,6 +89,9 @@ export const load: LayoutServerLoad = async (event) => {
 			(event.locals.session as { impersonatedBy?: string } | undefined)?.impersonatedBy ?? null,
 		categories: userCategories,
 		theme,
+		// Sections this account has put away: out of every menu the shell
+		// renders, still answering at their URLs.
+		hiddenSections,
 		// The week is the user's, not the instance's.
 		config: { week },
 		// How long a delete waits before it happens. The instance's call.

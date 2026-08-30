@@ -16,12 +16,14 @@
 	 * It is also the accessible path to everything a gesture menu would do — a
 	 * radial menu is invisible to a screen reader, and this is not.
 	 */
+	let { hidden = [] }: { hidden?: readonly string[] } = $props();
+
 	let query = $state('');
 	let cursor = $state(0);
 	let hits = $state<Hit[]>([]);
 	let input = $state<HTMLInputElement | null>(null);
 
-	const places = $derived(findDestinations(query).slice(0, query ? 6 : 8));
+	const places = $derived(findDestinations(query, hidden).slice(0, query ? 6 : 8));
 	type Row = { sort: 'place'; place: Destination } | { sort: 'thing'; hit: Hit };
 	const rows = $derived<Row[]>([
 		...places.map((place) => ({ sort: 'place' as const, place })),

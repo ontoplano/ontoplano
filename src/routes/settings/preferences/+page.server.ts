@@ -7,15 +7,17 @@ import { createQuote, deleteQuote, importQuotes, listQuotes } from '$lib/server/
 import { CURRENCIES, isCurrency } from '$lib/money';
 import { fail } from '@sveltejs/kit';
 import {
-	DASHBOARD_CARDS,
 	DASHBOARD_LAYOUT_KEY,
 	defaultLayout,
 	parseLayout,
 	serialiseLayout,
+	visibleCards,
 	type DashboardCardId
 } from '$lib/dashboard';
+import { HIDEABLE_SECTIONS, isHideableSection } from '$lib/sections';
 import {
 	getCurrency,
+	getHiddenSections,
 	getGridHours,
 	getStyle,
 	getTheme,
@@ -23,6 +25,7 @@ import {
 	getUserSetting,
 	getWeekSettings,
 	setCurrency,
+	setHiddenSections,
 	setUserSetting
 } from '$lib/server/settings';
 import {
@@ -36,8 +39,12 @@ import {
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
 
+	const hiddenSections = getHiddenSections(ctx.userId);
+
 	return {
 		errorReports: clientErrorState(ctx.userId),
+		sections: HIDEABLE_SECTIONS,
+		hiddenSections,
 		week: getWeekSettings(ctx.userId),
 		gridHours: getGridHours(ctx.userId),
 		currency: getCurrency(ctx.userId),
@@ -45,8 +52,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 		timezone: getTimezone(ctx.userId) ?? ctx.tz,
 		theme: getTheme(ctx.userId),
 		style: getStyle(ctx.userId),
-		cards: DASHBOARD_CARDS,
-		layout: parseLayout(getUserSetting(ctx.userId, DASHBOARD_LAYOUT_KEY)),
+		// A hidden section's card is not offered here either — one toggle, one
+		// truth. The stored layout keeps the card, so unhiding restores it.
+		cards: visibleCards(hiddenSections),
+		layout: parseLayout(getUserSetting(ctx.userId, DASHBOARD_LAYOUT_KEY)).filter((id) =>
+			visibleCards(hiddenSections).some((c) => c.id === id)
+		),
 		quotes: listQuotes(ctx),
 		styles: STYLES.map((key) => ({ key, label: STYLE_LABELS[key], hint: STYLE_HINTS[key] }))
 	};
@@ -82,6 +93,18 @@ export const actions: Actions = {
 		} catch (e) {
 			return toActionFailure(e);
 		}
+	},
+
+	setSections: async ({ request, locals }) => {
+		const formData = await request.formData();
+		// The boxes name what is SHOWN; everything unchecked is hidden. An
+		// unknown id in the post is ignored the way an unknown stored id is.
+		const shown = new Set(formData.getAll('section').map(String));
+		setHiddenSections(
+			locals.user!.id,
+			HIDEABLE_SECTIONS.map((s) => s.id).filter((id) => !shown.has(id) && isHideableSection(id))
+		);
+		return { success: true, action: 'setSections' };
 	},
 
 	setLayout: async ({ request, locals }) => {

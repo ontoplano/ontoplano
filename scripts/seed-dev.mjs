@@ -595,6 +595,9 @@ setting('user.timezone', 'America/Sao_Paulo');
 setting('week.firstDay', '0');
 setting('week.generateDay', '6');
 setting('ui.theme', 'system');
+// Everything shown: the dev account should have a little of everything, and a
+// section hidden here would hide the very features being worked on.
+setting('ui.hiddenSections', '[]');
 setting(
 	'dashboard.layout',
 	'todayTasks,goals,habits,weekPlan,threeWins,diary,shopping,quickLinks,quote'

@@ -67,5 +67,10 @@ test('says what the box has turned away', async ({ page }) => {
 	// real instance uses.
 	const blocked = page.locator('section, article, div').filter({ hasText: 'Blocked' }).last();
 	await expect(blocked).toContainText('203.0.113.7');
-	await expect(blocked).toContainText('ontoplano-web');
+	// Not the jail's name — what the address did.
+	await expect(blocked).toContainText('scanner');
+	// Both fixture bans are minutes old, so the rolling count must agree with
+	// the rows under it — the card once said "0 blocked today" above a ban
+	// made just before midnight.
+	await expect(blocked).toContainText('2 addresses blocked in the last 24 hours');
 });

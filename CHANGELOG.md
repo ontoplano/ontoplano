@@ -6,6 +6,12 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- Sections can be put away. Preferences grew a Sections card: untick Goals,
+  Diary, People, Notebooks, Ideas, Health, Shopping or Recipes and it leaves
+  the navbar, the pies, the palette's places, the dashboard and the capture
+  buttons — while its pages keep answering at their URLs and nothing is
+  deleted, so turning it back on is the same tick. Home and the planner are
+  always on.
 - The admin Blocked card now says what each banned address did ("guessed at
   SSH logins", "hammered the site with errors") instead of naming a jail,
   and counts addresses over the last 24 hours — it used to count since

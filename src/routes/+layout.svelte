@@ -8,6 +8,7 @@
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { THEMES } from '$lib/theme.js';
 	import type { SectionKey } from '$lib/colors.js';
+	import type { HideableSection } from '$lib/sections.js';
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
 	import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
 	import CapturePie from '$lib/components/CapturePie.svelte';
@@ -40,7 +41,14 @@
 			.join(';');
 	}
 
-	const nav: { href: string; label: string; section: SectionKey; icon: string }[] = [
+	const allNav: {
+		href: string;
+		label: string;
+		section: SectionKey;
+		icon: string;
+		/** Which preference toggle puts this tab away. Absent means always on. */
+		hide?: HideableSection;
+	}[] = [
 		// `icon` is an SVG path drawn at 24x24. Inline rather than an icon package:
 		// nine glyphs is not worth a dependency that ships to a webview.
 		{ href: '/', label: 'Home', section: 'home', icon: 'M3 10.5 12 3l9 7.5V21H3z' },
@@ -50,45 +58,72 @@
 			section: 'planner',
 			icon: 'M4 5h16v16H4zM4 9h16M9 9v12M15 9v12'
 		},
-		{ href: '/goals', label: 'Goals', section: 'goals', icon: 'M12 3v18M4 6h14l-3 4 3 4H4z' },
+		{
+			href: '/goals',
+			label: 'Goals',
+			section: 'goals',
+			icon: 'M12 3v18M4 6h14l-3 4 3 4H4z',
+			hide: 'goals'
+		},
 		{
 			href: '/diary',
 			label: 'Diary',
 			section: 'diary',
-			icon: 'M5 3h14v18H5zM9 3v18M12 8h4M12 12h4'
+			icon: 'M5 3h14v18H5zM9 3v18M12 8h4M12 12h4',
+			hide: 'diary'
 		},
 		{
 			href: '/diary/people',
 			label: 'People',
 			section: 'diary',
-			icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a8 8 0 0 1 16 0'
+			icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a8 8 0 0 1 16 0',
+			hide: 'people'
 		},
 		{
 			href: '/diary/notebooks',
 			label: 'Notebooks',
 			section: 'diary',
-			icon: 'M7 4h12v17H7zM7 8H4M7 12H4M7 16H4'
+			icon: 'M7 4h12v17H7zM7 8H4M7 12H4M7 16H4',
+			hide: 'notebooks'
 		},
 		{
 			href: '/ideas',
 			label: 'Ideas',
 			section: 'ideas',
-			icon: 'M9 21h6M10 18h4M12 3a6 6 0 0 1 4 10.5V16H8v-2.5A6 6 0 0 1 12 3z'
+			icon: 'M9 21h6M10 18h4M12 3a6 6 0 0 1 4 10.5V16H8v-2.5A6 6 0 0 1 12 3z',
+			hide: 'ideas'
 		},
-		{ href: '/health/habits', label: 'Health', section: 'health', icon: 'M3 12h4l2 6 4-14 2 8h6' },
+		{
+			href: '/health/habits',
+			label: 'Health',
+			section: 'health',
+			icon: 'M3 12h4l2 6 4-14 2 8h6',
+			hide: 'health'
+		},
 		{
 			href: '/shopping',
 			label: 'Shopping',
 			section: 'shopping',
-			icon: 'M4 7h16l-1.5 12h-13zM9 7V5a3 3 0 0 1 6 0v2'
+			icon: 'M4 7h16l-1.5 12h-13zM9 7V5a3 3 0 0 1 6 0v2',
+			hide: 'shopping'
 		},
 		{
 			href: '/kitchen/recipes',
 			label: 'Recipes',
 			section: 'kitchen',
-			icon: 'M8 3v8a3 3 0 0 0 6 0V3M11 11v10M17 3c-1.5 2-2 3.5-2 6v3h4V9c0-2.5-.5-4-2-6zM17 12v9'
+			icon: 'M8 3v8a3 3 0 0 0 6 0V3M11 11v10M17 3c-1.5 2-2 3.5-2 6v3h4V9c0-2.5-.5-4-2-6zM17 12v9',
+			hide: 'recipes'
 		}
 	];
+
+	/**
+	 * The tabs this account actually shows. Hiding is a menu matter only —
+	 * the routes behind a hidden tab keep answering, so a bookmark or a link
+	 * into a hidden section still works.
+	 */
+	const nav = $derived(
+		allNav.filter((item) => !item.hide || !data.hiddenSections.includes(item.hide))
+	);
 
 	/**
 	 * Screens that carry no navigation.
@@ -564,9 +599,9 @@
 		</nav>
 
 		<ShortcutHelp />
-		<CommandPalette />
-		<CapturePie bind:this={pie} onopenchange={(v) => (pieOpen = v)} />
-		<NavPie bind:this={rooms} onopenchange={(v) => (roomsOpen = v)} />
+		<CommandPalette hidden={data.hiddenSections} />
+		<CapturePie bind:this={pie} onopenchange={(v) => (pieOpen = v)} hidden={data.hiddenSections} />
+		<NavPie bind:this={rooms} onopenchange={(v) => (roomsOpen = v)} hidden={data.hiddenSections} />
 		<Reminders />
 		<UndoToast />
 		{#if data.clientErrorReports !== 'off'}

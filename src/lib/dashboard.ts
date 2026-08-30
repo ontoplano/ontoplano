@@ -6,6 +6,8 @@
  * which is what this being other people's software requires — a new user should
  * meet a dashboard that makes sense, not one full of someone else's habits.
  */
+import type { HideableSection } from '$lib/sections';
+
 export type DashboardCardId =
 	| 'todayTasks'
 	| 'goals'
@@ -24,6 +26,8 @@ export type DashboardCard = {
 	defaultOn: boolean;
 	/** Half-width cards pair up on wide screens; full-width ones do not. */
 	width: 'half' | 'full';
+	/** The section this card fronts. Hiding that section takes the card too. */
+	hide?: HideableSection;
 };
 
 export const DASHBOARD_CARDS: DashboardCard[] = [
@@ -39,14 +43,16 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 		label: 'Goals',
 		description: 'Goals whose period covers today, with progress.',
 		defaultOn: true,
-		width: 'half'
+		width: 'half',
+		hide: 'goals'
 	},
 	{
 		id: 'habits',
 		label: 'Habits',
 		description: 'Current streaks.',
 		defaultOn: true,
-		width: 'half'
+		width: 'half',
+		hide: 'health'
 	},
 	{
 		id: 'quote',
@@ -74,16 +80,23 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 		label: 'Diary',
 		description: 'Your most recent entry, and a box to write a new one.',
 		defaultOn: true,
-		width: 'full'
+		width: 'full',
+		hide: 'diary'
 	},
 	{
 		id: 'shopping',
 		label: 'Shopping',
 		description: 'What is left to buy.',
 		defaultOn: true,
-		width: 'full'
+		width: 'full',
+		hide: 'shopping'
 	}
 ];
+
+/** The cards left once an account's hidden sections are taken out. */
+export function visibleCards(hidden: readonly string[]): DashboardCard[] {
+	return DASHBOARD_CARDS.filter((c) => !c.hide || !hidden.includes(c.hide));
+}
 
 export const DASHBOARD_LAYOUT_KEY = 'dashboard.layout';
 

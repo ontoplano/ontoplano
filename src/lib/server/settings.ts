@@ -6,6 +6,7 @@ import { user, userSettings } from './db/schema.js';
 import { STYLES, isStyle, type Style } from '../style.js';
 import { THEMES, type Theme } from '../theme.js';
 import { DEFAULT_CURRENCY, isCurrency, type Currency } from '../money.js';
+import { isHideableSection, type HideableSection } from '../sections.js';
 
 export function getUserSetting(userId: string, key: string): string | null {
 	const row = db
@@ -60,6 +61,33 @@ export function getTheme(userId: string): Theme {
 
 export function setTheme(userId: string, theme: Theme): void {
 	setUserSetting(userId, THEME_KEY, theme);
+}
+
+// --- Hidden sections ----------------------------------------------------------
+
+export const HIDDEN_SECTIONS_KEY = 'ui.hiddenSections';
+
+/**
+ * The sections this account has put away — out of every menu, still there at
+ * their URLs. Stored as a JSON array; unknown ids are dropped on read, so a
+ * section that stops existing disappears from the setting by itself.
+ */
+export function getHiddenSections(userId: string): HideableSection[] {
+	const stored = getUserSetting(userId, HIDDEN_SECTIONS_KEY);
+	if (!stored) return [];
+	try {
+		const parsed: unknown = JSON.parse(stored);
+		if (!Array.isArray(parsed)) return [];
+		return parsed.filter(
+			(v): v is HideableSection => typeof v === 'string' && isHideableSection(v)
+		);
+	} catch {
+		return [];
+	}
+}
+
+export function setHiddenSections(userId: string, hidden: HideableSection[]): void {
+	setUserSetting(userId, HIDDEN_SECTIONS_KEY, JSON.stringify([...new Set(hidden)]));
 }
 
 // --- Layout style ------------------------------------------------------------

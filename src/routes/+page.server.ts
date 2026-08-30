@@ -1,14 +1,14 @@
 import type { Actions, PageServerLoad } from './$types';
 import {
-	DASHBOARD_CARDS,
 	DASHBOARD_LAYOUT_KEY,
 	defaultLayout,
 	parseLayout,
 	quoteForDate,
+	visibleCards,
 	serialiseLayout,
 	type DashboardCardId
 } from '$lib/dashboard';
-import { getUserSetting, setUserSetting } from '$lib/server/settings';
+import { getHiddenSections, getUserSetting, setUserSetting } from '$lib/server/settings';
 import { formatPrice } from '$lib/plans';
 import { displayPricing } from '$lib/server/services/billing';
 import { instanceIsEmpty, registrationMode } from '$lib/server/services/registration';
@@ -119,13 +119,21 @@ export const load: PageServerLoad = async ({ locals }) => {
 		early: done.filter((t) => t.timing === 'early').length
 	};
 
+	// Hidden sections take their dashboard cards along — filtered on read,
+	// never written back, so turning a section on brings its card straight back.
+	const hiddenSections = getHiddenSections(ctx.userId);
+	const cards = visibleCards(hiddenSections);
+
 	return {
 		/** Null here is what tells the page it is the dashboard rather than the pitch. */
 		landing: null,
 		// A layout the user has never set falls back to the registry defaults, so
 		// a new account meets a sensible dashboard rather than an empty one.
-		layout: parseLayout(getUserSetting(ctx.userId, DASHBOARD_LAYOUT_KEY)),
-		cards: DASHBOARD_CARDS,
+		layout: parseLayout(getUserSetting(ctx.userId, DASHBOARD_LAYOUT_KEY)).filter((id) =>
+			cards.some((c) => c.id === id)
+		),
+		cards,
+		hiddenSections,
 		quote: quoteForDate(listQuotes(ctx), today),
 		wins: listWins(ctx, today),
 		// Goals whose period covers today — the week's and the year's alike, since
