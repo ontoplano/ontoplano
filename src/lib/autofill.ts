@@ -31,23 +31,52 @@ const IGNORE_FLAGS: [string, string][] = [
 	['data-bwignore', ''] // Bitwarden
 ];
 
+/** Fields that have not declared what they are, and so want nothing. */
+const UNCLAIMED =
+	'input:not([autocomplete]), input[autocomplete="off"], textarea:not([autocomplete]), textarea[autocomplete="off"]';
+
+/**
+ * Chrome classifies a field by its `name`, `id` and label before it ever reads
+ * `autocomplete`, and for a field it has classified as part of an address it
+ * treats `autocomplete="off"` as advisory. `name="name"` on the New Activity
+ * form is exactly that: Chrome reads it as a person's name and offers the
+ * saved address profile, which is where the key and card icons on the phone
+ * keyboard were still coming from after the attribute was in place.
+ *
+ * The submitted `name` is the server's business and cannot change here, but
+ * the `id` can: an id the classifier cannot read as an address part takes one
+ * of its three signals away. Given rather than removed, because a field with
+ * no id at all is one a label cannot point at.
+ */
+let seq = 0;
+function blurTheClassifier(field: Element) {
+	if (!field.id) field.id = `f${(seq += 1)}`;
+	// A form is classified as a whole; one that says it wants nothing is a
+	// weaker candidate for the address heuristic than one that says nothing.
+	const form = field.closest('form');
+	if (form && !form.hasAttribute('autocomplete')) form.setAttribute('autocomplete', 'off');
+	if (form) {
+		for (const [name, value] of IGNORE_FLAGS) {
+			if (!form.hasAttribute(name)) form.setAttribute(name, value);
+		}
+	}
+}
+
 export function suppressAutofill(root: ParentNode & Node): () => void {
-	const quiet = (node: ParentNode) => {
-		for (const field of node.querySelectorAll(
-			'input:not([autocomplete]), textarea:not([autocomplete])'
-		)) {
-			field.setAttribute('autocomplete', 'off');
+	const stamp = (field: Element) => {
+		if (!field.hasAttribute('autocomplete')) field.setAttribute('autocomplete', 'off');
+		for (const [name, value] of IGNORE_FLAGS) {
+			if (!field.hasAttribute(name)) field.setAttribute(name, value);
 		}
-		// The flags go on every field that has not asked for autofill —
-		// including the ones that already said `autocomplete="off"` by hand,
-		// which is where this was still leaking.
-		for (const field of node.querySelectorAll(
-			'input:not([autocomplete]), input[autocomplete="off"], textarea:not([autocomplete]), textarea[autocomplete="off"]'
-		)) {
-			for (const [name, value] of IGNORE_FLAGS) {
-				if (!field.hasAttribute(name)) field.setAttribute(name, value);
-			}
-		}
+		blurTheClassifier(field);
+	};
+
+	const quiet = (node: Element | (ParentNode & Node)) => {
+		// The node itself, not only its descendants. `querySelectorAll` never
+		// returns the element it is called on, so a dialog that mounts an input
+		// as the added node — or any field added on its own — was walked past.
+		if (node instanceof Element && node.matches(UNCLAIMED)) stamp(node);
+		for (const field of node.querySelectorAll(UNCLAIMED)) stamp(field);
 	};
 
 	quiet(root);
