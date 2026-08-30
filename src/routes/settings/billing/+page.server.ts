@@ -89,7 +89,7 @@ export const actions: Actions = {
 			const budget = rateLimit(`billing-switch:${locals.user!.id}`, 2, 24 * 60 * 60 * 1000);
 			if (!budget.allowed) {
 				throw new RateLimitedError(
-					'The billing cycle was already changed twice today — it can change again tomorrow.'
+					'You have already switched twice today. You can switch again tomorrow.'
 				);
 			}
 			await changeInterval(locals.user!.id, interval);
