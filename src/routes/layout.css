@@ -232,6 +232,19 @@ html[data-style='playful'] svg {
 }
 
 /*
+ * And a dialog that IS the screen. Below `sm` every dialog is full-height, so
+ * its rounded corners had nothing to sit against: the page behind showed
+ * through at four points, which reads as a rendering fault rather than as a
+ * radius. A corner needs somewhere to be a corner, and the edge of the screen
+ * is not it.
+ */
+@media (width < 40rem) {
+	html[data-style='playful'] dialog > div {
+		border-radius: 0;
+	}
+}
+
+/*
  * Rows used to round their own first and last children to follow the card's
  * corners, which was wrong twice: a list that started below a header grew
  * rounded corners mid-card, and a rounded row inside an equally rounded
