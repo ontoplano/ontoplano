@@ -2615,7 +2615,7 @@
 				<textarea
 					name="csv"
 					rows="8"
-					placeholder={'h,d,m,t,w,t,f,s,s\n610,30,wake up,wake up,wake up,wake up,wake up,,\n630,60,alongar,regar plantas,alongar,regar plantas,alongar,,'}
+					placeholder={'h,d,m,t,w,t,f,s,s\n610,30,Wake up,Wake up,Wake up,Wake up,Wake up,,\n630,60,Stretch,Water the plants,Stretch,Water the plants,Stretch,,'}
 					class="block w-full border border-gray-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				></textarea>
 				<div class="flex items-center gap-4">
