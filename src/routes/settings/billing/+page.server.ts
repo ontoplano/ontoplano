@@ -6,12 +6,15 @@ import { buildCtx } from '$lib/server/services/ctx';
 import { exportAllowance } from '$lib/server/services/account';
 import { resolvePlan, usage } from '$lib/server/services/subscriptions';
 import {
+	changeInterval,
 	createCheckout,
+	currentInterval,
 	displayPricing,
 	hasYearlyPrice,
 	portalUrl,
 	isBillingConfigured
 } from '$lib/server/services/billing';
+import { activeProviderSubscription } from '$lib/server/services/subscriptions';
 import { toActionFailure } from '$lib/server/services/errors';
 
 /**
@@ -35,6 +38,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// to Pro" has just been told the free version is a demo. It is not.
 	if (isSelfHosted()) error(404, 'Not found');
 
+	// A card on file changes everything the page offers: no buy buttons (a
+	// second subscription is a billing dispute, not an upsell), a manage link,
+	// and the one honest upgrade — switching cycle in place.
+	const standing = activeProviderSubscription(ctx.userId);
+	const interval = standing ? await currentInterval(ctx.userId) : null;
+
 	return {
 		entitlement,
 		pricing: await displayPricing(),
@@ -43,12 +52,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 		limitKeys: LIMIT_KEYS,
 		usage: counts,
 		// Paddle mints a checkout per transaction, so buying is an action, not
-		// a link — this only says whether the button belongs on the page.
-		canCheckout: !(entitlement.plan === 'pro' && entitlement.source === 'subscription'),
+		// a link — and only for an account with no live subscription.
+		canCheckout: !standing && (entitlement.plan !== 'pro' || entitlement.source === 'trial'),
+		hasProviderSub: Boolean(standing),
+		interval,
 		yearly: hasYearlyPrice(),
 		// A fresh portal session per look: the links carry a short-lived token
 		// and the provider says not to store them.
-		portal: entitlement.source === 'subscription' ? await portalUrl(ctx.userId) : null
+		portal: standing ? await portalUrl(ctx.userId) : null
 	};
 };
 
@@ -63,5 +74,15 @@ export const actions: Actions = {
 			return toActionFailure(e);
 		}
 		redirect(303, url);
+	},
+	switchInterval: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const interval = formData.get('interval') === 'monthly' ? 'monthly' : 'yearly';
+		try {
+			await changeInterval(locals.user!.id, interval);
+		} catch (e) {
+			return toActionFailure(e);
+		}
+		return { switched: interval };
 	}
 };

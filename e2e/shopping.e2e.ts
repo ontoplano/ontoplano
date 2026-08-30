@@ -39,7 +39,7 @@ test('a category that holds food makes ingredients possible', async ({ page }) =
 
 	// Before: the recipes page says so rather than letting every field fail.
 	await page.goto('/kitchen/recipes', { waitUntil: 'networkidle' });
-	await expect(page.getByText(/no shopping category holds food/i)).toBeVisible();
+	await expect(page.getByText(/no food category yet/i)).toBeVisible();
 
 	await page.goto('/shopping', { waitUntil: 'networkidle' });
 	await page.getByRole('button', { name: 'Categories' }).click();
@@ -52,7 +52,7 @@ test('a category that holds food makes ingredients possible', async ({ page }) =
 
 	// After: the warning is gone.
 	await page.goto('/kitchen/recipes', { waitUntil: 'networkidle' });
-	await expect(page.getByText(/no shopping category holds food/i)).toHaveCount(0);
+	await expect(page.getByText(/no food category yet/i)).toHaveCount(0);
 });
 
 test('what you actually paid, and how it has moved', async ({ page }) => {

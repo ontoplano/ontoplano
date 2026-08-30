@@ -1,4 +1,8 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
+	import { page } from '$app/state';
+	import Banner from '$lib/components/Banner.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -23,14 +27,51 @@
 	}
 
 	const current = $derived(data.plans.find((p) => p.id === data.entitlement.plan) ?? data.plans[0]);
-	const yearly = $derived(describeYearly(data.pricing));
+	const yearlyLine = $derived(describeYearly(data.pricing));
+
+	/**
+	 * Coming back from checkout, the webhook may still be a few seconds out —
+	 * the page keeps asking until the plan flips, so nobody stares at buy
+	 * buttons they just used.
+	 */
+	const cameFromCheckout = page.url.searchParams.get('welcome') === '1';
+	let confirming = $state(cameFromCheckout);
+	$effect(() => {
+		if (!confirming) return;
+		if (data.hasProviderSub) {
+			confirming = false;
+			return;
+		}
+		let polls = 0;
+		const timer = setInterval(() => {
+			polls += 1;
+			if (polls > 15 || data.hasProviderSub) {
+				clearInterval(timer);
+				confirming = false;
+				return;
+			}
+			invalidateAll();
+		}, 2000);
+		return () => clearInterval(timer);
+	});
 </script>
 
 <div class="space-y-4">
+	{#if cameFromCheckout && data.hasProviderSub}
+		<Banner
+			kind="success"
+			message={data.entitlement.source === 'trial' || data.entitlement.status === 'trialing'
+				? `Card saved — your ${data.pricing.trialDays} days are running.`
+				: 'Payment confirmed.'}
+		/>
+	{:else if confirming}
+		<Banner kind="info" message="Confirming your payment…" />
+	{/if}
+
 	<Card
 		title="Your plan"
-		description={data.entitlement.source === 'trial'
-			? `Your trial runs for ${data.pricing.trialDays} days.`
+		description={data.entitlement.status === 'trialing' || data.entitlement.source === 'trial'
+			? `Your trial runs until ${when(data.entitlement.until)}.`
 			: data.entitlement.source === 'lapsed'
 				? 'Your subscription has ended. Nothing was deleted — everything you wrote is still here and still exportable.'
 				: current.blurb}
@@ -43,44 +84,85 @@
 
 		<div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
 			<span class="text-2xl font-bold text-gray-900">{current.label}</span>
-			<span class="text-sm text-gray-500">
-				{current.id === 'pro'
-					? `${formatPrice(data.pricing.monthlyCents, data.pricing.currency)} a month`
-					: 'not subscribed'}
-			</span>
+			{#if data.hasProviderSub && data.interval}
+				<span class="text-sm text-gray-500">
+					{data.interval === 'year'
+						? `${formatPrice(data.pricing.yearlyCents, data.pricing.currency)} a year`
+						: `${formatPrice(data.pricing.monthlyCents, data.pricing.currency)} a month`}
+				</span>
+			{:else if current.id === 'pro'}
+				<span class="text-sm text-gray-500">
+					{formatPrice(data.pricing.monthlyCents, data.pricing.currency)} a month
+				</span>
+			{/if}
 
 			{#if data.entitlement.until}
 				<span class="text-sm text-gray-500">
 					{data.entitlement.endingAt
 						? `ends ${when(data.entitlement.endingAt)}`
-						: data.entitlement.source === 'trial'
-							? `trial ends ${when(data.entitlement.until)}`
+						: data.entitlement.status === 'trialing' || data.entitlement.source === 'trial'
+							? `first charge ${when(data.entitlement.until)}`
 							: `renews ${when(data.entitlement.until)}`}
 				</span>
 			{/if}
 		</div>
 
+		<FormError message={form?.message} />
+
+		{#if form && 'switched' in form && form.switched}
+			<div class="mt-3">
+				<Banner
+					kind="success"
+					message={form.switched === 'yearly' ? 'Yearly it is.' : 'Back to monthly.'}
+				/>
+			</div>
+		{/if}
+
+		{#if data.hasProviderSub && data.yearly && data.interval === 'month'}
+			<!-- The one honest upgrade: same subscription, better cycle. -->
+			<form method="post" action="?/switchInterval" use:enhance class="mt-4">
+				<button name="interval" value="yearly" class="btn btn-primary">
+					<Icon name="arrow-right" /> Switch to yearly — {yearlyLine}
+				</button>
+			</form>
+		{:else if data.hasProviderSub && data.interval === 'year'}
+			<form method="post" action="?/switchInterval" use:enhance class="mt-4">
+				<button name="interval" value="monthly" class="btn btn-sm btn-quiet">
+					Switch to monthly
+				</button>
+			</form>
+		{/if}
+
 		{#if data.canCheckout}
 			<div class="mt-4">
-				<FormError message={form?.message} />
 				{#if data.configured}
 					{@const trialFirst = data.pricing.trialRequiresCard && data.entitlement.plan === 'none'}
 					<!-- Full page post on purpose: the answer is a redirect to the
-					     provider's checkout, which enhance would swallow. -->
-					<form method="post" action="?/checkout" class="flex items-center gap-2">
-						<button class="btn btn-primary" name="interval" value="monthly">
-							<Icon name="arrow-right" />
-							{trialFirst ? `Start your free ${data.pricing.trialDays} days` : 'Go Pro'}
-						</button>
+					     provider's checkout, which enhance would swallow. Yearly
+					     leads; it is the one worth taking. -->
+					<form method="post" action="?/checkout" class="flex flex-wrap items-center gap-2">
 						{#if data.yearly}
-							<button class="btn" name="interval" value="yearly"> A year at once </button>
+							<button class="btn btn-primary" name="interval" value="yearly">
+								<Icon name="arrow-right" />
+								{trialFirst ? `Start your free ${data.pricing.trialDays} days` : 'Go Pro'} — yearly
+							</button>
+							<button class="btn" name="interval" value="monthly">
+								{formatPrice(data.pricing.monthlyCents, data.pricing.currency)} monthly
+							</button>
+						{:else}
+							<button class="btn btn-primary" name="interval" value="monthly">
+								<Icon name="arrow-right" />
+								{trialFirst ? `Start your free ${data.pricing.trialDays} days` : 'Go Pro'}
+							</button>
 						{/if}
 					</form>
+					{#if data.yearly && yearlyLine}
+						<p class="mt-2 text-xs text-gray-500">Yearly is {yearlyLine}.</p>
+					{/if}
 					{#if trialFirst}
-						<p class="mt-2 text-xs text-gray-500">
+						<p class="mt-1 text-xs text-gray-500">
 							Card now, nothing charged today. The first charge comes after the
-							{data.pricing.trialDays} days, a mail warns you two days before, and cancelling before that
-							date costs nothing.
+							{data.pricing.trialDays} days, and a mail warns you two days before.
 						</p>
 					{/if}
 				{:else}
@@ -116,40 +198,6 @@
 							></div>
 						</div>
 					{/if}
-				</div>
-			{/each}
-		</div>
-	</Card>
-
-	<!--
-			One plan, and the option that is not a plan.
-
-			There is no tier to compare against: the free version of this app is the
-			one you run yourself, from the same source, and that is a better offer
-			than a crippled tier on somebody else's server.
-		-->
-	<Card title="What it costs" description="One subscription, or run it yourself for nothing.">
-		<div class="grid gap-4 sm:grid-cols-2">
-			{#each data.plans as plan (plan.id)}
-				<div
-					class="border p-4 {plan.id === data.entitlement.plan
-						? 'border-gray-900'
-						: 'border-gray-200'}"
-				>
-					<h3 class="text-sm font-semibold text-gray-900">{plan.label}</h3>
-					<p class="tabular mt-1 text-sm text-gray-500">
-						{formatPrice(data.pricing.monthlyCents, data.pricing.currency)} a month{#if yearly}<br
-							/>{yearly}{/if}
-					</p>
-					<p class="mt-2 text-sm text-gray-500">{plan.blurb}</p>
-					<dl class="mt-3 space-y-1 text-sm">
-						{#each data.limitKeys as key (key)}
-							<div class="flex justify-between gap-3">
-								<dt class="text-gray-500">{LIMIT_LABELS[key]}</dt>
-								<dd class="tabular text-gray-900">{plan.limits[key] ?? 'no limit'}</dd>
-							</div>
-						{/each}
-					</dl>
 				</div>
 			{/each}
 		</div>

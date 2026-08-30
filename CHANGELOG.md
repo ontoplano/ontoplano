@@ -6,6 +6,22 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- The signup funnel is one straight line: every landing CTA opens the
+  register form directly (the hero also grew a plain Sign in button, and
+  the price card is clickable), and a fresh account goes register → confirm
+  the address → the card page → the app, with nothing to find by hand. The
+  card page states the terms — nothing charged today, the first-charge date
+  — before any payment window opens, with yearly leading.
+- The billing page stopped selling to people who already bought: with a card
+  on file the buy buttons are gone, replaced by a one-click switch between
+  monthly and yearly on the same subscription (mid-trial it bills nothing;
+  on a paid plan the difference is prorated). Coming back from checkout the
+  page confirms the payment by itself instead of showing stale buy buttons,
+  and the "run it yourself for nothing" pitch left the paid app.
+- Hosted administrators have the Instance tab again — registration mode and
+  the rest were only reachable on self-hosted installs.
+- An administrator can end an account's plan on a chosen date — the
+  operator's clock for previewing what a lapsed user sees.
 - The price is $4.90 a month / $29.90 a year, and the app quotes it from the
   provider's own price entities (cached ten minutes) — the number on the
   landing and billing pages is the number that gets charged, from one place.
