@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
+	import NoteFields from '$lib/components/fields/NoteFields.svelte';
 	import { resolve } from '$app/paths';
 	import { renderMarkdown } from '$lib/markdown';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
-	import { autogrow } from '$lib/actions/autogrow';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -333,22 +333,10 @@
 			{/if}
 
 			<FormGrid>
-				<Field label="Entry" span={12} required>
-					<textarea name="content" required rows="8" use:autogrow class="textarea"
-						>{editingId ? (editingEntry()?.content ?? '') : ''}</textarea
-					>
-				</Field>
-
-				<Field label="Tags" span={6} hint="Separate with commas or spaces. A leading # is fine.">
-					<input
-						autocomplete="off"
-						name="tags"
-						type="text"
-						value={editingId ? editingTagString() : ''}
-						placeholder="health, work, idea"
-						class="input"
-					/>
-				</Field>
+				<NoteFields
+					content={editingId ? (editingEntry()?.content ?? '') : ''}
+					tags={editingId ? editingTagString() : ''}
+				/>
 
 				<Field label="People" span={6} hint="Anyone this was about.">
 					<input

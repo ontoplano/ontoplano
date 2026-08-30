@@ -2,11 +2,11 @@
 	/* biome-ignore-all assist/source/organizeImports lint/correctness/noUnusedImports lint/correctness/noUnusedVariables lint/style/useConst: Svelte template and rune usage in this file triggers false positives in current Biome diagnostics. */
 	import { enhance } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
+	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { autofocus } from '$lib/actions/autofocus';
-	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -294,22 +294,10 @@
 			{/if}
 
 			<FormGrid>
-				<Field label="Idea" span={12} required>
-					<textarea name="content" required rows="5" class="textarea"
-						>{editingId ? (editingIdea()?.content ?? '') : ''}</textarea
-					>
-				</Field>
-
-				<Field label="Tags" span={12} hint="Separate with commas or spaces. A leading # is fine.">
-					<input
-						name="tags"
-						type="text"
-						autocomplete="off"
-						value={editingId ? editingTagString() : ''}
-						placeholder="project, app, music"
-						class="input"
-					/>
-				</Field>
+				<IdeaFields
+					content={editingId ? (editingIdea()?.content ?? '') : ''}
+					tags={editingId ? editingTagString() : ''}
+				/>
 			</FormGrid>
 		</form>
 

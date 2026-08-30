@@ -19,9 +19,6 @@ export type Capture = {
 	/** Its colour in the pie: the section the thing ends up in. */
 	color: string;
 	action: string;
-	field: string;
-	placeholder: string;
-	multiline: boolean;
 	/** The section this writes into. A hidden section takes its wedge with it. */
 	hide?: HideableSection;
 };
@@ -34,9 +31,6 @@ export const CAPTURES: Capture[] = [
 		icon: 'ideas',
 		color: SECTION_COLORS.ideas,
 		action: '/ideas?/create',
-		field: 'content',
-		placeholder: 'the thing you would otherwise forget',
-		multiline: true,
 		hide: 'ideas'
 	},
 	{
@@ -45,10 +39,7 @@ export const CAPTURES: Capture[] = [
 		label: 'Todo',
 		icon: 'check',
 		color: SECTION_COLORS.planner,
-		action: '/planner/todo?/create',
-		field: 'title',
-		placeholder: 'something to do, no date yet',
-		multiline: false
+		action: '/planner/todo?/create'
 	},
 	{
 		key: 'note',
@@ -57,9 +48,6 @@ export const CAPTURES: Capture[] = [
 		icon: 'diary',
 		color: SECTION_COLORS.diary,
 		action: '/diary?/create',
-		field: 'content',
-		placeholder: "what happened, or what you're thinking",
-		multiline: true,
 		hide: 'diary'
 	},
 	{
@@ -69,11 +57,6 @@ export const CAPTURES: Capture[] = [
 		icon: 'shopping',
 		color: SECTION_COLORS.shopping,
 		action: '/shopping?/create',
-		// `label`, not `name`: a field a browser reads as a person's name is one
-		// it offers the saved address for. See tests/autofill-field-names.test.ts.
-		field: 'label',
-		placeholder: 'something to pick up',
-		multiline: false,
 		hide: 'shopping'
 	}
 ];

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { autofocus } from '$lib/actions/autofocus';
+	import CaptureForm from '$lib/components/CaptureForm.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { captureByShortcut, visibleCaptures, type Capture } from '$lib/capture';
@@ -29,13 +29,17 @@
 
 	let open = $state<Capture | null>(null);
 
+	function show(capture: Capture) {
+		open = capture;
+	}
+
 	/** Opened by key from the page that hosts this. */
 	export function openByShortcut(key: string): boolean {
 		const match = captureByShortcut(key);
 		// A hidden section's keystroke is off with its buttons — a shortcut
 		// that writes into a room the menus say is not there is a haunting.
 		if (!match || captures.every((c) => c.key !== match.key)) return false;
-		open = match;
+		show(match);
 		return true;
 	}
 </script>
@@ -43,7 +47,7 @@
 {#if inline}
 	<div class="hidden items-center gap-2 lg:flex">
 		{#each captures as capture (capture.key)}
-			<button type="button" onclick={() => (open = capture)} class="btn btn-sm">
+			<button type="button" onclick={() => show(capture)} class="btn btn-sm">
 				<Icon name={capture.icon} />
 				{capture.label}
 				<!-- `kbd-hint` so a touch screen wide enough for this row still drops
@@ -57,7 +61,7 @@
 		{#each captures as capture (capture.key)}
 			<button
 				type="button"
-				onclick={() => (open = capture)}
+				onclick={() => show(capture)}
 				class="lift flex flex-1 flex-col items-center gap-1 border border-gray-200 bg-white px-2 py-3 text-xs text-gray-700 shadow-card"
 			>
 				<Icon name={capture.icon} size={18} />
@@ -77,6 +81,7 @@
 	{error}
 >
 	{#if open}
+		{@const capture = open}
 		<form
 			id="capture-form"
 			method="post"
@@ -87,30 +92,7 @@
 					if (result.type === 'success') open = null;
 				}}
 		>
-			<!-- Shopping needs to know which list; everything else has one shape. -->
-			{#if open.key === 'buy'}
-				<input type="hidden" name="type" value="replenish" />
-			{/if}
-
-			{#if open.multiline}
-				<textarea
-					name={open.field}
-					required
-					rows="4"
-					use:autofocus
-					placeholder={open.placeholder}
-					class="textarea"
-				></textarea>
-			{:else}
-				<input
-					name={open.field}
-					required
-					autocomplete="off"
-					use:autofocus
-					placeholder={open.placeholder}
-					class="input"
-				/>
-			{/if}
+			<CaptureForm {capture} />
 		</form>
 	{/if}
 

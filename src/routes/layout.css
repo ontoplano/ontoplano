@@ -227,6 +227,12 @@ html[data-style='playful'] nav > a,
 html[data-style='playful'] .divide-y > *,
 html[data-style='playful'] dialog > div > header,
 html[data-style='playful'] dialog > div > footer,
+/*
+ * A disclosure whose only border is on top. The blanket radius above curved
+ * that hairline away at both ends, which reads as the top edge of a box that
+ * is not there — a stray arc floating under the field above it.
+ */
+html[data-style='playful'] details.no-round,
 html[data-style='playful'] svg {
 	border-radius: 0;
 }
@@ -239,7 +245,14 @@ html[data-style='playful'] svg {
  * is not it.
  */
 @media (width < 40rem) {
-	html[data-style='playful'] dialog > div {
+	/*
+	 * Both halves of the rule above, or neither wins: the panel is matched by
+	 * `.shadow-overlay` as well as by `dialog > div`, and the class branch
+	 * outranks a selector made only of elements. Naming both here is not
+	 * belt-and-braces, it is the fix.
+	 */
+	html[data-style='playful'] dialog > div,
+	html[data-style='playful'] dialog > .shadow-overlay {
 		border-radius: 0;
 	}
 }

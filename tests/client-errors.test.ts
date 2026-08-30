@@ -1,3 +1,6 @@
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts } from './helpers/db';
 
@@ -11,6 +14,16 @@ import { makeDatabase, OWNER, seedAccounts } from './helpers/db';
  * given means `/admin` can read it back, and the table never grows without
  * limit.
  */
+/*
+ * Its own config directory, decided before anything imports the config module.
+ *
+ * `CONFIG_DIR` is read once at import time, and the suite otherwise shares one
+ * directory — so another file turning the instance's report setting off, in
+ * another worker, turned it off here too. A test that passes alone and fails
+ * in the suite is worse than one that fails.
+ */
+process.env.ONTOPLANO_CONFIG_DIR = mkdtempSync(join(tmpdir(), 'ontoplano-reports-'));
+
 const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());

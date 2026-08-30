@@ -23,7 +23,11 @@
 	} = $props();
 </script>
 
-<details bind:open class="col-span-12 border-t border-gray-200 pt-3">
+<!--
+	Square: a border on one side of a rounded box draws a hairline that curves
+	away at both ends, which reads as the top of a box that is not there.
+-->
+<details bind:open class="no-round col-span-12 border-t border-gray-200 pt-3">
 	<summary
 		class="flex cursor-pointer list-none items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
 	>

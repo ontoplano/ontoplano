@@ -2,12 +2,12 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import Banner from '$lib/components/Banner.svelte';
+	import BuyFields from '$lib/components/fields/BuyFields.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { autofocus } from '$lib/actions/autofocus';
-	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -508,51 +508,14 @@
 				<input type="hidden" name="id" value={editingId} />
 			{/if}
 			<FormGrid>
-				<Field label="Item" span={8} required>
-					<input
-						name="label"
-						type="text"
-						autocomplete="off"
-						required
-						bind:value={editName}
-						class="input"
-					/>
-				</Field>
-
-				<Field label="List" span={4}>
-					<select name="type" required bind:value={newItemType} class="select">
-						<option value="replenish">Inventory</option>
-						<option value="someday">Wishlist</option>
-					</select>
-				</Field>
-
-				{#if newItemType === 'replenish'}
-					<Field label="Category" span={12}>
-						<select name="shoppingCategoryId" bind:value={editShoppingCategoryId} class="select">
-							{#each data.shoppingCategories as category (category.id)}
-								<option value={category.id}>{category.name}</option>
-							{/each}
-						</select>
-					</Field>
-				{/if}
-
-				<Field label="Notes" span={8}>
-					<input name="notes" type="text" autocomplete="off" bind:value={editNotes} class="input" />
-				</Field>
-
-				<!-- What it costs, roughly. Prices move and shops disagree, which is
-				     why the total says "about" and never claims a receipt — but the
-				     field is a price, and calling it "About" made it a riddle. -->
-				<Field label="Price" span={4} hint="What it usually costs.">
-					<input
-						name="price"
-						type="text"
-						inputmode="decimal"
-						autocomplete="off"
-						bind:value={editPrice}
-						class="input"
-					/>
-				</Field>
+				<BuyFields
+					bind:label={editName}
+					bind:notes={editNotes}
+					bind:price={editPrice}
+					bind:type={newItemType}
+					bind:shoppingCategoryId={editShoppingCategoryId}
+					categories={data.shoppingCategories}
+				/>
 			</FormGrid>
 		</form>
 

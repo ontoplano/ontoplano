@@ -2,6 +2,7 @@
 	import { autofocus } from '$lib/actions/autofocus';
 	import { enhance } from '$app/forms';
 	import Backlinks from '$lib/components/Backlinks.svelte';
+	import TodoFields from '$lib/components/fields/TodoFields.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -12,10 +13,6 @@
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import MoreOptions from '$lib/components/MoreOptions.svelte';
-	import NotebookField from '$lib/components/NotebookField.svelte';
-	import RatingPicker from '$lib/components/RatingPicker.svelte';
-	import { RATINGS } from '$lib/ratings.js';
 	import { CLOSED_STATUSES } from '$lib/task-status.js';
 	import { keepInView } from '$lib/actions/keep-in-view';
 
@@ -36,7 +33,6 @@
 	});
 
 	/** How many of the folded-away ratings currently carry a value. */
-	const ratingsSet = $derived(Object.values(formRatings).filter((v) => v !== null).length);
 
 	type Todo = (typeof data.todos)[number];
 
@@ -201,41 +197,15 @@
 			{/if}
 
 			<FormGrid>
-				<Field label="Title" span={12} required>
-					<input
-						name="title"
-						type="text"
-						required
-						autocomplete="off"
-						value={editing?.title ?? ''}
-						class="input"
-					/>
-				</Field>
-
-				<Field label="Category" span={6}>
-					<select name="categoryId" class="select">
-						<option value="">— none —</option>
-						{#each data.categories as cat (cat.id)}
-							<option value={cat.id} selected={editing?.categoryId === cat.id}>{cat.name}</option>
-						{/each}
-					</select>
-				</Field>
-
-				<NotebookField notebooks={data.notebooks} value={editing?.notebookId ?? null} />
-
-				<Field label="Notes" span={12}>
-					<textarea name="notes" rows="3" class="textarea">{editing?.notes ?? ''}</textarea>
-				</Field>
-
-				<!-- Three optional five-point scales at the top of a create form read
-				     as work to do before you may write anything down. -->
-				<MoreOptions label="Urgency, interest, energy" count={ratingsSet}>
-					{#each RATINGS as r (r)}
-						<div class="col-span-12 sm:col-span-4">
-							<RatingPicker rating={r} bind:value={formRatings[r]} />
-						</div>
-					{/each}
-				</MoreOptions>
+				<TodoFields
+					title={editing?.title ?? ''}
+					notes={editing?.notes ?? ''}
+					categoryId={editing?.categoryId ?? null}
+					notebookId={editing?.notebookId ?? null}
+					categories={data.categories}
+					notebooks={data.notebooks}
+					bind:ratings={formRatings}
+				/>
 			</FormGrid>
 		</form>
 

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { autofocus } from '$lib/actions/autofocus';
 	import { CAPTURES, visibleCaptures, type Capture } from '$lib/capture';
 	import Modal from '$lib/components/Modal.svelte';
+	import CaptureForm from '$lib/components/CaptureForm.svelte';
 	import RadialMenu from '$lib/components/RadialMenu.svelte';
 
 	/**
@@ -114,30 +114,7 @@
 					if (result.type === 'success') writing = null;
 				}}
 		>
-			<!-- Shopping needs to know which list; everything else has one shape. -->
-			{#if capture.key === 'buy'}
-				<input type="hidden" name="type" value="replenish" />
-			{/if}
-
-			{#if capture.multiline}
-				<textarea
-					name={capture.field}
-					required
-					rows="4"
-					use:autofocus
-					placeholder={capture.placeholder}
-					class="textarea"
-				></textarea>
-			{:else}
-				<input
-					name={capture.field}
-					required
-					autocomplete="off"
-					use:autofocus
-					placeholder={capture.placeholder}
-					class="input"
-				/>
-			{/if}
+			<CaptureForm {capture} />
 		</form>
 	{/if}
 
