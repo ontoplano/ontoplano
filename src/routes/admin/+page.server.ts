@@ -1,7 +1,15 @@
+import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { recentEvents, searchAccounts, setRole } from '$lib/server/services/admin';
 import { dismissFailure, openFailures, retryFailure } from '$lib/server/services/mail-log';
-import { protection } from '$lib/server/services/protection';
+import {
+	banControlEnabled,
+	blockForever,
+	permanentlyBlocked,
+	protection,
+	unban,
+	unblockForever
+} from '$lib/server/services/protection';
 import { dismissClientError, recentClientErrors } from '$lib/server/services/client-errors';
 import { toActionFailure, ValidationError } from '$lib/server/services/errors';
 
@@ -26,6 +34,10 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		// What the layer in front of the app has been doing. Read from fail2ban's
 		// log, and honest about not being able to read it.
 		protection: protection(),
+		// Whether this box has been given the one sudo rule that lets the app
+		// act on a ban. Off means the list is shown and no buttons are.
+		canControlBans: banControlEnabled(),
+		blockedForever: permanentlyBlocked(),
 		// So the page can leave your own row alone rather than offering a button
 		// the server will refuse.
 		me: locals.user!.id
@@ -33,6 +45,41 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 };
 
 export const actions: Actions = {
+	/*
+	 * Acting on a ban. Every argument is validated again by the root-side
+	 * helper, which is where the trust boundary actually is — these are the
+	 * page's half of it, not the whole of it.
+	 */
+	unban: async ({ request }) => {
+		const formData = await request.formData();
+		try {
+			unban(String(formData.get('jail') ?? ''), String(formData.get('address') ?? ''));
+			return { success: true };
+		} catch (e) {
+			return fail(400, { message: e instanceof Error ? e.message : 'Could not unban that' });
+		}
+	},
+
+	blockForever: async ({ request }) => {
+		const formData = await request.formData();
+		try {
+			blockForever(String(formData.get('address') ?? ''));
+			return { success: true };
+		} catch (e) {
+			return fail(400, { message: e instanceof Error ? e.message : 'Could not block that' });
+		}
+	},
+
+	unblockForever: async ({ request }) => {
+		const formData = await request.formData();
+		try {
+			unblockForever(String(formData.get('address') ?? ''));
+			return { success: true };
+		} catch (e) {
+			return fail(400, { message: e instanceof Error ? e.message : 'Could not unblock that' });
+		}
+	},
+
 	dismissReport: async ({ request }) => {
 		const formData = await request.formData();
 		dismissClientError(Number(formData.get('id')));

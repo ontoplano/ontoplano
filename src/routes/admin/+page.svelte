@@ -315,6 +315,12 @@ sudo systemctl restart user@$(id -u)</pre>
 			{:else if data.protection.recent.length === 0}
 				<EmptyState icon="shield" title="Nobody has been turned away" />
 			{:else}
+				{#if !data.canControlBans}
+					<p class="border-b border-gray-200 px-4 py-2 text-xs text-gray-500">
+						Read-only: this box has not been given the sudo rule that lets the app unban or block an
+						address. <code class="text-xs">the-setup-script</code> installs it.
+					</p>
+				{/if}
 				<p class="border-b border-gray-200 px-4 py-2 text-xs text-gray-500">
 					{data.protection.lastDay}
 					{data.protection.lastDay === 1 ? 'address' : 'addresses'} blocked in the last 24 hours
@@ -339,6 +345,46 @@ sudo systemctl restart user@$(id -u)</pre>
 								</span>
 							</span>
 							<span class="shrink-0 text-xs text-gray-500">{ago(ban.at)}</span>
+
+							<!--
+								Only where the box has been given the one sudo rule that lets
+								the app act. Elsewhere the list is a record and nothing more,
+								which is honest — buttons that always fail are worse than no
+								buttons.
+							-->
+							{#if data.canControlBans}
+								{@const forever = data.blockedForever.includes(ban.address)}
+								<div class="flex shrink-0 gap-1">
+									{#if ban.active}
+										<form method="post" action="?/unban" use:enhance>
+											<input type="hidden" name="jail" value={ban.jail} />
+											<input type="hidden" name="address" value={ban.address} />
+											<button class="btn btn-sm" title="Let this address back in now">
+												Unban
+											</button>
+										</form>
+									{/if}
+									{#if forever}
+										<form method="post" action="?/unblockForever" use:enhance>
+											<input type="hidden" name="address" value={ban.address} />
+											<button class="btn btn-sm" title="Lift the permanent block">
+												Lift block
+											</button>
+										</form>
+									{:else}
+										<form method="post" action="?/blockForever" use:enhance>
+											<input type="hidden" name="address" value={ban.address} />
+											<button
+												class="btn btn-sm btn-danger"
+												use:armed
+												title="Out for good — survives fail2ban restarts and jail expiry"
+											>
+												Block for good
+											</button>
+										</form>
+									{/if}
+								</div>
+							{/if}
 						</div>
 					{/each}
 				</div>

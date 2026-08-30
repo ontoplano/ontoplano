@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { openSync, closeSync, fstatSync, readSync, constants } from 'node:fs';
 
 /**
@@ -194,4 +195,66 @@ function local(date: Date): string {
 		`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
 		`${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
 	);
+}
+
+/* ── Acting on a ban ─────────────────────────────────────────────────────────
+ *
+ * Reading the log needs nothing but a group membership. Unbanning needs root,
+ * and the way that is usually done — a sudoers line with a wildcard — hands
+ * the web process the box: `*` in sudoers matches spaces, and
+ * `fail2ban-client set <jail> action <name> actionban` is arbitrary root
+ * command execution by design.
+ *
+ * So the app runs one fixed path with no wildcards in the rule, and
+ * `the-deployment-repo/bin/onto-ban-control` decides what may be asked for: a
+ * verb from four literals, a jail that already exists, and an address that is
+ * a bare IP literal. Nothing is passed through a shell at either end.
+ *
+ * Off unless the box says otherwise. An instance that has not been set up for
+ * this shows the bans and no buttons, rather than buttons that fail.
+ */
+const CONTROL = process.env.ONTOPLANO_BAN_CONTROL_CMD || '/usr/local/sbin/onto-ban-control';
+
+export function banControlEnabled(): boolean {
+	return process.env.ONTOPLANO_BAN_CONTROL === 'true';
+}
+
+function control(args: string[]): string {
+	if (!banControlEnabled()) throw new Error('Ban control is not enabled on this instance');
+	// execFileSync, never a shell: the arguments are validated again by the
+	// helper, and neither end ever builds a command line out of them.
+	return execFileSync('sudo', ['-n', CONTROL, ...args], {
+		encoding: 'utf8',
+		timeout: 10_000
+	}).trim();
+}
+
+/** Let an address back in now, rather than when its bantime runs out. */
+export function unban(jail: string, address: string): string {
+	return control(['unban', jail, address]);
+}
+
+/**
+ * Out for good.
+ *
+ * fail2ban has no "forever" — every jail has a bantime and the timer wins — so
+ * this is an entry in the `banned` nftables set the box already keeps, which
+ * survives a fail2ban restart and a jail expiry.
+ */
+export function blockForever(address: string): string {
+	return control(['block', address]);
+}
+
+export function unblockForever(address: string): string {
+	return control(['unblock', address]);
+}
+
+/** Which addresses are out for good, so the page knows which button to offer. */
+export function permanentlyBlocked(): string[] {
+	if (!banControlEnabled()) return [];
+	try {
+		return control(['list']).split('\n').filter(Boolean);
+	} catch {
+		return [];
+	}
 }
