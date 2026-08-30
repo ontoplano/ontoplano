@@ -6,6 +6,7 @@ import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { env } from '$env/dynamic/private';
 import { getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
+import { MIN_PASSWORD_LENGTH } from '$lib/passwords';
 import { sendLogged } from '$lib/server/services/mail-log';
 import { renderEmail } from '$lib/server/email-template';
 import { configuredProviders, type SocialProvider } from '$lib/social';
@@ -79,6 +80,19 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 		requireEmailVerification: false,
+		/*
+		 * Eight characters, and not all of one kind.
+		 *
+		 * Deliberately modest: length is what actually matters and rules that
+		 * demand an uppercase and a symbol mostly produce `Password1!`. This is
+		 * the floor that stops `123456` and `qwerty`, and nothing beyond it —
+		 * the rest of the defence is the rate limit on the sign-in door.
+		 *
+		 * The length is better-auth's business; "not all of one kind" is
+		 * `$lib/passwords`, which every door that takes a new password calls.
+		 * The form says the rule up front so nobody meets it only as a refusal.
+		 */
+		minPasswordLength: MIN_PASSWORD_LENGTH,
 		// Short-lived, because a reset link in a mailbox is a standing key to the
 		// account.
 		resetPasswordTokenExpiresIn: 60 * 60,

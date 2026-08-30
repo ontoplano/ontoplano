@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { auth } from '$lib/server/auth';
+import { checkPassword } from '$lib/passwords';
 import { APIError } from 'better-auth/api';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
@@ -20,7 +21,8 @@ export const actions: Actions = {
 		const confirm = formData.get('confirm')?.toString() ?? '';
 
 		if (!token) return fail(400, { message: 'This reset link is missing its token' });
-		if (password.length < 8) return fail(400, { message: 'Use at least 8 characters' });
+		const weak = checkPassword(password);
+		if (weak) return fail(400, { message: weak });
 		if (password !== confirm) return fail(400, { message: 'The two passwords do not match' });
 
 		try {

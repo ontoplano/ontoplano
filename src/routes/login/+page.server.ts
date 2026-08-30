@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { auth, configuredSocialProviders } from '$lib/server/auth';
+import { checkPassword } from '$lib/passwords';
 import { APIError } from 'better-auth/api';
 import { isEmailConfigured } from '$lib/server/email';
 import { isStaging } from '$lib/server/settings';
@@ -88,6 +89,11 @@ export const actions: Actions = {
 		const name = formData.get('name')?.toString() ?? '';
 		const now = new Date();
 
+		// Before the account exists, so a refused password does not burn an
+		// invitation code or leave a half-made row behind.
+		const weak = checkPassword(password);
+		if (weak) return fail(400, { message: weak });
+
 		let invite;
 		try {
 			invite = checkSignUpAllowed(formData.get('invite'), now).invite;
@@ -113,9 +119,18 @@ export const actions: Actions = {
 				claimFirstAccount(created.user.id);
 				const onboarding = onboardEntitlement(created.user.id, Boolean(invite), now);
 				record(created.user.id, 'registered', { ip: event.getClientAddress() });
-				// (The verified-address gate, when on, intercepts with its own
-				// page first — the right order anyway.)
 				if (onboarding === 'checkout') landing = '/start';
+				// Confirm the address FIRST, then ask for the card. It ran the
+				// other way round: somebody handed over a card and was only then
+				// told to go and check their mailbox, which is the one order that
+				// makes a card feel like a trick. The verify page knows where to
+				// send them next, so nothing is skipped by going through it.
+				//
+				// Only where a mail can actually arrive. On an instance with no
+				// SMTP the confirmation goes to the log, and a page telling
+				// somebody to check a mailbox that will stay empty is a worse
+				// first step than no step.
+				if (!created.user.emailVerified && isEmailConfigured()) landing = '/login/verify';
 			}
 		} catch (error) {
 			if (error instanceof APIError) {

@@ -56,6 +56,19 @@
 			</button>
 		</form>
 
+		<!--
+			A way past it, because this is a step in the funnel and not a wall:
+			confirming is required only where the instance says so, and that gate
+			is in the hook. Somebody whose mail is slow should not be stuck on a
+			page whose only act is "send it again".
+		-->
+		<p class="mt-4 text-center text-sm">
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+			<a href={data.next} class="text-gray-600 underline hover:text-gray-900">
+				Skip for now — you can confirm later
+			</a>
+		</p>
+
 		<form method="post" action="/login?/signOut" use:enhance class="mt-4 text-xs text-gray-500">
 			Wrong address? <button type="submit" class="underline">Sign out</button>.
 		</form>

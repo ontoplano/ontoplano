@@ -2,6 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
 import type { Actions, PageServerLoad } from './$types';
 import { auth, verifyPassword } from '$lib/server/auth';
+import { checkPassword } from '$lib/passwords';
 import { loadConfig } from '$lib/server/config';
 import { isEmailConfigured } from '$lib/server/email';
 import {
@@ -107,6 +108,8 @@ export const actions: Actions = {
 		const confirmPassword = formData.get('confirmPassword')?.toString() ?? '';
 
 		if (!currentPassword || !newPassword) return fail(400, { message: 'Fill in both passwords' });
+		const weak = checkPassword(newPassword);
+		if (weak) return fail(400, { message: weak });
 		if (newPassword !== confirmPassword)
 			return fail(400, { message: 'The two new passwords do not match' });
 		if (newPassword === currentPassword)

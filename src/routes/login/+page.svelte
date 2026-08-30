@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { createAuthClient } from 'better-auth/svelte';
 	import { SOCIAL_GLYPHS, SOCIAL_LABELS, type SocialProvider } from '$lib/social';
+	import { MIN_PASSWORD_LENGTH, PASSWORD_RULE } from '$lib/passwords';
 	import Banner from '$lib/components/Banner.svelte';
 	import StagingBand from '$lib/components/StagingBand.svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -102,10 +103,15 @@
 						name="password"
 						type="password"
 						required
-						minlength="3"
+						minlength={mode === 'register' ? MIN_PASSWORD_LENGTH : 3}
 						autocomplete={mode === 'register' ? 'new-password' : 'current-password'}
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
+					<!-- The rule before it is broken, not only as a refusal after. The
+					     old `minlength=3` on a NEW password was also just wrong. -->
+					{#if mode === 'register'}
+						<span class="mt-1 block text-xs text-gray-500">{PASSWORD_RULE}</span>
+					{/if}
 				</label>
 			{/if}
 			<button
