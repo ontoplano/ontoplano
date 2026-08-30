@@ -6,9 +6,9 @@
 	import { afterNavigate, goto } from '$app/navigation';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
+	import { NAV_PLACES } from '$lib/sections-nav';
 	import { THEMES } from '$lib/theme.js';
 	import type { SectionKey } from '$lib/colors.js';
-	import type { HideableSection } from '$lib/sections.js';
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
 	import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
 	import CapturePie from '$lib/components/CapturePie.svelte';
@@ -24,7 +24,6 @@
 	import type { IconName } from '$lib/components/Icon.svelte';
 	import { suppressAutofill } from '$lib/autofill';
 	import type { Snippet } from 'svelte';
-	import type { Pathname } from '$app/types';
 
 	let { children, data }: { children: Snippet; data: LayoutServerData } = $props();
 
@@ -45,81 +44,14 @@
 			.join(';');
 	}
 
-	const allNav: {
-		/** A real route, so a tab pointing at one that does not exist fails the build. */
-		href: Pathname;
-		label: string;
-		section: SectionKey;
-		icon: string;
-		/** Which preference toggle puts this tab away. Absent means always on. */
-		hide?: HideableSection;
-	}[] = [
-		// `icon` is an SVG path drawn at 24x24. Inline rather than an icon package:
-		// nine glyphs is not worth a dependency that ships to a webview.
-		{ href: '/', label: 'Home', section: 'home', icon: 'M3 10.5 12 3l9 7.5V21H3z' },
-		{
-			href: '/planner/plan',
-			label: 'Planner',
-			section: 'planner',
-			icon: 'M4 5h16v16H4zM4 9h16M9 9v12M15 9v12'
-		},
-		{
-			href: '/goals',
-			label: 'Goals',
-			section: 'goals',
-			icon: 'M12 3v18M4 6h14l-3 4 3 4H4z',
-			hide: 'goals'
-		},
-		{
-			href: '/diary',
-			label: 'Diary',
-			section: 'diary',
-			icon: 'M5 3h14v18H5zM9 3v18M12 8h4M12 12h4',
-			hide: 'diary'
-		},
-		{
-			href: '/diary/people',
-			label: 'People',
-			section: 'diary',
-			icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a8 8 0 0 1 16 0',
-			hide: 'people'
-		},
-		{
-			href: '/diary/notebooks',
-			label: 'Notebooks',
-			section: 'diary',
-			icon: 'M7 4h12v17H7zM7 8H4M7 12H4M7 16H4',
-			hide: 'notebooks'
-		},
-		{
-			href: '/ideas',
-			label: 'Ideas',
-			section: 'ideas',
-			icon: 'M9 21h6M10 18h4M12 3a6 6 0 0 1 4 10.5V16H8v-2.5A6 6 0 0 1 12 3z',
-			hide: 'ideas'
-		},
-		{
-			href: '/health/habits',
-			label: 'Health',
-			section: 'health',
-			icon: 'M3 12h4l2 6 4-14 2 8h6',
-			hide: 'health'
-		},
-		{
-			href: '/shopping',
-			label: 'Shopping',
-			section: 'shopping',
-			icon: 'M4 7h16l-1.5 12h-13zM9 7V5a3 3 0 0 1 6 0v2',
-			hide: 'shopping'
-		},
-		{
-			href: '/kitchen/recipes',
-			label: 'Recipes',
-			section: 'kitchen',
-			icon: 'M8 3v8a3 3 0 0 0 6 0V3M11 11v10M17 3c-1.5 2-2 3.5-2 6v3h4V9c0-2.5-.5-4-2-6zM17 12v9',
-			hide: 'recipes'
-		}
-	];
+	/**
+	 * The tabs, from the same list the pie's wedges come from.
+	 *
+	 * They used to be two lists — ten here, eight there — so Notebooks and
+	 * People sat in the bar and were simply absent from the pie whatever the
+	 * preferences said. `sections-nav.test.ts` keeps them the same list.
+	 */
+	const allNav = NAV_PLACES;
 
 	/**
 	 * The tabs this account actually shows. Hiding is a menu matter only —
@@ -396,17 +328,9 @@
 									: 'border-transparent font-medium text-chrome-muted hover:border-chrome-line hover:text-chrome-ink'}"
 								style={active ? `border-color: ${SECTIONS[item.section].accent}` : ''}
 							>
-								<svg
-									class="h-4 w-4"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.75"
-									stroke-linecap="square"
-									aria-hidden="true"
-								>
-									<path d={item.icon} />
-								</svg>
+								<!-- The icon set, rather than a path copied into this file: the
+								     bar and the pie draw the same place with the same glyph. -->
+								<Icon name={item.icon} size={16} />
 								<!--
 									Ten first-class sections, squeezed rather than grouped. Every
 									one of these is somewhere you go, and burying four of them

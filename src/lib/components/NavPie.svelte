@@ -21,20 +21,6 @@
 		hidden = []
 	}: { onopenchange?: (open: boolean) => void; hidden?: readonly string[] } = $props();
 
-	/**
-	 * Which preference toggle closes each room. Diary is the room's own page —
-	 * People and Notebooks keep their navbar tabs even when it is away, so
-	 * only the door this pie opens decides.
-	 */
-	const ROOM_HIDE: Record<string, string> = {
-		goals: 'goals',
-		diary: 'diary',
-		ideas: 'ideas',
-		health: 'health',
-		shopping: 'shopping',
-		kitchen: 'recipes'
-	};
-
 	let open = $state(false);
 	let dragging = $state(false);
 	let origin = $state({ x: 0, y: 0 });
@@ -76,7 +62,7 @@
 	// button, and a pie slot spent on "go to the start" is a slot a real room
 	// could have used.
 	const wedges = $derived(
-		ROOMS.filter((r) => r.key !== 'home' && !hidden.includes(ROOM_HIDE[r.key] ?? '')).map((r) => ({
+		ROOMS.filter((r) => r.key !== 'home' && !(r.hide && hidden.includes(r.hide))).map((r) => ({
 			key: r.key,
 			label: r.label,
 			icon: r.icon,
