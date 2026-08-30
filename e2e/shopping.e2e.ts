@@ -55,7 +55,21 @@ test('a category that holds food makes ingredients possible', async ({ page }) =
 	await expect(page.getByText(/no food category yet/i)).toHaveCount(0);
 });
 
-test('what you actually paid, and how it has moved', async ({ page }) => {
+/**
+ * A price is recorded after the tick, never during it.
+ *
+ * The tick happens in an aisle, one press, often with no signal; asking for a
+ * number there would make the one thing this list is for slower. So the price
+ * is the optional second act, and an item's expected price shows on its row
+ * so that editing it is visibly an edit.
+ *
+ * There is no price *comparison* any more. It compared every purchase against
+ * the first one ever recorded, which is not a trend, and a mistyped first
+ * price poisoned it permanently with nothing in the app able to correct it.
+ */
+test('what you paid is recorded after the tick, and the price shows on the row', async ({
+	page
+}) => {
 	await register(page, `prices-${Date.now()}@test.invalid`);
 	await page.goto('/shopping', { waitUntil: 'networkidle' });
 
@@ -65,40 +79,23 @@ test('what you actually paid, and how it has moved', async ({ page }) => {
 	await dialog.locator('input[name=label]').press('Enter');
 	await expect(page.getByText('oat milk')).toBeVisible();
 
-	// Ticking never asks for a price: it happens in an aisle, one press.
+	// Ticking never asks for a price.
 	await page
 		.getByRole('button', { name: /got it/i })
 		.first()
 		.click();
 	await expect(page.getByRole('button', { name: 'Set price' }).first()).toBeVisible();
 
-	// The price is the optional second act.
 	await page.getByRole('button', { name: 'Set price' }).first().click();
 	await page.locator('input[name=paid]').fill('1.20');
 	await page.getByRole('button', { name: /save what you paid/i }).click();
 	await page.waitForTimeout(400);
 
-	// One price says nothing yet — it is already on the row.
+	// Nothing claims a trend from one purchase — or from any number of them.
 	await expect(page.getByText('→')).toHaveCount(0);
 
-	// Put it back on the list and buy it again, dearer.
-	await page.getByRole('button', { name: /show bought/i }).click();
-	await page.waitForTimeout(300);
-	await page
-		.getByRole('button', { name: /need to buy/i })
-		.first()
-		.click();
-	await page.waitForTimeout(400);
-	await page
-		.getByRole('button', { name: /got it/i })
-		.first()
-		.click();
-	await page.waitForTimeout(400);
-
-	await page.getByRole('button', { name: 'Set price' }).first().click();
-	await page.locator('input[name=paid]').fill('1.60');
-	await page.getByRole('button', { name: /save what you paid/i }).click();
-
-	await expect(page.getByText(/→/)).toBeVisible();
-	await expect(page.getByText(/\+33%/)).toBeVisible();
+	// And the expected price is on the row, which is what makes editing it
+	// look like it worked. It did not appear anywhere before.
+	await page.reload({ waitUntil: 'networkidle' });
+	await expect(page.getByText(/1[.,]20/).first()).toBeVisible();
 });

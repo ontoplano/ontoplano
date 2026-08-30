@@ -285,57 +285,17 @@ export function priceHistory(ctx: Ctx, id: number): PricePoint[] {
 		.all();
 }
 
-/**
- * How every price has moved, in one query.
+/*
+ * There used to be a `priceDrifts` here, showing "R$7.20 → R$8.90 (+24%)" on
+ * a row. It compared the newest purchase against the FIRST one ever recorded,
+ * which is not a trend — one mistyped price at the beginning poisoned the
+ * comparison for good, and nothing in the app could correct it.
  *
- * An account has a few hundred of these at most, so folding them here beats a
- * query per row on a list that draws forty items.
+ * Saying nothing beats saying something wrong, so it is gone. The purchases
+ * are still recorded (`pricePoints` below), which is what a real answer would
+ * be built on: an editable price history, and a comparison against a recent
+ * window rather than against the beginning of time.
  */
-export function priceDrifts(
-	ctx: Ctx
-): Record<number, { fromCents: number; toCents: number; percent: number; points: number }> {
-	const rows = db
-		.select({
-			itemId: pricePoints.itemId,
-			priceCents: pricePoints.priceCents,
-			forDate: pricePoints.forDate
-		})
-		.from(pricePoints)
-		.where(eq(pricePoints.userId, ctx.userId))
-		.orderBy(asc(pricePoints.forDate), asc(pricePoints.id))
-		.all();
-
-	const first = new Map<number, number>();
-	const last = new Map<number, number>();
-	const count = new Map<number, number>();
-
-	for (const row of rows) {
-		if (!first.has(row.itemId)) first.set(row.itemId, row.priceCents);
-		last.set(row.itemId, row.priceCents);
-		count.set(row.itemId, (count.get(row.itemId) ?? 0) + 1);
-	}
-
-	const out: Record<
-		number,
-		{ fromCents: number; toCents: number; percent: number; points: number }
-	> = {};
-
-	for (const [itemId, from] of first) {
-		const to = last.get(itemId)!;
-		const points = count.get(itemId)!;
-		// One price is what the item already says; two is the first thing worth
-		// reading.
-		if (points < 2 || from === 0) continue;
-		out[itemId] = {
-			fromCents: from,
-			toCents: to,
-			percent: Math.round(((to - from) / from) * 100),
-			points
-		};
-	}
-
-	return out;
-}
 
 /**
  * How a price has moved, in the one sentence worth reading.

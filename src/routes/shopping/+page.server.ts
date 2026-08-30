@@ -10,7 +10,6 @@ import {
 	listCategories,
 	setCategoryFood,
 	listItems,
-	priceDrifts,
 	recordPaid,
 	restockItem,
 	toggleBought,
@@ -24,8 +23,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 		items: listItems(ctx),
 		/** Which recipes use each item — the other half of the ingredient link. */
 		usedIn: recipesByItem(ctx),
-		/** How each price has moved, for the ones bought more than once. */
-		drifts: priceDrifts(ctx),
 		shoppingCategories: listCategories(ctx),
 		currency: getCurrency(ctx.userId)
 	};

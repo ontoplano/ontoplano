@@ -264,26 +264,6 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <!--
-	What something has actually cost, over time.
-
-	The item's own price is a last-known guess and gets overwritten; this is the
-	sentence nobody else's app shows you. It appears from the second purchase,
-	because "it cost 1.60" is already on the row.
--->
-{#snippet drift(item: { id: number })}
-	{#if data.drifts[item.id]}
-		{@const d = data.drifts[item.id]}
-		<span
-			class="ml-2 text-xs {d.percent > 0 ? 'text-amber-700' : 'text-gray-500'}"
-			title="{d.points} purchases recorded"
-		>
-			{formatMoney(d.fromCents, data.currency)} → {formatMoney(d.toCents, data.currency)}
-			({d.percent > 0 ? '+' : ''}{d.percent}%)
-		</span>
-	{/if}
-{/snippet}
-
-<!--
 	What you paid, asked afterwards.
 
 	Never part of the tick: that happens in an aisle, one press, often offline.
@@ -309,6 +289,21 @@
 						>{/if}
 				</a>
 			{/each}
+		</span>
+	{/if}
+{/snippet}
+
+<!--
+	What this usually costs, beside the thing it costs.
+
+	It was summed into the total at the top and rendered on no row, so editing
+	an item's price looked exactly like an edit that had not saved — including
+	after a reload, because there was nothing there to change.
+-->
+{#snippet expectedPrice(item: { priceCents: number | null })}
+	{#if item.priceCents !== null}
+		<span class="tabular ml-2 text-xs text-gray-500">
+			{formatMoney(item.priceCents, data.currency)}
 		</span>
 	{/if}
 {/snippet}
@@ -546,8 +541,9 @@
 				</Field>
 
 				<!-- What it costs, roughly. Prices move and shops disagree, which is
-				     why the list says "about" and never claims a receipt. -->
-				<Field label="About" span={4} hint="What it usually costs.">
+				     why the total says "about" and never claims a receipt — but the
+				     field is a price, and calling it "About" made it a riddle. -->
+				<Field label="Price" span={4} hint="What it usually costs.">
 					<input
 						name="price"
 						type="text"
@@ -603,7 +599,7 @@
 										{#if item.notes}
 											<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
 										{/if}
-										{@render drift(item)}
+										{@render expectedPrice(item)}
 										{@render usedIn(item)}
 									</div>
 									{@render paidPrompt(item)}
@@ -728,7 +724,7 @@
 								{#if item.notes}
 									<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
 								{/if}
-								{@render drift(item)}
+								{@render expectedPrice(item)}
 								{@render usedIn(item)}
 							</div>
 							{@render paidPrompt(item)}
