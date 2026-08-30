@@ -6,6 +6,26 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- Saving a settings form no longer empties it. Turning a section off cleared
+  every other box until the page finished reloading — the setting was always
+  saved, the screen just stopped showing it for a moment. The same was one
+  submit away on the registration mode, the email-change and client-error
+  switches, and the deployment fields.
+- On a phone you can press and hold anywhere on the plan to add a block at
+  that day and hour. The grid could only be drawn on with a mouse; on a touch
+  screen a drag scrolls the page, so there was no way to make a block by
+  touching the calendar at all.
+- The demo says what it is in a bar at the top, and on a phone in a strip
+  above the bottom bar. It also tells a desktop visitor they can open the same
+  demo on their phone.
+- The demo has two months of use in it — a plan that was mostly kept, habits
+  with gaps, notes worth opening and a review written most weeks — instead of
+  one of everything and no history.
+- "You have already switched twice today. You can switch again tomorrow." —
+  and the billing page says you can switch twice a day before you hit it.
+- The planner's CSV import example is in English.
+- There is a `robots.txt`, and the public demo asks not to be indexed at all.
+
 - Signing up at the weekend no longer lands on an empty day. The starter
   weeks each left one weekend day blank — Student had no Saturday, Remote
   worker no Sunday — so the week onboarding promises to fill arrived empty
