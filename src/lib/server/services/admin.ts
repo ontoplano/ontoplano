@@ -46,6 +46,8 @@ export type Account = {
 	isOwner: boolean;
 	/** Hosted instance, no plan history: the one case an admin may start a trial. */
 	canGrantTrial?: boolean;
+	/** Hosted instance with a plan: the operator may move its end date. */
+	canEndPlan?: boolean;
 };
 
 export function roleOf(userId: string): Role {
@@ -55,6 +57,18 @@ export function roleOf(userId: string): Role {
 
 export function isAdmin(userId: string): boolean {
 	return roleOf(userId) === 'admin' || isInstanceOwner(userId);
+}
+
+/**
+ * Who may touch the deployment settings.
+ *
+ * Self-hosted: the owner, as always. Hosted: the administrators — the
+ * instance page is where registration mode lives, and the person running
+ * ontoplano.com flips that more often than anyone self-hosting does.
+ */
+export function canEditInstance(userId: string): boolean {
+	if (isSelfHosted()) return isInstanceOwner(userId);
+	return isAdmin(userId);
 }
 
 /** Throws the same thing a missing page would. */
@@ -143,7 +157,8 @@ export function accountById(id: string): Account {
 		sessions: sessionCount(row.id),
 		plan: describePlan(row.id),
 		isOwner: isInstanceOwner(row.id),
-		canGrantTrial: !isSelfHosted() && !hasPlanHistory(row.id)
+		canGrantTrial: !isSelfHosted() && !hasPlanHistory(row.id),
+		canEndPlan: !isSelfHosted() && hasPlanHistory(row.id)
 	};
 }
 
@@ -164,6 +179,40 @@ export function grantTrial(actorId: string, subjectId: string, now = new Date())
 		throw new ValidationError('This account already has a plan history');
 
 	startTrial(subjectId, now, actorId);
+}
+
+/**
+ * End an account's plan on a chosen date, by an administrator's hand.
+ *
+ * An operator's tool, not a customer one: set it to yesterday and the
+ * account shows exactly what a lapsed user sees, set it ahead and a trial
+ * stretches. It moves only the dates this instance keeps — the provider's
+ * own billing schedule is not touched, so use it on test accounts.
+ */
+export function setPlanEnd(actorId: string, subjectId: string, endsAt: string): void {
+	requireAdmin(actorId);
+	if (isSelfHosted()) throw new ValidationError('A self-hosted instance has no plans');
+
+	const date = new Date(endsAt);
+	if (isNaN(date.getTime())) throw new ValidationError('That is not a date');
+	const iso = date.toISOString();
+
+	const row = db
+		.select({ id: subscriptions.id, status: subscriptions.status })
+		.from(subscriptions)
+		.where(eq(subscriptions.userId, subjectId))
+		.get();
+	if (!row) throw new NotFoundError('This account has no plan to end');
+
+	db.update(subscriptions)
+		.set({
+			currentPeriodEnd: iso,
+			...(row.status === 'trialing' ? { trialEndsAt: iso } : {}),
+			updatedAt: new Date().toISOString()
+		})
+		.where(eq(subscriptions.id, row.id))
+		.run();
+	record(subjectId, 'plan_end_set', { actorId, detail: { endsAt: iso } });
 }
 
 function hasPlanHistory(userId: string): boolean {

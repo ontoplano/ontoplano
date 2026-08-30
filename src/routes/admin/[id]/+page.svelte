@@ -80,6 +80,16 @@
 				</form>
 			{/if}
 
+			{#if data.account.canEndPlan}
+				<!-- The operator's clock: yesterday shows the lapsed view, a date
+				     ahead stretches a test trial. Local dates only, provider
+				     billing untouched. -->
+				<form method="post" action="?/setPlanEnd" use:enhance class="flex items-center gap-2">
+					<input type="date" name="endsAt" required class="input input-sm" />
+					<button class="btn btn-sm"><Icon name="clock" /> End plan then</button>
+				</form>
+			{/if}
+
 			{#if !data.account.emailVerified}
 				<form method="post" action="?/resendVerification" use:enhance>
 					<button class="btn btn-sm">

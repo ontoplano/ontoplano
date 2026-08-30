@@ -1,7 +1,8 @@
 import { error } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { loadConfig, saveConfig, DB_PATH, isRegistrationMode } from '$lib/server/config';
-import { isInstanceOwner, isStaging } from '$lib/server/settings';
+import { isStaging } from '$lib/server/settings';
+import { canEditInstance } from '$lib/server/services/admin';
 import { build } from '$lib/server/services/version';
 import { toActionFailure, ValidationError } from '$lib/server/services/errors';
 import {
@@ -21,7 +22,7 @@ import {
  * once roles land.
  */
 export const load: PageServerLoad = async ({ locals }) => {
-	if (!isInstanceOwner(locals.user!.id)) error(404, 'Not found');
+	if (!canEditInstance(locals.user!.id)) error(404, 'Not found');
 
 	return {
 		config: loadConfig(),
@@ -38,7 +39,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 /** The owner check is repeated per action, not inherited from the load. */
 function owner(userId: string): string {
-	if (!isInstanceOwner(userId)) error(404, 'Not found');
+	if (!canEditInstance(userId)) error(404, 'Not found');
 	return userId;
 }
 

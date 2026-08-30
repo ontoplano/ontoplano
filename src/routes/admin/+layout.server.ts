@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { isAdmin } from '$lib/server/services/admin';
-import { isInstanceOwner, isSelfHosted } from '$lib/server/settings';
+import { canEditInstance, isAdmin } from '$lib/server/services/admin';
+import { isSelfHosted } from '$lib/server/settings';
 
 /**
  * Everything under /admin, behind one check.
@@ -17,7 +17,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	// the same tab row: without them Administration is a page you can reach and
 	// not leave.
 	return {
-		canEditInstance: isInstanceOwner(locals.user!.id),
+		canEditInstance: canEditInstance(locals.user!.id),
 		canAdminister: true,
 		billable: !isSelfHosted()
 	};

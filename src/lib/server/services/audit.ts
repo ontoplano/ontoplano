@@ -23,6 +23,7 @@ export const AUDIT_EVENTS = [
 	'account_deleted',
 	'role_changed',
 	'plan_changed',
+	'plan_end_set',
 	'impersonation_started',
 	'impersonation_ended',
 	'verification_resent'
