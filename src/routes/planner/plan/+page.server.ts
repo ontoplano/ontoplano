@@ -320,7 +320,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			const id = addFeed(buildCtx(locals.user!.id), {
-				name: formData.get('name'),
+				name: formData.get('label'),
 				url: formData.get('url'),
 				color: formData.get('color')
 			});
@@ -361,7 +361,7 @@ export const actions: Actions = {
 	saveScheme: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
-			saveScheme(buildCtx(locals.user!.id), formData.get('name'));
+			saveScheme(buildCtx(locals.user!.id), formData.get('label'));
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);
@@ -394,7 +394,7 @@ export const actions: Actions = {
 			renameScheme(
 				buildCtx(locals.user!.id),
 				Number(formData.get('schemeId')),
-				formData.get('name')
+				formData.get('label')
 			);
 			return { success: true };
 		} catch (e) {

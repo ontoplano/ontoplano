@@ -61,7 +61,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			createCategory(buildCtx(locals.user!.id), {
-				name: formData.get('name'),
+				name: formData.get('label'),
 				isFood: formData.get('isFood') === 'true'
 			});
 			return { success: true, action: 'createCategory' };
@@ -73,7 +73,7 @@ export const actions: Actions = {
 	create: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
-			const name = formData.get('name');
+			const name = formData.get('label');
 			const { alreadyHad } = createItem(buildCtx(locals.user!.id), {
 				name,
 				type: formData.get('type'),
@@ -98,7 +98,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			updateItem(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				name: formData.get('name'),
+				name: formData.get('label'),
 				type: formData.get('type'),
 				notes: formData.get('notes'),
 				price: formData.get('price'),

@@ -86,7 +86,7 @@ export const recipeActions = {
 		try {
 			addIngredient(buildCtx(locals.user!.id), recipeId, {
 				itemId: formData.get('itemId'),
-				name: formData.get('name'),
+				name: formData.get('label'),
 				quantity: formData.get('quantity'),
 				unit: formData.get('unit'),
 				note: formData.get('note')

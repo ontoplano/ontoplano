@@ -49,7 +49,7 @@ async function mintToken(
 ): Promise<string> {
 	const res = await request.post('/settings/integrations?/createToken', {
 		headers: { Origin: ORIGIN, Cookie: cookie, 'x-sveltekit-action': 'true' },
-		form: { name: `token ${scopes}`, scopes }
+		form: { label: `token ${scopes}`, scopes }
 	});
 
 	const token = /onto_[A-Za-z0-9_-]+/.exec(await res.text())?.[0];
@@ -78,7 +78,7 @@ test('today answers with blocks, habits and tasks in one request', async ({ play
 
 	await request.post('/health/habits?/create', {
 		headers: action,
-		form: { name: 'drink water', type: 'good', scheduledDays: '' }
+		form: { label: 'drink water', type: 'good', scheduledDays: '' }
 	});
 
 	const token = await mintToken(request, cookie, 'today:read');

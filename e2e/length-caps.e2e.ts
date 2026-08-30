@@ -26,11 +26,11 @@ const CASES: { name: string; path: string; form: Record<string, string> }[] = [
 		path: '/diary/notebooks?/create',
 		form: { title: TOO_LONG }
 	},
-	{ name: 'person name', path: '/diary/people?/create', form: { name: TOO_LONG } },
+	{ name: 'person name', path: '/diary/people?/create', form: { label: TOO_LONG } },
 	{
 		name: 'habit name',
 		path: '/health/habits?/create',
-		form: { name: TOO_LONG, type: 'good', scheduledDays: '' }
+		form: { label: TOO_LONG, type: 'good', scheduledDays: '' }
 	},
 	{
 		name: 'goal title',
@@ -38,7 +38,7 @@ const CASES: { name: string; path: string; form: Record<string, string> }[] = [
 		form: { title: TOO_LONG, horizon: 'week' }
 	},
 	{ name: 'idea', path: '/ideas?/create', form: { content: TOO_LONG } },
-	{ name: 'shopping item', path: '/shopping?/create', form: { name: TOO_LONG } },
+	{ name: 'shopping item', path: '/shopping?/create', form: { label: TOO_LONG } },
 	{
 		name: 'quote',
 		path: '/settings/preferences?/addQuote',
@@ -47,7 +47,7 @@ const CASES: { name: string; path: string; form: Record<string, string> }[] = [
 	{
 		name: 'api token name',
 		path: '/settings/integrations?/createToken',
-		form: { name: TOO_LONG, scopes: 'schedule:read' }
+		form: { label: TOO_LONG, scopes: 'schedule:read' }
 	},
 	{
 		name: 'timezone',

@@ -57,7 +57,7 @@ export const actions: Actions = {
 
 		try {
 			const token = createToken(ctx, {
-				name: formData.get('name'),
+				name: formData.get('label'),
 				scopes: formData.getAll('scopes'),
 				expiresInDays: formData.get('expiresInDays')
 			});
@@ -88,7 +88,7 @@ export const actions: Actions = {
 		try {
 			updateStreamDisplay(ctx, Number(formData.get('id')), {
 				display: formData.get('display'),
-				name: formData.get('name'),
+				name: formData.get('label'),
 				showOnDashboard: formData.get('showOnDashboard') === 'on',
 				retentionDays: formData.get('retentionDays')
 			});

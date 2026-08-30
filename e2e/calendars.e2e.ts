@@ -16,7 +16,7 @@ test('an address pointing at this machine is refused, and says so', async ({ pag
 	await page.getByRole('button', { name: /schemes/i }).click();
 	await expect(page.getByText('Calendars you subscribe to')).toBeVisible();
 
-	await page.locator('input[name=name]').last().fill('Sneaky');
+	await page.locator('input[name=label]').last().fill('Sneaky');
 	await page.locator('input[name=url]').fill('http://127.0.0.1:1493/private.ics');
 	await page.getByRole('button', { name: /^subscribe$/i }).click();
 

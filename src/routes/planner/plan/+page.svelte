@@ -1658,7 +1658,7 @@
 					<div class="text-sm font-medium text-gray-900">Save current plan as scheme</div>
 					<div class="flex gap-2">
 						<input
-							name="name"
+							name="label"
 							type="text"
 							autocomplete="off"
 							bind:value={newSchemeName}
@@ -1687,7 +1687,7 @@
 										<input type="hidden" name="schemeId" value={scheme.id} />
 										<div class="flex gap-2">
 											<input
-												name="name"
+												name="label"
 												type="text"
 												autocomplete="off"
 												value={scheme.name}
@@ -1842,7 +1842,7 @@
 					>
 						<div class="flex flex-wrap gap-2">
 							<input
-								name="name"
+								name="label"
 								placeholder="Work"
 								autocomplete="off"
 								required

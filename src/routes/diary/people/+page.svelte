@@ -240,7 +240,7 @@
 
 		<FormGrid>
 			<Field label="Name" span={8} required>
-				<input name="name" required autocomplete="off" value={editing?.name ?? ''} class="input" />
+				<input name="label" required autocomplete="off" value={editing?.name ?? ''} class="input" />
 			</Field>
 
 			<Field label="How you know them" span={4}>

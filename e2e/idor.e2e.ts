@@ -140,11 +140,11 @@ test.describe('one account cannot reach another account by id', () => {
 			payloadKey: 'items',
 			create: {
 				path: '/shopping?/create',
-				form: { name: "alice's milk", type: 'replenish' }
+				form: { label: "alice's milk", type: 'replenish' }
 			},
 			attack: (id) => ({
 				path: '/shopping?/update',
-				form: { id, name: 'taken', type: 'someday' }
+				form: { id, label: 'taken', type: 'someday' }
 			})
 		},
 		{
@@ -158,10 +158,10 @@ test.describe('one account cannot reach another account by id', () => {
 			name: 'habit',
 			page: '/health/habits',
 			payloadKey: 'habits',
-			create: { path: '/health/habits?/create', form: { name: "alice's habit", type: 'good' } },
+			create: { path: '/health/habits?/create', form: { label: "alice's habit", type: 'good' } },
 			attack: (id) => ({
 				path: '/health/habits?/update',
-				form: { id, name: 'taken', type: 'bad' }
+				form: { id, label: 'taken', type: 'bad' }
 			})
 		},
 		{
@@ -178,7 +178,7 @@ test.describe('one account cannot reach another account by id', () => {
 			name: 'goal area',
 			page: '/goals',
 			payloadKey: 'areas',
-			create: { path: '/goals?/createArea', form: { name: "alice's area" } },
+			create: { path: '/goals?/createArea', form: { label: "alice's area" } },
 			attack: (id) => ({ path: '/goals?/deleteArea', form: { id } })
 		},
 		{
@@ -187,7 +187,7 @@ test.describe('one account cannot reach another account by id', () => {
 			payloadKey: 'activities',
 			create: {
 				path: '/planner/activities?/create',
-				form: { name: "alice's activity", categoryId: '' }
+				form: { label: "alice's activity", categoryId: '' }
 			},
 			attack: (id) => ({
 				path: '/planner/activities?/toggleActive',
@@ -208,7 +208,7 @@ test.describe('one account cannot reach another account by id', () => {
 			name: 'planning scheme',
 			page: '/planner/plan',
 			payloadKey: 'schemes',
-			create: { path: '/planner/plan?/saveScheme', form: { name: "alice's scheme" } },
+			create: { path: '/planner/plan?/saveScheme', form: { label: "alice's scheme" } },
 			attack: (id) => ({ path: '/planner/plan?/loadScheme', form: { schemeId: id } })
 		},
 		{
@@ -222,8 +222,8 @@ test.describe('one account cannot reach another account by id', () => {
 			name: 'person',
 			page: '/diary/people',
 			payloadKey: 'people',
-			create: { path: '/diary/people?/create', form: { name: "alice's friend" } },
-			attack: (id) => ({ path: '/diary/people?/update', form: { id, name: 'taken' } })
+			create: { path: '/diary/people?/create', form: { label: "alice's friend" } },
+			attack: (id) => ({ path: '/diary/people?/update', form: { id, label: 'taken' } })
 		},
 		{
 			name: 'notebook',
@@ -238,7 +238,7 @@ test.describe('one account cannot reach another account by id', () => {
 			payloadKey: 'tokens',
 			create: {
 				path: '/settings/integrations?/createToken',
-				form: { name: "alice's token", scopes: 'schedule:read' }
+				form: { label: "alice's token", scopes: 'schedule:read' }
 			},
 			attack: (id) => ({ path: '/settings/integrations?/revokeToken', form: { id } })
 		},

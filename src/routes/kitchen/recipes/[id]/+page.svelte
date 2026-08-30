@@ -195,7 +195,7 @@
 						aria-label="Unit"
 					/>
 					<input
-						name="name"
+						name="label"
 						bind:this={nameBox}
 						bind:value={ingredientName}
 						list="pantry"

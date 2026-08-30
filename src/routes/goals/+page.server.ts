@@ -38,7 +38,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			createArea(buildCtx(locals.user!.id), {
-				name: formData.get('name'),
+				name: formData.get('label'),
 				color: formData.get('color')
 			});
 			return { success: true };

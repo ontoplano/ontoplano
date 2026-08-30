@@ -188,7 +188,13 @@
 		>
 			<FormGrid>
 				<Field label="New area" span={8}>
-					<input name="name" required autocomplete="off" placeholder="e.g. fitness" class="input" />
+					<input
+						name="label"
+						required
+						autocomplete="off"
+						placeholder="e.g. fitness"
+						class="input"
+					/>
 				</Field>
 				<Field label="Colour" span={4}>
 					<input name="color" type="color" value="#6b7280" class="input h-9 p-1" />

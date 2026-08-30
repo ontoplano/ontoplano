@@ -28,7 +28,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			createActivity(buildCtx(locals.user!.id), {
-				name: formData.get('name'),
+				name: formData.get('label'),
 				categoryId: formData.get('categoryId'),
 				description: formData.get('description')
 			});
@@ -42,7 +42,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			updateActivity(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				name: formData.get('name'),
+				name: formData.get('label'),
 				categoryId: formData.get('categoryId'),
 				description: formData.get('description')
 			});
@@ -76,7 +76,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			createCategory(buildCtx(locals.user!.id), {
-				name: formData.get('name'),
+				name: formData.get('label'),
 				color: formData.get('color')
 			});
 			return { success: true };
@@ -89,7 +89,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			updateCategory(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				name: formData.get('name'),
+				name: formData.get('label'),
 				color: formData.get('color')
 			});
 			return { success: true };

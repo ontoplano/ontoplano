@@ -27,7 +27,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			createPerson(buildCtx(locals.user!.id), {
-				name: formData.get('name'),
+				name: formData.get('label'),
 				relationship: formData.get('relationship'),
 				notes: formData.get('notes')
 			});
@@ -41,7 +41,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			updatePerson(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				name: formData.get('name'),
+				name: formData.get('label'),
 				relationship: formData.get('relationship'),
 				notes: formData.get('notes')
 			});

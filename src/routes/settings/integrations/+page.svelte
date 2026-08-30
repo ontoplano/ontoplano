@@ -138,7 +138,7 @@
 					<Field label="Name" span={8} required>
 						<input
 							autocomplete="off"
-							name="name"
+							name="label"
 							type="text"
 							required
 							maxlength="60"
@@ -287,7 +287,7 @@
 									{/if}
 								</p>
 							</div>
-							<input type="hidden" name="name" value={stream.name} />
+							<input type="hidden" name="label" value={stream.name} />
 							<select
 								name="display"
 								class="border border-gray-300 px-2 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"

@@ -155,7 +155,7 @@
 									class="h-8 w-10 cursor-pointer border border-gray-300"
 								/>
 								<input
-									name="name"
+									name="label"
 									type="text"
 									autocomplete="off"
 									value={cat.name}
@@ -254,7 +254,7 @@
 					class="h-8 w-10 cursor-pointer border border-gray-300"
 				/>
 				<input
-					name="name"
+					name="label"
 					type="text"
 					autocomplete="off"
 					placeholder="New category name"
@@ -326,7 +326,7 @@
 			<FormGrid>
 				<Field label="Name" span={12} required>
 					<input
-						name="name"
+						name="label"
 						type="text"
 						autocomplete="off"
 						required
@@ -420,7 +420,7 @@
 								editingId = activity.id;
 								showForm = true;
 								tick().then(() => {
-									const nameInput = document.querySelector<HTMLInputElement>('input[name="name"]');
+									const nameInput = document.querySelector<HTMLInputElement>('input[name="label"]');
 									nameInput?.focus();
 								});
 							}}

@@ -29,7 +29,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			createHabit(buildCtx(locals.user!.id), {
-				name: formData.get('name'),
+				name: formData.get('label'),
 				description: formData.get('description'),
 				type: formData.get('type'),
 				scheduledDays: formData.get('scheduledDays')
@@ -44,7 +44,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			updateHabit(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				name: formData.get('name'),
+				name: formData.get('label'),
 				description: formData.get('description'),
 				type: formData.get('type'),
 				scheduledDays: formData.get('scheduledDays')

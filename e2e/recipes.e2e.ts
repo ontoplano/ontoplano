@@ -17,7 +17,7 @@ async function makeRecipe(page: import('@playwright/test').Page, title: string):
 
 	const dialog = page.locator('dialog[open]');
 	await dialog.getByRole('button', { name: /new category/i }).click();
-	await dialog.locator('input[name=name]').fill('Pantry');
+	await dialog.locator('input[name=label]').fill('Pantry');
 	await dialog.locator('input[name=isFood]').check();
 	await dialog.getByRole('button', { name: /add the category/i }).click();
 	await page.waitForTimeout(500);

@@ -515,7 +515,7 @@
 			<FormGrid>
 				<Field label="Item" span={8} required>
 					<input
-						name="name"
+						name="label"
 						type="text"
 						autocomplete="off"
 						required
@@ -911,7 +911,7 @@
 		>
 			<label class="block">
 				<span class="eyebrow text-gray-600">New category</span>
-				<input name="name" required autocomplete="off" placeholder="Frozen" class="input mt-1" />
+				<input name="label" required autocomplete="off" placeholder="Frozen" class="input mt-1" />
 			</label>
 			<div class="mt-2 flex flex-wrap items-center justify-between gap-2">
 				<label class="flex items-center gap-2 text-sm text-gray-600">

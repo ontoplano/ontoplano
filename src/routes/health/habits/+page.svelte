@@ -206,7 +206,7 @@
 				confirmingDeleteId = null;
 				resetForm();
 				tick().then(() => {
-					const nameInput = document.querySelector<HTMLInputElement>('input[name="name"]');
+					const nameInput = document.querySelector<HTMLInputElement>('input[name="label"]');
 					nameInput?.focus();
 				});
 				break;
@@ -244,7 +244,7 @@
 		scheduledDaysState = [0, 1, 2, 3, 4, 5, 6].map((d) => scheduled.includes(d));
 		showForm = true;
 		tick().then(() => {
-			const nameInput = document.querySelector<HTMLInputElement>('input[name="name"]');
+			const nameInput = document.querySelector<HTMLInputElement>('input[name="label"]');
 			nameInput?.focus();
 		});
 	}
@@ -276,7 +276,7 @@
 					return;
 				}
 				tick().then(() => {
-					const nameInput = document.querySelector<HTMLInputElement>('input[name="name"]');
+					const nameInput = document.querySelector<HTMLInputElement>('input[name="label"]');
 					nameInput?.focus();
 				});
 			}}
@@ -362,7 +362,7 @@
 			<FormGrid>
 				<Field label="Name" span={12} required>
 					<input
-						name="name"
+						name="label"
 						type="text"
 						autocomplete="off"
 						required
