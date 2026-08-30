@@ -25,6 +25,14 @@
 		open = false,
 		/** Where the gesture began, in viewport coordinates. */
 		origin = { x: 0, y: 0 },
+		/**
+		 * Where to draw the ring, if not around the gesture.
+		 *
+		 * The phone's trigger is a fixed button at the bottom of the screen, so
+		 * the pie is drawn above the hand instead of under it — but the gesture
+		 * maths (was this a tap or a drag?) still measures from the finger.
+		 */
+		anchor = null,
 		/** True while a finger or button is still down, so release selects. */
 		dragging = false,
 		/** Screen the pie must stay clear of — a fixed navigation bar, usually. */
@@ -35,6 +43,7 @@
 		items: Wedge[];
 		open?: boolean;
 		origin?: { x: number; y: number };
+		anchor?: { x: number; y: number } | null;
 		dragging?: boolean;
 		bottomInset?: number;
 		onselect: (key: string) => void;
@@ -79,9 +88,10 @@
 			return;
 		}
 		const margin = OUTER + PAD;
+		const at = anchor ?? origin;
 		centre = {
-			x: Math.min(Math.max(origin.x, margin), window.innerWidth - margin),
-			y: Math.min(Math.max(origin.y, margin), window.innerHeight - margin - bottomInset)
+			x: Math.min(Math.max(at.x, margin), window.innerWidth - margin),
+			y: Math.min(Math.max(at.y, margin), window.innerHeight - margin - bottomInset)
 		};
 		held = dragging;
 		travelled = 0;

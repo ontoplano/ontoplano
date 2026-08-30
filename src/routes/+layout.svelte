@@ -572,14 +572,16 @@
 				<div class="relative flex-1">
 					<button
 						onpointerdown={(e) => rooms?.summon(e)}
-						class="pie-handle absolute -top-5 left-1/2 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full border border-chrome-line bg-chrome shadow-overlay {roomsOpen
+						class="pie-handle pie-bump absolute -top-6 left-1/2 flex h-16 w-16 -translate-x-1/2 items-center justify-center border border-chrome-line bg-chrome shadow-overlay {roomsOpen
 							? 'text-chrome-ink'
 							: 'text-chrome-muted'}"
 						aria-label="Go to a section"
 						title="Go to a section"
 					>
+						<!-- Bigger than its neighbours on purpose: this is the way
+						     into everything, and the bar's one raised control. -->
 						<svg
-							class="h-6 w-6"
+							class="h-8 w-8"
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"

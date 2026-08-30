@@ -102,6 +102,18 @@ input[type='radio'] {
 }
 
 /*
+ * And the phone bar's raised pie button.
+ *
+ * Same argument as the radio: its roundness carries meaning rather than
+ * decoration. It is the one control docked *through* the bar rather than
+ * sitting in it, and a square bump reads as a mistake in the border — the
+ * circle is what says "this one is the way in".
+ */
+.pie-bump {
+	border-radius: 100% !important;
+}
+
+/*
  * The playful style.
  *
  * Rounded, shadowless, and colour allowed onto the chrome. Two rules keep it

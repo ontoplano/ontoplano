@@ -38,6 +38,7 @@
 	let open = $state(false);
 	let dragging = $state(false);
 	let origin = $state({ x: 0, y: 0 });
+	let anchor = $state<{ x: number; y: number } | null>(null);
 	let inset = $state(0);
 
 	/**
@@ -52,6 +53,23 @@
 		const style = getComputedStyle(document.documentElement);
 		const px = (name: string) => parseFloat(style.getPropertyValue(name)) || 0;
 		return px('--mobile-nav-height') + px('--safe-bottom') + 16;
+	}
+
+	/**
+	 * On the phone the pie does not open under the thumb.
+	 *
+	 * Its trigger is the raised button in the middle of the bar, so the pie
+	 * belongs on that axis — centred, and lifted clear of the hand that opened
+	 * it. Opening under the finger put half the rooms behind the thumb and the
+	 * bottom ones behind the bar, which is the one thing a menu must not do.
+	 */
+	function phoneOrigin(): { x: number; y: number } | null {
+		if (typeof window === 'undefined' || window.innerWidth >= 1024) return null;
+		const style = getComputedStyle(document.documentElement);
+		const px = (name: string) => parseFloat(style.getPropertyValue(name)) || 0;
+		const bar = px('--mobile-nav-height') + px('--safe-bottom');
+		// The ring's outer edge plus a thumb's width above the bar.
+		return { x: window.innerWidth / 2, y: window.innerHeight - bar - 200 };
 	}
 
 	// No Home wedge: the navbar and the phone bar both carry Home as a plain
@@ -74,7 +92,10 @@
 		const button = e.currentTarget as Element | null;
 		button?.setPointerCapture?.(e.pointerId);
 
+		// The finger, for telling a tap from a drag…
 		origin = { x: e.clientX, y: e.clientY };
+		// …and, on a phone, where the ring is actually drawn.
+		anchor = phoneOrigin();
 		dragging = e.pointerType !== 'mouse' || e.button === 0;
 		inset = bottomInset();
 		open = true;
@@ -95,6 +116,7 @@
 	items={wedges}
 	{open}
 	{origin}
+	{anchor}
 	{dragging}
 	bottomInset={inset}
 	onselect={enter}
