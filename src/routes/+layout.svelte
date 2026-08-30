@@ -9,6 +9,7 @@
 	import { THEMES } from '$lib/theme.js';
 	import type { SectionKey } from '$lib/colors.js';
 	import type { HideableSection } from '$lib/sections.js';
+	import Banner from '$lib/components/Banner.svelte';
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
 	import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
 	import CapturePie from '$lib/components/CapturePie.svelte';
@@ -618,6 +619,21 @@
 				</button>
 			</div>
 		</nav>
+
+		{#if data.demo}
+			<!-- Fixed above the bottom bar rather than in the page: on the demo
+			     every page is somebody's first, and a band that scrolls away is
+			     a band the visitor never sees. -->
+			<div
+				class="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+0.5rem)] lg:pb-3"
+			>
+				<div class="mx-auto max-w-page">
+					<Banner kind="warning">
+						<strong>Demo.</strong> One shared account. Everything here is wiped and reseeded every hour.
+					</Banner>
+				</div>
+			</div>
+		{/if}
 
 		<ShortcutHelp />
 		<CommandPalette hidden={data.hiddenSections} />

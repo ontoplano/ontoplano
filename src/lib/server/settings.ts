@@ -294,6 +294,25 @@ export function isStaging(): boolean {
 }
 
 /**
+ * The public demo.
+ *
+ * One account, already signed in, that anybody arriving can poke at — and a
+ * database rebuilt from the seed every hour, which is what makes leaving the
+ * doors open safe. Opt-in, like every other deployment answer here: a box
+ * that forgets to say is an ordinary instance.
+ */
+export function isDemo(): boolean {
+	return process.env.ONTOPLANO_DEMO === 'true' && Boolean(demoAccount().email);
+}
+
+export function demoAccount(): { email: string; password: string } {
+	return {
+		email: process.env.ONTOPLANO_DEMO_EMAIL ?? '',
+		password: process.env.ONTOPLANO_DEMO_PASSWORD ?? ''
+	};
+}
+
+/**
  * What this instance charges, and how its trial runs.
  *
  * From the environment rather than compiled in, because a price is not a fact

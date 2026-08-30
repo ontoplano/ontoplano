@@ -5,7 +5,8 @@ import {
 	DEFAULT_WEEK,
 	getHiddenSections,
 	getTheme,
-	getWeekSettings
+	getWeekSettings,
+	isDemo as isDemoInstance
 } from '$lib/server/settings';
 import type { HideableSection } from '$lib/sections';
 import { clientErrorState } from '$lib/server/services/client-errors';
@@ -92,6 +93,9 @@ export const load: LayoutServerLoad = async (event) => {
 		// Sections this account has put away: out of every menu the shell
 		// renders, still answering at their URLs.
 		hiddenSections,
+		// The public demo says so on every page: one shared account, wiped
+		// hourly, so nobody mistakes it for their own instance.
+		demo: isDemoInstance(),
 		// The week is the user's, not the instance's.
 		config: { week },
 		// How long a delete waits before it happens. The instance's call.

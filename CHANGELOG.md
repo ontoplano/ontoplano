@@ -6,6 +6,11 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- There is a demo mode. With `ONTOPLANO_DEMO=true` and an account named,
+  anybody who arrives is already signed in to it — no registering to look at
+  a planner — and a band on every page says the data is wiped hourly.
+  Changing the password or address, deleting the account and revoking
+  sessions are refused, so one visitor cannot end the demo for everybody.
 - The expired account's "Download your data" button works on the first tap.
   It was a link into an export endpoint, which the router tried to treat as
   a page — so the first tap raised an error instead of downloading and only

@@ -4,7 +4,7 @@ import { building } from '$app/environment';
 import { auth } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { ensureUserCategories } from '$lib/server/db/ensure-categories';
-import { DEFAULT_THEME, getStyle, getTheme } from '$lib/server/settings';
+import { DEFAULT_THEME, demoAccount, getStyle, getTheme, isDemo } from '$lib/server/settings';
 import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
 import { checkSignUpAllowed, consumeInvite } from '$lib/server/services/registration';
 import { claimFirstAccount } from '$lib/server/services/admin';
@@ -277,6 +277,87 @@ const HOLD_EXEMPT = [
 	'/demo'
 ];
 
+/**
+ * The public demo signs everybody in, and refuses to let them lock it.
+ *
+ * A stranger who has to invent an account to look at a planner does not look
+ * at the planner. So on a demo box the first page view signs the visitor into
+ * the one demo account — a real sign-in with the demo credentials, not a
+ * fabricated session — and everybody browsing shares it until the hourly
+ * reset wipes the database back to the seed.
+ *
+ * Shared means one visitor could change the password, the address, or delete
+ * the account outright and leave the demo dead for the hour: those endpoints
+ * are refused here rather than in each route, because the next endpoint that
+ * could do it must be covered without anybody remembering to.
+ */
+const DEMO_FORBIDDEN = [
+	'/api/auth/change-password',
+	'/api/auth/change-email',
+	'/api/auth/delete-user',
+	'/api/auth/update-user',
+	'/api/auth/revoke-sessions'
+];
+
+/**
+ * The refusals, in front of better-auth rather than behind it.
+ *
+ * better-auth answers everything under /api/auth itself, inside its own
+ * handle — so a guard placed after it never sees those requests at all, and
+ * the demo's password could be changed by anybody who found the endpoint.
+ */
+const handleDemoGuard: Handle = ({ event, resolve }) => {
+	if (!isDemo()) return resolve(event);
+
+	const path = event.url.pathname;
+	const writes = event.request.method !== 'GET' && event.request.method !== 'HEAD';
+
+	if (DEMO_FORBIDDEN.some((p) => path === p || path.startsWith(`${p}/`))) {
+		return new Response('Not available on the demo.', { status: 403 });
+	}
+	// The account page's own delete action, by name — the same reasoning.
+	if (writes && path === '/settings/account' && event.url.searchParams.get('/delete') !== null) {
+		return new Response('Not available on the demo.', { status: 403 });
+	}
+
+	return resolve(event);
+};
+
+const handleDemo: Handle = async ({ event, resolve }) => {
+	if (!isDemo()) return resolve(event);
+
+	const path = event.url.pathname;
+	const writes = event.request.method !== 'GET' && event.request.method !== 'HEAD';
+
+	// Only a page view signs somebody in: an asset or an API call arriving
+	// without a session should answer as itself, not mint a session each time.
+	const wantsPage = !writes && event.request.headers.get('accept')?.includes('text/html');
+	let signedIn = false;
+	if (!event.locals.user && wantsPage && !path.startsWith('/api/')) {
+		const { email, password } = demoAccount();
+		try {
+			await auth.api.signInEmail({
+				body: { email, password },
+				headers: event.request.headers,
+				asResponse: false
+			});
+			signedIn = true;
+		} catch (e) {
+			// A demo that cannot sign in is still a readable landing page, so
+			// this never takes the site down — it just stays signed out.
+			console.error('demo sign-in failed', e);
+		}
+	}
+
+	// Outside the try: the cookie is set on this response by better-auth's
+	// SvelteKit plugin, and the reload is what makes the session visible to
+	// the load functions of the page that was asked for. A redirect thrown
+	// inside the try above would have been caught as a failure.
+	if (signedIn) redirect(303, event.url.pathname + event.url.search);
+
+	return resolve(event);
+};
+
 const handleAccessHolds: Handle = ({ event, resolve }) => {
 	if (!event.locals.user) return resolve(event);
 	const path = event.url.pathname;
@@ -305,7 +386,9 @@ export const handle: Handle = sequence(
 	handleSecurityHeaders,
 	handleAuthRateLimit,
 	handleRegistration,
+	handleDemoGuard,
 	handleBetterAuth,
+	handleDemo,
 	handleAccessHolds,
 	handleSignedOutWrites,
 	handleTheme
