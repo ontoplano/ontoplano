@@ -48,7 +48,7 @@
 				<div class="mb-3">
 					<h4 class="mb-1 text-xs font-medium text-gray-500">{pageLabel}</h4>
 					<div class="space-y-0.5">
-						{#each pageDisplay as s}
+						{#each pageDisplay as s (s.displayKey + s.description)}
 							<div class="flex items-center justify-between text-xs">
 								<kbd class="border border-gray-300 bg-gray-50 px-1 font-mono text-gray-700"
 									>{s.displayKey}</kbd
@@ -63,7 +63,7 @@
 			<div>
 				<h4 class="mb-1 text-xs font-medium text-gray-500">Global</h4>
 				<div class="space-y-0.5">
-					{#each GLOBAL_SHORTCUTS as s}
+					{#each GLOBAL_SHORTCUTS as s (s.key)}
 						<div class="flex items-center justify-between text-xs">
 							<kbd class="border border-gray-300 bg-gray-50 px-1 font-mono text-gray-700"
 								>{s.key === 'Escape' ? 'Esc' : s.key}</kbd

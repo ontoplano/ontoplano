@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { autofocus } from '$lib/actions/autofocus';
-	import Icon, { type IconName } from '$lib/components/Icon.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { captureByShortcut, visibleCaptures, type Capture } from '$lib/capture';
 

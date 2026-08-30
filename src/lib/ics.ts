@@ -79,7 +79,7 @@ function unescapeText(value: string): string {
 	return value
 		.replace(/\\n/gi, ' ')
 		.replace(/\\,/g, ',')
-		.replace(/\;/g, ';')
+		.replace(/;/g, ';')
 		.replace(/\\\\/g, '\\')
 		.trim();
 }

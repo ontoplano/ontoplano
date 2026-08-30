@@ -439,9 +439,7 @@ export const handleError: HandleServerError = ({ error, event, status }) => {
  * one context.
  */
 declare global {
-	// eslint-disable-next-line no-var
 	var __ontoplanoDeathWatch: boolean | undefined;
-	// eslint-disable-next-line no-var
 	var __ontoplanoSweep: ReturnType<typeof setInterval> | undefined;
 }
 

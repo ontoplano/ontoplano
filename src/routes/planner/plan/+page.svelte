@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import Banner from '$lib/components/Banner.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -736,7 +737,7 @@
 	function goToRange(from: string | null) {
 		const parts: string[] = [`view=${viewMode}`];
 		if (from) parts.push(`from=${from}`);
-		goto(`/planner/plan${parts.length ? `?${parts.join('&')}` : ''}`);
+		goto(resolve(`/planner/plan?${parts.join('&')}`));
 	}
 
 	function goToPrevWeek() {
@@ -964,8 +965,7 @@
 		viewMode = mode;
 		const parts: string[] = [`view=${mode}`];
 		if (!data.range.isCurrent) parts.push(`from=${data.range.from}`);
-		const qs = parts.join('&');
-		goto(`/planner/plan${qs ? `?${qs}` : ''}`, {
+		goto(resolve(`/planner/plan?${parts.join('&')}`), {
 			replaceState: true,
 			keepFocus: true,
 			noScroll: true
@@ -1204,7 +1204,6 @@
 			// carry it across midnight or into another day correctly.
 			// A scratch value used to compute one new time and then discarded —
 			// nothing reads it reactively.
-			// eslint-disable-next-line svelte/prefer-svelte-reactivity
 			const currentDate =
 				decoded.kind === 'slot'
 					? weekdayToDate(data.range.from, (source as Slot).weekday)

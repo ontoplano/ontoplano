@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 	import { armed } from '$lib/actions/armed';
 	import { focusHere } from '$lib/actions/autofocus';
@@ -87,6 +88,7 @@
 	 * the hours went.
 	 */
 	const dayTotals = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- built, read once and thrown away inside this function; nothing tracks it.
 		const totals = new Map<string, { color: string; minutes: number }>();
 
 		for (const card of data.todayCards) {
@@ -203,7 +205,7 @@
 	}
 
 	function refresh() {
-		return goto(`/planner/board?date=${data.date}`, {
+		return goto(resolve(`/planner/board?date=${data.date}`), {
 			invalidateAll: true,
 			noScroll: true,
 			keepFocus: true
@@ -402,10 +404,13 @@
 	}
 
 	function shiftDay(days: number) {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- built, read once and thrown away inside this function; nothing tracks it.
 		const d = new Date(data.date + 'T00:00:00');
 		d.setDate(d.getDate() + days);
 		const pad = (n: number) => String(n).padStart(2, '0');
-		goto(`/planner/board?date=${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+		goto(
+			resolve(`/planner/board?date=${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`)
+		);
 	}
 </script>
 
@@ -440,7 +445,7 @@
 					aria-label="Previous day">&larr;</button
 				>
 				<button
-					onclick={() => goto('/planner/board')}
+					onclick={() => goto(resolve('/planner/board'))}
 					class="tabular border px-2 py-1 text-sm shadow-sm {data.date === data.today
 						? 'border-gray-900 bg-gray-900 text-white'
 						: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"

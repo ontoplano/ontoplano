@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
@@ -120,7 +121,7 @@
 								: ''}"
 						>
 							<a
-								href="/diary/people?person={person.id}"
+								href={resolve(`/diary/people?person=${person.id}`)}
 								class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
 							>
 								{person.name}

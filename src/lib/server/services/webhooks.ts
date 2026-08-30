@@ -209,7 +209,7 @@ export function emit(ctx: Ctx, event: WebhookEvent, data: Record<string, unknown
 }
 
 async function deliver(sub: Subscription, event: WebhookEvent, body: string): Promise<void> {
-	let status = 0;
+	let status: number;
 	try {
 		const response = await fetch(sub.url, {
 			method: 'POST',

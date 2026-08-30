@@ -36,6 +36,7 @@
 	});
 
 	function seqMap() {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- built, read once and thrown away inside this function; nothing tracks it.
 		const map = new Map<number, { content: string; createdAt: string }>();
 		for (const entry of data.entries) {
 			map.set(entry.seq, { content: entry.content, createdAt: entry.createdAt });
@@ -263,7 +264,7 @@
 					class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</div>
-			{#each { length: winInputCount } as _, i}
+			{#each { length: winInputCount }, i (i)}
 				<input
 					autocomplete="off"
 					name="win_{i}"

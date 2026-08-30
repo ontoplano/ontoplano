@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { GoalBacklink } from '$lib/server/services/backlinks';
 
@@ -27,7 +28,7 @@
 	<p class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
 		{#if notebook}
 			<a
-				href="/diary/notebooks/{notebook.id}"
+				href={resolve('/diary/notebooks/[id]', { id: String(notebook.id) })}
 				class="inline-flex items-center gap-1 hover:text-gray-900 hover:underline"
 				title="Notebook"
 			>
@@ -37,7 +38,7 @@
 		{/if}
 		{#each goals as goal (goal.id)}
 			<a
-				href="/goals#goal-{goal.id}"
+				href="{resolve('/goals')}#goal-{goal.id}"
 				class="inline-flex items-center gap-1 hover:text-gray-900 hover:underline {goal.status ===
 				'open'
 					? ''

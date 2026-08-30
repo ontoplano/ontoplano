@@ -1,8 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
+	import type { Snippet } from 'svelte';
 
-	let { children, data }: { children: any; data: { streams: { slug: string; name: string }[] } } =
-		$props();
+	let {
+		children,
+		data
+	}: { children: Snippet; data: { streams: { slug: string; name: string }[] } } = $props();
 
 	/**
 	 * Habits, and then whatever this account measures.
@@ -11,9 +15,12 @@
 	 * opinions about their body and was empty for almost all of them. Weight is
 	 * one data stream that one producer pushes; it earns a tab by existing.
 	 */
+	// Through `resolve` rather than a template string: a stream's slug reaches
+	// the URL as a parameter of the route that owns it, so a slug with anything
+	// interesting in it is escaped rather than pasted.
 	const tabs = $derived([
-		{ href: '/health/habits', label: 'Habits' },
-		...data.streams.map((s) => ({ href: `/data/${s.slug}`, label: s.name }))
+		{ href: resolve('/health/habits'), label: 'Habits' },
+		...data.streams.map((s) => ({ href: resolve('/data/[slug]', { slug: s.slug }), label: s.name }))
 	]);
 
 	function isActive(href: string): boolean {
@@ -27,7 +34,13 @@
 	</div>
 
 	<div class="flex gap-1 border-b border-gray-200">
-		{#each tabs as tab}
+		<!--
+			Resolved where the tabs are built, above — a stream's tab has to be,
+			because its slug is a route parameter. The rule reads the href
+			expression and cannot see through the array.
+		-->
+		<!-- eslint-disable svelte/no-navigation-without-resolve -->
+		{#each tabs as tab (tab.href)}
 			<a
 				href={tab.href}
 				class="px-4 py-2 text-sm font-medium transition {isActive(tab.href)
@@ -37,6 +50,7 @@
 				{tab.label}
 			</a>
 		{/each}
+		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 	</div>
 
 	{@render children()}

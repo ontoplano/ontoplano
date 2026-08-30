@@ -23,8 +23,10 @@
 	import { palette } from '$lib/palette.svelte';
 	import type { IconName } from '$lib/components/Icon.svelte';
 	import { suppressAutofill } from '$lib/autofill';
+	import type { Snippet } from 'svelte';
+	import type { Pathname } from '$app/types';
 
-	let { children, data }: { children: any; data: LayoutServerData } = $props();
+	let { children, data }: { children: Snippet; data: LayoutServerData } = $props();
 
 	// Autofill is opt-in: see $lib/autofill. Once, for every form the app ever mounts.
 	$effect(() => suppressAutofill(document.body));
@@ -44,7 +46,8 @@
 	}
 
 	const allNav: {
-		href: string;
+		/** A real route, so a tab pointing at one that does not exist fails the build. */
+		href: Pathname;
 		label: string;
 		section: SectionKey;
 		icon: string;
@@ -217,6 +220,10 @@
 					action === 'global-next-page'
 						? (idx + 1) % nav.length
 						: (idx - 1 + nav.length) % nav.length;
+				// `href` is typed as a real route of this app, so there is nothing
+				// left to resolve. The rule only recognises a literal resolve()
+				// call sitting in the argument, which this cannot be.
+				// eslint-disable-next-line svelte/no-navigation-without-resolve
 				goto(nav[next].href);
 				break;
 			}
@@ -335,7 +342,7 @@
 			<div class="mx-auto flex w-full max-w-page items-stretch justify-between px-4 sm:px-6">
 				<div class="flex min-w-0 items-stretch gap-4 min-[1460px]:gap-6">
 					<a
-						href="/"
+						href={resolve('/')}
 						class="flex shrink-0 items-center text-lg font-bold tracking-tight whitespace-nowrap text-chrome-ink"
 						>ontoplano</a
 					>
@@ -350,6 +357,12 @@
 						break again.
 					-->
 					<nav class="hidden min-w-0 overflow-x-auto lg:flex">
+						<!--
+							The hrefs are typed as real routes of this app. The rule reads
+							the href expression and cannot see through the array, so it is
+							off for the loop rather than for the file.
+						-->
+						<!-- eslint-disable svelte/no-navigation-without-resolve -->
 						{#each nav as item (item.href)}
 							{@const active = isNavActive(item.href)}
 							<!-- Active tab is a solid block of its section colour; the rest stay
@@ -383,6 +396,7 @@
 								<span class="hidden xl:inline">{item.label}</span>
 							</a>
 						{/each}
+						<!-- eslint-enable svelte/no-navigation-without-resolve -->
 					</nav>
 				</div>
 				<div
@@ -481,21 +495,21 @@
 								</form>
 							</div>
 							<a
-								href="/settings/account"
+								href={resolve('/settings/account')}
 								onclick={() => (menuOpen = false)}
 								class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
 							>
 								Account
 							</a>
 							<a
-								href="/settings/preferences"
+								href={resolve('/settings/preferences')}
 								onclick={() => (menuOpen = false)}
 								class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
 							>
 								Preferences
 							</a>
 							<a
-								href="/settings/integrations"
+								href={resolve('/settings/integrations')}
 								onclick={() => (menuOpen = false)}
 								class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
 							>

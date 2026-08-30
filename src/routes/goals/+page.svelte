@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
@@ -131,9 +132,16 @@
 			<!-- Nothing to filter and nothing to file: an account with no goals is
 			     offered one button, which is the one that helps. -->
 			{#if data.goals.length > 0}
-				<a href={data.includeClosed ? '/goals' : '/goals?closed=1'} class="btn btn-sm">
+				<!-- Both branches are resolved; the rule reads the href expression
+				     and does not look inside a conditional. -->
+				<!-- eslint-disable svelte/no-navigation-without-resolve -->
+				<a
+					href={data.includeClosed ? resolve('/goals') : resolve('/goals?closed=1')}
+					class="btn btn-sm"
+				>
 					{data.includeClosed ? 'Hide closed' : 'Show closed'}
 				</a>
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 				<button onclick={() => (showAreas = true)} class="btn btn-sm">Areas</button>
 			{/if}
 			<button onclick={openCreate} class="btn btn-primary btn-sm">

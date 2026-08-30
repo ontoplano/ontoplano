@@ -4,6 +4,7 @@
  * The navigation, the command palette and — when it exists — the pie are three
  * renderings of this list rather than three lists that drift apart.
  */
+import type { Pathname } from '$app/types';
 import type { IconName } from '$lib/components/Icon.svelte';
 import type { HideableSection } from '$lib/sections';
 
@@ -11,7 +12,13 @@ export type Destination = {
 	label: string;
 	/** The section it belongs to, shown after the label in a flat list. */
 	group: string;
-	href: string;
+	/**
+	 * A real route of this app, not a string that looks like one. `resolve()`
+	 * only takes these, and typing it here means a destination pointing at a
+	 * route that does not exist is a build error rather than a 404 somebody
+	 * finds later.
+	 */
+	href: Pathname;
 	icon: IconName;
 	/** The preference toggle that puts this row away, if any. */
 	hide?: HideableSection;

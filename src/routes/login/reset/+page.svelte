@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 	import type { PageServerData, ActionData } from './$types';
 	import Banner from '$lib/components/Banner.svelte';
@@ -18,7 +19,7 @@
 		{#if data.invalid}
 			<p class="text-sm text-gray-600">
 				This link has no token in it. Reset links work once — request a fresh one from the
-				<a href="/login" class="underline">sign-in page</a>.
+				<a href={resolve('/login')} class="underline">sign-in page</a>.
 			</p>
 		{:else}
 			<form method="post" action="?/reset" use:enhance>

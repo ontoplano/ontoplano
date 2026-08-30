@@ -37,6 +37,7 @@
 	}
 
 	function toggleFilter(catId: number) {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- built, read once and thrown away inside this function; nothing tracks it.
 		const next = new Set(activeFilters);
 		if (next.has(catId)) next.delete(catId);
 		else next.add(catId);
@@ -270,7 +271,7 @@
 	</Modal>
 
 	<div class="flex gap-2">
-		{#each data.categories as cat}
+		{#each data.categories as cat (cat.id)}
 			<button
 				onclick={() => toggleFilter(cat.id)}
 				class="border px-2 py-1 text-xs font-medium transition {activeFilters.has(cat.id)
@@ -382,7 +383,7 @@
 		</div>
 	{:else}
 		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
-			{#each filteredActivities() as activity, i}
+			{#each filteredActivities() as activity, i (activity.id)}
 				<div
 					use:keepInView={i === selectedIndex}
 					class="flex flex-col gap-2 px-4 py-3 transition-colors sm:flex-row sm:items-center sm:gap-4 {i ===

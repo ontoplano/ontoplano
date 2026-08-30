@@ -89,6 +89,14 @@
 		await invalidateAll();
 	}
 
+	/*
+	 * A year of days, laid out in weeks.
+	 *
+	 * eslint-disable svelte/prefer-svelte-reactivity -- every Date below is a
+	 * cursor walked once through the year and then thrown away. Nothing reads
+	 * them reactively, and SvelteDate here would only be slower.
+	 */
+	/* eslint-disable svelte/prefer-svelte-reactivity */
 	function buildHeatmapWeeks(): string[][] {
 		const weeks: string[][] = [];
 		const today = new Date();
@@ -129,6 +137,7 @@
 
 		return weeks;
 	}
+	/* eslint-enable svelte/prefer-svelte-reactivity */
 
 	function badHeatmapColor(count: number): string {
 		return HEATMAP_BAD[Math.min(count, HEATMAP_BAD.length - 1)];
@@ -601,7 +610,7 @@
 										</div>
 									{/each}
 									<div class="ml-1 flex flex-col gap-px">
-										{#each orderedDayLabels() as label}
+										{#each orderedDayLabels() as label, i (i)}
 											<span class="flex h-2.5 items-center text-[9px] leading-none text-gray-500"
 												>{label}</span
 											>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Landing from '$lib/components/Landing.svelte';
@@ -212,6 +213,9 @@
 -->
 		{#snippet nothingYet(text: string, href: string, action: string)}
 			<p class="text-sm text-gray-500">{text}</p>
+			<!-- Every caller passes a resolved path; a snippet parameter is as far
+			     as the rule can follow. -->
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 			<a {href} class="btn btn-sm mt-3 inline-flex">{action}</a>
 		{/snippet}
 
@@ -225,7 +229,7 @@
 	-->
 		{#if data.pendingReview}
 			<a
-				href="/planner/review?week={data.pendingReview.weekStart}"
+				href="{resolve('/planner/review')}?week={data.pendingReview.weekStart}"
 				class="flex items-center gap-3 border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:bg-gray-50"
 			>
 				<span class="text-gray-500"><Icon name="clock" size={16} /></span>
@@ -298,7 +302,9 @@
 		{#snippet card_todayTasks()}
 			<Card title="Today's Tasks" accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
-					<a href="/planner/board" class="text-xs text-gray-500 hover:text-gray-900"> Open → </a>
+					<a href={resolve('/planner/board')} class="text-xs text-gray-500 hover:text-gray-900">
+						Open →
+					</a>
 				{/snippet}
 				{#if data.taskSummary.total === 0}
 					{@render nothingYet(
@@ -388,7 +394,9 @@
 		{#snippet card_goals()}
 			<Card title="Goals" accent={SECTION_COLORS.goals}>
 				{#snippet actions()}
-					<a href="/goals" class="text-xs text-gray-500 hover:text-gray-900">Open &rarr;</a>
+					<a href={resolve('/goals')} class="text-xs text-gray-500 hover:text-gray-900"
+						>Open &rarr;</a
+					>
 				{/snippet}
 				{#if data.activeGoals.length === 0}
 					{@render nothingYet(
@@ -437,7 +445,9 @@
 		{#snippet card_habits()}
 			<Card title="Habits" accent={SECTION_COLORS.health}>
 				{#snippet actions()}
-					<a href="/health/habits" class="text-xs text-gray-500 hover:text-gray-900"> Open → </a>
+					<a href={resolve('/health/habits')} class="text-xs text-gray-500 hover:text-gray-900">
+						Open →
+					</a>
 				{/snippet}
 				{#if data.habitStreaks.length === 0}
 					{@render nothingYet(
@@ -481,13 +491,15 @@
 			].sort()}
 			<Card title="Week Plan" accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
-					<a href="/planner/plan" class="text-xs text-gray-500 hover:text-gray-900">Edit →</a>
+					<a href={resolve('/planner/plan')} class="text-xs text-gray-500 hover:text-gray-900"
+						>Edit →</a
+					>
 				{/snippet}
 				<div class="overflow-x-auto">
 					<table class="w-full text-xs">
 						<thead>
 							<tr>
-								{#each DAYS as day, i}
+								{#each DAYS as day, i (day + i)}
 									<th
 										class="px-1 py-1 text-center font-medium {i === todayIndex
 											? 'bg-gray-100 text-gray-900'
@@ -499,15 +511,15 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each timeSlots as time}
+							{#each timeSlots as time (time)}
 								<tr class="border-t border-gray-100">
-									{#each Array(7) as _, day}
+									{#each { length: 7 }, day (day)}
 										{@const slots = data.weekSlots.filter(
 											(s: { weekday: number; startTime: string }) =>
 												s.weekday === day && s.startTime === time
 										)}
 										<td class="px-1 py-0.5 {day === todayIndex ? 'bg-gray-50' : ''}">
-											{#each slots as slot}
+											{#each slots as slot (slot.id ?? slot.startTime)}
 												<!--
 												The category colour is a mark beside the label, not the
 												label's own ink. As text at 12px it was only as readable
@@ -543,7 +555,9 @@
 			<Card title="Diary" accent={SECTION_COLORS.diary}>
 				{#snippet actions()}
 					<div class="flex items-center gap-3">
-						<a href="/diary" class="text-xs text-gray-500 hover:text-gray-900"> All entries → </a>
+						<a href={resolve('/diary')} class="text-xs text-gray-500 hover:text-gray-900">
+							All entries →
+						</a>
 						{#if winsEnabled}
 							<button
 								onclick={() => {
@@ -690,7 +704,8 @@
 		{#snippet card_shopping()}
 			<Card title="Shopping" accent={SECTION_COLORS.shopping}>
 				{#snippet actions()}
-					<a href="/shopping" class="text-xs text-gray-500 hover:text-gray-900">Open →</a>
+					<a href={resolve('/shopping')} class="text-xs text-gray-500 hover:text-gray-900">Open →</a
+					>
 				{/snippet}
 				{#if data.shoppingToBuy.length === 0}
 					{@render nothingYet(
@@ -723,8 +738,9 @@
 		{#snippet card_quote()}
 			<Card title="Today" accent={SECTION_COLORS.home}>
 				{#snippet actions()}
-					<a href="/settings/preferences" class="text-xs text-gray-500 hover:text-gray-900"
-						>Edit &rarr;</a
+					<a
+						href={resolve('/settings/preferences')}
+						class="text-xs text-gray-500 hover:text-gray-900">Edit &rarr;</a
 					>
 				{/snippet}
 				{#if data.quote}
