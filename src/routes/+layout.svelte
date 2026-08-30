@@ -313,9 +313,12 @@
 			<div
 				class="relative z-50 hidden flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950 lg:flex"
 			>
-				<span><strong>Demo.</strong> One shared account, wiped and reseeded every hour.</span>
+				<span>
+					<strong>This is a demo version of ontoplano.</strong> One shared account, wiped and reseeded
+					every now and then.
+				</span>
 				{#if data.demoHost}
-					<span class="font-normal">On your phone too — {data.demoHost}</span>
+					<span class="font-normal">Open {data.demoHost} on your phone to see it there too.</span>
 				{/if}
 			</div>
 		{/if}
@@ -674,8 +677,8 @@
 			>
 				<!-- Split around the pie button, which sits in the middle of this
 				     strip and would otherwise cover the words. -->
-				<span><strong>Demo</strong> · one shared account</span>
-				<span>wiped hourly</span>
+				<span><strong>Demo version</strong> · one shared account</span>
+				<span>wiped regularly</span>
 			</div>
 		{/if}
 
