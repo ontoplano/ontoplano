@@ -427,7 +427,7 @@
 		{#if data.past.length > 0}
 			<Card
 				title="What you wrote before"
-				description="The weeks behind this one. This is where the three lines end up."
+				description="The weeks behind this one."
 				accent="var(--section-accent)"
 				flush
 			>

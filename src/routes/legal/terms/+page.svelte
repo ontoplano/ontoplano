@@ -80,12 +80,11 @@
 	retention period.
 </p>
 
-<h2>The name</h2>
+<h2>The software</h2>
 <p>
-	Ontoplano's source is open and you are welcome to run your own copy of it — that is what the
-	software is for. The name <strong>ontoplano</strong> and its mark are not part of that: a fork runs
-	under a name of its own, and may say factually what it is built on. Nothing here stops you building
-	or selling; it stops a copy being mistaken for this one.
+	Ontoplano is open source under the AGPL-3.0, and you are welcome to run your own copy — that is
+	what it is for. The licence covers the code rather than the project's name, so a fork goes out
+	under a name of its own.
 </p>
 
 <h2>The boring part</h2>
