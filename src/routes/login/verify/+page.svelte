@@ -37,16 +37,13 @@
 		{/if}
 		{#if form && 'sent' in form && form.sent}
 			<div class="mb-4">
-				<Banner
-					kind="success"
-					message="Sent. Check your mailbox — and the spam folder, the first time."
-				/>
+				<Banner kind="success" message="Sent — check your mailbox." />
 			</div>
 		{/if}
 
 		<p class="text-sm text-gray-700">
-			A confirmation mail went to <strong class="text-gray-900">{data.email}</strong>. Following its
-			link signs you in; until then this page is the whole app.
+			A confirmation mail went to <strong class="text-gray-900">{data.email}</strong>. Click on its
+			link to sign in.
 		</p>
 
 		<form method="post" action="?/resend" use:enhance class="mt-6">
@@ -60,9 +57,7 @@
 		</form>
 
 		<form method="post" action="/login?/signOut" use:enhance class="mt-4 text-xs text-gray-500">
-			Wrong address?
-			<button type="submit" class="underline">Sign out</button> and register again — nothing has been
-			kept yet.
+			Wrong address? <button type="submit" class="underline">Sign out</button>.
 		</form>
 	</div>
 </div>

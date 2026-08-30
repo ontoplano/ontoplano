@@ -98,7 +98,9 @@
 	 * anybody is signed in.
 	 */
 	const bareScreen = $derived(
-		page.url.pathname === '/welcome' || page.url.pathname.startsWith('/legal')
+		page.url.pathname === '/welcome' ||
+			page.url.pathname === '/login/verify' ||
+			page.url.pathname.startsWith('/legal')
 	);
 
 	/** The section being viewed. Its accent fills the active nav tab. */

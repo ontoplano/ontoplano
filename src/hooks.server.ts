@@ -265,7 +265,10 @@ const VERIFY_EXEMPT = [
 	'/terms',
 	'/favicon.svg',
 	'/icons',
-	'/manifest.webmanifest'
+	'/manifest.webmanifest',
+	// The impersonation escape hatch: an administrator inside an unverified
+	// account must always be able to give it back.
+	'/admin/stop'
 ];
 
 const handleUnverified: Handle = ({ event, resolve }) => {
