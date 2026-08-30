@@ -218,6 +218,13 @@
       "when": 1788039817795,
       "tag": "0030_mail-failures",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1788118104562,
+      "tag": "0031_client-errors",
+      "breakpoints": true
     }
   ]
 }

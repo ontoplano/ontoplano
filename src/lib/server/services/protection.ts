@@ -39,6 +39,12 @@ export type Ban = {
 	at: string;
 	/** Why this jail bans, in words — what the address actually did. */
 	reason: string;
+	/** When fail2ban let it back in, if it has. Same format as `at`. */
+	unbannedAt: string | null;
+	/** How long it was (or has been) blocked, in words. */
+	held: string;
+	/** Still blocked as far as the log knows. */
+	active: boolean;
 };
 
 /*
@@ -103,14 +109,67 @@ function tail(path: string, bytes: number): string | null {
 // brackets too, and the jail is the LAST bracketed thing before the verb.
 const BAN = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*\[([^\]]+)\] Ban ([0-9a-fA-F.:]+)/;
 
+/*
+ * And the unbans, which are not news on their own and are the only way to say
+ * how long a ban lasted. "Blocked" with no duration reads as "blocked
+ * forever", which is the one thing it never means — every jail here has a
+ * bantime, and an address let back in an hour later is a different fact from
+ * one that is still out.
+ */
+const UNBAN = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*\[([^\]]+)\] Unban ([0-9a-fA-F.:]+)/;
+
+/** A span in words, from two of the log's own timestamps. */
+function spanBetween(from: string, to: string): string {
+	const ms = Date.parse(to.replace(' ', 'T')) - Date.parse(from.replace(' ', 'T'));
+	if (!Number.isFinite(ms) || ms < 0) return '';
+	const minutes = Math.round(ms / 60000);
+	if (minutes < 1) return 'under a minute';
+	if (minutes < 60) return `${minutes}m`;
+	const hours = Math.floor(minutes / 60);
+	if (hours < 24) return minutes % 60 ? `${hours}h ${minutes % 60}m` : `${hours}h`;
+	const days = Math.floor(hours / 24);
+	return hours % 24 ? `${days}d ${hours % 24}h` : `${days}d`;
+}
+
 export function protection(limit = 8): Protection {
 	const text = tail(LOG, TAIL_BYTES);
 	if (text === null) return { readable: false, path: LOG, lastDay: 0, recent: [] };
 
 	const bans: Ban[] = [];
+	// `jail:address` → when it was let back in. The last unban wins, which is
+	// what makes a rebanned address read correctly: an earlier release does not
+	// describe the ban that is running now.
+	const released = new Map<string, string>();
+
 	for (const line of text.split('\n')) {
 		const m = BAN.exec(line);
-		if (m) bans.push({ at: m[1], jail: m[2], address: m[3], reason: reasonFor(m[2]) });
+		if (m) {
+			bans.push({
+				at: m[1],
+				jail: m[2],
+				address: m[3],
+				reason: reasonFor(m[2]),
+				unbannedAt: null,
+				held: '',
+				active: true
+			});
+			continue;
+		}
+		const u = UNBAN.exec(line);
+		if (u) released.set(`${u[2]}:${u[3]}`, u[1]);
+	}
+
+	const now = local(new Date());
+	for (const ban of bans) {
+		const out = released.get(`${ban.jail}:${ban.address}`);
+		// An unban only belongs to a ban that came before it.
+		if (out && out > ban.at) {
+			ban.unbannedAt = out;
+			ban.active = false;
+			ban.held = spanBetween(ban.at, out);
+		} else {
+			ban.held = spanBetween(ban.at, now);
+		}
 	}
 
 	// A rolling 24 hours, not "since midnight": a count of zero above a ban

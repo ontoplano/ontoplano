@@ -1,7 +1,12 @@
+import { desc, eq, sql } from 'drizzle-orm';
+
 import { loadConfig } from '../config.js';
+import { db } from '../db/index.js';
+import { clientErrors, user } from '../db/schema.js';
 import { getUserSetting, setUserSetting } from '../settings.js';
 import type { Ctx } from './ctx.js';
 import { ForbiddenError } from './errors.js';
+import { stamps } from './time.js';
 import { oneOf, optionalStr, str } from './validate.js';
 
 /**
@@ -31,24 +36,99 @@ export function setClientErrorConsent(ctx: Ctx, decision: unknown): void {
 	setUserSetting(ctx.userId, CONSENT_KEY, oneOf(decision, 'decision', ['yes', 'no'] as const));
 }
 
+/** How many reports are kept. Older ones go on every write. */
+const KEEP = 200;
+
 /**
- * Write one report to the server log, in the same shape as a server error.
+ * Write one report — to the log, and to a table the administrator can read.
  *
- * The log, not a table: reports are operational exhaust, not the account's
- * data, and the operator already greps this log for the server's own 500s.
+ * The log alone was the original answer, on the grounds that a report is
+ * operational exhaust rather than the account's data. That first half is still
+ * true and is why this table is not part of an export and carries no name once
+ * the account has gone. The second half was wrong in practice: the log is
+ * journald on the box, so "somebody reported an error" reached nobody who was
+ * not already tailing it, and the only way to find out was to be told.
+ *
+ * Both, then: the line stays for whoever greps, and `/admin` shows the last
+ * few hundred so a report goes somewhere a person actually looks.
  */
 export function recordClientError(ctx: Ctx, input: Record<string, unknown>): void {
 	if (clientErrorState(ctx.userId) !== 'yes')
 		throw new ForbiddenError('Error reporting is not enabled for this account');
+
+	const message = str(input.message, 'message', { max: 500 });
+	const url = optionalStr(input.url, 'url', { max: 300 });
+	const stack = optionalStr(input.stack, 'stack', { max: 8000 });
+	const userAgent = optionalStr(input.userAgent, 'userAgent', { max: 300 });
 
 	console.error(
 		JSON.stringify({
 			at: ctx.now.toISOString(),
 			level: 'client-error',
 			user: ctx.userId,
-			message: str(input.message, 'message', { max: 500 }),
-			url: optionalStr(input.url, 'url', { max: 300 }),
-			stack: optionalStr(input.stack, 'stack', { max: 8000 })
+			message,
+			url,
+			stack
 		})
 	);
+
+	db.insert(clientErrors)
+		.values({
+			userId: ctx.userId,
+			message,
+			url,
+			stack,
+			userAgent,
+			createdAt: stamps(ctx).createdAt
+		})
+		.run();
+
+	// Swept here rather than by a timer: this is the only thing that writes to
+	// the table, so it is the only place that can let it grow.
+	db.run(
+		sql`delete from client_errors where id not in (
+			select id from client_errors order by id desc limit ${KEEP}
+		)`
+	);
+}
+
+export type ReportedError = {
+	id: number;
+	userId: string | null;
+	email: string | null;
+	message: string;
+	url: string | null;
+	stack: string | null;
+	userAgent: string | null;
+	createdAt: string;
+};
+
+/**
+ * The most recent reports, for `/admin`.
+ *
+ * The address is joined rather than stored, so an account that is deleted
+ * takes its name out of this view without the row having to be rewritten.
+ */
+export function recentClientErrors(limit = 40): ReportedError[] {
+	return db
+		.select({
+			id: clientErrors.id,
+			userId: clientErrors.userId,
+			email: user.email,
+			message: clientErrors.message,
+			url: clientErrors.url,
+			stack: clientErrors.stack,
+			userAgent: clientErrors.userAgent,
+			createdAt: clientErrors.createdAt
+		})
+		.from(clientErrors)
+		.leftJoin(user, eq(clientErrors.userId, user.id))
+		.orderBy(desc(clientErrors.id))
+		.limit(limit)
+		.all();
+}
+
+/** Forget one, once it has been dealt with. */
+export function dismissClientError(id: number): void {
+	db.delete(clientErrors).where(eq(clientErrors.id, id)).run();
 }

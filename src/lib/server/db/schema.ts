@@ -888,6 +888,36 @@ export const billingEvents = sqliteTable(
  * outlives that in the payment provider's own records, which is where a charge
  * is evidenced anyway.
  */
+/**
+ * What broke in somebody's browser, when they said we could hear about it.
+ *
+ * Kept for the administrator to look at, not for the account: this is
+ * operational exhaust, and the person it happened to has no use for it. So the
+ * account reference is nullable and is cleared rather than cascaded when an
+ * account goes — a stack trace with no name on it is still a bug worth fixing,
+ * and keeping the name would make this the account's data, which it is not.
+ *
+ * Swept to a ceiling on write (see services/client-errors.ts). A table nobody
+ * prunes is a table that eats the disk of a box with 2GB free.
+ */
+export const clientErrors = sqliteTable(
+	'client_errors',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		/** Null once the account it happened to has been deleted. */
+		userId: text('user_id'),
+		message: text('message').notNull(),
+		url: text('url'),
+		stack: text('stack'),
+		/** Which browser, as it described itself. Nothing is inferred from it. */
+		userAgent: text('user_agent'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [index('client_errors_created_idx').on(table.createdAt)]
+);
+
 export const auditEvents = sqliteTable(
 	'audit_events',
 	{

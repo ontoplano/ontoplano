@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -203,10 +204,22 @@
 		{/if}
 
 		<Card title="Lately" description="Every account's history in one column, newest first." flush>
+			{#snippet actions()}
+				<button type="button" class="btn btn-sm" onclick={() => invalidateAll()}>
+					<Icon name="undo" /> Refresh
+				</button>
+			{/snippet}
 			{#if data.events.length === 0}
 				<EmptyState icon="clock" title="Nothing recorded yet" />
 			{:else}
-				<div class="divide-y divide-gray-200">
+				<!--
+					Contained and scrollable rather than however long the history
+					happens to be. On an instance in use this is the one card with no
+					natural end, and a page whose length is a function of how popular
+					you are is a page that stops being readable exactly when it starts
+					mattering.
+				-->
+				<div class="max-h-96 divide-y divide-gray-200 overflow-y-auto">
 					{#each data.events as event (event.id)}
 						<div class="flex items-baseline gap-2 px-4 py-2 text-sm">
 							<span class="min-w-0 flex-1 truncate">
@@ -215,6 +228,64 @@
 							</span>
 							<span class="shrink-0 text-xs text-gray-500">{ago(event.createdAt)}</span>
 						</div>
+					{/each}
+					{#if data.events.length >= data.eventLimit}
+						<!-- Reached through the URL rather than a fetch: the page already
+						     knows how to load itself, and this way a deep look is a link
+						     somebody can keep. -->
+						<a
+							href="{resolve('/admin')}?events={data.eventLimit + 50}{data.query
+								? `&q=${encodeURIComponent(data.query)}`
+								: ''}"
+							class="block px-4 py-3 text-center text-xs text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+						>
+							Show older
+						</a>
+					{/if}
+				</div>
+			{/if}
+		</Card>
+
+		<!--
+			What broke in somebody's browser.
+			
+			Only from accounts that agreed to send it, and only on an instance
+			that turned the feature on. It used to go to the server log alone,
+			which on the box is journald — so somebody pressing "Send" reached
+			nobody who was not already tailing it, and the only way to find out
+			was to be told in person.
+		-->
+		<Card
+			title="Reported by somebody's browser"
+			description="Crashes people chose to send. Dismiss one once it is dealt with."
+			flush
+		>
+			{#if data.clientErrors.length === 0}
+				<EmptyState icon="info" title="Nothing reported" />
+			{:else}
+				<div class="max-h-96 divide-y divide-gray-200 overflow-y-auto">
+					{#each data.clientErrors as report (report.id)}
+						<details class="px-4 py-2 text-sm">
+							<summary class="cursor-pointer list-none">
+								<span class="text-gray-900">{report.message}</span>
+								<span class="block truncate text-xs text-gray-500">
+									{report.email ?? 'account deleted'} · {report.url ?? 'no page'} · {ago(
+										report.createdAt
+									)}
+								</span>
+							</summary>
+							{#if report.stack}
+								<pre
+									class="mt-2 max-h-48 overflow-auto bg-gray-50 p-2 text-xs whitespace-pre-wrap text-gray-700">{report.stack}</pre>
+							{/if}
+							{#if report.userAgent}
+								<p class="mt-2 text-xs break-all text-gray-500">{report.userAgent}</p>
+							{/if}
+							<form method="post" action="?/dismissReport" use:enhance class="mt-2">
+								<input type="hidden" name="id" value={report.id} />
+								<button class="btn btn-sm">Dismiss</button>
+							</form>
+						</details>
 					{/each}
 				</div>
 			{/if}
@@ -254,6 +325,18 @@ sudo systemctl restart user@$(id -u)</pre>
 							<span class="min-w-0 flex-1">
 								<span class="tabular text-gray-900">{ban.address}</span>
 								<span class="block text-xs text-gray-500">{ban.reason}</span>
+								<!--
+									"Blocked" with no duration reads as "blocked forever", which
+									is the one thing it never means: every jail has a bantime.
+									Whether it is still out, and for how long, is the fact.
+								-->
+								<span class="block text-xs {ban.active ? 'text-gray-600' : 'text-gray-500'}">
+									{#if ban.active}
+										still blocked · {ban.held} so far
+									{:else}
+										let back in after {ban.held}
+									{/if}
+								</span>
 							</span>
 							<span class="shrink-0 text-xs text-gray-500">{ago(ban.at)}</span>
 						</div>

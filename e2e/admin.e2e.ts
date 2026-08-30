@@ -65,7 +65,10 @@ test('says what the box has turned away', async ({ page }) => {
 
 	// The fixture log `e2e/prepare.mjs` writes, read through the same path a
 	// real instance uses.
-	const blocked = page.locator('section, article, div').filter({ hasText: 'Blocked' }).last();
+	// Anchored on the card's own description rather than on the word "Blocked",
+	// which now also appears inside the rows — each one says whether the
+	// address is still out and for how long.
+	const blocked = page.locator('section').filter({ hasText: 'What fail2ban has turned away.' });
 	await expect(blocked).toContainText('203.0.113.7');
 	// Not the jail's name — what the address did.
 	await expect(blocked).toContainText('scanner');
@@ -73,4 +76,6 @@ test('says what the box has turned away', async ({ page }) => {
 	// the rows under it — the card once said "0 blocked today" above a ban
 	// made just before midnight.
 	await expect(blocked).toContainText('2 addresses blocked in the last 24 hours');
+	// A ban with no duration reads as "forever", which it never is.
+	await expect(blocked).toContainText('still blocked');
 });

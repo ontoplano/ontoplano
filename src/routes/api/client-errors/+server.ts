@@ -28,7 +28,13 @@ export const POST: RequestHandler = async (event) => {
 		if (body.decision !== undefined) {
 			setClientErrorConsent(ctx, body.decision);
 		} else {
-			recordClientError(ctx, (body.error ?? {}) as Record<string, unknown>);
+			// Taken from the request rather than from the page: which browser it
+			// was is the first thing anybody asks about a bug that only happens
+			// to one person, and a page that sends its own can send anything.
+			recordClientError(ctx, {
+				...((body.error ?? {}) as Record<string, unknown>),
+				userAgent: event.request.headers.get('user-agent') ?? undefined
+			});
 		}
 
 		return new Response(null, { status: 204 });
