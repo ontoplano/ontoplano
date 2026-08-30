@@ -6,6 +6,16 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- On a phone, forms are screens. Every dialog in the app now takes the whole
+  screen below `sm`, titled, with a back arrow at the top left instead of an
+  × in a corner — and the new-block form's hand-picked column widths became
+  the shared grid, so nothing is squeezed three-across on a 390px screen.
+- The phone lost its top bar: everything that was in it already lives in the
+  bottom one, so it was spending a strip of a small screen on the app's own
+  name.
+- The search box no longer offers saved passwords, cards and addresses: the
+  shell stamps the ignore flags every field needs, rather than each input
+  having to remember, and the palette input is a real search field.
 - There is a demo mode. With `ONTOPLANO_DEMO=true` and an account named,
   anybody who arrives is already signed in to it — no registering to look at
   a planner — and a band on every page says the data is wiped hourly.
