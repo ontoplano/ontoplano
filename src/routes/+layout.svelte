@@ -319,7 +319,18 @@
 		{/if}
 
 		<SectionPattern icon={pageGlyph} />
-		<header class="relative z-40 bg-chrome shadow-raised" style="padding-top: var(--safe-top)">
+		<!--
+			No top bar on a phone.
+			
+			Everything in it above `lg` — the section tabs, search, the pies, the
+			account menu — already lives in the bottom bar down there, so all the
+			header did on a phone was spend a strip of a small screen on the word
+			"ontoplano". An app does not put its own name above every screen.
+		-->
+		<header
+			class="relative z-40 hidden bg-chrome shadow-raised lg:block"
+			style="padding-top: var(--safe-top)"
+		>
 			<div class="mx-auto flex w-full max-w-page items-stretch justify-between px-4 sm:px-6">
 				<div class="flex min-w-0 items-stretch gap-4 min-[1460px]:gap-6">
 					<a
@@ -504,7 +515,7 @@
 		</header>
 		<main
 			bind:this={scroller}
-			class="relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto overscroll-y-contain px-4 pt-6 pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+0.75rem)] sm:px-6 lg:overflow-visible lg:pb-6"
+			class="relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto overscroll-y-contain px-4 pt-[calc(var(--safe-top)+1rem)] pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+0.75rem)] sm:px-6 lg:overflow-visible lg:pt-6 lg:pb-6"
 		>
 			<!-- Keyed so arriving on a page replays its entrance. The movement is
 			     transform alone — an opacity animation here is a flash of the page

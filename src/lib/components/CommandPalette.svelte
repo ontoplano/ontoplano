@@ -140,8 +140,15 @@
 		onclick={(e) => e.target === e.currentTarget && hide()}
 	>
 		<div class="w-full max-w-xl border border-gray-200 bg-white shadow-overlay" role="dialog">
+			<!--
+				A real search field, not a bare text input: the type is what tells
+				the browser what this is, and an unclassifiable input on a phone is
+				exactly what gets offered saved passwords and card numbers.
+			-->
 			<input
+				type="search"
 				autocomplete="off"
+				enterkeyhint="go"
 				bind:this={input}
 				bind:value={query}
 				placeholder="Go anywhere, or find anything"

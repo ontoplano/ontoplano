@@ -12,12 +12,41 @@
  * — email, current-password, new-password on the auth forms — declares it and
  * is left alone, because an explicit attribute is the opt-in.
  */
+/**
+ * `autocomplete="off"` is not enough on its own.
+ *
+ * Chrome — and Android's autofill framework behind it — treats that attribute
+ * as a hint it may ignore, which is why the command palette still raised a row
+ * of key, card and pin icons over the keyboard while carrying it. These are the
+ * flags the password managers and Chrome's own heuristics actually read, and
+ * they go on by the same rule as the attribute above: everything gets them,
+ * a field that wants autofill opts out by declaring what it is.
+ */
+const IGNORE_FLAGS: [string, string][] = [
+	// Chrome's own heuristics: a field it cannot classify is not offered
+	// addresses or cards.
+	['data-form-type', 'other'],
+	['data-lpignore', 'true'], // LastPass
+	['data-1p-ignore', ''], // 1Password
+	['data-bwignore', ''] // Bitwarden
+];
+
 export function suppressAutofill(root: ParentNode & Node): () => void {
 	const quiet = (node: ParentNode) => {
 		for (const field of node.querySelectorAll(
 			'input:not([autocomplete]), textarea:not([autocomplete])'
 		)) {
 			field.setAttribute('autocomplete', 'off');
+		}
+		// The flags go on every field that has not asked for autofill —
+		// including the ones that already said `autocomplete="off"` by hand,
+		// which is where this was still leaking.
+		for (const field of node.querySelectorAll(
+			'input:not([autocomplete]), input[autocomplete="off"], textarea:not([autocomplete]), textarea[autocomplete="off"]'
+		)) {
+			for (const [name, value] of IGNORE_FLAGS) {
+				if (!field.hasAttribute(name)) field.setAttribute(name, value);
+			}
 		}
 	};
 
