@@ -54,8 +54,11 @@
 		return px('--mobile-nav-height') + px('--safe-bottom') + 16;
 	}
 
+	// No Home wedge: the navbar and the phone bar both carry Home as a plain
+	// button, and a pie slot spent on "go to the start" is a slot a real room
+	// could have used.
 	const wedges = $derived(
-		ROOMS.filter((r) => !hidden.includes(ROOM_HIDE[r.key] ?? '')).map((r) => ({
+		ROOMS.filter((r) => r.key !== 'home' && !hidden.includes(ROOM_HIDE[r.key] ?? '')).map((r) => ({
 			key: r.key,
 			label: r.label,
 			icon: r.icon,

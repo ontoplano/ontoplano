@@ -152,11 +152,13 @@ test('the section pie lands you in the room', async ({ page }) => {
 	await page.mouse.down();
 	await page.mouse.up();
 
-	// Eight rooms, every one of them named.
+	// The rooms, every one of them named — and no Home: the navbar and the
+	// phone bar carry Home as a plain button, so the pie spends no wedge on it.
 	await expect(page.getByText('cancel')).toBeVisible();
-	for (const room of ['Home', 'Planner', 'Goals', 'Diary', 'Ideas', 'Health', 'Shopping']) {
+	for (const room of ['Planner', 'Goals', 'Diary', 'Ideas', 'Health', 'Shopping', 'Kitchen']) {
 		await expect(page.locator('.pie').getByText(room, { exact: true })).toBeVisible();
 	}
+	await expect(page.locator('.pie').getByText('Home', { exact: true })).toHaveCount(0);
 
 	await page.locator('.pie').getByText('Shopping', { exact: true }).click();
 	await page.waitForURL(/\/shopping/);

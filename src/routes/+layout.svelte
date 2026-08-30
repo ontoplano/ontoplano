@@ -564,26 +564,45 @@
 					<Icon name="search" size={22} />
 				</button>
 
-				<button
-					onpointerdown={(e) => rooms?.summon(e)}
-					class="pie-handle flex flex-1 items-center justify-center {roomsOpen
+				<!--
+					The rooms, raised out of the middle of the bar the way a docked
+					action button is: the one control here that opens a gesture rather
+					than a page earns the bump that says "this one is different".
+				-->
+				<div class="relative flex-1">
+					<button
+						onpointerdown={(e) => rooms?.summon(e)}
+						class="pie-handle absolute -top-5 left-1/2 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full border border-chrome-line bg-chrome shadow-overlay {roomsOpen
+							? 'text-chrome-ink'
+							: 'text-chrome-muted'}"
+						aria-label="Go to a section"
+						title="Go to a section"
+					>
+						<svg
+							class="h-6 w-6"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.75"
+							stroke-linecap="square"
+							aria-hidden="true"
+						>
+							<path d="M6 14l6-6 6 6" />
+						</svg>
+					</button>
+				</div>
+
+				<!-- Home by name, since the pie no longer offers it. -->
+				<a
+					href={resolve('/')}
+					class="flex flex-1 items-center justify-center {page.url.pathname === '/'
 						? 'text-chrome-ink'
 						: 'text-chrome-muted'}"
-					aria-label="Go to a section"
-					title="Go to a section"
+					aria-label="Home"
+					title="Home"
 				>
-					<svg
-						class="h-6 w-6"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.75"
-						stroke-linecap="square"
-						aria-hidden="true"
-					>
-						<path d="M6 14l6-6 6 6" />
-					</svg>
-				</button>
+					<Icon name="home" size={22} />
+				</a>
 
 				<button
 					onpointerdown={(e) => pie?.summon(e)}
