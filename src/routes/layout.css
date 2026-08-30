@@ -272,6 +272,17 @@ html[data-style='playful'] .page-surface {
  * it out, which is the point — the page should feel like somewhere, without
  * anything competing with the data on it.
  */
+/*
+ * Installed, this is an app, and an app does not reload itself because a
+ * thumb dragged a list past its top. `contain` rather than `none`: it stops
+ * the gesture from chaining into the browser's pull-to-refresh while leaving
+ * each scroller its native elastic stretch, which is exactly the part that
+ * feels like an app.
+ */
+html {
+	overscroll-behavior-y: contain;
+}
+
 .section-pattern {
 	position: fixed;
 	inset: 0;

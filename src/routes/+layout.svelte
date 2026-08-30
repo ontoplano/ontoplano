@@ -503,7 +503,7 @@
 		</header>
 		<main
 			bind:this={scroller}
-			class="relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto px-4 pt-6 pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+1.5rem)] sm:px-6 lg:overflow-visible lg:pb-6"
+			class="relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto overscroll-y-contain px-4 pt-6 pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+0.75rem)] sm:px-6 lg:overflow-visible lg:pb-6"
 		>
 			<!-- Keyed so arriving on a page replays its entrance. The movement is
 			     transform alone — an opacity animation here is a flash of the page
