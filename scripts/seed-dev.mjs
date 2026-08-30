@@ -165,6 +165,28 @@ const oneOff = (date, startTime, durationMinutes, activityId, label) => {
 	);
 };
 
+/** A one-off that names an area rather than a specific activity. */
+const oneOffInCategory = (date, startTime, durationMinutes, categoryId, label) => {
+	const existing = one(
+		'select id from exceptional_slots where user_id = ? and date = ? and start_time = ?',
+		uid,
+		date,
+		startTime
+	);
+	if (existing) return existing.id;
+	return run(
+		`insert into exceptional_slots
+		 (user_id, date, start_time, duration_minutes, mode, category_id, label, meta)
+		 values (?, ?, ?, ?, 'category', ?, ?, '{}')`,
+		uid,
+		date,
+		startTime,
+		durationMinutes,
+		categoryId,
+		label
+	);
+};
+
 const todo = (title, extra = {}) => {
 	const existing = one('select id from planner_todos where user_id = ? and title = ?', uid, title);
 	if (existing) return existing.id;
@@ -312,13 +334,24 @@ const person = (name, relationship, notes = '') => {
 	);
 };
 
-const mention = (entryId, personId) => {
-	if (one('select id from entry_people where entry_id = ? and person_id = ?', entryId, personId))
+/**
+ * Somebody named in an entry, found by the entry's `seq`.
+ *
+ * By seq rather than by row id: seq is the number the seed itself hands out
+ * (`diary(4, …)`) and the only stable handle a call site can name. It used to
+ * pass that number straight into `entry_id`, which worked solely because a
+ * long-lived dev database had grown ids that matched — on a database seeded
+ * from scratch, the foreign key refused it.
+ */
+const mention = (seq, personId) => {
+	const entry = one('select id from diary_entries where user_id = ? and seq = ?', uid, seq);
+	if (!entry) return;
+	if (one('select id from entry_people where entry_id = ? and person_id = ?', entry.id, personId))
 		return;
 	run(
 		'insert into entry_people (user_id, entry_id, person_id) values (?, ?, ?)',
 		uid,
-		entryId,
+		entry.id,
 		personId
 	);
 };
@@ -633,8 +666,13 @@ slot(4, '16:00', 60, meetings, 'weeks:2:' + monday);
 categorySlot(5, '15:00', 120, personal, 'errands');
 
 oneOff(today, '13:00', 90, meetings, 'quarterly review');
-oneOff(iso(dayOffset(1)), '19:30', 120, personal, 'dinner with M');
-oneOff(iso(dayOffset(-1)), '08:00', 60, health, 'physio');
+// These two name an area rather than an activity. They used to be passed to
+// oneOff, which writes the number into activity_id — and it only ever worked
+// because a long-lived dev database happened to have an activity with the
+// same id as the category. On a database seeded from scratch the foreign key
+// caught it, which is what building the demo does every hour.
+oneOffInCategory(iso(dayOffset(1)), '19:30', 120, personal, 'dinner with M');
+oneOffInCategory(iso(dayOffset(-1)), '08:00', 60, health, 'physio');
 
 // One occurrence of the Wednesday Russian block, dropped for a single week.
 const russianSlot = one(
