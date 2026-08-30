@@ -88,7 +88,7 @@ export default defineConfig({
 			// 30 Aug: 45.9% → 64.6% lines, after covering the services that had
 			// nothing. Three real bugs fell out of writing them, which is the
 			// argument for the number going up rather than the number itself.
-			thresholds: { lines: 63, functions: 64, statements: 60, branches: 48 }
+			thresholds: { lines: 66, functions: 66, statements: 63, branches: 52 }
 		}
 	}
 });
