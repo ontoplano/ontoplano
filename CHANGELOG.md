@@ -6,6 +6,23 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- Registration confirms your address before it asks for a card, not after.
+- A password needs eight characters with a letter and either a number or a
+  symbol — checked wherever a new one is set, and said in the form rather
+  than only as a refusal.
+- Notebooks and People are in the section wheel. The wheel and the bar kept
+  separate lists, so those two were in one and not the other whatever the
+  preferences said.
+- Quick capture opens the section's own form with everything but the first
+  field folded away, so writing something down is still one line and adding
+  the rest no longer means saving it and opening it again.
+- The shopping list shows what an item costs on its row, and no longer
+  claims a price trend — it was measured against the first price ever
+  recorded, which nothing could correct.
+- `/admin` can let a blocked address back in, or block one for good, where
+  the box has been set up for it.
+- ontoplano is licensed AGPL-3.0.
+
 - What just happened is said where you are looking. Confirmations and failures
   arrive in the corner of the screen instead of at the top of the page, so
   saving something from the bottom of a long settings page no longer answers
