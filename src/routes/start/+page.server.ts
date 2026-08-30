@@ -1,6 +1,7 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import {
+	checkoutTrialDays,
 	createCheckout,
 	displayPricing,
 	hasYearlyPrice,
@@ -26,14 +27,18 @@ export const load: PageServerLoad = async ({ locals }) => {
 	if (!hold) redirect(302, '/settings/billing');
 
 	const pricing = await displayPricing();
+	// A first account gets the full trial; a returning one only what it has
+	// left of it — usually nothing, in which case renewing bills today.
+	const trialDaysAhead = checkoutTrialDays(locals.user.id);
 	return {
 		// 'billing' is the card step of registration; 'expired' is the wall a
 		// lapsed account meets — data kept, renew or take it with you.
 		mode: hold,
 		pricing,
+		trialDaysAhead,
 		yearly: hasYearlyPrice(),
 		exportsLeft: hold === 'expired' ? exportAllowance(locals.user.id).remaining : 0,
-		firstChargeOn: new Date(Date.now() + pricing.trialDays * 86400_000).toISOString().slice(0, 10)
+		firstChargeOn: new Date(Date.now() + trialDaysAhead * 86400_000).toISOString().slice(0, 10)
 	};
 };
 

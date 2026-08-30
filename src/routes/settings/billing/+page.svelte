@@ -163,7 +163,7 @@
 		{#if data.canCheckout}
 			<div class="mt-4">
 				{#if data.configured}
-					{@const trialFirst = data.pricing.trialRequiresCard && data.entitlement.plan === 'none'}
+					{@const trialFirst = data.pricing.trialRequiresCard && data.trialDaysAhead > 0}
 					<!-- Full page post on purpose: the answer is a redirect to the
 					     provider's checkout, which enhance would swallow. Yearly
 					     leads; it is the one worth taking. -->
@@ -171,7 +171,7 @@
 						{#if data.yearly}
 							<button class="btn btn-primary" name="interval" value="yearly">
 								<Icon name="arrow-right" />
-								{trialFirst ? `Start your free ${data.pricing.trialDays} days` : 'Go Pro'} — yearly
+								{trialFirst ? `Start your free ${data.trialDaysAhead} days` : 'Go Pro'} — yearly
 							</button>
 							<button class="btn" name="interval" value="monthly">
 								{formatPrice(data.pricing.monthlyCents, data.pricing.currency)} monthly
@@ -179,7 +179,7 @@
 						{:else}
 							<button class="btn btn-primary" name="interval" value="monthly">
 								<Icon name="arrow-right" />
-								{trialFirst ? `Start your free ${data.pricing.trialDays} days` : 'Go Pro'}
+								{trialFirst ? `Start your free ${data.trialDaysAhead} days` : 'Go Pro'}
 							</button>
 						{/if}
 					</form>

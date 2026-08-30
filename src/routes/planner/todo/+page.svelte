@@ -167,7 +167,9 @@
 		</div>
 		<button onclick={startNew} class="btn btn-primary btn-sm">
 			<Icon name="plus" /> New todo
-			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">{keyFor('/planner/todo', 'new')}</kbd>
+			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
+				>{keyFor('/planner/todo', 'new')}</kbd
+			>
 		</button>
 	</div>
 

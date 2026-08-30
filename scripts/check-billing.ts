@@ -30,7 +30,9 @@ const { db } = await import('../src/lib/server/db/index.js');
 const { user } = await import('../src/lib/server/db/auth.schema.js');
 const { handleWebhook, verifySignature, isBillingConfigured } =
 	await import('../src/lib/server/services/billing.js');
-const { resolvePlan, startTrial } = await import('../src/lib/server/services/subscriptions.js');
+const { resolvePlan, startTrial, trialCarryover } =
+	await import('../src/lib/server/services/subscriptions.js');
+const { paymentHoldFor } = await import('../src/lib/server/services/access.js');
 
 let failures = 0;
 
@@ -188,6 +190,111 @@ check(
 	`${pastDue.plan}/${pastDue.status}`
 );
 
+// --- a provider-side trial is not stomped by its $0 payment -------------------
+//
+// Starting a card-first trial, Paddle sends BOTH subscription.activated
+// (status trialing) and transaction.completed for the $0 first payment. The
+// transaction handler may only bind an unknown subscription to its account —
+// stamping `active` over a known trialing row once broke cycle switching by
+// telling Paddle to prorate a trial.
+
+const trialUser = `check-${randomUUID()}`;
+db.insert(user)
+	.values({
+		id: trialUser,
+		name: 'Check Trial',
+		email: `${trialUser}@example.test`,
+		emailVerified: false,
+		createdAt: new Date(),
+		updatedAt: new Date()
+	})
+	.run();
+
+const trialEnds = new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString();
+handleWebhook(
+	JSON.stringify({
+		event_id: `evt_${randomUUID().replaceAll('-', '')}`,
+		event_type: 'subscription.activated',
+		data: {
+			id: `sub_03${runTag}`,
+			status: 'trialing',
+			customer_id: `ctm_03${runTag}`,
+			custom_data: { user_id: trialUser },
+			current_billing_period: { starts_at: new Date().toISOString(), ends_at: trialEnds },
+			next_billed_at: trialEnds,
+			scheduled_change: null
+		}
+	}),
+	'fallback-trialing'
+);
+handleWebhook(
+	JSON.stringify({
+		event_id: `evt_${randomUUID().replaceAll('-', '')}`,
+		event_type: 'transaction.completed',
+		data: {
+			id: `txn_02${runTag}`,
+			subscription_id: `sub_03${runTag}`,
+			customer_id: `ctm_03${runTag}`,
+			custom_data: { user_id: trialUser },
+			billing_period: {
+				starts_at: new Date().toISOString(),
+				ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+			}
+		}
+	}),
+	'fallback-zero-payment'
+);
+const stillTrialing = resolvePlan(trialUser);
+check(
+	'the $0 trial payment does not stamp a trialing subscription active',
+	stillTrialing.status === 'trialing' && stillTrialing.source === 'trial',
+	`${stillTrialing.status}/${stillTrialing.source}`
+);
+
+// --- what a returning account has left of its trial ---------------------------
+
+const fresh = trialCarryover(`check-nobody-${runTag}`);
+check(
+	'a fresh account has no history and no carryover',
+	!fresh.hasHistory && fresh.remainingDays === 0
+);
+
+const carrying = trialCarryover(trialUser);
+check(
+	'cancelling with four days left carries four days over',
+	carrying.hasHistory && carrying.remainingDays === 4,
+	`${carrying.remainingDays} days`
+);
+
+const spent = trialCarryover(trialUser, new Date(Date.now() + 10 * 24 * 60 * 60 * 1000));
+check(
+	'a trial that ran out carries nothing over',
+	spent.hasHistory && spent.remainingDays === 0,
+	`${spent.remainingDays} days`
+);
+
+// --- the account holds --------------------------------------------------------
+//
+// paymentHoldFor is the wall in front of pages, API and plugins alike: a
+// verified account with no plan is sent to the card page, a lapsed one to the
+// renew-or-export page, a running one is left alone.
+
+const heldUser = `check-${randomUUID()}`;
+db.insert(user)
+	.values({
+		id: heldUser,
+		name: 'Check Held',
+		email: `${heldUser}@example.test`,
+		emailVerified: false,
+		createdAt: new Date(),
+		updatedAt: new Date()
+	})
+	.run();
+
+check('an account with no plan yet is held for billing', paymentHoldFor(heldUser) === 'billing');
+check('a trialing account is not held', paymentHoldFor(trialUser) === null);
+check('a subscribed account is not held', paymentHoldFor(otherUser) === null);
+
 // --- cancelling --------------------------------------------------------------
 
 const canceled = JSON.stringify({
@@ -211,6 +318,7 @@ check(
 	after.plan === 'none' && after.source === 'lapsed',
 	`${after.plan}/${after.source}`
 );
+check('the lapsed account is held as expired', paymentHoldFor(userId) === 'expired');
 
 console.log(failures === 0 ? '\nall good' : `\n${failures} failed`);
 process.exit(failures === 0 ? 0 : 1);

@@ -6,6 +6,11 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- Coming back after cancelling carries over whatever is left of the trial:
+  resubscribe with four days left and the checkout says — and bills — four
+  days, not a fresh fourteen; with nothing left, it says billed today. And
+  the billing cycle can change at most twice a day, since every switch
+  moves real billing and sends provider mail.
 - An expired subscription now holds the whole account, the way an
   unconfirmed address does: every page leads to the wall that says the data
   is kept, offers renewal (yearly leading) and the JSON export (twice a day,

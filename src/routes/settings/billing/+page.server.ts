@@ -7,6 +7,7 @@ import { exportAllowance } from '$lib/server/services/account';
 import { resolvePlan, usage } from '$lib/server/services/subscriptions';
 import {
 	changeInterval,
+	checkoutTrialDays,
 	createCheckout,
 	currentInterval,
 	displayPricing,
@@ -52,8 +53,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 		limitKeys: LIMIT_KEYS,
 		usage: counts,
 		// Paddle mints a checkout per transaction, so buying is an action, not
-		// a link — and only for an account with no live subscription.
-		canCheckout: !standing && (entitlement.plan !== 'pro' || entitlement.source === 'trial'),
+		// a link — and only for an account with no live subscription. A
+		// cancelled one still running its period may buy again; the checkout
+		// itself carries over whatever trial is left instead of a fresh one.
+		canCheckout: !standing,
+		trialDaysAhead: checkoutTrialDays(ctx.userId),
 		hasProviderSub: Boolean(standing),
 		interval,
 		yearly: hasYearlyPrice(),

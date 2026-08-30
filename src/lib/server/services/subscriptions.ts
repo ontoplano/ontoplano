@@ -243,6 +243,28 @@ export function activeProviderSubscription(
 	};
 }
 
+/**
+ * What a returning account still has of its trial.
+ *
+ * Cancel with four days left and come back: the four days carry over. Come
+ * back after they ran out — or after a paid year — and there is no trial at
+ * all; fourteen fresh days per card would make cancelling a renewal ritual.
+ */
+export function trialCarryover(
+	userId: string,
+	now = new Date()
+): { hasHistory: boolean; remainingDays: number } {
+	const row = db
+		.select({ trialEndsAt: subscriptions.trialEndsAt })
+		.from(subscriptions)
+		.where(eq(subscriptions.userId, userId))
+		.get();
+	if (!row) return { hasHistory: false, remainingDays: 0 };
+	const ends = row.trialEndsAt ? Date.parse(row.trialEndsAt) : NaN;
+	const remaining = Number.isFinite(ends) ? Math.ceil((ends - now.getTime()) / 86400_000) : 0;
+	return { hasHistory: true, remainingDays: Math.max(0, remaining) };
+}
+
 /** The account a provider subscription belongs to, for a webhook. */
 export function userIdForSubscription(provider: string, subscriptionId: string): string | null {
 	const row = db

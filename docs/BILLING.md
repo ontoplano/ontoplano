@@ -35,13 +35,13 @@ keys — which one the instance talks to follows from the API key alone
 
 Set these on the server:
 
-| Variable                  | What it is                                                          |
-| ------------------------- | ------------------------------------------------------------------- |
-| `PADDLE_API_KEY`          | An API key. Checkout creation and the nightly reconcile use it.     |
-| `PADDLE_WEBHOOK_SECRET`   | The secret of the notification destination you create there.        |
+| Variable                  | What it is                                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------ |
+| `PADDLE_API_KEY`          | An API key. Checkout creation and the nightly reconcile use it.                                  |
+| `PADDLE_WEBHOOK_SECRET`   | The secret of the notification destination you create there.                                     |
 | `PADDLE_CLIENT_TOKEN`     | A client-side token (`test_`/`live_`) — safe to expose; Paddle.js on `/buy` initializes with it. |
-| `PADDLE_PRICE_ID_MONTHLY` | The Pro monthly price (`pri_…`), with the 14-day trial on it.       |
-| `PADDLE_PRICE_ID_YEARLY`  | Optional. Adds a "year at once" button.                             |
+| `PADDLE_PRICE_ID_MONTHLY` | The Pro monthly price (`pri_…`), with the 14-day trial on it.                                    |
+| `PADDLE_PRICE_ID_YEARLY`  | Optional. Adds a "year at once" button.                                                          |
 
 Point the notification destination at `https://your-instance/api/billing/paddle`
 and subscribe to the `subscription.*` and `transaction.completed` events. One
@@ -53,7 +53,7 @@ value — or transactions cannot be created at all.
 with the account id in `custom_data` — what every later webhook matches on —
 and redirects to `/buy`, the one page allowed to load Paddle.js (the CSP is
 widened for exactly that route in hooks.server.ts). The overlay checkout
-opens itself from the `_ptxn` parameter. Paddle's own *hosted* checkout is
+opens itself from the `_ptxn` parameter. Paddle's own _hosted_ checkout is
 not used: it is gated behind approval on live accounts, and /buy is the same
 overlay without the gate.
 

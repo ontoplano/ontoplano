@@ -12,8 +12,8 @@ import { isSelfHosted, pricing } from '../settings.js';
 import {
 	activeProviderSubscription,
 	applySubscription,
-	hasPlanHistory,
-	startTrial
+	startTrial,
+	trialCarryover
 } from './subscriptions.js';
 import { ValidationError } from './errors.js';
 
@@ -171,6 +171,33 @@ export async function createCheckout(
 	const { apiKey, priceMonthly, priceYearly } = config();
 	const priceId = interval === 'yearly' && priceYearly ? priceYearly : priceMonthly;
 
+	// A fresh account buys the catalog price, trial included. A returning one
+	// gets an inline copy of it whose trial is whatever it still has — the
+	// days left of a cancelled trial carry over, and zero means billed today.
+	// Serial fourteen-day trials by cancel-and-rebuy end here.
+	const { hasHistory, remainingDays } = trialCarryover(userId);
+	let items: unknown[] = [{ price_id: priceId, quantity: 1 }];
+	if (hasHistory) {
+		const entity = await priceEntity(priceId);
+		if (!entity?.product_id || !entity.unit_price || !entity.billing_cycle) {
+			throw new ValidationError('The payment provider did not answer. Try again in a minute.');
+		}
+		items = [
+			{
+				quantity: 1,
+				price: {
+					description: `${entity.description ?? 'Ontoplano Pro'} — returning`,
+					product_id: entity.product_id,
+					unit_price: entity.unit_price,
+					billing_cycle: entity.billing_cycle,
+					...(remainingDays > 0
+						? { trial_period: { interval: 'day', frequency: remainingDays } }
+						: {})
+				}
+			}
+		];
+	}
+
 	const response = await fetch(`${apiBase()}/transactions`, {
 		method: 'POST',
 		headers: {
@@ -178,7 +205,7 @@ export async function createCheckout(
 			Authorization: `Bearer ${apiKey}`
 		},
 		body: JSON.stringify({
-			items: [{ price_id: priceId, quantity: 1 }],
+			items,
 			custom_data: { user_id: userId }
 		})
 	});
@@ -306,6 +333,38 @@ export function onboardEntitlement(
 	if (isBillingConfigured() && pricing().trialRequiresCard) return 'checkout';
 	startTrial(userId, now);
 	return 'trial';
+}
+
+type PriceEntity = {
+	description?: string;
+	product_id?: string;
+	unit_price?: { amount?: string; currency_code?: string };
+	billing_cycle?: { interval?: string; frequency?: number } | null;
+	trial_period?: { interval?: string; frequency?: number } | null;
+};
+
+/** One catalog price, from the provider — the template a returning checkout copies. */
+async function priceEntity(id: string): Promise<PriceEntity | null> {
+	try {
+		const response = await fetch(`${apiBase()}/prices/${id}`, {
+			headers: { Authorization: `Bearer ${config().apiKey}` }
+		});
+		if (!response.ok) return null;
+		const body = (await response.json()) as { data?: PriceEntity };
+		return body.data ?? null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * The trial the NEXT checkout would carry, for the pages that sell it: the
+ * full run for a fresh account, the carried-over remainder for a returning
+ * one, zero when there is nothing left to carry.
+ */
+export function checkoutTrialDays(userId: string): number {
+	const { hasHistory, remainingDays } = trialCarryover(userId);
+	return hasHistory ? remainingDays : pricing().trialDays;
 }
 
 /** Which cycle the standing subscription bills on, asked of the provider. */

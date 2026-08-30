@@ -53,15 +53,18 @@
 				Everything you wrote is kept — nothing was deleted. Renew to pick up where you left off, or
 				take your data with you.
 			</p>
-		{:else}
+		{:else if data.trialDaysAhead > 0}
 			<h1 class="mb-4 text-xl font-bold tracking-tight text-gray-900">
-				Your {data.pricing.trialDays} free days
+				Your {data.trialDaysAhead} free days
 			</h1>
 			<p class="text-sm text-gray-700">
 				<strong class="text-gray-900">Nothing is charged today.</strong> The first charge is on
 				{when(data.firstChargeOn)}, a mail warns you two days before, and cancelling before that
 				date costs nothing.
 			</p>
+		{:else}
+			<h1 class="mb-4 text-xl font-bold tracking-tight text-gray-900">Go Pro</h1>
+			<p class="text-sm text-gray-700">Billed today — the trial was already used.</p>
 		{/if}
 
 		{#if form && 'message' in form && form.message}
