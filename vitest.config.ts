@@ -29,7 +29,27 @@ export default defineConfig({
 		// temp database path into it, so the next `yarn dev` cannot even open.
 		env: {
 			ONTOPLANO_SELF_HOST: 'true',
-			ONTOPLANO_CONFIG_DIR: mkdtempSync(join(tmpdir(), 'ontoplano-test-config-'))
+			ONTOPLANO_CONFIG_DIR: mkdtempSync(join(tmpdir(), 'ontoplano-test-config-')),
+
+			/*
+			 * The suite runs in UTC, wherever the machine is.
+			 *
+			 * The app deals in two kinds of value on purpose: instants, which
+			 * are UTC, and wall-clock values, which are naive and resolved
+			 * against the account's zone. A test writes both — `ctx.now` is an
+			 * instant, a day boundary is wall-clock — and `new Date('…T08:00:00')`
+			 * means "08:00 wherever this machine is". In UTC the two conventions
+			 * happen to agree, so the suite passed here and one reminders test
+			 * failed on a laptop in São Paulo: `dueReminders` correctly resolved
+			 * an 11:00 UTC instant into 11:00 for a `tz: 'UTC'` account, and two
+			 * reminders set for 08:30 were duly overdue.
+			 *
+			 * That was the test being ambiguous, not the app being wrong — so
+			 * the fix is to remove the ambiguity rather than to loosen the
+			 * assertion. Testing the app *across* zones is a different job, and
+			 * one worth doing deliberately with explicit instants.
+			 */
+			TZ: 'UTC'
 		},
 
 		/*

@@ -46,7 +46,11 @@ export default defineConfig({
 			XDG_CONFIG_HOME: join(homedir(), '.config'),
 			// The administration page reads fail2ban's log; `e2e/prepare.mjs`
 			// writes this one, so the test does not need the real thing.
-			ONTOPLANO_FAIL2BAN_LOG: join(tmpdir(), 'ontoplano-e2e-fail2ban.log')
+			ONTOPLANO_FAIL2BAN_LOG: join(tmpdir(), 'ontoplano-e2e-fail2ban.log'),
+			// The server runs in UTC for the same reason the unit suite does:
+			// otherwise "today" is a different day here and on a laptop three
+			// hours west, and a failure means the machine rather than the code.
+			TZ: 'UTC'
 		}
 	},
 	use: { baseURL: 'http://localhost:4173' },
