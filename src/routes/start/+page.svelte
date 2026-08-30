@@ -33,15 +33,27 @@
 		return () => clearInterval(timer);
 	});
 
-	/** One export at a time — the button disables so a double-click cannot burn both. */
+	/**
+	 * One export per click.
+	 *
+	 * It used to be a link, which the client router tried to route to — the
+	 * export is an endpoint, not a page, so the first tap raised a navigation
+	 * error instead of downloading, and only the second one appeared to work.
+	 * A plain form submits natively, and the guard below disarms the button
+	 * for the same gesture rather than for a re-render: two of a day's two
+	 * exports must not go to one impatient double-tap.
+	 */
 	let exporting = $state(false);
-	function startExport() {
-		exporting = true;
-		setTimeout(() => (exporting = false), 5000);
-	}
 
-	function setThemeNow(theme: string) {
-		document.documentElement.dataset.theme = theme;
+	function startExport(event: SubmitEvent) {
+		if (exporting) {
+			event.preventDefault();
+			return;
+		}
+		exporting = true;
+		// After the submission is under way, so the button is still enabled at
+		// the moment the browser reads the form.
+		setTimeout(() => (exporting = false), 6000);
 	}
 </script>
 
@@ -101,16 +113,21 @@
 
 		{#if data.mode === 'expired'}
 			{#if data.exportsLeft > 0}
-				<a
-					href={resolve('/settings/account/export')}
-					data-sveltekit-preload-data="off"
-					class="mt-3 block w-full border border-gray-300 px-4 py-2.5 text-center text-sm text-gray-700 transition hover:bg-gray-50 {exporting
-						? 'pointer-events-none opacity-50'
-						: ''}"
-					onclick={startExport}
+				<!-- A native GET, not a routed link: the target is an endpoint. -->
+				<form
+					method="get"
+					action={resolve('/settings/account/export')}
+					onsubmit={startExport}
+					class="mt-3"
 				>
-					{exporting ? 'Exporting…' : 'Download your data (JSON)'}
-				</a>
+					<button
+						type="submit"
+						disabled={exporting}
+						class="w-full border border-gray-300 px-4 py-2.5 text-center text-sm text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+					>
+						{exporting ? 'Exporting…' : 'Download your data (JSON)'}
+					</button>
+				</form>
 			{:else}
 				<p class="mt-3 text-xs text-gray-500">
 					Both of today's exports are used — the next unlocks tomorrow.
@@ -118,17 +135,9 @@
 			{/if}
 		{/if}
 
-		<div class="mt-5 flex items-center justify-between text-xs text-gray-500">
+		<div class="mt-5 text-xs text-gray-500">
 			<form method="post" action="/login?/signOut" use:enhance>
-				Not now? <button type="submit" class="underline">Sign out</button>.
-			</form>
-			<form method="post" action="?/theme" use:enhance class="flex gap-2">
-				<button name="theme" value="light" class="underline" onclick={() => setThemeNow('light')}>
-					Light
-				</button>
-				<button name="theme" value="dark" class="underline" onclick={() => setThemeNow('dark')}>
-					Dark
-				</button>
+				<button type="submit" class="underline">Sign out</button>
 			</form>
 		</div>
 	</div>

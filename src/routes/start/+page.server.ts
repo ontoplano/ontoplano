@@ -9,8 +9,7 @@ import {
 } from '$lib/server/services/billing';
 import { paymentHoldFor } from '$lib/server/services/access';
 import { exportAllowance } from '$lib/server/services/account';
-import { isTheme, setTheme } from '$lib/server/settings';
-import { toActionFailure, ValidationError } from '$lib/server/services/errors';
+import { toActionFailure } from '$lib/server/services/errors';
 
 /**
  * The card step of the funnel: register → confirm → here.
@@ -53,13 +52,5 @@ export const actions: Actions = {
 			return toActionFailure(e);
 		}
 		redirect(303, url);
-	},
-	/** The hold pages sit outside preferences, so the toggle lives here too. */
-	theme: async ({ request, locals }) => {
-		const formData = await request.formData();
-		const theme = formData.get('theme')?.toString() ?? '';
-		if (!isTheme(theme)) return toActionFailure(new ValidationError('Unknown theme'));
-		setTheme(locals.user!.id, theme);
-		return { themed: theme };
 	}
 };
