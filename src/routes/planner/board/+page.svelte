@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { armed } from '$lib/actions/armed';
+	import { focusHere } from '$lib/actions/autofocus';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { goto } from '$app/navigation';
@@ -286,6 +287,11 @@
 			confirmingDelete = null;
 			return;
 		}
+
+		// While a card is asking whether to delete it, the keyboard belongs to
+		// that question. Without this, Enter would answer it *and* open the
+		// editor behind it, because both read the same keystroke.
+		if (confirmingDelete) return;
 
 		// Every other key answers to the registry in $lib/shortcuts.ts — the
 		// binding lives there, only the behaviour lives here.
@@ -887,6 +893,48 @@
 											{/if}
 										</div>
 									</div>
+
+									<!--
+										What `x` arms. The key does not delete on its own — a keystroke
+										that destroys a row is one you make by accident — it opens this,
+										and the button ignores its own first moments, so the press that
+										armed it cannot also confirm it. Escape backs out, as everywhere
+										else here.
+									-->
+									{#if confirmingDelete === card.uid}
+										<form
+											method="post"
+											action="?/deleteTodo"
+											use:enhance={() =>
+												async ({ update }) => {
+													confirmingDelete = null;
+													await update();
+												}}
+											class="mt-1.5 flex items-center gap-2 border-t border-gray-200 pt-1.5"
+										>
+											<input type="hidden" name="id" value={card.id} />
+											<input type="hidden" name="kind" value={card.kind} />
+											<span class="text-[11px] text-gray-600">Delete this?</span>
+											<button
+												class="btn btn-danger btn-sm ml-auto"
+												use:armed
+												use:focusHere
+												onclick={(e) => e.stopPropagation()}
+											>
+												Delete
+											</button>
+											<button
+												type="button"
+												class="btn btn-sm"
+												onclick={(e) => {
+													e.stopPropagation();
+													confirmingDelete = null;
+												}}
+											>
+												Cancel
+											</button>
+										</form>
+									{/if}
 								</article>
 							{/each}
 

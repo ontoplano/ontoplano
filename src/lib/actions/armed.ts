@@ -24,6 +24,11 @@ export function armed(node: HTMLElement, delay: number = 450) {
 
 	function swallow(event: Event) {
 		if (ready) return;
+		// Escape is how you back out, and backing out is never the accident this
+		// is guarding against. It used to be swallowed with everything else,
+		// which left a confirmation stuck open for exactly the moments you are
+		// most likely to want out of it — found by the board's `x`.
+		if (event instanceof KeyboardEvent && event.key === 'Escape') return;
 		event.preventDefault();
 		event.stopImmediatePropagation();
 	}

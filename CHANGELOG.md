@@ -6,6 +6,10 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- `x` on the board asks about deleting a card again. It had stopped doing
+  anything at all: the key armed a confirmation that nothing on screen drew
+  any more, while the shortcut sheet went on offering it. The card now asks
+  in place, and the key still never deletes on its own.
 - The pie in the bar is the ontoplano mark rather than a chevron — on the
   phone's raised button and in the desktop header. The mark itself now lives
   in one file (`src/lib/logo/mark.svg`) which the app draws and which
