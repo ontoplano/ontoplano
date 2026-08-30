@@ -96,6 +96,11 @@ export const load: LayoutServerLoad = async (event) => {
 		// The public demo says so on every page: one shared account, wiped
 		// hourly, so nobody mistakes it for their own instance.
 		demo: isDemoInstance(),
+		// The demo's own address, for the band that tells a desktop visitor
+		// they can open the same thing on their phone. Taken from the request
+		// rather than from configuration: whatever host they reached it on is
+		// the host that will work when they type it again.
+		demoHost: isDemoInstance() ? event.url.host : null,
 		// The week is the user's, not the instance's.
 		config: { week },
 		// How long a delete waits before it happens. The instance's call.

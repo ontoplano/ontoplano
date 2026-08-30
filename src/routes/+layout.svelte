@@ -9,7 +9,6 @@
 	import { THEMES } from '$lib/theme.js';
 	import type { SectionKey } from '$lib/colors.js';
 	import type { HideableSection } from '$lib/sections.js';
-	import Banner from '$lib/components/Banner.svelte';
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
 	import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
 	import CapturePie from '$lib/components/CapturePie.svelte';
@@ -303,6 +302,24 @@
 		class="page-surface relative flex h-[100dvh] flex-col overflow-hidden bg-gray-100 lg:h-auto lg:min-h-screen lg:overflow-visible"
 		style="{categoryStyle()};--section-accent:{section.accent}"
 	>
+		{#if data.demo}
+			<!--
+				The demo says so at the very top, where the impersonation band
+				says its piece — the two are the same kind of statement: this
+				page is not what it looks like. Above `lg` only; the phone gets
+				the strip above the bottom bar instead, because a band at the
+				top of a phone pushes the whole app down for a sentence.
+			-->
+			<div
+				class="relative z-50 hidden flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950 lg:flex"
+			>
+				<span><strong>Demo.</strong> One shared account, wiped and reseeded every hour.</span>
+				{#if data.demoHost}
+					<span class="font-normal">On your phone too — {data.demoHost}</span>
+				{/if}
+			</div>
+		{/if}
+
 		{#if data.impersonatedBy}
 			<!--
 				Loud on purpose. An administrator looking at somebody's account is a
@@ -640,17 +657,25 @@
 		</nav>
 
 		{#if data.demo}
-			<!-- Fixed above the bottom bar rather than in the page: on the demo
-			     every page is somebody's first, and a band that scrolls away is
-			     a band the visitor never sees. -->
+			<!--
+				On a phone: a strip sitting on top of the bottom bar, one line
+				tall, its top edge level with the top of the raised pie button
+				— which is 1.5rem proud of the bar, hence the height. Behind the
+				bar in z-order, so the button tucks into it rather than floating
+				over a gap.
+
+				Fixed rather than in the page because on the demo every page is
+				somebody's first, and a band that scrolls away is one the visitor
+				never sees.
+			-->
 			<div
-				class="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+0.5rem)] lg:pb-3"
+				class="fixed inset-x-0 z-30 flex items-center justify-between bg-amber-500 px-3 text-[11px] leading-none font-medium text-amber-950 lg:hidden"
+				style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom)); height: 1.5rem"
 			>
-				<div class="mx-auto max-w-page">
-					<Banner kind="warning">
-						<strong>Demo.</strong> One shared account. Everything here is wiped and reseeded every hour.
-					</Banner>
-				</div>
+				<!-- Split around the pie button, which sits in the middle of this
+				     strip and would otherwise cover the words. -->
+				<span><strong>Demo</strong> · one shared account</span>
+				<span>wiped hourly</span>
 			</div>
 		{/if}
 
