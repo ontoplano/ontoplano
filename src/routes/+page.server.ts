@@ -8,7 +8,7 @@ import {
 	serialiseLayout,
 	type DashboardCardId
 } from '$lib/dashboard';
-import { getHiddenSections, getUserSetting, setUserSetting } from '$lib/server/settings';
+import { demoUrl, getHiddenSections, getUserSetting, setUserSetting } from '$lib/server/settings';
 import { formatPrice } from '$lib/plans';
 import { displayPricing } from '$lib/server/services/billing';
 import { instanceIsEmpty, registrationMode } from '$lib/server/services/registration';
@@ -50,7 +50,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 						? formatPrice(Math.round(price.yearlyCents / 12), price.currency)
 						: null,
 				/** Dropped in when there is a file. Until then the page draws a frame. */
-				videoSrc: process.env.ONTOPLANO_DEMO_VIDEO || null
+				videoSrc: process.env.ONTOPLANO_DEMO_VIDEO || null,
+				/** Somewhere to try it without an account, when this instance knows of one. */
+				demoUrl: demoUrl()
 			}
 		};
 	}

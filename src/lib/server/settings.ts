@@ -305,6 +305,22 @@ export function isDemo(): boolean {
 	return process.env.ONTOPLANO_DEMO === 'true' && Boolean(demoAccount().email);
 }
 
+/**
+ * Where a stranger can try it without registering.
+ *
+ * The hosted instance points at demo.ontoplano.com by default; a self-hosted
+ * one advertises nothing, because sending somebody else's visitors to our
+ * demo is not a self-hoster's business. `ONTOPLANO_DEMO_URL` overrides either
+ * way, and an empty value takes the link off the page.
+ */
+export function demoUrl(): string | null {
+	const configured = process.env.ONTOPLANO_DEMO_URL;
+	if (configured !== undefined) return configured.trim() || null;
+	// The demo itself must not link to itself.
+	if (isSelfHosted() || isDemo()) return null;
+	return 'https://demo.ontoplano.com';
+}
+
 export function demoAccount(): { email: string; password: string } {
 	return {
 		email: process.env.ONTOPLANO_DEMO_EMAIL ?? '',
