@@ -6,6 +6,15 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- The phone bar was redrawn: Home sits in it as its own button and the
+  section pie rises out of the middle in a raised bump — and the pie (on
+  desktop too) no longer spends a wedge on Home.
+- Installed as an app, dragging a list past its top no longer reloads the
+  page: the browser's pull-to-refresh is off, while the native elastic
+  stretch stays. Short pages also lost a little pointless scroll tail.
+- Phone dialogs now behave like sheets: they slide up from the bottom,
+  carry a drag handle, and a downward swipe dismisses them — with the
+  spring back when the drag was not far enough.
 - Sections can be put away. Preferences grew a Sections card: untick Goals,
   Diary, People, Notebooks, Ideas, Health, Shopping or Recipes and it leaves
   the navbar, the pies, the palette's places, the dashboard and the capture

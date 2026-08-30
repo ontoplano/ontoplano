@@ -42,6 +42,43 @@
 
 	let dialog: HTMLDialogElement | undefined = $state();
 
+	/**
+	 * The sheet gesture, below `sm`.
+	 *
+	 * A phone dialog that can only be dismissed by finding an × is a web page;
+	 * dragging it down and letting go is what makes it a sheet. Down follows
+	 * the finger one-for-one; up is damped, so pulling against the top gives
+	 * the elastic give of a native sheet instead of a wall. Only the handle
+	 * drags — the content underneath keeps its own scrolling.
+	 */
+	let dragY = $state(0);
+	let draggingSheet = $state(false);
+	let dragStartY = 0;
+	let dragStartAt = 0;
+
+	function sheetDown(e: PointerEvent) {
+		draggingSheet = true;
+		dragStartY = e.clientY;
+		dragStartAt = performance.now();
+		dragY = 0;
+		(e.currentTarget as Element).setPointerCapture(e.pointerId);
+	}
+
+	function sheetMove(e: PointerEvent) {
+		if (!draggingSheet) return;
+		const dy = e.clientY - dragStartY;
+		dragY = dy > 0 ? dy : -Math.pow(-dy, 0.6);
+	}
+
+	function sheetUp() {
+		if (!draggingSheet) return;
+		draggingSheet = false;
+		// Far enough, or flung: closed. Anything less springs back.
+		const speed = dragY / Math.max(1, performance.now() - dragStartAt);
+		if (dragY > 96 || speed > 0.55) handleClose();
+		dragY = 0;
+	}
+
 	// `showModal()` is what makes it modal; setting the `open` attribute alone
 	// gives a non-modal dialog with no backdrop and no focus trap.
 	$effect(() => {
@@ -89,7 +126,21 @@
 	style="--modal-width: {WIDTHS[size]}"
 >
 	{#if open}
-		<div class="rise panel border border-gray-200 bg-white shadow-overlay">
+		<div
+			class="rise panel border border-gray-200 bg-white shadow-overlay"
+			class:snapping={!draggingSheet}
+			style="transform: translateY({Math.round(dragY)}px)"
+		>
+			<div
+				class="sheet-handle sm:hidden"
+				style="touch-action: none"
+				onpointerdown={sheetDown}
+				onpointermove={sheetMove}
+				onpointerup={sheetUp}
+				onpointercancel={sheetUp}
+			>
+				<div class="mx-auto h-1 w-10 bg-gray-300"></div>
+			</div>
 			<header class="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4">
 				<div>
 					<h2 class="text-sm font-semibold text-gray-900">{title}</h2>
@@ -153,6 +204,29 @@
 		display: flex;
 		flex-direction: column;
 		max-height: 100dvh;
+	}
+
+	/* The spring back after a drag that was not far enough to close. */
+	.panel.snapping {
+		transition: transform 180ms cubic-bezier(0.2, 0.9, 0.3, 1.15);
+	}
+
+	.sheet-handle {
+		padding: 0.625rem 0 0.375rem;
+		cursor: grab;
+	}
+
+	@media (max-width: 639px) {
+		/* Arrive the way a sheet does — from below, not fading in place. */
+		.panel {
+			animation: sheet-in 240ms cubic-bezier(0.2, 0.9, 0.3, 1);
+		}
+	}
+
+	@keyframes sheet-in {
+		from {
+			transform: translateY(100%);
+		}
 	}
 
 	@media (min-width: 640px) {
