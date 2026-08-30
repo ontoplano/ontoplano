@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { settingsForm } from '$lib/actions/settings-form';
 	import { armed } from '$lib/actions/armed';
 	import Banner from '$lib/components/Banner.svelte';
 	import Card from '$lib/components/Card.svelte';
@@ -151,7 +152,7 @@
 
 	<div class="grid gap-4 lg:grid-cols-2">
 		<Card title="Deployment" description="Where the server listens. Takes effect on restart.">
-			<form method="post" action="?/save" use:enhance>
+			<form method="post" action="?/save" use:settingsForm>
 				<FormGrid>
 					<Field label="Host" span={8}>
 						<input
@@ -211,7 +212,7 @@
 			</div>
 		{/if}
 
-		<form method="post" action="?/setRegistration" use:enhance class="space-y-3">
+		<form method="post" action="?/setRegistration" use:settingsForm class="space-y-3">
 			{#each REGISTRATION_MODES as mode (mode.key)}
 				<label class="flex cursor-pointer items-start gap-3">
 					<input
@@ -236,7 +237,7 @@
 		title="What an account may change"
 		description="An address is what an account is here — it signs in and it receives the reset link."
 	>
-		<form method="post" action="?/setEmailChange" use:enhance class="space-y-3">
+		<form method="post" action="?/setEmailChange" use:settingsForm class="space-y-3">
 			<label class="flex cursor-pointer items-start gap-3">
 				<input
 					type="checkbox"
@@ -263,7 +264,7 @@
 		title="Error reports"
 		description="When a page breaks in somebody's browser, the server normally never hears about it."
 	>
-		<form method="post" action="?/setClientErrors" use:enhance class="space-y-3">
+		<form method="post" action="?/setClientErrors" use:settingsForm class="space-y-3">
 			<label class="flex cursor-pointer items-start gap-3">
 				<input
 					type="checkbox"

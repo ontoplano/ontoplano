@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { settingsForm } from '$lib/actions/settings-form';
 	import Banner from '$lib/components/Banner.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -74,7 +75,7 @@
 	<form
 		method="post"
 		action="?/saveWeek"
-		use:enhance
+		use:settingsForm
 		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
 	>
 		<div>
@@ -115,7 +116,7 @@
 	<form
 		method="post"
 		action="?/saveCurrency"
-		use:enhance
+		use:settingsForm
 		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
 	>
 		<div>
@@ -142,7 +143,7 @@
 	<form
 		method="post"
 		action="?/saveGridHours"
-		use:enhance
+		use:settingsForm
 		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
 	>
 		<div>
@@ -182,7 +183,7 @@
 			</p>
 		</div>
 
-		<form method="post" action="?/setSections" use:enhance class="space-y-2">
+		<form method="post" action="?/setSections" use:settingsForm class="space-y-2">
 			<div class="grid gap-2 sm:grid-cols-2">
 				{#each data.sections as section (section.id)}
 					<label
@@ -210,7 +211,7 @@
 			<p class="mt-1 text-sm text-gray-500">Which cards appear, and in what order.</p>
 		</div>
 
-		<form method="post" action="?/setLayout" use:enhance class="space-y-2">
+		<form method="post" action="?/setLayout" use:settingsForm class="space-y-2">
 			{#each layout as id (id)}
 				{@const card = data.cards.find((c) => c.id === id)}
 				{#if card}
@@ -442,7 +443,7 @@
 				When a page breaks, send the technical details to this server's log. Only what broke — never
 				what you wrote.
 			</p>
-			<form method="post" action="?/setErrorReports" use:enhance class="mt-3 flex gap-2">
+			<form method="post" action="?/setErrorReports" use:settingsForm class="mt-3 flex gap-2">
 				{#each [['yes', 'Send'], ['no', 'Never']] as [value, label] (value)}
 					<button
 						type="submit"
