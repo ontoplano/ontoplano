@@ -4,6 +4,7 @@
 	import Banner from '$lib/components/Banner.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
+	import type { Theme } from '$lib/theme';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -19,13 +20,31 @@
 	let timezone = $state(
 		typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC'
 	);
+
+	/**
+	 * The look, chosen here because this is where the account is set up — and
+	 * applied to the page as it is picked, since a theme you cannot see is not
+	 * a choice. `system` follows the device, which is the default.
+	 */
+	let theme = $state<Theme>(data.theme);
+	const LOOKS: { key: Theme; label: string }[] = [
+		{ key: 'system', label: 'Match my device' },
+		{ key: 'light', label: 'Light' },
+		{ key: 'dark', label: 'Dark' }
+	];
+
+	function pickTheme(key: Theme) {
+		theme = key;
+		if (key === 'system') delete document.documentElement.dataset.theme;
+		else document.documentElement.dataset.theme = key;
+	}
 </script>
 
 <div class="mx-auto w-full max-w-2xl space-y-6 px-4 py-10">
 	<div>
 		<h1 class="text-lg font-bold text-gray-900">Welcome to ontoplano</h1>
 		<p class="mt-1 text-sm text-gray-500">
-			Two questions and a week to start from. All of it is editable later.
+			A few questions and a week to start from. All of it is editable later.
 		</p>
 	</div>
 
@@ -45,6 +64,20 @@
 							<option value={i} selected={data.week.firstDay === i}>{day}</option>
 						{/each}
 					</select>
+				</Field>
+				<Field label="Look" span={12} hint="Changes as you pick it.">
+					<div class="flex flex-wrap gap-2">
+						{#each LOOKS as look (look.key)}
+							<button
+								type="button"
+								onclick={() => pickTheme(look.key)}
+								class="btn btn-sm {theme === look.key ? 'btn-primary' : ''}"
+							>
+								{look.label}
+							</button>
+						{/each}
+					</div>
+					<input type="hidden" name="theme" value={theme} />
 				</Field>
 			</FormGrid>
 		</section>

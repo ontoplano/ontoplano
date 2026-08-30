@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { DEFAULT_WEEK } from '$lib/server/settings';
+import { DEFAULT_THEME, DEFAULT_WEEK, getTheme } from '$lib/server/settings';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
 import { completeFirstRun, needsFirstRun, TEMPLATES } from '$lib/server/services/onboarding';
@@ -11,6 +11,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		week: DEFAULT_WEEK,
+		theme: getTheme(locals.user!.id) ?? DEFAULT_THEME,
 		templates: TEMPLATES.map((t) => ({
 			key: t.key,
 			label: t.label,
@@ -34,7 +35,8 @@ export const actions: Actions = {
 				timezone: formData.get('timezone'),
 				firstDay: formData.get('firstDay'),
 				generateDay: formData.get('generateDay'),
-				template: skipped ? 'blank' : formData.get('template')
+				template: skipped ? 'blank' : formData.get('template'),
+				theme: formData.get('theme')
 			});
 		} catch (e) {
 			return toActionFailure(e);

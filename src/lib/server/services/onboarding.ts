@@ -2,7 +2,14 @@ import { eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { activities, categories, weeklySlots } from '../db/schema.js';
-import { isOnboarded, markOnboarded, setTimezone, setWeekSettings } from '../settings.js';
+import {
+	isOnboarded,
+	isTheme,
+	markOnboarded,
+	setTheme,
+	setTimezone,
+	setWeekSettings
+} from '../settings.js';
 import type { Ctx } from './ctx.js';
 import { parseTimezone } from './preferences.js';
 import { clearWeeklyPlanIn } from './slots.js';
@@ -165,6 +172,8 @@ export type FirstRunInput = {
 	firstDay: unknown;
 	generateDay?: unknown;
 	template: unknown;
+	/** Optional: first run is where the account is dressed, so it asks here. */
+	theme?: unknown;
 };
 
 /**
@@ -184,6 +193,8 @@ export function completeFirstRun(ctx: Ctx, raw: FirstRunInput): TemplateKey {
 
 	setTimezone(ctx.userId, timezone);
 	setWeekSettings(ctx.userId, { firstDay, generateDay });
+	// Unknown or absent leaves the default, which follows the device.
+	if (typeof raw.theme === 'string' && isTheme(raw.theme)) setTheme(ctx.userId, raw.theme);
 
 	applyTemplate(ctx, key, { replacePlan: false });
 
