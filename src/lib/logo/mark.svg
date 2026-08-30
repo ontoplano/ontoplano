@@ -1,0 +1,22 @@
+<!--
+  THE LOGO. Change this file and everything changes with it.
+
+  The app draws it through `$lib/components/Logo.svelte` (the pie in the bar);
+  `yarn icons` redraws the favicon, the PWA icons and the Android app icon from
+  it. Nothing else holds a copy.
+
+  Rules for whatever replaces it: a viewBox and no width/height (the component
+  sizes it), the artwork drawn edge to edge with no margin of its own (the icon
+  files get their margin from ICON_SCALE in brand.ts — margin baked in here
+  would be counted twice and the logo would come out half size in the bar), a
+  transparent ground, and legible at 32px, because that is where it lives.
+
+  The mark today is the board — three columns, work moving left to right, in
+  the planner, diary and health accents, over the baseline it all sits on.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <rect x="0" y="0" width="72" height="176" fill="#1d4ed8" />
+  <rect x="92" y="0" width="72" height="120" fill="#b45309" />
+  <rect x="184" y="0" width="72" height="64" fill="#0f766e" />
+  <rect x="0" y="208" width="256" height="48" fill="#f2f5fa" />
+</svg>

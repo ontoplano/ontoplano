@@ -21,6 +21,7 @@ help:
 	@echo "  dev / dev-stop / dev-logs   the dev server, as a user service (dev-fg holds the terminal)"
 	@echo "  lint · format               prettier+eslint, prettier --write"
 	@echo "  test                        the Playwright e2e suite (yarn test for units)"
+	@echo "  icons                       redraw every icon from src/lib/logo/mark.svg"
 	@echo
 	@printf '\033[1mdatabase\033[0m\n'
 	@echo "  db-generate                 write a migration from the schema diff"
@@ -42,7 +43,7 @@ help:
 		echo "  deploy · restart-server · up   see local.mk — these touch the real server"; \
 	fi
 
-.PHONY: help up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: help icons up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -107,6 +108,12 @@ build:
 	else \
 		yarn build; \
 	fi
+
+# The logo lives in exactly one file, src/lib/logo/mark.svg. This is what turns
+# it into the favicon, the four PWA icons and the one iOS reads — so changing
+# the logo is changing a file, not finding eight copies of it.
+icons:
+	@yarn -s icons
 
 preview:
 	yarn preview

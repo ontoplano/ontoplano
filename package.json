@@ -18,7 +18,8 @@
 		"db:snapshot": "node scripts/db-snapshot.mjs",
 		"db:studio": "drizzle-kit studio",
 		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes",
-		"test:unit": "vitest run"
+		"test:unit": "vitest run",
+		"icons": "node scripts/build-icons.mjs"
 	},
 	"private": true,
 	"type": "module",
@@ -28,6 +29,7 @@
 		"@eslint/compat": "^2.0.3",
 		"@eslint/js": "^10.0.1",
 		"@playwright/test": "^1.58.2",
+		"@resvg/resvg-js": "^2.6.2",
 		"@sveltejs/adapter-node": "^5.5.2",
 		"@sveltejs/kit": "^2.50.2",
 		"@sveltejs/package": "^2.5.7",

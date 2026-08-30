@@ -14,6 +14,7 @@
 	import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
 	import CapturePie from '$lib/components/CapturePie.svelte';
 	import NavPie from '$lib/components/NavPie.svelte';
+	import Logo from '$lib/components/Logo.svelte';
 	import Reminders from '$lib/components/Reminders.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import UndoToast from '$lib/components/UndoToast.svelte';
@@ -416,7 +417,7 @@
 						aria-label="Jump to a section"
 						title="Jump to a section"
 					>
-						<Icon name="drag" size={16} />
+						<Logo size={18} />
 					</button>
 
 					<!-- Capture, beside search: the two things you reach for without
@@ -590,19 +591,12 @@
 						aria-label="Go to a section"
 						title="Go to a section"
 					>
-						<!-- Bigger than its neighbours on purpose: this is the way
-						     into everything, and the bar's one raised control. -->
-						<svg
-							class="h-8 w-8"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.75"
-							stroke-linecap="square"
-							aria-hidden="true"
-						>
-							<path d="M6 14l6-6 6 6" />
-						</svg>
+						<!-- The logo, bigger than its neighbours on purpose: this is
+						     the way into everything, and the bar's one raised control.
+						     The mark lives in $lib/logo/mark.svg and nothing here
+						     knows what is in it. No ground behind it — the chrome is
+						     already that colour, in both themes. -->
+						<Logo size={32} />
 					</button>
 				</div>
 

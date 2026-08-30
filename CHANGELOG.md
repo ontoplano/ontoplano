@@ -6,6 +6,12 @@ rest. Versions follow `package.json`.
 
 ## 0.8.2 — 2026-08-29
 
+- The pie in the bar is the ontoplano mark rather than a chevron — on the
+  phone's raised button and in the desktop header. The mark itself now lives
+  in one file (`src/lib/logo/mark.svg`) which the app draws and which
+  `make icons` turns into the favicon, the PWA icons and the one iOS reads,
+  so changing the logo is changing a file.
+
 - On a phone, forms are screens. Every dialog in the app now takes the whole
   screen below `sm`, titled, with a back arrow at the top left instead of an
   × in a corner — and the new-block form's hand-picked column widths became
