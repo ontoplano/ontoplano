@@ -84,6 +84,22 @@ procedure is real rather than plausible:
 
 Redo it after any change to the replication config, and note the date here.
 
+### And then put it on a timer
+
+A drill performed once is a drill that proves the backups were restorable on
+one afternoon in August. Whatever schedules the rest of your machine —
+systemd, cron, a CI job — should run this weekly and tell you when it stops
+passing, because the failure this catches is silent by nature: the backups go
+on being written, and being written is not the same as being restorable.
+
+Two things are worth checking beyond `integrity_check`, and neither is
+obvious. **A database with the schema and no rows passes every structural
+check there is** — count something you would expect to exist. And **a copy
+that is behind the code's migrations restores perfectly and then refuses to
+serve**, because the app checks its migration head at boot; compare
+`__drizzle_migrations` against `drizzle/meta/_journal.json` before believing
+a green light.
+
 ## What is not covered
 
 - **The config file.** `~/.config/ontoplano/config.toml` and the env file are not
