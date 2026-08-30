@@ -834,6 +834,20 @@ const readingNotebook = notebook('Reading', 'What I am reading, and what I thoug
 const portugal = notebook('Portugal in September', 'Everything for the trip.');
 const leak = notebook('Bathroom leak', 'Two weeks of it. Kept for the invoices.', true);
 
+/**
+ * The notebook that shows what a notebook is for.
+ *
+ * The others hold a line or two each, which demonstrates the field and not the
+ * feature. Somebody reading a long book over months is the case notebooks
+ * exist for, and it has to have enough in it to be worth opening. Plato,
+ * because it is public domain and because arguing with a book is exactly the
+ * kind of thing people keep notes about.
+ */
+const republic = notebook(
+	'The Republic',
+	'Reading it properly this time, a book at a time. Notes as I go.'
+);
+
 todo('get three quotes for the counter', { urgency: 3, interest: 2, sortOrder: 7 });
 todo('measure the wall properly', { status: 'done', sortOrder: 8 });
 
@@ -849,15 +863,19 @@ inNotebook('goals', 'title', 'read twelve books', readingNotebook);
 
 orphanNote('The old flat: the landlord kept the deposit over the scuffed floor.');
 
-idea('A weekly review that writes itself from the tracker', ['product', 'planning'], {
+// The ideas somebody who USES a planner writes down — not ideas about
+// building one. The demo is a person's account, and an account full of
+// product notes about the app it is running in reads as the author's
+// scratchpad, which is exactly what a visitor should not be looking at.
+idea('Learn to make proper bread — the slow kind, not the machine', ['someday'], {
 	favorite: true
 });
-idea('Meal plan should generate the shopping list', ['product'], {
+idea('A weekend with no plans in it at all, once a month', ['living'], {
 	applied: true,
-	appliedNote: 'the v2 milestone'
+	appliedNote: 'blocked out the first Saturday'
 });
-idea('Colour the week grid by energy rather than category', ['ui']);
-idea('Keyboard shortcut to jump straight to today', ['ui'], { favorite: true });
+idea('Ask Mum for the recipe before it is only in her head', ['family']);
+idea('Cycle to work through the park instead of the main road', ['health'], { favorite: true });
 
 // --- habits -----------------------------------------------------------------------
 
@@ -1178,10 +1196,14 @@ if (!forgottenTodo)
 		monthsAgo(7)
 	);
 
-idea('A newsletter about bread, maybe', ['someday']);
+idea('Learn to sail, properly, not just crewing for other people', ['someday']);
 shoppingItem('a proper armchair', 'someday', { categoryId: household });
 
-age('ideas', { column: 'content', value: 'A newsletter about bread, maybe' }, monthsAgo(5));
+age(
+	'ideas',
+	{ column: 'content', value: 'Learn to sail, properly, not just crewing for other people' },
+	monthsAgo(5)
+);
 age('shopping_items', { column: 'name', value: 'a proper armchair' }, monthsAgo(9));
 
 // --- What things have actually cost -----------------------------------------------
@@ -1318,6 +1340,64 @@ const dayAt = (daysAgo) => {
 	d.setDate(d.getDate() - daysAgo);
 	return d;
 };
+
+// --- A notebook with something in it ------------------------------------------
+
+const REPUBLIC_NOTES = [
+	[
+		20,
+		56,
+		`Book I. Thrasymachus says justice is whatever serves the strong, and he is not a strawman — he is the most modern voice in the room.
+
+Socrates does not really refute him here. He ties him in knots about whether a craft serves itself or its object, Thrasymachus gets annoyed and gives up, and the argument is left standing. Everything after this is Plato admitting that, and starting again properly.
+
+Worth remembering when people quote the later books as if the case had been settled in the first one.`
+	],
+	[
+		21,
+		49,
+		`Book II. The ring of Gyges.
+
+Glaucon's version of the challenge is much better than Thrasymachus's: give a just man and an unjust man a ring that makes them invisible, and see whether either behaves differently. If they do not, then justice was only ever reputation.
+
+What strikes me is that the question is not "why be good" but "would you still be, with no consequences". Two and a half thousand years and nobody has improved the framing.`
+	],
+	[
+		22,
+		41,
+		`Books II–IV, the city.
+
+The move is a sleight of hand and he tells you it is: justice is hard to see in one person, so let us look at it written large in a city, then read it back. Everything about the ideal state is really a claim about the parts of a mind.
+
+Which is a relief, because taken as politics it is monstrous — the censorship, the lie about the metals, breeding people like dogs. Taken as psychology it is sharp: the part that reasons, the part that wants, and the part that gets angry on your behalf, which is not the same as either.`
+	],
+	[
+		23,
+		33,
+		`Book VII. The cave.
+
+Everyone knows the image and almost nobody mentions the ending: the one who gets out and comes back to tell the others is not thanked. He is worse at the shadow game than they are, because his eyes have adjusted, and they conclude that going up ruins you and it would be right to kill anyone who tried to take them.
+
+Written by a man whose teacher was executed by his own city. It is not a metaphor about ignorance. It is about what happens to the person who says so.`
+	],
+	[
+		24,
+		18,
+		`Book X, and done.
+
+He throws the poets out and then writes the myth of Er — a story about the afterlife — as the last word. Either he knew exactly what he was doing or he could not help himself, and I do not think Plato could not help himself about anything.
+
+Overall: the political programme is indefensible and the psychology is still the best thing anybody has written about wanting two things at once. Read the middle books; argue with the rest.`
+	]
+];
+
+for (const [seq, daysAgo, content] of REPUBLIC_NOTES) {
+	diary(seq, content, [], iso(dayAt(daysAgo)));
+	inNotebook('diary_entries', 'seq', seq, republic);
+}
+
+todo('finish Book VIII before the group meets', { status: 'done', sortOrder: 9400 });
+inNotebook('planner_todos', 'title', 'finish Book VIII before the group meets', republic);
 
 // The weekly plan as it stands, which is what the past is generated from: the
 // blocks somebody has been keeping are the blocks they have.
