@@ -19,7 +19,7 @@ import {
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { created, stamp, stamps } from './time.js';
-import { num, oneOf, optionalStr, str } from './validate.js';
+import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
 
 /**
  * The plan itself: blocks that repeat (`weekly_slots`) and blocks that happen
@@ -38,7 +38,6 @@ export const MAX_ACTIVITY_NAME_LENGTH = 100;
 export const MAX_CSV_LENGTH = 100_000;
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_PATTERN = /^\d{2}:\d{2}$/;
 
 /** Submitted by the activity picker when the user wants to create one inline. */
 export const NEW_ACTIVITY_VALUE = '__new__';

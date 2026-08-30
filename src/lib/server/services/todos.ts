@@ -25,7 +25,7 @@ import { NotFoundError, ValidationError } from './errors.js';
 import { ownedNotebookId } from './notebooks.js';
 import { created, stamp, stamps } from './time.js';
 import { emit } from './webhooks.js';
-import { num, oneOf, optionalStr, str } from './validate.js';
+import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
 
 export type Todo = {
 	id: number;
@@ -263,7 +263,6 @@ export const MAX_NOTES_LENGTH = 4000;
 export const MAX_LABEL_LENGTH = 300;
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_PATTERN = /^\d{2}:\d{2}$/;
 
 export type TodoInput = {
 	title: unknown;

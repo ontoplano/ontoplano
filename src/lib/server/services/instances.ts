@@ -17,7 +17,7 @@ import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 // `created` is also a local counter in this file, hence the alias.
 import { created as createdStamp, stamp } from './time.js';
-import { num, optionalStr, str } from './validate.js';
+import { TIME_PATTERN, num, optionalStr, str } from './validate.js';
 import {
 	activities,
 	categories,
@@ -394,8 +394,6 @@ export function listForDate(ctx: Ctx, date: Date): Occurrence[] {
 // --- Mutations ----------------------------------------------------------------
 
 export const MAX_LABEL_LENGTH = 300;
-
-const TIME_PATTERN = /^\d{2}:\d{2}$/;
 
 /**
  * Move an occurrence between statuses.

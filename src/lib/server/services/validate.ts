@@ -104,3 +104,16 @@ export const SLUG_PATTERN = /^[a-z0-9]+(?:[-_][a-z0-9]+)*(?:\.[a-z0-9]+(?:[-_][a
 export function slug(value: unknown, field: string): string {
 	return str(value, field, { max: 64, pattern: SLUG_PATTERN });
 }
+
+/**
+ * A real clock reading, `HH:MM` on a 24-hour clock.
+ *
+ * Lived in three services as `/^\d{2}:\d{2}$/`, which accepts `25:00` and
+ * `09:99` — stored happily and then drawn off the bottom of the grid or at a
+ * minute that does not exist. Three copies of a pattern is three chances to
+ * fix it in two places.
+ *
+ * 24:00 is deliberately not one: it is the end of the grid's day, which is a
+ * preference and validated where preferences are.
+ */
+export const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
