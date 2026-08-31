@@ -2,9 +2,15 @@
 
 What changed for somebody using the app, newest first. One entry per
 user-visible change, written when the change is made — the git log has the
-rest. Versions follow `package.json`.
+rest.
 
-## Unreleased
+Every entry sits under a version, and the newest heading is always the version
+in `package.json`: adding a line means bumping. `scripts/check-changelog.mjs`
+enforces that, from `make lint`, because the rule alone did not hold. There is
+no "Unreleased" section, deliberately — it is where entries go to lose their
+version.
+
+## 0.9.0 — 2026-08-31
 
 
 - The wiki is a site: `docs.ontoplano.com`, built from the same markdown the

@@ -186,6 +186,7 @@ db-setup: db-push db-seed
 lint:
 	yarn lint
 	@$(MAKE) -s docs-check
+	@yarn -s changelog:check
 
 format:
 	yarn format

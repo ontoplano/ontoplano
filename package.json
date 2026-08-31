@@ -1,6 +1,6 @@
 {
 	"name": "ontoplano",
-	"version": "0.8.2",
+	"version": "0.9.0",
 	"license": "AGPL-3.0-or-later",
 	"scripts": {
 		"dev": "vite dev",
@@ -23,6 +23,7 @@
 		"icons": "node scripts/build-icons.mjs",
 		"docs": "node scripts/build-docs.mjs",
 		"docs:check": "node scripts/build-docs.mjs --check",
+		"changelog:check": "node scripts/check-changelog.mjs",
 		"docs:site": "node scripts/build-docs-site.mjs",
 		"test:coverage": "vitest run --coverage"
 	},
