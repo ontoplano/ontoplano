@@ -32,7 +32,11 @@ export function settingsForm(node: HTMLFormElement, options: { notice?: string }
 		// how the Sections card reported success on a phone.
 		if (result.type === 'success' && options.notice) notify.success(options.notice);
 		if (result.type === 'failure') {
-			const said = (result.data as { message?: unknown } | undefined)?.message;
+			const data = result.data as { message?: unknown; refused?: unknown } | undefined;
+			// A refusal from a hook is announced by the root layout, for every form
+			// in the app at once. Saying it here as well is the same sentence twice.
+			if (data?.refused === true) return;
+			const said = data?.message;
 			notify.error(typeof said === 'string' && said ? said : 'That did not save.');
 		}
 	});

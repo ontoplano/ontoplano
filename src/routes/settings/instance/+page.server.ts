@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { loadConfig, saveConfig, isRegistrationMode } from '$lib/server/config';
-import { isStaging } from '$lib/server/settings';
+import { isDemo, isStaging } from '$lib/server/settings';
 import { canEditInstance } from '$lib/server/services/admin';
 import { build } from '$lib/server/services/version';
 import { toActionFailure, ValidationError } from '$lib/server/services/errors';
@@ -24,8 +24,27 @@ import {
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!canEditInstance(locals.user!.id)) error(404, 'Not found');
 
+	const config = loadConfig();
+
+	/*
+	 * The demo shows what this page is, not where this box is.
+	 *
+	 * Everybody browsing the demo is signed into its one account, which is the
+	 * first account, which is an administrator — so this page is public there.
+	 * The bind address and the database path are facts about somebody's server,
+	 * including the name of the user it runs as, and they are nobody's business
+	 * but the operator's. Blanked rather than removed: the point of a demo is to
+	 * show the shape of the thing.
+	 */
+	const demo = isDemo();
+	if (demo) {
+		config.server = { ...config.server, host: '', port: 0 };
+		config.database = { ...config.database, path: '' };
+	}
+
 	return {
-		config: loadConfig(),
+		config,
+		demo,
 		invites: listInvites(),
 		// What is running, so "did my deploy land" is answerable from here rather
 		// than from an ssh session.

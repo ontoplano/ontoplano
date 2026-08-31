@@ -18,6 +18,7 @@
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import UndoToast from '$lib/components/UndoToast.svelte';
 	import Notifications from '$lib/components/Notifications.svelte';
+	import { notify } from '$lib/notify.svelte';
 	import ClientErrorPrompt from '$lib/components/ClientErrorPrompt.svelte';
 	import { undo } from '$lib/undo.svelte';
 	import { palette } from '$lib/palette.svelte';
@@ -172,6 +173,25 @@
 	let scroller: HTMLElement | undefined = $state();
 
 	afterNavigate(() => scroller?.scrollTo({ top: 0 }));
+
+	/**
+	 * A write refused before it reached its action, said once, anywhere.
+	 *
+	 * `hooks.server.ts` refuses some writes outright — the demo cannot change
+	 * the administration pages, and cannot delete its own account. That refusal
+	 * cannot come back as a `fail()` from an action that never ran, so it comes
+	 * back marked `refused`, and it is said here rather than by each of the
+	 * thirty forms that might receive one. A form that shows `form.message`
+	 * still shows it too; this is what covers the ones that do not.
+	 */
+	let refusalSaid: string | null = null;
+	$effect(() => {
+		const form = page.form as { refused?: boolean; message?: string } | null;
+		if (!form?.refused || typeof form.message !== 'string') return;
+		if (form.message === refusalSaid) return;
+		refusalSaid = form.message;
+		notify.error(form.message);
+	});
 
 	function handleClickOutside(e: MouseEvent) {
 		if (menuOpen) {

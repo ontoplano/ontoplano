@@ -12,6 +12,8 @@ import { onboardEntitlement } from '$lib/server/services/billing';
 import { accessHoldFor, holdDestination } from '$lib/server/services/access';
 import { record } from '$lib/server/services/audit';
 import { toJsonError } from '$lib/server/services/errors';
+import { refuse } from '$lib/server/refuse';
+import { demoRefusal } from '$lib/server/demo-guard';
 
 /**
  * Registration control, at the one door there is.
@@ -277,47 +279,20 @@ const HOLD_EXEMPT = [
 ];
 
 /**
- * The public demo signs everybody in, and refuses to let them lock it.
- *
- * A stranger who has to invent an account to look at a planner does not look
- * at the planner. So on a demo box the first page view signs the visitor into
- * the one demo account — a real sign-in with the demo credentials, not a
- * fabricated session — and everybody browsing shares it until the hourly
- * reset wipes the database back to the seed.
- *
- * Shared means one visitor could change the password, the address, or delete
- * the account outright and leave the demo dead for the hour: those endpoints
- * are refused here rather than in each route, because the next endpoint that
- * could do it must be covered without anybody remembering to.
- */
-const DEMO_FORBIDDEN = [
-	'/api/auth/change-password',
-	'/api/auth/change-email',
-	'/api/auth/delete-user',
-	'/api/auth/update-user',
-	'/api/auth/revoke-sessions'
-];
-
-/**
- * The refusals, in front of better-auth rather than behind it.
+ * The demo's refusals, in front of better-auth rather than behind it.
  *
  * better-auth answers everything under /api/auth itself, inside its own
  * handle — so a guard placed after it never sees those requests at all, and
  * the demo's password could be changed by anybody who found the endpoint.
+ *
+ * Which requests are refused, and why, is `$lib/server/demo-guard`. This is
+ * only where it is applied.
  */
 const handleDemoGuard: Handle = ({ event, resolve }) => {
 	if (!isDemo()) return resolve(event);
 
-	const path = event.url.pathname;
-	const writes = event.request.method !== 'GET' && event.request.method !== 'HEAD';
-
-	if (DEMO_FORBIDDEN.some((p) => path === p || path.startsWith(`${p}/`))) {
-		return new Response('Not available on the demo.', { status: 403 });
-	}
-	// The account page's own delete action, by name — the same reasoning.
-	if (writes && path === '/settings/account' && event.url.searchParams.get('/delete') !== null) {
-		return new Response('Not available on the demo.', { status: 403 });
-	}
+	const said = demoRefusal(event.request.method, event.url.pathname, event.url.search);
+	if (said) return refuse(event.request, said);
 
 	return resolve(event);
 };
@@ -328,9 +303,22 @@ const handleDemo: Handle = async ({ event, resolve }) => {
 	const path = event.url.pathname;
 	const writes = event.request.method !== 'GET' && event.request.method !== 'HEAD';
 
-	// Only a page view signs somebody in: an asset or an API call arriving
-	// without a session should answer as itself, not mint a session each time.
-	const wantsPage = !writes && event.request.headers.get('accept')?.includes('text/html');
+	/*
+	 * Only a page view signs somebody in: an asset or an API call arriving
+	 * without a session should answer as itself, not mint a session each time.
+	 *
+	 * A data request counts as a page view. Client-side navigation asks for
+	 * `…/__data.json` rather than HTML, so after the hourly reset has deleted
+	 * every session, moving between pages in an open tab reached the layout with
+	 * nobody signed in and was walked to the login page — on a demo whose entire
+	 * premise is that there is no login page. It signs in and is sent to the
+	 * page itself rather than to the data URL, which is not a thing to navigate
+	 * to.
+	 */
+	const dataSuffix = '/__data.json';
+	const isData = event.isDataRequest || path.endsWith(dataSuffix);
+	const wantsPage =
+		!writes && (isData || Boolean(event.request.headers.get('accept')?.includes('text/html')));
 	let signedIn = false;
 	if (!event.locals.user && wantsPage && !path.startsWith('/api/')) {
 		const { email, password } = demoAccount();
@@ -352,7 +340,10 @@ const handleDemo: Handle = async ({ event, resolve }) => {
 	// SvelteKit plugin, and the reload is what makes the session visible to
 	// the load functions of the page that was asked for. A redirect thrown
 	// inside the try above would have been caught as a failure.
-	if (signedIn) redirect(303, event.url.pathname + event.url.search);
+	if (signedIn) {
+		const target = path.endsWith(dataSuffix) ? path.slice(0, -dataSuffix.length) || '/' : path;
+		redirect(303, target + event.url.search);
+	}
 
 	return resolve(event);
 };

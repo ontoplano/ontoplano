@@ -157,11 +157,22 @@
 			box. It is a fact about the deployment, like the database path beside
 			it, so it is shown the same way.
 		-->
+		<!--
+			Blank on the demo. Both of these describe somebody's server — the
+			address it answers on, and a path that carries the name of the user it
+			runs as — and everybody browsing the demo is signed into its one
+			administrator account. The cards stay, because what this page is for is
+			part of what the demo shows.
+		-->
 		<Card title="Deployment" description="Where the server listens. Set in config.toml.">
 			<p
 				class="tabular border border-gray-200 bg-gray-50 px-3 py-2 text-sm break-all text-gray-700"
 			>
-				{data.config.server.host}:{data.config.server.port}
+				{#if data.demo}
+					<span class="text-gray-500">Hidden on the demo.</span>
+				{:else}
+					{data.config.server.host}:{data.config.server.port}
+				{/if}
 			</p>
 		</Card>
 
@@ -169,7 +180,11 @@
 			<p
 				class="tabular border border-gray-200 bg-gray-50 px-3 py-2 text-sm break-all text-gray-700"
 			>
-				{data.config.database.path}
+				{#if data.demo}
+					<span class="text-gray-500">Hidden on the demo.</span>
+				{:else}
+					{data.config.database.path}
+				{/if}
 			</p>
 		</Card>
 	</div>

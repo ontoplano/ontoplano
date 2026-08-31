@@ -297,7 +297,19 @@
 			app did; this is what never reached it.
 		-->
 		<Card title="Blocked" description="What fail2ban has turned away." flush>
-			{#if !data.protection.readable}
+			{#if data.demo}
+				<!--
+					The addresses a box turned away are real people's, and the demo is
+					public. The card stays so the feature is visible; the list does not.
+				-->
+				<div class="px-4 py-3 text-sm text-gray-500">
+					<p class="text-gray-900">Hidden on the demo.</p>
+					<p class="mt-1">
+						On your own instance this lists the addresses fail2ban has turned away, why, and whether
+						they are still out.
+					</p>
+				</div>
+			{:else if !data.protection.readable}
 				<div class="px-4 py-3 text-sm text-gray-500">
 					<p class="text-gray-900">Nothing to read here yet.</p>
 					<p class="mt-1">

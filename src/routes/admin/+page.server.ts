@@ -12,8 +12,23 @@ import {
 } from '$lib/server/services/protection';
 import { dismissClientError, recentClientErrors } from '$lib/server/services/client-errors';
 import { toActionFailure, ValidationError } from '$lib/server/services/errors';
+import { isDemo } from '$lib/server/settings';
 
+/**
+ * What the demo may see here, and what it may not.
+ *
+ * The demo signs every visitor into its one account, which is an
+ * administrator — so this page is public there, deliberately: somebody
+ * deciding whether to run this themselves should see what administering it
+ * looks like. What they must not see is anything about the box or about other
+ * people: the addresses fail2ban turned away are real people's, a failed mail
+ * carries a real address, and a client error carries a stack from the server.
+ *
+ * Writes are refused in `hooks.server.ts`, in one place, for the same reason
+ * this list is here rather than spread through the page.
+ */
 export const load: PageServerLoad = async ({ url, locals }) => {
+	const demo = isDemo();
 	const query = url.searchParams.get('q') ?? '';
 	// How far back the history goes. Bounded: this is a page, and "all of it"
 	// on an instance in use is a query nobody meant to run.
@@ -27,13 +42,14 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		// What broke in somebody's browser, when they let us hear about it. It
 		// used to go only to the log, which on this box is journald — so a
 		// report reached nobody who was not already tailing it.
-		clientErrors: recentClientErrors(),
+		demo,
+		clientErrors: demo ? [] : recentClientErrors(),
 		// Mail that did not go out. The same list /healthz counts, so the alert
 		// on a phone and the page it points at cannot disagree.
-		mailFailures: openFailures(),
+		mailFailures: demo ? [] : openFailures(),
 		// What the layer in front of the app has been doing. Read from fail2ban's
 		// log, and honest about not being able to read it.
-		protection: protection(),
+		protection: demo ? { readable: false, path: '', recent: [], lastDay: 0 } : protection(),
 		// Whether this box has been given the one sudo rule that lets the app
 		// act on a ban. Off means the list is shown and no buttons are.
 		canControlBans: banControlEnabled(),

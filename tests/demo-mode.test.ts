@@ -15,6 +15,7 @@
 import { readFileSync } from 'node:fs';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { makeDatabase } from './helpers/db';
+import { demoRefusal } from '../src/lib/server/demo-guard';
 
 // Importing the settings module reaches the database module, which refuses to
 // load against a database behind the code — so this file gets one of its own.
@@ -71,13 +72,54 @@ describe('the demo refusals', () => {
 		);
 	});
 
+	it('leave the administration pages readable', () => {
+		// Deliberate: somebody deciding whether to run this themselves should see
+		// what administering it looks like.
+		expect(demoRefusal('GET', '/admin')).toBeNull();
+		expect(demoRefusal('GET', '/settings/instance')).toBeNull();
+		expect(demoRefusal('GET', '/admin/abc123')).toBeNull();
+	});
+
+	it('refuse every write behind them', () => {
+		for (const path of ['/admin', '/admin/abc123', '/settings/instance']) {
+			expect(demoRefusal('POST', path), `${path} is writable on the demo`).toMatch(/demo/i);
+		}
+	});
+
+	it('still let somebody stop impersonating', () => {
+		// The way back from being impersonated has to work wherever
+		// impersonation does, or a visitor is stuck as somebody else.
+		expect(demoRefusal('POST', '/admin/stop')).toBeNull();
+	});
+
+	it('leave the rest of the app alone', () => {
+		// The demo is a playground: everything that is not the box or the
+		// account must still be usable, or there is nothing to look at.
+		for (const path of ['/planner/plan', '/shopping', '/diary', '/settings/preferences']) {
+			expect(demoRefusal('POST', path), `${path} is refused on the demo`).toBeNull();
+		}
+	});
+
+	it("refuse the account page's own delete, by the action it names", () => {
+		expect(demoRefusal('POST', '/settings/account', '?/delete')).toMatch(/deleted/);
+		// And leave the rest of that page working.
+		expect(demoRefusal('POST', '/settings/account', '?/rename')).toBeNull();
+	});
+
 	it('cover every way to lock the shared account out', () => {
 		for (const path of [
 			'/api/auth/change-password',
 			'/api/auth/change-email',
-			'/api/auth/delete-user'
+			'/api/auth/delete-user',
+			'/api/auth/update-user',
+			'/api/auth/revoke-sessions'
 		]) {
-			expect(hooks, `${path} is not refused on the demo`).toContain(path);
+			// Whatever the method: better-auth accepts some of these as GET.
+			expect(demoRefusal('POST', path), `${path} is not refused`).toMatch(/demo/i);
+			expect(demoRefusal('GET', path), `${path} is not refused on GET`).toMatch(/demo/i);
 		}
+
+		// And signing in is not one of them — it is how the demo works at all.
+		expect(demoRefusal('POST', '/api/auth/sign-in/email')).toBeNull();
 	});
 });
