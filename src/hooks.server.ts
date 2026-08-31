@@ -4,7 +4,8 @@ import { building } from '$app/environment';
 import { auth } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { ensureUserCategories } from '$lib/server/db/ensure-categories';
-import { DEFAULT_THEME, demoAccount, getStyle, getTheme, isDemo } from '$lib/server/settings';
+import { DEFAULT_THEME, getStyle, getTheme, isDemo } from '$lib/server/settings';
+import { createDemoAccount, sweepDemoAccounts, touchDemoAccount } from '$lib/server/services/demo';
 import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
 import { checkSignUpAllowed, consumeInvite } from '$lib/server/services/registration';
 import { claimFirstAccount } from '$lib/server/services/admin';
@@ -297,6 +298,20 @@ const handleDemoGuard: Handle = ({ event, resolve }) => {
 	return resolve(event);
 };
 
+/**
+ * How many demo accounts one address may be given, and how quickly.
+ *
+ * A person opening the demo, closing it and opening it again wants a handful; a
+ * script wants thousands. Both are answered by the same number.
+ */
+const DEMO_ACCOUNTS_PER_ADDRESS = 5;
+const DEMO_WINDOW_MS = 60 * 60 * 1000;
+
+/** Set on the first page view, returned by anything that keeps cookies. */
+const DEMO_HANDSHAKE = 'onto_demo';
+/** Says "you have already been bounced once", so a cookieless client stops. */
+const DEMO_BOUNCE = 'demo';
+
 const handleDemo: Handle = async ({ event, resolve }) => {
 	if (!isDemo()) return resolve(event);
 
@@ -321,19 +336,77 @@ const handleDemo: Handle = async ({ event, resolve }) => {
 		!writes && (isData || Boolean(event.request.headers.get('accept')?.includes('text/html')));
 	let signedIn = false;
 	if (!event.locals.user && wantsPage && !path.startsWith('/api/')) {
-		const { email, password } = demoAccount();
-		try {
-			await auth.api.signInEmail({
-				body: { email, password },
-				headers: event.request.headers,
-				asResponse: false
+		/*
+		 * A copy of their own, made on arrival.
+		 *
+		 * Everybody used to be signed into one account: two people looking at
+		 * once watched each other type, and one person renaming everything ruined
+		 * it for the rest until the hourly wipe took an hour of somebody else's
+		 * poking about with it. Now the visitor gets an account, seeded with the
+		 * same week the development database has, deleted once it has been left
+		 * alone. See `services/demo.ts`.
+		 *
+		 * Rate limited per address, because this is the one place in the app
+		 * where an unauthenticated GET creates an account and runs a seed. The
+		 * budget is generous for a person and useless to a script.
+		 */
+		const key = `demo:${clientKey(event.request, event.getClientAddress)}`;
+		const budget = rateLimit(key, DEMO_ACCOUNTS_PER_ADDRESS, DEMO_WINDOW_MS);
+
+		/*
+		 * One handshake before anything is created.
+		 *
+		 * An account is a row and a seeded week on disk, and a client that does
+		 * not keep cookies would ask for a new one on every single request — a
+		 * crawler, a link unfurler, `curl -L`, a health probe that sends
+		 * `Accept: text/html`. The first was found by `curl -L` making six
+		 * accounts out of one visit.
+		 *
+		 * So the first page view sets a cookie and bounces back to the same
+		 * address. A browser returns it and gets an account; anything that does
+		 * not returns with `?demo` and no cookie, which is how we know not to
+		 * bother — it gets the landing page, signed out, and no more redirects.
+		 */
+		const handshook = event.cookies.get(DEMO_HANDSHAKE) === '1';
+		const bounced = event.url.searchParams.has(DEMO_BOUNCE);
+
+		if (budget.allowed && !handshook && !bounced) {
+			event.cookies.set(DEMO_HANDSHAKE, '1', {
+				path: '/',
+				httpOnly: true,
+				sameSite: 'lax',
+				maxAge: 600
 			});
-			signedIn = true;
-		} catch (e) {
-			// A demo that cannot sign in is still a readable landing page, so
-			// this never takes the site down — it just stays signed out.
-			console.error('demo sign-in failed', e);
+			const target = path.endsWith(dataSuffix) ? path.slice(0, -dataSuffix.length) || '/' : path;
+			const url = new URL(target + event.url.search, event.url.origin);
+			url.searchParams.set(DEMO_BOUNCE, '1');
+			redirect(303, url.pathname + url.search);
 		}
+
+		if (budget.allowed && handshook) {
+			// Cheap when there is nothing to do, and it means a demo whose timer
+			// is not running still clears up after itself.
+			sweepDemoAccounts();
+
+			try {
+				const account = await createDemoAccount(event.url.hostname);
+				if (account) {
+					await auth.api.signInEmail({
+						body: { email: account.email, password: account.password },
+						headers: event.request.headers,
+						asResponse: false
+					});
+					signedIn = true;
+				}
+			} catch (e) {
+				// A demo that cannot make an account is still a readable landing
+				// page, so this never takes the site down.
+				console.error('demo account creation failed', e);
+			}
+		}
+	} else if (event.locals.user && wantsPage) {
+		// Still here, so still wanted. The lifetime runs from the last page view.
+		touchDemoAccount(event.locals.user.id);
 	}
 
 	// Outside the try: the cookie is set on this response by better-auth's
@@ -342,7 +415,11 @@ const handleDemo: Handle = async ({ event, resolve }) => {
 	// inside the try above would have been caught as a failure.
 	if (signedIn) {
 		const target = path.endsWith(dataSuffix) ? path.slice(0, -dataSuffix.length) || '/' : path;
-		redirect(303, target + event.url.search);
+		// Without the marker: it has done its job, and an address somebody might
+		// copy out of the bar should not carry it.
+		const url = new URL(target + event.url.search, event.url.origin);
+		url.searchParams.delete(DEMO_BOUNCE);
+		redirect(303, url.pathname + url.search);
 	}
 
 	return resolve(event);

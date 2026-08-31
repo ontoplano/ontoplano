@@ -32,8 +32,8 @@ async function settings() {
 
 afterEach(() => {
 	delete process.env.ONTOPLANO_DEMO;
-	delete process.env.ONTOPLANO_DEMO_EMAIL;
-	delete process.env.ONTOPLANO_DEMO_PASSWORD;
+	delete process.env.ONTOPLANO_DEMO_TTL_MINUTES;
+	delete process.env.ONTOPLANO_DEMO_MAX_ACCOUNTS;
 });
 
 describe('whether this deployment is the demo', () => {
@@ -41,22 +41,37 @@ describe('whether this deployment is the demo', () => {
 		expect((await settings()).isDemo()).toBe(false);
 	});
 
-	it('is not, when the flag is on but no account is named', async () => {
+	it('is, on the flag alone', async () => {
+		// There is no shared account to name any more — every visitor gets one
+		// of their own — so the flag is the whole switch.
 		process.env.ONTOPLANO_DEMO = 'true';
-		// The dangerous half-state: auto-sign-in with nobody to sign in as.
-		expect((await settings()).isDemo()).toBe(false);
+		expect((await settings()).isDemo()).toBe(true);
+	});
+});
+
+describe('how long a demo account lives, and how many there may be', () => {
+	it('has answers without being told', async () => {
+		const s = await settings();
+		expect(s.demoLifetimeMinutes()).toBeGreaterThan(0);
+		expect(s.demoMaxAccounts()).toBeGreaterThan(0);
 	});
 
-	it('is, with a flag and an account', async () => {
-		process.env.ONTOPLANO_DEMO = 'true';
-		process.env.ONTOPLANO_DEMO_EMAIL = 'demo@example.test';
-		process.env.ONTOPLANO_DEMO_PASSWORD = 'not-a-secret';
+	it('takes the instance at its word for both', async () => {
+		process.env.ONTOPLANO_DEMO_TTL_MINUTES = '45';
+		process.env.ONTOPLANO_DEMO_MAX_ACCOUNTS = '12';
 		const s = await settings();
-		expect(s.isDemo()).toBe(true);
-		expect(s.demoAccount()).toEqual({
-			email: 'demo@example.test',
-			password: 'not-a-secret'
-		});
+		expect(s.demoLifetimeMinutes()).toBe(45);
+		expect(s.demoMaxAccounts()).toBe(12);
+	});
+
+	it('ignores a value that is not one', async () => {
+		// A ceiling of zero is a demo that refuses everybody, and "abc" minutes
+		// is an account that expires in the past.
+		process.env.ONTOPLANO_DEMO_TTL_MINUTES = 'soon';
+		process.env.ONTOPLANO_DEMO_MAX_ACCOUNTS = '0';
+		const s = await settings();
+		expect(s.demoLifetimeMinutes()).toBeGreaterThan(0);
+		expect(s.demoMaxAccounts()).toBeGreaterThan(0);
 	});
 });
 
@@ -101,7 +116,7 @@ describe('the demo refusals', () => {
 	});
 
 	it("refuse the account page's own delete, by the action it names", () => {
-		expect(demoRefusal('POST', '/settings/account', '?/delete')).toMatch(/deleted/);
+		expect(demoRefusal('POST', '/settings/account', '?/delete')).toMatch(/deletes itself/);
 		// And leave the rest of that page working.
 		expect(demoRefusal('POST', '/settings/account', '?/rename')).toBeNull();
 	});

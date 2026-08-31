@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.11.0 — 2026-08-31
+
+- **The demo gives you a copy of your own.** It used to sign everybody into one
+  account and wipe the database every hour, so two people looking at once
+  watched each other type and anything either of them broke was fixed by
+  destroying the other's afternoon. Now arriving makes an account, seeded with
+  a full week, that nobody else can see — and it deletes itself a few hours
+  after you stop using it.
+
 ## 0.10.0 — 2026-08-31
 
 - The four tables a task can live in are named after what they are rather than

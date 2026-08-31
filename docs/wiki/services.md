@@ -23,6 +23,7 @@ shows up here on the next build.
 | [`calendars`](#calendars)                       | Calendars somebody else controls.                                                                                                                                                                                                                                    |
 | [`client-errors`](#client-errors)               | Client-side errors, sent in with permission.                                                                                                                                                                                                                         |
 | [`ctx`](#ctx)                                   | The single argument every service function takes.                                                                                                                                                                                                                    |
+| [`demo`](#demo)                                 | A demo where everybody gets their own copy.                                                                                                                                                                                                                          |
 | [`diary`](#diary)                               | The journal: free text, free-form tags, one running number per account.                                                                                                                                                                                              |
 | [`errors`](#errors)                             | Typed errors thrown by service functions.                                                                                                                                                                                                                            |
 | [`goals`](#goals)                               | Goals, and the progress that makes them more than a wish list.                                                                                                                                                                                                       |
@@ -597,6 +598,81 @@ per-row timezone maths at read time.
 ### Types
 
 - `Ctx`
+
+## demo
+
+A demo where everybody gets their own copy.
+
+The first version signed every visitor into one shared account and wiped the
+database hourly. That is simple and it is also the worst of both worlds: two
+people looking at once each watch the other type, one person can rename
+everything for everybody, and the only way to make it safe again is to
+destroy an hour of somebody else's poking about.
+
+So a visitor gets an account of their own, seeded with the same week the
+development database has, and it is deleted when it has been left alone long
+enough. Nothing is shared, nothing has to be wiped on a timer, and somebody
+who comes back within the hour finds their own changes where they left them.
+
+Three things keep that from being a way to fill a disk: an account is only
+ever made for a page view (never for an asset or an API call), the instance
+has a ceiling on how many may exist at once, and every one of them has an
+expiry from the moment it is made.
+
+### Functions
+
+#### `demoAccountCount()`
+
+How many demo accounts exist right now.
+
+#### `createDemoAccount(host)`
+
+Make one, seed it, and hand back what to sign in with.
+
+The password is generated and never shown: the session cookie is how the
+visitor stays in, and an address nobody can read mail for cannot be recovered
+anyway. Returning it is only so the caller can complete the sign-in in the
+same request.
+
+Returns null when the instance is at its ceiling — the caller then shows the
+landing page rather than a broken app, which is the honest failure for "the
+demo is busy".
+
+#### `demoExpiry(userId)`
+
+Whether this account is a demo one, and whether its time is up.
+
+#### `sweepDemoAccounts(now)`
+
+Delete every demo account whose time has passed.
+
+Run from the box's timer, and also opportunistically when a new visitor
+arrives — so a demo nobody has swept still cleans up after itself, and the
+ceiling above is a ceiling on _live_ accounts rather than on all the accounts
+there have ever been.
+
+`deleteAccount` is the same function the account page calls, so a demo
+account leaves exactly as thoroughly as a real one.
+
+#### `touchDemoAccount(userId, now)`
+
+Push an account's expiry out, because somebody is using it.
+
+The lifetime is "since last seen" rather than "since created": a visitor
+reading carefully for two hours should not have the page taken away
+mid-sentence, and one who left an hour ago is not coming back.
+
+#### `orphanedDemoAccounts(host)`
+
+Demo accounts left behind by an older deployment, or by a crash mid-creation.
+
+An account whose address looks like ours but which carries no expiry would
+otherwise live forever. Swept on the same pass, with the same reasoning: the
+demo owns every address at this host.
+
+### Types
+
+- `DemoAccount`
 
 ## diary
 

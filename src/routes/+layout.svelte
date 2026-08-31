@@ -267,8 +267,8 @@
 				class="relative z-50 hidden flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950 lg:flex"
 			>
 				<span>
-					<strong>This is a demo version of ontoplano.</strong> One shared account, wiped and reseeded
-					every now and then.
+					<strong>This is a demo version of ontoplano.</strong> Everything here is yours alone, and it
+					disappears a few hours after you stop using it.
 				</span>
 				{#if data.demoHost}
 					<span class="font-normal">Open {data.demoHost} on your phone to see it there too.</span>
@@ -631,7 +631,7 @@
 				     this strip. Anything longer was cut off by the menu button and
 				     read as "one shared a—", which says less than nothing. -->
 				<span><strong>Demo version</strong></span>
-				<span>wiped regularly</span>
+				<span>yours, and temporary</span>
 			</div>
 		{/if}
 

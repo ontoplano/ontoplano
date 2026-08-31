@@ -83,7 +83,7 @@ export const load: LayoutServerLoad = async (event) => {
 		// Sections this account has put away: out of every menu the shell
 		// renders, still answering at their URLs.
 		hiddenSections,
-		// The public demo says so on every page: one shared account, wiped
+		// The public demo says so on every page: a copy of your own, deleted
 		// hourly, so nobody mistakes it for their own instance.
 		demo: isDemoInstance(),
 		// The demo's own address, for the band that tells a desktop visitor

@@ -19,9 +19,9 @@ import type { RequestHandler } from './$types';
  * that were crawled and bounced is noise in the log.
  */
 export const GET: RequestHandler = () => {
-	// The demo is a throwaway copy of the app that is wiped every hour. Indexed,
-	// it competes with the real site for the same words and offers a searcher a
-	// shared account full of somebody else's seeded week.
+	// The demo hands every visitor a throwaway copy of the app. Indexed, it
+	// competes with the real site for the same words and offers a searcher a
+	// seeded week that will not be there in the morning.
 	const body = isDemo()
 		? ['User-agent: *', 'Disallow: /', ''].join('\n')
 		: [

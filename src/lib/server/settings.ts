@@ -296,13 +296,43 @@ export function isStaging(): boolean {
 /**
  * The public demo.
  *
- * One account, already signed in, that anybody arriving can poke at — and a
- * database rebuilt from the seed every hour, which is what makes leaving the
- * doors open safe. Opt-in, like every other deployment answer here: a box
- * that forgets to say is an ordinary instance.
+ * Every visitor gets an account of their own, seeded with a week worth looking
+ * at and deleted once it has been left alone — see `services/demo.ts` for why
+ * that beats one shared account wiped on a timer. Opt-in, like every other
+ * deployment answer here: a box that forgets to say is an ordinary instance.
+ *
+ * `ONTOPLANO_DEMO_EMAIL` is no longer part of the switch. There is no one
+ * account to name, and requiring it would have meant a box that upgraded to
+ * this and dropped the variable silently stopped being a demo.
  */
 export function isDemo(): boolean {
-	return process.env.ONTOPLANO_DEMO === 'true' && Boolean(demoAccount().email);
+	return process.env.ONTOPLANO_DEMO === 'true';
+}
+
+/**
+ * How long a demo account outlives its last page view.
+ *
+ * Since last seen rather than since created: somebody reading carefully for two
+ * hours should not have the page taken away mid-sentence, and somebody who left
+ * an hour ago is not coming back. Three hours by default — long enough to be a
+ * proper look, short enough that a day's visitors are not still on the disk in
+ * the morning.
+ */
+export function demoLifetimeMinutes(): number {
+	const raw = Number(process.env.ONTOPLANO_DEMO_TTL_MINUTES);
+	return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 180;
+}
+
+/**
+ * How many demo accounts may exist at once.
+ *
+ * The ceiling is the answer to "somebody points a script at it": each account
+ * costs a seeded week on a small disk, and the honest failure when the demo is
+ * full is the landing page rather than a broken app.
+ */
+export function demoMaxAccounts(): number {
+	const raw = Number(process.env.ONTOPLANO_DEMO_MAX_ACCOUNTS);
+	return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 200;
 }
 
 /**
@@ -319,13 +349,6 @@ export function demoUrl(): string | null {
 	// The demo itself must not link to itself.
 	if (isSelfHosted() || isDemo()) return null;
 	return 'https://demo.ontoplano.com';
-}
-
-export function demoAccount(): { email: string; password: string } {
-	return {
-		email: process.env.ONTOPLANO_DEMO_EMAIL ?? '',
-		password: process.env.ONTOPLANO_DEMO_PASSWORD ?? ''
-	};
 }
 
 /**

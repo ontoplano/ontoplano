@@ -1,18 +1,19 @@
 /**
  * What a visitor to the public demo may not do.
  *
- * The demo signs everybody into one shared account, so "what could one visitor
- * do that ruins it for the next" is the whole question. There are two kinds of
- * answer and they are different in what they protect:
+ * Every visitor gets an account of their own now, so most of what a demo used
+ * to have to protect protects itself: renaming everything only ruins your own
+ * copy, and it is deleted in a few hours anyway. Two things are still refused.
  *
- *  - **Locking everyone out.** Change the password, change the address, delete
- *    the account, revoke the sessions — any one of those leaves the demo dead
- *    until the hourly reset. Refused outright.
- *  - **Changing the box.** The demo account is the instance's first account,
- *    which makes it an administrator, which makes `/admin` and
- *    `/settings/instance` visible. That is deliberate — somebody deciding
- *    whether to run this themselves should see what administering it looks
- *    like — but nothing behind those pages may be written.
+ *  - **Changing the identity.** The address, the password, the sessions,
+ *    deleting the account. None of it would hurt anybody else — but changing
+ *    the address makes the box send mail to a stranger's inbox on request,
+ *    which is a spam relay with extra steps, and the rest only locks somebody
+ *    out of the demo they are in the middle of.
+ *  - **Changing the box.** `/admin` and `/settings/instance` describe the
+ *    instance rather than the account. A demo visitor is an ordinary member and
+ *    should not reach them at all; this is the second lock on that door, for an
+ *    instance that hands a demo account more than it should.
  *
  * The rules live here rather than in the routes because both areas grow: a new
  * `/admin` action, or a new better-auth endpoint that can change an identity,
@@ -20,7 +21,7 @@
  */
 
 /**
- * Endpoints that could lock the shared account, refused whatever the method.
+ * Endpoints that change who an account is, refused whatever the method.
  *
  * better-auth answers these inside its own handler, so the guard has to sit in
  * front of it — a check placed afterwards never sees the request at all.
@@ -57,10 +58,11 @@ const under = (path: string, prefixes: string[]) =>
 export function demoRefusal(method: string, path: string, search = ''): string | null {
 	const writes = method !== 'GET' && method !== 'HEAD';
 
-	if (under(path, DEMO_FORBIDDEN)) return 'This is the demo — that cannot be changed here.';
+	if (under(path, DEMO_FORBIDDEN))
+		return 'The demo account is temporary — its address and password cannot be changed.';
 
 	if (writes && path === '/settings/account' && new URLSearchParams(search).has('/delete')) {
-		return 'This is the demo — the account cannot be deleted.';
+		return 'The demo account is temporary — it deletes itself in a few hours.';
 	}
 
 	if (writes && under(path, DEMO_READ_ONLY) && !under(path, DEMO_WRITABLE)) {
