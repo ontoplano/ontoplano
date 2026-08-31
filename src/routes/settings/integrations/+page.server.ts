@@ -40,13 +40,35 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	);
 
 	return {
-		tokens: listTokens(ctx),
+		/*
+		 * The calendar link shares this table and is not one of these.
+		 *
+		 * It is a token underneath — same row, same hashing, same revocation —
+		 * but on the page it is its own feature with its own card, and listing
+		 * it here as well would make somebody wonder which of the two things
+		 * they are looking at and what happens if they revoke one. Shared
+		 * storage is not shared interface.
+		 */
+		tokens: listTokens(ctx).filter(
+			(t) => !(t.scopes.length === 1 && t.scopes[0] === 'calendar:read')
+		),
 		calendarLink: calendarLinks[0] ?? null,
 		streams: listStreams(ctx, { includeArchived: true }).map((s) => ({
 			...s,
 			stats: streamStats(ctx, s.id)
 		})),
-		scopes: ALL_SCOPES.map((key) => ({ key, description: SCOPES[key] })),
+		/*
+		 * `calendar:read` is not offered here.
+		 *
+		 * It exists to bound what a URL-borne credential can do, and the card
+		 * above is the only thing that should mint one. Offering it in this list
+		 * would let somebody create an "API token" that is really a feed key —
+		 * which the filter above would then hide from them.
+		 */
+		scopes: ALL_SCOPES.filter((key) => key !== 'calendar:read').map((key) => ({
+			key,
+			description: SCOPES[key]
+		})),
 		displays: STREAM_DISPLAYS,
 		webhooks: listSubscriptions(ctx).map((s) => ({
 			id: s.id,
