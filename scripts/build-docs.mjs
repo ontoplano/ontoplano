@@ -288,6 +288,16 @@ function apiPage() {
 	}
 	out.push('');
 
+	const events = webhookEvents();
+	if (events.length) {
+		out.push('## Webhook events\n');
+		out.push('What a subscription can ask to be told about. Managed through');
+		out.push('`/settings/integrations` or the `webhooks:manage` scope.\n');
+		out.push('| Event | Fires when |', '| --- | --- |');
+		for (const e of events) out.push(`| \`${e.event}\` | ${e.label || '—'} |`);
+		out.push('');
+	}
+
 	for (const e of endpoints) {
 		out.push(`### \`${e.path}\`\n`);
 		if (e.moduleDoc) out.push(e.moduleDoc + '\n');
@@ -471,6 +481,265 @@ function shortcutsPage() {
 	return out.join('\n');
 }
 
+/* ------------------------------------------------------------- pages/actions */
+
+/**
+ * Turn a route directory into the URL it answers on.
+ *
+ * SvelteKit's grouping folders — `(app)`, `(marketing)` — organise the source
+ * and are not part of any address, so they come out. `[id]` stays, because a
+ * parameter is part of the shape of the URL even though it is not part of any
+ * one address.
+ */
+function urlFor(dir) {
+	const rel = relative(join(ROOT, 'src/routes'), dir).split(/[\\/]/).filter(Boolean);
+	const parts = rel.filter((p) => !/^\(.*\)$/.test(p));
+	return '/' + parts.join('/');
+}
+
+function pagesPage() {
+	const serverFiles = walk(join(ROOT, 'src/routes'), (f) => f === '+page.server.ts');
+	const pageFiles = walk(join(ROOT, 'src/routes'), (f) => f === '+page.svelte');
+
+	const byUrl = new Map();
+	const touch = (url) => {
+		if (!byUrl.has(url)) byUrl.set(url, { url, actions: [], hasPage: false, doc: '' });
+		return byUrl.get(url);
+	};
+
+	for (const file of pageFiles) touch(urlFor(dirname(file))).hasPage = true;
+
+	for (const file of serverFiles) {
+		const source = parse(file);
+		const entry = touch(urlFor(dirname(file)));
+		const moduleDoc = moduleDocOf(source);
+
+		for (const st of source.statements) {
+			if (!ts.isVariableStatement(st)) continue;
+			const isExported = st.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+			if (!isExported) continue;
+
+			for (const decl of st.declarationList.declarations) {
+				if (decl.name.getText(source) !== 'actions' || !decl.initializer) continue;
+
+				const obj = ts.isSatisfiesExpression(decl.initializer)
+					? decl.initializer.expression
+					: decl.initializer;
+				if (!ts.isObjectLiteralExpression(obj)) continue;
+
+				for (const prop of obj.properties) {
+					if (!prop.name) continue;
+					entry.actions.push({
+						name: prop.name.getText(source).replace(/['"]/g, ''),
+						doc: docOf(prop, source, moduleDoc)
+					});
+				}
+			}
+		}
+	}
+
+	const routes = [...byUrl.values()]
+		.filter((r) => r.hasPage || r.actions.length)
+		.sort((a, b) => a.url.localeCompare(b.url));
+
+	const totalActions = routes.reduce((n, r) => n + r.actions.length, 0);
+
+	const out = [
+		STAMP,
+		'# Pages and actions\n',
+		'Every address the app serves a page on, and every form action behind it —',
+		'read from the route tree, so a page added or an action renamed shows up',
+		'here on the next build.\n',
+		'An action is what a `<form method="post">` posts to. They are the app\'s',
+		'own write surface, the way the endpoints in [the API](api.md) are the',
+		'write surface for everything else; both end up calling the same',
+		'[services](services.md).\n',
+		`**${routes.length} pages, ${totalActions} actions.**\n`,
+		'| Page | Actions |',
+		'| --- | --- |'
+	];
+
+	for (const r of routes) {
+		out.push(
+			`| \`${r.url}\` | ${
+				r.actions.length ? r.actions.map((a) => `\`${a.name}\``).join(', ') : '—'
+			} |`
+		);
+	}
+	out.push('');
+
+	const documented = routes.filter((r) => r.actions.some((a) => a.doc));
+	if (documented.length) {
+		out.push('## What the actions do\n');
+		out.push('Only the ones whose code says. The rest are named for what they do.\n');
+		for (const r of documented) {
+			out.push(`### \`${r.url}\`\n`);
+			for (const a of r.actions.filter((a) => a.doc)) {
+				out.push(`**\`${a.name}\`**\n`);
+				out.push(a.doc + '\n');
+			}
+		}
+	}
+
+	return out.join('\n');
+}
+
+/* ---------------------------------------------------------------- config */
+
+/** Every `process.env.ONTOPLANO_*` the source actually reads. */
+function environmentVariables() {
+	const files = [
+		...walk(join(ROOT, 'src'), (f) => f.endsWith('.ts')),
+		...walk(join(ROOT, 'scripts'), (f) => f.endsWith('.mjs') || f.endsWith('.ts'))
+	];
+
+	const found = new Map();
+	for (const file of files) {
+		if (file.includes('.test.')) continue;
+		const text = readFileSync(file, 'utf8');
+		for (const m of text.matchAll(/process\.env\.(ONTOPLANO_[A-Z0-9_]+)/g)) {
+			const where = relative(ROOT, file);
+			if (!found.has(m[1])) found.set(m[1], new Set());
+			found.get(m[1]).add(where);
+		}
+	}
+
+	return [...found.entries()].sort(([a], [b]) => a.localeCompare(b));
+}
+
+/** The shape of config.toml, from the interface that types it. */
+function configShape() {
+	const source = parse(join(ROOT, 'src/lib/server/config.ts'));
+	const sections = [];
+
+	const visit = (n) => {
+		if (ts.isInterfaceDeclaration(n) && n.name.getText(source) === 'OntoplanoConfig') {
+			for (const member of n.members) {
+				if (!ts.isPropertySignature(member) || !member.type) continue;
+				const section = member.name.getText(source);
+				const keys = [];
+
+				if (ts.isTypeLiteralNode(member.type)) {
+					for (const sub of member.type.members) {
+						if (!ts.isPropertySignature(sub) || !sub.type) continue;
+						keys.push({
+							name: sub.name.getText(source),
+							type: sub.type.getText(source),
+							doc: docOf(sub, source)
+						});
+					}
+				}
+				sections.push({ section, keys });
+			}
+		}
+		ts.forEachChild(n, visit);
+	};
+	visit(source);
+	return sections;
+}
+
+/** The per-account settings keys, from the constants that name them. */
+function userSettingKeys() {
+	const source = parse(join(ROOT, 'src/lib/server/settings.ts'));
+	const keys = [];
+
+	const visit = (n) => {
+		if (
+			ts.isVariableDeclaration(n) &&
+			/_KEY$/.test(n.name.getText(source)) &&
+			n.initializer &&
+			ts.isStringLiteral(n.initializer)
+		) {
+			keys.push({ constant: n.name.getText(source), key: n.initializer.text });
+		}
+		ts.forEachChild(n, visit);
+	};
+	visit(source);
+	return keys.sort((a, b) => a.key.localeCompare(b.key));
+}
+
+function configurationPage() {
+	const out = [
+		STAMP,
+		'# Configuration\n',
+		'Three separate things, often confused: what the **operator** sets for the',
+		'whole instance, what the **process** is told through its environment, and',
+		'what each **account** chooses for itself.\n',
+		'## config.toml\n',
+		'Written to `~/.config/ontoplano/config.toml` on first run, and edited by',
+		'the operator or through `/admin`. Its shape is the `OntoplanoConfig`',
+		'interface, so this table is that interface.\n'
+	];
+
+	for (const { section, keys } of configShape()) {
+		out.push(`### \`[${section}]\`\n`);
+		out.push('| Key | Type | Means |', '| --- | --- | --- |');
+		for (const k of keys) {
+			out.push(`| \`${k.name}\` | \`${k.type}\` | ${summary(k.doc) || '—'} |`);
+		}
+		out.push('');
+		for (const k of keys.filter((k) => k.doc && k.doc !== summary(k.doc))) {
+			out.push(`**\`${k.name}\`**\n`, k.doc + '\n');
+		}
+	}
+
+	out.push('## Environment\n');
+	out.push('Every `ONTOPLANO_*` variable the code actually reads, and where it is');
+	out.push('read. A variable that stops being consulted leaves this table by');
+	out.push('itself, which is the point — an env var nobody reads any more is the');
+	out.push('kind of thing that stays in a deployment script for years.\n');
+	out.push('| Variable | Read in |', '| --- | --- |');
+	for (const [name, where] of environmentVariables()) {
+		out.push(
+			`| \`${name}\` | ${[...where]
+				.sort()
+				.map((w) => `\`${w}\``)
+				.join(', ')} |`
+		);
+	}
+	out.push('');
+
+	out.push('## Per-account settings\n');
+	out.push('Rows in `user_settings`, one per account per key. These are choices a');
+	out.push('person makes about their own copy of the app, not the operator.\n');
+	out.push('| Key | Constant |', '| --- | --- |');
+	for (const k of userSettingKeys()) out.push(`| \`${k.key}\` | \`${k.constant}\` |`);
+
+	return out.join('\n');
+}
+
+/* -------------------------------------------------------------- webhooks */
+
+function webhookEvents() {
+	const source = parse(join(ROOT, 'src/lib/server/services/webhooks.ts'));
+	const labels = new Map();
+	const events = [];
+
+	const visit = (n) => {
+		if (ts.isVariableDeclaration(n) && n.initializer) {
+			const name = n.name.getText(source);
+			const init = ts.isAsExpression(n.initializer) ? n.initializer.expression : n.initializer;
+
+			if (name === 'WEBHOOK_EVENTS' && ts.isArrayLiteralExpression(init)) {
+				for (const el of init.elements) {
+					if (ts.isStringLiteral(el)) events.push(el.text);
+				}
+			}
+			if (name === 'WEBHOOK_EVENT_LABELS' && ts.isObjectLiteralExpression(init)) {
+				for (const prop of init.properties) {
+					if (!ts.isPropertyAssignment(prop)) continue;
+					const key = prop.name.getText(source).replace(/['"]/g, '');
+					if (ts.isStringLiteral(prop.initializer)) labels.set(key, prop.initializer.text);
+				}
+			}
+		}
+		ts.forEachChild(n, visit);
+	};
+	visit(source);
+
+	return events.map((e) => ({ event: e, label: labels.get(e) ?? '' }));
+}
+
 /* ------------------------------------------------------------------ index */
 
 function indexPage(pages) {
@@ -516,6 +785,18 @@ const PAGES = [
 		title: 'Services',
 		blurb: 'the service layer, module by module',
 		build: servicesPage
+	},
+	{
+		file: 'pages.md',
+		title: 'Pages and actions',
+		blurb: 'every address, and the form actions behind it',
+		build: pagesPage
+	},
+	{
+		file: 'configuration.md',
+		title: 'Configuration',
+		blurb: 'config.toml, the environment, and per-account settings',
+		build: configurationPage
 	},
 	{
 		file: 'keyboard.md',
