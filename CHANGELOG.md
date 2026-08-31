@@ -10,6 +10,16 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.12.0 — 2026-08-31
+
+- **Bring your tasks in from Todoist or Google Tasks.** Settings → Account takes
+  a Todoist project exported as CSV, or Google Takeout's `Tasks.json`, and turns
+  it into todos — it works out which kind of file it is by itself. Everything
+  lands in one notebook, so deleting that notebook undoes the whole import.
+  Finished tasks are left out unless you ask for them, and anything it could not
+  read — a section heading, a repeat rule where a date should be — is named
+  rather than silently dropped.
+
 ## 0.11.0 — 2026-08-31
 
 - **The demo gives you a copy of your own.** It used to sign everybody into one

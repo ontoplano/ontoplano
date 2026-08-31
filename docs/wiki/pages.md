@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**37 pages, 153 actions.**
+**37 pages, 154 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                            |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -43,7 +43,7 @@ write surface for everything else; both end up calling the same
 | `/planner/review`               | `saveLines`, `keepStale`, `completeStale`, `dropStale`, `resolve`, `carry`                                                                                                                                                                                                                                                                                                         |
 | `/planner/todo`                 | `create`, `remind`, `unremind`, `update`, `setStatus`, `schedule`, `delete`, `delegate`                                                                                                                                                                                                                                                                                            |
 | `/search`                       | —                                                                                                                                                                                                                                                                                                                                                                                  |
-| `/settings/account`             | `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `delete`                                                                                                                                                                                                                                                                                                    |
+| `/settings/account`             | `importTasks`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `delete`                                                                                                                                                                                                                                                                                     |
 | `/settings/billing`             | `checkout`, `switchInterval`                                                                                                                                                                                                                                                                                                                                                       |
 | `/settings/instance`            | `setRegistration`, `setEmailChange`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                                                             |
 | `/settings/integrations`        | `createToken`, `calendarLink`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                                                    |
@@ -241,6 +241,15 @@ clock reading rather than a lead time, unlike a block's.
 ### `/settings/account`
 
 better-auth's messages are already user-facing; anything else is a bug.
+
+**`importTasks`**
+
+Take a list out of Todoist or Google Tasks and put it here.
+
+The parsing and the writing are `services/imports.ts`; this reads the
+form. The text arrives in the textarea whether it was pasted or read from
+a chosen file — the page reads the file itself, so what is about to be
+imported is visible before the button is pressed.
 
 **`changeEmail`**
 

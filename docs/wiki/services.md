@@ -30,6 +30,7 @@ shows up here on the next build.
 | [`habits`](#habits)                             | Habits are things to do or to avoid, logged one day at a time.                                                                                                                                                                                                       |
 | [`health`](#health)                             | Can this process actually reach the database?                                                                                                                                                                                                                        |
 | [`ideas`](#ideas)                               | Quick capture: a thought, optionally tagged, optionally marked as applied.                                                                                                                                                                                           |
+| [`imports`](#imports)                           | Bringing a list in from somewhere else.                                                                                                                                                                                                                              |
 | [`instances`](#instances)                       | The one answer to "what is on, between these dates".                                                                                                                                                                                                                 |
 | [`legal`](#legal)                               | The facts the policies are written around.                                                                                                                                                                                                                           |
 | [`mail-log`](#mail-log)                         | Mail that must not fail silently.                                                                                                                                                                                                                                    |
@@ -902,6 +903,91 @@ Applied is a toggle, so the current value is read inside the same scope.
 
 - `IdeaTag`
 - `Idea`
+
+## imports
+
+Bringing a list in from somewhere else.
+
+The top reason people do not adopt a planner is that everything they already
+wrote down is in the last one. So this takes what Todoist and Google Tasks
+actually hand you when you ask for your data — a CSV per project, and
+Takeout's JSON — and turns it into todos.
+
+Todos, and not blocks, because that is what these apps hold: a title, some
+notes, sometimes a day. Neither of them knows what an hour of your week is
+for, so inventing one here would be putting words in somebody's mouth. What
+arrives lands in the strip beside the planner grid, ready to be given a time.
+
+Every import goes into a notebook of its own. That is not filing for its own
+sake — it is the undo: one delete puts the account back, and a notebook that
+goes takes nothing with it (`notebooks.ts` disowns rather than cascades).
+
+### Functions
+
+#### `detectSource(text)`
+
+Which of the two this is, without asking.
+
+Both files announce themselves plainly — one starts with Todoist's own header
+row, the other is JSON — and a person exporting their tasks should not have
+to know which radio button matches the file they just downloaded.
+
+#### `parseCsv(text)`
+
+A CSV reader that survives what a task manager exports.
+
+`line.split(',')` is wrong here and not by a little: a Todoist task called
+"Buy milk, bread" becomes two cells, and a description with a newline in it
+becomes two rows. So: quotes, doubled quotes inside them, newlines inside
+them, and CRLF — which is RFC 4180 and nothing more.
+
+#### `parseTodoistCsv(text)`
+
+Todoist's own CSV, as its "Export as template → CSV" writes it.
+
+The columns that matter are TYPE, CONTENT, DESCRIPTION, PRIORITY, INDENT and
+DATE. Three shapes appear in the TYPE column and each is a decision:
+
+- `task` — a todo.
+- `note` — a comment belonging to the task above it. Appended to that task's
+  notes rather than dropped, because a comment is usually where the actual
+  instruction is.
+- `section` — a heading inside the project. Ontoplano has no such thing
+  inside a notebook, so it is reported rather than silently swallowed.
+
+Sub-tasks (INDENT above 1) come in flat. Nesting is a shape this app does not
+have, and inventing a "parent: " prefix would make somebody edit every one of
+them to get rid of it.
+
+The DATE column is free text — "every day", "tomorrow", "in 3 days" — and only
+a real date is read. A repeat rule is not a date, and guessing what "every
+day" meant to somebody else is how an import puts wrong things in a calendar.
+
+#### `parseGoogleTasks(text)`
+
+Google Takeout's `Tasks.json`.
+
+One object with `items`, each of which is a _list_ that itself has `items` —
+the tasks. A completed task carries `status: "completed"`, and `due` is a full
+RFC 3339 stamp of which only the date half means anything: Google stores a due
+date as midnight UTC, so reading the time would move half the world's tasks a
+day.
+
+#### `importTasks(ctx, input)`
+
+Read the file, then write what it said.
+
+`includeDone` is off by default, and that is the important default: a Todoist
+account of several years holds thousands of finished tasks, and importing
+them fills the board's Done column with somebody's entire history on their
+first day here. What is worth bringing over is what is still owed.
+
+### Types
+
+- `ImportedTask` — One task, in the shape both sources are reduced to before anything is written.
+- `ParseResult`
+- `ImportResult`
+- `ImportSource`
 
 ## instances
 

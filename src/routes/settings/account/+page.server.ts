@@ -12,6 +12,7 @@ import {
 	hoursUntil
 } from '$lib/server/services/account';
 import { buildCtx } from '$lib/server/services/ctx';
+import { importTasks } from '$lib/server/services/imports';
 import { toActionFailure } from '$lib/server/services/errors';
 import { listSessions, sessionTokenById } from '$lib/server/services/sessions';
 import { record } from '$lib/server/services/audit';
@@ -47,6 +48,42 @@ function authFailure(error: unknown, fallback: string) {
 }
 
 export const actions: Actions = {
+	/**
+	 * Take a list out of Todoist or Google Tasks and put it here.
+	 *
+	 * The parsing and the writing are `services/imports.ts`; this reads the
+	 * form. The text arrives in the textarea whether it was pasted or read from
+	 * a chosen file — the page reads the file itself, so what is about to be
+	 * imported is visible before the button is pressed.
+	 */
+	importTasks: async ({ request, locals }) => {
+		const formData = await request.formData();
+
+		try {
+			const result = importTasks(buildCtx(locals.user!.id), {
+				text: formData.get('text'),
+				notebook: formData.get('notebook'),
+				includeDone: formData.get('includeDone') === 'on'
+			});
+
+			// Everything it did and everything it did not: a count somebody can
+			// check against the app they came from, and what was left behind.
+			const parts = [`Imported ${result.imported} into “${result.notebook}”.`];
+			if (result.datesDropped > 0) {
+				parts.push(
+					`${result.datesDropped} had a date this does not read — a repeat rule, or "tomorrow".`
+				);
+			}
+			if (result.skipped.length > 0) {
+				parts.push(`Left behind: ${result.skipped.slice(0, 5).join(', ')}.`);
+			}
+
+			return { success: true, action: 'importTasks', message: parts.join(' ') };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	/**
 	 * Ask to move the account to another address, where the instance allows it.
 	 *
