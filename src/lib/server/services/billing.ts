@@ -86,7 +86,7 @@ export function isBillingConfigured(): boolean {
  * Once billing is configured, Paddle's price entities are the source of
  * truth — amount, currency and the trial length all live on them — and the
  * env numbers are only what an instance quotes before it sells. Cached for
- * ten minutes: the landing page asks on every visit and the answer changes
+ * ten minutes: the front page asks on every visit and the answer changes
  * once a year.
  */
 let priceCache: { at: number; value: Pricing } | null = null;
@@ -130,7 +130,7 @@ export async function displayPricing(): Promise<Pricing> {
 		return value;
 	} catch {
 		// The provider being unreachable is the reconcile's problem, not the
-		// landing page's: quote the fallback rather than 500 on a visitor.
+		// front page's: quote the fallback rather than 500 on a visitor.
 		return base;
 	}
 }

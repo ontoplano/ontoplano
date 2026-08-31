@@ -78,7 +78,7 @@ export function recordClientError(
 /**
  * A crash on a page nobody was signed in to.
  *
- * The landing page is the one a stranger sees, and it was the one page whose
+ * The front page is the one a stranger sees, and it was the one page whose
  * failures could never be reported: the endpoint asked for a session, so an
  * error there reached the visitor and nothing else. A 500 on production with
  * nothing in the server log is exactly this shape — the server answered 200 and

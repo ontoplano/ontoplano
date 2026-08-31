@@ -365,7 +365,7 @@ const handleDemo: Handle = async ({ event, resolve }) => {
 		 * So the first page view sets a cookie and bounces back to the same
 		 * address. A browser returns it and gets an account; anything that does
 		 * not returns with `?demo` and no cookie, which is how we know not to
-		 * bother — it gets the landing page, signed out, and no more redirects.
+		 * bother — it gets the front page, signed out, and no more redirects.
 		 */
 		const handshook = event.cookies.get(DEMO_HANDSHAKE) === '1';
 		const bounced = event.url.searchParams.has(DEMO_BOUNCE);

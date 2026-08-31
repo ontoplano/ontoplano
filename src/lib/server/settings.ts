@@ -102,7 +102,7 @@ export const STYLE_KEY = 'ui.style';
  *
  * Sober was the default because it was the style the app was built in, which is
  * a reason about the past rather than about the person arriving. What a new
- * account should see is the version the landing page just promised — colour on
+ * account should see is the version the front page just promised — colour on
  * the chrome, rooms that look like rooms — and somebody who finds it too much
  * has the switch in Settings. The severe one is the taste you acquire, not the
  * one you are handed.
@@ -328,7 +328,7 @@ export function demoLifetimeMinutes(): number {
  *
  * The ceiling is the answer to "somebody points a script at it": each account
  * costs a seeded week on a small disk, and the honest failure when the demo is
- * full is the landing page rather than a broken app.
+ * full is the front page rather than a broken app.
  */
 export function demoMaxAccounts(): number {
 	const raw = Number(process.env.ONTOPLANO_DEMO_MAX_ACCOUNTS);

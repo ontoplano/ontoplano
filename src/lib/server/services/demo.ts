@@ -77,7 +77,7 @@ export function demoAccountCount(): number {
  * same request.
  *
  * Returns null when the instance is at its ceiling — the caller then shows the
- * landing page rather than a broken app, which is the honest failure for "the
+ * front page rather than a broken app, which is the honest failure for "the
  * demo is busy".
  */
 export async function createDemoAccount(host: string): Promise<DemoAccount | null> {

@@ -128,7 +128,6 @@ version.
 
 ## 0.9.0 — 2026-08-31
 
-
 - The wiki is a site: `docs.ontoplano.com`, built from the same markdown the
   repository carries and published by `make deploy-docs`. `make deploy` now
   carries the app, the demo and the documentation together; each also has its

@@ -113,7 +113,7 @@ for (const shape of ['desktop', 'mobile'] as const) {
 test('a new account gets the playful style, not the sober one', async ({ page }) => {
 	// The default used to be `sober`, which is the style the app was built in —
 	// a reason about the past rather than about the person arriving. What a new
-	// account should see is the version the landing page promised.
+	// account should see is the version the front page promised.
 	await register(page, `style-${Date.now()}@example.test`);
 	await expect(page.locator('html')).toHaveAttribute('data-style', 'playful');
 });
