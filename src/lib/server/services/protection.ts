@@ -242,12 +242,29 @@ export function banControlEnabled(): boolean {
 
 function control(args: string[]): string {
 	if (!banControlEnabled()) throw new Error('Ban control is not enabled on this instance');
-	// execFileSync, never a shell: the arguments are validated again by the
-	// helper, and neither end ever builds a command line out of them.
-	return execFileSync('sudo', ['-n', CONTROL, ...args], {
-		encoding: 'utf8',
-		timeout: 10_000
-	}).trim();
+
+	try {
+		// execFileSync, never a shell: the arguments are validated again by the
+		// helper, and neither end ever builds a command line out of them.
+		return execFileSync('sudo', ['-n', CONTROL, ...args], {
+			encoding: 'utf8',
+			timeout: 10_000
+		}).trim();
+	} catch (e) {
+		/*
+		 * What the helper actually said, rather than "Command failed".
+		 *
+		 * `execFileSync` throws with the command line as its message and puts the
+		 * real complaint on `stderr` — so "sudo: a password is required", "no
+		 * jail called ontoplano-web on this box" and "Could not process rule:
+		 * File exists" all reached the page as the same useless sentence, and a
+		 * button that had stopped working looked like a button that did nothing.
+		 */
+		const said = String((e as { stderr?: unknown }).stderr ?? '').trim();
+		throw new Error(said || (e instanceof Error ? e.message : 'Could not run onto-ban-control'), {
+			cause: e
+		});
+	}
 }
 
 /** Let an address back in now, rather than when its bantime runs out. */

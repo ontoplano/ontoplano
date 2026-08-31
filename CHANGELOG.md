@@ -10,7 +10,19 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
-## 0.9.10 — 2026-08-31
+## 0.9.11 — 2026-08-31
+
+- The error page is readable on a phone: bigger type, centred in the space it
+  has, and the offer to send the details is a button rather than a link inside
+  a sentence.
+- The planner's tabs are full size again and the row scrolls, with an arrow at
+  the edge saying which way the rest of them are.
+- The week header on a phone puts the date and the weekday on their own lines,
+  so a week that crosses a month boundary does not sit at two heights.
+- When a ban action fails, the page says what the helper actually said instead
+  of "Command failed".
+- The demo says which pages it will not let you change, rather than implying
+  none of it can be.
 
 - The wiki's page on the plan says what a recurring block actually is — every
   repeat, including every-other-week and monthly, not only weekly ones — and

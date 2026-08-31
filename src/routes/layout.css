@@ -1629,6 +1629,19 @@ html a.tab-link {
  */
 
 /*
+ * The column headers keep the line break they were given.
+ *
+ * On a phone each header is "31\nM" — the date and the weekday's single
+ * letter — decided in `planner-grid.ts` so that every column is the same two
+ * lines whatever the date is. Without this the newline collapses to a space and
+ * a week spanning a month boundary is a row of different heights.
+ */
+html .ec .ec-day-head {
+	white-space: pre-line;
+	line-height: 1.15;
+}
+
+/*
  * The planner grid on a phone.
  *
  * The hour gutter is sized for a desktop week, where it is a small fraction of

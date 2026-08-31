@@ -45,12 +45,11 @@
 	</div>
 
 	<!--
-		Tight enough on a phone that six tabs fit without scrolling.
+		Full size, and it scrolls when it has to.
 
-		They used to overflow by about thirty pixels, and `.snap-strip` snaps, so
-		dragging the row sideways moved it a fraction and sprang back — the strip
-		looked broken rather than scrollable. A tab row that fits is better than
-		one that scrolls well.
+		Shrinking the type until six tabs fit was the wrong trade: the row fit and
+		became hard to read. The tabs stay legible, the row scrolls, and the
+		chevron at the edge says so — which is what makes a hidden tab findable.
 	-->
 	<div use:scrollHints class="scroll-hints flex gap-0 border-b border-gray-200 md:gap-1">
 		<!--
@@ -70,7 +69,7 @@
 			-->
 			<a
 				href={tab.href}
-				class="tab-link border-b-2 px-1.5 py-2 text-xs font-medium whitespace-nowrap transition sm:px-4 sm:text-sm {isActive(
+				class="tab-link border-b-2 px-2 py-2 text-sm font-medium whitespace-nowrap transition sm:px-4 {isActive(
 					tab.href
 				)
 					? 'border-gray-900 text-gray-900'

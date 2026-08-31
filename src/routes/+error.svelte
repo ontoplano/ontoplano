@@ -63,38 +63,46 @@
 
 <svelte:head><title>{page.status} · ontoplano</title></svelte:head>
 
-<div class="mx-auto max-w-md px-6 py-16 text-center">
-	<p class="tabular text-5xl font-bold text-gray-900">{page.status}</p>
+<!--
+	Centred in what is left of the screen, at a size somebody can read.
 
-	<p class="mt-3 text-sm text-gray-700">
+	It used to be a small block of 12px and 14px text at the top of a tall empty
+	page: on a phone that is a paragraph of fine print above six hundred pixels of
+	nothing, and the page scrolls for no reason. The type is the page's ordinary
+	reading size now, and the block sits in the middle of the space it has.
+-->
+<div class="flex min-h-[60vh] flex-col items-center justify-center px-6 py-10 text-center">
+	<p class="tabular text-6xl font-bold text-gray-900">{page.status}</p>
+
+	<p class="mt-4 max-w-sm text-base text-gray-700">
 		{page.error?.message ?? 'Something went wrong.'}
 	</p>
 
 	{#if page.status === 404}
-		<p class="mt-2 text-sm text-gray-500">
+		<p class="mt-2 max-w-sm text-base text-gray-500">
 			That page is not here. It may have been renamed, or never existed.
 		</p>
 	{/if}
 
 	{#if id}
-		<p class="mt-4 text-xs text-gray-500">
+		<p class="mt-5 max-w-sm text-sm text-gray-500">
 			If you report this, quote <code class="rounded bg-gray-100 px-1 text-gray-700">{id}</code>. It
 			points at the exact line in the log.
 		</p>
 	{:else if offerReport}
-		<p class="mt-4 text-xs text-gray-500">
+		<div class="mt-6 max-w-sm">
 			{#if sent}
-				Sent. Only what broke went — never what you wrote.
+				<p class="text-sm text-gray-500">Sent. Only what broke went — never what you wrote.</p>
 			{:else if failed}
-				That could not be sent either.
+				<p class="text-sm text-gray-500">That could not be sent either.</p>
 			{:else}
-				<button type="button" class="underline underline-offset-2" onclick={send}>
-					Send the technical details
-				</button>
-				so this can be fixed. Only what broke is sent.
+				<!-- A button, not an underlined phrase inside a sentence: this is the
+				     one thing to do on this page and a thumb has to find it. -->
+				<button type="button" class="btn" onclick={send}>Send the technical details</button>
+				<p class="mt-2 text-sm text-gray-500">Only what broke is sent, never what you wrote.</p>
 			{/if}
-		</p>
+		</div>
 	{/if}
 
-	<a href={resolve('/')} class="btn btn-sm mt-6 inline-flex">Back to today</a>
+	<a href={resolve('/')} class="btn btn-primary mt-8 inline-flex">Back to today</a>
 </div>

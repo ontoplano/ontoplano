@@ -519,17 +519,25 @@ export function baseGridOptions(
 			? (info) => info.event.title
 			: (info) => (eventFitsText(info.event, slotHeight) ? info.event.title : ''),
 		/*
-		 * A week of columns on a phone has about fifty pixels each, and "Wed"
-		 * does not fit in them — the header read "31 M…", "2 W…", which is
-		 * neither the date nor the day. `weekday: 'narrow'` is the single letter
-		 * every locale defines for exactly this, so the row reads M T W T F S S
-		 * with the date above it.
+		 * A week of columns on a phone has about fifty pixels each, and "Wed" does
+		 * not fit — the header read "31 M…", "2 W…", which is neither the date nor
+		 * the day. `weekday: 'narrow'` is the single letter every locale defines
+		 * for exactly this.
+		 *
+		 * Two explicit lines rather than one string left to wrap where it likes:
+		 * "31 M" wraps after the number and "1 T" does not, so a week containing a
+		 * month boundary had some columns one line tall and some two, and the
+		 * whole row sat at different heights. The break is decided here and the
+		 * CSS honours it (`white-space: pre-line`).
 		 */
 		dayHeaderFormat: month
 			? { weekday: 'short' }
 			: days === 1
 				? { weekday: 'long', day: 'numeric', month: 'short' }
-				: { weekday: narrow ? 'narrow' : 'short', day: 'numeric' }
+				: narrow
+					? (date: Date) =>
+							`${date.getDate()}\n${date.toLocaleDateString(undefined, { weekday: 'narrow' })}`
+					: { weekday: 'short', day: 'numeric' }
 	};
 }
 

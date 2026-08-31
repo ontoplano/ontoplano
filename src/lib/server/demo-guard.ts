@@ -64,7 +64,10 @@ export function demoRefusal(method: string, path: string, search = ''): string |
 	}
 
 	if (writes && under(path, DEMO_READ_ONLY) && !under(path, DEMO_WRITABLE)) {
-		return 'This is the demo — nothing here can be changed.';
+		// Named, not general: everything else on the demo IS editable, and a
+		// message saying otherwise sends somebody away thinking the whole thing
+		// is a screenshot.
+		return 'The demo can look at the administration pages but not change them.';
 	}
 
 	return null;
