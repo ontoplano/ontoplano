@@ -24,6 +24,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { marked } from 'marked';
 
+import { anchor } from './lib/anchor.mjs';
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const WIKI = join(ROOT, 'docs', 'wiki');
 const OUT = join(ROOT, process.argv[2] ?? 'build-docs');
@@ -52,10 +54,12 @@ function titleOf(markdown, file) {
 }
 
 const pages = [
-	{ file: 'README.md', href: 'index.html', markdown: index },
+	{ file: 'README.md', href: 'index.html', link: '/', markdown: index },
 	...ordered.map((file) => ({
 		file,
 		href: file.replace(/\.md$/, '.html'),
+		// The address it is linked by, which is not the filename it is written to.
+		link: `/${file.replace(/\.md$/, '')}`,
 		markdown: readFileSync(join(WIKI, file), 'utf8')
 	}))
 ].map((p) => ({ ...p, title: titleOf(p.markdown, p.file) }));
@@ -119,13 +123,37 @@ footer { margin-top: 4rem; padding-top: 1rem; border-top: 1px solid var(--line);
 const escape = (text) =>
 	text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-/** Links between wiki pages are `.md` in the repo and `.html` here. */
+/**
+ * Links between wiki pages are `.md` in the repo and bare paths here.
+ *
+ * `/the-plan` rather than `/the-plan.html`: the vhost resolves both, and the
+ * address somebody copies out of the bar should not carry an implementation
+ * detail of how the page is stored.
+ */
 function rewriteLinks(html) {
 	return html.replace(
 		/href="([\w-]+)\.md(#[^"]*)?"/g,
-		(_, name, hash) => `href="${name}.html${hash ?? ''}"`
+		(_, name, hash) => `href="${name === 'README' ? '/' : `/${name}`}${hash ?? ''}"`
 	);
 }
+
+/**
+ * Every heading gets the anchor its own table of contents links to.
+ *
+ * marked stopped adding heading ids, so `data-model#weekly_slots` landed on the
+ * page and scrolled nowhere — the link was there, the target was not. The slug
+ * comes from `build-docs.mjs` so the markdown in the repo and the page on the
+ * site cannot disagree about it.
+ */
+marked.use({
+	renderer: {
+		heading({ tokens, depth }) {
+			const text = this.parser.parseInline(tokens);
+			const id = anchor(this.parser.parseInline(tokens, this.parser.textRenderer));
+			return `<h${depth} id="${id}">${text}</h${depth}>\n`;
+		}
+	}
+});
 
 function render(page) {
 	const body = rewriteLinks(marked.parse(page.markdown, { async: false }))
@@ -137,7 +165,7 @@ function render(page) {
 	const nav = pages
 		.map(
 			(p) =>
-				`<li><a href="${p.href}"${p.href === page.href ? ' aria-current="page"' : ''}>${escape(
+				`<li><a href="${p.link}"${p.href === page.href ? ' aria-current="page"' : ''}>${escape(
 					p.title
 				)}</a></li>`
 		)
@@ -155,7 +183,7 @@ function render(page) {
 <body>
   <div class="wrap">
     <nav>
-      <a class="brand" href="index.html">ontoplano docs</a>
+      <a class="brand" href="/">ontoplano docs</a>
       <ul>
         ${nav}
       </ul>

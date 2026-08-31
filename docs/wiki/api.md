@@ -2,10 +2,10 @@
 
 # HTTP API
 
-Every endpoint under `/api`, read out of the route files themselves — the
-methods they export, and the scope each one demands taken from its own
-`authenticateApi` call. A handler that changes the scope it requires
-changes this page on the next build.
+Every endpoint the app answers on, read out of the route files
+themselves — the methods they export, and the scope each one demands.
+A handler that changes the scope it requires changes this page on the
+next build.
 
 ## Scopes
 
@@ -28,6 +28,9 @@ sentence somebody agrees to when they grant it.
 
 | Endpoint                                     | Method | Scope             |
 | -------------------------------------------- | ------ | ----------------- |
+| `/.well-known/assetlinks.json`               | GET    | —                 |
+| `/account/export`                            | GET    | —                 |
+| `/admin/stop`                                | POST   | —                 |
 | `/api/billing/paddle`                        | POST   | —                 |
 | `/api/capture-options`                       | GET    | —                 |
 | `/api/client-errors`                         | POST   | —                 |
@@ -51,6 +54,10 @@ sentence somebody agrees to when they grant it.
 | `/api/v1/webhooks`                           | GET    | `webhooks:manage` |
 | `/api/v1/webhooks`                           | POST   | `webhooks:manage` |
 | `/api/v1/webhooks/[id]`                      | DELETE | `webhooks:manage` |
+| `/calendar/[token]`                          | GET    | `calendar:read`   |
+| `/healthz`                                   | GET    | —                 |
+| `/robots.txt`                                | GET    | —                 |
+| `/settings/account/export`                   | GET    | —                 |
 
 ## Webhook events
 
@@ -65,6 +72,44 @@ What a subscription can ask to be told about. Managed through
 | `diary.created`   | a diary entry is written            |
 | `shopping.added`  | something goes on the shopping list |
 | `shopping.bought` | something on the list is bought     |
+
+### `/.well-known/assetlinks.json`
+
+Digital Asset Links, which is what removes the URL bar from the Android app.
+
+A Trusted Web Activity is Chrome rendering this site inside our own APK. It
+only drops the address bar once it can prove the two belong together, and the
+proof is mutual: the APK names this domain, and this file names the APK's
+signing certificate. Get it wrong and the app still works — it just looks like
+a browser, which is the single most common TWA complaint.
+
+The fingerprints come from the environment because they are a property of the
+signing keys, which differ between a local debug build and whatever Play
+signs. `ANDROID_CERT_FINGERPRINTS` is a comma-separated list of SHA-256
+fingerprints in the usual colon-separated hex form.
+
+List both your upload key and Play's app-signing key: Play re-signs uploads,
+so an app that only trusts the upload key shows the URL bar for every user
+who installs from the store while working perfectly on the developer's phone.
+
+**GET**
+
+### `/account/export`
+
+The export moved with the page it hangs off.
+
+**GET**
+
+### `/admin/stop`
+
+Give the account back.
+
+Posted from the banner that sits over every page while an administrator is
+borrowing a session. better-auth swaps the cookie back to the administrator's
+own session; the note in the borrowed account's history is what makes the
+whole thing visible to the person it happened to.
+
+**POST**
 
 ### `/api/billing/paddle`
 
@@ -240,3 +285,72 @@ verify `X-Ontoplano-Signature` (`sha256=` + HMAC-SHA256 of the raw body).
 ### `/api/v1/webhooks/[id]`
 
 **DELETE** — requires `webhooks:manage`
+
+### `/calendar/[token]`
+
+The plan, as a calendar anybody's software can subscribe to.
+
+Unauthenticated in the session sense on purpose: this URL is pasted into
+Google Calendar or an iPhone, which will fetch it from their own servers with
+no cookie, no header and no way to be asked anything. The secret is the URL —
+the same bargain Google makes with its own "secret address in iCal format".
+
+Which is why the token in the path must hold `calendar:read` and **nothing
+else**. A URL is written into config files, walked past by every proxy in
+between, and sometimes handed to a partner; the one thing that keeps that
+bounded is that the credential it carries cannot do anything but this. A
+powerful token pasted here is refused rather than honoured, so nobody can
+arrive at a working feed with a key that also writes.
+
+**GET** — requires `calendar:read`
+
+### `/healthz`
+
+Is this box alive, and is it actually able to work?
+
+A process that is listening is not the same as a process that can serve, and
+on a small machine the difference is the whole problem: the disk fills, or
+SQLite is locked by a backup, and every page 500s while the port stays open.
+So this touches the database rather than answering from memory.
+
+No session and no auth, because whatever is watching this is not logged in
+and should not have to be. It says nothing an attacker could not learn by
+loading the login page.
+
+The disk and memory numbers are the exception, and they are behind a token.
+"This box is 94% full" is a sentence that tells somebody exactly which
+attack is cheap today, so it is for the machine that is watching and nobody
+else. Set `ONTOPLANO_HEALTH_TOKEN` and send it as `x-health-token` or
+`?token=`; without one configured, nothing is ever disclosed.
+
+**GET**
+
+### `/robots.txt`
+
+What a crawler is welcome to read.
+
+A route rather than a file in `static/`, because the right answer differs by
+instance and a static file cannot know which one it is on.
+
+Worth being honest about what this does and does not do. It is a request, and
+only well-behaved crawlers honour it — the addresses fail2ban is banning are
+hitting sixty failed requests a minute looking for `/wp-admin` and `.env`, and
+they have never read a robots.txt in their lives. This is here so that the
+pages behind a login do not turn up in a search result, and so that the demo
+is not indexed as a second copy of the site; the banning stays fail2ban's job.
+
+Everything under a login already redirects, so a crawler learns nothing from
+following them — but a redirect still costs a request, and a list of paths
+that were crawled and bounced is noise in the log.
+
+**GET**
+
+### `/settings/account/export`
+
+The account's data as a JSON download.
+
+A +server route rather than a form action, because the answer is a file
+rather than a page — the "no +server routes" convention is
+about mutations, and this reads.
+
+**GET**

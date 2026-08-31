@@ -13,8 +13,7 @@ is out of date, which is what keeps the two honest.
 
 ## What the app is
 
-Written by hand, in `docs/prose/`, because no generator can explain why a
-thing exists. The tables inside them are still generated.
+How the pieces fit, and why. The tables inside are generated.
 
 - [Architecture](architecture.md) — how a request travels, and where each kind of rule is allowed to live
 - [The plan](the-plan.md) — what a block, an occurrence and a todo each are, and how one becomes another
@@ -22,7 +21,7 @@ thing exists. The tables inside them are still generated.
 
 ## Reference
 
-Generated, every one. Do not edit them.
+Generated from the code, on every build.
 
 - [Data model](data-model.md) — every table and column, from the migration snapshot
 - [HTTP API](api.md) — endpoints and the scope each one demands

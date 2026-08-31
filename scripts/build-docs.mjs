@@ -31,6 +31,8 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import * as prettier from 'prettier';
 
+import { anchor } from './lib/anchor.mjs';
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'docs', 'wiki');
 const CHECK = process.argv.includes('--check');
@@ -153,7 +155,7 @@ function dataModelPage() {
 	const ownsUser = (t) => Object.keys(t.columns).includes('user_id');
 	for (const t of tables) {
 		out.push(
-			`| [\`${t.name}\`](#${t.name.replace(/_/g, '')}) | ${Object.keys(t.columns).length} | ${ownsUser(t) ? 'yes' : '—'} |`
+			`| [\`${t.name}\`](#${anchor(t.name)}) | ${Object.keys(t.columns).length} | ${ownsUser(t) ? 'yes' : '—'} |`
 		);
 	}
 	out.push('');
@@ -204,9 +206,22 @@ function dataModelPage() {
 
 /* -------------------------------------------------------------------- API */
 
-/** The scope a handler demands, from its own `authenticateApi` call. */
+/**
+ * The scope a handler demands.
+ *
+ * Usually from its own `authenticateApi(event, 'scope')` call, which is the
+ * one door nearly every endpoint goes through. The calendar feed is the
+ * exception and has to be read differently: it authenticates the token itself,
+ * because the credential is in the URL rather than in a header, and it demands
+ * that the token hold *exactly* one scope. So a handler that names a known
+ * scope as a string literal anywhere is taken at its word — otherwise the feed
+ * appeared nowhere on this page and `calendar:read` looked like a scope no
+ * endpoint had ever asked for.
+ */
 function scopeIn(node, source) {
 	let scope = null;
+	const known = new Set(scopeTable().map((r) => r.key));
+
 	const visit = (n) => {
 		if (
 			ts.isCallExpression(n) &&
@@ -216,6 +231,7 @@ function scopeIn(node, source) {
 		) {
 			scope = n.arguments[1].text;
 		}
+		if (!scope && ts.isStringLiteral(n) && known.has(n.text)) scope = n.text;
 		ts.forEachChild(n, visit);
 	};
 	visit(node);
@@ -245,7 +261,15 @@ function scopeTable() {
 }
 
 function apiPage() {
-	const files = walk(join(ROOT, 'src/routes/api'), (f) => f === '+server.ts');
+	/*
+	 * Every endpoint the app serves, not only the ones under `/api`.
+	 *
+	 * The calendar feed lives at `/calendar/[token]` because it is a URL people
+	 * paste into a calendar app rather than something a plugin calls — and
+	 * walking only `/api` meant this page did not know it existed, while the
+	 * scope table above listed `calendar:read` as a permission nothing used.
+	 */
+	const files = walk(join(ROOT, 'src/routes'), (f) => f === '+server.ts');
 	const endpoints = [];
 
 	for (const file of files) {
@@ -280,10 +304,10 @@ function apiPage() {
 	const out = [
 		STAMP,
 		'# HTTP API\n',
-		'Every endpoint under `/api`, read out of the route files themselves — the',
-		'methods they export, and the scope each one demands taken from its own',
-		'`authenticateApi` call. A handler that changes the scope it requires',
-		'changes this page on the next build.\n',
+		'Every endpoint the app answers on, read out of the route files',
+		'themselves — the methods they export, and the scope each one demands.',
+		'A handler that changes the scope it requires changes this page on the',
+		'next build.\n',
 		'## Scopes\n',
 		'A token holds some of these and nothing else. Each description is the',
 		'sentence somebody agrees to when they grant it.\n',
@@ -384,9 +408,7 @@ function servicesPage() {
 
 	out.push('| Module | What it is for |', '| --- | --- |');
 	for (const m of modules) {
-		out.push(
-			`| [\`${m.name}\`](#${m.name.replace(/[^a-z0-9]/g, '')}) | ${summary(m.moduleDoc) || '—'} |`
-		);
+		out.push(`| [\`${m.name}\`](#${anchor(m.name)}) | ${summary(m.moduleDoc) || '—'} |`);
 	}
 	out.push('');
 
@@ -858,12 +880,11 @@ function indexPage(pages, written) {
 		'Run `yarn docs` to rebuild. `yarn docs:check` fails if what is committed',
 		'is out of date, which is what keeps the two honest.\n',
 		'## What the app is\n',
-		'Written by hand, in `docs/prose/`, because no generator can explain why a',
-		'thing exists. The tables inside them are still generated.\n',
+		'How the pieces fit, and why. The tables inside are generated.\n',
 		...written.map((p) => `- [${p.title}](${p.file}) — ${p.blurb}`),
 		'',
 		'## Reference\n',
-		'Generated, every one. Do not edit them.\n',
+		'Generated from the code, on every build.\n',
 		...pages.map((p) => `- [${p.title}](${p.file}) — ${p.blurb}`),
 		'',
 		'## What is not here\n',

@@ -59,6 +59,20 @@ Only the ones whose code says — the comment at the top of the route file,
 and the comment above each action. Write it there and it turns up here;
 the rest are named for what they do.
 
+### `/admin`
+
+What the demo may see here, and what it may not.
+
+The demo signs every visitor into its one account, which is an
+administrator — so this page is public there, deliberately: somebody
+deciding whether to run this themselves should see what administering it
+looks like. What they must not see is anything about the box or about other
+people: the addresses fail2ban turned away are real people's, a failed mail
+carries a real address, and a client error carries a stack from the server.
+
+Writes are refused in `hooks.server.ts`, in one place, for the same reason
+this list is here rather than spread through the page.
+
 ### `/admin/[id]`
 
 **`setPlanEnd`**

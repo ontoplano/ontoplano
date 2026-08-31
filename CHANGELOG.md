@@ -10,7 +10,12 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
-## 0.9.5 — 2026-08-31
+## 0.9.6 — 2026-08-31
+
+- The documentation site's links work: pages are `/data-model` rather than
+  `/data-model.html`, and a link to a table in the contents scrolls to it.
+- The calendar feed appears in the API reference, so `calendar:read` is no
+  longer a permission that nothing seems to use.
 
 - A drag shows where it will land before you let go. A todo dragged over the
   grid is drawn as the block it is about to become, at that hour; a block
