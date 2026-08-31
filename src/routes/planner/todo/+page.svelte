@@ -431,12 +431,12 @@
 							/>
 						</div>
 
-						<div class="flex flex-wrap items-center gap-2 sm:shrink-0">
+						<div class="row-actions gap-1">
 							{#if !isDone(todo)}
 								<button
 									type="button"
 									onclick={() => (reminding = reminding === todo.id ? null : todo.id)}
-									class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-50"
+									class="icon-btn"
 									title="Remind me about this"
 									aria-label="Remind me about {todo.title}"
 								>
@@ -454,9 +454,8 @@
 									/>
 									<button
 										type="submit"
-										class="border px-2 py-1 text-xs transition {todo.scheduledDate
-											? 'border-gray-900 bg-gray-900 text-white'
-											: 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}"
+										class="btn btn-sm"
+										aria-pressed={!!todo.scheduledDate}
 										title={todo.scheduledDate ? 'Put back on the general list' : 'Pull onto today'}
 									>
 										{todo.scheduledDate ? 'On a day' : 'Today'}
@@ -464,10 +463,7 @@
 								</form>
 							{/if}
 							{#if !isDone(todo)}
-								<button
-									onclick={() => startDelegate(todo)}
-									class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-600 transition hover:bg-blue-50"
-								>
+								<button onclick={() => startDelegate(todo)} class="btn btn-sm btn-quiet">
 									Delegate
 								</button>
 							{/if}
@@ -475,7 +471,7 @@
 								title="Edit"
 								aria-label="Edit"
 								onclick={() => startEdit(todo)}
-								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+								class="icon-btn"
 							>
 								<Icon name="edit" />
 							</button>
@@ -492,20 +488,14 @@
 									}}
 								>
 									<input type="hidden" name="id" value={todo.id} />
-									<button
-										type="submit"
-										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
-										use:armed
-									>
-										Confirm?
-									</button>
+									<button type="submit" class="btn btn-sm btn-danger" use:armed> Confirm? </button>
 								</form>
 								<button
 									type="button"
 									onclick={() => {
 										confirmingDelete = null;
 									}}
-									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+									class="btn btn-sm"
 								>
 									Cancel
 								</button>
@@ -517,7 +507,7 @@
 									onclick={() => {
 										confirmingDelete = todo.id;
 									}}
-									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+									class="icon-btn icon-btn-danger"
 								>
 									<Icon name="trash" />
 								</button>

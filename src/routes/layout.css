@@ -32,6 +32,16 @@
 	--color-gray-500: #5c6470;
 	--color-slate-500: #5c6470;
 
+	/*
+	 * The step a tonal control sits on.
+	 *
+	 * Between gray-100 and gray-200, because both are already spoken for: the
+	 * page surface is gray-100, and gray-200 is the border everywhere. A filled
+	 * button needs to be distinguishable from the surface it sits on *and* from
+	 * the line around the card — one step, and it needed its own rung.
+	 */
+	--color-gray-150: #eceef2;
+
 	--color-chrome: #111827;
 	--color-chrome-raised: #1f2937;
 	--color-chrome-line: #374151;
@@ -440,17 +450,32 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		resize: vertical;
 	}
 
+	/*
+	 * The button ladder.
+	 *
+	 * A default button used to be white with a border and a shadow, which is one
+	 * button looking correct and ten looking like a wall of boxes — and ten in a
+	 * row is the normal case here: a shopping row, a planner toolbar, a card
+	 * header. The weight has to come off the secondary rungs so the primary one
+	 * can mean something.
+	 *
+	 * So the default is **tonal**: a fill a step off the surface, no border, no
+	 * shadow. It still reads as pressable because it is filled and it moves under
+	 * the pointer; what it no longer does is draw a box that competes with the
+	 * text beside it. Borders are now opt-in (`.btn-outline`), for the one case
+	 * that needs them — a control on a ground whose colour we do not own.
+	 */
 	.btn {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		gap: 0.375rem;
-		border: 1px solid var(--color-gray-300);
-		background-color: var(--color-white);
+		border: 1px solid transparent;
+		background-color: var(--color-gray-150);
 		padding: 0.5rem 1rem;
 		font-size: 0.875rem;
+		font-weight: 500;
 		color: var(--color-gray-700);
-		box-shadow: var(--shadow-card);
 		transition:
 			background-color 120ms ease,
 			border-color 120ms ease,
@@ -460,20 +485,18 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 	}
 
 	/*
-	 * Hover is felt, not just seen: the button rises a pixel and its shadow
+	 * Hover is felt, not just seen: the button rises a pixel and its fill
 	 * deepens, then pressing sets it back down. `translate` rather than
 	 * `transform` so it composes with anything a component transforms itself.
 	 */
 	.btn:hover {
-		background-color: var(--color-gray-50);
-		border-color: var(--color-gray-400);
+		background-color: var(--color-gray-200);
+		color: var(--color-gray-900);
 		translate: 0 -1px;
-		box-shadow: var(--shadow-raised);
 	}
 
 	.btn:active {
 		translate: 0 0;
-		box-shadow: var(--shadow-card);
 	}
 
 	.btn-primary {
@@ -481,22 +504,42 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		background-color: var(--color-gray-900);
 		font-weight: 500;
 		color: var(--color-white);
+		box-shadow: var(--shadow-card);
 	}
 
 	.btn-primary:hover {
 		background-color: var(--color-gray-800);
 		border-color: var(--color-gray-800);
+		box-shadow: var(--shadow-raised);
+	}
+
+	.btn-primary:active {
+		box-shadow: var(--shadow-card);
+	}
+
+	/*
+	 * The old look, kept for where a border is doing real work: a control sitting
+	 * on the section wash or on a card whose fill is close to the tonal one.
+	 */
+	.btn-outline {
+		border-color: var(--color-gray-300);
+		background-color: var(--color-white);
+	}
+
+	.btn-outline:hover {
+		border-color: var(--color-gray-400);
+		background-color: var(--color-gray-50);
 	}
 
 	/* Red for destruction only, and never as the only cue — the word says it too. */
 	.btn-danger {
-		border-color: var(--color-red-200);
+		background-color: var(--color-red-50);
 		color: var(--color-red-600);
 	}
 
 	.btn-danger:hover {
-		background-color: var(--color-red-50);
-		border-color: var(--color-red-300);
+		background-color: var(--color-red-100);
+		color: var(--color-red-700);
 	}
 
 	.btn-quiet {
@@ -542,6 +585,81 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		cursor: default;
 	}
 
+	/*
+	 * A row action: the icon alone, in a square that is big enough to hit.
+	 *
+	 * Repeated per-row actions are the icon on its own — the word goes in the
+	 * tooltip and the accessible name. What this adds over a bare `<button>` is
+	 * the hit area: an 18px glyph is a 44px target here, so the same markup is
+	 * usable with a thumb without the list growing to accommodate it.
+	 */
+	.icon-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex: none;
+		width: 2.25rem;
+		height: 2.25rem;
+		border: 1px solid transparent;
+		background-color: transparent;
+		color: var(--color-gray-500);
+		transition:
+			background-color 120ms ease,
+			color 120ms ease,
+			opacity 120ms ease;
+	}
+
+	.icon-btn:hover {
+		background-color: var(--color-gray-200);
+		color: var(--color-gray-900);
+	}
+
+	.icon-btn[aria-pressed='true'] {
+		background-color: var(--color-gray-200);
+		color: var(--color-gray-900);
+	}
+
+	/* Never the only cue: these always carry a word in the tooltip and the label. */
+	.icon-btn-danger:hover {
+		background-color: var(--color-red-50);
+		color: var(--color-red-600);
+	}
+
+	/*
+	 * The rail those actions live in.
+	 *
+	 * The complaint this answers: actions used to be appended inline after the
+	 * row's text, in a wrapping flex, so their left edge moved with the length of
+	 * whatever was written — every row's buttons in a different place, and a
+	 * long note pushing them onto a second line. Here they are pinned to the
+	 * right edge of every row in a list, in the same order, at the same x.
+	 *
+	 * On a pointer they rest at a third opacity and come up when the row is
+	 * hovered or holds focus, so a list of thirty reads as thirty things you
+	 * wrote rather than ninety controls. The space is reserved either way —
+	 * nothing moves when they appear, which is what makes a revealed action safe
+	 * to click for.
+	 */
+	.row-actions {
+		display: flex;
+		flex: none;
+		align-items: center;
+		gap: 0.125rem;
+		margin-left: auto;
+	}
+
+	@media (hover: hover) {
+		.row-actions {
+			opacity: 0.35;
+		}
+
+		*:hover > .row-actions,
+		*:focus-within > .row-actions,
+		.row-actions:focus-within {
+			opacity: 1;
+		}
+	}
+
 	.btn-sm {
 		padding: 0.25rem 0.625rem;
 		font-size: 0.75rem;
@@ -582,6 +700,62 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 	.btn:hover kbd {
 		border-color: var(--color-gray-500);
 		color: var(--color-gray-900);
+	}
+
+	/*
+	 * A segmented control: one choice out of a few, as one object.
+	 *
+	 * Day / Week / Month were three separate bordered buttons with gaps between
+	 * them, which says "three things you could press" when it means "one setting
+	 * with three positions". Grouping them into a single inset track says the
+	 * second, takes less room, and stops the selected one from being the only
+	 * thing on the page with a black fill — which had it competing with the one
+	 * button on the screen that is actually the primary action.
+	 */
+	.seg {
+		display: inline-flex;
+		flex: none;
+		align-items: center;
+		gap: 0.125rem;
+		padding: 0.1875rem;
+		background-color: var(--color-gray-150);
+	}
+
+	.seg > button,
+	.seg > a {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border: 1px solid transparent;
+		background-color: transparent;
+		padding: 0.3125rem 0.75rem;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: var(--color-gray-600);
+		white-space: nowrap;
+		transition:
+			background-color 140ms ease,
+			color 140ms ease;
+	}
+
+	.seg > button:hover,
+	.seg > a:hover {
+		color: var(--color-gray-900);
+	}
+
+	/* The chosen position is a raised tile, not a filled button. */
+	.seg > [aria-pressed='true'],
+	.seg > [aria-current='page'],
+	.seg > [aria-current='true'] {
+		background-color: var(--color-white);
+		color: var(--color-gray-900);
+		box-shadow: var(--shadow-card);
+	}
+
+	html[data-style='playful'] .seg > [aria-pressed='true'],
+	html[data-style='playful'] .seg > [aria-current='page'],
+	html[data-style='playful'] .seg > [aria-current='true'] {
+		box-shadow: 0 0 0 1px var(--color-gray-200);
 	}
 
 	/*
@@ -1013,6 +1187,7 @@ html[data-theme='dark'] {
 
 	--color-gray-50: #161a20;
 	--color-gray-100: #1c212a;
+	--color-gray-150: #222732;
 	--color-gray-200: #272d38;
 	--color-gray-300: #3a4150;
 	--color-gray-400: #6f7889;
@@ -1109,6 +1284,7 @@ html[data-theme='dark'] {
 
 		--color-gray-50: #161a20;
 		--color-gray-100: #1c212a;
+		--color-gray-150: #222732;
 		--color-gray-200: #272d38;
 		--color-gray-300: #3a4150;
 		--color-gray-400: #6f7889;

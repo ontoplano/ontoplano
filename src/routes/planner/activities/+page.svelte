@@ -168,11 +168,7 @@
 								>
 									Save
 								</button>
-								<button
-									type="button"
-									onclick={() => (editingCategoryId = null)}
-									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500 hover:text-gray-600"
-								>
+								<button type="button" onclick={() => (editingCategoryId = null)} class="btn btn-sm">
 									Cancel
 								</button>
 							</form>
@@ -186,7 +182,7 @@
 								title="Edit"
 								aria-label="Edit"
 								onclick={() => (editingCategoryId = cat.id)}
-								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
+								class="btn btn-sm"
 							>
 								<Icon name="edit" />
 							</button>
@@ -215,7 +211,7 @@
 									onclick={() => {
 										confirmingDelete = null;
 									}}
-									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+									class="btn btn-sm"
 								>
 									Cancel
 								</button>
@@ -288,7 +284,7 @@
 					activeFilters = new Set();
 					selectedIndex = 0;
 				}}
-				class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500 transition hover:text-gray-600"
+				class="btn btn-sm"
 			>
 				clear
 			</button>
@@ -424,17 +420,14 @@
 									nameInput?.focus();
 								});
 							}}
-							class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+							class="btn btn-sm"
 						>
 							<Icon name="edit" />
 						</button>
 						<form method="post" action="?/toggleActive" use:enhance>
 							<input type="hidden" name="id" value={activity.id} />
 							<input type="hidden" name="active" value={String(activity.active)} />
-							<button
-								type="submit"
-								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-							>
+							<button type="submit" class="btn btn-sm">
 								{activity.active ? 'Disable' : 'Enable'}
 							</button>
 						</form>
@@ -463,7 +456,7 @@
 								onclick={() => {
 									confirmingDelete = null;
 								}}
-								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+								class="btn btn-sm"
 							>
 								Cancel
 							</button>

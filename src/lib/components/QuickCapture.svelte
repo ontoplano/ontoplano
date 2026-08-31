@@ -45,10 +45,18 @@
 </script>
 
 {#if inline}
-	<div class="hidden items-center gap-2 lg:flex">
+	<!--
+		Four buttons that were four identical grey pills, distinguishable only by
+		reading them. The one thing that actually tells them apart is where each
+		one writes — and those rooms already have colours. So the glyph carries the
+		section's accent and the row becomes scannable at a glance, while the
+		button itself stays neutral: the colour marks the destination, it does not
+		make four buttons shout.
+	-->
+	<div class="hidden items-center gap-1 lg:flex">
 		{#each captures as capture (capture.key)}
 			<button type="button" onclick={() => show(capture)} class="btn btn-sm">
-				<Icon name={capture.icon} />
+				<span style="color:{capture.color}"><Icon name={capture.icon} /></span>
 				{capture.label}
 				<!-- `kbd-hint` so a touch screen wide enough for this row still drops
 				     it: a keystroke is noise where there is no keyboard. -->
@@ -64,7 +72,9 @@
 				onclick={() => show(capture)}
 				class="lift flex flex-1 flex-col items-center gap-1 border border-gray-200 bg-white px-2 py-3 text-xs text-gray-700 shadow-card"
 			>
-				<Icon name={capture.icon} size={18} />
+				<!-- The same accent as the row on a wide screen: these are the same
+				     four buttons and they cannot look like two different ideas. -->
+				<span style="color:{capture.color}"><Icon name={capture.icon} size={18} /></span>
 				<!-- No keystroke here: this is the phone, where there is no keyboard
 				     to press it on. The desktop row above says it instead. -->
 				<span>{capture.label}</span>

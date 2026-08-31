@@ -1534,87 +1534,86 @@
 	{/if}
 
 	<!--
-		Three groups of full-size buttons is three stacked rows on a phone, which
-		spent two hundred pixels before the grid began. The buttons are compact
-		below `sm` so where-you-are and what-shape-you-want share one line, and
-		the two ways to add a block share the next with the date.
+		One bar.
+
+		This was four stacked things: an arrow cluster, a view cluster, an add
+		cluster, and the date orphaned on a line of its own underneath — three
+		different alignments and, on a phone, two hundred pixels spent before the
+		grid began. Grouped by what they do instead: where you are on the left
+		(the date beside the arrows that move it, because that is what the eye is
+		already looking at when it reaches for them), what shape and what next on
+		the right. It wraps to two rows on a phone and holds one on a laptop.
 	-->
-	<div class="flex flex-wrap items-center justify-between gap-2">
-		<div class="flex items-center gap-1 sm:gap-2">
+	<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+		<div class="flex items-center gap-1">
 			<button
 				onclick={goToPrevWeek}
 				disabled={!data.range.prev}
-				class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 sm:text-sm"
-				title={data.range.prev ? 'Back 7 days ([)' : 'Already starting today'}>&larr;</button
+				class="icon-btn disabled:opacity-30"
+				title={data.range.prev ? 'Back 7 days ([)' : 'Already starting today'}
+				aria-label="Back 7 days">&larr;</button
 			>
+			<!-- In day view the strip below already has a Today, in the same place
+			     every time. Two of them on one screen is one too many. -->
 			<button
 				onclick={goToToday}
 				disabled={data.range.isCurrent}
-				class="border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed sm:px-3 sm:text-sm"
-				class:border-gray-900={data.range.isCurrent}
-				class:text-gray-900={data.range.isCurrent}
+				class="btn btn-sm {effectiveView === 'day' ? 'hidden sm:inline-flex' : ''}"
+				title="Back to this week">Today</button
 			>
-				Today
-			</button>
 			<button
 				onclick={goToNextWeek}
-				class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50 sm:text-sm"
-				title="Forward 7 days (])">&rarr;</button
+				class="icon-btn"
+				title="Forward 7 days (])"
+				aria-label="Forward 7 days">&rarr;</button
 			>
 		</div>
-		<!-- The span you are looking at, in the middle, where the eye already is. -->
-		<div class="flex">
-			{#each [['day', 'Day'], ['week', 'Week'], ['month', 'Month']] as [mode, label] (mode)}
-				<button
-					onclick={() => setView(mode as PlanView)}
-					class="px-2 py-1 text-xs sm:px-3 sm:text-sm {effectiveView === mode
-						? 'bg-gray-900 font-medium text-white hover:bg-gray-800'
-						: 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50'}"
-					title="{label} view (g cycles)">{label}</button
-				>
-			{/each}
-		</div>
 
-		<!-- On a phone this shares its line with the date; on a wide screen the
-		     date has the middle to itself, as before. -->
-		<div class="flex flex-1 items-center justify-between gap-2 sm:flex-none sm:justify-end">
-			<span class="text-xs text-gray-500 sm:hidden">
-				{#if effectiveView === 'month'}
-					{monthLabel(data.range.from)}
-				{:else}
-					{formatWeekDate(data.range.from)} &mdash; {formatWeekDate(data.range.last)}
+		<!-- Where you are, in words, next to what changes it. -->
+		<span class="text-sm text-gray-600">
+			{#if effectiveView === 'month'}
+				{monthLabel(data.range.from)}
+			{:else}
+				{formatWeekDate(data.range.from)} &mdash; {formatWeekDate(data.range.last)}
+				{#if data.range.isCurrent}
+					<span class="hidden text-gray-500 sm:inline">
+						· {effectiveView === 'day' ? 'today' : 'next 7 days'}
+					</span>
 				{/if}
-			</span>
-			<div class="flex gap-2">
-				<button
-					onclick={() => (showForm && repeat === 'once' ? closeForm() : startNew('once'))}
-					class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-600 shadow-sm transition hover:bg-blue-50 sm:text-sm"
-					title="One-off block (N)"
-				>
-					{showForm && repeat === 'once' ? 'Cancel' : '+ One-off'}
-				</button>
-				<button
-					onclick={() => (showForm && repeat === 'weekly' ? closeForm() : startNew('weekly'))}
-					class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50 sm:text-sm"
-					title="Weekly block (n)"
-				>
-					{showForm && repeat === 'weekly' ? 'Cancel' : '+ Weekly'}
-				</button>
-			</div>
-		</div>
-	</div>
-
-	<div class="hidden text-center text-sm text-gray-500 sm:block">
-		{#if effectiveView === 'month'}
-			{monthLabel(data.range.from)}
-		{:else}
-			{formatWeekDate(data.range.from)} &mdash; {formatWeekDate(data.range.last)}
-			{#if data.range.isCurrent}
-				<span class="text-gray-500">
-					· {effectiveView === 'day' ? 'today' : 'next 7 days'}
-				</span>
 			{/if}
-		{/if}
+		</span>
+
+		<!-- Pinned right on a laptop; on a phone it takes the second line whole, so
+		     the two controls sit at the ends instead of huddling in one corner. -->
+		<div class="ml-auto flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+			<div class="seg" role="group" aria-label="How much to show">
+				{#each [['day', 'Day'], ['week', 'Week'], ['month', 'Month']] as [mode, label] (mode)}
+					<button
+						onclick={() => setView(mode as PlanView)}
+						aria-pressed={effectiveView === mode}
+						title="{label} view (g cycles)">{label}</button
+					>
+				{/each}
+			</div>
+
+			<!--
+				One button, not two.
+
+				"+ One-off" and "+ Weekly" made you answer "how often does this
+				repeat" before you had said what it was — and the form asks the
+				same question again, with the answer changeable, two lines below
+				the name. So the toolbar asks nothing: it opens the form on the
+				day you are looking at, and the repeat control is where it always
+				was. Both keyboard shortcuts still open it at their own setting.
+			-->
+			<button
+				onclick={() => (showForm ? closeForm() : startNew('weekly'))}
+				class="btn btn-sm btn-primary"
+				title="New block (n)"
+			>
+				{showForm ? 'Cancel' : '+ New'}
+			</button>
+		</div>
 	</div>
 
 	<FormError message={form?.message} />
@@ -1623,7 +1622,18 @@
 		<Banner kind="error" message={gridError} />
 	{/if}
 
-	<div class="border border-gray-200 bg-white shadow-card">
+	<!--
+		Schemes had a full-width card of its own to hold one word and "Show" —
+		forty-odd pixels of surface, above the grid, for something most people open
+		once a month. Closed it is now a line; the card appears when there is
+		something in it.
+	-->
+	<div
+		class:border={schemesExpanded}
+		class:border-gray-200={schemesExpanded}
+		class:bg-white={schemesExpanded}
+		class:shadow-card={schemesExpanded}
+	>
 		<button
 			type="button"
 			onclick={() => {
@@ -1634,10 +1644,12 @@
 					confirmingClearAll = false;
 				}
 			}}
-			class="eyebrow flex w-full items-center justify-between px-4 py-3 text-left text-gray-500 hover:bg-gray-50"
+			class="eyebrow flex items-center gap-2 py-1 text-left text-gray-500 hover:text-gray-900 {schemesExpanded
+				? 'w-full justify-between px-4 py-3'
+				: ''}"
 		>
 			<span>Schemes</span>
-			<span class="text-xs text-gray-500">{schemesExpanded ? 'Hide' : 'Show'}</span>
+			<span class="text-xs">{schemesExpanded ? 'Hide' : 'Show'}</span>
 		</button>
 
 		{#if schemesExpanded}
@@ -2425,16 +2437,16 @@
 	</Modal>
 
 	<!-- Also shown over the day grid, which needs a way to move between days;
-	     the full week grid already shows all seven at once. -->
+	     the full week grid already shows all seven at once. One track rather than
+	     seven bordered buttons — it is one setting with seven positions, and it
+	     is the same object as the Day/Week/Month control above it. -->
 	{#if effectiveView === 'day'}
-		<div class="flex gap-1">
+		<div class="seg flex w-full" role="group" aria-label="Which day">
 			{#each data.range.days as day, i (day.date)}
 				<button
 					onclick={() => (selectedOffset = i)}
-					class="flex-1 border px-2 py-2 text-center text-xs font-medium transition {selectedOffset ===
-					i
-						? 'border-gray-900 bg-gray-900 text-white'
-						: 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}"
+					aria-pressed={selectedOffset === i}
+					class="flex-1"
 					title={day.date}
 				>
 					{day.isToday ? 'Today' : day.name.slice(0, 3)}
@@ -2458,10 +2470,9 @@
 					{data.todos.length}
 				</span>
 				{#if !todosOpen}
-					<span class="hidden text-xs text-gray-500 sm:inline">
-						drag one onto the grid to give it a time
-					</span>
-					<span class="text-xs text-gray-500 sm:hidden">tap one, then tap a time</span>
+					<!-- What these are, not how to move them: a chip beside a grid is
+					     something you drag, and nobody needed to be told. -->
+					<span class="text-xs text-gray-500">still without a time</span>
 				{/if}
 			</summary>
 

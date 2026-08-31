@@ -544,7 +544,7 @@
 								title="Edit"
 								aria-label="Edit"
 								onclick={() => startEdit(habit)}
-								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+								class="btn btn-sm"
 							>
 								<Icon name="edit" />
 							</button>
@@ -553,7 +553,7 @@
 									expandedHabitId = expandedHabitId === habit.id ? null : habit.id;
 									confirmingDeleteId = null;
 								}}
-								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+								class="btn btn-sm"
 							>
 								{expandedHabitId === habit.id ? 'Collapse' : 'Expand'}
 							</button>
@@ -747,7 +747,7 @@
 													onclick={() => {
 														confirmingOccurrenceDelete = null;
 													}}
-													class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+													class="btn btn-sm"
 												>
 													Cancel
 												</button>

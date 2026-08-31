@@ -475,7 +475,7 @@
 									onclick={() => {
 										confirmingDeleteId = null;
 									}}
-									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+									class="btn btn-sm"
 								>
 									Cancel
 								</button>
@@ -493,7 +493,7 @@
 											ta?.focus();
 										});
 									}}
-									class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+									class="btn btn-sm"
 								>
 									<Icon name="edit" />
 								</button>

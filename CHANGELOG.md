@@ -4,6 +4,34 @@ What changed for somebody using the app, newest first. One entry per
 user-visible change, written when the change is made — the git log has the
 rest. Versions follow `package.json`.
 
+## Unreleased
+
+- Buttons have weights again. Every button used to be a white box with a
+  border and a shadow, which is fine for one and a wall for ten — and ten in a
+  row was the normal case. A secondary button is now a quiet tonal fill, so
+  the one button that is the point of the screen is the one you see first.
+- The things you do to a row — snooze, edit, delete — sit at the right edge,
+  in the same order, in the same place on every row. They used to be appended
+  after the item's name, so a long name moved them, and a very long one pushed
+  them onto a second line. They rest quietly and come up when you point at the
+  row.
+- Ticking something off the shopping list is a checkbox, where it always
+  should have been. "Got it" and "Not now" were two bordered buttons on every
+  row; the box is one control, in the same place, reachable with a thumb. Rows
+  you still have to buy are no longer washed in red — the empty box says it.
+- The planner's controls are one bar instead of three clusters and a date
+  stranded on its own line. On a phone that is nearly an hour more of the day
+  visible without scrolling.
+- One "+ New" button in the planner instead of "+ One-off" and "+ Weekly". You
+  no longer have to decide how often something repeats before you have said
+  what it is — the form still asks, two lines below the name, where you can
+  change your mind.
+- Day / Week / Month, and the shopping list's All / Inventory / Wishlist, are
+  single controls with positions rather than three separate buttons.
+- The four quick-capture buttons carry the colour of the section they write
+  into, on the phone and on a wide screen alike, so you can pick one without
+  reading all four.
+
 ## 0.8.2 — 2026-08-29
 
 - Your export now includes your recipes, your written weekly reviews, your

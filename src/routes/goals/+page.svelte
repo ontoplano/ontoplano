@@ -461,36 +461,34 @@
 									</div>
 								</div>
 
-								<div class="flex flex-wrap items-center gap-2 sm:shrink-0">
+								<!--
+									Five controls per row, in three different treatments, starting
+									wherever the goal's text happened to end. The rail puts them at
+									the same place on every row, and the two that matter — how it
+									ended — keep their words, because "achieved" and "missed" are a
+									judgement you make once and not a routine action you would
+									recognise from a glyph.
+								-->
+								<div class="row-actions gap-1">
 									<button
 										onclick={() => (linkingId = linkingId === goal.id ? null : goal.id)}
-										class="btn btn-sm"
+										class="btn btn-sm btn-quiet"
 										title="Choose which tasks count towards this"
 									>
 										Tasks ({goal.linkedSlotIds.length +
 											goal.linkedTodoIds.length +
 											goal.linkedActivityIds.length})
 									</button>
-									<button
-										title="Edit"
-										aria-label="Edit"
-										onclick={() => openEdit(goal)}
-										class="btn btn-sm"><Icon name="edit" /></button
-									>
 									{#if goal.status === 'open'}
 										<form method="post" action="?/close" use:enhance>
 											<input type="hidden" name="id" value={goal.id} />
 											<input type="hidden" name="status" value="achieved" />
-											<button
-												class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-700 hover:bg-blue-50"
-												>Achieved</button
-											>
+											<button class="btn btn-sm" title="Close it as done">Achieved</button>
 										</form>
 										<form method="post" action="?/close" use:enhance>
 											<input type="hidden" name="id" value={goal.id} />
 											<input type="hidden" name="status" value="missed" />
-											<button
-												class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+											<button class="btn btn-sm btn-quiet" title="Close it as not done"
 												>Missed</button
 											>
 										</form>
@@ -498,25 +496,26 @@
 										<form method="post" action="?/close" use:enhance>
 											<input type="hidden" name="id" value={goal.id} />
 											<input type="hidden" name="status" value="open" />
-											<button
-												class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
-												>Reopen</button
-											>
+											<button class="btn btn-sm">Reopen</button>
 										</form>
 									{/if}
+									<button
+										title="Edit"
+										aria-label="Edit"
+										onclick={() => openEdit(goal)}
+										class="icon-btn"><Icon name="edit" /></button
+									>
 									{#if confirmingDelete === goal.id}
 										<form method="post" action="?/remove" use:enhance>
 											<input type="hidden" name="id" value={goal.id} />
-											<button class="border border-red-200 px-2 py-1 text-xs text-red-600" use:armed
-												>Confirm?</button
-											>
+											<button class="btn btn-sm btn-danger" use:armed>Confirm?</button>
 										</form>
 									{:else}
 										<button
 											title="Delete"
 											aria-label="Delete"
 											onclick={() => (confirmingDelete = goal.id)}
-											class="text-xs text-gray-500 hover:text-red-600"><Icon name="trash" /></button
+											class="icon-btn icon-btn-danger"><Icon name="trash" /></button
 										>
 									{/if}
 								</div>

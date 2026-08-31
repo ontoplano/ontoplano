@@ -391,55 +391,53 @@
 	     "Shopping List" became three lines on a phone. -->
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<h1 class="shrink-0 text-lg font-bold text-gray-900">Shopping List</h1>
+		<!--
+			Six buttons of identical weight said everything here was equally worth
+			pressing. They are three different kinds of thing, so they now look like
+			three: which list you are in (one setting, one track), what it hides (two
+			quiet toggles), and the one thing you came to do.
+		-->
 		<div class="flex flex-wrap items-center gap-2">
-			<button
-				onclick={() => (filterType = filterType === 'someday' ? 'all' : 'someday')}
-				aria-pressed={filterType === 'someday'}
-				class="btn btn-sm {filterType === 'someday'
-					? 'border-orange-200 bg-orange-50 text-orange-700'
-					: ''}"
-			>
-				Wishlist <kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-					>{keyFor('/shopping', 'filter-someday')}</kbd
+			<div class="seg" role="group" aria-label="Which list">
+				<button onclick={() => (filterType = 'all')} aria-pressed={filterType === 'all'}>All</button
 				>
-			</button>
-			<button
-				onclick={() => (filterType = filterType === 'replenish' ? 'all' : 'replenish')}
-				aria-pressed={filterType === 'replenish'}
-				class="btn btn-sm {filterType === 'replenish'
-					? 'border-cyan-200 bg-cyan-50 text-cyan-700'
-					: ''}"
-			>
-				Inventory <kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-					>{keyFor('/shopping', 'filter-replenish')}</kbd
+				<button
+					onclick={() => (filterType = filterType === 'replenish' ? 'all' : 'replenish')}
+					aria-pressed={filterType === 'replenish'}
+					title="Inventory ({keyFor('/shopping', 'filter-replenish')})">Inventory</button
 				>
-			</button>
+				<button
+					onclick={() => (filterType = filterType === 'someday' ? 'all' : 'someday')}
+					aria-pressed={filterType === 'someday'}
+					title="Wishlist ({keyFor('/shopping', 'filter-someday')})">Wishlist</button
+				>
+			</div>
+
 			<button
 				onclick={() => (showBought = !showBought)}
 				aria-pressed={showBought}
-				class="btn btn-sm {showBought ? '' : 'text-gray-500'}"
+				class="btn btn-sm btn-quiet"
+				title="Show what you already have ({keyFor('/shopping', 'toggle-show-bought')})"
 			>
 				{showBought ? 'Hide' : 'Show'} bought
-				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-					>{keyFor('/shopping', 'toggle-show-bought')}</kbd
-				>
 			</button>
 			<button
 				onclick={() => (showSnoozed = !showSnoozed)}
 				aria-pressed={showSnoozed}
-				class="btn btn-sm {showSnoozed ? '' : 'text-gray-500'}"
+				class="btn btn-sm btn-quiet"
+				title="Show what you put off ({keyFor('/shopping', 'toggle-show-snoozed')})"
 			>
 				{showSnoozed ? 'Hide' : 'Show'} snoozed
-				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-					>{keyFor('/shopping', 'toggle-show-snoozed')}</kbd
-				>
 			</button>
-			<button onclick={() => (showCategories = true)} class="btn btn-sm">Categories</button>
-			<button onclick={() => (showForm ? (showForm = false) : openCreateForm())} class="btn btn-sm">
+			<button onclick={() => (showCategories = true)} class="btn btn-sm btn-quiet"
+				>Categories</button
+			>
+			<button
+				onclick={() => (showForm ? (showForm = false) : openCreateForm())}
+				class="btn btn-sm btn-primary"
+			>
 				{showForm ? 'Cancel' : 'Add item'}
-				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-					>{keyFor('/shopping', 'new')}</kbd
-				>
+				<kbd class="border border-white/30 px-1">{keyFor('/shopping', 'new')}</kbd>
 			</button>
 		</div>
 	</div>
@@ -547,16 +545,48 @@
 						<div class="divide-y divide-gray-200">
 							{#each category.items as item (item.id)}
 								{@const globalIdx = filteredItems.indexOf(item)}
+								<!--
+									Still to buy is the normal state of a shopping list, and a wash of
+									alarm colour behind every row spends the one signal that should
+									mean something is wrong. The unticked box already says it. Only
+									what you have — blue — and what you put off — dimmed — are marked.
+								-->
 								<div
 									use:keepInView={globalIdx === selectedIndex}
-									class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 {item.snoozed
+									class="flex items-center gap-x-3 px-4 py-2 {item.snoozed
 										? 'bg-gray-50 opacity-50'
 										: item.bought
 											? 'bg-blue-50'
-											: 'bg-red-50'} {globalIdx === selectedIndex
-										? 'ring-2 ring-gray-400 ring-inset'
-										: ''}"
+											: ''} {globalIdx === selectedIndex ? 'ring-2 ring-gray-400 ring-inset' : ''}"
 								>
+									<!--
+										Whether you have it is a checkbox.
+
+										It used to be two bordered buttons per row — "Got it" and
+										"Not now" — sitting after the name in a wrapping flex, so
+										their position moved with the length of whatever the item
+										was called and a long note pushed them onto a second line.
+										A checkbox is what "do you have this" already looks like
+										everywhere else in this app and every list anybody has
+										used, it is one control instead of two, and it puts the
+										one thing you do forty times down the left edge where the
+										thumb already is.
+									-->
+									<form method="POST" action="?/toggleBought" use:enhance={tick('toggleBought')}>
+										<input type="hidden" name="id" value={item.id} />
+										<button
+											type="submit"
+											aria-pressed={item.bought}
+											class="flex size-5 items-center justify-center border transition {item.bought
+												? 'border-blue-600 bg-blue-600 text-white'
+												: 'border-gray-400 bg-white text-transparent hover:border-gray-600'}"
+											title={item.bought ? 'Put it back on the list' : 'Got it'}
+											aria-label="{item.bought ? 'Put back on the list' : 'Got it'}: {item.name}"
+										>
+											<Icon name="check" size={14} />
+										</button>
+									</form>
+
 									<div class="min-w-0 flex-1">
 										<span class="text-sm text-gray-900">{item.name}</span>
 										{#if item.notes}
@@ -566,7 +596,9 @@
 										{@render usedIn(item)}
 									</div>
 									{@render paidPrompt(item)}
-									{#if item.snoozed}
+
+									<!-- Everything else at the right edge, same order, same x, every row. -->
+									<div class="row-actions">
 										<form
 											method="POST"
 											action="?/toggleSnoozed"
@@ -575,86 +607,52 @@
 											<input type="hidden" name="id" value={item.id} />
 											<button
 												type="submit"
-												class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 shadow-sm hover:bg-gray-50"
+												class="icon-btn"
+												aria-pressed={item.snoozed}
+												title={item.snoozed ? 'Put it back on the list' : 'Not now'}
+												aria-label="{item.snoozed ? 'Unshelve' : 'Snooze'}: {item.name}"
 											>
-												Unshelve
-											</button>
-										</form>
-									{:else if item.bought}
-										<form method="POST" action="?/restock" use:enhance={tick('restock')}>
-											<input type="hidden" name="id" value={item.id} />
-											<button
-												type="submit"
-												class="border border-orange-200 bg-white px-2 py-1 text-xs text-orange-600 shadow-sm hover:bg-orange-50"
-											>
-												Need to buy
-											</button>
-										</form>
-									{:else}
-										<form method="POST" action="?/toggleBought" use:enhance={tick('toggleBought')}>
-											<input type="hidden" name="id" value={item.id} />
-											<button
-												type="submit"
-												class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-600 shadow-sm hover:bg-blue-50"
-											>
-												Got it
-											</button>
-										</form>
-										<form
-											method="POST"
-											action="?/toggleSnoozed"
-											use:enhance={tick('toggleSnoozed')}
-										>
-											<input type="hidden" name="id" value={item.id} />
-											<button
-												type="submit"
-												class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500 shadow-sm hover:bg-gray-50"
-											>
-												Not now
-											</button>
-										</form>
-									{/if}
-									<button
-										onclick={() => startEdit(item)}
-										class="text-gray-500 hover:text-gray-700"
-										title="Edit"
-										aria-label="Edit {item.name}"><Icon name="edit" /></button
-									>
-									{#if confirmingDelete === item.id}
-										<form
-											method="POST"
-											action="?/delete"
-											use:enhance={deferDelete(item.id, item.name)}
-										>
-											<input type="hidden" name="id" value={item.id} />
-											<button
-												type="submit"
-												class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
-												use:armed
-											>
-												Confirm?
+												<Icon name={item.snoozed ? 'undo' : 'clock'} />
 											</button>
 										</form>
 										<button
-											type="button"
-											onclick={() => {
-												confirmingDelete = null;
-											}}
-											class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
+											onclick={() => startEdit(item)}
+											class="icon-btn"
+											title="Edit"
+											aria-label="Edit {item.name}"><Icon name="edit" /></button
 										>
-											Cancel
-										</button>
-									{:else}
-										<button
-											type="button"
-											onclick={() => {
-												confirmingDelete = item.id;
-											}}
-											class="text-gray-500 hover:text-red-500"
-											title="Delete"
-											aria-label="Delete {item.name}"><Icon name="trash" /></button
-										>
-									{/if}
+										{#if confirmingDelete === item.id}
+											<form
+												method="POST"
+												action="?/delete"
+												use:enhance={deferDelete(item.id, item.name)}
+											>
+												<input type="hidden" name="id" value={item.id} />
+												<button type="submit" class="btn btn-sm btn-danger" use:armed>
+													Confirm?
+												</button>
+											</form>
+											<button
+												type="button"
+												onclick={() => {
+													confirmingDelete = null;
+												}}
+												class="btn btn-sm"
+											>
+												Cancel
+											</button>
+										{:else}
+											<button
+												type="button"
+												onclick={() => {
+													confirmingDelete = item.id;
+												}}
+												class="icon-btn icon-btn-danger"
+												title="Delete"
+												aria-label="Delete {item.name}"><Icon name="trash" /></button
+											>
+										{/if}
+									</div>
 								</div>
 							{/each}
 						</div>
@@ -676,103 +674,84 @@
 					{@const globalIdx = filteredItems.indexOf(item)}
 					<div
 						use:keepInView={globalIdx === selectedIndex}
-						class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 {globalIdx ===
-						selectedIndex
+						class="flex items-center gap-x-3 px-4 py-2 {globalIdx === selectedIndex
 							? 'bg-gray-50'
 							: ''} {item.snoozed ? 'opacity-50' : ''}"
 					>
-						{#if item.snoozed}
-							<div class="min-w-0 flex-1">
-								<span class="text-sm text-gray-900">{item.name}</span>
-								{#if item.notes}
-									<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
-								{/if}
-								{@render expectedPrice(item)}
-								{@render usedIn(item)}
-							</div>
-							{@render paidPrompt(item)}
+						<!-- The same checkbox as the inventory rows, so one list does not
+						     have a different idea of what "have it" looks like. -->
+						<form method="POST" action="?/toggleBought" use:enhance={tick('toggleBought')}>
+							<input type="hidden" name="id" value={item.id} />
+							<button
+								type="submit"
+								aria-pressed={item.bought}
+								class="flex size-5 items-center justify-center border transition {item.bought
+									? 'border-blue-600 bg-blue-600 text-white'
+									: 'border-gray-400 bg-white text-transparent hover:border-gray-600'}"
+								title={item.bought ? 'Put it back on the list' : 'Got it'}
+								aria-label="{item.bought ? 'Put back on the list' : 'Got it'}: {item.name}"
+							>
+								<Icon name="check" size={14} />
+							</button>
+						</form>
+
+						<div class="min-w-0 flex-1">
+							<span class="text-sm {item.bought ? 'text-gray-500 line-through' : 'text-gray-900'}">
+								{item.name}
+							</span>
+							{#if item.notes}
+								<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
+							{/if}
+							{@render expectedPrice(item)}
+							{@render usedIn(item)}
+						</div>
+						{@render paidPrompt(item)}
+
+						<div class="row-actions">
 							<form method="POST" action="?/toggleSnoozed" use:enhance={tick('toggleSnoozed')}>
 								<input type="hidden" name="id" value={item.id} />
 								<button
 									type="submit"
-									class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 shadow-sm hover:bg-gray-50"
+									class="icon-btn"
+									aria-pressed={item.snoozed}
+									title={item.snoozed ? 'Put it back on the list' : 'Not now'}
+									aria-label="{item.snoozed ? 'Unshelve' : 'Snooze'}: {item.name}"
 								>
-									Unshelve
+									<Icon name={item.snoozed ? 'undo' : 'clock'} />
 								</button>
 							</form>
-						{:else}
-							<form method="POST" action="?/toggleBought" use:enhance={tick('toggleBought')}>
-								<input type="hidden" name="id" value={item.id} />
-								<button
-									type="submit"
-									class="flex h-5 w-5 items-center justify-center border border-gray-300 bg-white shadow-sm hover:bg-gray-50 {item.bought
-										? 'bg-gray-100'
-										: ''}"
-								>
-									{#if item.bought}
-										<span class="text-xs text-gray-600">&#10003;</span>
-									{/if}
-								</button>
-							</form>
-							<div class="min-w-0 flex-1">
-								<span
-									class="text-sm {item.bought ? 'text-gray-500 line-through' : 'text-gray-900'}"
-								>
-									{item.name}
-								</span>
-								{#if item.notes}
-									<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
-								{/if}
-							</div>
-							{#if !item.bought}
-								<form method="POST" action="?/toggleSnoozed" use:enhance={tick('toggleSnoozed')}>
+							<button
+								onclick={() => startEdit(item)}
+								class="icon-btn"
+								title="Edit"
+								aria-label="Edit {item.name}"><Icon name="edit" /></button
+							>
+							{#if confirmingDelete === item.id}
+								<form method="POST" action="?/delete" use:enhance={deferDelete(item.id, item.name)}>
 									<input type="hidden" name="id" value={item.id} />
-									<button
-										type="submit"
-										class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500 shadow-sm hover:bg-gray-50"
-									>
-										Not now
-									</button>
+									<button type="submit" class="btn btn-sm btn-danger" use:armed> Confirm? </button>
 								</form>
-							{/if}
-						{/if}
-						<button
-							onclick={() => startEdit(item)}
-							class="text-gray-500 hover:text-gray-700"
-							title="Edit"
-							aria-label="Edit {item.name}"><Icon name="edit" /></button
-						>
-						{#if confirmingDelete === item.id}
-							<form method="POST" action="?/delete" use:enhance={deferDelete(item.id, item.name)}>
-								<input type="hidden" name="id" value={item.id} />
 								<button
-									type="submit"
-									class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
-									use:armed
+									type="button"
+									onclick={() => {
+										confirmingDelete = null;
+									}}
+									class="btn btn-sm"
 								>
-									Confirm?
+									Cancel
 								</button>
-							</form>
-							<button
-								type="button"
-								onclick={() => {
-									confirmingDelete = null;
-								}}
-								class="border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100"
-							>
-								Cancel
-							</button>
-						{:else}
-							<button
-								type="button"
-								onclick={() => {
-									confirmingDelete = item.id;
-								}}
-								class="text-gray-500 hover:text-red-500"
-								title="Delete"
-								aria-label="Delete {item.name}"><Icon name="trash" /></button
-							>
-						{/if}
+							{:else}
+								<button
+									type="button"
+									onclick={() => {
+										confirmingDelete = item.id;
+									}}
+									class="icon-btn icon-btn-danger"
+									title="Delete"
+									aria-label="Delete {item.name}"><Icon name="trash" /></button
+								>
+							{/if}
+						</div>
 					</div>
 				{/each}
 			</div>

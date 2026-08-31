@@ -183,6 +183,9 @@
 				{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
 			</h1>
 			{#if !arranging}
+				<!-- Arrange is not a fifth thing to write down — it changes what the
+				     page is. Set apart by a rule, and the icon alone, so the row reads
+				     as "four things you can write" and then "and you can rearrange". -->
 				<div class="flex items-center gap-2">
 					<QuickCapture
 						bind:this={capture}
@@ -190,8 +193,14 @@
 						hidden={data.hiddenSections ?? []}
 						inline
 					/>
-					<button onclick={startArranging} class="btn btn-sm">
-						<Icon name="drag" /> Arrange
+					<span class="hidden h-5 w-px bg-gray-300 lg:block"></span>
+					<button
+						onclick={startArranging}
+						class="icon-btn"
+						title="Rearrange the cards"
+						aria-label="Rearrange the cards"
+					>
+						<Icon name="drag" />
 					</button>
 				</div>
 			{/if}

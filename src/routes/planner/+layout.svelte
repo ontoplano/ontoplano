@@ -31,7 +31,15 @@
 </script>
 
 <div class="space-y-4">
-	<div class="flex flex-wrap items-center justify-between gap-3">
+	<!--
+		The heading is for a wide screen only.
+
+		On a phone it was the first of six stacked rows above the grid, saying what
+		the highlighted item in the bottom bar and the tab row directly beneath it
+		both already said. The tabs are the header there; the space goes to the
+		plan, which is what somebody opened this to look at.
+	-->
+	<div class="hidden flex-wrap items-center justify-between gap-3 sm:flex">
 		<h1 class="shrink-0 text-lg font-bold text-gray-900">Weekly Planner</h1>
 	</div>
 
