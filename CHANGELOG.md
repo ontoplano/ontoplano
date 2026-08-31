@@ -6,6 +6,11 @@ rest. Versions follow `package.json`.
 
 ## Unreleased
 
+- The demo's notes are written the way notes are actually written — headings,
+  lists, quotes, the odd task list — so what the diary and notebooks do with
+  Markdown is visible without typing any. The Republic notebook has more in it,
+  which is the one that shows what a notebook is for.
+
 - History no longer offers weeks that have not happened, and each day in the
   strip says its date: "Aug 24 — Mon (3)" rather than "Mon (3)", so you are not
   counting along from the week's range to find the Wednesday you meant.

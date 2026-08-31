@@ -802,7 +802,7 @@ diary(1, 'Started using the planner properly. Blocked out the mornings for deep 
 diary(2, 'Gym twice this week with João. The evening slot works better than mornings.', ['health']);
 diary(
 	3,
-	'Win 1: shipped the export\nWin 2: ran 8km\nWin 3: cooked instead of ordering',
+	'**Three wins**\n\n1. shipped the export\n2. ran 8km\n3. cooked instead of ordering',
 	['3w'],
 	iso(dayOffset(-1))
 );
@@ -1351,47 +1351,141 @@ const REPUBLIC_NOTES = [
 	[
 		20,
 		56,
-		`Book I. Thrasymachus says justice is whatever serves the strong, and he is not a strawman — he is the most modern voice in the room.
+		`## Book I — Thrasymachus
 
-Socrates does not really refute him here. He ties him in knots about whether a craft serves itself or its object, Thrasymachus gets annoyed and gives up, and the argument is left standing. Everything after this is Plato admitting that, and starting again properly.
+Justice is whatever serves the strong. He is not a strawman; he is the most
+modern voice in the room, and he says it without embarrassment:
 
-Worth remembering when people quote the later books as if the case had been settled in the first one.`
+> I proclaim that justice is nothing else than the interest of the stronger.
+
+Socrates does not really refute him here. He ties him in knots about whether a
+craft serves itself or its object, Thrasymachus gets annoyed and gives up, and
+the argument is left standing.
+
+Everything after this is Plato admitting that and starting again properly —
+worth remembering when people quote the later books as if the case had been
+settled in the first one.`
 	],
 	[
 		21,
 		49,
-		`Book II. The ring of Gyges.
+		`## Book II — the ring of Gyges
 
-Glaucon's version of the challenge is much better than Thrasymachus's: give a just man and an unjust man a ring that makes them invisible, and see whether either behaves differently. If they do not, then justice was only ever reputation.
+Glaucon's version of the challenge is much better than Thrasymachus's. Give
+two men a ring that makes them invisible:
 
-What strikes me is that the question is not "why be good" but "would you still be, with no consequences". Two and a half thousand years and nobody has improved the framing.`
+- one who has spent his life being just
+- one who has spent it being unjust
+
+Then watch. If neither behaves differently once nobody can see, justice was
+only ever reputation.
+
+The question is not **why be good**. It is *would you still be, with no
+consequences* — and two and a half thousand years later nobody has improved
+the framing. See #20 for the version he is improving on.`
 	],
 	[
 		22,
 		41,
-		`Books II–IV, the city.
+		`## Books II–IV — the city, and the sleight of hand
 
-The move is a sleight of hand and he tells you it is: justice is hard to see in one person, so let us look at it written large in a city, then read it back. Everything about the ideal state is really a claim about the parts of a mind.
+He tells you it is a trick, which is the part people forget: justice is hard
+to see in one person, so let us look at it *written large* in a city and then
+read it back.
 
-Which is a relief, because taken as politics it is monstrous — the censorship, the lie about the metals, breeding people like dogs. Taken as psychology it is sharp: the part that reasons, the part that wants, and the part that gets angry on your behalf, which is not the same as either.`
+So everything about the ideal state is really a claim about the parts of a mind:
+
+- the guardians — the part that reasons
+- the auxiliaries — the part that gets angry on your behalf
+- the producers — the part that wants
+
+Which is a relief, because taken as politics it is monstrous — the censorship,
+the lie about the metals, breeding people like dogs. Taken as psychology it is
+sharp. The angry part is the interesting one: it is not reason and it is not
+appetite, and it takes reason's side against your own wanting.`
 	],
 	[
 		23,
 		33,
-		`Book VII. The cave.
+		`## Book V — the part nobody quotes at dinner
 
-Everyone knows the image and almost nobody mentions the ending: the one who gets out and comes back to tell the others is not thanked. He is worse at the shadow game than they are, because his eyes have adjusted, and they conclude that going up ruins you and it would be right to kill anyone who tried to take them.
+Three waves, each one more embarrassing than the last, and he knows it:
 
-Written by a man whose teacher was executed by his own city. It is not a metaphor about ignorance. It is about what happens to the person who says so.`
+1. the same education for women, on the grounds that the difference does not
+   bear on the work — startling for the century, and then
+2. no families among the guardians: partners assigned, children raised in
+   common and never told whose they are
+3. philosophers as kings, which is the one everyone remembers because it is
+   the one that flatters philosophers
+
+The second is where it turns. His argument is that private love is the seed of
+private interest, so the city must have none — and a city that has abolished
+the family in order to be just has stopped being a city anybody would want to
+live in. **The reasoning is careful and the conclusion is a horror.** That
+combination is the whole difficulty with this book.`
 	],
 	[
 		24,
+		26,
+		`## Book VII — the cave
+
+Everyone knows the image and almost nobody mentions the ending.
+
+The one who gets out and comes back is not thanked. His eyes have adjusted, so
+he is now *worse* at the shadow game than the people who never left, and they
+draw the obvious conclusion:
+
+> And if anyone tried to loose another and lead him up to the light, let them
+> only catch the offender, and they would put him to death.
+
+Written by a man whose teacher was executed by his own city.
+
+It is not a metaphor about ignorance. It is about what happens to the person
+who says so.`
+	],
+	[
+		25,
+		21,
+		`## Books VIII–IX — how it comes apart
+
+The best chapter, and the one that reads like it was written last week. Each
+constitution decays into the next by its own virtue overshooting:
+
+- **timocracy** — honour, until honour is only ambition
+- **oligarchy** — thrift, until the city is two cities, the rich and the poor,
+  plotting against each other
+- **democracy** — freedom, until nothing can be asked of anybody
+- **tyranny** — the man who arrives promising to protect the people from the
+  ones who have everything, and stays
+
+The democratic man is the passage to sit with. He treats every appetite as
+equally worth satisfying, "calling insolence good breeding, and anarchy
+liberty" — not because he is wicked but because he has no principle for
+ranking anything. He does not fall to a tyrant. He *asks* for one, because a
+man with a single overriding want is the only thing he has ever seen that
+looks like order.`
+	],
+	[
+		26,
 		18,
-		`Book X, and done.
+		`## Book X — done
 
-He throws the poets out and then writes the myth of Er — a story about the afterlife — as the last word. Either he knew exactly what he was doing or he could not help himself, and I do not think Plato could not help himself about anything.
+He throws the poets out, and then closes the book with the myth of Er: a story
+about the afterlife, told as the last word. Either he knew exactly what he was
+doing or he could not help himself, and I do not think Plato could not help
+himself about anything.
 
-Overall: the political programme is indefensible and the psychology is still the best thing anybody has written about wanting two things at once. Read the middle books; argue with the rest.`
+**Where I have landed, two months in:**
+
+- The political programme is indefensible and he half-knows it — see #23.
+- The psychology is still the best thing anybody has written about wanting two
+  things at once.
+- Book I is the honest one; the rest is a very long answer to it.
+
+Read the middle books. Argue with the rest.
+
+- [x] finish it before the group meets
+- [ ] find a decent secondary reader on Books VIII–IX`
 	]
 ];
 
@@ -1462,31 +1556,59 @@ Worth keeping: the diary form does a lot of the work. He is writing things down 
 		10,
 		kitchen,
 		34,
-		`Three quotes in, and they disagree about the wall rather than the price.
+		`## Three quotes in
 
-The first two want to move the pipes and rebuild; the third says the wall is not structural and the pipes can be boxed in for a fifth of it. He is either right or about to cost me a ceiling.
+They disagree about **the wall**, not about the price:
 
-Ringing the building manager on Monday to find out which. Nothing gets ordered until that is answered — the counter is the expensive part and it is cut to whatever the wall ends up being.`
+1. move the pipes, rebuild — €4,100
+2. move the pipes, rebuild — €3,850
+3. wall is not structural, box the pipes in — €780
+
+The third is either right or about to cost me a ceiling.
+
+- [x] get three quotes
+- [ ] ring the building manager about the wall
+- [ ] order the counter — *not until the wall is answered*
+
+Nothing gets ordered until that is settled. The counter is the expensive part
+and it is cut to whatever the wall ends up being.`
 	],
 	[
 		11,
 		portugal,
 		12,
-		`Route settled: three nights Lisbon, train to Évora, two nights, then down to the coast.
+		`## Route settled
 
-The train south only runs twice a day and the afternoon one arrives after everything closes, so it has to be the 09:20. That fixes the Évora morning and everything else falls out of it.
+- **Lisbon** — three nights
+- **Évora** — two nights, arriving on the 09:20
+- **the coast** — whatever is left
 
-Still open: whether to keep the last two days loose. Every trip I have planned to the hour I have then spent rearranging.`
+The train south runs twice a day and the afternoon one arrives after
+everything closes, so it has to be the morning one. That fixes the Évora
+departure and everything else falls out of it.
+
+> Still open: whether to keep the last two days loose. Every trip I have
+> planned to the hour I have then spent rearranging.`
 	],
 	[
 		12,
 		null,
 		45,
-		`A month of doing this properly, so: what has actually changed.
+		`## A month of doing this properly
 
-Mornings hold. The block before ten is the only one I never move, and it is the only reason anything long ever gets finished. Afternoons are still fiction — I plan two hours of deep work at 14:00 and spend it on mail, every time. That block should be admin and I should stop pretending.
+What has actually changed, as opposed to what I meant to change.
 
-The shopping list turned out to be the thing I use most, which I did not expect. It is the only part that goes in my pocket.`
+**Mornings hold.** The block before ten is the only one I never move, and it
+is the only reason anything long ever gets finished.
+
+**Afternoons are fiction.** I plan two hours of deep work at 14:00 and spend
+it on mail, every time. That block should say *admin* and I should stop
+pretending otherwise.
+
+---
+
+The shopping list turned out to be the thing I use most, which I did not
+expect. It is the only part that goes in my pocket.`
 	]
 ];
 
