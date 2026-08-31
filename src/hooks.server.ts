@@ -273,8 +273,7 @@ const HOLD_EXEMPT = [
 	'/favicon.svg',
 	'/icons',
 	'/manifest.webmanifest',
-	'/admin/stop',
-	'/demo'
+	'/admin/stop'
 ];
 
 /**
@@ -367,7 +366,7 @@ const handleAccessHolds: Handle = ({ event, resolve }) => {
 	return resolve(event);
 };
 
-const PUBLIC_WRITES = ['/login', '/demo', '/api/auth'];
+const PUBLIC_WRITES = ['/login', '/api/auth'];
 
 const handleSignedOutWrites: Handle = ({ event, resolve }) => {
 	const writes = event.request.method !== 'GET' && event.request.method !== 'HEAD';

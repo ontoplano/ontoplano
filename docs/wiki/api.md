@@ -52,6 +52,20 @@ sentence somebody agrees to when they grant it.
 | `/api/v1/webhooks`                           | POST   | `webhooks:manage` |
 | `/api/v1/webhooks/[id]`                      | DELETE | `webhooks:manage` |
 
+## Webhook events
+
+What a subscription can ask to be told about. Managed through
+`/settings/integrations` or the `webhooks:manage` scope.
+
+| Event             | Fires when                          |
+| ----------------- | ----------------------------------- |
+| `todo.created`    | a todo is added                     |
+| `todo.completed`  | a todo is finished                  |
+| `idea.created`    | an idea is captured                 |
+| `diary.created`   | a diary entry is written            |
+| `shopping.added`  | something goes on the shopping list |
+| `shopping.bought` | something on the list is bought     |
+
 ### `/api/billing/paddle`
 
 Where Paddle tells us what happened.

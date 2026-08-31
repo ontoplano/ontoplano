@@ -6,6 +6,12 @@ rest. Versions follow `package.json`.
 
 ## Unreleased
 
+- A leftover scaffolding page could create an account on an instance that was
+  set to invite-only or closed. It called the auth library directly, so none of
+  the rules the sign-up form applies — the registration mode, the invite code,
+  the limit on how fast accounts can be made — were being asked. The pages are
+  gone.
+
 - **Your plan, in the calendar you already use.** Settings → Integrations now
   hands you a calendar address you can paste into Google Calendar, Apple
   Calendar, Thunderbird or a phone's built-in app. Your blocks turn up there

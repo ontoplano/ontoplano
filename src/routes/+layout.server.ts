@@ -19,7 +19,6 @@ export const load: LayoutServerLoad = async (event) => {
 	// Anything under /login, not just /login itself — /login/reset is where a
 	// password-reset link lands, and by definition its visitor is signed out.
 	const isLoginPage = event.url.pathname === '/login' || event.url.pathname.startsWith('/login/');
-	const isDemo = event.url.pathname.startsWith('/demo');
 	// The offline fallback has to render without a session check — reaching it
 	// means the network is down, so there is nothing to check against.
 	const isOffline = event.url.pathname === '/offline';
@@ -32,15 +31,7 @@ export const load: LayoutServerLoad = async (event) => {
 	// is, which is the shortest possible funnel and the wrong one.
 	const isLanding = event.url.pathname === '/';
 
-	if (
-		!event.locals.user &&
-		!isLoginPage &&
-		!isDemo &&
-		!isAuthApi &&
-		!isOffline &&
-		!isLegal &&
-		!isLanding
-	) {
+	if (!event.locals.user && !isLoginPage && !isAuthApi && !isOffline && !isLegal && !isLanding) {
 		return redirect(302, '/login');
 	}
 
@@ -56,7 +47,6 @@ export const load: LayoutServerLoad = async (event) => {
 		event.locals.user &&
 		!isWelcome &&
 		!isVerifyHold &&
-		!isDemo &&
 		!isAuthApi &&
 		!event.url.pathname.startsWith('/api/') &&
 		needsFirstRun(event.locals.user.id)

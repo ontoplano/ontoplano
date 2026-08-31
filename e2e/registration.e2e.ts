@@ -102,6 +102,48 @@ test('a closed instance refuses a sign-up', async ({ playwright }) => {
 	await request.dispose();
 });
 
+/**
+ * The rule is the instance's, not one route's.
+ *
+ * `/login?/signUp` asks the mode, the invite table and the rate limiter before
+ * it calls better-auth. Nothing stops a second route calling better-auth
+ * directly and asking none of them — and one did: `npx sv create` leaves a
+ * `/demo/better-auth/login` behind with its own `signUpEmail` action, and it
+ * shipped. On a closed instance it created accounts, while the front door was
+ * refusing, because calling `auth.api` in-process never crosses the hook that
+ * does the rate limiting either.
+ *
+ * The scaffolding is gone. This is here so that the next route to reach for
+ * better-auth directly has something that objects.
+ */
+test('there is no second door onto a closed instance', async ({ playwright }) => {
+	const request = await playwright.request.newContext({ baseURL: ORIGIN });
+	setMode('closed');
+
+	const email = `side-${Date.now()}@example.test`;
+	const password = 'hunter2hunter2';
+
+	for (const path of ['/demo/better-auth/login?/signUpEmail', '/demo/better-auth/login']) {
+		await request.post(path, {
+			headers: { Origin: ORIGIN, 'x-sveltekit-action': 'true', 'x-forwarded-for': '10.90.0.1' },
+			form: { name: 'Side', email, password }
+		});
+	}
+
+	// The status is not the point — a missing route renders the error page, and
+	// what that is answered with is SvelteKit's business. What matters is that
+	// no account exists afterwards, which is checked by trying to be it.
+	const signIn = await request.post('/login?/signIn', {
+		headers: { Origin: ORIGIN, 'x-sveltekit-action': 'true', 'x-forwarded-for': '10.90.0.2' },
+		form: { email, password }
+	});
+
+	const said = await signIn.text();
+	expect(said, 'the side door created an account on a closed instance').not.toContain('redirect');
+
+	await request.dispose();
+});
+
 test('invite-only refuses a sign-up with no code and one with a wrong code', async ({
 	playwright
 }) => {

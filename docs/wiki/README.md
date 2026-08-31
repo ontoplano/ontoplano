@@ -16,6 +16,8 @@ is out of date, which is what keeps the two honest.
 - [Data model](data-model.md) — every table and column, from the migration snapshot
 - [HTTP API](api.md) — endpoints and the scope each one demands
 - [Services](services.md) — the service layer, module by module
+- [Pages and actions](pages.md) — every address, and the form actions behind it
+- [Configuration](configuration.md) — config.toml, the environment, and per-account settings
 - [Keyboard](keyboard.md) — every shortcut, per page
 
 ## What is not here
