@@ -28,8 +28,20 @@ import {
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
 
+	/*
+	 * Whether a calendar link exists, not what it is.
+	 *
+	 * The plaintext is not stored — it is hashed like every other token — so the
+	 * page can say "you have one, made on the 3rd" and offer to replace it, and
+	 * that is all. See the note beside the Replace action.
+	 */
+	const calendarLinks = listTokens(ctx).filter(
+		(t) => t.scopes.length === 1 && t.scopes[0] === 'calendar:read'
+	);
+
 	return {
 		tokens: listTokens(ctx),
+		calendarLink: calendarLinks[0] ?? null,
 		streams: listStreams(ctx, { includeArchived: true }).map((s) => ({
 			...s,
 			stats: streamStats(ctx, s.id)
@@ -64,6 +76,37 @@ export const actions: Actions = {
 			// The plaintext is returned exactly once, here. It is not stored and
 			// cannot be shown again.
 			return { success: true, action: 'createToken', token };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * Mint the calendar link, replacing whatever was there.
+	 *
+	 * One per account. Replacing revokes the old one first, which is the whole
+	 * point of the action: the URL is the credential, so "I pasted it somewhere I
+	 * should not have" has to have an answer, and that answer is that every
+	 * subscription using the old link stops working at once.
+	 */
+	calendarLink: async ({ request, locals, url }) => {
+		const ctx = buildCtx(locals.user!.id);
+		await request.formData();
+
+		try {
+			for (const existing of listTokens(ctx)) {
+				if (existing.scopes.length === 1 && existing.scopes[0] === 'calendar:read')
+					revokeToken(ctx, existing.id);
+			}
+
+			const token = createToken(ctx, { name: 'Calendar link', scopes: ['calendar:read'] });
+			return {
+				success: true,
+				action: 'calendarLink',
+				// Shown once, same as any other token — the difference is that this
+				// one is only useful as a whole URL, so it is assembled here.
+				feedUrl: `${url.origin}/calendar/${token.plaintext}`
+			};
 		} catch (e) {
 			return toActionFailure(e);
 		}

@@ -24,6 +24,9 @@
 	let copied = $state(false);
 
 	const newToken = $derived(form?.success && form.action === 'createToken' ? form.token : null);
+	const newFeedUrl = $derived(
+		form?.success && form.action === 'calendarLink' ? form.feedUrl : null
+	);
 
 	// The sentence a scope was granted as, everywhere a scope is shown — the
 	// key is for the developer, the sentence is for the owner of the data.
@@ -107,6 +110,64 @@
 			</p>
 		</div>
 	{/if}
+
+	<!--
+		The calendar link.
+
+		Above the tokens because it is the one on this page an ordinary person
+		wants: paste a URL into the calendar they already use and their plan turns
+		up there, with no app to install and nothing of ours in the way.
+	-->
+	<Card
+		title="Calendar link"
+		description="Subscribe to your plan from Google Calendar, Apple Calendar, Thunderbird — anything that takes a calendar address. Read-only, and it updates itself."
+	>
+		{#if newFeedUrl}
+			<div class="border border-blue-200 bg-blue-50 p-4">
+				<p class="text-sm font-semibold text-blue-900">Copy it now — it is not shown again.</p>
+				<div class="mt-2 flex items-center gap-2">
+					<code
+						class="flex-1 overflow-x-auto border border-blue-200 bg-white px-3 py-2 font-mono text-xs break-all text-gray-900"
+						>{newFeedUrl}</code
+					>
+					<button type="button" onclick={() => copyToken(newFeedUrl)} class="btn">
+						{copied ? 'Copied' : 'Copy'}
+					</button>
+				</div>
+			</div>
+		{:else if data.calendarLink}
+			<p class="text-sm text-gray-600">
+				A link is active, made {new Date(data.calendarLink.createdAt).toLocaleDateString()}.
+				{#if data.calendarLink.lastUsedAt}
+					Last fetched {new Date(data.calendarLink.lastUsedAt).toLocaleDateString()}.
+				{:else}
+					Nothing has fetched it yet.
+				{/if}
+			</p>
+		{:else}
+			<p class="text-sm text-gray-600">No link yet.</p>
+		{/if}
+
+		<!--
+			Anyone holding the address can read the plan — that is how every calendar
+			subscription works, Google's included, because the calendar fetches it
+			with no way to be asked anything. Said plainly rather than buried: it is
+			the one thing somebody needs to know before pasting it into a shared
+			machine.
+		-->
+		<p class="mt-3 text-sm text-gray-500">
+			Anyone with the address can read your plan, so treat it like a password.
+			{#if data.calendarLink}
+				Replacing it stops every calendar already using the old one.
+			{/if}
+		</p>
+
+		<form method="post" action="?/calendarLink" use:enhance class="mt-3">
+			<button class="btn btn-sm {data.calendarLink ? '' : 'btn-primary'}">
+				{data.calendarLink ? 'Replace the link' : 'Create a calendar link'}
+			</button>
+		</form>
+	</Card>
 
 	<!-- API tokens -->
 	<Card title="API tokens" flush>

@@ -6,6 +6,15 @@ rest. Versions follow `package.json`.
 
 ## Unreleased
 
+- **Your plan, in the calendar you already use.** Settings → Integrations now
+  hands you a calendar address you can paste into Google Calendar, Apple
+  Calendar, Thunderbird or a phone's built-in app. Your blocks turn up there
+  and keep themselves up to date, read-only, with nothing to install. Anyone
+  holding the address can read your plan, so it is treated like a password —
+  and "Replace the link" stops every calendar using the old one at once.
+- A subscribed calendar's event no longer shows a stray backslash when its name
+  has a semicolon in it — "Standup\; then triage" was being read literally.
+
 - Buttons have weights again. Every button used to be a white box with a
   border and a shadow, which is fine for one and a wall for ten — and ten in a
   row was the normal case. A secondary button is now a quiet tonal fill, so

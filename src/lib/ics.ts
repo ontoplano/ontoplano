@@ -74,12 +74,20 @@ function splitLine(line: string): { name: string; params: Record<string, string>
 	return { name: name.toUpperCase(), params, value };
 }
 
-/** Text values escape commas, semicolons and newlines. */
+/**
+ * Text values escape commas, semicolons and newlines.
+ *
+ * The semicolon line used to read `.replace(/;/g, ';')` — a semicolon replaced
+ * by a semicolon, which is nothing at all, so `\;` came through with its
+ * backslash still attached and every subscribed meeting with a semicolon in its
+ * name read "Standup\; then triage". Found by generating a feed in
+ * `calendar-feed.ts` and reading it back through here.
+ */
 function unescapeText(value: string): string {
 	return value
 		.replace(/\\n/gi, ' ')
 		.replace(/\\,/g, ',')
-		.replace(/;/g, ';')
+		.replace(/\\;/g, ';')
 		.replace(/\\\\/g, '\\')
 		.trim();
 }

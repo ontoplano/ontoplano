@@ -29,7 +29,18 @@ export const SCOPES = {
 	'plugin:declare': 'Name and describe itself on your integrations page',
 	'webhooks:manage': 'Ask to be told when things happen — and manage those subscriptions',
 	'shopping:read': 'See everything on your shopping list',
-	'shopping:write': 'Add to your shopping list, and tick things bought'
+	'shopping:write': 'Add to your shopping list, and tick things bought',
+	/*
+	 * The calendar feed's own scope, and the reason it has one.
+	 *
+	 * A calendar app cannot send a header, so the credential has to live in the
+	 * URL — where it is written into a config file, walked past by every proxy in
+	 * between, and sometimes shared with a household. `schedule:read` would have
+	 * done the job and would have made every leak of that URL a leak of a token
+	 * that might also write to the shopping list. This grants one thing, the feed
+	 * route accepts nothing else, and what a leaked link costs is bounded.
+	 */
+	'calendar:read': 'Publish your plan as a calendar link — read-only, and nothing else'
 } as const;
 
 export type Scope = keyof typeof SCOPES;

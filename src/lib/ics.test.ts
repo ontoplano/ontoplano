@@ -254,3 +254,41 @@ describe('a whole file', () => {
 		expect(found.map((e) => e.summary)).toEqual(['Earlier', 'Later']);
 	});
 });
+
+/**
+ * What somebody else's calendar wrote, read back as they wrote it.
+ *
+ * Escaping is where a parser fails quietly: the event still appears, it is just
+ * subtly wrong, so nobody files it and everybody sees it. The semicolon case
+ * below shipped — `\;` came through with its backslash attached, because the
+ * rule meant to strip it replaced a semicolon with a semicolon.
+ */
+describe('the text of an event', () => {
+	function summaryOf(raw: string): string {
+		const [only] = eventsBetween(
+			ics(event(['UID:esc', `SUMMARY:${raw}`, 'DTSTART:20260817T090000', 'DTEND:20260817T091500'])),
+			WEEK_FROM,
+			WEEK_TO
+		);
+		return only.summary;
+	}
+
+	test('gives back a comma', () => {
+		expect(summaryOf('Buy milk\\, bread')).toBe('Buy milk, bread');
+	});
+
+	test('gives back a semicolon, without the backslash in front of it', () => {
+		// `\\;` in this literal is the two characters `\` and `;` in the file —
+		// which is the escape the format actually writes. `'\;'` would be a bare
+		// semicolon and would pass against the bug it is here to catch.
+		expect(summaryOf('Standup\\; then triage')).toBe('Standup; then triage');
+	});
+
+	test('gives back a backslash', () => {
+		expect(summaryOf('a\\\\b')).toBe('a\\b');
+	});
+
+	test('and turns an escaped newline into a space, so a row stays one line', () => {
+		expect(summaryOf('Two\\nlines')).toBe('Two lines');
+	});
+});

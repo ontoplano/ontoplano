@@ -937,6 +937,10 @@ if (!one('select id from webhook_subscriptions where user_id = ?', uid)) {
 }
 apiToken('scratch script', 'streams:read');
 apiToken('Phone widget', 'today:read');
+// The calendar link, so /settings/integrations shows the "a link is active"
+// state in development rather than only the empty one. Its printed URL is
+// `<origin>/calendar/<the token above>`, and it is fetchable straight away.
+apiToken('Calendar link', 'calendar:read');
 
 // Instance data rather than the user's, but the settings page is a screen too:
 // one invitation outstanding, one already spent.
