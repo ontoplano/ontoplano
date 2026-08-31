@@ -549,15 +549,18 @@ const instance = (slotId, scheduledAt, status, extra = {}) => {
 const apiToken = (name, scopes) => {
 	const existing = one('select id from api_tokens where user_id = ? and name = ?', uid, name);
 	if (existing) return existing.id;
-	// The plaintext is never stored; a dev token is printed once, like a real one.
 	const plain = `onto_${randomBytes(24).toString('hex')}`;
 	const hash = createHash('sha256').update(plain).digest('hex');
+	// Kept in the clear for a calendar link and for nothing else — that is the
+	// rule the app itself follows, and the settings page shows the address back.
+	const keep = scopes === 'calendar:read' ? plain : null;
 	const id = run(
-		`insert into api_tokens (user_id, name, token_hash, prefix, scopes, created_at, updated_at)
-		 values (?, ?, ?, ?, ?, ?, ?)`,
+		`insert into api_tokens (user_id, name, token_hash, plaintext, prefix, scopes, created_at, updated_at)
+		 values (?, ?, ?, ?, ?, ?, ?, ?)`,
 		uid,
 		name,
 		hash,
+		keep,
 		plain.slice(0, 12),
 		scopes,
 		stamp(now),
@@ -937,10 +940,11 @@ if (!one('select id from webhook_subscriptions where user_id = ?', uid)) {
 }
 apiToken('scratch script', 'streams:read');
 apiToken('Phone widget', 'today:read');
-// The calendar link, so /settings/integrations shows the "a link is active"
-// state in development rather than only the empty one. Its printed URL is
-// `<origin>/calendar/<the token above>`, and it is fetchable straight away.
-apiToken('Calendar link', 'calendar:read');
+// Two calendar links, so /settings/integrations shows the list with its
+// addresses rather than only the empty state. Each printed URL is
+// `<origin>/calendar/<the token above>`, and both are fetchable straight away.
+apiToken('Calendar link — phone', 'calendar:read');
+apiToken('Calendar link — laptop', 'calendar:read');
 
 // Instance data rather than the user's, but the settings page is a screen too:
 // one invitation outstanding, one already spent.

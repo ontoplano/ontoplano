@@ -40,7 +40,7 @@ export const SCOPES = {
 	 * that might also write to the shopping list. This grants one thing, the feed
 	 * route accepts nothing else, and what a leaked link costs is bounded.
 	 */
-	'calendar:read': 'Publish your plan as a calendar link — read-only, and nothing else'
+	'calendar:read': 'Show your plan in a calendar app. It can see the plan and change nothing'
 } as const;
 
 export type Scope = keyof typeof SCOPES;
@@ -61,6 +61,22 @@ export interface CreatedToken {
 	plaintext: string;
 	prefix: string;
 	scopes: Scope[];
+}
+
+/**
+ * How many calendar links one account may hold.
+ *
+ * More than one is the point — a phone, a laptop, a partner's calendar — and
+ * each can be revoked without disturbing the others. A ceiling all the same:
+ * these are readable addresses to somebody's whole plan, and an account that
+ * has quietly accumulated forty of them cannot be reasoned about by the person
+ * who owns it.
+ */
+export const CALENDAR_LINK_LIMIT = 5;
+
+/** A calendar link is exactly this one scope — see the note beside it. */
+export function isCalendarLink(scopes: readonly string[]): boolean {
+	return scopes.length === 1 && scopes[0] === 'calendar:read';
 }
 
 export function createToken(
@@ -85,6 +101,30 @@ export function createToken(
 	];
 	if (scopes.length === 0) throw new ForbiddenError('At least one valid scope is required');
 
+	/*
+	 * A calendar link stands alone, and it is refused rather than trimmed.
+	 *
+	 * The feed route accepts a token holding this scope and nothing else, so a
+	 * token that mixed it with `shopping:write` would be a calendar address that
+	 * does not work as one — and would carry a key that writes into a URL pasted
+	 * into somebody's calendar app. Refusing says which of the two things they
+	 * are making; combining silently makes neither.
+	 */
+	if (scopes.includes('calendar:read') && scopes.length > 1) {
+		throw new ForbiddenError(
+			'A calendar link reads your plan and nothing else — it cannot be combined with other scopes'
+		);
+	}
+
+	if (isCalendarLink(scopes)) {
+		const held = listTokens(ctx).filter((t) => isCalendarLink(t.scopes)).length;
+		if (held >= CALENDAR_LINK_LIMIT) {
+			throw new ForbiddenError(
+				`That is ${CALENDAR_LINK_LIMIT} calendar links already. Revoke one to make another.`
+			);
+		}
+	}
+
 	let expiresAt: string | null = null;
 	if (
 		input.expiresInDays !== undefined &&
@@ -106,6 +146,9 @@ export function createToken(
 			userId: ctx.userId,
 			name,
 			tokenHash: hashToken(plaintext),
+			// Kept only for a calendar link, so its address can be shown again.
+			// See the column's own note in the schema.
+			plaintext: isCalendarLink(scopes) ? plaintext : null,
 			prefix: plaintext.slice(0, PREFIX_DISPLAY_LENGTH),
 			scopes: scopes.join(','),
 			expiresAt,
@@ -123,6 +166,8 @@ export interface TokenSummary {
 	name: string;
 	prefix: string;
 	scopes: Scope[];
+	/** The whole token, for a calendar link and for nothing else. */
+	plaintext: string | null;
 	lastUsedAt: string | null;
 	expiresAt: string | null;
 	createdAt: string;
@@ -140,6 +185,7 @@ export function listTokens(ctx: Ctx): TokenSummary[] {
 			name: t.name,
 			prefix: t.prefix,
 			scopes: t.scopes.split(',').filter(Boolean) as Scope[],
+			plaintext: t.plaintext,
 			lastUsedAt: t.lastUsedAt,
 			expiresAt: t.expiresAt,
 			createdAt: t.createdAt

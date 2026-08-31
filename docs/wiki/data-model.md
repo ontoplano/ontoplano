@@ -13,7 +13,7 @@ exist.
 | ------------------------------------------------ | ------- | ----------------- |
 | [`account`](#account)                            | 13      | yes               |
 | [`activities`](#activities)                      | 9       | yes               |
-| [`api_tokens`](#apitokens)                       | 11      | yes               |
+| [`api_tokens`](#apitokens)                       | 12      | yes               |
 | [`audit_events`](#auditevents)                   | 7       | yes               |
 | [`billing_events`](#billingevents)               | 8       | —                 |
 | [`calendar_feeds`](#calendarfeeds)               | 9       | yes               |
@@ -111,6 +111,7 @@ Indexes:
 | `name`         | text    | not null | —       | —                 |
 | `token_hash`   | text    | not null | —       | —                 |
 | `prefix`       | text    | not null | —       | —                 |
+| `plaintext`    | text    | null     | —       | —                 |
 | `scopes`       | text    | not null | `''`    | —                 |
 | `last_used_at` | text    | null     | —       | —                 |
 | `expires_at`   | text    | null     | —       | —                 |

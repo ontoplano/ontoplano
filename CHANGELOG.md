@@ -6,6 +6,12 @@ rest. Versions follow `package.json`.
 
 ## Unreleased
 
+- **Calendar links are yours to look at again.** The address is now kept and
+  shown back on Settings → Integrations, so setting it up on a second device a
+  fortnight later no longer costs you the first. You can hold up to five —
+  name them ("my phone") — and revoke any one on its own. They sit in the
+  token list with everything else, because that is what they are.
+
 - The demo's notes are written the way notes are actually written — headings,
   lists, quotes, the odd task list — so what the diary and notebooks do with
   Markdown is visible without typing any. The Republic notebook has more in it,

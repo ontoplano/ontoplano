@@ -114,19 +114,49 @@ test('a wrong address and a wrong scope are the same answer', async ({ playwrigh
 	await request.dispose();
 });
 
-test('replacing the link stops the old one at once', async ({ playwright }) => {
+test('a second link works alongside the first', async ({ playwright }) => {
 	const { request, cookie } = await account(playwright);
 
-	const first = await makeLink(request, cookie);
-	expect((await request.get(first, { headers: { Cookie: '' } })).status()).toBe(200);
+	// A phone and a laptop, which is the case one-link-per-account made
+	// impossible: wanting it in a second place cost you the first, and making
+	// a new one used to revoke the old.
+	const phone = await makeLink(request, cookie);
+	const laptop = await makeLink(request, cookie);
+	expect(laptop).not.toBe(phone);
 
-	const second = await makeLink(request, cookie);
-	expect(second).not.toBe(first);
+	expect((await request.get(phone, { headers: { Cookie: '' } })).status()).toBe(200);
+	expect((await request.get(laptop, { headers: { Cookie: '' } })).status()).toBe(200);
 
-	// The whole point of the Replace button: every calendar using the old
-	// address stops getting the plan, immediately.
-	expect((await request.get(first, { headers: { Cookie: '' } })).status()).toBe(404);
-	expect((await request.get(second, { headers: { Cookie: '' } })).status()).toBe(200);
+	await request.dispose();
+});
+
+test('the addresses are shown back on the settings page', async ({ playwright }) => {
+	const { request, cookie } = await account(playwright);
+
+	const link = await makeLink(request, cookie);
+	const page = await (
+		await request.get('/settings/integrations', { headers: { Cookie: cookie } })
+	).text();
+
+	// The reason the plaintext is kept for this one kind of token: set it up on
+	// the phone, then want it on the laptop a fortnight later.
+	expect(page).toContain(link);
+
+	await request.dispose();
+});
+
+test('a sixth calendar link is refused, in words', async ({ playwright }) => {
+	const { request, cookie } = await account(playwright);
+
+	for (let i = 0; i < 5; i++) await makeLink(request, cookie);
+
+	const res = await request.post('/settings/integrations?/calendarLink', {
+		headers: { Origin: ORIGIN, Cookie: cookie, 'x-sveltekit-action': 'true' },
+		form: {}
+	});
+	const body = await res.text();
+	expect(body).toContain('Revoke one');
+	expect(/onto_[A-Za-z0-9_-]+/.test(body), 'no sixth link was minted').toBe(false);
 
 	await request.dispose();
 });

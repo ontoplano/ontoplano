@@ -225,6 +225,13 @@
       "when": 1788118104562,
       "tag": "0031_client-errors",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1788198180660,
+      "tag": "0032_neat_thunderbolt_ross",
+      "breakpoints": true
     }
   ]
 }

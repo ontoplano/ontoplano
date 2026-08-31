@@ -120,11 +120,11 @@
 	-->
 	<Card
 		title="Calendar link"
-		description="Subscribe to your plan from Google Calendar, Apple Calendar, Thunderbird — anything that takes a calendar address. Read-only, and it updates itself."
+		description="Paste the address into Google Calendar, Apple Calendar or Thunderbird and your plan appears there, keeping itself current. Those apps only read it — nothing they do can change your plan."
 	>
 		{#if newFeedUrl}
 			<div class="border border-blue-200 bg-blue-50 p-4">
-				<p class="text-sm font-semibold text-blue-900">Copy it now — it is not shown again.</p>
+				<p class="text-sm font-semibold text-blue-900">Your new calendar address</p>
 				<div class="mt-2 flex items-center gap-2">
 					<code
 						class="flex-1 overflow-x-auto border border-blue-200 bg-white px-3 py-2 font-mono text-xs break-all text-gray-900"
@@ -135,17 +135,6 @@
 					</button>
 				</div>
 			</div>
-		{:else if data.calendarLink}
-			<p class="text-sm text-gray-600">
-				A link is active, made {new Date(data.calendarLink.createdAt).toLocaleDateString()}.
-				{#if data.calendarLink.lastUsedAt}
-					Last fetched {new Date(data.calendarLink.lastUsedAt).toLocaleDateString()}.
-				{:else}
-					Nothing has fetched it yet.
-				{/if}
-			</p>
-		{:else}
-			<p class="text-sm text-gray-600">No link yet.</p>
 		{/if}
 
 		<!--
@@ -156,16 +145,35 @@
 			machine.
 		-->
 		<p class="mt-3 text-sm text-gray-500">
-			Anyone with the address can read your plan, so treat it like a password.
-			{#if data.calendarLink}
-				Replacing it stops every calendar already using the old one.
-			{/if}
+			Anyone with the address can read your plan, so treat it like a password. Each one is listed
+			below and can be revoked on its own.
 		</p>
 
-		<form method="post" action="?/calendarLink" use:enhance class="mt-3">
-			<button class="btn btn-sm {data.calendarLink ? '' : 'btn-primary'}">
-				{data.calendarLink ? 'Replace the link' : 'Create a calendar link'}
+		<form method="post" action="?/calendarLink" use:enhance class="mt-3 flex items-end gap-2">
+			<!-- Named, because five identical rows called "Calendar link" are five
+			     rows nobody can revoke with any confidence. -->
+			<label class="text-xs text-gray-500">
+				<span class="eyebrow block text-gray-600">Where it is going</span>
+				<input
+					autocomplete="off"
+					name="label"
+					type="text"
+					maxlength="60"
+					placeholder="my phone"
+					class="input mt-1 w-48"
+				/>
+			</label>
+			<button
+				class="btn btn-sm btn-primary"
+				disabled={data.calendarLinks.length >= data.calendarLinkLimit}
+			>
+				Create a calendar link
 			</button>
+			{#if data.calendarLinks.length >= data.calendarLinkLimit}
+				<span class="text-xs text-gray-500">
+					{data.calendarLinkLimit} is the most. Revoke one to make another.
+				</span>
+			{/if}
 		</form>
 	</Card>
 
@@ -262,7 +270,39 @@
 					>
 						<div class="min-w-0 flex-1">
 							<p class="truncate text-sm font-medium text-gray-900">{token.name}</p>
-							<p class="mt-0.5 font-mono text-xs text-gray-500">{token.prefix}…</p>
+							<!--
+								A calendar link shows its whole address; every other token
+								shows the six characters that identify it and nothing more.
+								That difference is the difference between the two kinds of
+								credential, and it is the one thing this row has to make
+								obvious.
+							-->
+							{#if token.feedUrl}
+								<div class="mt-1 flex items-center gap-2">
+									<code
+										class="min-w-0 flex-1 overflow-x-auto border border-gray-200 bg-gray-50 px-2 py-1 font-mono text-xs break-all text-gray-700"
+										>{token.feedUrl}</code
+									>
+									<button
+										type="button"
+										onclick={() => copyToken(token.feedUrl!)}
+										class="btn btn-sm shrink-0"
+									>
+										{copied ? 'Copied' : 'Copy'}
+									</button>
+								</div>
+							{:else if token.scopes.includes('calendar:read')}
+								<!-- Made before addresses were kept, so this one genuinely
+								     cannot be shown again. Said, rather than left as a row
+								     that looks broken next to the ones above it. -->
+								<p class="mt-0.5 font-mono text-xs text-gray-500">{token.prefix}…</p>
+								<p class="mt-0.5 text-xs text-gray-500">
+									This address was not kept and cannot be shown again. Make a new link to have one
+									you can copy.
+								</p>
+							{:else}
+								<p class="mt-0.5 font-mono text-xs text-gray-500">{token.prefix}…</p>
+							{/if}
 							<p class="mt-1 text-xs text-gray-500">
 								{token.scopes.map(scopeSentence).join(' · ') || 'no scopes'}
 								{#if token.lastUsedAt}

@@ -160,6 +160,59 @@ describe('a token a plugin holds', () => {
 		expect(JSON.stringify(listed)).not.toContain(made.plaintext);
 	});
 
+	/**
+	 * The calendar link is the exception, deliberately.
+	 *
+	 * It lives in a URL pasted into a calendar app, so "set it up on the phone,
+	 * then want it on the laptop a fortnight later" is the ordinary case — and
+	 * with nothing stored, the only answer was to replace the link and redo the
+	 * phone. It is kept in the clear because what it can do is bounded: read the
+	 * plan, and nothing else. These tests are that bound.
+	 */
+	describe('a calendar link', () => {
+		test('keeps its address so it can be shown again', () => {
+			const made = tokens.createToken(ctx, { name: 'phone', scopes: 'calendar:read' });
+			const listed = tokens.listTokens(ctx).find((t) => t.id === made.id)!;
+
+			expect(listed.plaintext).toBe(made.plaintext);
+		});
+
+		test('and is the only kind of token that does', () => {
+			const made = tokens.createToken(ctx, { name: 'a widget', scopes: 'today:read' });
+			const listed = tokens.listTokens(ctx).find((t) => t.id === made.id)!;
+
+			expect(listed.plaintext).toBeNull();
+		});
+
+		test('cannot be combined with a scope that does anything else', () => {
+			// Otherwise a key that writes to the shopping list ends up in a URL
+			// pasted into somebody's calendar app — and it would not work as a
+			// feed either, since the route accepts that one scope alone.
+			expect(() =>
+				tokens.createToken(ctx, { name: 'mixed', scopes: ['calendar:read', 'shopping:write'] })
+			).toThrow(/cannot be combined/i);
+		});
+
+		test('runs out at five', () => {
+			const fresh = { ...ctx, userId: STRANGER };
+			for (let i = 0; i < tokens.CALENDAR_LINK_LIMIT; i++) {
+				tokens.createToken(fresh, { name: `link ${i}`, scopes: 'calendar:read' });
+			}
+
+			expect(() =>
+				tokens.createToken(fresh, { name: 'one too many', scopes: 'calendar:read' })
+			).toThrow(/revoke one/i);
+
+			// And revoking one makes room again, rather than the count being of
+			// everything ever made.
+			const [first] = tokens.listTokens(fresh);
+			tokens.revokeToken(fresh, first.id);
+			expect(() =>
+				tokens.createToken(fresh, { name: 'room again', scopes: 'calendar:read' })
+			).not.toThrow();
+		});
+	});
+
 	test('needs at least one scope the app knows', () => {
 		expect(() => tokens.createToken(ctx, { name: 'empty', scopes: '' })).toThrow();
 		expect(() => tokens.createToken(ctx, { name: 'nonsense', scopes: 'wat:read' })).toThrow();

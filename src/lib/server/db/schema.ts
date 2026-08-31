@@ -986,6 +986,21 @@ export const apiTokens = sqliteTable(
 		name: text('name').notNull(),
 		tokenHash: text('token_hash').notNull(),
 		prefix: text('prefix').notNull(), // first chars, shown in the UI to identify a token
+		/*
+		 * The one kind of token that is kept in the clear, and why.
+		 *
+		 * Every other token is a hash: shown once, never recoverable, because a
+		 * stolen database must not be a set of working keys. A calendar link is
+		 * different in what it can do — read the plan, and nothing else — and
+		 * different in how it is used: it lives in a URL pasted into a calendar
+		 * app, and "set it up on the phone, then want it on the laptop a
+		 * fortnight later" is the ordinary case rather than the careless one.
+		 * Storing that one address so it can be shown again costs a blast radius
+		 * of "can read your plan", which anybody holding the database has anyway.
+		 *
+		 * Null for every token that is not a calendar link.
+		 */
+		plaintext: text('plaintext'),
 		scopes: text('scopes').notNull().default(''),
 		lastUsedAt: text('last_used_at'),
 		expiresAt: text('expires_at'),

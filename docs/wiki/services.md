@@ -525,7 +525,7 @@ What the page should do with an error: nothing, ask first, send, or drop it.
 
 #### `setClientErrorConsent(ctx, decision)`
 
-#### `recordClientError(ctx, input)`
+#### `recordClientError(ctx, input, options)`
 
 Write one report — to the log, and to a table the administrator can read.
 
@@ -2212,6 +2212,24 @@ that are secretly the same thing.
 Shared by the board, where it is a drop into a status column, and the plan
 grid, where it is a drop at a particular hour.
 
+#### `demoteToTodo(ctx, slotId)`
+
+Put a block back on the list, with no time.
+
+The exact reverse of `promoteTodo`, and it exists because the forward move
+was one-way: a todo dragged onto Tuesday at nine stopped being a todo, and
+changing your mind meant deleting the block and typing it in again. The week
+is a plan, and a plan you cannot back out of is one people stop making.
+
+One-off blocks only. A weekly block is a shape of the week rather than a
+task — dragging one off the grid would quietly delete every future
+occurrence, which is not what "not today" means. Refused, in words.
+
+What survives is what a todo can hold: the name, the notes, the category, the
+notebook and the three ratings. The date and the hour are what is being
+given up, and the status comes with it — a block ticked off and then pulled
+back is still done.
+
 #### `createTodo(ctx, raw)`
 
 #### `updateTodo(ctx, id, raw)`
@@ -2270,6 +2288,10 @@ to a string of jargon is not informed; the key is for the developer and the
 docs, the sentence is for the owner of the data.
 
 ### Functions
+
+#### `isCalendarLink(scopes)`
+
+A calendar link is exactly this one scope — see the note beside it.
 
 #### `createToken(ctx, input)`
 

@@ -12,17 +12,17 @@ changes this page on the next build.
 A token holds some of these and nothing else. Each description is the
 sentence somebody agrees to when they grant it.
 
-| Scope             | What it permits                                                    |
-| ----------------- | ------------------------------------------------------------------ |
-| `streams:write`   | Send readings into your data streams, and create new streams       |
-| `streams:read`    | Read everything your data streams have ever recorded               |
-| `schedule:read`   | Read everything on your calendar for the days ahead                |
-| `today:read`      | See today's blocks, habits and tasks — what the phone widget shows |
-| `plugin:declare`  | Name and describe itself on your integrations page                 |
-| `webhooks:manage` | Ask to be told when things happen — and manage those subscriptions |
-| `shopping:read`   | See everything on your shopping list                               |
-| `shopping:write`  | Add to your shopping list, and tick things bought                  |
-| `calendar:read`   | Publish your plan as a calendar link — read-only, and nothing else |
+| Scope             | What it permits                                                          |
+| ----------------- | ------------------------------------------------------------------------ |
+| `streams:write`   | Send readings into your data streams, and create new streams             |
+| `streams:read`    | Read everything your data streams have ever recorded                     |
+| `schedule:read`   | Read everything on your calendar for the days ahead                      |
+| `today:read`      | See today's blocks, habits and tasks — what the phone widget shows       |
+| `plugin:declare`  | Name and describe itself on your integrations page                       |
+| `webhooks:manage` | Ask to be told when things happen — and manage those subscriptions       |
+| `shopping:read`   | See everything on your shopping list                                     |
+| `shopping:write`  | Add to your shopping list, and tick things bought                        |
+| `calendar:read`   | Show your plan in a calendar app. It can see the plan and change nothing |
 
 ## Endpoints
 
@@ -98,7 +98,9 @@ Where the page sends what broke, and the answer it was given.
 
 Session-authenticated like `/api/search` — this exists for the page that is
 already open, not for a plugin. One body, two shapes: `{ decision }` records
-the person's yes or no, `{ error }` is a report, accepted only after a yes.
+the person's yes or no, `{ error }` is a report, accepted only after a yes —
+or with `once`, which is the error page's own button and speaks for that one
+report only.
 
 **POST**
 

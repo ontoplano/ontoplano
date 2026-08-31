@@ -11,8 +11,10 @@ import {
 } from '$lib/server/services/streams';
 import {
 	ALL_SCOPES,
+	CALENDAR_LINK_LIMIT,
 	SCOPES,
 	createToken,
+	isCalendarLink,
 	listTokens,
 	revokeToken
 } from '$lib/server/services/tokens';
@@ -28,44 +30,33 @@ import {
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
 
-	/*
-	 * Whether a calendar link exists, not what it is.
-	 *
-	 * The plaintext is not stored — it is hashed like every other token — so the
-	 * page can say "you have one, made on the 3rd" and offer to replace it, and
-	 * that is all. See the note beside the Replace action.
-	 */
-	const calendarLinks = listTokens(ctx).filter(
-		(t) => t.scopes.length === 1 && t.scopes[0] === 'calendar:read'
-	);
+	const tokens = listTokens(ctx);
+	const calendarLinks = tokens.filter((t) => isCalendarLink(t.scopes));
 
 	return {
 		/*
-		 * The calendar link shares this table and is not one of these.
+		 * One list, calendar links included.
 		 *
-		 * It is a token underneath — same row, same hashing, same revocation —
-		 * but on the page it is its own feature with its own card, and listing
-		 * it here as well would make somebody wonder which of the two things
-		 * they are looking at and what happens if they revoke one. Shared
-		 * storage is not shared interface.
+		 * They were filtered out of here and given a card of their own, on the
+		 * grounds that two views of one row invite "which am I looking at". The
+		 * simpler truth won: a calendar link *is* a token, it is revoked like
+		 * one, and somebody who wants to see the addresses they have handed out
+		 * should find them in the list of things they have handed out. The card
+		 * above still makes them, and explains what they are for.
 		 */
-		tokens: listTokens(ctx).filter(
-			(t) => !(t.scopes.length === 1 && t.scopes[0] === 'calendar:read')
-		),
-		calendarLink: calendarLinks[0] ?? null,
+		tokens: tokens.map((t) => ({
+			...t,
+			// Assembled here rather than in the page: only the server knows the
+			// origin this instance answers on.
+			feedUrl: t.plaintext ? `${url.origin}/calendar/${t.plaintext}` : null
+		})),
+		calendarLinks,
+		calendarLinkLimit: CALENDAR_LINK_LIMIT,
 		streams: listStreams(ctx, { includeArchived: true }).map((s) => ({
 			...s,
 			stats: streamStats(ctx, s.id)
 		})),
-		/*
-		 * `calendar:read` is not offered here.
-		 *
-		 * It exists to bound what a URL-borne credential can do, and the card
-		 * above is the only thing that should mint one. Offering it in this list
-		 * would let somebody create an "API token" that is really a feed key —
-		 * which the filter above would then hide from them.
-		 */
-		scopes: ALL_SCOPES.filter((key) => key !== 'calendar:read').map((key) => ({
+		scopes: ALL_SCOPES.map((key) => ({
 			key,
 			description: SCOPES[key]
 		})),
@@ -104,29 +95,26 @@ export const actions: Actions = {
 	},
 
 	/**
-	 * Mint the calendar link, replacing whatever was there.
+	 * Mint another calendar link.
 	 *
-	 * One per account. Replacing revokes the old one first, which is the whole
-	 * point of the action: the URL is the credential, so "I pasted it somewhere I
-	 * should not have" has to have an answer, and that answer is that every
-	 * subscription using the old link stops working at once.
+	 * Several are allowed — a phone, a laptop, a partner's calendar — because
+	 * one per account meant that wanting it in a second place cost you the
+	 * first. Each is revoked on its own, in the list below, which is what makes
+	 * "I pasted that one somewhere I should not have" recoverable without
+	 * breaking the calendars that are fine.
 	 */
 	calendarLink: async ({ request, locals, url }) => {
 		const ctx = buildCtx(locals.user!.id);
-		await request.formData();
+		const formData = await request.formData();
 
 		try {
-			for (const existing of listTokens(ctx)) {
-				if (existing.scopes.length === 1 && existing.scopes[0] === 'calendar:read')
-					revokeToken(ctx, existing.id);
-			}
-
-			const token = createToken(ctx, { name: 'Calendar link', scopes: ['calendar:read'] });
+			const token = createToken(ctx, {
+				name: formData.get('label')?.toString()?.trim() || 'Calendar link',
+				scopes: ['calendar:read']
+			});
 			return {
 				success: true,
 				action: 'calendarLink',
-				// Shown once, same as any other token — the difference is that this
-				// one is only useful as a whole URL, so it is assembled here.
 				feedUrl: `${url.origin}/calendar/${token.plaintext}`
 			};
 		} catch (e) {

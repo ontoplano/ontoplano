@@ -1968,7 +1968,7 @@
 						</div>
 						<p class="mt-2 text-xs text-gray-500">
 							In Google Calendar: Settings → the calendar → “Secret address in iCal format”.
-							Read-only — nothing here is ever written back.
+							Ontoplano only reads that calendar; nothing you do here changes it.
 						</p>
 					</form>
 				</div>
