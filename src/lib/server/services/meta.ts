@@ -5,7 +5,7 @@ import { ValidationError } from './errors.js';
  *
  * Ontoplano stores these and never interprets them. Plugins read them from the
  * schedule API and decide what they mean — `alarm: true` and `remind_min: 5`
- * make a-private-plugin ring five minutes early, and a future ontoplano app can act
+ * make an alarm app ring five minutes early, and a future ontoplano app can act
  * on the same pairs without a schema change.
  *
  * Deliberately constrained rather than free-form JSON: an unbounded blob turns

@@ -153,7 +153,7 @@ Withdraw a manifest. The metadata keys keep working; they just lose their label.
 
 Upcoming scheduled occurrences, so an external app can act on the plan.
 
-This is what a-private-plugin reads to set alarms from planner slots. Ontoplano
+This is what an alarm app reads to set alarms from planner slots. Ontoplano
 reports _what is scheduled_; deciding which occurrences deserve an alarm —
 and what kind — is the consumer's business, matched on `title`, `category`
 or `label`.

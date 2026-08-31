@@ -12,9 +12,9 @@ import { num, str } from './validate.js';
 /**
  * Scopes an API token can hold.
  *
- * Deliberately narrow: a-private-plugin running on a phone needs to push weight
- * readings and read the schedule to set alarms. It must not be able to read
- * the diary if that phone is ever compromised.
+ * Deliberately narrow: a scale app on a phone needs to push weight readings
+ * and read the schedule to set alarms. It must not be able to read the diary
+ * if that phone is ever compromised.
  *
  * Each description is the sentence the person agrees to — "read everything on
  * your calendar", not `schedule:read`. A grant is consent, and consent given

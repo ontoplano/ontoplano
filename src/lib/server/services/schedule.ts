@@ -17,7 +17,7 @@ import { num } from './validate.js';
 /**
  * Read-only view of what's coming up.
  *
- * This is what lets an external app schedule against the plan — a-private-plugin
+ * This is what lets an external app schedule against the plan — an alarm clock
  * turning a "wake up 07:00 Tuesday" slot into an alarm, for instance. It is
  * deliberately read-only and deliberately generic: ontoplano exposes *what is
  * scheduled*, and the consuming app decides what to do about it. Ontoplano

@@ -132,14 +132,14 @@ describe('the keys a block can carry', () => {
 		// It knows what the key does to it; a generic gloss would say less.
 		const merged = mergeSuggestions([
 			{
-				name: 'a-private-plugin',
+				name: 'scale',
 				metaKeys: [{ key: 'location', description: 'Which room the scale is in', example: 'B12' }]
 			}
 		]);
 
 		const location = merged.find((s) => s.key === 'location')!;
 		expect(location.description).toBe('Which room the scale is in');
-		expect(location.usedBy).toBe('a-private-plugin');
+		expect(location.usedBy).toBe('scale');
 	});
 
 	test('two plugins claiming one key are both named, not picked between', () => {

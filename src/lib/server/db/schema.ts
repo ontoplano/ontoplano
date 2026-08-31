@@ -971,7 +971,7 @@ export const invites = sqliteTable(
 
 // --- Plugin platform: API tokens ---
 //
-// Tokens are how external apps (a-private-plugin, scripts, future plugins) talk to
+// Tokens are how external apps (scripts, phone apps, future plugins) talk to
 // ontoplano. Only the SHA-256 hash is stored — the plaintext is shown once at
 // creation and is unrecoverable afterwards. `scopes` is a comma-separated list
 // of scope slugs; see `$lib/server/services/tokens.ts` for the vocabulary.
@@ -1058,9 +1058,9 @@ export const dataStreams = sqliteTable(
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' }),
-		slug: text('slug').notNull(), // 'a-private-plugin.weight'
+		slug: text('slug').notNull(), // 'scale.weight'
 		name: text('name').notNull(),
-		source: text('source').notNull(), // producing app, e.g. 'a-private-plugin'
+		source: text('source').notNull(), // producing app, e.g. 'scale'
 		kind: text('kind', { enum: ['measurement', 'event', 'counter', 'state'] }).notNull(),
 		unit: text('unit').notNull().default(''),
 		display: text('display', {
@@ -1444,12 +1444,12 @@ export const weeklyReviews = sqliteTable(
  * program reads which, or what happens if you set it.
  *
  * A manifest is a plugin declaring, through the API and with its own token,
- * which keys it understands. The editor then shows provenance — "used by
- * a-private-plugin" — instead of a list that looks arbitrary.
+ * which keys it understands. The editor then shows provenance — "used by the
+ * alarm app" — instead of a list that looks arbitrary.
  *
- * Per-user rather than global: one person's a-private-plugin may be a version behind
- * another's, and a manifest is a claim by an installation, not a fact about the
- * world.
+ * Per-user rather than global: one person's copy of a plugin may be a version
+ * behind another's, and a manifest is a claim by an installation, not a fact
+ * about the world.
  */
 export const pluginManifests = sqliteTable(
 	'plugin_manifests',

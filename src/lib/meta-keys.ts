@@ -26,7 +26,8 @@ export const SUGGESTED_KEYS: MetaKeySuggestion[] = [
  * Combine ontoplano's own suggestions with what plugins have declared.
  *
  * A plugin's description wins for a key it claims: it knows what the key does
- * to it, and a generic gloss would be less useful than "used by a-private-plugin".
+ * to it, and a generic gloss would be less useful than naming the app that
+ * reads it.
  */
 export function mergeSuggestions(
 	declared: { name: string; metaKeys: { key: string; description: string; example: string }[] }[]

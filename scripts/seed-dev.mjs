@@ -629,7 +629,7 @@ const manifest = (source, name, description, metaKeys) => {
 		source,
 		name,
 		description,
-		'https://example.invalid/a-private-plugin',
+		'https://example.invalid/scale',
 		metaKeys,
 		stamp(now)
 	);
@@ -925,7 +925,7 @@ win(iso(dayOffset(-1)), 1, 'ran 8km');
 
 // --- the plugin platform --------------------------------------------------------------
 
-apiToken('a-private-plugin on the phone', 'schedule:read,streams:write');
+apiToken('the scale app on my phone', 'schedule:read,streams:write');
 
 // One webhook subscription, so the integrations page shows the card in use.
 if (!one('select id from webhook_subscriptions where user_id = ?', uid)) {
@@ -999,23 +999,25 @@ if (!one('select id from subscriptions where user_id = ?', uid)) {
 invite('dev-invite-open-0001', 'for my brother');
 invite('dev-invite-used-0002', 'for Ana', uid);
 
-const weight = stream('a-private-plugin.weight', 'Weight', 'measurement', 'kg', 'line_chart');
+const weight = stream('scale.weight', 'Weight', 'measurement', 'kg', 'line_chart');
 for (let back = 0; back < 30; back += 2) {
 	const d = dayOffset(-back);
 	point(weight, stamp(d), iso(d), Number((78 + Math.sin(back / 4) * 1.2).toFixed(1)));
 }
 
 // One stream with a retention window, so the settings page shows it in use.
-const sleep = stream('a-private-plugin.sleep', 'Sleep', 'measurement', 'h', 'bar_chart', 365);
+const sleep = stream('scale.sleep', 'Sleep', 'measurement', 'h', 'bar_chart', 365);
 for (let back = 0; back < 14; back++) {
 	const d = dayOffset(-back);
 	point(sleep, stamp(d), iso(d), Number((6.4 + ((back * 7) % 5) / 4).toFixed(1)));
 }
 
+// A plausible producer, and deliberately a generic one: this seed fills the
+// public demo, which is no place to advertise anybody's particular app.
 manifest(
-	'a-private-plugin',
-	'a-private-plugin',
-	'Alarms that read the plan',
+	'scale',
+	'Smart scale',
+	'Weighs you, and sets alarms from the plan',
 	JSON.stringify(['alarm', 'remind_min'])
 );
 

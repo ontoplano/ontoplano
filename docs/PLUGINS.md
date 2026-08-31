@@ -9,8 +9,8 @@ Plugins do two things:
 - **Push data in** as a _stream_ — readings, events, counts. Ontoplano charts it for you.
 - **Read the schedule out** — to act on what the user has planned.
 
-`a-private-plugin` (a smart-scale alarm app) does both: it pushes weight readings, and reads
-upcoming planner slots to decide when to ring.
+A smart-scale alarm app does both, and is the example used throughout: it pushes weight
+readings, and reads upcoming planner slots to decide when to ring.
 
 ---
 
@@ -57,9 +57,9 @@ Idempotent — call it at every startup, it costs nothing.
 ```http
 POST /api/v1/streams
 {
-  "slug":    "a-private-plugin.weight",
+  "slug":    "scale.weight",
   "name":    "Weight",
-  "source":  "a-private-plugin",
+  "source":  "scale",
   "kind":    "measurement",
   "unit":    "kg",
   "display": "line_chart"
@@ -87,7 +87,7 @@ stream should set this; nobody wants minute-by-minute readings from two years ag
 ### Push points
 
 ```http
-POST /api/v1/streams/a-private-plugin.weight/points
+POST /api/v1/streams/scale.weight/points
 {
   "points": [
     { "external_id": "2026-08-09T07:12:03Z", "at": "2026-08-09T07:12:03Z", "value": 78.4 },
@@ -174,7 +174,7 @@ to UTC this response gains an `at` field alongside, and `at_local` keeps its mea
 Ontoplano reports what's scheduled. It knows nothing about alarms, ringtones, or wifi —
 and it shouldn't, or every consumer's concepts would leak into its schema.
 
-So matching rules live in **your** app's config. a-private-plugin, for example, stores something like:
+So matching rules live in **your** app's config. The alarm app above stores something like:
 
 ```
 hard_alarm_when: title matches /wake up/i
@@ -333,10 +333,10 @@ Authorization: Bearer <token with plugin:declare>
 Content-Type: application/json
 
 {
-  "source": "a-private-plugin",
-  "name": "a-private-plugin",
+  "source": "scale",
+  "name": "Smart scale",
   "description": "Smart-scale alarm",
-  "homepage": "https://example.com/a-private-plugin",
+  "homepage": "https://example.com/scale",
   "metaKeys": [
     { "key": "alarm",       "description": "Ring an alarm for this block",       "example": "true" },
     { "key": "remind_min",  "description": "Notify N minutes beforehand",        "example": "5" },

@@ -211,7 +211,7 @@
 							type="text"
 							required
 							maxlength="60"
-							placeholder="a-private-plugin on my phone"
+							placeholder="the app on my phone"
 							class="input"
 						/>
 					</Field>

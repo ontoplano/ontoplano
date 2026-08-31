@@ -959,7 +959,7 @@ User-defined key/value metadata attached to planner slots.
 
 Ontoplano stores these and never interprets them. Plugins read them from the
 schedule API and decide what they mean — `alarm: true` and `remind_min: 5`
-make a-private-plugin ring five minutes early, and a future ontoplano app can act
+make an alarm app ring five minutes early, and a future ontoplano app can act
 on the same pairs without a schema change.
 
 Deliberately constrained rather than free-form JSON: an unbounded blob turns
@@ -1642,7 +1642,7 @@ in that list, so nothing happens and nothing says so (I3).
 
 Read-only view of what's coming up.
 
-This is what lets an external app schedule against the plan — a-private-plugin
+This is what lets an external app schedule against the plan — an alarm clock
 turning a "wake up 07:00 Tuesday" slot into an alarm, for instance. It is
 deliberately read-only and deliberately generic: ontoplano exposes _what is
 scheduled_, and the consuming app decides what to do about it. Ontoplano
@@ -2278,9 +2278,9 @@ todo that happens to have a time.
 
 Scopes an API token can hold.
 
-Deliberately narrow: a-private-plugin running on a phone needs to push weight
-readings and read the schedule to set alarms. It must not be able to read
-the diary if that phone is ever compromised.
+Deliberately narrow: a scale app on a phone needs to push weight readings
+and read the schedule to set alarms. It must not be able to read the diary
+if that phone is ever compromised.
 
 Each description is the sentence the person agrees to — "read everything on
 your calendar", not `schedule:read`. A grant is consent, and consent given

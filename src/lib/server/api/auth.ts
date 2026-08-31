@@ -49,7 +49,7 @@ function isWrite(method: string): boolean {
  * Authenticate an API request and check its scope.
  *
  * Two ways in:
- *  - `Authorization: Bearer onto_…` — external producers (a-private-plugin, scripts)
+ *  - `Authorization: Bearer onto_…` — external producers (scripts, phone apps)
  *  - an active session cookie — the app's own frontend, which holds every scope
  *
  * Both resolve to the same `Ctx`, so handlers never care which was used.
