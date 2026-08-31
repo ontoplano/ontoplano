@@ -63,6 +63,37 @@ describe('what the box blocked', () => {
 		expect(out.lastDay).toBe(0);
 	});
 
+	it('says how many times an address has been back', async () => {
+		/*
+		 * The list shows the last handful of bans. Without a count, an address on
+		 * its fourth visit is indistinguishable from one on its first — and the
+		 * two want different buttons pressed.
+		 */
+		const out = await read(
+			[
+				line(today('08:00:00'), 'ontoplano-web', 'Ban', '203.0.113.4'),
+				line(today('08:30:00'), 'ontoplano-web', 'Unban', '203.0.113.4'),
+				line(today('09:00:00'), 'ontoplano-web', 'Ban', '203.0.113.4'),
+				line(today('09:30:00'), 'ontoplano-web', 'Unban', '203.0.113.4'),
+				line(today('10:00:00'), 'ontoplano-web', 'Ban', '203.0.113.4'),
+				line(today('10:05:00'), 'sshd', 'Ban', '198.51.100.7'),
+				''
+			].join('\n')
+		);
+
+		const persistent = out.recent.find((b) => b.address === '203.0.113.4')!;
+		const passing = out.recent.find((b) => b.address === '198.51.100.7')!;
+
+		expect(persistent.times).toBe(3);
+		// Every row for that address carries the same count, not a running one:
+		// the question is "how often has this address been here", not "which of
+		// its visits is this".
+		expect(out.recent.filter((b) => b.address === '203.0.113.4').every((b) => b.times === 3)).toBe(
+			true
+		);
+		expect(passing.times).toBe(1);
+	});
+
 	it('reads bans, and only bans', async () => {
 		const out = await read(
 			[

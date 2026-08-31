@@ -358,6 +358,15 @@ sudo systemctl restart user@$(id -u)</pre>
 									{:else}
 										let back in after {ban.held}
 									{/if}
+									<!--
+										One ban is a scanner passing through; the ninth is
+										somebody working at it, and that is the row worth
+										blocking for good. The list only shows the last few, so
+										without this a repeat offender reads as a first-timer.
+									-->
+									{#if ban.times > 1}
+										· <strong class="font-medium">{ban.times}× in this log</strong>
+									{/if}
 								</span>
 							</span>
 							<span class="shrink-0 text-xs text-gray-500">{ago(ban.at)}</span>

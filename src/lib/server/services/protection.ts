@@ -46,6 +46,19 @@ export type Ban = {
 	held: string;
 	/** Still blocked as far as the log knows. */
 	active: boolean;
+	/**
+	 * How many times this address appears in the log being read.
+	 *
+	 * One row saying "blocked, let back in an hour later" is a scanner passing
+	 * through. The same address on its ninth ban is somebody working at it, and
+	 * that is the row worth blocking for good — but the list shows the last
+	 * handful of bans, so a repeat offender looks exactly like a first-timer
+	 * unless the count is carried with it.
+	 *
+	 * Counted across the tail that was read, not across all time: the log
+	 * rotates, and "since this file started" is the honest claim.
+	 */
+	times: number;
 };
 
 /*
@@ -153,7 +166,10 @@ export function protection(limit = 8): Protection {
 				reason: reasonFor(m[2]),
 				unbannedAt: null,
 				held: '',
-				active: true
+				active: true,
+				// Filled once every line has been read; a ban does not know how
+				// many others there are until then.
+				times: 0
 			});
 			continue;
 		}
@@ -161,8 +177,12 @@ export function protection(limit = 8): Protection {
 		if (u) released.set(`${u[2]}:${u[3]}`, u[1]);
 	}
 
+	const perAddress = new Map<string, number>();
+	for (const ban of bans) perAddress.set(ban.address, (perAddress.get(ban.address) ?? 0) + 1);
+
 	const now = local(new Date());
 	for (const ban of bans) {
+		ban.times = perAddress.get(ban.address) ?? 1;
 		const out = released.get(`${ban.jail}:${ban.address}`);
 		// An unban only belongs to a ban that came before it.
 		if (out && out > ban.at) {

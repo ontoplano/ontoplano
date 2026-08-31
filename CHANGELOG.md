@@ -10,7 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
-## 0.9.2 — 2026-08-31
+## 0.9.3 — 2026-08-31
+
+- "Block for good" works more than once. It failed on exactly the address you
+  would use it on — one fail2ban had just banned — because that address was
+  already in the firewall set, and the page stopped offering "unblock" as soon
+  as two addresses were in there.
+- Each blocked address says how many times it has been back. One ban is a
+  scanner passing through; the ninth is somebody working at it.
 
 - The demo shows the administration pages and refuses every change made from
   them, saying so. What describes the machine — the bind address, the database
@@ -18,7 +25,6 @@ version.
   is hidden there; it is somebody's server, not part of the tour.
 - A tab left open on the demo across an hourly reset no longer lands on a login
   page the demo does not have.
-
 
 - The demo's seeded notes no longer use Markdown checklists. In an app that has
   a todo list, a checkbox inside a note reads as one and is not.
