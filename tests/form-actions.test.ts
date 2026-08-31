@@ -27,7 +27,6 @@ vi.mock('$app/forms', () => ({
 
 const { settingsForm } = await import('../src/lib/actions/settings-form');
 const { autofocus, focusHere } = await import('../src/lib/actions/autofocus');
-const { reveal } = await import('../src/lib/actions/reveal');
 const { autogrow } = await import('../src/lib/actions/autogrow');
 const { notices } = await import('../src/lib/notify.svelte');
 
@@ -121,85 +120,6 @@ describe('where the keyboard lands', () => {
 		document.body.innerHTML = '<button id="confirm">Delete</button>';
 		focusHere(document.querySelector('#confirm')!);
 		expect(document.activeElement?.id).toBe('confirm');
-	});
-});
-
-describe('fading a section in as it is scrolled to', () => {
-	function observed() {
-		const instances: { callback: (entries: unknown[]) => void; disconnect: () => void }[] = [];
-		vi.stubGlobal(
-			'IntersectionObserver',
-			class {
-				callback: (entries: unknown[]) => void;
-				constructor(callback: (entries: unknown[]) => void) {
-					this.callback = callback;
-					instances.push({ callback, disconnect: () => this.disconnect() });
-				}
-				observe() {}
-				disconnect = vi.fn();
-			}
-		);
-		return instances;
-	}
-
-	test('somebody who asked for less motion gets the content immediately', () => {
-		vi.stubGlobal('matchMedia', () => ({ matches: true }));
-		document.body.innerHTML = '<section id="s"></section>';
-
-		reveal(document.querySelector('#s')!);
-		const section = document.querySelector('#s')!;
-
-		expect(section.classList.contains('revealed')).toBe(true);
-		// And it is never staged to fade, so there is nothing to animate.
-		expect(section.classList.contains('reveal')).toBe(false);
-	});
-
-	test('and so does a browser with no way to tell when it arrives', () => {
-		vi.stubGlobal('matchMedia', () => ({ matches: false }));
-		vi.stubGlobal('IntersectionObserver', undefined);
-		document.body.innerHTML = '<section id="s"></section>';
-
-		reveal(document.querySelector('#s')!);
-		expect(document.querySelector('#s')!.classList.contains('revealed')).toBe(true);
-	});
-
-	test('otherwise it is staged, then revealed when it comes into view', () => {
-		vi.stubGlobal('matchMedia', () => ({ matches: false }));
-		const instances = observed();
-		document.body.innerHTML = '<section id="s"></section>';
-
-		reveal(document.querySelector('#s')!, 120);
-		const section = document.querySelector('#s') as HTMLElement;
-
-		expect(section.classList.contains('reveal')).toBe(true);
-		expect(section.classList.contains('revealed')).toBe(false);
-		expect(section.style.transitionDelay).toBe('120ms');
-
-		instances[0].callback([{ isIntersecting: true }]);
-		expect(section.classList.contains('revealed')).toBe(true);
-	});
-
-	test('once only, so scrolling back up does not make it flicker', () => {
-		vi.stubGlobal('matchMedia', () => ({ matches: false }));
-		const instances = observed();
-		document.body.innerHTML = '<section id="s"></section>';
-
-		const handle = reveal(document.querySelector('#s')!) as { destroy?: () => void };
-		instances[0].callback([{ isIntersecting: true }]);
-
-		// It stops watching the moment it has done its job.
-		expect(typeof handle.destroy).toBe('function');
-	});
-
-	test('and a section scrolled past without entering stays staged', () => {
-		vi.stubGlobal('matchMedia', () => ({ matches: false }));
-		const instances = observed();
-		document.body.innerHTML = '<section id="s"></section>';
-
-		reveal(document.querySelector('#s')!);
-		instances[0].callback([{ isIntersecting: false }]);
-
-		expect(document.querySelector('#s')!.classList.contains('revealed')).toBe(false);
 	});
 });
 

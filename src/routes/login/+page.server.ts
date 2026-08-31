@@ -21,8 +21,8 @@ export const load: PageServerLoad = async (event) => {
 	if (event.locals.user) {
 		return redirect(302, '/');
 	}
-	// Landing CTAs land straight on the register form (?register) — one step
-	// fewer between "I want this" and the first field.
+	// The front page's Create account lands straight on the register form
+	// (?register) — one step fewer between "I want this" and the first field.
 	const openRegister = event.url.searchParams.has('register');
 	// The reset form says so up front when the server cannot send mail, rather
 	// than claiming a link is on its way.

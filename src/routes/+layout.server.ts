@@ -29,9 +29,9 @@ export const load: LayoutServerLoad = async (event) => {
 	// The front page is the pitch when nobody is signed in. Sending a stranger
 	// straight to a sign-in form asks them to commit before they know what this
 	// is, which is the shortest possible funnel and the wrong one.
-	const isLanding = event.url.pathname === '/';
+	const isFrontPage = event.url.pathname === '/';
 
-	if (!event.locals.user && !isLoginPage && !isAuthApi && !isOffline && !isLegal && !isLanding) {
+	if (!event.locals.user && !isLoginPage && !isAuthApi && !isOffline && !isLegal && !isFrontPage) {
 		return redirect(302, '/login');
 	}
 
