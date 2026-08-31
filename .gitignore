@@ -83,7 +83,6 @@ temp/
 AGENTS.md
 TODO.md
 CLAUDE.md
-a-working-file
 /.mcp.json
 
 # Coverage reports (yarn test:coverage)
