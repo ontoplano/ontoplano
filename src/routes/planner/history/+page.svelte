@@ -28,10 +28,18 @@
 		return cat?.color ?? CATEGORY_FALLBACK_COLOR;
 	}
 
+	/*
+	 * Done is blue, not green.
+	 *
+	 * Green against grey is the one distinction this app never leans on — see
+	 * the same rule in the watchers' alerts. The word is there either way; the
+	 * colour is only there to make the done ones findable at a glance, and blue
+	 * does that for everybody.
+	 */
 	const statusBadgeClass: Record<string, string> = {
 		todo: 'bg-gray-100 text-gray-600',
-		doing: 'bg-blue-100 text-blue-700',
-		done: 'bg-green-100 text-green-700',
+		doing: 'bg-blue-50 text-blue-600',
+		done: 'bg-blue-100 text-blue-800',
 		skipped: 'bg-gray-200 text-gray-500'
 	};
 
@@ -143,9 +151,14 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<div class="flex items-center justify-end">
-		<div class="flex items-center gap-2">
-			<button onclick={() => navigateWeek('prev')} class="btn btn-sm" title="Previous week ([)"
+	<div class="flex items-center justify-between gap-2 sm:justify-end">
+		<!-- The range sits with the control on a phone rather than centred on a
+		     line of its own, which cost a whole row to say six words. -->
+		<span class="text-sm text-gray-500 sm:hidden">
+			{formatWeekDate(data.weekMeta.monday)} &mdash; {formatWeekDate(data.weekMeta.sunday)}
+		</span>
+		<div class="flex items-center gap-1">
+			<button onclick={() => navigateWeek('prev')} class="icon-btn" title="Previous week ([)"
 				>&larr;</button
 			>
 			<span
@@ -160,7 +173,7 @@
 			-->
 			<button
 				onclick={() => navigateWeek('next')}
-				class="btn btn-sm"
+				class="icon-btn"
 				disabled={!data.weekMeta.hasNextWeek}
 				title={data.weekMeta.hasNextWeek ? 'Next week (])' : 'This is the latest week'}
 				>&rarr;</button
@@ -168,7 +181,7 @@
 		</div>
 	</div>
 
-	<div class="text-center text-sm text-gray-500">
+	<div class="hidden text-center text-sm text-gray-500 sm:block">
 		{formatWeekDate(data.weekMeta.monday)} &mdash; {formatWeekDate(data.weekMeta.sunday)}
 	</div>
 
@@ -176,10 +189,10 @@
 		<div class="flex gap-3 text-xs text-gray-500">
 			<span>{data.summary.total} tasks</span>
 			{#if data.summary.done > 0}
-				<span class="text-green-600">{data.summary.done} done</span>
+				<span class="text-blue-700">{data.summary.done} done</span>
 			{/if}
 			{#if data.summary.early > 0}
-				<span class="text-blue-600">{data.summary.early} early</span>
+				<span class="text-gray-600">{data.summary.early} early</span>
 			{/if}
 			{#if data.summary.late > 0}
 				<span class="text-gray-500">{data.summary.late} late</span>
@@ -249,11 +262,22 @@
 						? 'border-gray-200 bg-gray-50 text-gray-400'
 						: 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}"
 			>
-				<span class="flex flex-col items-center justify-center sm:flex-row sm:gap-1">
-					<span class="tabular">{formatWeekDate(day.date)}</span>
+				<!--
+					Two lines on a phone, one sentence on a wide screen.
+
+					Seven columns at 412px cannot hold "Aug 24 — Mon (3)", and
+					stacking it whole made seven tall boxes of three crowded lines.
+					The month is already in the range above the strip, so the phone
+					gets the weekday and the date, which is all that tells one column
+					from another.
+				-->
+				<span class="flex flex-col items-center justify-center leading-tight sm:flex-row sm:gap-1">
+					<span class="opacity-60 sm:hidden">{day.name.slice(0, 3)}</span>
+					<span class="tabular hidden sm:inline">{formatWeekDate(day.date)}</span>
 					<span class="hidden opacity-40 sm:inline">&mdash;</span>
 					<span>
-						{day.name.slice(0, 3)}
+						<span class="tabular sm:hidden">{day.date.slice(-2)}</span>
+						<span class="hidden sm:inline">{day.name.slice(0, 3)}</span>
 						{#if count > 0}
 							<span class="opacity-60">({count})</span>
 						{/if}

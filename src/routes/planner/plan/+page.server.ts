@@ -52,6 +52,15 @@ import {
 import { addDays } from '$lib/server/week-generator';
 import { getGridHours } from '$lib/server/settings';
 
+/**
+ * What the browser last knew about its own width.
+ *
+ * Not a preference and not a setting — a fact about the screen, written by the
+ * page that can see one, read by the render that cannot.
+ */
+// Not exported: a `+page.server.ts` may only export what SvelteKit names.
+const NARROW_COOKIE = 'onto_narrow';
+
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 /**
@@ -163,14 +172,29 @@ function trayTodos(ctx: Ctx, today: string) {
 	];
 }
 
-export const load: PageServerLoad = async ({ locals, url }) => {
+export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 	const ctx = buildCtx(locals.user!.id);
 
-	// Whether the URL named a view matters: without one the client shows a day on
-	// a phone, where a week of columns is seven strips of truncated text.
+	/*
+	 * Whether the URL named a view matters: without one the client shows a day on
+	 * a phone, where a week of columns is seven strips of truncated text.
+	 *
+	 * And the server has to know which it will be, or the phone is served a week,
+	 * paints it, and swaps to a day the moment the script runs — the Week button
+	 * lighting up and going out again on every visit. The browser writes what it
+	 * is on first sight; from then on the first paint is already right. A cookie
+	 * because it has to arrive with the request, and nothing else does.
+	 */
+	const narrow = cookies.get(NARROW_COOKIE) === '1';
 	const requestedView = url.searchParams.get('view');
 	const view: PlanView =
-		requestedView === 'day' || requestedView === 'month' ? requestedView : 'week';
+		requestedView === 'day' || requestedView === 'month'
+			? requestedView
+			: requestedView === 'week'
+				? 'week'
+				: narrow
+					? 'day'
+					: 'week';
 	const viewExplicit =
 		requestedView === 'day' || requestedView === 'week' || requestedView === 'month';
 	const span = SPAN_DAYS[view];

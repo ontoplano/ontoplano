@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import { scrollHints } from '$lib/actions/scroll-hints';
 	import type { Snippet } from 'svelte';
 
 	let { children }: { children: Snippet } = $props();
@@ -51,7 +52,7 @@
 		looked broken rather than scrollable. A tab row that fits is better than
 		one that scrolls well.
 	-->
-	<div class="snap-strip gap-0 border-b border-gray-200 md:flex md:gap-1">
+	<div use:scrollHints class="scroll-hints flex gap-0 border-b border-gray-200 md:gap-1">
 		<!--
 			These are resolved where the tabs are written, above. The rule looks at
 			the href expression and cannot see through the array, so it is turned
@@ -59,14 +60,21 @@
 		-->
 		<!-- eslint-disable svelte/no-navigation-without-resolve -->
 		{#each tabs as tab (tab.href)}
+			<!--
+				The mark is the ink, as in Settings: one tab row treatment, and a
+				section accent under a bold label read as a stray blue blob.
+
+				`rounded-none` because the playful style rounds every corner by
+				default, and a bottom-only border on a rounded box draws a smile
+				rather than an underline.
+			-->
 			<a
 				href={tab.href}
-				class="px-1.5 py-2 text-xs font-medium whitespace-nowrap transition sm:px-4 sm:text-sm {isActive(
+				class="tab-link border-b-2 px-1.5 py-2 text-xs font-medium whitespace-nowrap transition sm:px-4 sm:text-sm {isActive(
 					tab.href
 				)
-					? 'border-b-2 text-gray-900'
-					: 'text-gray-500 hover:text-gray-700'}"
-				style={isActive(tab.href) ? 'border-color: var(--section-accent)' : ''}
+					? 'border-gray-900 text-gray-900'
+					: 'border-transparent text-gray-500 hover:text-gray-700'}"
 			>
 				{tab.label}
 			</a>

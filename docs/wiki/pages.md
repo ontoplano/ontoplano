@@ -201,11 +201,10 @@ Last week by default: this week is what the tracker is for.
 
 ### `/planner/plan`
 
-How much of the plan is on screen.
+What the browser last knew about its own width.
 
-A week is the default because that is what the plan _is_. A day is what a
-phone can show honestly, and a month is for looking rather than editing —
-six rows so every month fits whatever weekday it starts on.
+Not a preference and not a setting — a fact about the screen, written by the
+page that can see one, read by the render that cannot.
 
 **`scheduleTodo`**
 

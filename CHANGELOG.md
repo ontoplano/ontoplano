@@ -10,7 +10,20 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
-## 0.9.8 — 2026-08-31
+## 0.9.9 — 2026-08-31
+
+- **A tidier planner on a phone.** The weekday headers read M T W T F S S
+  instead of "M…" and "W…"; the zoom control is in the same style as everything
+  else; the tabs fit, and where they do not there is an arrow saying which way
+  the rest of them are. Less air above the grid, so more of the day is on
+  screen.
+- The planner opens on the view it will settle on. It used to be served the
+  week, paint it, and switch to the day as soon as the script ran.
+- History's day strip is two tight lines on a phone rather than three crowded
+  ones, and "done" is blue there. Green against grey is a distinction this app
+  does not use.
+- The demo strip on a phone says "Demo version" and stops, instead of being cut
+  off mid-sentence by the menu button.
 
 - A page that breaks before you have signed in can be reported now. Reporting
   needed an account, so the landing page — the one a stranger sees — was the

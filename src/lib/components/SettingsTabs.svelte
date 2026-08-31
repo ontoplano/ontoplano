@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import { scrollHints } from '$lib/actions/scroll-hints';
 
 	/**
 	 * The one row of tabs for everything under Settings.
@@ -48,7 +49,12 @@
 	]);
 </script>
 
-<nav bind:this={nav} class="flex gap-1 overflow-x-auto border-b border-gray-200">
+<nav
+	bind:this={nav}
+	use:scrollHints
+	class="scroll-hints flex gap-1 border-b border-gray-200"
+	aria-label="Settings sections"
+>
 	{#each tabs as tab (tab.path)}
 		{@const active = page.url.pathname === tab.path}
 		<!--
@@ -64,7 +70,7 @@
 		<a
 			href={resolve(tab.path)}
 			aria-current={active ? 'page' : undefined}
-			class="border-b-2 px-3 py-2 text-sm whitespace-nowrap transition-colors {active
+			class="tab-link border-b-2 px-3 py-2 text-sm whitespace-nowrap transition-colors {active
 				? 'border-gray-900 font-semibold text-gray-900'
 				: 'border-transparent text-gray-500 hover:text-gray-900'}"
 		>

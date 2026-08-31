@@ -539,6 +539,20 @@ not already tailing it, and the only way to find out was to be told.
 Both, then: the line stays for whoever greps, and `/admin` shows the last
 few hundred so a report goes somewhere a person actually looks.
 
+#### `recordVisitorError(input, now)`
+
+A crash on a page nobody was signed in to.
+
+The landing page is the one a stranger sees, and it was the one page whose
+failures could never be reported: the endpoint asked for a session, so an
+error there reached the visitor and nothing else. A 500 on production with
+nothing in the server log is exactly this shape — the server answered 200 and
+the page broke afterwards.
+
+There is no stored consent for somebody with no account, so the only way in
+is an explicit press of the button on the error page. The instance switch
+still decides whether the feature exists at all.
+
 #### `recentClientErrors(limit)`
 
 The most recent reports, for `/admin`.

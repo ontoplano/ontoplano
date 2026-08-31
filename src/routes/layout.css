@@ -1483,6 +1483,100 @@ html .ec {
 }
 
 /*
+ * A tab in a tab row, square-cornered whatever the style.
+ *
+ * The mark under the current tab is a bottom border, and the playful style
+ * rounds every corner of every element from an unlayered rule — which a
+ * `rounded-none` utility cannot beat, because utilities are in a layer and
+ * layers lose to unlayered CSS. So a two-pixel underline was drawn as a smile
+ * under the word. Stated here, where it can actually win.
+ */
+html[data-style] a.tab-link,
+html a.tab-link {
+	/* Specific enough to win outright rather than on source order: the playful
+	   rule is `html[data-style='playful'] a`, and where these two land relative
+	   to each other after the stylesheet is assembled is not something to rely
+	   on. This file uses the same trick for `.ec`. */
+	border-radius: 0;
+}
+
+/*
+ * A row that scrolls, and says so.
+ *
+ * Paired with `use:scrollHints`, which sets `data-more` on the element. The
+ * native scrollbar is hidden — under the Settings tabs it drew a grey bar that
+ * read as a broken underline — and replaced by a fade and a chevron on the side
+ * that has more.
+ *
+ * `background-attachment: local` is what makes the fades follow the content:
+ * they are painted on the scrolling box itself, so they sit against the edge of
+ * what is visible rather than against the edge of what exists.
+ */
+.scroll-hints {
+	position: relative;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.scroll-hints::-webkit-scrollbar {
+	display: none;
+}
+
+.scroll-hints::before,
+.scroll-hints::after {
+	content: '';
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	display: none;
+	align-self: stretch;
+	width: 2rem;
+	flex: none;
+	pointer-events: none;
+	background-repeat: no-repeat;
+	/*
+	 * Two layers: the arrow, and a fade of the page's own ground under it.
+	 *
+	 * Not a mask — a mask clips everything the element paints, the fade
+	 * included, so the arrow floated over readable text with nothing behind it.
+	 * The arrow's grey is fixed rather than a token because it is inside a data
+	 * URI; #94a3b8 is the one step of the ramp that reads on both grounds.
+	 */
+	background-size:
+		0.5rem 0.8rem,
+		100% 100%;
+}
+
+.scroll-hints::before {
+	left: 0;
+	margin-right: -2rem;
+	background-image:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 12'%3E%3Cpath d='M6.5 1 1.5 6l5 5' fill='none' stroke='%2394a3b8' stroke-width='2'/%3E%3C/svg%3E"),
+		linear-gradient(to right, var(--color-gray-100) 55%, transparent);
+	background-position:
+		left 0.35rem center,
+		center;
+}
+
+.scroll-hints::after {
+	right: 0;
+	margin-left: -2rem;
+	background-image:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 12'%3E%3Cpath d='M1.5 1l5 5-5 5' fill='none' stroke='%2394a3b8' stroke-width='2'/%3E%3C/svg%3E"),
+		linear-gradient(to left, var(--color-gray-100) 55%, transparent);
+	background-position:
+		right 0.35rem center,
+		center;
+}
+
+.scroll-hints[data-more='left']::before,
+.scroll-hints[data-more='both']::before,
+.scroll-hints[data-more='right']::after,
+.scroll-hints[data-more='both']::after {
+	display: block;
+}
+
+/*
  * Horizontal column strips — the board, the day tabs.
  *
  * Rather than crushing every column to fit, they keep a usable width and the

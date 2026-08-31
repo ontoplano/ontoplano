@@ -460,6 +460,8 @@ export function baseGridOptions(
 		month?: boolean;
 		minTime?: string;
 		maxTime?: string;
+		/** A phone: the column headers get one letter rather than three. */
+		narrow?: boolean;
 	} = {}
 ): Calendar.Options {
 	const slotHeight = opts.slotHeight ?? GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX];
@@ -470,6 +472,7 @@ export function baseGridOptions(
 	// A month is a different question: not "when today" but "how does this month
 	// look". Times stop mattering, so it is a day grid rather than a time grid.
 	const month = opts.month === true;
+	const narrow = opts.narrow === true;
 
 	/*
 	 * Every key is present in both shapes, always.
@@ -515,11 +518,18 @@ export function baseGridOptions(
 		eventContent: month
 			? (info) => info.event.title
 			: (info) => (eventFitsText(info.event, slotHeight) ? info.event.title : ''),
+		/*
+		 * A week of columns on a phone has about fifty pixels each, and "Wed"
+		 * does not fit in them — the header read "31 M…", "2 W…", which is
+		 * neither the date nor the day. `weekday: 'narrow'` is the single letter
+		 * every locale defines for exactly this, so the row reads M T W T F S S
+		 * with the date above it.
+		 */
 		dayHeaderFormat: month
 			? { weekday: 'short' }
 			: days === 1
 				? { weekday: 'long', day: 'numeric', month: 'short' }
-				: { weekday: 'short', day: 'numeric' }
+				: { weekday: narrow ? 'narrow' : 'short', day: 'numeric' }
 	};
 }
 

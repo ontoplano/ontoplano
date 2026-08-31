@@ -627,9 +627,10 @@
 				class="fixed inset-x-0 z-30 flex items-center justify-between bg-amber-500 px-3 text-[11px] leading-none font-medium text-amber-950 lg:hidden"
 				style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom)); height: 1.5rem"
 			>
-				<!-- Split around the pie button, which sits in the middle of this
-				     strip and would otherwise cover the words. -->
-				<span><strong>Demo version</strong> · one shared account</span>
+				<!-- Two words, split around the pie button that sits in the middle of
+				     this strip. Anything longer was cut off by the menu button and
+				     read as "one shared a—", which says less than nothing. -->
+				<span><strong>Demo version</strong></span>
 				<span>wiped regularly</span>
 			</div>
 		{/if}

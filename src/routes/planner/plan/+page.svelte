@@ -71,7 +71,14 @@
 	 * no longer has, which throws.
 	 */
 	let widthChecked = $state(false);
-	let narrowScreen = $state(false);
+	/*
+	 * Read synchronously where there is a window to read it from, so the first
+	 * client render already agrees with the screen. The effect below still runs
+	 * — it is what notices a resize — but by then there is nothing to correct.
+	 */
+	let narrowScreen = $state(
+		browser ? window.matchMedia(`(max-width: ${NARROW_BREAKPOINT - 1}px)`).matches : false
+	);
 
 	// One effect owns `viewMode`, because two of them assigning it is what makes
 	// the calendar mount and unmount in the same frame.
@@ -82,6 +89,16 @@
 		const apply = () => {
 			narrowScreen = query.matches;
 			widthChecked = true;
+			/*
+			 * Tell the server, for the next request.
+			 *
+			 * It cannot measure a screen, and without this a phone was served the
+			 * week view, painted it, and switched to the day view as soon as the
+			 * script ran — the Week button lighting up and going out on every
+			 * visit. A year, `Lax`, and no personal information in it: which of
+			 * two layouts to draw first.
+			 */
+			document.cookie = `onto_narrow=${query.matches ? 1 : 0}; path=/; max-age=31536000; samesite=lax`;
 		};
 		apply();
 		query.addEventListener('change', apply);
@@ -1244,7 +1261,8 @@
 			maxTime: gridMaxTime,
 			slotHeight,
 			days: gridDays,
-			month: effectiveView === 'month'
+			month: effectiveView === 'month',
+			narrow: narrowScreen
 		}),
 		events: gridEvents,
 		editable: true,
@@ -1674,7 +1692,15 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="space-y-4">
+<!--
+	Tighter on a phone.
+
+	Six things stack above the grid — tabs, toolbar, schemes, the day strip, the
+	todo strip — and a 16px gap between each of them spent nearly a hundred
+	pixels of a 900px screen on air, before any of the plan was visible. The
+	laptop keeps the roomier rhythm; it has the room.
+-->
+<div class="space-y-2 sm:space-y-4">
 	{#if showWelcome}
 		<!-- Shown once, on the way in from first run: the grid's two gestures are
 		     not discoverable by looking at it. -->
@@ -2868,20 +2894,25 @@
 					>+scroll)</span
 				>
 			</span>
+			<!--
+				The design pass replaced white-with-a-border-and-a-shadow everywhere
+				except here, so this one control was still wearing the old clothes.
+				A stepper is two quiet square buttons around the value they change,
+				and the value is the reset.
+			-->
 			<button
 				type="button"
 				onclick={() => setZoom(zoomIndex - 1)}
 				disabled={zoomIndex === 0}
 				title="Zoom out (-)"
 				aria-label="Zoom out"
-				class="border border-gray-300 bg-white px-2 py-0.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
-				>&minus;</button
+				class="icon-btn disabled:cursor-not-allowed disabled:opacity-30">&minus;</button
 			>
 			<button
 				type="button"
 				onclick={() => setZoom(GRID_DEFAULT_ZOOM_INDEX)}
 				title="Reset zoom (0)"
-				class="border border-gray-300 bg-white px-2 py-0.5 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+				class="btn btn-sm tabular"
 				>{Math.round((slotHeight / GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX]) * 100)}%</button
 			>
 			<button
@@ -2890,8 +2921,7 @@
 				disabled={zoomIndex === GRID_ZOOM_LEVELS.length - 1}
 				title="Zoom in (+)"
 				aria-label="Zoom in"
-				class="border border-gray-300 bg-white px-2 py-0.5 text-sm text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
-				>+</button
+				class="icon-btn disabled:cursor-not-allowed disabled:opacity-30">+</button
 			>
 		</div>
 	</div>
