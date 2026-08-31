@@ -16,7 +16,7 @@ is out of date, which is what keeps the two honest.
 How the pieces fit, and why. The tables inside are generated.
 
 - [Architecture](architecture.md) — how a request travels, and where each kind of rule is allowed to live
-- [The plan](the-plan.md) — what a block, an occurrence and a todo each are, and how one becomes another
+- [The plan](the-plan.md) — the three tables a task can live in, and how one becomes another
 - [Ways in](ways-in.md) — tokens, scopes, streams, webhooks and the calendar link — the whole outside surface
 
 ## Reference

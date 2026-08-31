@@ -3,24 +3,41 @@
 
 # The plan
 
-Almost everything in ontoplano is one of four things. They are easy to confuse
-from the schema, because three of them are rows about "a thing at a time", and
-the difference between them is what happens tomorrow.
+A task in ontoplano is stored in one of three tables, and which one depends on a
+single question: **does it happen again?**
 
-## A weekly block
+|                   | Repeats | Has a date  | Has a time |
+| ----------------- | ------- | ----------- | ---------- |
+| a recurring block | yes     | no — a rule | yes        |
+| a one-off block   | no      | yes         | yes        |
+| a todo            | no      | maybe       | no         |
 
-`weekly_slots`. **Tuesday at 09:00, every week, for an hour.** It is a shape of
-the week rather than an event: it has a weekday and a time and no date at all.
+Everything else on this page follows from that table. A fourth thing, the
+**occurrence**, is not a task at all: it is the record of one day of one.
 
-Editing one changes every week — past weeks included, because there is no
-copy of it in any of them. That is the point of it, and it is also the trap:
-"move the gym to Thursday" is a different act from "I went on Thursday this
-week", and the second must never be done by editing the block.
+## A recurring block
+
+`weekly_slots`, which is a bad name for it — it holds every repeat, not only
+weekly ones. Its `recurrence` column says which:
+
+- `weekly` — every week on that weekday
+- `weeks:2` — every other week, counted from an anchor date
+- `days:10` — every ten days
+- `monthly:15` — the 15th of each month
+
+**Tuesday at 09:00, for an hour, every week** is the common case, and it is a
+shape of the week rather than an event: a weekday, a time, and no date at all.
+
+Editing one changes every week — past weeks included, because there is no copy
+of it in any of them. That is the point of it, and it is also the trap: "move
+the gym to Thursday" is a different act from "I went on Thursday this week", and
+the second must never be done by editing the block.
 
 ## A one-off block
 
-`exceptional_slots`. **The 4th of September at 09:00, once.** Same fields, plus
-a date instead of a weekday. Nothing about next week follows from it.
+`exceptional_slots`. **The 4th of September at 09:00, once.** The same fields as
+a recurring block, with a date instead of a weekday and a rule. Nothing about
+next week follows from it.
 
 This is what a todo becomes when it is given a time, and what a weekly block
 becomes for one day when you drag that day's occurrence somewhere else while
@@ -39,7 +56,7 @@ what makes it possible to tick off Tuesday's gym without saying anything about
 next Tuesday's. Everything the tracker, the history page and the goals count is
 occurrences; the blocks are only their reason for existing.
 
-Skipping one day of a weekly block does not touch the block either: it writes a
+Skipping one day of a recurring block does not touch the block either: it writes a
 suppression for that date, and the grid draws it as skipped.
 
 ## A todo

@@ -10,7 +10,11 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
-## 0.9.9 — 2026-08-31
+## 0.9.10 — 2026-08-31
+
+- The wiki's page on the plan says what a recurring block actually is — every
+  repeat, including every-other-week and monthly, not only weekly ones — and
+  leads with the one question that decides which table a task lives in.
 
 - **A tidier planner on a phone.** The weekday headers read M T W T F S S
   instead of "M…" and "W…"; the zoom control is in the same style as everything
