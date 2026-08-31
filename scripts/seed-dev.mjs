@@ -1490,8 +1490,7 @@ himself about anything.
 
 Read the middle books. Argue with the rest.
 
-- [x] finish it before the group meets
-- [ ] find a decent secondary reader on Books VIII–IX`
+Still want a decent secondary reader on Books VIII–IX.`
 	]
 ];
 
@@ -1570,11 +1569,8 @@ They disagree about **the wall**, not about the price:
 2. move the pipes, rebuild — €3,850
 3. wall is not structural, box the pipes in — €780
 
-The third is either right or about to cost me a ceiling.
-
-- [x] get three quotes
-- [ ] ring the building manager about the wall
-- [ ] order the counter — *not until the wall is answered*
+The third is either right or about to cost me a ceiling. Ringing the building
+manager on Monday to find out which.
 
 Nothing gets ordered until that is settled. The counter is the expensive part
 and it is cut to whatever the wall ends up being.`

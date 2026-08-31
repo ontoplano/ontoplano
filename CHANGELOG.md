@@ -10,6 +10,11 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.9.1 — 2026-08-31
+
+- The demo's seeded notes no longer use Markdown checklists. In an app that has
+  a todo list, a checkbox inside a note reads as one and is not.
+
 ## 0.9.0 — 2026-08-31
 
 
