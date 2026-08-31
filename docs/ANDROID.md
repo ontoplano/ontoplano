@@ -77,6 +77,15 @@ _every_ invocation, including `--version`, so the script writes that config from
 what is already installed and refuses if something is missing. Set `ANDROID_HOME`
 and it will find the rest.
 
+Only `ANDROID_HOME`. `ANDROID_SDK_ROOT` is deprecated, and Gradle stops with
+"Several environment variables and/or system properties contain different paths
+to the SDK" the moment the two disagree — which happens without anyone changing
+anything, because Bubblewrap sets `ANDROID_HOME` to the SDK recorded in
+`~/.bubblewrap/config.json` for the Gradle it runs. So the build drops
+`ANDROID_SDK_ROOT` from its own environment, always, and prints which SDK
+Bubblewrap has recorded when that is not the one you set. Edit that file to
+change it.
+
 ```sh
 npm install -g @bubblewrap/cli     # or: yarn add -D @bubblewrap/cli
 apt install openjdk-21-jdk-headless

@@ -22,6 +22,8 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 
+import { androidEnv } from './lib/android-env.mjs';
+
 const DIR = 'android-twa';
 
 /**
@@ -340,33 +342,9 @@ function checkToolchain() {
 	process.exit(1);
 }
 
-/**
- * One SDK path, whatever the machine says.
- *
- * Gradle refuses outright when `ANDROID_HOME` and `ANDROID_SDK_ROOT` point at
- * different directories — "Several environment variables and/or system
- * properties contain different paths to the SDK" — and it is easy to end up
- * that way: Bubblewrap installs its own SDK under `~/.bubblewrap` and sets
- * `ANDROID_HOME`, while a distro package or an old shell profile leaves
- * `ANDROID_SDK_ROOT` pointing at `/opt/android-sdk`. Neither is wrong; having
- * both is.
- *
- * `ANDROID_HOME` wins, because that is the one Google still supports and the
- * one Bubblewrap writes. `ANDROID_SDK_ROOT` is dropped from the environment of
- * the build rather than from the shell, so nothing outside this script is
- * changed by running it.
- */
 function buildEnv() {
-	const env = { ...process.env };
-	const home = env.ANDROID_HOME ?? bubblewrapSdkPath();
-	if (home) env.ANDROID_HOME = home;
-	if (env.ANDROID_SDK_ROOT && env.ANDROID_SDK_ROOT !== env.ANDROID_HOME) {
-		console.log(
-			`Ignoring ANDROID_SDK_ROOT (${env.ANDROID_SDK_ROOT}) — Gradle refuses two SDK paths.\n` +
-				`Building against ANDROID_HOME (${env.ANDROID_HOME}).`
-		);
-		delete env.ANDROID_SDK_ROOT;
-	}
+	const { env, notes } = androidEnv(process.env, bubblewrapSdkPath());
+	for (const note of notes) console.log(note);
 	return env;
 }
 

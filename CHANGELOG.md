@@ -6,6 +6,11 @@ rest. Versions follow `package.json`.
 
 ## Unreleased
 
+- The Android build no longer stops with "Several environment variables and/or
+  system properties contain different paths to the SDK". It uses `ANDROID_HOME`
+  and drops the deprecated `ANDROID_SDK_ROOT` from its own environment, and
+  says which SDK Bubblewrap has recorded when that is not the one you set.
+
 - The error page stops making promises. It used to say "this is our fault
   rather than yours" and "nothing you had written is lost" — neither of which
   it can know. It now says what broke, and offers to send the technical
