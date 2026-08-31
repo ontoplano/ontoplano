@@ -10,7 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
-## 0.9.6 — 2026-08-31
+## 0.9.7 — 2026-08-31
+
+- The planner's tabs fit on a phone. Six of them overflowed by about thirty
+  pixels, and the row snaps as it scrolls, so dragging it sideways moved a
+  fraction and sprang back.
+- The tab you are on is underlined in the same ink as its label. It was drawn in
+  the Home section's slate grey, which beside a white label read as the tab
+  being disabled.
 
 - The documentation site's links work: pages are `/data-model` rather than
   `/data-model.html`, and a link to a table in the contents scrolls to it.

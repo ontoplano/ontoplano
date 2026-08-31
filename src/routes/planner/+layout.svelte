@@ -43,7 +43,15 @@
 		<h1 class="shrink-0 text-lg font-bold text-gray-900">Weekly Planner</h1>
 	</div>
 
-	<div class="snap-strip gap-1 border-b border-gray-200 md:flex">
+	<!--
+		Tight enough on a phone that six tabs fit without scrolling.
+
+		They used to overflow by about thirty pixels, and `.snap-strip` snaps, so
+		dragging the row sideways moved it a fraction and sprang back — the strip
+		looked broken rather than scrollable. A tab row that fits is better than
+		one that scrolls well.
+	-->
+	<div class="snap-strip gap-0 border-b border-gray-200 md:flex md:gap-1">
 		<!--
 			These are resolved where the tabs are written, above. The rule looks at
 			the href expression and cannot see through the array, so it is turned
@@ -53,7 +61,7 @@
 		{#each tabs as tab (tab.href)}
 			<a
 				href={tab.href}
-				class="px-2 py-2 text-sm font-medium whitespace-nowrap transition sm:px-4 {isActive(
+				class="px-1.5 py-2 text-xs font-medium whitespace-nowrap transition sm:px-4 sm:text-sm {isActive(
 					tab.href
 				)
 					? 'border-b-2 text-gray-900'

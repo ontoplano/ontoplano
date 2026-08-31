@@ -51,13 +51,22 @@
 <nav bind:this={nav} class="flex gap-1 overflow-x-auto border-b border-gray-200">
 	{#each tabs as tab (tab.path)}
 		{@const active = page.url.pathname === tab.path}
+		<!--
+			The mark under the current tab is the ink, not the section accent.
+
+			It used to be `var(--section-accent)`, and everything under Settings
+			falls back to the Home section, whose accent is a slate grey. Beside a
+			bold near-white label on a dark background that read as a mistake — a
+			marker greyed out, as though the tab you were on were the disabled one.
+			The ink inverts with the theme, so it matches the label it underlines in
+			both.
+		-->
 		<a
 			href={resolve(tab.path)}
 			aria-current={active ? 'page' : undefined}
 			class="border-b-2 px-3 py-2 text-sm whitespace-nowrap transition-colors {active
-				? 'font-semibold text-gray-900'
+				? 'border-gray-900 font-semibold text-gray-900'
 				: 'border-transparent text-gray-500 hover:text-gray-900'}"
-			style={active ? 'border-color: var(--section-accent)' : ''}
 		>
 			{tab.label}
 		</a>
