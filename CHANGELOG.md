@@ -6,6 +6,12 @@ rest. Versions follow `package.json`.
 
 ## Unreleased
 
+- The wiki has hand-written pages now, beside the generated ones: what a block,
+  an occurrence and a todo each are; how a request travels; every way another
+  program can reach an account. The tables inside them are still generated from
+  the code, and the comment at the top of a route file now turns up as that
+  page's description.
+
 - **Calendar links are yours to look at again.** The address is now kept and
   shown back on Settings → Integrations, so setting it up on a second device a
   fortnight later no longer costs you the first. You can hold up to five —

@@ -81,8 +81,22 @@ function undecorate(raw) {
  */
 function moduleDocOf(source) {
 	const text = source.getFullText();
-	const start = text.indexOf('/**');
+
+	/*
+	 * At column zero, which is what makes it the file's rather than something
+	 * else's. Without that, a route whose first `/** … *\/` happens to sit
+	 * inside a function — a note on one field of a returned object, say — had
+	 * that note published as the description of the whole page.
+	 */
+	let start = -1;
+	for (let at = text.indexOf('/**'); at !== -1; at = text.indexOf('/**', at + 3)) {
+		if (at === 0 || text[at - 1] === '\n') {
+			start = at;
+			break;
+		}
+	}
 	if (start === -1) return '';
+
 	const end = text.indexOf('*/', start);
 	if (end === -1) return '';
 	return undecorate(text.slice(start, end + 2));
@@ -513,6 +527,10 @@ function pagesPage() {
 		const source = parse(file);
 		const entry = touch(urlFor(dirname(file)));
 		const moduleDoc = moduleDocOf(source);
+		// The prose a route already carries at the top of its own file. Written
+		// beside the code it describes, so it moves with it — which is the only
+		// arrangement in which it stays true.
+		entry.doc = moduleDoc;
 
 		for (const st of source.statements) {
 			if (!ts.isVariableStatement(st)) continue;
@@ -568,12 +586,17 @@ function pagesPage() {
 	}
 	out.push('');
 
-	const documented = routes.filter((r) => r.actions.some((a) => a.doc));
+	const documented = routes.filter((r) => r.doc || r.actions.some((a) => a.doc));
 	if (documented.length) {
-		out.push('## What the actions do\n');
-		out.push('Only the ones whose code says. The rest are named for what they do.\n');
+		out.push('## What these pages do\n');
+		out.push(
+			'Only the ones whose code says — the comment at the top of the route file,',
+			'and the comment above each action. Write it there and it turns up here;',
+			'the rest are named for what they do.\n'
+		);
 		for (const r of documented) {
 			out.push(`### \`${r.url}\`\n`);
+			if (r.doc) out.push(r.doc + '\n');
 			for (const a of r.actions.filter((a) => a.doc)) {
 				out.push(`**\`${a.name}\`**\n`);
 				out.push(a.doc + '\n');
@@ -740,26 +763,113 @@ function webhookEvents() {
 	return events.map((e) => ({ event: e, label: labels.get(e) ?? '' }));
 }
 
+/* ------------------------------------------------------------------ prose */
+
+/**
+ * The half of the wiki a generator cannot write.
+ *
+ * Everything else here is derived, which is what stops it going stale — but
+ * "the migration snapshot says `planner_todos.scheduled_date` is nullable" is
+ * not an explanation of what a todo *is*, and no amount of reading the schema
+ * produces one. So prose lives in `docs/prose/`, is edited by hand, and is
+ * built into the wiki beside the generated pages.
+ *
+ * What keeps it from going stale in its own way is that the parts which *can*
+ * be derived are not written down twice: a line reading
+ *
+ *     <!-- generated: scopes -->
+ *
+ * is replaced with the current table on every build. The prose says why the
+ * thing exists; the generator says what it currently is.
+ *
+ * A page declares its own title and blurb for the index in the same shape:
+ *
+ *     <!-- title: The plan -->
+ *     <!-- blurb: what a block, an occurrence and a todo each are -->
+ */
+const PROSE_DIR = join(ROOT, 'docs', 'prose');
+
+const PROSE_STAMP =
+	'<!-- Written by hand in docs/prose/%s — edit that file, then run `yarn docs`.\n' +
+	'     The tables below marked "generated" come from the code itself. -->\n\n';
+
+/** The blocks a prose page may ask for, by name. */
+const FRAGMENTS = {
+	scopes: () =>
+		[
+			'| Scope | What granting it allows |',
+			'| --- | --- |',
+			...scopeTable().map((r) => `| \`${r.key}\` | ${r.value} |`)
+		].join('\n'),
+	'webhook-events': () =>
+		[
+			'| Event | When it fires |',
+			'| --- | --- |',
+			...webhookEvents().map((e) => `| \`${e.event}\` | ${e.label} |`)
+		].join('\n')
+};
+
+function prosePages() {
+	if (!existsSync(PROSE_DIR)) return [];
+
+	return readdirSync(PROSE_DIR)
+		.filter((f) => f.endsWith('.md'))
+		.sort()
+		.map((file) => {
+			const raw = readFileSync(join(PROSE_DIR, file), 'utf8');
+			const title = /<!--\s*title:\s*(.+?)\s*-->/.exec(raw)?.[1];
+			const blurb = /<!--\s*blurb:\s*(.+?)\s*-->/.exec(raw)?.[1];
+			if (!title || !blurb) {
+				console.error(`${file}: needs a <!-- title: … --> and a <!-- blurb: … --> line`);
+				process.exit(1);
+			}
+
+			const body = raw
+				.replace(/<!--\s*(?:title|blurb):.*?-->\n?/g, '')
+				.replace(/^[^\S\n]*<!--\s*generated:\s*([\w-]+)\s*-->[^\S\n]*$/gm, (line, name) => {
+					const fragment = FRAGMENTS[name];
+					if (!fragment) {
+						console.error(`${file}: no generated block called "${name}"`);
+						process.exit(1);
+					}
+					return fragment();
+				});
+
+			return {
+				file,
+				title,
+				blurb,
+				build: () => PROSE_STAMP.replace('%s', file) + body.trimStart()
+			};
+		});
+}
+
 /* ------------------------------------------------------------------ index */
 
-function indexPage(pages) {
+function indexPage(pages, written) {
 	return [
 		STAMP,
 		'# How ontoplano works\n',
-		'A wiki that is built rather than written. Every page here is generated by',
-		'`scripts/build-docs.mjs` from something the running app enforces — the',
-		'migration snapshot, the route files, the scope table, the shortcut map —',
-		'so a change to the logic changes the page on the next build, and a page',
-		'cannot quietly stop being true.\n',
+		'Most of this wiki is built rather than written. The reference pages are',
+		'generated by `scripts/build-docs.mjs` from something the running app',
+		'enforces — the migration snapshot, the route files, the scope table, the',
+		'shortcut map — so a change to the logic changes the page on the next',
+		'build, and a page cannot quietly stop being true.\n',
 		'Run `yarn docs` to rebuild. `yarn docs:check` fails if what is committed',
 		'is out of date, which is what keeps the two honest.\n',
-		'## Pages\n',
+		'## What the app is\n',
+		'Written by hand, in `docs/prose/`, because no generator can explain why a',
+		'thing exists. The tables inside them are still generated.\n',
+		...written.map((p) => `- [${p.title}](${p.file}) — ${p.blurb}`),
+		'',
+		'## Reference\n',
+		'Generated, every one. Do not edit them.\n',
 		...pages.map((p) => `- [${p.title}](${p.file}) — ${p.blurb}`),
 		'',
 		'## What is not here\n',
-		'Anything that cannot be derived. The prose explaining *why* a decision was',
-		'taken lives in the comment above the code it explains, where it moves with',
-		'that code; the hand-written guides for operators — deployment, backups,',
+		'The reasoning behind a particular line lives in the comment above that',
+		'line, where it moves with the code — the wiki collects those rather than',
+		'restating them. The guides for running an instance — deployment, backups,',
 		'billing, the Android build — are in `docs/` beside this directory, because',
 		'they describe things outside this repository that no generator can read.'
 	].join('\n');
@@ -817,9 +927,11 @@ const PAGES = [
 const config = (await prettier.resolveConfig(join(ROOT, 'docs/wiki/README.md'))) ?? {};
 const format = (text) => prettier.format(text, { ...config, parser: 'markdown' });
 
+const WRITTEN = prosePages();
+
 const built = new Map();
-for (const page of PAGES) built.set(page.file, await format(page.build()));
-built.set('README.md', await format(indexPage(PAGES)));
+for (const page of [...WRITTEN, ...PAGES]) built.set(page.file, await format(page.build()));
+built.set('README.md', await format(indexPage(PAGES, WRITTEN)));
 
 if (CHECK) {
 	const stale = [];

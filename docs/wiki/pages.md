@@ -53,11 +53,17 @@ write surface for everything else; both end up calling the same
 | `/start`                        | `checkout`                                                                                                                                                                                                                                                                                                                                                                         |
 | `/welcome`                      | `default`                                                                                                                                                                                                                                                                                                                                                                          |
 
-## What the actions do
+## What these pages do
 
-Only the ones whose code says. The rest are named for what they do.
+Only the ones whose code says — the comment at the top of the route file,
+and the comment above each action. Write it there and it turns up here;
+the rest are named for what they do.
 
 ### `/admin/[id]`
+
+**`setPlanEnd`**
+
+The operator's clock: end the plan on a chosen date.
 
 **`grantTrial`**
 
@@ -73,6 +79,31 @@ Sign in as somebody else, with the session marked as borrowed.
 
 Recorded against both accounts before it happens: the point of the log is
 that the person whose account it is can see it too.
+
+### `/buy`
+
+The one page that loads the payment provider's script.
+
+A checkout action mints a transaction and lands here with `?_ptxn=…`;
+Paddle.js reads that itself and opens its overlay. The page is only the
+overlay's backdrop — the terms were already read on /start or the
+billing page, so nothing here competes with the payment window.
+
+### `/diary/notebooks`
+
+The query value that stands for the orphaned notes rather than a notebook.
+
+### `/diary/notebooks/[id]`
+
+One notebook, with nothing else on the page.
+
+The index shows a notebook beside the list of them, which is the right shape
+for moving between subjects and the wrong one for sitting inside a single
+one. This is the same notebook with the whole width.
+
+### `/kitchen/meals`
+
+The seven days from a date, as `YYYY-MM-DD`.
 
 ### `/login`
 
@@ -91,7 +122,27 @@ Ask for a reset link.
 Always reports the same thing whether or not the address exists — the
 response is otherwise a way to enumerate who has an account here.
 
+### `/login/verify`
+
+Signed in, address unconfirmed — the one page such an account can reach
+while `ONTOPLANO_REQUIRE_VERIFIED_EMAIL=true` (the gate is in
+hooks.server.ts). It says so plainly and offers exactly one act: sending
+the mail again.
+
+### `/offline`
+
+Public on purpose.
+
+The layout guard sends signed-out visitors to /login, but this page is what a
+failed navigation falls back to — including one where the session could not be
+checked because there is no network.
+
 ### `/planner/board`
+
+Next sensible start time on a day.
+
+Today gets the next half hour from now so a promoted todo lands ahead of you
+rather than in the past; another day starts at nine.
 
 **`setTiming`**
 
@@ -130,7 +181,17 @@ The reverse: a one-off goes back to being an undated todo.
 
 Which activity a category-shaped block turned out to be.
 
+### `/planner/history`
+
+Last week by default: this week is what the tracker is for.
+
 ### `/planner/plan`
+
+How much of the plan is on screen.
+
+A week is the default because that is what the plan _is_. A day is what a
+phone can show honestly, and a month is for looking rather than editing —
+six rows so every month fits whatever weekday it starts on.
 
 **`scheduleTodo`**
 
@@ -146,6 +207,11 @@ block and typing it in again.
 
 ### `/planner/review`
 
+Last week by default.
+
+You review a week once it is over; landing on the current one would invite
+writing three lines about a Wednesday.
+
 **`resolve`**
 
 Done, or skipped — the two answers that are not "carry it forward".
@@ -160,6 +226,8 @@ A todo has no time on it — that is what makes it a todo — so this is a
 clock reading rather than a lead time, unlike a block's.
 
 ### `/settings/account`
+
+better-auth's messages are already user-facing; anything else is a bug.
 
 **`changeEmail`**
 
@@ -194,7 +262,50 @@ Deleting an account is irreversible, so it asks for the account's own
 email address rather than a yes/no — the point is to make it impossible to
 do by reflex, not to add a step.
 
+### `/settings/billing`
+
+What this account is on, and what it is using.
+
+A self-hosted instance sells nothing, so the page says so and stops — the
+same answer the Telegram bot and the deployment settings give.
+
+### `/settings/instance`
+
+Deployment settings: bind host, port, database path, and who may register.
+
+These describe the machine, not the account, so they are only readable and
+writable on a self-hosted instance by its owner. Anyone else gets a 404 —
+"not yours" and "not there" are the same answer. This page moves to /admin
+once roles land.
+
+### `/settings/integrations`
+
+**`calendarLink`**
+
+Mint another calendar link.
+
+Several are allowed — a phone, a laptop, a partner's calendar — because
+one per account meant that wanting it in a second place cost you the
+first. Each is revoked on its own, in the list below, which is what makes
+"I pasted that one somewhere I should not have" recoverable without
+breaking the calendars that are fine.
+
+### `/settings/integrations/widget`
+
+Where the phone widget connects itself.
+
+The widget used to ask for an address and a pasted token, which is asking a
+person to do a key exchange by hand. Now its Connect button opens this page
+in the browser — where a session already exists — one tap mints the key, and
+the app link on the way back carries it home. Nobody sees a token.
+
+### `/settings/preferences`
+
+Everything on this page belongs to the account, never to the instance (I9).
+
 ### `/shopping`
+
+Every action here is the same shape: read the form, call the service, map errors.
 
 **`saveCategories`**
 
@@ -212,3 +323,12 @@ simply did nothing and said nothing about it.
 **`paid`**
 
 What you actually paid. Never part of the tick, which has to stay one press.
+
+### `/start`
+
+The card step of the funnel: register → confirm → here.
+
+The billing-hold gate in hooks.server.ts routes a verified account with no
+plan yet to this page, so the terms are read BEFORE any payment window
+opens — /buy is just the overlay's backdrop. Yearly leads; it is the one
+worth taking.
