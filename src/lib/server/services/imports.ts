@@ -322,27 +322,45 @@ export function importTasks(
 
 	const title = notebookTitleFor(ctx, input.notebook, source, wanted);
 
-	// One notebook, made first: it is the container the whole import goes into,
-	// and deleting it is the undo.
-	const notebookId = createNotebook(ctx, {
-		title,
-		description: source === 'todoist' ? 'Imported from Todoist.' : 'Imported from Google Tasks.'
-	});
-
+	/*
+	 * All of it or none of it.
+	 *
+	 * An import is somebody's list arriving once. Half of it arriving — because
+	 * the four hundredth title was longer than a title may be, or the disk
+	 * filled — is the worst outcome available: they cannot tell which half is
+	 * missing without comparing against the app they just left, and importing
+	 * again would duplicate everything that did land.
+	 *
+	 * So the notebook and every todo in it are one transaction. A failure leaves
+	 * the account exactly as it was, and the error says which row broke.
+	 *
+	 * `createNotebook` and `createTodo` write through `db` rather than through the
+	 * `tx` handle, and that is fine here rather than lucky: better-sqlite3 is
+	 * synchronous and drizzle runs BEGIN on the same connection, so every
+	 * statement either of them issues inside this callback is inside the
+	 * transaction. The test below proves it by making one fail on purpose.
+	 */
 	let datesDropped = 0;
-	for (const task of wanted) {
-		// It said something about when, and it was not a date we read.
-		if (task.dueDate === null && task.rawDate) datesDropped += 1;
-		createTodo(ctx, {
-			title: task.title,
-			notes: task.list
-				? [task.notes, `From “${task.list}”.`].filter(Boolean).join('\n\n')
-				: task.notes,
-			notebookId,
-			scheduledDate: task.dueDate ?? undefined,
-			status: task.done ? 'done' : 'todo'
+	db.transaction(() => {
+		const notebookId = createNotebook(ctx, {
+			title,
+			description: source === 'todoist' ? 'Imported from Todoist.' : 'Imported from Google Tasks.'
 		});
-	}
+
+		for (const task of wanted) {
+			// It said something about when, and it was not a date we read.
+			if (task.dueDate === null && task.rawDate) datesDropped += 1;
+			createTodo(ctx, {
+				title: task.title,
+				notes: task.list
+					? [task.notes, `From “${task.list}”.`].filter(Boolean).join('\n\n')
+					: task.notes,
+				notebookId,
+				scheduledDate: task.dueDate ?? undefined,
+				status: task.done ? 'done' : 'todo'
+			});
+		}
+	});
 
 	return { imported: wanted.length, notebook: title, skipped: parsed.skipped, datesDropped };
 }

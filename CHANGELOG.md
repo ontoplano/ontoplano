@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.13.0 — 2026-08-31
+
+- The documentation site has a page on running it yourself: what it needs, three
+  ways to start it, and where your data lives.
+- An import is all-or-nothing. A file that fails halfway used to leave whatever
+  had already landed behind, which is the one outcome nobody can recover from
+  without checking every row against the app they came from.
+
 ## 0.12.0 — 2026-08-31
 
 - **Bring your tasks in from Todoist or Google Tasks.** Settings → Account takes

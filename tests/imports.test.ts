@@ -20,12 +20,14 @@ afterAll(() => database.remove());
 let imports: typeof import('../src/lib/server/services/imports');
 let todos: typeof import('../src/lib/server/services/todos');
 let notebooks: typeof import('../src/lib/server/services/notebooks');
+let db: typeof import('../src/lib/server/db/index');
 let ctx: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
 	imports = await import('../src/lib/server/services/imports');
 	todos = await import('../src/lib/server/services/todos');
 	notebooks = await import('../src/lib/server/services/notebooks');
+	db = await import('../src/lib/server/db/index');
 	ctx = { userId: OWNER, now: new Date('2026-09-01T10:00:00Z'), tz: 'UTC' };
 });
 
@@ -194,6 +196,35 @@ describe('what the import writes', () => {
 		// A Todoist account of several years holds thousands of finished tasks,
 		// and the board's Done column is not where somebody's first day goes.
 		expect(withDone.imported).toBe(without.imported + 1);
+	});
+
+	it('is all of it or none of it', () => {
+		/*
+		 * The failure that matters: half a list arrives, and the person cannot
+		 * tell which half without going back to the app they just left —
+		 * importing again would duplicate everything that did land.
+		 *
+		 * The import writes through `db` inside a `db.transaction`, which only
+		 * rolls back because better-sqlite3 is synchronous and drizzle runs
+		 * BEGIN on the same connection. That is the assumption worth testing, so
+		 * it is tested directly: the same two calls the import makes, with the
+		 * second one refused.
+		 */
+		const todosBefore = todos.listTodos(ctx).length;
+		const booksBefore = notebooks.listNotebooks(ctx).length;
+
+		expect(() =>
+			db.db.transaction(() => {
+				const notebookId = notebooks.createNotebook(ctx, { title: 'Doomed import' });
+				todos.createTodo(ctx, { title: 'this one lands first', notebookId });
+				// A todo with no title is refused by the service, as any row the
+				// importer mangled would be.
+				todos.createTodo(ctx, { title: '', notebookId });
+			})
+		).toThrow();
+
+		expect(todos.listTodos(ctx)).toHaveLength(todosBefore);
+		expect(notebooks.listNotebooks(ctx)).toHaveLength(booksBefore);
 	});
 
 	it('refuses an empty paste and a file it does not know', () => {
