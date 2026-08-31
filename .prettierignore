@@ -9,11 +9,7 @@ bun.lockb
 /static/
 /drizzle/
 
-# The sibling repositories, which live inside this working directory but are
-# not this repository. Each has its own formatter settings; prettier reads
-# .prettierignore rather than .gitignore, so they have to be named twice.
-/a-private-repo/
-/the-deployment-repo/
-/a-private-repo/
-/a-private-repo/
-/the-fleet-repo/
+# Anything else a particular checkout wants left alone — another repository
+# cloned inside this directory, for instance — goes in `.ignore.local`, which
+# `yarn lint` passes as a third ignore file and which is itself untracked. That
+# is the point: a published ignore file describes whatever it names.

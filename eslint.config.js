@@ -1,5 +1,6 @@
 import prettier from 'eslint-config-prettier';
 import path from 'node:path';
+import { existsSync } from 'node:fs';
 import { includeIgnoreFile } from '@eslint/compat';
 import js from '@eslint/js';
 import svelte from 'eslint-plugin-svelte';
@@ -10,8 +11,20 @@ import svelteConfig from './svelte.config.js';
 
 const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 
+/*
+ * A checkout's own ignores, when it has any.
+ *
+ * `.ignore.local` is where anything particular to one machine belongs —
+ * another repository cloned inside this directory, most often. It is not part
+ * of this repository and it is absent from a fresh clone, so it is read only
+ * if it exists.
+ */
+const excludePath = path.resolve(import.meta.dirname, '.ignore.local');
+const localIgnores = existsSync(excludePath) ? [includeIgnoreFile(excludePath)] : [];
+
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
+	...localIgnores,
 	js.configs.recommended,
 	ts.configs.recommended,
 	svelte.configs.recommended,

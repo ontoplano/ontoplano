@@ -61,35 +61,30 @@ android-twa/
 *.keystore.pass
 *.pass.*.bak
 
-# Scratch copies of host config, pasted in for debugging
+# Scratch copies pasted in while debugging
 temp/
-my-publishing-studies/competition.md
 
 # ── Local only ───────────────────────────────────────────────────────────────
 #
-# Working files and machine-specific overrides. Present on a working checkout,
-# not part of the product, and not anybody else's business.
+# Machine-specific overrides and the files a working checkout accumulates that
+# are not the product.
+#
+# Anything particular to ONE person's setup goes in `.git/info/exclude`
+# instead, which is not part of the repository. That is the whole difference:
+# this file is published, so every line in it describes something to whoever
+# reads it — including the existence and the name of whatever it ignores.
 #
 # The leading slashes matter and are not tidiness: an unanchored pattern
 # matches a directory of that name at ANY depth — back when this repo was named
 # `server/`, the bare pattern also swallowed `src/lib/server/`, and every new
 # file added there stopped appearing in `git status`. Two of them were missing
 # from the repository before anybody noticed.
-/the-deployment-repo/
-/a-private-repo/
-/a-private-repo/
-/a-private-repo/
-/the-fleet-repo/
 /local.mk
 AGENTS.md
 TODO.md
 CLAUDE.md
-/.mcp.json
-
-# Estevão's own review list — his file, not the repo's.
-# Estevao's review list. It lives in a-private-repo (tracked there) and
-# is symlinked in here, so the public repo never carries it.
 a-working-file
+/.mcp.json
 
 # Coverage reports (yarn test:coverage)
 coverage/

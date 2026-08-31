@@ -226,10 +226,10 @@ function local(date: Date): string {
  * `fail2ban-client set <jail> action <name> actionban` is arbitrary root
  * command execution by design.
  *
- * So the app runs one fixed path with no wildcards in the rule, and
- * `the-deployment-repo/bin/onto-ban-control` decides what may be asked for: a
- * verb from four literals, a jail that already exists, and an address that is
- * a bare IP literal. Nothing is passed through a shell at either end.
+ * So the app runs one fixed path with no wildcards in the rule, and the
+ * helper at the other end decides what may be asked for: a verb from four
+ * literals, a jail that already exists, and an address that is a bare IP
+ * literal. Nothing is passed through a shell at either end.
  *
  * Off unless the box says otherwise. An instance that has not been set up for
  * this shows the bans and no buttons, rather than buttons that fail.
