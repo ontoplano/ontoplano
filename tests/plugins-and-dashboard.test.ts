@@ -55,8 +55,8 @@ describe('a plugin saying what it is', () => {
 	});
 
 	test('lowercases the source, so two spellings are one program', () => {
-		plugins.upsertManifest(OWNER, { source: 'a-private-plugin', name: 'Mass' });
-		expect(plugins.listManifests(OWNER).some((m) => m.source === 'scale')).toBe(true);
+		plugins.upsertManifest(OWNER, { source: 'ScaleBot', name: 'Scale bot' });
+		expect(plugins.listManifests(OWNER).some((m) => m.source === 'scalebot')).toBe(true);
 	});
 
 	test('belongs to the account that declared it', () => {
