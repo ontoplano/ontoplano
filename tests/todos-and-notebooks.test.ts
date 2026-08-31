@@ -144,9 +144,9 @@ describe('putting a todo on the calendar', () => {
 		});
 		todos.promoteTodo(ctx, { todoId: id, date: '2026-08-19', startTime: '11:00' });
 
-		const block = slots.listExceptionals(ctx, '2026-08-19', '2026-08-20').find(
-			(e) => e.label === 'post the letter'
-		)!;
+		const block = slots
+			.listExceptionals(ctx, '2026-08-19', '2026-08-20')
+			.find((e) => e.label === 'post the letter')!;
 		expect(block).toBeTruthy();
 
 		const { todoId } = todos.demoteToTodo(ctx, block.id);

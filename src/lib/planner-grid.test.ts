@@ -53,9 +53,7 @@ describe('the stretch of day the grid draws', () => {
 
 	test('is the one asked for when everything fits inside it', () => {
 		expect(
-			windowForEvents(asked, [
-				{ start: at('2026-09-02T09:00:00'), end: at('2026-09-02T10:30:00') }
-			])
+			windowForEvents(asked, [{ start: at('2026-09-02T09:00:00'), end: at('2026-09-02T10:30:00') }])
 		).toEqual({ start: 6, end: 22 });
 	});
 
@@ -71,17 +69,13 @@ describe('the stretch of day the grid draws', () => {
 	test('and up past the latest, rounding to the hour that contains it', () => {
 		// 23:30 needs the hour it sits in, not the line above it.
 		expect(
-			windowForEvents(asked, [
-				{ start: at('2026-09-02T23:00:00'), end: at('2026-09-02T23:30:00') }
-			])
+			windowForEvents(asked, [{ start: at('2026-09-02T23:00:00'), end: at('2026-09-02T23:30:00') }])
 		).toEqual({ start: 6, end: 24 });
 	});
 
 	test('gives a block that runs past midnight the rest of the day', () => {
 		expect(
-			windowForEvents(asked, [
-				{ start: at('2026-09-02T22:00:00'), end: at('2026-09-03T01:00:00') }
-			])
+			windowForEvents(asked, [{ start: at('2026-09-02T22:00:00'), end: at('2026-09-03T01:00:00') }])
 		).toEqual({ start: 6, end: 24 });
 	});
 
@@ -97,9 +91,7 @@ describe('the stretch of day the grid draws', () => {
 		// An empty Tuesday still shows the hours somebody chose to see.
 		expect(windowForEvents(asked, [])).toEqual(asked);
 		expect(
-			windowForEvents(asked, [
-				{ start: at('2026-09-02T12:00:00'), end: at('2026-09-02T13:00:00') }
-			])
+			windowForEvents(asked, [{ start: at('2026-09-02T12:00:00'), end: at('2026-09-02T13:00:00') }])
 		).toEqual(asked);
 	});
 
