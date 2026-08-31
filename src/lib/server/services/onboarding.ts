@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { activities, categories, weeklySlots } from '../db/schema.js';
+import { activities, categories, recurringTasks } from '../db/schema.js';
 import {
 	isOnboarded,
 	isTheme,
@@ -43,9 +43,9 @@ export function needsFirstRun(userId: string): boolean {
 	if (isOnboarded(userId)) return false;
 
 	const hasSlot = db
-		.select({ id: weeklySlots.id })
-		.from(weeklySlots)
-		.where(eq(weeklySlots.userId, userId))
+		.select({ id: recurringTasks.id })
+		.from(recurringTasks)
+		.where(eq(recurringTasks.userId, userId))
 		.limit(1)
 		.get();
 	if (hasSlot) return false;
@@ -162,7 +162,7 @@ export function applyTemplate(ctx: Ctx, key: TemplateKey, options: { replacePlan
 		for (const block of template.blocks) {
 			const activityId = activityIds.get(block.activity);
 			if (!activityId) continue;
-			tx.insert(weeklySlots)
+			tx.insert(recurringTasks)
 				.values({
 					...stamps(ctx),
 					userId: ctx.userId,

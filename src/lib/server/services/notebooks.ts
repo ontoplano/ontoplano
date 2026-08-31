@@ -1,7 +1,7 @@
 import { and, count, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { diaryEntries, exceptionalSlots, goals, notebooks, plannerTodos } from '../db/schema.js';
+import { diaryEntries, exceptionalTasks, goals, notebooks, todoTasks } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError } from './errors.js';
 import { stamp, stamps } from './time.js';
@@ -63,18 +63,18 @@ function tallies(ctx: Ctx): Map<number, Tally> {
 
 	// A todo and a block are the same task at two stages, so they share a count.
 	for (const row of db
-		.select({ id: plannerTodos.notebookId, n: count() })
-		.from(plannerTodos)
-		.where(eq(plannerTodos.userId, ctx.userId))
-		.groupBy(plannerTodos.notebookId)
+		.select({ id: todoTasks.notebookId, n: count() })
+		.from(todoTasks)
+		.where(eq(todoTasks.userId, ctx.userId))
+		.groupBy(todoTasks.notebookId)
 		.all())
 		add(row.id, 'tasks', row.n);
 
 	for (const row of db
-		.select({ id: exceptionalSlots.notebookId, n: count() })
-		.from(exceptionalSlots)
-		.where(eq(exceptionalSlots.userId, ctx.userId))
-		.groupBy(exceptionalSlots.notebookId)
+		.select({ id: exceptionalTasks.notebookId, n: count() })
+		.from(exceptionalTasks)
+		.where(eq(exceptionalTasks.userId, ctx.userId))
+		.groupBy(exceptionalTasks.notebookId)
 		.all())
 		add(row.id, 'tasks', row.n);
 
@@ -178,26 +178,26 @@ export function contentsOf(ctx: Ctx, id: number) {
 
 		todos: db
 			.select({
-				id: plannerTodos.id,
-				title: plannerTodos.title,
-				status: plannerTodos.status,
-				scheduledDate: plannerTodos.scheduledDate
+				id: todoTasks.id,
+				title: todoTasks.title,
+				status: todoTasks.status,
+				scheduledDate: todoTasks.scheduledDate
 			})
-			.from(plannerTodos)
-			.where(and(eq(plannerTodos.notebookId, id), eq(plannerTodos.userId, ctx.userId)))
-			.orderBy(plannerTodos.status, plannerTodos.sortOrder)
+			.from(todoTasks)
+			.where(and(eq(todoTasks.notebookId, id), eq(todoTasks.userId, ctx.userId)))
+			.orderBy(todoTasks.status, todoTasks.sortOrder)
 			.all(),
 
 		blocks: db
 			.select({
-				id: exceptionalSlots.id,
-				label: exceptionalSlots.label,
-				date: exceptionalSlots.date,
-				startTime: exceptionalSlots.startTime
+				id: exceptionalTasks.id,
+				label: exceptionalTasks.label,
+				date: exceptionalTasks.date,
+				startTime: exceptionalTasks.startTime
 			})
-			.from(exceptionalSlots)
-			.where(and(eq(exceptionalSlots.notebookId, id), eq(exceptionalSlots.userId, ctx.userId)))
-			.orderBy(desc(exceptionalSlots.date))
+			.from(exceptionalTasks)
+			.where(and(eq(exceptionalTasks.notebookId, id), eq(exceptionalTasks.userId, ctx.userId)))
+			.orderBy(desc(exceptionalTasks.date))
 			.all(),
 
 		goals: db
@@ -286,9 +286,9 @@ export function deleteNotebook(ctx: Ctx, id: number): void {
 			.where(and(eq(diaryEntries.notebookId, id), eq(diaryEntries.userId, ctx.userId)))
 			.run();
 
-		tx.update(plannerTodos)
+		tx.update(todoTasks)
 			.set({ notebookId: null })
-			.where(and(eq(plannerTodos.notebookId, id), eq(plannerTodos.userId, ctx.userId)))
+			.where(and(eq(todoTasks.notebookId, id), eq(todoTasks.userId, ctx.userId)))
 			.run();
 
 		tx.update(goals)

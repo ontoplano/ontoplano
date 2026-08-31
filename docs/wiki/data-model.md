@@ -25,7 +25,7 @@ exist.
 | [`diary_entries`](#diary_entries)                 | 9       | yes               |
 | [`diary_entry_tags`](#diary_entry_tags)           | 4       | yes               |
 | [`entry_people`](#entry_people)                   | 4       | yes               |
-| [`exceptional_slots`](#exceptional_slots)         | 17      | yes               |
+| [`exceptional_tasks`](#exceptional_tasks)         | 17      | yes               |
 | [`goal_areas`](#goal_areas)                       | 6       | yes               |
 | [`goal_links`](#goal_links)                       | 6       | yes               |
 | [`goals`](#goals)                                 | 17      | yes               |
@@ -37,13 +37,13 @@ exist.
 | [`mail_failures`](#mail_failures)                 | 11      | —                 |
 | [`notebooks`](#notebooks)                         | 7       | yes               |
 | [`people`](#people)                               | 7       | yes               |
-| [`planner_todos`](#planner_todos)                 | 15      | yes               |
 | [`planning_schemes`](#planning_schemes)           | 5       | yes               |
 | [`plugin_manifests`](#plugin_manifests)           | 8       | yes               |
 | [`price_points`](#price_points)                   | 6       | yes               |
 | [`quotes`](#quotes)                               | 5       | yes               |
 | [`recipe_items`](#recipe_items)                   | 8       | yes               |
 | [`recipes`](#recipes)                             | 12      | yes               |
+| [`recurring_tasks`](#recurring_tasks)             | 18      | yes               |
 | [`reminders`](#reminders)                         | 9       | yes               |
 | [`scheme_slots`](#scheme_slots)                   | 11      | yes               |
 | [`session`](#session)                             | 9       | yes               |
@@ -52,13 +52,13 @@ exist.
 | [`subscriptions`](#subscriptions)                 | 14      | yes               |
 | [`suppressed_slots`](#suppressed_slots)           | 5       | yes               |
 | [`tags`](#tags)                                   | 3       | yes               |
-| [`task_instances`](#task_instances)               | 16      | yes               |
+| [`task_records`](#task_records)                   | 16      | yes               |
+| [`todo_tasks`](#todo_tasks)                       | 15      | yes               |
 | [`user`](#user)                                   | 11      | —                 |
 | [`user_settings`](#user_settings)                 | 4       | yes               |
 | [`verification`](#verification)                   | 6       | —                 |
 | [`webhook_subscriptions`](#webhook_subscriptions) | 11      | yes               |
 | [`weekly_reviews`](#weekly_reviews)               | 7       | yes               |
-| [`weekly_slots`](#weekly_slots)                   | 18      | yes               |
 
 ## account
 
@@ -323,7 +323,7 @@ Indexes:
 - `entry_people_person_idx` on `person_id`
 - `entry_people_unique` on `entry_id`, `person_id` — unique
 
-## exceptional_slots
+## exceptional_tasks
 
 | Column             | Type    | Null     | Default               | Notes             |
 | ------------------ | ------- | -------- | --------------------- | ----------------- |
@@ -347,16 +347,16 @@ Indexes:
 
 Indexes:
 
-- `exceptional_slots_user_date_idx` on `user_id`, `date`
-- `exceptional_slots_notebook_idx` on `notebook_id`
+- `exceptional_tasks_user_date_idx` on `user_id`, `date`
+- `exceptional_tasks_notebook_idx` on `notebook_id`
 
 Checks — enforced by the database, not only by the service layer:
 
-- `exceptional_urgency_range`: `"exceptional_slots"."urgency" IS NULL OR "exceptional_slots"."urgency" BETWEEN 1 AND 5`
-- `exceptional_interest_range`: `"exceptional_slots"."interest" IS NULL OR "exceptional_slots"."interest" BETWEEN 1 AND 5`
-- `exceptional_energy_range`: `"exceptional_slots"."energy" IS NULL OR "exceptional_slots"."energy" BETWEEN 1 AND 5`
-- `exceptional_mode_category`: `"exceptional_slots"."mode" != 'category' OR "exceptional_slots"."category_id" IS NOT NULL`
-- `exceptional_mode_activity`: `"exceptional_slots"."mode" != 'activity' OR "exceptional_slots"."activity_id" IS NOT NULL`
+- `exceptional_urgency_range`: `"exceptional_tasks"."urgency" IS NULL OR "exceptional_tasks"."urgency" BETWEEN 1 AND 5`
+- `exceptional_interest_range`: `"exceptional_tasks"."interest" IS NULL OR "exceptional_tasks"."interest" BETWEEN 1 AND 5`
+- `exceptional_energy_range`: `"exceptional_tasks"."energy" IS NULL OR "exceptional_tasks"."energy" BETWEEN 1 AND 5`
+- `exceptional_mode_category`: `"exceptional_tasks"."mode" != 'category' OR "exceptional_tasks"."category_id" IS NOT NULL`
+- `exceptional_mode_activity`: `"exceptional_tasks"."mode" != 'activity' OR "exceptional_tasks"."activity_id" IS NOT NULL`
 
 ## goal_areas
 
@@ -376,14 +376,14 @@ Indexes:
 
 ## goal_links
 
-| Column        | Type    | Null     | Default | Notes                |
-| ------------- | ------- | -------- | ------- | -------------------- |
-| `id`          | integer | not null | —       | primary key, auto    |
-| `user_id`     | text    | not null | —       | → `user.id`          |
-| `goal_id`     | integer | not null | —       | → `goals.id`         |
-| `slot_id`     | integer | null     | —       | → `weekly_slots.id`  |
-| `todo_id`     | integer | null     | —       | → `planner_todos.id` |
-| `activity_id` | integer | null     | —       | → `activities.id`    |
+| Column        | Type    | Null     | Default | Notes                  |
+| ------------- | ------- | -------- | ------- | ---------------------- |
+| `id`          | integer | not null | —       | primary key, auto      |
+| `user_id`     | text    | not null | —       | → `user.id`            |
+| `goal_id`     | integer | not null | —       | → `goals.id`           |
+| `slot_id`     | integer | null     | —       | → `recurring_tasks.id` |
+| `todo_id`     | integer | null     | —       | → `todo_tasks.id`      |
+| `activity_id` | integer | null     | —       | → `activities.id`      |
 
 Indexes:
 
@@ -565,38 +565,6 @@ Indexes:
 - `people_user_idx` on `user_id`
 - `people_user_name_unique` on `user_id`, `name` — unique
 
-## planner_todos
-
-| Column           | Type    | Null     | Default               | Notes             |
-| ---------------- | ------- | -------- | --------------------- | ----------------- |
-| `id`             | integer | not null | —                     | primary key, auto |
-| `user_id`        | text    | not null | —                     | → `user.id`       |
-| `title`          | text    | not null | —                     | —                 |
-| `notes`          | text    | null     | `''`                  | —                 |
-| `completed`      | integer | not null | `false`               | —                 |
-| `category_id`    | integer | null     | —                     | → `categories.id` |
-| `notebook_id`    | integer | null     | —                     | → `notebooks.id`  |
-| `scheduled_date` | text    | null     | —                     | —                 |
-| `status`         | text    | not null | `'todo'`              | —                 |
-| `sort_order`     | integer | not null | `0`                   | —                 |
-| `urgency`        | integer | null     | —                     | —                 |
-| `interest`       | integer | null     | —                     | —                 |
-| `energy`         | integer | null     | —                     | —                 |
-| `created_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
-| `updated_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
-
-Indexes:
-
-- `planner_todos_user_idx` on `user_id`
-- `planner_todos_scheduled_idx` on `user_id`, `scheduled_date`
-- `planner_todos_notebook_idx` on `notebook_id`
-
-Checks — enforced by the database, not only by the service layer:
-
-- `todos_urgency_range`: `"planner_todos"."urgency" IS NULL OR "planner_todos"."urgency" BETWEEN 1 AND 5`
-- `todos_interest_range`: `"planner_todos"."interest" IS NULL OR "planner_todos"."interest" BETWEEN 1 AND 5`
-- `todos_energy_range`: `"planner_todos"."energy" IS NULL OR "planner_todos"."energy" BETWEEN 1 AND 5`
-
 ## planning_schemes
 
 | Column       | Type    | Null     | Default               | Notes             |
@@ -709,6 +677,44 @@ Checks — enforced by the database, not only by the service layer:
 
 - `recipes_servings_positive`: `"recipes"."servings" IS NULL OR "recipes"."servings" > 0`
 - `recipes_minutes_positive`: `"recipes"."minutes" IS NULL OR "recipes"."minutes" > 0`
+
+## recurring_tasks
+
+| Column             | Type    | Null     | Default               | Notes             |
+| ------------------ | ------- | -------- | --------------------- | ----------------- |
+| `id`               | integer | not null | —                     | primary key, auto |
+| `user_id`          | text    | not null | —                     | → `user.id`       |
+| `weekday`          | integer | not null | —                     | —                 |
+| `recurrence`       | text    | not null | `'weekly'`            | —                 |
+| `start_time`       | text    | not null | —                     | —                 |
+| `duration_minutes` | integer | not null | `60`                  | —                 |
+| `mode`             | text    | not null | —                     | —                 |
+| `category_id`      | integer | null     | —                     | → `categories.id` |
+| `activity_id`      | integer | null     | —                     | → `activities.id` |
+| `label`            | text    | null     | `''`                  | —                 |
+| `active`           | integer | not null | `true`                | —                 |
+| `urgency`          | integer | null     | —                     | —                 |
+| `interest`         | integer | null     | —                     | —                 |
+| `energy`           | integer | null     | —                     | —                 |
+| `meta`             | text    | not null | `'{}'`                | —                 |
+| `recipe_id`        | integer | null     | —                     | → `recipes.id`    |
+| `created_at`       | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| `updated_at`       | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `slots_user_idx` on `user_id`
+- `slots_weekday_idx` on `weekday`
+- `slots_weekday_time_idx` on `weekday`, `start_time`
+
+Checks — enforced by the database, not only by the service layer:
+
+- `slots_urgency_range`: `"recurring_tasks"."urgency" IS NULL OR "recurring_tasks"."urgency" BETWEEN 1 AND 5`
+- `slots_interest_range`: `"recurring_tasks"."interest" IS NULL OR "recurring_tasks"."interest" BETWEEN 1 AND 5`
+- `slots_energy_range`: `"recurring_tasks"."energy" IS NULL OR "recurring_tasks"."energy" BETWEEN 1 AND 5`
+- `slots_weekday_range`: `"recurring_tasks"."weekday" >= 0 AND "recurring_tasks"."weekday" <= 6`
+- `slots_mode_category`: `"recurring_tasks"."mode" != 'category' OR "recurring_tasks"."category_id" IS NOT NULL`
+- `slots_mode_activity`: `"recurring_tasks"."mode" != 'activity' OR "recurring_tasks"."activity_id" IS NOT NULL`
 
 ## reminders
 
@@ -842,8 +848,8 @@ Indexes:
 | `id`          | integer | not null | —       | primary key, auto        |
 | `user_id`     | text    | not null | —       | → `user.id`              |
 | `date`        | text    | not null | —       | —                        |
-| `slot_id`     | integer | not null | —       | → `weekly_slots.id`      |
-| `moved_to_id` | integer | null     | —       | → `exceptional_slots.id` |
+| `slot_id`     | integer | not null | —       | → `recurring_tasks.id`   |
+| `moved_to_id` | integer | null     | —       | → `exceptional_tasks.id` |
 
 Indexes:
 
@@ -863,14 +869,14 @@ Indexes:
 - `tags_user_idx` on `user_id`
 - `tags_user_name_unique` on `user_id`, `name` — unique
 
-## task_instances
+## task_records
 
 | Column                 | Type    | Null     | Default               | Notes                    |
 | ---------------------- | ------- | -------- | --------------------- | ------------------------ |
 | `id`                   | integer | not null | —                     | primary key, auto        |
 | `user_id`              | text    | not null | —                     | → `user.id`              |
-| `slot_id`              | integer | null     | —                     | → `weekly_slots.id`      |
-| `exceptional_slot_id`  | integer | null     | —                     | → `exceptional_slots.id` |
+| `slot_id`              | integer | null     | —                     | → `recurring_tasks.id`   |
+| `exceptional_slot_id`  | integer | null     | —                     | → `exceptional_tasks.id` |
 | `scheduled_at`         | text    | not null | —                     | —                        |
 | `status`               | text    | not null | `'todo'`              | —                        |
 | `timing`               | text    | null     | —                     | —                        |
@@ -896,7 +902,39 @@ Indexes:
 
 Checks — enforced by the database, not only by the service layer:
 
-- `instance_has_exactly_one_source`: `("task_instances"."slot_id" IS NULL) != ("task_instances"."exceptional_slot_id" IS NULL)`
+- `instance_has_exactly_one_source`: `("task_records"."slot_id" IS NULL) != ("task_records"."exceptional_slot_id" IS NULL)`
+
+## todo_tasks
+
+| Column           | Type    | Null     | Default               | Notes             |
+| ---------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`             | integer | not null | —                     | primary key, auto |
+| `user_id`        | text    | not null | —                     | → `user.id`       |
+| `title`          | text    | not null | —                     | —                 |
+| `notes`          | text    | null     | `''`                  | —                 |
+| `completed`      | integer | not null | `false`               | —                 |
+| `category_id`    | integer | null     | —                     | → `categories.id` |
+| `notebook_id`    | integer | null     | —                     | → `notebooks.id`  |
+| `scheduled_date` | text    | null     | —                     | —                 |
+| `status`         | text    | not null | `'todo'`              | —                 |
+| `sort_order`     | integer | not null | `0`                   | —                 |
+| `urgency`        | integer | null     | —                     | —                 |
+| `interest`       | integer | null     | —                     | —                 |
+| `energy`         | integer | null     | —                     | —                 |
+| `created_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| `updated_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `todo_tasks_user_idx` on `user_id`
+- `todo_tasks_scheduled_idx` on `user_id`, `scheduled_date`
+- `todo_tasks_notebook_idx` on `notebook_id`
+
+Checks — enforced by the database, not only by the service layer:
+
+- `todos_urgency_range`: `"todo_tasks"."urgency" IS NULL OR "todo_tasks"."urgency" BETWEEN 1 AND 5`
+- `todos_interest_range`: `"todo_tasks"."interest" IS NULL OR "todo_tasks"."interest" BETWEEN 1 AND 5`
+- `todos_energy_range`: `"todo_tasks"."energy" IS NULL OR "todo_tasks"."energy" BETWEEN 1 AND 5`
 
 ## user
 
@@ -983,41 +1021,3 @@ Indexes:
 
 - `weekly_reviews_user_week_idx` on `user_id`, `week_start`
 - `weekly_reviews_slot_unique` on `user_id`, `week_start`, `position` — unique
-
-## weekly_slots
-
-| Column             | Type    | Null     | Default               | Notes             |
-| ------------------ | ------- | -------- | --------------------- | ----------------- |
-| `id`               | integer | not null | —                     | primary key, auto |
-| `user_id`          | text    | not null | —                     | → `user.id`       |
-| `weekday`          | integer | not null | —                     | —                 |
-| `recurrence`       | text    | not null | `'weekly'`            | —                 |
-| `start_time`       | text    | not null | —                     | —                 |
-| `duration_minutes` | integer | not null | `60`                  | —                 |
-| `mode`             | text    | not null | —                     | —                 |
-| `category_id`      | integer | null     | —                     | → `categories.id` |
-| `activity_id`      | integer | null     | —                     | → `activities.id` |
-| `label`            | text    | null     | `''`                  | —                 |
-| `active`           | integer | not null | `true`                | —                 |
-| `urgency`          | integer | null     | —                     | —                 |
-| `interest`         | integer | null     | —                     | —                 |
-| `energy`           | integer | null     | —                     | —                 |
-| `meta`             | text    | not null | `'{}'`                | —                 |
-| `recipe_id`        | integer | null     | —                     | → `recipes.id`    |
-| `created_at`       | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
-| `updated_at`       | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
-
-Indexes:
-
-- `slots_user_idx` on `user_id`
-- `slots_weekday_idx` on `weekday`
-- `slots_weekday_time_idx` on `weekday`, `start_time`
-
-Checks — enforced by the database, not only by the service layer:
-
-- `slots_urgency_range`: `"weekly_slots"."urgency" IS NULL OR "weekly_slots"."urgency" BETWEEN 1 AND 5`
-- `slots_interest_range`: `"weekly_slots"."interest" IS NULL OR "weekly_slots"."interest" BETWEEN 1 AND 5`
-- `slots_energy_range`: `"weekly_slots"."energy" IS NULL OR "weekly_slots"."energy" BETWEEN 1 AND 5`
-- `slots_weekday_range`: `"weekly_slots"."weekday" >= 0 AND "weekly_slots"."weekday" <= 6`
-- `slots_mode_category`: `"weekly_slots"."mode" != 'category' OR "weekly_slots"."category_id" IS NOT NULL`
-- `slots_mode_activity`: `"weekly_slots"."mode" != 'activity' OR "weekly_slots"."activity_id" IS NOT NULL`

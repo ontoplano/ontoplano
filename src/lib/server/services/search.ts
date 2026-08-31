@@ -17,14 +17,14 @@ import { db } from '../db/index.js';
 import {
 	activities,
 	diaryEntries,
-	exceptionalSlots,
+	exceptionalTasks,
 	goals,
 	ideas,
 	notebooks,
 	people,
-	plannerTodos,
+	todoTasks,
 	shoppingItems,
-	weeklySlots
+	recurringTasks
 } from '../db/schema.js';
 import {
 	KIND_LABELS,
@@ -190,13 +190,13 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 
 	// --- what you have to do ----------------------------------------------------
 	for (const row of db
-		.select({ id: plannerTodos.id, title: plannerTodos.title, notes: plannerTodos.notes })
-		.from(plannerTodos)
+		.select({ id: todoTasks.id, title: todoTasks.title, notes: todoTasks.notes })
+		.from(todoTasks)
 		.where(
 			and(
-				eq(plannerTodos.userId, ctx.userId),
-				or(matches(plannerTodos.title), matches(plannerTodos.notes ?? sql`''`)),
-				scope === null ? undefined : eq(plannerTodos.notebookId, scope)
+				eq(todoTasks.userId, ctx.userId),
+				or(matches(todoTasks.title), matches(todoTasks.notes ?? sql`''`)),
+				scope === null ? undefined : eq(todoTasks.notebookId, scope)
 			)
 		)
 		.limit(PER_KIND)
@@ -210,9 +210,13 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 		});
 
 	for (const row of db
-		.select({ id: weeklySlots.id, label: weeklySlots.label, startTime: weeklySlots.startTime })
-		.from(weeklySlots)
-		.where(and(eq(weeklySlots.userId, ctx.userId), matches(weeklySlots.label ?? sql`''`)))
+		.select({
+			id: recurringTasks.id,
+			label: recurringTasks.label,
+			startTime: recurringTasks.startTime
+		})
+		.from(recurringTasks)
+		.where(and(eq(recurringTasks.userId, ctx.userId), matches(recurringTasks.label ?? sql`''`)))
 		.limit(PER_KIND)
 		.all())
 		found({
@@ -225,20 +229,20 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 
 	for (const row of db
 		.select({
-			id: exceptionalSlots.id,
-			label: exceptionalSlots.label,
-			date: exceptionalSlots.date,
-			startTime: exceptionalSlots.startTime
+			id: exceptionalTasks.id,
+			label: exceptionalTasks.label,
+			date: exceptionalTasks.date,
+			startTime: exceptionalTasks.startTime
 		})
-		.from(exceptionalSlots)
+		.from(exceptionalTasks)
 		.where(
 			and(
-				eq(exceptionalSlots.userId, ctx.userId),
-				matches(exceptionalSlots.label ?? sql`''`),
-				scope === null ? undefined : eq(exceptionalSlots.notebookId, scope)
+				eq(exceptionalTasks.userId, ctx.userId),
+				matches(exceptionalTasks.label ?? sql`''`),
+				scope === null ? undefined : eq(exceptionalTasks.notebookId, scope)
 			)
 		)
-		.orderBy(desc(exceptionalSlots.date))
+		.orderBy(desc(exceptionalTasks.date))
 		.limit(PER_KIND)
 		.all())
 		found({

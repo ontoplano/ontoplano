@@ -101,7 +101,7 @@ const activity = (name, categoryId) => {
 
 const slot = (weekday, startTime, durationMinutes, activityId, recurrence = 'weekly') => {
 	const existing = one(
-		'select id from weekly_slots where user_id = ? and weekday = ? and start_time = ? and activity_id = ?',
+		'select id from recurring_tasks where user_id = ? and weekday = ? and start_time = ? and activity_id = ?',
 		uid,
 		weekday,
 		startTime,
@@ -109,7 +109,7 @@ const slot = (weekday, startTime, durationMinutes, activityId, recurrence = 'wee
 	);
 	if (existing) return existing.id;
 	return run(
-		`insert into weekly_slots
+		`insert into recurring_tasks
 		 (user_id, weekday, start_time, duration_minutes, mode, activity_id, label, recurrence, meta)
 		 values (?, ?, ?, ?, 'activity', ?, '', ?, '{}')`,
 		uid,
@@ -124,7 +124,7 @@ const slot = (weekday, startTime, durationMinutes, activityId, recurrence = 'wee
 /** A block that names only an area of life, resolved to an activity when done. */
 const categorySlot = (weekday, startTime, durationMinutes, categoryId, label) => {
 	const existing = one(
-		'select id from weekly_slots where user_id = ? and weekday = ? and start_time = ? and label = ?',
+		'select id from recurring_tasks where user_id = ? and weekday = ? and start_time = ? and label = ?',
 		uid,
 		weekday,
 		startTime,
@@ -132,7 +132,7 @@ const categorySlot = (weekday, startTime, durationMinutes, categoryId, label) =>
 	);
 	if (existing) return existing.id;
 	return run(
-		`insert into weekly_slots
+		`insert into recurring_tasks
 		 (user_id, weekday, start_time, duration_minutes, mode, category_id, label, recurrence, meta)
 		 values (?, ?, ?, ?, 'category', ?, ?, 'weekly', '{}')`,
 		uid,
@@ -146,14 +146,14 @@ const categorySlot = (weekday, startTime, durationMinutes, categoryId, label) =>
 
 const oneOff = (date, startTime, durationMinutes, activityId, label) => {
 	const existing = one(
-		'select id from exceptional_slots where user_id = ? and date = ? and start_time = ?',
+		'select id from exceptional_tasks where user_id = ? and date = ? and start_time = ?',
 		uid,
 		date,
 		startTime
 	);
 	if (existing) return existing.id;
 	return run(
-		`insert into exceptional_slots
+		`insert into exceptional_tasks
 		 (user_id, date, start_time, duration_minutes, mode, activity_id, label, meta)
 		 values (?, ?, ?, ?, 'activity', ?, ?, '{}')`,
 		uid,
@@ -168,14 +168,14 @@ const oneOff = (date, startTime, durationMinutes, activityId, label) => {
 /** A one-off that names an area rather than a specific activity. */
 const oneOffInCategory = (date, startTime, durationMinutes, categoryId, label) => {
 	const existing = one(
-		'select id from exceptional_slots where user_id = ? and date = ? and start_time = ?',
+		'select id from exceptional_tasks where user_id = ? and date = ? and start_time = ?',
 		uid,
 		date,
 		startTime
 	);
 	if (existing) return existing.id;
 	return run(
-		`insert into exceptional_slots
+		`insert into exceptional_tasks
 		 (user_id, date, start_time, duration_minutes, mode, category_id, label, meta)
 		 values (?, ?, ?, ?, 'category', ?, ?, '{}')`,
 		uid,
@@ -188,10 +188,10 @@ const oneOffInCategory = (date, startTime, durationMinutes, categoryId, label) =
 };
 
 const todo = (title, extra = {}) => {
-	const existing = one('select id from planner_todos where user_id = ? and title = ?', uid, title);
+	const existing = one('select id from todo_tasks where user_id = ? and title = ?', uid, title);
 	if (existing) return existing.id;
 	return run(
-		`insert into planner_todos
+		`insert into todo_tasks
 		 (user_id, title, notes, status, completed, scheduled_date, category_id, urgency, interest, energy, sort_order)
 		 values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		uid,
@@ -524,14 +524,14 @@ const scheme = (name, slots) => {
 
 const instance = (slotId, scheduledAt, status, extra = {}) => {
 	const existing = one(
-		'select id from task_instances where user_id = ? and slot_id is ? and scheduled_at = ?',
+		'select id from task_records where user_id = ? and slot_id is ? and scheduled_at = ?',
 		uid,
 		slotId,
 		scheduledAt
 	);
 	if (existing) return existing.id;
 	return run(
-		`insert into task_instances
+		`insert into task_records
 		 (user_id, slot_id, exceptional_slot_id, scheduled_at, status, timing, completed_at, notes, resolved_activity_id)
 		 values (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		uid,
@@ -690,7 +690,7 @@ oneOffInCategory(iso(dayOffset(-1)), '08:00', 60, health, 'physio');
 
 // One occurrence of the Wednesday Russian block, dropped for a single week.
 const russianSlot = one(
-	'select id from weekly_slots where user_id = ? and activity_id = ? limit 1',
+	'select id from recurring_tasks where user_id = ? and activity_id = ? limit 1',
 	uid,
 	russian
 );
@@ -712,7 +712,7 @@ if (
 
 // History to look at: last week done, this week partly.
 const deepWorkSlot = one(
-	'select id from weekly_slots where user_id = ? and activity_id = ? limit 1',
+	'select id from recurring_tasks where user_id = ? and activity_id = ? limit 1',
 	uid,
 	deepWork
 );
@@ -789,7 +789,7 @@ goal('ship the plugin API', 'quarter', quarterStart, {
 goal('learn to sail', 'year', yearStart, { status: 'abandoned', outcome: 'no time this year' });
 
 const gymSlot = one(
-	'select id from weekly_slots where user_id = ? and activity_id = ? limit 1',
+	'select id from recurring_tasks where user_id = ? and activity_id = ? limit 1',
 	uid,
 	gym
 );
@@ -854,9 +854,9 @@ const republic = notebook(
 todo('get three quotes for the counter', { urgency: 3, interest: 2, sortOrder: 7 });
 todo('measure the wall properly', { status: 'done', sortOrder: 8 });
 
-inNotebook('planner_todos', 'title', 'get three quotes for the counter', kitchen);
-inNotebook('planner_todos', 'title', 'measure the wall properly', kitchen);
-inNotebook('planner_todos', 'title', 'plan the trip', portugal);
+inNotebook('todo_tasks', 'title', 'get three quotes for the counter', kitchen);
+inNotebook('todo_tasks', 'title', 'measure the wall properly', kitchen);
+inNotebook('todo_tasks', 'title', 'plan the trip', portugal);
 inNotebook('diary_entries', 'seq', 5, kitchen);
 inNotebook('diary_entries', 'seq', 4, readingNotebook);
 inNotebook('diary_entries', 'seq', 6, readingNotebook);
@@ -1128,9 +1128,9 @@ ingredient(riceAndBeans, 'black beans', 400, 'g');
 ingredient(riceAndBeans, 'garlic', 3, 'cloves');
 
 // A meal is a block with a recipe on it, on the grid with everything else.
-const dinner = one("select id from weekly_slots where user_id = ? and label = 'cooking'", uid);
+const dinner = one("select id from recurring_tasks where user_id = ? and label = 'cooking'", uid);
 if (dinner)
-	db.prepare('update weekly_slots set recipe_id = ? where id = ?').run(tomatoPasta, dinner.id);
+	db.prepare('update recurring_tasks set recipe_id = ? where id = ?').run(tomatoPasta, dinner.id);
 
 // --- The week before last, closed ------------------------------------------------
 //
@@ -1191,13 +1191,13 @@ const age = (table, match, when) => {
 };
 
 const forgottenTodo = one(
-	'select id from planner_todos where user_id = ? and title = ?',
+	'select id from todo_tasks where user_id = ? and title = ?',
 	uid,
 	'learn a bit of woodworking'
 );
 if (!forgottenTodo)
 	run(
-		'insert into planner_todos (user_id, title, status, sort_order, created_at, updated_at) values (?, ?, ?, ?, ?, ?)',
+		'insert into todo_tasks (user_id, title, status, sort_order, created_at, updated_at) values (?, ?, ?, ?, ?, ?)',
 		uid,
 		'learn a bit of woodworking',
 		'todo',
@@ -1500,13 +1500,13 @@ for (const [seq, daysAgo, content] of REPUBLIC_NOTES) {
 }
 
 todo('finish Book VIII before the group meets', { status: 'done', sortOrder: 9400 });
-inNotebook('planner_todos', 'title', 'finish Book VIII before the group meets', republic);
+inNotebook('todo_tasks', 'title', 'finish Book VIII before the group meets', republic);
 
 // The weekly plan as it stands, which is what the past is generated from: the
 // blocks somebody has been keeping are the blocks they have.
 const plannedSlots = db
 	.prepare(
-		'select id, weekday, start_time as startTime from weekly_slots where user_id = ? and active = 1'
+		'select id, weekday, start_time as startTime from recurring_tasks where user_id = ? and active = 1'
 	)
 	.all(uid);
 
@@ -1661,7 +1661,7 @@ const FINISHED = [
 for (const [title, daysAgo] of FINISHED) {
 	const id = todo(title, { status: 'done', sortOrder: 9500 });
 	const when = `${iso(dayAt(daysAgo))} 18:00:00`;
-	db.prepare('update planner_todos set status = ?, completed = 1, updated_at = ? where id = ?').run(
+	db.prepare('update todo_tasks set status = ?, completed = 1, updated_at = ? where id = ?').run(
 		'done',
 		when,
 		id

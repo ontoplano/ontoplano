@@ -50,7 +50,7 @@ shows up here on the next build.
 | [`search`](#search)                             | One box over everything the account owns.                                                                                                                                                                                                                            |
 | [`sessions`](#sessions)                         | The sessions an account currently has open.                                                                                                                                                                                                                          |
 | [`shopping`](#shopping)                         | Two lists that share a table: `replenish` is stock you keep, `someday` is a wishlist. The difference is what "bought" means — a replenish item comes back when it runs out, a someday item is done.                                                                  |
-| [`slots`](#slots)                               | The plan itself: blocks that repeat (`weekly_slots`) and blocks that happen once (`exceptional_slots`), plus the skips that cancel a single occurrence.                                                                                                              |
+| [`slots`](#slots)                               | The plan itself: blocks that repeat (`recurring_tasks`) and blocks that happen once (`exceptional_tasks`), plus the skips that cancel a single occurrence.                                                                                                           |
 | [`stale`](#stale)                               | Things that never ended.                                                                                                                                                                                                                                             |
 | [`streams`](#streams)                           | Declare a stream. Idempotent per (user, slug) so producers can call it at every startup.                                                                                                                                                                             |
 | [`subscriptions`](#subscriptions)               | What an account may do, and until when.                                                                                                                                                                                                                              |
@@ -832,7 +832,7 @@ Applied is a toggle, so the current value is read inside the same scope.
 The one answer to "what is on, between these dates".
 
 Both kinds of planned block — a recurring weekly slot and a one-off — produce
-rows in `task_instances`, and this module is the only place that knows how to
+rows in `task_records`, and this module is the only place that knows how to
 generate and read them. Before it existed each caller wrote its own union of
 two tables, and the ones that forgot the second half were quietly wrong: the
 dashboard omitted one-offs entirely and the tracker's day tabs counted a
@@ -1844,8 +1844,8 @@ What is still to buy, for the dashboard card.
 
 ## slots
 
-The plan itself: blocks that repeat (`weekly_slots`) and blocks that happen
-once (`exceptional_slots`), plus the skips that cancel a single occurrence.
+The plan itself: blocks that repeat (`recurring_tasks`) and blocks that happen
+once (`exceptional_tasks`), plus the skips that cancel a single occurrence.
 
 What any of it produces on a given day is `services/instances.ts`. This
 module owns the shape of the plan; that one owns what the plan means for a
@@ -2116,7 +2116,7 @@ moments that happened. They are stored as UTC ISO-8601 with a trailing `Z`,
 so a reader in any zone can render them correctly and two rows can be
 compared without knowing where either was written.
 
-**Wall-clock values** — `task_instances.scheduled_at`, `weekly_slots.
+**Wall-clock values** — `task_records.scheduled_at`, `recurring_tasks.
 start_time` — are not instants. "Gym at 18:00 on Thursday" means six in the
 evening wherever you are, not a fixed point on the timeline, and converting
 it to UTC would move it when you travel. They stay naive and are resolved

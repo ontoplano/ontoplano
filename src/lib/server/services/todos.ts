@@ -13,10 +13,10 @@ import { db } from '../db/index.js';
 import {
 	activities,
 	categories,
-	exceptionalSlots,
+	exceptionalTasks,
 	notebooks,
-	plannerTodos,
-	taskInstances
+	todoTasks,
+	taskRecords
 } from '../db/schema.js';
 import { CLOSED_STATUSES, isStatus, type Status } from '../../task-status.js';
 import type { RatingValues } from '../../ratings.js';
@@ -45,22 +45,22 @@ export type Todo = {
 };
 
 const SELECTION = {
-	id: plannerTodos.id,
-	title: plannerTodos.title,
-	notes: plannerTodos.notes,
-	status: plannerTodos.status,
-	scheduledDate: plannerTodos.scheduledDate,
-	sortOrder: plannerTodos.sortOrder,
-	categoryId: plannerTodos.categoryId,
+	id: todoTasks.id,
+	title: todoTasks.title,
+	notes: todoTasks.notes,
+	status: todoTasks.status,
+	scheduledDate: todoTasks.scheduledDate,
+	sortOrder: todoTasks.sortOrder,
+	categoryId: todoTasks.categoryId,
 	categoryName: categories.name,
 	categoryColor: categories.color,
-	notebookId: plannerTodos.notebookId,
+	notebookId: todoTasks.notebookId,
 	notebookTitle: notebooks.title,
-	urgency: plannerTodos.urgency,
-	interest: plannerTodos.interest,
-	energy: plannerTodos.energy,
-	createdAt: plannerTodos.createdAt,
-	updatedAt: plannerTodos.updatedAt
+	urgency: todoTasks.urgency,
+	interest: todoTasks.interest,
+	energy: todoTasks.energy,
+	createdAt: todoTasks.createdAt,
+	updatedAt: todoTasks.updatedAt
 };
 
 function shape(r: Record<string, unknown>): Todo {
@@ -90,11 +90,11 @@ function shape(r: Record<string, unknown>): Todo {
 export function listTodos(ctx: Ctx): Todo[] {
 	return db
 		.select(SELECTION)
-		.from(plannerTodos)
-		.leftJoin(categories, eq(plannerTodos.categoryId, categories.id))
-		.leftJoin(notebooks, eq(plannerTodos.notebookId, notebooks.id))
-		.where(eq(plannerTodos.userId, ctx.userId))
-		.orderBy(asc(plannerTodos.sortOrder), asc(plannerTodos.createdAt))
+		.from(todoTasks)
+		.leftJoin(categories, eq(todoTasks.categoryId, categories.id))
+		.leftJoin(notebooks, eq(todoTasks.notebookId, notebooks.id))
+		.where(eq(todoTasks.userId, ctx.userId))
+		.orderBy(asc(todoTasks.sortOrder), asc(todoTasks.createdAt))
 		.all()
 		.map(shape);
 }
@@ -110,17 +110,17 @@ export function listTodos(ctx: Ctx): Todo[] {
 export function listUnscheduled(ctx: Ctx, options: { openOnly?: boolean } = {}): Todo[] {
 	return db
 		.select(SELECTION)
-		.from(plannerTodos)
-		.leftJoin(categories, eq(plannerTodos.categoryId, categories.id))
-		.leftJoin(notebooks, eq(plannerTodos.notebookId, notebooks.id))
+		.from(todoTasks)
+		.leftJoin(categories, eq(todoTasks.categoryId, categories.id))
+		.leftJoin(notebooks, eq(todoTasks.notebookId, notebooks.id))
 		.where(
 			and(
-				eq(plannerTodos.userId, ctx.userId),
-				isNull(plannerTodos.scheduledDate),
-				options.openOnly ? notInArray(plannerTodos.status, [...CLOSED_STATUSES]) : undefined
+				eq(todoTasks.userId, ctx.userId),
+				isNull(todoTasks.scheduledDate),
+				options.openOnly ? notInArray(todoTasks.status, [...CLOSED_STATUSES]) : undefined
 			)
 		)
-		.orderBy(asc(plannerTodos.sortOrder), asc(plannerTodos.createdAt))
+		.orderBy(asc(todoTasks.sortOrder), asc(todoTasks.createdAt))
 		.all()
 		.map(shape);
 }
@@ -135,26 +135,26 @@ export function listUnscheduled(ctx: Ctx, options: { openOnly?: boolean } = {}):
 export function listForDate(ctx: Ctx, date: string): Todo[] {
 	const rows = db
 		.select(SELECTION)
-		.from(plannerTodos)
-		.leftJoin(categories, eq(plannerTodos.categoryId, categories.id))
-		.leftJoin(notebooks, eq(plannerTodos.notebookId, notebooks.id))
-		.where(and(eq(plannerTodos.userId, ctx.userId), eq(plannerTodos.scheduledDate, date)))
-		.orderBy(asc(plannerTodos.sortOrder), asc(plannerTodos.createdAt))
+		.from(todoTasks)
+		.leftJoin(categories, eq(todoTasks.categoryId, categories.id))
+		.leftJoin(notebooks, eq(todoTasks.notebookId, notebooks.id))
+		.where(and(eq(todoTasks.userId, ctx.userId), eq(todoTasks.scheduledDate, date)))
+		.orderBy(asc(todoTasks.sortOrder), asc(todoTasks.createdAt))
 		.all()
 		.map(shape);
 
 	const overdue = db
 		.select(SELECTION)
-		.from(plannerTodos)
-		.leftJoin(categories, eq(plannerTodos.categoryId, categories.id))
-		.leftJoin(notebooks, eq(plannerTodos.notebookId, notebooks.id))
+		.from(todoTasks)
+		.leftJoin(categories, eq(todoTasks.categoryId, categories.id))
+		.leftJoin(notebooks, eq(todoTasks.notebookId, notebooks.id))
 		.where(
 			and(
-				eq(plannerTodos.userId, ctx.userId),
-				or(eq(plannerTodos.status, 'todo'), eq(plannerTodos.status, 'doing'))
+				eq(todoTasks.userId, ctx.userId),
+				or(eq(todoTasks.status, 'todo'), eq(todoTasks.status, 'doing'))
 			)
 		)
-		.orderBy(asc(plannerTodos.sortOrder), asc(plannerTodos.createdAt))
+		.orderBy(asc(todoTasks.sortOrder), asc(todoTasks.createdAt))
 		.all()
 		.map(shape)
 		.filter((t) => t.scheduledDate !== null && t.scheduledDate < date);
@@ -165,9 +165,9 @@ export function listForDate(ctx: Ctx, date: string): Todo[] {
 /** Next free slot at the bottom of a column, so a new card lands last. */
 export function nextSortOrder(ctx: Ctx): number {
 	const rows = db
-		.select({ sortOrder: plannerTodos.sortOrder })
-		.from(plannerTodos)
-		.where(eq(plannerTodos.userId, ctx.userId))
+		.select({ sortOrder: todoTasks.sortOrder })
+		.from(todoTasks)
+		.where(eq(todoTasks.userId, ctx.userId))
 		.all();
 	return rows.reduce((max, r) => Math.max(max, r.sortOrder), 0) + 1;
 }
@@ -195,8 +195,8 @@ export function promoteTodo(
 ): { ok: true } | { ok: false; message: string } {
 	const todo = db
 		.select()
-		.from(plannerTodos)
-		.where(and(eq(plannerTodos.id, input.todoId), eq(plannerTodos.userId, ctx.userId)))
+		.from(todoTasks)
+		.where(and(eq(todoTasks.id, input.todoId), eq(todoTasks.userId, ctx.userId)))
 		.get();
 	if (!todo) return { ok: false, message: 'Todo not found' };
 
@@ -216,7 +216,7 @@ export function promoteTodo(
 
 	db.transaction((tx) => {
 		const slot = tx
-			.insert(exceptionalSlots)
+			.insert(exceptionalTasks)
 			.values({
 				...created(ctx),
 				userId: ctx.userId,
@@ -232,10 +232,10 @@ export function promoteTodo(
 				interest: todo.interest,
 				energy: todo.energy
 			})
-			.returning({ id: exceptionalSlots.id })
+			.returning({ id: exceptionalTasks.id })
 			.get();
 
-		tx.insert(taskInstances)
+		tx.insert(taskRecords)
 			.values({
 				...created(ctx),
 				userId: ctx.userId,
@@ -248,8 +248,8 @@ export function promoteTodo(
 			})
 			.run();
 
-		tx.delete(plannerTodos)
-			.where(and(eq(plannerTodos.id, input.todoId), eq(plannerTodos.userId, ctx.userId)))
+		tx.delete(todoTasks)
+			.where(and(eq(todoTasks.id, input.todoId), eq(todoTasks.userId, ctx.userId)))
 			.run();
 	});
 
@@ -276,8 +276,8 @@ export function promoteTodo(
 export function demoteToTodo(ctx: Ctx, slotId: number): { ok: true; todoId: number } {
 	const slot = db
 		.select()
-		.from(exceptionalSlots)
-		.where(and(eq(exceptionalSlots.id, slotId), eq(exceptionalSlots.userId, ctx.userId)))
+		.from(exceptionalTasks)
+		.where(and(eq(exceptionalTasks.id, slotId), eq(exceptionalTasks.userId, ctx.userId)))
 		.get();
 	if (!slot) throw new NotFoundError('Block');
 
@@ -285,8 +285,8 @@ export function demoteToTodo(ctx: Ctx, slotId: number): { ok: true; todoId: numb
 	// a block has nowhere else to put.
 	const instance = db
 		.select()
-		.from(taskInstances)
-		.where(and(eq(taskInstances.exceptionalSlotId, slotId), eq(taskInstances.userId, ctx.userId)))
+		.from(taskRecords)
+		.where(and(eq(taskRecords.exceptionalSlotId, slotId), eq(taskRecords.userId, ctx.userId)))
 		.get();
 
 	const activity = slot.activityId
@@ -302,7 +302,7 @@ export function demoteToTodo(ctx: Ctx, slotId: number): { ok: true; todoId: numb
 
 	const todoId = db.transaction((tx) => {
 		const row = tx
-			.insert(plannerTodos)
+			.insert(todoTasks)
 			.values({
 				...stamps(ctx),
 				userId: ctx.userId,
@@ -317,14 +317,14 @@ export function demoteToTodo(ctx: Ctx, slotId: number): { ok: true; todoId: numb
 				interest: slot.interest,
 				energy: slot.energy
 			})
-			.returning({ id: plannerTodos.id })
+			.returning({ id: todoTasks.id })
 			.get();
 
-		tx.delete(taskInstances)
-			.where(and(eq(taskInstances.exceptionalSlotId, slotId), eq(taskInstances.userId, ctx.userId)))
+		tx.delete(taskRecords)
+			.where(and(eq(taskRecords.exceptionalSlotId, slotId), eq(taskRecords.userId, ctx.userId)))
 			.run();
-		tx.delete(exceptionalSlots)
-			.where(and(eq(exceptionalSlots.id, slotId), eq(exceptionalSlots.userId, ctx.userId)))
+		tx.delete(exceptionalTasks)
+			.where(and(eq(exceptionalTasks.id, slotId), eq(exceptionalTasks.userId, ctx.userId)))
 			.run();
 
 		return row.id;
@@ -354,7 +354,7 @@ export type TodoInput = {
 export function createTodo(ctx: Ctx, raw: TodoInput): number {
 	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
 	const result = db
-		.insert(plannerTodos)
+		.insert(todoTasks)
 		.values({
 			...stamps(ctx),
 			userId: ctx.userId,
@@ -376,7 +376,7 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 
 export function updateTodo(ctx: Ctx, id: number, raw: TodoInput): void {
 	const res = db
-		.update(plannerTodos)
+		.update(todoTasks)
 		.set({
 			title: str(raw.title, 'title', { max: MAX_TITLE_LENGTH }),
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
@@ -385,7 +385,7 @@ export function updateTodo(ctx: Ctx, id: number, raw: TodoInput): void {
 			...(raw.ratings ?? {}),
 			updatedAt: stamp(ctx)
 		})
-		.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, ctx.userId)))
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('todo');
@@ -395,7 +395,7 @@ export function setTodoStatus(ctx: Ctx, id: number, status: unknown): void {
 	if (!isStatus(status)) throw new ValidationError('Invalid status');
 
 	const res = db
-		.update(plannerTodos)
+		.update(todoTasks)
 		.set({
 			status,
 			// `completed` is kept in step for anything still reading it, and so
@@ -403,7 +403,7 @@ export function setTodoStatus(ctx: Ctx, id: number, status: unknown): void {
 			completed: status === 'done',
 			updatedAt: stamp(ctx)
 		})
-		.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, ctx.userId)))
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('todo');
@@ -418,9 +418,9 @@ export function setTodoStatus(ctx: Ctx, id: number, status: unknown): void {
  */
 export function scheduleTodo(ctx: Ctx, id: number, date: unknown): void {
 	const res = db
-		.update(plannerTodos)
+		.update(todoTasks)
 		.set({ scheduledDate: optionalDate(date), updatedAt: stamp(ctx) })
-		.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, ctx.userId)))
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('todo');
@@ -428,8 +428,8 @@ export function scheduleTodo(ctx: Ctx, id: number, date: unknown): void {
 
 export function deleteTodo(ctx: Ctx, id: number): void {
 	const res = db
-		.delete(plannerTodos)
-		.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, ctx.userId)))
+		.delete(todoTasks)
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('todo');
@@ -468,15 +468,15 @@ export function delegateTodo(
 	if (mode === 'activity' && !activityId) throw new ValidationError('Activity required');
 
 	const todo = db
-		.select({ title: plannerTodos.title, notebookId: plannerTodos.notebookId })
-		.from(plannerTodos)
-		.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, ctx.userId)))
+		.select({ title: todoTasks.title, notebookId: todoTasks.notebookId })
+		.from(todoTasks)
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
 		.get();
 
 	if (!todo) throw new NotFoundError('todo');
 
 	db.transaction((tx) => {
-		tx.insert(exceptionalSlots)
+		tx.insert(exceptionalTasks)
 			.values({
 				...created(ctx),
 				userId: ctx.userId,
@@ -493,9 +493,9 @@ export function delegateTodo(
 			})
 			.run();
 
-		tx.update(plannerTodos)
+		tx.update(todoTasks)
 			.set({ completed: true, updatedAt: stamp(ctx) })
-			.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, ctx.userId)))
+			.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
 			.run();
 	});
 }
@@ -551,9 +551,9 @@ export function reorderTodos(ctx: Ctx, ids: unknown[]): void {
 	const now = stamp(ctx);
 	db.transaction((tx) => {
 		ordered.forEach((id, index) => {
-			tx.update(plannerTodos)
+			tx.update(todoTasks)
 				.set({ sortOrder: index, updatedAt: now })
-				.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, ctx.userId)))
+				.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
 				.run();
 		});
 	});
@@ -563,9 +563,9 @@ export function setTodoRatings(ctx: Ctx, id: number, ratings: Partial<RatingValu
 	if (Object.keys(ratings).length === 0) return;
 
 	const res = db
-		.update(plannerTodos)
+		.update(todoTasks)
 		.set({ ...ratings, updatedAt: stamp(ctx) })
-		.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, ctx.userId)))
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('todo');
@@ -580,21 +580,21 @@ export function setTodoRatings(ctx: Ctx, id: number, ratings: Partial<RatingValu
 export function demoteInstance(ctx: Ctx, instanceId: number): void {
 	const instance = db
 		.select({
-			exceptionalSlotId: taskInstances.exceptionalSlotId,
-			status: taskInstances.status,
-			notes: taskInstances.notes,
-			urgencyOverride: taskInstances.urgencyOverride,
-			interestOverride: taskInstances.interestOverride,
-			energyOverride: taskInstances.energyOverride,
-			label: exceptionalSlots.label,
-			categoryId: exceptionalSlots.categoryId,
-			urgency: exceptionalSlots.urgency,
-			interest: exceptionalSlots.interest,
-			energy: exceptionalSlots.energy
+			exceptionalSlotId: taskRecords.exceptionalSlotId,
+			status: taskRecords.status,
+			notes: taskRecords.notes,
+			urgencyOverride: taskRecords.urgencyOverride,
+			interestOverride: taskRecords.interestOverride,
+			energyOverride: taskRecords.energyOverride,
+			label: exceptionalTasks.label,
+			categoryId: exceptionalTasks.categoryId,
+			urgency: exceptionalTasks.urgency,
+			interest: exceptionalTasks.interest,
+			energy: exceptionalTasks.energy
 		})
-		.from(taskInstances)
-		.innerJoin(exceptionalSlots, eq(taskInstances.exceptionalSlotId, exceptionalSlots.id))
-		.where(and(eq(taskInstances.id, instanceId), eq(taskInstances.userId, ctx.userId)))
+		.from(taskRecords)
+		.innerJoin(exceptionalTasks, eq(taskRecords.exceptionalSlotId, exceptionalTasks.id))
+		.where(and(eq(taskRecords.id, instanceId), eq(taskRecords.userId, ctx.userId)))
 		.get();
 
 	if (!instance) throw new ValidationError('Only one-off blocks can go back to the todo list');
@@ -602,7 +602,7 @@ export function demoteInstance(ctx: Ctx, instanceId: number): void {
 	const sortOrder = nextSortOrder(ctx);
 
 	db.transaction((tx) => {
-		tx.insert(plannerTodos)
+		tx.insert(todoTasks)
 			.values({
 				...stamps(ctx),
 				userId: ctx.userId,
@@ -619,11 +619,11 @@ export function demoteInstance(ctx: Ctx, instanceId: number): void {
 			.run();
 
 		// The instance goes with it, by cascade.
-		tx.delete(exceptionalSlots)
+		tx.delete(exceptionalTasks)
 			.where(
 				and(
-					eq(exceptionalSlots.id, instance.exceptionalSlotId!),
-					eq(exceptionalSlots.userId, ctx.userId)
+					eq(exceptionalTasks.id, instance.exceptionalSlotId!),
+					eq(exceptionalTasks.userId, ctx.userId)
 				)
 			)
 			.run();

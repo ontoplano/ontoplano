@@ -10,11 +10,11 @@ import { db } from '../db/index.js';
 import {
 	activities,
 	categories,
-	exceptionalSlots,
+	exceptionalTasks,
 	recipes,
 	suppressedSlots,
-	taskInstances,
-	weeklySlots
+	taskRecords,
+	recurringTasks
 } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
@@ -22,8 +22,8 @@ import { created, stamp, stamps } from './time.js';
 import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
 
 /**
- * The plan itself: blocks that repeat (`weekly_slots`) and blocks that happen
- * once (`exceptional_slots`), plus the skips that cancel a single occurrence.
+ * The plan itself: blocks that repeat (`recurring_tasks`) and blocks that happen
+ * once (`exceptional_tasks`), plus the skips that cancel a single occurrence.
  *
  * What any of it produces on a given day is `services/instances.ts`. This
  * module owns the shape of the plan; that one owns what the plan means for a
@@ -63,21 +63,21 @@ export type BlockInput = {
 export function listActiveWeeklySlots(ctx: Ctx) {
 	return db
 		.select({
-			id: weeklySlots.id,
-			weekday: weeklySlots.weekday,
-			startTime: weeklySlots.startTime,
-			durationMinutes: weeklySlots.durationMinutes,
-			mode: weeklySlots.mode,
-			label: weeklySlots.label,
+			id: recurringTasks.id,
+			weekday: recurringTasks.weekday,
+			startTime: recurringTasks.startTime,
+			durationMinutes: recurringTasks.durationMinutes,
+			mode: recurringTasks.mode,
+			label: recurringTasks.label,
 			activityName: activities.name,
 			categoryName: categories.name,
 			categoryColor: categories.color
 		})
-		.from(weeklySlots)
-		.leftJoin(activities, eq(weeklySlots.activityId, activities.id))
-		.leftJoin(categories, eq(weeklySlots.categoryId, categories.id))
-		.where(and(eq(weeklySlots.userId, ctx.userId), eq(weeklySlots.active, true)))
-		.orderBy(weeklySlots.startTime)
+		.from(recurringTasks)
+		.leftJoin(activities, eq(recurringTasks.activityId, activities.id))
+		.leftJoin(categories, eq(recurringTasks.categoryId, categories.id))
+		.where(and(eq(recurringTasks.userId, ctx.userId), eq(recurringTasks.active, true)))
+		.orderBy(recurringTasks.startTime)
 		.all();
 }
 
@@ -85,29 +85,29 @@ export function listActiveWeeklySlots(ctx: Ctx) {
 export function listWeeklySlots(ctx: Ctx) {
 	return db
 		.select({
-			id: weeklySlots.id,
-			weekday: weeklySlots.weekday,
-			startTime: weeklySlots.startTime,
-			durationMinutes: weeklySlots.durationMinutes,
-			mode: weeklySlots.mode,
-			categoryId: weeklySlots.categoryId,
+			id: recurringTasks.id,
+			weekday: recurringTasks.weekday,
+			startTime: recurringTasks.startTime,
+			durationMinutes: recurringTasks.durationMinutes,
+			mode: recurringTasks.mode,
+			categoryId: recurringTasks.categoryId,
 			categoryName: categories.name,
-			activityId: weeklySlots.activityId,
+			activityId: recurringTasks.activityId,
 			activityName: activities.name,
 			activityCategoryId: activities.categoryId,
-			label: weeklySlots.label,
-			recurrence: weeklySlots.recurrence,
-			urgency: weeklySlots.urgency,
-			interest: weeklySlots.interest,
-			energy: weeklySlots.energy,
-			meta: weeklySlots.meta,
-			active: weeklySlots.active
+			label: recurringTasks.label,
+			recurrence: recurringTasks.recurrence,
+			urgency: recurringTasks.urgency,
+			interest: recurringTasks.interest,
+			energy: recurringTasks.energy,
+			meta: recurringTasks.meta,
+			active: recurringTasks.active
 		})
-		.from(weeklySlots)
-		.leftJoin(categories, eq(weeklySlots.categoryId, categories.id))
-		.leftJoin(activities, eq(weeklySlots.activityId, activities.id))
-		.where(eq(weeklySlots.userId, ctx.userId))
-		.orderBy(weeklySlots.weekday, weeklySlots.startTime)
+		.from(recurringTasks)
+		.leftJoin(categories, eq(recurringTasks.categoryId, categories.id))
+		.leftJoin(activities, eq(recurringTasks.activityId, activities.id))
+		.where(eq(recurringTasks.userId, ctx.userId))
+		.orderBy(recurringTasks.weekday, recurringTasks.startTime)
 		.all();
 }
 
@@ -128,37 +128,37 @@ export function listSuppressions(ctx: Ctx, from: string, to: string) {
 export function listExceptionals(ctx: Ctx, from: string, to: string) {
 	return db
 		.select({
-			id: exceptionalSlots.id,
-			date: exceptionalSlots.date,
-			startTime: exceptionalSlots.startTime,
-			durationMinutes: exceptionalSlots.durationMinutes,
-			mode: exceptionalSlots.mode,
-			categoryId: exceptionalSlots.categoryId,
+			id: exceptionalTasks.id,
+			date: exceptionalTasks.date,
+			startTime: exceptionalTasks.startTime,
+			durationMinutes: exceptionalTasks.durationMinutes,
+			mode: exceptionalTasks.mode,
+			categoryId: exceptionalTasks.categoryId,
 			categoryName: categories.name,
-			activityId: exceptionalSlots.activityId,
+			activityId: exceptionalTasks.activityId,
 			activityName: activities.name,
 			activityCategoryId: activities.categoryId,
-			label: exceptionalSlots.label,
-			urgency: exceptionalSlots.urgency,
-			interest: exceptionalSlots.interest,
-			energy: exceptionalSlots.energy,
-			meta: exceptionalSlots.meta,
-			active: exceptionalSlots.active,
+			label: exceptionalTasks.label,
+			urgency: exceptionalTasks.urgency,
+			interest: exceptionalTasks.interest,
+			energy: exceptionalTasks.energy,
+			meta: exceptionalTasks.meta,
+			active: exceptionalTasks.active,
 			// A one-off's status lives on its instance now, not on the block.
-			status: sql<string>`coalesce(${taskInstances.status}, 'todo')`.as('one_off_status')
+			status: sql<string>`coalesce(${taskRecords.status}, 'todo')`.as('one_off_status')
 		})
-		.from(exceptionalSlots)
-		.leftJoin(categories, eq(exceptionalSlots.categoryId, categories.id))
-		.leftJoin(activities, eq(exceptionalSlots.activityId, activities.id))
-		.leftJoin(taskInstances, eq(taskInstances.exceptionalSlotId, exceptionalSlots.id))
+		.from(exceptionalTasks)
+		.leftJoin(categories, eq(exceptionalTasks.categoryId, categories.id))
+		.leftJoin(activities, eq(exceptionalTasks.activityId, activities.id))
+		.leftJoin(taskRecords, eq(taskRecords.exceptionalSlotId, exceptionalTasks.id))
 		.where(
 			and(
-				eq(exceptionalSlots.userId, ctx.userId),
-				gte(exceptionalSlots.date, from),
-				lt(exceptionalSlots.date, to)
+				eq(exceptionalTasks.userId, ctx.userId),
+				gte(exceptionalTasks.date, from),
+				lt(exceptionalTasks.date, to)
 			)
 		)
-		.orderBy(exceptionalSlots.date, exceptionalSlots.startTime)
+		.orderBy(exceptionalTasks.date, exceptionalTasks.startTime)
 		.all();
 }
 
@@ -169,7 +169,7 @@ export function createSlot(ctx: Ctx, raw: BlockInput & { weekday: unknown }): nu
 	const weekday = num(raw.weekday, 'weekday', { int: true, min: 0, max: 6 });
 
 	const inserted = db
-		.insert(weeklySlots)
+		.insert(recurringTasks)
 		.values({
 			...stamps(ctx),
 			userId: ctx.userId,
@@ -179,7 +179,7 @@ export function createSlot(ctx: Ctx, raw: BlockInput & { weekday: unknown }): nu
 			...(raw.ratings ?? {}),
 			meta: raw.meta ?? '{}'
 		})
-		.returning({ id: weeklySlots.id })
+		.returning({ id: recurringTasks.id })
 		.get();
 
 	return inserted.id;
@@ -190,7 +190,7 @@ export function updateSlot(ctx: Ctx, id: number, raw: BlockInput & { weekday: un
 	const weekday = num(raw.weekday, 'weekday', { int: true, min: 0, max: 6 });
 
 	const res = db
-		.update(weeklySlots)
+		.update(recurringTasks)
 		.set({
 			weekday,
 			...placement,
@@ -199,7 +199,7 @@ export function updateSlot(ctx: Ctx, id: number, raw: BlockInput & { weekday: un
 			...(raw.metaPatch !== undefined ? { meta: raw.metaPatch } : {}),
 			updatedAt: stamp(ctx)
 		})
-		.where(and(eq(weeklySlots.id, id), eq(weeklySlots.userId, ctx.userId)))
+		.where(and(eq(recurringTasks.id, id), eq(recurringTasks.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('slot');
@@ -207,16 +207,16 @@ export function updateSlot(ctx: Ctx, id: number, raw: BlockInput & { weekday: un
 
 export function toggleSlotActive(ctx: Ctx, id: number): void {
 	const current = db
-		.select({ active: weeklySlots.active })
-		.from(weeklySlots)
-		.where(and(eq(weeklySlots.id, id), eq(weeklySlots.userId, ctx.userId)))
+		.select({ active: recurringTasks.active })
+		.from(recurringTasks)
+		.where(and(eq(recurringTasks.id, id), eq(recurringTasks.userId, ctx.userId)))
 		.get();
 
 	if (!current) throw new NotFoundError('slot');
 
-	db.update(weeklySlots)
+	db.update(recurringTasks)
 		.set({ active: !current.active, updatedAt: stamp(ctx) })
-		.where(and(eq(weeklySlots.id, id), eq(weeklySlots.userId, ctx.userId)))
+		.where(and(eq(recurringTasks.id, id), eq(recurringTasks.userId, ctx.userId)))
 		.run();
 }
 
@@ -225,23 +225,23 @@ export function deleteSlots(ctx: Ctx, ids: number[]): void {
 	if (wanted.length === 0) throw new ValidationError('No slots selected');
 
 	const owned = db
-		.select({ id: weeklySlots.id })
-		.from(weeklySlots)
-		.where(and(inArray(weeklySlots.id, wanted), eq(weeklySlots.userId, ctx.userId)))
+		.select({ id: recurringTasks.id })
+		.from(recurringTasks)
+		.where(and(inArray(recurringTasks.id, wanted), eq(recurringTasks.userId, ctx.userId)))
 		.all()
 		.map((s) => s.id);
 
 	if (owned.length === 0) throw new NotFoundError('slot');
 
 	db.transaction((tx) => {
-		tx.delete(taskInstances)
-			.where(and(inArray(taskInstances.slotId, owned), eq(taskInstances.userId, ctx.userId)))
+		tx.delete(taskRecords)
+			.where(and(inArray(taskRecords.slotId, owned), eq(taskRecords.userId, ctx.userId)))
 			.run();
 		tx.delete(suppressedSlots)
 			.where(and(inArray(suppressedSlots.slotId, owned), eq(suppressedSlots.userId, ctx.userId)))
 			.run();
-		tx.delete(weeklySlots)
-			.where(and(inArray(weeklySlots.id, owned), eq(weeklySlots.userId, ctx.userId)))
+		tx.delete(recurringTasks)
+			.where(and(inArray(recurringTasks.id, owned), eq(recurringTasks.userId, ctx.userId)))
 			.run();
 	});
 }
@@ -256,8 +256,8 @@ export function copySlotsToWeekdays(ctx: Ctx, ids: number[], days: number[]): vo
 
 	const sources = db
 		.select()
-		.from(weeklySlots)
-		.where(and(inArray(weeklySlots.id, wanted), eq(weeklySlots.userId, ctx.userId)))
+		.from(recurringTasks)
+		.where(and(inArray(recurringTasks.id, wanted), eq(recurringTasks.userId, ctx.userId)))
 		.all();
 
 	if (sources.length === 0) throw new NotFoundError('slot');
@@ -266,7 +266,7 @@ export function copySlotsToWeekdays(ctx: Ctx, ids: number[], days: number[]): vo
 		for (const slot of sources) {
 			for (const day of targetDays) {
 				if (day === slot.weekday) continue;
-				tx.insert(weeklySlots)
+				tx.insert(recurringTasks)
 					.values({
 						...stamps(ctx),
 						userId: ctx.userId,
@@ -293,22 +293,22 @@ export function clearWeeklyPlan(ctx: Ctx): void {
 /** The same, inside a transaction someone else opened. */
 export function clearWeeklyPlanIn(tx: TxLike, ctx: Ctx): void {
 	const slotIds = tx
-		.select({ id: weeklySlots.id })
-		.from(weeklySlots)
-		.where(eq(weeklySlots.userId, ctx.userId))
+		.select({ id: recurringTasks.id })
+		.from(recurringTasks)
+		.where(eq(recurringTasks.userId, ctx.userId))
 		.all()
 		.map((slot: { id: number }) => slot.id);
 
 	if (slotIds.length > 0) {
-		tx.delete(taskInstances)
-			.where(and(inArray(taskInstances.slotId, slotIds), eq(taskInstances.userId, ctx.userId)))
+		tx.delete(taskRecords)
+			.where(and(inArray(taskRecords.slotId, slotIds), eq(taskRecords.userId, ctx.userId)))
 			.run();
 		tx.delete(suppressedSlots)
 			.where(and(inArray(suppressedSlots.slotId, slotIds), eq(suppressedSlots.userId, ctx.userId)))
 			.run();
 	}
 
-	tx.delete(weeklySlots).where(eq(weeklySlots.userId, ctx.userId)).run();
+	tx.delete(recurringTasks).where(eq(recurringTasks.userId, ctx.userId)).run();
 }
 
 /** Drizzle's transaction object, structurally — enough to run these statements. */
@@ -324,7 +324,7 @@ export function createExceptional(
 	const date = requiredDate(raw.date);
 
 	const inserted = db
-		.insert(exceptionalSlots)
+		.insert(exceptionalTasks)
 		.values({
 			...created(ctx),
 			userId: ctx.userId,
@@ -337,7 +337,7 @@ export function createExceptional(
 			...(raw.ratings ?? {}),
 			meta: raw.meta ?? '{}'
 		})
-		.returning({ id: exceptionalSlots.id })
+		.returning({ id: exceptionalTasks.id })
 		.get();
 
 	return inserted.id;
@@ -348,7 +348,7 @@ export function updateExceptional(ctx: Ctx, id: number, raw: BlockInput & { date
 	const date = requiredDate(raw.date);
 
 	const res = db
-		.update(exceptionalSlots)
+		.update(exceptionalTasks)
 		.set({
 			date,
 			...placement,
@@ -358,7 +358,7 @@ export function updateExceptional(ctx: Ctx, id: number, raw: BlockInput & { date
 			...(raw.ratings ?? {}),
 			...(raw.metaPatch !== undefined ? { meta: raw.metaPatch } : {})
 		})
-		.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, ctx.userId)))
+		.where(and(eq(exceptionalTasks.id, id), eq(exceptionalTasks.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('exception');
@@ -366,8 +366,8 @@ export function updateExceptional(ctx: Ctx, id: number, raw: BlockInput & { date
 
 export function deleteExceptional(ctx: Ctx, id: number): void {
 	const res = db
-		.delete(exceptionalSlots)
-		.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, ctx.userId)))
+		.delete(exceptionalTasks)
+		.where(and(eq(exceptionalTasks.id, id), eq(exceptionalTasks.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('exception');
@@ -436,8 +436,8 @@ export function moveOccurrence(
 
 	const slot = db
 		.select()
-		.from(weeklySlots)
-		.where(and(eq(weeklySlots.id, raw.slotId), eq(weeklySlots.userId, ctx.userId)))
+		.from(recurringTasks)
+		.where(and(eq(recurringTasks.id, raw.slotId), eq(recurringTasks.userId, ctx.userId)))
 		.get();
 
 	if (!slot) throw new NotFoundError('block');
@@ -461,19 +461,19 @@ export function moveOccurrence(
 
 		// The instance the skipped occurrence produced would otherwise linger as a
 		// task for a block that is no longer on that day.
-		tx.delete(taskInstances)
+		tx.delete(taskRecords)
 			.where(
 				and(
-					eq(taskInstances.userId, ctx.userId),
-					eq(taskInstances.slotId, raw.slotId),
-					gte(taskInstances.scheduledAt, `${fromDate}T00:00:00`),
-					lt(taskInstances.scheduledAt, `${fromDate}T23:59:59`)
+					eq(taskRecords.userId, ctx.userId),
+					eq(taskRecords.slotId, raw.slotId),
+					gte(taskRecords.scheduledAt, `${fromDate}T00:00:00`),
+					lt(taskRecords.scheduledAt, `${fromDate}T23:59:59`)
 				)
 			)
 			.run();
 
 		const moved = tx
-			.insert(exceptionalSlots)
+			.insert(exceptionalTasks)
 			.values({
 				...created(ctx),
 				userId: ctx.userId,
@@ -489,7 +489,7 @@ export function moveOccurrence(
 				energy: slot.energy,
 				meta: slot.meta
 			})
-			.returning({ id: exceptionalSlots.id })
+			.returning({ id: exceptionalTasks.id })
 			.get();
 
 		tx.insert(suppressedSlots)
@@ -518,14 +518,14 @@ export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: un
 	if (to === 'weekly') {
 		const one = db
 			.select()
-			.from(exceptionalSlots)
-			.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, ctx.userId)))
+			.from(exceptionalTasks)
+			.where(and(eq(exceptionalTasks.id, id), eq(exceptionalTasks.userId, ctx.userId)))
 			.get();
 
 		if (!one) throw new NotFoundError('block');
 
 		db.transaction((tx) => {
-			tx.insert(weeklySlots)
+			tx.insert(recurringTasks)
 				.values({
 					...stamps(ctx),
 					userId: ctx.userId,
@@ -546,8 +546,8 @@ export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: un
 
 			// Cascades to the instance it produced; the new weekly slot generates
 			// its own.
-			tx.delete(exceptionalSlots)
-				.where(and(eq(exceptionalSlots.id, id), eq(exceptionalSlots.userId, ctx.userId)))
+			tx.delete(exceptionalTasks)
+				.where(and(eq(exceptionalTasks.id, id), eq(exceptionalTasks.userId, ctx.userId)))
 				.run();
 		});
 
@@ -556,14 +556,14 @@ export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: un
 
 	const slot = db
 		.select()
-		.from(weeklySlots)
-		.where(and(eq(weeklySlots.id, id), eq(weeklySlots.userId, ctx.userId)))
+		.from(recurringTasks)
+		.where(and(eq(recurringTasks.id, id), eq(recurringTasks.userId, ctx.userId)))
 		.get();
 
 	if (!slot) throw new NotFoundError('block');
 
 	db.transaction((tx) => {
-		tx.insert(exceptionalSlots)
+		tx.insert(exceptionalTasks)
 			.values({
 				...created(ctx),
 				userId: ctx.userId,
@@ -581,14 +581,14 @@ export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: un
 			})
 			.run();
 
-		tx.delete(taskInstances)
-			.where(and(eq(taskInstances.userId, ctx.userId), eq(taskInstances.slotId, id)))
+		tx.delete(taskRecords)
+			.where(and(eq(taskRecords.userId, ctx.userId), eq(taskRecords.slotId, id)))
 			.run();
 		tx.delete(suppressedSlots)
 			.where(and(eq(suppressedSlots.userId, ctx.userId), eq(suppressedSlots.slotId, id)))
 			.run();
-		tx.delete(weeklySlots)
-			.where(and(eq(weeklySlots.id, id), eq(weeklySlots.userId, ctx.userId)))
+		tx.delete(recurringTasks)
+			.where(and(eq(recurringTasks.id, id), eq(recurringTasks.userId, ctx.userId)))
 			.run();
 	});
 }
@@ -690,7 +690,7 @@ export function importWeekCsv(
 
 	db.transaction((tx) => {
 		if (raw.clearExisting) clearWeeklyPlanIn(tx, ctx);
-		for (const row of rows) tx.insert(weeklySlots).values(row).run();
+		for (const row of rows) tx.insert(recurringTasks).values(row).run();
 	});
 
 	return { imported: rows.length, unmatched };
@@ -790,9 +790,9 @@ function resolveActivityId(ctx: Ctx, raw: BlockInput): number | null {
 
 function assertOwnedSlot(ctx: Ctx, id: number): void {
 	const owned = db
-		.select({ id: weeklySlots.id })
-		.from(weeklySlots)
-		.where(and(eq(weeklySlots.id, id), eq(weeklySlots.userId, ctx.userId)))
+		.select({ id: recurringTasks.id })
+		.from(recurringTasks)
+		.where(and(eq(recurringTasks.id, id), eq(recurringTasks.userId, ctx.userId)))
 		.get();
 
 	if (!owned) throw new NotFoundError('slot');

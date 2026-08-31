@@ -140,7 +140,7 @@ function rewriteLinks(html) {
 /**
  * Every heading gets the anchor its own table of contents links to.
  *
- * marked stopped adding heading ids, so `data-model#weekly_slots` landed on the
+ * marked stopped adding heading ids, so `data-model#recurring_tasks` landed on the
  * page and scrolled nowhere — the link was there, the target was not. The slug
  * comes from `build-docs.mjs` so the markdown in the repo and the page on the
  * site cannot disagree about it.

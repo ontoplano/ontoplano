@@ -8,7 +8,7 @@ import type { Ctx } from './ctx.js';
  * so a reader in any zone can render them correctly and two rows can be
  * compared without knowing where either was written.
  *
- * **Wall-clock values** — `task_instances.scheduled_at`, `weekly_slots.
+ * **Wall-clock values** — `task_records.scheduled_at`, `recurring_tasks.
  * start_time` — are not instants. "Gym at 18:00 on Thursday" means six in the
  * evening wherever you are, not a fixed point on the timeline, and converting
  * it to UTC would move it when you travel. They stay naive and are resolved

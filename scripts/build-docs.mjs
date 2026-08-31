@@ -791,7 +791,7 @@ function webhookEvents() {
  * The half of the wiki a generator cannot write.
  *
  * Everything else here is derived, which is what stops it going stale — but
- * "the migration snapshot says `planner_todos.scheduled_date` is nullable" is
+ * "the migration snapshot says `todo_tasks.scheduled_date` is nullable" is
  * not an explanation of what a todo *is*, and no amount of reading the schema
  * produces one. So prose lives in `docs/prose/`, is edited by hand, and is
  * built into the wiki beside the generated pages.

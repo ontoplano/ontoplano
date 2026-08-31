@@ -2,7 +2,7 @@
  * The one answer to "what is on, between these dates".
  *
  * Both kinds of planned block — a recurring weekly slot and a one-off — produce
- * rows in `task_instances`, and this module is the only place that knows how to
+ * rows in `task_records`, and this module is the only place that knows how to
  * generate and read them. Before it existed each caller wrote its own union of
  * two tables, and the ones that forgot the second half were quietly wrong: the
  * dashboard omitted one-offs entirely and the tracker's day tabs counted a
@@ -21,10 +21,10 @@ import { TIME_PATTERN, num, optionalStr, str } from './validate.js';
 import {
 	activities,
 	categories,
-	exceptionalSlots,
+	exceptionalTasks,
 	suppressedSlots,
-	taskInstances,
-	weeklySlots
+	taskRecords,
+	recurringTasks
 } from '../db/schema.js';
 
 import type { Status, Timing } from '../../task-status.js';
@@ -121,8 +121,8 @@ export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 
 	const slots = db
 		.select()
-		.from(weeklySlots)
-		.where(and(eq(weeklySlots.userId, ctx.userId), eq(weeklySlots.active, true)))
+		.from(recurringTasks)
+		.where(and(eq(recurringTasks.userId, ctx.userId), eq(recurringTasks.active, true)))
 		.all();
 
 	const suppressed = new Set(
@@ -142,13 +142,13 @@ export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 
 	const existingWeekly = new Set(
 		db
-			.select({ slotId: taskInstances.slotId, scheduledAt: taskInstances.scheduledAt })
-			.from(taskInstances)
+			.select({ slotId: taskRecords.slotId, scheduledAt: taskRecords.scheduledAt })
+			.from(taskRecords)
 			.where(
 				and(
-					eq(taskInstances.userId, ctx.userId),
-					gte(taskInstances.scheduledAt, fromStr),
-					lt(taskInstances.scheduledAt, toStr)
+					eq(taskRecords.userId, ctx.userId),
+					gte(taskRecords.scheduledAt, fromStr),
+					lt(taskRecords.scheduledAt, toStr)
 				)
 			)
 			.all()
@@ -166,7 +166,7 @@ export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 			if (suppressed.has(`${slot.id}:${dateStr}`)) continue;
 			if (existingWeekly.has(`${slot.id}:${dateStr}`)) continue;
 
-			db.insert(taskInstances)
+			db.insert(taskRecords)
 				.values({
 					...createdStamp(ctx),
 					userId: ctx.userId,
@@ -184,26 +184,26 @@ export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 	// exceptional_slot_id rather than by hoping every caller checks first.
 	const oneOffs = db
 		.select()
-		.from(exceptionalSlots)
+		.from(exceptionalTasks)
 		.where(
 			and(
-				eq(exceptionalSlots.userId, ctx.userId),
-				eq(exceptionalSlots.active, true),
-				gte(exceptionalSlots.date, fromDate),
-				lt(exceptionalSlots.date, toDate)
+				eq(exceptionalTasks.userId, ctx.userId),
+				eq(exceptionalTasks.active, true),
+				gte(exceptionalTasks.date, fromDate),
+				lt(exceptionalTasks.date, toDate)
 			)
 		)
 		.all();
 
 	for (const one of oneOffs) {
 		const existing = db
-			.select({ id: taskInstances.id })
-			.from(taskInstances)
-			.where(eq(taskInstances.exceptionalSlotId, one.id))
+			.select({ id: taskRecords.id })
+			.from(taskRecords)
+			.where(eq(taskRecords.exceptionalSlotId, one.id))
 			.get();
 		if (existing) continue;
 
-		db.insert(taskInstances)
+		db.insert(taskRecords)
 			.values({
 				...createdStamp(ctx),
 				userId: ctx.userId,
@@ -243,80 +243,80 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 
 	const rows = db
 		.select({
-			id: taskInstances.id,
-			slotId: taskInstances.slotId,
-			exceptionalSlotId: taskInstances.exceptionalSlotId,
-			scheduledAt: taskInstances.scheduledAt,
-			status: taskInstances.status,
-			timing: taskInstances.timing,
-			completedAt: taskInstances.completedAt,
-			notes: taskInstances.notes,
-			labelOverride: taskInstances.labelOverride,
-			durationOverride: taskInstances.durationOverride,
-			urgencyOverride: taskInstances.urgencyOverride,
-			interestOverride: taskInstances.interestOverride,
-			energyOverride: taskInstances.energyOverride,
-			resolvedActivityId: taskInstances.resolvedActivityId,
+			id: taskRecords.id,
+			slotId: taskRecords.slotId,
+			exceptionalSlotId: taskRecords.exceptionalSlotId,
+			scheduledAt: taskRecords.scheduledAt,
+			status: taskRecords.status,
+			timing: taskRecords.timing,
+			completedAt: taskRecords.completedAt,
+			notes: taskRecords.notes,
+			labelOverride: taskRecords.labelOverride,
+			durationOverride: taskRecords.durationOverride,
+			urgencyOverride: taskRecords.urgencyOverride,
+			interestOverride: taskRecords.interestOverride,
+			energyOverride: taskRecords.energyOverride,
+			resolvedActivityId: taskRecords.resolvedActivityId,
 			resolvedActivityName: resolvedActivities.name,
 			resolvedActivityColor: resolvedActivities.color,
 
-			slotMode: weeklySlots.mode,
-			slotStartTime: weeklySlots.startTime,
-			slotDuration: weeklySlots.durationMinutes,
-			slotLabel: weeklySlots.label,
-			slotMeta: weeklySlots.meta,
-			slotCategoryId: weeklySlots.categoryId,
+			slotMode: recurringTasks.mode,
+			slotStartTime: recurringTasks.startTime,
+			slotDuration: recurringTasks.durationMinutes,
+			slotLabel: recurringTasks.label,
+			slotMeta: recurringTasks.meta,
+			slotCategoryId: recurringTasks.categoryId,
 			slotCategoryName: slotCategories.name,
 			slotCategoryColor: slotCategories.color,
-			slotUrgency: weeklySlots.urgency,
-			slotInterest: weeklySlots.interest,
-			slotEnergy: weeklySlots.energy,
-			slotActivityId: weeklySlots.activityId,
+			slotUrgency: recurringTasks.urgency,
+			slotInterest: recurringTasks.interest,
+			slotEnergy: recurringTasks.energy,
+			slotActivityId: recurringTasks.activityId,
 			slotActivityName: slotActivities.name,
 			slotActivityColor: slotActivities.color,
 			slotActivityCategoryId: slotActivities.categoryId,
 			slotActivityCategoryName: slotActivityCategories.name,
 			slotActivityCategoryColor: slotActivityCategories.color,
 
-			oneOffMode: exceptionalSlots.mode,
-			oneOffStartTime: exceptionalSlots.startTime,
-			oneOffDuration: exceptionalSlots.durationMinutes,
-			oneOffLabel: exceptionalSlots.label,
-			oneOffMeta: exceptionalSlots.meta,
-			oneOffCategoryId: exceptionalSlots.categoryId,
+			oneOffMode: exceptionalTasks.mode,
+			oneOffStartTime: exceptionalTasks.startTime,
+			oneOffDuration: exceptionalTasks.durationMinutes,
+			oneOffLabel: exceptionalTasks.label,
+			oneOffMeta: exceptionalTasks.meta,
+			oneOffCategoryId: exceptionalTasks.categoryId,
 			oneOffCategoryName: oneOffCategories.name,
 			oneOffCategoryColor: oneOffCategories.color,
-			oneOffUrgency: exceptionalSlots.urgency,
-			oneOffInterest: exceptionalSlots.interest,
-			oneOffEnergy: exceptionalSlots.energy,
-			oneOffActivityId: exceptionalSlots.activityId,
+			oneOffUrgency: exceptionalTasks.urgency,
+			oneOffInterest: exceptionalTasks.interest,
+			oneOffEnergy: exceptionalTasks.energy,
+			oneOffActivityId: exceptionalTasks.activityId,
 			oneOffActivityName: oneOffActivities.name,
 			oneOffActivityColor: oneOffActivities.color,
 			oneOffActivityCategoryId: oneOffActivities.categoryId,
 			oneOffActivityCategoryName: oneOffActivityCategories.name,
 			oneOffActivityCategoryColor: oneOffActivityCategories.color
 		})
-		.from(taskInstances)
-		.leftJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
-		.leftJoin(exceptionalSlots, eq(taskInstances.exceptionalSlotId, exceptionalSlots.id))
-		.leftJoin(slotCategories, eq(weeklySlots.categoryId, slotCategories.id))
-		.leftJoin(slotActivities, eq(weeklySlots.activityId, slotActivities.id))
+		.from(taskRecords)
+		.leftJoin(recurringTasks, eq(taskRecords.slotId, recurringTasks.id))
+		.leftJoin(exceptionalTasks, eq(taskRecords.exceptionalSlotId, exceptionalTasks.id))
+		.leftJoin(slotCategories, eq(recurringTasks.categoryId, slotCategories.id))
+		.leftJoin(slotActivities, eq(recurringTasks.activityId, slotActivities.id))
 		.leftJoin(slotActivityCategories, eq(slotActivities.categoryId, slotActivityCategories.id))
-		.leftJoin(oneOffCategories, eq(exceptionalSlots.categoryId, oneOffCategories.id))
-		.leftJoin(oneOffActivities, eq(exceptionalSlots.activityId, oneOffActivities.id))
+		.leftJoin(oneOffCategories, eq(exceptionalTasks.categoryId, oneOffCategories.id))
+		.leftJoin(oneOffActivities, eq(exceptionalTasks.activityId, oneOffActivities.id))
 		.leftJoin(
 			oneOffActivityCategories,
 			eq(oneOffActivities.categoryId, oneOffActivityCategories.id)
 		)
-		.leftJoin(resolvedActivities, eq(taskInstances.resolvedActivityId, resolvedActivities.id))
+		.leftJoin(resolvedActivities, eq(taskRecords.resolvedActivityId, resolvedActivities.id))
 		.where(
 			and(
-				eq(taskInstances.userId, ctx.userId),
-				gte(taskInstances.scheduledAt, fromStr),
-				lt(taskInstances.scheduledAt, toStr)
+				eq(taskRecords.userId, ctx.userId),
+				gte(taskRecords.scheduledAt, fromStr),
+				lt(taskRecords.scheduledAt, toStr)
 			)
 		)
-		.orderBy(asc(taskInstances.scheduledAt))
+		.orderBy(asc(taskRecords.scheduledAt))
 		.all();
 
 	return rows.map((r): Occurrence => {
@@ -415,9 +415,9 @@ export function setInstanceTiming(ctx: Ctx, id: number, raw: unknown): void {
 	if (timing !== null && !isTiming(timing)) throw new ValidationError('Unknown timing');
 
 	const res = db
-		.update(taskInstances)
+		.update(taskRecords)
 		.set({ timing })
-		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('task');
@@ -429,14 +429,14 @@ export function setInstanceStatus(ctx: Ctx, id: number, rawStatus: unknown): voi
 
 	const instance = db
 		.select({
-			scheduledAt: taskInstances.scheduledAt,
-			slotMode: weeklySlots.mode,
-			oneOffMode: exceptionalSlots.mode
+			scheduledAt: taskRecords.scheduledAt,
+			slotMode: recurringTasks.mode,
+			oneOffMode: exceptionalTasks.mode
 		})
-		.from(taskInstances)
-		.leftJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
-		.leftJoin(exceptionalSlots, eq(taskInstances.exceptionalSlotId, exceptionalSlots.id))
-		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.from(taskRecords)
+		.leftJoin(recurringTasks, eq(taskRecords.slotId, recurringTasks.id))
+		.leftJoin(exceptionalTasks, eq(taskRecords.exceptionalSlotId, exceptionalTasks.id))
+		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
 		.get();
 
 	if (!instance) throw new NotFoundError('task');
@@ -449,9 +449,9 @@ export function setInstanceStatus(ctx: Ctx, id: number, rawStatus: unknown): voi
 	if ((status === 'todo' || status === 'skipped') && mode === 'category')
 		values.resolvedActivityId = null;
 
-	db.update(taskInstances)
+	db.update(taskRecords)
 		.set(values)
-		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
 		.run();
 }
 
@@ -466,9 +466,9 @@ export function setInstanceLabel(ctx: Ctx, id: number, label: unknown): void {
 	const text = optionalStr(label, 'label', { max: MAX_LABEL_LENGTH });
 
 	const res = db
-		.update(taskInstances)
+		.update(taskRecords)
 		.set({ labelOverride: text || null })
-		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('task');
@@ -479,9 +479,9 @@ export function resolveInstanceActivity(ctx: Ctx, id: number, activityId: unknow
 	const resolved = ownedActivity(ctx, activityId);
 
 	const res = db
-		.update(taskInstances)
+		.update(taskRecords)
 		.set({ resolvedActivityId: resolved })
-		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('task');
@@ -492,30 +492,30 @@ export function setInstanceTime(ctx: Ctx, id: number, rawTime: unknown): void {
 
 	const task = db
 		.select({
-			scheduledAt: taskInstances.scheduledAt,
-			exceptionalSlotId: taskInstances.exceptionalSlotId
+			scheduledAt: taskRecords.scheduledAt,
+			exceptionalSlotId: taskRecords.exceptionalSlotId
 		})
-		.from(taskInstances)
-		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.from(taskRecords)
+		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
 		.get();
 
 	if (!task) throw new NotFoundError('task');
 
 	db.transaction((tx) => {
-		tx.update(taskInstances)
+		tx.update(taskRecords)
 			.set({ scheduledAt: `${task.scheduledAt.slice(0, 10)}T${time}:00` })
-			.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+			.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
 			.run();
 
 		// A one-off block and its instance are one-to-one, and the plan grid draws
 		// the block — leaving it behind would put the same task at two times.
 		if (task.exceptionalSlotId !== null) {
-			tx.update(exceptionalSlots)
+			tx.update(exceptionalTasks)
 				.set({ startTime: time })
 				.where(
 					and(
-						eq(exceptionalSlots.id, task.exceptionalSlotId),
-						eq(exceptionalSlots.userId, ctx.userId)
+						eq(exceptionalTasks.id, task.exceptionalSlotId),
+						eq(exceptionalTasks.userId, ctx.userId)
 					)
 				)
 				.run();
@@ -528,9 +528,9 @@ export function setInstanceDuration(ctx: Ctx, id: number, minutes: unknown): voi
 	const value = num(minutes, 'duration', { int: true, min: 0, max: 24 * 60 });
 
 	const res = db
-		.update(taskInstances)
+		.update(taskRecords)
 		.set({ durationOverride: value === 0 ? null : value })
-		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('task');
@@ -538,8 +538,8 @@ export function setInstanceDuration(ctx: Ctx, id: number, minutes: unknown): voi
 
 export function deleteInstance(ctx: Ctx, id: number): void {
 	const res = db
-		.delete(taskInstances)
-		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.delete(taskRecords)
+		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('task');
@@ -573,13 +573,13 @@ export function setInstanceRatings(
 	if (Object.keys(ratings).length === 0) return;
 
 	const res = db
-		.update(taskInstances)
+		.update(taskRecords)
 		.set({
 			urgencyOverride: ratings.urgency,
 			interestOverride: ratings.interest,
 			energyOverride: ratings.energy
 		})
-		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('task');

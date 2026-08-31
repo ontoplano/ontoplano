@@ -4,11 +4,11 @@ import { db } from '../db/index.js';
 import {
 	activities,
 	categories,
-	exceptionalSlots,
-	plannerTodos,
+	exceptionalTasks,
+	todoTasks,
 	reminders,
-	taskInstances,
-	weeklySlots
+	taskRecords,
+	recurringTasks
 } from '../db/schema.js';
 import { blockName } from '../../planner-grid.js';
 
@@ -148,9 +148,9 @@ export function createReminder(
 	} else if (kind === 'todo') {
 		subjectId = num(raw.subjectId, 'todo', { int: true, min: 1 });
 		const todo = db
-			.select({ title: plannerTodos.title })
-			.from(plannerTodos)
-			.where(and(eq(plannerTodos.id, subjectId), eq(plannerTodos.userId, ctx.userId)))
+			.select({ title: todoTasks.title })
+			.from(todoTasks)
+			.where(and(eq(todoTasks.id, subjectId), eq(todoTasks.userId, ctx.userId)))
 			.get();
 		if (!todo) throw new NotFoundError('todo');
 		when = parseWhen(raw.at, ctx);
@@ -227,33 +227,33 @@ export function remindersFor(ctx: Ctx, kind: 'instance' | 'todo', id: number): R
 function ownedInstance(ctx: Ctx, id: number): { scheduledAt: string; title: string } {
 	const row = db
 		.select({
-			scheduledAt: taskInstances.scheduledAt,
-			labelOverride: taskInstances.labelOverride,
-			weeklyLabel: weeklySlots.label,
-			weeklyMode: weeklySlots.mode,
-			exceptionalLabel: exceptionalSlots.label,
-			exceptionalMode: exceptionalSlots.mode,
+			scheduledAt: taskRecords.scheduledAt,
+			labelOverride: taskRecords.labelOverride,
+			weeklyLabel: recurringTasks.label,
+			weeklyMode: recurringTasks.mode,
+			exceptionalLabel: exceptionalTasks.label,
+			exceptionalMode: exceptionalTasks.mode,
 			activityName: activities.name,
 			categoryName: categories.name
 		})
-		.from(taskInstances)
-		.leftJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
-		.leftJoin(exceptionalSlots, eq(taskInstances.exceptionalSlotId, exceptionalSlots.id))
+		.from(taskRecords)
+		.leftJoin(recurringTasks, eq(taskRecords.slotId, recurringTasks.id))
+		.leftJoin(exceptionalTasks, eq(taskRecords.exceptionalSlotId, exceptionalTasks.id))
 		.leftJoin(
 			activities,
 			eq(
 				activities.id,
-				sql`coalesce(${taskInstances.resolvedActivityId}, ${weeklySlots.activityId}, ${exceptionalSlots.activityId})`
+				sql`coalesce(${taskRecords.resolvedActivityId}, ${recurringTasks.activityId}, ${exceptionalTasks.activityId})`
 			)
 		)
 		.leftJoin(
 			categories,
 			eq(
 				categories.id,
-				sql`coalesce(${weeklySlots.categoryId}, ${exceptionalSlots.categoryId}, ${activities.categoryId})`
+				sql`coalesce(${recurringTasks.categoryId}, ${exceptionalTasks.categoryId}, ${activities.categoryId})`
 			)
 		)
-		.where(and(eq(taskInstances.id, id), eq(taskInstances.userId, ctx.userId)))
+		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
 		.get();
 
 	if (!row) throw new NotFoundError('block');

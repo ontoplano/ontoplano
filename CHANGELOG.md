@@ -10,7 +10,13 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
-## 0.9.11 — 2026-08-31
+## 0.10.0 — 2026-08-31
+
+- The four tables a task can live in are named after what they are rather than
+  how they are stored: `recurring_tasks`, `exceptional_tasks`, `todo_tasks` and
+  `task_records`. Nothing changes for anybody using the app — the names are
+  what the documentation and the API reference talk about, and "weekly_slots"
+  had stopped being true the day monthly repeats arrived.
 
 - The error page is readable on a phone: bigger type, centred in the space it
   has, and the offer to send the details is a button rather than a link inside

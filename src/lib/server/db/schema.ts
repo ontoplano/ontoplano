@@ -55,8 +55,8 @@ export const activities = sqliteTable(
 	]
 );
 
-export const weeklySlots = sqliteTable(
-	'weekly_slots',
+export const recurringTasks = sqliteTable(
+	'recurring_tasks',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
 		userId: text('user_id')
@@ -132,15 +132,15 @@ export const weeklySlots = sqliteTable(
  * instance, so every "what is on this date" question needed two queries and a
  * union — and the callers that forgot the second one were silently wrong.
  */
-export const taskInstances = sqliteTable(
-	'task_instances',
+export const taskRecords = sqliteTable(
+	'task_records',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id),
-		slotId: integer('slot_id').references(() => weeklySlots.id),
-		exceptionalSlotId: integer('exceptional_slot_id').references(() => exceptionalSlots.id, {
+		slotId: integer('slot_id').references(() => recurringTasks.id),
+		exceptionalSlotId: integer('exceptional_slot_id').references(() => exceptionalTasks.id, {
 			onDelete: 'cascade'
 		}),
 		scheduledAt: text('scheduled_at').notNull(), // ISO 8601
@@ -412,7 +412,7 @@ export const suppressedSlots = sqliteTable(
 		date: text('date').notNull(), // YYYY-MM-DD
 		slotId: integer('slot_id')
 			.notNull()
-			.references(() => weeklySlots.id, { onDelete: 'cascade' }),
+			.references(() => recurringTasks.id, { onDelete: 'cascade' }),
 		/**
 		 * Set when this day was *moved* rather than skipped.
 		 *
@@ -421,7 +421,7 @@ export const suppressedSlots = sqliteTable(
 		 * instead" — the replacement is what should be on screen, and leaving
 		 * the original visible makes one block look like two.
 		 */
-		movedToId: integer('moved_to_id').references(() => exceptionalSlots.id, {
+		movedToId: integer('moved_to_id').references(() => exceptionalTasks.id, {
 			onDelete: 'set null'
 		})
 	},
@@ -431,8 +431,8 @@ export const suppressedSlots = sqliteTable(
 	]
 );
 
-export const exceptionalSlots = sqliteTable(
-	'exceptional_slots',
+export const exceptionalTasks = sqliteTable(
+	'exceptional_tasks',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
 		userId: text('user_id')
@@ -458,15 +458,15 @@ export const exceptionalSlots = sqliteTable(
 		energy: integer('energy'),
 		meta: text('meta').notNull().default('{}'),
 
-		/** The recipe this block is for, when it is a meal. See `weekly_slots`. */
+		/** The recipe this block is for, when it is a meal. See `recurring_tasks`. */
 		recipeId: integer('recipe_id').references(() => recipes.id, { onDelete: 'set null' }),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
 	(table) => [
-		index('exceptional_slots_user_date_idx').on(table.userId, table.date),
-		index('exceptional_slots_notebook_idx').on(table.notebookId),
+		index('exceptional_tasks_user_date_idx').on(table.userId, table.date),
+		index('exceptional_tasks_notebook_idx').on(table.notebookId),
 		check(
 			'exceptional_urgency_range',
 			sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 1 AND 5`
@@ -490,8 +490,8 @@ export const exceptionalSlots = sqliteTable(
 	]
 );
 
-export const plannerTodos = sqliteTable(
-	'planner_todos',
+export const todoTasks = sqliteTable(
+	'todo_tasks',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
 		userId: text('user_id')
@@ -524,9 +524,9 @@ export const plannerTodos = sqliteTable(
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
 	(table) => [
-		index('planner_todos_user_idx').on(table.userId),
-		index('planner_todos_scheduled_idx').on(table.userId, table.scheduledDate),
-		index('planner_todos_notebook_idx').on(table.notebookId),
+		index('todo_tasks_user_idx').on(table.userId),
+		index('todo_tasks_scheduled_idx').on(table.userId, table.scheduledDate),
+		index('todo_tasks_notebook_idx').on(table.notebookId),
 		check('todos_urgency_range', sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 1 AND 5`),
 		check(
 			'todos_interest_range',
@@ -1198,7 +1198,7 @@ export const goals = sqliteTable(
  * A goal linked to tasks has progress that is a real number — how many of the
  * committed occurrences got done — rather than a self-report. Both kinds of
  * task can be linked, and exactly one column is set, the same shape
- * task_instances itself uses.
+ * task_records itself uses.
  */
 export const goalLinks = sqliteTable(
 	'goal_links',
@@ -1210,8 +1210,8 @@ export const goalLinks = sqliteTable(
 		goalId: integer('goal_id')
 			.notNull()
 			.references(() => goals.id, { onDelete: 'cascade' }),
-		slotId: integer('slot_id').references(() => weeklySlots.id, { onDelete: 'cascade' }),
-		todoId: integer('todo_id').references(() => plannerTodos.id, { onDelete: 'cascade' }),
+		slotId: integer('slot_id').references(() => recurringTasks.id, { onDelete: 'cascade' }),
+		todoId: integer('todo_id').references(() => todoTasks.id, { onDelete: 'cascade' }),
 		activityId: integer('activity_id').references(() => activities.id, { onDelete: 'cascade' })
 	},
 	(table) => [
@@ -1340,7 +1340,7 @@ export const reminders = sqliteTable(
 			.default('free'),
 		subjectId: integer('subject_id'),
 		/**
-		 * Wall-clock, like `task_instances.scheduled_at` — not an instant.
+		 * Wall-clock, like `task_records.scheduled_at` — not an instant.
 		 *
 		 * "Remind me at ten to nine" means ten to nine wherever you are, and a
 		 * reminder that shifts by an hour because you flew somewhere is a reminder

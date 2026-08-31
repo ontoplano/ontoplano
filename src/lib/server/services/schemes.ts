@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { planningSchemes, schemeSlots, weeklySlots } from '../db/schema.js';
+import { planningSchemes, schemeSlots, recurringTasks } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError } from './errors.js';
 import { clearWeeklyPlanIn } from './slots.js';
@@ -40,7 +40,11 @@ export function saveScheme(ctx: Ctx, rawName: unknown): number {
 			.run();
 		const schemeId = Number(inserted.lastInsertRowid);
 
-		const slots = tx.select().from(weeklySlots).where(eq(weeklySlots.userId, ctx.userId)).all();
+		const slots = tx
+			.select()
+			.from(recurringTasks)
+			.where(eq(recurringTasks.userId, ctx.userId))
+			.all();
 
 		if (slots.length > 0) {
 			tx.insert(schemeSlots)
@@ -80,7 +84,7 @@ export function applyScheme(ctx: Ctx, schemeId: number): void {
 			.all();
 
 		if (slots.length > 0) {
-			tx.insert(weeklySlots)
+			tx.insert(recurringTasks)
 				.values(
 					slots.map((slot) => ({
 						userId: ctx.userId,

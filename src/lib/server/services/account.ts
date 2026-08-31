@@ -92,7 +92,7 @@ const USER_TABLES: OwnedTable[] = [
 	owned('planningSchemes', schema.planningSchemes as never),
 	owned('shoppingItems', schema.shoppingItems as never),
 	owned('shoppingCategories', schema.shoppingCategories as never),
-	owned('plannerTodos', schema.plannerTodos as never),
+	owned('todoTasks', schema.todoTasks as never),
 	owned('diaryEntryTags', schema.diaryEntryTags as never),
 	// Mentions first: they point at both entries and people.
 	owned('entryPeople', schema.entryPeople as never),
@@ -101,16 +101,16 @@ const USER_TABLES: OwnedTable[] = [
 	owned('tags', schema.tags as never),
 	owned('habitOccurrences', schema.habitOccurrences as never),
 	owned('habits', schema.habits as never),
-	owned('taskInstances', schema.taskInstances as never),
+	owned('taskRecords', schema.taskRecords as never),
 	owned('suppressedSlots', schema.suppressedSlots as never),
-	owned('exceptionalSlots', schema.exceptionalSlots as never),
+	owned('exceptionalTasks', schema.exceptionalTasks as never),
 	owned('auditEvents', schema.auditEvents as never),
 	// The provider keeps its own copy of the commercial record; this one is the
 	// account's and goes with it.
 	owned('subscriptions', schema.subscriptions as never),
 	// Last of the subjects: entries, todos, goals and blocks all point at it.
 	owned('notebooks', schema.notebooks as never),
-	owned('weeklySlots', schema.weeklySlots as never),
+	owned('recurringTasks', schema.recurringTasks as never),
 	owned('activities', schema.activities as never),
 	owned('categories', schema.categories as never),
 	owned('userSettings', schema.userSettings as never)

@@ -17,8 +17,7 @@ Everything else on this page follows from that table. A fourth thing, the
 
 ## A recurring block
 
-`weekly_slots`, which is a bad name for it — it holds every repeat, not only
-weekly ones. Its `recurrence` column says which:
+`recurring_tasks`. Its `recurrence` column says how often:
 
 - `weekly` — every week on that weekday
 - `weeks:2` — every other week, counted from an anchor date
@@ -35,7 +34,7 @@ the second must never be done by editing the block.
 
 ## A one-off block
 
-`exceptional_slots`. **The 4th of September at 09:00, once.** The same fields as
+`exceptional_tasks`. **The 4th of September at 09:00, once.** The same fields as
 a recurring block, with a date instead of a weekday and a rule. Nothing about
 next week follows from it.
 
@@ -46,7 +45,7 @@ block goes on repeating, untouched.
 
 ## An occurrence
 
-`task_instances`. **What actually happened on one day.** It is the row that
+`task_records`. **What actually happened on one day.** It is the row that
 carries a status (`todo`, `doing`, `done`, `skipped`), when it was done, notes,
 and whether it was early or late.
 
@@ -61,7 +60,7 @@ suppression for that date, and the grid draws it as skipped.
 
 ## A todo
 
-`planner_todos`. **A task with no time yet.** It has a title, notes, a
+`todo_tasks`. **A task with no time yet.** It has a title, notes, a
 category, a notebook, three ratings — and a nullable `scheduled_date`.
 
 That one nullable column is the whole distinction people trip over:

@@ -16,12 +16,12 @@ import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { parseLines } from '../../ingredient-lines.js';
 import { db } from '../db/index.js';
 import {
-	exceptionalSlots,
+	exceptionalTasks,
 	recipeItems,
 	recipes,
 	shoppingCategories,
 	shoppingItems,
-	weeklySlots
+	recurringTasks
 } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
@@ -458,22 +458,22 @@ export type Needed = {
  */
 export function neededBetween(ctx: Ctx, from: string, to: string): Needed[] {
 	const oneOffs = db
-		.select({ recipeId: exceptionalSlots.recipeId })
-		.from(exceptionalSlots)
+		.select({ recipeId: exceptionalTasks.recipeId })
+		.from(exceptionalTasks)
 		.where(
 			and(
-				eq(exceptionalSlots.userId, ctx.userId),
-				sql`${exceptionalSlots.date} >= ${from}`,
-				sql`${exceptionalSlots.date} <= ${to}`
+				eq(exceptionalTasks.userId, ctx.userId),
+				sql`${exceptionalTasks.date} >= ${from}`,
+				sql`${exceptionalTasks.date} <= ${to}`
 			)
 		)
 		.all();
 
 	// A weekly block happens every week, so it is in any range at all.
 	const weekly = db
-		.select({ recipeId: weeklySlots.recipeId })
-		.from(weeklySlots)
-		.where(and(eq(weeklySlots.userId, ctx.userId), eq(weeklySlots.active, true)))
+		.select({ recipeId: recurringTasks.recipeId })
+		.from(recurringTasks)
+		.where(and(eq(recurringTasks.userId, ctx.userId), eq(recurringTasks.active, true)))
 		.all();
 
 	const ids = [
@@ -530,23 +530,23 @@ export function neededBetween(ctx: Ctx, from: string, to: string): Needed[] {
 export function mealsBetween(ctx: Ctx, from: string, to: string) {
 	return db
 		.select({
-			id: exceptionalSlots.id,
-			date: exceptionalSlots.date,
-			startTime: exceptionalSlots.startTime,
-			recipeId: exceptionalSlots.recipeId,
+			id: exceptionalTasks.id,
+			date: exceptionalTasks.date,
+			startTime: exceptionalTasks.startTime,
+			recipeId: exceptionalTasks.recipeId,
 			title: recipes.title,
 			minutes: recipes.minutes
 		})
-		.from(exceptionalSlots)
-		.innerJoin(recipes, eq(exceptionalSlots.recipeId, recipes.id))
+		.from(exceptionalTasks)
+		.innerJoin(recipes, eq(exceptionalTasks.recipeId, recipes.id))
 		.where(
 			and(
-				eq(exceptionalSlots.userId, ctx.userId),
-				sql`${exceptionalSlots.date} >= ${from}`,
-				sql`${exceptionalSlots.date} <= ${to}`
+				eq(exceptionalTasks.userId, ctx.userId),
+				sql`${exceptionalTasks.date} >= ${from}`,
+				sql`${exceptionalTasks.date} <= ${to}`
 			)
 		)
-		.orderBy(asc(exceptionalSlots.date), asc(exceptionalSlots.startTime))
+		.orderBy(asc(exceptionalTasks.date), asc(exceptionalTasks.startTime))
 		.all();
 }
 

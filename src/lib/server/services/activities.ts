@@ -2,7 +2,7 @@ import { and, count, eq } from 'drizzle-orm';
 
 import { CATEGORY_DEFAULT_NEW } from '../../colors.js';
 import { db } from '../db/index.js';
-import { activities, categories, taskInstances, weeklySlots } from '../db/schema.js';
+import { activities, categories, taskRecords, recurringTasks } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';
@@ -190,8 +190,8 @@ export function deleteCategory(ctx: Ctx, id: number): void {
 	const slotRefs = countRows(
 		db
 			.select({ cnt: count() })
-			.from(weeklySlots)
-			.where(and(eq(weeklySlots.categoryId, id), eq(weeklySlots.userId, ctx.userId)))
+			.from(recurringTasks)
+			.where(and(eq(recurringTasks.categoryId, id), eq(recurringTasks.userId, ctx.userId)))
 			.get()
 	);
 
@@ -210,15 +210,15 @@ function activityReferences(ctx: Ctx, id: number): number {
 	const slotRefs = countRows(
 		db
 			.select({ cnt: count() })
-			.from(weeklySlots)
-			.where(and(eq(weeklySlots.activityId, id), eq(weeklySlots.userId, ctx.userId)))
+			.from(recurringTasks)
+			.where(and(eq(recurringTasks.activityId, id), eq(recurringTasks.userId, ctx.userId)))
 			.get()
 	);
 	const instanceRefs = countRows(
 		db
 			.select({ cnt: count() })
-			.from(taskInstances)
-			.where(and(eq(taskInstances.resolvedActivityId, id), eq(taskInstances.userId, ctx.userId)))
+			.from(taskRecords)
+			.where(and(eq(taskRecords.resolvedActivityId, id), eq(taskRecords.userId, ctx.userId)))
 			.get()
 	);
 

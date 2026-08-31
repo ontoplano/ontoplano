@@ -5,9 +5,9 @@ import { db } from '../db/index.js';
 import {
 	activities,
 	categories,
-	exceptionalSlots,
-	taskInstances,
-	weeklySlots
+	exceptionalTasks,
+	taskRecords,
+	recurringTasks
 } from '../db/schema.js';
 import { generateWeekInstances, getMonday, toLocalISOString, addDays } from '../week-generator.js';
 import type { Ctx } from './ctx.js';
@@ -92,59 +92,59 @@ export function getUpcomingSchedule(
 
 	const instances = db
 		.select({
-			id: taskInstances.id,
-			scheduledAt: taskInstances.scheduledAt,
-			status: taskInstances.status,
-			duration: weeklySlots.durationMinutes,
-			durationOverride: taskInstances.durationOverride,
-			startTime: weeklySlots.startTime,
-			label: weeklySlots.label,
-			meta: weeklySlots.meta,
+			id: taskRecords.id,
+			scheduledAt: taskRecords.scheduledAt,
+			status: taskRecords.status,
+			duration: recurringTasks.durationMinutes,
+			durationOverride: taskRecords.durationOverride,
+			startTime: recurringTasks.startTime,
+			label: recurringTasks.label,
+			meta: recurringTasks.meta,
 			slotActivityName: slotActivities.name,
 			resolvedActivityName: activities.name,
 			categoryName: categories.name,
 			activityCategoryName: activityCategories.name
 		})
-		.from(taskInstances)
-		.innerJoin(weeklySlots, eq(taskInstances.slotId, weeklySlots.id))
-		.leftJoin(categories, eq(weeklySlots.categoryId, categories.id))
-		.leftJoin(slotActivities, eq(weeklySlots.activityId, slotActivities.id))
+		.from(taskRecords)
+		.innerJoin(recurringTasks, eq(taskRecords.slotId, recurringTasks.id))
+		.leftJoin(categories, eq(recurringTasks.categoryId, categories.id))
+		.leftJoin(slotActivities, eq(recurringTasks.activityId, slotActivities.id))
 		.leftJoin(activityCategories, eq(slotActivities.categoryId, activityCategories.id))
-		.leftJoin(activities, eq(taskInstances.resolvedActivityId, activities.id))
+		.leftJoin(activities, eq(taskRecords.resolvedActivityId, activities.id))
 		.where(
 			and(
-				eq(taskInstances.userId, ctx.userId),
-				gte(taskInstances.scheduledAt, fromStr),
-				lt(taskInstances.scheduledAt, toStr)
+				eq(taskRecords.userId, ctx.userId),
+				gte(taskRecords.scheduledAt, fromStr),
+				lt(taskRecords.scheduledAt, toStr)
 			)
 		)
-		.orderBy(asc(taskInstances.scheduledAt))
+		.orderBy(asc(taskRecords.scheduledAt))
 		.all();
 
 	const exceptionals = db
 		.select({
-			id: exceptionalSlots.id,
-			date: exceptionalSlots.date,
-			startTime: exceptionalSlots.startTime,
-			duration: exceptionalSlots.durationMinutes,
+			id: exceptionalTasks.id,
+			date: exceptionalTasks.date,
+			startTime: exceptionalTasks.startTime,
+			duration: exceptionalTasks.durationMinutes,
 			// Execution state moved onto the instance the one-off produces.
-			durationOverride: taskInstances.durationOverride,
-			status: sql<string>`coalesce(${taskInstances.status}, 'todo')`.as('one_off_status'),
-			label: exceptionalSlots.label,
-			meta: exceptionalSlots.meta,
-			active: exceptionalSlots.active,
+			durationOverride: taskRecords.durationOverride,
+			status: sql<string>`coalesce(${taskRecords.status}, 'todo')`.as('one_off_status'),
+			label: exceptionalTasks.label,
+			meta: exceptionalTasks.meta,
+			active: exceptionalTasks.active,
 			activityName: activities.name,
 			categoryName: categories.name
 		})
-		.from(exceptionalSlots)
-		.leftJoin(categories, eq(exceptionalSlots.categoryId, categories.id))
-		.leftJoin(activities, eq(exceptionalSlots.activityId, activities.id))
-		.leftJoin(taskInstances, eq(taskInstances.exceptionalSlotId, exceptionalSlots.id))
+		.from(exceptionalTasks)
+		.leftJoin(categories, eq(exceptionalTasks.categoryId, categories.id))
+		.leftJoin(activities, eq(exceptionalTasks.activityId, activities.id))
+		.leftJoin(taskRecords, eq(taskRecords.exceptionalSlotId, exceptionalTasks.id))
 		.where(
 			and(
-				eq(exceptionalSlots.userId, ctx.userId),
-				gte(exceptionalSlots.date, formatDate(from)),
-				lt(exceptionalSlots.date, formatDate(to))
+				eq(exceptionalTasks.userId, ctx.userId),
+				gte(exceptionalTasks.date, formatDate(from)),
+				lt(exceptionalTasks.date, formatDate(to))
 			)
 		)
 		.all();

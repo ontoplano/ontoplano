@@ -5,7 +5,7 @@ import { generateInstances } from './services/instances.js';
 /**
  * A Date as a naive `YYYY-MM-DDTHH:MM:SS`, with no zone.
  *
- * This is for **wall-clock** values only — `task_instances.scheduled_at` and
+ * This is for **wall-clock** values only — `task_records.scheduled_at` and
  * the day bounds compared against it. Instants are UTC and come from
  * `services/time.ts`; writing one of those with this function is finding S7
  * all over again.

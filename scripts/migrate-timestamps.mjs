@@ -7,7 +7,7 @@
  * rewritten as the moments they actually were.
  *
  * What it touches: columns that hold a *moment*. It deliberately leaves
- * `task_instances.scheduled_at`, `weekly_slots.start_time` and every civil date
+ * `task_records.scheduled_at`, `recurring_tasks.start_time` and every civil date
  * alone — those are wall-clock values, and "gym at 18:00" does not move because
  * the reader did.
  *
@@ -33,21 +33,21 @@ const INSTANT_COLUMNS = {
 	data_points: ['at', 'created_at'],
 	data_streams: ['archived_at', 'created_at', 'updated_at'],
 	diary_entries: ['created_at', 'updated_at'],
-	exceptional_slots: ['created_at', 'updated_at'],
+	exceptional_tasks: ['created_at', 'updated_at'],
 	goal_areas: ['created_at'],
 	goals: ['closed_at', 'created_at', 'updated_at'],
 	habit_occurrences: ['created_at'],
 	habits: ['created_at'],
 	ideas: ['created_at', 'updated_at'],
-	planner_todos: ['created_at', 'updated_at'],
+	todo_tasks: ['created_at', 'updated_at'],
 	planning_schemes: ['created_at', 'updated_at'],
 	plugin_manifests: ['updated_at'],
 	quotes: ['created_at'],
 	shopping_categories: ['created_at'],
 	shopping_items: ['bought_at', 'created_at', 'updated_at'],
 	// `scheduled_at` is NOT here: it is a wall-clock value.
-	task_instances: ['completed_at', 'created_at'],
-	weekly_slots: ['created_at', 'updated_at']
+	task_records: ['completed_at', 'created_at'],
+	recurring_tasks: ['created_at', 'updated_at']
 };
 
 const args = process.argv.slice(2);

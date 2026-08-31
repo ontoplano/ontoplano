@@ -1,7 +1,7 @@
 import { and, asc, eq, lt, notInArray } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { ideas, plannerTodos, shoppingItems } from '../db/schema.js';
+import { ideas, todoTasks, shoppingItems } from '../db/schema.js';
 import { CLOSED_STATUSES } from '../../task-status.js';
 import type { Ctx } from './ctx.js';
 import { stamp } from './time.js';
@@ -41,17 +41,17 @@ export function listStale(ctx: Ctx, months = STALE_MONTHS): StaleThing[] {
 	const out: StaleThing[] = [];
 
 	for (const row of db
-		.select({ id: plannerTodos.id, title: plannerTodos.title, at: plannerTodos.updatedAt })
-		.from(plannerTodos)
+		.select({ id: todoTasks.id, title: todoTasks.title, at: todoTasks.updatedAt })
+		.from(todoTasks)
 		.where(
 			and(
-				eq(plannerTodos.userId, ctx.userId),
-				lt(plannerTodos.updatedAt, before),
+				eq(todoTasks.userId, ctx.userId),
+				lt(todoTasks.updatedAt, before),
 				// Something you finished has ended. This is about the ones that did not.
-				notInArray(plannerTodos.status, [...CLOSED_STATUSES])
+				notInArray(todoTasks.status, [...CLOSED_STATUSES])
 			)
 		)
-		.orderBy(asc(plannerTodos.updatedAt))
+		.orderBy(asc(todoTasks.updatedAt))
 		.all())
 		out.push({ sort: 'todo', id: row.id, title: row.title, since: row.at.slice(0, 10) });
 
@@ -103,9 +103,9 @@ export function keepStale(ctx: Ctx, sort: StaleThing['sort'], id: number): boole
 	if (sort === 'todo')
 		return (
 			db
-				.update(plannerTodos)
+				.update(todoTasks)
 				.set({ updatedAt: now })
-				.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, ctx.userId)))
+				.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
 				.run().changes > 0
 		);
 
@@ -142,9 +142,9 @@ export function completeStale(ctx: Ctx, sort: StaleThing['sort'], id: number): b
 
 	return (
 		db
-			.update(plannerTodos)
+			.update(todoTasks)
 			.set({ status: 'done', updatedAt: stamp(ctx) })
-			.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, ctx.userId)))
+			.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
 			.run().changes > 0
 	);
 }
@@ -159,8 +159,8 @@ export function dropStale(ctx: Ctx, sort: StaleThing['sort'], id: number): boole
 	if (sort === 'todo')
 		return (
 			db
-				.delete(plannerTodos)
-				.where(and(eq(plannerTodos.id, id), eq(plannerTodos.userId, ctx.userId)))
+				.delete(todoTasks)
+				.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
 				.run().changes > 0
 		);
 

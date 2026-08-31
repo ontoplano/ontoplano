@@ -16,9 +16,9 @@ import {
 	goalLinks,
 	goals,
 	notebooks,
-	plannerTodos,
-	taskInstances,
-	weeklySlots
+	todoTasks,
+	taskRecords,
+	recurringTasks
 } from '../db/schema.js';
 import { periodEnd, periodStart, isGoalStatus, isHorizon, type Horizon } from '../../goals.js';
 import type { Ctx } from './ctx.js';
@@ -108,16 +108,16 @@ function progressFor(
 	if (slotIds.length > 0 || activityIds.length > 0) {
 		const rows = db
 			.select({
-				status: taskInstances.status,
-				slotId: taskInstances.slotId,
-				resolvedActivityId: taskInstances.resolvedActivityId
+				status: taskRecords.status,
+				slotId: taskRecords.slotId,
+				resolvedActivityId: taskRecords.resolvedActivityId
 			})
-			.from(taskInstances)
+			.from(taskRecords)
 			.where(
 				and(
-					eq(taskInstances.userId, ctx.userId),
-					gte(taskInstances.scheduledAt, `${from}T00:00:00`),
-					lt(taskInstances.scheduledAt, `${to}T00:00:00`)
+					eq(taskRecords.userId, ctx.userId),
+					gte(taskRecords.scheduledAt, `${from}T00:00:00`),
+					lt(taskRecords.scheduledAt, `${to}T00:00:00`)
 				)
 			)
 			.all();
@@ -136,9 +136,9 @@ function progressFor(
 
 	if (todoIds.length > 0) {
 		const rows = db
-			.select({ status: plannerTodos.status })
-			.from(plannerTodos)
-			.where(and(eq(plannerTodos.userId, ctx.userId), inArray(plannerTodos.id, todoIds)))
+			.select({ status: todoTasks.status })
+			.from(todoTasks)
+			.where(and(eq(todoTasks.userId, ctx.userId), inArray(todoTasks.id, todoIds)))
 			.all();
 		total += rows.length;
 		done += rows.filter((r) => r.status === 'done').length;
@@ -240,20 +240,20 @@ export function listActiveOn(ctx: Ctx, date: string): Goal[] {
 export function linkableSlots(ctx: Ctx) {
 	return db
 		.select({
-			id: weeklySlots.id,
-			label: weeklySlots.label,
-			mode: weeklySlots.mode,
-			weekday: weeklySlots.weekday,
-			startTime: weeklySlots.startTime,
-			activityId: weeklySlots.activityId,
+			id: recurringTasks.id,
+			label: recurringTasks.label,
+			mode: recurringTasks.mode,
+			weekday: recurringTasks.weekday,
+			startTime: recurringTasks.startTime,
+			activityId: recurringTasks.activityId,
 			activityName: activities.name,
 			categoryName: categories.name
 		})
-		.from(weeklySlots)
-		.leftJoin(activities, eq(weeklySlots.activityId, activities.id))
-		.leftJoin(categories, eq(weeklySlots.categoryId, categories.id))
-		.where(and(eq(weeklySlots.userId, ctx.userId), eq(weeklySlots.active, true)))
-		.orderBy(asc(weeklySlots.weekday), asc(weeklySlots.startTime))
+		.from(recurringTasks)
+		.leftJoin(activities, eq(recurringTasks.activityId, activities.id))
+		.leftJoin(categories, eq(recurringTasks.categoryId, categories.id))
+		.where(and(eq(recurringTasks.userId, ctx.userId), eq(recurringTasks.active, true)))
+		.orderBy(asc(recurringTasks.weekday), asc(recurringTasks.startTime))
 		.all()
 		.map((slot) => ({ ...slot, name: blockName(slot) }));
 }
@@ -510,18 +510,18 @@ function ownedIds(claimed: unknown[], owned: number[]): number[] {
 
 function ownedSlotIds(ctx: Ctx): number[] {
 	return db
-		.select({ id: weeklySlots.id })
-		.from(weeklySlots)
-		.where(eq(weeklySlots.userId, ctx.userId))
+		.select({ id: recurringTasks.id })
+		.from(recurringTasks)
+		.where(eq(recurringTasks.userId, ctx.userId))
 		.all()
 		.map((r) => r.id);
 }
 
 function ownedTodoIds(ctx: Ctx): number[] {
 	return db
-		.select({ id: plannerTodos.id })
-		.from(plannerTodos)
-		.where(eq(plannerTodos.userId, ctx.userId))
+		.select({ id: todoTasks.id })
+		.from(todoTasks)
+		.where(eq(todoTasks.userId, ctx.userId))
 		.all()
 		.map((r) => r.id);
 }
