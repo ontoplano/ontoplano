@@ -41,6 +41,7 @@
 		GRID_DAYS_DESKTOP,
 		GRID_DAYS_MOBILE,
 		hourToTime,
+		windowForEvents,
 		GRID_SNAP_DURATION,
 		timeToMinutes,
 		minutesToTime,
@@ -97,11 +98,6 @@
 	);
 
 	const gridDays = $derived(effectiveView === 'day' ? GRID_DAYS_MOBILE : GRID_DAYS_DESKTOP);
-
-	// The hours the account asked for, in Preferences. The geometry the drop
-	// target reads back has to agree with what the calendar was told to draw.
-	const gridMinTime = $derived(hourToTime(data.gridHours.start));
-	const gridMaxTime = $derived(hourToTime(data.gridHours.end));
 
 	/**
 	 * Which day the single-day grid is showing.
@@ -1095,6 +1091,18 @@
 		// because they are not ours to move.
 		...buildSubscribedEvents(data.subscribed)
 	]);
+
+	/*
+	 * The hours the account asked for in Preferences, widened to hold whatever
+	 * is actually on the grid — see `windowForEvents`. A block above the first
+	 * line does not scroll off the top; it vanishes, and the day reads as free.
+	 *
+	 * The geometry the drop target reads back has to agree with what the
+	 * calendar was told to draw, which is why both come from here.
+	 */
+	const gridWindow = $derived(windowForEvents(data.gridHours, gridEvents));
+	const gridMinTime = $derived(hourToTime(gridWindow.start));
+	const gridMaxTime = $derived(hourToTime(gridWindow.end));
 
 	/**
 	 * The month a six-week window belongs to.

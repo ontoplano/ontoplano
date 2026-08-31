@@ -6,6 +6,11 @@ rest. Versions follow `package.json`.
 
 ## Unreleased
 
+- The planner grid stretches to hold whatever is on it. If a block starts
+  before the first hour you asked to see — dragged up, typed in, or arriving in
+  a subscribed calendar from another timezone — it used to be drawn nowhere at
+  all, and the day looked free. The same now holds at the other end.
+
 - The administration page no longer explains the operator's own server to
   them. Where an instance cannot act on a ban it says so in one line, and
   stops there.

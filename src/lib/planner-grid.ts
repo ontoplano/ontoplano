@@ -15,6 +15,60 @@ export const GRID_MAX_TIME = '24:00:00';
 export function hourToTime(hour: number): string {
 	return `${String(hour).padStart(2, '0')}:00:00`;
 }
+
+/**
+ * The stretch of day the grid has to draw, which is not always the one asked for.
+ *
+ * Preferences hold a window — 06:00 to 22:00, say — and that is the right thing
+ * to look at on an ordinary day. It is the wrong thing to obey: a block can be
+ * dragged above the first line, created at 04:00 from the form, or arrive in a
+ * subscribed calendar from somebody in another timezone, and a window that
+ * ignores it draws a grid with a missing block. Nothing tells you it is
+ * missing. It is simply not there, and the day looks free.
+ *
+ * So the window is the asked-for one widened to hold everything on it, at both
+ * ends — the same argument reads the same going the other way, and a meeting at
+ * 23:30 disappears exactly as quietly as one at 04:00. It never narrows: an
+ * empty Tuesday still shows the hours somebody chose to see.
+ *
+ * All-day events are excluded. They have no hour to make room for, and taking
+ * their span literally would open every grid to the full day.
+ */
+export function windowForEvents(
+	asked: { start: number; end: number },
+	events: { start?: unknown; end?: unknown; allDay?: boolean }[]
+): { start: number; end: number } {
+	let start = asked.start;
+	let end = asked.end;
+
+	for (const event of events) {
+		if (event.allDay) continue;
+		const from = asDate(event.start);
+		if (!from) continue;
+		const to = asDate(event.end) ?? from;
+
+		start = Math.min(start, from.getHours());
+
+		// A block running past midnight has no end hour on this day — it needs
+		// the rest of it. Anything else rounds up, so 23:30 asks for 24 rather
+		// than for 23 and half a block below the last line.
+		const sameDay = to.toDateString() === from.toDateString();
+		const endHour = sameDay ? Math.ceil((to.getHours() * 60 + to.getMinutes()) / 60) : 24;
+		end = Math.max(end, endHour);
+	}
+
+	start = Math.max(0, Math.min(start, 23));
+	return { start, end: Math.min(24, Math.max(end, start + 1)) };
+}
+
+function asDate(value: unknown): Date | null {
+	if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+	if (typeof value === 'string') {
+		const parsed = new Date(value);
+		return Number.isNaN(parsed.getTime()) ? null : parsed;
+	}
+	return null;
+}
 export const GRID_SLOT_DURATION = '00:30:00';
 export const GRID_SLOT_MINUTES = 30;
 // Drag/resize/select step. Independent from GRID_SLOT_DURATION so the gridlines stay
