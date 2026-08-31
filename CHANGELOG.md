@@ -10,7 +10,12 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
-## 0.9.4 — 2026-08-31
+## 0.9.5 — 2026-08-31
+
+- A drag shows where it will land before you let go. A todo dragged over the
+  grid is drawn as the block it is about to become, at that hour; a block
+  dragged toward the todo strip appears there, greyed out. And dragging a
+  weekly block no longer opens the strip, since a weekly block cannot go in it.
 
 - Changing page no longer makes the layout jump. Every navigation used to
   rebuild the whole page and slide it up six pixels — including the tab row you

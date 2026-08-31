@@ -381,7 +381,7 @@
 		target: EventTarget | null;
 		clientX: number;
 		clientY: number;
-	}): { date: string; startTime: string } | null {
+	}): DropSpot | null {
 		const root = (e.target as HTMLElement | null)?.closest('.ec');
 		const bodyEl = root?.querySelector('.ec-body');
 		if (!bodyEl) return null;
@@ -412,11 +412,49 @@
 		const snap = timeToMinutes(GRID_SNAP_DURATION);
 		const minutes = Math.floor((minMinutes + fraction * span) / snap) * snap;
 
-		return { date, startTime: minutesToTime(minutes) };
+		/*
+		 * And where that lands on screen, so the drop can be drawn rather than
+		 * described.
+		 *
+		 * A chip in the corner reading "2026-09-02 · 09:30" is a sentence to read
+		 * while your hand is holding a drag. The block itself, drawn where it
+		 * would go, is the answer to the same question with nothing to read.
+		 * Measured against the grid wrapper because that is what the ghost is
+		 * positioned inside.
+		 */
+		let box: DropSpot['box'];
+		const wrap = gridWrap?.getBoundingClientRect();
+		if (wrap) {
+			const column = columns[index].getBoundingClientRect();
+			const top = bodyRect.top + ((minutes - minMinutes) / span) * bodyRect.height;
+			box = {
+				left: column.left - wrap.left,
+				width: column.width,
+				top: top - wrap.top,
+				height: Math.max((NEW_TODO_MINUTES / span) * bodyRect.height, 12)
+			};
+		}
+
+		return { date, startTime: minutesToTime(minutes), box };
 	}
 
+	/** Where a drop would land, and the rectangle it would occupy there. */
+	type DropSpot = {
+		date: string;
+		startTime: string;
+		box?: { left: number; top: number; width: number; height: number };
+	};
+
+	/** What a todo dropped on the grid is given, in minutes. */
+	const NEW_TODO_MINUTES = 30;
+
+	let gridWrap: HTMLElement | undefined = $state();
 	let dragTodoId: number | null = $state(null);
-	let dropPreview: { date: string; startTime: string } | null = $state(null);
+	let dropPreview: DropSpot | null = $state(null);
+	/** The todo being dragged or placed, so the ghost can carry its name. */
+	const dragTodoTitle = $derived(
+		data.todos.find((t: { id: number }) => t.id === (dragTodoId ?? placingTodoId))?.title ?? ''
+	);
 
 	/**
 	 * Dragging a block back off the grid.
@@ -429,6 +467,10 @@
 	 */
 	let trayEl: HTMLElement | undefined = $state();
 	let draggingBlock = $state(false);
+	/** The name of the block in the air, so the strip can show it arriving. */
+	let draggingBlockTitle = $state('');
+	/** Whether that drag is currently over the strip. */
+	let overTrayNow = $state(false);
 	/** Set when a drag ended on the strip, so `eventDrop` does not also act. */
 	let takenOffGrid = false;
 
@@ -441,6 +483,26 @@
 		if (!trayEl || point?.clientX === undefined || point.clientY === undefined) return false;
 		const el = document.elementFromPoint(point.clientX, point.clientY);
 		return el !== null && trayEl.contains(el);
+	}
+
+	/*
+	 * Whether the drag is over the strip, while it is still in the air.
+	 *
+	 * The calendar drags with pointer events and reports only start and stop, so
+	 * "it will land here" has to be watched for. Attached only while a block is
+	 * being dragged, and detached the moment it is dropped.
+	 */
+	let trayWatcher: ((e: PointerEvent) => void) | null = null;
+
+	function watchTray() {
+		stopWatchingTray();
+		trayWatcher = (e: PointerEvent) => (overTrayNow = overTray(e));
+		window.addEventListener('pointermove', trayWatcher);
+	}
+
+	function stopWatchingTray() {
+		if (trayWatcher) window.removeEventListener('pointermove', trayWatcher);
+		trayWatcher = null;
 	}
 
 	async function unscheduleBlock(slotId: number) {
@@ -464,6 +526,8 @@
 	 */
 	function handleEventDragStop(info: Calendar.EventDragInfo) {
 		draggingBlock = false;
+		overTrayNow = false;
+		stopWatchingTray();
 		if (!overTray(info.jsEvent)) return;
 
 		const decoded = decodeEventId(info.event.id);
@@ -496,7 +560,7 @@
 		body.set('todoId', String(todoId));
 		body.set('date', target.date);
 		body.set('startTime', target.startTime);
-		body.set('durationMinutes', '30');
+		body.set('durationMinutes', String(NEW_TODO_MINUTES));
 
 		const result = await postGridAction('scheduleTodo', body, 'Could not schedule that todo.');
 		if (!result) return;
@@ -1192,12 +1256,25 @@
 		eventDidMount: stampEventId,
 		eventMouseEnter: showHover,
 		eventMouseLeave: () => (hovered = null),
-		eventDragStart: () => {
+		eventDragStart: (info: Calendar.EventDragInfo) => {
 			hovered = null;
+
+			/*
+			 * Only for a block that could actually go there.
+			 *
+			 * A weekly block cannot become a todo — it is a shape of the week, and
+			 * pulling one off would end every future occurrence — so opening the
+			 * strip while one is being dragged offers something that will be
+			 * refused. Nothing opens, and the drag reads as what it is: a move.
+			 */
+			if (decodeEventId(info.event.id)?.kind !== 'exceptional') return;
+
+			draggingBlock = true;
+			draggingBlockTitle = String(info.event.title ?? 'this block');
 			// The strip has to be visible before the drag reaches it, and open
 			// before anything can be dropped into it.
-			draggingBlock = true;
 			todosOpen = true;
+			watchTray();
 		},
 		eventDragStop: handleEventDragStop,
 		eventResizeStart: () => (hovered = null)
@@ -2603,6 +2680,19 @@
 			</summary>
 
 			<div class="mt-2 flex flex-wrap items-center gap-2">
+				<!--
+					The block being dragged, drawn where it would land, before the
+					mouse is released. A drop target that only lights up says
+					"something can go here"; this says what, and it is the same chip
+					it will become.
+				-->
+				{#if draggingBlock && overTrayNow}
+					<span
+						class="border border-dashed border-gray-400 bg-gray-100 px-2 py-1 text-xs text-gray-500 italic"
+					>
+						{draggingBlockTitle}
+					</span>
+				{/if}
 				{#each data.todos as todo (todo.id)}
 					<button
 						type="button"
@@ -2674,6 +2764,7 @@
 		viewport and the page scrolls, which is the trade every calendar makes.
 	-->
 	<div
+		bind:this={gridWrap}
 		class="relative border border-gray-200 bg-white shadow-sm {effectiveView === 'month'
 			? 'h-[calc(100dvh-12rem)] min-h-[54rem]'
 			: gridDays === 1
@@ -2719,13 +2810,23 @@
 			</div>
 		{/if}
 
-		{#if dropPreview}
-			<!-- Says exactly where it will land, since the grid gives no other
-				     feedback for a drop it does not itself handle. -->
+		{#if dropPreview?.box}
+			<!--
+				The todo, drawn as the block it is about to become.
+
+				This was a chip in the corner reading the date and the time, which is
+				a sentence to read while your hand is holding a drag. The shape in
+				the right place answers the same question with nothing to read.
+			-->
 			<div
-				class="tabular pointer-events-none absolute top-2 right-2 z-20 border border-gray-900 bg-gray-900 px-2 py-1 text-xs text-white"
+				class="pointer-events-none absolute z-20 overflow-hidden border-2 border-dashed border-gray-500 bg-gray-500/15"
+				style="left:{dropPreview.box.left}px; top:{dropPreview.box.top}px; width:{dropPreview.box
+					.width}px; height:{dropPreview.box.height}px"
 			>
-				{dropPreview.date} · {dropPreview.startTime}
+				<span class="tabular block px-1 text-[0.65rem] leading-tight text-gray-700">
+					{dropPreview.startTime}
+					{dragTodoTitle}
+				</span>
 			</div>
 		{/if}
 		{#if browser && widthChecked}
