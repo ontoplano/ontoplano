@@ -167,8 +167,9 @@ and has dropped data here before.
 yarn dev              # dev server on 1493
 yarn build            # production build
 yarn check            # svelte-check
-yarn lint             # prettier + eslint
+yarn lint             # prettier + eslint, and checks the wiki is current
 yarn test:e2e         # Playwright
+yarn docs             # rebuild docs/wiki from the code
 make db-snapshot      # a consistent copy, before you do something regrettable
 ```
 
@@ -177,6 +178,14 @@ form, call a service and map errors. A lint rule stops `$lib/server/db` being
 imported under `src/routes/`. Colours live in `src/lib/colors.ts`, form controls
 and buttons in `src/routes/layout.css`. `CONTRIBUTING.md` has the conventions
 that are not obvious from the code, and the reasons for them.
+
+**[`docs/wiki/`](docs/wiki/) is how the app works, generated from the app.**
+Every table and column, every endpoint with the scope it demands, the service
+layer module by module, and every keyboard shortcut — built by
+`scripts/build-docs.mjs` from the migration snapshot, the route files, the
+scope table and the shortcut map. `make lint` fails if what is committed is out
+of date, so it cannot quietly stop being true. Do not edit those pages; change
+the code and run `yarn docs`.
 
 ## Stack
 

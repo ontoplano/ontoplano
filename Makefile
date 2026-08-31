@@ -22,6 +22,7 @@ help:
 	@echo "  lint · format               prettier+eslint, prettier --write"
 	@echo "  test                        the Playwright e2e suite (yarn test for units)"
 	@echo "  icons                       redraw every icon from src/lib/logo/mark.svg"
+	@echo "  docs                        rebuild docs/wiki from the code (lint checks it is current)"
 	@echo
 	@printf '\033[1mdatabase\033[0m\n'
 	@echo "  db-generate                 write a migration from the schema diff"
@@ -43,7 +44,7 @@ help:
 		echo "  deploy · restart-server · up   see local.mk — these touch the real server"; \
 	fi
 
-.PHONY: help icons up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: help docs docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -183,9 +184,22 @@ db-setup: db-push db-seed
 
 lint:
 	yarn lint
+	@$(MAKE) -s docs-check
 
 format:
 	yarn format
+
+# ─── Docs ─────────────────────────────────────────────────────────────────────
+
+# The wiki is built from the schema snapshot, the route files, the scope table
+# and the shortcut map. It is committed so it can be read on the forge without
+# a checkout, which is exactly the arrangement that lets a generated file go
+# stale — so `make lint` fails when it has.
+docs:
+	yarn docs
+
+docs-check:
+	@yarn -s docs:check
 
 test:
 	yarn test:e2e

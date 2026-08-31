@@ -21,6 +21,8 @@
 		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes",
 		"test:unit": "vitest run",
 		"icons": "node scripts/build-icons.mjs",
+		"docs": "node scripts/build-docs.mjs",
+		"docs:check": "node scripts/build-docs.mjs --check",
 		"test:coverage": "vitest run --coverage"
 	},
 	"private": true,
