@@ -8,3 +8,12 @@ bun.lockb
 # Miscellaneous
 /static/
 /drizzle/
+
+# The sibling repositories, which live inside this working directory but are
+# not this repository. Each has its own formatter settings; prettier reads
+# .prettierignore rather than .gitignore, so they have to be named twice.
+/a-private-repo/
+/the-deployment-repo/
+/a-private-repo/
+/a-private-repo/
+/the-fleet-repo/

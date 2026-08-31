@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import Landing from '$lib/components/Landing.svelte';
+	import FrontDoor from '$lib/components/FrontDoor.svelte';
 	import QuickCapture from '$lib/components/QuickCapture.svelte';
 	import { enhance } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
@@ -31,7 +31,7 @@
 	let dragOver: DashboardCardId | null = $state(null);
 
 	/**
-	 * Signed out, this route is the pitch and there is no dashboard.
+	 * Signed out, this route is a door and there is no dashboard.
 	 *
 	 * One route with two audiences: the template picks between them, but the
 	 * script above it runs either way, so the places that reach for dashboard
@@ -173,9 +173,12 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-{#if data.landing}
-	<!-- Signed out, the front page is the pitch. -->
-	<Landing {...data.landing} />
+{#if data.frontDoor}
+	<!--
+		Signed out, this is a door rather than a pitch. The pitch is
+		ontoplano.com, which is its own repository and its own audience.
+	-->
+	<FrontDoor {...data.frontDoor} />
 {:else}
 	<div class="space-y-6">
 		<div class="flex flex-wrap items-center justify-between gap-3">

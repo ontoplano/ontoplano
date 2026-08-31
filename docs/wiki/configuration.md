@@ -91,8 +91,6 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_DEMO`                   | `src/lib/server/settings.ts`                             |
 | `ONTOPLANO_DEMO_MAX_ACCOUNTS`      | `src/lib/server/settings.ts`                             |
 | `ONTOPLANO_DEMO_TTL_MINUTES`       | `src/lib/server/settings.ts`                             |
-| `ONTOPLANO_DEMO_URL`               | `src/lib/server/settings.ts`                             |
-| `ONTOPLANO_DEMO_VIDEO`             | `src/routes/+page.server.ts`                             |
 | `ONTOPLANO_FAIL2BAN_LOG`           | `src/lib/server/services/protection.ts`                  |
 | `ONTOPLANO_HEALTH_TOKEN`           | `src/lib/server/settings.ts`                             |
 | `ONTOPLANO_HTTPS`                  | `src/hooks.server.ts`                                    |

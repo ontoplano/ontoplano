@@ -8,9 +8,7 @@ import {
 	serialiseLayout,
 	type DashboardCardId
 } from '$lib/dashboard';
-import { demoUrl, getHiddenSections, getUserSetting, setUserSetting } from '$lib/server/settings';
-import { formatPrice } from '$lib/plans';
-import { displayPricing } from '$lib/server/services/billing';
+import { getHiddenSections, getUserSetting, setUserSetting } from '$lib/server/settings';
 import { instanceIsEmpty, registrationMode } from '$lib/server/services/registration';
 import { buildCtx } from '$lib/server/services/ctx';
 import { createEntry, latestEntry, listTags } from '$lib/server/services/diary';
@@ -33,26 +31,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 	 * for — so it returns early rather than guarding twenty fields.
 	 */
 	if (!locals.user) {
-		const price = await displayPricing();
+		/*
+		 * A door, not a pitch.
+		 *
+		 * Everything this used to assemble — the price, the trial length, the
+		 * video, the demo link — was for the landing page, which now lives at
+		 * ontoplano.com in a repository of its own. What is left is the one fact
+		 * the door needs: whether there is any point offering a Register button.
+		 */
 		return {
-			landing: {
-				price: formatPrice(price.monthlyCents, price.currency),
-				yearly: formatPrice(price.yearlyCents, price.currency) + ' a year',
-				trialDays: price.trialDays,
-				trialRequiresCard: price.trialRequiresCard,
-				canRegister: instanceIsEmpty() || registrationMode() !== 'closed',
-				/**
-				 * The annual price as a per-month figure, which is the one to lead
-				 * with — it is the offer worth taking and the one worth funding.
-				 */
-				yearlyPerMonth:
-					price.yearlyCents > 0
-						? formatPrice(Math.round(price.yearlyCents / 12), price.currency)
-						: null,
-				/** Dropped in when there is a file. Until then the page draws a frame. */
-				videoSrc: process.env.ONTOPLANO_DEMO_VIDEO || null,
-				/** Somewhere to try it without an account, when this instance knows of one. */
-				demoUrl: demoUrl()
+			frontDoor: {
+				canRegister: instanceIsEmpty() || registrationMode() !== 'closed'
 			}
 		};
 	}
@@ -127,8 +116,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const cards = visibleCards(hiddenSections);
 
 	return {
-		/** Null here is what tells the page it is the dashboard rather than the pitch. */
-		landing: null,
+		/** Null here is what tells the page it is the dashboard rather than the door. */
+		frontDoor: null,
 		// A layout the user has never set falls back to the registry defaults, so
 		// a new account meets a sensible dashboard rather than an empty one.
 		layout: parseLayout(getUserSetting(ctx.userId, DASHBOARD_LAYOUT_KEY)).filter((id) =>

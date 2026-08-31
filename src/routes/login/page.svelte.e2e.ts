@@ -22,13 +22,13 @@ async function openSignIn(page: Page) {
 	await expect(submit).toHaveText('Sign in');
 }
 
-test('the front page is the pitch, not a redirect to the sign-in form', async ({ page }) => {
-	// It used to redirect. Asking a stranger to commit before they know what
-	// this is was the shortest possible funnel and the wrong one; every *other*
-	// route still sends them here.
+test('the front page is a door, not a redirect to the sign-in form', async ({ page }) => {
+	// It used to redirect. Landing a stranger on a password field before they
+	// know what this is tells them nothing, and an instance should say its own
+	// name; every *other* route still sends them here.
 	await page.goto('/');
 	await expect(page).toHaveURL('/');
-	await expect(page.getByRole('link', { name: /read the code/i })).toBeVisible();
+	await expect(page.getByRole('link', { name: /^sign in$/i })).toBeVisible();
 });
 
 test('but every other route still redirects to /login', async ({ page }) => {

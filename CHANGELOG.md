@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.14.0 — 2026-08-31
+
+- **The front page is a door.** Signed out, `/` used to be a pitch: a headline,
+  a price, a video, an argument for self-hosting. That belongs to whoever is
+  choosing the software, not to whoever is running it — on your own instance a
+  price is a bill you are not being sent. It is now the name, one line about
+  what this is, and a way in. The pitch lives at ontoplano.com, and the hosted
+  app has moved to app.ontoplano.com; old links to it still arrive.
+
 ## 0.13.0 — 2026-08-31
 
 - The documentation site has a page on running it yourself: what it needs, three

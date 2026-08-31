@@ -336,28 +336,12 @@ export function demoMaxAccounts(): number {
 }
 
 /**
- * Where a stranger can try it without registering.
- *
- * The hosted instance points at demo.ontoplano.com by default; a self-hosted
- * one advertises nothing, because sending somebody else's visitors to our
- * demo is not a self-hoster's business. `ONTOPLANO_DEMO_URL` overrides either
- * way, and an empty value takes the link off the page.
- */
-export function demoUrl(): string | null {
-	const configured = process.env.ONTOPLANO_DEMO_URL;
-	if (configured !== undefined) return configured.trim() || null;
-	// The demo itself must not link to itself.
-	if (isSelfHosted() || isDemo()) return null;
-	return 'https://demo.ontoplano.com';
-}
-
-/**
  * What this instance charges, and how its trial runs.
  *
  * From the environment rather than compiled in, because a price is not a fact
  * about the software — the person running the instance decides it, and changing
- * it should not be a deploy. The defaults are argued for in
- * `notes/competition-studies/pricing.md`.
+ * it should not be a deploy. The defaults are argued for in the marketing
+ * repository, alongside the study of what everyone else charges.
  */
 export function pricing(): Pricing {
 	const int = (name: string, fallback: number) => {

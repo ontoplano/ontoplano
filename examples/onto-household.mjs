@@ -16,7 +16,7 @@
  *      (shopping:read, shopping:write, webhooks:manage).
  *   2. Run this somewhere both instances can reach:
  *
- *        A_URL=https://ontoplano.com          A_TOKEN=onto_… \
+ *        A_URL=https://app.ontoplano.com      A_TOKEN=onto_… \
  *        B_URL=https://planner.example.org    B_TOKEN=onto_… \
  *        PUBLIC_URL=https://household.example.org \
  *        node onto-household.mjs
