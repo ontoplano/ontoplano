@@ -1,8 +1,28 @@
-@import 'tailwindcss';
+@import 'tailwindcss' source(none);
 @import '@fontsource-variable/ibm-plex-sans';
 @import '@fontsource-variable/jetbrains-mono';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+
+/*
+ * What Tailwind is allowed to read.
+ *
+ * `source(none)` turns off the automatic scan, and then the app is named
+ * explicitly. Left to itself Tailwind reads the whole repository looking for
+ * anything shaped like a class name — including plain English in comments,
+ * changelogs and generated files. That is not a theoretical worry: the word
+ * "prose", written in build-script comments and copied into the generated wiki,
+ * was enough to make Tailwind believe the typography plugin's classes were in
+ * use and emit its entire ruleset. One of those rules is `content: "\`"` — a
+ * literal backtick — and adapter-node writes each CSS chunk into a JavaScript
+ * template literal without escaping it. Every production build then died with
+ * "Unterminated string constant" in a generated file, naming nothing anybody
+ * had written.
+ *
+ * So the sources are stated. Markup lives in `src` and nowhere else, which is
+ * also a faster scan and a smaller stylesheet.
+ */
+@source '../../src';
 
 /*
  * Type, shadow and motion carry the visual interest here, because colour
@@ -829,6 +849,7 @@ html[data-style='playful'] .card-accent {
  * document's: a heading inside a diary entry is a label for a few lines, not a
  * chapter title.
  */
+
 /*
  * A meeting from somebody else's calendar.
  *
