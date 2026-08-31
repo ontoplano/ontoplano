@@ -101,6 +101,31 @@ describe('an error report', () => {
 		);
 	});
 
+	/**
+	 * The page a stranger sees.
+	 *
+	 * Reporting used to need a session, so the landing page was the one page
+	 * whose crashes could never be heard about — which is what "a 500 on
+	 * production and nothing in the log" looks like from the server: it answered
+	 * 200, and the page broke afterwards, in a browser we had no way to hear
+	 * from.
+	 */
+	it('is accepted from somebody with no account at all', () => {
+		service.recordVisitorError({ message: 'broke before signing in', url: '/' }, new Date());
+
+		const [report] = service.recentClientErrors();
+		expect(report.message).toBe('broke before signing in');
+		expect(report.userId).toBeNull();
+		expect(report.email).toBeNull();
+	});
+
+	it('and refused from them when the instance has reporting off', () => {
+		config.saveConfig({ ...config.loadConfig(), reports: { clientErrors: false } });
+		expect(() => service.recordVisitorError({ message: 'nope' }, new Date())).toThrow(
+			/not enabled on this server/
+		);
+	});
+
 	it('can be dismissed once it is dealt with', () => {
 		service.setClientErrorConsent(ctx, 'yes');
 		service.recordClientError(ctx, { message: 'one to dismiss' });

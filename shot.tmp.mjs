@@ -1,0 +1,12 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch();
+const c = await b.newContext({ viewport: { width: 1280, height: 900 } });
+const p = await c.newPage();
+const errs = [];
+p.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
+p.on('pageerror', e => errs.push('PAGEERROR ' + e.message));
+await p.goto('http://localhost:1493/', { waitUntil: 'networkidle' });
+await p.waitForTimeout(1500);
+console.log('signed out landing:', p.url(), '| status text on page:', (await p.locator('h1, p.tabular').first().innerText().catch(() => '?')).slice(0, 40));
+console.log('errors:', JSON.stringify(errs.slice(0, 5)));
+await b.close();

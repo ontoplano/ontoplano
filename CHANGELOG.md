@@ -10,7 +10,12 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
-## 0.9.7 — 2026-08-31
+## 0.9.8 — 2026-08-31
+
+- A page that breaks before you have signed in can be reported now. Reporting
+  needed an account, so the landing page — the one a stranger sees — was the
+  one page whose failures reached nobody. Nothing is sent unless the button is
+  pressed.
 
 - The planner's tabs fit on a phone. Six of them overflowed by about thirty
   pixels, and the row snaps as it scrolls, so dragging it sideways moved a

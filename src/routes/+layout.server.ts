@@ -97,6 +97,19 @@ export const load: LayoutServerLoad = async (event) => {
 		undoSeconds: loadConfig().ui.undoSeconds,
 		// Whether the page may offer to send client-side errors: 'off' unless
 		// the instance enabled it, then the account's own once-asked answer.
-		clientErrorReports: event.locals.user ? clientErrorState(event.locals.user.id) : 'off'
+		/*
+		 * Signed out, the instance switch is the whole answer.
+		 *
+		 * This was `'off'` for anybody without a session, which meant the landing
+		 * page could not offer to report its own crash — on the one page a
+		 * stranger sees. There is no stored preference to consult for somebody
+		 * with no account, so the error page asks, and nothing is sent unless
+		 * they press it.
+		 */
+		clientErrorReports: event.locals.user
+			? clientErrorState(event.locals.user.id)
+			: loadConfig().reports.clientErrors
+				? ('ask' as const)
+				: ('off' as const)
 	};
 };

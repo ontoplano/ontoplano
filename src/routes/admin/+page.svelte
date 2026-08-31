@@ -269,9 +269,11 @@
 							<summary class="cursor-pointer list-none">
 								<span class="text-gray-900">{report.message}</span>
 								<span class="block truncate text-xs text-gray-500">
-									{report.email ?? 'account deleted'} · {report.url ?? 'no page'} · {ago(
-										report.createdAt
-									)}
+									<!-- Three different absences, and they mean different things: nobody
+									     was signed in, the account has since gone, or the report
+									     carried no page. -->
+									{report.email ?? (report.userId ? 'account deleted' : 'not signed in')} ·
+									{report.url ?? 'no page'} · {ago(report.createdAt)}
 								</span>
 							</summary>
 							{#if report.stack}

@@ -6,7 +6,6 @@ import { clientErrors, user } from '../db/schema.js';
 import { getUserSetting, setUserSetting } from '../settings.js';
 import type { Ctx } from './ctx.js';
 import { ForbiddenError } from './errors.js';
-import { stamps } from './time.js';
 import { oneOf, optionalStr, str } from './validate.js';
 
 /**
@@ -73,6 +72,30 @@ export function recordClientError(
 	if (state !== 'yes' && !options.once)
 		throw new ForbiddenError('Error reporting is not enabled for this account');
 
+	write(ctx.userId, input, ctx.now);
+}
+
+/**
+ * A crash on a page nobody was signed in to.
+ *
+ * The landing page is the one a stranger sees, and it was the one page whose
+ * failures could never be reported: the endpoint asked for a session, so an
+ * error there reached the visitor and nothing else. A 500 on production with
+ * nothing in the server log is exactly this shape — the server answered 200 and
+ * the page broke afterwards.
+ *
+ * There is no stored consent for somebody with no account, so the only way in
+ * is an explicit press of the button on the error page. The instance switch
+ * still decides whether the feature exists at all.
+ */
+export function recordVisitorError(input: Record<string, unknown>, now: Date): void {
+	if (!loadConfig().reports.clientErrors)
+		throw new ForbiddenError('Error reporting is not enabled on this server');
+
+	write(null, input, now);
+}
+
+function write(userId: string | null, input: Record<string, unknown>, now: Date): void {
 	const message = str(input.message, 'message', { max: 500 });
 	const url = optionalStr(input.url, 'url', { max: 300 });
 	const stack = optionalStr(input.stack, 'stack', { max: 8000 });
@@ -80,9 +103,9 @@ export function recordClientError(
 
 	console.error(
 		JSON.stringify({
-			at: ctx.now.toISOString(),
+			at: now.toISOString(),
 			level: 'client-error',
-			user: ctx.userId,
+			user: userId,
 			message,
 			url,
 			stack
@@ -91,12 +114,12 @@ export function recordClientError(
 
 	db.insert(clientErrors)
 		.values({
-			userId: ctx.userId,
+			userId,
 			message,
 			url,
 			stack,
 			userAgent,
-			createdAt: stamps(ctx).createdAt
+			createdAt: now.toISOString()
 		})
 		.run();
 
