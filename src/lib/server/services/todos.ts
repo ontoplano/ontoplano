@@ -256,6 +256,83 @@ export function promoteTodo(
 	return { ok: true };
 }
 
+/**
+ * Put a block back on the list, with no time.
+ *
+ * The exact reverse of `promoteTodo`, and it exists because the forward move
+ * was one-way: a todo dragged onto Tuesday at nine stopped being a todo, and
+ * changing your mind meant deleting the block and typing it in again. The week
+ * is a plan, and a plan you cannot back out of is one people stop making.
+ *
+ * One-off blocks only. A weekly block is a shape of the week rather than a
+ * task — dragging one off the grid would quietly delete every future
+ * occurrence, which is not what "not today" means. Refused, in words.
+ *
+ * What survives is what a todo can hold: the name, the notes, the category, the
+ * notebook and the three ratings. The date and the hour are what is being
+ * given up, and the status comes with it — a block ticked off and then pulled
+ * back is still done.
+ */
+export function demoteToTodo(ctx: Ctx, slotId: number): { ok: true; todoId: number } {
+	const slot = db
+		.select()
+		.from(exceptionalSlots)
+		.where(and(eq(exceptionalSlots.id, slotId), eq(exceptionalSlots.userId, ctx.userId)))
+		.get();
+	if (!slot) throw new NotFoundError('Block');
+
+	// The instance carries what happened to it: the status, and the notes, which
+	// a block has nowhere else to put.
+	const instance = db
+		.select()
+		.from(taskInstances)
+		.where(and(eq(taskInstances.exceptionalSlotId, slotId), eq(taskInstances.userId, ctx.userId)))
+		.get();
+
+	const activity = slot.activityId
+		? db.select().from(activities).where(eq(activities.id, slot.activityId)).get()
+		: undefined;
+	const category = slot.categoryId
+		? db.select().from(categories).where(eq(categories.id, slot.categoryId)).get()
+		: undefined;
+
+	// A block need not be named — it can be "the health one at seven" — but a
+	// todo on a list with no title is a blank row nobody can act on.
+	const title = slot.label?.trim() || activity?.name || category?.name || 'Untitled';
+
+	const todoId = db.transaction((tx) => {
+		const row = tx
+			.insert(plannerTodos)
+			.values({
+				...stamps(ctx),
+				userId: ctx.userId,
+				title,
+				notes: instance?.notes ?? '',
+				status: instance?.status ?? 'todo',
+				scheduledDate: null,
+				sortOrder: nextSortOrder(ctx),
+				categoryId: slot.categoryId,
+				notebookId: slot.notebookId,
+				urgency: slot.urgency,
+				interest: slot.interest,
+				energy: slot.energy
+			})
+			.returning({ id: plannerTodos.id })
+			.get();
+
+		tx.delete(taskInstances)
+			.where(and(eq(taskInstances.exceptionalSlotId, slotId), eq(taskInstances.userId, ctx.userId)))
+			.run();
+		tx.delete(exceptionalSlots)
+			.where(and(eq(exceptionalSlots.id, slotId), eq(exceptionalSlots.userId, ctx.userId)))
+			.run();
+
+		return row.id;
+	});
+
+	return { ok: true, todoId };
+}
+
 // --- Mutations ----------------------------------------------------------------
 
 export const MAX_TITLE_LENGTH = 300;

@@ -6,6 +6,13 @@ rest. Versions follow `package.json`.
 
 ## Unreleased
 
+- **The todo strip in the planner works both ways.** It now also holds the
+  todos due today and the ones still owed from an earlier day — those were
+  visible only on the board, though a todo due today is exactly what you open
+  the planner to place. And a block can be dragged back onto the strip to take
+  it off the day again, keeping the task. Scheduling used to be one-way: to
+  change your mind you had to delete the block and type it in again.
+
 - The planner grid stretches to hold whatever is on it. If a block starts
   before the first hour you asked to see — dragged up, typed in, or arriving in
   a subscribed calendar from another timezone — it used to be drawn nowhere at

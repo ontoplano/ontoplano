@@ -10,7 +10,6 @@
  */
 import { describe, expect, test } from 'vitest';
 
-// @ts-expect-error — a build script, not part of the app's TypeScript
 import { androidEnv } from '../scripts/lib/android-env.mjs';
 
 type Result = { env: Record<string, string>; notes: string[] };

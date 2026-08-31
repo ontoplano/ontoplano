@@ -43,7 +43,12 @@ import {
 	updateExceptional,
 	updateSlot
 } from '$lib/server/services/slots';
-import { listUnscheduled, promoteTodo } from '$lib/server/services/todos';
+import {
+	demoteToTodo,
+	listForDate,
+	listUnscheduled,
+	promoteTodo
+} from '$lib/server/services/todos';
 import { addDays } from '$lib/server/week-generator';
 import { getGridHours } from '$lib/server/settings';
 
@@ -134,6 +139,30 @@ function blockFields(formData: FormData) {
 	};
 }
 
+/**
+ * The strip beside the grid: everything waiting for a time.
+ *
+ * Undated todos, and also the ones already pulled onto today or left behind on
+ * an earlier day. Those had nowhere on this page at all — a todo due today is
+ * exactly the thing somebody opens the planner to place, and it was visible
+ * only on the board. Today's come first because they are the ones being asked
+ * about; the undated pile is what is left.
+ */
+function trayTodos(ctx: Ctx, today: string) {
+	const dated = listForDate(ctx, today)
+		.filter((t) => t.status === 'todo' || t.status === 'doing')
+		.map((t) => ({
+			...t,
+			due: t.scheduledDate === today ? ('today' as const) : ('overdue' as const)
+		}));
+
+	return [
+		...dated.filter((t) => t.due === 'today'),
+		...dated.filter((t) => t.due === 'overdue'),
+		...listUnscheduled(ctx, { openOnly: true }).map((t) => ({ ...t, due: null }))
+	];
+}
+
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
 
@@ -197,8 +226,16 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		plugins: listManifests(ctx.userId).map((m) => ({ name: m.name, metaKeys: m.metaKeys })),
 		// The stretch of the day this account asked the grid to draw.
 		gridHours: getGridHours(ctx.userId),
-		// Undated todos, so one can be dragged straight onto an hour.
-		todos: listUnscheduled(ctx, { openOnly: true }),
+		/*
+		 * The strip beside the grid: everything waiting for a time.
+		 *
+		 * Undated todos, and also the ones already pulled onto today or left
+		 * behind on an earlier day. Those had nowhere on this page at all — a
+		 * todo due today is exactly the thing somebody opens the planner to
+		 * place, and it was visible only on the board. They are marked so the
+		 * strip can say which is which; the undated ones are the general pile.
+		 */
+		todos: trayTodos(ctx, formatDate(today)),
 		slots: listWeeklySlots(ctx),
 		range,
 		view,
@@ -423,6 +460,26 @@ export const actions: Actions = {
 		if (!result.ok) return fail(400, { message: result.message });
 
 		return { success: true };
+	},
+
+	/**
+	 * A block dragged off the grid and back onto the todo strip.
+	 *
+	 * The reverse of `scheduleTodo`, and the reason the strip is a drop target:
+	 * scheduling used to be one-way, so changing your mind meant deleting the
+	 * block and typing it in again.
+	 */
+	unscheduleBlock: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		if (!id) return fail(400, { message: 'Missing block id' });
+
+		try {
+			demoteToTodo(buildCtx(locals.user!.id), id);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	convertRepeat: async ({ request, locals }) => {

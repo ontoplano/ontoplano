@@ -18,6 +18,7 @@ let todos: typeof import('../src/lib/server/services/todos');
 let notebooks: typeof import('../src/lib/server/services/notebooks');
 let diary: typeof import('../src/lib/server/services/diary');
 let activities: typeof import('../src/lib/server/services/activities');
+let slots: typeof import('../src/lib/server/services/slots');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 let work: number;
@@ -27,6 +28,7 @@ beforeAll(async () => {
 	notebooks = await import('../src/lib/server/services/notebooks');
 	diary = await import('../src/lib/server/services/diary');
 	activities = await import('../src/lib/server/services/activities');
+	slots = await import('../src/lib/server/services/slots');
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 	work = activities.createCategory(ctx, { name: 'Work', color: '#1d4ed8' });
@@ -121,6 +123,54 @@ describe('putting a todo on the calendar', () => {
 			startTime: '10:00'
 		});
 		expect(result.ok).toBe(false);
+	});
+
+	/**
+	 * And back off it again.
+	 *
+	 * Scheduling used to be one-way: a todo dragged onto Tuesday at nine stopped
+	 * being a todo, and changing your mind meant deleting the block and typing
+	 * the task in again. A week you cannot back out of is one people stop
+	 * planning, so the round trip is the thing worth pinning.
+	 */
+	test('and back off it, with what a todo can hold intact', () => {
+		const notebook = notebooks.createNotebook(ctx, { title: 'Correspondence' });
+		const id = todos.createTodo(ctx, {
+			title: 'post the letter',
+			notes: 'second class is fine',
+			categoryId: work,
+			notebookId: notebook,
+			ratings: { urgency: 4, interest: null, energy: null }
+		});
+		todos.promoteTodo(ctx, { todoId: id, date: '2026-08-19', startTime: '11:00' });
+
+		const block = slots.listExceptionals(ctx, '2026-08-19', '2026-08-20').find(
+			(e) => e.label === 'post the letter'
+		)!;
+		expect(block).toBeTruthy();
+
+		const { todoId } = todos.demoteToTodo(ctx, block.id);
+
+		const back = todos.listUnscheduled(ctx).find((t) => t.id === todoId)!;
+		expect(back.title).toBe('post the letter');
+		expect(back.notes).toBe('second class is fine');
+		expect(back.categoryId).toBe(work);
+		expect(back.notebookId).toBe(notebook);
+		expect(back.ratings.urgency).toBe(4);
+		// The block is gone, rather than the task existing in both places.
+		expect(
+			slots.listExceptionals(ctx, '2026-08-19', '2026-08-20').some((e) => e.id === block.id)
+		).toBe(false);
+	});
+
+	test('taking a block off the day is refused for somebody else', () => {
+		const id = todos.createTodo(ctx, { title: 'mine alone', categoryId: work });
+		todos.promoteTodo(ctx, { todoId: id, date: '2026-08-20', startTime: '09:00' });
+		const block = slots
+			.listExceptionals(ctx, '2026-08-20', '2026-08-21')
+			.find((e) => e.label === 'mine alone')!;
+
+		expect(() => todos.demoteToTodo(theirs, block.id)).toThrow();
 	});
 
 	test('delegating one to a block refuses a time that is not one', () => {

@@ -419,6 +419,67 @@
 	let dropPreview: { date: string; startTime: string } | null = $state(null);
 
 	/**
+	 * Dragging a block back off the grid.
+	 *
+	 * The calendar drags with pointer events rather than HTML5 drag-and-drop, so
+	 * the strip cannot be a `dragover` target — nothing would ever fire. What it
+	 * gets instead is the coordinates the drag ended at, and whether they land
+	 * inside it. `draggingBlock` is only for showing the strip while a drag is in
+	 * the air: an affordance nobody can see is one nobody uses.
+	 */
+	let trayEl: HTMLElement | undefined = $state();
+	let draggingBlock = $state(false);
+	/** Set when a drag ended on the strip, so `eventDrop` does not also act. */
+	let takenOffGrid = false;
+
+	const dueToday = $derived(
+		data.todos.filter((t: { due: string | null }) => t.due === 'today').length
+	);
+
+	function overTray(jsEvent: Calendar.DomEvent | undefined): boolean {
+		const point = jsEvent as { clientX?: number; clientY?: number } | undefined;
+		if (!trayEl || point?.clientX === undefined || point.clientY === undefined) return false;
+		const el = document.elementFromPoint(point.clientX, point.clientY);
+		return el !== null && trayEl.contains(el);
+	}
+
+	async function unscheduleBlock(slotId: number) {
+		const body = new FormData();
+		body.set('id', String(slotId));
+		const result = await postGridAction(
+			'unscheduleBlock',
+			body,
+			'Could not take that off the day.'
+		);
+		if (!result) return;
+		await invalidateAll();
+	}
+
+	/**
+	 * A drag that ended on the todo strip means "not on a day after all".
+	 *
+	 * One-off blocks only. A weekly block is a shape of the week rather than a
+	 * task, and pulling one off the grid would quietly end every future
+	 * occurrence of it — so it says so instead, and the block springs back.
+	 */
+	function handleEventDragStop(info: Calendar.EventDragInfo) {
+		draggingBlock = false;
+		if (!overTray(info.jsEvent)) return;
+
+		const decoded = decodeEventId(info.event.id);
+		if (!decoded) return;
+		takenOffGrid = true;
+
+		if (decoded.kind !== 'exceptional') {
+			gridError =
+				'That block repeats every week. Skip it for this day, or remove it from the week.';
+			return;
+		}
+
+		void unscheduleBlock(decoded.refId);
+	}
+
+	/**
 	 * The same thing as a drag, for a finger.
 	 *
 	 * HTML5 drag-and-drop does not exist on touch, so the rail's whole purpose —
@@ -1131,7 +1192,14 @@
 		eventDidMount: stampEventId,
 		eventMouseEnter: showHover,
 		eventMouseLeave: () => (hovered = null),
-		eventDragStart: () => (hovered = null),
+		eventDragStart: () => {
+			hovered = null;
+			// The strip has to be visible before the drag reaches it, and open
+			// before anything can be dropped into it.
+			draggingBlock = true;
+			todosOpen = true;
+		},
+		eventDragStop: handleEventDragStop,
 		eventResizeStart: () => (hovered = null)
 	});
 
@@ -1228,6 +1296,15 @@
 	};
 
 	async function handleEventDrop(info: DragInfo) {
+		// The drag ended on the todo strip, and `eventDragStop` has already dealt
+		// with it. Whether the calendar also reads it as a move depends on where
+		// the strip happens to sit, which is not a thing to depend on.
+		if (takenOffGrid) {
+			takenOffGrid = false;
+			info.revert();
+			return;
+		}
+
 		const keys = modifiers(info.jsEvent);
 		if (keys.ctrlKey || keys.metaKey) {
 			await duplicateBlock(info);
@@ -2398,6 +2475,30 @@
 						</form>
 					{/if}
 
+					<!--
+						The same act as dragging the block onto the todo strip, for a
+						screen where that drag is awkward — and the one place somebody
+						looking for it would think to look. One-offs only: a weekly
+						block is a shape of the week, not a task waiting for a time.
+					-->
+					{#if editingKind === 'exceptional'}
+						<form
+							method="post"
+							action="?/unscheduleBlock"
+							use:enhance={() => {
+								return async ({ update }) => {
+									await update();
+									closeForm();
+								};
+							}}
+						>
+							<input type="hidden" name="id" value={editingBlockId} />
+							<button type="submit" class="btn btn-sm" title="Take it off the day, keep the task">
+								Back to todo
+							</button>
+						</form>
+					{/if}
+
 					{#if editingKind}
 						<div class="ml-auto">
 							{#if confirmingFormDelete}
@@ -2463,10 +2564,23 @@
 		</div>
 	{/if}
 
-	<!-- Undated todos, so one can be dragged straight onto an hour instead of
-		     being scheduled on the board and then found here. -->
-	{#if data.todos.length > 0}
-		<details bind:open={todosOpen} class="mb-2">
+	<!--
+		The strip things wait on, in both directions.
+
+		It holds what has no time yet: the undated pile, and the ones due today or
+		still owed from an earlier day — those had nowhere on this page at all,
+		though a todo due today is exactly what somebody opens the planner to
+		place. Dropping a block back onto it takes the block off the day again,
+		which is what makes the grid somewhere you can change your mind.
+	-->
+	{#if data.todos.length > 0 || draggingBlock}
+		<details
+			bind:open={todosOpen}
+			bind:this={trayEl}
+			class="mb-2 {draggingBlock
+				? 'border border-dashed border-gray-400 bg-gray-50 px-2 py-1'
+				: ''}"
+		>
 			<summary
 				class="flex cursor-pointer list-none items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
 			>
@@ -2477,10 +2591,14 @@
 				>
 					{data.todos.length}
 				</span>
-				{#if !todosOpen}
+				{#if draggingBlock}
+					<span class="text-xs text-gray-700">drop here to take it off the day</span>
+				{:else if !todosOpen}
 					<!-- What these are, not how to move them: a chip beside a grid is
 					     something you drag, and nobody needed to be told. -->
-					<span class="text-xs text-gray-500">still without a time</span>
+					<span class="text-xs text-gray-500">
+						{dueToday > 0 ? `${dueToday} for today` : 'still without a time'}
+					</span>
 				{/if}
 			</summary>
 
@@ -2502,7 +2620,9 @@
 						}}
 						class="lift cursor-grab border px-2 py-1 text-xs shadow-card {placingTodoId === todo.id
 							? 'border-gray-900 bg-gray-900 text-white'
-							: 'border-gray-200 bg-white text-gray-700'} {dragTodoId === todo.id
+							: todo.due
+								? 'border-gray-400 bg-white font-medium text-gray-900'
+								: 'border-gray-200 bg-white text-gray-700'} {dragTodoId === todo.id
 							? 'opacity-40'
 							: ''}"
 						title="Drag onto the grid, or tap and then tap a time"
@@ -2514,6 +2634,16 @@
 							></span>
 						{/if}
 						{todo.title}
+						<!--
+							Said in a word rather than a colour: which of these is for
+							today is the whole reason the strip is worth opening, and a
+							tint alone says it to some people and not others.
+						-->
+						{#if todo.due === 'today'}
+							<span class="ml-1 text-[0.65rem] tracking-wide text-gray-500 uppercase">today</span>
+						{:else if todo.due === 'overdue'}
+							<span class="ml-1 text-[0.65rem] tracking-wide text-gray-500 uppercase">owed</span>
+						{/if}
 					</button>
 				{/each}
 				{#if placingTodo}
@@ -2527,7 +2657,7 @@
 					>
 				{:else}
 					<span class="hidden text-xs text-gray-500 sm:inline">
-						drag onto the grid to give it a time
+						drag onto the grid to give it a time, or back here to take it off
 					</span>
 					<span class="text-xs text-gray-500 sm:hidden">tap one, then tap a time</span>
 				{/if}
