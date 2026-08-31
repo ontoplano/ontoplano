@@ -6,6 +6,10 @@ rest. Versions follow `package.json`.
 
 ## Unreleased
 
+- History no longer offers weeks that have not happened, and each day in the
+  strip says its date: "Aug 24 — Mon (3)" rather than "Mon (3)", so you are not
+  counting along from the week's range to find the Wednesday you meant.
+
 - **The todo strip in the planner works both ways.** It now also holds the
   todos due today and the ones still owed from an earlier day — those were
   visible only on the board, though a todo due today is exactly what you open

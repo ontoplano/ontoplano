@@ -78,12 +78,21 @@
 		return `${h}h ${m}min`;
 	}
 
+	/** The last column that has happened — the whole strip, in a past week. */
+	function lastPastDay(): number {
+		for (let i = 6; i >= 0; i--) if (!data.days[i].future) return i;
+		return 0;
+	}
+
 	function formatWeekDate(dateStr: string): string {
 		const d = new Date(dateStr + 'T00:00:00');
 		return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 	}
 
 	function navigateWeek(direction: 'prev' | 'next') {
+		// There is no history of a week that has not happened. The button is
+		// disabled for the same reason, but the shortcut has to know it too.
+		if (direction === 'next' && !data.weekMeta.hasNextWeek) return;
 		const target = direction === 'prev' ? data.weekMeta.prevWeek : data.weekMeta.nextWeek;
 		// The route is resolved; the rule cannot see through the query string.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
@@ -114,10 +123,13 @@
 				selectedDay = Math.max(selectedDay - 1, 0);
 				selectedIndex = 0;
 				break;
-			case 'next-day':
-				selectedDay = Math.min(selectedDay + 1, 6);
+			case 'next-day': {
+				const last = lastPastDay();
+				if (selectedDay >= last) break;
+				selectedDay = selectedDay + 1;
 				selectedIndex = 0;
 				break;
+			}
 			case 'navigate-down':
 				if (items.length > 0) selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
 				break;
@@ -141,7 +153,16 @@
 			>
 				W{data.weekMeta.weekNumber}, {data.weekMeta.weekYear}
 			</span>
-			<button onclick={() => navigateWeek('next')} class="btn btn-sm" title="Next week (])"
+			<!--
+				A week that has not happened has no history, so there is nothing to
+				walk into. Disabled rather than hidden: the arrow disappearing under
+				the cursor is worse than one that is plainly at the end.
+			-->
+			<button
+				onclick={() => navigateWeek('next')}
+				class="btn btn-sm"
+				disabled={!data.weekMeta.hasNextWeek}
+				title={data.weekMeta.hasNextWeek ? 'Next week (])' : 'This is the latest week'}
 				>&rarr;</button
 			>
 		</div>
@@ -209,19 +230,35 @@
 		{/if}
 	</div>
 
+	<!--
+		Each column says its own date. A strip reading Mon…Sun leaves somebody
+		counting along from the week's range to work out which Wednesday they are
+		looking at, every time. The date leads because that is the thing being
+		identified; the weekday is how it is remembered.
+	-->
 	<div class="flex gap-1">
-		{#each data.weekdays as day, i (i)}
+		{#each data.days as day, i (day.date)}
 			{@const count = filtering ? instancesForDay(i).length : countForDay(i)}
 			<button
 				onclick={() => (selectedDay = i)}
+				disabled={day.future}
+				title={day.future ? 'Not yet' : day.date}
 				class="flex-1 border px-2 py-2 text-center text-xs font-medium transition {selectedDay === i
 					? 'border-gray-900 bg-gray-900 text-white'
-					: 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}"
+					: day.future
+						? 'border-gray-200 bg-gray-50 text-gray-400'
+						: 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}"
 			>
-				{day.slice(0, 3)}
-				{#if count > 0}
-					<span class="ml-1 opacity-60">({count})</span>
-				{/if}
+				<span class="flex flex-col items-center justify-center sm:flex-row sm:gap-1">
+					<span class="tabular">{formatWeekDate(day.date)}</span>
+					<span class="hidden opacity-40 sm:inline">&mdash;</span>
+					<span>
+						{day.name.slice(0, 3)}
+						{#if count > 0}
+							<span class="opacity-60">({count})</span>
+						{/if}
+					</span>
+				</span>
 			</button>
 		{/each}
 	</div>
