@@ -23,6 +23,7 @@ help:
 	@echo "  test                        the Playwright e2e suite (yarn test for units)"
 	@echo "  icons                       redraw every icon from src/lib/logo/mark.svg"
 	@echo "  docs                        rebuild docs/wiki from the code (lint checks it is current)"
+	@echo "  docs-site                   …and render it to build-docs/ as a static site"
 	@echo
 	@printf '\033[1mdatabase\033[0m\n'
 	@echo "  db-generate                 write a migration from the schema diff"
@@ -44,7 +45,7 @@ help:
 		echo "  deploy · restart-server · up   see local.mk — these touch the real server"; \
 	fi
 
-.PHONY: help docs docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -197,6 +198,11 @@ format:
 # stale — so `make lint` fails when it has.
 docs:
 	yarn docs
+
+# The same wiki as a static site, for docs.ontoplano.com. Regenerates the
+# markdown first, so what is published is never staler than the code.
+docs-site: docs
+	@yarn -s docs:site
 
 docs-check:
 	@yarn -s docs:check

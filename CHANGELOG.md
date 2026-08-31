@@ -6,6 +6,11 @@ rest. Versions follow `package.json`.
 
 ## Unreleased
 
+- The wiki is a site: `docs.ontoplano.com`, built from the same markdown the
+  repository carries and published by `make deploy-docs`. `make deploy` now
+  carries the app, the demo and the documentation together; each also has its
+  own target for when only one of them changed.
+
 - The wiki has hand-written pages now, beside the generated ones: what a block,
   an occurrence and a todo each are; how a request travels; every way another
   program can reach an account. The tables inside them are still generated from
