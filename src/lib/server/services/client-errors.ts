@@ -52,8 +52,25 @@ const KEEP = 200;
  * Both, then: the line stays for whoever greps, and `/admin` shows the last
  * few hundred so a report goes somewhere a person actually looks.
  */
-export function recordClientError(ctx: Ctx, input: Record<string, unknown>): void {
-	if (clientErrorState(ctx.userId) !== 'yes')
+export function recordClientError(
+	ctx: Ctx,
+	input: Record<string, unknown>,
+	options: { once?: boolean } = {}
+): void {
+	/*
+	 * `once` is the error page's button.
+	 *
+	 * An error the router turned into a page never reaches the window listener
+	 * that normally offers to send one, so that page asks for itself — and a
+	 * click on "send the technical details" is consent for that report and
+	 * nothing more. It does not answer the standing question in Preferences,
+	 * which is a different question and stays where the person left it. The
+	 * instance switch is not negotiable either way: an operator who has
+	 * reporting off collects nothing.
+	 */
+	const state = clientErrorState(ctx.userId);
+	if (state === 'off') throw new ForbiddenError('Error reporting is not enabled on this server');
+	if (state !== 'yes' && !options.once)
 		throw new ForbiddenError('Error reporting is not enabled for this account');
 
 	const message = str(input.message, 'message', { max: 500 });

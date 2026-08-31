@@ -12,7 +12,9 @@ import { toJsonError } from '$lib/server/services/errors';
  *
  * Session-authenticated like `/api/search` — this exists for the page that is
  * already open, not for a plugin. One body, two shapes: `{ decision }` records
- * the person's yes or no, `{ error }` is a report, accepted only after a yes.
+ * the person's yes or no, `{ error }` is a report, accepted only after a yes —
+ * or with `once`, which is the error page's own button and speaks for that one
+ * report only.
  */
 export const POST: RequestHandler = async (event) => {
 	if (!event.locals.user) return json({ error: 'Sign in first' }, { status: 401 });
@@ -31,10 +33,14 @@ export const POST: RequestHandler = async (event) => {
 			// Taken from the request rather than from the page: which browser it
 			// was is the first thing anybody asks about a bug that only happens
 			// to one person, and a page that sends its own can send anything.
-			recordClientError(ctx, {
-				...((body.error ?? {}) as Record<string, unknown>),
-				userAgent: event.request.headers.get('user-agent') ?? undefined
-			});
+			recordClientError(
+				ctx,
+				{
+					...((body.error ?? {}) as Record<string, unknown>),
+					userAgent: event.request.headers.get('user-agent') ?? undefined
+				},
+				{ once: body.once === true }
+			);
 		}
 
 		return new Response(null, { status: 204 });

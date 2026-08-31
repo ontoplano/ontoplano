@@ -75,7 +75,35 @@ describe('an error report', () => {
 		expect(report.email).toBeTruthy();
 	});
 
+	/*
+	 * The error page's own button.
+	 *
+	 * An error the router turned into the error page never reaches the window
+	 * listener that would otherwise offer to send it, so that page offers for
+	 * itself — and the click is consent for that one report. It must not become
+	 * a standing yes, and it must not get past an instance with reporting off.
+	 */
+	it('is accepted from the error page without a standing yes', () => {
+		service.setClientErrorConsent(ctx, 'no');
+
+		expect(() => service.recordClientError(ctx, { message: 'not this one' })).toThrow();
+		service.recordClientError(ctx, { message: 'sent from the error page' }, { once: true });
+
+		expect(service.recentClientErrors()[0].message).toBe('sent from the error page');
+		// The answer they gave in Preferences is still the answer they gave.
+		expect(service.clientErrorState(OWNER)).toBe('no');
+	});
+
+	it('is refused from the error page too when the instance has reporting off', () => {
+		config.saveConfig({ ...config.loadConfig(), reports: { clientErrors: false } });
+		expect(() => service.recordClientError(ctx, { message: 'nope' }, { once: true })).toThrow(
+			/not enabled on this server/
+		);
+	});
+
 	it('can be dismissed once it is dealt with', () => {
+		service.setClientErrorConsent(ctx, 'yes');
+		service.recordClientError(ctx, { message: 'one to dismiss' });
 		const [report] = service.recentClientErrors();
 		service.dismissClientError(report.id);
 		expect(service.recentClientErrors().find((r) => r.id === report.id)).toBeUndefined();

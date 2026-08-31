@@ -6,6 +6,11 @@ rest. Versions follow `package.json`.
 
 ## Unreleased
 
+- The error page stops making promises. It used to say "this is our fault
+  rather than yours" and "nothing you had written is lost" — neither of which
+  it can know. It now says what broke, and offers to send the technical
+  details so it can be fixed.
+
 - A leftover scaffolding page could create an account on an instance that was
   set to invite-only or closed. It called the auth library directly, so none of
   the rules the sign-up form applies — the registration mode, the invite code,
