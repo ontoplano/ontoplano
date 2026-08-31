@@ -10,7 +10,11 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
-## 0.9.3 — 2026-08-31
+## 0.9.4 — 2026-08-31
+
+- Changing page no longer makes the layout jump. Every navigation used to
+  rebuild the whole page and slide it up six pixels — including the tab row you
+  had just clicked, which is the one part of the screen that did not change.
 
 - "Block for good" works more than once. It failed on exactly the address you
   would use it on — one fail2ban had just banned — because that address was

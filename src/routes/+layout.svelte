@@ -497,14 +497,21 @@
 			bind:this={scroller}
 			class="relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto overscroll-y-contain px-4 pt-[calc(var(--safe-top)+1rem)] pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+0.75rem)] sm:px-6 lg:overflow-visible lg:pt-6 lg:pb-6"
 		>
-			<!-- Keyed so arriving on a page replays its entrance. The movement is
-			     transform alone — an opacity animation here is a flash of the page
-			     background on every navigation, which was tried and hated. -->
-			{#key page.url.pathname}
-				<div class="page-enter">
-					{@render children()}
-				</div>
-			{/key}
+			<!--
+				No entrance animation, and no `{#key}` around the page.
+
+				It used to be keyed on the pathname with a 6px rise, so arriving
+				anywhere replayed a small step upward. What that actually did was
+				throw away and rebuild the whole subtree on every navigation —
+				including any nested layout's own chrome. Switching between two
+				Settings tabs made the tab row itself jump, which is the one part of
+				the screen that did not change and the one part the eye is fixed on
+				while clicking.
+
+				A page that simply swaps its contents is smoother than any animation
+				of it, so there is nothing here to animate.
+			-->
+			{@render children()}
 		</main>
 
 		<!--

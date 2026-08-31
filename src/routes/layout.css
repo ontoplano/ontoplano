@@ -1161,25 +1161,18 @@ pre,
 	}
 
 	/*
-	 * A page arrives with a small upward step.
+	 * There is no page-entrance animation, deliberately.
 	 *
-	 * Movement only, never opacity: view transitions were tried here and their
-	 * cross-fade let the dark page background flash through on every
-	 * navigation. A transform cannot dim anything, so the worst this can be is
-	 * subtle.
+	 * A 6px rise on every navigation used to live here, applied to a subtree
+	 * keyed on the pathname — so the whole page, nested layouts included, was
+	 * rebuilt and re-animated on each click. Moving between two Settings tabs
+	 * made the tab row jump, which is the part of the screen that did not
+	 * change. Swapping the contents with no animation reads as faster than
+	 * animating them, so this is a deletion rather than a shorter duration.
+	 *
+	 * `.rise` below stays: it is for something that appears *over* the page — a
+	 * menu, a modal, a notice — where arriving is the event.
 	 */
-	@keyframes page-enter {
-		from {
-			transform: translateY(6px);
-		}
-		to {
-			transform: none;
-		}
-	}
-
-	.page-enter {
-		animation: page-enter 160ms ease-out both;
-	}
 }
 
 /*
