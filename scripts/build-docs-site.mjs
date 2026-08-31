@@ -163,8 +163,7 @@ function render(page) {
     <main>
 ${body}
       <footer>
-        Built from the source of <a href="https://github.com/ontoplano/ontoplano">ontoplano</a>.
-        The reference pages are generated; a change to the code changes them.
+        Generated from <a href="https://github.com/ontoplano/ontoplano">the ontoplano source</a>.
       </footer>
     </main>
   </div>
