@@ -6,6 +6,10 @@ rest. Versions follow `package.json`.
 
 ## Unreleased
 
+- The administration page no longer explains the operator's own server to
+  them. Where an instance cannot act on a ban it says so in one line, and
+  stops there.
+
 - The Android build no longer stops with "Several environment variables and/or
   system properties contain different paths to the SDK". It uses `ANDROID_HOME`
   and drops the deprecated `ANDROID_SDK_ROOT` from its own environment, and

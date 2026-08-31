@@ -316,9 +316,13 @@ sudo systemctl restart user@$(id -u)</pre>
 				<EmptyState icon="shield" title="Nobody has been turned away" />
 			{:else}
 				{#if !data.canControlBans}
+					<!--
+						What the instance cannot do, and nothing about how to change
+						that: this page belongs to whoever runs the instance, and it is
+						not the place to explain somebody's server to them.
+					-->
 					<p class="border-b border-gray-200 px-4 py-2 text-xs text-gray-500">
-						Read-only: this box has not been given the sudo rule that lets the app unban or block an
-						address. <code class="text-xs">the-setup-script</code> installs it.
+						Read-only: this instance cannot unban or block an address. These are a record.
 					</p>
 				{/if}
 				<p class="border-b border-gray-200 px-4 py-2 text-xs text-gray-500">

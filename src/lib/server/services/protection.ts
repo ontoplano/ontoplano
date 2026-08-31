@@ -51,8 +51,9 @@ export type Ban = {
 /*
  * What tripping each jail means. The log only names the jail, and a jail name
  * is configuration, not an explanation — "ontoplano-web" says nothing about
- * WHY an address is gone. These match the jails the-setup-script and the mail
- * setup put on the box; an unknown jail falls back to naming itself.
+ * WHY an address is gone. These are the jail names fail2ban ships with, plus
+ * the one this app's own filter uses; an unknown jail falls back to naming
+ * itself, which is what a box with its own jails will show.
  */
 const REASONS: Record<string, string> = {
 	'ontoplano-web': 'hammered the site with errors — 60 failed requests in a minute is a scanner',
