@@ -99,7 +99,13 @@ const rasteriser = await (async () => {
 		const { Resvg } = await import('@resvg/resvg-js');
 		return {
 			name: '@resvg/resvg-js',
-			run: (svg, size) => new Resvg(svg, { fitTo: { mode: 'width', value: size } }).render().asPng()
+			run: (svg, size) =>
+				new Resvg(svg, { fitTo: { mode: 'width', value: size } }).render().asPng(),
+			/** Raw RGBA, for measuring the artwork rather than drawing it. */
+			raw: (svg, size) => {
+				const out = new Resvg(svg, { fitTo: { mode: 'width', value: size } }).render();
+				return { pixels: out.pixels, width: out.width, height: out.height };
+			}
 		};
 	} catch {
 		/* not installed — try the system one */
@@ -115,6 +121,105 @@ const rasteriser = await (async () => {
 		return null;
 	}
 })();
+
+// ── The mark's own outline ───────────────────────────────────────────────────
+
+/**
+ * The shape of the mark, as a CSS polygon.
+ *
+ * The phone bar's raised button used to be a circle with the mark inside it,
+ * which reads as two shapes where there is one. Clipping the button to the
+ * mark's own outline makes the button *be* the mark — but the outline is a
+ * property of the artwork, so it is measured from the artwork rather than typed
+ * out and left to rot the first time the logo changes.
+ *
+ * Measured by casting rays from the centre and finding where the alpha stops,
+ * then keeping the local maxima — which for a convex polygon are its corners.
+ * Written into `src/lib/logo/mark-shape.ts`, which the stylesheet reads.
+ */
+function outlinePolygon() {
+	if (!rasteriser || rasteriser.name !== '@resvg/resvg-js') return null;
+
+	const SAMPLE = 256;
+	const svg = `${header}
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${SAMPLE}" height="${SAMPLE}"><image width="${SAMPLE}" height="${SAMPLE}" preserveAspectRatio="xMidYMid meet" xlink:href="${dataUri}"/></svg>`;
+
+	const rendered = rasteriser.raw(svg, SAMPLE);
+	if (!rendered) return null;
+	const { pixels, width, height } = rendered;
+
+	const opaque = (x, y) => {
+		if (x < 0 || y < 0 || x >= width || y >= height) return false;
+		return pixels[(y * width + x) * 4 + 3] > 24;
+	};
+
+	const cx = width / 2;
+	const cy = height / 2;
+	const STEPS = 720;
+	const radii = [];
+
+	for (let i = 0; i < STEPS; i++) {
+		const angle = (i / STEPS) * Math.PI * 2;
+		const dx = Math.cos(angle);
+		const dy = Math.sin(angle);
+		let hit = 0;
+		// Outwards in, so a hole in the middle of the artwork cannot be mistaken
+		// for its edge.
+		for (let r = Math.min(cx, cy); r > 0; r -= 0.5) {
+			if (opaque(Math.round(cx + dx * r), Math.round(cy + dy * r))) {
+				hit = r;
+				break;
+			}
+		}
+		radii.push(hit);
+	}
+
+	// A corner is where the radius is a local maximum. Smoothed first, or the
+	// anti-aliased edge produces a maximum every few degrees.
+	const smooth = radii.map((_, i) => {
+		let sum = 0;
+		for (let k = -4; k <= 4; k++) sum += radii[(i + k + STEPS) % STEPS];
+		return sum / 9;
+	});
+
+	const corners = [];
+	const WINDOW = 20;
+	for (let i = 0; i < STEPS; i++) {
+		let isMax = true;
+		for (let k = -WINDOW; k <= WINDOW; k++) {
+			if (smooth[(i + k + STEPS) % STEPS] > smooth[i] + 1e-9) {
+				isMax = false;
+				break;
+			}
+		}
+		if (!isMax) continue;
+		// One corner per plateau: an exactly flat run would otherwise give one
+		// point per sample.
+		const angle = (i / STEPS) * Math.PI * 2;
+		const last = corners[corners.length - 1];
+		if (last && Math.abs(angle - last.angle) < 0.25) continue;
+		corners.push({ angle, r: radii[i] });
+	}
+
+	// The wrap-around: the last corner and the first are the same corner when
+	// the ray sweep comes back round to where it started.
+	if (
+		corners.length > 3 &&
+		Math.abs(corners[0].angle + Math.PI * 2 - corners[corners.length - 1].angle) < 0.25
+	) {
+		corners.pop();
+	}
+
+	if (corners.length < 3) return null;
+
+	return corners
+		.map(({ angle, r }) => {
+			const x = ((cx + Math.cos(angle) * r) / width) * 100;
+			const y = ((cy + Math.sin(angle) * r) / height) * 100;
+			return `${x.toFixed(2)}% ${y.toFixed(2)}%`;
+		})
+		.join(', ');
+}
 
 // ── Writing ──────────────────────────────────────────────────────────────────
 
@@ -145,6 +250,16 @@ if (rasteriser) {
 	console.log('  no rasteriser (@resvg/resvg-js or rsvg-convert) — the PNGs were left alone');
 	console.log('  install one and run this again, or the app icon stays on the old mark');
 	stale += pngs.length;
+}
+
+const polygon = outlinePolygon();
+if (polygon) {
+	write(
+		'src/lib/logo/mark-shape.ts',
+		`${'/'}**\n * The mark's own outline, measured from \`mark.png\` by \`yarn icons\`.\n *\n * Do not edit: replace the logo and run \`yarn icons\` instead. It is what lets\n * the phone bar's raised button be the shape of the mark rather than a circle\n * with the mark inside it.\n */\nexport const MARK_CLIP_PATH = 'polygon(${polygon})';\n`
+	);
+} else {
+	console.log('  no rasteriser — src/lib/logo/mark-shape.ts left alone');
 }
 
 if (CHECK && stale) {

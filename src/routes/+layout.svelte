@@ -8,6 +8,7 @@
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { NAV_PLACES } from '$lib/sections-nav';
 	import { accentsWith, placesFor } from '$lib/nav-order';
+	import { MARK_CLIP_PATH } from '$lib/logo/mark-shape';
 	import { THEMES } from '$lib/theme.js';
 	import type { SectionKey } from '$lib/colors.js';
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
@@ -597,20 +598,32 @@
 					than a page earns the bump that says "this one is different".
 				-->
 				<div class="relative flex-1">
+					<!--
+						The button IS the mark.
+
+						It used to be a circle with the mark inside it, which is two
+						shapes where there is one — an octagon in a ring, neither of them
+						quite the thing. The button is clipped to the mark's own outline
+						now and the mark fills it edge to edge, so the raised control on
+						the bar is the logo and nothing else.
+
+						The outline is measured from `mark.png` by `yarn icons` into
+						`mark-shape.ts`, so replacing the logo reshapes this button too.
+						No border and no ground: a clipped edge cannot carry a border,
+						and the mark's own bright rim is the edge.
+					-->
 					<button
 						onpointerdown={(e) => rooms?.summon(e)}
-						class="pie-handle pie-bump absolute -top-6 left-1/2 flex h-16 w-16 -translate-x-1/2 items-center justify-center border border-chrome-line bg-chrome shadow-overlay {roomsOpen
+						style="clip-path: {MARK_CLIP_PATH}"
+						class="pie-handle absolute -top-6 left-1/2 flex h-16 w-16 -translate-x-1/2 items-center justify-center {roomsOpen
 							? 'text-chrome-ink'
 							: 'text-chrome-muted'}"
 						aria-label="Go to a section"
 						title="Go to a section"
 					>
-						<!-- The logo, bigger than its neighbours on purpose: this is
-						     the way into everything, and the bar's one raised control.
-						     The mark lives in $lib/logo/mark.png and nothing here
-						     knows what is in it. No ground behind it — the chrome is
-						     already that colour, in both themes. -->
-						<Logo size={32} />
+						<!-- Edge to edge: the button's own outline is the mark's, so any
+						     inset here would show as a gap inside its own shape. -->
+						<Logo size={64} />
 					</button>
 				</div>
 

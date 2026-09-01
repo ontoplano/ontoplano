@@ -132,16 +132,14 @@ input[type='radio'] {
 }
 
 /*
- * And the phone bar's raised pie button.
+ * The phone bar's raised pie button has no rule here any more.
  *
- * Same argument as the radio: its roundness carries meaning rather than
- * decoration. It is the one control docked *through* the bar rather than
- * sitting in it, and a square bump reads as a mistake in the border — the
- * circle is what says "this one is the way in".
+ * It was a circle, forced round against the style's other radii, with the mark
+ * sitting inside it — two shapes where there is one. It is clipped to the
+ * mark's own outline now (`MARK_CLIP_PATH`, measured from the artwork by `yarn
+ * icons`), so the button is the logo. A clip-path ignores border-radius, which
+ * is why there is nothing left to say here.
  */
-.pie-bump {
-	border-radius: 100% !important;
-}
 
 /*
  * The playful style.

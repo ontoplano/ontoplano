@@ -10,6 +10,16 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.30.0 — 2026-09-01
+
+- **Dragging a card can reach a column that is not on the screen.** On a phone
+  the board shows one column, so the names above it are the target now: they
+  light up while a card is being dragged, and dropping on one moves the card
+  and follows it there.
+- The raised button in the middle of the phone bar is the mark itself — the
+  octagon, edge to edge — rather than the octagon inside a circle. Its outline
+  is measured from the logo, so replacing the logo reshapes the button.
+
 ## 0.29.0 — 2026-09-01
 
 - **A reminder belongs to a block now, and to nothing else.** Say it once when

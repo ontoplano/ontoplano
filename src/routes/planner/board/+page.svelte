@@ -837,16 +837,46 @@
 		<div class="min-w-0 flex-1">
 			<!-- Which column the phone is looking at. Above md every column is on
 			     screen at once and this is not drawn at all. -->
-			<div class="seg mb-3 flex w-full md:hidden">
+			<!--
+				The switcher, which is also where you drop.
+
+				With one column on the screen there is nowhere to drag a card *to* —
+				the column it should go in is the one that is not visible. So the
+				names above are the target: they light up the moment a drag starts,
+				and dropping on one moves the card there and follows it, which is
+				the only way the gesture makes sense when you cannot see where it
+				landed.
+			-->
+			<div class="seg mb-3 flex w-full md:hidden {dragging ? 'ring-2 ring-gray-900' : ''}">
 				{#each columns as column (column.status)}
 					<button
 						type="button"
 						onclick={() => (phoneColumn = column.status)}
 						aria-pressed={phoneColumn === column.status}
-						class="flex-1 gap-1.5"
+						ondragover={(e) => {
+							e.preventDefault();
+							dragOverColumn = column.status;
+						}}
+						ondragleave={() => {
+							if (dragOverColumn === column.status) dragOverColumn = null;
+						}}
+						ondrop={async (e) => {
+							const card = dragging;
+							await onDropInColumn(column.status, e);
+							// Follow it. A card that moved to a column you cannot see
+							// has, as far as the screen is concerned, vanished.
+							if (card) phoneColumn = column.status;
+						}}
+						class="flex-1 gap-1.5 {dragging && dragOverColumn === column.status
+							? 'bg-gray-900 text-white'
+							: ''}"
 					>
 						{STATUS_LABELS[column.status]}
-						<span class="tabular text-xs text-gray-500">{column.cards.length}</span>
+						<span
+							class="tabular text-xs {dragging && dragOverColumn === column.status
+								? 'text-gray-300'
+								: 'text-gray-500'}">{column.cards.length}</span
+						>
 					</button>
 				{/each}
 			</div>
@@ -868,12 +898,29 @@
 						}}
 						ondrop={(e) => onDropInColumn(column.status, e)}
 					>
-						<!-- The switcher above says both of these on a phone. -->
+						<!--
+							The switcher above says both of these on a phone.
+
+							It lights up while a card is being dragged, like the switcher
+							does: a column is a drop target for its whole height, and the
+							header is the part somebody aims at.
+						-->
 						<header
-							class="hidden items-center justify-between border-b border-gray-200 bg-white px-3 py-2 md:flex"
+							class="hidden items-center justify-between border-b px-3 py-2 md:flex {dragging &&
+							dragOverColumn === column.status
+								? 'border-gray-900 bg-gray-900 text-white'
+								: 'border-gray-200 bg-white'}"
 						>
-							<span class="eyebrow text-gray-600">{STATUS_LABELS[column.status]}</span>
-							<span class="tabular text-xs text-gray-500">{column.cards.length}</span>
+							<span
+								class="eyebrow {dragging && dragOverColumn === column.status
+									? 'text-white'
+									: 'text-gray-600'}">{STATUS_LABELS[column.status]}</span
+							>
+							<span
+								class="tabular text-xs {dragging && dragOverColumn === column.status
+									? 'text-gray-300'
+									: 'text-gray-500'}">{column.cards.length}</span
+							>
 						</header>
 
 						<div class="flex-1 space-y-2 p-2">

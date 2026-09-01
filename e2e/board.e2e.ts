@@ -198,3 +198,46 @@ test.describe('the board on a phone', () => {
 		await expect(page.getByText(title, { exact: true })).toBeHidden();
 	});
 });
+
+/**
+ * Where a card goes when the column it should go to is not on the screen.
+ *
+ * On a phone the board shows one column, so there is nothing to drag a card
+ * *to*. The names above it are the target: they light up while a card is being
+ * dragged, and dropping on one moves the card and follows it — a card that
+ * moved somewhere invisible has, as far as the screen is concerned, vanished.
+ */
+test.describe('dropping on the column switcher', () => {
+	test.use({ viewport: { width: 390, height: 844 } });
+
+	test('moves the card there and follows it', async ({ page }) => {
+		await register(page, `board-switch-${Date.now()}@example.test`);
+		const title = 'A card that should end up Doing';
+		await newCard(page, title);
+
+		const doing = page.getByRole('button', { name: /^Doing/ });
+		const card = page.getByText(title, { exact: true });
+
+		// A real HTML5 drag, which is what the desktop and a mouse-driven narrow
+		// window do. The touch path is the tick box and the card editor.
+		await card.dispatchEvent('dragstart', { dataTransfer: await makeDataTransfer(page) });
+		await doing.dispatchEvent('dragover', { dataTransfer: await makeDataTransfer(page) });
+		await doing.dispatchEvent('drop', { dataTransfer: await makeDataTransfer(page) });
+		await page.waitForTimeout(900);
+
+		// It followed the card: Doing is the column on screen now, with the card
+		// in it.
+		await expect(doing).toHaveAttribute('aria-pressed', 'true');
+		await expect(page.getByText(title, { exact: true })).toBeVisible();
+
+		// And it really moved, rather than only appearing to.
+		await page.reload({ waitUntil: 'networkidle' });
+		await page.getByRole('button', { name: /^Doing/ }).click();
+		await expect(page.getByText(title, { exact: true })).toBeVisible();
+	});
+});
+
+/** A DataTransfer the page owns, which a synthetic drag event needs. */
+function makeDataTransfer(page: import('@playwright/test').Page) {
+	return page.evaluateHandle(() => new DataTransfer());
+}
