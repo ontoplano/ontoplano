@@ -112,6 +112,25 @@ blockquote { margin: 1rem 0; padding-left: 1rem; border-left: 3px solid var(--li
              color: var(--muted); }
 kbd { font-family: var(--mono); font-size: 0.8em; border: 1px solid var(--line);
       background: var(--soft); padding: 0.05em 0.35em; }
+/*
+ * The install page's wizard: three questions, then only the steps that answer
+ * them. Without JavaScript every branch is on the page under its own heading,
+ * which is what these styles have to look right as too.
+ */
+.wizard { display: grid; gap: 1rem; margin: 1.5rem 0; padding: 1rem 1.25rem;
+          border: 1px solid var(--line); background: var(--soft); }
+.wizard fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap;
+                   align-items: center; gap: 0.35rem 1.1rem; }
+.wizard legend { float: left; width: 100%; font-weight: 600; font-size: 0.9rem;
+                 margin-bottom: 0.35rem; }
+.wizard label { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem;
+                cursor: pointer; }
+.wizard-note { font-size: 0.85rem; color: var(--muted); }
+/* An illustration of somebody else's menu — drawn, not photographed, so it
+   reads the same in both themes and does not go stale with a browser update. */
+.shot { display: block; width: 100%; max-width: 20rem; margin: 1rem 0;
+        border: 1px solid var(--line); }
+[data-step][hidden], [hidden] { display: none; }
 footer { margin-top: 4rem; padding-top: 1rem; border-top: 1px solid var(--line);
          color: var(--muted); font-size: 0.85rem; }
 @media (max-width: 60rem) {

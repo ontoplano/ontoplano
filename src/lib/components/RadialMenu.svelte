@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
+	import { wedgeAt, wedgeCentre, wedgeEdges, wedgeStep } from '$lib/radial';
 
 	/**
 	 * A pie of choices, under the thumb.
@@ -97,23 +98,24 @@
 		travelled = 0;
 	});
 
-	/** Which wedge a point falls in, or -1 for the hole. */
-	function wedgeAt(x: number, y: number): number {
+	/**
+	 * Which wedge a point falls in, or -1 for the hole.
+	 *
+	 * The arithmetic is in `$lib/radial.ts`, with the drawing below, so the hit
+	 * test and the picture cannot disagree — which is a bug nobody sees, they
+	 * only see a menu that chooses the wrong thing.
+	 */
+	function wedgeIndexAt(x: number, y: number): number {
 		const dx = x - centre.x;
 		const dy = y - centre.y;
 		if (Math.hypot(dx, dy) < INNER) return -1;
-
-		// Angles run clockwise from twelve o'clock, which is how the wedges are
-		// drawn and how somebody describes one out loud.
-		let a = Math.atan2(dy, dx) + Math.PI / 2;
-		if (a < 0) a += Math.PI * 2;
-		return Math.floor((a / (Math.PI * 2)) * items.length) % items.length;
+		return wedgeAt(dx, dy, items.length);
 	}
 
 	function onmove(e: PointerEvent) {
 		if (!open) return;
 		travelled = Math.max(travelled, Math.hypot(e.clientX - origin.x, e.clientY - origin.y));
-		active = wedgeAt(e.clientX, e.clientY);
+		active = wedgeIndexAt(e.clientX, e.clientY);
 	}
 
 	/** A press that never went anywhere is a tap, not a gesture. */
@@ -150,7 +152,7 @@
 			}
 		}
 
-		const chosen = wedgeAt(e.clientX, e.clientY);
+		const chosen = wedgeIndexAt(e.clientX, e.clientY);
 		if (chosen >= 0) onselect(items[chosen].key);
 		else onclose();
 	}
@@ -210,21 +212,25 @@
 		}
 	}
 
-	/** One annulus sector, drawn from a centre at 0,0. */
+	/**
+	 * One annulus sector, drawn from a centre at 0,0.
+	 *
+	 * Anti-clockwise from six o'clock, so the sweep flags are the opposite of
+	 * what a clockwise ring uses: 0 on the outer arc, 1 on the inner one coming
+	 * back. See `$lib/radial.ts` for which way round and why.
+	 */
 	function wedgePath(i: number): string {
-		const step = (Math.PI * 2) / items.length;
-		const a0 = -Math.PI / 2 + i * step;
-		const a1 = a0 + step;
-		const big = step > Math.PI ? 1 : 0;
+		const { from, to } = wedgeEdges(i, items.length);
+		const big = wedgeStep(items.length) > Math.PI ? 1 : 0;
 		const at = (r: number, a: number) =>
 			`${(r * Math.cos(a)).toFixed(2)} ${(r * Math.sin(a)).toFixed(2)}`;
 
 		return [
-			`M ${at(INNER, a0)}`,
-			`L ${at(OUTER, a0)}`,
-			`A ${OUTER} ${OUTER} 0 ${big} 1 ${at(OUTER, a1)}`,
-			`L ${at(INNER, a1)}`,
-			`A ${INNER} ${INNER} 0 ${big} 0 ${at(INNER, a0)}`,
+			`M ${at(INNER, from)}`,
+			`L ${at(OUTER, from)}`,
+			`A ${OUTER} ${OUTER} 0 ${big} 0 ${at(OUTER, to)}`,
+			`L ${at(INNER, to)}`,
+			`A ${INNER} ${INNER} 0 ${big} 1 ${at(INNER, from)}`,
 			'Z'
 		].join(' ');
 	}
@@ -232,8 +238,7 @@
 	/** Where a wedge's label sits: upright, never rotated. Rotated text at a
 	 *  glance is unreadable, and glance is the whole point. */
 	function labelAt(i: number): { x: number; y: number } {
-		const step = (Math.PI * 2) / items.length;
-		const a = -Math.PI / 2 + (i + 0.5) * step;
+		const a = wedgeCentre(i, items.length);
 		const r = (INNER + OUTER) / 2;
 		return { x: r * Math.cos(a), y: r * Math.sin(a) };
 	}

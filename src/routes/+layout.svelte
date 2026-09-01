@@ -7,6 +7,7 @@
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { NAV_PLACES } from '$lib/sections-nav';
+	import { accentsWith, placesFor } from '$lib/nav-order';
 	import { THEMES } from '$lib/theme.js';
 	import type { SectionKey } from '$lib/colors.js';
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
@@ -52,7 +53,20 @@
 	 * People sat in the bar and were simply absent from the pie whatever the
 	 * preferences said. `sections-nav.test.ts` keeps them the same list.
 	 */
-	const allNav = NAV_PLACES;
+	/*
+	 * In this account's order, and this account's colours.
+	 *
+	 * `placesFor` is the one place either preference is applied — it drops a key
+	 * for a room the app no longer has and keeps a room the stored order has
+	 * never heard of, so neither an old preference nor a new room can leave a
+	 * hole in somebody's menu.
+	 */
+	const allNav = $derived(
+		placesFor(NAV_PLACES, { order: data.navOrder, colors: data.sectionColors })
+	);
+
+	/** Every section's colour, the account's where it has chosen one. */
+	const accents = $derived(accentsWith(data.sectionColors));
 
 	/**
 	 * The tabs this account actually shows. Hiding is a menu matter only —
@@ -77,7 +91,7 @@
 
 	/** The section being viewed. Its accent fills the active nav tab. */
 	const sectionKey = $derived(sectionFor(page.url.pathname));
-	const section = $derived(SECTIONS[sectionKey]);
+	const section = $derived({ ...SECTIONS[sectionKey], accent: accents[sectionKey] });
 
 	/** The glyph tiled behind the page, from the same table as the nav icons. */
 	const SECTION_GLYPH: Record<SectionKey, IconName> = {
@@ -355,7 +369,7 @@
 								class="flex shrink-0 items-center gap-1 border-b-2 px-3 py-4 text-sm whitespace-nowrap transition-colors min-[1460px]:gap-1.5 min-[1460px]:px-3 xl:px-1.5 [&>svg]:h-5 [&>svg]:w-5 xl:[&>svg]:h-4 xl:[&>svg]:w-4 {active
 									? 'font-semibold text-chrome-ink'
 									: 'border-transparent font-medium text-chrome-muted hover:border-chrome-line hover:text-chrome-ink'}"
-								style={active ? `border-color: ${SECTIONS[item.section].accent}` : ''}
+								style={active ? `border-color: ${item.accent}` : ''}
 							>
 								<!-- The icon set, rather than a path copied into this file: the
 								     bar and the pie draw the same place with the same glyph. -->
@@ -652,7 +666,13 @@
 		<ShortcutHelp />
 		<CommandPalette hidden={data.hiddenSections} />
 		<CapturePie bind:this={pie} onopenchange={(v) => (pieOpen = v)} hidden={data.hiddenSections} />
-		<NavPie bind:this={rooms} onopenchange={(v) => (roomsOpen = v)} hidden={data.hiddenSections} />
+		<NavPie
+			bind:this={rooms}
+			onopenchange={(v) => (roomsOpen = v)}
+			hidden={data.hiddenSections}
+			order={data.navOrder}
+			colors={data.sectionColors}
+		/>
 		<Reminders />
 		<UndoToast />
 		<Notifications />

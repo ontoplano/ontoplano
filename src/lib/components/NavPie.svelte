@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { ROOMS, roomFor } from '$lib/sections-nav';
+	import { NAV_PLACES, roomFor } from '$lib/sections-nav';
+	import { placesFor } from '$lib/nav-order';
 	import RadialMenu from '$lib/components/RadialMenu.svelte';
 
 	/**
@@ -18,8 +19,23 @@
 	 */
 	let {
 		onopenchange,
-		hidden = []
-	}: { onopenchange?: (open: boolean) => void; hidden?: readonly string[] } = $props();
+		hidden = [],
+		/**
+		 * The order and the colours this account chose, from the shell.
+		 *
+		 * Passed in rather than read here, because the bar above and the pie
+		 * under the thumb are two renderings of one list and the list has to be
+		 * built once. Empty means the app's own order, which is what a page that
+		 * has no account behind it gets.
+		 */
+		order = [],
+		colors = null
+	}: {
+		onopenchange?: (open: boolean) => void;
+		hidden?: readonly string[];
+		order?: readonly string[];
+		colors?: Record<string, string> | null;
+	} = $props();
 
 	let open = $state(false);
 	let dragging = $state(false);
@@ -58,16 +74,22 @@
 		return { x: window.innerWidth / 2, y: window.innerHeight - bar - 200 };
 	}
 
-	// No Home wedge: the navbar and the phone bar both carry Home as a plain
-	// button, and a pie slot spent on "go to the start" is a slot a real room
-	// could have used.
+	/*
+	 * The wedges, in the order they will be reached.
+	 *
+	 * The first one is under a right thumb — bottom, just to the right — and the
+	 * rest run anti-clockwise from it up the right-hand side. See
+	 * `$lib/radial.ts`; the order somebody sets in Preferences is that order,
+	 * so "first in the list" and "first under the thumb" are the same sentence.
+	 *
+	 * No Home wedge: the navbar and the phone bar both carry Home as a plain
+	 * button, and a pie slot spent on "go to the start" is a slot a real room
+	 * could have used.
+	 */
 	const wedges = $derived(
-		ROOMS.filter((r) => r.key !== 'home' && !(r.hide && hidden.includes(r.hide))).map((r) => ({
-			key: r.key,
-			label: r.label,
-			icon: r.icon,
-			color: r.color
-		}))
+		placesFor(NAV_PLACES, { order, colors })
+			.filter((r) => r.key !== 'home' && !(r.hide && hidden.includes(r.hide)))
+			.map((r) => ({ key: r.key, label: r.label, icon: r.icon, color: r.accent }))
 	);
 
 	export function summon(e: PointerEvent) {

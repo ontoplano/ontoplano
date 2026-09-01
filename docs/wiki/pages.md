@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**38 pages, 159 actions.**
+**38 pages, 163 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                            |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -49,7 +49,7 @@ write surface for everything else; both end up calling the same
 | `/settings/instance`            | `setRegistration`, `setEmailChange`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                                                             |
 | `/settings/integrations`        | `createToken`, `calendarLink`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                                                    |
 | `/settings/integrations/widget` | `connect`                                                                                                                                                                                                                                                                                                                                                                          |
-| `/settings/preferences`         | `setErrorReports`, `saveCurrency`, `saveGridHours`, `setSections`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setTheme`, `saveWeek`                                                                                                                                                                                                       |
+| `/settings/preferences`         | `setErrorReports`, `saveCurrency`, `saveGridHours`, `setSections`, `setNavOrder`, `resetNavOrder`, `setSectionColors`, `resetSectionColors`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setTheme`, `saveWeek`                                                                                                                             |
 | `/shopping`                     | `saveCategories`, `createCategory`, `create`, `update`, `toggleBought`, `paid`, `delete`, `restock`, `toggleSnoozed`                                                                                                                                                                                                                                                               |
 | `/start`                        | `checkout`                                                                                                                                                                                                                                                                                                                                                                         |
 | `/welcome`                      | `default`                                                                                                                                                                                                                                                                                                                                                                          |
@@ -338,6 +338,27 @@ the app link on the way back carries it home. Nobody sees a token.
 ### `/settings/preferences`
 
 Everything on this page belongs to the account, never to the instance (I9).
+
+**`setNavOrder`**
+
+The order of the rooms, as the list of keys the form posted.
+
+Validation is deliberately thin here and thorough on the way out: what
+counts as a room changes as the app grows, so `applyOrder` is the one
+place that decides what a stored key means — see `$lib/nav-order.ts`.
+
+**`resetNavOrder`**
+
+Back to the order the app ships with.
+
+**`setSectionColors`**
+
+The colours, one per section.
+
+A colour ends up in a `style` attribute, which very few settings do, so
+`setSectionColors` keeps only `#rrggbb` for a section that exists — and
+`accentsWith` checks again when the value is read back. Belt and braces
+on purpose: this is the one preference that reaches the page as markup.
 
 ### `/shopping`
 

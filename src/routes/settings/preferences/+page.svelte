@@ -24,6 +24,27 @@
 		layout = isOn(id) ? layout.filter((x) => x !== id) : [...layout, id];
 	}
 
+	/*
+	 * The rooms, in the order this account keeps them.
+	 *
+	 * A local copy so the arrows can move things before anything is saved,
+	 * reset from the server whenever the load re-runs — the same shape the
+	 * dashboard layout above uses, for the same reason.
+	 */
+	let rooms = $state([...data.rooms]);
+	$effect(() => {
+		rooms = [...data.rooms];
+	});
+
+	function shiftRoom(key: string, by: number) {
+		const at = rooms.findIndex((r) => r.key === key);
+		const to = at + by;
+		if (at === -1 || to < 0 || to >= rooms.length) return;
+		const next = [...rooms];
+		[next[at], next[to]] = [next[to], next[at]];
+		rooms = next;
+	}
+
 	function shift(id: DashboardCardId, by: number) {
 		const at = layout.indexOf(id);
 		const to = at + by;
@@ -194,6 +215,120 @@
 			</div>
 			<p class="text-xs text-gray-500">Home and the planner are always on.</p>
 			<button class="btn btn-primary">Save sections</button>
+		</form>
+	</section>
+
+	<!--
+		The order of the rooms, which is two orders at once.
+
+		The bar reads left to right and the pie reads round from the bottom
+		right, and they are the same list — so this is one control, and the
+		sentence under it says where the top of the list ends up under a thumb.
+		The docs page has the picture; a paragraph describing a circle is a
+		paragraph nobody finishes.
+	-->
+	<section class="border border-gray-200 bg-white p-6 shadow-card">
+		<div class="mb-4">
+			<h2 class="text-sm font-semibold text-gray-900">The menu</h2>
+			<p class="mt-1 text-sm text-gray-500">
+				The order the rooms appear in — along the bar, and round the wheel. First in this list is
+				first along the bar and first under your thumb: the wheel starts at the bottom right and
+				goes anti-clockwise from there.
+				<a
+					href="https://docs.ontoplano.com/the-wheel"
+					class="font-medium text-gray-900 underline"
+					rel="external">How the wheel is laid out</a
+				>.
+			</p>
+		</div>
+
+		<form
+			method="post"
+			action="?/setNavOrder"
+			use:settingsForm={{ notice: 'Menu order saved.' }}
+			class="space-y-2"
+		>
+			{#each rooms as room, i (room.key)}
+				<div class="flex items-center gap-3 border border-gray-200 px-3 py-2">
+					<input type="hidden" name="room" value={room.key} />
+					<span class="tabular w-5 shrink-0 text-xs text-gray-500">{i + 1}</span>
+					<span class="h-4 w-1 shrink-0" style="background-color: {room.accent}" title={room.label}
+					></span>
+					<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{room.label}</span>
+					<button
+						type="button"
+						onclick={() => shiftRoom(room.key, -1)}
+						disabled={i === 0}
+						class="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"
+						title="Move up"
+						aria-label="Move {room.label} up"
+					>
+						<Icon name="chevron-up" size={16} />
+					</button>
+					<button
+						type="button"
+						onclick={() => shiftRoom(room.key, 1)}
+						disabled={i === rooms.length - 1}
+						class="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"
+						title="Move down"
+						aria-label="Move {room.label} down"
+					>
+						<Icon name="chevron-down" size={16} />
+					</button>
+				</div>
+			{/each}
+			<div class="flex flex-wrap items-center gap-2 pt-2">
+				<button class="btn btn-primary">Save order</button>
+				<button formaction="?/resetNavOrder" class="btn btn-sm">Back to the default</button>
+			</div>
+		</form>
+	</section>
+
+	<!--
+		The colours, one per section rather than one per room.
+
+		People and Notebooks live in the Diary and wear its colour; giving each
+		room its own would let one section arrive on screen in three hues, which
+		is the thing the colours exist to prevent.
+	-->
+	<section class="border border-gray-200 bg-white p-6 shadow-card">
+		<div class="mb-4">
+			<h2 class="text-sm font-semibold text-gray-900">Colours</h2>
+			<p class="mt-1 text-sm text-gray-500">
+				What each section is coloured. It fills the wheel, marks the tab you are on and rules the
+				top of that section's cards. Pick dark ones: the labels on the wheel are white.
+			</p>
+		</div>
+
+		<form
+			method="post"
+			action="?/setSectionColors"
+			use:settingsForm={{ notice: 'Colours saved.' }}
+			class="space-y-2"
+		>
+			<div class="grid gap-2 sm:grid-cols-2">
+				{#each data.sectionColors as swatch (swatch.key)}
+					<label
+						class="flex cursor-pointer items-center gap-3 border border-gray-200 px-3 py-2 text-sm"
+					>
+						<input
+							type="color"
+							name="color.{swatch.key}"
+							value={swatch.accent}
+							class="h-7 w-10 shrink-0 cursor-pointer border border-gray-300 bg-white p-0.5"
+							aria-label="The colour for {swatch.label}"
+						/>
+						<span class="min-w-0 flex-1 truncate text-gray-900">{swatch.label}</span>
+						{#if !swatch.isDefault}
+							<span class="eyebrow shrink-0 text-gray-500">changed</span>
+						{/if}
+					</label>
+				{/each}
+			</div>
+			<div class="flex flex-wrap items-center gap-2 pt-2">
+				<button class="btn btn-primary">Save colours</button>
+				<button formaction="?/resetSectionColors" class="btn btn-sm">Back to the defaults</button>
+			</div>
 		</form>
 	</section>
 

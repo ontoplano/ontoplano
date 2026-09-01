@@ -4,6 +4,8 @@ import {
 	DEFAULT_THEME,
 	DEFAULT_WEEK,
 	getHiddenSections,
+	getNavOrder,
+	getSectionColors,
 	getTheme,
 	getWeekSettings,
 	isDemo as isDemoInstance
@@ -58,6 +60,8 @@ export const load: LayoutServerLoad = async (event) => {
 	let theme = DEFAULT_THEME;
 	let week = DEFAULT_WEEK;
 	let hiddenSections: HideableSection[] = [];
+	let navOrder: string[] = [];
+	let sectionColors: Record<string, string> = {};
 	if (event.locals.user) {
 		const ctx = buildCtx(event.locals.user.id);
 		userCategories = listCategories(ctx).map((c) => ({
@@ -69,6 +73,8 @@ export const load: LayoutServerLoad = async (event) => {
 		theme = getTheme(ctx.userId);
 		week = getWeekSettings(ctx.userId);
 		hiddenSections = getHiddenSections(ctx.userId);
+		navOrder = getNavOrder(ctx.userId);
+		sectionColors = getSectionColors(ctx.userId);
 	}
 
 	return {
@@ -83,6 +89,12 @@ export const load: LayoutServerLoad = async (event) => {
 		// Sections this account has put away: out of every menu the shell
 		// renders, still answering at their URLs.
 		hiddenSections,
+		// The order this account keeps its rooms in, and the colours it has
+		// changed. Both are the shell's business rather than a page's, so they
+		// arrive here — the bar, the pie and the palette are three renderings of
+		// one list and have to agree about it.
+		navOrder,
+		sectionColors,
 		// The public demo says so on every page: a copy of your own, deleted
 		// hourly, so nobody mistakes it for their own instance.
 		demo: isDemoInstance(),

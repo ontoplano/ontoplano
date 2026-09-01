@@ -136,6 +136,8 @@ person makes about their own copy of the app, not the operator.
 | `planner.grid_start_hour` | `GRID_START_KEY`        |
 | `shopping.currency`       | `CURRENCY_KEY`          |
 | `ui.hiddenSections`       | `HIDDEN_SECTIONS_KEY`   |
+| `ui.navOrder`             | `NAV_ORDER_KEY`         |
+| `ui.sectionColors`        | `SECTION_COLORS_KEY`    |
 | `ui.style`                | `STYLE_KEY`             |
 | `ui.theme`                | `THEME_KEY`             |
 | `user.timezone`           | `TIMEZONE_KEY`          |

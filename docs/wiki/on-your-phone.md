@@ -67,3 +67,48 @@ to Home Screen_.
 Not at the moment, and it would be the same thing if there were: the store
 build is this app in a thin wrapper. Installing from the browser costs nothing
 and updates itself the moment the instance does.
+
+## The Android package, and the one thing it adds
+
+There is a signed `.apk`, published with each release:
+**<https://github.com/ontoplano/ontoplano/releases/latest>**.
+
+Installing from the browser is the right answer for almost everybody, and the
+package is not a better version of the app — it is the same app in a wrapper.
+There is exactly one reason to want it:
+
+**The home-screen widget.** Android only lets an installed _app_ provide a
+widget. A web app added from the browser is not one, however much it behaves
+like one, so today's blocks on your home screen need the package. Nothing else
+differs.
+
+### Installing it
+
+Android calls this "installing an unknown app", and it will ask you to allow it
+once — for the browser you downloaded it with, not for ontoplano.
+
+1. Open the releases page above **on the phone** and download the `.apk`.
+2. Open the downloaded file. Android asks whether to allow installs from this
+   browser; say yes, and it returns you to the install screen.
+3. Install, and open it once so it can sign you in.
+
+If you already have the browser-installed version on your home screen, remove
+that shortcut: two icons for the same app, one of which has the widget, is
+confusing in exactly the way a widget is supposed to stop.
+
+### Adding the widget
+
+1. Long-press an empty part of the home screen → **Widgets**.
+2. Find **ontoplano** and drag **Today** onto the screen.
+3. Its setup screen opens. Check the address — it is filled in with the
+   instance the app was built for — and tap **Connect**.
+4. Your browser opens the app's connect page, which mints a key for this
+   widget and hands it back. The widget appears with today on it.
+
+The key the widget gets can read today's plan and nothing else. Revoke it any
+time under **Settings → Integrations**; the widget goes blank rather than
+showing anything stale.
+
+If Connect opens the page and nothing comes back, check that the page opened in
+your _browser_ rather than inside the app — the handover is a link the app
+listens for, and a link fired from inside the app comes back to the app.

@@ -7,6 +7,8 @@ import { STYLES, isStyle, type Style } from '../style.js';
 import { THEMES, type Theme } from '../theme.js';
 import { DEFAULT_CURRENCY, isCurrency, type Currency } from '../money.js';
 import { isHideableSection, type HideableSection } from '../sections.js';
+import { SECTIONS } from '../colors.js';
+import { isHexColor } from '../nav-order.js';
 
 export function getUserSetting(userId: string, key: string): string | null {
 	const row = db
@@ -88,6 +90,67 @@ export function getHiddenSections(userId: string): HideableSection[] {
 
 export function setHiddenSections(userId: string, hidden: HideableSection[]): void {
 	setUserSetting(userId, HIDDEN_SECTIONS_KEY, JSON.stringify([...new Set(hidden)]));
+}
+
+// --- The menu: its order, and its colours ------------------------------------
+
+export const NAV_ORDER_KEY = 'ui.navOrder';
+export const SECTION_COLORS_KEY = 'ui.sectionColors';
+
+/**
+ * The order this account wants its rooms in, as a list of keys.
+ *
+ * Stored thin and validated on the way out rather than on the way in: what is
+ * a room changes as the app grows, so a list that was valid when it was saved
+ * can name something that no longer exists. `applyOrder` in `$lib/nav-order.ts`
+ * is where a missing key is dropped and a new room is kept, and it is the only
+ * place that decides either.
+ */
+export function getNavOrder(userId: string): string[] {
+	const stored = getUserSetting(userId, NAV_ORDER_KEY);
+	if (!stored) return [];
+	try {
+		const parsed: unknown = JSON.parse(stored);
+		if (!Array.isArray(parsed)) return [];
+		return parsed.filter(
+			(v): v is string => typeof v === 'string' && v.length > 0 && v.length < 64
+		);
+	} catch {
+		return [];
+	}
+}
+
+export function setNavOrder(userId: string, order: string[]): void {
+	setUserSetting(userId, NAV_ORDER_KEY, JSON.stringify([...new Set(order)]));
+}
+
+/**
+ * The colours this account has changed, keyed by section. The rest are the
+ * app's own; `$lib/colors.ts` still holds those and is still the default.
+ *
+ * Only `#rrggbb` is stored and only `#rrggbb` is returned. A colour reaches a
+ * `style` attribute, which is one of the very few settings that does, so it is
+ * checked at both ends rather than trusted at either.
+ */
+export function getSectionColors(userId: string): Record<string, string> {
+	const stored = getUserSetting(userId, SECTION_COLORS_KEY);
+	if (!stored) return {};
+	try {
+		const parsed: unknown = JSON.parse(stored);
+		if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+		return Object.fromEntries(
+			Object.entries(parsed as Record<string, unknown>).filter(([, v]) => isHexColor(v))
+		) as Record<string, string>;
+	} catch {
+		return {};
+	}
+}
+
+export function setSectionColors(userId: string, colors: Record<string, string>): void {
+	const clean = Object.fromEntries(
+		Object.entries(colors).filter(([key, value]) => key in SECTIONS && isHexColor(value))
+	);
+	setUserSetting(userId, SECTION_COLORS_KEY, JSON.stringify(clean));
 }
 
 // --- Layout style ------------------------------------------------------------

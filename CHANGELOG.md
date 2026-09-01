@@ -10,6 +10,21 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.25.0 — 2026-09-01
+
+- **The menu is yours to arrange.** Settings → Preferences → The menu sets the
+  order the rooms appear in, along the bar and round the wheel at once — they
+  are two renderings of one list and always agree.
+- **And to colour.** Each section's colour is a setting, with the ones the app
+  ships as the defaults and one click back to them.
+- The wheel starts at the bottom right and runs anti-clockwise, so the first
+  room in your list is the one under your thumb. It used to start at twelve
+  o'clock, which is how a clock works and not how a hand does. There is a
+  picture of it in the docs, linked from Preferences.
+- A page in the documentation that asks what phone and browser you have and
+  then shows only those steps, including how to get the Android package —
+  which is the only way to have the home-screen widget.
+
 ## 0.24.0 — 2026-09-01
 
 - **Docker is the easy path now.** One `docker run`, one volume, no database

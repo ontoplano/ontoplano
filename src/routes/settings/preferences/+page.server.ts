@@ -15,10 +15,15 @@ import {
 	type DashboardCardId
 } from '$lib/dashboard';
 import { HIDEABLE_SECTIONS, isHideableSection } from '$lib/sections';
+import { accentsWith, placesFor } from '$lib/nav-order';
+import { NAV_PLACES } from '$lib/sections-nav';
+import { SECTIONS, type SectionKey } from '$lib/colors';
 import {
 	getCurrency,
 	getHiddenSections,
 	getGridHours,
+	getNavOrder,
+	getSectionColors,
 	getStyle,
 	getTheme,
 	getTimezone,
@@ -26,6 +31,8 @@ import {
 	getWeekSettings,
 	setCurrency,
 	setHiddenSections,
+	setNavOrder,
+	setSectionColors,
 	setUserSetting
 } from '$lib/server/settings';
 import {
@@ -58,6 +65,26 @@ export const load: PageServerLoad = async ({ locals }) => {
 		layout: parseLayout(getUserSetting(ctx.userId, DASHBOARD_LAYOUT_KEY)).filter((id) =>
 			visibleCards(hiddenSections).some((c) => c.id === id)
 		),
+		// The rooms, in this account's order and with its colours applied — one
+		// list for the page to show, rather than a list plus two settings the
+		// page would have to combine itself and get subtly wrong.
+		rooms: placesFor(NAV_PLACES, {
+			order: getNavOrder(ctx.userId),
+			colors: getSectionColors(ctx.userId)
+		}).map((p) => ({ key: p.key, label: p.label, section: p.section, accent: p.accent })),
+		// The things a colour belongs to. A *section*, not a room: People and
+		// Notebooks live in the Diary and wear its colour, and letting one
+		// section arrive on screen in three hues is what the colours exist to
+		// prevent. `isDefault` is here rather than in the page because the page
+		// would have to compare hex strings to work it out.
+		sectionColors: Object.entries(SECTIONS).map(([key, section]) => ({
+			key,
+			label: section.label,
+			accent: accentsWith(getSectionColors(ctx.userId))[key as SectionKey],
+			isDefault:
+				accentsWith(getSectionColors(ctx.userId))[key as SectionKey].toLowerCase() ===
+				section.accent.toLowerCase()
+		})),
 		quotes: listQuotes(ctx),
 		styles: STYLES.map((key) => ({ key, label: STYLE_LABELS[key], hint: STYLE_HINTS[key] }))
 	};
@@ -105,6 +132,48 @@ export const actions: Actions = {
 			HIDEABLE_SECTIONS.map((s) => s.id).filter((id) => !shown.has(id) && isHideableSection(id))
 		);
 		return { success: true, action: 'setSections' };
+	},
+
+	/**
+	 * The order of the rooms, as the list of keys the form posted.
+	 *
+	 * Validation is deliberately thin here and thorough on the way out: what
+	 * counts as a room changes as the app grows, so `applyOrder` is the one
+	 * place that decides what a stored key means — see `$lib/nav-order.ts`.
+	 */
+	setNavOrder: async ({ request, locals }) => {
+		const formData = await request.formData();
+		setNavOrder(locals.user!.id, formData.getAll('room').map(String));
+		return { success: true, action: 'setNavOrder' };
+	},
+
+	/** Back to the order the app ships with. */
+	resetNavOrder: async ({ locals }) => {
+		setNavOrder(locals.user!.id, []);
+		return { success: true, action: 'setNavOrder' };
+	},
+
+	/**
+	 * The colours, one per section.
+	 *
+	 * A colour ends up in a `style` attribute, which very few settings do, so
+	 * `setSectionColors` keeps only `#rrggbb` for a section that exists — and
+	 * `accentsWith` checks again when the value is read back. Belt and braces
+	 * on purpose: this is the one preference that reaches the page as markup.
+	 */
+	setSectionColors: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const colors: Record<string, string> = {};
+		for (const [key, value] of formData.entries()) {
+			if (key.startsWith('color.')) colors[key.slice('color.'.length)] = String(value);
+		}
+		setSectionColors(locals.user!.id, colors);
+		return { success: true, action: 'setSectionColors' };
+	},
+
+	resetSectionColors: async ({ locals }) => {
+		setSectionColors(locals.user!.id, {});
+		return { success: true, action: 'setSectionColors' };
 	},
 
 	setLayout: async ({ request, locals }) => {

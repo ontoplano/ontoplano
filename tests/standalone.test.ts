@@ -13,18 +13,23 @@ import { isStandalone } from '../src/lib/platform';
 
 const realWindow = globalThis.window;
 
+/**
+ * A stand-in window with only the two properties this reads.
+ *
+ * Cast rather than constructed: a real `Window` is several hundred members, and
+ * a test that has to build one to ask a two-line question is a test nobody
+ * writes.
+ */
 function windowSaying(options: { displayMode?: boolean; iosStandalone?: boolean } = {}) {
-	// @ts-expect-error — a stand-in for the two properties this reads.
 	globalThis.window = {
 		navigator: options.iosStandalone ? { standalone: true } : {},
 		matchMedia: (query: string) => ({
 			matches: Boolean(options.displayMode) && query.includes('standalone')
 		})
-	};
+	} as unknown as Window & typeof globalThis;
 }
 
 afterEach(() => {
-	// @ts-expect-error — put back whatever was there, including nothing.
 	globalThis.window = realWindow;
 	vi.restoreAllMocks();
 });
@@ -48,14 +53,13 @@ describe('isStandalone', () => {
 	});
 
 	test('is false on the server, where there is no window to ask', () => {
-		// @ts-expect-error — deleting it is what rendering server-side looks like.
-		delete globalThis.window;
+		// Deleting it is what rendering server-side looks like from in here.
+		(globalThis as { window?: unknown }).window = undefined;
 		expect(isStandalone()).toBe(false);
 	});
 
 	test('and false in a window with no matchMedia at all', () => {
-		// @ts-expect-error — a minimal stand-in, which is what a test harness is.
-		globalThis.window = { navigator: {} };
+		globalThis.window = { navigator: {} } as unknown as Window & typeof globalThis;
 		expect(isStandalone()).toBe(false);
 	});
 });

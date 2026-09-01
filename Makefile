@@ -41,6 +41,7 @@ help:
 	@printf '\033[1mphone & bot\033[0m\n'
 	@echo "  android                     build the APK (android-install / android-share to get it on)"
 	@echo "  android-lan                 an APK pointed at this machine, over wifi"
+	@echo "  android-release             publish the signed APK to GitHub Releases"
 	@echo "  telegram-install            the bot on a self-hosted box (telegram-dev to try it)"
 	@if [ -f local.mk ]; then echo; \
 		printf '\033[1mthis instance (local.mk)\033[0m\n'; \
@@ -49,7 +50,7 @@ help:
 		echo "  logs-app · logs-demo · setup · up  see local.mk for the rest"; \
 	fi
 
-.PHONY: help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down docker-publish logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down docker-publish logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -406,6 +407,37 @@ android-check:
 	fi
 
 # Straight onto a phone over USB or wireless debugging.
+# ─── Publishing the APK ──────────────────────────────────────────────────────
+#
+# The widget is the reason this exists. Android only lets an installed *app*
+# provide a home-screen widget, and a web app added from the browser is not
+# one — so anybody who wants today's blocks on their home screen needs the
+# package, and there has to be somewhere to get it.
+#
+# GitHub Releases rather than a file on the site: it is versioned, it has a
+# stable address per release, and a browser downloading from it does not
+# have to trust a host nobody has heard of. The tag is the app's version, so
+# `package.json` is still the one place a version is decided.
+android-release: $(APK)
+	@command -v gh >/dev/null || { \
+		echo "The GitHub CLI (gh) is not on PATH — it is what uploads the file."; \
+		echo "  https://cli.github.com , then: gh auth login"; exit 1; }
+	@gh auth status >/dev/null 2>&1 || { echo "Not signed in: gh auth login"; exit 1; }
+	@v=v$$(node -p "require('./package.json').version"); \
+	echo "Publishing $(APK) as $$v to $(GH_REPO)"; \
+	if gh release view "$$v" --repo $(GH_REPO) >/dev/null 2>&1; then \
+		gh release upload "$$v" $(APK) --repo $(GH_REPO) --clobber; \
+	else \
+		gh release create "$$v" $(APK) --repo $(GH_REPO) \
+			--title "$$v" \
+			--notes "The Android package for this version. Everything in it is also in the web app; the one thing it adds is the home-screen widget, which Android only lets an installed app provide."; \
+	fi
+	@echo "Done. It is at https://github.com/$(GH_REPO)/releases/latest"
+
+# Where releases go. A fork publishes its own:
+#   make android-release GH_REPO=you/ontoplano
+GH_REPO ?= ontoplano/ontoplano
+
 android-install: $(APK)
 	@command -v adb >/dev/null || { \
 		echo "adb not found. Install android-tools-adb, or use 'make android-share'"; \
