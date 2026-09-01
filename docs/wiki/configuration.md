@@ -72,6 +72,21 @@ no. Nothing is ever sent before both have said yes.
 | ------------- | -------- | ----------------------------------------------------------------------- |
 | `undoSeconds` | `number` | Seconds a delete waits, undoably, before it happens. Zero turns it off. |
 
+### `[instance]`
+
+| Key       | Type     | Means                                                     |
+| --------- | -------- | --------------------------------------------------------- |
+| `tagline` | `string` | The one line under the name on the signed-out front page. |
+
+**`tagline`**
+
+The one line under the name on the signed-out front page.
+
+Here rather than in the component because it is the operator's
+sentence, not the app's: somebody running this for a household or a
+team should be able to say what their instance is without editing
+Svelte. Empty falls back to the line below.
+
 ## Environment
 
 Every `ONTOPLANO_*` variable the code actually reads, and where it is

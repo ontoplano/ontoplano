@@ -160,6 +160,15 @@ works is a key listed here and the reverse.
 | <kbd>x</kbd> | Ask to delete selected        |
 | <kbd>p</kbd> | Copy to days (multiselect)    |
 
+## Reminders — `/planner/reminders`
+
+| Key          | Does          |
+| ------------ | ------------- |
+| <kbd>j</kbd> | Navigate list |
+| <kbd>k</kbd> | Navigate list |
+| <kbd>n</kbd> | New reminder  |
+| <kbd>x</kbd> | Ask to delete |
+
 ## Todo — `/planner/todo`
 
 | Key          | Does          |

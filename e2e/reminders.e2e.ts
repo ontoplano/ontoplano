@@ -59,3 +59,54 @@ test('what fell due arrives, once', async ({ page }) => {
 	await page.waitForTimeout(1500);
 	await expect(page.getByText('take the bread out')).toHaveCount(0);
 });
+
+/**
+ * A reminder about nothing had nowhere to be.
+ *
+ * The card in the corner was the only place one ever appeared: it could not be
+ * looked up, and clicking it did nothing. A notification with no page behind it
+ * is one you have to trust from memory.
+ */
+test('a free reminder is on a page of its own, and the card leads to it', async ({ page }) => {
+	await register(page, `remind-page-${Date.now()}@test.invalid`);
+
+	await page.goto('/planner/reminders', { waitUntil: 'networkidle' });
+	await page.getByRole('button', { name: /new reminder/i }).click();
+	await page.fill('input[name=message]', 'call the landlord back');
+	await page.getByRole('button', { name: 'Set it' }).click();
+
+	await expect(page.getByText('call the landlord back')).toBeVisible();
+	await expect(page.getByText('on its own')).toBeVisible();
+
+	// And it survives a reload, so the list is reading the database rather than
+	// what the form just said.
+	await page.reload({ waitUntil: 'networkidle' });
+	await expect(page.getByText('call the landlord back')).toBeVisible();
+});
+
+test('a due card leads to the page the reminder belongs on', async ({ page }) => {
+	await register(page, `remind-link-${Date.now()}@test.invalid`);
+
+	const past = new Date(Date.now() - 60_000);
+	const pad = (n: number) => String(n).padStart(2, '0');
+	const stamp = `${past.getFullYear()}-${pad(past.getMonth() + 1)}-${pad(past.getDate())}T${pad(past.getHours())}:${pad(past.getMinutes())}`;
+
+	await page.goto('/planner/reminders', { waitUntil: 'networkidle' });
+	await page.evaluate(async (at) => {
+		const body = new FormData();
+		body.append('at', at);
+		body.append('message', 'water the plants');
+		await fetch('/planner/reminders?/create', {
+			method: 'POST',
+			headers: { 'x-sveltekit-action': 'true' },
+			body
+		});
+	}, stamp);
+
+	await page.goto('/', { waitUntil: 'networkidle' });
+	const card = page.getByRole('link', { name: 'water the plants' });
+	await expect(card).toBeVisible({ timeout: 10_000 });
+
+	await card.click();
+	await expect(page).toHaveURL(/\/planner\/reminders$/);
+});

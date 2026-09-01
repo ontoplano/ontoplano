@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import Icon from '$lib/components/Icon.svelte';
+	import { reminderHref, type ReminderSubject } from '$lib/reminders';
 
 	/**
 	 * The one thing in this app that reaches out.
@@ -18,8 +19,17 @@
 	 *
 	 * A reminder is marked delivered only once it is actually on screen, so a
 	 * failed poll loses nothing and one that fell due overnight still arrives.
+	 *
+	 * The card leads somewhere. A notification you cannot follow is one you have
+	 * to remember twice — once because it told you, and again because looking at
+	 * the thing it is about means going and finding it yourself.
 	 */
-	type Due = { id: number; message: string; remindAt: string };
+	type Due = {
+		id: number;
+		message: string;
+		remindAt: string;
+		subjectKind: ReminderSubject;
+	};
 
 	const EVERY = 60_000;
 
@@ -116,7 +126,17 @@
 			>
 				<span class="mt-0.5 shrink-0 text-gray-500"><Icon name="clock" size={16} /></span>
 				<div class="min-w-0 flex-1">
-					<p class="text-sm font-medium text-gray-900">{reminder.message}</p>
+					<!-- Where the thing it is about actually is. Resolved in
+					     `$lib/reminders.ts`, which the list uses too. -->
+					<!-- eslint-disable svelte/no-navigation-without-resolve -->
+					<a
+						href={reminderHref(reminder.subjectKind, reminder.remindAt)}
+						onclick={() => dismiss(reminder.id)}
+						class="block text-sm font-medium text-gray-900 hover:underline"
+					>
+						{reminder.message}
+					</a>
+					<!-- eslint-enable svelte/no-navigation-without-resolve -->
 					<p class="tabular mt-0.5 text-xs text-gray-500">{reminder.remindAt.slice(11, 16)}</p>
 					{#if canAsk}
 						<button

@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**49 tables.**
+**50 tables.**
 
 | Table                                             | Columns | Belongs to a user |
 | ------------------------------------------------- | ------- | ----------------- |
@@ -38,6 +38,7 @@ exist.
 | [`mail_failures`](#mail_failures)                 | 11      | —                 |
 | [`notebooks`](#notebooks)                         | 7       | yes               |
 | [`people`](#people)                               | 10      | yes               |
+| [`plan_members`](#plan_members)                   | 4       | —                 |
 | [`planning_schemes`](#planning_schemes)           | 5       | yes               |
 | [`plugin_manifests`](#plugin_manifests)           | 8       | yes               |
 | [`price_points`](#price_points)                   | 6       | yes               |
@@ -50,7 +51,7 @@ exist.
 | [`session`](#session)                             | 9       | yes               |
 | [`shopping_categories`](#shopping_categories)     | 6       | yes               |
 | [`shopping_items`](#shopping_items)               | 12      | yes               |
-| [`subscriptions`](#subscriptions)                 | 14      | yes               |
+| [`subscriptions`](#subscriptions)                 | 15      | yes               |
 | [`suppressed_slots`](#suppressed_slots)           | 5       | yes               |
 | [`tags`](#tags)                                   | 3       | yes               |
 | [`task_records`](#task_records)                   | 16      | yes               |
@@ -586,6 +587,20 @@ Indexes:
 - `people_user_idx` on `user_id`
 - `people_user_name_unique` on `user_id`, `name` — unique
 
+## plan_members
+
+| Column       | Type    | Null     | Default               | Notes             |
+| ------------ | ------- | -------- | --------------------- | ----------------- |
+| `id`         | integer | not null | —                     | primary key, auto |
+| `owner_id`   | text    | not null | —                     | → `user.id`       |
+| `member_id`  | text    | not null | —                     | → `user.id`       |
+| `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `plan_members_owner_idx` on `owner_id`
+- `plan_members_member_unique` on `member_id` — unique
+
 ## planning_schemes
 
 | Column       | Type    | Null     | Default               | Notes             |
@@ -854,6 +869,7 @@ Indexes:
 | `trial_notice_sent_at`     | text    | null     | —                     | —                 |
 | `cancel_at`                | text    | null     | —                     | —                 |
 | `portal_url`               | text    | null     | —                     | —                 |
+| `seats`                    | integer | not null | `1`                   | —                 |
 | `created_at`               | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 | `updated_at`               | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 

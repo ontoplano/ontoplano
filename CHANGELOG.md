@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.20.0 — 2026-09-01
+
+- **Reminders have a page.** Planner → Reminders lists everything you have asked
+  to be told about, waiting and already read, and is where you set one that is
+  not attached to anything. A reminder about nothing could be created before
+  this and then appeared in no list at all.
+- The reminder card in the corner leads somewhere now: to the day's board, to
+  the todo list, or to the reminders page, depending on what it is about.
+
 ## 0.19.1 — 2026-09-01
 
 - Rearranging the dashboard no longer draws a second, empty card above each one.

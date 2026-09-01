@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**37 pages, 154 actions.**
+**38 pages, 159 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                            |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -40,11 +40,12 @@ write surface for everything else; both end up calling the same
 | `/planner/board`                | `setStatus`, `setTiming`, `reorder`, `schedule`, `promote`, `demote`, `createTodo`, `setRatings`, `remind`, `unremind`, `editInstance`, `resolveActivity`, `deleteInstance`, `deleteTodo`                                                                                                                                                                                          |
 | `/planner/history`              | —                                                                                                                                                                                                                                                                                                                                                                                  |
 | `/planner/plan`                 | `create`, `update`, `toggleActive`, `delete`, `bulkDelete`, `copyToWeekdays`, `clearAll`, `addCalendar`, `removeCalendar`, `applyTemplate`, `saveScheme`, `loadScheme`, `deleteScheme`, `renameScheme`, `scheduleTodo`, `unscheduleBlock`, `convertRepeat`, `moveOccurrence`, `suppress`, `unsuppress`, `createExceptional`, `updateExceptional`, `deleteExceptional`, `importCsv` |
+| `/planner/reminders`            | `create`, `dismiss`, `delete`                                                                                                                                                                                                                                                                                                                                                      |
 | `/planner/review`               | `saveLines`, `keepStale`, `completeStale`, `dropStale`, `resolve`, `carry`                                                                                                                                                                                                                                                                                                         |
 | `/planner/todo`                 | `create`, `remind`, `unremind`, `update`, `setStatus`, `schedule`, `delete`, `delegate`                                                                                                                                                                                                                                                                                            |
 | `/search`                       | —                                                                                                                                                                                                                                                                                                                                                                                  |
 | `/settings/account`             | `importTasks`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `delete`                                                                                                                                                                                                                                                                                     |
-| `/settings/billing`             | `checkout`, `switchInterval`                                                                                                                                                                                                                                                                                                                                                       |
+| `/settings/billing`             | `addSeat`, `removeSeat`, `checkout`, `switchInterval`                                                                                                                                                                                                                                                                                                                              |
 | `/settings/instance`            | `setRegistration`, `setEmailChange`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                                                             |
 | `/settings/integrations`        | `createToken`, `calendarLink`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                                                    |
 | `/settings/integrations/widget` | `connect`                                                                                                                                                                                                                                                                                                                                                                          |
@@ -217,6 +218,19 @@ A block dragged off the grid and back onto the todo strip.
 The reverse of `scheduleTodo`, and the reason the strip is a drop target:
 scheduling used to be one-way, so changing your mind meant deleting the
 block and typing it in again.
+
+### `/planner/reminders`
+
+Everything this account has asked to be told about.
+
+Reminders existed before this page did, and could only be seen on the thing
+they were attached to — so one attached to nothing could be created (the API
+takes them, and the seed makes them) and then appeared nowhere at all. A
+notification you cannot go and look at is a notification you cannot trust.
+
+**`dismiss`**
+
+Read and done with, but kept — the list is also a record.
 
 ### `/planner/review`
 

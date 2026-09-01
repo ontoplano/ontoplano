@@ -23,7 +23,8 @@
 		{ href: resolve('/planner/todo'), label: 'Todo' },
 		{ href: resolve('/planner/activities'), label: 'Activities' },
 		{ href: resolve('/planner/history'), label: 'History' },
-		{ href: resolve('/planner/review'), label: 'Review' }
+		{ href: resolve('/planner/review'), label: 'Review' },
+		{ href: resolve('/planner/reminders'), label: 'Reminders' }
 	];
 
 	function isActive(href: string): boolean {

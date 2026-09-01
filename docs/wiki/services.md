@@ -342,7 +342,7 @@ What the /buy page needs to start Paddle.js — null when there is no selling.
 
 #### `hasYearlyPrice()`
 
-#### `createCheckout(userId, interval)`
+#### `createCheckout(userId, interval, tier)`
 
 Mint a checkout for one account, right now.
 
@@ -362,6 +362,16 @@ Mark a checkout done, and say which route found out.
 #### `hasUnsettledCheckout(userId)`
 
 Is there anything to ask about for this account? One indexed read.
+
+#### `seatsFromItems(items)`
+
+How many accounts a subscription covers, read off what it is paying for.
+
+The seat count belongs to the price, not to this app's guess: the family
+prices carry `{"seats": 5}` in their custom data, and the price id is the
+fallback for a provider that does not hand custom data back on a
+subscription. Anything else is one seat, which is the safe reading — a
+mistake here gives away paid access.
 
 #### `claimCheckouts(userId, now)`
 
@@ -473,6 +483,7 @@ this is the noticing.
 
 ### Types
 
+- `PlanTier` — Which of the two plans is being bought.
 - `WebhookOutcome`
 
 ## calendar-feed
@@ -2318,6 +2329,34 @@ Refuse a create that would go over the plan's ceiling.
 
 Called by the service that owns the thing, not by the route: a limit checked
 in a form is a limit that the API does not have.
+
+#### `seatsFor(userId)`
+
+How many accounts this subscription is allowed to cover.
+
+#### `membersOf(ownerId)`
+
+The accounts on somebody's plan, the payer excluded.
+
+#### `seatOwnerOf(memberId)`
+
+Whose plan is paying for this account, if it is not their own.
+
+#### `addToPlan(ownerId, email)`
+
+Put an account on somebody's plan.
+
+By address, and the account has to exist already: this hands somebody a paid
+plan, so it is not a way to create accounts, and an instance with closed
+registration must not gain a back door because a payer typed an address.
+
+Refuses when the plan has no room, when the account already has a plan of its
+own — being on two at once is a question with no good answer, and the second
+payer would be paying for nothing — and when the payer is not paying.
+
+#### `removeFromPlan(ownerId, memberId)`
+
+Take an account off a plan. Their data is untouched; only the seat goes.
 
 ### Types
 
