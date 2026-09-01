@@ -10,6 +10,13 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.34.2 — 2026-09-01
+
+- **The default theme has the right colours in a dark room.** Anybody who never
+  picked a theme was getting light-mode reds, blues and greens on a dark ground
+  — an error message in crimson on near-black, and a row that barely changed
+  under the pointer.
+
 ## 0.34.1 — 2026-09-01
 
 - **No more Home tab.** The ontoplano wordmark in the corner has always been
