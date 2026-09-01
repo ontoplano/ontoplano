@@ -87,3 +87,10 @@ CLAUDE.md
 
 # Coverage reports (yarn test:coverage)
 coverage/
+
+# Dropped-in asset bundles. `static/` is served to the public verbatim, so an
+# archive left there is a 1.5MB download somebody can find — and it went into
+# the history once, from a `git add -A`, before anybody noticed. The one copy
+# of the logo is src/lib/logo/mark.png; a delivery it came in is not an asset.
+/static/*.zip
+/static/*.tar.gz
