@@ -14,6 +14,9 @@ import {
 	setArchived,
 	updateRecipe
 } from '$lib/server/services/recipes';
+import { parseRecipeFromHtml } from '$lib/recipe-import';
+import { fetchPage } from '$lib/server/services/recipe-fetch';
+import { rateLimit } from '$lib/server/rate-limit';
 
 /**
  * What can be done to a recipe, from the list or from its own page.
@@ -44,6 +47,63 @@ export const recipeActions = {
 		}
 
 		// Straight into the new recipe: the next thing anybody does is write it.
+		redirect(303, `/kitchen/recipes/${id}`);
+	},
+
+	/**
+	 * A recipe from a link.
+	 *
+	 * Almost every food site publishes schema.org JSON-LD, because Google's rich
+	 * results require it — so this reads a standard rather than scraping a
+	 * layout, and does not break when a blog is redesigned.
+	 *
+	 * The two halves are deliberately separate. `fetchPage` is the one that can
+	 * hurt somebody: fetching a URL a user supplies reaches everything the box
+	 * can reach and nothing outside it can, so it resolves the name, refuses
+	 * private addresses, and re-checks every redirect. `parseRecipeFromHtml` is
+	 * pure and knows nothing about the network.
+	 *
+	 * Rate limited per account, not per address: it is a signed-in action that
+	 * makes the server fetch something, which is worth a ceiling even from
+	 * somebody who is allowed to do it.
+	 */
+	importFromUrl: async ({ request, locals }) => {
+		const ctx = buildCtx(locals.user!.id);
+		const formData = await request.formData();
+
+		const budget = rateLimit(`recipe-import:${ctx.userId}`, 10, 60_000);
+		if (!budget.allowed)
+			return fail(429, {
+				message: `Too many at once. Try again in ${budget.retryAfterSeconds} seconds.`
+			});
+
+		let id: number;
+		try {
+			const url = String(formData.get('url') ?? '');
+			const page = await fetchPage(url);
+			const found = parseRecipeFromHtml(page);
+
+			if (!found)
+				return fail(422, {
+					message:
+						'No recipe on that page — it has no structured recipe data. Paste the ingredients instead.'
+				});
+
+			id = createRecipe(ctx, {
+				title: found.title,
+				method: found.method,
+				servings: found.servings,
+				minutes: found.minutes,
+				source: url
+			});
+
+			// The same parser the paste box uses, so a line imported from a page
+			// and a line typed by hand end up as the same ingredient.
+			importIngredients(ctx, id, found.ingredients.join('\n'));
+		} catch (e) {
+			return toActionFailure(e);
+		}
+
 		redirect(303, `/kitchen/recipes/${id}`);
 	},
 

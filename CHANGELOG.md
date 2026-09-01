@@ -10,6 +10,17 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.32.0 — 2026-09-01
+
+- **A recipe from a link.** Paste the address of a recipe page and its title,
+  ingredients, method, servings and time come with it. It reads the structured
+  data almost every food site already publishes for Google, so it does not
+  break when a blog is redesigned — and it says so plainly when a page has none
+  rather than making an empty recipe.
+- The README no longer advertises a page that was removed, and now mentions
+  recipes, reminders, the weekly review, the calendar feed and taking your data
+  out. Docker is the first way offered to run it rather than the last.
+
 ## 0.31.0 — 2026-09-01
 
 - **A reminder can be any number of minutes before a block**, typed, with the

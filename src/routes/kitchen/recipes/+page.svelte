@@ -15,6 +15,8 @@
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	let showForm = $state(false);
+	/** While the server is fetching somebody else's page, which takes a moment. */
+	let importing = $state(false);
 	let onlyMakeable = $state(false);
 
 	const visible = $derived(
@@ -121,6 +123,48 @@
 </div>
 
 <Modal bind:open={showForm} error={form?.message} title="New recipe">
+	<!--
+		A link first, because it is the shortest path.
+
+		Almost every food site publishes its recipes as structured data, so most
+		of the time the answer to "add this recipe" is a paste rather than twenty
+		minutes of typing. Its own form above the manual one: two acts, two
+		buttons, and this one either works outright or says why and leaves the
+		fields below for you.
+	-->
+	<form
+		method="post"
+		action="?/importFromUrl"
+		class="mb-4 border-b border-gray-200 pb-4"
+		use:enhance={() => {
+			importing = true;
+			return async ({ update }) => {
+				importing = false;
+				await update();
+			};
+		}}
+	>
+		<Field
+			label="From a link"
+			span={12}
+			hint="A recipe page. Its ingredients and method come with it."
+		>
+			<div class="flex flex-wrap items-center gap-2">
+				<input
+					name="url"
+					type="url"
+					required
+					autocomplete="off"
+					placeholder="https://…"
+					class="input min-w-0 flex-1"
+				/>
+				<button class="btn shrink-0" disabled={importing}>
+					{importing ? 'Reading…' : 'Read it'}
+				</button>
+			</div>
+		</Field>
+	</form>
+
 	<!-- Everything the editor has. Making somebody create a title and then
 	     immediately press Edit to write the recipe is two steps for one act. -->
 	<form id="recipe-form" method="post" action="?/create" use:enhance>

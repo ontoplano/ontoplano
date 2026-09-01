@@ -44,6 +44,7 @@ shows up here on the next build.
 | [`preferences`](#preferences)                   | The settings a person chooses about themselves.                                                                                                                                                                                                                      |
 | [`protection`](#protection)                     | What the box has blocked, read from fail2ban's own log.                                                                                                                                                                                                              |
 | [`quotes`](#quotes)                             | The quotes shown one-per-day on the dashboard.                                                                                                                                                                                                                       |
+| [`recipe-fetch`](#recipe-fetch)                 | Fetching a page somebody pasted, without becoming a way into the network.                                                                                                                                                                                            |
 | [`recipes`](#recipes)                           | Recipes, and the loop they close.                                                                                                                                                                                                                                    |
 | [`registration`](#registration)                 | Who is allowed to create an account here.                                                                                                                                                                                                                            |
 | [`reminders`](#reminders)                       | Something that reaches out.                                                                                                                                                                                                                                          |
@@ -1629,6 +1630,60 @@ should be boring, not an error.
 
 - `Quote`
 - `QuoteImport`
+
+## recipe-fetch
+
+Fetching a page somebody pasted, without becoming a way into the network.
+
+This is the dangerous half of importing a recipe, and it is dangerous in a
+specific, well-known way. A server that fetches a URL a user supplies is a
+**server-side request forgery** hole: the request comes from inside, so it
+reaches everything the box can reach and nothing outside can. On a rented VPS
+that is the cloud provider's metadata service — `169.254.169.254`, which
+hands out credentials to anyone who asks. On a home server it is the router's
+admin page, the NAS, the printer, and this app's own port.
+
+Ontoplano is meant to be run by other people on their own machines, so the
+guard is not optional and not a setting. What it does:
+
+- **Only http and https.** `file://` reads the disk. `gopher://` and friends
+  have been used to speak other protocols through a fetch.
+- **Resolves the name and checks the address**, not the string. `localhost`,
+  `127.0.0.1`, `0x7f.1`, `[::1]`, a name whose A record is `10.0.0.5` — all
+  of them are the same request, and only the resolved address knows it.
+- **Follows redirects by hand**, checking every hop. A public URL that 302s
+  to `http://169.254.169.254/` is the standard bypass, and `fetch` following
+  redirects on its own would walk straight into it.
+- **Caps the response and the time.** A page is a page; an endless stream is
+  a way to exhaust memory.
+
+There is a residual race — the name could resolve to a public address here
+and a private one microseconds later (DNS rebinding). Closing it properly
+means connecting to the checked address with the Host header set, which Node
+cannot do through `fetch`. It is documented rather than hidden: the payoff
+for an attacker is one GET whose body is parsed as a recipe and discarded,
+and the accounts that can reach this are the ones that can already sign in.
+
+### Functions
+
+#### `isPrivateAddress(address)`
+
+Whether an address belongs to a network that is nobody else's business.
+
+Written out rather than reached for from a package: it is a short list, it
+does not change, and a dependency for it is a dependency in the path of the
+one function that must not be wrong.
+
+#### `assertFetchable(raw)`
+
+The URL, if it is one this may fetch. Throws with a reason if not.
+
+#### `fetchPage(raw)`
+
+Somebody else's page, as text.
+
+Redirects are followed here rather than by `fetch`, because each hop has to
+be checked: a public URL that redirects to a private one is the whole attack.
 
 ## recipes
 

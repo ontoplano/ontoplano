@@ -67,3 +67,33 @@ secret the delivery is signed with, so the receiver can tell it is really us.
 
 A subscription that keeps failing is disabled rather than retried forever, and
 says so on the settings page where it can be revived.
+
+## The one request the server makes for you
+
+Importing a recipe from a link is the only place ontoplano fetches something on
+your behalf. That makes it the one place a **server-side request forgery** could
+live: a request made from inside the box reaches everything the box can reach
+and nothing outside it can — on a rented VPS, the cloud provider's metadata
+service, which hands out credentials to whatever asks; on a home server, the
+router's admin page, the NAS, and this app's own port.
+
+So it is guarded, and the guard is not a setting:
+
+- **http and https only.** `file://` reads the disk; other schemes have been
+  used to speak entirely different protocols through a fetch.
+- **The resolved address is checked, not the string.** `localhost`, `127.0.0.1`,
+  `[::1]`, and a name whose A record points at `10.0.0.5` are the same request,
+  and only the address knows it. Loopback, link-local, both private ranges,
+  carrier-grade NAT and multicast are all refused, in v4 and v6.
+- **Redirects are followed by hand and re-checked at every hop.** A public URL
+  that redirects to a private one is the standard way past a naive check.
+- **The response is capped** at 2MB and 10 seconds, and only HTML is read.
+- **Every refusal says the same sentence.** Distinguishing "that is private"
+  from "that does not resolve" would map your network one guess at a time.
+
+One residual: a name could resolve to a public address at the check and a
+private one microseconds later — DNS rebinding. Closing it means connecting to
+the checked address with the Host header set, which Node cannot do through
+`fetch`. It is written down rather than hidden: the payoff is a single GET whose
+body is parsed as a recipe and discarded, and only accounts that can already
+sign in can reach it.
