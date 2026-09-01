@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.22.0 — 2026-09-01
+
+- **A page for when the app is not answering.** A deploy, a restart or a crash
+  used to leave whoever was mid-sentence looking at the web server's own grey
+  "502 Bad Gateway". They now get an ontoplano page saying it is not answering
+  and retrying on its own. It is one flat file with nothing outside it, because
+  everything else needs the thing that is down.
+
 ## 0.21.0 — 2026-09-01
 
 - **An invitation now hands over a free month, and works on an open instance.**

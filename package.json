@@ -1,10 +1,10 @@
 {
 	"name": "ontoplano",
-	"version": "0.21.0",
+	"version": "0.22.0",
 	"license": "AGPL-3.0-or-later",
 	"scripts": {
 		"dev": "vite dev",
-		"build": "vite build",
+		"build": "vite build && node scripts/build-error-page.mjs",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -21,6 +21,7 @@
 		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes",
 		"test:unit": "vitest run",
 		"icons": "node scripts/build-icons.mjs",
+		"errorpage": "node scripts/build-error-page.mjs",
 		"docs": "node scripts/build-docs.mjs",
 		"docs:check": "node scripts/build-docs.mjs --check",
 		"changelog:check": "node scripts/check-changelog.mjs",
