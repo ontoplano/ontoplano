@@ -251,7 +251,41 @@ test.describe('one account cannot reach another account by id', () => {
 				form: { url: 'https://example.com/alices-hook', events: 'todo.created' }
 			},
 			attack: (id) => ({ path: '/settings/integrations?/deleteWebhook', form: { id } })
+		},
+		{
+			// The headline feature of the kitchen half, and the one entity whose
+			// rows point at several others — so the ownership check has more than
+			// one place to be forgotten.
+			name: 'recipe',
+			page: '/kitchen/recipes',
+			payloadKey: 'recipes',
+			create: { path: '/kitchen/recipes?/create', form: { title: "alice's recipe" } },
+			attack: (id) => ({ path: '/kitchen/recipes?/update', form: { id, title: 'taken' } })
+		},
+		{
+			// A category is what half the other entities hang off, so reaching one
+			// would be reaching into everything attached to it.
+			name: 'category',
+			page: '/planner/activities',
+			payloadKey: 'categories',
+			create: {
+				path: '/planner/activities?/createCategory',
+				form: { label: "alice's category", color: '#1d4ed8' }
+			},
+			attack: (id) => ({
+				path: '/planner/activities?/updateCategory',
+				form: { id, label: 'taken', color: '#b91c1c' }
+			})
 		}
+		/*
+		 * Not here, and deliberately: a shopping category.
+		 *
+		 * There is no action that takes one by id. `saveCategories` walks the
+		 * account's own list and writes each row it finds, so a form naming
+		 * somebody else's id has nothing to name it *to* — the id never leaves
+		 * the server. That is a stronger shape than a checked id, and a test
+		 * here would be asserting against an attack that cannot be expressed.
+		 */
 	];
 
 	for (const c of cases) {
@@ -267,7 +301,12 @@ test.describe('one account cannot reach another account by id', () => {
 				form.categoryId = await firstId(request, alice, '/planner/activities', 'categories');
 
 			const created = await action(request, alice, c.create.path, form);
-			expect(created.type, `Alice creating a ${c.name}: ${created.message}`).toBe('success');
+			// A create that ends in a redirect — the recipe editor opens on the new
+			// row — reports `redirect` rather than `success`. Both mean it worked.
+			expect(
+				['success', 'redirect'],
+				`Alice creating a ${c.name}: ${created.type} ${created.message ?? ''}`
+			).toContain(created.type);
 
 			const id = await firstId(request, alice, c.page, c.payloadKey);
 
