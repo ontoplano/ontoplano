@@ -38,6 +38,7 @@ sentence somebody agrees to when they grant it.
 | `/api/reminders`                             | GET    | —                 |
 | `/api/reminders`                             | POST   | —                 |
 | `/api/search`                                | GET    | —                 |
+| `/api/tutorial`                              | POST   | —                 |
 | `/api/v1/me`                                 | GET    | —                 |
 | `/api/v1/plugin`                             | GET    | `plugin:declare`  |
 | `/api/v1/plugin`                             | PUT    | `plugin:declare`  |
@@ -192,6 +193,21 @@ Session-authenticated like the rest of the app rather than token-based like
 `/api/v1` — this exists for the page that is already open, not for a plugin.
 
 **GET**
+
+### `/api/tutorial`
+
+"I have been shown around."
+
+Session-authenticated and one line long, like `/api/client-errors`: the shell
+mounts the tour on every page, so there is no page whose form action could
+own this. It is a preference the chrome writes about itself, not a mutation
+of anything a page is showing.
+
+The demo never posts here. Its account belongs to one visitor for a few hours
+and the next visitor gets a different one, so a dismissal there is remembered
+by the tab and nowhere else.
+
+**POST**
 
 ### `/api/v1/me`
 

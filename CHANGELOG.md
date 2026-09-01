@@ -10,6 +10,19 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.35.0 — 2026-09-01
+
+- **The app shows you around.** On a new account, and on every visit to the
+  demo, the screen dims and the tour points at one thing at a time: the rooms,
+  the wheel under your thumb, the way to write something down before you have
+  decided where it goes. Dismissing takes two clicks — the first one shows you
+  where the tour lives afterwards.
+- **Every room has a tour of its own**, and the question mark in the corner
+  opens the one for whatever you are looking at. Beside it: a keyboard, which is
+  the list of keys that used to be behind that question mark, and a book, which
+  opens the documentation. On a screen nobody has written a tour for yet, the
+  question mark is red and says so.
+
 ## 0.34.2 — 2026-09-01
 
 - **The default theme has the right colours in a dark room.** Anybody who never

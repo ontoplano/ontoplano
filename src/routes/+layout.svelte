@@ -12,7 +12,8 @@
 	import { THEMES } from '$lib/theme.js';
 	import type { SectionKey } from '$lib/colors.js';
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
-	import ShortcutHelp from '$lib/components/ShortcutHelp.svelte';
+	import HelpDock from '$lib/components/HelpDock.svelte';
+	import Tutorial from '$lib/components/Tutorial.svelte';
 	import CapturePie from '$lib/components/CapturePie.svelte';
 	import NavPie from '$lib/components/NavPie.svelte';
 	import Logo from '$lib/components/Logo.svelte';
@@ -257,6 +258,57 @@
 	$effect(() => {
 		undo.seconds = data.undoSeconds;
 	});
+
+	/* ------------------------------------------------------------- the tour */
+
+	let tour = $state<Tutorial | undefined>();
+
+	/**
+	 * Shown around once, on the way in.
+	 *
+	 * On the dashboard and nowhere else: it is the screen first run lets go of
+	 * somebody on, and it is the only tour that explains the parts of the app
+	 * that are on every screen. Somebody who deep-links into a room instead gets
+	 * the button in the corner, which is the same tour on demand.
+	 *
+	 * A short wait first — the page under it has to have drawn the things the
+	 * tour points at before the light can find them.
+	 */
+	let tourOffered = false;
+	const DEMO_TOUR_KEY = 'ontoplano.tourSeen';
+
+	$effect(() => {
+		if (!data.tutorialPending || tourOffered) return;
+		if (page.url.pathname !== '/') return;
+		// The demo's account is shared with nobody and thrown away, so its
+		// dismissal is remembered by the tab rather than by the database.
+		if (data.demo && sessionStorage.getItem(DEMO_TOUR_KEY)) return;
+
+		tourOffered = true;
+		const timer = setTimeout(() => tour?.start(), 500);
+		return () => clearTimeout(timer);
+	});
+
+	function tourDismissed() {
+		tourOffered = true;
+		if (data.demo) {
+			try {
+				sessionStorage.setItem(DEMO_TOUR_KEY, '1');
+			} catch {
+				// A browser that refuses storage gets the tour again next page. That
+				// is a nuisance and not a reason to break anything.
+			}
+			return;
+		}
+
+		void fetch('/api/tutorial', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ seen: true })
+			// Remembering that somebody has seen the tour is not worth an error
+			// message if it fails; they see it once more.
+		}).catch(() => {});
+	}
 </script>
 
 <svelte:window onkeydown={handleGlobalKeydown} onclick={handleClickOutside} />
@@ -357,7 +409,7 @@
 						navigation that reflows as you add to it is a navigation that will
 						break again.
 					-->
-					<nav class="hidden min-w-0 overflow-x-auto lg:flex">
+					<nav class="hidden min-w-0 overflow-x-auto lg:flex" data-tour="nav">
 						<!--
 							The hrefs are typed as real routes of this app. The rule reads
 							the href expression and cannot see through the array, so it is
@@ -407,6 +459,7 @@
 					<button
 						onclick={() => (palette.open = true)}
 						class="flex w-40 items-center gap-2 border border-chrome-line bg-chrome-raised px-3 py-1.5 text-sm text-chrome-muted transition hover:text-chrome-ink hover:brightness-125 min-[1460px]:w-72"
+						data-tour="search"
 					>
 						<Icon name="search" size={14} />
 						Search
@@ -428,6 +481,7 @@
 						class="pie-handle flex h-8 w-8 items-center justify-center border border-chrome-line bg-chrome-raised text-chrome-muted shadow-sm transition hover:text-chrome-ink hover:brightness-125"
 						aria-label="Jump to a section"
 						title="Jump to a section"
+						data-tour="rooms"
 					>
 						<Logo size={18} />
 					</button>
@@ -439,6 +493,7 @@
 						class="pie-handle flex h-8 w-8 items-center justify-center border border-chrome-line bg-chrome-raised text-chrome-muted shadow-sm transition hover:text-chrome-ink hover:brightness-125"
 						aria-label="Write something down"
 						title="Write something down"
+						data-tour="capture"
 					>
 						<Icon name="plus" size={16} />
 					</button>
@@ -447,6 +502,7 @@
 						onclick={() => (menuOpen = !menuOpen)}
 						class="flex h-8 w-8 items-center justify-center border border-chrome-line bg-chrome-raised text-chrome-muted shadow-sm transition hover:text-chrome-ink hover:brightness-125"
 						aria-label="Menu"
+						data-tour="menu"
 					>
 						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path
@@ -568,6 +624,7 @@
 			class="fixed inset-x-0 bottom-0 z-40 border-t border-chrome-line bg-chrome lg:hidden"
 			style="padding-bottom: var(--safe-bottom)"
 			aria-label="Primary"
+			data-tour="mobile-bar"
 		>
 			<div class="flex" style="height: var(--mobile-nav-height)">
 				<!--
@@ -582,6 +639,7 @@
 						: 'text-chrome-muted'}"
 					aria-label="Account"
 					title="Account"
+					data-tour="menu"
 				>
 					<Icon name="user" size={22} />
 				</a>
@@ -592,6 +650,7 @@
 					class="flex flex-1 items-center justify-center text-chrome-muted"
 					aria-label="Search"
 					title="Search"
+					data-tour="search"
 				>
 					<Icon name="search" size={22} />
 				</button>
@@ -624,6 +683,7 @@
 							: 'text-chrome-muted'}"
 						aria-label="Go to a section"
 						title="Go to a section"
+						data-tour="rooms"
 					>
 						<!-- Edge to edge: the button's own outline is the mark's, so any
 						     inset here would show as a gap inside its own shape. -->
@@ -650,6 +710,7 @@
 						: 'text-chrome-muted'}"
 					aria-label="Write something down"
 					title="Write something down"
+					data-tour="capture"
 				>
 					<Icon name="plus" size={24} />
 				</button>
@@ -680,7 +741,8 @@
 			</div>
 		{/if}
 
-		<ShortcutHelp />
+		<HelpDock demo={data.demo} onstart={() => tour?.start()} />
+		<Tutorial bind:this={tour} accent={section.accent} ondismiss={tourDismissed} />
 		<CommandPalette hidden={data.hiddenSections} />
 		<CapturePie bind:this={pie} onopenchange={(v) => (pieOpen = v)} hidden={data.hiddenSections} />
 		<NavPie

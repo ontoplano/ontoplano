@@ -281,6 +281,7 @@
 				});
 			}}
 			class="btn btn-sm order-last ml-auto"
+			data-tour="habit-new"
 		>
 			{showForm ? 'Cancel' : 'New habit'}
 		</button>
@@ -466,7 +467,7 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="space-y-3">
+		<div class="space-y-3" data-tour="habit-list">
 			{#each filteredHabits() as habit, i (habit.id)}
 				{@const occ = occurrencesForHabit(habit.id)}
 				{@const todayLogged = occ.some((o) => o.date === data.today)}

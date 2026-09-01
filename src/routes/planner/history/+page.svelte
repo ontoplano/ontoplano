@@ -157,7 +157,7 @@
 		<span class="text-sm text-gray-500 sm:hidden">
 			{formatWeekDate(data.weekMeta.monday)} &mdash; {formatWeekDate(data.weekMeta.sunday)}
 		</span>
-		<div class="flex items-center gap-1">
+		<div class="flex items-center gap-1" data-tour="history-week">
 			<button onclick={() => navigateWeek('prev')} class="icon-btn" title="Previous week ([)"
 				>&larr;</button
 			>
@@ -186,7 +186,7 @@
 	</div>
 
 	{#if data.summary.total > 0}
-		<div class="flex gap-3 text-xs text-gray-500">
+		<div class="flex gap-3 text-xs text-gray-500" data-tour="history-summary">
 			<span>{data.summary.total} tasks</span>
 			{#if data.summary.done > 0}
 				<span class="text-blue-700">{data.summary.done} done</span>

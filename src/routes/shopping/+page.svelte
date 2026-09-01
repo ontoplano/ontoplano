@@ -435,6 +435,7 @@
 			<button
 				onclick={() => (showForm ? (showForm = false) : openCreateForm())}
 				class="btn btn-sm btn-primary"
+				data-tour="shopping-new"
 			>
 				{showForm ? 'Cancel' : 'Add item'}
 				<kbd class="border border-white/30 px-1">{keyFor('/shopping', 'new')}</kbd>
@@ -526,7 +527,7 @@
 	</Modal>
 
 	{#if replenishItems.length > 0}
-		<div>
+		<div data-tour="shopping-list">
 			<h2 class="mb-2 text-sm font-bold text-gray-500">Inventory</h2>
 			<!--
 				One category per card, flowing into columns.
@@ -663,7 +664,7 @@
 	{/if}
 
 	{#if somedayItems.length > 0}
-		<div>
+		<div data-tour="shopping-list">
 			<h2 class="mb-2 text-sm font-bold text-gray-500">Wishlist</h2>
 			<!-- The same column width as a category, so the two halves of the page
 			     line up instead of one running the full width of the screen. -->

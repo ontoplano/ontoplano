@@ -207,7 +207,7 @@
 				{showCompleted ? 'Hide completed' : 'Show completed'}
 			</button>
 		</div>
-		<button onclick={startNew} class="btn btn-primary btn-sm">
+		<button onclick={startNew} class="btn btn-primary btn-sm" data-tour="todo-new">
 			<Icon name="plus" /> New todo
 			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
 				>{keyFor('/planner/todo', 'new')}</kbd
@@ -349,7 +349,10 @@
 			/>
 		</div>
 	{:else}
-		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
+		<div
+			class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card"
+			data-tour="todo-list"
+		>
 			{#each visibleTodos as todo, i (todo.id)}
 				<div
 					use:keepInView={selectedIndex === i}

@@ -23,6 +23,7 @@
 			value={data.q}
 			autofocus
 			autocomplete="off"
+			data-tour="search-box"
 			placeholder="Anything you have written down"
 			class="input"
 			aria-label="Search"

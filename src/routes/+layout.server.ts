@@ -8,6 +8,7 @@ import {
 	getSectionColors,
 	getTheme,
 	getWeekSettings,
+	hasSeenTutorial,
 	isDemo as isDemoInstance
 } from '$lib/server/settings';
 import type { HideableSection } from '$lib/sections';
@@ -62,6 +63,7 @@ export const load: LayoutServerLoad = async (event) => {
 	let hiddenSections: HideableSection[] = [];
 	let navOrder: string[] = [];
 	let sectionColors: Record<string, string> = {};
+	let tutorialPending = false;
 	if (event.locals.user) {
 		const ctx = buildCtx(event.locals.user.id);
 		userCategories = listCategories(ctx).map((c) => ({
@@ -75,6 +77,15 @@ export const load: LayoutServerLoad = async (event) => {
 		hiddenSections = getHiddenSections(ctx.userId);
 		navOrder = getNavOrder(ctx.userId);
 		sectionColors = getSectionColors(ctx.userId);
+		/*
+		 * The demo is everybody's first visit.
+		 *
+		 * Its accounts are handed out one per visitor and thrown away, so there
+		 * is nothing worth storing and nothing to be gained by asking — the tour
+		 * is the point of the demo. Everywhere else it is the flag, which is
+		 * written once and never again.
+		 */
+		tutorialPending = isDemoInstance() || !hasSeenTutorial(ctx.userId);
 	}
 
 	return {
@@ -98,6 +109,9 @@ export const load: LayoutServerLoad = async (event) => {
 		// The public demo says so on every page: a copy of your own, deleted
 		// hourly, so nobody mistakes it for their own instance.
 		demo: isDemoInstance(),
+		// Whether to show somebody around without being asked. The shell decides
+		// where — the dashboard, which is where first run lets go of them.
+		tutorialPending,
 		// The demo's own address, for the band that tells a desktop visitor
 		// they can open the same thing on their phone. Taken from the request
 		// rather than from configuration: whatever host they reached it on is

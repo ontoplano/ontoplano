@@ -479,7 +479,7 @@
 	<FormError message={form?.message} />
 
 	<div class="flex flex-wrap items-center justify-between gap-3">
-		<div class="flex items-center gap-1">
+		<div class="flex items-center gap-1" data-tour="board-tabs">
 			{#each [{ v: 'today', l: 'Today' }, { v: 'general', l: 'Todo' }] as t (t.v)}
 				<button
 					onclick={() => {
@@ -531,12 +531,14 @@
 		onclick={() => (filtersOpen = !filtersOpen)}
 		class="btn btn-sm sm:hidden"
 		aria-expanded={filtersOpen}
+		data-tour="board-ratings"
 	>
 		{filtersOpen ? 'Hide filters' : 'Filters'}
 	</button>
 
 	<div
 		class="{filtersOpen ? 'flex' : 'hidden'} flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:flex"
+		data-tour="board-ratings"
 	>
 		<div class="flex items-center gap-1">
 			<span class="eyebrow text-gray-600">Sort</span>
@@ -881,7 +883,10 @@
 				{/each}
 			</div>
 
-			<div class="grid grid-cols-1 gap-3 md:auto-cols-fr md:grid-flow-col">
+			<div
+				class="grid grid-cols-1 gap-3 md:auto-cols-fr md:grid-flow-col"
+				data-tour="board-columns"
+			>
 				{#each columns as column, ci (column.status)}
 					<section
 						class="min-h-64 flex-col border bg-gray-50 {phoneColumn === column.status

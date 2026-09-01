@@ -44,7 +44,7 @@
 	</div>
 
 	<!-- Seven columns, because a week is the unit a shop is done in. -->
-	<div class="grid gap-2 md:grid-cols-7">
+	<div class="grid gap-2 md:grid-cols-7" data-tour="meals-week">
 		{#each data.days as day (day)}
 			{@const onThisDay = data.meals.filter((m) => m.date === day)}
 			<section
@@ -85,7 +85,7 @@
 			{/snippet}
 		</EmptyState>
 	{:else}
-		<div class="grid gap-4 lg:grid-cols-2">
+		<div class="grid gap-4 lg:grid-cols-2" data-tour="meals-shopping">
 			<section class="border border-gray-200 bg-white shadow-card">
 				<header
 					class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-3"

@@ -83,7 +83,7 @@
 			A subject you write against with no deadline — a book you are reading, a trip, a renovation.
 			Notes, tasks and goals can belong to one, and everything about it collects here.
 		</p>
-		<button onclick={openCreate} class="btn btn-primary btn-sm">
+		<button onclick={openCreate} class="btn btn-primary btn-sm" data-tour="notebook-new">
 			<Icon name="plus" /> New notebook
 			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
 				>{keyFor('/diary/notebooks', 'new')}</kbd

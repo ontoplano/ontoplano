@@ -51,7 +51,11 @@
 					{onlyMakeable ? 'Show all' : 'What I can make now'}
 				</button>
 			{/if}
-			<button onclick={() => (showForm = true)} class="btn btn-primary btn-sm">
+			<button
+				onclick={() => (showForm = true)}
+				class="btn btn-primary btn-sm"
+				data-tour="recipe-new"
+			>
 				<Icon name="plus" /> New recipe
 				<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
 					>{keyFor('/kitchen/recipes', 'new')}</kbd
@@ -90,7 +94,7 @@
 			{/snippet}
 		</EmptyState>
 	{:else}
-		<div class="gap-4 lg:columns-2 2xl:columns-3">
+		<div class="gap-4 lg:columns-2 2xl:columns-3" data-tour="recipe-list">
 			{#each visible as recipe (recipe.id)}
 				<a
 					href={resolve('/kitchen/recipes/[id]', { id: String(recipe.id) })}

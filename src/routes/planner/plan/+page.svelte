@@ -1777,7 +1777,7 @@
 		already looking at when it reaches for them), what shape and what next on
 		the right. It wraps to two rows on a phone and holds one on a laptop.
 	-->
-	<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+	<div class="flex flex-wrap items-center gap-x-4 gap-y-2" data-tour="plan-toolbar">
 		<!--
 			The two arrows go to the two ends, with where you are between them.
 
@@ -1879,6 +1879,7 @@
 		class:border-gray-200={schemesExpanded}
 		class:bg-white={schemesExpanded}
 		class:shadow-card={schemesExpanded}
+		data-tour="plan-schemes"
 	>
 		<button
 			type="button"
@@ -2862,6 +2863,7 @@
 	-->
 	<div
 		bind:this={gridWrap}
+		data-tour="plan-grid"
 		class="relative border border-gray-200 bg-white shadow-sm {effectiveView === 'month'
 			? 'h-[calc(100dvh-12rem)] min-h-[54rem]'
 			: gridDays === 1

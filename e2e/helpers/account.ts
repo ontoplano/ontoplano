@@ -38,7 +38,13 @@ export function clientAddress(): string {
 	return `10.${42 + WORKER}.${Math.floor(clients / 250)}.${(clients % 250) + 1}`;
 }
 
-export async function register(page: Page, email: string, name = 'Smoke Test'): Promise<void> {
+export async function register(
+	page: Page,
+	email: string,
+	name = 'Smoke Test',
+	/** Leave the first-run tour up, for the one suite that is about it. */
+	keepTour = false
+): Promise<void> {
 	await page.setExtraHTTPHeaders({ 'x-forwarded-for': clientAddress() });
 
 	await page.goto('/login', { waitUntil: 'networkidle' });
@@ -74,4 +80,29 @@ export async function register(page: Page, email: string, name = 'Smoke Test'): 
 	// onboarding just installed. Without this the account has weekly slots and
 	// no blocks, which is a state nobody using the app is ever in for long.
 	await page.goto('/', { waitUntil: 'networkidle' });
+
+	// A new account is shown around, once, on this screen — so every test that
+	// makes one would otherwise start behind a modal. Dismissed here rather than
+	// suppressed, because that is what a person does and because it is the only
+	// way the flag it writes gets written.
+	if (!keepTour) await dismissTour(page);
+}
+
+/**
+ * Close the guided tour if it has come up.
+ *
+ * Two presses, deliberately: the first goes to the closing step that says where
+ * the tour lives afterwards, the second ends it. Silent when no tour appears —
+ * an account that has already seen it is not a failure.
+ */
+export async function dismissTour(page: Page): Promise<void> {
+	const tour = page.getByRole('dialog', { name: 'Tutorial' });
+	try {
+		await tour.waitFor({ state: 'visible', timeout: 4000 });
+	} catch {
+		return;
+	}
+	await tour.getByRole('button', { name: 'Dismiss' }).click();
+	await tour.getByRole('button', { name: 'Okay, dismiss!' }).click();
+	await tour.waitFor({ state: 'hidden' });
 }

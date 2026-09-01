@@ -84,7 +84,7 @@
 	<!-- Title and button on one line; the button had a row of its own. -->
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<h1 class="text-lg font-bold text-gray-900">People</h1>
-		<button onclick={openCreate} class="btn btn-primary btn-sm">
+		<button onclick={openCreate} class="btn btn-primary btn-sm" data-tour="people-new">
 			<Icon name="plus" /> New person
 			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
 				>{keyFor('/diary/people', 'new')}</kbd
@@ -109,7 +109,7 @@
 					{/snippet}
 				</EmptyState>
 			{:else}
-				<div class="divide-y divide-gray-200">
+				<div class="divide-y divide-gray-200" data-tour="people-list">
 					{#each data.people as person, i (person.id)}
 						<!-- Two buttons and a count beside a name is more than a phone has
 						     room for; below `sm` they go under it. -->

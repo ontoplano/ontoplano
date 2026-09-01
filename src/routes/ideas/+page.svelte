@@ -157,6 +157,7 @@
 				}
 			}}
 			class="btn btn-sm"
+			data-tour="idea-new"
 		>
 			{showForm ? 'Cancel' : 'New idea'}
 		</button>
@@ -328,7 +329,7 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="space-y-3">
+		<div class="space-y-3" data-tour="idea-list">
 			{#each filteredIdeas as idea, i (idea.id)}
 				<div
 					use:keepInView={i === clampedSelectedIndex}

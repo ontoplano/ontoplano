@@ -517,6 +517,161 @@ function shortcutsPage() {
 	return out.join('\n');
 }
 
+/* ------------------------------------------------------------------ tutorials */
+
+/**
+ * The tours, and the screens still waiting for one.
+ *
+ * Read out of `src/lib/tutorials.ts`, `src/lib/sections-nav.ts` and
+ * `src/lib/shortcuts.ts` rather than listed anywhere: a room added to the
+ * navigation is a room this page immediately reports as untoured, which is the
+ * only arrangement in which "we forgot to write the tutorial" is a thing
+ * somebody finds out before a stranger does.
+ */
+function tutorialsPage() {
+	/** path → { label, steps: [title] } */
+	const tours = new Map();
+	{
+		const source = parse(join(ROOT, 'src/lib/tutorials.ts'));
+		const visit = (n) => {
+			if (
+				ts.isVariableDeclaration(n) &&
+				n.name.getText(source) === 'TUTORIALS' &&
+				n.initializer &&
+				ts.isObjectLiteralExpression(n.initializer)
+			) {
+				for (const prop of n.initializer.properties) {
+					if (!ts.isPropertyAssignment(prop) || !ts.isObjectLiteralExpression(prop.initializer))
+						continue;
+					const path = prop.name.getText(source).replace(/['"]/g, '');
+					const at = (key) =>
+						prop.initializer.properties.find(
+							(p) => ts.isPropertyAssignment(p) && p.name.getText(source) === key
+						);
+					const labelProp = at('label');
+					const stepsProp = at('steps');
+					const steps =
+						stepsProp && ts.isArrayLiteralExpression(stepsProp.initializer)
+							? stepsProp.initializer.elements.filter(ts.isObjectLiteralExpression).map((el) => {
+									const title = el.properties.find(
+										(p) => ts.isPropertyAssignment(p) && p.name.getText(source) === 'title'
+									);
+									return title && ts.isStringLiteral(title.initializer)
+										? title.initializer.text
+										: '';
+								})
+							: [];
+					tours.set(path, {
+						label:
+							labelProp && ts.isStringLiteral(labelProp.initializer)
+								? labelProp.initializer.text
+								: path,
+						steps
+					});
+				}
+			}
+			ts.forEachChild(n, visit);
+		};
+		visit(source);
+	}
+
+	// Somewhere the navigation goes, or somewhere with keys of its own: either
+	// is a screen somebody arrives at without having been told what it is.
+	const owed = new Set();
+	{
+		const source = parse(join(ROOT, 'src/lib/sections-nav.ts'));
+		const visit = (n) => {
+			if (
+				ts.isVariableDeclaration(n) &&
+				n.name.getText(source) === 'NAV_PLACES' &&
+				n.initializer &&
+				ts.isArrayLiteralExpression(n.initializer)
+			) {
+				for (const el of n.initializer.elements) {
+					if (!ts.isObjectLiteralExpression(el)) continue;
+					const href = el.properties.find(
+						(p) => ts.isPropertyAssignment(p) && p.name.getText(source) === 'href'
+					);
+					if (href && ts.isStringLiteral(href.initializer)) owed.add(href.initializer.text);
+				}
+			}
+			ts.forEachChild(n, visit);
+		};
+		visit(source);
+	}
+	{
+		const source = parse(join(ROOT, 'src/lib/shortcuts.ts'));
+		const visit = (n) => {
+			if (
+				ts.isVariableDeclaration(n) &&
+				n.name.getText(source) === 'PAGE_SHORTCUTS' &&
+				n.initializer
+			) {
+				const obj = ts.isAsExpression(n.initializer) ? n.initializer.expression : n.initializer;
+				if (ts.isObjectLiteralExpression(obj)) {
+					for (const prop of obj.properties) {
+						if (!ts.isPropertyAssignment(prop)) continue;
+						owed.add(prop.name.getText(source).replace(/['"]/g, ''));
+					}
+				}
+			}
+			ts.forEachChild(n, visit);
+		};
+		visit(source);
+	}
+
+	const screens = [...owed].sort();
+	const covered = screens.filter((s) => tours.has(s));
+	const extra = [...tours.keys()].filter((p) => !owed.has(p)).sort();
+
+	const out = [
+		STAMP,
+		'# Tutorials\n',
+		'The guided tours: the screen dims and one thing at a time does not. Shown',
+		'once on a new account and on every visit to the demo, and on the `?` button',
+		'in the corner of every screen afterwards.\n',
+		'This page is the coverage. A room added to the navigation, or a page given',
+		'keyboard shortcuts, is a screen owed a tour — and turns up here as **none**',
+		'until somebody writes one in `src/lib/tutorials.ts`. The same gap is visible',
+		'in the app: the `?` button goes red on a screen with no tour and says so',
+		'under the pointer.\n',
+		`**${covered.length} of ${screens.length} screens have one.**\n`,
+		'| Screen | Tour | Steps |',
+		'| --- | --- | --- |'
+	];
+
+	for (const screen of screens) {
+		const tour = tours.get(screen);
+		out.push(
+			`| \`${screen}\` | ${tour ? tour.label : '**none**'} | ${tour ? tour.steps.length : '—'} |`
+		);
+	}
+	out.push('');
+
+	if (extra.length) {
+		out.push(
+			'Toured as well, though nothing obliges them to be — a screen reached from',
+			'a link rather than from the navigation:\n'
+		);
+		for (const path of extra) out.push(`- \`${path}\` — ${tours.get(path).label}`);
+		out.push('');
+	}
+
+	out.push('## What each one says\n');
+	out.push(
+		'The steps, in order. Every tour ends on the same closing step, which points',
+		'at the button that reopens it, so it is not listed here.\n'
+	);
+	for (const path of [...tours.keys()].sort()) {
+		const tour = tours.get(path);
+		out.push(`### \`${path}\` — ${tour.label}\n`);
+		tour.steps.forEach((title, i) => out.push(`${i + 1}. ${title}`));
+		out.push('');
+	}
+
+	return out.join('\n');
+}
+
 /* ------------------------------------------------------------- pages/actions */
 
 /**
@@ -934,6 +1089,12 @@ const PAGES = [
 		title: 'Keyboard',
 		blurb: 'every shortcut, per page',
 		build: shortcutsPage
+	},
+	{
+		file: 'tutorials.md',
+		title: 'Tutorials',
+		blurb: 'the guided tours, and the screens still without one',
+		build: tutorialsPage
 	}
 ];
 

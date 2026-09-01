@@ -71,7 +71,18 @@
 		error: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 8v5M12 16h.01',
 		// A circle with an i: a quiet aside, not a problem.
 		info: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 11v5M12 8h.01',
-		shield: 'M12 3l8 3v6c0 4.4-3.2 7.5-8 9-4.8-1.5-8-4.6-8-9V6z'
+		shield: 'M12 3l8 3v6c0 4.4-3.2 7.5-8 9-4.8-1.5-8-4.6-8-9V6z',
+
+		// the help dock, bottom right
+		// A keyboard, because the sheet behind this button is a list of keys —
+		// a bare "?" said "help of some kind" and there are three kinds now.
+		keyboard: 'M3 6h18v12H3zM7 10h.01M11 10h.01M15 10h.01M7 14h10',
+		// A circle with a question in it: the guided tour of whatever is on
+		// screen. Distinct from `info`, which is an aside rather than an offer.
+		help: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM9.6 9.8A2.5 2.5 0 0 1 14.5 11c0 1.7-2.2 2-2.2 3.3M12 17h.01',
+		// An open book: the documentation, which is a different thing from the
+		// tour — the tour is this screen, the book is everything.
+		book: 'M12 6c-2-1.5-4.5-2-8-2v13c3.5 0 6 .5 8 2 2-1.5 4.5-2 8-2V4c-3.5 0-6 .5-8 2zM12 6v13'
 	} as const;
 
 	export type IconName = keyof typeof ICONS;

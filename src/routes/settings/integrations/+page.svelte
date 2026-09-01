@@ -180,7 +180,12 @@
 	<!-- API tokens -->
 	<Card title="API tokens" flush>
 		{#snippet actions()}
-			<button type="button" onclick={() => (showTokenForm = true)} class="btn btn-sm">
+			<button
+				type="button"
+				onclick={() => (showTokenForm = true)}
+				class="btn btn-sm"
+				data-tour="integrations-tokens"
+			>
 				New token <kbd class="ml-1 border border-gray-300 bg-gray-50 px-1 text-gray-700"
 					>{keyFor('/settings/integrations', 'new')}</kbd
 				>
@@ -350,7 +355,7 @@
 		flush
 	>
 		{#if data.streams.length === 0}
-			<div class="space-y-2 px-4 py-6 text-sm text-gray-500">
+			<div class="space-y-2 px-4 py-6 text-sm text-gray-500" data-tour="integrations-streams">
 				<EmptyState icon="plug" title="No streams yet" compact />
 				<p class="text-xs">
 					An app declares a stream by POSTing to
@@ -361,7 +366,7 @@
 				</p>
 			</div>
 		{:else}
-			<ul class="divide-y divide-gray-200">
+			<ul class="divide-y divide-gray-200" data-tour="integrations-streams">
 				{#each data.streams as stream (stream.id)}
 					<li class="px-4 py-3">
 						<form

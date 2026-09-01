@@ -215,7 +215,7 @@
 			{#if data.loose.length === 0}
 				<EmptyState icon="check" title="Everything you planned, you did" />
 			{:else}
-				<form method="post" action="?/carry" use:enhance>
+				<form method="post" action="?/carry" use:enhance data-tour="review-loose">
 					<input type="hidden" name="weekStart" value={data.reading.weekStart} />
 
 					{#each looseByDay as day (day.date)}
@@ -387,7 +387,13 @@
 			description="Not a report. The thing you would tell somebody who asked how your week was."
 			accent="var(--section-accent)"
 		>
-			<form method="post" action="?/saveLines" use:enhance class="space-y-2">
+			<form
+				method="post"
+				action="?/saveLines"
+				use:enhance
+				class="space-y-2"
+				data-tour="review-lines"
+			>
 				<input type="hidden" name="weekStart" value={data.reading.weekStart} />
 
 				{#each { length: data.linesPerReview }, i (i)}

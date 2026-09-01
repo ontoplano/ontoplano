@@ -111,6 +111,7 @@
 				}
 			}}
 			class="btn btn-sm"
+			data-tour="activity-categories"
 		>
 			{showCategoryForm ? 'Hide Categories' : 'Manage Categories'}
 		</button>
@@ -378,7 +379,10 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
+		<div
+			class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card"
+			data-tour="activity-list"
+		>
 			{#each filteredActivities() as activity, i (activity.id)}
 				<div
 					use:keepInView={i === selectedIndex}

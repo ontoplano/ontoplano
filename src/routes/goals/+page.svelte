@@ -142,9 +142,11 @@
 					{data.includeClosed ? 'Hide closed' : 'Show closed'}
 				</a>
 				<!-- eslint-enable svelte/no-navigation-without-resolve -->
-				<button onclick={() => (showAreas = true)} class="btn btn-sm">Areas</button>
+				<button onclick={() => (showAreas = true)} class="btn btn-sm" data-tour="goal-areas">
+					Areas
+				</button>
 			{/if}
-			<button onclick={openCreate} class="btn btn-primary btn-sm">
+			<button onclick={openCreate} class="btn btn-primary btn-sm" data-tour="goal-new">
 				<Icon name="plus" /> New goal
 				<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">{keyFor('/goals', 'new')}</kbd>
 			</button>
@@ -366,7 +368,7 @@
 		</div>
 	{/if}
 
-	<div class="space-y-4">
+	<div class="space-y-4" data-tour="goal-list">
 		{#each byHorizon as column (column.horizon)}
 			<section
 				class="card-accent border border-gray-200 bg-white p-4 shadow-card"

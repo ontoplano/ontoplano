@@ -796,7 +796,10 @@
 		beside it. On a sparse account, where most cards are one line, the
 		difference is a screen of empty space or none.
 	-->
-		<div class="grid grid-flow-row-dense grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+		<div
+			class="grid grid-flow-row-dense grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3"
+			data-tour="dash-cards"
+		>
 			{#each layout as id (id)}
 				{@const card = cardById(id)}
 				{#if card}

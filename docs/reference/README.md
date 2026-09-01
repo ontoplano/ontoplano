@@ -32,6 +32,7 @@ Generated from the code, on every build.
 - [Pages and actions](pages.md) — every address, and the form actions behind it
 - [Configuration](configuration.md) — config.toml, the environment, and per-account settings
 - [Keyboard](keyboard.md) — every shortcut, per page
+- [Tutorials](tutorials.md) — the guided tours, and the screens still without one
 
 ## What is not here
 

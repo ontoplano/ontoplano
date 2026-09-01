@@ -141,6 +141,7 @@ person makes about their own copy of the app, not the operator.
 | `ui.sectionColors`        | `SECTION_COLORS_KEY`    |
 | `ui.style`                | `STYLE_KEY`             |
 | `ui.theme`                | `THEME_KEY`             |
+| `ui.tutorialSeen`         | `TUTORIAL_KEY`          |
 | `user.timezone`           | `TIMEZONE_KEY`          |
 | `week.firstDay`           | `WEEK_FIRST_DAY_KEY`    |
 | `week.generateDay`        | `WEEK_GENERATE_DAY_KEY` |

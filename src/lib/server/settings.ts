@@ -92,6 +92,31 @@ export function setHiddenSections(userId: string, hidden: HideableSection[]): vo
 	setUserSetting(userId, HIDDEN_SECTIONS_KEY, JSON.stringify([...new Set(hidden)]));
 }
 
+// --- The tour ----------------------------------------------------------------
+
+export const TUTORIAL_KEY = 'ui.tutorialSeen';
+
+/**
+ * Whether this account has been shown around.
+ *
+ * The tour runs unasked exactly once — on the first screen after first run —
+ * and lives on a button in the corner from then on. One flag rather than one
+ * per screen: being walked through the app is a thing that happens to a person,
+ * not to a page, and an account that meets the same welcome on every new room
+ * has been nagged rather than helped.
+ *
+ * The demo does not consult this. Every visitor there is somebody's first visit
+ * and the account is shared with nobody, so the demo remembers a dismissal for
+ * the length of the tab and forgets it afterwards.
+ */
+export function hasSeenTutorial(userId: string): boolean {
+	return getUserSetting(userId, TUTORIAL_KEY) === 'true';
+}
+
+export function setTutorialSeen(userId: string, seen: boolean): void {
+	setUserSetting(userId, TUTORIAL_KEY, seen ? 'true' : 'false');
+}
+
 // --- The menu: its order, and its colours ------------------------------------
 
 export const NAV_ORDER_KEY = 'ui.navOrder';

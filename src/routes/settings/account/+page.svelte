@@ -289,7 +289,7 @@
 			</form>
 		{/if}
 
-		<div class="divide-y divide-gray-200 border-t border-gray-200">
+		<div class="divide-y divide-gray-200 border-t border-gray-200" data-tour="account-sessions">
 			{#each data.sessions as s, i (s.id)}
 				<div
 					class="flex items-center gap-4 px-4 py-3 {selected === i
@@ -355,6 +355,7 @@
 				onclick={download}
 				disabled={data.exports.remaining <= 0 || downloading || cooling}
 				class="btn btn-sm"
+				data-tour="account-export"
 			>
 				<Icon name="download" />
 				{downloading ? 'Preparing…' : 'Download'}

@@ -233,6 +233,7 @@
 		<form
 			method="post"
 			action="?/saveMenu"
+			data-tour="prefs-menu"
 			use:settingsForm={{ notice: 'Menu saved.' }}
 			class="space-y-2"
 		>
@@ -542,6 +543,7 @@
 		<form
 			method="post"
 			action="?/setTheme"
+			data-tour="prefs-theme"
 			use:enhance={({ formData }) => {
 				// <html> is outside the component tree, so `update()` will not touch it.
 				const chosen = formData.get('theme')?.toString();

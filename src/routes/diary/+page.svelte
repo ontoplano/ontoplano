@@ -188,6 +188,7 @@
 						winInputCount = 3;
 					}}
 					class="btn btn-sm"
+					data-tour="diary-wins"
 				>
 					{showWinsForm ? 'Cancel' : 'New wins'}
 				</button>
@@ -204,6 +205,7 @@
 					});
 				}}
 				class="btn btn-sm"
+				data-tour="diary-new"
 			>
 				{showForm ? 'Cancel' : 'New entry'}
 			</button>
@@ -394,6 +396,7 @@
 		<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
 		<div
 			class="space-y-3"
+			data-tour="diary-list"
 			onpointerover={handleEntriesPointerOver}
 			onpointerout={handleEntriesPointerOut}
 			onclick={handleEntriesClick}
