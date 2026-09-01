@@ -8,7 +8,7 @@ node_modules
 /.svelte-kit
 /build
 /dist
-# The documentation site, built from docs/wiki/ by `yarn docs:site`. The
+# The documentation site, built from docs/reference/ by `yarn docs:site`. The
 # markdown it is built from IS tracked; this is just its HTML.
 /build-docs
 

@@ -26,7 +26,7 @@ Closes #
 - [ ] `CHANGELOG.md` has a line, under a version that moved in this same commit
       — there is no "Unreleased" section, deliberately.
 - [ ] `yarn docs` was run if you touched the schema, the API, the routes or the
-      keyboard; the wiki is generated and `yarn lint` fails when it is stale.
+      keyboard; the docs is generated and `yarn lint` fails when it is stale.
 
 ## The four invariants
 

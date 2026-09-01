@@ -1,7 +1,7 @@
 /**
- * The wiki, as a site somebody can read without a git checkout.
+ * The docs, as a site somebody can read without a git checkout.
  *
- * `build-docs.mjs` produces markdown in `docs/wiki/`, which is the right shape
+ * `build-docs.mjs` produces markdown in `docs/reference/`, which is the right shape
  * for a repository — reviewable in a diff, greppable, and checked for drift by
  * `yarn docs:check`. It is the wrong shape for reading on a phone, so this
  * turns the same files into static HTML for docs.ontoplano.com.
@@ -27,11 +27,11 @@ import { marked } from 'marked';
 import { anchor } from './lib/anchor.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const WIKI = join(ROOT, 'docs', 'wiki');
+const REFERENCE = join(ROOT, 'docs', 'reference');
 const OUT = join(ROOT, process.argv[2] ?? 'build-docs');
 
-if (!existsSync(WIKI)) {
-	console.error('No docs/wiki — run `yarn docs` first.');
+if (!existsSync(REFERENCE)) {
+	console.error('No docs/reference — run `yarn docs` first.');
 	process.exit(1);
 }
 
@@ -41,8 +41,8 @@ function navOrder(index) {
 	return [...new Set(links)];
 }
 
-const index = readFileSync(join(WIKI, 'README.md'), 'utf8');
-const files = readdirSync(WIKI).filter((f) => f.endsWith('.md') && f !== 'README.md');
+const index = readFileSync(join(REFERENCE, 'README.md'), 'utf8');
+const files = readdirSync(REFERENCE).filter((f) => f.endsWith('.md') && f !== 'README.md');
 const ordered = [
 	...navOrder(index).filter((f) => files.includes(f)),
 	...files.filter((f) => !navOrder(index).includes(f))
@@ -60,7 +60,7 @@ const pages = [
 		href: file.replace(/\.md$/, '.html'),
 		// The address it is linked by, which is not the filename it is written to.
 		link: `/${file.replace(/\.md$/, '')}`,
-		markdown: readFileSync(join(WIKI, file), 'utf8')
+		markdown: readFileSync(join(REFERENCE, file), 'utf8')
 	}))
 ].map((p) => ({ ...p, title: titleOf(p.markdown, p.file) }));
 
@@ -186,7 +186,7 @@ const escape = (text) =>
 	text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /**
- * Links between wiki pages are `.md` in the repo and bare paths here.
+ * Links between docs pages are `.md` in the repo and bare paths here.
  *
  * `/the-plan` rather than `/the-plan.html`: the vhost resolves both, and the
  * address somebody copies out of the bar should not carry an implementation
@@ -277,7 +277,7 @@ for (const page of pages) writeFileSync(join(OUT, page.href), render(page));
  * A page for the addresses that are not pages.
  *
  * Without one, nginx answers with its own — white, serif, "404 Not Found", and
- * no way back into the documentation. It is the same wiki chrome as every
+ * no way back into the documentation. It is the same docs chrome as every
  * other page here, with the nav, because the useful thing to offer somebody
  * who mistyped a URL is the list of what does exist.
  *

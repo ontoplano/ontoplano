@@ -40,7 +40,7 @@ jobs:
 
       - run: yarn install --frozen-lockfile
 
-      # prettier, eslint, the changelog check and the wiki freshness check.
+      # prettier, eslint, the changelog check and the docs freshness check.
       - run: yarn lint
 
       - run: yarn check

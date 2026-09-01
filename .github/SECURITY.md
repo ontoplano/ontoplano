@@ -42,4 +42,4 @@ neither has a safe default:
 - `BETTER_AUTH_SECRET` signs sessions. Generate it; never share one between
   instances.
 
-`docs/wiki/configuration.md` is the full list.
+`docs/reference/configuration.md` is the full list.

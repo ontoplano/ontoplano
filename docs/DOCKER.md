@@ -40,7 +40,7 @@ the _public_ address, not the container's.
 everybody out. There is deliberately no default: a guessable one is every
 account on the instance.
 
-Everything else is optional. `docs/wiki/configuration.md` is the full list, and
+Everything else is optional. `docs/reference/configuration.md` is the full list, and
 the settings a person chooses (week start, theme, what the dashboard shows) are
 in the app rather than in the environment.
 
