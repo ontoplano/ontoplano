@@ -10,6 +10,17 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.27.0 — 2026-09-01
+
+- **The planner's header is one row and its arrows are at the edges.** Back and
+  forward sit at the two ends of the screen at the size of a thumb, with the
+  date between them. In day view it says one date rather than "Sep 1 — Sep 1",
+  and the full-width Today button that moved nothing is gone.
+- Clearing every block in the week at once is no longer a button. Schemes are
+  deleted one at a time, which is the only pace at which that is a decision.
+- One page in the documentation about the phone, opening with the two ways to
+  install and what each costs you, and a button to the app on every docs page.
+
 ## 0.26.0 — 2026-09-01
 
 - **An export can be put back.** Settings → Account → Restore an export takes a

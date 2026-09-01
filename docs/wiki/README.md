@@ -16,8 +16,7 @@ is out of date, which is what keeps the two honest.
 How the pieces fit, and why. The tables inside are generated.
 
 - [Architecture](architecture.md) — how a request travels, and where each kind of rule is allowed to live
-- [Install it on your phone](install.md) — answer three questions and get the steps for your phone, your browser and your instance
-- [On your phone](on-your-phone.md) — installing it as an app, what works offline, and the gesture that captures things
+- [On your phone](on-your-phone.md) — the two ways to install it, the steps for your phone and browser, and what works offline
 - [Running it yourself](running-it.md) — what it needs, three ways to start it, and where your data lives
 - [The plan](the-plan.md) — the three tables a task can live in, and how one becomes another
 - [The wheel](the-wheel.md) — the gesture that opens the rooms, which way round it goes, and how to reorder it

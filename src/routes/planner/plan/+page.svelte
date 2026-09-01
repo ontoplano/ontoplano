@@ -264,7 +264,6 @@
 	let newSchemeName = $state('');
 	let confirmingLoadSchemeId: number | null = $state(null);
 	let confirmingDeleteSchemeId: number | null = $state(null);
-	let confirmingClearAll = $state(false);
 	let confirmingTemplate: string | null = $state(null);
 	let showCsvImport = $state(false);
 
@@ -1756,43 +1755,56 @@
 		the right. It wraps to two rows on a phone and holds one on a laptop.
 	-->
 	<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-		<div class="flex items-center gap-1">
+		<!--
+			The two arrows go to the two ends, with where you are between them.
+
+			They used to sit together in a cluster on the left, small, with the
+			date orphaned beside them — so on a phone the target for "next day"
+			was a 32px glyph in the middle of the screen, next to an identical one
+			that goes the other way. At the ends they are unmistakable, they are
+			the size of a thumb, and the direction is the side it is on.
+		-->
+		<div class="flex w-full items-center gap-2 sm:w-auto sm:flex-1">
 			<button
 				onclick={goToPrevWeek}
 				disabled={!data.range.prev}
-				class="icon-btn disabled:opacity-30"
-				title={data.range.prev ? 'Back 7 days ([)' : 'Already starting today'}
-				aria-label="Back 7 days">&larr;</button
+				class="icon-btn h-11 w-11 shrink-0 disabled:opacity-30"
+				title={data.range.prev ? `Back one ${effectiveView} ([)` : 'Already starting today'}
+				aria-label="Back one {effectiveView}"
 			>
-			<!-- In day view the strip below already has a Today, in the same place
-			     every time. Two of them on one screen is one too many. -->
-			<button
-				onclick={goToToday}
-				disabled={data.range.isCurrent}
-				class="btn btn-sm {effectiveView === 'day' ? 'hidden sm:inline-flex' : ''}"
-				title="Back to this week">Today</button
-			>
+				<Icon name="arrow-left" size={22} />
+			</button>
+
+			<!-- Where you are, in words, between the two things that change it. -->
+			<span class="min-w-0 flex-1 truncate text-center text-sm text-gray-600 sm:text-left">
+				{#if effectiveView === 'month'}
+					{monthLabel(data.range.from)}
+				{:else if effectiveView === 'day'}
+					<!-- One day is one date. "Sep 1 — Sep 1" is a range with nothing
+					     in it, and it read as a bug every time. -->
+					{formatWeekDate(data.range.from)}
+					{#if data.range.isCurrent}<span class="text-gray-500"> · today</span>{/if}
+				{:else}
+					{formatWeekDate(data.range.from)} &mdash; {formatWeekDate(data.range.last)}
+					{#if data.range.isCurrent}
+						<span class="hidden text-gray-500 sm:inline"> · next 7 days</span>
+					{/if}
+				{/if}
+			</span>
+
+			{#if !data.range.isCurrent}
+				<button onclick={goToToday} class="btn btn-sm shrink-0" title="Back to today">Today</button>
+			{/if}
+
 			<button
 				onclick={goToNextWeek}
-				class="icon-btn"
-				title="Forward 7 days (])"
-				aria-label="Forward 7 days">&rarr;</button
+				class="icon-btn h-11 w-11 shrink-0"
+				title="Forward one {effectiveView} (])"
+				aria-label="Forward one {effectiveView}"
 			>
+				<Icon name="arrow-right" size={22} />
+			</button>
 		</div>
-
-		<!-- Where you are, in words, next to what changes it. -->
-		<span class="text-sm text-gray-600">
-			{#if effectiveView === 'month'}
-				{monthLabel(data.range.from)}
-			{:else}
-				{formatWeekDate(data.range.from)} &mdash; {formatWeekDate(data.range.last)}
-				{#if data.range.isCurrent}
-					<span class="hidden text-gray-500 sm:inline">
-						· {effectiveView === 'day' ? 'today' : 'next 7 days'}
-					</span>
-				{/if}
-			{/if}
-		</span>
 
 		<!-- Pinned right on a laptop; on a phone it takes the second line whole, so
 		     the two controls sit at the ends instead of huddling in one corner. -->
@@ -1852,7 +1864,6 @@
 				if (!schemesExpanded) {
 					confirmingLoadSchemeId = null;
 					confirmingDeleteSchemeId = null;
-					confirmingClearAll = false;
 				}
 			}}
 			class="eyebrow flex items-center gap-2 py-1 text-left text-gray-500 hover:text-gray-900 {schemesExpanded
@@ -1945,7 +1956,6 @@
 													onclick={() => {
 														confirmingLoadSchemeId = scheme.id;
 														confirmingDeleteSchemeId = null;
-														confirmingClearAll = false;
 													}}
 													class="btn"
 												>
@@ -1991,7 +2001,6 @@
 												onclick={() => {
 													confirmingDeleteSchemeId = scheme.id;
 													confirmingLoadSchemeId = null;
-													confirmingClearAll = false;
 												}}
 												class="btn btn-danger"
 											>
@@ -2141,7 +2150,6 @@
 												confirmingTemplate = template.key;
 												confirmingLoadSchemeId = null;
 												confirmingDeleteSchemeId = null;
-												confirmingClearAll = false;
 											}}
 											class="btn"
 										>
@@ -2152,46 +2160,6 @@
 							</div>
 						{/each}
 					</div>
-				</div>
-
-				<div class="border-t border-gray-200 pt-4">
-					{#if confirmingClearAll}
-						<div class="flex items-center gap-3">
-							<span class="text-sm text-red-600">Delete every block?</span>
-							<form
-								method="post"
-								action="?/clearAll"
-								use:enhance={() => {
-									return async ({ update }) => {
-										await update();
-										confirmingClearAll = false;
-									};
-								}}
-							>
-								<button
-									type="submit"
-									class="border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 shadow-sm transition hover:bg-red-100"
-								>
-									Yes, clear all
-								</button>
-							</form>
-							<button type="button" onclick={() => (confirmingClearAll = false)} class="btn">
-								Cancel
-							</button>
-						</div>
-					{:else}
-						<button
-							type="button"
-							onclick={() => {
-								confirmingClearAll = true;
-								confirmingLoadSchemeId = null;
-								confirmingDeleteSchemeId = null;
-							}}
-							class="btn btn-danger"
-						>
-							Clear all slots
-						</button>
-					{/if}
 				</div>
 			</div>
 		{/if}
@@ -2671,11 +2639,15 @@
 		{/snippet}
 	</Modal>
 
-	<!-- Also shown over the day grid, which needs a way to move between days;
-	     the full week grid already shows all seven at once. One track rather than
-	     seven bordered buttons — it is one setting with seven positions, and it
-	     is the same object as the Day/Week/Month control above it. -->
-	{#if effectiveView === 'day'}
+	<!--
+		The day picker, where there is more than one day to pick.
+
+		In day view the range is one day, so this drew a single full-width button
+		saying "Today" that moved nothing — a hundred pixels of the phone's screen
+		spent on a control with one position. The arrows above are what moves the
+		day; this is for a range that has several.
+	-->
+	{#if effectiveView === 'day' && data.range.days.length > 1}
 		<div class="seg flex w-full" role="group" aria-label="Which day">
 			{#each data.range.days as day, i (day.date)}
 				<button

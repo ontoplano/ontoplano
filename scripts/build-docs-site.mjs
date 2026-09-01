@@ -84,6 +84,19 @@ a { color: var(--link); }
 nav { position: sticky; top: 2rem; flex: 0 0 15rem; font-size: 0.9rem; }
 nav .brand { font-weight: 700; letter-spacing: -0.01em; margin-bottom: 1rem; display: block;
              color: var(--ink); text-decoration: none; font-size: 1.05rem; }
+/*
+ * The way back to the thing the documentation is about.
+ *
+ * Somebody reading a docs page is one click from wanting to try what it
+ * describes, and until now that click did not exist anywhere on the page.
+ * Filled rather than listed: it is not one of the pages, it is the exit.
+ */
+nav .to-app { display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+              margin: 0 0 1.5rem; padding: 0.5rem 0.9rem; border-radius: 4px;
+              background: var(--ink); color: var(--bg); text-decoration: none;
+              font-weight: 600; font-size: 0.9rem; }
+nav .to-app:hover { opacity: 0.85; }
+nav .to-app svg { width: 1em; height: 1em; }
 nav ul { list-style: none; margin: 0; padding: 0; }
 nav li { margin: 0.15rem 0; }
 nav a { display: block; padding: 0.25rem 0.5rem; text-decoration: none; color: var(--muted);
@@ -123,8 +136,29 @@ kbd { font-family: var(--mono); font-size: 0.8em; border: 1px solid var(--line);
                    align-items: center; gap: 0.35rem 1.1rem; }
 .wizard legend { float: left; width: 100%; font-weight: 600; font-size: 0.9rem;
                  margin-bottom: 0.35rem; }
-.wizard label { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem;
-                cursor: pointer; }
+/*
+ * The choices as pills rather than as the browser's radio buttons.
+ *
+ * A native radio is 13px of somebody else's chrome, different on every
+ * platform, and impossible to make a comfortable tap target without making the
+ * dot enormous. The input is still a radio — it is still keyboard-navigable,
+ * still announced as a radio group — it is just moved out of sight and the
+ * label does the drawing.
+ */
+.wizard label { display: inline-flex; align-items: center; gap: 0.45rem;
+                padding: 0.35rem 0.8rem; border: 1px solid var(--line); border-radius: 999px;
+                background: var(--bg); font-size: 0.9rem; cursor: pointer;
+                transition: border-color 120ms ease, background 120ms ease, color 120ms ease; }
+.wizard label:hover { border-color: var(--muted); }
+.wizard label input { position: absolute; opacity: 0; width: 0; height: 0; }
+/* The dot is drawn, so it is the same shape everywhere. */
+.wizard label::before { content: ''; width: 0.7rem; height: 0.7rem; border-radius: 50%;
+                        border: 1px solid var(--muted); flex: none; }
+.wizard label:has(input:checked) { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+.wizard label:has(input:checked)::before { border-color: var(--bg); background: var(--bg);
+                                           box-shadow: inset 0 0 0 2px var(--ink); }
+/* Keyboard focus has to be visible when the input itself is not. */
+.wizard label:has(input:focus-visible) { outline: 2px solid var(--link); outline-offset: 2px; }
 .wizard-note { font-size: 0.85rem; color: var(--muted); }
 /* An illustration of somebody else's menu — drawn, not photographed, so it
    reads the same in both themes and does not go stale with a browser update. */
@@ -138,6 +172,15 @@ footer { margin-top: 4rem; padding-top: 1rem; border-top: 1px solid var(--line);
   nav { position: static; margin-bottom: 2rem; }
 }
 `.trim();
+
+/**
+ * Where "Open the app" goes.
+ *
+ * The hosted instance by default, and overridable so that somebody building
+ * these docs for their own instance points them at their own app rather than
+ * at mine.
+ */
+const APP_URL = process.env.ONTOPLANO_APP_URL || 'https://app.ontoplano.com';
 
 const escape = (text) =>
 	text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -203,6 +246,13 @@ function render(page) {
   <div class="wrap">
     <nav>
       <a class="brand" href="/">ontoplano docs</a>
+      <a class="to-app" href="${APP_URL}">
+        Open the app
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+      </a>
       <ul>
         ${nav}
       </ul>

@@ -24,7 +24,6 @@ import {
 	saveScheme
 } from '$lib/server/services/schemes';
 import {
-	clearWeeklyPlan,
 	convertRepeat,
 	copySlotsToWeekdays,
 	createExceptional,
@@ -362,15 +361,6 @@ export const actions: Actions = {
 				idList(formData.get('ids')),
 				idList(formData.get('targetDays'), { allowZero: true })
 			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	clearAll: async ({ locals }) => {
-		try {
-			clearWeeklyPlan(buildCtx(locals.user!.id));
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

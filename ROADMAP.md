@@ -1,112 +1,108 @@
 # Roadmap
 
-What ontoplano does not do yet, and intends to. `CHANGELOG.md` is what it
-already does; this is the other end of the same list.
+What Ontoplano does not do yet. `CHANGELOG.md` is what it already does.
 
-Nothing here is scheduled. These are the pieces deliberately left out of the
-first public release so that it could be a first public release, written down
-so that somebody who wants to build one does not have to guess at the shape it
-should take. Each heading is roughly one contribution.
+Three lists: things that are decided and not built, things that are small, and
+things that may never happen. Nothing here is scheduled.
 
-If you want to take one on, open an issue saying so before you write much — the
-constraints below are the parts that are decided, and the rest is genuinely
-open.
+Want to take one on? Open an issue saying so first — the constraints under each
+are the parts that are already decided, and the rest is open.
 
 ---
 
-## Images on notes
+## In scope
 
-Today a note is text. It should be possible to drag an image into one and have
-it appear where it was dropped, the way it works when you drag a picture into a
-GitHub comment: the file uploads, and the editor is left holding a reference to
-it.
+### Images on notes
 
-- **Images first.** Audio comes later, and video probably never — a planner is
-  not a media library. The upload path should not assume "image", but the first
-  version only accepts them.
-- **Where they can go.** Notebooks are the reason for this. Diary entries and
-  ideas write to the same table, so they get it at the same time rather than
-  being carved out.
-- **Storage is the instance's problem, not the schema's.** Files on disk under
-  the instance's data directory, with a row carrying the owner, the mime type
-  and the size. Not blobs in SQLite.
-- **Ownership is in the URL's answer, not in the URL.** Serving a file checks
-  that the account asking owns it, exactly as every other row in this app is
-  read. A guessable path that serves anybody's picture is the failure mode this
-  bullet exists to prevent, and the ownership suite gets a case for it.
-- **Ceilings belong to the plan, not to the upload form.** `src/lib/plans.ts`
-  gains the keys and `assertWithinLimit` enforces them, so the API has the same
-  ceiling the form does. Self-hosted is unlimited, like everything else. On the
-  hosted instance: 1 MB per image, 100 MB per account.
-- **Deleting the note deletes the file.** Including through account deletion and
-  the export, which means `services/account.ts` learns about it.
+Drag an image into a note and have it appear there, the way it works in a
+GitHub comment.
 
-## Audio on notes
+- Images only at first. Notebooks, diary entries and ideas together — they are
+  one table.
+- Files on disk under the instance's data directory, with a row carrying the
+  owner, mime type and size. Not blobs in SQLite.
+- Serving one checks ownership, like every other read. A case in
+  `e2e/idor.e2e.ts`.
+- Ceilings in `src/lib/plans.ts`, enforced with `assertWithinLimit`, so the API
+  has them too. Self-hosted unlimited; hosted 1 MB an image, 100 MB an account.
+- Deleting the note deletes the file, and `services/account.ts` learns about it.
 
-The same path, once images have proved it: a recording attached to an entry, for
-the note you would rather speak than type. Bigger files, so the ceilings are
-different and probably paid-tier only on the hosted instance.
+### A business section
 
-## A business section
+For someone running something small on their own, in the same place as the rest
+of their life.
 
-For somebody running something small on their own — a shop, a practice, freelance
-work — kept in the same place as the rest of their life rather than in a second
-app. The units:
+- Products or services: name, price, cost, still offered.
+- Revenue: what sold, when, how much, to whom — a customer is a `people` row.
+- Costs: one-off and recurring, categorised.
+- One page answering "how was this month", by month and by product.
 
-- **Products or services.** A name, a price, a cost, and whether it is still
-  offered.
-- **Revenue.** What was sold, when, how much of it, and to whom — a customer is
-  a `people` row, which already exists.
-- **Costs.** One-off and recurring, categorised, so a month can be totalled.
-- **The month, answered.** Revenue minus costs, by month and by product, which is
-  the only question this section exists to answer. Not accounting software: no
-  ledgers, no tax, no invoicing.
+Not accounting software: no ledgers, no tax, no invoicing. Reuses `categories`
+and links to `goals` like everything else.
 
-Two things it must not do: become a second todo list, and become a second
-categories system. It reuses `categories` and it links to `goals` like everything
-else here.
+### Trips
 
-## Trips
+A date range with a place, and things hanging off it: what to pack, what it
+cost, what happened. Most of those units exist; the work is the linking and the
+one page that shows a trip whole.
 
-A trip is a date range with a place, and things hanging off it: what to pack,
-what it cost, what happened. Most of that already exists as other units — todos,
-costs, diary entries — so the work is mostly the linking and the one page that
-shows a trip whole.
+### Plugin permissions
 
-## Plugins, less experimental
+A token carries the whole account today. It should not.
 
-The plugin platform (`docs/PLUGINS.md`) is real and used, but a token scoped to
-an instance is still a lot of trust to hand a script somebody found. Three
-pieces, roughly in this order:
+- Scopes per entity and per direction — todos read-only, one stream
+  write-only.
+- A log of what each token actually did, on the page that lists them.
+- `/api/v1` covers `me`, the schedule and streams. The rest — people,
+  notebooks, diary, ideas, recipes, meals, habits, shopping, goals — is a thin
+  adapter and an ownership test each. Do them as one set, or the tenth will not
+  look like the first.
 
-- **Permissions per thing, not per instance.** A token says which entities it
-  may read and which it may write — todos read-only, one data stream write-only
-  — rather than carrying the whole account. The vocabulary is in
-  `services/tokens.ts`; what is missing is the granularity and the UI that makes
-  a narrow token as easy to make as a wide one.
-- **A log of what a token did.** Every call, with the endpoint and the outcome,
-  on the page that lists the tokens — so revoking one is a decision somebody can
-  make from evidence rather than from a name they wrote six months ago.
-- **The rest of the app, over the API.** `/api/v1` covers `me`, the schedule and
-  the data streams, and nothing else. People, notebooks and diary entries,
-  ideas, recipes and meals, habits, shopping, goals — each is a service already,
-  so each is a thin adapter and an ownership test away. Do them as a set with
-  one shape rather than one at a time, or the tenth will not look like the
-  first.
+### Another language
 
-## Another language
+Every string is written into its page in English.
 
-Every string in the app is written into its page in English. Making that
-translatable is a large, mechanical, genuinely useful contribution, and it is
-the one on this list most likely to be done by somebody who is not me.
+- Strings into a keyed catalogue; the build fails on a key that is gone.
+- Locale per account in `user_settings`, browser first, instance as fallback.
+- Dates and numbers through `Intl` — several places hardcode `en-US`.
+- Portuguese first.
 
-- Strings come out of the markup into a catalogue, keyed and typed, and the
-  build fails on a key that no longer exists.
-- The locale is a per-account setting (`user_settings`), with the browser's as
-  the first guess and the instance's as the fallback.
-- Dates, times and numbers go through `Intl` with that locale — several places
-  already hardcode `en-US`, and those are the first ones to find.
-- Portuguese first, because I can check it.
+Not in scope: right-to-left layout, translating the docs.
 
-Not in scope: right-to-left layout, and translating the documentation. Both are
-worth doing and neither is the same job.
+### Sharing, narrowly
+
+A family plan shares a bill and nothing else. The first thing worth actually
+sharing is a **shopping category** — one household, one list of what is out of
+milk. Per category, opt-in, and never a default.
+
+Everything else stays private. "Share your diary with your family" is not a
+feature this is heading towards.
+
+---
+
+## Small improvements
+
+- **Audio on notes.** The same upload path as images, once that exists.
+- **Recipe import from a URL.** schema.org JSON-LD covers most food blogs.
+- **An `.ics` importer**, to sit beside the Todoist and Google Tasks ones.
+- **Reorder the capture wheel.** The rooms wheel is arrangeable; the four
+  capture kinds are not.
+- **Per-account week templates beyond schemes** — a scheme you can schedule
+  rather than apply by hand.
+
+---
+
+## One day, maybe
+
+- **An Obsidian plugin** for notebooks.
+- **An interface for an AI** — say "put this in my week" and have it arranged.
+  Nothing of the sort goes inside the app; this is an API question.
+- **Video on notes.** Probably never: a planner is not a media library.
+
+---
+
+## Decided against
+
+So they stop coming back: budget tracking (huge, crowded, barely touches the
+week), reading lists (a different app), an in-process plugin system (data
+streams already cover it), AI features inside the app.

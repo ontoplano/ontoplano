@@ -36,7 +36,8 @@ help:
 	@echo "  build · preview             production build, and serve it locally"
 	@echo "  install-service / update    the systemd user service: first install, then updates"
 	@echo "  docker-up / docker-down     an instance in a container (docs/DOCKER.md)"
-	@echo "  docker-publish              push the image to the registry — this project only"
+	@echo "  docker-image                build the published image here, without pushing"
+	@echo "  docker-publish              …and push it — asks first, this project only"
 	@echo "  backup-install              Litestream replication (backup-status, backup-drill)"
 	@echo
 	@printf '\033[1mphone & bot\033[0m\n'
@@ -52,7 +53,7 @@ help:
 		echo "  logs-app · logs-dev · setup · up  see local.mk for the rest"; \
 	fi
 
-.PHONY: help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down docker-publish logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
+.PHONY: help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -242,6 +243,13 @@ test:
 # The name and the tags are variables so a fork publishes its own:
 #   make docker-publish IMAGE=you/ontoplano
 
+# Printing, defined here rather than borrowed. `local.mk` has its own set, and
+# a public checkout has no local.mk at all — a target that only prints properly
+# on one person's machine is a target that fails on everybody else's.
+OK   = printf '  \033[34m✓ %s\033[0m\n'
+NO   = printf '  \033[1;31m✗ %s\033[0m\n'
+LOUD = printf '\033[1m%s\033[0m\n'
+
 IMAGE ?= ontoplano/ontoplano
 # The tags a push writes: the version in package.json, and `latest`.
 IMAGE_VERSION = $(shell node -p "require('./package.json').version")
@@ -259,15 +267,85 @@ docker-up:
 docker-down:
 	docker compose down
 
+# What must not end up inside a public image.
+#
+# The build does `COPY . .`, and this checkout holds four private repositories,
+# a signing keystore and an env file. `.dockerignore` is what keeps them out —
+# and a published image is permanent, public and readable layer by layer, so a
+# file deleted in a later layer is still there in the earlier one. There is no
+# taking it back.
+#
+# So it is checked twice, and the second check is the one that counts:
+#
+#   _docker-safe   reads .dockerignore and says which names are missing. Fast,
+#                  and catches the mistake before a build is spent on it.
+#   _docker-audit  looks inside the image that was actually built. An ignore
+#                  rule that reads fine and matches nothing is exactly the bug
+#                  the first check cannot see, and this one can.
+#
+# `docker-publish` runs both, because the cost of being wrong is unbounded.
+DOCKER_MUST_IGNORE = ontoplano-server ontoplano-site ontoplano-development \
+	ontoplano-marketing vboxes .env android-twa
+
+_docker-safe:
+	@[ -f .dockerignore ] || { $(NO) ".dockerignore is missing — refusing to build an image"; exit 1; }
+	@fail=0; \
+	for path in $(DOCKER_MUST_IGNORE); do \
+		[ -e "$$path" ] || continue; \
+		if grep -qE "^/?$$path/?$$" .dockerignore; then \
+			$(OK) "$$path is ignored"; \
+		else \
+			$(NO) "$$path is NOT in .dockerignore"; fail=1; \
+		fi; \
+	done; \
+	[ $$fail = 0 ] || { echo; echo "Refusing to build: add those to .dockerignore first."; exit 1; }
+
+# The built image, opened and looked in. Nothing here is about intent.
+_docker-audit:
+	@fail=0; \
+	for path in $(DOCKER_MUST_IGNORE); do \
+		if docker run --rm --entrypoint /bin/sh $(IMAGE):$(IMAGE_VERSION) \
+			-c "test -e /app/$$path" 2>/dev/null; then \
+			$(NO) "/app/$$path is INSIDE the image"; fail=1; \
+		fi; \
+	done; \
+	[ $$fail = 0 ] || { echo; echo "Refusing to publish: that would be public forever."; exit 1; }
+	@$(OK) "nothing private is in the image"
+
+# The image, built here and sent nowhere. What to run before publishing, and
+# what to run to try the thing a self-hoster will actually get.
+docker-image: _docker-safe
+	@command -v docker >/dev/null || { echo "docker is not on PATH"; exit 1; }
+	@echo "Building $(IMAGE):$(IMAGE_VERSION) for this machine's architecture"
+	@docker build -t $(IMAGE):$(IMAGE_VERSION) -t $(IMAGE):latest .
+	@$(MAKE) -s _docker-audit
+	@$(OK) "built. 'make docker-up' runs it, 'make docker-publish' pushes it"
+
 # One image, both architectures, pushed. buildx builds arm64 under emulation on
 # an x86 machine, which is slow and correct; there is no second command and no
 # manifest to assemble by hand.
-docker-publish:
-	@command -v docker >/dev/null || { echo "docker is not on PATH"; exit 1; }
+#
+# It builds and audits locally first, then asks — like `make deploy`, and for a
+# stronger reason: a deploy can be redone and a publish cannot be undone.
+# DOCKER_YES=1 skips the prompt for a script that has already asked.
+docker-publish: docker-image
 	@docker buildx version >/dev/null 2>&1 || { \
 		echo "docker buildx is missing — it ships with Docker Desktop and with"; \
 		echo "the docker-buildx-plugin package on Linux."; exit 1; }
-	@echo "Publishing $(IMAGE):$(IMAGE_VERSION) and $(IMAGE):latest for $(PLATFORMS)"
+	@echo
+	@$(LOUD) "This PUBLISHES $(IMAGE):$(IMAGE_VERSION) and $(IMAGE):latest"
+	@echo "  to a public registry, for $(PLATFORMS)"
+	@echo "  it cannot be unpublished — somebody may have pulled it before you changed your mind"
+	@echo "  and every layer stays readable, including files a later layer deletes"
+	@if [ -n "$$(git status --porcelain)" ]; then \
+		echo "  ! the working tree is DIRTY — the image is built from what is on disk:"; \
+		git status --porcelain | head -5 | sed 's/^/      /'; \
+	fi
+	@if [ "$(DOCKER_YES)" = 1 ]; then echo "  confirmed by DOCKER_YES=1"; else \
+		printf 'Publish? [y/N] '; \
+		read -r answer </dev/tty 2>/dev/null || answer=; \
+		case "$$answer" in [yY]*) ;; *) echo "Not confirmed — nothing was pushed."; exit 1;; esac; \
+	fi
 	@docker buildx build --platform $(PLATFORMS) \
 		-t $(IMAGE):$(IMAGE_VERSION) -t $(IMAGE):latest \
 		--push .
