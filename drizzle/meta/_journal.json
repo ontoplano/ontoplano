@@ -253,6 +253,13 @@
       "when": 1788227421205,
       "tag": "0035_person_contact_details",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1788231421569,
+      "tag": "0036_family_seats",
+      "breakpoints": true
     }
   ]
 }

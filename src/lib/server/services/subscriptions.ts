@@ -10,9 +10,11 @@ import {
 	type SubscriptionStatus
 } from '../../plans.js';
 import { db } from '../db/index.js';
-import { apiTokens, dataPoints, dataStreams, subscriptions } from '../db/schema.js';
+import { apiTokens, dataPoints, dataStreams, planMembers, subscriptions } from '../db/schema.js';
 import { isSelfHosted, pricing } from '../settings.js';
 import { record } from './audit.js';
+import { user } from '../db/auth.schema.js';
+import { NotFoundError, ValidationError } from './errors.js';
 import type { Ctx } from './ctx.js';
 import { ForbiddenError } from './errors.js';
 
@@ -29,7 +31,7 @@ export type Entitlement = {
 	plan: PlanId;
 	status: SubscriptionStatus;
 	/** Where the answer came from, for a page that has to explain itself. */
-	source: 'self-hosted' | 'trial' | 'subscription' | 'invited' | 'lapsed' | 'none';
+	source: 'self-hosted' | 'trial' | 'subscription' | 'invited' | 'family' | 'lapsed' | 'none';
 	/** End of the trial or of the paid period, whichever is running. */
 	until: string | null;
 	/** True while a cancellation is scheduled and the period is still running. */
@@ -72,7 +74,33 @@ export function resolvePlan(userId: string, now = new Date()): Entitlement {
 	if (isSelfHosted()) return SELF_HOSTED;
 
 	const row = db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).get();
-	if (!row) return { ...unsubscribed() };
+	if (!row) {
+		/*
+		 * No subscription of their own — but somebody may be paying for them.
+		 *
+		 * A family plan is one subscription covering several accounts, so a
+		 * member has no row here at all and resolves through the payer's. Read
+		 * in that direction rather than copied onto each member: one row moves
+		 * when the provider says so, and nobody is left entitled by a copy after
+		 * the payer cancels.
+		 */
+		const seat = db
+			.select({ ownerId: planMembers.ownerId })
+			.from(planMembers)
+			.where(eq(planMembers.memberId, userId))
+			.get();
+
+		if (seat) {
+			const theirs = resolvePlan(seat.ownerId, now);
+			// A seat grants access, never the ability to spend: the billing pages
+			// belong to whoever holds the card.
+			return theirs.plan === 'none'
+				? { ...unsubscribed(), source: 'lapsed' }
+				: { ...theirs, source: 'family', billable: false };
+		}
+
+		return { ...unsubscribed() };
+	}
 
 	const plan = isPlanId(row.plan) ? row.plan : 'none';
 	const status = isSubscriptionStatus(row.status) ? row.status : 'expired';
@@ -206,6 +234,8 @@ export function applySubscription(
 		cancelAt?: string | null;
 		/** Set for a provider-side trial, so the trial-ending mail knows when. */
 		trialEndsAt?: string | null;
+		/** How many accounts this covers. Absent leaves whatever is there. */
+		seats?: number;
 	},
 	now = new Date()
 ): void {
@@ -224,6 +254,9 @@ export function applySubscription(
 		currentPeriodEnd: input.currentPeriodEnd ?? null,
 		cancelAt: input.cancelAt ?? null,
 		...(input.trialEndsAt !== undefined ? { trialEndsAt: input.trialEndsAt } : {}),
+		// Left alone when the caller does not know: a webhook that carries no
+		// items must not silently shrink a family plan to one seat.
+		...(input.seats !== undefined ? { seats: Math.max(1, Math.floor(input.seats)) } : {}),
 		updatedAt: now.toISOString()
 	};
 
@@ -341,4 +374,105 @@ export function assertWithinLimit(ctx: Ctx, key: LimitKey, adding = 1): void {
 		`Your plan allows ${limit.toLocaleString('en-US')} ${LIMIT_LABELS[key].toLowerCase()}. ` +
 			`Nothing has been deleted — upgrading raises the limit.`
 	);
+}
+
+/* ── Seats ───────────────────────────────────────────────────────────────────
+ *
+ * A family plan is one subscription and several accounts. What follows is the
+ * whole of it: the payer holds the card and the seats, a member holds nothing
+ * but access, and no data crosses between them.
+ */
+
+/** How many accounts this subscription is allowed to cover. */
+export function seatsFor(userId: string): number {
+	const row = db
+		.select({ seats: subscriptions.seats })
+		.from(subscriptions)
+		.where(eq(subscriptions.userId, userId))
+		.get();
+	return row?.seats ?? 1;
+}
+
+/** The accounts on somebody's plan, the payer excluded. */
+export function membersOf(ownerId: string): { id: string; name: string; email: string }[] {
+	return db
+		.select({ id: user.id, name: user.name, email: user.email })
+		.from(planMembers)
+		.innerJoin(user, eq(planMembers.memberId, user.id))
+		.where(eq(planMembers.ownerId, ownerId))
+		.orderBy(user.name)
+		.all();
+}
+
+/** Whose plan is paying for this account, if it is not their own. */
+export function seatOwnerOf(memberId: string): string | null {
+	const row = db
+		.select({ ownerId: planMembers.ownerId })
+		.from(planMembers)
+		.where(eq(planMembers.memberId, memberId))
+		.get();
+	return row?.ownerId ?? null;
+}
+
+/**
+ * Put an account on somebody's plan.
+ *
+ * By address, and the account has to exist already: this hands somebody a paid
+ * plan, so it is not a way to create accounts, and an instance with closed
+ * registration must not gain a back door because a payer typed an address.
+ *
+ * Refuses when the plan has no room, when the account already has a plan of its
+ * own — being on two at once is a question with no good answer, and the second
+ * payer would be paying for nothing — and when the payer is not paying.
+ */
+export function addToPlan(ownerId: string, email: string): { id: string; name: string } {
+	const owner = resolvePlan(ownerId);
+	if (owner.plan === 'none') throw new ValidationError('This plan is not active');
+
+	const seats = seatsFor(ownerId);
+	if (seats <= 1) throw new ValidationError('This plan covers one account');
+
+	// The payer holds a seat too, which is why the comparison is against
+	// seats - 1 rather than seats.
+	if (membersOf(ownerId).length >= seats - 1) {
+		throw new ValidationError(`This plan covers ${seats} accounts, and they are all taken`);
+	}
+
+	const wanted = String(email ?? '')
+		.trim()
+		.toLowerCase();
+	if (!wanted) throw new ValidationError('An email address is needed');
+
+	const account = db.select().from(user).where(eq(user.email, wanted)).get();
+	// Deliberately the same message either way: whether an address has an
+	// account here is not a payer's business to learn by typing addresses in.
+	if (!account || account.id === ownerId) {
+		throw new ValidationError('No account here uses that address');
+	}
+
+	if (seatOwnerOf(account.id)) throw new ValidationError('That account is already on a plan');
+
+	const theirs = db
+		.select({ id: subscriptions.id })
+		.from(subscriptions)
+		.where(eq(subscriptions.userId, account.id))
+		.get();
+	if (theirs && resolvePlan(account.id).plan !== 'none') {
+		throw new ValidationError('That account already pays for itself');
+	}
+
+	db.insert(planMembers).values({ ownerId, memberId: account.id }).run();
+	record(ownerId, 'seat_added', { detail: { member: account.id } });
+
+	return { id: account.id, name: account.name };
+}
+
+/** Take an account off a plan. Their data is untouched; only the seat goes. */
+export function removeFromPlan(ownerId: string, memberId: string): void {
+	const result = db
+		.delete(planMembers)
+		.where(and(eq(planMembers.ownerId, ownerId), eq(planMembers.memberId, memberId)))
+		.run();
+	if (result.changes === 0) throw new NotFoundError('seat');
+	record(ownerId, 'seat_removed', { detail: { member: memberId } });
 }

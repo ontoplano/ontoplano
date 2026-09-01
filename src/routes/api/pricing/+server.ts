@@ -35,6 +35,17 @@ export const GET: RequestHandler = async () => {
 				? formatPrice(Math.round(price.yearlyCents / 12), price.currency)
 				: null,
 			yearlyDescribed: describeYearly(price),
+			// The family plan, absent when this instance does not sell one.
+			familyMonthly: price.familyMonthlyCents
+				? formatPrice(price.familyMonthlyCents, price.currency)
+				: null,
+			familyYearly: price.familyYearlyCents
+				? formatPrice(price.familyYearlyCents, price.currency)
+				: null,
+			familyYearlyPerMonth: price.familyYearlyCents
+				? formatPrice(Math.round(price.familyYearlyCents / 12), price.currency)
+				: null,
+			familySeats: price.familySeats,
 			trialDays: price.trialDays,
 			trialRequiresCard: price.trialRequiresCard,
 			// A self-hosted instance sells nothing, and says so rather than

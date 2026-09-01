@@ -26,7 +26,11 @@ export const AUDIT_EVENTS = [
 	'plan_end_set',
 	'impersonation_started',
 	'impersonation_ended',
-	'verification_resent'
+	'verification_resent',
+	// Somebody being given or taken off a paid seat is somebody's access
+	// changing without them doing anything, which is exactly what a log is for.
+	'seat_added',
+	'seat_removed'
 ] as const;
 
 export type AuditEvent = (typeof AUDIT_EVENTS)[number];

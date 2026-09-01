@@ -352,6 +352,19 @@ export function pricing(): Pricing {
 	return {
 		monthlyCents: int('ONTOPLANO_PRICE_MONTHLY_CENTS', DEFAULT_PRICING.monthlyCents),
 		yearlyCents: int('ONTOPLANO_PRICE_YEARLY_CENTS', DEFAULT_PRICING.yearlyCents),
+		// The family rate is only quoted where the provider has a price for it,
+		// so an instance that has not set one up sells one plan rather than
+		// advertising a second nobody can buy.
+		familyMonthlyCents: process.env.PADDLE_PRICE_ID_FAMILY_MONTHLY
+			? int('ONTOPLANO_PRICE_FAMILY_MONTHLY_CENTS', DEFAULT_PRICING.familyMonthlyCents)
+			: 0,
+		familyYearlyCents: process.env.PADDLE_PRICE_ID_FAMILY_YEARLY
+			? int('ONTOPLANO_PRICE_FAMILY_YEARLY_CENTS', DEFAULT_PRICING.familyYearlyCents)
+			: 0,
+		familySeats: Math.min(
+			Math.max(int('ONTOPLANO_FAMILY_SEATS', DEFAULT_PRICING.familySeats), 2),
+			20
+		),
 		currency: process.env.ONTOPLANO_PRICE_CURRENCY || DEFAULT_PRICING.currency,
 		// Bounded: a trial has to span two weekly reviews to show what the app is
 		// for, and one longer than a season is not a trial.

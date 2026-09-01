@@ -10,6 +10,18 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.18.0 — 2026-09-01
+
+- **A family plan: one invoice, up to five accounts.** The payer adds people by
+  email from Settings → Billing, and everybody keeps their own week — the only
+  thing shared is the bill. A seat grants access and never the ability to spend,
+  and taking somebody off a plan leaves their data untouched.
+- New prices: $5.00 a month, $12.00 a month for a family of five, and 30% off
+  either if you pay for a year. The yearly figures are worked out from the
+  monthly ones, so the discount cannot drift from the sentence describing it.
+- The signed-out front page's line comes from `config.toml` now, so whoever
+  runs an instance can say what theirs is without editing the app.
+
 ## 0.17.0 — 2026-09-01
 
 - **The price in the terms is the price the card is charged.** It came from

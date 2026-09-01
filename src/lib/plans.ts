@@ -107,6 +107,16 @@ export type Pricing = {
 	monthlyCents: number;
 	/** A year, in cents. Zero hides the annual option. */
 	yearlyCents: number;
+	/**
+	 * The family rate, covering `familySeats` accounts on one invoice.
+	 *
+	 * Zero means this instance does not sell one, which is the honest default
+	 * for a self-hosted box and for an operator who has not set the price up
+	 * with their provider.
+	 */
+	familyMonthlyCents: number;
+	familyYearlyCents: number;
+	familySeats: number;
 	currency: string;
 	trialDays: number;
 	/** Whether the trial asks for a card up front. */
@@ -115,9 +125,31 @@ export type Pricing = {
 	provider: string;
 };
 
+/**
+ * What an instance quotes before the provider has told it otherwise.
+ *
+ * One rate and one discount: a month costs what it costs, a family is a bigger
+ * number for up to five accounts, and a year is the same thing 30% off. The
+ * yearly figures are derived rather than typed, so the discount cannot drift
+ * from the sentence describing it.
+ */
+export const YEARLY_DISCOUNT = 0.3;
+
+/** The one number to change, and the one to change beside it. */
+const MONTHLY_CENTS = 500;
+const FAMILY_MONTHLY_CENTS = 1200;
+
+/** A year at the monthly rate, less the discount, to the cent. */
+export const yearlyOf = (monthlyCents: number) =>
+	Math.round(monthlyCents * 12 * (1 - YEARLY_DISCOUNT));
+
 export const DEFAULT_PRICING: Pricing = {
-	monthlyCents: 490,
-	yearlyCents: 2990,
+	monthlyCents: MONTHLY_CENTS,
+	yearlyCents: yearlyOf(MONTHLY_CENTS),
+	familyMonthlyCents: FAMILY_MONTHLY_CENTS,
+	familyYearlyCents: yearlyOf(FAMILY_MONTHLY_CENTS),
+	/** How many accounts one family subscription covers, the payer included. */
+	familySeats: 5,
 	currency: 'USD',
 	trialDays: 14,
 	trialRequiresCard: true,

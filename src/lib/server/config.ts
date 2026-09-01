@@ -66,6 +66,9 @@ client_errors = "false"
 
 [ui]
 undo_seconds = "5"
+
+[instance]
+tagline = "Managing life, one week at a time"
 `;
 
 /**
@@ -124,7 +127,21 @@ export interface OntoplanoConfig {
 		/** Seconds a delete waits, undoably, before it happens. Zero turns it off. */
 		undoSeconds: number;
 	};
+	instance: {
+		/**
+		 * The one line under the name on the signed-out front page.
+		 *
+		 * Here rather than in the component because it is the operator's
+		 * sentence, not the app's: somebody running this for a household or a
+		 * team should be able to say what their instance is without editing
+		 * Svelte. Empty falls back to the line below.
+		 */
+		tagline: string;
+	};
 }
+
+/** What the front page says when the instance has not said anything else. */
+export const DEFAULT_TAGLINE = 'Managing life, one week at a time';
 
 export function ensureDirectories(): void {
 	mkdirSync(CONFIG_DIR, { recursive: true });
@@ -161,6 +178,9 @@ client_errors = "${config.reports.clientErrors}"
 
 [ui]
 undo_seconds = "${config.ui.undoSeconds}"
+
+[instance]
+tagline = "${config.instance.tagline}"
 `;
 }
 
@@ -182,6 +202,7 @@ export function loadConfig(): OntoplanoConfig {
 	const account = (parsed.account as Record<string, string>) || {};
 	const reports = (parsed.reports as Record<string, string>) || {};
 	const ui = (parsed.ui as Record<string, string>) || {};
+	const instance = (parsed.instance as Record<string, string>) || {};
 
 	return {
 		server: {
@@ -224,6 +245,9 @@ export function loadConfig(): OntoplanoConfig {
 			 * closing the tab.
 			 */
 			undoSeconds: Math.min(Math.max(parseInt(ui.undo_seconds || '5', 10) || 0, 0), 60)
+		},
+		instance: {
+			tagline: (instance.tagline || '').trim() || DEFAULT_TAGLINE
 		}
 	};
 }

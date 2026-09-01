@@ -9,6 +9,7 @@ import {
 	type DashboardCardId
 } from '$lib/dashboard';
 import { getHiddenSections, getUserSetting, setUserSetting } from '$lib/server/settings';
+import { loadConfig } from '$lib/server/config';
 import { instanceIsEmpty, registrationMode } from '$lib/server/services/registration';
 import { buildCtx } from '$lib/server/services/ctx';
 import { createEntry, latestEntry, listTags } from '$lib/server/services/diary';
@@ -41,7 +42,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		 */
 		return {
 			frontDoor: {
-				canRegister: instanceIsEmpty() || registrationMode() !== 'closed'
+				canRegister: instanceIsEmpty() || registrationMode() !== 'closed',
+				// The operator's sentence, not the app's — see config.toml.
+				tagline: loadConfig().instance.tagline
 			}
 		};
 	}

@@ -849,6 +849,14 @@ export const subscriptions = sqliteTable(
 		cancelAt: text('cancel_at'),
 		/** Where the provider lets this customer manage their own card. */
 		portalUrl: text('portal_url'),
+		/**
+		 * How many accounts this subscription covers, the payer included.
+		 *
+		 * One for the ordinary plan. A family plan is not a different product —
+		 * it is the same subscription with a bigger number here, which is why
+		 * there is no second entitlement model to keep in step.
+		 */
+		seats: integer('seats').notNull().default(1),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -859,6 +867,43 @@ export const subscriptions = sqliteTable(
 	(table) => [
 		uniqueIndex('subscriptions_user_unique').on(table.userId),
 		index('subscriptions_provider_idx').on(table.providerSubscriptionId)
+	]
+);
+
+/**
+ * Who else is on somebody's plan.
+ *
+ * A family plan is one subscription paying for several accounts. Rather than
+ * copying a subscription onto each of them — which would need keeping in step
+ * with the provider five times over, and would leave four rows nobody is
+ * paying for when the payer cancels — a member has no subscription of their
+ * own and resolves through the payer's.
+ *
+ * Nothing is shared but the invoice. Two people on one plan see none of each
+ * other's data, and the app has no notion of a shared week: the entitlement is
+ * the only thing that crosses.
+ */
+export const planMembers = sqliteTable(
+	'plan_members',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		/** Whose subscription pays for this seat. */
+		ownerId: text('owner_id')
+			.notNull()
+			.references(() => user.id),
+		/** The account the seat belongs to. */
+		memberId: text('member_id')
+			.notNull()
+			.references(() => user.id),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('plan_members_owner_idx').on(table.ownerId),
+		// One seat per account: being on two plans at once is a question with no
+		// good answer, and the second payer would be paying for nothing.
+		uniqueIndex('plan_members_member_unique').on(table.memberId)
 	]
 );
 

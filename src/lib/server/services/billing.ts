@@ -62,7 +62,12 @@ type Config = {
 	clientToken: string;
 	priceMonthly: string;
 	priceYearly: string;
+	priceFamilyMonthly: string;
+	priceFamilyYearly: string;
 };
+
+/** Which of the two plans is being bought. */
+export type PlanTier = 'solo' | 'family';
 
 function config(): Config {
 	return {
@@ -70,7 +75,11 @@ function config(): Config {
 		webhookSecret: process.env.PADDLE_WEBHOOK_SECRET ?? '',
 		clientToken: process.env.PADDLE_CLIENT_TOKEN ?? '',
 		priceMonthly: process.env.PADDLE_PRICE_ID_MONTHLY ?? '',
-		priceYearly: process.env.PADDLE_PRICE_ID_YEARLY ?? ''
+		priceYearly: process.env.PADDLE_PRICE_ID_YEARLY ?? '',
+		// The family plan is the same product at a bigger price covering more
+		// accounts. Absent means this instance does not sell one.
+		priceFamilyMonthly: process.env.PADDLE_PRICE_ID_FAMILY_MONTHLY ?? '',
+		priceFamilyYearly: process.env.PADDLE_PRICE_ID_FAMILY_YEARLY ?? ''
 	};
 }
 
@@ -173,11 +182,31 @@ export function hasYearlyPrice(): boolean {
  */
 export async function createCheckout(
 	userId: string,
-	interval: 'monthly' | 'yearly' = 'monthly'
+	interval: 'monthly' | 'yearly' = 'monthly',
+	tier: PlanTier = 'solo'
 ): Promise<string> {
 	if (!isBillingConfigured()) throw new ValidationError('Billing is not configured here');
-	const { apiKey, priceMonthly, priceYearly } = config();
-	const priceId = interval === 'yearly' && priceYearly ? priceYearly : priceMonthly;
+	const { apiKey, priceMonthly, priceYearly, priceFamilyMonthly, priceFamilyYearly } = config();
+
+	/*
+	 * Four prices, one product.
+	 *
+	 * The family plan is not a second thing to own — it is the same
+	 * subscription with more seats on it, which is why the seat count comes
+	 * back from the price rather than being decided here.
+	 */
+	const family = tier === 'family' && priceFamilyMonthly;
+	const priceId = family
+		? interval === 'yearly' && priceFamilyYearly
+			? priceFamilyYearly
+			: priceFamilyMonthly
+		: interval === 'yearly' && priceYearly
+			? priceYearly
+			: priceMonthly;
+
+	if (tier === 'family' && !family) {
+		throw new ValidationError('This instance does not sell a family plan');
+	}
 
 	// A fresh account buys the catalog price, trial included. A returning one
 	// gets an inline copy of it whose trial is whatever it still has — the
@@ -279,6 +308,36 @@ export function hasUnsettledCheckout(userId: string): boolean {
 	return unsettledCheckouts(userId).length > 0;
 }
 
+/**
+ * How many accounts a subscription covers, read off what it is paying for.
+ *
+ * The seat count belongs to the price, not to this app's guess: the family
+ * prices carry `{"seats": 5}` in their custom data, and the price id is the
+ * fallback for a provider that does not hand custom data back on a
+ * subscription. Anything else is one seat, which is the safe reading — a
+ * mistake here gives away paid access.
+ */
+export function seatsFromItems(items: unknown): number {
+	if (!Array.isArray(items)) return 1;
+	const { priceFamilyMonthly, priceFamilyYearly } = config();
+	const familyIds = [priceFamilyMonthly, priceFamilyYearly].filter(Boolean);
+
+	let seats = 1;
+	for (const raw of items) {
+		const item = (raw ?? {}) as Record<string, unknown>;
+		const price = (item.price ?? {}) as Record<string, unknown>;
+		const custom = (price.custom_data ?? null) as Record<string, unknown> | null;
+
+		const declared = Number(custom?.seats);
+		if (Number.isFinite(declared) && declared > seats) seats = Math.floor(declared);
+		else if (price.id && familyIds.includes(String(price.id))) {
+			seats = Math.max(seats, pricing().familySeats);
+		}
+	}
+	// A ceiling, so a mistyped price cannot hand out an unbounded number.
+	return Math.min(seats, 20);
+}
+
 /** Write a provider subscription entity onto an account. */
 function applyProviderSubscription(
 	userId: string,
@@ -300,7 +359,8 @@ function applyProviderSubscription(
 			providerSubscriptionId: String(data.id ?? fallbackSubscriptionId ?? ''),
 			currentPeriodEnd: iso(period.ends_at ?? data.next_billed_at ?? data.canceled_at),
 			cancelAt: change && String(change.action) === 'cancel' ? iso(change.effective_at) : null,
-			trialEndsAt: status === 'trialing' ? iso(period.ends_at ?? data.next_billed_at) : null
+			trialEndsAt: status === 'trialing' ? iso(period.ends_at ?? data.next_billed_at) : null,
+			seats: seatsFromItems(data.items)
 		},
 		now
 	);
@@ -783,7 +843,11 @@ export function handleWebhook(
 			cancelAt: change && String(change.action) === 'cancel' ? iso(change.effective_at) : null,
 			// A card-first trial lives at the provider; its end is the billing
 			// period's end, and the trial-ending mail needs it here.
-			trialEndsAt: status === 'trialing' ? iso(period.ends_at ?? data.next_billed_at) : null
+			trialEndsAt: status === 'trialing' ? iso(period.ends_at ?? data.next_billed_at) : null,
+			// Which plan they are actually on, read off what they are paying for.
+			// Undefined when the event carries no items, which leaves the number
+			// alone rather than shrinking a family plan to one.
+			seats: Array.isArray(data.items) ? seatsFromItems(data.items) : undefined
 		},
 		now
 	);

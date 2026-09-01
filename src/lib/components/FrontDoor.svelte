@@ -19,7 +19,14 @@
 	 * So: the name, one line about what it is, and the two doors. The link out
 	 * is to the project, not to a price.
 	 */
-	let { canRegister = false }: { canRegister?: boolean } = $props();
+	let {
+		canRegister = false,
+		tagline
+	}: {
+		canRegister?: boolean;
+		/** The instance's own line, from config.toml. See `DEFAULT_TAGLINE`. */
+		tagline: string;
+	} = $props();
 </script>
 
 <div
@@ -28,7 +35,7 @@
 	<Logo size={44} />
 
 	<h1 class="mt-5 text-2xl font-bold text-gray-900">ontoplano</h1>
-	<p class="mt-2 text-base text-gray-600">A planner for a whole week, not just a work day.</p>
+	<p class="mt-2 text-base text-gray-600">{tagline}</p>
 
 	<div class="mt-8 flex flex-wrap items-center justify-center gap-3">
 		{#if canRegister}

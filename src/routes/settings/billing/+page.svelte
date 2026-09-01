@@ -175,6 +175,7 @@
 					     provider's checkout, which enhance would swallow. Yearly
 					     leads; it is the one worth taking. -->
 					<form method="post" action="?/checkout" class="flex flex-wrap items-center gap-2">
+						<input type="hidden" name="tier" value="solo" />
 						{#if data.yearly}
 							<button class="btn btn-primary" name="interval" value="yearly">
 								<Icon name="arrow-right" />
@@ -190,6 +191,33 @@
 							</button>
 						{/if}
 					</form>
+
+					<!--
+						The family plan, offered beside the ordinary one rather than as
+						an upsell after it: somebody buying for a household knows that
+						before they reach this page, and finding out afterwards means
+						cancelling and buying again.
+					-->
+					{#if data.pricing.familyMonthlyCents > 0}
+						<form
+							method="post"
+							action="?/checkout"
+							class="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-200 pt-3"
+						>
+							<input type="hidden" name="tier" value="family" />
+							<span class="text-sm text-gray-600">
+								For up to {data.pricing.familySeats} accounts on one invoice:
+							</span>
+							{#if data.yearly}
+								<button class="btn btn-sm" name="interval" value="yearly">
+									{formatPrice(data.pricing.familyYearlyCents, data.pricing.currency)} yearly
+								</button>
+							{/if}
+							<button class="btn btn-sm" name="interval" value="monthly">
+								{formatPrice(data.pricing.familyMonthlyCents, data.pricing.currency)} monthly
+							</button>
+						</form>
+					{/if}
 					{#if data.yearly && yearlyLine}
 						<p class="mt-2 text-xs text-gray-500">Yearly is {yearlyLine}.</p>
 					{/if}
@@ -236,4 +264,64 @@
 			{/each}
 		</div>
 	</Card>
+
+	<!--
+		Who else is on this plan.
+		
+		Shown to the payer when their plan has room, and to a member as a single
+		sentence saying who is covering them — a seat grants access, never the
+		ability to spend, so there are no buttons on that side.
+	-->
+	{#if data.seatOwner}
+		<Card title="Your plan" accent="var(--section-accent)">
+			<p class="text-sm text-gray-600">
+				Somebody else's plan covers this account, so there is nothing to pay here. Ask them to take
+				you off it if you would rather pay for yourself.
+			</p>
+		</Card>
+	{:else if data.seats > 1}
+		<Card title="Who is on your plan" accent="var(--section-accent)">
+			<p class="text-sm text-gray-600">
+				Your plan covers {data.seats} accounts — yours and {data.seats - 1} more. Everybody keeps their
+				own week; the only thing shared is the invoice.
+			</p>
+
+			{#if data.members.length > 0}
+				<ul class="mt-3 divide-y divide-gray-200 border-y border-gray-200">
+					{#each data.members as member (member.id)}
+						<li class="flex items-center justify-between gap-3 py-2">
+							<span class="min-w-0">
+								<span class="block truncate text-sm text-gray-900">{member.name}</span>
+								<span class="block truncate text-xs text-gray-500">{member.email}</span>
+							</span>
+							<form method="post" action="?/removeSeat" use:enhance>
+								<input type="hidden" name="member" value={member.id} />
+								<button class="btn btn-sm" title="Take them off this plan">
+									<Icon name="close" size={14} />
+								</button>
+							</form>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+
+			{#if data.members.length < data.seats - 1}
+				<form method="post" action="?/addSeat" use:enhance class="mt-3 flex flex-wrap gap-2">
+					<input
+						name="who"
+						type="email"
+						required
+						placeholder="their email address"
+						class="input flex-1"
+					/>
+					<button class="btn btn-sm btn-primary">Add to my plan</button>
+				</form>
+				<p class="mt-2 text-xs text-gray-500">
+					They need an account here already. Adding somebody does not create one.
+				</p>
+			{:else}
+				<p class="mt-3 text-xs text-gray-500">Every seat is taken.</p>
+			{/if}
+		</Card>
+	{/if}
 </div>

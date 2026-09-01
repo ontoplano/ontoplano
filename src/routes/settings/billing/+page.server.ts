@@ -4,7 +4,15 @@ import { LIMIT_KEYS, PLANS } from '$lib/plans';
 import { isSelfHosted } from '$lib/server/settings';
 import { buildCtx } from '$lib/server/services/ctx';
 import { exportAllowance } from '$lib/server/services/account';
-import { resolvePlan, usage } from '$lib/server/services/subscriptions';
+import {
+	addToPlan,
+	membersOf,
+	removeFromPlan,
+	resolvePlan,
+	seatOwnerOf,
+	seatsFor,
+	usage
+} from '$lib/server/services/subscriptions';
 import {
 	changeInterval,
 	checkoutTrialDays,
@@ -62,6 +70,16 @@ export const load: PageServerLoad = async ({ locals }) => {
 		hasProviderSub: Boolean(standing),
 		interval,
 		yearly: hasYearlyPrice(),
+		/*
+		 * The family plan, and who is on it.
+		 *
+		 * Only the payer sees any of this: a seat grants access, never the
+		 * ability to spend, so somebody on somebody else's plan gets the state of
+		 * it and no buttons.
+		 */
+		seats: seatsFor(ctx.userId),
+		members: membersOf(ctx.userId),
+		seatOwner: seatOwnerOf(ctx.userId),
 		// A fresh portal session per look: the links carry a short-lived token
 		// and the provider says not to store them.
 		portal: standing ? await portalUrl(ctx.userId) : null
@@ -69,12 +87,40 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
+	/*
+	 * Putting somebody on the plan, and taking them off.
+	 *
+	 * By address, and only for an account that already exists: this hands out a
+	 * paid plan, so it must not become a way to create accounts on an instance
+	 * whose registration is closed.
+	 */
+	addSeat: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			const added = addToPlan(locals.user!.id, String(formData.get('who') ?? ''));
+			return { success: true, added: added.name };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	removeSeat: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			removeFromPlan(locals.user!.id, String(formData.get('member') ?? ''));
+			return { success: true, removed: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	checkout: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const interval = formData.get('interval') === 'yearly' ? 'yearly' : 'monthly';
+		const tier = formData.get('tier') === 'family' ? 'family' : 'solo';
 		let url: string;
 		try {
-			url = await createCheckout(locals.user!.id, interval);
+			url = await createCheckout(locals.user!.id, interval, tier);
 		} catch (e) {
 			return toActionFailure(e);
 		}

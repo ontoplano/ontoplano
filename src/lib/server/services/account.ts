@@ -290,6 +290,22 @@ export function deleteAccount(userId: string): void {
 	db.transaction((tx) => {
 		for (const table of USER_TABLES) table.remove(tx, userId);
 
+		/*
+		 * Seats, in both directions.
+		 *
+		 * This account may be ON somebody's plan, and may BE somebody's plan —
+		 * and neither row carries a `user_id`, so the table-walk above cannot
+		 * see them. Left behind, the foreign key refuses the delete; worse, a
+		 * seat pointing at a deleted payer would leave somebody entitled by a
+		 * row nobody can cancel.
+		 */
+		tx.delete(schema.planMembers)
+			.where(eq(schema.planMembers.memberId, userId) as SQL)
+			.run();
+		tx.delete(schema.planMembers)
+			.where(eq(schema.planMembers.ownerId, userId) as SQL)
+			.run();
+
 		// Not deleted, disowned. The report stops being anybody's the moment
 		// the account goes; the crash it describes is still worth fixing.
 		tx.update(schema.clientErrors)
