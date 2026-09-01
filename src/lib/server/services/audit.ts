@@ -20,6 +20,7 @@ export const AUDIT_EVENTS = [
 	'email_change_requested',
 	'sessions_revoked',
 	'data_exported',
+	'data_imported',
 	'account_deleted',
 	'role_changed',
 	'plan_changed',

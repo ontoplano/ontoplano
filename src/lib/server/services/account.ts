@@ -35,8 +35,10 @@ type Deleter = Pick<typeof db, 'delete'>;
  * There is no second kind of table here any more, which is the point: a build
  * that adds one and forgets it fails the check below.
  */
-type OwnedTable = {
+export type OwnedTable = {
 	name: string;
+	/** The drizzle table itself, so an importer can insert into it. */
+	table: never;
 	rows: (userId: string) => unknown[];
 	remove: (tx: Deleter, userId: string) => void;
 };
@@ -48,6 +50,7 @@ function owned(name: string, table: never): OwnedTable {
 	const col = () => (table as unknown as { userId: never }).userId;
 	return {
 		name,
+		table,
 		rows: (userId) => db.select().from(table).where(eq(col(), userId)).all(),
 		remove: (tx, userId) => void tx.delete(table).where(eq(col(), userId)).run()
 	};
@@ -62,7 +65,7 @@ function owned(name: string, table: never): OwnedTable {
  * them carries its own `user_id` now, so an export reads them the same way as
  * anything else instead of collecting ids through their parents.
  */
-const USER_TABLES: OwnedTable[] = [
+export const USER_TABLES: OwnedTable[] = [
 	// Ordered so a table that points at another comes first.
 	//
 	// These seven were carrying a user_id and being handled by neither the
@@ -324,5 +327,3 @@ export function deleteAccount(userId: string): void {
 			.run();
 	});
 }
-
-export { USER_TABLES };

@@ -35,6 +35,15 @@
 		importText = await file.text();
 	}
 
+	/** The same trick for the account restore: read here, posted as text. */
+	let restoreText = $state('');
+
+	async function readRestoreFile(event: Event) {
+		const file = (event.currentTarget as HTMLInputElement).files?.[0];
+		if (!file) return;
+		restoreText = await file.text();
+	}
+
 	let downloading = $state(false);
 	/** Held after a successful export, so a double-click cannot spend two. */
 	let cooling = $state(false);
@@ -475,6 +484,75 @@
 		</form>
 
 		{#if form?.success && form.action === 'importTasks'}
+			<p class="mt-3 text-sm text-gray-700">{form.message}</p>
+		{/if}
+	</Card>
+
+	<!--
+		The other half of the export, and the one that makes it mean something.
+
+		Its own card rather than a second button on the export's, because they
+		are opposite in consequence: one takes a copy, the other overwrites
+		everything here. Above the delete card and below the tasks import, which
+		is roughly the order of how much they can cost you.
+	-->
+	<Card title="Restore an export" accent="#b45309">
+		<p class="text-sm text-gray-500">
+			A file downloaded from <strong>Export your data</strong>, on this instance or another one.
+			Moving to your own server, or off it, is this and nothing else.
+		</p>
+
+		<form
+			method="post"
+			action="?/importAccount"
+			enctype="multipart/form-data"
+			use:settingsForm={{ notice: 'Restored.' }}
+			class="mt-3 space-y-3"
+		>
+			<input
+				type="file"
+				name="file"
+				accept=".json,application/json"
+				class="input"
+				onchange={readRestoreFile}
+			/>
+
+			<textarea
+				name="text"
+				bind:value={restoreText}
+				rows="3"
+				placeholder="…or paste the export here"
+				class="input font-mono text-xs"
+			></textarea>
+
+			<!--
+				Said before the button, in the words of what it does.
+
+				This is not "import": it empties the account and then fills it, so
+				the sentence has to be the destructive one and the confirmation has
+				to be typed rather than clicked.
+			-->
+			<div class="border border-amber-300 bg-amber-50 p-3">
+				<p class="text-sm text-amber-900">
+					This <strong>replaces everything in this account</strong> with what is in the file. What is
+					here now is gone, and nothing merges.
+				</p>
+				<label class="mt-2 block text-sm text-amber-900">
+					Type <code class="text-xs">REPLACE</code> to confirm
+					<input name="confirm" autocomplete="off" class="input mt-1 max-w-[12rem]" />
+				</label>
+			</div>
+
+			<p class="text-xs text-gray-500">
+				What will not come across: anything about billing, API tokens, calendar feed addresses and
+				the audit log. Those belong to the instance that issued them, not to you — everything you
+				wrote does come across.
+			</p>
+
+			<button type="submit" class="btn btn-sm">Restore</button>
+		</form>
+
+		{#if form?.success && form.action === 'importAccount'}
 			<p class="mt-3 text-sm text-gray-700">{form.message}</p>
 		{/if}
 	</Card>

@@ -13,6 +13,7 @@ import {
 } from '$lib/server/services/account';
 import { buildCtx } from '$lib/server/services/ctx';
 import { importTasks } from '$lib/server/services/imports';
+import { importAccount } from '$lib/server/services/account-import';
 import { toActionFailure } from '$lib/server/services/errors';
 import { listSessions, sessionTokenById } from '$lib/server/services/sessions';
 import { record } from '$lib/server/services/audit';
@@ -79,6 +80,40 @@ export const actions: Actions = {
 			}
 
 			return { success: true, action: 'importTasks', message: parts.join(' ') };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * Put an exported account back — into this one, over what is here.
+	 *
+	 * Destructive, so it asks for a typed word rather than a click: this
+	 * empties the account before it fills it, and the one thing worse than an
+	 * import that fails is an import that half-succeeds over a real week.
+	 * `importAccount` is one transaction for the same reason.
+	 */
+	importAccount: async ({ request, locals }) => {
+		const formData = await request.formData();
+
+		if (
+			String(formData.get('confirm') ?? '')
+				.trim()
+				.toUpperCase() !== 'REPLACE'
+		)
+			return fail(400, { message: 'Type REPLACE to confirm — this empties the account first.' });
+
+		try {
+			const result = importAccount(locals.user!.id, formData.get('text'));
+
+			const parts = [
+				`Imported ${result.total} rows${result.from ? ` from ${result.from.email}` : ''}.`
+			];
+			if (result.skipped.length > 0) {
+				parts.push(`Left behind: ${result.skipped.map((s) => `${s.name} (${s.why})`).join('; ')}.`);
+			}
+
+			return { success: true, action: 'importAccount', message: parts.join(' ') };
 		} catch (e) {
 			return toActionFailure(e);
 		}

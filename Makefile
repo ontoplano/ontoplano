@@ -30,6 +30,7 @@ help:
 	@echo "  db-migrate                  apply migrations (snapshots first)"
 	@echo "  db-snapshot                 a consistent copy, before something regrettable"
 	@echo "  db-seed                     synthetic data for the dev account"
+	@echo "  db-import FILE= EMAIL=      restore an exported account over that address"
 	@echo
 	@printf '\033[1mrun it for real\033[0m\n'
 	@echo "  build · preview             production build, and serve it locally"
@@ -50,7 +51,7 @@ help:
 		echo "  logs-app · logs-demo · setup · up  see local.mk for the rest"; \
 	fi
 
-.PHONY: help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down docker-publish logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
+.PHONY: help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down docker-publish logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -146,6 +147,20 @@ db-generate:
 # so a schema change can never ship without the migration that backs it.
 db-migrate:
 	yarn db:migrate
+
+# Restore an exported account over the one with this address, on this machine.
+#
+# The browser does the same thing under Settings → Account, and is the right
+# tool for a normal-sized export. This is for the move that is too big for a
+# request: a year of use is megabytes, and a proxy refuses it before the app
+# ever sees it.
+#
+# It snapshots first, because it replaces and there is no undo.
+db-import:
+	@[ -n "$(FILE)" ] || { echo "make db-import FILE=export.json EMAIL=you@example.com"; exit 1; }
+	@[ -n "$(EMAIL)" ] || { echo "make db-import FILE=export.json EMAIL=you@example.com"; exit 1; }
+	@$(MAKE) -s db-snapshot
+	npx tsx scripts/import-account.ts "$(FILE)" "$(EMAIL)"
 
 db-snapshot:
 	yarn db:snapshot manual

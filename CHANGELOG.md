@@ -10,6 +10,17 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.26.0 — 2026-09-01
+
+- **An export can be put back.** Settings → Account → Restore an export takes a
+  file from any ontoplano instance and rebuilds this account from it, which is
+  what makes moving between instances — or off one — a thing you can actually
+  do. It replaces rather than merges, asks for a typed word first, and either
+  all of it lands or none of it does.
+- Billing, API tokens, calendar feed addresses and the audit log deliberately
+  do not travel: they belong to the instance that issued them. Everything you
+  wrote does.
+
 ## 0.25.1 — 2026-09-01
 
 - The page shown when the app is not answering is 9kB rather than 900kB. It

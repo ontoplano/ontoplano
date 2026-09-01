@@ -13,6 +13,7 @@ shows up here on the next build.
 | Module                                          | What it is for                                                                                                                                                                                                                                                       |
 | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`access`](#access)                             | The account-level holds, decided in exactly one place.                                                                                                                                                                                                               |
+| [`account-import`](#account-import)             | Putting an exported account back.                                                                                                                                                                                                                                    |
 | [`account`](#account)                           | Taking your data out, and closing your account.                                                                                                                                                                                                                      |
 | [`activities`](#activities)                     | Categories are the areas of a life; activities are the named recurring things inside them. Both are referenced by planner slots and by history, so neither can be deleted while something still points at it — history that loses its category stops being readable. |
 | [`admin`](#admin)                               | Administration: looking at somebody else's account.                                                                                                                                                                                                                  |
@@ -92,6 +93,69 @@ Where a held browser goes.
 
 - `AccessHold`
 
+## account-import
+
+Putting an exported account back.
+
+The export was always the easy half — every row this account owns, as JSON.
+This is the other half, and it is the one that makes the export a way out
+rather than a souvenir: an instance you can leave is only true if there is
+somewhere to arrive.
+
+## The hard part is the ids
+
+Every app table has an integer autoincrement primary key, and rows point at
+each other with it — a `task_records` row names a `recurring_tasks` id, a
+`shopping_items` row names a `shopping_categories` id. Those numbers mean
+nothing in the database being imported into: id 7 over there is somebody
+else's row over here, or nothing at all.
+
+So the ids are not carried. Each row is inserted without its own id, the id
+SQLite gives it is remembered against the one it had, and every column that
+pointed at another table is rewritten through that map before it is written.
+Which columns those are is read from the schema itself — drizzle knows every
+foreign key, so there is no second list to keep in step with the first.
+
+Tables go in parents-first, which is `USER_TABLES` reversed: that list is
+ordered children-first so deletion can walk it, and an insert is a deletion
+backwards.
+
+## What does not travel
+
+An export contains rows that describe the _instance_ rather than the person.
+Carrying them across would be wrong in ways that range from useless to
+dangerous, so they are dropped on the way in and `NOT_PORTABLE` says why for
+each one. The export still contains them: it is a copy of your account, and
+what an import does with a row is a separate question from whether you are
+entitled to have it.
+
+## It replaces, and it is one transaction
+
+Merging two accounts is a different feature with different questions —
+whether two categories called "work" are one category, and nobody can answer
+that but the person. So this empties the account first and then fills it,
+inside a single transaction: it either all lands or none of it does, and
+there is no state where half a week exists.
+
+### Functions
+
+#### `parseExport(raw)`
+
+The shape `exportAccount` produces, checked rather than trusted.
+
+#### `importAccount(userId, payload)`
+
+Replace everything in this account with what is in the file.
+
+One transaction: it all lands or none of it does. Foreign keys are left on —
+the parents-first order is what makes that possible, and a failure here means
+the file is inconsistent, which is a thing worth hearing about rather than
+working around.
+
+### Types
+
+- `ImportResult`
+
 ## account
 
 Taking your data out, and closing your account.
@@ -134,6 +198,7 @@ in and retry, which beats being locked out of a shell of an account.
 
 ### Types
 
+- `OwnedTable` — A table holding user data.
 - `AccountExport`
 - `ExportAllowance`
 
