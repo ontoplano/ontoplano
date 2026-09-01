@@ -63,10 +63,11 @@ test('press, flick and release writes the thing', async ({ page }) => {
 	await page.mouse.down();
 	await page.mouse.move(at.x, at.y - 4);
 
-	// Wedges run clockwise from noon, so the second one — Todo — is down and to
-	// the right.
+	// Wedges run anti-clockwise from six o'clock — the first is under a right
+	// thumb — so the second one, Todo, is up and to the right. See
+	// `$lib/radial.ts` for why that way round.
 	const pie = await pieCentre(page);
-	await page.mouse.move(pie.x + 70, pie.y + 40, { steps: 8 });
+	await page.mouse.move(pie.x + 70, pie.y - 40, { steps: 8 });
 	await page.mouse.up();
 
 	await expect(page.getByRole('heading', { name: /new todo/i })).toBeVisible();
