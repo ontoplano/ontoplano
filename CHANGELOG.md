@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.24.0 — 2026-09-01
+
+- **Docker is the easy path now.** One `docker run`, one volume, no database
+  server, and migrations that apply themselves when the container starts. It
+  runs as a normal user rather than root, stops when it is asked to, and the
+  compilers that build it are left behind in an earlier build stage.
+  `docs/DOCKER.md` covers the reverse proxy, upgrading and backups.
+
 ## 0.23.1 — 2026-09-01
 
 - Connecting the home-screen widget works again. Its setup opened the connect

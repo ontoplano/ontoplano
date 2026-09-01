@@ -55,6 +55,21 @@ Self-hosted, single SQLite file, no account anywhere but your own.
 
 ## Running it
 
+The quickest way, and the one that needs nothing but Docker:
+
+```sh
+docker run -d --name ontoplano -p 1493:1493 \
+  -v ontoplano-data:/data \
+  -e ORIGIN=http://localhost:1493 \
+  -e BETTER_AUTH_SECRET="$(openssl rand -base64 32)" \
+  ontoplano/ontoplano:latest
+```
+
+One container, one volume, no database server — migrations run when it starts.
+`docs/DOCKER.md` has the reverse proxy, the upgrade and the backup.
+
+From the source instead:
+
 ```sh
 yarn
 cp .env.example .env      # set ORIGIN and BETTER_AUTH_SECRET

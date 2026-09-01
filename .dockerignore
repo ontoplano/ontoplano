@@ -1,0 +1,50 @@
+# What must never reach the image.
+#
+# The build stage does `COPY . .`, and this checkout has more in it than the
+# app: the deployment repo, the private notes, the marketing site, the fleet.
+# Without this file every one of them is baked into a layer of an image that is
+# then pushed to a public registry — where a deleted file in a later layer is
+# still readable in the earlier one. This is the file that stops that.
+#
+# Everything here is either private, enormous, or rebuilt inside the image
+# anyway.
+
+# The private siblings. Ignored in .gitignore too; a published image is a
+# second way for them to leave the machine.
+/ontoplano-server/
+/ontoplano-site/
+/ontoplano-development/
+/ontoplano-marketing/
+/vboxes/
+/temp/
+/notes/
+TO-REVIEW.md
+
+# Secrets and local state.
+.env
+.env.*
+!.env.example
+*.db
+*.db-shm
+*.db-wal
+/android-twa/android.keystore
+/android-twa/android.keystore.pass
+
+# Rebuilt in the image, or irrelevant to it.
+node_modules
+/build
+/build-docs
+/.svelte-kit
+/coverage
+/test-results
+/playwright-report
+/android
+/android-twa
+/e2e
+/tests
+/.git
+/.github
+/.claude
+/.claude-docker
+/.opencode
+/.vscode

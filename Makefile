@@ -34,6 +34,8 @@ help:
 	@printf '\033[1mrun it for real\033[0m\n'
 	@echo "  build · preview             production build, and serve it locally"
 	@echo "  install-service / update    the systemd user service: first install, then updates"
+	@echo "  docker-up / docker-down     an instance in a container (docs/DOCKER.md)"
+	@echo "  docker-publish              push the image to the registry — this project only"
 	@echo "  backup-install              Litestream replication (backup-status, backup-drill)"
 	@echo
 	@printf '\033[1mphone & bot\033[0m\n'
@@ -47,7 +49,7 @@ help:
 		echo "  logs-app · logs-demo · setup · up  see local.mk for the rest"; \
 	fi
 
-.PHONY: help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down docker-publish logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -214,6 +216,22 @@ test:
 	yarn test:e2e
 
 # ─── Docker ───────────────────────────────────────────────────────────────────
+#
+# Two audiences and two jobs. `docker-up` / `docker-down` / `docker-build` run
+# an instance HERE, which is what anybody self-hosting wants. `docker-publish`
+# pushes the image to the registry, which only this project does — see
+# docs/DOCKER.md for what it needs the first time.
+#
+# The name and the tags are variables so a fork publishes its own:
+#   make docker-publish IMAGE=you/ontoplano
+
+IMAGE ?= ontoplano/ontoplano
+# The tags a push writes: the version in package.json, and `latest`.
+IMAGE_VERSION = $(shell node -p "require('./package.json').version")
+# What `docker-publish` builds for. arm64 is not decoration: the cheap boxes
+# people self-host on are increasingly Ampere, and a Raspberry Pi is the single
+# commonest thing this runs on.
+PLATFORMS ?= linux/amd64,linux/arm64
 
 docker-build:
 	docker compose build
@@ -223,6 +241,19 @@ docker-up:
 
 docker-down:
 	docker compose down
+
+# One image, both architectures, pushed. buildx builds arm64 under emulation on
+# an x86 machine, which is slow and correct; there is no second command and no
+# manifest to assemble by hand.
+docker-publish:
+	@command -v docker >/dev/null || { echo "docker is not on PATH"; exit 1; }
+	@docker buildx version >/dev/null 2>&1 || { \
+		echo "docker buildx is missing — it ships with Docker Desktop and with"; \
+		echo "the docker-buildx-plugin package on Linux."; exit 1; }
+	@echo "Publishing $(IMAGE):$(IMAGE_VERSION) and $(IMAGE):latest for $(PLATFORMS)"
+	@docker buildx build --platform $(PLATFORMS) \
+		-t $(IMAGE):$(IMAGE_VERSION) -t $(IMAGE):latest \
+		--push .
 
 logs:
 	journalctl --user -u ontoplano -f

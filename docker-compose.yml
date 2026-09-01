@@ -1,20 +1,44 @@
+# ontoplano, in one command.
+#
+#   cp .env.example .env      # then set ORIGIN and BETTER_AUTH_SECRET
+#   docker compose up -d
+#
+# One service, one volume, no database server. See docs/DOCKER.md.
 services:
   ontoplano:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # The published image. To run your own build instead — a patch you have
+    # written, or a branch — comment this out and uncomment `build` below.
+    image: ontoplano/ontoplano:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     container_name: ontoplano
     restart: unless-stopped
     ports:
       - '${PORT:-1493}:1493'
     volumes:
+      # Everything the instance keeps: the database, the snapshots taken before
+      # each migration, and the config file. One volume, one thing to back up.
       - ontoplano-data:/data
     environment:
-      - DATABASE_URL=/data/ontoplano.db
-      - ORIGIN=${ORIGIN:-http://localhost:1493}
-      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}
-      - HOST=0.0.0.0
-      - PORT=1493
+      # The address people type. The app checks it against the one in the
+      # browser's bar — that check is the whole of its CSRF defence, so an
+      # ORIGIN that does not match means every form is refused.
+      ORIGIN: ${ORIGIN:-http://localhost:1493}
+      # Sessions are signed with this. Generate one, keep it, and know that
+      # changing it signs everybody out:  openssl rand -base64 32
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET in .env}
+      # Self-hosted is the whole app, free, with no billing anywhere in it.
+      ONTOPLANO_SELF_HOST: 'true'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:1493/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
 
 volumes:
   ontoplano-data:
