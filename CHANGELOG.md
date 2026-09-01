@@ -10,6 +10,11 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.23.0 — 2026-09-01
+
+- **A new logo.** The favicon, the app icons, the home-screen icon and the mark
+  in the app are all the puffin now, drawn from one file as before.
+
 ## 0.22.0 — 2026-09-01
 
 - **A page for when the app is not answering.** A deploy, a restart or a crash

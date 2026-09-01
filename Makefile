@@ -21,7 +21,7 @@ help:
 	@echo "  dev / dev-stop / dev-logs   the dev server, as a user service (dev-fg holds the terminal)"
 	@echo "  lint · format               prettier+eslint, prettier --write"
 	@echo "  test                        the Playwright e2e suite (yarn test for units)"
-	@echo "  icons                       redraw every icon from src/lib/logo/mark.svg"
+	@echo "  icons                       redraw every icon from src/lib/logo/mark.png"
 	@echo "  docs                        rebuild docs/wiki from the code (lint checks it is current)"
 	@echo "  docs-site                   …and render it to build-docs/ as a static site"
 	@echo
@@ -113,7 +113,7 @@ build:
 		yarn build; \
 	fi
 
-# The logo lives in exactly one file, src/lib/logo/mark.svg. This is what turns
+# The logo lives in exactly one file, src/lib/logo/mark.png. This is what turns
 # it into the favicon, the four PWA icons and the one iOS reads — so changing
 # the logo is changing a file, not finding eight copies of it.
 icons:

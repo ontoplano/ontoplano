@@ -8,9 +8,9 @@
  * the visitor would get the browser's own grey error page with a broken layout
  * on top of it.
  *
- * Generated rather than committed, and generated from `mark.svg`, because that
- * file is the one copy of the logo. A hand-pasted `<svg>` here is a second copy
- * that goes stale the first time the mark changes.
+ * Generated rather than committed, and generated from `mark.png`, because that
+ * file is the one copy of the logo. A hand-pasted copy here is a second one that
+ * goes stale the first time the mark changes.
  *
  * It lands in the build output, which the deploy already ships, so there is no
  * extra directory on the box and no step anybody has to remember. It is also
@@ -30,17 +30,13 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'build', 'client', '503.html');
 
 /**
- * The mark is drawn on the brand ground, as the app draws it.
+ * The logo, inlined.
  *
- * Its baseline bar is near-white, so on a white card the logo loses a quarter
- * of itself — which is why `Logo.svelte` has a `background` prop at all.
+ * A data URI rather than a `<img src="/icons/...">`: this page is served by
+ * nginx off a flat file precisely because the app is not answering, and a
+ * request for anything under `/icons/` would go to the app and fail with it.
  */
-const BRAND_GROUND = '#111827';
-
-/** The logo, with its authoring comment left behind. */
-const mark = readFileSync(join(ROOT, 'src/lib/logo/mark.svg'), 'utf8')
-	.replace(/<!--[\s\S]*?-->/g, '')
-	.trim();
+const mark = `data:image/png;base64,${readFileSync(join(ROOT, 'src/lib/logo/mark.png')).toString('base64')}`;
 
 /** How often the page asks again. Long enough not to be a load test. */
 const RETRY_SECONDS = 20;
@@ -72,9 +68,7 @@ main { width: 100%; max-width: 30rem; background: var(--card);
        border: 1px solid var(--line); border-top: 3px solid var(--bad);
        padding: 2rem; }
 .brand { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.75rem; }
-.brand .mark { display: inline-flex; width: 30px; height: 30px; padding: 3px;
-               background: ${BRAND_GROUND}; }
-.brand svg { width: 100%; height: 100%; display: block; }
+.brand img { width: 30px; height: 30px; display: block; }
 .brand span { font-weight: 700; letter-spacing: -0.01em; }
 h1 { font-size: 1.35rem; letter-spacing: -0.02em; margin: 0 0 0.75rem; }
 p { margin: 0.75rem 0; color: var(--muted); }
@@ -83,7 +77,7 @@ p.lead { color: var(--ink); }
 </head>
 <body>
 <main>
-  <div class="brand"><span class="mark">${mark}</span><span>ontoplano</span></div>
+  <div class="brand"><img src="${mark}" alt=""><span>ontoplano</span></div>
   <h1>Not answering right now</h1>
   <p class="lead">Ontoplano is not responding at this address.</p>
   <p>This page tries again every ${RETRY_SECONDS} seconds, so leaving the tab open is enough.</p>

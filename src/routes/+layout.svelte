@@ -593,7 +593,7 @@
 					>
 						<!-- The logo, bigger than its neighbours on purpose: this is
 						     the way into everything, and the bar's one raised control.
-						     The mark lives in $lib/logo/mark.svg and nothing here
+						     The mark lives in $lib/logo/mark.png and nothing here
 						     knows what is in it. No ground behind it — the chrome is
 						     already that colour, in both themes. -->
 						<Logo size={32} />
