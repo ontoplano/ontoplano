@@ -21,6 +21,8 @@ version.
   monthly ones, so the discount cannot drift from the sentence describing it.
 - The signed-out front page's line comes from `config.toml` now, so whoever
   runs an instance can say what theirs is without editing the app.
+- Dragging a block on a phone no longer scrolls the page at the same time. Both
+  gestures were running at once, so neither finished.
 
 ## 0.17.0 — 2026-09-01
 

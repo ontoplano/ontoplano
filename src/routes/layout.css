@@ -1731,6 +1731,25 @@ html[data-style='playful'] .ec {
 	overflow: hidden;
 }
 
+/*
+ * Dragging a block with a finger, without the page moving underneath it.
+ *
+ * The calendar starts a touch drag on a long press, but sets no `touch-action`
+ * — so the browser was free to scroll at the same time, and a block being
+ * dragged travelled while the grid slid under it. Both happened at once, which
+ * is exactly as useless as it sounds.
+ *
+ * `none` on the blocks themselves rather than on the grid: a finger that starts
+ * on a block is dragging that block, and a finger that starts anywhere else —
+ * the time column, the gutters, an empty half-hour — still scrolls normally. A
+ * pointer-driven gesture cannot share a start with the browser's own.
+ */
+@media (pointer: coarse) {
+	html .ec .ec-event.ec-draggable {
+		touch-action: none;
+	}
+}
+
 @media (prefers-reduced-motion: no-preference) {
 	html .ec .ec-event {
 		transition:
