@@ -10,6 +10,19 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.15.0 — 2026-09-01
+
+- **Paying is no longer something the app can fail to notice.** It learnt about
+  payments in exactly one way — a notification from the payment provider — and
+  when those stopped arriving, somebody who had paid, and had the receipt in
+  their inbox, was sent back to the page that asks for a card. The app now
+  writes down every payment window it opens and asks the provider what became
+  of it: on the way back, and again nightly for anybody who closed the tab.
+  Nobody who has paid is shown the pay page again.
+- If a payment ever does arrive without its notification, the instance says so
+  on `/healthz` and to whoever watches it — rescuing one person quietly would
+  leave the same thing broken for everybody else.
+
 ## 0.14.0 — 2026-08-31
 
 - **The front page is a door.** Signed out, `/` used to be a pitch: a headline,

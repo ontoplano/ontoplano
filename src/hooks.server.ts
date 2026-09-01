@@ -9,7 +9,11 @@ import { createDemoAccount, sweepDemoAccounts, touchDemoAccount } from '$lib/ser
 import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
 import { checkSignUpAllowed, consumeInvite } from '$lib/server/services/registration';
 import { claimFirstAccount } from '$lib/server/services/admin';
-import { onboardEntitlement } from '$lib/server/services/billing';
+import {
+	claimCheckouts,
+	hasUnsettledCheckout,
+	onboardEntitlement
+} from '$lib/server/services/billing';
 import { accessHoldFor, holdDestination } from '$lib/server/services/access';
 import { record } from '$lib/server/services/audit';
 import { toJsonError } from '$lib/server/services/errors';
@@ -425,11 +429,34 @@ const handleDemo: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-const handleAccessHolds: Handle = ({ event, resolve }) => {
+const handleAccessHolds: Handle = async ({ event, resolve }) => {
 	if (!event.locals.user) return resolve(event);
 	const path = event.url.pathname;
 	if (HOLD_EXEMPT.some((p) => path === p || path.startsWith(`${p}/`))) return resolve(event);
-	const hold = accessHoldFor(event.locals.user);
+
+	let hold = accessHoldFor(event.locals.user);
+
+	/*
+	 * Before sending anybody to the pay page: did they already pay?
+	 *
+	 * This is the last line of defence against the worst thing this app can
+	 * do. Somebody paid, the provider mailed them a receipt, its webhook never
+	 * reached us — and they were sent back to the beginning of the payment
+	 * flow, where the honest next step looks like paying a second time.
+	 *
+	 * So a hold that would bounce somebody is not trusted until the checkouts
+	 * they opened have been accounted for. The guard is a single indexed read
+	 * on the ordinary path: only an account with a checkout nobody ever closed
+	 * pays for the round trip to the provider, and only until it is closed.
+	 */
+	if (hold === 'billing' || hold === 'expired') {
+		if (hasUnsettledCheckout(event.locals.user.id)) {
+			if (await claimCheckouts(event.locals.user.id)) {
+				hold = accessHoldFor(event.locals.user);
+			}
+		}
+	}
+
 	if (hold) redirect(303, holdDestination(hold));
 	return resolve(event);
 };

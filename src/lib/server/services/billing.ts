@@ -4,7 +4,7 @@ import { and, eq, gt, isNull, lt, lte, or } from 'drizzle-orm';
 
 import { isPlanId, type PlanId, type Pricing, type SubscriptionStatus } from '../../plans.js';
 import { db } from '../db/index.js';
-import { billingEvents, subscriptions } from '../db/schema.js';
+import { billingCheckouts, billingEvents, subscriptions } from '../db/schema.js';
 import { user } from '../db/auth.schema.js';
 import { renderEmail } from '../email-template.js';
 import { sendLogged } from './mail-log.js';
@@ -31,8 +31,16 @@ import { ValidationError } from './errors.js';
  *    somebody has paid; it only records what the provider said.
  *  - Every webhook is verified and stored by the provider's own event id, so a
  *    retry — and they do retry — is applied exactly once.
- *  - A nightly pass catches what webhooks missed, because a webhook that never
- *    arrived leaves no trace to notice.
+ *  - The webhook is never the ONLY way to learn. Every checkout is written down
+ *    when it is opened, so the app can ask what became of it — on the customer's
+ *    way back, and again nightly for anybody who closed the tab.
+ *
+ * That third rule is not theoretical. The webhook destination was left pointing
+ * at a hostname that had become a redirect; the provider does not follow those,
+ * so every billing event failed silently for hours. A customer paid, got a
+ * receipt by mail, came back, and was shown the pay page again — the worst
+ * thing this code can do. The nightly pass could not save it either, because it
+ * walked subscription rows and the row is exactly what never got written.
  *
  * Sandbox and live are entirely separate Paddle accounts; which one this
  * instance talks to is decided by the API key alone (pdl_sdbx_… keys reach
@@ -220,8 +228,196 @@ export async function createCheckout(
 	if (!transactionId)
 		throw new ValidationError('The payment provider answered strangely. Try again.');
 
+	// Written down BEFORE the customer leaves for the payment window. This row
+	// is what lets the app find out what happened without being told.
+	db.insert(billingCheckouts)
+		.values({ userId, provider: PROVIDER, providerTransactionId: transactionId })
+		.onConflictDoNothing()
+		.run();
+
 	// Relative on purpose: the page is ours. Paddle.js reads _ptxn itself.
 	return `/buy?_ptxn=${transactionId}`;
+}
+
+/* ── What became of a checkout ───────────────────────────────────────────────
+ *
+ * The webhook is still the fast path, and when it arrives it stamps the
+ * checkout settled. What follows is the answer to "and when it does not".
+ */
+
+/** Mark a checkout done, and say which route found out. */
+export function settleCheckout(transactionId: string, by: 'webhook' | 'claim'): void {
+	db.update(billingCheckouts)
+		.set({ settledAt: new Date().toISOString(), settledBy: by })
+		.where(
+			and(
+				eq(billingCheckouts.providerTransactionId, transactionId),
+				isNull(billingCheckouts.settledAt)
+			)
+		)
+		.run();
+}
+
+/** Checkouts opened and never accounted for, oldest first. */
+function unsettledCheckouts(userId?: string) {
+	const unsettled = isNull(billingCheckouts.settledAt);
+	return db
+		.select({
+			id: billingCheckouts.id,
+			userId: billingCheckouts.userId,
+			providerTransactionId: billingCheckouts.providerTransactionId,
+			createdAt: billingCheckouts.createdAt
+		})
+		.from(billingCheckouts)
+		.where(userId ? and(unsettled, eq(billingCheckouts.userId, userId)) : unsettled)
+		.orderBy(billingCheckouts.id)
+		.all();
+}
+
+/** Is there anything to ask about for this account? One indexed read. */
+export function hasUnsettledCheckout(userId: string): boolean {
+	return unsettledCheckouts(userId).length > 0;
+}
+
+/** Write a provider subscription entity onto an account. */
+function applyProviderSubscription(
+	userId: string,
+	data: Record<string, unknown>,
+	now: Date,
+	fallbackSubscriptionId?: string
+): void {
+	const status = mapStatus(data.status);
+	const period = (data.current_billing_period ?? {}) as Record<string, unknown>;
+	const change = (data.scheduled_change ?? null) as Record<string, unknown> | null;
+
+	applySubscription(
+		userId,
+		{
+			plan: status === 'expired' ? 'none' : 'pro',
+			status,
+			provider: PROVIDER,
+			providerCustomerId: data.customer_id ? String(data.customer_id) : null,
+			providerSubscriptionId: String(data.id ?? fallbackSubscriptionId ?? ''),
+			currentPeriodEnd: iso(period.ends_at ?? data.next_billed_at ?? data.canceled_at),
+			cancelAt: change && String(change.action) === 'cancel' ? iso(change.effective_at) : null,
+			trialEndsAt: status === 'trialing' ? iso(period.ends_at ?? data.next_billed_at) : null
+		},
+		now
+	);
+}
+
+async function getJson(path: string): Promise<Record<string, unknown> | null> {
+	const { apiKey } = config();
+	if (!apiKey) return null;
+	try {
+		const response = await fetch(`${apiBase()}${path}`, {
+			headers: { Authorization: `Bearer ${apiKey}` }
+		});
+		if (!response.ok) return null;
+		const body = (await response.json()) as { data?: Record<string, unknown> };
+		return body.data ?? null;
+	} catch (e) {
+		console.error('billing: could not reach the provider for', path, e);
+		return null;
+	}
+}
+
+/**
+ * Ask the provider what became of the checkouts this account opened.
+ *
+ * Called on the way back from the payment window, before the gate that would
+ * otherwise send a paying customer to the pay page. Cheap and bounded: it only
+ * runs when there is an unsettled checkout row, and only touches that account.
+ *
+ * A checkout that produced a subscription is applied and settled. One that
+ * produced nothing — abandoned, or a card that was declined — is settled too
+ * once it is old enough, so the question is not asked forever.
+ *
+ * Returns true when something was actually applied, which the caller uses to
+ * decide whether to recompute access before answering the request.
+ */
+export async function claimCheckouts(userId: string, now = new Date()): Promise<boolean> {
+	const pending = unsettledCheckouts(userId);
+	if (pending.length === 0) return false;
+
+	let applied = false;
+
+	for (const row of pending) {
+		const transaction = await getJson(`/transactions/${row.providerTransactionId}`);
+		if (!transaction) continue;
+
+		const subscriptionId = transaction.subscription_id ? String(transaction.subscription_id) : null;
+
+		if (subscriptionId) {
+			const subscription = await getJson(`/subscriptions/${subscriptionId}`);
+			if (subscription) {
+				applyProviderSubscription(userId, subscription, now, subscriptionId);
+				applied = true;
+				settleCheckout(row.providerTransactionId, 'claim');
+				// A claim means the webhook did not arrive. Loud on purpose: this
+				// self-heals one customer and hides a destination that is wrong for
+				// everybody. /healthz and the administration page count these.
+				console.error(
+					'billing: claimed a checkout the webhook never delivered —',
+					row.providerTransactionId,
+					'check the provider notification destination'
+				);
+				continue;
+			}
+		}
+
+		// Nothing came of it. Give an abandoned window an hour before writing it
+		// off, so a customer who is still typing their card is not dismissed.
+		//
+		// SQLite's CURRENT_TIMESTAMP is `YYYY-MM-DD HH:MM:SS` in UTC with no zone
+		// on it, which Date() is free to read as local time. Made explicit here:
+		// an hour's grace that is silently three is not a grace period.
+		const stamped = row.createdAt.includes('T')
+			? row.createdAt
+			: `${row.createdAt.replace(' ', 'T')}Z`;
+		const opened = new Date(stamped).getTime();
+		const age = Number.isNaN(opened) ? Infinity : now.getTime() - opened;
+		const status = String(transaction.status ?? '');
+		if (status === 'canceled' || (!subscriptionId && age > 3600_000)) {
+			settleCheckout(row.providerTransactionId, 'claim');
+		}
+	}
+
+	return applied;
+}
+
+/**
+ * The same question for everybody, on the nightly pass.
+ *
+ * This is what covers the customer who paid and never came back to the tab.
+ */
+export async function claimAbandonedCheckouts(now = new Date()): Promise<number> {
+	const owners = [...new Set(unsettledCheckouts().map((row) => row.userId))];
+	let applied = 0;
+	for (const userId of owners) {
+		if (await claimCheckouts(userId, now)) applied += 1;
+	}
+	return applied;
+}
+
+/**
+ * Checkouts the app had to chase, because nobody told it.
+ *
+ * Zero is the healthy number. Anything else means the provider's notification
+ * destination is not reaching this instance, and every one of those customers
+ * saw the pay page after paying until something asked on their behalf.
+ */
+export function chasedCheckouts(since: Date): number {
+	return db
+		.select({ id: billingCheckouts.id })
+		.from(billingCheckouts)
+		.where(
+			and(
+				eq(billingCheckouts.settledBy, 'claim'),
+				gt(billingCheckouts.settledAt, since.toISOString())
+			)
+		)
+		.all().length;
 }
 
 /**
@@ -520,6 +716,10 @@ export function handleWebhook(
 		// A payment landed. The subscription events say the rest; this one
 		// exists to bind subscription id to account via the transaction's
 		// custom_data, and to flip the plan on without waiting for them.
+		//
+		// It also closes the checkout we wrote down when the payment window
+		// opened, so nothing goes looking for an answer it already has.
+		if (data.id) settleCheckout(String(data.id), 'webhook');
 		const subscriptionId = String(data.subscription_id ?? '');
 		const resolved = customUserId ?? userIdFromSubscription(subscriptionId);
 		if (!subscriptionId || !resolved) {
@@ -608,6 +808,11 @@ export async function reconcile(
 
 	// Before anything lapses: the warning has to precede the consequence.
 	const noticed = await sendTrialEndingNotices(now);
+
+	// And before anything is judged unpaid: a checkout whose result never
+	// arrived is somebody who paid, and expiring them would be the second
+	// insult after showing them the pay page.
+	await claimAbandonedCheckouts(now);
 
 	const lapsed = db
 		.select({ id: subscriptions.id, userId: subscriptions.userId })

@@ -108,6 +108,11 @@ const USER_TABLES: OwnedTable[] = [
 	// The provider keeps its own copy of the commercial record; this one is the
 	// account's and goes with it.
 	owned('subscriptions', schema.subscriptions as never),
+	// A record of the payment windows this account opened, so a payment the
+	// provider never reported can still be found. It goes with the account for
+	// the same reason the subscription does: it is the paper trail for money
+	// they spent, and deleting the account must not leave it behind.
+	owned('billingCheckouts', schema.billingCheckouts as never),
 	// Last of the subjects: entries, todos, goals and blocks all point at it.
 	owned('notebooks', schema.notebooks as never),
 	owned('recurringTasks', schema.recurringTasks as never),

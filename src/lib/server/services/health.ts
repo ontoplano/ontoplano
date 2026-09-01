@@ -5,6 +5,7 @@ import { sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { loadConfig } from '$lib/server/config';
 import { openFailureCount } from './mail-log.js';
+import { chasedCheckouts } from './billing.js';
 
 /**
  * Can this process actually reach the database?
@@ -148,6 +149,29 @@ export function warnings(r: Resources = resources()): string[] {
 	} catch {
 		// A database mid-migration must not take the probe down with it.
 	}
+
+	/*
+	 * A payment the provider never told us about.
+	 *
+	 * The app chases these now rather than stranding the customer, and that
+	 * rescue is exactly what must not be silent: every chase is somebody who
+	 * saw the pay page after paying, and it means the provider's notification
+	 * destination is not reaching this instance. One is a broken webhook, not a
+	 * fluke — the same channel that carries failed mail carries this, so it
+	 * reaches a phone rather than a log nobody reads.
+	 */
+	try {
+		const chased = chasedCheckouts(new Date(Date.now() - 24 * 3600_000));
+		if (chased > 0) {
+			out.push(
+				`${chased} payment${chased === 1 ? '' : 's'} arrived without a webhook in 24h —` +
+					" check the provider's notification destination"
+			);
+		}
+	} catch {
+		// Same reason.
+	}
+
 	return out;
 }
 

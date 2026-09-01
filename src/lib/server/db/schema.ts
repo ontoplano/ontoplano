@@ -850,6 +850,51 @@ export const subscriptions = sqliteTable(
 );
 
 /**
+ * Every checkout this instance has opened, and whether its result ever landed.
+ *
+ * The app used to learn about a payment in exactly one way: the provider's
+ * webhook. When that stopped arriving — the destination was left pointing at a
+ * hostname that had become a redirect, and the provider does not follow those —
+ * somebody paid, got a receipt by mail, came back, and was shown the pay page
+ * again. Nothing in the app knew a payment had happened, and the nightly
+ * reconcile could not help either: it walks subscription rows, and the row is
+ * what never got written.
+ *
+ * So the checkout is written down when it is opened, before the customer
+ * leaves. Coming back, the app can ask the provider what became of THIS
+ * transaction and act on the answer, and a sweep can do the same later for
+ * anybody who closed the tab. The webhook stays the fast path; this is the
+ * one that cannot go quiet.
+ */
+export const billingCheckouts = sqliteTable(
+	'billing_checkouts',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		provider: text('provider').notNull(),
+		/** The provider's id for the transaction this checkout is paying. */
+		providerTransactionId: text('provider_transaction_id').notNull(),
+		/** Set once the app has read the outcome and written it down. */
+		settledAt: text('settled_at'),
+		/**
+		 * How the outcome was learnt: 'webhook' when the provider told us, and
+		 * 'claim' when it did not and we had to ask. A row full of 'claim' means
+		 * the webhook is broken, which is why it is recorded rather than inferred.
+		 */
+		settledBy: text('settled_by', { enum: ['webhook', 'claim'] }),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('billing_checkouts_user_idx').on(table.userId),
+		uniqueIndex('billing_checkouts_transaction_unique').on(table.providerTransactionId)
+	]
+);
+
+/**
  * Every webhook the provider has sent, by its own id.
  *
  * Providers retry, and a retried "subscription cancelled" applied twice is
