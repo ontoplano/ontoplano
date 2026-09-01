@@ -15,9 +15,9 @@ import {
 	type DashboardCardId
 } from '$lib/dashboard';
 import { HIDEABLE_SECTIONS, isHideableSection } from '$lib/sections';
-import { accentsWith, placesFor } from '$lib/nav-order';
+import { placesFor } from '$lib/nav-order';
 import { NAV_PLACES } from '$lib/sections-nav';
-import { SECTIONS, type SectionKey } from '$lib/colors';
+import { SECTIONS } from '$lib/colors';
 import {
 	getCurrency,
 	getHiddenSections,
@@ -65,26 +65,56 @@ export const load: PageServerLoad = async ({ locals }) => {
 		layout: parseLayout(getUserSetting(ctx.userId, DASHBOARD_LAYOUT_KEY)).filter((id) =>
 			visibleCards(hiddenSections).some((c) => c.id === id)
 		),
-		// The rooms, in this account's order and with its colours applied — one
-		// list for the page to show, rather than a list plus two settings the
-		// page would have to combine itself and get subtly wrong.
-		rooms: placesFor(NAV_PLACES, {
-			order: getNavOrder(ctx.userId),
-			colors: getSectionColors(ctx.userId)
-		}).map((p) => ({ key: p.key, label: p.label, section: p.section, accent: p.accent })),
-		// The things a colour belongs to. A *section*, not a room: People and
-		// Notebooks live in the Diary and wear its colour, and letting one
-		// section arrive on screen in three hues is what the colours exist to
-		// prevent. `isDefault` is here rather than in the page because the page
-		// would have to compare hex strings to work it out.
-		sectionColors: Object.entries(SECTIONS).map(([key, section]) => ({
-			key,
-			label: section.label,
-			accent: accentsWith(getSectionColors(ctx.userId))[key as SectionKey],
-			isDefault:
-				accentsWith(getSectionColors(ctx.userId))[key as SectionKey].toLowerCase() ===
-				section.accent.toLowerCase()
-		})),
+		/*
+		 * The rooms: one list, carrying everything there is to say about each.
+		 *
+		 * This was three lists — Sections, The menu, Colours — naming the same
+		 * eight things three times and asking a different question of each. One
+		 * row per room now, and the row holds all three answers.
+		 *
+		 * Home is not in it. It is always on, it is not on the wheel (the bar
+		 * carries it on every screen), and a row whose every control is disabled
+		 * is a row that only teaches you the controls do not work.
+		 *
+		 * `ownsColor` is which row draws the colour picker. People and Notebooks
+		 * live in the Diary and wear its colour, so they show it and cannot
+		 * change it — three pickers for one value is three ways to disagree.
+		 */
+		rooms: (() => {
+			const hidden = getHiddenSections(ctx.userId);
+			const seen = new Set<string>();
+			return placesFor(NAV_PLACES, {
+				order: getNavOrder(ctx.userId),
+				colors: getSectionColors(ctx.userId)
+			})
+				.filter((p) => p.key !== 'home')
+				.map((p) => {
+					const ownsColor = !seen.has(p.section);
+					seen.add(p.section);
+					return {
+						key: p.key,
+						label: p.label,
+						section: p.section,
+						accent: p.accent,
+						ownsColor,
+						/** Whose colour this row follows, when it is not its own. */
+						colorFrom: ownsColor ? null : SECTIONS[p.section].label,
+						/**
+						 * The preference that puts this room away, if it has one.
+						 * Not the same as its key — Recipes is the Kitchen section's
+						 * room and hides under `recipes` — so it is carried rather
+						 * than derived.
+						 */
+						hide: p.hide ?? null,
+						hidden: p.hide !== undefined && hidden.includes(p.hide)
+					};
+				});
+		})(),
+		/** Whether anything has been changed from what the app ships with. */
+		menuIsDefault:
+			getNavOrder(ctx.userId).length === 0 &&
+			Object.keys(getSectionColors(ctx.userId)).length === 0 &&
+			getHiddenSections(ctx.userId).length === 0,
 		quotes: listQuotes(ctx),
 		styles: STYLES.map((key) => ({ key, label: STYLE_LABELS[key], hint: STYLE_HINTS[key] }))
 	};
@@ -122,58 +152,47 @@ export const actions: Actions = {
 		}
 	},
 
-	setSections: async ({ request, locals }) => {
+	/**
+	 * The menu: its order, what is put away, and the colours. One form.
+	 *
+	 * Three settings, saved together, because they are three answers about the
+	 * same eight rooms and splitting them into three forms is what made the page
+	 * list everything three times.
+	 *
+	 * `room` arrives in the order the list showed, `hidden` names the ones put
+	 * away, and `color.<section>` carries a hex per section. Each is validated
+	 * where it is stored — see `$lib/nav-order.ts` and `server/settings.ts` —
+	 * because what counts as a room and what counts as a colour both change
+	 * independently of this form.
+	 */
+	saveMenu: async ({ request, locals }) => {
 		const formData = await request.formData();
-		// The boxes name what is SHOWN; everything unchecked is hidden. An
-		// unknown id in the post is ignored the way an unknown stored id is.
-		const shown = new Set(formData.getAll('section').map(String));
+		const userId = locals.user!.id;
+
+		setNavOrder(userId, formData.getAll('room').map(String));
+
+		const away = new Set(formData.getAll('hidden').map(String));
 		setHiddenSections(
-			locals.user!.id,
-			HIDEABLE_SECTIONS.map((s) => s.id).filter((id) => !shown.has(id) && isHideableSection(id))
+			userId,
+			HIDEABLE_SECTIONS.map((s) => s.id).filter((id) => away.has(id) && isHideableSection(id))
 		);
-		return { success: true, action: 'setSections' };
-	},
 
-	/**
-	 * The order of the rooms, as the list of keys the form posted.
-	 *
-	 * Validation is deliberately thin here and thorough on the way out: what
-	 * counts as a room changes as the app grows, so `applyOrder` is the one
-	 * place that decides what a stored key means — see `$lib/nav-order.ts`.
-	 */
-	setNavOrder: async ({ request, locals }) => {
-		const formData = await request.formData();
-		setNavOrder(locals.user!.id, formData.getAll('room').map(String));
-		return { success: true, action: 'setNavOrder' };
-	},
-
-	/** Back to the order the app ships with. */
-	resetNavOrder: async ({ locals }) => {
-		setNavOrder(locals.user!.id, []);
-		return { success: true, action: 'setNavOrder' };
-	},
-
-	/**
-	 * The colours, one per section.
-	 *
-	 * A colour ends up in a `style` attribute, which very few settings do, so
-	 * `setSectionColors` keeps only `#rrggbb` for a section that exists — and
-	 * `accentsWith` checks again when the value is read back. Belt and braces
-	 * on purpose: this is the one preference that reaches the page as markup.
-	 */
-	setSectionColors: async ({ request, locals }) => {
-		const formData = await request.formData();
 		const colors: Record<string, string> = {};
 		for (const [key, value] of formData.entries()) {
 			if (key.startsWith('color.')) colors[key.slice('color.'.length)] = String(value);
 		}
-		setSectionColors(locals.user!.id, colors);
-		return { success: true, action: 'setSectionColors' };
+		setSectionColors(userId, colors);
+
+		return { success: true, action: 'saveMenu' };
 	},
 
-	resetSectionColors: async ({ locals }) => {
-		setSectionColors(locals.user!.id, {});
-		return { success: true, action: 'setSectionColors' };
+	/** Back to the order, the colours and the sections the app ships with. */
+	resetMenu: async ({ locals }) => {
+		const userId = locals.user!.id;
+		setNavOrder(userId, []);
+		setSectionColors(userId, {});
+		setHiddenSections(userId, []);
+		return { success: true, action: 'saveMenu' };
 	},
 
 	setLayout: async ({ request, locals }) => {

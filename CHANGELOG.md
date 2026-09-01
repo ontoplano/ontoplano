@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.28.0 — 2026-09-01
+
+- **One list for the menu.** Preferences had three sections naming the same
+  rooms and asking one question of each — order, shown, colour. It is one row
+  per room now, holding all three, and a room you put away drops to the end
+  greyed out with no number. Home is not listed: it is always on and is not on
+  the wheel.
+
 ## 0.27.0 — 2026-09-01
 
 - **The planner's header is one row and its arrows are at the edges.** Back and

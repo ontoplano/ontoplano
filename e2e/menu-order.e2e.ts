@@ -14,7 +14,7 @@ test.describe('the menu order', () => {
 		await register(page, `order-${Date.now()}@test.invalid`);
 
 		await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
-		const menu = page.locator('form[action="?/setNavOrder"]');
+		const menu = page.locator('form[action="?/saveMenu"]');
 
 		// Shopping to the top, which is first along the bar and first under the
 		// thumb — the wheel starts at the bottom right and runs anti-clockwise.
@@ -23,7 +23,7 @@ test.describe('the menu order', () => {
 			if (await up.isDisabled()) break;
 			await up.click();
 		}
-		await menu.getByRole('button', { name: 'Save order' }).click();
+		await menu.getByRole('button', { name: 'Save menu' }).click();
 		await page.waitForTimeout(600);
 
 		await page.goto('/', { waitUntil: 'networkidle' });
@@ -47,7 +47,7 @@ test.describe('the menu order', () => {
 		await page.evaluate(async () => {
 			const body = new FormData();
 			body.append('room', 'ideas');
-			await fetch('/settings/preferences?/setNavOrder', {
+			await fetch('/settings/preferences?/saveMenu', {
 				method: 'POST',
 				headers: { 'x-sveltekit-action': 'true' },
 				body
@@ -55,10 +55,12 @@ test.describe('the menu order', () => {
 		});
 
 		await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
-		const menu = page.locator('form[action="?/setNavOrder"]');
+		const menu = page.locator('form[action="?/saveMenu"]');
 		// Ideas first, and every other room still listed behind it.
 		await expect(menu.getByRole('button', { name: 'Move Ideas up' })).toBeDisabled();
-		await expect(menu.getByRole('button', { name: /^Move .* up$/ })).toHaveCount(10);
+		// Every room but Home, which is never listed: it is always on and is not
+		// on the wheel, so a row for it would be one with nothing to change.
+		await expect(menu.getByRole('button', { name: /^Move .* up$/ })).toHaveCount(9);
 	});
 });
 
@@ -67,9 +69,9 @@ test.describe('the section colours', () => {
 		await register(page, `colour-${Date.now()}@test.invalid`);
 
 		await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
-		const form = page.locator('form[action="?/setSectionColors"]');
+		const form = page.locator('form[action="?/saveMenu"]');
 		await form.locator('input[name="color.planner"]').fill('#123456');
-		await form.getByRole('button', { name: 'Save colours' }).click();
+		await form.getByRole('button', { name: 'Save menu' }).click();
 		await page.waitForTimeout(600);
 
 		// The accent is a custom property on the page surface, which is where
@@ -92,7 +94,7 @@ test.describe('the section colours', () => {
 		await page.evaluate(async () => {
 			const body = new FormData();
 			body.append('color.planner', 'javascript:alert(1)');
-			await fetch('/settings/preferences?/setSectionColors', {
+			await fetch('/settings/preferences?/saveMenu', {
 				method: 'POST',
 				headers: { 'x-sveltekit-action': 'true' },
 				body
@@ -105,5 +107,52 @@ test.describe('the section colours', () => {
 			.first()
 			.evaluate((el) => getComputedStyle(el).getPropertyValue('--section-accent').trim());
 		expect(accent).toBe('#1d4ed8');
+	});
+});
+
+/**
+ * One list, three answers.
+ *
+ * Order, whether it is shown, and its colour used to be three sections naming
+ * the same eight rooms. The thing worth pinning is that they still save
+ * together and still reach the app — and that a room put away falls to the end
+ * without a number, because that is what "it has no place in the menu" looks
+ * like.
+ */
+test.describe('the one menu list', () => {
+	test('puts a hidden room at the end, and out of the menus', async ({ page }) => {
+		await register(page, `menu-hide-${Date.now()}@test.invalid`);
+
+		await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
+		const menu = page.locator('form[action="?/saveMenu"]');
+
+		// The row is the one whose Move buttons name Ideas; its Hide is the
+		// sibling of those.
+		const ideas = menu.locator('div').filter({
+			has: page.getByRole('button', { name: 'Move Ideas up' })
+		});
+		await ideas.getByRole('button', { name: 'Hide' }).click();
+
+		// It loses its arrows the moment it is put away — there is no order for
+		// it to have a position in.
+		await expect(menu.getByRole('button', { name: 'Move Ideas up' })).toHaveCount(0);
+
+		await menu.getByRole('button', { name: 'Save menu' }).click();
+		await page.waitForTimeout(600);
+
+		await page.goto('/', { waitUntil: 'networkidle' });
+		await expect(page.getByRole('link', { name: 'Ideas' })).toHaveCount(0);
+
+		// And the page it owns still answers, because hiding is a menu matter.
+		const res = await page.goto('/ideas', { waitUntil: 'networkidle' });
+		expect(res?.status()).toBe(200);
+	});
+
+	test('never lists Home', async ({ page }) => {
+		await register(page, `menu-home-${Date.now()}@test.invalid`);
+		await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
+
+		const menu = page.locator('form[action="?/saveMenu"]');
+		await expect(menu.getByRole('button', { name: 'Move Home up' })).toHaveCount(0);
 	});
 });

@@ -27,22 +27,41 @@
 	/*
 	 * The rooms, in the order this account keeps them.
 	 *
-	 * A local copy so the arrows can move things before anything is saved,
-	 * reset from the server whenever the load re-runs — the same shape the
-	 * dashboard layout above uses, for the same reason.
+	 * A local copy so the arrows and the Hide buttons can move things before
+	 * anything is saved, reset from the server whenever the load re-runs — the
+	 * same shape the dashboard layout below uses, for the same reason.
 	 */
 	let rooms = $state([...data.rooms]);
 	$effect(() => {
 		rooms = [...data.rooms];
 	});
 
+	/**
+	 * Shown first in their order, then the ones put away.
+	 *
+	 * A room with no place in the menu has no place in the order either, so it
+	 * falls to the bottom and loses its number — which is also what the saved
+	 * order says, since the form posts this list.
+	 */
+	const orderedRooms = $derived([
+		...rooms.filter((r) => !r.hidden),
+		...rooms.filter((r) => r.hidden)
+	]);
+
+	/** The last row that can still move down: the ones below it are put away. */
+	const lastShownIndex = $derived(rooms.filter((r) => !r.hidden).length - 1);
+
 	function shiftRoom(key: string, by: number) {
-		const at = rooms.findIndex((r) => r.key === key);
+		const shown = rooms.filter((r) => !r.hidden);
+		const at = shown.findIndex((r) => r.key === key);
 		const to = at + by;
-		if (at === -1 || to < 0 || to >= rooms.length) return;
-		const next = [...rooms];
-		[next[at], next[to]] = [next[to], next[at]];
-		rooms = next;
+		if (at === -1 || to < 0 || to >= shown.length) return;
+		[shown[at], shown[to]] = [shown[to], shown[at]];
+		rooms = [...shown, ...rooms.filter((r) => r.hidden)];
+	}
+
+	function toggleRoom(key: string) {
+		rooms = rooms.map((r) => (r.key === key ? { ...r, hidden: !r.hidden } : r));
 	}
 
 	function shift(id: DashboardCardId, by: number) {
@@ -182,153 +201,131 @@
 		<button class="btn btn-primary">Save</button>
 	</form>
 
-	<section class="border border-gray-200 bg-white p-6 shadow-card">
-		<div class="mb-4">
-			<h2 class="text-sm font-semibold text-gray-900">Sections</h2>
-			<p class="mt-1 text-sm text-gray-500">
-				Which parts of the app appear in the menus. A section you turn off is only put away — its
-				pages still open from a link and everything in it is kept.
-			</p>
-		</div>
-
-		<form
-			method="post"
-			action="?/setSections"
-			use:settingsForm={{ notice: 'Sections saved.' }}
-			class="space-y-2"
-		>
-			<div class="grid gap-2 sm:grid-cols-2">
-				{#each data.sections as section (section.id)}
-					<label
-						class="flex cursor-pointer items-center gap-3 border border-gray-200 px-3 py-2 text-sm text-gray-900"
-					>
-						<input
-							type="checkbox"
-							name="section"
-							value={section.id}
-							checked={!data.hiddenSections.includes(section.id)}
-							class="accent-gray-900"
-						/>
-						{section.label}
-					</label>
-				{/each}
-			</div>
-			<p class="text-xs text-gray-500">Home and the planner are always on.</p>
-			<button class="btn btn-primary">Save sections</button>
-		</form>
-	</section>
-
 	<!--
-		The order of the rooms, which is two orders at once.
+		The rooms: one list, three answers.
 
-		The bar reads left to right and the pie reads round from the bottom
-		right, and they are the same list — so this is one control, and the
-		sentence under it says where the top of the list ends up under a thumb.
-		The docs page has the picture; a paragraph describing a circle is a
-		paragraph nobody finishes.
+		This was three sections — Sections, The menu, Colours — listing the same
+		eight things and asking one question of each, so changing where Diary
+		sits and what colour it is meant scrolling between two lists that looked
+		identical. One row per room, holding its order, whether it is shown, and
+		its colour.
+
+		Home is not here: it is always on, the bar carries it on every screen,
+		and it is not on the wheel. A row whose every control is disabled teaches
+		you that the controls do not work.
 	-->
 	<section class="border border-gray-200 bg-white p-6 shadow-card">
 		<div class="mb-4">
 			<h2 class="text-sm font-semibold text-gray-900">The menu</h2>
 			<p class="mt-1 text-sm text-gray-500">
-				The order the rooms appear in — along the bar, and round the wheel. First in this list is
-				first along the bar and first under your thumb: the wheel starts at the bottom right and
-				goes anti-clockwise from there.
+				The rooms, in the order they appear — along the bar, and round the wheel. First in the list
+				is first along the bar and first under your thumb: the wheel starts at the bottom right and
+				goes anti-clockwise.
 				<a
 					href="https://docs.ontoplano.com/the-wheel"
 					class="font-medium text-gray-900 underline"
 					rel="external">How the wheel is laid out</a
-				>.
+				>. A room you put away leaves every menu and keeps everything in it — its pages still open
+				from a link.
 			</p>
 		</div>
 
 		<form
 			method="post"
-			action="?/setNavOrder"
-			use:settingsForm={{ notice: 'Menu order saved.' }}
+			action="?/saveMenu"
+			use:settingsForm={{ notice: 'Menu saved.' }}
 			class="space-y-2"
 		>
-			{#each rooms as room, i (room.key)}
-				<div class="flex items-center gap-3 border border-gray-200 px-3 py-2">
+			{#each orderedRooms as room, i (room.key)}
+				{@const shown = !room.hidden}
+				<div
+					class="flex items-center gap-3 border px-3 py-2 {shown
+						? 'border-gray-200'
+						: 'border-dashed border-gray-300 bg-gray-50'}"
+				>
 					<input type="hidden" name="room" value={room.key} />
-					<span class="tabular w-5 shrink-0 text-xs text-gray-500">{i + 1}</span>
-					<span class="h-4 w-1 shrink-0" style="background-color: {room.accent}" title={room.label}
-					></span>
-					<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{room.label}</span>
-					<button
-						type="button"
-						onclick={() => shiftRoom(room.key, -1)}
-						disabled={i === 0}
-						class="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"
-						title="Move up"
-						aria-label="Move {room.label} up"
-					>
-						<Icon name="chevron-up" size={16} />
-					</button>
-					<button
-						type="button"
-						onclick={() => shiftRoom(room.key, 1)}
-						disabled={i === rooms.length - 1}
-						class="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"
-						title="Move down"
-						aria-label="Move {room.label} down"
-					>
-						<Icon name="chevron-down" size={16} />
-					</button>
-				</div>
-			{/each}
-			<div class="flex flex-wrap items-center gap-2 pt-2">
-				<button class="btn btn-primary">Save order</button>
-				<button formaction="?/resetNavOrder" class="btn btn-sm">Back to the default</button>
-			</div>
-		</form>
-	</section>
+					{#if room.hidden && room.hide}
+						<input type="hidden" name="hidden" value={room.hide} />
+					{/if}
 
-	<!--
-		The colours, one per section rather than one per room.
+					<!-- A number only where there is a position. A room that is put
+					     away has no place in the order, so it has no number. -->
+					<span class="tabular w-5 shrink-0 text-xs text-gray-500">
+						{shown ? i + 1 : ''}
+					</span>
 
-		People and Notebooks live in the Diary and wear its colour; giving each
-		room its own would let one section arrive on screen in three hues, which
-		is the thing the colours exist to prevent.
-	-->
-	<section class="border border-gray-200 bg-white p-6 shadow-card">
-		<div class="mb-4">
-			<h2 class="text-sm font-semibold text-gray-900">Colours</h2>
-			<p class="mt-1 text-sm text-gray-500">
-				What each section is coloured. It fills the wheel, marks the tab you are on and rules the
-				top of that section's cards. Pick dark ones: the labels on the wheel are white.
-			</p>
-		</div>
-
-		<form
-			method="post"
-			action="?/setSectionColors"
-			use:settingsForm={{ notice: 'Colours saved.' }}
-			class="space-y-2"
-		>
-			<div class="grid gap-2 sm:grid-cols-2">
-				{#each data.sectionColors as swatch (swatch.key)}
-					<label
-						class="flex cursor-pointer items-center gap-3 border border-gray-200 px-3 py-2 text-sm"
-					>
+					{#if room.ownsColor}
 						<input
 							type="color"
-							name="color.{swatch.key}"
-							value={swatch.accent}
-							class="h-7 w-10 shrink-0 cursor-pointer border border-gray-300 bg-white p-0.5"
-							aria-label="The colour for {swatch.label}"
+							name="color.{room.section}"
+							value={room.accent}
+							class="h-6 w-8 shrink-0 cursor-pointer border border-gray-300 bg-white p-0.5"
+							aria-label="The colour for {room.label}"
 						/>
-						<span class="min-w-0 flex-1 truncate text-gray-900">{swatch.label}</span>
-						{#if !swatch.isDefault}
-							<span class="eyebrow shrink-0 text-gray-500">changed</span>
+					{:else}
+						<!-- Shown, not editable: this room wears another's colour, and
+						     three pickers for one value is three ways to disagree. -->
+						<span
+							class="h-6 w-8 shrink-0 border border-gray-200"
+							style="background-color: {room.accent}"
+							title="Follows {room.colorFrom}"
+						></span>
+					{/if}
+
+					<span class="min-w-0 flex-1 truncate text-sm {shown ? 'text-gray-900' : 'text-gray-500'}">
+						{room.label}
+						{#if !room.ownsColor}
+							<span class="text-xs text-gray-500">· {room.colorFrom}'s colour</span>
 						{/if}
-					</label>
-				{/each}
-			</div>
+					</span>
+
+					{#if shown}
+						<button
+							type="button"
+							onclick={() => shiftRoom(room.key, -1)}
+							disabled={i === 0}
+							class="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"
+							title="Move up"
+							aria-label="Move {room.label} up"
+						>
+							<Icon name="chevron-up" size={16} />
+						</button>
+						<button
+							type="button"
+							onclick={() => shiftRoom(room.key, 1)}
+							disabled={i === lastShownIndex}
+							class="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"
+							title="Move down"
+							aria-label="Move {room.label} down"
+						>
+							<Icon name="chevron-down" size={16} />
+						</button>
+					{/if}
+
+					{#if room.hide}
+						<button
+							type="button"
+							onclick={() => toggleRoom(room.key)}
+							class="btn btn-sm shrink-0"
+							aria-pressed={room.hidden}
+						>
+							{room.hidden ? 'Show' : 'Hide'}
+						</button>
+					{:else}
+						<span class="eyebrow shrink-0 text-gray-500">always on</span>
+					{/if}
+				</div>
+			{/each}
+
 			<div class="flex flex-wrap items-center gap-2 pt-2">
-				<button class="btn btn-primary">Save colours</button>
-				<button formaction="?/resetSectionColors" class="btn btn-sm">Back to the defaults</button>
+				<button class="btn btn-primary">Save menu</button>
+				{#if !data.menuIsDefault}
+					<button formaction="?/resetMenu" class="btn btn-sm">Back to the defaults</button>
+				{/if}
 			</div>
+			<p class="text-xs text-gray-500">
+				Pick dark colours: the labels on the wheel are white. Home and the planner are always on.
+			</p>
 		</form>
 	</section>
 
