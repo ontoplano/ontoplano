@@ -10,6 +10,13 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.32.1 — 2026-09-01
+
+- The keyboard no longer hides the Save button. A form on a phone is a
+  full-height sheet, and the keyboard covers that height rather than shrinking
+  it — so confirming what you had just typed meant dismissing the keyboard
+  first. The sheet now fits the part of the screen you can actually see.
+
 ## 0.32.0 — 2026-09-01
 
 - **A recipe from a link.** Paste the address of a recipe page and its title,

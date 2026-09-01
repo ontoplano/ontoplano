@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick, type Snippet } from 'svelte';
 	import Banner from '$lib/components/Banner.svelte';
+	import { panelHeight, readViewport } from '$lib/keyboard';
 
 	/**
 	 * A modal dialog.
@@ -15,6 +16,42 @@
 	 * Below `sm` it becomes a sheet against the bottom of the screen, where a
 	 * thumb is.
 	 */
+	/**
+	 * How tall the sheet should be while the software keyboard is up.
+	 *
+	 * `height: 100dvh` is the layout viewport, and the keyboard covers that
+	 * rather than shrinking it — so the footer of a full-height form, Save
+	 * included, sat underneath the keyboard. `window.visualViewport` is the part
+	 * actually on screen; `$lib/keyboard.ts` has the arithmetic and the reasons
+	 * for its thresholds.
+	 *
+	 * Null the rest of the time, so nothing is written into the style attribute
+	 * at all: a height pinned in pixels stops following a rotation.
+	 */
+	let keyboardHeight = $state<number | null>(null);
+
+	$effect(() => {
+		if (!open || typeof window === 'undefined' || !window.visualViewport) return;
+
+		const viewport = window.visualViewport;
+		const update = () => {
+			const reading = readViewport();
+			keyboardHeight = reading ? panelHeight(reading) : null;
+		};
+
+		update();
+		viewport.addEventListener('resize', update);
+		// iOS pushes the visible area down rather than only shrinking it, and
+		// reports that as a scroll of the visual viewport.
+		viewport.addEventListener('scroll', update);
+
+		return () => {
+			viewport.removeEventListener('resize', update);
+			viewport.removeEventListener('scroll', update);
+			keyboardHeight = null;
+		};
+	});
+
 	let {
 		open = $bindable(false),
 		title,
@@ -133,7 +170,9 @@
 		<div
 			class="rise panel border border-gray-200 bg-white shadow-overlay"
 			class:snapping={!draggingSheet}
-			style="transform: translateY({Math.round(dragY)}px)"
+			style="transform: translateY({Math.round(dragY)}px); {keyboardHeight
+				? `height:${keyboardHeight}px; max-height:${keyboardHeight}px`
+				: ''}"
 		>
 			<!--
 				The phone header: a back arrow and the title, the way a screen in an
