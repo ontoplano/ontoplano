@@ -76,6 +76,37 @@ shows a trip whole.
 ## Plugins, less experimental
 
 The plugin platform (`docs/PLUGINS.md`) is real and used, but a token scoped to
-an instance is still a lot of trust to hand a script somebody found. Narrower
-scopes, a visible log of what a token actually did, and a way to revoke one from
-the page that shows the log.
+an instance is still a lot of trust to hand a script somebody found. Three
+pieces, roughly in this order:
+
+- **Permissions per thing, not per instance.** A token says which entities it
+  may read and which it may write — todos read-only, one data stream write-only
+  — rather than carrying the whole account. The vocabulary is in
+  `services/tokens.ts`; what is missing is the granularity and the UI that makes
+  a narrow token as easy to make as a wide one.
+- **A log of what a token did.** Every call, with the endpoint and the outcome,
+  on the page that lists the tokens — so revoking one is a decision somebody can
+  make from evidence rather than from a name they wrote six months ago.
+- **The rest of the app, over the API.** `/api/v1` covers `me`, the schedule and
+  the data streams, and nothing else. People, notebooks and diary entries,
+  ideas, recipes and meals, habits, shopping, goals — each is a service already,
+  so each is a thin adapter and an ownership test away. Do them as a set with
+  one shape rather than one at a time, or the tenth will not look like the
+  first.
+
+## Another language
+
+Every string in the app is written into its page in English. Making that
+translatable is a large, mechanical, genuinely useful contribution, and it is
+the one on this list most likely to be done by somebody who is not me.
+
+- Strings come out of the markup into a catalogue, keyed and typed, and the
+  build fails on a key that no longer exists.
+- The locale is a per-account setting (`user_settings`), with the browser's as
+  the first guess and the instance's as the fallback.
+- Dates, times and numbers go through `Intl` with that locale — several places
+  already hardcode `en-US`, and those are the first ones to find.
+- Portuguese first, because I can check it.
+
+Not in scope: right-to-left layout, and translating the documentation. Both are
+worth doing and neither is the same job.
