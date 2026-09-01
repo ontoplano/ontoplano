@@ -8,6 +8,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+
+import androidx.browser.customtabs.CustomTabsIntent;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -90,9 +92,7 @@ public class WidgetConfigureActivity extends Activity {
                 try {
                     tokenBefore = WidgetSettings.token(WidgetConfigureActivity.this);
                     waiting = true;
-                    startActivity(new Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse(address + "/settings/integrations/widget")));
+                    openConnectPage(address);
                     status.setText(R.string.configure_waiting);
                 } catch (ActivityNotFoundException e) {
                     waiting = false;
@@ -132,6 +132,33 @@ public class WidgetConfigureActivity extends Activity {
         super.onSaveInstanceState(out);
         out.putBoolean(STATE_WAITING, waiting);
         out.putString(STATE_TOKEN_BEFORE, tokenBefore);
+    }
+
+    /**
+     * Open the connect page in a BROWSER, not in this app.
+     *
+     * A plain ACTION_VIEW on an https address this app has verified is routed
+     * straight back into the app — the page opens inside the TWA, and the
+     * ontoplano://widget link it ends on then resolves to the app as well.
+     * Android asks "Continue to Ontoplano?", Continue reloads the same page,
+     * and the key never reaches this screen. It looks exactly like a flow
+     * eating itself, because it is one.
+     *
+     * A custom tab is addressed to the browser package, so app-link resolution
+     * does not get a say: the page runs in the browser, this activity stays in
+     * the background listening, and the scheme link comes home. If there is no
+     * browser at all the plain intent is still worth a try — a phone in that
+     * state fails either way, and the caller has a message for it.
+     */
+    private void openConnectPage(String address) {
+        Uri page = Uri.parse(address + "/settings/integrations/widget");
+        try {
+            CustomTabsIntent tab = new CustomTabsIntent.Builder().build();
+            tab.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            tab.launchUrl(this, page);
+        } catch (ActivityNotFoundException e) {
+            startActivity(new Intent(Intent.ACTION_VIEW, page));
+        }
     }
 
     /**

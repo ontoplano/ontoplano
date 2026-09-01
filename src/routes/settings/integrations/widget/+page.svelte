@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import Banner from '$lib/components/Banner.svelte';
 	import Card from '$lib/components/Card.svelte';
+	import { isStandalone } from '$lib/platform';
 	import type { ActionData } from './$types';
 
 	let { form }: { form: ActionData } = $props();
@@ -18,12 +20,18 @@
 	);
 
 	/**
-	 * The navigation happens on its own, but a link stays on screen: a browser
-	 * that refuses a page-initiated scheme change still honours a tap.
+	 * Inside the installed app, this page cannot finish.
+	 *
+	 * The last step is a link to `ontoplano://widget`, and a scheme link fired
+	 * from inside the app resolves back to the app: Android asks "Continue to
+	 * Ontoplano?" and Continue reloads this page. The screen that has to receive
+	 * the key is the widget's own setup, which is only listening while the app is
+	 * in the background — so the page has to be open in a browser.
+	 *
+	 * Said before the button rather than after it: minting a key that cannot be
+	 * delivered leaves a live token on the account and the person no further on.
 	 */
-	$effect(() => {
-		if (handoff) window.location.href = handoff;
-	});
+	const trapped = $derived(browser && isStandalone());
 </script>
 
 {#if form?.message && !form?.success}
@@ -43,6 +51,21 @@
 				<a href={handoff} class="font-medium text-gray-900 underline">finish in the app</a>.
 			</p>
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
+		</div>
+	{:else if trapped}
+		<div class="space-y-3">
+			<Banner
+				kind="warning"
+				message="This page has to be open in a browser to finish. Inside the app, the last step comes straight back here."
+			/>
+			<p class="text-sm text-gray-500">
+				Add the widget from your home screen, tap Connect on its setup screen, and it will open this
+				page where it can hand the key over.
+			</p>
+			<p class="text-sm text-gray-500">
+				The widget comes with the Android app. A shortcut added from the browser cannot provide one
+				— Android only lets an installed app do that.
+			</p>
 		</div>
 	{:else}
 		<form method="post" action="?/connect" use:enhance>

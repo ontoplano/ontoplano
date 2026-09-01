@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.23.1 — 2026-09-01
+
+- Connecting the home-screen widget works again. Its setup opened the connect
+  page inside the app rather than in a browser, so the last step — a link back
+  to the widget — came round to the same page and asked "Continue?" forever.
+  The page also says so now if you reach it from inside the app, rather than
+  minting a key that cannot be delivered.
+
 ## 0.23.0 — 2026-09-01
 
 - **A new logo.** The favicon, the app icons, the home-screen icon and the mark

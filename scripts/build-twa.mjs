@@ -389,6 +389,23 @@ if (cleartext) {
 		.replaceAll(`https://${domain}`, `${scheme}://${domain}`);
 }
 
+/*
+ * androidx.browser, named rather than inherited.
+ *
+ * The widget's setup screen opens the connect page in a custom tab, which is
+ * how the page ends up in the browser rather than back inside this app. The
+ * class comes with androidbrowserhelper today, transitively — and a transitive
+ * dependency is one somebody else can drop. Naming it costs a line and turns a
+ * future silent breakage into a version conflict, which is a thing gradle says
+ * out loud.
+ */
+if (!gradle.includes('androidx.browser:browser')) {
+	gradle = gradle.replace(
+		/dependencies\s*\{/,
+		(match) => `${match}\n    implementation 'androidx.browser:browser:1.8.0'`
+	);
+}
+
 writeFileSync(gradlePath, gradle);
 console.log(`Set version ${versionName} (${versionCode})`);
 

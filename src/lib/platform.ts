@@ -22,3 +22,28 @@ export function commandKey(): string {
 
 	return /mac|iphone|ipad|ipod/i.test(platform) ? '⌘' : 'Ctrl';
 }
+
+/**
+ * Whether this page is being read inside the installed app.
+ *
+ * True for the Android app and for a home-screen install on either platform:
+ * all three run the same pages in a window with no address bar, which
+ * `display-mode: standalone` is the way to ask about. (iOS answers through
+ * `navigator.standalone`, which nothing else has and which no amount of
+ * standardisation has replaced.)
+ *
+ * It matters wherever a page hands off to something outside itself. A link to
+ * an app scheme fired from inside the app resolves back to the app — Android
+ * asks "Continue to Ontoplano?" and Continue lands on the page that asked,
+ * which is what a flow eating itself looks like from the outside.
+ */
+export function isStandalone(): boolean {
+	if (typeof window === 'undefined') return false;
+
+	if ((window.navigator as Navigator & { standalone?: boolean }).standalone === true) return true;
+
+	return (
+		typeof window.matchMedia === 'function' &&
+		window.matchMedia('(display-mode: standalone)').matches
+	);
+}
