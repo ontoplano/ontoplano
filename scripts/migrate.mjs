@@ -38,6 +38,17 @@ client.pragma('journal_mode = WAL');
  */
 client.pragma('foreign_keys = OFF');
 
+/** How many are already in, so the run can say what it actually did. */
+function appliedCount() {
+	const table = client
+		.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = '__drizzle_migrations'`)
+		.get();
+	if (!table) return 0;
+	return client.prepare('SELECT count(*) AS n FROM __drizzle_migrations').get().n;
+}
+
+const before = appliedCount();
+
 try {
 	migrate(drizzle(client), { migrationsFolder: './drizzle' });
 
@@ -51,7 +62,10 @@ try {
 		console.error('\nRestore the snapshot printed above.');
 		process.exitCode = 1;
 	} else {
-		console.log('Migrations applied.');
+		// Said in numbers, because "Migrations applied." reads the same whether
+		// it applied eleven or none — and `make dev` runs this every time.
+		const applied = appliedCount() - before;
+		console.log(applied === 0 ? 'Database already up to date.' : `${applied} migration${applied === 1 ? '' : 's'} applied.`);
 	}
 } catch (e) {
 	console.error('\nMigration failed:\n');

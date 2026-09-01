@@ -24,8 +24,13 @@ export function snapshot(label = 'pre-migrate') {
 		return null;
 	}
 
-	const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-	const out = `${path}.${label}-${stamp}`;
+	// Milliseconds, not seconds. `VACUUM INTO` refuses to overwrite, so two
+	// snapshots in the same second used to fail the whole command with
+	// "output file already exists" — which, now that `make dev` migrates
+	// before it starts, is two `make dev` in a row.
+	const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 23);
+	let out = `${path}.${label}-${stamp}`;
+	for (let n = 2; existsSync(out); n++) out = `${path}.${label}-${stamp}-${n}`;
 
 	const db = new Database(path, { readonly: true });
 	try {

@@ -19,12 +19,12 @@ help:
 	@echo
 	@printf '\033[1mdevelop\033[0m\n'
 	@echo "  dev / dev-stop / dev-logs   the app, as a user service (dev-fg holds the terminal)"
-	@echo "  dev-docs · dev-site         the wiki and the marketing site, served here"
+	@echo "  dev-docs · dev-site         the docs and the marketing site, served here"
 	@echo "  dev-all                     all three at once"
 	@echo "  lint · format               prettier+eslint, prettier --write"
 	@echo "  test                        the Playwright e2e suite (yarn test for units)"
 	@echo "  icons                       redraw every icon from src/lib/logo/mark.png"
-	@echo "  docs                        rebuild docs/wiki from the code (lint checks it is current)"
+	@echo "  docs                        rebuild docs/reference from the code (lint checks it is current)"
 	@echo "  docs-site                   …and render it to build-docs/ as a static site"
 	@echo
 	@printf '\033[1mdatabase\033[0m\n'
@@ -55,7 +55,7 @@ help:
 		echo "  logs-app · logs-staging · setup   see local.mk for the rest"; \
 	fi
 
-.PHONY: help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
+.PHONY: _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -70,7 +70,7 @@ YARN_BIN ?= $(shell command -v yarn)
 # prompt: a backup needs no ceremony, only doing — `deploy` is the one that
 # stops to ask. `dev-fg` is the old foreground behaviour, for when you want
 # vite's output in the terminal you are sitting at.
-dev:
+dev: _dev-port _dev-migrated
 	@[ -n "$(NODE_BIN)" ] || { echo "no node on PATH"; exit 1; }
 	@[ -n "$(YARN_BIN)" ] || { echo "no yarn on PATH"; exit 1; }
 	@mkdir -p ~/.config/systemd/user
@@ -93,6 +93,57 @@ dev:
 		journalctl --user -u ontoplano-dev -n 20 --no-pager; \
 		exit 1; \
 	fi
+
+# ── Two things that must be true before vite starts ──────────────────────────
+#
+# Both of these have cost an evening. They are checked here rather than left to
+# fail inside the unit, because a service that exits fills the journal with a
+# stack trace and says nothing about what to do next.
+
+# Port 1493, held by something that is not this.
+#
+# The failure it catches: an older way of running this app — a hand-written
+# `ontoplano.service` doing `yarn dev` — enabled at login, holding the port
+# forever. `make dev` then restarted a unit that could not bind, and the only
+# clue was "Port 1493 is already in use" twenty lines into journalctl.
+#
+# Our own unit holding the port is fine: restarting it is the point.
+_dev-port:
+	@pid=$$( (ss -ltnpH "sport = :1493" 2>/dev/null || lsof -tiTCP:1493 -sTCP:LISTEN -Pn 2>/dev/null) \
+		| grep -oE 'pid=[0-9]+|^[0-9]+$$' | head -1 | tr -dc '0-9'); \
+	[ -n "$$pid" ] || exit 0; \
+	unit=$$(sed -n 's#.*/\([^/]*\.service\)$$#\1#p' /proc/$$pid/cgroup 2>/dev/null | head -1); \
+	[ "$$unit" != "ontoplano-dev.service" ] || exit 0; \
+	cmd=$$(tr '\0' ' ' </proc/$$pid/cmdline 2>/dev/null); \
+	echo "Port 1493 is already taken, so the dev server cannot start."; \
+	echo "  held by pid $$pid$${unit:+, in $$unit}"; \
+	[ -z "$$cmd" ] || echo "  $$cmd"; \
+	if [ -n "$$unit" ] && [ "$$unit" != "ontoplano-dev.service" ]; then \
+		echo; \
+		echo "That is a service, so it comes back at every login. To retire it:"; \
+		echo "  systemctl --user disable --now $$unit"; \
+		if [ "$$unit" = "ontoplano.service" ]; then \
+			echo; \
+			echo "ontoplano.service is how this app used to be run in development."; \
+			echo "make dev replaces it — ontoplano-dev.service does the same job and"; \
+			echo "snapshots the database first. Nothing is lost by removing it."; \
+		fi; \
+	fi; \
+	exit 1
+
+# A database behind the code.
+#
+# The app refuses to serve when it is (src/lib/server/db/assert-migrated.ts),
+# and the refusal arrives as vite's red overlay in the browser rather than in
+# the terminal that ran `make dev` — so it reads like the app is broken. It is
+# also sticky: migrating afterwards does not clear the module vite has already
+# failed to evaluate, so the fix looks like it did not work either.
+#
+# Migrating here removes the whole shape. `db:migrate` snapshots first and does
+# nothing when there is nothing to do, which is the common case and silent.
+_dev-migrated:
+	@out=$$(yarn -s db:migrate 2>&1) || { echo "$$out"; exit 1; }; \
+	case "$$out" in *"migration"*) echo "$$out" | grep -v '^Snapshot:' ;; esac
 
 dev-stop:
 	@systemctl --user stop ontoplano-dev
@@ -118,8 +169,8 @@ PYTHON ?= python3
 # `dev` is the app; this is the name to type when you mean it by contrast.
 dev-app: dev
 
-# The wiki, generated from the code and served as the static site it becomes.
-# Regenerated first, every time: the whole point of the wiki is that it cannot
+# The docs, generated from the code and served as the static site it becomes.
+# Regenerated first, every time: the whole point of the docs is that it cannot
 # drift from the code, and previewing a stale copy would be exactly that drift.
 dev-docs:
 	@yarn -s docs
@@ -273,14 +324,14 @@ format:
 
 # ─── Docs ─────────────────────────────────────────────────────────────────────
 
-# The wiki is built from the schema snapshot, the route files, the scope table
+# The docs is built from the schema snapshot, the route files, the scope table
 # and the shortcut map. It is committed so it can be read on the forge without
 # a checkout, which is exactly the arrangement that lets a generated file go
 # stale — so `make lint` fails when it has.
 docs:
 	yarn docs
 
-# The same wiki as a static site, for docs.ontoplano.com. Regenerates the
+# The same docs as a static site, for docs.ontoplano.com. Regenerates the
 # markdown first, so what is published is never staler than the code.
 docs-site: docs
 	@yarn -s docs:site

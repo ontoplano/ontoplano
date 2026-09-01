@@ -64,7 +64,15 @@ export function assertMigrated(client: Database.Database, path: string): void {
 	if (Number(applied.latest ?? 0) < newest.when) {
 		throw new Error(
 			`The database at ${path} is behind the code (it expects up to ${newest.tag}). ` +
-				`Run \`yarn db:migrate\`, or set ONTOPLANO_SKIP_MIGRATION_CHECK=true to serve anyway.`
+				`Run \`yarn db:migrate\`, or set ONTOPLANO_SKIP_MIGRATION_CHECK=true to serve anyway.` +
+				// Vite caches a module that failed to evaluate, so migrating under a
+				// running dev server changes nothing until it is restarted — which
+				// reads as "the migration did not work" and costs an evening.
+				// `make dev` migrates before it starts, so this is for the person
+				// who ran vite some other way.
+				(process.env.NODE_ENV === 'production'
+					? ''
+					: ' A dev server already running must then be restarted: it holds on to the module that failed.')
 		);
 	}
 }
