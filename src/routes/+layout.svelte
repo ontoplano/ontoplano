@@ -26,12 +26,16 @@
 	import { palette } from '$lib/palette.svelte';
 	import type { IconName } from '$lib/components/Icon.svelte';
 	import { suppressAutofill } from '$lib/autofill';
+	import { smartNumberFields } from '$lib/number-fields';
 	import type { Snippet } from 'svelte';
 
 	let { children, data }: { children: Snippet; data: LayoutServerData } = $props();
 
 	// Autofill is opt-in: see $lib/autofill. Once, for every form the app ever mounts.
 	$effect(() => suppressAutofill(document.body));
+	// And once for every number box: clicking one selects what is in it, so
+	// typing 2 into a field showing 0 gives 2 rather than 02.
+	$effect(() => smartNumberFields(document));
 	let menuOpen = $state(false);
 	let pie = $state<CapturePie | undefined>();
 	let rooms = $state<NavPie | undefined>();

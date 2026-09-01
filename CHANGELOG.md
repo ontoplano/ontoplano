@@ -16,6 +16,9 @@ version.
   Takeout writes it as one file per note, so choose all of them at once: a
   checklist arrives as one todo per line with its ticks, a written note as one
   todo with the text in its notes. The bin is left where it is.
+- **Clicking a number box selects what is in it.** Typing 2 into a field
+  showing 0 gives 2, not 02 — everywhere in the app, not only where somebody
+  remembered.
 - **Bringing things in has a page of its own**, under Account → Bring things in.
   It was two long forms between the sessions list and the delete button.
 

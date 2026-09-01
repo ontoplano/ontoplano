@@ -98,6 +98,19 @@ test('a lead set on a block reminds about every occurrence', async ({ page }) =>
 	// And a chip writes into the same box rather than being a second answer.
 	await page.locator('dialog[open]').getByRole('button', { name: '10 min' }).click();
 	await expect(page.locator('dialog[open] input[name=remindLeadMinutes]')).toHaveValue('10');
+
+	/*
+	 * Clicking the box and typing gives you what you typed.
+	 *
+	 * A number field showing 10, clicked, puts the caret at the end — so typing
+	 * 2 gave 102, and a field showing 0 gave 02. Real clicks and real keys,
+	 * because this is entirely about what the browser does with a caret and
+	 * nothing about what the app renders.
+	 */
+	const box = page.locator('dialog[open] input[name=remindLeadMinutes]');
+	await box.click();
+	await page.keyboard.type('2');
+	await expect(box).toHaveValue('2');
 });
 
 /**
