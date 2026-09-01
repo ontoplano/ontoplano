@@ -176,3 +176,108 @@ test.describe('importing a recipe from a URL', () => {
 		expect([400, 422]).toContain(result.status);
 	});
 });
+
+/**
+ * The claim the whole kitchen half exists to make.
+ *
+ * "Put a recipe on a day and its ingredients land on the list — only what you
+ * have run out of." Work planners ignore food and meal planners ignore the rest
+ * of the week; this is the seam, and it is the sentence on the front page. It
+ * crosses four pages and three tables, so it is exactly the kind of claim that
+ * can quietly stop being true while every page still looks right.
+ */
+test('a recipe put on a day turns into shopping', async ({ page }) => {
+	await register(page, `seam-${Date.now()}@test.invalid`);
+
+	// A food category, because an ingredient is a shopping item and a shopping
+	// item lives in one.
+	await page.goto('/shopping', { waitUntil: 'networkidle' });
+	await page.evaluate(async () => {
+		const body = new FormData();
+		body.append('label', 'Cupboard');
+		await fetch('/shopping?/createCategory', {
+			method: 'POST',
+			headers: { 'x-sveltekit-action': 'true' },
+			body
+		});
+	});
+	await page.goto('/shopping', { waitUntil: 'networkidle' });
+	// The food ticks live in the Categories dialog, so it has to be open for
+	// them to exist at all.
+	await page.getByRole('button', { name: 'Categories' }).click();
+	const food = await page.evaluate(async () => {
+		// Every category this account has, ticked as food. An ingredient is a
+		// shopping item, and a shopping item that is not food cannot be one.
+		const boxes = [...document.querySelectorAll('input[name=food]')] as HTMLInputElement[];
+		const body = new FormData();
+		for (const box of boxes) body.append('food', box.value);
+		const res = await fetch('/shopping?/saveCategories', {
+			method: 'POST',
+			headers: { 'x-sveltekit-action': 'true' },
+			body
+		});
+		return { boxes: boxes.length, type: (await res.json()).type as string };
+	});
+	expect(food.boxes, 'the shopping page should offer a food tick per category').toBeGreaterThan(0);
+	expect(food.type).toBe('success');
+
+	// A recipe with two ingredients.
+	await page.goto('/kitchen/recipes', { waitUntil: 'networkidle' });
+	await page
+		.getByRole('button', { name: /new recipe/i })
+		.first()
+		.click();
+	await page.locator('#recipe-form input[name=title]').fill('Leek soup');
+	await page.getByRole('button', { name: 'Create', exact: true }).click();
+	await page.waitForURL(/\/kitchen\/recipes\/\d+/);
+
+	const recipeId = page.url().split('/').pop()!;
+	const imported = await page.evaluate(async (id) => {
+		const body = new FormData();
+		body.append('recipeId', id);
+		body.append('list', 'leeks\npotatoes');
+		const res = await fetch(`/kitchen/recipes/${id}?/importIngredients`, {
+			method: 'POST',
+			headers: { 'x-sveltekit-action': 'true' },
+			body
+		});
+		return await res.text();
+	}, recipeId);
+	// `importIngredients` skips a line it cannot use rather than failing, so
+	// "success" alone would pass with nothing added.
+	expect(imported, 'importing the ingredients').toContain('success');
+	expect(imported, 'both lines should have become ingredients').toContain('2');
+
+	// On a day. It becomes an ordinary block on the grid with the recipe on it,
+	// which is what makes "what does this week need" a join rather than a second
+	// calendar.
+	const today = new Date().toISOString().slice(0, 10);
+	const scheduled = await page.evaluate(
+		async ({ id, date }) => {
+			const body = new FormData();
+			body.append('recipeId', id);
+			body.append('date', date);
+			body.append('startTime', '19:00');
+			body.append('durationMinutes', '45');
+			body.append('label', 'Leek soup');
+			const res = await fetch(`/kitchen/recipes/${id}?/schedule`, {
+				method: 'POST',
+				headers: { 'x-sveltekit-action': 'true' },
+				body
+			});
+			return (await res.json()).type as string;
+		},
+		{ id: recipeId, date: today }
+	);
+	expect(scheduled, 'putting the recipe on a day').toBe('success');
+
+	// And the week now knows what it needs.
+	await page.goto('/kitchen/meals', { waitUntil: 'networkidle' });
+	await expect(page.getByText('leeks')).toBeVisible();
+	await expect(page.getByText('potatoes')).toBeVisible();
+
+	// Which is the shopping list, not a second copy of one: the same rows.
+	await page.goto('/shopping', { waitUntil: 'networkidle' });
+	await expect(page.getByText('leeks')).toBeVisible();
+	await expect(page.getByText('potatoes')).toBeVisible();
+});
