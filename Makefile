@@ -47,8 +47,9 @@ help:
 	@if [ -f local.mk ]; then echo; \
 		printf '\033[1mthis instance (local.mk)\033[0m\n'; \
 		echo "  deploy [-app|-site|-docs|-demo]   ship it; bare deploy is all four"; \
+		echo "  deploy-dev [-app|-site|-docs]     the dev instance (dev-app, dev-site, dev-docs)"; \
 		echo "  restart [-app|-site|-docs|-demo]  without shipping anything"; \
-		echo "  logs-app · logs-demo · setup · up  see local.mk for the rest"; \
+		echo "  logs-app · logs-dev · setup · up  see local.mk for the rest"; \
 	fi
 
 .PHONY: help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down docker-publish logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
