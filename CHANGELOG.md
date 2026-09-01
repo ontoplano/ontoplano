@@ -10,6 +10,12 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.25.1 — 2026-09-01
+
+- The page shown when the app is not answering is 9kB rather than 900kB. It
+  carried the launcher-sized logo whole; it draws it at the size it shows it
+  now, which matters on the one page that has to arrive when nothing else is.
+
 ## 0.25.0 — 2026-09-01
 
 - **The menu is yours to arrange.** Settings → Preferences → The menu sets the
