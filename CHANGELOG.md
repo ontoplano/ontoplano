@@ -10,6 +10,21 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.19.0 — 2026-09-01
+
+- **A todo ticked off can be taken back.** Ticking one — on the board or in the
+  todo list — puts a line at the bottom of the screen with a few seconds of Undo
+  on it. Nothing is written until the seconds run out, so Undo is not a repair:
+  the change simply never happened.
+- Board cards have a tick box. Dragging is a mouse gesture and does not exist on
+  a touch screen, which left a phone with no way to move a card out of a column
+  at all; the card editor also names the four statuses now, so every move is one
+  tap.
+- The board on a phone shows one column at a time, with its name above it.
+  Getting from Pending to Done used to mean scrolling sideways past a
+  full-height Doing.
+- The todo list beside Today no longer keeps everything you have ever finished.
+
 ## 0.18.0 — 2026-09-01
 
 - **A family plan: one invoice, up to five accounts.** The payer adds people by

@@ -4,11 +4,11 @@
 	import { flushNow, takeBack, undo } from '$lib/undo.svelte';
 
 	/**
-	 * What just went, and the way back.
+	 * What just happened, and the way back.
 	 *
-	 * One line per pending deletion, stacked above the bottom bar on a phone and
-	 * in the corner on a wide screen. It counts down, because a window you cannot
-	 * see the end of is a window you do not trust.
+	 * One line per held action — a deletion, a todo ticked off — stacked above the
+	 * bottom bar on a phone and in the corner on a wide screen. It counts down,
+	 * because a window you cannot see the end of is a window you do not trust.
 	 */
 	let now = $state(Date.now());
 
@@ -36,7 +36,7 @@
 				class="pointer-events-auto flex w-full max-w-sm items-center gap-3 border border-gray-700 bg-gray-900 px-4 py-3 text-sm text-white shadow-overlay"
 				role="status"
 			>
-				<span class="min-w-0 flex-1 truncate">Deleted {item.label}</span>
+				<span class="min-w-0 flex-1 truncate">{item.message}</span>
 				<span class="tabular shrink-0 text-xs text-gray-500">{left}s</span>
 				<button
 					onclick={() => takeBack(item.id)}

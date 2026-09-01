@@ -17,8 +17,15 @@
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
 	import { RATINGS, type Rating } from '$lib/ratings.js';
 	import { getAction, keyFor } from '$lib/shortcuts';
-	import { STATUSES, STATUS_LABELS, TIMING_LABELS, type Status } from '$lib/task-status.js';
+	import {
+		CLOSED_STATUSES,
+		STATUSES,
+		STATUS_LABELS,
+		TIMING_LABELS,
+		type Status
+	} from '$lib/task-status.js';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
+	import { cancelFor, changeLater, isPending } from '$lib/undo.svelte';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -110,14 +117,33 @@
 	let railOver = $state(false);
 
 	const cards = $derived(tab === 'today' ? data.todayCards : data.generalCards);
-	/** The rail beside Today always shows the todo list, whatever the tab. */
-	const railCards = $derived(data.generalCards);
+	/**
+	 * The rail beside Today always shows the todo list, whatever the tab.
+	 *
+	 * Open ones only. The General tab sorts every undated todo into its status
+	 * column, where a finished one belongs under Done; the rail is a single
+	 * list with no column to put it in, so everything ever ticked off sat in it
+	 * forever — a todo list that only grows is not a todo list.
+	 */
+	const railCards = $derived(data.generalCards.filter((c) => !CLOSED_STATUSES.includes(c.status)));
 
 	/** Only on a phone; a wide screen shows the filters without asking. */
 	let filtersOpen = $state(false);
 
+	/**
+	 * Which column a card is drawn in right now.
+	 *
+	 * A tick is held for the undo window rather than sent, so between the tap and
+	 * the write there is nothing on the server to read. Derived rather than
+	 * written onto the card, because Undo has to put it back where it was and a
+	 * mutation would have already lost that.
+	 */
+	function shownStatus(card: Card): Status {
+		return isPending(card.uid) ? 'done' : card.status;
+	}
+
 	function visible(status: Status): Card[] {
-		let out = cards.filter((c) => c.status === status);
+		let out = cards.filter((c) => shownStatus(c) === status);
 
 		// An unrated card is never hidden: the filter is for choosing among what
 		// you have described, not for burying what you have not.
@@ -154,6 +180,22 @@
 		}))
 	);
 
+	/**
+	 * On a phone the board is one column at a time.
+	 *
+	 * It used to be a sideways snapping strip of them, which is the standard
+	 * answer and the wrong one here: the columns are as tall as the tallest, so a
+	 * busy Doing in the middle made getting from Pending to Done a scroll through
+	 * a screen and a half of somebody else's cards. Three columns are not enough
+	 * to be worth navigating — they are enough to be named.
+	 */
+	let phoneColumn: Status = $state('todo');
+
+	// Hiding Skipped while it is the one on screen would leave a blank board.
+	$effect(() => {
+		if (!columns.some((c) => c.status === phoneColumn)) phoneColumn = 'todo';
+	});
+
 	const focusedCard = $derived(columns[focusCol]?.cards[focusRow] ?? null);
 
 	function post(action: string, fields: Record<string, string | string[]>) {
@@ -174,11 +216,28 @@
 	}
 
 	async function move(card: Card, status: Status) {
+		// A second tick inside the window is the same gesture as pressing Undo.
+		if (isPending(card.uid)) {
+			cancelFor(card.uid);
+			return;
+		}
 		if (card.status === status) return;
+
+		const send = async () => {
+			await post('setStatus', { kind: card.kind, id: String(card.id), status });
+			await refresh();
+		};
+
+		// Ticking a thing off is the one move worth a few seconds to take back —
+		// it is the move people make by accident, and on a phone with a thumb.
+		if (status === 'done') {
+			changeLater(card.uid, `Completed ${card.title}`, () => void send());
+			return;
+		}
+
 		// Optimistic: the card jumps immediately and the load re-runs behind it.
 		card.status = status;
-		await post('setStatus', { kind: card.kind, id: String(card.id), status });
-		await refresh();
+		await send();
 	}
 
 	/**
@@ -582,6 +641,32 @@
 			{/if}
 
 			<!--
+				Which column it is in.
+
+				Not part of the form below: moving a card is its own act and takes
+				effect on the tap, where saving a name and a length is a form with a
+				Save button. It is also the only way to reach Doing on a touch screen,
+				where there is no drag.
+			-->
+			<div class="mb-3 flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3">
+				<span class="eyebrow shrink-0 text-gray-600">Status</span>
+				<div class="seg">
+					{#each STATUSES as status (status)}
+						<button
+							type="button"
+							aria-pressed={shownStatus(card) === status}
+							onclick={() => {
+								move(card, status);
+								editing = null;
+							}}
+						>
+							{STATUS_LABELS[status]}
+						</button>
+					{/each}
+				</div>
+			</div>
+
+			<!--
 				A nudge before it starts.
 
 				Its own form, because setting a reminder and editing the block are two
@@ -750,13 +835,28 @@
 
 	<div class="flex flex-col gap-3 md:flex-row">
 		<div class="min-w-0 flex-1">
-			<!-- Below md this is a snapping strip of readable columns rather than a
-			     grid squeezed to fit: a 90px column is not a column. -->
-			<div class="snap-strip snap-strip-grid md:gap-3">
+			<!-- Which column the phone is looking at. Above md every column is on
+			     screen at once and this is not drawn at all. -->
+			<div class="seg mb-3 flex w-full md:hidden">
+				{#each columns as column (column.status)}
+					<button
+						type="button"
+						onclick={() => (phoneColumn = column.status)}
+						aria-pressed={phoneColumn === column.status}
+						class="flex-1 gap-1.5"
+					>
+						{STATUS_LABELS[column.status]}
+						<span class="tabular text-xs text-gray-500">{column.cards.length}</span>
+					</button>
+				{/each}
+			</div>
+
+			<div class="grid grid-cols-1 gap-3 md:auto-cols-fr md:grid-flow-col">
 				{#each columns as column, ci (column.status)}
 					<section
-						class="flex min-h-64 w-[78vw] shrink-0 flex-col border bg-gray-50 sm:w-64 md:w-auto {dragOverColumn ===
-						column.status
+						class="min-h-64 flex-col border bg-gray-50 {phoneColumn === column.status
+							? 'flex'
+							: 'hidden'} md:flex {dragOverColumn === column.status
 							? 'border-gray-900'
 							: 'border-gray-200'}"
 						ondragover={(e) => {
@@ -768,8 +868,9 @@
 						}}
 						ondrop={(e) => onDropInColumn(column.status, e)}
 					>
+						<!-- The switcher above says both of these on a phone. -->
 						<header
-							class="flex items-center justify-between border-b border-gray-200 bg-white px-3 py-2"
+							class="hidden items-center justify-between border-b border-gray-200 bg-white px-3 py-2 md:flex"
 						>
 							<span class="eyebrow text-gray-600">{STATUS_LABELS[column.status]}</span>
 							<span class="tabular text-xs text-gray-500">{column.cards.length}</span>
@@ -807,6 +908,41 @@
 										: ''} {dragging?.uid === card.uid ? 'opacity-40' : ''} border-gray-200"
 								>
 									<div class="flex items-start gap-2">
+										<!--
+											Done, with a thumb.
+
+											Dragging is a mouse gesture: it does not exist on a touch
+											screen, which left a phone with no way at all to move a card
+											out of a column. This is the one move that matters, it is the
+											same box as the todo list's, and it is held for the undo
+											window rather than sent — so a mis-tap costs nothing.
+
+											The box is 20px; the thing you tap is 44.
+										-->
+										<button
+											type="button"
+											onclick={(e) => {
+												e.stopPropagation();
+												move(card, shownStatus(card) === 'done' ? 'todo' : 'done');
+											}}
+											class="-m-1 flex shrink-0 items-center justify-center p-1 pointer-coarse:w-11"
+											title={shownStatus(card) === 'done' ? 'Mark not done' : 'Mark done'}
+											aria-label={shownStatus(card) === 'done'
+												? `Mark ${card.title} not done`
+												: `Mark ${card.title} done`}
+										>
+											<span
+												class="flex h-4 w-4 items-center justify-center border border-gray-400 {shownStatus(
+													card
+												) === 'done'
+													? 'bg-gray-400 text-white'
+													: 'bg-white'}"
+											>
+												{#if shownStatus(card) === 'done'}
+													<Icon name="check" size={11} />
+												{/if}
+											</span>
+										</button>
 										<span
 											class="mt-1 h-3 w-1 shrink-0"
 											style="background-color: {card.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
@@ -958,6 +1094,7 @@
 			<!-- The todo list stays visible beside Today so the two can actually
 			     interact: drag one across and it becomes a scheduled task. -->
 			<aside
+				aria-label="Todo list"
 				class="w-full shrink-0 border bg-gray-50 md:w-64 lg:w-72 xl:w-80 {railOver
 					? 'border-gray-900'
 					: 'border-gray-200'}"

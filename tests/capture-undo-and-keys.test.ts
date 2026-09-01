@@ -12,7 +12,16 @@
  */
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { CAPTURES, captureByShortcut, visibleCaptures } from '../src/lib/capture';
-import { deleteLater, flushNow, isLeaving, takeBack, undo } from '../src/lib/undo.svelte';
+import {
+	cancelFor,
+	changeLater,
+	deleteLater,
+	flushNow,
+	isLeaving,
+	isPending,
+	takeBack,
+	undo
+} from '../src/lib/undo.svelte';
 import { mergeSuggestions, parseSlotMeta, SUGGESTED_KEYS } from '../src/lib/meta-keys';
 import { commandKey } from '../src/lib/platform';
 
@@ -118,8 +127,38 @@ describe('a delete that is still on its way', () => {
 		deleteLater('item:7', 'b', vi.fn());
 
 		expect(undo.pending).toHaveLength(2);
-		expect(undo.pending.map((p) => p.label)).toEqual(['a', 'b']);
+		expect(undo.pending.map((p) => p.message)).toEqual(['Deleted a', 'Deleted b']);
 		expect(isLeaving('item:8')).toBe(false);
+	});
+
+	test('a todo ticked off is held the same way, but its row stays put', () => {
+		// A delete hides the row while it waits; a tick does not — the list has
+		// to draw the outcome, which is what `isPending` answers and `isLeaving`
+		// deliberately does not.
+		vi.useFakeTimers();
+		const send = vi.fn();
+		changeLater('todo:9', 'Completed call the landlord', send);
+
+		expect(undo.pending[0].message).toBe('Completed call the landlord');
+		expect(isPending('todo:9')).toBe(true);
+		expect(isLeaving('todo:9')).toBe(false);
+
+		vi.advanceTimersByTime(5_000);
+		expect(send).toHaveBeenCalledTimes(1);
+	});
+
+	test('ticking the same row twice takes it back rather than queueing both', () => {
+		// Clicking the box a second time inside the window is the same gesture as
+		// pressing Undo. Queueing the opposite write behind the first would leave
+		// the outcome decided by whichever timer landed last.
+		vi.useFakeTimers();
+		const send = vi.fn();
+		changeLater('todo:10', 'Completed a', send);
+		cancelFor('todo:10');
+
+		expect(undo.pending).toHaveLength(0);
+		vi.advanceTimersByTime(60_000);
+		expect(send).not.toHaveBeenCalled();
 	});
 });
 

@@ -15,6 +15,9 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { CLOSED_STATUSES } from '$lib/task-status.js';
 	import { keepInView } from '$lib/actions/keep-in-view';
+	import { invalidateAll } from '$app/navigation';
+	import { cancelFor, changeLater, isPending } from '$lib/undo.svelte';
+	import type { SubmitFunction } from '@sveltejs/kit';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -36,13 +39,59 @@
 
 	type Todo = (typeof data.todos)[number];
 
+	/**
+	 * What the row says right now.
+	 *
+	 * A tick is held for the undo window rather than sent, so between the click
+	 * and the write there is nothing on the server to read: the list renders the
+	 * outcome itself, and Undo just cancels the timer. Reopening is not held —
+	 * it is already the undo of a tick.
+	 */
+	function shownStatus(todo: Todo): Todo['status'] {
+		return isPending(undoKey(todo)) ? 'done' : todo.status;
+	}
+
+	function undoKey(todo: Todo): string {
+		return `todo:${todo.id}`;
+	}
+
 	let visibleTodos = $derived(
-		showCompleted ? data.todos : data.todos.filter((t: Todo) => !CLOSED_STATUSES.includes(t.status))
+		showCompleted
+			? data.todos
+			: data.todos.filter((t: Todo) => !CLOSED_STATUSES.includes(shownStatus(t)))
 	);
 
 	function isDone(todo: Todo): boolean {
-		return todo.status === 'done';
+		return shownStatus(todo) === 'done';
 	}
+
+	/**
+	 * Ticking one off, with a few seconds to have meant something else.
+	 *
+	 * Clicking the box a second time inside the window is the same gesture as
+	 * pressing Undo in the toast, so it cancels rather than queueing the
+	 * opposite write behind the first.
+	 */
+	const deferComplete =
+		(todo: Todo): SubmitFunction =>
+		({ action, formData, cancel }) => {
+			const key = undoKey(todo);
+			if (isPending(key)) {
+				cancel();
+				cancelFor(key);
+				return;
+			}
+			if (todo.status === 'done') return;
+
+			cancel();
+			changeLater(key, `Completed ${todo.title}`, () => {
+				void fetch(action, {
+					method: 'POST',
+					body: formData,
+					headers: { 'x-sveltekit-action': 'true' }
+				}).then(() => invalidateAll());
+			});
+		};
 
 	/** Today, as the value the scheduling form wants. */
 	function todayStr(): string {
@@ -311,9 +360,14 @@
 						? 'ring-2 ring-gray-900 ring-inset'
 						: ''} {isDone(todo) ? 'opacity-50' : ''}"
 				>
-					<form id="toggle-form-{todo.id}" method="post" action="?/setStatus" use:enhance>
+					<form
+						id="toggle-form-{todo.id}"
+						method="post"
+						action="?/setStatus"
+						use:enhance={deferComplete(todo)}
+					>
 						<input type="hidden" name="id" value={todo.id} />
-						<input type="hidden" name="status" value={isDone(todo) ? 'todo' : 'done'} />
+						<input type="hidden" name="status" value={todo.status === 'done' ? 'todo' : 'done'} />
 						<!--
 							The box is 20px; the thing you tap is 44. A touch screen gives
 							every button a 44px minimum height, which stretched a 20px-wide

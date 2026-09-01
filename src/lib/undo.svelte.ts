@@ -1,26 +1,35 @@
 /**
- * A delete that waits, and can be taken back.
+ * An action that waits, and can be taken back.
  *
- * The confirmation stays. That is the deliberate half — a dialog or an armed
- * second click, so nothing is destroyed by a reflex. This is the other half:
- * the seconds between saying yes and meaning it.
+ * Nothing is soft-deleted, marked provisional or reconciled afterwards. The
+ * request simply has not been sent yet: the screen shows the outcome at once,
+ * the submission is held for a few seconds, and Undo cancels it. So there is no
+ * state to unwind and no way for a change to survive somewhere a query forgot
+ * to filter — the only cost is that closing the tab inside the window means the
+ * action never happens, which loses nothing.
  *
- * Nothing is soft-deleted and nothing is restored. The request simply has not
- * been sent yet: the row disappears from the screen at once, the submission is
- * held for a few seconds, and Undo cancels it. So there is no state to reconcile
- * and no way for a deleted row to reappear somewhere the query forgot to filter
- * — the only cost is that closing the tab inside the window means the delete
- * never happens, which loses nothing.
+ * Two shapes use this. A **deletion** hides its row while it waits, so the list
+ * reads as though it were already gone; `isLeaving` is what a list asks. A
+ * **change** — ticking a todo off — leaves the row where it is and shows the new
+ * state, so the list asks `isPending` and renders it done.
+ *
+ * For deletion the confirmation stays. That is the deliberate half — a dialog or
+ * an armed second click, so nothing is destroyed by a reflex. This is the other
+ * half: the seconds between saying yes and meaning it. A tick has no
+ * confirmation and does not need one, because this is the whole of its safety
+ * net.
  *
  * The window comes from the instance's config (`[ui] undo_seconds`); zero sends
  * immediately and shows no toast.
  */
 export type Pending = {
 	id: number;
-	/** What vanished, for the toast: "Deleted olive oil". */
-	label: string;
-	/** Hidden from lists while this is pending — `${kind}:${id}`. */
+	/** What the toast says: "Deleted olive oil", "Completed call the landlord". */
+	message: string;
+	/** The row this is about — `${kind}:${id}`. */
 	key: string;
+	/** Whether the row is hidden from lists while this waits. */
+	hides: boolean;
 	send: () => void;
 	timer: ReturnType<typeof setTimeout>;
 	until: number;
@@ -35,20 +44,29 @@ export const undo = $state<{ pending: Pending[]; seconds: number }>({
 
 /** Whether a row is on its way out, so a list can leave it out already. */
 export function isLeaving(key: string): boolean {
+	return undo.pending.some((p) => p.key === key && p.hides);
+}
+
+/** Whether anything at all is waiting on this row, so it can show the outcome. */
+export function isPending(key: string): boolean {
 	return undo.pending.some((p) => p.key === key);
 }
 
 /**
- * Hold a deletion for the undo window, then send it.
+ * Hold an action for the undo window, then send it.
  *
  * With a window of zero it sends now, which is what an instance that has turned
- * this off wants.
+ * this off wants. A second action on the same row replaces the first: two holds
+ * on one todo would fire in whichever order their timers landed.
  */
-export function deleteLater(key: string, label: string, send: () => void): void {
+function hold(key: string, message: string, hides: boolean, send: () => void): void {
 	if (undo.seconds <= 0) {
 		send();
 		return;
 	}
+
+	for (const p of undo.pending.filter((p) => p.key === key)) clearTimeout(p.timer);
+	undo.pending = undo.pending.filter((p) => p.key !== key);
 
 	const id = nextId++;
 	const timer = setTimeout(() => {
@@ -58,8 +76,24 @@ export function deleteLater(key: string, label: string, send: () => void): void 
 
 	undo.pending = [
 		...undo.pending,
-		{ id, label, key, send, timer, until: Date.now() + undo.seconds * 1000 }
+		{ id, message, key, hides, send, timer, until: Date.now() + undo.seconds * 1000 }
 	];
+}
+
+/** A row that leaves the screen now and is deleted in a few seconds. */
+export function deleteLater(key: string, label: string, send: () => void): void {
+	hold(key, `Deleted ${label}`, true, send);
+}
+
+/** A row that shows its new state now and is written in a few seconds. */
+export function changeLater(key: string, message: string, send: () => void): void {
+	hold(key, message, false, send);
+}
+
+/** Take back whatever is waiting on one row — clicking the tick again. */
+export function cancelFor(key: string): void {
+	for (const p of undo.pending.filter((p) => p.key === key)) clearTimeout(p.timer);
+	undo.pending = undo.pending.filter((p) => p.key !== key);
 }
 
 export function takeBack(id: number): void {
@@ -73,7 +107,7 @@ export function takeBack(id: number): void {
 /**
  * Send everything still waiting, now.
  *
- * Called when the page is being left: a delete somebody confirmed should not be
+ * Called when the page is being left: something somebody confirmed should not be
  * quietly forgotten because they clicked a link four seconds later.
  */
 export function flushNow(): void {

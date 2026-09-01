@@ -81,3 +81,120 @@ test.describe('the board deletes by keyboard', () => {
 		await expect(page.getByText(title, { exact: true })).toHaveCount(0);
 	});
 });
+
+/**
+ * The todo rail beside Today, which is a todo list and has to behave like one.
+ *
+ * The General tab sorts every undated todo into its status column, so a
+ * finished one lands under Done and reads correctly. The rail is a single list
+ * with no column to put it in, and it was rendering the same unfiltered set —
+ * so everything ever ticked off stayed in it, and the list only ever grew.
+ */
+test.describe('the todo rail', () => {
+	test('drops a todo once it is done', async ({ page }) => {
+		await register(page, `board-rail-${Date.now()}@example.test`);
+		const title = 'A rail todo that gets finished';
+		const rail = page.getByRole('complementary', { name: 'Todo list' });
+		const todoTab = page.getByRole('button', { name: 'Todo', exact: true });
+		const todayTab = page.getByRole('button', { name: 'Today', exact: true });
+
+		// A card made on the Todo tab has no day, which is what puts it in the
+		// rail; one made on Today would be a block on today's board instead.
+		await page.goto('/planner/board', { waitUntil: 'networkidle' });
+		await todoTab.click();
+		await page.keyboard.press('n');
+		await page.fill('#card-form input[name=title]', title);
+		await page.getByRole('button', { name: 'Add card' }).click();
+		await expect(page.getByText(title, { exact: true }).first()).toBeVisible();
+
+		// The rail is drawn beside Today, so that is where it has to show up.
+		await todayTab.click();
+		await expect(rail.getByText(title, { exact: true })).toBeVisible();
+
+		await todoTab.click();
+		await page.getByRole('button', { name: `Mark ${title} done`, exact: true }).click();
+		// Let the undo window run out, so the write actually happens.
+		await expect(page.getByText(`Completed ${title}`)).toBeVisible();
+		await expect(page.getByText(`Completed ${title}`)).toHaveCount(0, { timeout: 15_000 });
+
+		await page.reload({ waitUntil: 'networkidle' });
+		await expect(rail.getByText(title, { exact: true })).toHaveCount(0);
+	});
+});
+
+/**
+ * Ticking a card off, and the few seconds to have meant something else.
+ *
+ * The write is held rather than sent, so Undo cancels a timer instead of
+ * reversing anything — which is why the reload at the end is the real
+ * assertion: it proves nothing was written, not merely that nothing redrew.
+ */
+test.describe('undo on a card ticked off', () => {
+	test('offers Undo, and Undo means the write never happens', async ({ page }) => {
+		await register(page, `board-undo-${Date.now()}@example.test`);
+		const title = 'A card ticked off by mistake';
+		await newCard(page, title);
+
+		await page.getByRole('button', { name: `Mark ${title} done`, exact: true }).click();
+		await expect(page.getByText(`Completed ${title}`)).toBeVisible();
+
+		await page.getByRole('button', { name: 'Undo' }).click();
+		await page.reload({ waitUntil: 'networkidle' });
+
+		// Back where it started: still tickable, so still not done.
+		await expect(
+			page.getByRole('button', { name: `Mark ${title} done`, exact: true })
+		).toBeVisible();
+	});
+
+	test('lets the window run out and the card is done', async ({ page }) => {
+		await register(page, `board-done-${Date.now()}@example.test`);
+		const title = 'A card that really is done';
+		await newCard(page, title);
+
+		await page.getByRole('button', { name: `Mark ${title} done`, exact: true }).click();
+		await expect(page.getByText(`Completed ${title}`)).toBeVisible();
+
+		// The window is five seconds by default; wait it out rather than racing it.
+		await expect(page.getByText(`Completed ${title}`)).toHaveCount(0, { timeout: 15_000 });
+		await page.reload({ waitUntil: 'networkidle' });
+
+		await expect(
+			page.getByRole('button', { name: `Mark ${title} not done`, exact: true })
+		).toBeVisible();
+	});
+});
+
+/**
+ * The board on a phone.
+ *
+ * It was a sideways snapping strip of columns, all as tall as the tallest, so
+ * getting from Pending to Done meant scrolling past a full-height Doing. Three
+ * columns are not enough to be worth navigating — they are enough to be named,
+ * so the phone shows one at a time and a switcher above it.
+ */
+test.describe('the board on a phone', () => {
+	test.use({ viewport: { width: 390, height: 844 } });
+
+	test('shows one column at a time, chosen by name', async ({ page }) => {
+		await register(page, `board-phone-${Date.now()}@example.test`);
+		const title = 'A card to find under Done';
+		await newCard(page, title);
+
+		// Pending is what a phone opens on, and the card is on the screen.
+		await expect(page.getByRole('button', { name: /^Pending/ })).toHaveAttribute(
+			'aria-pressed',
+			'true'
+		);
+		await expect(page.getByText(title, { exact: true })).toBeVisible();
+
+		await page.getByRole('button', { name: /^Done/ }).click();
+		await expect(page.getByRole('button', { name: /^Done/ })).toHaveAttribute(
+			'aria-pressed',
+			'true'
+		);
+		// One column on screen at a time: Pending's card is no longer on it, and
+		// nothing had to be scrolled past to get here.
+		await expect(page.getByText(title, { exact: true })).toBeHidden();
+	});
+});
