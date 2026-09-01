@@ -1,0 +1,65 @@
+name: Something is broken
+description: It does the wrong thing, or nothing at all.
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Two things make a report actionable: what you did, and what happened
+        instead of what you expected. Everything else below is optional.
+
+        **Not here:** a security problem. Report those privately —
+        [security advisories](https://github.com/ontoplano/ontoplano/security/advisories/new).
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, and what it did. Screenshots help more than adjectives.
+      placeholder: |
+        I dragged a block from Tuesday to Wednesday on the week grid.
+        It landed on Wednesday, and after a reload it was back on Tuesday.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Settings → Instance shows it, beside the commit and the build time.
+      placeholder: 0.29.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: instance
+    attributes:
+      label: Whose instance
+      options:
+        - app.ontoplano.com
+        - One I run myself
+        - The demo
+    validations:
+      required: true
+
+  - type: input
+    id: where
+    attributes:
+      label: Browser and device
+      placeholder: Firefox 142 on Linux · Chrome on a Pixel 8 · the Android app
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Anything in the console or the server log
+      description: Optional, and often the whole answer. Redact anything private first.
+      render: text

@@ -1,0 +1,22 @@
+name: The documentation is wrong
+description: A page that is out of date, unclear, or missing.
+labels: ['documentation']
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Which page
+      placeholder: https://docs.ontoplano.com/running-it
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong with it
+      description: >
+        Most of the wiki is generated from the code — the data model, the API,
+        the keyboard, the pages. If one of those is wrong, the code it is
+        generated from is what is wrong, which is worth saying.
+    validations:
+      required: true

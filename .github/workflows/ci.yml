@@ -1,0 +1,61 @@
+# What has to be true of every push and every pull request.
+#
+# The same commands anybody runs here — there is deliberately no CI-only
+# incantation, because a check that only exists in CI is one nobody can
+# reproduce when it fails.
+#
+# One job rather than three: the install and the Playwright browsers are most of
+# the wall-clock, and paying for them once beats running the suites in parallel.
+name: checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push to the same branch cancels the first. Nobody needs the result
+# of the commit they have already replaced.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Vite 7 wants 20.19 or newer, and better-sqlite3 is compiled against
+          # whatever this is — pinning the major keeps a runner upgrade from
+          # being a surprise on an unrelated pull request.
+          node-version: 22
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+
+      # prettier, eslint, the changelog check and the wiki freshness check.
+      - run: yarn lint
+
+      - run: yarn check
+
+      - run: yarn test:unit
+
+      # Only the browser the suite actually uses. `--with-deps` because a bare
+      # runner has none of the shared libraries Chromium needs.
+      - run: yarn playwright install --with-deps chromium
+      - run: yarn test:e2e
+
+      - name: Keep the report from a failed run
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

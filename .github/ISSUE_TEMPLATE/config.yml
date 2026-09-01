@@ -1,0 +1,18 @@
+# The chooser somebody sees before they open an issue.
+#
+# `blank_issues_enabled: false` on purpose: a blank issue is where "it doesn't
+# work" goes, and nobody can act on that. The three forms below ask the handful
+# of things that turn a report into something reproducible, and the two links
+# take the questions that are not issues somewhere they can actually be
+# answered.
+blank_issues_enabled: false
+contact_links:
+  - name: A question about using it
+    url: https://github.com/ontoplano/ontoplano/discussions
+    about: How something works, or whether it can. Not a bug until it is one.
+  - name: The documentation
+    url: https://docs.ontoplano.com
+    about: Running it yourself, the API, the data model, the keyboard.
+  - name: A security problem
+    url: https://github.com/ontoplano/ontoplano/security/advisories/new
+    about: Report it privately. Never in a public issue.

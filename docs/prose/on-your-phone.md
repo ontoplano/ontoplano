@@ -289,6 +289,12 @@ confusing in exactly the way a widget is meant to prevent.
 4. Your browser opens, mints a key for this widget and hands it back. The widget
    appears with today on it.
 
+**If step 4 does not come back** — the page sits there, or Android asks "Continue
+to Ontoplano?" and lands you on the same page again — the link has been answered
+by the app instead of by the widget. The page also shows the key: copy it, go
+back to the widget's setup screen, paste it into **Or paste the key**, and tap
+**Use this key**. That path needs no link and cannot be intercepted.
+
 The key can read today's plan and nothing else. Revoke it any time under
 **Settings → Integrations**; the widget goes blank rather than showing anything
 stale.

@@ -101,6 +101,40 @@ public class WidgetConfigureActivity extends Activity {
             }
         });
 
+        /*
+         * The way that cannot fail.
+         *
+         * Connect hands the key back over an ontoplano:// link, and a link is at
+         * the mercy of which app Android decides should answer it — on a phone
+         * with this app installed it has answered itself more than once, leaving
+         * the browser page asking to "continue" forever. The page shows the key
+         * as well as sending it, and this takes it typed or pasted: no intent,
+         * no chooser, no browser.
+         */
+        final EditText key = findViewById(R.id.configure_key);
+        Button useKey = findViewById(R.id.configure_use_key);
+        useKey.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String typed = key.getText().toString().trim();
+                if (typed.isEmpty()) {
+                    status.setText(R.string.configure_needs_key);
+                    return;
+                }
+
+                String address = normalize(origin.getText().toString());
+                if (address.isEmpty()) {
+                    status.setText(R.string.configure_needs_address);
+                    return;
+                }
+
+                waiting = false;
+                status.setText(R.string.configure_checking);
+                WidgetSettings.save(WidgetConfigureActivity.this, address, typed);
+                verifyAndFinish();
+            }
+        });
+
         handleReturn(getIntent());
     }
 

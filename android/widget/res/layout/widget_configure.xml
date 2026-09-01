@@ -61,5 +61,37 @@
             android:importantForAutofill="no"
             android:textColor="@color/widget_text"
             android:textColorHint="@color/widget_dim" />
+
+        <!-- The way that cannot fail.
+             Connect hands the key back over an ontoplano:// link, and a link is
+             at the mercy of which app Android decides should answer it — on a
+             phone with the app installed it has more than once answered itself,
+             leaving the browser page asking to "continue" forever. The page
+             shows the key as well as sending it; this is where it gets pasted,
+             and it needs no intent, no chooser and no browser. -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="24dp"
+            android:text="@string/configure_paste_label"
+            android:textColor="@color/widget_dim"
+            android:textSize="12sp" />
+
+        <EditText
+            android:id="@+id/configure_key"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/configure_paste_hint"
+            android:inputType="textNoSuggestions"
+            android:importantForAutofill="no"
+            android:textColor="@color/widget_text"
+            android:textColorHint="@color/widget_dim" />
+
+        <Button
+            android:id="@+id/configure_use_key"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/configure_use_key" />
     </LinearLayout>
 </ScrollView>

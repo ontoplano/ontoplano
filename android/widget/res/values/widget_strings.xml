@@ -17,7 +17,7 @@
     <string name="widget_unreachable">Could not reach the instance.</string>
 
     <string name="configure_title">Ontoplano widget</string>
-    <string name="configure_help">Connect opens your instance in the browser; one tap there and the widget is connected. It can read today\'s plan and nothing else.</string>
+    <string name="configure_help">Connect opens your instance in the browser; one tap there and the widget is connected. If it comes back here without connecting, the page also shows a key you can paste below. Either way it can read today\'s plan and nothing else.</string>
     <string name="configure_connect">Connect</string>
     <string name="configure_waiting">Finish in the browser — this screen completes by itself.</string>
     <string name="configure_checking">Checking…</string>
@@ -27,4 +27,8 @@
     <string name="configure_needs_address">Say which instance to connect to.</string>
     <string name="configure_no_browser">No browser on this phone can open the instance.</string>
     <string name="configure_bad_link">That link was missing its key. Try Connect again.</string>
+    <string name="configure_paste_label">Or paste the key</string>
+    <string name="configure_paste_hint">The key the browser page shows</string>
+    <string name="configure_use_key">Use this key</string>
+    <string name="configure_needs_key">Paste the key the browser page shows.</string>
 </resources>

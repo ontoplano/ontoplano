@@ -22,6 +22,20 @@ agreement of everybody who has ever contributed, which in practice means it
 will not happen. That is the point: the guarantee is structural rather than a
 line in a README that a new owner could edit.
 
+## Opening something
+
+Issues and pull requests have templates, and they ask what they ask because
+each question is something that has been missing from a report here before —
+the version, whose instance, which browser. `.github/` has them.
+
+A security problem is the one thing that does not go in an issue: use a
+[private advisory](https://github.com/ontoplano/ontoplano/security/advisories/new).
+`.github/SECURITY.md` says what is worth reporting and what is not.
+
+Every push runs prettier, eslint, the changelog check, the type check, the unit
+suite and the end-to-end suite. They are the same commands listed below, so a
+red build is reproducible in one line on your own machine.
+
 ## What is missing
 
 `ROADMAP.md` is the list of things this app intends to do and does not do yet,

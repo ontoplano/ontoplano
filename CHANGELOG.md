@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.30.1 — 2026-09-01
+
+- Connecting the widget shows the key as well as sending it, and the widget's
+  setup screen has a box to paste it into. The link back is at the mercy of
+  which app Android decides should answer it; pasting a key is not. The page
+  also stopped refusing to run inside the app — which is the one place the
+  widget's own setup opens it from.
+
 ## 0.30.0 — 2026-09-01
 
 - **Dragging a card can reach a column that is not on the screen.** On a phone
