@@ -42,7 +42,9 @@ help:
 	@echo "  telegram-install            the bot on a self-hosted box (telegram-dev to try it)"
 	@if [ -f local.mk ]; then echo; \
 		printf '\033[1mthis instance (local.mk)\033[0m\n'; \
-		echo "  deploy · restart-server · up   see local.mk — these touch the real server"; \
+		echo "  deploy [-app|-site|-docs|-demo]   ship it; bare deploy is all four"; \
+		echo "  restart [-app|-site|-docs|-demo]  without shipping anything"; \
+		echo "  logs-app · logs-demo · setup · up  see local.mk for the rest"; \
 	fi
 
 .PHONY: help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-up docker-down logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
