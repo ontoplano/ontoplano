@@ -29,3 +29,35 @@ test('the allowance updates the moment an export lands', async ({ page }) => {
 	await expect(download).toBeDisabled();
 	await expect(download).toBeEnabled({ timeout: 10_000 });
 });
+
+/**
+ * Moving in, on the page that exists for it.
+ *
+ * The forms used to sit at the bottom of the account page; what this holds is
+ * that they still work where they now live, and that a Keep export — which is
+ * a different product from Google Tasks and arrives as one file per note —
+ * is recognised as itself.
+ */
+test('a Google Keep export lands as todos in a notebook of its own', async ({ page }) => {
+	await register(page, `import-keep-${Date.now()}@test.invalid`);
+
+	// Reached from the account page rather than by knowing the address.
+	await page.goto('/settings/account', { waitUntil: 'networkidle' });
+	await page.getByRole('link', { name: 'Import' }).click();
+	await page.waitForURL(/\/settings\/account\/import/);
+
+	const notes = JSON.stringify([
+		{ title: 'Shed', listContent: [{ text: 'wood glue', isChecked: false }], isTrashed: false },
+		{ title: 'Call the vet', textContent: 'about the booster', isTrashed: false }
+	]);
+
+	await page.getByPlaceholder('…or paste the file here').fill(notes);
+	await page.getByRole('button', { name: 'Import' }).click();
+
+	await expect(page.getByText(/Imported 2 into/)).toBeVisible();
+	await expect(page.getByText(/Google Keep/).first()).toBeVisible();
+
+	// And they are really there, as todos, in one notebook that undoes it.
+	await page.goto('/diary/notebooks', { waitUntil: 'networkidle' });
+	await expect(page.getByText('Google Keep').first()).toBeVisible();
+});

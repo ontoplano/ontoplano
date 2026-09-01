@@ -83,9 +83,26 @@ export type ImportResult = {
 	skipped: { name: string; rows: number; why: string }[];
 };
 
+/*
+ * What a file is allowed to be.
+ *
+ * An export is a file a stranger can hand this instance, so every one of these
+ * is a ceiling on what one request can cost the machine it lands on. They are
+ * generous — a year of heavy use is a few megabytes and some tens of thousands
+ * of rows — and the point is only that there IS a ceiling.
+ */
+/** Bigger than any real export, and small enough to parse without thinking. */
+const MAX_BYTES = 20_000_000;
+/** Rows across every table. Beyond this, one request is filling a disk. */
+const MAX_ROWS = 200_000;
+/** One field. The longest thing anybody writes here is a diary entry. */
+const MAX_VALUE_LENGTH = 200_000;
+
 /** The shape `exportAccount` produces, checked rather than trusted. */
 export function parseExport(raw: unknown): AccountExport {
 	if (typeof raw === 'string') {
+		if (raw.length > MAX_BYTES)
+			throw new ValidationError('That file is too big to restore through the browser.');
 		try {
 			raw = JSON.parse(raw);
 		} catch {
@@ -100,10 +117,17 @@ export function parseExport(raw: unknown): AccountExport {
 	if (!body.data || typeof body.data !== 'object' || Array.isArray(body.data))
 		throw new ValidationError('That file has no account data in it.');
 
+	let total = 0;
 	for (const [name, rows] of Object.entries(body.data)) {
 		if (!Array.isArray(rows))
 			throw new ValidationError(`That file's "${name}" is not a list of rows.`);
+		total += rows.length;
 	}
+	if (total > MAX_ROWS)
+		throw new ValidationError(
+			`That file has ${total} rows in it; ${MAX_ROWS} is the most one restore may carry. ` +
+				`\`make db-import\` on the machine itself has no such limit.`
+		);
 
 	return {
 		exportedAt: typeof body.exportedAt === 'string' ? body.exportedAt : '',
@@ -202,7 +226,7 @@ export function importAccount(userId: string, payload: unknown): ImportResult {
 
 			for (const raw of rows) {
 				if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
-				const row = { ...(raw as Record<string, unknown>) };
+				const row = sanitise(raw as Record<string, unknown>);
 
 				const wasId = row.id;
 				delete row.id;
@@ -269,4 +293,35 @@ function columnProperty(table: never, sqlColumn: string): string | null {
 			return key;
 	}
 	return null;
+}
+
+/**
+ * A row reduced to what a database column can hold.
+ *
+ * Every value in this file came from outside, and the driver binds numbers,
+ * strings, bigints, buffers and null — nothing else. A nested object or an
+ * array reaches it as a TypeError halfway through the transaction, which the
+ * person restoring reads as "something went wrong" with no way to tell which
+ * of six thousand rows did it. Dropped here instead, along with any string
+ * long enough to be a mistake rather than a diary entry.
+ *
+ * Unknown keys need no handling: drizzle builds its insert from the table's
+ * own columns and never looks at the rest.
+ */
+function sanitise(row: Record<string, unknown>): Record<string, unknown> {
+	const out: Record<string, unknown> = {};
+
+	for (const [key, value] of Object.entries(row)) {
+		if (value === null || value === undefined) {
+			out[key] = null;
+		} else if (typeof value === 'string') {
+			out[key] = value.slice(0, MAX_VALUE_LENGTH);
+		} else if (typeof value === 'number' || typeof value === 'boolean') {
+			out[key] = value;
+		}
+		// Anything else — an object, an array, a function from a crafted file —
+		// is not a column value and is left out entirely.
+	}
+
+	return out;
 }

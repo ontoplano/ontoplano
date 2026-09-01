@@ -56,7 +56,12 @@
 	aria-label="Settings sections"
 >
 	{#each tabs as tab (tab.path)}
-		{@const active = page.url.pathname === tab.path}
+		<!--
+			startsWith, not equals: /settings/account/import is a page under
+			Account, and an exact match left the row with nothing marked while you
+			were standing on it.
+		-->
+		{@const active = page.url.pathname === tab.path || page.url.pathname.startsWith(`${tab.path}/`)}
 		<!--
 			The mark under the current tab is the ink, not the section accent.
 

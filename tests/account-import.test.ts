@@ -140,4 +140,41 @@ describe('a file that is not an export', () => {
 			/not a list of rows/i
 		);
 	});
+
+	/**
+	 * A file somebody made rather than exported.
+	 *
+	 * This is the one screen where a stranger's file is read by the server, so
+	 * the ceilings are the interesting part: not what a real export contains,
+	 * but what a made-up one is stopped from costing.
+	 */
+	test("is refused when it is too big to be anybody's data", () => {
+		const huge = `{"data":{"todoTasks":[${'{},'.repeat(200_001).slice(0, -1)}]}}`;
+		expect(() => accountImport.parseExport(huge)).toThrow(/most one restore may carry/i);
+
+		expect(() => accountImport.parseExport('x'.repeat(20_000_001))).toThrow(/too big/i);
+	});
+
+	test('drops a value no column can hold rather than failing mid-restore', () => {
+		const before = todos.listUnscheduled(stranger()).length;
+
+		accountImport.importAccount(STRANGER, {
+			exportedAt: '2026-09-01',
+			account: { id: OWNER, name: 'x', email: 'x@test.invalid' },
+			data: {
+				notebooks: [{ id: 1, title: 'Kept', description: { nested: 'not a column value' } }],
+				todoTasks: [
+					{ id: 1, title: 'A'.repeat(400_000), notebookId: 1, status: 'todo' },
+					{ id: 2, title: 'Fine', notebookId: 1, status: 'todo', notes: ['also', 'not'] }
+				]
+			}
+		});
+
+		const after = todos.listUnscheduled(stranger());
+		expect(after.length).toBeGreaterThan(before);
+		// The long one landed, cut to a length a column can hold, rather than
+		// taking the whole transaction down with it.
+		expect(after.some((t) => t.title.startsWith('AAAA'))).toBe(true);
+		expect(after.some((t) => t.title === 'Fine')).toBe(true);
+	});
 });

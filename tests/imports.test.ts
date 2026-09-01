@@ -1,5 +1,5 @@
 /**
- * Bringing a list in from Todoist or Google Tasks.
+ * Bringing a list in from Todoist, Google Tasks or Google Keep.
  *
  * Both files are somebody's real data, exported once and imported once, and an
  * importer that quietly drops half of it is worse than no importer — the person
@@ -159,6 +159,87 @@ describe('a Google Tasks export', () => {
 	});
 });
 
+/**
+ * Keep, which Takeout writes as one file per note.
+ *
+ * The page reads however many were chosen and hands the service an array, so
+ * both shapes are accepted: the array, and a single note on its own.
+ */
+const KEEP = JSON.stringify([
+	{
+		title: 'Camping list',
+		listContent: [
+			{ text: 'tent pegs', isChecked: false },
+			{ text: 'gas canister', isChecked: true },
+			{ text: '', isChecked: false }
+		],
+		isTrashed: false,
+		isArchived: false
+	},
+	{
+		title: 'Bike shop',
+		textContent: 'The one on the corner closes at six.\nAsk about the rack.',
+		isTrashed: false
+	},
+	{ title: '', textContent: 'Remember the umbrella\nit is in the hall', isTrashed: false },
+	{ title: 'Old thing', textContent: 'gone', isTrashed: true },
+	{ title: '', textContent: '', isTrashed: false }
+]);
+
+describe('a Google Keep export', () => {
+	it('is told apart from Google Tasks, which is a different product', () => {
+		expect(imports.detectSource(KEEP)).toBe('google-keep');
+		expect(imports.detectSource(GOOGLE)).toBe('google-tasks');
+	});
+
+	it('turns a checklist into one todo per line, ticks and all', () => {
+		const { tasks } = imports.parseGoogleKeep(KEEP);
+
+		expect(tasks.find((t) => t.title === 'tent pegs')!.done).toBe(false);
+		expect(tasks.find((t) => t.title === 'gas canister')!.done).toBe(true);
+		// The note's title is the context each line came with.
+		expect(tasks.find((t) => t.title === 'tent pegs')!.notes).toContain('Camping list');
+		expect(tasks.map((t) => t.title)).not.toContain('');
+	});
+
+	it('turns a text note into one todo, body in the notes', () => {
+		const { tasks } = imports.parseGoogleKeep(KEEP);
+		const note = tasks.find((t) => t.title === 'Bike shop')!;
+
+		expect(note.notes).toContain('closes at six');
+		expect(note.done).toBe(false);
+	});
+
+	it('names an untitled note by its first line, and does not repeat it', () => {
+		const { tasks } = imports.parseGoogleKeep(KEEP);
+		const note = tasks.find((t) => t.title === 'Remember the umbrella')!;
+
+		expect(note.notes).toBe('it is in the hall');
+	});
+
+	it('leaves the bin alone and says it did', () => {
+		const { tasks, skipped } = imports.parseGoogleKeep(KEEP);
+
+		expect(tasks.map((t) => t.title)).not.toContain('Old thing');
+		expect(skipped.join(' ')).toContain('bin');
+		expect(skipped.join(' ')).toContain('empty');
+	});
+
+	it('accepts one note on its own, which is what one Takeout file holds', () => {
+		const { tasks } = imports.parseGoogleKeep(
+			JSON.stringify({ title: 'Just this', textContent: 'one file, one note' })
+		);
+		expect(tasks).toHaveLength(1);
+		expect(tasks[0].title).toBe('Just this');
+	});
+
+	it('lands in a notebook of its own, named for where it came from', () => {
+		const result = imports.importTasks(ctx, { text: KEEP });
+		expect(result.notebook).toContain('Google Keep');
+		expect(result.imported).toBeGreaterThan(0);
+	});
+});
+
 describe('what the import writes', () => {
 	it('puts everything in a notebook of its own, which is the undo', () => {
 		const result = imports.importTasks(ctx, { text: TODOIST });
@@ -229,6 +310,8 @@ describe('what the import writes', () => {
 
 	it('refuses an empty paste and a file it does not know', () => {
 		expect(() => imports.importTasks(ctx, { text: '   ' })).toThrow(/Nothing to import/);
-		expect(() => imports.importTasks(ctx, { text: 'just some words' })).toThrow(/neither/);
+		expect(() => imports.importTasks(ctx, { text: 'just some words' })).toThrow(
+			/not a Todoist CSV/
+		);
 	});
 });

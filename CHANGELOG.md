@@ -12,6 +12,13 @@ version.
 
 ## 0.34.0 — 2026-09-01
 
+- **Google Keep comes in too.** It is a different product from Google Tasks and
+  Takeout writes it as one file per note, so choose all of them at once: a
+  checklist arrives as one todo per line with its ticks, a written note as one
+  todo with the text in its notes. The bin is left where it is.
+- **Bringing things in has a page of its own**, under Account → Bring things in.
+  It was two long forms between the sessions list and the delete button.
+
 - **A recipe now comes in as a paste rather than a link.** Select all on the
   recipe page, copy, paste: the title, ingredients, method, servings and time
   come with it, read from the structured data the site already publishes. The

@@ -35,6 +35,7 @@ const ROUTES = [
 	'/kitchen/meals',
 	'/search?q=a+thing',
 	'/settings/account',
+	'/settings/account/import',
 	'/settings/preferences',
 	'/settings/integrations'
 ];

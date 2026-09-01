@@ -63,7 +63,14 @@ export type ImportResult = {
 const MAX_INPUT = 2_000_000;
 const MAX_TASKS = 2000;
 
-export type ImportSource = 'todoist' | 'google-tasks';
+export type ImportSource = 'todoist' | 'google-tasks' | 'google-keep';
+
+/** What each is called, where a person will read it. */
+export const SOURCE_NAMES: Record<ImportSource, string> = {
+	todoist: 'Todoist',
+	'google-tasks': 'Google Tasks',
+	'google-keep': 'Google Keep'
+};
 
 /**
  * Which of the two this is, without asking.
@@ -73,8 +80,16 @@ export type ImportSource = 'todoist' | 'google-tasks';
  * to know which radio button matches the file they just downloaded.
  */
 export function detectSource(text: string): ImportSource | null {
-	const head = text.trimStart().slice(0, 400);
-	if (head.startsWith('{') || head.startsWith('[')) return 'google-tasks';
+	const head = text.trimStart().slice(0, 4000);
+	if (head.startsWith('{') || head.startsWith('[')) {
+		// Keep and Tasks are both Takeout JSON, and neither says its own name.
+		// They are told apart by the fields only one of them has: a Keep note
+		// carries its body as `textContent` or its ticks as `listContent`, and
+		// a Tasks export is one object whose `items` are lists.
+		return /"(textContent|listContent|isTrashed|isArchived)"/.test(head)
+			? 'google-keep'
+			: 'google-tasks';
+	}
 	if (/^\s*"?TYPE"?\s*,/i.test(head)) return 'todoist';
 	return null;
 }
@@ -281,6 +296,107 @@ export function parseGoogleTasks(text: string): ParseResult {
 	return { tasks, skipped };
 }
 
+/* ----------------------------------------------------------- Google Keep */
+
+type KeepNote = {
+	title?: unknown;
+	textContent?: unknown;
+	listContent?: unknown;
+	isTrashed?: unknown;
+	isArchived?: unknown;
+	labels?: unknown;
+	createdTimestampUsec?: unknown;
+};
+
+/**
+ * Google Keep, which is not Google Tasks and never was.
+ *
+ * Takeout writes Keep as **one JSON file per note**, which is the awkward part:
+ * a person with four hundred notes has four hundred files. So the page reads
+ * however many were chosen and hands this a JSON array of them; a single note
+ * on its own is accepted too, because that is what one file holds.
+ *
+ * What a note becomes:
+ *
+ * - A checklist note (`listContent`) becomes one todo per line, which is what
+ *   its ticks already were. The note's title, if it has one, goes in the notes
+ *   of each so the line keeps its context.
+ * - A text note becomes one todo: the title if there is one, the first line
+ *   otherwise, and the body in the notes.
+ *
+ * Todos, and not diary entries or ideas, for the same reason the other two
+ * imports land there: it is one shape, in one notebook, and deleting that
+ * notebook undoes the whole thing. Sorting somebody's four hundred notes into
+ * the right rooms of a new app is a job for them, not for a parser guessing.
+ *
+ * Trashed notes are never imported. Archived ones are, because archived in
+ * Keep means "dealt with but keep it", which is not the same as deleted.
+ */
+export function parseGoogleKeep(text: string): ParseResult {
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(text);
+	} catch {
+		throw new ValidationError('That file is not JSON — export Keep from Google Takeout');
+	}
+
+	const notes = Array.isArray(parsed) ? parsed : [parsed];
+	const tasks: ImportedTask[] = [];
+	const skipped: string[] = [];
+
+	for (const raw of notes as KeepNote[]) {
+		if (!raw || typeof raw !== 'object') continue;
+
+		if (raw.isTrashed === true) {
+			skipped.push('a note in the bin');
+			continue;
+		}
+
+		const title = typeof raw.title === 'string' ? raw.title.trim() : '';
+		const body = typeof raw.textContent === 'string' ? raw.textContent.trim() : '';
+		const list = Array.isArray(raw.listContent) ? raw.listContent : [];
+		const label = title ? `From “${title}”.` : null;
+
+		if (list.length > 0) {
+			for (const entry of list as { text?: unknown; isChecked?: unknown }[]) {
+				const line = typeof entry?.text === 'string' ? entry.text.trim() : '';
+				if (!line) continue;
+				tasks.push({
+					title: line.slice(0, MAX_TITLE_LENGTH),
+					notes: (label ?? '').slice(0, MAX_NOTES_LENGTH),
+					done: entry?.isChecked === true,
+					dueDate: null,
+					rawDate: null,
+					// Not `list`: that names the notebook everything lands in, and a
+					// Keep export is many notes rather than one list. The note's own
+					// title is already in the notes above.
+					list: null
+				});
+			}
+			continue;
+		}
+
+		if (!title && !body) {
+			skipped.push('an empty note');
+			continue;
+		}
+
+		// A note with no title of its own is named by its first line, and that
+		// line is not then repeated in the body.
+		const [firstLine, ...rest] = body.split('\n');
+		tasks.push({
+			title: (title || firstLine).trim().slice(0, MAX_TITLE_LENGTH),
+			notes: (title ? body : rest.join('\n')).trim().slice(0, MAX_NOTES_LENGTH),
+			done: false,
+			dueDate: null,
+			rawDate: null,
+			list: null
+		});
+	}
+
+	return { tasks, skipped };
+}
+
 /* ------------------------------------------------------------------ into */
 
 /**
@@ -302,11 +418,16 @@ export function importTasks(
 	const source = detectSource(text);
 	if (!source) {
 		throw new ValidationError(
-			'That is neither a Todoist CSV nor a Google Tasks export. Both are described above.'
+			'That is not a Todoist CSV, a Google Tasks export or a Google Keep note.'
 		);
 	}
 
-	const parsed = source === 'todoist' ? parseTodoistCsv(text) : parseGoogleTasks(text);
+	const parsed =
+		source === 'todoist'
+			? parseTodoistCsv(text)
+			: source === 'google-keep'
+				? parseGoogleKeep(text)
+				: parseGoogleTasks(text);
 
 	const wanted = parsed.tasks.filter((t) => input.includeDone || !t.done);
 	if (wanted.length === 0) {
@@ -344,7 +465,7 @@ export function importTasks(
 	db.transaction(() => {
 		const notebookId = createNotebook(ctx, {
 			title,
-			description: source === 'todoist' ? 'Imported from Todoist.' : 'Imported from Google Tasks.'
+			description: `Imported from ${SOURCE_NAMES[source]}.`
 		});
 
 		for (const task of wanted) {
@@ -382,10 +503,7 @@ function notebookTitleFor(
 	const given = typeof asked === 'string' ? asked.trim() : '';
 	// Google names its lists; a Todoist CSV does not say which project it is.
 	const fromFile = tasks.find((t) => t.list)?.list ?? '';
-	const base = (given || fromFile || (source === 'todoist' ? 'Todoist' : 'Google Tasks')).slice(
-		0,
-		MAX_TITLE_LENGTH - 12
-	);
+	const base = (given || fromFile || SOURCE_NAMES[source]).slice(0, MAX_TITLE_LENGTH - 12);
 
 	if (!taken(ctx, base)) return base;
 

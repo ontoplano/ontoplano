@@ -5,7 +5,6 @@
 	import Banner from '$lib/components/Banner.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
-	import { settingsForm } from '$lib/actions/settings-form';
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
 	import Field from '$lib/components/Field.svelte';
@@ -18,31 +17,6 @@
 
 	let editing = $state<'email' | 'password' | null>(null);
 	let confirming = $state(false);
-
-	/**
-	 * The chosen file, read here rather than posted as a file.
-	 *
-	 * The action wants text either way — somebody may paste instead of choosing
-	 * — and reading it in the page means the textarea shows what is about to be
-	 * imported, which is the only preview this needs. A file that is not text
-	 * cannot be either of the two formats, so nothing is lost by insisting.
-	 */
-	let importText = $state('');
-
-	async function readFile(event: Event) {
-		const file = (event.currentTarget as HTMLInputElement).files?.[0];
-		if (!file) return;
-		importText = await file.text();
-	}
-
-	/** The same trick for the account restore: read here, posted as text. */
-	let restoreText = $state('');
-
-	async function readRestoreFile(event: Event) {
-		const file = (event.currentTarget as HTMLInputElement).files?.[0];
-		if (!file) return;
-		restoreText = await file.text();
-	}
 
 	let downloading = $state(false);
 	/** Held after a successful export, so a double-click cannot spend two. */
@@ -420,141 +394,18 @@
 		Beside the export, because it is the same question the other way round.
 
 		A person deciding whether to move here is asking "can I get my things in,
-		and can I get them out again" — and the answer being on one screen is
-		worth more than either card is on its own.
+		and can I get them out again" — and the answer being next to each other is
+		worth more than either is alone. The doing is a page of its own: moving in
+		happens once, and it had grown into two long forms sitting between the
+		sessions list and the delete button.
 	-->
-	<Card title="Bring your tasks in">
+	<Card title="Bring things in">
+		{#snippet actions()}
+			<a href={resolve('/settings/account/import')} class="btn btn-sm">Import</a>
+		{/snippet}
 		<p class="text-sm text-gray-500">
-			From <strong>Todoist</strong> (a project exported as CSV) or
-			<strong>Google Tasks</strong> (Takeout's <code class="text-xs">Tasks.json</code>). Choose the
-			file or paste it — which one it is is worked out from the file itself.
+			A list from Todoist, Google Tasks or Google Keep, or an export from another instance.
 		</p>
-
-		<form
-			method="post"
-			action="?/importTasks"
-			enctype="multipart/form-data"
-			use:settingsForm={{ notice: 'Imported.' }}
-			class="mt-3 space-y-3"
-		>
-			<input
-				type="file"
-				name="file"
-				accept=".csv,.json,text/csv,application/json"
-				class="input"
-				onchange={readFile}
-			/>
-
-			<textarea
-				name="text"
-				bind:value={importText}
-				rows="4"
-				placeholder="…or paste the file here"
-				class="input font-mono text-xs"
-			></textarea>
-
-			<label class="flex items-start gap-2 text-sm text-gray-700">
-				<input type="checkbox" name="includeDone" class="mt-1" />
-				<span>
-					Bring finished tasks too
-					<span class="block text-xs text-gray-500">
-						Off by default: years of ticked-off tasks would arrive as somebody else's history.
-					</span>
-				</span>
-			</label>
-
-			<label class="block text-sm text-gray-700">
-				Name for the notebook they land in
-				<input
-					name="notebook"
-					type="text"
-					maxlength="80"
-					placeholder="Todoist"
-					class="input mt-1"
-					autocomplete="off"
-				/>
-			</label>
-
-			<!-- The undo, said before the button rather than after the regret. -->
-			<p class="text-xs text-gray-500">
-				Everything arrives as todos in one notebook. Deleting that notebook undoes the import.
-			</p>
-
-			<button type="submit" class="btn btn-sm">Import</button>
-		</form>
-
-		{#if form?.success && form.action === 'importTasks'}
-			<p class="mt-3 text-sm text-gray-700">{form.message}</p>
-		{/if}
-	</Card>
-
-	<!--
-		The other half of the export, and the one that makes it mean something.
-
-		Its own card rather than a second button on the export's, because they
-		are opposite in consequence: one takes a copy, the other overwrites
-		everything here. Above the delete card and below the tasks import, which
-		is roughly the order of how much they can cost you.
-	-->
-	<Card title="Restore an export" accent="#b45309">
-		<p class="text-sm text-gray-500">
-			A file downloaded from <strong>Export your data</strong>, on this instance or another one.
-			Moving to your own server, or off it, is this and nothing else.
-		</p>
-
-		<form
-			method="post"
-			action="?/importAccount"
-			enctype="multipart/form-data"
-			use:settingsForm={{ notice: 'Restored.' }}
-			class="mt-3 space-y-3"
-		>
-			<input
-				type="file"
-				name="file"
-				accept=".json,application/json"
-				class="input"
-				onchange={readRestoreFile}
-			/>
-
-			<textarea
-				name="text"
-				bind:value={restoreText}
-				rows="3"
-				placeholder="…or paste the export here"
-				class="input font-mono text-xs"
-			></textarea>
-
-			<!--
-				Said before the button, in the words of what it does.
-
-				This is not "import": it empties the account and then fills it, so
-				the sentence has to be the destructive one and the confirmation has
-				to be typed rather than clicked.
-			-->
-			<div class="border border-amber-300 bg-amber-50 p-3">
-				<p class="text-sm text-amber-900">
-					This <strong>replaces everything in this account</strong> with what is in the file. What is
-					here now is gone, and nothing merges.
-				</p>
-				<label class="mt-2 block text-sm text-amber-900">
-					Type <code class="text-xs">REPLACE</code> to confirm
-					<input name="confirm" autocomplete="off" class="input mt-1 max-w-[12rem]" />
-				</label>
-			</div>
-
-			<p class="text-xs text-gray-500">
-				What will not come across: anything about billing, API tokens, calendar feed addresses and
-				the audit log. Those belong to the instance that issued them, not to you — everything you
-				wrote does come across.
-			</p>
-
-			<button type="submit" class="btn btn-sm">Restore</button>
-		</form>
-
-		{#if form?.success && form.action === 'importAccount'}
-			<p class="mt-3 text-sm text-gray-700">{form.message}</p>
-		{/if}
 	</Card>
 
 	<Card title="Delete your account" accent="#b91c1c">
