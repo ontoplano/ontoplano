@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { autofocus } from '$lib/actions/autofocus';
 	import { enhance } from '$app/forms';
 	import Backlinks from '$lib/components/Backlinks.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
@@ -25,8 +24,6 @@
 	let editingId: number | null = $state(null);
 	let showCompleted = $state(false);
 	let selectedIndex = $state(0);
-	/** The todo whose "when should I nudge you" box is open. */
-	let reminding: number | null = $state(null);
 	let delegatingId: number | null = $state(null);
 	let confirmingDelete: number | null = $state(null);
 	let formRatings: Record<string, number | null> = $state({
@@ -425,58 +422,6 @@
 							{#if todo.notes}
 								<p class="truncate text-xs text-gray-500">{todo.notes}</p>
 							{/if}
-							<!-- A clock reading rather than a lead time: a todo has no time on
-							     it, which is exactly what makes it a todo. -->
-							{#if reminding === todo.id}
-								<form
-									method="post"
-									action="?/remind"
-									use:enhance={() => {
-										return async ({ update }) => {
-											await update({ reset: true });
-											reminding = null;
-										};
-									}}
-									class="mt-1 flex flex-wrap items-center gap-1"
-								>
-									<input type="hidden" name="todoId" value={todo.id} />
-									<input
-										autocomplete="off"
-										type="datetime-local"
-										name="at"
-										required
-										use:autofocus
-										class="input w-auto px-2 py-1 text-xs"
-										aria-label="When to remind you about {todo.title}"
-									/>
-									<button class="btn btn-sm" title="Set it" aria-label="Set the reminder">
-										<Icon name="check" size={14} />
-									</button>
-									<button type="button" class="btn btn-sm" onclick={() => (reminding = null)}>
-										Cancel
-									</button>
-								</form>
-							{:else if (data.reminders[todo.id] ?? []).length > 0}
-								<div class="mt-1 flex flex-wrap items-center gap-1">
-									{#each data.reminders[todo.id] as reminder (reminder.id)}
-										<form method="post" action="?/unremind" use:enhance>
-											<input type="hidden" name="reminderId" value={reminder.id} />
-											<button
-												class="chip flex items-center gap-1 text-gray-700"
-												title="Remove this reminder"
-												aria-label="Remove the reminder at {reminder.remindAt.slice(0, 16)}"
-											>
-												<Icon name="clock" size={12} />
-												<span class="tabular"
-													>{reminder.remindAt.slice(5, 16).replace('T', ' ')}</span
-												>
-												<Icon name="close" size={12} />
-											</button>
-										</form>
-									{/each}
-								</div>
-							{/if}
-
 							<Backlinks
 								goals={data.goalLinks.todos[todo.id]}
 								notebook={todo.notebookId && todo.notebookTitle
@@ -486,17 +431,6 @@
 						</div>
 
 						<div class="row-actions gap-1">
-							{#if !isDone(todo)}
-								<button
-									type="button"
-									onclick={() => (reminding = reminding === todo.id ? null : todo.id)}
-									class="icon-btn"
-									title="Remind me about this"
-									aria-label="Remind me about {todo.title}"
-								>
-									<Icon name="clock" size={14} />
-								</button>
-							{/if}
 							{#if !isDone(todo)}
 								<!-- One column changes; nothing is copied anywhere. -->
 								<form method="post" action="?/schedule" use:enhance>

@@ -10,6 +10,18 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.29.0 — 2026-09-01
+
+- **A reminder belongs to a block now, and to nothing else.** Say it once when
+  you make or edit the block — "thirty minutes before" — and every occurrence
+  of it gets its own nudge. There is no separate reminders page and no reminder
+  about nothing: those were the thing that could be created and then appeared
+  in no list anywhere.
+- Todos have no reminders, because they have no time. Wanting to be reminded of
+  one is wanting it to happen at a time: give it a day and a time, and the block
+  takes the reminder.
+- Reminders made before this still arrive until they are dismissed.
+
 ## 0.28.0 — 2026-09-01
 
 - **One list for the menu.** Preferences had three sections naming the same

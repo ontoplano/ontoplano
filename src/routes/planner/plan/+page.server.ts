@@ -137,6 +137,12 @@ function blockFields(formData: FormData) {
 	return {
 		startTime: formData.get('startTime'),
 		durationMinutes: formData.get('durationMinutes'),
+		// `get` returns null for a field the form did not carry, and the parser
+		// reads that as "leave it alone" — which is what a drag or a resize
+		// posting placement only needs it to mean. See `parseRemindLead`.
+		remindLeadMinutes: formData.has('remindLeadMinutes')
+			? formData.get('remindLeadMinutes')
+			: undefined,
 		mode: formData.get('mode'),
 		categoryId: formData.get('categoryId'),
 		activityId: formData.get('activityId'),

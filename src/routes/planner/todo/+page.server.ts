@@ -2,7 +2,6 @@ import type { Actions, PageServerLoad } from './$types';
 import { ratingsFromForm } from '$lib/ratings';
 import { listActivities, listCategories } from '$lib/server/services/activities';
 import { goalBacklinks } from '$lib/server/services/backlinks';
-import { createReminder, deleteReminder, listReminders } from '$lib/server/services/reminders';
 import { buildCtx } from '$lib/server/services/ctx';
 import { pickableNotebooks } from '$lib/server/services/notebooks';
 import { toActionFailure } from '$lib/server/services/errors';
@@ -24,14 +23,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		categories: listCategories(ctx),
 		notebooks: pickableNotebooks(ctx),
 		activities: listActivities(ctx, { activeOnly: true }),
-		goalLinks: goalBacklinks(ctx),
-		/** Reminders already set, keyed by the todo they belong to. */
-		reminders: listReminders(ctx)
-			.filter((r) => r.subjectKind === 'todo' && r.subjectId !== null)
-			.reduce<Record<number, { id: number; remindAt: string }[]>>((acc, r) => {
-				(acc[r.subjectId!] ??= []).push({ id: r.id, remindAt: r.remindAt });
-				return acc;
-			}, {})
+		goalLinks: goalBacklinks(ctx)
 	};
 };
 
@@ -53,37 +45,15 @@ export const actions: Actions = {
 		}
 	},
 
-	/**
-	 * A nudge at a time.
+	/*
+	 * There is no `remind` here any more.
 	 *
-	 * A todo has no time on it — that is what makes it a todo — so this is a
-	 * clock reading rather than a lead time, unlike a block's.
+	 * A todo has no time on it — that is what makes it a todo — so there is
+	 * nothing for a reminder to be *before*. Wanting to be reminded of one is
+	 * wanting it to happen at a time: give it a day and a time, which makes it a
+	 * block, and the block's editor takes the reminder. See
+	 * `services/reminders.ts`.
 	 */
-	remind: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			const todoId = formData.get('todoId');
-			createReminder(buildCtx(locals.user!.id), {
-				subjectKind: todoId ? 'todo' : 'free',
-				subjectId: todoId,
-				at: formData.get('at'),
-				message: formData.get('message')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	unremind: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			deleteReminder(buildCtx(locals.user!.id), Number(formData.get('reminderId')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
 
 	update: async ({ request, locals }) => {
 		const formData = await request.formData();

@@ -128,15 +128,6 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'x', action: 'delete', description: 'Ask to delete' }
 		]
 	},
-	'/planner/reminders': {
-		label: 'Reminders',
-		shortcuts: [
-			{ key: 'j', action: 'navigate-down', description: 'Navigate list' },
-			{ key: 'k', action: 'navigate-up', description: 'Navigate list' },
-			{ key: 'n', action: 'new', description: 'New reminder' },
-			{ key: 'x', action: 'delete', description: 'Ask to delete' }
-		]
-	},
 	'/diary': {
 		label: 'Diary',
 		shortcuts: [

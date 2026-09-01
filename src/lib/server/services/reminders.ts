@@ -5,14 +5,13 @@ import {
 	activities,
 	categories,
 	exceptionalTasks,
-	todoTasks,
 	reminders,
 	taskRecords,
 	recurringTasks
 } from '../db/schema.js';
 import { blockName } from '../../planner-grid.js';
 
-import { localDateOf, type Ctx } from './ctx.js';
+import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { localOfInstant, stamp } from './time.js';
 import { num, str } from './validate.js';
@@ -24,6 +23,22 @@ import { num, str } from './validate.js';
  * people who try a planner stop in week two. Everything else here waits to be
  * visited; a reminder is the one thing that does not.
  *
+ * ## A reminder belongs to a block, and to nothing else
+ *
+ * There used to be three kinds: one on an occurrence, one on a todo, and a
+ * "free" one that was a message and a clock reading and nothing else. The free
+ * one was a mistake — it made reminders a thing of their own, with a list of
+ * their own to keep, when what anybody actually means is *tell me before this
+ * starts*. So there is one kind now, and it hangs off an occurrence.
+ *
+ * Which also settles the todo. A todo has no time; there is nothing to be
+ * before. Wanting to be reminded of one is wanting it to happen at a time —
+ * give it one, which makes it a block, and the block takes the reminder.
+ *
+ * The lead lives on the block (`remind_lead_minutes`) and `generateForDate`
+ * writes a row here per occurrence, so "ten minutes before gym" is said once
+ * and applies to every gym. The rows below are those occurrences.
+ *
  * Times are wall-clock, like a block's, because "remind me at ten to nine"
  * means ten to nine wherever you are. Delivery is deliberately somebody else's
  * job: a row that is due is a row anything with the database can deliver — the
@@ -33,11 +48,14 @@ import { num, str } from './validate.js';
  */
 
 export const MAX_MESSAGE_LENGTH = 300;
-/** As far ahead as a reminder may be set. Beyond a year it is a diary entry. */
-export const MAX_LEAD_DAYS = 366;
 
 export type Reminder = {
 	id: number;
+	/**
+	 * Always `instance` for anything made now. `todo` and `free` are rows from
+	 * before there was one kind — they still fire, and they drain as they are
+	 * dismissed, but nothing creates another.
+	 */
 	subjectKind: 'instance' | 'todo' | 'free';
 	subjectId: number | null;
 	remindAt: string;
@@ -49,21 +67,6 @@ export type Reminder = {
 /** Now, as the wall-clock string reminders are stored in. */
 export function localNow(ctx: Ctx): string {
 	return localOfInstant(ctx.now, ctx.tz);
-}
-
-function parseWhen(raw: unknown, ctx: Ctx): string {
-	const value = str(raw, 'time', { max: 40 });
-	// What `<input type="datetime-local">` sends, with or without seconds.
-	const match = value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})(:\d{2})?$/);
-	if (!match) throw new ValidationError('Invalid time');
-
-	const when = `${match[1]}T${match[2]}:00`;
-	const limit = new Date(ctx.now);
-	limit.setDate(limit.getDate() + MAX_LEAD_DAYS);
-	if (when > `${localDateOf(limit, ctx.tz)}T23:59:00`)
-		throw new ValidationError(`A reminder cannot be more than ${MAX_LEAD_DAYS} days ahead`);
-
-	return when;
 }
 
 /** Minutes before a block starts, as the wall-clock time to fire at. */
@@ -126,45 +129,48 @@ export function dueReminders(ctx: Ctx): Reminder[] {
 		.all();
 }
 
+/**
+ * A nudge before one occurrence starts.
+ *
+ * `at` is a lead in minutes, not a clock reading — "ten minutes before" is how
+ * anybody describes a reminder about something already on a calendar, and it is
+ * the only thing this takes. There is no way to make a reminder about nothing,
+ * on purpose: see the note at the top of this file.
+ */
 export function createReminder(
 	ctx: Ctx,
-	raw: { at?: unknown; message?: unknown; subjectKind?: unknown; subjectId?: unknown }
+	raw: { at?: unknown; message?: unknown; subjectId?: unknown }
 ): number {
-	const kind =
-		raw.subjectKind === 'instance' || raw.subjectKind === 'todo' ? raw.subjectKind : 'free';
+	const subjectId = num(raw.subjectId, 'block', { int: true, min: 1 });
+	const block = ownedInstance(ctx, subjectId);
+	const lead = num(raw.at, 'minutes', { int: true, min: 0, max: 24 * 60 });
+	const when = minutesBefore(block.scheduledAt, lead);
 
-	let subjectId: number | null = null;
-	let when: string;
-	let message = raw.message === undefined || raw.message === null ? '' : String(raw.message).trim();
+	const given = raw.message === undefined || raw.message === null ? '' : String(raw.message).trim();
+	const message = given || block.title;
 
-	if (kind === 'instance') {
-		subjectId = num(raw.subjectId, 'block', { int: true, min: 1 });
-		const block = ownedInstance(ctx, subjectId);
-		// A lead time, because "ten minutes before" is how anybody describes a
-		// reminder about something already on a calendar.
-		const lead = num(raw.at, 'minutes', { int: true, min: 0, max: 24 * 60 });
-		when = minutesBefore(block.scheduledAt, lead);
-		if (!message) message = block.title;
-	} else if (kind === 'todo') {
-		subjectId = num(raw.subjectId, 'todo', { int: true, min: 1 });
-		const todo = db
-			.select({ title: todoTasks.title })
-			.from(todoTasks)
-			.where(and(eq(todoTasks.id, subjectId), eq(todoTasks.userId, ctx.userId)))
-			.get();
-		if (!todo) throw new NotFoundError('todo');
-		when = parseWhen(raw.at, ctx);
-		if (!message) message = todo.title;
-	} else {
-		when = parseWhen(raw.at, ctx);
-		if (!message) throw new ValidationError('A reminder about nothing needs something to say');
-	}
+	// Said twice is said once. Regenerating a week must not stack four copies of
+	// the same nudge onto one occurrence, and the block's lead is applied every
+	// time an occurrence is made.
+	const already = db
+		.select({ id: reminders.id })
+		.from(reminders)
+		.where(
+			and(
+				eq(reminders.userId, ctx.userId),
+				eq(reminders.subjectKind, 'instance'),
+				eq(reminders.subjectId, subjectId),
+				eq(reminders.remindAt, when)
+			)
+		)
+		.get();
+	if (already) return already.id;
 
 	const inserted = db
 		.insert(reminders)
 		.values({
 			userId: ctx.userId,
-			subjectKind: kind,
+			subjectKind: 'instance',
 			subjectId,
 			remindAt: when,
 			message: str(message, 'message', { max: MAX_MESSAGE_LENGTH })
@@ -212,8 +218,8 @@ export function deleteReminder(ctx: Ctx, id: number): boolean {
 }
 
 /** The reminders already set on one block, so its editor can show them. */
-export function remindersFor(ctx: Ctx, kind: 'instance' | 'todo', id: number): Reminder[] {
-	return listReminders(ctx).filter((r) => r.subjectKind === kind && r.subjectId === id);
+export function remindersFor(ctx: Ctx, id: number): Reminder[] {
+	return listReminders(ctx).filter((r) => r.subjectKind === 'instance' && r.subjectId === id);
 }
 
 /**

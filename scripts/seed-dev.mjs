@@ -64,6 +64,7 @@ const monday = (() => {
 // --- get-or-create helpers ------------------------------------------------------
 
 const one = (sql, ...args) => db.prepare(sql).get(...args);
+const all = (sql, ...args) => db.prepare(sql).all(...args);
 const run = (sql, ...args) => db.prepare(sql).run(...args).lastInsertRowid;
 
 const setting = (key, value) => {
@@ -1283,20 +1284,50 @@ const localStamp = (offsetMinutes) => {
 	return `${formatted.replace(' ', 'T')}:00`;
 };
 
-const reminder = (offsetMinutes, message) => {
-	const existing = one('select id from reminders where user_id = ? and message = ?', uid, message);
-	if (existing) return existing.id;
-	return run(
-		'insert into reminders (user_id, subject_kind, remind_at, message) values (?, ?, ?, ?)',
+/**
+ * A nudge before an occurrence, which is the only kind there is.
+ *
+ * It used to seed two "free" reminders — a message and a clock reading, about
+ * nothing — and they turned up as a card in the corner of the demo that
+ * appeared in no list anywhere, because there was no list for them. There is
+ * one kind now: it hangs off a block, and the block is what carries the lead.
+ */
+const reminder = (recordId, leadMinutes, message) => {
+	const at = one('select scheduled_at from task_records where id = ?', recordId);
+	if (!at) return null;
+
+	const when = new Date(at.scheduled_at.slice(0, 19));
+	when.setMinutes(when.getMinutes() - leadMinutes);
+	const pad = (n) => String(n).padStart(2, '0');
+	const stamp = `${when.getFullYear()}-${pad(when.getMonth() + 1)}-${pad(when.getDate())}T${pad(when.getHours())}:${pad(when.getMinutes())}:00`;
+
+	const existing = one(
+		'select id from reminders where user_id = ? and subject_id = ? and remind_at = ?',
 		uid,
-		'free',
-		localStamp(offsetMinutes),
+		recordId,
+		stamp
+	);
+	if (existing) return existing.id;
+
+	return run(
+		'insert into reminders (user_id, subject_kind, subject_id, remind_at, message) values (?, ?, ?, ?, ?)',
+		uid,
+		'instance',
+		recordId,
+		stamp,
 		message
 	);
 };
 
-reminder(-8, 'take the bread out of the oven');
-reminder(180, 'call the landlord back');
+// The next two things on the plan get one each, so the demo shows a reminder
+// arriving about something the visitor can actually go and look at.
+for (const row of all(
+	'select id from task_records where user_id = ? and scheduled_at >= ? order by scheduled_at limit 2',
+	uid,
+	localStamp(-30)
+)) {
+	reminder(row.id, 10, 'Coming up in ten minutes');
+}
 
 // --- mail that did not go out (the /admin card and the /healthz warning) --------
 

@@ -74,6 +74,16 @@ export const recurringTasks = sqliteTable(
 		activityId: integer('activity_id').references(() => activities.id),
 		label: text('label').default(''),
 		active: integer('active', { mode: 'boolean' }).notNull().default(true),
+		/**
+		 * How many minutes before this starts to be reminded, or null for not.
+		 *
+		 * On the block rather than on the occurrence, because that is where
+		 * somebody says it: a reminder is a property of the thing being planned
+		 * ("tell me ten minutes before gym"), not a separate object with a clock
+		 * reading of its own. `generateForDate` turns it into a row in
+		 * `reminders` for each occurrence as the occurrence appears.
+		 */
+		remindLeadMinutes: integer('remind_lead_minutes'),
 		// How pressing, how appealing, how much it will take out of you, 1-5.
 		// Nullable on purpose: forcing three numbers onto every task is how a
 		// system stops being used by the second week. Columns rather than `meta`
@@ -459,6 +469,16 @@ export const exceptionalTasks = sqliteTable(
 		activityId: integer('activity_id').references(() => activities.id),
 		label: text('label').default(''),
 		active: integer('active', { mode: 'boolean' }).notNull().default(true),
+		/**
+		 * How many minutes before this starts to be reminded, or null for not.
+		 *
+		 * On the block rather than on the occurrence, because that is where
+		 * somebody says it: a reminder is a property of the thing being planned
+		 * ("tell me ten minutes before gym"), not a separate object with a clock
+		 * reading of its own. `generateForDate` turns it into a row in
+		 * `reminders` for each occurrence as the occurrence appears.
+		 */
+		remindLeadMinutes: integer('remind_lead_minutes'),
 		// Carried over when a todo is dragged onto the grid, so scheduling
 		// something does not remove it from the subject it belongs to.
 		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),

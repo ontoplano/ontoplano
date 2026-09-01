@@ -45,6 +45,8 @@ export const NEW_ACTIVITY_VALUE = '__new__';
 export type BlockInput = {
 	startTime: unknown;
 	durationMinutes?: unknown;
+	/** Minutes before the start to be reminded. Absent or 0 is no reminder. */
+	remindLeadMinutes?: unknown;
 	mode: unknown;
 	categoryId?: unknown;
 	activityId?: unknown;
@@ -89,6 +91,7 @@ export function listWeeklySlots(ctx: Ctx) {
 			weekday: recurringTasks.weekday,
 			startTime: recurringTasks.startTime,
 			durationMinutes: recurringTasks.durationMinutes,
+			remindLeadMinutes: recurringTasks.remindLeadMinutes,
 			mode: recurringTasks.mode,
 			categoryId: recurringTasks.categoryId,
 			categoryName: categories.name,
@@ -132,6 +135,7 @@ export function listExceptionals(ctx: Ctx, from: string, to: string) {
 			date: exceptionalTasks.date,
 			startTime: exceptionalTasks.startTime,
 			durationMinutes: exceptionalTasks.durationMinutes,
+			remindLeadMinutes: exceptionalTasks.remindLeadMinutes,
 			mode: exceptionalTasks.mode,
 			categoryId: exceptionalTasks.categoryId,
 			categoryName: categories.name,
@@ -722,12 +726,32 @@ export function readRecurrence(formData: FormData, now: Date): string {
 
 export { ratingsFromForm };
 
+/**
+ * How long before this starts to be reminded.
+ *
+ * A lead rather than a time, because that is the only thing anybody says about
+ * a reminder on something already on a calendar. Empty and "0" both mean no
+ * reminder — a nudge at the exact moment a thing starts is not a nudge.
+ *
+ * Three answers, not two. `undefined` means the form did not mention it at
+ * all, and the field is then left alone: a drag or a resize posts placement
+ * only, and must not silently take somebody's reminder off a block they were
+ * only moving. Same rule as `meta` below.
+ */
+function parseRemindLead(raw: unknown): number | null | undefined {
+	if (raw === undefined) return undefined;
+	if (raw === null || raw === '') return null;
+	const minutes = num(raw, 'reminder', { int: true, min: 0, max: 24 * 60 });
+	return minutes > 0 ? minutes : null;
+}
+
 /** Placement and identity, shared by both kinds of block. */
 function parseBlock(ctx: Ctx, raw: BlockInput) {
 	const mode = oneOf(raw.mode, 'mode', MODES);
 	const startTime = str(raw.startTime, 'time', { max: 5, pattern: TIME_PATTERN });
 	const durationMinutes = parseDuration(raw.durationMinutes, 60);
 	const label = optionalStr(raw.label, 'label', { max: MAX_LABEL_LENGTH });
+	const remindLeadMinutes = parseRemindLead(raw.remindLeadMinutes);
 
 	const categoryId = ownedCategoryId(ctx, raw.categoryId);
 	if (mode === 'category' && !categoryId) throw new ValidationError('Category required');
@@ -735,7 +759,15 @@ function parseBlock(ctx: Ctx, raw: BlockInput) {
 	const activityId = mode === 'activity' ? resolveActivityId(ctx, raw) : null;
 	if (mode === 'activity' && !activityId) throw new ValidationError('Activity required');
 
-	return { startTime, durationMinutes, mode, categoryId, activityId, label };
+	return {
+		startTime,
+		durationMinutes,
+		mode,
+		categoryId,
+		activityId,
+		label,
+		...(remindLeadMinutes === undefined ? {} : { remindLeadMinutes })
+	};
 }
 
 /** A recipe id from a form is a number until it is checked against the owner. */

@@ -368,7 +368,6 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			createReminder(buildCtx(locals.user!.id), {
-				subjectKind: 'instance',
 				subjectId: formData.get('id'),
 				at: formData.get('minutes')
 			});

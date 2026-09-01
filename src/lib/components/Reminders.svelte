@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import Icon from '$lib/components/Icon.svelte';
-	import { reminderHref, type ReminderSubject } from '$lib/reminders';
+	import { reminderHref } from '$lib/reminders';
 
 	/**
 	 * The one thing in this app that reaches out.
@@ -20,16 +20,11 @@
 	 * A reminder is marked delivered only once it is actually on screen, so a
 	 * failed poll loses nothing and one that fell due overnight still arrives.
 	 *
-	 * The card leads somewhere. A notification you cannot follow is one you have
-	 * to remember twice — once because it told you, and again because looking at
-	 * the thing it is about means going and finding it yourself.
+	 * The card leads to the day the block is on. A notification you cannot follow
+	 * is one you have to remember twice — once because it told you, and again
+	 * because looking at the thing it is about means going and finding it.
 	 */
-	type Due = {
-		id: number;
-		message: string;
-		remindAt: string;
-		subjectKind: ReminderSubject;
-	};
+	type Due = { id: number; message: string; remindAt: string };
 
 	const EVERY = 60_000;
 
@@ -130,7 +125,7 @@
 					     `$lib/reminders.ts`, which the list uses too. -->
 					<!-- eslint-disable svelte/no-navigation-without-resolve -->
 					<a
-						href={reminderHref(reminder.subjectKind, reminder.remindAt)}
+						href={reminderHref(reminder.remindAt)}
 						onclick={() => dismiss(reminder.id)}
 						class="block text-sm font-medium text-gray-900 hover:underline"
 					>

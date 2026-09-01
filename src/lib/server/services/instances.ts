@@ -14,6 +14,7 @@ import { alias } from 'drizzle-orm/sqlite-core';
 import { db } from '../db/index.js';
 import { isStatus, isTiming, timingFor } from '../../task-status.js';
 import type { Ctx } from './ctx.js';
+import { createReminder } from './reminders.js';
 import { NotFoundError, ValidationError } from './errors.js';
 // `created` is also a local counter in this file, hence the alias.
 import { created as createdStamp, stamp } from './time.js';
@@ -111,6 +112,33 @@ function addDays(d: Date, n: number): Date {
  * this can run on every page load without disturbing recorded status. `from` is
  * inclusive, `to` exclusive.
  */
+/**
+ * The reminder a block asked for, for the occurrence just made.
+ *
+ * The lead lives on the block — "tell me ten minutes before gym" is said once,
+ * about the thing being planned — and each occurrence gets a row here as it
+ * appears. Which means a reminder exists only for occurrences that exist, and
+ * changing the lead on the block changes it for everything generated after.
+ *
+ * Quiet about failure on purpose: a reminder that could not be written must not
+ * stop the occurrence being written. The plan is the thing; the nudge is not.
+ */
+function remindFor(
+	ctx: Ctx,
+	recordId: number,
+	scheduledAt: string,
+	lead: number | null | undefined
+): void {
+	if (lead === null || lead === undefined || !Number.isFinite(lead) || lead < 0) return;
+
+	try {
+		createReminder(ctx, { subjectId: recordId, at: lead });
+	} catch {
+		// A malformed time, or a block whose start could not be parsed. The
+		// occurrence stands.
+	}
+}
+
 export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 	const fromDate = formatDate(from);
 	const toDate = formatDate(to);
@@ -166,7 +194,8 @@ export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 			if (suppressed.has(`${slot.id}:${dateStr}`)) continue;
 			if (existingWeekly.has(`${slot.id}:${dateStr}`)) continue;
 
-			db.insert(taskRecords)
+			const record = db
+				.insert(taskRecords)
 				.values({
 					...createdStamp(ctx),
 					userId: ctx.userId,
@@ -175,7 +204,10 @@ export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 					status: 'todo',
 					resolvedActivityId: slot.mode === 'activity' ? slot.activityId : null
 				})
-				.run();
+				.returning({ id: taskRecords.id })
+				.get();
+
+			remindFor(ctx, record.id, atLocal(dateStr, slot.startTime), slot.remindLeadMinutes);
 			created++;
 		}
 	}
@@ -203,7 +235,8 @@ export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 			.get();
 		if (existing) continue;
 
-		db.insert(taskRecords)
+		const record = db
+			.insert(taskRecords)
 			.values({
 				...createdStamp(ctx),
 				userId: ctx.userId,
@@ -212,7 +245,10 @@ export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 				status: 'todo',
 				resolvedActivityId: one.mode === 'activity' ? one.activityId : null
 			})
-			.run();
+			.returning({ id: taskRecords.id })
+			.get();
+
+		remindFor(ctx, record.id, atLocal(one.date, one.startTime), one.remindLeadMinutes);
 		created++;
 	}
 

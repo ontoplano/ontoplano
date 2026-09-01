@@ -26,7 +26,7 @@ exist.
 | [`diary_entries`](#diary_entries)                 | 9       | yes               |
 | [`diary_entry_tags`](#diary_entry_tags)           | 4       | yes               |
 | [`entry_people`](#entry_people)                   | 4       | yes               |
-| [`exceptional_tasks`](#exceptional_tasks)         | 17      | yes               |
+| [`exceptional_tasks`](#exceptional_tasks)         | 18      | yes               |
 | [`goal_areas`](#goal_areas)                       | 6       | yes               |
 | [`goal_links`](#goal_links)                       | 6       | yes               |
 | [`goals`](#goals)                                 | 17      | yes               |
@@ -45,7 +45,7 @@ exist.
 | [`quotes`](#quotes)                               | 5       | yes               |
 | [`recipe_items`](#recipe_items)                   | 8       | yes               |
 | [`recipes`](#recipes)                             | 12      | yes               |
-| [`recurring_tasks`](#recurring_tasks)             | 18      | yes               |
+| [`recurring_tasks`](#recurring_tasks)             | 19      | yes               |
 | [`reminders`](#reminders)                         | 9       | yes               |
 | [`scheme_slots`](#scheme_slots)                   | 11      | yes               |
 | [`session`](#session)                             | 9       | yes               |
@@ -344,25 +344,26 @@ Indexes:
 
 ## exceptional_tasks
 
-| Column             | Type    | Null     | Default               | Notes             |
-| ------------------ | ------- | -------- | --------------------- | ----------------- |
-| `id`               | integer | not null | —                     | primary key, auto |
-| `user_id`          | text    | not null | —                     | → `user.id`       |
-| `date`             | text    | not null | —                     | —                 |
-| `start_time`       | text    | not null | —                     | —                 |
-| `duration_minutes` | integer | not null | `60`                  | —                 |
-| `mode`             | text    | not null | —                     | —                 |
-| `category_id`      | integer | null     | —                     | → `categories.id` |
-| `activity_id`      | integer | null     | —                     | → `activities.id` |
-| `label`            | text    | null     | `''`                  | —                 |
-| `active`           | integer | not null | `true`                | —                 |
-| `notebook_id`      | integer | null     | —                     | → `notebooks.id`  |
-| `urgency`          | integer | null     | —                     | —                 |
-| `interest`         | integer | null     | —                     | —                 |
-| `energy`           | integer | null     | —                     | —                 |
-| `meta`             | text    | not null | `'{}'`                | —                 |
-| `recipe_id`        | integer | null     | —                     | → `recipes.id`    |
-| `created_at`       | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| Column                | Type    | Null     | Default               | Notes             |
+| --------------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`                  | integer | not null | —                     | primary key, auto |
+| `user_id`             | text    | not null | —                     | → `user.id`       |
+| `date`                | text    | not null | —                     | —                 |
+| `start_time`          | text    | not null | —                     | —                 |
+| `duration_minutes`    | integer | not null | `60`                  | —                 |
+| `mode`                | text    | not null | —                     | —                 |
+| `category_id`         | integer | null     | —                     | → `categories.id` |
+| `activity_id`         | integer | null     | —                     | → `activities.id` |
+| `label`               | text    | null     | `''`                  | —                 |
+| `active`              | integer | not null | `true`                | —                 |
+| `remind_lead_minutes` | integer | null     | —                     | —                 |
+| `notebook_id`         | integer | null     | —                     | → `notebooks.id`  |
+| `urgency`             | integer | null     | —                     | —                 |
+| `interest`            | integer | null     | —                     | —                 |
+| `energy`              | integer | null     | —                     | —                 |
+| `meta`                | text    | not null | `'{}'`                | —                 |
+| `recipe_id`           | integer | null     | —                     | → `recipes.id`    |
+| `created_at`          | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
 
@@ -717,26 +718,27 @@ Checks — enforced by the database, not only by the service layer:
 
 ## recurring_tasks
 
-| Column             | Type    | Null     | Default               | Notes             |
-| ------------------ | ------- | -------- | --------------------- | ----------------- |
-| `id`               | integer | not null | —                     | primary key, auto |
-| `user_id`          | text    | not null | —                     | → `user.id`       |
-| `weekday`          | integer | not null | —                     | —                 |
-| `recurrence`       | text    | not null | `'weekly'`            | —                 |
-| `start_time`       | text    | not null | —                     | —                 |
-| `duration_minutes` | integer | not null | `60`                  | —                 |
-| `mode`             | text    | not null | —                     | —                 |
-| `category_id`      | integer | null     | —                     | → `categories.id` |
-| `activity_id`      | integer | null     | —                     | → `activities.id` |
-| `label`            | text    | null     | `''`                  | —                 |
-| `active`           | integer | not null | `true`                | —                 |
-| `urgency`          | integer | null     | —                     | —                 |
-| `interest`         | integer | null     | —                     | —                 |
-| `energy`           | integer | null     | —                     | —                 |
-| `meta`             | text    | not null | `'{}'`                | —                 |
-| `recipe_id`        | integer | null     | —                     | → `recipes.id`    |
-| `created_at`       | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
-| `updated_at`       | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| Column                | Type    | Null     | Default               | Notes             |
+| --------------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`                  | integer | not null | —                     | primary key, auto |
+| `user_id`             | text    | not null | —                     | → `user.id`       |
+| `weekday`             | integer | not null | —                     | —                 |
+| `recurrence`          | text    | not null | `'weekly'`            | —                 |
+| `start_time`          | text    | not null | —                     | —                 |
+| `duration_minutes`    | integer | not null | `60`                  | —                 |
+| `mode`                | text    | not null | —                     | —                 |
+| `category_id`         | integer | null     | —                     | → `categories.id` |
+| `activity_id`         | integer | null     | —                     | → `activities.id` |
+| `label`               | text    | null     | `''`                  | —                 |
+| `active`              | integer | not null | `true`                | —                 |
+| `remind_lead_minutes` | integer | null     | —                     | —                 |
+| `urgency`             | integer | null     | —                     | —                 |
+| `interest`            | integer | null     | —                     | —                 |
+| `energy`              | integer | null     | —                     | —                 |
+| `meta`                | text    | not null | `'{}'`                | —                 |
+| `recipe_id`           | integer | null     | —                     | → `recipes.id`    |
+| `created_at`          | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| `updated_at`          | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
 

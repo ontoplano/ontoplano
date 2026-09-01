@@ -1131,12 +1131,6 @@ different set of tasks than the list beneath them displayed.
 
 #### `generateInstances(ctx, from, to)`
 
-Create any missing instances for the window, for both kinds of block.
-
-Idempotent: an occurrence that already exists is left exactly as it is, so
-this can run on every page load without disturbing recorded status. `from` is
-inclusive, `to` exclusive.
-
 #### `generateForDate(ctx, date)`
 
 Generate for a whole day, the common case for a page that shows "today".
@@ -1817,6 +1811,22 @@ The app only helps on the days you remember to open it, which is why most
 people who try a planner stop in week two. Everything else here waits to be
 visited; a reminder is the one thing that does not.
 
+## A reminder belongs to a block, and to nothing else
+
+There used to be three kinds: one on an occurrence, one on a todo, and a
+"free" one that was a message and a clock reading and nothing else. The free
+one was a mistake — it made reminders a thing of their own, with a list of
+their own to keep, when what anybody actually means is _tell me before this
+starts_. So there is one kind now, and it hangs off an occurrence.
+
+Which also settles the todo. A todo has no time; there is nothing to be
+before. Wanting to be reminded of one is wanting it to happen at a time —
+give it one, which makes it a block, and the block takes the reminder.
+
+The lead lives on the block (`remind_lead_minutes`) and `generateForDate`
+writes a row here per occurrence, so "ten minutes before gym" is said once
+and applies to every gym. The rows below are those occurrences.
+
 Times are wall-clock, like a block's, because "remind me at ten to nine"
 means ten to nine wherever you are. Delivery is deliberately somebody else's
 job: a row that is due is a row anything with the database can deliver — the
@@ -1842,6 +1852,13 @@ arrives the next time it opens, rather than being silently skipped.
 
 #### `createReminder(ctx, raw)`
 
+A nudge before one occurrence starts.
+
+`at` is a lead in minutes, not a clock reading — "ten minutes before" is how
+anybody describes a reminder about something already on a calendar, and it is
+the only thing this takes. There is no way to make a reminder about nothing,
+on purpose: see the note at the top of this file.
+
 #### `markDelivered(ctx, ids)`
 
 Stamped by whoever showed it, so nothing announces the same thing twice.
@@ -1850,7 +1867,7 @@ Stamped by whoever showed it, so nothing announces the same thing twice.
 
 #### `deleteReminder(ctx, id)`
 
-#### `remindersFor(ctx, kind, id)`
+#### `remindersFor(ctx, id)`
 
 The reminders already set on one block, so its editor can show them.
 

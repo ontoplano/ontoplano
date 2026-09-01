@@ -1,18 +1,17 @@
 import { resolve } from '$app/paths';
 
 /**
- * What a reminder is about, and therefore where it leads.
+ * Where a reminder leads.
  *
- * Shared by the toast and the list, because "clicking it should go somewhere to
- * see it" has to give the same answer in both. A reminder attached to a block
- * leads to that day's board; one attached to a todo leads to the todo list; one
- * attached to nothing leads here, which is the page that exists so that a free
- * reminder is not a message with no home.
+ * There is one kind now — a nudge before a block starts — so there is one
+ * answer: the day that block is on. It used to be three, because a reminder
+ * could also hang off a todo or off nothing at all, and the one hanging off
+ * nothing had nowhere to lead. See `services/reminders.ts` for why that went.
+ *
+ * The rows from before still fire until they are dismissed, and they land here
+ * too: the day the reminder was for is the best guess available, and it is a
+ * better one than refusing to go anywhere.
  */
-export type ReminderSubject = 'instance' | 'todo' | 'free';
-
-export function reminderHref(kind: ReminderSubject, remindAt: string): string {
-	if (kind === 'instance') return `${resolve('/planner/board')}?date=${remindAt.slice(0, 10)}`;
-	if (kind === 'todo') return resolve('/planner/todo');
-	return resolve('/planner/reminders');
+export function reminderHref(remindAt: string): string {
+	return `${resolve('/planner/board')}?date=${remindAt.slice(0, 10)}`;
 }

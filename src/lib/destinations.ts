@@ -33,7 +33,6 @@ export const DESTINATIONS: Destination[] = [
 	{ label: 'Activities', group: 'Planner', href: '/planner/activities', icon: 'tag' },
 	{ label: 'History', group: 'Planner', href: '/planner/history', icon: 'clock' },
 	{ label: 'Review', group: 'Planner', href: '/planner/review', icon: 'check' },
-	{ label: 'Reminders', group: 'Planner', href: '/planner/reminders', icon: 'clock' },
 
 	{ label: 'Goals', group: '', href: '/goals', icon: 'goals', hide: 'goals' },
 

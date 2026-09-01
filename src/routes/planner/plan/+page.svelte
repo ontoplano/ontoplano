@@ -2458,6 +2458,29 @@
 				</FormGrid>
 
 				<FormGrid>
+					<!--
+						The reminder, where the block is.
+
+						Not a page of its own and not a clock reading: a reminder is a
+						property of the thing being planned — "tell me ten minutes before
+						gym" — said once, applying to every occurrence of it. Each
+						occurrence gets its own nudge as it appears.
+					-->
+					<Field label="Remind me" span={12} hint="Before it starts. Every time it comes round.">
+						<select name="remindLeadMinutes" class="select">
+							{#each [[0, 'Not at all'], [5, '5 minutes before'], [10, '10 minutes before'], [15, '15 minutes before'], [30, '30 minutes before'], [60, '1 hour before'], [120, '2 hours before'], [1440, 'A day before']] as [minutes, label] (minutes)}
+								<option
+									value={minutes}
+									selected={(editingBlock?.remindLeadMinutes ?? 0) === minutes}
+								>
+									{label}
+								</option>
+							{/each}
+						</select>
+					</Field>
+				</FormGrid>
+
+				<FormGrid>
 					<Field label="Mode" span={4} required>
 						<select name="mode" required bind:value={slotMode} class="select">
 							<option value="activity">Activity</option>

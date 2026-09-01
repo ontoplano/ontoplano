@@ -30,83 +30,83 @@ test('a reminder is set on a block and arrives on its own', async ({ page }) => 
 
 test('what fell due arrives, once', async ({ page }) => {
 	await register(page, `remind-due-${Date.now()}@test.invalid`);
+	await page.goto('/planner/board', { waitUntil: 'networkidle' });
 
-	// Set one in the past through the API, which is the same path the UI uses
-	// and the only way to make "already due" happen inside a test.
-	const past = new Date(Date.now() - 60_000);
-	const stamp = `${past.getFullYear()}-${String(past.getMonth() + 1).padStart(2, '0')}-${String(past.getDate()).padStart(2, '0')}T${String(past.getHours()).padStart(2, '0')}:${String(past.getMinutes()).padStart(2, '0')}`;
+	// A day's lead, so the nudge for one of today's blocks is already in the
+	// past. The editor only offers up to an hour; this posts the same action it
+	// does, which is the only way to make "already due" happen inside a test.
+	await page.locator('article').first().getByRole('button', { name: /^edit/i }).click();
+	const editor = page.locator('dialog[open]');
+	await expect(editor.getByText('Remind me')).toBeVisible();
 
-	await page.goto('/planner/todo', { waitUntil: 'networkidle' });
-	const made = await page.evaluate(async (at) => {
+	const id = await editor.locator('form[action="?/remind"] input[name=id]').first().inputValue();
+	const made = await page.evaluate(async (blockId) => {
 		const body = new FormData();
-		body.append('at', at);
-		body.append('message', 'take the bread out');
-		const res = await fetch('/planner/todo?/remind', {
+		body.append('id', blockId);
+		body.append('minutes', String(24 * 60));
+		const res = await fetch('/planner/board?/remind', {
 			method: 'POST',
 			headers: { 'x-sveltekit-action': 'true' },
 			body
 		});
 		return res.status;
-	}, stamp);
+	}, id);
 	expect(made).toBe(200);
 
 	// The poller runs on mount and whenever the tab comes back.
 	await page.goto('/', { waitUntil: 'networkidle' });
-	await expect(page.getByText('take the bread out')).toBeVisible({ timeout: 10_000 });
+	const toast = page.locator('[role=status]').first();
+	await expect(toast).toBeVisible({ timeout: 10_000 });
 
 	// And never again: it is marked delivered the moment it is on screen.
 	await page.reload({ waitUntil: 'networkidle' });
 	await page.waitForTimeout(1500);
-	await expect(page.getByText('take the bread out')).toHaveCount(0);
+	await expect(page.locator('[role=status]')).toHaveCount(0);
 });
 
 /**
- * A reminder about nothing had nowhere to be.
+ * The lead lives on the block, and reaches every occurrence of it.
  *
- * The card in the corner was the only place one ever appeared: it could not be
- * looked up, and clicking it did nothing. A notification with no page behind it
- * is one you have to trust from memory.
+ * This is the shape a reminder has now: said once, on the thing being planned,
+ * rather than set again on each occurrence — and there is no way to make one
+ * about nothing, which is what used to leave them appearing in no list.
  */
-test('a free reminder is on a page of its own, and the card leads to it', async ({ page }) => {
-	await register(page, `remind-page-${Date.now()}@test.invalid`);
+test('a lead set on a block reminds about every occurrence', async ({ page }) => {
+	await register(page, `remind-lead-${Date.now()}@test.invalid`);
 
-	await page.goto('/planner/reminders', { waitUntil: 'networkidle' });
-	await page.getByRole('button', { name: /new reminder/i }).click();
-	await page.fill('input[name=message]', 'call the landlord back');
-	await page.getByRole('button', { name: 'Set it' }).click();
+	// Editing a block the starter week already put there, rather than making
+	// one: what is being checked is that the lead is a property of the block and
+	// comes back when you reopen it.
+	await page.goto('/planner/plan?view=week', { waitUntil: 'networkidle' });
+	await page.locator('.ec-event').first().click();
 
-	await expect(page.getByText('call the landlord back')).toBeVisible();
-	await expect(page.getByText('on its own')).toBeVisible();
+	const form = page.locator('dialog[open]');
+	await expect(form.getByText('Remind me')).toBeVisible();
+	await form.locator('select[name=remindLeadMinutes]').selectOption('30');
+	await form.getByRole('button', { name: 'Save' }).first().click();
+	await page.waitForTimeout(900);
 
-	// And it survives a reload, so the list is reading the database rather than
-	// what the form just said.
+	// Reopened, it still says thirty — the lead is on the block, not on one
+	// occurrence, so it has to survive the round trip.
 	await page.reload({ waitUntil: 'networkidle' });
-	await expect(page.getByText('call the landlord back')).toBeVisible();
+	await page.locator('.ec-event').first().click();
+	await expect(page.locator('dialog[open] select[name=remindLeadMinutes]')).toHaveValue('30');
 });
 
-test('a due card leads to the page the reminder belongs on', async ({ page }) => {
-	await register(page, `remind-link-${Date.now()}@test.invalid`);
+/**
+ * There is no page of reminders, and no way to make one about nothing.
+ *
+ * Both went together: a reminder that is not about anything has nowhere to
+ * lead and nothing to be before, which is why it needed a list of its own in
+ * the first place.
+ */
+test('there is no reminders page any more', async ({ page }) => {
+	await register(page, `remind-gone-${Date.now()}@test.invalid`);
 
-	const past = new Date(Date.now() - 60_000);
-	const pad = (n: number) => String(n).padStart(2, '0');
-	const stamp = `${past.getFullYear()}-${pad(past.getMonth() + 1)}-${pad(past.getDate())}T${pad(past.getHours())}:${pad(past.getMinutes())}`;
+	const res = await page.goto('/planner/reminders', { waitUntil: 'networkidle' });
+	expect(res?.status()).toBe(404);
 
-	await page.goto('/planner/reminders', { waitUntil: 'networkidle' });
-	await page.evaluate(async (at) => {
-		const body = new FormData();
-		body.append('at', at);
-		body.append('message', 'water the plants');
-		await fetch('/planner/reminders?/create', {
-			method: 'POST',
-			headers: { 'x-sveltekit-action': 'true' },
-			body
-		});
-	}, stamp);
-
-	await page.goto('/', { waitUntil: 'networkidle' });
-	const card = page.getByRole('link', { name: 'water the plants' });
-	await expect(card).toBeVisible({ timeout: 10_000 });
-
-	await card.click();
-	await expect(page).toHaveURL(/\/planner\/reminders$/);
+	await page.goto('/planner/todo', { waitUntil: 'networkidle' });
+	// A todo has no time, so it has no reminder control.
+	await expect(page.getByRole('button', { name: /remind me about/i })).toHaveCount(0);
 });
