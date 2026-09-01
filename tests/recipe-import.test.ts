@@ -1,22 +1,20 @@
 /**
- * Reading a recipe off somebody else's page, and not becoming a way into the
- * network while doing it.
+ * Reading a recipe out of what somebody pasted.
  *
- * Two halves, tested apart because they fail apart. The parser is pure and gets
- * the shapes real sites actually publish — there are four common ones for the
- * instructions alone. The fetcher is where the danger is: a server that fetches
- * a URL a user supplies reaches everything the box can reach and nothing
- * outside can, which on a rented VPS is the metadata service handing out
- * credentials to anyone who asks.
+ * The parser is pure and gets the shapes real sites actually publish — there
+ * are four common ones for the instructions alone. Nothing here touches the
+ * network, and that is deliberate rather than incidental: this used to be fed
+ * by the server fetching a URL, which is a way into everything the box can
+ * reach and nothing outside it can. The paste costs one step and closes that
+ * door outright.
  */
-import { beforeAll, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import {
 	minutesFromDuration,
 	parseRecipeFromHtml,
 	plainText,
 	servingsFrom
 } from '../src/lib/recipe-import';
-import { isPrivateAddress } from '../src/lib/server/services/recipe-fetch';
 
 /** A page with one JSON-LD block holding `recipe`. */
 const page = (recipe: unknown, extra = '') =>
@@ -161,105 +159,30 @@ describe('the awkward small fields', () => {
 });
 
 /**
- * The half that can hurt somebody.
+ * What a person actually pastes.
  *
- * Every one of these is an address that reaches something the box can see and
- * the internet cannot: the cloud metadata service, the router, a NAS, this
- * app's own port. `isPrivateAddress` is what stands between a pasted URL and
- * all of it, so it is checked exhaustively rather than representatively.
+ * Two shapes reach the box: the page source, and the structured-data block on
+ * its own, from somebody who went looking in the source and copied the part
+ * that mattered. Both are the same object once parsed.
  */
-describe('addresses the server must refuse to fetch', () => {
-	test('loopback, in every spelling', () => {
-		for (const address of ['127.0.0.1', '127.1.2.3', '::1', '::ffff:127.0.0.1'])
-			expect(isPrivateAddress(address), address).toBe(true);
+describe('a paste, in the two shapes it arrives in', () => {
+	test('the whole page source', () => {
+		expect(parseRecipeFromHtml(page(soup))?.title).toBe('Leek and potato soup');
 	});
 
-	test('the cloud metadata service, which is the one that hands out credentials', () => {
-		expect(isPrivateAddress('169.254.169.254')).toBe(true);
-		expect(isPrivateAddress('169.254.0.1')).toBe(true);
+	test('the JSON-LD block on its own', () => {
+		const found = parseRecipeFromHtml(JSON.stringify(soup));
+		expect(found?.title).toBe('Leek and potato soup');
+		expect(found?.ingredients).toHaveLength(3);
 	});
 
-	test('every private range, including the ones people forget', () => {
-		for (const address of [
-			'10.0.0.1',
-			'172.16.0.1',
-			'172.31.255.255',
-			'192.168.1.1',
-			'100.64.0.1', // carrier-grade NAT
-			'0.0.0.0',
-			'224.0.0.1', // multicast
-			'255.255.255.255'
-		])
-			expect(isPrivateAddress(address), address).toBe(true);
+	test('an array of blocks, as a page can carry', () => {
+		const found = parseRecipeFromHtml(JSON.stringify([{ '@type': 'WebPage' }, soup]));
+		expect(found?.title).toBe('Leek and potato soup');
 	});
 
-	test('IPv6 loopback, link-local, unique-local and multicast', () => {
-		for (const address of ['::1', '::', 'fe80::1', 'fc00::1', 'fd12:3456::1', 'ff02::1'])
-			expect(isPrivateAddress(address), address).toBe(true);
-	});
-
-	test('an IPv4 address wearing an IPv6 hat is still that address', () => {
-		expect(isPrivateAddress('::ffff:169.254.169.254')).toBe(true);
-		expect(isPrivateAddress('::ffff:10.0.0.1')).toBe(true);
-	});
-
-	test('anything that is not an address at all is refused rather than guessed', () => {
-		for (const value of ['', 'localhost', 'not-an-address', '999.1.1.1'])
-			expect(isPrivateAddress(value), value).toBe(true);
-	});
-
-	test('and a real public address is allowed, or nothing could be imported', () => {
-		for (const address of ['1.1.1.1', '93.184.216.34', '172.15.0.1', '172.32.0.1', '2606:4700::1'])
-			expect(isPrivateAddress(address), address).toBe(false);
-	});
-});
-
-/**
- * And the check that stands in front of the fetch, exercised directly.
- *
- * The end-to-end test asserts a refusal, but a refusal is also what a machine
- * with no outbound network produces — so it could pass for the wrong reason
- * forever. This calls the guard itself: `localhost` and the literal addresses
- * resolve without touching a network, so a rejection here can only be the
- * guard rejecting them.
- */
-describe('the guard in front of the fetch', () => {
-	let fetcher: typeof import('../src/lib/server/services/recipe-fetch');
-
-	beforeAll(async () => {
-		fetcher = await import('../src/lib/server/services/recipe-fetch');
-	});
-
-	test('refuses a name that resolves to the inside', async () => {
-		await expect(fetcher.assertFetchable('http://localhost:1493/')).rejects.toThrow(
-			/not reachable/i
-		);
-	});
-
-	test('refuses the metadata service and the loopback address', async () => {
-		for (const url of ['http://169.254.169.254/latest/meta-data/', 'http://127.0.0.1:1493/'])
-			await expect(fetcher.assertFetchable(url), url).rejects.toThrow(/not reachable/i);
-	});
-
-	test('refuses a scheme that is not the web', async () => {
-		for (const url of ['file:///etc/passwd', 'gopher://x/', 'ftp://x/'])
-			await expect(fetcher.assertFetchable(url), url).rejects.toThrow(/http and https/i);
-	});
-
-	test('and says the same thing about every refused address', async () => {
-		// "That is the metadata service" and "that is a private address" would
-		// together map somebody's network one guess at a time.
-		const messages = await Promise.all(
-			['http://127.0.0.1/', 'http://10.0.0.1/', 'http://169.254.169.254/'].map((url) =>
-				fetcher.assertFetchable(url).catch((e: Error) => e.message)
-			)
-		);
-		expect(new Set(messages).size).toBe(1);
-	});
-
-	test('and lets a real public address through to the fetch', async () => {
-		// No network needed: this only asserts the guard returns rather than
-		// throwing. 1.1.1.1 is a literal, so there is no lookup either.
-		await expect(fetcher.assertFetchable('https://1.1.1.1/recipe')).resolves.toBeInstanceOf(URL);
+	test('a paste that is neither is not a recipe', () => {
+		expect(parseRecipeFromHtml('3 leeks\n500g potatoes')).toBeNull();
+		expect(parseRecipeFromHtml('{ broken json')).toBeNull();
 	});
 });

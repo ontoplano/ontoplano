@@ -106,74 +106,69 @@ test('a pasted list becomes the ingredients', async ({ page }) => {
 });
 
 /**
- * A recipe from a link.
+ * A recipe out of a pasted page.
  *
  * The parser is unit-tested against the shapes real sites publish; what this
  * checks is the half that only exists in a running app — that the action is
- * wired up, that a refused address is refused with a sentence rather than a
- * stack trace, and above all that the server will not fetch something on the
- * inside of the network because somebody pasted it.
+ * wired up, that the recipe and its ingredients land together, and that a
+ * paste with no recipe in it comes back as a sentence rather than a stack
+ * trace.
+ *
+ * There is deliberately no URL here to refuse. This used to fetch the page
+ * server-side, guarded against every private address; the guard was sound and
+ * the door was still a door, so the door is gone.
  */
-test.describe('importing a recipe from a URL', () => {
-	test('refuses an address on the inside of the network', async ({ page }) => {
-		await register(page, `recipe-ssrf-${Date.now()}@test.invalid`);
+test.describe('importing a recipe from a pasted page', () => {
+	const PAGE = `<!doctype html><html><head><script type="application/ld+json">${JSON.stringify({
+		'@context': 'https://schema.org',
+		'@type': 'Recipe',
+		name: 'Pasted pancakes',
+		recipeIngredient: ['200g plain flour', '2 eggs', '300ml milk'],
+		recipeInstructions: [
+			{ '@type': 'HowToStep', text: 'Whisk it.' },
+			{ '@type': 'HowToStep', text: 'Fry it.' }
+		],
+		recipeYield: '4',
+		totalTime: 'PT25M'
+	})}</script></head><body></body></html>`;
+
+	test('reads the recipe, its ingredients and its timing', async ({ page }) => {
+		await register(page, `recipe-paste-${Date.now()}@test.invalid`);
 		await page.goto('/kitchen/recipes', { waitUntil: 'networkidle' });
 
-		// The cloud metadata service, which hands out credentials to whoever
-		// asks — and the app's own port, and the loopback name.
-		for (const url of [
-			'http://169.254.169.254/latest/meta-data/',
-			'http://127.0.0.1:1493/settings/account',
-			'http://localhost:1493/',
-			'file:///etc/passwd'
-		]) {
-			const result = await page.evaluate(async (target) => {
-				const body = new FormData();
-				body.append('url', target);
-				const res = await fetch('/kitchen/recipes?/importFromUrl', {
-					method: 'POST',
-					headers: { 'x-sveltekit-action': 'true' },
-					body
-				});
-				// An action reports its own status inside the envelope; the HTTP
-				// status of the envelope itself is 200 either way.
-				const envelope = await res.json();
-				return { status: envelope.status as number, type: envelope.type as string };
-			}, url);
+		await page.getByRole('button', { name: 'New recipe' }).first().click();
+		await page.getByPlaceholder('Paste the page here').fill(PAGE);
+		await page.getByRole('button', { name: 'Read it' }).click();
 
-			// Refused — never fetched, never redirected to, never parsed.
-			expect(result.type, `${url} should be refused`).toBe('failure');
-			expect(result.status, `${url} should be refused`).toBe(400);
-		}
-
-		// And nothing was created by any of it.
-		await page.reload({ waitUntil: 'networkidle' });
-		await expect(page.getByText('No recipes yet')).toBeVisible();
+		await page.waitForURL(/\/kitchen\/recipes\/\d+/);
+		await expect(page.getByText('Pasted pancakes').first()).toBeVisible();
+		await expect(page.getByText('plain flour').first()).toBeVisible();
+		await expect(page.getByText('Whisk it.').first()).toBeVisible();
 	});
 
-	test('and says so plainly when a page has no recipe on it', async ({ page }) => {
+	test('says so plainly when there is no recipe in the paste', async ({ page }) => {
 		await register(page, `recipe-none-${Date.now()}@test.invalid`);
 		await page.goto('/kitchen/recipes', { waitUntil: 'networkidle' });
 
-		// The app's own front page over its public name: a real page, reachable,
-		// with no structured recipe in it.
 		const result = await page.evaluate(async () => {
 			const body = new FormData();
-			body.append('url', 'https://example.com/');
-			const res = await fetch('/kitchen/recipes?/importFromUrl', {
+			body.append('page', '<html><body>a blog post about a holiday</body></html>');
+			const res = await fetch('/kitchen/recipes?/importFromPage', {
 				method: 'POST',
 				headers: { 'x-sveltekit-action': 'true' },
 				body
 			});
+			// An action reports its own status inside the envelope; the HTTP
+			// status of the envelope itself is 200 either way.
 			const envelope = await res.json();
 			return { status: envelope.status as number, type: envelope.type as string };
 		});
 
-		// Either it could not be reached from this machine — the suite runs with
-		// no outbound network — or it was read and held no recipe. Both are a
-		// sentence, and neither is a 500 with a stack trace in it.
 		expect(result.type).toBe('failure');
-		expect([400, 422]).toContain(result.status);
+		expect(result.status).toBe(422);
+
+		await page.reload({ waitUntil: 'networkidle' });
+		await expect(page.getByText('No recipes yet')).toBeVisible();
 	});
 });
 

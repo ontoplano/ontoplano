@@ -7,10 +7,12 @@
  * That is the whole trick: this does not scrape a layout, it reads a standard,
  * so it does not break when a blog is redesigned.
  *
- * Pure on purpose. It takes HTML as a string and returns fields; fetching the
- * page is somebody else's job (`services/recipe-fetch.ts`, which has the part
- * that can be dangerous). That split is what lets this be tested against a
- * shelf of real-world shapes without a network.
+ * Pure on purpose, and it stays that way. Nothing here fetches: what it reads
+ * is what somebody pasted. A server that fetches an address a user typed can
+ * reach everything the box can reach and nothing outside it can — the metadata
+ * service on a rented VPS, the router, the app's own port — and no amount of
+ * filtering makes that a good door to have. Pasting the page costs one step
+ * and removes the door.
  *
  * What it does NOT try to do: understand the ingredients. A line arrives as
  * written — "2 cloves garlic, crushed" — and `importIngredients` already knows
@@ -41,6 +43,19 @@ const MAX_METHOD_LENGTH = 20_000;
  */
 function jsonLdBlocks(html: string): unknown[] {
 	const out: unknown[] = [];
+
+	// The paste is sometimes the structured data on its own — somebody who
+	// found it in the page source and copied the block rather than the page.
+	// It is the same object either way, so it is read either way.
+	const trimmed = html.trimStart();
+	if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+		try {
+			return [JSON.parse(trimmed)];
+		} catch {
+			// Not JSON after all; fall through and look for script tags.
+		}
+	}
+
 	const pattern = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
 
 	for (const match of html.matchAll(pattern)) {

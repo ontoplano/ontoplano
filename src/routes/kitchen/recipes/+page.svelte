@@ -124,7 +124,7 @@
 
 <Modal bind:open={showForm} error={form?.message} title="New recipe">
 	<!--
-		A link first, because it is the shortest path.
+		The paste first, because it is the shortest path.
 
 		Almost every food site publishes its recipes as structured data, so most
 		of the time the answer to "add this recipe" is a paste rather than twenty
@@ -134,7 +134,7 @@
 	-->
 	<form
 		method="post"
-		action="?/importFromUrl"
+		action="?/importFromPage"
 		class="mb-4 border-b border-gray-200 pb-4"
 		use:enhance={() => {
 			importing = true;
@@ -145,24 +145,28 @@
 		}}
 	>
 		<Field
-			label="From a link"
+			label="From a page"
 			span={12}
-			hint="A recipe page. Its ingredients and method come with it."
+			hint="On the recipe page: select all, copy, paste here. Its ingredients and method come with it."
 		>
-			<div class="flex flex-wrap items-center gap-2">
-				<input
-					name="url"
-					type="url"
-					required
-					autocomplete="off"
-					placeholder="https://…"
-					class="input min-w-0 flex-1"
-				/>
-				<button class="btn shrink-0" disabled={importing}>
-					{importing ? 'Reading…' : 'Read it'}
-				</button>
-			</div>
+			<textarea
+				name="page"
+				rows="3"
+				placeholder="Paste the page here"
+				class="textarea font-mono text-xs"
+			></textarea>
 		</Field>
+		<div class="mt-2 flex flex-wrap items-center gap-2">
+			<input
+				name="source"
+				autocomplete="off"
+				placeholder="Where it came from (optional)"
+				class="input min-w-0 flex-1"
+			/>
+			<button class="btn shrink-0" disabled={importing}>
+				{importing ? 'Reading…' : 'Read it'}
+			</button>
+		</div>
 	</form>
 
 	<!-- Everything the editor has. Making somebody create a title and then

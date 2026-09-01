@@ -15,8 +15,9 @@ import {
 	updateRecipe
 } from '$lib/server/services/recipes';
 import { parseRecipeFromHtml } from '$lib/recipe-import';
-import { fetchPage } from '$lib/server/services/recipe-fetch';
-import { rateLimit } from '$lib/server/rate-limit';
+
+/** A recipe page is tens of kilobytes. This is where a paste stops being one. */
+const MAX_PAGE_LENGTH = 1_000_000;
 
 /**
  * What can be done to a recipe, from the list or from its own page.
@@ -51,42 +52,39 @@ export const recipeActions = {
 	},
 
 	/**
-	 * A recipe from a link.
+	 * A recipe out of a page somebody pasted.
 	 *
-	 * Almost every food site publishes schema.org JSON-LD, because Google's rich
-	 * results require it — so this reads a standard rather than scraping a
-	 * layout, and does not break when a blog is redesigned.
+	 * Almost every food site publishes its recipes as schema.org JSON-LD,
+	 * because Google's rich results require it — so this reads a standard rather
+	 * than scraping a layout, and does not break when a blog is redesigned.
 	 *
-	 * The two halves are deliberately separate. `fetchPage` is the one that can
-	 * hurt somebody: fetching a URL a user supplies reaches everything the box
-	 * can reach and nothing outside it can, so it resolves the name, refuses
-	 * private addresses, and re-checks every redirect. `parseRecipeFromHtml` is
-	 * pure and knows nothing about the network.
-	 *
-	 * Rate limited per account, not per address: it is a signed-in action that
-	 * makes the server fetch something, which is worth a ceiling even from
-	 * somebody who is allowed to do it.
+	 * The page arrives as text rather than as a link, and that is the design.
+	 * A server that fetches an address a user typed reaches everything the box
+	 * can reach and nothing outside it can: the metadata service on a rented
+	 * VPS, the router, this app's own port. Other people run this on their own
+	 * machines and would inherit that door. Pasting costs one step, works on
+	 * sites that refuse servers anyway, and leaves the useful half — the parser
+	 * — exactly as it was.
 	 */
-	importFromUrl: async ({ request, locals }) => {
+	importFromPage: async ({ request, locals }) => {
 		const ctx = buildCtx(locals.user!.id);
 		const formData = await request.formData();
 
-		const budget = rateLimit(`recipe-import:${ctx.userId}`, 10, 60_000);
-		if (!budget.allowed)
-			return fail(429, {
-				message: `Too many at once. Try again in ${budget.retryAfterSeconds} seconds.`
-			});
-
 		let id: number;
 		try {
-			const url = String(formData.get('url') ?? '');
-			const page = await fetchPage(url);
-			const found = parseRecipeFromHtml(page);
+			const pasted = String(formData.get('page') ?? '');
+
+			// A page is tens of kilobytes; a megabyte is somebody's mistake and
+			// there is no reason to hand it to a regular expression.
+			if (pasted.length > MAX_PAGE_LENGTH)
+				return fail(413, { message: 'That is too much to read at once.' });
+
+			const found = parseRecipeFromHtml(pasted);
 
 			if (!found)
 				return fail(422, {
 					message:
-						'No recipe on that page — it has no structured recipe data. Paste the ingredients instead.'
+						'No recipe in that — it has no structured recipe data. Paste the ingredients below instead.'
 				});
 
 			id = createRecipe(ctx, {
@@ -94,11 +92,11 @@ export const recipeActions = {
 				method: found.method,
 				servings: found.servings,
 				minutes: found.minutes,
-				source: url
+				source: String(formData.get('source') ?? '').slice(0, 500) || null
 			});
 
-			// The same parser the paste box uses, so a line imported from a page
-			// and a line typed by hand end up as the same ingredient.
+			// The same parser the paste box uses, so a line read off a page and a
+			// line typed by hand end up as the same ingredient.
 			importIngredients(ctx, id, found.ingredients.join('\n'));
 		} catch (e) {
 			return toActionFailure(e);

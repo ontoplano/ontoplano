@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.34.0 — 2026-09-01
+
+- **A recipe now comes in as a paste rather than a link.** Select all on the
+  recipe page, copy, paste: the title, ingredients, method, servings and time
+  come with it, read from the structured data the site already publishes. The
+  link box is gone — an instance fetching an address somebody typed can reach
+  everything the machine it runs on can reach, and that is not a door worth
+  having on somebody else's server for the sake of one step.
+
 ## 0.33.0 — 2026-09-01
 
 - **A second example plugin**, and the one to read first: `onto-morning.mjs`
