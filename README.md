@@ -1,6 +1,10 @@
 # Ontoplano
 
-A life management tool that started as a weekly planner.
+**Managing life, one week at a time.**
+
+Everything you are keeping track of, in one place, on one week. It started as a
+weekly planner and the week is still the shape — what goes on it is the rest of
+a life.
 
 You describe the week you intend to have — blocks of time, recurring or one-off,
 each belonging to an area of your life. Ontoplano turns that into the days as
@@ -8,10 +12,10 @@ they arrive, and records what actually happened: what you did, when, how late,
 how it felt. What comes out is the gap between the week you planned and the week
 you had, which is the only thing a planner can honestly tell you.
 
-The week is the shape; what goes on it is the rest of a life. Goals with real
-progress, a journal, the people in it, ideas, habits, recipes and the shopping
-that follows from them — and an API that lets other apps push data in and read
-your schedule out.
+Goals with real progress, a journal, the people in it, ideas, habits, recipes
+and the shopping that follows from them — and an API that lets other apps push
+data in and read your schedule out. Use the parts you want: every section can be
+switched off, reordered and recoloured.
 
 Self-hosted, one SQLite file, no account anywhere but your own.
 
