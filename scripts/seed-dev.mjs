@@ -330,15 +330,20 @@ const idea = (content, tags = [], extra = {}) => {
 	return id;
 };
 
-const person = (name, relationship, notes = '') => {
+// contact: { birthday, phone, email } — all optional, and the dev database
+// carries at least one of each shape, including a birthday with no year.
+const person = (name, relationship, notes = '', contact = {}) => {
 	const existing = one('select id from people where user_id = ? and name = ?', uid, name);
 	if (existing) return existing.id;
 	return run(
-		`insert into people (user_id, name, relationship, notes, created_at, updated_at)
-		 values (?, ?, ?, ?, ?, ?)`,
+		`insert into people (user_id, name, relationship, birthday, phone, email, notes, created_at, updated_at)
+		 values (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		uid,
 		name,
 		relationship,
+		contact.birthday ?? null,
+		contact.phone ?? null,
+		contact.email ?? null,
 		notes,
 		stamp(now),
 		stamp(now)
@@ -813,9 +818,18 @@ diary(4, 'Reading is slipping. Move it before the phone, not after.', ['reading'
 
 // --- people ------------------------------------------------------------------
 
-const ana = person('Ana', 'partner', 'anniversary in March');
-const joao = person('João', 'friend', 'the one who runs');
-const marina = person('Marina', 'professional', 'runs the Tuesday standup');
+const ana = person('Ana', 'partner', 'anniversary in March', {
+	birthday: '1992-03-14',
+	phone: '+55 21 90000-0001',
+	email: 'ana@example.test'
+});
+// A birthday whose year nobody knows — the ordinary case in an address book,
+// and the one a plain date field cannot hold.
+const joao = person('João', 'friend', 'the one who runs', { birthday: '--07-02' });
+const marina = person('Marina', 'professional', 'runs the Tuesday standup', {
+	phone: '+55 11 90000-0002',
+	email: 'marina@example.test'
+});
 person('Mum', 'family');
 
 mention(1, ana);

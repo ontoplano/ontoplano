@@ -10,6 +10,20 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.16.0 — 2026-09-01
+
+- **The weekly review's three answers now all mean the same thing: done with
+  it.** Skipping a block set it to what it already was and left it in the list,
+  so the same blocks came back every week; carrying one into the todo list made
+  the todo and left the block there too, so pressing the button twice made two
+  todos out of one block. Each answer now takes the row out of the list for
+  good.
+- A person can carry a birthday, a phone number and an email address. The
+  birthday takes `--03-14` when you do not know the year, which is most of
+  them.
+- The section bar's icons are bigger and easier to hit on a screen too narrow
+  to show their words.
+
 ## 0.15.0 — 2026-09-01
 
 - **Paying is no longer something the app can fail to notice.** It learnt about

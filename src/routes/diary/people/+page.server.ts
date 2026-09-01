@@ -29,6 +29,9 @@ export const actions: Actions = {
 			createPerson(buildCtx(locals.user!.id), {
 				name: formData.get('label'),
 				relationship: formData.get('relationship'),
+				birthday: formData.get('bornOn'),
+				phone: formData.get('theirPhone'),
+				email: formData.get('theirEmail'),
 				notes: formData.get('notes')
 			});
 			return { success: true };
@@ -43,6 +46,9 @@ export const actions: Actions = {
 			updatePerson(buildCtx(locals.user!.id), Number(formData.get('id')), {
 				name: formData.get('label'),
 				relationship: formData.get('relationship'),
+				birthday: formData.get('bornOn'),
+				phone: formData.get('theirPhone'),
+				email: formData.get('theirEmail'),
 				notes: formData.get('notes')
 			});
 			return { success: true };

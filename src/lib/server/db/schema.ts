@@ -243,6 +243,19 @@ export const people = sqliteTable(
 		})
 			.notNull()
 			.default('other'),
+		/**
+		 * The three things you actually look somebody up for.
+		 *
+		 * All optional, and stored as written rather than parsed: a phone number
+		 * is a string in every country that has ever tried to make it a number,
+		 * and a birthday you only know the day of ("14 March, no idea which
+		 * year") is still worth keeping. YYYY-MM-DD where the year is known,
+		 * --MM-DD where it is not, which is the shape vCard uses for the same
+		 * reason.
+		 */
+		birthday: text('birthday'),
+		phone: text('phone'),
+		email: text('email'),
 		notes: text('notes').default(''),
 		createdAt: text('created_at')
 			.notNull()

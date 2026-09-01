@@ -313,8 +313,16 @@ Three rules, and they are the ones that make billing survivable:
   somebody has paid; it only records what the provider said.
 - Every webhook is verified and stored by the provider's own event id, so a
   retry — and they do retry — is applied exactly once.
-- A nightly pass catches what webhooks missed, because a webhook that never
-  arrived leaves no trace to notice.
+- The webhook is never the ONLY way to learn. Every checkout is written down
+  when it is opened, so the app can ask what became of it — on the customer's
+  way back, and again nightly for anybody who closed the tab.
+
+That third rule is not theoretical. The webhook destination was left pointing
+at a hostname that had become a redirect; the provider does not follow those,
+so every billing event failed silently for hours. A customer paid, got a
+receipt by mail, came back, and was shown the pay page again — the worst
+thing this code can do. The nightly pass could not save it either, because it
+walked subscription rows and the row is exactly what never got written.
 
 Sandbox and live are entirely separate Paddle accounts; which one this
 instance talks to is decided by the API key alone (pdl*sdbx*… keys reach
@@ -346,6 +354,43 @@ with — and the customer lands on /buy with that transaction loaded.
 Our own page, not Paddle's hosted checkout: the hosted one is gated
 behind approval on live accounts, and /buy is the same overlay without
 the gate.
+
+#### `settleCheckout(transactionId, by)`
+
+Mark a checkout done, and say which route found out.
+
+#### `hasUnsettledCheckout(userId)`
+
+Is there anything to ask about for this account? One indexed read.
+
+#### `claimCheckouts(userId, now)`
+
+Ask the provider what became of the checkouts this account opened.
+
+Called on the way back from the payment window, before the gate that would
+otherwise send a paying customer to the pay page. Cheap and bounded: it only
+runs when there is an unsettled checkout row, and only touches that account.
+
+A checkout that produced a subscription is applied and settled. One that
+produced nothing — abandoned, or a card that was declined — is settled too
+once it is old enough, so the question is not asked forever.
+
+Returns true when something was actually applied, which the caller uses to
+decide whether to recompute access before answering the request.
+
+#### `claimAbandonedCheckouts(now)`
+
+The same question for everybody, on the nightly pass.
+
+This is what covers the customer who paid and never came back to the tab.
+
+#### `chasedCheckouts(since)`
+
+Checkouts the app had to chase, because nobody told it.
+
+Zero is the healthy number. Anything else means the provider's notification
+destination is not reaching this instance, and every one of those customers
+saw the pay page after paying until something asked on their behalf.
 
 #### `portalUrl(userId)`
 

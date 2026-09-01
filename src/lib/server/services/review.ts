@@ -99,8 +99,18 @@ export function readWeek(ctx: Ctx, weekStart: string): { reading: WeekReading; l
 		buckets.set(key, bucket);
 	}
 
+	/*
+	 * What is still waiting for an answer — not merely "not done".
+	 *
+	 * This used to be everything that was not done, which put every skipped
+	 * block back in the list every week: the Skipped button then set a block to
+	 * what it already was, changed nothing, and left it sitting there. Skipping
+	 * IS one of the three answers, so a block that carries it has been dealt
+	 * with. The list is the open questions and nothing else, and each of the
+	 * three buttons takes a row out of it for good.
+	 */
 	const loose: Loose[] = instances
-		.filter((i) => i.status !== 'done')
+		.filter((i) => i.status === 'todo' || i.status === 'doing')
 		.map((i) => ({
 			id: i.id,
 			title: blockName(i),
@@ -269,12 +279,25 @@ export function carryIntoTodos(ctx: Ctx, weekStart: string, rawIds: unknown[]): 
 	const { loose } = readWeek(ctx, weekStart);
 	const carrying = loose.filter((l) => wanted.has(l.id));
 
+	/*
+	 * The block is answered for as well as copied.
+	 *
+	 * Without the second half, carrying left the block in the list — so
+	 * pressing the button twice made two todos out of one block, which is the
+	 * one outcome a review must not produce. Reading `loose` again is what makes
+	 * it safe: the second press finds nothing to carry.
+	 *
+	 * Skipped is the honest status for what is left behind. The block did not
+	 * happen, and next week generates its own; what still needs doing is now a
+	 * todo with no day on it, which is the whole point of carrying.
+	 */
 	for (const item of carrying) {
 		createTodo(ctx, {
 			title: item.title,
 			notes: `Planned for ${item.date} and not done.`,
 			categoryId: item.categoryId
 		});
+		setInstanceStatus(ctx, item.id, 'skipped');
 	}
 
 	return carrying.length;

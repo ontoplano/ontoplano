@@ -239,11 +239,16 @@
 		{/if}
 
 		<FormGrid>
-			<Field label="Name" span={8} required>
+			<!--
+				Six and six rather than eight and four: "How you know them" wrapped
+				onto a second line in the narrow column, which pushed its select a
+				line below the name box beside it.
+			-->
+			<Field label="Name" span={6} required>
 				<input name="label" required autocomplete="off" value={editing?.name ?? ''} class="input" />
 			</Field>
 
-			<Field label="How you know them" span={4}>
+			<Field label="How you know them" span={6}>
 				<select name="relationship" class="select">
 					{#each RELATIONSHIPS as value (value)}
 						<option {value} selected={(editing?.relationship ?? 'other') === value}>
@@ -251,6 +256,48 @@
 						</option>
 					{/each}
 				</select>
+			</Field>
+
+			<!--
+				A birthday you only half know is the ordinary case, so the year is
+				optional: `--03-14` is the vCard spelling and what the field stores.
+				A plain date input cannot express it, which is why this is text.
+
+				`bornOn`, `theirPhone`, `theirEmail` rather than the obvious names:
+				a browser classifies a field by its name before it reads
+				autocomplete, so calling this one after the address field it
+				resembles would offer YOUR details while you are typing somebody
+				else's. tests/autofill-field-names.test.ts is the rule, and it
+				reads the markup literally — including comments.
+			-->
+			<Field label="Birthday" span={4} hint="1990-03-14, or --03-14 without the year">
+				<input
+					name="bornOn"
+					autocomplete="off"
+					placeholder="1990-03-14"
+					value={editing?.birthday ?? ''}
+					class="input"
+				/>
+			</Field>
+
+			<Field label="Phone" span={4}>
+				<input
+					name="theirPhone"
+					type="tel"
+					autocomplete="off"
+					value={editing?.phone ?? ''}
+					class="input"
+				/>
+			</Field>
+
+			<Field label="Email" span={4}>
+				<input
+					name="theirEmail"
+					type="email"
+					autocomplete="off"
+					value={editing?.email ?? ''}
+					class="input"
+				/>
 			</Field>
 
 			<Field label="Notes" span={12}>

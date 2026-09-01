@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**48 tables.**
+**49 tables.**
 
 | Table                                             | Columns | Belongs to a user |
 | ------------------------------------------------- | ------- | ----------------- |
@@ -15,6 +15,7 @@ exist.
 | [`activities`](#activities)                       | 9       | yes               |
 | [`api_tokens`](#api_tokens)                       | 12      | yes               |
 | [`audit_events`](#audit_events)                   | 7       | yes               |
+| [`billing_checkouts`](#billing_checkouts)         | 7       | yes               |
 | [`billing_events`](#billing_events)               | 8       | —                 |
 | [`calendar_feeds`](#calendar_feeds)               | 9       | yes               |
 | [`categories`](#categories)                       | 5       | yes               |
@@ -140,6 +141,23 @@ Indexes:
 
 - `audit_events_user_idx` on `user_id`
 - `audit_events_created_idx` on `created_at`
+
+## billing_checkouts
+
+| Column                    | Type    | Null     | Default               | Notes             |
+| ------------------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`                      | integer | not null | —                     | primary key, auto |
+| `user_id`                 | text    | not null | —                     | → `user.id`       |
+| `provider`                | text    | not null | —                     | —                 |
+| `provider_transaction_id` | text    | not null | —                     | —                 |
+| `settled_at`              | text    | null     | —                     | —                 |
+| `settled_by`              | text    | null     | —                     | —                 |
+| `created_at`              | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `billing_checkouts_user_idx` on `user_id`
+- `billing_checkouts_transaction_unique` on `provider_transaction_id` — unique
 
 ## billing_events
 

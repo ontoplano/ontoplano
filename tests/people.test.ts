@@ -131,3 +131,53 @@ describe('deleting somebody', () => {
 		expect(() => people.deletePerson(theirs, mine.id)).toThrow();
 	});
 });
+
+/**
+ * The three things you actually look somebody up for.
+ *
+ * A person had a name, a relationship and a note, which is enough for the
+ * diary and not enough for an address book. The birthday is the one with a
+ * shape worth pinning: half the birthdays anybody knows come without a year.
+ */
+describe('a person can carry contact details', () => {
+	test('a full birthday, a phone and an email are kept as written', () => {
+		const id = people.createPerson(ctx, {
+			name: 'Contactable',
+			relationship: 'friend',
+			birthday: '1990-03-14',
+			phone: '+55 21 90000-0000',
+			email: 'someone@example.test'
+		});
+
+		const made = people.listPeople(ctx).find((p) => p.id === id)!;
+		expect(made.birthday).toBe('1990-03-14');
+		expect(made.phone).toBe('+55 21 90000-0000');
+		expect(made.email).toBe('someone@example.test');
+	});
+
+	test('a birthday with no year is kept too, because most of them have none', () => {
+		const id = people.createPerson(ctx, { name: 'Year unknown', birthday: '--07-02' });
+		expect(people.listPeople(ctx).find((p) => p.id === id)!.birthday).toBe('--07-02');
+	});
+
+	test('an empty box clears it rather than storing a blank', () => {
+		const id = people.createPerson(ctx, { name: 'Nothing given', birthday: '', phone: '' });
+		const made = people.listPeople(ctx).find((p) => p.id === id)!;
+		expect(made.birthday).toBeNull();
+		expect(made.phone).toBeNull();
+	});
+
+	test('and a birthday that is neither shape is refused, not silently stored', () => {
+		expect(() => people.createPerson(ctx, { name: 'Bad date', birthday: '14/03/1990' })).toThrow();
+		expect(() => people.createPerson(ctx, { name: 'Bad month', birthday: '--13-01' })).toThrow();
+	});
+
+	test('editing keeps them, and can change them', () => {
+		const id = people.createPerson(ctx, { name: 'Editable', phone: '+1 555 0100' });
+		people.updatePerson(ctx, id, { name: 'Editable', phone: '+1 555 0199', email: 'e@x.test' });
+
+		const after = people.listPeople(ctx).find((p) => p.id === id)!;
+		expect(after.phone).toBe('+1 555 0199');
+		expect(after.email).toBe('e@x.test');
+	});
+});

@@ -208,7 +208,7 @@
 		<!-- What did not happen, and whether it still needs to. -->
 		<Card
 			title="What did not happen"
-			description="A block that did not happen is gone — next week generates its own. Tick the ones that still need doing and they become todos, with no day on them."
+			description="Tick them and say what happened. Whichever answer you give, they leave this list — next week generates its own blocks."
 			accent="var(--section-accent)"
 			flush
 		>
@@ -239,9 +239,6 @@
 										></span>
 										<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{item.title}</span>
 										<span class="tabular shrink-0 text-xs text-gray-500">{pretty(item.date)}</span>
-										{#if item.status === 'skipped'}
-											<span class="shrink-0 text-xs text-gray-500">skipped</span>
-										{/if}
 									</label>
 								</li>
 							{/each}

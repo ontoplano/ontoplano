@@ -181,30 +181,103 @@ describe('carrying the unfinished forward', () => {
 });
 
 describe('saying what actually happened', () => {
+	/*
+	 * Its own week. Each answer settles a block for good now, so tests that
+	 * share one week run out of blocks and start asserting nothing — which is
+	 * how a suite goes green while the feature is broken.
+	 */
+	const OWN = '2026-08-03';
+
+	beforeAll(() => {
+		s.instances.generateInstances(
+			ctx,
+			new Date(OWN + 'T00:00:00'),
+			new Date('2026-08-10T00:00:00')
+		);
+	});
+
 	test('a block can be marked done from the review', () => {
-		const { loose } = s.review.readWeek(ctx, MONDAY);
+		const { loose } = s.review.readWeek(ctx, OWN);
 		const target = loose[0];
 
-		expect(s.review.resolveLoose(ctx, MONDAY, [target.id], 'done')).toBe(1);
+		expect(s.review.resolveLoose(ctx, OWN, [target.id], 'done')).toBe(1);
 
-		const after = s.review.readWeek(ctx, MONDAY);
+		const after = s.review.readWeek(ctx, OWN);
 		expect(after.loose.some((l) => l.id === target.id)).toBe(false);
 		expect(after.reading.done).toBeGreaterThan(0);
 	});
 
 	test('or skipped, which is a different fact about the week', () => {
-		const { loose } = s.review.readWeek(ctx, MONDAY);
+		const { loose } = s.review.readWeek(ctx, OWN);
 		const target = loose[0];
 
-		expect(s.review.resolveLoose(ctx, MONDAY, [target.id], 'skipped')).toBe(1);
-		expect(s.review.readWeek(ctx, MONDAY).reading.skipped).toBeGreaterThan(0);
+		expect(s.review.resolveLoose(ctx, OWN, [target.id], 'skipped')).toBe(1);
+		expect(s.review.readWeek(ctx, OWN).reading.skipped).toBeGreaterThan(0);
 	});
 
 	test('an id from another account resolves nothing', () => {
-		const { loose } = s.review.readWeek(ctx, MONDAY);
+		const { loose } = s.review.readWeek(ctx, OWN);
 		if (loose.length === 0) return;
 
-		expect(s.review.resolveLoose(theirs, MONDAY, [loose[0].id], 'done')).toBe(0);
-		expect(s.review.readWeek(ctx, MONDAY).loose.some((l) => l.id === loose[0].id)).toBe(true);
+		expect(s.review.resolveLoose(theirs, OWN, [loose[0].id], 'done')).toBe(0);
+		// Still open on the owner's side: the refusal changed nothing.
+		expect(s.review.readWeek(ctx, OWN).loose.some((l) => l.id === loose[0].id)).toBe(true);
+	});
+});
+
+/*
+ * The three answers, and the rule that makes the list finite.
+ *
+ * Its own week, because each of these settles a block and the shared week has
+ * only three.
+ *
+ * Every one of these failed before: the list held everything that was not
+ * done, so a skipped block came back every week and the Skipped button set it
+ * to what it already was. Carrying was worse — it made the todo and left the
+ * block sitting there, so pressing the button twice made two todos out of one
+ * block.
+ */
+describe('every answer takes the block out of the list', () => {
+	/** The week before the shared one, generated from the same slots. */
+	const EARLIER = '2026-08-10';
+
+	beforeAll(() => {
+		s.instances.generateInstances(
+			ctx,
+			new Date(EARLIER + 'T00:00:00'),
+			new Date(MONDAY + 'T00:00:00')
+		);
+	});
+
+	test('carrying it, so it cannot be carried twice', () => {
+		const target = s.review.readWeek(ctx, EARLIER).loose[0];
+		expect(s.review.carryIntoTodos(ctx, EARLIER, [target.id])).toBe(1);
+
+		expect(s.review.readWeek(ctx, EARLIER).loose.map((l) => l.id)).not.toContain(target.id);
+
+		const made = s.todos.listTodos(ctx).length;
+		expect(s.review.carryIntoTodos(ctx, EARLIER, [target.id])).toBe(0);
+		expect(s.todos.listTodos(ctx)).toHaveLength(made);
+	});
+
+	test('skipping it, rather than setting it to what it already is', () => {
+		const target = s.review.readWeek(ctx, EARLIER).loose[0];
+		expect(s.review.resolveLoose(ctx, EARLIER, [target.id], 'skipped')).toBe(1);
+
+		expect(s.review.readWeek(ctx, EARLIER).loose.map((l) => l.id)).not.toContain(target.id);
+		expect(s.review.resolveLoose(ctx, EARLIER, [target.id], 'skipped')).toBe(0);
+	});
+
+	test('and saying it was done after all', () => {
+		const target = s.review.readWeek(ctx, EARLIER).loose[0];
+		expect(s.review.resolveLoose(ctx, EARLIER, [target.id], 'done')).toBe(1);
+
+		const after = s.review.readWeek(ctx, EARLIER);
+		expect(after.loose.map((l) => l.id)).not.toContain(target.id);
+		expect(after.reading.done).toBe(1);
+	});
+
+	test('leaving nothing behind to answer twice', () => {
+		expect(s.review.readWeek(ctx, EARLIER).loose).toEqual([]);
 	});
 });

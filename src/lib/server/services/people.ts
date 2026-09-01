@@ -19,14 +19,42 @@ import { optionalStr, str } from './validate.js';
 
 export const MAX_NAME_LENGTH = 100;
 export const MAX_NOTES_LENGTH = 2000;
+export const MAX_PHONE_LENGTH = 40;
+export const MAX_EMAIL_LENGTH = 200;
 
 export type Person = {
 	id: number;
 	name: string;
 	relationship: Relationship;
+	/** `YYYY-MM-DD`, or `--MM-DD` when the year is not known. Null if unset. */
+	birthday: string | null;
+	phone: string | null;
+	email: string | null;
 	notes: string;
 	mentions: number;
 };
+
+/**
+ * A birthday you may only half know.
+ *
+ * Kept as written rather than as a date: somebody whose birthday is the 14th of
+ * March, year unknown, is the ordinary case in an address book, and a Date
+ * cannot hold that. `--MM-DD` is vCard's answer to the same problem.
+ *
+ * An empty box clears it. Anything that is neither shape is refused rather than
+ * silently stored, so the field can be read back without guessing.
+ */
+function parseBirthday(value: unknown): string | null {
+	if (value === undefined || value === null) return null;
+	const raw = String(value).trim();
+	if (raw === '') return null;
+	if (/^\d{4}-\d{2}-\d{2}$/.test(raw) || /^--\d{2}-\d{2}$/.test(raw)) {
+		const month = Number(raw.slice(-5, -3));
+		const day = Number(raw.slice(-2));
+		if (month >= 1 && month <= 12 && day >= 1 && day <= 31) return raw;
+	}
+	throw new ValidationError('A birthday looks like 1990-03-14, or --03-14 without the year');
+}
 
 export function listPeople(ctx: Ctx): Person[] {
 	const rows = db
@@ -34,6 +62,9 @@ export function listPeople(ctx: Ctx): Person[] {
 			id: people.id,
 			name: people.name,
 			relationship: people.relationship,
+			birthday: people.birthday,
+			phone: people.phone,
+			email: people.email,
 			notes: people.notes,
 			mentions: sql<number>`count(${entryPeople.id})`.as('mentions')
 		})
@@ -68,7 +99,14 @@ export function entriesAbout(ctx: Ctx, personId: number) {
 
 export function createPerson(
 	ctx: Ctx,
-	raw: { name: unknown; relationship?: unknown; notes?: unknown }
+	raw: {
+		name: unknown;
+		relationship?: unknown;
+		birthday?: unknown;
+		phone?: unknown;
+		email?: unknown;
+		notes?: unknown;
+	}
 ): number {
 	const name = str(raw.name, 'name', { max: MAX_NAME_LENGTH });
 	if (personNamed(ctx, name)) throw new ConflictError('Somebody by that name already exists');
@@ -80,6 +118,9 @@ export function createPerson(
 			userId: ctx.userId,
 			name,
 			relationship: parseRelationship(raw.relationship),
+			birthday: parseBirthday(raw.birthday),
+			phone: optionalStr(raw.phone, 'phone', { max: MAX_PHONE_LENGTH }) || null,
+			email: optionalStr(raw.email, 'email', { max: MAX_EMAIL_LENGTH }) || null,
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH })
 		})
 		.run();
@@ -90,7 +131,14 @@ export function createPerson(
 export function updatePerson(
 	ctx: Ctx,
 	id: number,
-	raw: { name: unknown; relationship?: unknown; notes?: unknown }
+	raw: {
+		name: unknown;
+		relationship?: unknown;
+		birthday?: unknown;
+		phone?: unknown;
+		email?: unknown;
+		notes?: unknown;
+	}
 ): void {
 	const name = str(raw.name, 'name', { max: MAX_NAME_LENGTH });
 
@@ -102,6 +150,9 @@ export function updatePerson(
 		.set({
 			name,
 			relationship: parseRelationship(raw.relationship),
+			birthday: parseBirthday(raw.birthday),
+			phone: optionalStr(raw.phone, 'phone', { max: MAX_PHONE_LENGTH }) || null,
+			email: optionalStr(raw.email, 'email', { max: MAX_EMAIL_LENGTH }) || null,
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
 			updatedAt: stamps(ctx).updatedAt
 		})
@@ -156,9 +207,12 @@ export function setEntryPeople(ctx: Ctx, entryId: number, raw: unknown): void {
 	});
 }
 
+/** What a mention chip needs: who, and how you know them. */
+export type Mentioned = Pick<Person, 'id' | 'name' | 'relationship'>;
+
 /** The people each of these entries mentions, keyed by entry id. */
-export function peopleForEntries(ctx: Ctx, entryIds: number[]): Map<number, Person[]> {
-	const byEntry = new Map<number, Person[]>();
+export function peopleForEntries(ctx: Ctx, entryIds: number[]): Map<number, Mentioned[]> {
+	const byEntry = new Map<number, Mentioned[]>();
 	if (entryIds.length === 0) return byEntry;
 
 	const rows = db
@@ -166,8 +220,7 @@ export function peopleForEntries(ctx: Ctx, entryIds: number[]): Map<number, Pers
 			entryId: entryPeople.entryId,
 			id: people.id,
 			name: people.name,
-			relationship: people.relationship,
-			notes: people.notes
+			relationship: people.relationship
 		})
 		.from(entryPeople)
 		.innerJoin(people, eq(entryPeople.personId, people.id))
@@ -177,13 +230,7 @@ export function peopleForEntries(ctx: Ctx, entryIds: number[]): Map<number, Pers
 
 	for (const row of rows) {
 		const list = byEntry.get(row.entryId) ?? [];
-		list.push({
-			id: row.id,
-			name: row.name,
-			relationship: row.relationship,
-			notes: row.notes ?? '',
-			mentions: 0
-		});
+		list.push({ id: row.id, name: row.name, relationship: row.relationship });
 		byEntry.set(row.entryId, list);
 	}
 

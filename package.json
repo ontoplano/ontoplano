@@ -1,6 +1,6 @@
 {
 	"name": "ontoplano",
-	"version": "0.15.0",
+	"version": "0.16.0",
 	"license": "AGPL-3.0-or-later",
 	"scripts": {
 		"dev": "vite dev",
