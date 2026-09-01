@@ -33,6 +33,13 @@ export type Room = {
  * preferences said. Anything that is a room in one of them has to be a room in
  * the other, and `sections-nav.test.ts` is what keeps that true.
  *
+ * **Home is not on this list.** The wordmark in the corner of the header is the
+ * way home, the way it is in every app with a logo in its corner, and the pie
+ * has never offered one. A Home tab beside that wordmark is the same door drawn
+ * twice — and because a stored order does not mention rooms it has never heard
+ * of, it drifted to the far end of the bar, which is the one place a way home
+ * should never be.
+ *
  * `section` is which room's colour and glyph it belongs to; `key` is its own
  * identity, because Notebooks and People live in the Diary section and are not
  * the Diary.
@@ -49,7 +56,6 @@ export type NavPlace = {
 };
 
 export const NAV_PLACES: NavPlace[] = [
-	{ key: 'home', label: 'Home', section: 'home', icon: 'home', href: '/' },
 	{ key: 'planner', label: 'Planner', section: 'planner', icon: 'planner', href: '/planner/plan' },
 	{ key: 'goals', label: 'Goals', section: 'goals', icon: 'goals', href: '/goals', hide: 'goals' },
 	{ key: 'diary', label: 'Diary', section: 'diary', icon: 'diary', href: '/diary', hide: 'diary' },

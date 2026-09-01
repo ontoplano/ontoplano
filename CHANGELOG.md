@@ -10,6 +10,12 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.34.1 — 2026-09-01
+
+- **No more Home tab.** The ontoplano wordmark in the corner has always been
+  the way back, and the tab beside it was the same door drawn twice — one that
+  a saved menu order had quietly pushed to the far end of the bar.
+
 ## 0.34.0 — 2026-09-01
 
 - **Google Keep comes in too.** It is a different product from Google Tasks and

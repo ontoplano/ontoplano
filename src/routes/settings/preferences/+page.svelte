@@ -210,9 +210,9 @@
 		identical. One row per room, holding its order, whether it is shown, and
 		its colour.
 
-		Home is not here: it is always on, the bar carries it on every screen,
-		and it is not on the wheel. A row whose every control is disabled teaches
-		you that the controls do not work.
+		Home is not here, because Home is not a room: the wordmark in the header
+		and the house in the phone bar are the way back. A row whose every
+		control is disabled teaches you that the controls do not work.
 	-->
 	<section class="border border-gray-200 bg-white p-6 shadow-card">
 		<div class="mb-4">
@@ -324,7 +324,7 @@
 				{/if}
 			</div>
 			<p class="text-xs text-gray-500">
-				Pick dark colours: the labels on the wheel are white. Home and the planner are always on.
+				Pick dark colours: the labels on the wheel are white. The planner is always on.
 			</p>
 		</form>
 	</section>

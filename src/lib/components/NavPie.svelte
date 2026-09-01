@@ -82,13 +82,13 @@
 	 * `$lib/radial.ts`; the order somebody sets in Preferences is that order,
 	 * so "first in the list" and "first under the thumb" are the same sentence.
 	 *
-	 * No Home wedge: the navbar and the phone bar both carry Home as a plain
-	 * button, and a pie slot spent on "go to the start" is a slot a real room
-	 * could have used.
+	 * No Home wedge, and no Home tab either: the wordmark in the header and the
+	 * house in the phone bar are the way back, and a slot spent on "go to the
+	 * start" is a slot a real room could have used.
 	 */
 	const wedges = $derived(
 		placesFor(NAV_PLACES, { order, colors })
-			.filter((r) => r.key !== 'home' && !(r.hide && hidden.includes(r.hide)))
+			.filter((r) => !(r.hide && hidden.includes(r.hide)))
 			.map((r) => ({ key: r.key, label: r.label, icon: r.icon, color: r.accent }))
 	);
 

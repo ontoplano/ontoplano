@@ -15,10 +15,8 @@ import { HIDEABLE_SECTIONS } from './sections';
  * navigation appears in both renderings or the suite fails.
  */
 describe('the places the app can take you', () => {
-	it('gives the pie every place the bar has, except Home', () => {
-		const bar = NAV_PLACES.filter((p) => p.key !== 'home').map((p) => p.key);
-		const pie = ROOMS.filter((r) => r.key !== 'home').map((r) => r.key);
-		expect(pie).toEqual(bar);
+	it('gives the pie every place the bar has', () => {
+		expect(ROOMS.map((r) => r.key)).toEqual(NAV_PLACES.map((p) => p.key));
 	});
 
 	it('has Notebooks and People among them', () => {
@@ -46,7 +44,10 @@ describe('the places the app can take you', () => {
 		}
 	});
 
-	it('keeps Home always on — it is the way back', () => {
-		expect(NAV_PLACES.find((p) => p.key === 'home')?.hide).toBeUndefined();
+	it('has no Home among them — the wordmark is the way back', () => {
+		// It was here, and a stored order that predated it pushed it to the far
+		// end of the bar: the way home, last, beside the wordmark that already
+		// went there. The header logo and the phone bar's house are the door.
+		expect(NAV_PLACES.find((p) => p.key === 'home')).toBeUndefined();
 	});
 });

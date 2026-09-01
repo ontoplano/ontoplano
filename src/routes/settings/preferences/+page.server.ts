@@ -72,9 +72,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 		 * eight things three times and asking a different question of each. One
 		 * row per room now, and the row holds all three answers.
 		 *
-		 * Home is not in it. It is always on, it is not on the wheel (the bar
-		 * carries it on every screen), and a row whose every control is disabled
-		 * is a row that only teaches you the controls do not work.
+		 * Home is not in it, because Home is not a room: the wordmark in the
+		 * header and the house in the phone bar are the way back, and a row
+		 * whose every control is disabled only teaches you the controls do not
+		 * work.
 		 *
 		 * `ownsColor` is which row draws the colour picker. People and Notebooks
 		 * live in the Diary and wear its colour, so they show it and cannot
@@ -86,29 +87,27 @@ export const load: PageServerLoad = async ({ locals }) => {
 			return placesFor(NAV_PLACES, {
 				order: getNavOrder(ctx.userId),
 				colors: getSectionColors(ctx.userId)
-			})
-				.filter((p) => p.key !== 'home')
-				.map((p) => {
-					const ownsColor = !seen.has(p.section);
-					seen.add(p.section);
-					return {
-						key: p.key,
-						label: p.label,
-						section: p.section,
-						accent: p.accent,
-						ownsColor,
-						/** Whose colour this row follows, when it is not its own. */
-						colorFrom: ownsColor ? null : SECTIONS[p.section].label,
-						/**
-						 * The preference that puts this room away, if it has one.
-						 * Not the same as its key — Recipes is the Kitchen section's
-						 * room and hides under `recipes` — so it is carried rather
-						 * than derived.
-						 */
-						hide: p.hide ?? null,
-						hidden: p.hide !== undefined && hidden.includes(p.hide)
-					};
-				});
+			}).map((p) => {
+				const ownsColor = !seen.has(p.section);
+				seen.add(p.section);
+				return {
+					key: p.key,
+					label: p.label,
+					section: p.section,
+					accent: p.accent,
+					ownsColor,
+					/** Whose colour this row follows, when it is not its own. */
+					colorFrom: ownsColor ? null : SECTIONS[p.section].label,
+					/**
+					 * The preference that puts this room away, if it has one.
+					 * Not the same as its key — Recipes is the Kitchen section's
+					 * room and hides under `recipes` — so it is carried rather
+					 * than derived.
+					 */
+					hide: p.hide ?? null,
+					hidden: p.hide !== undefined && hidden.includes(p.hide)
+				};
+			});
 		})(),
 		/** Whether anything has been changed from what the app ships with. */
 		menuIsDefault:
