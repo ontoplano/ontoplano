@@ -22,6 +22,13 @@ agreement of everybody who has ever contributed, which in practice means it
 will not happen. That is the point: the guarantee is structural rather than a
 line in a README that a new owner could edit.
 
+## What is missing
+
+`ROADMAP.md` is the list of things this app intends to do and does not do yet,
+with the constraints that are already decided written down beside each. If you
+are looking for something to build, start there rather than from a blank page —
+and open an issue saying which one before you write much of it.
+
 ## Run it
 
 ```sh
