@@ -22,12 +22,15 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
 	const nav = page.locator('nav');
 	await expect(nav.getByRole('link', { name: 'Shopping' })).toBeVisible();
 
-	// Put it away.
+	// Put it away. Order, colour and this are one list now, so it is one form.
 	await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
-	const sections = page.locator('section', { hasText: 'Home and the planner are always on' });
-	await sections.getByLabel('Shopping').uncheck();
-	await sections.getByRole('button', { name: 'Save sections' }).click();
-	await expect(page.getByText('Sections saved.')).toBeVisible();
+	const menu = page.locator('form[action="?/saveMenu"]');
+	const shopping = menu.locator('div').filter({
+		has: page.getByRole('button', { name: 'Move Shopping up' })
+	});
+	await shopping.getByRole('button', { name: 'Hide' }).click();
+	await menu.getByRole('button', { name: 'Save menu' }).click();
+	await expect(page.getByText('Menu saved.')).toBeVisible();
 
 	// Gone from the navbar…
 	await page.goto('/', { waitUntil: 'networkidle' });
@@ -40,11 +43,18 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
 	await expect(page).toHaveURL(/\/shopping/);
 	await expect(page.getByRole('heading', { name: /shopping/i }).first()).toBeVisible();
 
-	// And the toggle comes back on, bringing the tab with it.
+	// And it comes back on, bringing the tab with it.
 	await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
-	await sections.getByLabel('Shopping').check();
-	await sections.getByRole('button', { name: 'Save sections' }).click();
-	await expect(page.getByText('Sections saved.')).toBeVisible();
+	await page
+		.locator('form[action="?/saveMenu"]')
+		.getByRole('button', { name: 'Show' })
+		.first()
+		.click();
+	await page
+		.locator('form[action="?/saveMenu"]')
+		.getByRole('button', { name: 'Save menu' })
+		.click();
+	await expect(page.getByText('Menu saved.')).toBeVisible();
 	await page.goto('/', { waitUntil: 'networkidle' });
 	await expect(nav.getByRole('link', { name: 'Shopping' })).toBeVisible();
 });
@@ -54,38 +64,34 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
  *
  * SvelteKit's `enhance` calls `form.reset()` on a successful submit and then
  * awaits `invalidateAll()`. For a form you fill in that is right — the fields
- * clear. For one whose boxes are drawn from stored state it is wrong: Svelte
- * sets `checked` as a property and never writes the attribute, so `reset()`
- * returns every box to "unchecked" and they stay that way until the reload
- * lands. Over a real network that is long enough to read as "it cleared my
- * settings", which is how this was reported.
+ * clear. For one whose state is drawn from what is stored it is wrong: it
+ * returns every control to its markup default and they stay that way until the
+ * reload lands. Over a real network that is long enough to read as "it cleared
+ * my settings", which is how this was reported.
  *
  * The reload is blocked rather than delayed, so the assertion is about the
  * mechanism and not about a race: with the reset gone there is nothing to put
- * back, and the boxes are simply still right.
+ * back, and the list is simply still right.
  */
-test('saving the sections does not empty the boxes', async ({ page }) => {
+test('saving the menu does not empty the list', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 800 });
 	await register(page, `sections-keep-${Date.now()}@test.invalid`);
 	await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
 
-	const sections = page.locator('section', { hasText: 'Home and the planner are always on' });
-	await sections.getByLabel('Shopping').uncheck();
+	const menu = page.locator('form[action="?/saveMenu"]');
+	const shopping = menu.locator('div').filter({
+		has: page.getByRole('button', { name: 'Move Shopping up' })
+	});
+	await shopping.getByRole('button', { name: 'Hide' }).click();
 
 	// Nothing may repaint the form after the submit — no data reload, so no
 	// re-render to hide a reset behind.
 	await page.route('**/__data.json*', (route) => route.abort());
-	await sections.getByRole('button', { name: 'Save sections' }).click();
-	await page.waitForResponse((r) => r.url().includes('setSections'));
+	await menu.getByRole('button', { name: 'Save menu' }).click();
+	await page.waitForResponse((r) => r.url().includes('saveMenu'));
 	await page.waitForTimeout(500);
 
-	await expect(sections.getByLabel('Recipes')).toBeChecked();
-	await expect(sections.getByLabel('Diary')).toBeChecked();
-	await expect(sections.getByLabel('Shopping')).not.toBeChecked();
-
-	// And the server kept what the screen is showing.
-	await page.unroute('**/__data.json*');
-	await page.reload({ waitUntil: 'networkidle' });
-	await expect(sections.getByLabel('Shopping')).not.toBeChecked();
-	await expect(sections.getByLabel('Recipes')).toBeChecked();
+	// Still put away, and every other room still listed.
+	await expect(menu.getByRole('button', { name: 'Show' })).toHaveCount(1);
+	await expect(menu.getByRole('button', { name: /^Move .* up$/ })).toHaveCount(8);
 });
