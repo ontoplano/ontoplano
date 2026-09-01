@@ -340,6 +340,7 @@
 		formWeekday = slot.weekday;
 		slotMode = slot.mode as 'category' | 'activity';
 		activityChoice = defaultActivityChoice(slot.activityId);
+		remindLead = slot.remindLeadMinutes ?? 0;
 		openForm();
 	}
 
@@ -355,6 +356,7 @@
 		formDate = exc.date;
 		slotMode = exc.mode as 'category' | 'activity';
 		activityChoice = defaultActivityChoice(exc.activityId);
+		remindLead = exc.remindLeadMinutes ?? 0;
 		openForm();
 	}
 
@@ -370,6 +372,7 @@
 		formDate = selectedDateStr();
 		slotMode = 'activity';
 		activityChoice = defaultActivityChoice(null);
+		remindLead = 0;
 		openForm();
 	}
 
@@ -1180,6 +1183,26 @@
 	// The block currently open in the form, whichever kind it is. Only the fields
 	// both kinds share are read through this; the day/date field is rendered from
 	// `formWeekday` / `formDate` instead.
+	/**
+	 * How long before this block starts to be reminded, while the form is open.
+	 *
+	 * Its own state rather than a plain `value=` because the chips write into
+	 * it: they are shortcuts for typing a number, not a separate control with a
+	 * separate answer. Reset from the block whenever the editor opens on a
+	 * different one.
+	 */
+	let remindLead: number | string = $state(0);
+
+	/** "30 min", "1 h", "Not at all" — the chips, in the fewest words. */
+	function leadLabel(minutes: number): string {
+		if (minutes === 0) return 'Not at all';
+		if (minutes < 60) return `${minutes} min`;
+		if (minutes === 1440) return 'A day';
+		return minutes % 60 === 0
+			? `${minutes / 60} h`
+			: `${Math.floor(minutes / 60)}h ${minutes % 60}`;
+	}
+
 	const editingBlock = $derived.by((): Slot | Exceptional | null => {
 		if (editingBlockId === null) return null;
 		return editingKind === 'slot' ? findSlot(editingBlockId) : findExceptional(editingBlockId);
@@ -2466,17 +2489,47 @@
 						gym" — said once, applying to every occurrence of it. Each
 						occurrence gets its own nudge as it appears.
 					-->
-					<Field label="Remind me" span={12} hint="Before it starts. Every time it comes round.">
-						<select name="remindLeadMinutes" class="select">
-							{#each [[0, 'Not at all'], [5, '5 minutes before'], [10, '10 minutes before'], [15, '15 minutes before'], [30, '30 minutes before'], [60, '1 hour before'], [120, '2 hours before'], [1440, 'A day before']] as [minutes, label] (minutes)}
-								<option
-									value={minutes}
-									selected={(editingBlock?.remindLeadMinutes ?? 0) === minutes}
-								>
-									{label}
-								</option>
-							{/each}
-						</select>
+					<Field
+						label="Remind me"
+						span={12}
+						hint="Minutes before it starts. Every time it comes round. Empty or 0 is not at all."
+					>
+						<!--
+							A list and a box, not one or the other.
+
+							The list is what anybody picks nine times out of ten, and
+							hunting for "10" in a number field is worse than tapping it.
+							But "the usual few" is a guess about somebody else's life —
+							45 minutes for a commute, three hours for a flight — so the
+							list writes into the box rather than replacing it, and the
+							box is what is submitted.
+						-->
+						<div class="flex flex-wrap items-center gap-2">
+							<input
+								autocomplete="off"
+								name="remindLeadMinutes"
+								type="number"
+								min="0"
+								max="1440"
+								step="5"
+								bind:value={remindLead}
+								placeholder="0"
+								class="input tabular w-28"
+								aria-label="Minutes before it starts"
+							/>
+							<div class="flex flex-wrap gap-1">
+								{#each [0, 5, 10, 30, 60, 1440] as minutes (minutes)}
+									<button
+										type="button"
+										class="chip"
+										aria-pressed={Number(remindLead) === minutes}
+										onclick={() => (remindLead = minutes)}
+									>
+										{leadLabel(minutes)}
+									</button>
+								{/each}
+							</div>
+						</div>
 					</Field>
 				</FormGrid>
 

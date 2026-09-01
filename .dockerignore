@@ -1,50 +1,54 @@
-# What must never reach the image.
+# What reaches the image: an allowlist, not a list of things to keep out.
 #
-# The build stage does `COPY . .`, and this checkout has more in it than the
-# app: the deployment repo, the private notes, the marketing site, the fleet.
-# Without this file every one of them is baked into a layer of an image that is
-# then pushed to a public registry — where a deleted file in a later layer is
-# still readable in the earlier one. This is the file that stops that.
+# The build does `COPY . .`, and a published image is permanent, public, and
+# readable layer by layer — a file deleted in a later layer is still there in
+# the earlier one. So the rule is inverted: **everything is excluded**, and the
+# handful of paths the build actually needs are named back in.
 #
-# Everything here is either private, enormous, or rebuilt inside the image
-# anyway.
+# Two reasons it is this way round rather than a list of exclusions.
+#
+# The first is that a denylist fails open. Anything added to the checkout later
+# — a directory, a dump, a key — ships until somebody remembers to exclude it,
+# and the failure is silent and public.
+#
+# The second is that a denylist has to *name* what it is hiding, and this file
+# ships inside the image and in the repository. A list of the private things
+# beside this checkout is itself the leak: it tells a reader exactly what to go
+# looking for. An allowlist names only what is already public.
+#
+# `make docker-image` checks both ends: that nothing private matches the
+# allowlist, and then that the built image really does not contain it.
 
-# The private siblings. Ignored in .gitignore too; a published image is a
-# second way for them to leave the machine.
-/ontoplano-server/
-/ontoplano-site/
-/ontoplano-development/
-/ontoplano-marketing/
-/vboxes/
-/temp/
-/notes/
-TO-REVIEW.md
+*
 
-# Secrets and local state.
-.env
-.env.*
-!.env.example
-*.db
-*.db-shm
-*.db-wal
-/android-twa/android.keystore
-/android-twa/android.keystore.pass
+# The app.
+!src/
+!static/
+!drizzle/
+!scripts/
+!docs/
 
-# Rebuilt in the image, or irrelevant to it.
-node_modules
-/build
-/build-docs
-/.svelte-kit
-/coverage
-/test-results
-/playwright-report
-/android
-/android-twa
-/e2e
-/tests
-/.git
-/.github
-/.claude
-/.claude-docker
-/.opencode
-/.vscode
+# What builds it.
+!package.json
+!yarn.lock
+!.npmrc
+!svelte.config.js
+!vite.config.ts
+!tsconfig.json
+!drizzle.config.ts
+!eslint.config.js
+!.prettierrc
+!.prettierignore
+
+# What the entrypoint needs, and what a reader is owed.
+!docker-entrypoint.sh
+!README.md
+!LICENSE
+!CHANGELOG.md
+!CONTRIBUTING.md
+!ROADMAP.md
+
+# Re-excluded inside the allowed directories: node_modules under any of them
+# would be this machine's, compiled against this machine's Node.
+**/node_modules
+**/.DS_Store

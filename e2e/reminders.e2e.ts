@@ -82,15 +82,22 @@ test('a lead set on a block reminds about every occurrence', async ({ page }) =>
 
 	const form = page.locator('dialog[open]');
 	await expect(form.getByText('Remind me')).toBeVisible();
-	await form.locator('select[name=remindLeadMinutes]').selectOption('30');
+
+	// A value the chips do not offer, because the chips are shortcuts for
+	// typing a number rather than the only numbers there are.
+	await form.locator('input[name=remindLeadMinutes]').fill('45');
 	await form.getByRole('button', { name: 'Save' }).first().click();
 	await page.waitForTimeout(900);
 
-	// Reopened, it still says thirty — the lead is on the block, not on one
+	// Reopened, it still says forty-five — the lead is on the block, not on one
 	// occurrence, so it has to survive the round trip.
 	await page.reload({ waitUntil: 'networkidle' });
 	await page.locator('.ec-event').first().click();
-	await expect(page.locator('dialog[open] select[name=remindLeadMinutes]')).toHaveValue('30');
+	await expect(page.locator('dialog[open] input[name=remindLeadMinutes]')).toHaveValue('45');
+
+	// And a chip writes into the same box rather than being a second answer.
+	await page.locator('dialog[open]').getByRole('button', { name: '10 min' }).click();
+	await expect(page.locator('dialog[open] input[name=remindLeadMinutes]')).toHaveValue('10');
 });
 
 /**

@@ -10,6 +10,19 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.31.0 — 2026-09-01
+
+- **A reminder can be any number of minutes before a block**, typed, with the
+  usual few as one-tap shortcuts that write into the same box. Six fixed
+  choices were a guess about somebody else's life — 45 minutes for a commute,
+  three hours for a flight.
+- `make dev-docs` and `make dev-site` serve the wiki and the marketing site
+  locally beside `make dev`, and `make dev-all` runs the three together. All of
+  it needs nothing but this checkout.
+- Restoring an account is checked against the whole seeded database now, so a
+  table that stops travelling fails the build instead of being noticed a year
+  later by somebody missing a year of habits.
+
 ## 0.30.1 — 2026-09-01
 
 - Connecting the widget shows the key as well as sending it, and the widget's

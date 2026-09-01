@@ -54,7 +54,7 @@ import { USER_TABLES, type AccountExport } from './account.js';
  * Each one is dropped on the way in, and the reason is the comment beside it.
  * Anything not named here travels.
  */
-const NOT_PORTABLE: Record<string, string> = {
+export const NOT_PORTABLE: Record<string, string> = {
 	// What somebody is paying, and to whom. An import must never be a way to
 	// arrive on an instance already subscribed.
 	subscriptions: 'billing belongs to the instance that took the money',

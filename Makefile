@@ -18,7 +18,9 @@ help:
 	@printf '\033[1montoplano\033[0m — bare `make` only prints this.\n'
 	@echo
 	@printf '\033[1mdevelop\033[0m\n'
-	@echo "  dev / dev-stop / dev-logs   the dev server, as a user service (dev-fg holds the terminal)"
+	@echo "  dev / dev-stop / dev-logs   the app, as a user service (dev-fg holds the terminal)"
+	@echo "  dev-docs · dev-site         the wiki and the marketing site, served here"
+	@echo "  dev-all                     all three at once"
 	@echo "  lint · format               prettier+eslint, prettier --write"
 	@echo "  test                        the Playwright e2e suite (yarn test for units)"
 	@echo "  icons                       redraw every icon from src/lib/logo/mark.png"
@@ -48,12 +50,12 @@ help:
 	@if [ -f local.mk ]; then echo; \
 		printf '\033[1mthis instance (local.mk)\033[0m\n'; \
 		echo "  deploy [-app|-site|-docs|-demo]   ship it; bare deploy is all four"; \
-		echo "  deploy-dev [-app|-site|-docs]     the dev instance (dev-app, dev-site, dev-docs)"; \
+		echo "  deploy-staging [-app|-site|-docs]  the staging instance on the box"; \
 		echo "  restart [-app|-site|-docs|-demo]  without shipping anything"; \
-		echo "  logs-app · logs-dev · setup · up  see local.mk for the rest"; \
+		echo "  logs-app · logs-staging · setup   see local.mk for the rest"; \
 	fi
 
-.PHONY: help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
+.PHONY: help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -95,6 +97,62 @@ dev:
 dev-stop:
 	@systemctl --user stop ontoplano-dev
 	@echo "stopped."
+
+# ─── The other two things this project builds, locally ───────────────────────
+#
+# `make dev` is the app. These are its siblings: the documentation site and the
+# marketing site, served here so a change to either can be looked at before it
+# is anywhere near a box.
+#
+# Everything here is local and needs nothing but this checkout — no ssh, no
+# server, no DNS. That is why they live in this Makefile rather than in the
+# deployment one: a contributor has to be able to see what they changed.
+
+# The ports the two previews bind. Not 1493, which is the app's.
+DOCS_PORT ?= 1494
+SITE_PORT ?= 1495
+# Where the marketing site's checkout is, if it is here at all.
+SITE_SRC_LOCAL ?= ontoplano-site
+PYTHON ?= python3
+
+# `dev` is the app; this is the name to type when you mean it by contrast.
+dev-app: dev
+
+# The wiki, generated from the code and served as the static site it becomes.
+# Regenerated first, every time: the whole point of the wiki is that it cannot
+# drift from the code, and previewing a stale copy would be exactly that drift.
+dev-docs:
+	@yarn -s docs
+	@yarn -s docs:site
+	@echo "documentation at http://localhost:$(DOCS_PORT) — Ctrl-C to stop"
+	@cd build-docs && $(PYTHON) -m http.server $(DOCS_PORT) --bind 127.0.0.1
+
+# The marketing site, which is a separate repository. Absent from most
+# checkouts, and that is not an error — it is a different audience and a
+# different repo, so this says so and stops.
+dev-site:
+	@if [ ! -d "$(SITE_SRC_LOCAL)" ]; then \
+		echo "No site checkout at $(SITE_SRC_LOCAL)."; \
+		echo "ontoplano.com is a separate repository; this one is the app."; \
+		echo "If you have it elsewhere:  make dev-site SITE_SRC_LOCAL=../elsewhere"; \
+		exit 1; \
+	fi
+	@$(MAKE) -s -C $(SITE_SRC_LOCAL) preview PREVIEW_PORT=$(SITE_PORT)
+
+# All of them, for a change that shows up in more than one. The app is a user
+# service and returns; the other two each hold a terminal, so they run in the
+# background here and Ctrl-C stops both.
+dev-all: dev
+	@echo
+	@echo "  app     http://localhost:1493"
+	@echo "  docs    http://localhost:$(DOCS_PORT)"
+	@if [ -d "$(SITE_SRC_LOCAL)" ]; then echo "  site    http://localhost:$(SITE_PORT)"; fi
+	@echo
+	@echo "Ctrl-C stops the docs and the site; make dev-stop stops the app."
+	@trap 'kill 0' INT TERM; \
+	$(MAKE) -s dev-docs & \
+	if [ -d "$(SITE_SRC_LOCAL)" ]; then $(MAKE) -s dev-site & fi; \
+	wait
 
 dev-logs:
 	journalctl --user -u ontoplano-dev -f
@@ -267,50 +325,59 @@ docker-up:
 docker-down:
 	docker compose down
 
-# What must not end up inside a public image.
+# What ends up inside a public image, checked twice.
 #
-# The build does `COPY . .`, and this checkout holds four private repositories,
-# a signing keystore and an env file. `.dockerignore` is what keeps them out —
-# and a published image is permanent, public and readable layer by layer, so a
-# file deleted in a later layer is still there in the earlier one. There is no
-# taking it back.
+# A published image is permanent, public, and readable layer by layer — a file
+# deleted in a later layer is still there in the earlier one. There is no taking
+# it back, so this is checked before every push and the two checks look at
+# different things:
 #
-# So it is checked twice, and the second check is the one that counts:
+#   _docker-safe    that `.dockerignore` is still an ALLOWLIST — the first line
+#                   being `*`. A denylist fails open: anything added to the
+#                   checkout later ships until somebody remembers to exclude it.
+#   _docker-audit   what is actually inside the built image, compared against
+#                   the paths that are meant to be. An ignore rule that reads
+#                   fine and matches nothing is exactly the bug the first check
+#                   cannot see, and this one can.
 #
-#   _docker-safe   reads .dockerignore and says which names are missing. Fast,
-#                  and catches the mistake before a build is spent on it.
-#   _docker-audit  looks inside the image that was actually built. An ignore
-#                  rule that reads fine and matches nothing is exactly the bug
-#                  the first check cannot see, and this one can.
-#
-# `docker-publish` runs both, because the cost of being wrong is unbounded.
-DOCKER_MUST_IGNORE = ontoplano-server ontoplano-site ontoplano-development \
-	ontoplano-marketing vboxes .env android-twa
+# Both are stated as what *should* be there rather than as what should not.
+# A list of things to keep out has to name them, and this Makefile is public —
+# naming the private things beside this checkout would itself be the leak.
+DOCKER_ALLOWED = src static drizzle scripts docs build node_modules 	package.json yarn.lock .npmrc svelte.config.js vite.config.ts tsconfig.json 	drizzle.config.ts eslint.config.js .prettierrc .prettierignore 	README.md LICENSE CHANGELOG.md CONTRIBUTING.md ROADMAP.md
 
 _docker-safe:
 	@[ -f .dockerignore ] || { $(NO) ".dockerignore is missing — refusing to build an image"; exit 1; }
-	@fail=0; \
-	for path in $(DOCKER_MUST_IGNORE); do \
-		[ -e "$$path" ] || continue; \
-		if grep -qE "^/?$$path/?$$" .dockerignore; then \
-			$(OK) "$$path is ignored"; \
-		else \
-			$(NO) "$$path is NOT in .dockerignore"; fail=1; \
-		fi; \
-	done; \
-	[ $$fail = 0 ] || { echo; echo "Refusing to build: add those to .dockerignore first."; exit 1; }
+	@# The first rule that is not a comment has to be `*`. Anything else means
+	@# somebody turned it back into a denylist, which fails open.
+	@first=$$(grep -vE '^\s*(#|$$)' .dockerignore | head -1); \
+	if [ "$$first" != '*' ]; then \
+		$(NO) ".dockerignore is not an allowlist (its first rule is '$$first')"; \
+		echo "  It must start with '*' and name back only what the build needs."; \
+		echo "  A list of exclusions ships whatever nobody remembered to exclude."; \
+		exit 1; \
+	fi
+	@$(OK) ".dockerignore is an allowlist"
 
 # The built image, opened and looked in. Nothing here is about intent.
 _docker-audit:
-	@fail=0; \
-	for path in $(DOCKER_MUST_IGNORE); do \
-		if docker run --rm --entrypoint /bin/sh $(IMAGE):$(IMAGE_VERSION) \
-			-c "test -e /app/$$path" 2>/dev/null; then \
-			$(NO) "/app/$$path is INSIDE the image"; fail=1; \
-		fi; \
+	@found=$$(docker run --rm --entrypoint /bin/sh $(IMAGE):$(IMAGE_VERSION) \
+		-c 'ls -A /app' 2>/dev/null); \
+	unexpected=''; \
+	for entry in $$found; do \
+		case " $(DOCKER_ALLOWED) " in \
+			*" $$entry "*) ;; \
+			*) unexpected="$$unexpected $$entry" ;; \
+		esac; \
 	done; \
-	[ $$fail = 0 ] || { echo; echo "Refusing to publish: that would be public forever."; exit 1; }
-	@$(OK) "nothing private is in the image"
+	if [ -n "$$unexpected" ]; then \
+		$(NO) "the image contains things it should not:"; \
+		for entry in $$unexpected; do echo "      /app/$$entry"; done; \
+		echo; \
+		echo "  Either .dockerignore let them through, or they belong in"; \
+		echo "  DOCKER_ALLOWED. Do not publish until you know which."; \
+		exit 1; \
+	fi
+	@$(OK) "the image contains only what it should"
 
 # The image, built here and sent nowhere. What to run before publishing, and
 # what to run to try the thing a self-hoster will actually get.

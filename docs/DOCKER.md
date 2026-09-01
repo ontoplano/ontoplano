@@ -142,11 +142,13 @@ make docker-publish IMAGE=ghcr.io/you/ontoplano
 
 **Two things to check before the first push:**
 
-- `.dockerignore` is what keeps the private sibling repositories, the keystore
-  and the `.env` out of the image. A published image is a permanent, public,
-  layer-by-layer copy of whatever the build could see, and a file deleted in a
-  later layer is still readable in the earlier one. Read that file before
-  pushing something with a new directory in the checkout.
+- **`.dockerignore` is an allowlist**, and it has to stay one. The first rule is
+  `*` — everything excluded — and the build's inputs are named back in. A list
+  of exclusions fails open: anything added to the checkout later ships until
+  somebody remembers to exclude it, and a published image is a permanent,
+  public, layer-by-layer copy of whatever the build could see. `make
+docker-image` refuses to build if that first rule changes, and then opens the
+  image it built and refuses to publish if anything unexpected is inside it.
 - The version in `package.json` is the tag. Bump it in the same commit as the
   work, as always — a second push of the same version overwrites a tag people
   may already be pinning.
