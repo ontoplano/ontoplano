@@ -68,6 +68,22 @@ secret the delivery is signed with, so the receiver can tell it is really us.
 A subscription that keeps failing is disabled rather than retried forever, and
 says so on the settings page where it can be revived.
 
+## Two plugins to read
+
+Both are in `examples/`, both are plain Node with no dependencies, and neither
+runs anything inside anybody's server.
+
+**`onto-morning.mjs`** is the short one, and the place to start: a single token
+holding one scope, one GET of `/api/v1/today`, and a message to ntfy or Telegram
+from a crontab line. Around 150 lines including the comments. It is what most
+plugins look like.
+
+**`onto-household.mjs`** is the two-way one: it keeps two accounts' shopping
+lists equal over webhooks — add milk on one phone and it is on the other, tick
+it in the aisle and it is bought on both — with signature verification and
+idempotent subscription. The two accounts can be on _different instances_, which
+is the thing no shared-table design can offer.
+
 ## The one request the server makes for you
 
 Importing a recipe from a link is the only place ontoplano fetches something on

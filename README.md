@@ -62,6 +62,10 @@ Self-hosted, one SQLite file, no account anywhere but your own.
   accounts' shopping lists equal over webhooks: add milk on one phone, it is
   on both; tick it in the aisle, it is bought on both. Works across two
   separate instances.
+- **Today, pushed to you** — `examples/onto-morning.mjs` is one token, one GET
+  and one message: your blocks, habits and carried-over tasks to ntfy or
+  Telegram from a crontab line. It is the shortest thing you can write against
+  the API, and the place to start reading.
 - **Phone** — an installable PWA, and an Android app that wraps it
   (`docs/ANDROID.md`).
 - **Telegram** — a bot for the plan, the list and quick capture, on a

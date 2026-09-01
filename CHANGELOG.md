@@ -10,6 +10,13 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.33.0 — 2026-09-01
+
+- **A second example plugin**, and the one to read first: `onto-morning.mjs`
+  sends today's blocks, the habits still due and anything carried over to ntfy
+  or Telegram, from one crontab line. One token holding one scope, one GET, no
+  dependencies and nothing running the other twenty-three hours.
+
 ## 0.32.1 — 2026-09-01
 
 - The keyboard no longer hides the Save button. A form on a phone is a
