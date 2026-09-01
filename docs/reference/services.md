@@ -1098,6 +1098,31 @@ RFC 3339 stamp of which only the date half means anything: Google stores a due
 date as midnight UTC, so reading the time would move half the world's tasks a
 day.
 
+#### `parseGoogleKeep(text)`
+
+Google Keep, which is not Google Tasks and never was.
+
+Takeout writes Keep as **one JSON file per note**, which is the awkward part:
+a person with four hundred notes has four hundred files. So the page reads
+however many were chosen and hands this a JSON array of them; a single note
+on its own is accepted too, because that is what one file holds.
+
+What a note becomes:
+
+- A checklist note (`listContent`) becomes one todo per line, which is what
+  its ticks already were. The note's title, if it has one, goes in the notes
+  of each so the line keeps its context.
+- A text note becomes one todo: the title if there is one, the first line
+  otherwise, and the body in the notes.
+
+Todos, and not diary entries or ideas, for the same reason the other two
+imports land there: it is one shape, in one notebook, and deleting that
+notebook undoes the whole thing. Sorting somebody's four hundred notes into
+the right rooms of a new app is a job for them, not for a parser guessing.
+
+Trashed notes are never imported. Archived ones are, because archived in
+Keep means "dealt with but keep it", which is not the same as deleted.
+
 #### `importTasks(ctx, input)`
 
 Read the file, then write what it said.

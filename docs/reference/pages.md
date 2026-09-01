@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**37 pages, 155 actions.**
+**38 pages, 155 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -43,7 +43,8 @@ write surface for everything else; both end up calling the same
 | `/planner/review`               | `saveLines`, `keepStale`, `completeStale`, `dropStale`, `resolve`, `carry`                                                                                                                                                                                                                                                                                             |
 | `/planner/todo`                 | `create`, `update`, `setStatus`, `schedule`, `delete`, `delegate`                                                                                                                                                                                                                                                                                                      |
 | `/search`                       | —                                                                                                                                                                                                                                                                                                                                                                      |
-| `/settings/account`             | `importTasks`, `importAccount`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `delete`                                                                                                                                                                                                                                                        |
+| `/settings/account`             | `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `delete`                                                                                                                                                                                                                                                                                        |
+| `/settings/account/import`      | `importTasks`, `importAccount`                                                                                                                                                                                                                                                                                                                                         |
 | `/settings/billing`             | `addSeat`, `removeSeat`, `checkout`, `switchInterval`                                                                                                                                                                                                                                                                                                                  |
 | `/settings/instance`            | `setRegistration`, `setEmailChange`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                                                 |
 | `/settings/integrations`        | `createToken`, `calendarLink`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                                        |
@@ -233,24 +234,6 @@ Done, or skipped — the two answers that are not "carry it forward".
 
 better-auth's messages are already user-facing; anything else is a bug.
 
-**`importTasks`**
-
-Take a list out of Todoist or Google Tasks and put it here.
-
-The parsing and the writing are `services/imports.ts`; this reads the
-form. The text arrives in the textarea whether it was pasted or read from
-a chosen file — the page reads the file itself, so what is about to be
-imported is visible before the button is pressed.
-
-**`importAccount`**
-
-Put an exported account back — into this one, over what is here.
-
-Destructive, so it asks for a typed word rather than a click: this
-empties the account before it fills it, and the one thing worse than an
-import that fails is an import that half-succeeds over a real week.
-`importAccount` is one transaction for the same reason.
-
 **`changeEmail`**
 
 Ask to move the account to another address, where the instance allows it.
@@ -283,6 +266,35 @@ and the answer to that is nobody.
 Deleting an account is irreversible, so it asks for the account's own
 email address rather than a yes/no — the point is to make it impossible to
 do by reflex, not to add a step.
+
+### `/settings/account/import`
+
+Bringing things in, on a page of its own.
+
+It used to be two cards at the bottom of the account page, below the
+sessions and above the delete button — which put "restore an export over
+everything you have" three inches from "change your password". Moving in is
+its own act, done once, and it reads better as its own page than as the
+tail of somebody else's.
+
+**`importTasks`**
+
+Take a list out of Todoist, Google Tasks or Google Keep and put it here.
+
+The parsing and the writing are `services/imports.ts`; this reads the
+form. The text arrives in the textarea whether it was pasted or read from
+a chosen file — the page reads the file itself, so what is about to be
+imported is visible before the button is pressed, and no file is ever
+uploaded.
+
+**`importAccount`**
+
+Put an exported account back \u2014 into this one, over what is here.
+
+Destructive, so it asks for a typed word rather than a click: this
+empties the account before it fills it, and the one thing worse than an
+import that fails is an import that half-succeeds over a real week.
+`importAccount` is one transaction for the same reason.
 
 ### `/settings/billing`
 

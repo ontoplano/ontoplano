@@ -95,6 +95,37 @@ export function foodCategories(ctx: Ctx) {
 }
 
 /**
+ * Somewhere for the first ingredient to go.
+ *
+ * A brand-new account has no shopping categories at all, so the first recipe
+ * anybody wrote ended in "tick one in settings" — a setting with nothing in it
+ * to tick. Two different states were being treated as one:
+ *
+ * - **No categories.** Nothing has been decided yet, so one is made. It is a
+ *   shopping category called Food, holding food, and it can be renamed.
+ * - **Categories, none holding food.** Somebody has decided, and it is not this
+ *   function's business to overrule them — that is still the message, and now
+ *   there is a box to tick.
+ */
+function firstFoodCategory(ctx: Ctx): { id: number; name: string } {
+	const any = db
+		.select({ id: shoppingCategories.id })
+		.from(shoppingCategories)
+		.where(eq(shoppingCategories.userId, ctx.userId))
+		.get();
+
+	if (any) throw new ValidationError('No shopping category holds food yet — tick one in settings');
+
+	const id = db
+		.insert(shoppingCategories)
+		.values({ userId: ctx.userId, name: 'Food', isFood: true, sortOrder: 1 })
+		.returning({ id: shoppingCategories.id })
+		.get().id;
+
+	return { id, name: 'Food' };
+}
+
+/**
  * The item an ingredient names, creating it when it is new.
  *
  * This is the half of the design that makes it worth using: typing "cumin" into
@@ -125,9 +156,7 @@ function itemFor(ctx: Ctx, raw: { itemId?: unknown; name?: unknown }): number {
 		.get();
 	if (existing) return existing.id;
 
-	const category = foodCategories(ctx)[0];
-	if (!category)
-		throw new ValidationError('No shopping category holds food yet — tick one in settings');
+	const category = foodCategories(ctx)[0] ?? firstFoodCategory(ctx);
 
 	return db
 		.insert(shoppingItems)
@@ -386,6 +415,8 @@ export function importIngredients(ctx: Ctx, recipeId: number, text: unknown): nu
 	const lines = parseLines(str(text, 'list', { max: 10_000, min: 0 }));
 
 	let added = 0;
+	let firstFailure: unknown = null;
+
 	db.transaction(() => {
 		for (const line of lines) {
 			try {
@@ -396,11 +427,22 @@ export function importIngredients(ctx: Ctx, recipeId: number, text: unknown): nu
 					note: line.note
 				});
 				added += 1;
-			} catch {
+			} catch (e) {
 				// One unreadable line should not lose the other nineteen.
+				firstFailure ??= e;
 			}
 		}
 	});
+
+	/*
+	 * Nothing at all landed, and something went wrong: say what.
+	 *
+	 * Swallowing every failure is right per line and wrong for the whole list —
+	 * a paste that adds nothing and reports nothing looks like a button that
+	 * does not work. The one cause that produced this in practice was an
+	 * account with nowhere to put food, and the person was never told.
+	 */
+	if (added === 0 && lines.length > 0 && firstFailure) throw firstFailure;
 
 	return added;
 }

@@ -173,3 +173,34 @@ describe('a pasted ingredient list', () => {
 		expect(s.recipes.ingredientsOf(ctx, mine)).toEqual([]);
 	});
 });
+
+/**
+ * The first ingredient anybody adds, on an account with nothing in it.
+ *
+ * Registering creates no shopping categories, and an ingredient has to land in
+ * one that holds food — so pasting a recipe's ingredients on a fresh account
+ * added nothing and said nothing, which reads as a button that does not work.
+ * Two states were being treated as one: nobody has decided yet, and somebody
+ * has decided and it is not food.
+ */
+describe('nowhere to put food yet', () => {
+	test('makes one, on an account with no categories at all', () => {
+		// STRANGER has never touched the shopping list.
+		expect(s.shopping.listCategories(theirs)).toHaveLength(0);
+
+		const id = s.recipes.createRecipe(theirs, { title: 'First recipe' });
+		expect(s.recipes.importIngredients(theirs, id, '2 onions\n1 tin tomatoes')).toBe(2);
+
+		expect(s.recipes.foodCategories(theirs).map((c) => c.name)).toContain('Food');
+		// And they really are ingredients, which is the point of the category.
+		expect(s.recipes.ingredientsOf(theirs, id).map((i) => i.name)).toContain('onions');
+	});
+
+	test('says so, rather than adding nothing quietly, once the choice is made', () => {
+		const id = s.recipes.createRecipe(theirs, { title: 'Second recipe' });
+		for (const c of s.shopping.listCategories(theirs))
+			s.shopping.setCategoryFood(theirs, c.id, false);
+
+		expect(() => s.recipes.importIngredients(theirs, id, '3 screws')).toThrow(/holds food/i);
+	});
+});

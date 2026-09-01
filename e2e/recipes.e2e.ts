@@ -142,8 +142,15 @@ test.describe('importing a recipe from a pasted page', () => {
 
 		await page.waitForURL(/\/kitchen\/recipes\/\d+/);
 		await expect(page.getByText('Pasted pancakes').first()).toBeVisible();
-		await expect(page.getByText('plain flour').first()).toBeVisible();
 		await expect(page.getByText('Whisk it.').first()).toBeVisible();
+
+		// The ingredients went through the same parser a pasted list uses, so
+		// they are rows in the list rather than the text that was pasted.
+		const list = page.locator('section', {
+			has: page.getByRole('heading', { name: 'Ingredients' })
+		});
+		for (const name of ['flour', 'eggs', 'milk'])
+			await expect(list.getByText(name, { exact: false }).first()).toBeVisible();
 	});
 
 	test('says so plainly when there is no recipe in the paste', async ({ page }) => {

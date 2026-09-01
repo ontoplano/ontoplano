@@ -16,6 +16,11 @@ version.
   Takeout writes it as one file per note, so choose all of them at once: a
   checklist arrives as one todo per line with its ticks, a written note as one
   todo with the text in its notes. The bin is left where it is.
+- **The first recipe on a new account keeps its ingredients.** An ingredient
+  has to land in a shopping category that holds food, and a fresh account has
+  no categories at all — so pasting a list added nothing and said nothing. One
+  called Food is made on the spot now, and if you have categories and none of
+  them holds food, it says so instead of shrugging.
 - **Clicking a number box selects what is in it.** Typing 2 into a field
   showing 0 gives 2, not 02 — everywhere in the app, not only where somebody
   remembered.
