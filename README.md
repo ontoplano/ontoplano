@@ -1,6 +1,6 @@
-# ontoplano
+# Ontoplano
 
-A planner for a whole week, not just a work day.
+A life management tool that started as a weekly planner.
 
 You describe the week you intend to have — blocks of time, recurring or one-off,
 each belonging to an area of your life. Ontoplano turns that into the days as
@@ -8,20 +8,23 @@ they arrive, and records what actually happened: what you did, when, how late,
 how it felt. What comes out is the gap between the week you planned and the week
 you had, which is the only thing a planner can honestly tell you.
 
-Around that: goals with real progress, a journal, habits, ideas, a shopping
-list, and an API that lets other apps push data in and read your schedule out.
+The week is the shape; what goes on it is the rest of a life. Goals with real
+progress, a journal, the people in it, ideas, habits, recipes and the shopping
+that follows from them — and an API that lets other apps push data in and read
+your schedule out.
 
-Self-hosted, single SQLite file, no account anywhere but your own.
+Self-hosted, one SQLite file, no account anywhere but your own.
 
 ## What is in it
 
 - **Plan** — a week grid. Drag to make a block; alt-drag one occurrence to move
   just that day. Blocks name a category or a specific activity, repeat weekly or
   on an interval, and can be saved as a scheme to put back later.
-- **Track** — today, as occurrences of the plan. Mark them done, doing, skipped;
-  timing (early, on time, late) is derived from when you finished, never chosen.
-- **Board** — the same day as a kanban, plus everything with no date yet. Drag a
-  card onto a day and it becomes a real block.
+- **Board** — today as a kanban, plus everything with no date yet. Mark things
+  done, doing, skipped; timing (early, on time, late) is derived from when you
+  finished, never chosen. Drag a card onto a day and it becomes a real block.
+- **Review** — what you planned against what you did, week by week, and three
+  lines you will actually want to read in a year.
 - **Goals** — by horizon, from a day to a year. Link a goal to the tasks that
   count towards it and the progress bar is your execution log, not a number you
   typed.
@@ -33,7 +36,18 @@ Self-hosted, single SQLite file, no account anywhere but your own.
 - **Notebooks** — a subject you write against with no deadline: a book, a trip,
   a renovation. Entries, tasks and goals can belong to one, and deleting it
   leaves every one of them where it is.
-- **Dashboard** — the cards you choose, in the order you choose.
+- **Recipes and meals** — a recipe with its ingredients, put on a day; what you
+  have run out of lands on the shopping list. Work planners ignore food and meal
+  planners ignore the rest of the week; this is the seam.
+- **Reminders** — set on a block, in minutes before it starts, and every
+  occurrence of it gets one. There is nothing else to keep.
+- **Dashboard** — the cards you choose, in the order you choose. The rooms of
+  the app are yours to order and colour too.
+- **Your data, out and back** — every row as JSON in one click, and the same
+  file restored into any instance. That is what makes leaving possible, so it
+  is a feature rather than a promise.
+- **Calendar feed** — a private iCal URL your week shows up in, wherever you
+  already look.
 - **Administration** — `/admin` for whoever runs the instance: find an account,
   see its plan and its history, resend a confirmation, hand out the admin role.
   Signing in as somebody to help them puts an amber banner over every page and a

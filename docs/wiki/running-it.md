@@ -20,7 +20,36 @@ upgrades and the backups.
   confirmation and password-reset mail. Without one those links are written to
   the log instead, which is fine for one person.
 
-## The quickest start
+## The quickest start: Docker
+
+One container, one volume, no database server. Migrations run when it starts,
+so there is no first-run step.
+
+```sh
+docker run -d --name ontoplano -p 1493:1493 \
+  -v ontoplano-data:/data \
+  -e ORIGIN=http://localhost:1493 \
+  -e BETTER_AUTH_SECRET="$(openssl rand -base64 32)" \
+  ontoplano/ontoplano:latest
+```
+
+Or with compose, which is the same thing written down:
+
+```sh
+curl -O https://raw.githubusercontent.com/ontoplano/ontoplano/main/docker-compose.yml
+curl -o .env https://raw.githubusercontent.com/ontoplano/ontoplano/main/.env.example
+# set ORIGIN and BETTER_AUTH_SECRET in .env
+docker compose up -d
+```
+
+Register at `/login`. The first account is always allowed and owns the
+instance; the first screen asks for your timezone and which day your week
+starts, and offers a starter week to argue with.
+
+[docs/DOCKER.md](https://github.com/ontoplano/ontoplano/blob/main/docs/DOCKER.md)
+has the reverse proxy, upgrading and backups.
+
+## From the source
 
 ```sh
 git clone https://github.com/ontoplano/ontoplano.git
@@ -31,11 +60,9 @@ yarn db:migrate           # create the database
 yarn dev                  # http://localhost:1493
 ```
 
-Register at `/login`. The first account is always allowed and owns the
-instance; the first screen asks for your timezone and which day your week
-starts, and offers a starter week to argue with.
-
 ## As a service
+
+For a box you keep, without Docker:
 
 ```sh
 make install-service      # build, migrate, install and start a systemd user unit
@@ -44,16 +71,6 @@ make update               # after a git pull: rebuild, migrate, restart
 
 The unit runs as your own user, keeps running after logout, and snapshots the
 database before every migration.
-
-## With Docker
-
-```sh
-docker compose up -d
-```
-
-The compose file builds the image and mounts a volume for the database. Set
-`ORIGIN` and `BETTER_AUTH_SECRET` in the environment before the first start;
-everything else has a default.
 
 ## Where your data lives
 
