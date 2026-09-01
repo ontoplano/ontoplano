@@ -817,10 +817,21 @@
 						role={arranging ? 'listitem' : undefined}
 					>
 						{#if arranging}
+							<!--
+								The handle sits ON the card, not above it.
+
+								It used to be a separate bordered bar with a gap under it,
+								repeating the card's own title — which read as a collapsed card
+								with a duplicate of itself underneath rather than as a control
+								belonging to the card below. Flush, borderless along the bottom
+								and with no title of its own: the card says its name once.
+							-->
 							<div
-								class="mb-1 flex items-center justify-between gap-2 border border-gray-300 bg-gray-100 px-2 py-1"
+								class="flex items-center justify-between gap-2 border border-b-0 border-gray-300 bg-gray-100 px-2 py-1"
 							>
-								<span class="eyebrow min-w-0 truncate text-gray-600">{card.label}</span>
+								<span class="text-gray-500" title="Drag {card.label} to move it" aria-hidden="true">
+									<Icon name="drag" size={14} />
+								</span>
 								<div class="flex shrink-0 items-center gap-1">
 									<button
 										onclick={() => move(id, -1)}
@@ -842,10 +853,11 @@
 									</button>
 									<button
 										onclick={() => hideCard(id)}
-										class="text-xs text-gray-500 hover:text-gray-900"
+										class="p-1 text-gray-500 hover:text-gray-900"
 										title="Hide this card"
+										aria-label="Hide {card.label}"
 									>
-										Hide
+										<Icon name="close" size={16} />
 									</button>
 								</div>
 							</div>

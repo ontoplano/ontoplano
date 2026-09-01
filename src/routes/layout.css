@@ -402,7 +402,14 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 	font-weight: 600;
 	letter-spacing: 0.09em;
 	text-transform: uppercase;
-	line-height: 1;
+	/*
+	 * Not 1. A font's ascent and descent together are taller than one em, so a
+	 * line box of exactly 1em leaves the glyphs hanging out of it — invisible
+	 * until something clips, and `truncate` clips. The tops of T and W came off
+	 * on the dashboard, barely and unmistakably, while round letters got away
+	 * with it. This is still tight; it just contains what it is setting.
+	 */
+	line-height: 1.15;
 }
 
 /*

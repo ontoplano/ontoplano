@@ -10,6 +10,13 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.19.1 — 2026-09-01
+
+- Rearranging the dashboard no longer draws a second, empty card above each one.
+  The handle sits on the card it moves, and the card says its name once.
+- Small capitals stopped losing the tops of their letters — T and W most
+  visibly — wherever a label had to be shortened to fit.
+
 ## 0.19.0 — 2026-09-01
 
 - **A todo ticked off can be taken back.** Ticking one — on the board or in the
