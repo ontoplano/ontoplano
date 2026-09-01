@@ -16,6 +16,7 @@ is out of date, which is what keeps the two honest.
 How the pieces fit, and why. The tables inside are generated.
 
 - [Architecture](architecture.md) — how a request travels, and where each kind of rule is allowed to live
+- [On your phone](on-your-phone.md) — installing it as an app, what works offline, and the gesture that captures things
 - [Running it yourself](running-it.md) — what it needs, three ways to start it, and where your data lives
 - [The plan](the-plan.md) — the three tables a task can live in, and how one becomes another
 - [Ways in](ways-in.md) — tokens, scopes, streams, webhooks and the calendar link — the whole outside surface

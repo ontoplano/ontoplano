@@ -34,6 +34,7 @@ sentence somebody agrees to when they grant it.
 | `/api/billing/paddle`                        | POST   | —                 |
 | `/api/capture-options`                       | GET    | —                 |
 | `/api/client-errors`                         | POST   | —                 |
+| `/api/pricing`                               | GET    | —                 |
 | `/api/reminders`                             | GET    | —                 |
 | `/api/reminders`                             | POST   | —                 |
 | `/api/search`                                | GET    | —                 |
@@ -148,6 +149,26 @@ or with `once`, which is the error page's own button and speaks for that one
 report only.
 
 **POST**
+
+### `/api/pricing`
+
+What this instance charges, for whoever is quoting it.
+
+There is one number and it has to be the same everywhere: on the billing
+page, in the terms, and on ontoplano.com — which is a different repository
+with no database, built on a laptop. The price it prints was typed into that
+repo by hand, so it could quote $4.90 while the checkout took something else,
+and nothing anywhere would notice.
+
+So the provider is the single source, this endpoint is how anything outside
+the app reads it, and `make deploy-site` fetches it at build time. Changing a
+price is changing it in Paddle and deploying; nothing is typed twice.
+
+Public and cacheable on purpose: it is the number on a public page, and it
+discloses nothing an anonymous visitor cannot already read. It carries no
+account, no ids and no provider keys.
+
+**GET**
 
 ### `/api/reminders`
 

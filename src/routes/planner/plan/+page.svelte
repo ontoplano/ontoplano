@@ -105,8 +105,23 @@
 		return () => query.removeEventListener('change', apply);
 	});
 
+	/**
+	 * What the buttons show while the new view is still loading.
+	 *
+	 * Separate from `viewMode`, and that separation is the fix: setting the view
+	 * optimistically redrew the grid in the new shape against the OLD data — a
+	 * day grid holding a week's blocks, or a month holding one day's — for as
+	 * long as the navigation took. On a phone that is a visible second of wrong
+	 * information every time you change view.
+	 *
+	 * So the grid changes only when its data does, and the only thing that moves
+	 * immediately is the pressed button, which is what makes a tap feel answered.
+	 */
+	let pendingView: PlanView | null = $state(null);
+
 	$effect(() => {
 		viewMode = data.view;
+		pendingView = null;
 	});
 
 	/** What the grid actually shows, after the screen width has its say. */
@@ -1010,7 +1025,13 @@
 		e.preventDefault();
 
 		if (action === 'toggle-view') {
-			setView(viewMode === 'day' ? 'week' : viewMode === 'week' ? 'month' : 'day');
+			// From what the buttons show rather than from the grid: pressing `g`
+			// twice before the first load lands should step two views on, not
+			// twice off the same one.
+			{
+				const shown = pendingView ?? viewMode;
+				setView(shown === 'day' ? 'week' : shown === 'week' ? 'month' : 'day');
+			}
 			return;
 		}
 
@@ -1172,7 +1193,9 @@
 	});
 
 	function setView(mode: PlanView) {
-		viewMode = mode;
+		// The button, not the grid. `viewMode` follows `data.view` when the load
+		// lands, so nothing is drawn against data that does not match it.
+		pendingView = mode;
 		const parts: string[] = [`view=${mode}`];
 		if (!data.range.isCurrent) parts.push(`from=${data.range.from}`);
 		goto(resolve(`/planner/plan?${parts.join('&')}`), {
@@ -1778,7 +1801,7 @@
 				{#each [['day', 'Day'], ['week', 'Week'], ['month', 'Month']] as [mode, label] (mode)}
 					<button
 						onclick={() => setView(mode as PlanView)}
-						aria-pressed={effectiveView === mode}
+						aria-pressed={(pendingView ?? effectiveView) === mode}
 						title="{label} view (g cycles)">{label}</button
 					>
 				{/each}

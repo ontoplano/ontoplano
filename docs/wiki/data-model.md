@@ -37,7 +37,7 @@ exist.
 | [`invites`](#invites)                             | 8       | —                 |
 | [`mail_failures`](#mail_failures)                 | 11      | —                 |
 | [`notebooks`](#notebooks)                         | 7       | yes               |
-| [`people`](#people)                               | 7       | yes               |
+| [`people`](#people)                               | 10      | yes               |
 | [`planning_schemes`](#planning_schemes)           | 5       | yes               |
 | [`plugin_manifests`](#plugin_manifests)           | 8       | yes               |
 | [`price_points`](#price_points)                   | 6       | yes               |
@@ -574,6 +574,9 @@ Indexes:
 | `user_id`      | text    | not null | —                     | → `user.id`       |
 | `name`         | text    | not null | —                     | —                 |
 | `relationship` | text    | not null | `'other'`             | —                 |
+| `birthday`     | text    | null     | —                     | —                 |
+| `phone`        | text    | null     | —                     | —                 |
+| `email`        | text    | null     | —                     | —                 |
 | `notes`        | text    | null     | `''`                  | —                 |
 | `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 | `updated_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |

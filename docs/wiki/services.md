@@ -1123,6 +1123,14 @@ few things that differ between deployments come from here.
 The operator's name, address and jurisdiction are the instance's to set. The
 defaults say so rather than inventing a company.
 
+The price comes from the payment provider rather than from this instance's
+env, and that is the whole point: the number in the terms is a promise about
+what a card will be charged, so it has to be the number the provider will
+actually charge. Reading the env here meant the terms could quote one price
+while the checkout took another — the one billing disagreement that reaches
+a stranger's statement. Falls back to the env when the provider cannot be
+reached, which is also what the billing page does.
+
 ### Functions
 
 #### `legalFacts()`
@@ -1385,6 +1393,7 @@ The people each of these entries mentions, keyed by entry id.
 ### Types
 
 - `Person`
+- `Mentioned` — What a mention chip needs: who, and how you know them.
 
 ## plugins
 

@@ -10,6 +10,21 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.17.0 — 2026-09-01
+
+- **The price in the terms is the price the card is charged.** It came from
+  this instance's settings, which could quietly disagree with what the payment
+  provider would actually take. The provider is now the one place a price is
+  set: the app, the terms and ontoplano.com all read it from there.
+- Changing the view on the planner no longer shows a second of the wrong week.
+  The button answers immediately; the grid waits for the data that matches it.
+- A page on installing ontoplano on your phone: it is a web app, so there is
+  nothing to buy and no store to go through.
+- The documentation site has a 404 page of its own, with the contents list on
+  it, instead of the web server's blank one.
+- The demo says plainly not to put real data in it, and that the account is
+  wiped.
+
 ## 0.16.0 — 2026-09-01
 
 - **The weekly review's three answers now all mean the same thing: done with

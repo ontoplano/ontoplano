@@ -177,11 +177,15 @@ describe('the quote of the day', () => {
 });
 
 describe('what the instance says about itself', () => {
-	test('names an operator rather than inventing a company', () => {
-		const facts = legal.legalFacts();
+	test('names an operator rather than inventing a company', async () => {
+		// Async because the price in it comes from the payment provider now: the
+		// number in the terms is a promise about what a card will be charged, so
+		// it cannot be this instance's env guessing.
+		const facts = await legal.legalFacts();
 		expect(facts.operator).toBeTruthy();
 		expect(facts.contactEmail).toContain('@');
 		expect(typeof facts.hosted).toBe('boolean');
+		expect(facts.monthly).toMatch(/\d/);
 	});
 
 	test('reports a build even when nothing was stamped into it', () => {

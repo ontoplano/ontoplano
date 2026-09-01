@@ -266,9 +266,18 @@
 			<div
 				class="relative z-50 hidden flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950 lg:flex"
 			>
+				<!--
+					The warning is the point, so it is the part that is loud.
+					"Everything here is yours alone" read as reassurance and invited
+					exactly the thing this band exists to prevent: somebody typing
+					their real week into an account that is deleted this afternoon.
+					Red on the amber band, and it says wiped rather than disappears.
+				-->
 				<span>
-					<strong>This is a demo version of ontoplano.</strong> Everything here is yours alone, and it
-					disappears a few hours after you stop using it.
+					<strong>This is a demo version of ontoplano.</strong>
+					<strong class="text-red-900">
+						Do not put your real data here — this account will be wiped in a few hours.
+					</strong>
 				</span>
 				{#if data.demoHost}
 					<span class="font-normal">Open {data.demoHost} on your phone to see it there too.</span>

@@ -204,4 +204,33 @@ rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 for (const page of pages) writeFileSync(join(OUT, page.href), render(page));
 
-console.log(`docs site: wrote ${pages.length} pages to ${OUT.replace(ROOT + '/', '')}/`);
+/*
+ * A page for the addresses that are not pages.
+ *
+ * Without one, nginx answers with its own — white, serif, "404 Not Found", and
+ * no way back into the documentation. It is the same wiki chrome as every
+ * other page here, with the nav, because the useful thing to offer somebody
+ * who mistyped a URL is the list of what does exist.
+ *
+ * It renders through the same `render()` as the rest, so it cannot drift from
+ * them, and the vhost points `error_page 404` at it.
+ */
+writeFileSync(
+	join(OUT, '404.html'),
+	render({
+		title: 'Not found',
+		href: '404.html',
+		link: '/404',
+		markdown: [
+			'# Not found',
+			'',
+			'There is no page at that address. The documentation is in the list beside',
+			'this one — or start from [the beginning](/).',
+			'',
+			'If you followed a link from somewhere in the app and it brought you here,',
+			'that is a bug worth reporting.'
+		].join('\n')
+	})
+);
+
+console.log(`docs site: wrote ${pages.length} pages and a 404 to ${OUT.replace(ROOT + '/', '')}/`);

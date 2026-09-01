@@ -1,5 +1,6 @@
 import { describeYearly, formatPrice } from '../../plans.js';
-import { isSelfHosted, pricing } from '../settings.js';
+import { isSelfHosted } from '../settings.js';
+import { displayPricing } from './billing.js';
 
 /**
  * The facts the policies are written around.
@@ -11,9 +12,17 @@ import { isSelfHosted, pricing } from '../settings.js';
  *
  * The operator's name, address and jurisdiction are the instance's to set. The
  * defaults say so rather than inventing a company.
+ *
+ * The price comes from the payment provider rather than from this instance's
+ * env, and that is the whole point: the number in the terms is a promise about
+ * what a card will be charged, so it has to be the number the provider will
+ * actually charge. Reading the env here meant the terms could quote one price
+ * while the checkout took another — the one billing disagreement that reaches
+ * a stranger's statement. Falls back to the env when the provider cannot be
+ * reached, which is also what the billing page does.
  */
-export function legalFacts() {
-	const price = pricing();
+export async function legalFacts() {
+	const price = await displayPricing();
 
 	return {
 		updated: process.env.ONTOPLANO_POLICY_UPDATED ?? '25 August 2026',

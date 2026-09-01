@@ -4,6 +4,24 @@ The rules that are not obvious from reading the code, and the reasons for them.
 Everything else — naming, layout, comment density — is "match what is around
 you".
 
+## There is no CLA
+
+Nothing to sign. You keep the copyright in what you write; it goes in under
+the AGPLv3 the rest of the project is under, and that is the whole agreement.
+
+This is deliberate and it is a promise about the future rather than a
+convenience today. A contributor licence agreement asks you to assign your
+copyright — or license it broadly enough to amount to the same — to whoever
+holds the project. What that buys the holder is the right to relicense the
+whole thing later: to close it, to sell an exception, to move it to a licence
+you would not have contributed under. Every open-source project that has gone
+closed has gone through that door.
+
+Without a CLA, nobody can do that, including me. Relicensing would need the
+agreement of everybody who has ever contributed, which in practice means it
+will not happen. That is the point: the guarantee is structural rather than a
+line in a README that a new owner could edit.
+
 ## Run it
 
 ```sh
