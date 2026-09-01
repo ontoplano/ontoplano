@@ -29,7 +29,20 @@
 	// on register, because there is nobody to sign in as yet, and after that the
 	// choice is the visitor's.
 	// svelte-ignore state_referenced_locally
-	let mode: Tab = $state(data.isFirstAccount || data.openRegister ? 'register' : 'login');
+	let mode: Tab = $state(
+		data.isFirstAccount || data.openRegister || data.invite ? 'register' : 'login'
+	);
+
+	/**
+	 * Whether the code field is on the screen.
+	 *
+	 * Open registration takes a code and does not require one, so the field is
+	 * behind a line of text: a required box for something almost nobody has is a
+	 * box almost everybody has to read and ignore. A code that arrived as a link
+	 * opens it already filled.
+	 */
+	// svelte-ignore state_referenced_locally
+	let showInvite = $state(Boolean(data.invite));
 </script>
 
 <div class="flex min-h-screen items-center justify-center bg-gray-50">
@@ -62,17 +75,26 @@
 			action={mode === 'login' ? '?/signIn' : mode === 'register' ? '?/signUp' : '?/requestReset'}
 			use:enhance
 		>
-			{#if mode === 'register' && data.needsInvite}
+			{#if mode === 'register' && (data.needsInvite || showInvite)}
 				<label class="mb-3 block">
 					<span class="text-sm font-medium text-gray-700">Invitation code</span>
 					<input
 						name="invite"
 						type="text"
-						required
+						required={data.needsInvite}
+						value={data.invite}
 						autocomplete="off"
 						class="tabular mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
 				</label>
+			{:else if mode === 'register'}
+				<button
+					type="button"
+					onclick={() => (showInvite = true)}
+					class="mb-3 text-sm text-gray-500 underline underline-offset-2 hover:text-gray-900"
+				>
+					I have an invitation code
+				</button>
 			{/if}
 			{#if mode === 'register'}
 				<label class="mb-3 block">

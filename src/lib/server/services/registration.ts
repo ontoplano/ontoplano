@@ -27,10 +27,27 @@ export type Invite = {
 	code: string;
 	note: string;
 	createdAt: string;
+	/** When the code stops working. */
 	expiresAt: string | null;
+	/** When the Pro it hands over runs out. Null is the open-ended alpha grant. */
+	grantsUntil: string | null;
 	usedAt: string | null;
 	usedBy: string | null;
 };
+
+/**
+ * How long a month of Pro is, when nobody says otherwise.
+ *
+ * The point of an invitation on a paying instance is to hand somebody the app
+ * for a while without asking for a card first — so the default is a month, and
+ * the form says so as a date the operator can change.
+ */
+export const DEFAULT_GRANT_DAYS = 30;
+
+/** A month from now, as the date the invite form opens on. */
+export function defaultGrantUntil(now: Date): string {
+	return new Date(now.getTime() + DEFAULT_GRANT_DAYS * 24 * 60 * 60 * 1000).toISOString();
+}
 
 /**
  * Who may create an account here.
@@ -75,10 +92,31 @@ export function checkSignUpAllowed(code: unknown, now: Date): { invite: Invite |
 	if (instanceIsEmpty()) return { invite: null };
 
 	const mode = registrationMode();
-	if (mode === 'open') return { invite: null };
+	const trimmed = typeof code === 'string' ? code.trim() : '';
+
+	/*
+	 * Open registration still honours a code.
+	 *
+	 * Anybody may sign up, so a code is not permission — it is what it grants: a
+	 * month of Pro handed over directly, with no card and no trial. Without this
+	 * branch an invitation was silently ignored the moment the instance opened,
+	 * and the person it was sent to met the checkout like everybody else.
+	 *
+	 * A code that is given and does not work is refused rather than dropped, and
+	 * says so plainly: there is nothing to leak about an instance that already
+	 * lets anybody in, and quietly charging somebody who was told they had a free
+	 * month is the worse failure by far.
+	 */
+	if (mode === 'open') {
+		if (!trimmed) return { invite: null };
+
+		const invite = findUsable(trimmed, now);
+		if (!invite) throw new ForbiddenError('That invitation code is not valid, or has been used');
+		return { invite };
+	}
+
 	if (mode === 'closed') throw new ForbiddenError('This instance is not accepting new accounts');
 
-	const trimmed = typeof code === 'string' ? code.trim() : '';
 	if (!trimmed) throw new ForbiddenError('This instance is not accepting new accounts');
 
 	const invite = findUsable(trimmed, now);
@@ -106,7 +144,7 @@ export function listInvites(): Invite[] {
 
 export function createInvite(
 	createdBy: string,
-	raw: { note?: unknown; expiresInDays?: unknown },
+	raw: { note?: unknown; expiresInDays?: unknown; grantsUntil?: unknown },
 	now: Date
 ): Invite {
 	const note = optionalStr(raw.note, 'note', { max: MAX_NOTE_LENGTH });
@@ -127,7 +165,14 @@ export function createInvite(
 
 	const inserted = db
 		.insert(invites)
-		.values({ code, note, createdBy, expiresAt, createdAt: now.toISOString() })
+		.values({
+			code,
+			note,
+			createdBy,
+			expiresAt,
+			grantsUntil: parseGrantUntil(raw.grantsUntil, now),
+			createdAt: now.toISOString()
+		})
 		.returning()
 		.get();
 
@@ -142,6 +187,28 @@ export function revokeInvite(id: number): void {
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('invite');
+}
+
+/**
+ * When the Pro this invitation hands over runs out.
+ *
+ * A date from the form (`<input type="date">`), read as the end of that day so
+ * that "until the 30th" includes the 30th. Empty means the open-ended alpha
+ * grant, which is what an instance that sells nothing wants.
+ */
+function parseGrantUntil(raw: unknown, now: Date): string | null {
+	if (raw === undefined || raw === null || raw === '') return null;
+
+	const value = str(raw, 'until', { max: 40 });
+	const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+	if (!match) throw new ValidationError('Invalid date');
+
+	const until = new Date(`${match[1]}T23:59:59.999Z`);
+	if (isNaN(until.getTime())) throw new ValidationError('Invalid date');
+	if (until.getTime() <= now.getTime())
+		throw new ValidationError('A free month that has already ended grants nothing');
+
+	return until.toISOString();
 }
 
 function findUsable(code: string, now: Date): Invite | null {

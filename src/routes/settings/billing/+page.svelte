@@ -77,7 +77,12 @@
 			? `Your trial runs until ${when(data.entitlement.until)}.`
 			: data.entitlement.source === 'lapsed'
 				? 'Your subscription has ended. Nothing was deleted — everything you wrote is still here and still exportable.'
-				: current.blurb}
+				: data.entitlement.source === 'invited' && data.entitlement.until
+					? // An invitation, not a trial: nothing was charged and no card was
+						// asked for. Say when it runs out, because the buttons below are
+						// only useful to somebody who knows that it does.
+						`You were invited, and you are on Pro until ${when(data.entitlement.until)}. No card, and nothing charged.`
+					: current.blurb}
 	>
 		{#snippet actions()}
 			{#if data.portal}

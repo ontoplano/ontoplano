@@ -260,6 +260,13 @@
       "when": 1788231421569,
       "tag": "0036_family_seats",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1788235507611,
+      "tag": "0037_invite_pro_grant",
+      "breakpoints": true
     }
   ]
 }

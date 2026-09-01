@@ -185,6 +185,44 @@ test('an invitation works exactly once', async ({ playwright }) => {
 });
 
 /**
+ * An invitation on an open instance.
+ *
+ * Open registration used to return before it ever looked at a code, so an
+ * invitation quietly meant nothing the moment the instance started selling —
+ * and the person who was promised a free month met the checkout instead. It is
+ * consumed now, and a code that does not work is refused rather than dropped.
+ */
+test('an invitation is honoured, and enforced, under open registration', async ({ playwright }) => {
+	const request = await playwright.request.newContext({ baseURL: ORIGIN });
+	const cookie = await signInAsOwner(request);
+
+	const made = await request.post('/settings/instance?/createInvite', {
+		headers: { Origin: ORIGIN, Cookie: cookie, 'x-sveltekit-action': 'true' },
+		form: { note: 'a free month', expiresInDays: '', grantsUntil: '2030-01-01' }
+	});
+	const body = (await made.text()).replace(/\\"/g, '"');
+	expect(made.status(), body.slice(0, 200)).toBe(200);
+
+	const code = /"([A-Za-z0-9_-]{16,})"/.exec(body)?.[1];
+	expect(code, `no code in ${body.slice(0, 200)}`).toBeTruthy();
+
+	setMode('open');
+
+	// A code that does not exist is refused, even though anybody may sign up:
+	// silently charging somebody who was told they had a month is worse.
+	expect((await signUp(request, 'not-a-real-invitation')).status()).toBe(403);
+
+	// A real one goes through, and is spent.
+	expect((await signUp(request, code)).ok()).toBeTruthy();
+	expect((await signUp(request, code)).status()).toBe(403);
+
+	// And no code at all is still fine, because the instance is open.
+	expect((await signUp(request)).ok()).toBeTruthy();
+
+	await request.dispose();
+});
+
+/**
  * What is running, on the page that reports it.
  *
  * Here rather than in the smoke suite because the instance page belongs to the

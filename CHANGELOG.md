@@ -10,6 +10,16 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.21.0 — 2026-09-01
+
+- **An invitation now hands over a free month, and works on an open instance.**
+  Settings → Instance mints a code with a "Pro until" date on it, a month ahead
+  by default, and a link that opens the register form with the code already in
+  it. Whoever uses it starts on Pro, having given no card and spent no free
+  days, and their billing page says when it runs out and what to do about it.
+- The register form takes an invitation code even where one is not required —
+  behind a line of text, so nobody has to read past a box they have no use for.
+
 ## 0.20.0 — 2026-09-01
 
 - **Reminders have a page.** Planner → Reminders lists everything you have asked

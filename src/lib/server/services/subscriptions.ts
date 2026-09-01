@@ -106,10 +106,37 @@ export function resolvePlan(userId: string, now = new Date()): Entitlement {
 	const status = isSubscriptionStatus(row.status) ? row.status : 'expired';
 	const nowIso = now.toISOString();
 
-	// An alpha account, let in by invitation code: full access, no billing
-	// anywhere in its interface, no end date until the operator says so.
+	/*
+	 * An account let in by an invitation code.
+	 *
+	 * Two shapes, told apart by whether the invite named an end date.
+	 *
+	 * With none, it is the alpha account: full access, no billing anywhere in
+	 * its interface, until the operator says otherwise.
+	 *
+	 * With one, it is a month (or whatever was set) handed over directly — the
+	 * account is Pro from the moment it is made, having paid nothing and having
+	 * spent none of its free days. It *is* billable: the whole point of a month
+	 * on the house is that the person can decide to stay before it runs out, and
+	 * hiding the billing page until the day it lapses is the one way to make
+	 * sure they cannot.
+	 */
 	if (row.provider === 'invited' && status === 'active') {
-		return { plan: 'pro', status, source: 'invited', until: null, endingAt: null, billable: false };
+		const until = row.currentPeriodEnd;
+		if (!until)
+			return {
+				plan: 'pro',
+				status,
+				source: 'invited',
+				until: null,
+				endingAt: null,
+				billable: false
+			};
+
+		if (until > nowIso)
+			return { plan: 'pro', status, source: 'invited', until, endingAt: until, billable: true };
+
+		return { ...unsubscribed(), source: 'lapsed' };
 	}
 
 	// A trial that has run out is not a trial, whatever the row still says: the

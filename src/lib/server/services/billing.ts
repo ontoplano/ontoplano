@@ -570,20 +570,33 @@ export function mapStatus(raw: unknown): SubscriptionStatus {
 /**
  * What a brand-new account is entitled to, decided once at registration.
  *
- * Invited: the alpha deal — Pro, no billing UI, until the operator changes
- * it. Open registration on a selling instance with card-first trials:
- * nothing yet — the fourteen days start at the provider's checkout, card in
- * hand, and the caller sends the person there. Everything else (an instance
- * that sells but does not require the card, mainly): the internal no-card
- * trial, as before.
+ * Invited with no end date: the alpha deal — Pro, no billing UI, until the
+ * operator changes it. Invited with one: Pro until that moment, paid for by
+ * nobody, with the billing pages available throughout so the person can decide
+ * to stay before it runs out. Neither spends a free trial: the invitation is
+ * instead of the fourteen days, not on top of them.
+ *
+ * Open registration on a selling instance with card-first trials: nothing yet
+ * — the fourteen days start at the provider's checkout, card in hand, and the
+ * caller sends the person there. Everything else (an instance that sells but
+ * does not require the card, mainly): the internal no-card trial, as before.
  */
 export function onboardEntitlement(
 	userId: string,
-	invited: boolean,
+	invite: { grantsUntil: string | null } | null,
 	now = new Date()
 ): 'invited' | 'checkout' | 'trial' {
-	if (invited) {
-		applySubscription(userId, { plan: 'pro', status: 'active', provider: 'invited' }, now);
+	if (invite) {
+		applySubscription(
+			userId,
+			{
+				plan: 'pro',
+				status: 'active',
+				provider: 'invited',
+				currentPeriodEnd: invite.grantsUntil
+			},
+			now
+		);
 		return 'invited';
 	}
 	if (isBillingConfigured() && pricing().trialRequiresCard) return 'checkout';

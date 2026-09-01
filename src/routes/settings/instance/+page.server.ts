@@ -1,12 +1,13 @@
 import { error } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { loadConfig, saveConfig, isRegistrationMode } from '$lib/server/config';
-import { isDemo, isStaging } from '$lib/server/settings';
+import { isDemo, isSelfHosted, isStaging } from '$lib/server/settings';
 import { canEditInstance } from '$lib/server/services/admin';
 import { build } from '$lib/server/services/version';
 import { toActionFailure, ValidationError } from '$lib/server/services/errors';
 import {
 	createInvite,
+	defaultGrantUntil,
 	listInvites,
 	registrationMode,
 	revokeInvite,
@@ -52,7 +53,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 		staging: isStaging(),
 		// The file says one thing and the environment may say another; the page
 		// should show what is actually in force, not what is written down.
-		effectiveRegistration: registrationMode()
+		effectiveRegistration: registrationMode(),
+		// What the invite form opens on: a month from now, as a date field's value.
+		defaultGrantUntil: defaultGrantUntil(new Date()).slice(0, 10),
+		// Whether an invitation is worth anything beyond letting somebody in.
+		sellsAnything: !isSelfHosted()
 	};
 };
 
@@ -124,7 +129,11 @@ export const actions: Actions = {
 		try {
 			const invite = createInvite(
 				userId,
-				{ note: formData.get('note'), expiresInDays: formData.get('expiresInDays') },
+				{
+					note: formData.get('note'),
+					expiresInDays: formData.get('expiresInDays'),
+					grantsUntil: formData.get('grantsUntil')
+				},
 				new Date()
 			);
 

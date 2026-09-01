@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { register } from './helpers/account';
+import { DEFAULT_TAGLINE } from '../src/lib/server/config';
 
 /**
  * What a stranger sees at `/`.
@@ -20,7 +21,7 @@ test('the front page is a door when signed out', async ({ page }) => {
 	expect(new URL(page.url()).pathname).toBe('/');
 
 	await expect(page.getByRole('heading', { level: 1 })).toContainText(/ontoplano/i);
-	await expect(page.getByText(/a planner for a whole week/i)).toBeVisible();
+	await expect(page.getByText(DEFAULT_TAGLINE)).toBeVisible();
 
 	// The way in. Registration is open on the test instance, so both are here.
 	await expect(page.getByRole('link', { name: /create an account/i })).toBeVisible();
@@ -41,6 +42,6 @@ test('and the dashboard the moment somebody is signed in', async ({ page }) => {
 	await register(page, `front-door-${Date.now()}@test.invalid`);
 	await page.goto('/', { waitUntil: 'networkidle' });
 
-	await expect(page.getByText(/a planner for a whole week/i)).toHaveCount(0);
+	await expect(page.getByText(DEFAULT_TAGLINE)).toHaveCount(0);
 	await expect(page.getByRole('button', { name: /arrange/i })).toBeVisible();
 });

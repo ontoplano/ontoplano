@@ -26,6 +26,12 @@
 	const open = $derived(data.invites.filter((i) => !i.usedAt));
 	const used = $derived(data.invites.filter((i) => i.usedAt));
 
+	/** The register form, with the code already in it. */
+	function inviteLink(code: string): string {
+		const origin = typeof location === 'undefined' ? '' : location.origin;
+		return `${origin}/login?register&invite=${encodeURIComponent(code)}`;
+	}
+
 	async function copy(code: string) {
 		try {
 			await navigator.clipboard.writeText(code);
@@ -300,9 +306,20 @@
 		</form>
 	</Card>
 
+	<!--
+		Invitations are not only for a closed instance.
+
+		They used to be: open registration ignored a code outright, so on the
+		instance that actually sells something an invitation meant nothing. What it
+		means now is the thing worth giving away — a month of Pro handed over at
+		sign-up, no card asked for and no trial spent. The code still lets somebody
+		in where the instance is closed; that is the smaller half of its job.
+	-->
 	<Card
 		title="Invitations"
-		description="A code somebody types when they create their account. It works once."
+		description={data.sellsAnything
+			? 'A code somebody types when they create their account. It works once, and it hands them Pro until the date you set.'
+			: 'A code somebody types when they create their account. It works once.'}
 	>
 		{#snippet actions()}
 			<span class="eyebrow text-gray-600">{open.length} open</span>
@@ -322,16 +339,32 @@
 						{copied === fresh ? 'Copied' : 'Copy'}
 					</button>
 				</div>
+				<!--
+					The link, not only the code.
+
+					Sending somebody a string and telling them where to paste it is a step
+					they can get wrong; this one opens the register form with the code
+					already in it, which is the whole of what they have to do.
+				-->
+				<div class="mt-2 flex items-center gap-2">
+					<code class="flex-1 border border-blue-200 bg-white px-3 py-2 text-xs break-all">
+						{inviteLink(fresh)}
+					</code>
+					<button type="button" onclick={() => copy(inviteLink(fresh))} class="btn btn-sm">
+						<Icon name="link" />
+						{copied === inviteLink(fresh) ? 'Copied' : 'Copy link'}
+					</button>
+				</div>
 			</div>
 		{/if}
 
 		<form method="post" action="?/createInvite" use:enhance>
 			<FormGrid>
-				<Field label="Who is it for" span={8} hint="For your own memory; they never see it.">
+				<Field label="Who is it for" span={12} hint="For your own memory; they never see it.">
 					<input name="note" autocomplete="off" placeholder="my brother" class="input" />
 				</Field>
 
-				<Field label="Expires in" span={4} hint="Days. Leave empty for no expiry.">
+				<Field label="Code expires in" span={6} hint="Days. Leave empty for no expiry.">
 					<input
 						autocomplete="off"
 						name="expiresInDays"
@@ -341,6 +374,27 @@
 						class="input tabular"
 					/>
 				</Field>
+
+				{#if data.sellsAnything}
+					<!--
+						The two dates on this form are different clocks and the labels say
+						so: one is how long the code works for, the other is how long what
+						it hands over lasts.
+					-->
+					<Field
+						label="Pro until"
+						span={6}
+						hint="They start paid, on the house — no card, no free days. Empty means no end date."
+					>
+						<input
+							autocomplete="off"
+							name="grantsUntil"
+							type="date"
+							value={data.defaultGrantUntil}
+							class="input tabular"
+						/>
+					</Field>
+				{/if}
 			</FormGrid>
 
 			<div class="mt-4">
@@ -367,7 +421,12 @@
 								{#if invite.usedAt}
 									· used {when(invite.usedAt)}
 								{:else if invite.expiresAt}
-									· expires {when(invite.expiresAt)}
+									· code expires {when(invite.expiresAt)}
+								{/if}
+								{#if data.sellsAnything}
+									· {invite.grantsUntil
+										? `Pro until ${when(invite.grantsUntil)}`
+										: 'Pro with no end date'}
 								{/if}
 							</span>
 						</span>

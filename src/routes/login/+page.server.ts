@@ -24,6 +24,15 @@ export const load: PageServerLoad = async (event) => {
 	// The front page's Create account lands straight on the register form
 	// (?register) — one step fewer between "I want this" and the first field.
 	const openRegister = event.url.searchParams.has('register');
+	/*
+	 * An invitation arrives as a link, not as a string to paste.
+	 *
+	 * The code goes in the field for them, so the whole of what somebody has to
+	 * do with an invitation is follow the link and fill in their name. Read into
+	 * the form rather than consumed here: nothing is spent until the account
+	 * exists.
+	 */
+	const invited = event.url.searchParams.get('invite')?.trim() ?? '';
 	// The reset form says so up front when the server cannot send mail, rather
 	// than claiming a link is on its way.
 	//
@@ -38,6 +47,8 @@ export const load: PageServerLoad = async (event) => {
 		openRegister,
 		canRegister: first || mode !== 'closed',
 		needsInvite: !first && mode === 'invite',
+		/** Prefilled from the link, and shown even where a code is not required. */
+		invite: invited,
 		isFirstAccount: first,
 		/** Says so before somebody puts their week into a copy of the app. */
 		staging: isStaging(),
@@ -117,7 +128,7 @@ export const actions: Actions = {
 				if (invite) consumeInvite(invite.id, created.user.id, now);
 				// An instance with nobody in it hands the first account the keys.
 				claimFirstAccount(created.user.id);
-				const onboarding = onboardEntitlement(created.user.id, Boolean(invite), now);
+				const onboarding = onboardEntitlement(created.user.id, invite, now);
 				record(created.user.id, 'registered', { ip: event.getClientAddress() });
 				if (onboarding === 'checkout') landing = '/start';
 				// Confirm the address FIRST, then ask for the card. It ran the

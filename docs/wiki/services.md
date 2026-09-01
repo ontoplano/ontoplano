@@ -425,16 +425,20 @@ appear while a secret is being rotated; any of them passing is a pass.
 
 What Paddle's statuses mean here. Paused is not entitled to anything.
 
-#### `onboardEntitlement(userId, invited, now)`
+#### `onboardEntitlement(userId, invite, now)`
 
 What a brand-new account is entitled to, decided once at registration.
 
-Invited: the alpha deal — Pro, no billing UI, until the operator changes
-it. Open registration on a selling instance with card-first trials:
-nothing yet — the fourteen days start at the provider's checkout, card in
-hand, and the caller sends the person there. Everything else (an instance
-that sells but does not require the card, mainly): the internal no-card
-trial, as before.
+Invited with no end date: the alpha deal — Pro, no billing UI, until the
+operator changes it. Invited with one: Pro until that moment, paid for by
+nobody, with the billing pages available throughout so the person can decide
+to stay before it runs out. Neither spends a free trial: the invitation is
+instead of the fourteen days, not on top of them.
+
+Open registration on a selling instance with card-first trials: nothing yet
+— the fourteen days start at the provider's checkout, card in hand, and the
+caller sends the person there. Everything else (an instance that sells but
+does not require the card, mainly): the internal no-card trial, as before.
 
 #### `checkoutTrialDays(userId)`
 
@@ -1685,6 +1689,10 @@ config file beside the other deployment settings. Enforcement is in
 endpoint and the answer has to be the same however it is reached.
 
 ### Functions
+
+#### `defaultGrantUntil(now)`
+
+A month from now, as the date the invite form opens on.
 
 #### `registrationMode()`
 

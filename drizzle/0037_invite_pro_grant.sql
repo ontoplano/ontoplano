@@ -1,0 +1,1 @@
+ALTER TABLE `invites` ADD `grants_until` text;

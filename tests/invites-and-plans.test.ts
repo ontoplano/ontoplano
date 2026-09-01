@@ -116,6 +116,48 @@ describe('who may register at all', () => {
 	});
 });
 
+/**
+ * An invitation on an instance that already lets anybody in.
+ *
+ * The code stopped meaning anything the moment registration opened: the mode
+ * check returned before ever looking at it, so somebody sent a link promising a
+ * free month met the checkout like everybody else. Open registration is where
+ * an invitation is *most* useful, because there it is not permission — it is
+ * the month itself.
+ */
+describe('an invitation under open registration', () => {
+	test('is consumed rather than ignored', () => {
+		registration.setRegistrationMode('open');
+		const invite = registration.createInvite(OWNER, { grantsUntil: '2026-10-01' }, now);
+
+		const allowed = registration.checkSignUpAllowed(invite.code, now);
+		expect(allowed.invite?.id).toBe(invite.id);
+		expect(allowed.invite?.grantsUntil).toBe(new Date('2026-10-01T23:59:59.999Z').toISOString());
+	});
+
+	test('carries a month by default, decided by the form rather than the code', () => {
+		const until = registration.defaultGrantUntil(now);
+		const days = (new Date(until).getTime() - now.getTime()) / 86_400_000;
+		expect(Math.round(days)).toBe(registration.DEFAULT_GRANT_DAYS);
+	});
+
+	test('refuses a code that does not work rather than quietly dropping it', () => {
+		// Charging somebody who was told they had a free month is the worse
+		// failure by far, and there is nothing to leak about an open instance.
+		registration.setRegistrationMode('open');
+		expect(() => registration.checkSignUpAllowed('not-a-real-code', now)).toThrow();
+	});
+
+	test('and no code at all is still fine, because the instance is open', () => {
+		registration.setRegistrationMode('open');
+		expect(() => registration.checkSignUpAllowed('', now)).not.toThrow();
+	});
+
+	test('will not hand over a month that has already ended', () => {
+		expect(() => registration.createInvite(OWNER, { grantsUntil: '2020-01-01' }, now)).toThrow();
+	});
+});
+
 describe('coming back after cancelling', () => {
 	// The suite runs self-hosted so plan ceilings never interfere; billing is
 	// the one thing that does not exist under it, so this block turns it off.

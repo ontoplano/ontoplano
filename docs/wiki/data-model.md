@@ -34,7 +34,7 @@ exist.
 | [`habits`](#habits)                               | 7       | yes               |
 | [`idea_tags`](#idea_tags)                         | 4       | yes               |
 | [`ideas`](#ideas)                                 | 8       | yes               |
-| [`invites`](#invites)                             | 8       | —                 |
+| [`invites`](#invites)                             | 9       | —                 |
 | [`mail_failures`](#mail_failures)                 | 11      | —                 |
 | [`notebooks`](#notebooks)                         | 7       | yes               |
 | [`people`](#people)                               | 10      | yes               |
@@ -515,16 +515,17 @@ Indexes:
 
 ## invites
 
-| Column       | Type    | Null     | Default               | Notes             |
-| ------------ | ------- | -------- | --------------------- | ----------------- |
-| `id`         | integer | not null | —                     | primary key, auto |
-| `code`       | text    | not null | —                     | —                 |
-| `note`       | text    | null     | `''`                  | —                 |
-| `created_by` | text    | not null | —                     | —                 |
-| `expires_at` | text    | null     | —                     | —                 |
-| `used_at`    | text    | null     | —                     | —                 |
-| `used_by`    | text    | null     | —                     | —                 |
-| `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| Column         | Type    | Null     | Default               | Notes             |
+| -------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`           | integer | not null | —                     | primary key, auto |
+| `code`         | text    | not null | —                     | —                 |
+| `note`         | text    | null     | `''`                  | —                 |
+| `created_by`   | text    | not null | —                     | —                 |
+| `expires_at`   | text    | null     | —                     | —                 |
+| `grants_until` | text    | null     | —                     | —                 |
+| `used_at`      | text    | null     | —                     | —                 |
+| `used_by`      | text    | null     | —                     | —                 |
+| `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
 

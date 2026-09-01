@@ -109,7 +109,7 @@ const handleRegistration: Handle = async ({ event, resolve }) => {
 	const code = inviteFrom(raw);
 
 	const now = new Date();
-	let invite: { id: number } | null;
+	let invite: { id: number; grantsUntil: string | null } | null;
 	try {
 		invite = checkSignUpAllowed(code, now).invite;
 	} catch (e) {
@@ -128,7 +128,7 @@ const handleRegistration: Handle = async ({ event, resolve }) => {
 			// door into the same act. A card-first account starts on nothing
 			// and meets the billing page on its first navigation.
 			claimFirstAccount(userId);
-			onboardEntitlement(userId, Boolean(invite), now);
+			onboardEntitlement(userId, invite, now);
 			record(userId, 'registered', { ip: safeAddress(event) });
 		}
 	}
