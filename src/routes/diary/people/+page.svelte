@@ -21,6 +21,11 @@
 
 	let showForm = $state(false);
 	let editingId = $state<number | null>(null);
+	/** The face's own form, submitted the moment a file is chosen. */
+	let pictureForm = $state<HTMLFormElement>();
+	let uploadingFace = $state(false);
+	/** Said here rather than by the server, for the ones never sent. */
+	let faceProblem = $state('');
 	let confirmDelete = $state<number | null>(null);
 	let selectedIndex = $state(0);
 
@@ -120,6 +125,31 @@
 								? 'bg-gray-100 ring-2 ring-gray-900 ring-inset'
 								: ''}"
 						>
+							<!--
+								The face, or the initial where there is not one yet.
+
+								A list of names is a list of names; a list of faces is a list
+								of people, and recognising one at a glance is the whole point
+								of a page about the people in your life. The fallback is a
+								letter rather than a grey silhouette — a silhouette says
+								"missing", an initial says "this one".
+							-->
+							{#if person.pictureId}
+								<img
+									src="/media/{person.pictureId}"
+									alt=""
+									loading="lazy"
+									class="size-9 shrink-0 rounded-full border border-gray-200 bg-white object-cover"
+								/>
+							{:else}
+								<span
+									aria-hidden="true"
+									class="flex size-9 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-100 text-sm font-medium text-gray-500"
+								>
+									{person.name.trim().charAt(0).toUpperCase()}
+								</span>
+							{/if}
+
 							<a
 								href={resolve(`/diary/people?person=${person.id}`)}
 								class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
@@ -305,6 +335,88 @@
 			</Field>
 		</FormGrid>
 	</form>
+
+	<!--
+		The picture, in a form of its own, and only once the person exists.
+
+		Two forms because they are two acts: the fields are saved when you press
+		Save, and a picture is stored the moment you choose one — there is no
+		half-uploaded state to keep and nothing to press afterwards. A nested form
+		is not valid HTML anyway.
+	-->
+	{#if editingId}
+		<div class="mt-4 flex flex-wrap items-center gap-3 border-t border-gray-200 pt-4">
+			{#if editing?.pictureId}
+				<img
+					src="/media/{editing.pictureId}"
+					alt=""
+					class="size-14 shrink-0 rounded-full border border-gray-200 bg-white object-cover"
+				/>
+			{:else}
+				<span
+					aria-hidden="true"
+					class="flex size-14 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-100 text-lg font-medium text-gray-500"
+				>
+					{(editing?.name ?? '?').trim().charAt(0).toUpperCase()}
+				</span>
+			{/if}
+
+			<form
+				bind:this={pictureForm}
+				method="post"
+				action="?/setPicture"
+				enctype="multipart/form-data"
+				use:enhance={() =>
+					async ({ update }) => {
+						uploadingFace = false;
+						await update({ reset: false });
+					}}
+				class="flex flex-wrap items-center gap-2"
+			>
+				<input type="hidden" name="id" value={editingId} />
+				<input type="hidden" name="name" value={editing?.name ?? ''} />
+				<label class="btn btn-sm">
+					<Icon name="image" />
+					{editing?.pictureId ? 'Replace the picture' : 'Add a picture'}
+					<input
+						type="file"
+						name="file"
+						accept="image/png,image/jpeg,image/webp,image/gif"
+						class="sr-only"
+						onchange={(e) => {
+							const field = e.currentTarget as HTMLInputElement;
+							const file = field.files?.[0];
+							faceProblem = '';
+							if (!file) return;
+							if (file.size > data.pictureKilobytes * 1024) {
+								faceProblem = `Pictures here are at most ${data.pictureKilobytes}KB, and ${file.name} is ${Math.ceil(file.size / 1024)}KB.`;
+								field.value = '';
+								return;
+							}
+							uploadingFace = true;
+							pictureForm?.requestSubmit();
+						}}
+					/>
+				</label>
+			</form>
+
+			{#if editing?.pictureId}
+				<form method="post" action="?/removePicture" use:enhance>
+					<input type="hidden" name="id" value={editingId} />
+					<button class="btn btn-sm btn-quiet" title="Remove the picture">
+						<Icon name="trash" /> Remove
+					</button>
+				</form>
+			{/if}
+
+			<span class="text-xs text-gray-500">
+				{#if uploadingFace}uploading…{:else}up to {data.pictureKilobytes}KB{/if}
+			</span>
+		</div>
+		{#if faceProblem}
+			<p class="mt-1 text-xs text-red-700">{faceProblem}</p>
+		{/if}
+	{/if}
 
 	{#snippet footer()}
 		<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>

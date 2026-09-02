@@ -38,6 +38,10 @@ export default defineConfig({
 			// The instance-owner pages only exist on a self-hosted instance, and
 			// they are part of what the suite checks.
 			ONTOPLANO_SELF_HOST: 'true',
+			// adapter-node's default is smaller than the pictures this app
+			// accepts, and the app refuses to start when the two disagree — the
+			// suite runs the real built server, so it needs the real setting.
+			BODY_SIZE_LIMIT: '12M',
 			// So a test can present itself as a distinct client and not spend the
 			// whole suite's share of the sign-in rate limit.
 			ONTOPLANO_TRUST_PROXY: 'true',

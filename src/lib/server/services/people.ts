@@ -31,6 +31,8 @@ export type Person = {
 	phone: string | null;
 	email: string | null;
 	notes: string;
+	/** The one picture of them, or null. */
+	pictureId: number | null;
 	mentions: number;
 };
 
@@ -66,6 +68,9 @@ export function listPeople(ctx: Ctx): Person[] {
 			phone: people.phone,
 			email: people.email,
 			notes: people.notes,
+			// The face, when there is one. An id rather than the bytes: the row
+			// draws `/media/<id>`, which the browser caches for good.
+			pictureId: people.pictureId,
 			mentions: sql<number>`count(${entryPeople.id})`.as('mentions')
 		})
 		.from(people)

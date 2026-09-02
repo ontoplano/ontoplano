@@ -18,6 +18,7 @@ import { needsFirstRun } from '$lib/server/services/onboarding';
 import { listCategories } from '$lib/server/services/activities';
 import { buildCtx } from '$lib/server/services/ctx';
 import { loadConfig } from '$lib/server/config';
+import { mediaLimits } from '$lib/server/services/media';
 
 export const load: LayoutServerLoad = async (event) => {
 	// Anything under /login, not just /login itself — /login/reset is where a
@@ -132,6 +133,17 @@ export const load: LayoutServerLoad = async (event) => {
 		config: { week },
 		// How long a delete waits before it happens. The instance's call.
 		undoSeconds: loadConfig().ui.undoSeconds,
+		/*
+		 * The biggest picture this instance takes, so the browser can refuse one
+		 * before sending it.
+		 *
+		 * The server refuses it too — that is where the rule lives — but a
+		 * refusal that arrives after a megabyte has gone up a phone's uplink is a
+		 * refusal that took ten seconds to say no. Worse, an over-large body is
+		 * rejected by the Node adapter before any of this app's code runs, and
+		 * what comes back is not the JSON a form is waiting for.
+		 */
+		maxPictureKilobytes: mediaLimits().maxKilobytes,
 		// Whether the page may offer to send client-side errors: 'off' unless
 		// the instance enabled it, then the account's own once-asked answer.
 		/*

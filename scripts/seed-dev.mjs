@@ -1214,6 +1214,37 @@ const picture = (filename, alt, bytes) => {
 	);
 };
 
+// A face, so the people page is a page of people rather than of names.
+const anaFace = picture('ana.png', 'Ana', solidPng(96, [70, 110, 160]));
+if (!one('select id from people where id = ? and picture_id is not null', ana))
+	db.prepare('update people set picture_id = ? where id = ? and user_id = ?').run(
+		anaFace,
+		ana,
+		uid
+	);
+
+/*
+ * And one inside somebody's writing, which is the other way a picture exists
+ * here: markdown in the text, pointing at `/media/<id>`.
+ *
+ * Appended to an entry that already belongs to a notebook, so the demo shows a
+ * notebook with a picture in it rather than a bare one.
+ */
+const tripPicture = picture('praia.png', 'The beach at Comporta', solidPng(96, [220, 190, 120]));
+{
+	const entry = one(
+		'select id, content from diary_entries where user_id = ? and notebook_id = ? order by id limit 1',
+		uid,
+		portugal
+	);
+	const reference = `![The beach at Comporta](/media/${tripPicture})`;
+	if (entry && !entry.content.includes(reference))
+		db.prepare('update diary_entries set content = ? where id = ?').run(
+			`${entry.content}\n\n${reference}`,
+			entry.id
+		);
+}
+
 const pastaPicture = picture(
 	'tomato-pasta.png',
 	'A bowl of tomato pasta',

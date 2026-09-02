@@ -329,3 +329,70 @@ describe('leaving with them', () => {
 		expect(media.read(ctx(), stored.id).bytes.equals(bytes)).toBe(true);
 	});
 });
+
+/**
+ * One picture per person, and it lets go of the old one.
+ *
+ * SQLite cannot attach an `ON DELETE` action to a column added by
+ * `ALTER TABLE`, so the constraint on `people.picture_id` is the default one —
+ * it would *refuse* to delete a picture somebody's face still points at. The
+ * service nulls the column itself, which is also where the decision belongs:
+ * whether the bytes go depends on whether anything else still wants them.
+ */
+describe('a person’s face', () => {
+	it('replaces the old one and does not leave it behind', async () => {
+		const people = await import('../src/lib/server/services/people');
+		withLimits('[media]\nmax_kilobytes = "500"\n');
+
+		const person = people.createPerson(ctx(), { name: 'Ana' });
+		const first = media.setPersonPicture(ctx(), person, {
+			bytes: png(40, [1, 0, 0]),
+			filename: 'ana.png'
+		});
+		const second = media.setPersonPicture(ctx(), person, {
+			bytes: png(40, [2, 0, 0]),
+			filename: 'ana2.png'
+		});
+
+		expect(second.id).not.toBe(first.id);
+		// The one it replaced is gone, because nothing else was using it.
+		expect(() => media.read(ctx(), first.id)).toThrow(/no such picture/i);
+		expect(media.read(ctx(), second.id).bytes.length).toBeGreaterThan(0);
+		expect(people.listPeople(ctx()).find((p) => p.id === person)?.pictureId).toBe(second.id);
+	});
+
+	it('lets go of the bytes when the face is removed', async () => {
+		const people = await import('../src/lib/server/services/people');
+		const person = people.createPerson(ctx(), { name: 'Bea' });
+		const face = media.setPersonPicture(ctx(), person, {
+			bytes: png(41),
+			filename: 'bea.png'
+		});
+
+		media.removePersonPicture(ctx(), person);
+		expect(people.listPeople(ctx()).find((p) => p.id === person)?.pictureId).toBeNull();
+		expect(() => media.read(ctx(), face.id)).toThrow(/no such picture/i);
+	});
+
+	it('keeps a face that a recipe is also using', async () => {
+		const people = await import('../src/lib/server/services/people');
+		const person = people.createPerson(ctx(), { name: 'Cec' });
+		const shared = media.setPersonPicture(ctx(), person, {
+			bytes: png(42),
+			filename: 'shared.png'
+		});
+		const recipe = recipes.createRecipe(ctx(), { title: 'Hers' });
+		media.attachToRecipe(ctx(), recipe, { bytes: png(42), filename: 'same.png' });
+
+		media.removePersonPicture(ctx(), person);
+		expect(media.read(ctx(), shared.id).bytes.length).toBeGreaterThan(0);
+	});
+
+	it('is not somebody else’s to set', async () => {
+		const people = await import('../src/lib/server/services/people');
+		const mine = people.createPerson(ctx(), { name: 'Mine' });
+		expect(() =>
+			media.setPersonPicture(other(), mine, { bytes: png(43), filename: 'x.png' })
+		).toThrow(/no such person/i);
+	});
+});

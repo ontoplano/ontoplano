@@ -65,6 +65,41 @@ const pages = [
 ].map((p) => ({ ...p, title: titleOf(p.markdown, p.file) }));
 
 const STYLE = `
+/* ── the search box, and what it finds ─────────────────────────────────────
+   The app finds a room from four letters; the docs had nothing but the
+   browser's find, which only ever looks at the page already open. */
+.search { position: relative; margin: 0 0 1rem; }
+.search input {
+  width: 100%; box-sizing: border-box;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--line); border-radius: 6px;
+  background: var(--soft); color: var(--ink);
+  font: inherit; font-size: 0.85rem;
+}
+.search input:focus { outline: 2px solid var(--link); outline-offset: -1px; }
+#docsearch-results {
+  position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px);
+  margin: 0; padding: 0.25rem; list-style: none;
+  max-height: 24rem; overflow-y: auto;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.18);
+}
+#docsearch-results li { margin: 0; }
+#docsearch-results a {
+  display: block; padding: 0.4rem 0.5rem; border-radius: 5px;
+  text-decoration: none; color: var(--ink);
+}
+#docsearch-results a.on, #docsearch-results a:hover { background: var(--soft); }
+#docsearch-results .where {
+  display: block; font-size: 0.7rem; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--muted);
+}
+#docsearch-results .what { display: block; font-size: 0.88rem; font-weight: 600; }
+#docsearch-results .said {
+  display: block; font-size: 0.78rem; color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
 :root {
   --ink: #171a1f; --muted: #5b6270; --line: #e2e5ea; --bg: #ffffff;
   --soft: #f6f7f9; --link: #1d4ed8;
@@ -217,6 +252,166 @@ marked.use({
 	}
 });
 
+/**
+ * Everything findable on this site, as one small list.
+ *
+ * The app has a command palette that finds a room from four letters; the
+ * documentation had nothing — you read the nav or you used the browser's find,
+ * which only ever looks at the page you are already on. This is the same
+ * gesture over the whole site.
+ *
+ * One entry per heading rather than per page, because "where is the bit about
+ * scopes" is a question about a section. The body text under each heading rides
+ * along, trimmed, so a word that appears in a paragraph still finds its
+ * section — and it is what the result shows underneath, so a hit explains
+ * itself before you click it.
+ */
+function searchIndex() {
+	const entries = [];
+
+	for (const page of pages) {
+		entries.push({ p: page.title, t: page.title, h: page.link, s: '' });
+
+		let heading = null;
+		let text = [];
+		const flush = () => {
+			if (!heading) return;
+			entries.push({
+				p: page.title,
+				t: heading.text,
+				h: `${page.link}#${heading.id}`,
+				s: text.join(' ').replace(/\s+/g, ' ').trim().slice(0, 180)
+			});
+			text = [];
+		};
+
+		for (const line of page.markdown.split('\n')) {
+			const match = /^(#{1,3})\s+(.*)$/.exec(line);
+			if (match) {
+				flush();
+				// The page's own h1 is already in as the page entry.
+				heading = match[1] === '#' ? null : { text: match[2].trim(), id: anchor(match[2].trim()) };
+				continue;
+			}
+			if (!heading) continue;
+			// Table rows are not sentences. A generated data-model page is mostly
+			// pipes and dashes, and letting them into the snippet fills the results
+			// with "Column Type Null Default Notes ----".
+			if (/^\s*\|/.test(line) || /^\s*[-|:\s]+$/.test(line)) continue;
+			const plain = line
+				.replace(/^[>\-*+\d.\s]+/, '')
+				// A link keeps its words and loses its address: "Model Context
+				// Protocolhttps://modelcontextprotocol.io" is not a snippet.
+				.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+				.replace(/[`*_[\]()|]/g, '')
+				.trim();
+			if (plain && text.join(' ').length < 200) text.push(plain);
+		}
+		flush();
+	}
+
+	return entries;
+}
+
+/**
+ * The matcher, which is the app's.
+ *
+ * Copied rather than imported: this site is plain files with no bundler, and
+ * eight lines of subsequence scoring is a cheaper coupling than a build step.
+ * It is `matchScore` from `src/lib/destinations.ts` — `pltd` finds "Planner
+ * todo" — and if the two ever drift, that one is right.
+ */
+const SEARCH_SCRIPT = `
+const INDEX = __INDEX__;
+
+function matchScore(haystack, needle) {
+	if (!needle) return 0;
+	const h = haystack.toLowerCase();
+	const n = needle.toLowerCase();
+	if (h.startsWith(n)) return 1000 - h.length;
+	if (h.includes(n)) return 500 - h.indexOf(n);
+	let at = -1, gaps = 0;
+	for (const char of n) {
+		const found = h.indexOf(char, at + 1);
+		if (found === -1) return null;
+		gaps += found - at - 1;
+		at = found;
+	}
+	return 100 - gaps;
+}
+
+const box = document.getElementById('docsearch');
+const list = document.getElementById('docsearch-results');
+let picked = -1;
+
+function find(query) {
+	if (!query.trim()) return [];
+	return INDEX
+		.map((e) => {
+			// The heading first, then the page it is on, then the words under it —
+			// a match in the title is worth more than one three paragraphs down.
+			const title = matchScore(e.t, query);
+			const withPage = matchScore(e.p + ' ' + e.t, query);
+			const body = e.s.toLowerCase().includes(query.toLowerCase()) ? 40 : null;
+			const score = Math.max(title ?? -1, withPage ?? -1, body ?? -1);
+			return score < 0 ? null : { e, score };
+		})
+		.filter(Boolean)
+		.sort((a, b) => b.score - a.score)
+		.slice(0, 12);
+}
+
+function draw() {
+	const hits = find(box.value);
+	picked = hits.length ? 0 : -1;
+	list.innerHTML = hits
+		.map(
+			(hit, i) =>
+				'<li><a href="' + hit.e.h + '" class="' + (i === 0 ? 'on' : '') + '">' +
+				'<span class="where">' + hit.e.p + '</span>' +
+				'<span class="what">' + hit.e.t + '</span>' +
+				(hit.e.s ? '<span class="said">' + hit.e.s + '</span>' : '') +
+				'</a></li>'
+		)
+		.join('');
+	list.hidden = hits.length === 0;
+}
+
+function move(by) {
+	const links = list.querySelectorAll('a');
+	if (!links.length) return;
+	links[Math.max(picked, 0)].classList.remove('on');
+	picked = (picked + by + links.length) % links.length;
+	links[picked].classList.add('on');
+	links[picked].scrollIntoView({ block: 'nearest' });
+}
+
+if (box) {
+	box.addEventListener('input', draw);
+	box.addEventListener('keydown', (e) => {
+		if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+		else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+		else if (e.key === 'Enter') {
+			const links = list.querySelectorAll('a');
+			if (links[picked]) { e.preventDefault(); location.href = links[picked].href; }
+		} else if (e.key === 'Escape') { box.value = ''; draw(); box.blur(); }
+	});
+	box.addEventListener('blur', () => setTimeout(() => (list.hidden = true), 150));
+	box.addEventListener('focus', draw);
+
+	// The same two keys the app uses, so the habit carries over.
+	document.addEventListener('keydown', (e) => {
+		if (e.target === box) return;
+		const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName ?? '');
+		if ((e.key === '/' && !typing) || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
+			e.preventDefault();
+			box.focus();
+			box.select();
+		}
+	});
+}
+`;
+
 function render(page) {
 	const body = rewriteLinks(marked.parse(page.markdown, { async: false }))
 		// Every table gets its own scroll container, so a wide data model does
@@ -246,6 +441,11 @@ function render(page) {
   <div class="wrap">
     <nav>
       <a class="brand" href="/">ontoplano docs</a>
+      <div class="search">
+        <input id="docsearch" type="search" placeholder="Search the docs  /"
+               autocomplete="off" aria-label="Search the documentation">
+        <ul id="docsearch-results" hidden></ul>
+      </div>
       <a class="to-app" href="${APP_URL}">
         Open the app
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -264,6 +464,7 @@ ${body}
       </footer>
     </main>
   </div>
+<script>${SEARCH_SCRIPT.replace('__INDEX__', JSON.stringify(searchIndex()))}</script>
 </body>
 </html>
 `;

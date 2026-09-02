@@ -57,18 +57,15 @@
 		</form>
 
 		<!--
-			A way past it, because this is a step in the funnel and not a wall:
-			confirming is required only where the instance says so, and that gate
-			is in the hook. Somebody whose mail is slow should not be stuck on a
-			page whose only act is "send it again".
-		-->
-		<p class="mt-4 text-center text-sm">
-			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-			<a href={data.next} class="text-gray-600 underline hover:text-gray-900">
-				Skip for now — you can confirm later
-			</a>
-		</p>
+			There used to be a "skip for now — you can confirm later" link here,
+			and it is gone.
 
+			On an instance that requires a confirmed address the hook bounces
+			straight back to this page, so the link led nowhere and read as the app
+			not working. A way out that does not work is worse than no way out: it
+			spends somebody's trust on the first screen they see. Whoever needs
+			past this signs out, or the operator turns the requirement off.
+		-->
 		<form method="post" action="/login?/signOut" use:enhance class="mt-4 text-xs text-gray-500">
 			Wrong address? <button type="submit" class="underline">Sign out</button>.
 		</form>

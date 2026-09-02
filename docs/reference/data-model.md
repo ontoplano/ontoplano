@@ -38,7 +38,7 @@ exist.
 | [`mail_failures`](#mail_failures)                 | 11      | —                 |
 | [`media`](#media)                                 | 9       | yes               |
 | [`notebooks`](#notebooks)                         | 7       | yes               |
-| [`people`](#people)                               | 10      | yes               |
+| [`people`](#people)                               | 11      | yes               |
 | [`plan_members`](#plan_members)                   | 4       | —                 |
 | [`planning_schemes`](#planning_schemes)           | 5       | yes               |
 | [`plugin_manifests`](#plugin_manifests)           | 8       | yes               |
@@ -606,6 +606,7 @@ Indexes:
 | `phone`        | text    | null     | —                     | —                 |
 | `email`        | text    | null     | —                     | —                 |
 | `notes`        | text    | null     | `''`                  | —                 |
+| `picture_id`   | integer | null     | —                     | → `media.id`      |
 | `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 | `updated_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 

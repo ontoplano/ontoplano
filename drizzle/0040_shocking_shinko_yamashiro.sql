@@ -1,0 +1,1 @@
+ALTER TABLE `people` ADD `picture_id` integer REFERENCES media(id);

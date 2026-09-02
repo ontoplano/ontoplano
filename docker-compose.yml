@@ -30,6 +30,11 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET in .env}
       # Self-hosted is the whole app, free, with no billing anywhere in it.
       ONTOPLANO_SELF_HOST: 'true'
+      # The biggest body Node will read. The default is 512kB, which is smaller
+      # than the pictures this app is configured to accept — see
+      # `src/lib/server/db/index.ts` for the check that refuses to start when
+      # the two disagree.
+      BODY_SIZE_LIMIT: ${BODY_SIZE_LIMIT:-12M}
     healthcheck:
       test:
         - CMD

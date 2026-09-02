@@ -106,11 +106,19 @@
 						without one is not a different shape from a card with one.
 					-->
 					{#if recipe.mainPicture}
+						<!--
+							A square, not a stripe.
+
+							Full-width at a fixed height crops a photograph to a letterbox
+							— a horse becomes a horse's flank, a face becomes an eye — and
+							a page of those is unreadable. A square of one size, whatever
+							the picture's own shape, is what makes a grid of cards scan.
+						-->
 						<img
 							src="/media/{recipe.mainPicture}"
 							alt=""
 							loading="lazy"
-							class="mb-3 block h-32 w-full rounded-md border border-gray-200 bg-white object-cover"
+							class="mb-3 block size-[9.6rem] rounded-md border border-gray-200 bg-white object-cover"
 						/>
 					{/if}
 

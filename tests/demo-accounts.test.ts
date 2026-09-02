@@ -89,6 +89,39 @@ describe('the sweep', () => {
 		expect(demo.demoExpiry('visitor-fresh')).toBeTruthy();
 	});
 
+	/**
+	 * Including the bytes.
+	 *
+	 * A picture is a blob in the same file as everything else, so a demo account
+	 * nobody deleted properly is disk that never comes back — and unlike a row
+	 * of text, one photograph is half a megabyte. `USER_TABLES` in
+	 * `services/account.ts` is what makes this true, and the guard beside it
+	 * fails when a new table with a `user_id` is not on that list; this is the
+	 * same promise asserted from the other end.
+	 */
+	it('takes their pictures with it', async () => {
+		const media = await import('../src/lib/server/services/media');
+		const { buildCtx } = await import('../src/lib/server/services/ctx');
+
+		pretendVisitor('visitor-with-photos', new Date(Date.now() - 60_000).toISOString());
+		const ctx = buildCtx('visitor-with-photos');
+		// A real PNG header is all the sniffing needs; the rest is padding.
+		const bytes = Buffer.concat([
+			Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+			Buffer.alloc(64, 3)
+		]);
+		media.store(ctx, { bytes, filename: 'holiday.png' });
+		expect(media.list(ctx)).toHaveLength(1);
+
+		demo.sweepDemoAccounts();
+
+		const left = db.db.select({ id: schema.media.id }).from(schema.media).all();
+		expect(
+			left.length,
+			'a swept demo account left its pictures behind, and nothing will ever collect them'
+		).toBe(0);
+	});
+
 	it('takes the whole account with it', () => {
 		pretendVisitor('visitor-gone', new Date(Date.now() - 60_000).toISOString());
 		demo.sweepDemoAccounts();

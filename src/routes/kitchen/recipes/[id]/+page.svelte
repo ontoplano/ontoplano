@@ -20,6 +20,11 @@
 	let confirmingDelete = $state(false);
 	/** Which picture is one press away from going. */
 	let confirmingPicture = $state<number | null>(null);
+	/** The gallery's own form, submitted the moment a file is chosen. */
+	let pictureForm = $state<HTMLFormElement>();
+	let uploading = $state(false);
+	/** Said here rather than by the server, for the ones never sent. */
+	let pictureProblem = $state('');
 	let cooking = $state(false);
 	let scheduling = $state(false);
 	let cookMode = $state(false);
@@ -402,23 +407,67 @@
 				{/if}
 
 				{#if data.pictures.length < data.pictureLimits.most}
+					<!--
+						Choosing the file is the whole gesture.
+
+						There was a second button to press afterwards, which is a step
+						nobody wants and half of people miss. The form submits itself on
+						change — and refuses an over-large file here, before sending it,
+						because a body over the Node adapter's limit never reaches this
+						app at all: what comes back is not the JSON the form is waiting
+						for, and the page reports an unexplained crash. That is what a
+						1.1MB photograph looked like.
+
+						The input is emptied either way, so the same file can be chosen
+						again after a refusal.
+					-->
 					<form
+						bind:this={pictureForm}
 						method="post"
 						action="?/addPicture"
 						enctype="multipart/form-data"
-						use:enhance
+						use:enhance={() =>
+							async ({ update }) => {
+								uploading = false;
+								await update();
+							}}
 						class="mt-3 flex flex-wrap items-center gap-2"
 					>
 						<input type="hidden" name="recipeId" value={data.recipe.id} />
-						<input
-							type="file"
-							name="file"
-							required
-							accept="image/png,image/jpeg,image/webp,image/gif"
-							class="text-xs text-gray-700 file:mr-2 file:border file:border-gray-300 file:bg-gray-50 file:px-2 file:py-1 file:text-xs"
-						/>
-						<button class="btn btn-sm"><Icon name="plus" /> Add</button>
+						<label class="btn btn-sm">
+							<Icon name="image" /> Add a picture
+							<input
+								type="file"
+								name="file"
+								required
+								accept="image/png,image/jpeg,image/webp,image/gif"
+								class="sr-only"
+								onchange={(e) => {
+									const field = e.currentTarget as HTMLInputElement;
+									const file = field.files?.[0];
+									pictureProblem = '';
+									if (!file) return;
+									if (file.size > data.pictureLimits.kilobytes * 1024) {
+										pictureProblem = `Pictures here are at most ${data.pictureLimits.kilobytes}KB, and ${file.name} is ${Math.ceil(file.size / 1024)}KB.`;
+										field.value = '';
+										return;
+									}
+									uploading = true;
+									pictureForm?.requestSubmit();
+								}}
+							/>
+						</label>
+						{#if uploading}
+							<span class="text-xs text-gray-500">uploading…</span>
+						{:else}
+							<span class="text-xs text-gray-500">
+								up to {data.pictureLimits.kilobytes}KB
+							</span>
+						{/if}
 					</form>
+					{#if pictureProblem}
+						<p class="mt-1 text-xs text-red-700">{pictureProblem}</p>
+					{/if}
 				{:else}
 					<p class="mt-3 text-xs text-gray-500">
 						That is as many as this instance allows. Remove one to add another.

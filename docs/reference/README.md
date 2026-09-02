@@ -15,6 +15,7 @@ is out of date, which is what keeps the two honest.
 
 How the pieces fit, and why. The tables inside are generated.
 
+- [An assistant](an-assistant.md) — pointing Claude, or anything else that speaks MCP, at your own instance
 - [Architecture](architecture.md) — how a request travels, and where each kind of rule is allowed to live
 - [On your phone](on-your-phone.md) — the two ways to install it, the steps for your phone and browser, and what works offline
 - [Running it yourself](running-it.md) — what it needs, three ways to start it, and where your data lives

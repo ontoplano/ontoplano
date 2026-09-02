@@ -24,8 +24,9 @@ import { createHash } from 'node:crypto';
 import { and, eq, like, or, sql } from 'drizzle-orm';
 
 import { loadConfig } from '../config.js';
+import { pictureCeiling } from '../db/assert-body-limit.js';
 import { db } from '../db/index.js';
-import { diaryEntries, media, recipeImages, recipes } from '../db/schema.js';
+import { diaryEntries, media, people, recipeImages, recipes } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { stamp } from './time.js';
@@ -80,12 +81,21 @@ export type Picture = {
 	createdAt: string;
 };
 
-/** What the operator currently allows. Read per call: the file can change. */
+/**
+ * What the operator currently allows. Read per call: the file can change.
+ *
+ * The per-picture ceiling is the *smaller* of what `config.toml` asks for and
+ * what the server can actually receive — `BODY_SIZE_LIMIT` belongs to the Node
+ * adapter and rejects a larger body before this app runs, with an answer no
+ * page can read. One effective number, honestly reported: the pages quote it,
+ * the browser refuses against it, and the service enforces it.
+ */
 export function mediaLimits() {
 	const { media: limits } = loadConfig();
+	const maxKilobytes = pictureCeiling(limits.maxKilobytes).kilobytes;
 	return {
-		maxBytes: limits.maxKilobytes * 1024,
-		maxKilobytes: limits.maxKilobytes,
+		maxBytes: maxKilobytes * 1024,
+		maxKilobytes,
 		recipeImages: limits.recipeImages,
 		entryImages: limits.entryImages,
 		accountBytes: limits.accountMegabytes * 1024 * 1024,
@@ -237,6 +247,13 @@ export function list(ctx: Ctx): Picture[] {
  * follow an id, so `/media/1` does not count `/media/17` as a reference to it.
  */
 export function isReferenced(ctx: Ctx, id: number): boolean {
+	const isAFace = db
+		.select({ id: people.id })
+		.from(people)
+		.where(and(eq(people.userId, ctx.userId), eq(people.pictureId, id)))
+		.get();
+	if (isAFace) return true;
+
 	const inRecipe = db
 		.select({ id: recipeImages.id })
 		.from(recipeImages)
@@ -301,6 +318,69 @@ export function assertEntryWithinLimit(content: string): void {
 		throw new ValidationError(
 			`An entry here holds at most ${limits.entryImages} pictures, and that one has ${count}.`
 		);
+}
+
+// ── A person's face ──────────────────────────────────────────────────────────
+//
+// One picture, not a gallery: a second photograph of the same person answers no
+// question the first did not.
+//
+// The column is nulled by hand rather than by the database. SQLite's
+// `ALTER TABLE … ADD COLUMN … REFERENCES` cannot carry an `ON DELETE` action, so
+// the constraint is the default one — which would refuse to delete a picture a
+// person still points at instead of letting go of it. Doing it here is also
+// where it belongs: whether the bytes go depends on whether anything *else*
+// still wants them.
+
+function assertOwnsPerson(ctx: Ctx, personId: number): void {
+	const found = db
+		.select({ id: people.id })
+		.from(people)
+		.where(and(eq(people.id, personId), eq(people.userId, ctx.userId)))
+		.get();
+	if (!found) throw new NotFoundError('No such person.');
+}
+
+/** Give somebody a face, replacing whatever was there. */
+export function setPersonPicture(
+	ctx: Ctx,
+	personId: number,
+	input: { bytes: Buffer; filename?: string; alt?: string }
+): Picture {
+	assertOwnsPerson(ctx, personId);
+
+	const previous = db
+		.select({ pictureId: people.pictureId })
+		.from(people)
+		.where(and(eq(people.id, personId), eq(people.userId, ctx.userId)))
+		.get()?.pictureId;
+
+	const picture = store(ctx, input);
+	db.update(people)
+		.set({ pictureId: picture.id })
+		.where(and(eq(people.id, personId), eq(people.userId, ctx.userId)))
+		.run();
+
+	// The one it replaced, if nothing else is using it.
+	if (previous && previous !== picture.id) removeIfUnreferenced(ctx, previous);
+	return picture;
+}
+
+export function removePersonPicture(ctx: Ctx, personId: number): void {
+	assertOwnsPerson(ctx, personId);
+
+	const current = db
+		.select({ pictureId: people.pictureId })
+		.from(people)
+		.where(and(eq(people.id, personId), eq(people.userId, ctx.userId)))
+		.get()?.pictureId;
+	if (!current) return;
+
+	db.update(people)
+		.set({ pictureId: null })
+		.where(and(eq(people.id, personId), eq(people.userId, ctx.userId)))
+		.run();
+	removeIfUnreferenced(ctx, current);
 }
 
 // ── A recipe's gallery ───────────────────────────────────────────────────────

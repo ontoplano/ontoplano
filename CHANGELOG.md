@@ -10,6 +10,23 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.39.1 — 2026-09-02
+
+- **Choosing a picture is the whole gesture** — there is no second button to
+  press, in a note, on a recipe or on a person.
+- **A picture that is too big says so before it is sent**, with both numbers,
+  instead of a 500 page reading `JSON.parse: unexpected character`. A refusal
+  the server explains now reaches you in its own words.
+- **People have a face.** One picture each, shown beside the name, so a list of
+  people is a list of people.
+- **A recipe's picture is a square** on the cookbook cards rather than a
+  letterbox strip across the top.
+- **The documentation has search** — the same four-letter matching the app's
+  command palette uses, over every heading on the site. `/` or ⌘K opens it. The
+  assistant has a page of its own there now.
+- The verification screen no longer offers to skip, because on an instance that
+  requires a confirmed address the link came straight back.
+
 ## 0.39.0 — 2026-09-02
 
 - **Setting up asks one thing at a time.** Where you are, when your week

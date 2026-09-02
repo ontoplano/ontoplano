@@ -3,6 +3,7 @@ import Database from 'better-sqlite3';
 import * as schema from './schema.js';
 import { loadConfig, ensureDirectories } from '../config.js';
 import { assertMigrated } from './assert-migrated.js';
+import { reconcileBodyLimit } from './assert-body-limit.js';
 
 ensureDirectories();
 const config = loadConfig();
@@ -22,11 +23,28 @@ client.pragma('foreign_keys = ON');
 // dynamic import fails there, which is itself the answer: a script is
 // never a build, and scripts want the check.
 let building = false;
+/*
+ * Whether this is the built server, as opposed to a dev server or a script.
+ *
+ * It decides one thing: whether `BODY_SIZE_LIMIT` matters. That limit belongs
+ * to `adapter-node`, which is only in front of the app in a production build —
+ * `vite dev` reads bodies itself and a script has no HTTP at all — so enforcing
+ * it anywhere else would fail a test suite over a setting that could not
+ * possibly bite it.
+ */
+let served = false;
 try {
-	({ building } = await import('$app/environment'));
+	const environment = await import('$app/environment');
+	building = environment.building;
+	served = !environment.dev && !environment.building;
 } catch {
-	// Outside the app: a script. The check applies.
+	// Outside the app: a script. The migration check applies; the body one does
+	// not, because nothing here is answering a request.
 }
 if (!building) assertMigrated(client, config.database.path);
+// Same moment: a setting that makes the configured picture ceiling impossible
+// is reconciled here and said out loud, rather than either surfacing as an
+// unreadable crash later or — as it did once — refusing to start at all.
+if (served) reconcileBodyLimit(config.media.maxKilobytes);
 
 export const db = drizzle(client, { schema });

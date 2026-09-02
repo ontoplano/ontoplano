@@ -245,9 +245,16 @@
 										{/each}
 									</ul>
 
+									<!--
+										A fixed floor under it, so hovering does not resize the
+										page. The descriptions are different lengths, and a panel
+										that grows to fit each one makes the whole card jump about
+										under the pointer — which reads as instability rather than
+										as information arriving. Sized to the longest of them.
+									-->
 									<aside
 										aria-live="polite"
-										class="rounded-md border border-gray-200 bg-gray-50 p-3 text-sm"
+										class="min-h-[15rem] rounded-md border border-gray-200 bg-gray-50 p-3 text-sm"
 									>
 										<p class="font-medium text-gray-900">{described?.label}</p>
 										<p class="mt-1 text-gray-500">{described?.blurb}</p>

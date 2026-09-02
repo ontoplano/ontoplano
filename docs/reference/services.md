@@ -1311,6 +1311,12 @@ does not have.
 
 What the operator currently allows. Read per call: the file can change.
 
+The per-picture ceiling is the _smaller_ of what `config.toml` asks for and
+what the server can actually receive — `BODY_SIZE_LIMIT` belongs to the Node
+adapter and rejects a larger body before this app runs, with an answer no
+page can read. One effective number, honestly reported: the pages quote it,
+the browser refuses against it, and the service enforces it.
+
 #### `bytesStored(ctx)`
 
 What this account's pictures already add up to.
@@ -1360,6 +1366,12 @@ and deleting the line is how you take it out again.
 #### `assertEntryWithinLimit(content)`
 
 Refuse writing that has gone over the instance's per-entry ceiling.
+
+#### `setPersonPicture(ctx, personId, input)`
+
+Give somebody a face, replacing whatever was there.
+
+#### `removePersonPicture(ctx, personId)`
 
 #### `picturesOf(ctx, recipeId)`
 

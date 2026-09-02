@@ -268,6 +268,15 @@ export const people = sqliteTable(
 		phone: text('phone'),
 		email: text('email'),
 		notes: text('notes').default(''),
+		/**
+		 * One picture, so a list of names is a list of faces.
+		 *
+		 * One rather than a gallery: this is a face, and a second one of the same
+		 * person answers no question the first did not. `set null` on delete, so
+		 * removing the picture leaves the person — the opposite would be a way to
+		 * lose somebody by tidying up.
+		 */
+		pictureId: integer('picture_id').references(() => media.id, { onDelete: 'set null' }),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),

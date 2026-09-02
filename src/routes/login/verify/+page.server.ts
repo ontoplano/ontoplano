@@ -11,11 +11,15 @@ import { paymentHoldFor } from '$lib/server/services/access';
  * the mail again.
  */
 /**
- * Where somebody goes when they are done here.
+ * Where somebody goes once the address *is* confirmed.
  *
- * The card comes after the address, so this page has to know whether there is
- * a card step waiting — otherwise "Skip for now" would land on the dashboard
- * and the billing gate would bounce them straight back out of it.
+ * The card comes after the address, so this has to know whether there is a card
+ * step waiting — landing on the dashboard would only have the billing gate
+ * bounce them straight out of it again.
+ *
+ * It no longer serves a "skip for now" link. That link led back here on any
+ * instance that requires confirmation, which is every instance that shows this
+ * page, so it read as the app being broken on the first screen somebody sees.
  */
 function onwards(userId: string): string {
 	return paymentHoldFor(userId) === 'billing' ? '/start' : '/';
@@ -24,7 +28,7 @@ function onwards(userId: string): string {
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) redirect(302, '/login');
 	if (locals.user.emailVerified) redirect(302, onwards(locals.user.id));
-	return { email: locals.user.email, next: onwards(locals.user.id) };
+	return { email: locals.user.email };
 };
 
 /** One resend a minute, per account — the button counts the same 60 down. */

@@ -70,7 +70,19 @@ export async function register(
 
 	// First run lands on onboarding; take the offered week so the grid, the board
 	// and the dashboard all have something to draw.
+	//
+	// It is a wizard now — one question a step — so this walks to the end rather
+	// than pressing the finish button straight away. Every step arrives with an
+	// answer already in it, so pressing Next is accepting the defaults, which is
+	// exactly what this helper wants; the finish button only exists on the last
+	// step, which is how this used to hang.
 	if (page.url().includes('/welcome')) {
+		for (let step = 0; step < 8; step += 1) {
+			const next = page.getByRole('button', { name: 'Next', exact: true });
+			if ((await next.count()) === 0) break;
+			await next.click();
+			await page.waitForTimeout(150);
+		}
 		await page.getByRole('button', { name: 'Start planning' }).click();
 		await page.waitForTimeout(1500);
 	}
