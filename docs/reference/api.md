@@ -12,25 +12,25 @@ next build.
 A token holds some of these and nothing else. Each description is the
 sentence somebody agrees to when they grant it.
 
-| Scope             | What it permits                                                          |
-| ----------------- | ------------------------------------------------------------------------ |
-| `streams:write`   | Send readings into your data streams, and create new streams             |
-| `streams:read`    | Read everything your data streams have ever recorded                     |
-| `schedule:read`   | Read everything on your calendar for the days ahead, today included      |
-| `today:read`      | See today's plan — the blocks and the tasks on it, and nothing else      |
-| `habits:read`     | See your habits, which are due today, and whether you kept them          |
-| `plugin:declare`  | Name and describe itself on your integrations page                       |
-| `webhooks:manage` | Ask to be told when things happen — and manage those subscriptions       |
-| `shopping:read`   | See everything on your shopping list                                     |
-| `shopping:write`  | Add to your shopping list, and tick things bought                        |
-| `calendar:read`   | Show your plan in a calendar app. It can see the plan and change nothing |
-| `notes:read`      | Read your diary, your notebooks and your ideas                           |
-| `notes:write`     | Write in your diary and your notebooks, and add ideas                    |
-| `tasks:read`      | Read your todo list and your goals                                       |
-| `tasks:write`     | Add and finish todos, and move them onto a day                           |
-| `kitchen:read`    | Read your recipes                                                        |
-| `kitchen:write`   | Add and change recipes                                                   |
-| `search:read`     | Search everything you have written, in one go                            |
+| Scope             | What it permits                                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------------------------ |
+| `streams:write`   | Send readings into your data streams, and create new streams                                                 |
+| `streams:read`    | Read everything your data streams have ever recorded                                                         |
+| `schedule:read`   | Read everything on your calendar for the days ahead, today included                                          |
+| `today:read`      | See today's plan — the blocks and the tasks on it                                                            |
+| `habits:read`     | See your habits, which are due today, and whether you kept them                                              |
+| `plugin:declare`  | Name and describe itself on your integrations page                                                           |
+| `webhooks:manage` | Send itself a message when something changes here — a task finished, a block done — to an address it chooses |
+| `shopping:read`   | See everything on your shopping list                                                                         |
+| `shopping:write`  | Add to your shopping list, and tick things bought                                                            |
+| `calendar:read`   | Show your plan in a calendar app. It can see the plan and change nothing                                     |
+| `notes:read`      | Read your diary, your notebooks and your ideas                                                               |
+| `notes:write`     | Write in your diary and your notebooks, and add ideas                                                        |
+| `tasks:read`      | Read your todo list and your goals                                                                           |
+| `tasks:write`     | Add and finish todos, and move them onto a day                                                               |
+| `kitchen:read`    | Read your recipes                                                                                            |
+| `kitchen:write`   | Add and change recipes                                                                                       |
+| `search:read`     | Search everything you have written, in one go                                                                |
 
 ## Endpoints
 

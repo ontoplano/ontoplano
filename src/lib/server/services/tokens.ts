@@ -25,7 +25,7 @@ export const SCOPES = {
 	'streams:write': 'Send readings into your data streams, and create new streams',
 	'streams:read': 'Read everything your data streams have ever recorded',
 	'schedule:read': 'Read everything on your calendar for the days ahead, today included',
-	'today:read': "See today's plan — the blocks and the tasks on it, and nothing else",
+	'today:read': "See today's plan — the blocks and the tasks on it",
 	/*
 	 * Habits, on their own, because they are not the plan.
 	 *
@@ -39,7 +39,8 @@ export const SCOPES = {
 	 */
 	'habits:read': 'See your habits, which are due today, and whether you kept them',
 	'plugin:declare': 'Name and describe itself on your integrations page',
-	'webhooks:manage': 'Ask to be told when things happen — and manage those subscriptions',
+	'webhooks:manage':
+		'Send itself a message when something changes here — a task finished, a block done — to an address it chooses',
 	'shopping:read': 'See everything on your shopping list',
 	'shopping:write': 'Add to your shopping list, and tick things bought',
 	/*

@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.41.1 — 2026-09-02
+
+- **A token you just made says how to use it with an AI assistant**, with a link
+  to a page that carries a prompt you can paste — token included — instead of
+  leaving you to work the connection out.
+- Two permissions said too little about themselves: `webhooks:manage` now says
+  it lets an app send itself a message when something changes here, and
+  `today:read` has stopped insisting on what it does not do.
+
 ## 0.41.0 — 2026-09-02
 
 - **Signing in is an address and a password.** "Continue with Google" and

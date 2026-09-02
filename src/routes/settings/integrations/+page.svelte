@@ -120,6 +120,25 @@
 			<p class="mt-2 text-xs text-blue-800">
 				It may: {newToken.scopes.map(scopeSentence).join(' · ')}
 			</p>
+			<!--
+				The one thing somebody is about to go looking for.
+				
+				A token is a means, not an end: whoever just made one is about to
+				paste it into something, and for most of them that something is an
+				assistant. The page that says how — with a prompt to copy — is one
+				link away, and this is the moment to offer it rather than the
+				documentation index.
+			-->
+			<p class="mt-3 border-t border-blue-200 pt-2 text-xs">
+				<a
+					href="https://docs.ontoplano.com/ai-agents"
+					target="_blank"
+					rel="noreferrer"
+					class="text-blue-800 underline decoration-blue-300 underline-offset-2 hover:text-blue-900"
+				>
+					See how to use this with an AI assistant →
+				</a>
+			</p>
 		</div>
 	{/if}
 
