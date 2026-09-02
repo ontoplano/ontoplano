@@ -23,7 +23,7 @@ under the pointer.
 | `/goals`                 | Goals        | 4     |
 | `/health/habits`         | Habits       | 3     |
 | `/ideas`                 | Ideas        | 3     |
-| `/kitchen/recipes`       | Recipes      | 3     |
+| `/kitchen/recipes`       | Recipes      | 4     |
 | `/planner/activities`    | Activities   | 3     |
 | `/planner/board`         | Board        | 4     |
 | `/planner/history`       | History      | 3     |
@@ -104,7 +104,8 @@ at the button that reopens it, so it is not listed here.
 
 1. Recipes, and what they cost you
 2. Paste the page in
-3. An ingredient is a shopping item
+3. And what it looks like
+4. An ingredient is a shopping item
 
 ### `/planner/activities` — Activities
 

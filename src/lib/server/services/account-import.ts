@@ -228,6 +228,13 @@ export function importAccount(userId: string, payload: unknown): ImportResult {
 				if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
 				const row = sanitise(raw as Record<string, unknown>);
 
+				// …and the blob columns back into bytes. The export wrote them as
+				// base64 because a Buffer is not a thing JSON holds; the schema is
+				// what says which strings to read that way, so no marker in the
+				// file can make the import decode a column that is really text.
+				for (const key of blobKeys(table.table))
+					if (typeof row[key] === 'string') row[key] = Buffer.from(row[key], 'base64');
+
 				const wasId = row.id;
 				delete row.id;
 				// Whoever it belonged to, it belongs to this account now.
@@ -287,6 +294,22 @@ export function importAccount(userId: string, payload: unknown): ImportResult {
  * the column, so this is a lookup rather than a transform — and a transform
  * would be a second, guessing implementation of drizzle's own casing rules.
  */
+/**
+ * The property names of a table's blob columns.
+ *
+ * Read from drizzle's own column objects rather than listed here: a second blob
+ * column added later is decoded without anybody remembering this file exists.
+ */
+function blobKeys(table: never): string[] {
+	const keys: string[] = [];
+	for (const [key, value] of Object.entries(table as object)) {
+		if (!value || typeof value !== 'object') continue;
+		const column = value as { dataType?: string; columnType?: string };
+		if (column.dataType === 'buffer' || column.columnType === 'SQLiteBlobBuffer') keys.push(key);
+	}
+	return keys;
+}
+
 function columnProperty(table: never, sqlColumn: string): string | null {
 	for (const [key, value] of Object.entries(table as object)) {
 		if (value && typeof value === 'object' && 'name' in value && value.name === sqlColumn)

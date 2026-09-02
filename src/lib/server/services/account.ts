@@ -43,6 +43,27 @@ export type OwnedTable = {
 	remove: (tx: Deleter, userId: string) => void;
 };
 
+/**
+ * A row, as something JSON can hold.
+ *
+ * One column in this schema is a blob — a picture's bytes — and `JSON.stringify`
+ * turns a Buffer into `{"type":"Buffer","data":[…]}`, which is both enormous and
+ * not something the import can put back. Base64 instead: bigger than the bytes
+ * by a third, and a string, which is what every other value in the file is.
+ *
+ * The export stays a plain JSON file somebody can read, and the import knows
+ * which columns to decode because it reads the schema. See `account-import.ts`.
+ */
+function asJson(row: Record<string, unknown>): Record<string, unknown> {
+	let copy: Record<string, unknown> | null = null;
+	for (const [key, value] of Object.entries(row)) {
+		if (!Buffer.isBuffer(value) && !(value instanceof Uint8Array)) continue;
+		copy ??= { ...row };
+		copy[key] = Buffer.from(value).toString('base64');
+	}
+	return copy ?? row;
+}
+
 function owned(name: string, table: never): OwnedTable {
 	// Resolved on use rather than captured here: this list is built at module
 	// scope, and reading a column off a table that has not finished
@@ -51,7 +72,7 @@ function owned(name: string, table: never): OwnedTable {
 	return {
 		name,
 		table,
-		rows: (userId) => db.select().from(table).where(eq(col(), userId)).all(),
+		rows: (userId) => db.select().from(table).where(eq(col(), userId)).all().map(asJson),
 		remove: (tx, userId) => void tx.delete(table).where(eq(col(), userId)).run()
 	};
 }

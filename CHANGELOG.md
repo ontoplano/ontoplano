@@ -10,6 +10,19 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.38.0 — 2026-09-02
+
+- **Pictures.** Paste a screenshot into an entry, drop one in, or press the
+  button — it lands in your writing as something you can move and delete like
+  any other line, and it is stored in the same file as everything else, so it
+  travels with your export.
+- **Recipes have a gallery.** Up to six pictures each, and the one you star is
+  the one the cookbook shows — so a list of forty recipes is something you
+  recognise rather than read.
+- **The instance decides the ceilings** — how big a picture may be, how many a
+  recipe or an entry may carry, and what your pictures may add up to — in
+  `[media]` in `config.toml`.
+
 ## 0.37.0 — 2026-09-02
 
 - **You can hand an assistant the keys.** `POST /api/mcp` is a Model Context

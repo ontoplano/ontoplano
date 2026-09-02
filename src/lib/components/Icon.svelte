@@ -58,6 +58,9 @@
 		link: 'M10 14a4 4 0 0 0 6 .5l2-2a4 4 0 0 0-5.7-5.7L11 8M14 10a4 4 0 0 0-6-.5l-2 2a4 4 0 0 0 5.7 5.7L13 16',
 		user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a8 8 0 0 1 16 0',
 		plug: 'M9 3v6M15 3v6M7 9h10v3a5 5 0 0 1-10 0zM12 17v4',
+		// A frame with a hill and a sun in it — the one shape everybody reads as
+		// "a picture" at 18 pixels.
+		image: 'M4 5h16v14H4zM4 16l4-4 3 3 4-5 5 6M9 9.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0',
 		note: 'M5 4h11l3 3v13H5zM8 10h8M8 14h6',
 		notebook: 'M7 4h12v17H7zM7 8H4M7 12H4M7 16H4',
 		// A fork and a knife: the kitchen, which was borrowing the shopping bag.

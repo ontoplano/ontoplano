@@ -68,6 +68,7 @@ sentence somebody agrees to when they grant it.
 | `/calendar/[token]`                          | GET    | `calendar:read`   |
 | `/healthz`                                   | GET    | —                 |
 | `/manifest.webmanifest`                      | GET    | —                 |
+| `/media`                                     | POST   | —                 |
 | `/media/[id]`                                | GET    | —                 |
 | `/robots.txt`                                | GET    | —                 |
 | `/settings/account/export`                   | GET    | —                 |
@@ -417,6 +418,24 @@ three things a launcher shows and nothing else, because a staging instance
 that differs in any other way has stopped standing in for the one it copies.
 
 **GET**
+
+### `/media`
+
+Somewhere to put a picture, before the writing that mentions it exists.
+
+This is an endpoint rather than a page action, and that is a deliberate
+exception to the rule that pages mutate through actions. The reason is what
+it is for: pasting a screenshot into a note. The picture has to be stored and
+given an address _while the person is still typing_, because the address is
+what goes into the text — so there is no form being submitted, and nothing on
+the page changes. The entry itself is still saved by an ordinary form action,
+with the markdown the person can see and edit.
+
+Nothing is relaxed by that. The session is required, the ceilings and the
+type allowlist are the service's, and SvelteKit's origin check covers a
+`multipart/form-data` POST exactly as it covers a form.
+
+**POST**
 
 ### `/media/[id]`
 

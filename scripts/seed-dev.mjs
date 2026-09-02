@@ -17,6 +17,7 @@
  * it finds. Re-runnable: every write is get-or-create.
  */
 import { createHash, randomBytes } from 'node:crypto';
+import { deflateSync } from 'node:zlib';
 import Database from 'better-sqlite3';
 
 const path = process.argv[2];
@@ -1141,6 +1142,98 @@ const riceAndBeans = recipe('Rice and beans', {
 ingredient(riceAndBeans, 'rice', 300, 'g');
 ingredient(riceAndBeans, 'black beans', 400, 'g');
 ingredient(riceAndBeans, 'garlic', 3, 'cloves');
+
+// --- Pictures ---------------------------------------------------------------
+//
+// Two of them, drawn here rather than shipped as files: a seed that carries
+// binaries is a seed nobody reviews, and the point is a database with a little
+// of everything in it, not a photograph.
+//
+// They are real PNGs — hand-assembled, so no image library is needed and the
+// bytes are exactly what a browser would accept. A recipe gets one as its main
+// picture, and a notebook entry mentions the other in its own text, which are
+// the two ways a picture exists in this app.
+
+/** A solid PNG of one colour, `size` square. Enough to be a real picture. */
+function solidPng(size, [r, g, b]) {
+	const crcTable = Array.from({ length: 256 }, (_, n) => {
+		let c = n;
+		for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+		return c >>> 0;
+	});
+	const crc = (buf) => {
+		let c = 0xffffffff;
+		for (const byte of buf) c = crcTable[(c ^ byte) & 0xff] ^ (c >>> 8);
+		return (c ^ 0xffffffff) >>> 0;
+	};
+	const chunk = (type, data) => {
+		const length = Buffer.alloc(4);
+		length.writeUInt32BE(data.length);
+		const body = Buffer.concat([Buffer.from(type, 'latin1'), data]);
+		const check = Buffer.alloc(4);
+		check.writeUInt32BE(crc(body));
+		return Buffer.concat([length, body, check]);
+	};
+
+	const ihdr = Buffer.alloc(13);
+	ihdr.writeUInt32BE(size, 0);
+	ihdr.writeUInt32BE(size, 4);
+	ihdr[8] = 8; // bit depth
+	ihdr[9] = 2; // truecolour
+	// One filter byte per row, then the pixels.
+	const raw = Buffer.concat(
+		Array.from({ length: size }, () =>
+			Buffer.concat([
+				Buffer.from([0]),
+				Buffer.concat(Array.from({ length: size }, () => Buffer.from([r, g, b])))
+			])
+		)
+	);
+	return Buffer.concat([
+		Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+		chunk('IHDR', ihdr),
+		chunk('IDAT', deflateSync(raw)),
+		chunk('IEND', Buffer.alloc(0))
+	]);
+}
+
+const picture = (filename, alt, bytes) => {
+	const sha = createHash('sha256').update(bytes).digest('hex');
+	const existing = one('select id from media where user_id = ? and sha256 = ?', uid, sha);
+	if (existing) return existing.id;
+	return run(
+		`insert into media (user_id, mime, filename, alt, byte_size, bytes, sha256, created_at)
+		 values (?, 'image/png', ?, ?, ?, ?, ?, ?)`,
+		uid,
+		filename,
+		alt,
+		bytes.length,
+		bytes,
+		sha,
+		stamp(now)
+	);
+};
+
+const pastaPicture = picture(
+	'tomato-pasta.png',
+	'A bowl of tomato pasta',
+	solidPng(96, [190, 60, 45])
+);
+if (
+	!one(
+		'select id from recipe_images where recipe_id = ? and media_id = ?',
+		tomatoPasta,
+		pastaPicture
+	)
+)
+	run(
+		`insert into recipe_images (user_id, recipe_id, media_id, position, is_main, created_at)
+		 values (?, ?, ?, 0, 1, ?)`,
+		uid,
+		tomatoPasta,
+		pastaPicture,
+		stamp(now)
+	);
 
 // A meal is a block with a recipe on it, on the grid with everything else.
 const dinner = one("select id from recurring_tasks where user_id = ? and label = 'cooking'", uid);

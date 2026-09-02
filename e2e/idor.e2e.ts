@@ -328,6 +328,80 @@ test.describe('one account cannot reach another account by id', () => {
 		});
 	}
 
+	/**
+	 * A picture is bytes, so reaching one is reading it rather than editing it.
+	 *
+	 * The other cases here attack a mutation; this one attacks the read, which
+	 * is the whole of what a picture has. `/media/<id>` is the address of
+	 * somebody's photograph — the one thing in this app where guessing a number
+	 * would hand over the content itself rather than a row about it.
+	 */
+	test('a picture cannot be read from another account', async ({ playwright }) => {
+		const request = await playwright.request.newContext({ baseURL: ORIGIN });
+
+		// A real PNG: the service reads the bytes, not the name.
+		const png = Buffer.from(
+			'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAJUlEQVR4nGP8//8/AymAiSTVoxpGNYxq' +
+				'GNUwqmFUw6iGUQ1DTwMAWKMD/1sYQKQAAAAASUVORK5CYII=',
+			'base64'
+		);
+
+		const uploaded = await request.post('/media', {
+			headers: { Origin: ORIGIN, Cookie: alice.cookie },
+			multipart: { file: { name: 'alice.png', mimeType: 'image/png', buffer: png } }
+		});
+		expect(uploaded.ok(), `Alice uploading: ${uploaded.status()}`).toBeTruthy();
+		const id = (await uploaded.json()).id as number;
+
+		const hers = await request.get(`/media/${id}`, { headers: { Cookie: alice.cookie } });
+		expect(hers.status(), 'Alice reading her own').toBe(200);
+
+		const stolen = await request.get(`/media/${id}`, { headers: { Cookie: mallory.cookie } });
+		const invented = await request.get('/media/987654', { headers: { Cookie: mallory.cookie } });
+		const anonymous = await request.get(`/media/${id}`, { headers: { Cookie: '' } });
+
+		expect(stolen.status(), "reaching Alice's picture").toBe(404);
+		expect(invented.status(), 'reaching one that never existed').toBe(404);
+		expect(anonymous.status(), 'reaching one with no session').toBe(404);
+		// Indistinguishable: a different body would say the row is there.
+		expect(await stolen.text()).toBe(await invented.text());
+
+		await request.dispose();
+	});
+
+	/**
+	 * And a picture cannot be hung on somebody else's recipe, which is the other
+	 * half: the gallery row carries its own user_id, and the recipe is checked
+	 * before anything is stored.
+	 */
+	test('a picture cannot be attached to another account’s recipe', async ({ playwright }) => {
+		const request = await playwright.request.newContext({ baseURL: ORIGIN });
+
+		const created = await action(request, alice, '/kitchen/recipes?/create', {
+			title: "alice's photographed recipe"
+		});
+		expect(['success', 'redirect']).toContain(created.type);
+		const recipeId = await firstId(request, alice, '/kitchen/recipes', 'recipes');
+
+		const png = Buffer.from(
+			'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAJUlEQVR4nGP8//8/AymAiSTVoxpGNYxq' +
+				'GNUwqmFUw6iGUQ1DTwMAWKMD/1sYQKQAAAAASUVORK5CYII=',
+			'base64'
+		);
+
+		const attempt = await request.post(`/kitchen/recipes/${recipeId}?/addPicture`, {
+			headers: { Origin: ORIGIN, Cookie: mallory.cookie, 'x-sveltekit-action': 'true' },
+			multipart: {
+				recipeId,
+				file: { name: 'mallory.png', mimeType: 'image/png', buffer: png }
+			}
+		});
+		const body = await attempt.json();
+		expect(body.status, "Mallory attaching to Alice's recipe").toBe(404);
+
+		await request.dispose();
+	});
+
 	test('a session cannot be revoked from another account', async ({ playwright }) => {
 		const request = await playwright.request.newContext({ baseURL: ORIGIN });
 

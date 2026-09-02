@@ -12,6 +12,7 @@ import {
 } from '../tags.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
+import { assertEntryWithinLimit } from './media.js';
 import { ownedNotebookId } from './notebooks.js';
 import { stamp, stamps } from './time.js';
 import { emit } from './webhooks.js';
@@ -78,6 +79,7 @@ export function createEntry(
 	raw: { content: unknown; tags?: unknown; notebookId?: unknown }
 ): number {
 	const content = str(raw.content, 'content', { max: MAX_ENTRY_LENGTH });
+	assertEntryWithinLimit(content);
 	const entryId = insertEntry(ctx, content, undefined, ownedNotebookId(ctx, raw.notebookId));
 
 	const tagNames = parseTags(tagInput(raw.tags));
@@ -123,6 +125,7 @@ export function updateEntry(
 	raw: { content: unknown; tags?: unknown; notebookId?: unknown }
 ): void {
 	const content = str(raw.content, 'content', { max: MAX_ENTRY_LENGTH });
+	assertEntryWithinLimit(content);
 
 	const res = db
 		.update(diaryEntries)

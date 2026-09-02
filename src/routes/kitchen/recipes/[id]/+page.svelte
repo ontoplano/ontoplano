@@ -18,6 +18,8 @@
 
 	let editing = $state(false);
 	let confirmingDelete = $state(false);
+	/** Which picture is one press away from going. */
+	let confirmingPicture = $state<number | null>(null);
 	let cooking = $state(false);
 	let scheduling = $state(false);
 	let cookMode = $state(false);
@@ -295,6 +297,131 @@
 				{#if data.recipe.source}
 					<p class="mt-4 border-t border-gray-200 pt-3 text-xs text-gray-500">
 						From {data.recipe.source}
+					</p>
+				{/if}
+			</div>
+		</section>
+
+		<!--
+			The pictures, and which one is the recipe.
+			A gallery rather than illustrations inside the method: these have an
+			order, one of them stands for the recipe in every list, and how many
+			there may be is the instance's call. The main one is marked with a star
+			because that is the same word the rest of the app uses for "this is the
+			one" — and it is never only a colour, which nobody can rely on seeing.
+		-->
+		<section class="border border-gray-200 bg-white shadow-card" data-tour="recipe-pictures">
+			<header
+				class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-3"
+			>
+				<h2 class="eyebrow shrink-0 text-gray-600">Pictures</h2>
+				<span class="text-xs text-gray-500">
+					{data.pictures.length} of {data.pictureLimits.most}, up to {data.pictureLimits
+						.kilobytes}KB each
+				</span>
+			</header>
+
+			<div class="p-4">
+				{#if data.pictures.length > 0}
+					<ul class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+						{#each data.pictures as picture (picture.id)}
+							<li class="group relative">
+								<img
+									src="/media/{picture.id}"
+									alt={picture.alt || picture.filename}
+									loading="lazy"
+									class="aspect-square w-full rounded-md border border-gray-200 bg-white object-cover"
+								/>
+
+								{#if picture.isMain}
+									<span
+										class="absolute top-1 left-1 flex items-center gap-1 rounded bg-gray-900/80 px-1.5 py-0.5 text-[0.65rem] font-medium text-white"
+									>
+										<Icon name="star" /> Main
+									</span>
+								{/if}
+
+								<div class="mt-1 flex items-center justify-between gap-1">
+									{#if !picture.isMain}
+										<form method="post" action="?/setMainPicture" use:enhance>
+											<input type="hidden" name="recipeId" value={data.recipe.id} />
+											<input type="hidden" name="mediaId" value={picture.id} />
+											<button
+												class="btn btn-sm btn-quiet"
+												title="Make this the main picture"
+												aria-label="Make this the main picture"><Icon name="star" /></button
+											>
+										</form>
+									{:else}
+										<span></span>
+									{/if}
+
+									<!--
+										Two steps, and the second one where the first one was not:
+										a bin under the cursor that removes on the second click is
+										a picture lost to a double-click. `use:armed` ignores the
+										first 450ms of the confirm for the same reason.
+									-->
+									{#if confirmingPicture === picture.id}
+										<span class="flex items-center gap-1">
+											<button
+												type="button"
+												class="btn btn-sm btn-quiet"
+												onclick={() => (confirmingPicture = null)}
+												title="Keep it"
+												aria-label="Keep it"><Icon name="close" /></button
+											>
+											<form method="post" action="?/removePicture" use:enhance>
+												<input type="hidden" name="recipeId" value={data.recipe.id} />
+												<input type="hidden" name="mediaId" value={picture.id} />
+												<button
+													class="btn btn-sm btn-danger"
+													use:armed
+													title="Remove it"
+													aria-label="Remove it">Remove</button
+												>
+											</form>
+										</span>
+									{:else}
+										<button
+											type="button"
+											class="btn btn-sm btn-quiet"
+											onclick={() => (confirmingPicture = picture.id)}
+											title="Remove this picture"
+											aria-label="Remove this picture"><Icon name="trash" /></button
+										>
+									{/if}
+								</div>
+							</li>
+						{/each}
+					</ul>
+				{:else}
+					<p class="text-sm text-gray-500">
+						No pictures yet — the first one you add becomes the one the list shows.
+					</p>
+				{/if}
+
+				{#if data.pictures.length < data.pictureLimits.most}
+					<form
+						method="post"
+						action="?/addPicture"
+						enctype="multipart/form-data"
+						use:enhance
+						class="mt-3 flex flex-wrap items-center gap-2"
+					>
+						<input type="hidden" name="recipeId" value={data.recipe.id} />
+						<input
+							type="file"
+							name="file"
+							required
+							accept="image/png,image/jpeg,image/webp,image/gif"
+							class="text-xs text-gray-700 file:mr-2 file:border file:border-gray-300 file:bg-gray-50 file:px-2 file:py-1 file:text-xs"
+						/>
+						<button class="btn btn-sm"><Icon name="plus" /> Add</button>
+					</form>
+				{:else}
+					<p class="mt-3 text-xs text-gray-500">
+						That is as many as this instance allows. Remove one to add another.
 					</p>
 				{/if}
 			</div>

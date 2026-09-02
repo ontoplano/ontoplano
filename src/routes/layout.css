@@ -1030,6 +1030,31 @@ html[data-style='playful'] .card-accent {
 	margin: 0.125rem 0;
 }
 
+/*
+ * A picture inside somebody's writing.
+ *
+ * Bounded rather than full width: an entry is prose with a picture in it, and a
+ * screenshot blown up to the width of a laptop stops the reading rather than
+ * illustrating it. Tall ones are capped too, so a photo from a phone — three
+ * times as tall as it is wide — does not push the rest of the entry off the
+ * screen.
+ *
+ * The ground under it is deliberate: a PNG with transparency in it is drawn on
+ * whatever is behind, and in the dark theme that is a dark page, which turns
+ * black line art into nothing at all.
+ */
+.md img.md-image {
+	display: block;
+	margin: 0.6rem 0;
+	max-width: min(100%, 34rem);
+	max-height: 26rem;
+	width: auto;
+	height: auto;
+	border: 1px solid var(--color-gray-200);
+	border-radius: var(--radius-md, 0);
+	background: #ffffff;
+}
+
 /* A task line reads as a line, not as a bullet with a box after it. */
 .md li.md-task {
 	display: flex;

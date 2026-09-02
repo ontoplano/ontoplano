@@ -104,9 +104,14 @@ export function mediaLimits() {
 function tidyFilename(raw: string): string {
 	return (
 		raw
+			// Nothing path-shaped survives. It is never used as a path — the bytes
+			// are a column — but a name that still looks like one invites somebody
+			// to treat it as one later.
+			.replace(/\.{2,}/g, '.')
 			.replace(/[\\/]/g, ' ')
 			// eslint-disable-next-line no-control-regex
 			.replace(/[\u0000-\u001f\u007f"';]/g, '')
+			.replace(/\s+/g, ' ')
 			.trim()
 			.slice(0, MAX_FILENAME_LENGTH)
 	);

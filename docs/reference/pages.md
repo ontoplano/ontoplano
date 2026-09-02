@@ -120,6 +120,14 @@ one. This is the same notebook with the whole width.
 
 The seven days from a date, as `YYYY-MM-DD`.
 
+### `/kitchen/recipes`
+
+Every recipe, with the picture that stands for it.
+
+One query for the whole list rather than one per card: a cookbook is a page
+of forty cards, and forty round trips to ask "does this one have a picture"
+is how a list stops being instant.
+
 ### `/login`
 
 **`signUp`**

@@ -417,6 +417,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				body: 'Copy a recipe from wherever you found it and paste the whole thing. The ingredients and the steps are pulled out of it.'
 			},
 			{
+				target: '[data-tour="recipe-pictures"]',
+				title: 'And what it looks like',
+				body: 'Up to six pictures per recipe. Star one and it becomes the one the list shows, so a cookbook is something you recognise by sight rather than by reading forty titles.'
+			},
+			{
 				target: '[data-tour="recipe-list"]',
 				title: 'An ingredient is a shopping item',
 				body: 'Put a recipe on the week and everything it needs turns up on the shopping list, minus what you already have.'

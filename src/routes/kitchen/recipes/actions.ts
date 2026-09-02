@@ -14,6 +14,7 @@ import {
 	setArchived,
 	updateRecipe
 } from '$lib/server/services/recipes';
+import { attachToRecipe, detachFromRecipe, setMain } from '$lib/server/services/media';
 import { parseRecipeFromHtml } from '$lib/recipe-import';
 
 /** A recipe page is tens of kilobytes. This is where a paste stops being one. */
@@ -150,6 +151,63 @@ export const recipeActions = {
 				note: formData.get('note')
 			});
 			return { success: true, action: 'addIngredient' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/*
+	 * The gallery: three actions, all of them ordinary form posts.
+	 *
+	 * Unlike a picture pasted into a note — which has to be stored while
+	 * somebody is still typing — a recipe's pictures are a list on a page that is
+	 * already a form, so there is nothing to invent: a file input, a submit, a
+	 * reload. Everything about how many and how big is the service's.
+	 */
+	addPicture: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const recipeId = Number(formData.get('recipeId'));
+		if (!recipeId) return fail(400, { message: 'No recipe' });
+
+		const file = formData.get('file');
+		if (!(file instanceof File) || file.size === 0)
+			return fail(400, { message: 'Choose a picture first.' });
+
+		try {
+			attachToRecipe(buildCtx(locals.user!.id), recipeId, {
+				bytes: Buffer.from(await file.arrayBuffer()),
+				filename: file.name,
+				alt: String(formData.get('alt') ?? '')
+			});
+			return { success: true, action: 'addPicture' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	removePicture: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			detachFromRecipe(
+				buildCtx(locals.user!.id),
+				Number(formData.get('recipeId')),
+				Number(formData.get('mediaId'))
+			);
+			return { success: true, action: 'removePicture' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	setMainPicture: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			setMain(
+				buildCtx(locals.user!.id),
+				Number(formData.get('recipeId')),
+				Number(formData.get('mediaId'))
+			);
+			return { success: true, action: 'setMainPicture' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

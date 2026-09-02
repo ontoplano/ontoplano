@@ -100,6 +100,20 @@
 					href={resolve('/kitchen/recipes/[id]', { id: String(recipe.id) })}
 					class="lift mb-4 block break-inside-avoid border border-gray-200 bg-white p-4 shadow-card"
 				>
+					<!--
+						The picture, when there is one: a cookbook you recognise by
+						sight rather than by reading forty titles. Sized so a card
+						without one is not a different shape from a card with one.
+					-->
+					{#if recipe.mainPicture}
+						<img
+							src="/media/{recipe.mainPicture}"
+							alt=""
+							loading="lazy"
+							class="mb-3 block h-32 w-full rounded-md border border-gray-200 bg-white object-cover"
+						/>
+					{/if}
+
 					<span class="block text-sm font-medium text-gray-900">{recipe.title}</span>
 
 					<span class="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">

@@ -52,6 +52,32 @@ and forgotten on the other — see [Pages and actions](pages.md) and
 | What an instance allows     | `config.toml`               | it is the operator's decision, not the code's                           |
 | What an account prefers     | `user_settings`             | it is theirs, and it travels in the export                              |
 | Why a line is the way it is | the comment above that line | it moves with the code, so it stays true                                |
+| A picture                   | a column in the database    | one file you can copy, export and walk away with                        |
+
+## Pictures live in the database
+
+The bytes of an uploaded picture are a `blob` column in `media`, not a file in a
+directory beside it. The trade is deliberate: what this app promises is that
+your data is one SQLite file you can copy, export and walk away with, and a
+media directory makes that two things that have to travel together — a backup
+that took one of them and not the other looks exactly like a backup. Under a
+megabyte a row SQLite reads a blob faster than the filesystem opens a file, and
+the ceiling is the operator's (`[media] max_kilobytes`), so the file cannot
+quietly become unmanageable.
+
+Three rules guard what comes in, and all three are in `services/media.ts`:
+
+- **The type is decided by the bytes**, never by the `Content-Type` the sender
+  claimed or the extension on the name they chose.
+- **SVG is not an image here.** It is a document that can carry script, and it
+  would be served from this app's own origin. There is no setting for it.
+- **The ceilings are the operator's** — per picture, per recipe, per entry and
+  per account — and they are enforced in the service, so the API has them too.
+
+Serving is `/media/<id>`, scoped by owner in the `WHERE`, with `nosniff` and an
+immutable cache. Inside somebody's writing a picture is markdown pointing at
+that address, and the renderer refuses any other address: an external one would
+tell a third party who is reading, and when.
 
 ## What is deliberately absent
 
