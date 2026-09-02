@@ -657,7 +657,9 @@
 				-->
 				<a
 					href={resolve('/settings/account')}
-					class="flex flex-1 items-center justify-center {page.url.pathname.startsWith('/settings')
+					class="tap flex flex-1 items-center justify-center {page.url.pathname.startsWith(
+						'/settings'
+					)
 						? 'text-chrome-ink'
 						: 'text-chrome-muted'}"
 					aria-label="Account"
@@ -670,7 +672,7 @@
 				<button
 					type="button"
 					onclick={() => (palette.open = true)}
-					class="flex flex-1 items-center justify-center text-chrome-muted"
+					class="tap flex flex-1 items-center justify-center text-chrome-muted"
 					aria-label="Search"
 					title="Search"
 					data-tour="search"
@@ -701,7 +703,7 @@
 					<button
 						onpointerdown={(e) => rooms?.summon(e)}
 						style="clip-path: {MARK_CLIP_PATH}"
-						class="pie-handle absolute -top-6 left-1/2 flex h-16 w-16 -translate-x-1/2 items-center justify-center {roomsOpen
+						class="tap tap-shape pie-handle absolute -top-6 left-1/2 flex h-16 w-16 -translate-x-1/2 items-center justify-center {roomsOpen
 							? 'text-chrome-ink'
 							: 'text-chrome-muted'}"
 						aria-label="Go to a section"
@@ -717,7 +719,7 @@
 				<!-- Home by name, since the pie no longer offers it. -->
 				<a
 					href={resolve('/')}
-					class="flex flex-1 items-center justify-center {page.url.pathname === '/'
+					class="tap flex flex-1 items-center justify-center {page.url.pathname === '/'
 						? 'text-chrome-ink'
 						: 'text-chrome-muted'}"
 					aria-label="Home"
@@ -728,7 +730,7 @@
 
 				<button
 					onpointerdown={(e) => pie?.summon(e)}
-					class="pie-handle flex flex-1 items-center justify-center {pieOpen
+					class="tap pie-handle flex flex-1 items-center justify-center {pieOpen
 						? 'text-chrome-ink'
 						: 'text-chrome-muted'}"
 					aria-label="Write something down"

@@ -1547,6 +1547,38 @@ html .ec {
 }
 
 /*
+ * A press you can see.
+ *
+ * The bottom bar's controls answered a tap by navigating and by nothing else:
+ * no hover exists on a phone, so between the finger going down and the next
+ * page arriving there was no sign the tap had registered at all — which on a
+ * slow connection reads as a dead button and gets pressed again.
+ *
+ * A ground and a slight shrink, held while the finger is down. `:active` is the
+ * one state a touchscreen does give, and the tap highlight is turned off
+ * because the browser's own blue rectangle ignores the shape of the control
+ * (the raised pie button is not a rectangle) and lands a beat late.
+ */
+.tap {
+	-webkit-tap-highlight-color: transparent;
+	transition:
+		background-color 120ms ease,
+		transform 120ms ease;
+}
+
+.tap:active {
+	background-color: color-mix(in srgb, currentColor 14%, transparent);
+	transform: scale(0.94);
+}
+
+/* The one that is its own shape: it presses, but a rectangle behind an octagon
+   would be worse than nothing. */
+.tap-shape:active {
+	background-color: transparent;
+	transform: translate(-50%, 0) scale(0.92);
+}
+
+/*
  * Keyboard hints are noise without a keyboard. Keyed on the pointer being
  * coarse rather than on width: a small window on a laptop still has a keyboard,
  * and a large tablet does not.
