@@ -326,12 +326,19 @@
 							<g transform="translate(-11 -20)">
 								<Icon name={item.icon} size={24} />
 							</g>
+							<!--
+								11px, because the wedge is as wide as it is: at 13 the longest
+								name in the ring — Notebooks — ran past its own slice and into
+								the one beside it, and Shopping was touching the edge. The ring
+								is sized for eight names, so the type is sized for the longest
+								of them rather than the average.
+							-->
 							<text
 								x="0"
-								y="18"
+								y="17"
 								text-anchor="middle"
 								fill="currentColor"
-								class="text-[13px] font-semibold"
+								class="text-[11px] font-semibold"
 							>
 								{item.label}
 							</text>
