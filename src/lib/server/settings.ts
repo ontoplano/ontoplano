@@ -415,7 +415,10 @@ export function isDemo(): boolean {
  */
 export function demoLifetimeMinutes(): number {
 	const raw = Number(process.env.ONTOPLANO_DEMO_TTL_MINUTES);
-	return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 180;
+	// Half an hour since last seen, not three. A demo visit is minutes long, and
+	// the accounts are seeded rows on a small disk — keeping each one alive for
+	// an afternoon after somebody has gone is paying for an audience that left.
+	return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 30;
 }
 
 /**
