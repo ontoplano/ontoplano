@@ -10,6 +10,23 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.45.0 — 2026-09-02
+
+- **Escape closes the quick-write forms again.** The dashboard's own Escape
+  handler was cancelling the dialog's built-in close, so `i`, `t`, `n` and `b`
+  opened something that only the × and the backdrop could shut. The same was
+  true on the diary, the shopping list and the ideas page.
+- **Undo covers more of the moves you make without looking**: skipping a block
+  as well as finishing one, on the board and on the dashboard, and closing a
+  goal as achieved or missed. Nothing is written until the window closes.
+- **The demo tidies up after itself.** Expired accounts were only swept when a
+  _new_ visitor arrived, so a demo nobody new came to never cleared — including
+  your own session, which is why it never went away.
+- **The demo can be reset**, from where Sign out would be: everything goes back
+  to the fixtures a first visitor is given, without ending a session you cannot
+  restart.
+- Everybody on the demo's people page has a face, not just Ana.
+
 ## 0.44.0 — 2026-09-02
 
 - **The page updates itself while something else is writing.** Ask an assistant
