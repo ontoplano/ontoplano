@@ -43,6 +43,7 @@ sentence somebody agrees to when they grant it.
 | `/api/billing/paddle`                        | POST   | —                 |
 | `/api/capture-options`                       | GET    | —                 |
 | `/api/client-errors`                         | POST   | —                 |
+| `/api/live`                                  | GET    | —                 |
 | `/api/mcp`                                   | POST   | —                 |
 | `/api/mcp`                                   | GET    | —                 |
 | `/api/pricing`                               | GET    | —                 |
@@ -164,6 +165,30 @@ or with `once`, which is the error page's own button and speaks for that one
 report only.
 
 **POST**
+
+### `/api/live`
+
+The stream a tab holds open to hear that its data moved.
+
+Session only — no bearer token. A token is for something acting _on_ the
+account from outside; this is the account's own browser being told what that
+something did, and there is no reason to hand a script a tap on somebody's
+activity.
+
+## The two lines that are not optional
+
+`X-Accel-Buffering: no` turns off nginx's response buffering for this
+response only. Without it nginx holds the bytes until its buffer fills, which
+for a stream of 60-byte messages is never — so the page hears nothing for
+minutes and then everything at once. `Cache-Control: no-store` stops anything
+in between deciding a stream is a document worth keeping.
+
+The heartbeat is a comment line every 25 seconds. It carries nothing; it
+exists because proxies close idle connections at 30 or 60, and a stream that
+dies silently is one where `EventSource` waits its full backoff before
+noticing.
+
+**GET**
 
 ### `/api/mcp`
 
