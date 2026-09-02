@@ -46,10 +46,21 @@ check() { local what=$1; shift; if "$@" >/dev/null 2>&1; then ok "$what"; else b
 if [ "${SKIP_BUILD:-0}" != 1 ]; then
 	head_ "Building"
 	yarn build >/dev/null 2>&1 || { echo "${red}the app would not build${off}"; exit 1; }
+
+	# What the repository's own tree looked like before packaging touched it.
+	# An earlier version of the packager pruned this tree to its production set
+	# and restored it badly, and the first anybody knew was `vite: command not
+	# found` on the next deploy — with yarn insisting the install was current.
+	before=$(ls node_modules/.bin 2>/dev/null | sort)
+
 	yarn package >"$WORK/package.log" 2>&1 || {
 		echo "${red}packaging failed${off}"; tail -30 "$WORK/package.log"; exit 1;
 	}
 	ok "the packages built"
+
+	if [ "$(ls node_modules/.bin 2>/dev/null | sort)" = "$before" ]
+	then ok "the repository's own node_modules is untouched"
+	else bad "packaging changed this repository's node_modules — the next build here will fail"; fi
 fi
 
 DEB=$ROOT/dist/ontoplano_${VERSION}_amd64.deb

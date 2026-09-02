@@ -160,34 +160,40 @@ function stage({ bundleNode, arch }) {
 }
 
 /**
- * `node_modules` without the build tools, kept compiled.
+ * The production `node_modules`, installed somewhere else entirely.
  *
- * `yarn install --production` on a machine with no compiler cannot rebuild
- * better-sqlite3, and the point of this step is to keep the .node that is
- * already there — so the dev tree is set aside, the production install is taken
- * from it, and the dev tree is put back. The same dance the Dockerfile does,
- * for the same reason.
+ * The first version of this pruned the repository's own `node_modules` with
+ * `yarn install --production`, copied the result, and put the development tree
+ * back afterwards. It did not put it back properly: what survived was the
+ * production `.bin`, so the next `make deploy` on the developer's machine said
+ * `vite: command not found` — and `yarn` refused to fix it, because the
+ * integrity file said the install was already up to date.
+ *
+ * Building a package must not touch the tree it is built from. `--modules-folder`
+ * installs into the staged package instead, so nothing outside `.package-work`
+ * and `dist` is written at all, and there is no restore step to get wrong.
  */
 function productionModules(lib, toolchain) {
 	say('  the production node_modules');
-	const dev = join(WORK, 'node_modules_dev');
-	rmSync(dev, { recursive: true, force: true });
-	cpSync(join(ROOT, 'node_modules'), dev, { recursive: true, dereference: false });
-	try {
-		// PATH, not a flag: yarn is a script with `#!/usr/bin/env node`, and
-		// everything under it — prebuild-install choosing which prebuilt binary to
-		// fetch, node-gyp choosing which headers to compile against — reads the
-		// ABI of the Node it is running under. Putting the bundled one first is
-		// what makes the whole tree agree.
-		run('yarn', ['install', '--frozen-lockfile', '--production', '--silent'], {
+	run(
+		'yarn',
+		[
+			'install',
+			'--frozen-lockfile',
+			'--production',
+			'--silent',
+			'--modules-folder',
+			join(lib, 'node_modules')
+		],
+		{
+			// PATH, not a flag: yarn is a script with `#!/usr/bin/env node`, and
+			// everything under it — prebuild-install choosing which prebuilt binary
+			// to fetch, node-gyp choosing which headers to compile against — reads
+			// the ABI of the Node it is running under. Putting the bundled one first
+			// is what makes the whole tree agree.
 			env: { ...process.env, PATH: `${toolchain}:${process.env.PATH}` }
-		});
-		cpSync(join(ROOT, 'node_modules'), join(lib, 'node_modules'), { recursive: true });
-	} finally {
-		rmSync(join(ROOT, 'node_modules'), { recursive: true, force: true });
-		cpSync(dev, join(ROOT, 'node_modules'), { recursive: true, dereference: false });
-		rmSync(dev, { recursive: true, force: true });
-	}
+		}
+	);
 }
 
 /**

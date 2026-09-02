@@ -23,6 +23,8 @@ version.
   generates the session secret once so an upgrade never signs anybody out.
 - An `ontoplano` command comes with it: `status`, `logs`, `config`, `migrate`,
   `version`.
+- Building a package no longer prunes the repository it is built from, which
+  left a development tree that could not build and a yarn that would not fix it.
 - **The documentation says where Windows stands** — there is no installer yet,
   WSL and Docker work today, and building one is a good first contribution.
 
