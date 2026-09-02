@@ -10,6 +10,22 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.42.0 — 2026-09-02
+
+- **The demo was losing most of its own contents.** The seed reads photographs
+  off disk, the deploy did not carry them to the box, and the read threw — so
+  the seeding stopped a third of the way down and everything after it, a
+  notebook's worth of reading notes and nine weeks of history included, was
+  never written. The pictures ship now, and a missing one is a warning that the
+  seed carries on past rather than the end of it.
+- **You cannot sign out of the demo any more**, because there was no way back
+  in: the account has no password anybody knows, so leaving it ended the visit
+  for good. The button is gone and the door refuses.
+- **The demo's integrations page can be read and not used.** It was minting
+  real API tokens and calendar links against the demo account; now every button
+  on it answers "You're not allowed to do that in the demo."
+- A picture in the trip notebook, beside the one in the kitchen notebook.
+
 ## 0.41.1 — 2026-09-02
 
 - **A token you just made says how to use it with an AI assistant**, with a link
