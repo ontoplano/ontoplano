@@ -10,6 +10,22 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.40.0 — 2026-09-02
+
+- **Ontoplano installs from a package.** A `.deb` for Debian, Ubuntu, Mint and
+  Pop!\_OS, an `.rpm` for Fedora, RHEL and openSUSE, and a PKGBUILD for Arch. One
+  command, a service that starts on boot, and upgrades through the package
+  manager you already use — `sudo ontoplano config`, then
+  `sudo systemctl enable --now ontoplano`.
+- It installs as a **system service** with an account of its own that can reach
+  one directory and nothing else, keeps your database at
+  `/var/lib/ontoplano/ontoplano.db` and your settings at `/etc/ontoplano/`, and
+  generates the session secret once so an upgrade never signs anybody out.
+- An `ontoplano` command comes with it: `status`, `logs`, `config`, `migrate`,
+  `version`.
+- **The documentation says where Windows stands** — there is no installer yet,
+  WSL and Docker work today, and building one is a good first contribution.
+
 ## 0.39.2 — 2026-09-02
 
 - **An import no longer takes your subscription with it.** Restoring an export
