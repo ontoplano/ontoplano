@@ -1163,12 +1163,28 @@ ingredient(riceAndBeans, 'garlic', 3, 'cloves');
 // about a trip reads as a broken feature rather than a seeded one, and a demo
 // is a claim about what the app looks like when somebody is using it.
 
-/** One of the files in `scripts/demo-media/`, as bytes. */
+/**
+ * One of the files in `scripts/demo-media/`, as bytes — or nothing.
+ *
+ * Nothing, rather than a thrown error, because of what a thrown error cost the
+ * one time it happened: the deploy shipped four named scripts to the demo box
+ * and not this directory, so the first picture threw, the seed stopped where it
+ * stood, and everything below this point — a notebook's worth of reading notes,
+ * nine weeks of history, the reviews — simply did not exist on the demo. A
+ * missing decoration must never take the data with it.
+ */
 function demoPicture(name) {
-	return readFileSync(join(here, 'demo-media', name));
+	try {
+		return readFileSync(join(here, 'demo-media', name));
+	} catch {
+		console.warn(`  no picture at scripts/demo-media/${name} — seeding the rest without it`);
+		return null;
+	}
 }
 
+/** Stores one, and answers with its id — or null, if there was nothing to store. */
 const picture = (filename, alt, bytes) => {
+	if (!bytes) return null;
 	const sha = createHash('sha256').update(bytes).digest('hex');
 	const existing = one('select id from media where user_id = ? and sha256 = ?', uid, sha);
 	if (existing) return existing.id;
@@ -1187,7 +1203,7 @@ const picture = (filename, alt, bytes) => {
 
 // A face, so the people page is a page of people rather than of names.
 const anaFace = picture('ana.jpg', 'Ana', demoPicture('ana.jpg'));
-if (!one('select id from people where id = ? and picture_id is not null', ana))
+if (anaFace && !one('select id from people where id = ? and picture_id is not null', ana))
 	db.prepare('update people set picture_id = ? where id = ? and user_id = ?').run(
 		anaFace,
 		ana,
@@ -1206,7 +1222,7 @@ const kitchenPicture = picture(
 	'The kitchen as it is now',
 	demoPicture('kitchen.jpg')
 );
-{
+if (kitchenPicture) {
 	const entry = one(
 		'select id, content from diary_entries where user_id = ? and notebook_id = ? order by id limit 1',
 		uid,
@@ -1220,12 +1236,40 @@ const kitchenPicture = picture(
 		);
 }
 
+/*
+ * And one in the trip notebook, because two notebooks with pictures is a
+ * pattern and one is an accident.
+ *
+ * Written into the entry that is already there rather than appended as a bare
+ * line: a picture in this app lives inside the writing, and a demo showing one
+ * stranded under a paragraph is showing the wrong thing.
+ */
+const horsePicture = picture(
+	'horse.jpg',
+	'A Lusitano in a field near Comporta',
+	demoPicture('horse.jpg')
+);
+if (horsePicture) {
+	const entry = one(
+		'select id, content from diary_entries where user_id = ? and notebook_id = ? order by id limit 1',
+		uid,
+		portugal
+	);
+	const reference = `![A Lusitano in a field near Comporta](/media/${horsePicture})`;
+	if (entry && !entry.content.includes(reference))
+		db.prepare('update diary_entries set content = ? where id = ?').run(
+			`${entry.content}\n\nThe stables outside Comporta will take us out on the Wednesday.\n\n${reference}`,
+			entry.id
+		);
+}
+
 const pastaPicture = picture(
 	'tomato-pasta.jpg',
 	'Tomatoes for the sauce',
 	demoPicture('tomato-pasta.jpg')
 );
 if (
+	pastaPicture &&
 	!one(
 		'select id from recipe_images where recipe_id = ? and media_id = ?',
 		tomatoPasta,

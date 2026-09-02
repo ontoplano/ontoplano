@@ -42,11 +42,13 @@
  */
 import { Resvg } from '@resvg/resvg-js';
 import jpeg from 'jpeg-js';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), 'demo-media');
+/** Originals that are not the museum's, kept so a rebuild is offline for them. */
+const SRC = join(dirname(fileURLToPath(import.meta.url)), 'demo-media-src');
 const API = 'https://collectionapi.metmuseum.org/public/collection/v1/objects';
 
 /**
@@ -72,6 +74,16 @@ const PICTURES = [
 		width: 640,
 		height: 440,
 		crop: { x: 0.0, y: 0.34, w: 0.8, h: 0.66 }
+	},
+	{
+		out: 'horse.jpg',
+		// Not the museum's: Estevão's own photograph, kept beside the script in
+		// `demo-media-src/` so a rebuild does not need the internet for it.
+		file: 'horse.jpg',
+		what: 'a picture inside a note, drawn at the width of the writing',
+		width: 640,
+		height: 440,
+		crop: { x: 0.02, y: 0.16, w: 0.96, h: 0.66 }
 	},
 	{
 		out: 'tomato-pasta.jpg',
@@ -149,14 +161,21 @@ for (const picture of PICTURES) {
 		continue;
 	}
 
-	const { meta, bytes } = await met(picture.object);
+	const { meta, bytes } = picture.file
+		? {
+				meta: { title: picture.what, objectURL: null, artistDisplayName: null },
+				bytes: readFileSync(join(SRC, picture.file))
+			}
+		: await met(picture.object);
 	const image = render(bytes, picture);
 	writeFileSync(path, image);
 	console.log(`${picture.out}  ${Math.round(image.length / 1024)}KB  ← ${meta.title}`);
 
 	rows.push(
-		`| \`${picture.out}\` | [${meta.title}](${meta.objectURL}) | ` +
-			`${meta.artistDisplayName || 'Unknown'}, ${meta.objectDate} | CC0 |`
+		picture.file
+			? `| \`${picture.out}\` | ${picture.what} | Estevão's own photograph | this project's |`
+			: `| \`${picture.out}\` | [${meta.title}](${meta.objectURL}) | ` +
+					`${meta.artistDisplayName || 'Unknown'}, ${meta.objectDate} | CC0 |`
 	);
 }
 
