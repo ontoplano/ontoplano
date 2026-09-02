@@ -10,6 +10,16 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.39.0 — 2026-09-02
+
+- **Setting up asks one thing at a time.** Where you are, when your week
+  starts, which rooms you want, how it should look, and what to start from —
+  five questions with Next between them, instead of one page of fields to fill
+  in before you have seen anything.
+- **You choose your rooms on the way in.** Everything is on to begin with; turn
+  off what you will not use and the description beside the list says what each
+  one actually is. Preferences has the same list whenever you change your mind.
+
 ## 0.38.0 — 2026-09-02
 
 - **Pictures.** Paste a screenshot into an entry, drop one in, or press the

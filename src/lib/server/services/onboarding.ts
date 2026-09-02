@@ -6,10 +6,12 @@ import {
 	isOnboarded,
 	isTheme,
 	markOnboarded,
+	setHiddenSections,
 	setTheme,
 	setTimezone,
 	setWeekSettings
 } from '../settings.js';
+import { HIDEABLE_SECTIONS } from '../../sections.js';
 import type { Ctx } from './ctx.js';
 import { parseTimezone } from './preferences.js';
 import { clearWeeklyPlanIn } from './slots.js';
@@ -73,6 +75,11 @@ export type FirstRunInput = {
 	template: unknown;
 	/** Optional: first run is where the account is dressed, so it asks here. */
 	theme?: unknown;
+	/**
+	 * The rooms they want, as ids. Absent means "everything", which is what an
+	 * account made by anything other than this page gets.
+	 */
+	rooms?: unknown[];
 };
 
 /**
@@ -94,6 +101,25 @@ export function completeFirstRun(ctx: Ctx, raw: FirstRunInput): TemplateKey {
 	setWeekSettings(ctx.userId, { firstDay, generateDay });
 	// Unknown or absent leaves the default, which follows the device.
 	if (typeof raw.theme === 'string' && isTheme(raw.theme)) setTheme(ctx.userId, raw.theme);
+
+	/*
+	 * The rooms they chose, as the ones they did not.
+	 *
+	 * Stored as what is *hidden* because that is what the rest of the app reads,
+	 * and because it makes silence mean "everything" — an account created by the
+	 * API, or by somebody who skipped this page, gets the whole app rather than
+	 * an empty navbar.
+	 *
+	 * `undefined` is that silence. An empty array is a real answer: somebody who
+	 * unticked all eight wants the planner and nothing else.
+	 */
+	if (Array.isArray(raw.rooms)) {
+		const wanted = new Set(raw.rooms.filter((r): r is string => typeof r === 'string'));
+		setHiddenSections(
+			ctx.userId,
+			HIDEABLE_SECTIONS.map((s) => s.id).filter((id) => !wanted.has(id))
+		);
+	}
 
 	applyTemplate(ctx, key, { replacePlan: false });
 

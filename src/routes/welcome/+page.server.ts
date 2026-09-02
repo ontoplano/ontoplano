@@ -4,6 +4,7 @@ import { DEFAULT_THEME, DEFAULT_WEEK, getTheme } from '$lib/server/settings';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
 import { completeFirstRun, needsFirstRun, TEMPLATES } from '$lib/server/services/onboarding';
+import { HIDEABLE_SECTIONS } from '$lib/sections';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	// Coming back here after setup would offer to seed a second starter week.
@@ -11,6 +12,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		week: DEFAULT_WEEK,
+		// The rooms somebody can turn off, with the sentence that says what each
+		// one is — the same list preferences shows, so the two cannot disagree.
+		rooms: HIDEABLE_SECTIONS,
 		theme: getTheme(locals.user!.id) ?? DEFAULT_THEME,
 		templates: TEMPLATES.map((t) => ({
 			key: t.key,
@@ -36,7 +40,10 @@ export const actions: Actions = {
 				firstDay: formData.get('firstDay'),
 				generateDay: formData.get('generateDay'),
 				template: skipped ? 'blank' : formData.get('template'),
-				theme: formData.get('theme')
+				theme: formData.get('theme'),
+				// Skipping is not a choice about rooms: it leaves every one of them
+				// on, which is what an account that never saw this page gets.
+				rooms: skipped ? undefined : formData.getAll('rooms')
 			});
 		} catch (e) {
 			return toActionFailure(e);
