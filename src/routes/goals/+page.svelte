@@ -2,6 +2,8 @@
 	import { resolve } from '$app/paths';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
+	import { cancelFor, changeLater, isPending } from '$lib/undo.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -91,6 +93,34 @@
 
 	function today(): string {
 		return formatDate(new Date());
+	}
+
+	/**
+	 * Close a goal, in a few seconds, unless it was a slip.
+	 *
+	 * The same shape the board uses for ticking a task off: the screen shows the
+	 * outcome at once and the request is held, so Undo cancels a request that was
+	 * never sent rather than unwinding one that was. A second press inside the
+	 * window is the same gesture as pressing Undo.
+	 */
+	function closeLater(goal: { id: number; title: string }, status: 'achieved' | 'missed') {
+		const key = `goal:${goal.id}`;
+		if (isPending(key)) {
+			cancelFor(key);
+			return;
+		}
+
+		const said = status === 'achieved' ? 'Achieved' : 'Missed';
+		changeLater(key, `${said} — ${goal.title}`, () => {
+			const body = new FormData();
+			body.set('id', String(goal.id));
+			body.set('status', status);
+			void fetch(`${location.pathname}?/close`, {
+				method: 'POST',
+				headers: { 'x-sveltekit-action': 'true' },
+				body
+			}).then(() => invalidateAll());
+		});
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -482,18 +512,28 @@
 											goal.linkedActivityIds.length})
 									</button>
 									{#if goal.status === 'open'}
-										<form method="post" action="?/close" use:enhance>
-											<input type="hidden" name="id" value={goal.id} />
-											<input type="hidden" name="status" value="achieved" />
-											<button class="btn btn-sm" title="Close it as done">Achieved</button>
-										</form>
-										<form method="post" action="?/close" use:enhance>
-											<input type="hidden" name="id" value={goal.id} />
-											<input type="hidden" name="status" value="missed" />
-											<button class="btn btn-sm btn-quiet" title="Close it as not done"
-												>Missed</button
-											>
-										</form>
+										<!--
+											Closing a goal is a verdict on months of work, and it was
+											one click with nothing between the click and the verdict.
+											Both answers wait a few seconds now, the way ticking a
+											task off does.
+										-->
+										<button
+											type="button"
+											class="btn btn-sm"
+											title="Close it as done"
+											onclick={() => closeLater(goal, 'achieved')}
+										>
+											Achieved
+										</button>
+										<button
+											type="button"
+											class="btn btn-sm btn-quiet"
+											title="Close it as not done"
+											onclick={() => closeLater(goal, 'missed')}
+										>
+											Missed
+										</button>
 									{:else}
 										<form method="post" action="?/close" use:enhance>
 											<input type="hidden" name="id" value={goal.id} />

@@ -228,10 +228,17 @@
 			await refresh();
 		};
 
-		// Ticking a thing off is the one move worth a few seconds to take back —
-		// it is the move people make by accident, and on a phone with a thumb.
-		if (status === 'done') {
-			changeLater(card.uid, `Completed ${card.title}`, () => void send());
+		/*
+		 * Answering for a thing is the move worth a few seconds to take back.
+		 *
+		 * Both answers, not only the good one. Skipping was the one without a net
+		 * and it is the more expensive mistake: "done" pressed by accident is a
+		 * tick you can untick, and "skipped" pressed by accident is a week that
+		 * now says you did not do something you did.
+		 */
+		if (status === 'done' || status === 'skipped') {
+			const said = status === 'done' ? 'Completed' : 'Skipped';
+			changeLater(card.uid, `${said} ${card.title}`, () => void send());
 			return;
 		}
 
