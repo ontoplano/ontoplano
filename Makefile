@@ -52,6 +52,7 @@ help:
 		echo "  deploy [-app|-site|-docs|-demo]   ship it; bare deploy is all four"; \
 		echo "  deploy-staging [-app|-site|-docs]  the staging instance on the box"; \
 		echo "  restart [-app|-site|-docs|-demo]  without shipping anything"; \
+		echo "  prune-assets                      drop the old hashed chunks the box keeps"; \
 		echo "  logs-app · logs-staging · setup   see local.mk for the rest"; \
 	fi
 
