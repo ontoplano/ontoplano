@@ -77,7 +77,27 @@ Self-hosted, one SQLite file, no account anywhere but your own.
 
 ## Running it
 
-The quickest way, and the one that needs nothing but Docker:
+On a machine you keep — a service that starts on boot, upgraded by the package
+manager you already use:
+
+```sh
+# Debian, Ubuntu, Mint, Pop!_OS
+sudo apt install ./ontoplano_amd64.deb
+
+# Fedora, RHEL, openSUSE
+sudo dnf install ./ontoplano.x86_64.rpm
+
+# Arch, Manjaro
+yay -S ontoplano
+```
+
+then `sudo ontoplano config` to set the origin and
+`sudo systemctl enable --now ontoplano`. The `.deb` and the `.rpm` are on the
+[releases page](https://github.com/ontoplano/ontoplano/releases); they carry
+their own Node, so there is nothing else to install. There is no Windows
+installer yet — [help build one](CONTRIBUTING.md).
+
+Or with Docker, which needs nothing but Docker:
 
 ```sh
 docker run -d --name ontoplano -p 1493:1493 \
