@@ -21,6 +21,7 @@ help:
 	@echo "  dev / dev-stop / dev-logs   the app, as a user service (dev-fg holds the terminal)"
 	@echo "  dev-docs · dev-site         the docs and the marketing site, served here"
 	@echo "  dev-all                     all three at once"
+	@echo "  vars                        every variable a make command line can carry"
 	@echo "  lint · format               prettier+eslint, prettier --write"
 	@echo "  test                        the Playwright e2e suite (yarn test for units)"
 	@echo "  icons                       redraw every icon from src/lib/logo/mark.png"
@@ -57,7 +58,15 @@ help:
 		echo "  logs-app · logs-staging · setup   see local.mk for the rest"; \
 	fi
 
-.PHONY: _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
+# What `help` deliberately leaves out: the variables, which are too many to
+# put in front of somebody who only wanted to know the target's name. Reading
+# them out of the makefiles means the list cannot describe a switch that was
+# renamed — the failure mode of writing this table by hand.
+vars:
+	@sh scripts/make-vars.sh $(MAKEFILE_LIST) defaults.env $(wildcard $(SERVER_SRC)/defaults.env)
+
+
+.PHONY: vars _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -162,6 +171,8 @@ dev-stop:
 # deployment one: a contributor has to be able to see what they changed.
 
 # The ports the two previews bind. Not 1493, which is the app's.
+#: DOCS_PORT=1494  where dev-docs serves
+#: SITE_PORT=1495  where dev-site serves
 DOCS_PORT ?= 1494
 SITE_PORT ?= 1495
 # Where the marketing site's checkout is, if it is here at all.
@@ -269,6 +280,8 @@ db-migrate:
 # ever sees it.
 #
 # It snapshots first, because it replaces and there is no undo.
+#: FILE=export.json  the export db-import restores
+#: EMAIL=you@example.com  the account it is restored over
 db-import:
 	@[ -n "$(FILE)" ] || { echo "make db-import FILE=export.json EMAIL=you@example.com"; exit 1; }
 	@[ -n "$(EMAIL)" ] || { echo "make db-import FILE=export.json EMAIL=you@example.com"; exit 1; }
@@ -361,12 +374,14 @@ OK   = printf '  \033[34m✓ %s\033[0m\n'
 NO   = printf '  \033[1;31m✗ %s\033[0m\n'
 LOUD = printf '\033[1m%s\033[0m\n'
 
+#: IMAGE=ontoplano/ontoplano  the name the Docker image is built and published under
 IMAGE ?= ontoplano/ontoplano
 # The tags a push writes: the version in package.json, and `latest`.
 IMAGE_VERSION = $(shell node -p "require('./package.json').version")
 # What `docker-publish` builds for. arm64 is not decoration: the cheap boxes
 # people self-host on are increasingly Ampere, and a Raspberry Pi is the single
 # commonest thing this runs on.
+#: PLATFORMS=linux/amd64,linux/arm64  architectures docker-publish builds for
 PLATFORMS ?= linux/amd64,linux/arm64
 
 docker-build:
@@ -447,6 +462,7 @@ docker-image: _docker-safe
 #
 # It builds and audits locally first, then asks — like `make deploy`, and for a
 # stronger reason: a deploy can be redone and a publish cannot be undone.
+#: DOCKER_YES=1  publish the image without stopping to confirm
 # DOCKER_YES=1 skips the prompt for a script that has already asked.
 docker-publish: docker-image
 	@docker buildx version >/dev/null 2>&1 || { \
@@ -593,6 +609,7 @@ android:
 	@$(MAKE) -s android-check
 
 # Against this machine over wifi, for working on the phone without deploying.
+#: LAN_IP=192.168.0.10  this machine's address, for android-lan and android-share
 android-lan:
 	@$(MAKE) android ONTOPLANO_ORIGIN=http://$(LAN_IP):$(APP_PORT)
 
