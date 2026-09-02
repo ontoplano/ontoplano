@@ -37,18 +37,31 @@ describe('registrationMode', () => {
 		expect(registrationMode()).toBe('closed');
 	});
 
-	test('staging opens it, because a staging instance nobody can join is not staging anything', () => {
-		setRegistrationMode('closed');
-		process.env.ONTOPLANO_STAGING = 'true';
-		expect(registrationMode()).toBe('open');
+	/**
+	 * Staging is a label, and a label changes nothing.
+	 *
+	 * It used to return `open` on its own, which made the one instance people
+	 * are invited to try the one instance running a code path production never
+	 * runs — the opposite of what a staging instance is for. Whatever staging
+	 * should do differently is written in its env file, in the same variable
+	 * production uses to say the opposite.
+	 */
+	test('staging changes nothing about who may register', () => {
+		for (const mode of ['closed', 'invite', 'open'] as const) {
+			setRegistrationMode(mode);
+			delete process.env.ONTOPLANO_STAGING;
+			const production = registrationMode();
+
+			process.env.ONTOPLANO_STAGING = 'true';
+			expect(registrationMode(), `the config file says ${mode}`).toBe(production);
+		}
 	});
 
-	test('an explicit setting beats staging', () => {
-		// So a staging instance can still be closed for a while without the flag
-		// being removed and the band with it.
+	test('a staging box that wants sign-ups says so out loud', () => {
+		setRegistrationMode('closed');
 		process.env.ONTOPLANO_STAGING = 'true';
-		process.env.ONTOPLANO_REGISTRATION = 'invite';
-		expect(registrationMode()).toBe('invite');
+		process.env.ONTOPLANO_REGISTRATION = 'open';
+		expect(registrationMode()).toBe('open');
 	});
 
 	test('an explicit setting beats the config file', () => {

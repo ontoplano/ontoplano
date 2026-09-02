@@ -72,14 +72,61 @@ function icon(scale, ground) {
 `;
 }
 
+/**
+ * The same icon, marked as not the real one.
+ *
+ * Two installed copies of this app on one phone — staging and the instance
+ * somebody actually uses — must not be the same picture, or the wrong week
+ * goes into the wrong one. The mark is drained of its colour and a band is laid
+ * across the foot of it: recognisable as this app at a glance, unmistakably not
+ * production at the same glance.
+ *
+ * A band rather than the word "staging": at the 48 pixels a launcher actually
+ * draws, a word is a smudge, and a shape is still a shape. Amber rather than
+ * red or green — red means broken and green means fine, and this is neither.
+ */
+const STAGING_BAND = '#b45309';
+
+/**
+ * `top` is where the band sits, as a fraction of the height.
+ *
+ * A launcher crops a maskable icon to its own outline — often a circle — so a
+ * band at the very foot of one is a band nobody ever sees. The plain icon is
+ * never cropped and wears it at the bottom; the maskable one wears it inside
+ * the safe area, where a circle, a squircle and a rounded square all keep it.
+ */
+function stagingIcon(scale, ground, top = 0.82) {
+	const side = SIZE * scale;
+	const at = (SIZE - side) / 2;
+	const band = SIZE * 0.15;
+	return `${header}
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">
+  <defs>
+    <filter id="drained"><feColorMatrix type="saturate" values="0.15"/></filter>
+  </defs>
+  ${ground ? `<rect width="${SIZE}" height="${SIZE}" fill="${ground}"/>` : ''}
+  <image x="${at}" y="${at}" width="${side}" height="${side}" preserveAspectRatio="xMidYMid meet"
+    filter="url(#drained)" xlink:href="${dataUri}"/>
+  <rect x="0" y="${SIZE * top}" width="${SIZE}" height="${band}" fill="${STAGING_BAND}"/>
+</svg>
+`;
+}
+
 const plain = icon(ICON_SCALE, null);
 const maskable = icon(MASKABLE, GROUND);
 const apple = icon(APPLE, GROUND);
 
+const plainStaging = stagingIcon(ICON_SCALE, null);
+const maskableStaging = stagingIcon(MASKABLE, GROUND, 0.62);
+const appleStaging = stagingIcon(APPLE, GROUND, 0.78);
+
 const svgs = [
 	['static/favicon.svg', plain],
 	['static/icons/icon.svg', plain],
-	['static/icons/icon-maskable.svg', maskable]
+	['static/icons/icon-maskable.svg', maskable],
+	['static/favicon-staging.svg', plainStaging],
+	['static/icons/icon-staging.svg', plainStaging],
+	['static/icons/icon-maskable-staging.svg', maskableStaging]
 ];
 
 const pngs = [
@@ -89,7 +136,15 @@ const pngs = [
 	['static/icons/icon-maskable-512.png', maskable, 512],
 	// iOS ignores the manifest and reads this one; it is never masked, so it
 	// is the mark at almost full size on the ground, at the size Apple asks for.
-	['static/icons/apple-touch-icon.png', apple, 180]
+	['static/icons/apple-touch-icon.png', apple, 180],
+	// …and the staging set, which the manifest route and app.html reach for
+	// when ONTOPLANO_STAGING is on. Built here rather than by hand, so the day
+	// the logo changes both sets change with it.
+	['static/icons/icon-192-staging.png', plainStaging, 192],
+	['static/icons/icon-512-staging.png', plainStaging, 512],
+	['static/icons/icon-maskable-192-staging.png', maskableStaging, 192],
+	['static/icons/icon-maskable-512-staging.png', maskableStaging, 512],
+	['static/icons/apple-touch-icon-staging.png', appleStaging, 180]
 ];
 
 // ── Rasterising ──────────────────────────────────────────────────────────────
@@ -256,7 +311,7 @@ const polygon = outlinePolygon();
 if (polygon) {
 	write(
 		'src/lib/logo/mark-shape.ts',
-		`${'/'}**\n * The mark's own outline, measured from \`mark.png\` by \`yarn icons\`.\n *\n * Do not edit: replace the logo and run \`yarn icons\` instead. It is what lets\n * the phone bar's raised button be the shape of the mark rather than a circle\n * with the mark inside it.\n */\nexport const MARK_CLIP_PATH = 'polygon(${polygon})';\n`
+		`${'/'}**\n * The mark's own outline, measured from \`mark.png\` by \`yarn icons\`.\n *\n * Do not edit: replace the logo and run \`yarn icons\` instead. It is what lets\n * the phone bar's raised button be the shape of the mark rather than a circle\n * with the mark inside it.\n */\nexport const MARK_CLIP_PATH =\n\t'polygon(${polygon})';\n`
 	);
 } else {
 	console.log('  no rasteriser — src/lib/logo/mark-shape.ts left alone');

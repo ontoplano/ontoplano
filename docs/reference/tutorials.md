@@ -16,7 +16,7 @@ under the pointer.
 
 | Screen                   | Tour         | Steps |
 | ------------------------ | ------------ | ----- |
-| `/`                      | Ontoplano    | 9     |
+| `/`                      | Ontoplano    | 8     |
 | `/diary`                 | Diary        | 4     |
 | `/diary/notebooks`       | Notebooks    | 2     |
 | `/diary/people`          | People       | 3     |
@@ -56,7 +56,6 @@ at the button that reopens it, so it is not listed here.
 6. Everything you have written
 7. What today looks like
 8. Yours to change
-9. Help sits in this corner
 
 ### `/diary` — Diary
 

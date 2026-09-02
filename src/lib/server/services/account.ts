@@ -73,6 +73,10 @@ export const USER_TABLES: OwnedTable[] = [
 	// the first time. Recipes and the written reviews are the ones that matter:
 	// the terms promise you can take your data with you, and those are as much
 	// somebody's writing as the diary is.
+	// Pictures: the join first, then the recipes, then the bytes. A recipe's
+	// gallery row points at both of the others, and `media` is last because
+	// deleting it while a row still names it is the one order that fails.
+	owned('recipeImages', schema.recipeImages as never),
 	owned('recipeItems', schema.recipeItems as never),
 	owned('recipes', schema.recipes as never),
 	owned('pricePoints', schema.pricePoints as never),
@@ -116,6 +120,10 @@ export const USER_TABLES: OwnedTable[] = [
 	// the same reason the subscription does: it is the paper trail for money
 	// they spent, and deleting the account must not leave it behind.
 	owned('billingCheckouts', schema.billingCheckouts as never),
+	// The bytes, after everything that could still be naming one. A picture is
+	// as much somebody's own as the diary is: it leaves with the export and it
+	// goes with the deletion.
+	owned('media', schema.media as never),
 	// Last of the subjects: entries, todos, goals and blocks all point at it.
 	owned('notebooks', schema.notebooks as never),
 	owned('recurringTasks', schema.recurringTasks as never),

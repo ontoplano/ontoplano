@@ -58,6 +58,8 @@ sentence somebody agrees to when they grant it.
 | `/api/v1/webhooks/[id]`                      | DELETE | `webhooks:manage` |
 | `/calendar/[token]`                          | GET    | `calendar:read`   |
 | `/healthz`                                   | GET    | —                 |
+| `/manifest.webmanifest`                      | GET    | —                 |
+| `/media/[id]`                                | GET    | —                 |
 | `/robots.txt`                                | GET    | —                 |
 | `/settings/account/export`                   | GET    | —                 |
 
@@ -359,6 +361,43 @@ The disk and memory numbers are the exception, and they are behind a token.
 attack is cheap today, so it is for the machine that is watching and nobody
 else. Set `ONTOPLANO_HEALTH_TOKEN` and send it as `x-health-token` or
 `?token=`; without one configured, nothing is ever disclosed.
+
+**GET**
+
+### `/manifest.webmanifest`
+
+The installed app's own identity, which is not the same on every instance.
+
+Served rather than shipped as a static file for one reason: two copies of
+this app can be installed on one phone — the instance somebody actually uses
+and the staging one — and if they claim the same name, the same id and the
+same icons, they are indistinguishable on a home screen. The week then goes
+into whichever one was tapped, which is a data loss nobody would think to
+report as a bug.
+
+Everything else here is production's manifest verbatim. Staging changes the
+three things a launcher shows and nothing else, because a staging instance
+that differs in any other way has stopped standing in for the one it copies.
+
+**GET**
+
+### `/media/[id]`
+
+One picture, to the one account it belongs to.
+
+The ownership is in the service's `WHERE`, so a signed-in stranger asking for
+somebody else's id gets the same 404 as an id that never existed — there is
+no arithmetic anybody can do on these numbers.
+
+The headers are the other half. `nosniff` stops a browser from deciding for
+itself that a file the service typed as an image is really a document;
+`Content-Disposition: inline` with a filename we sanitised keeps a crafted
+name from steering the header; `sandbox` is not needed because the type
+allowlist has no format that can execute anything.
+
+Cached hard and privately: a row here never changes — a different picture is
+a different id — so a browser may keep it for as long as it likes, and no
+shared cache may keep it at all.
 
 **GET**
 

@@ -23,6 +23,7 @@ import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 
 import { androidEnv } from './lib/android-env.mjs';
+import { defaultIdentity, identityFrom, packageIdFor } from './twa-identity.mjs';
 
 const DIR = 'android-twa';
 
@@ -70,7 +71,7 @@ if (cleartext) {
 	);
 }
 
-const packageId = process.env.ANDROID_PACKAGE_NAME ?? 'app.ontoplano.twa';
+const packageId = packageIdFor(domain, process.env.ANDROID_PACKAGE_NAME);
 
 const keyAlias = process.env.ANDROID_KEY_ALIAS ?? 'ontoplano';
 const keystoreSetting = process.env.ANDROID_KEYSTORE ?? join(DIR, 'android.keystore');
@@ -94,6 +95,38 @@ const origin = `${scheme}://${domain}`;
 const assetOrigin = process.env.ONTOPLANO_ASSET_ORIGIN ?? origin;
 
 /**
+ * What the instance calls itself, asked of the instance.
+ *
+ * The name under the icon and the icon itself come from the manifest the
+ * instance actually serves, rather than from a second list here. That is how a
+ * staging build ends up called "Staging" with the marked icon without this file
+ * knowing anything about staging: the server already answers that question for
+ * the browser, and this asks the same question.
+ *
+ * Unreachable — CI, a laptop before the first deploy — falls back to the plain
+ * names and says so, because a build that stops for want of a label is worse
+ * than a build with a plain one on it.
+ */
+async function identity() {
+	try {
+		const answer = await fetch(`${assetOrigin}/manifest.webmanifest`, {
+			signal: AbortSignal.timeout(8000)
+		});
+		if (!answer.ok) throw new Error(`answered ${answer.status}`);
+		return identityFrom(await answer.json(), assetOrigin);
+	} catch (e) {
+		console.warn(
+			`\nCould not read ${assetOrigin}/manifest.webmanifest (${e.message}).\n` +
+				'Building with the default name and icons — check them if this is not\n' +
+				'the production instance.\n'
+		);
+		return defaultIdentity(assetOrigin);
+	}
+}
+
+const app = await identity();
+
+/**
  * Colours come from the web manifest so the two cannot drift.
  *
  * `navigationColor` is the Android navigation bar; matching the chrome keeps
@@ -102,8 +135,8 @@ const assetOrigin = process.env.ONTOPLANO_ASSET_ORIGIN ?? origin;
 const twaManifest = {
 	packageId,
 	host: domain,
-	name: 'Ontoplano',
-	launcherName: 'Ontoplano',
+	name: app.name,
+	launcherName: app.launcherName,
 	display: 'standalone',
 	themeColor: '#111827',
 	themeColorDark: '#111827',
@@ -114,8 +147,8 @@ const twaManifest = {
 	backgroundColor: '#111827',
 	enableNotifications: false,
 	startUrl: '/',
-	iconUrl: `${assetOrigin}/icons/icon-512.png`,
-	maskableIconUrl: `${assetOrigin}/icons/icon-maskable-512.png`,
+	iconUrl: app.iconUrl,
+	maskableIconUrl: app.maskableIconUrl,
 	splashScreenFadeOutDuration: 300,
 	signingKey: {
 		// Absolute, because Bubblewrap runs with its cwd inside DIR and a relative

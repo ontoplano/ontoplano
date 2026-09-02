@@ -2,8 +2,14 @@
 <html lang="en" data-theme="%ontoplano.theme%" data-style="%ontoplano.style%">
 	<head>
 		<meta charset="utf-8" />
-		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
-		<link rel="apple-touch-icon" href="%sveltekit.assets%/icons/apple-touch-icon.png" />
+		<!-- The staging copy wears a marked set of these, so two of this app installed
+		     on one phone are not the same picture. `%ontoplano.mark%` is "" or "-staging",
+		     filled in by hooks.server.ts. -->
+		<link rel="icon" href="%sveltekit.assets%/favicon%ontoplano.mark%.svg" />
+		<link
+			rel="apple-touch-icon"
+			href="%sveltekit.assets%/icons/apple-touch-icon%ontoplano.mark%.png"
+		/>
 		<link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
 		<!-- interactive-widget makes the layout viewport shrink when the software
 		     keyboard opens. Without it 100dvh keeps the keyboard's height, so a
@@ -18,8 +24,8 @@
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-		<meta name="apple-mobile-web-app-title" content="Ontoplano" />
-		<title>Ontoplano</title>
+		<meta name="apple-mobile-web-app-title" content="%ontoplano.appname%" />
+		<title>%ontoplano.appname%</title>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

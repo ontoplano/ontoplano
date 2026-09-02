@@ -9,7 +9,8 @@ import {
 	getTheme,
 	getWeekSettings,
 	hasSeenTutorial,
-	isDemo as isDemoInstance
+	isDemo as isDemoInstance,
+	isStaging
 } from '$lib/server/settings';
 import type { HideableSection } from '$lib/sections';
 import { clientErrorState } from '$lib/server/services/client-errors';
@@ -109,6 +110,16 @@ export const load: LayoutServerLoad = async (event) => {
 		// The public demo says so on every page: a copy of your own, deleted
 		// hourly, so nobody mistakes it for their own instance.
 		demo: isDemoInstance(),
+		/*
+		 * And so does staging, on every page rather than only on the way in.
+		 *
+		 * It used to say so on the sign-in form and nowhere else, so the moment
+		 * somebody was signed in the copy was indistinguishable from the real
+		 * instance — which is the state in which a real week gets typed into it.
+		 * This is the only thing in the app that asks which instance it is, and
+		 * all it does is draw a band.
+		 */
+		staging: isStaging(),
 		// Whether to show somebody around without being asked. The shell decides
 		// where — the dashboard, which is where first run lets go of them.
 		tutorialPending,

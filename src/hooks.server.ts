@@ -4,7 +4,7 @@ import { building } from '$app/environment';
 import { auth } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { ensureUserCategories } from '$lib/server/db/ensure-categories';
-import { DEFAULT_THEME, getStyle, getTheme, isDemo } from '$lib/server/settings';
+import { DEFAULT_THEME, getStyle, getTheme, isDemo, isStaging } from '$lib/server/settings';
 import { createDemoAccount, sweepDemoAccounts, touchDemoAccount } from '$lib/server/services/demo';
 import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
 import { checkSignUpAllowed, consumeInvite } from '$lib/server/services/registration';
@@ -167,9 +167,25 @@ const handleTheme: Handle = ({ event, resolve }) => {
 	 */
 	const style = event.locals.user ? getStyle(event.locals.user.id) : 'playful';
 
+	/*
+	 * And which instance this is, in the two places a phone reads it.
+	 *
+	 * An installed copy takes its icon and its name from the head of the page it
+	 * was installed from, so a staging instance that serves production's head is
+	 * a second identical app on somebody's home screen. Marked here rather than
+	 * in the manifest alone, because iOS reads none of the manifest and Android
+	 * reads the favicon before it reads anything else.
+	 */
+	const mark = isStaging() ? '-staging' : '';
+	const appname = isStaging() ? 'Ontoplano staging' : 'Ontoplano';
+
 	return resolve(event, {
 		transformPageChunk: ({ html }) =>
-			html.replace('%ontoplano.theme%', theme).replace('%ontoplano.style%', style)
+			html
+				.replace('%ontoplano.theme%', theme)
+				.replace('%ontoplano.style%', style)
+				.replaceAll('%ontoplano.mark%', mark)
+				.replaceAll('%ontoplano.appname%', appname)
 	});
 };
 

@@ -8,7 +8,6 @@ import { invites } from '../db/schema.js';
 import { user } from '../db/auth.schema.js';
 import { ForbiddenError, NotFoundError, ValidationError } from './errors.js';
 import { optionalStr, str } from './validate.js';
-import { isStaging } from '../settings.js';
 
 /**
  * Who is allowed to create an account here.
@@ -52,20 +51,25 @@ export function defaultGrantUntil(now: Date): string {
 /**
  * Who may create an account here.
  *
- * The environment wins over the config file, and staging wins over the default,
- * in that order. Both exist because the config file is written from the web
- * page: on a box you administer over ssh, being able to open registration
- * without logging in — or before there is anybody to log in as — is the
- * difference between a deploy and an afternoon.
+ * The environment wins over the config file. That exists because the config
+ * file is written from the web page: on a box you administer over ssh, being
+ * able to open registration without logging in — or before there is anybody to
+ * log in as — is the difference between a deploy and an afternoon.
  *
- * `ONTOPLANO_REGISTRATION=open|invite|closed` is the explicit form and beats
- * everything. `ONTOPLANO_STAGING=true` implies open, because a staging instance
- * nobody can sign up to is not staging anything.
+ * `ONTOPLANO_REGISTRATION=open|invite|closed` is the whole of it.
+ *
+ * **Staging does not imply open, and no environment implies anything.** It used
+ * to: `ONTOPLANO_STAGING=true` quietly returned `open`, which meant the copy
+ * people test on was answering a question differently from the instance it is
+ * a copy of. A staging instance exists to behave exactly like production and
+ * be labelled as not being it; the moment a code path asks which one it is
+ * running on, it has stopped testing the thing it is standing in for. If a
+ * staging box should take sign-ups, its env file says `ONTOPLANO_REGISTRATION=open`
+ * out loud, and that is a sentence somebody wrote rather than a consequence.
  */
 export function registrationMode(): RegistrationMode {
 	const fromEnv = process.env.ONTOPLANO_REGISTRATION;
 	if (isRegistrationMode(fromEnv)) return fromEnv;
-	if (isStaging()) return 'open';
 	return loadConfig().registration.mode;
 }
 

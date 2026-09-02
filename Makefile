@@ -45,6 +45,7 @@ help:
 	@printf '\033[1mphone & bot\033[0m\n'
 	@echo "  android                     build the APK (android-install / android-share to get it on)"
 	@echo "  android-lan                 an APK pointed at this machine, over wifi"
+	@echo "  android-staging             …and one for staging, installable beside the real one"
 	@echo "  android-release             publish the signed APK to GitHub Releases"
 	@echo "  telegram-install            the bot on a self-hosted box (telegram-dev to try it)"
 	@if [ -f local.mk ]; then echo; \
@@ -56,7 +57,7 @@ help:
 		echo "  logs-app · logs-staging · setup   see local.mk for the rest"; \
 	fi
 
-.PHONY: _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
+.PHONY: _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -594,6 +595,14 @@ android:
 # Against this machine over wifi, for working on the phone without deploying.
 android-lan:
 	@$(MAKE) android ONTOPLANO_ORIGIN=http://$(LAN_IP):$(APP_PORT)
+
+# The staging instance, as its own app.
+#
+# A different package id, so it installs beside the real one rather than over
+# it, and its name and icon come from the manifest staging itself serves — the
+# marked ones. Two apps on the phone, and no way to confuse them.
+android-staging:
+	@$(MAKE) android ONTOPLANO_ORIGIN=https://$(ONTOPLANO_STAGING_HOST)
 
 # Does the server agree that this app is allowed to drop its URL bar?
 #

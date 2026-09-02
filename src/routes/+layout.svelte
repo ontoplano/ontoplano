@@ -356,6 +356,26 @@
 			</div>
 		{/if}
 
+		{#if data.staging}
+			<!--
+				Staging says so on every page, in the same place and the same shape
+				as the demo's band — they are the same statement: this is not the
+				instance you think it is.
+
+				It said it on the sign-in form and nowhere else, so a signed-in
+				staging session was pixel-identical to the real one. That is the
+				state in which somebody types a real week into a copy.
+			-->
+			<div
+				class="relative z-50 flex flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950"
+			>
+				<span>
+					<strong>Staging.</strong> A copy of Ontoplano for trying things on.
+					<strong class="text-red-900">Nothing here is promised to survive.</strong>
+				</span>
+			</div>
+		{/if}
+
 		{#if data.impersonatedBy}
 			<!--
 				Loud on purpose. An administrator looking at somebody's account is a

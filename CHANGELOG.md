@@ -10,6 +10,19 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.36.0 — 2026-09-02
+
+- **A staging instance behaves like the real one.** It used to open
+  registration by itself, run as self-hosted and skip the verification mail —
+  three things the instance it stands in for never does, so the copy people
+  tried was the copy nothing else ran. Now the only difference is the label.
+- **And it says so on every page**, not just on the way in. Signed in, staging
+  used to be indistinguishable from the instance you actually use.
+- **Installed side by side.** A staging copy on your phone wears a marked icon
+  and its own name, so two of them on one home screen cannot be confused — and
+  `make android-staging` builds one that installs beside the real app instead
+  of over it.
+
 ## 0.35.2 — 2026-09-02
 
 - **The tour stops repeating itself at the end.** The dashboard's last card

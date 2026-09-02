@@ -35,6 +35,7 @@ shows up here on the next build.
 | [`instances`](#instances)                       | The one answer to "what is on, between these dates".                                                                                                                                                                                                                 |
 | [`legal`](#legal)                               | The facts the policies are written around.                                                                                                                                                                                                                           |
 | [`mail-log`](#mail-log)                         | Mail that must not fail silently.                                                                                                                                                                                                                                    |
+| [`media`](#media)                               | Pictures: what is accepted, where they go, and who may see one.                                                                                                                                                                                                      |
 | [`meta`](#meta)                                 | User-defined key/value metadata attached to planner slots.                                                                                                                                                                                                           |
 | [`notebooks`](#notebooks)                       | Notebooks: a subject you write against, with no deadline.                                                                                                                                                                                                            |
 | [`onboarding-templates`](#onboarding-templates) | The starter weeks, as data.                                                                                                                                                                                                                                          |
@@ -1281,6 +1282,116 @@ How many mails are sitting failed — one number, for the health probe.
 - `MailKind`
 - `MailFailure`
 
+## media
+
+Pictures: what is accepted, where they go, and who may see one.
+
+Three rules do most of the work here, and each of them is a thing that goes
+wrong in every other app that stores an upload.
+
+**The type comes from the bytes.** A browser's `Content-Type` is a claim by
+whoever wrote the request, and a filename extension is a claim by whoever
+named the file. Neither decides anything: the first bytes are read and
+matched against a short allowlist, and a file that does not look like one of
+those is refused. Nothing is ever stored under a name the sender chose.
+
+**SVG is not an image here.** It is a document that can carry script, served
+from this app's own origin, which is same-origin script execution dressed up
+as a picture. There is no configuration for it.
+
+**The ceilings are the operator's.** `[media]` in `config.toml` decides how
+big one picture may be, how many a recipe or an entry may carry, and what one
+account's pictures may add up to. Every one of them is enforced here, in the
+service, rather than in a form — a limit checked in a form is a limit the API
+does not have.
+
+### Functions
+
+#### `mediaLimits()`
+
+What the operator currently allows. Read per call: the file can change.
+
+#### `bytesStored(ctx)`
+
+What this account's pictures already add up to.
+
+#### `store(ctx, input)`
+
+Take a picture in.
+
+The same bytes uploaded twice are one row: two entries that quote the same
+screenshot should not cost twice, and the second upload returns the first
+row rather than failing on the unique index.
+
+#### `read(ctx, id)`
+
+The bytes, for the one account they belong to.
+
+Scoped in the `WHERE`, so somebody else's id is a 404 rather than a picture:
+not found and not yours are the same answer.
+
+#### `list(ctx)`
+
+#### `isReferenced(ctx, id)`
+
+Is anything still pointing at this picture?
+
+Two kinds of reference exist and both are checked: a recipe's gallery, which
+is a row, and a mention inside somebody's writing, which is the string
+`/media/<id>` in the text. The `LIKE` is bounded by the characters that can
+follow an id, so `/media/1` does not count `/media/17` as a reference to it.
+
+#### `remove(ctx, id)`
+
+Remove a picture outright.
+
+#### `removeIfUnreferenced(ctx, id)`
+
+Remove it only if nothing points at it any more. Returns whether it went.
+
+#### `referencedIn(content)`
+
+How many pictures a piece of writing carries.
+
+Counted from the text rather than from a join table, because that is where
+the truth is: a picture is in an entry when the entry says `![…](/media/12)`,
+and deleting the line is how you take it out again.
+
+#### `assertEntryWithinLimit(content)`
+
+Refuse writing that has gone over the instance's per-entry ceiling.
+
+#### `picturesOf(ctx, recipeId)`
+
+#### `mainPictures(ctx, recipeIds)`
+
+The one picture that stands for each of these recipes, by recipe id.
+
+#### `attachToRecipe(ctx, recipeId, input)`
+
+Put a picture in a recipe's gallery.
+
+The first one is the main one without being asked: a gallery of one whose
+single picture is not the one the list shows would be a bug nobody would
+think to report.
+
+#### `detachFromRecipe(ctx, recipeId, mediaId)`
+
+Take one out, and take the bytes with it when nothing else wants them.
+
+#### `setMain(ctx, recipeId, mediaId)`
+
+Which one the list shows.
+
+Two statements, and the clearing has to come first: the database holds "one
+main per recipe" as a unique index, so setting the new one before clearing
+the old one is a constraint failure rather than a swap.
+
+### Types
+
+- `Picture`
+- `RecipePicture`
+
 ## meta
 
 User-defined key/value metadata attached to planner slots.
@@ -1782,15 +1893,21 @@ A month from now, as the date the invite form opens on.
 
 Who may create an account here.
 
-The environment wins over the config file, and staging wins over the default,
-in that order. Both exist because the config file is written from the web
-page: on a box you administer over ssh, being able to open registration
-without logging in — or before there is anybody to log in as — is the
-difference between a deploy and an afternoon.
+The environment wins over the config file. That exists because the config
+file is written from the web page: on a box you administer over ssh, being
+able to open registration without logging in — or before there is anybody to
+log in as — is the difference between a deploy and an afternoon.
 
-`ONTOPLANO_REGISTRATION=open|invite|closed` is the explicit form and beats
-everything. `ONTOPLANO_STAGING=true` implies open, because a staging instance
-nobody can sign up to is not staging anything.
+`ONTOPLANO_REGISTRATION=open|invite|closed` is the whole of it.
+
+**Staging does not imply open, and no environment implies anything.** It used
+to: `ONTOPLANO_STAGING=true` quietly returned `open`, which meant the copy
+people test on was answering a question differently from the instance it is
+a copy of. A staging instance exists to behave exactly like production and
+be labelled as not being it; the moment a code path asks which one it is
+running on, it has stopped testing the thing it is standing in for. If a
+staging box should take sign-ups, its env file says `ONTOPLANO_REGISTRATION=open`
+out loud, and that is a sentence somebody wrote rather than a consequence.
 
 #### `setRegistrationMode(mode)`
 

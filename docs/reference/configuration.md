@@ -72,6 +72,24 @@ no. Nothing is ever sent before both have said yes.
 | ------------- | -------- | ----------------------------------------------------------------------- |
 | `undoSeconds` | `number` | Seconds a delete waits, undoably, before it happens. Zero turns it off. |
 
+### `[media]`
+
+| Key                | Type     | Means                                                                |
+| ------------------ | -------- | -------------------------------------------------------------------- |
+| `maxKilobytes`     | `number` | The biggest single picture this instance accepts, in kilobytes.      |
+| `recipeImages`     | `number` | How many pictures one recipe may carry. One of them is the main one. |
+| `entryImages`      | `number` | How many pictures one notebook entry may carry.                      |
+| `accountMegabytes` | `number` | Everything one account's pictures may add up to, in megabytes.       |
+
+**`maxKilobytes`**
+
+The biggest single picture this instance accepts, in kilobytes.
+
+Enforced on the server against the bytes actually received, not against
+what the browser said it was sending. Pictures are rows in the same
+SQLite file as everything else, so this is also the number that decides
+how fast that file grows.
+
 ### `[instance]`
 
 | Key       | Type     | Means                                                     |

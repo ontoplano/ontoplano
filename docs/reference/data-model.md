@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**50 tables.**
+**52 tables.**
 
 | Table                                             | Columns | Belongs to a user |
 | ------------------------------------------------- | ------- | ----------------- |
@@ -36,6 +36,7 @@ exist.
 | [`ideas`](#ideas)                                 | 8       | yes               |
 | [`invites`](#invites)                             | 9       | —                 |
 | [`mail_failures`](#mail_failures)                 | 11      | —                 |
+| [`media`](#media)                                 | 9       | yes               |
 | [`notebooks`](#notebooks)                         | 7       | yes               |
 | [`people`](#people)                               | 10      | yes               |
 | [`plan_members`](#plan_members)                   | 4       | —                 |
@@ -43,6 +44,7 @@ exist.
 | [`plugin_manifests`](#plugin_manifests)           | 8       | yes               |
 | [`price_points`](#price_points)                   | 6       | yes               |
 | [`quotes`](#quotes)                               | 5       | yes               |
+| [`recipe_images`](#recipe_images)                 | 7       | yes               |
 | [`recipe_items`](#recipe_items)                   | 8       | yes               |
 | [`recipes`](#recipes)                             | 12      | yes               |
 | [`recurring_tasks`](#recurring_tasks)             | 19      | yes               |
@@ -552,6 +554,29 @@ Indexes:
 
 - `mail_failures_open_idx` on `resolved_at`
 
+## media
+
+| Column       | Type    | Null     | Default               | Notes             |
+| ------------ | ------- | -------- | --------------------- | ----------------- |
+| `id`         | integer | not null | —                     | primary key, auto |
+| `user_id`    | text    | not null | —                     | → `user.id`       |
+| `mime`       | text    | not null | —                     | —                 |
+| `filename`   | text    | not null | `''`                  | —                 |
+| `alt`        | text    | not null | `''`                  | —                 |
+| `byte_size`  | integer | not null | —                     | —                 |
+| `bytes`      | blob    | not null | —                     | —                 |
+| `sha256`     | text    | not null | —                     | —                 |
+| `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `media_user_idx` on `user_id`
+- `media_user_sha_unique` on `user_id`, `sha256` — unique
+
+Checks — enforced by the database, not only by the service layer:
+
+- `media_size_positive`: `"media"."byte_size" > 0`
+
 ## notebooks
 
 | Column        | Type    | Null     | Default               | Notes             |
@@ -665,6 +690,25 @@ Indexes:
 Indexes:
 
 - `quotes_user_idx` on `user_id`
+
+## recipe_images
+
+| Column       | Type    | Null     | Default               | Notes             |
+| ------------ | ------- | -------- | --------------------- | ----------------- |
+| `id`         | integer | not null | —                     | primary key, auto |
+| `user_id`    | text    | not null | —                     | → `user.id`       |
+| `recipe_id`  | integer | not null | —                     | → `recipes.id`    |
+| `media_id`   | integer | not null | —                     | → `media.id`      |
+| `position`   | integer | not null | `0`                   | —                 |
+| `is_main`    | integer | not null | `false`               | —                 |
+| `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `recipe_images_user_idx` on `user_id`
+- `recipe_images_recipe_idx` on `recipe_id`
+- `recipe_images_once_unique` on `recipe_id`, `media_id` — unique
+- `recipe_images_one_main_unique` on `recipe_id` — unique
 
 ## recipe_items
 

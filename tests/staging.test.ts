@@ -47,3 +47,66 @@ describe('isStaging', () => {
 		}
 	});
 });
+
+/**
+ * And it is a label, so nothing but the label may read it.
+ *
+ * The rule this pins is the one that was broken: `registrationMode()` returned
+ * `open` when the flag was set, so the one instance people are invited to try
+ * was the one instance running a branch production never runs. A staging copy
+ * that answers a question differently is not standing in for anything.
+ *
+ * So the flag may be read to *say* which instance this is — the band, the
+ * installed icon, the line on the instance page — and nowhere else. The list
+ * below is the allowance; adding to it is a decision, and this is where it is
+ * made rather than in a diff nobody reads.
+ */
+describe('who may ask', () => {
+	const ALLOWED = [
+		// Where it is defined, and the one place it is turned into a name.
+		'src/lib/server/settings.ts',
+		// Presentation: the band on the page, and the instance page saying so.
+		'src/routes/login/+page.server.ts',
+		'src/routes/settings/instance/+page.server.ts',
+		'src/routes/settings/instance/+page.svelte',
+		'src/routes/+layout.server.ts',
+		'src/routes/+layout.svelte',
+		// The head of every page: the favicon, the apple icon and the name an
+		// installed copy takes.
+		'src/hooks.server.ts',
+		// The installed app's own name and icon, so two of them on one phone are
+		// not the same picture.
+		'src/routes/manifest.webmanifest/+server.ts'
+	];
+
+	it('is consulted only where it decides what something is called', async () => {
+		const { readFileSync, readdirSync, statSync } = await import('node:fs');
+		const { join, relative } = await import('node:path');
+
+		const root = process.cwd();
+		const offenders: string[] = [];
+
+		const walk = (dir: string) => {
+			for (const name of readdirSync(dir)) {
+				const path = join(dir, name);
+				if (statSync(path).isDirectory()) {
+					walk(path);
+					continue;
+				}
+				if (!/\.(ts|svelte)$/.test(name) || name.includes('.test.')) continue;
+				const where = relative(root, path);
+				if (ALLOWED.includes(where)) continue;
+				// Comments are stripped first: a doc comment explaining why nothing
+				// may branch on this is not a branch on it, and the paragraph in
+				// `registration.ts` saying what used to happen must stay readable.
+				const code = readFileSync(path, 'utf8')
+					.replace(/\/\*[\s\S]*?\*\//g, '')
+					.replace(/(^|[^:])\/\/.*$/gm, '$1');
+				if (/isStaging|ONTOPLANO_STAGING/.test(code)) offenders.push(where);
+			}
+		};
+		walk(join(root, 'src'));
+
+		expect(offenders, 'staging is a label; these read it as a behaviour').toEqual([]);
+	});
+});

@@ -366,16 +366,23 @@ export function isSelfHosted(): boolean {
 /**
  * Is this instance a staging one — not the real thing?
  *
- * Staging in the general sense: a copy people are invited to try, running with
- * the doors open in a way production is not. It is deliberately a single
- * environment variable rather than a config-file setting, because the switch
- * belongs to whoever runs the box and not to whoever is logged into it.
+ * A label, and only a label. Every page that could mislead somebody about
+ * which instance they are looking at carries a band saying it, and the icon of
+ * an installed copy is marked so two of them on one phone are not the same
+ * picture. Nothing else consults this.
  *
- * It changes two things and says so everywhere. Registration opens, so people
- * can be let in without invite codes; and every page that could mislead
- * somebody about which instance they are on carries a band saying it. That
- * second half is the important one: the failure this exists to prevent is
- * leaving the flag set on the real instance and not noticing for a week.
+ * That is the point of it. Staging exists to behave exactly like production —
+ * same registration rules, same billing, same email verification — because a
+ * copy that answers a question differently is not testing the thing it stands
+ * in for. It used to imply open registration, so the one instance people were
+ * invited to try was the one instance running a code path production never
+ * ran. Anything staging should do differently is said out loud in its own env
+ * file, in the same variable production uses to say the opposite.
+ *
+ * It is an environment variable rather than a config setting because the
+ * switch belongs to whoever runs the box, not to whoever is logged into it —
+ * and because the failure worth guarding is leaving it set on the real
+ * instance, where a band on every page is what makes that impossible to miss.
  */
 export function isStaging(): boolean {
 	return process.env.ONTOPLANO_STAGING === 'true';
