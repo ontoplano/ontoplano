@@ -17,8 +17,13 @@
  * it finds. Re-runnable: every write is get-or-create.
  */
 import { createHash, randomBytes } from 'node:crypto';
-import { deflateSync } from 'node:zlib';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
+
+/** This script's own directory, which is where the demo pictures live. */
+const here = dirname(fileURLToPath(import.meta.url));
 
 const path = process.argv[2];
 const wantedEmail = process.argv[3] ?? 'dev@semotina.user';
@@ -1149,52 +1154,18 @@ ingredient(riceAndBeans, 'garlic', 3, 'cloves');
 // binaries is a seed nobody reviews, and the point is a database with a little
 // of everything in it, not a photograph.
 //
-// They are real PNGs — hand-assembled, so no image library is needed and the
-// bytes are exactly what a browser would accept. A recipe gets one as its main
-// picture, and a notebook entry mentions the other in its own text, which are
-// the two ways a picture exists in this app.
+// They are real pictures — three CC0 works from the Metropolitan Museum's Open
+// Access collection, cropped to the shapes this app draws them in by
+// `yarn demo-media`. `scripts/demo-media/SOURCES.md` says which is which.
+//
+// They used to be squares of one colour, generated here. The bytes were a valid
+// PNG and nothing else about them was a picture: a beige rectangle under a note
+// about a trip reads as a broken feature rather than a seeded one, and a demo
+// is a claim about what the app looks like when somebody is using it.
 
-/** A solid PNG of one colour, `size` square. Enough to be a real picture. */
-function solidPng(size, [r, g, b]) {
-	const crcTable = Array.from({ length: 256 }, (_, n) => {
-		let c = n;
-		for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-		return c >>> 0;
-	});
-	const crc = (buf) => {
-		let c = 0xffffffff;
-		for (const byte of buf) c = crcTable[(c ^ byte) & 0xff] ^ (c >>> 8);
-		return (c ^ 0xffffffff) >>> 0;
-	};
-	const chunk = (type, data) => {
-		const length = Buffer.alloc(4);
-		length.writeUInt32BE(data.length);
-		const body = Buffer.concat([Buffer.from(type, 'latin1'), data]);
-		const check = Buffer.alloc(4);
-		check.writeUInt32BE(crc(body));
-		return Buffer.concat([length, body, check]);
-	};
-
-	const ihdr = Buffer.alloc(13);
-	ihdr.writeUInt32BE(size, 0);
-	ihdr.writeUInt32BE(size, 4);
-	ihdr[8] = 8; // bit depth
-	ihdr[9] = 2; // truecolour
-	// One filter byte per row, then the pixels.
-	const raw = Buffer.concat(
-		Array.from({ length: size }, () =>
-			Buffer.concat([
-				Buffer.from([0]),
-				Buffer.concat(Array.from({ length: size }, () => Buffer.from([r, g, b])))
-			])
-		)
-	);
-	return Buffer.concat([
-		Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
-		chunk('IHDR', ihdr),
-		chunk('IDAT', deflateSync(raw)),
-		chunk('IEND', Buffer.alloc(0))
-	]);
+/** One of the files in `scripts/demo-media/`, as bytes. */
+function demoPicture(name) {
+	return readFileSync(join(here, 'demo-media', name));
 }
 
 const picture = (filename, alt, bytes) => {
@@ -1203,7 +1174,7 @@ const picture = (filename, alt, bytes) => {
 	if (existing) return existing.id;
 	return run(
 		`insert into media (user_id, mime, filename, alt, byte_size, bytes, sha256, created_at)
-		 values (?, 'image/png', ?, ?, ?, ?, ?, ?)`,
+		 values (?, 'image/jpeg', ?, ?, ?, ?, ?, ?)`,
 		uid,
 		filename,
 		alt,
@@ -1215,7 +1186,7 @@ const picture = (filename, alt, bytes) => {
 };
 
 // A face, so the people page is a page of people rather than of names.
-const anaFace = picture('ana.png', 'Ana', solidPng(96, [70, 110, 160]));
+const anaFace = picture('ana.jpg', 'Ana', demoPicture('ana.jpg'));
 if (!one('select id from people where id = ? and picture_id is not null', ana))
 	db.prepare('update people set picture_id = ? where id = ? and user_id = ?').run(
 		anaFace,
@@ -1230,14 +1201,18 @@ if (!one('select id from people where id = ? and picture_id is not null', ana))
  * Appended to an entry that already belongs to a notebook, so the demo shows a
  * notebook with a picture in it rather than a bare one.
  */
-const tripPicture = picture('praia.png', 'The beach at Comporta', solidPng(96, [220, 190, 120]));
+const kitchenPicture = picture(
+	'kitchen.jpg',
+	'The kitchen as it is now',
+	demoPicture('kitchen.jpg')
+);
 {
 	const entry = one(
 		'select id, content from diary_entries where user_id = ? and notebook_id = ? order by id limit 1',
 		uid,
-		portugal
+		kitchen
 	);
-	const reference = `![The beach at Comporta](/media/${tripPicture})`;
+	const reference = `![The kitchen as it is now](/media/${kitchenPicture})`;
 	if (entry && !entry.content.includes(reference))
 		db.prepare('update diary_entries set content = ? where id = ?').run(
 			`${entry.content}\n\n${reference}`,
@@ -1246,9 +1221,9 @@ const tripPicture = picture('praia.png', 'The beach at Comporta', solidPng(96, [
 }
 
 const pastaPicture = picture(
-	'tomato-pasta.png',
-	'A bowl of tomato pasta',
-	solidPng(96, [190, 60, 45])
+	'tomato-pasta.jpg',
+	'Tomatoes for the sauce',
+	demoPicture('tomato-pasta.jpg')
 );
 if (
 	!one(
