@@ -51,10 +51,12 @@
 		onclose: () => void;
 	} = $props();
 
-	const OUTER = 132;
-	const INNER = 52;
+	// A tenth wider than it first shipped: at 132 the slices were tight enough
+	// that a name and its glyph fought for the same band.
+	const OUTER = 145;
+	const INNER = 57;
 	/** Room for the ring plus the shadow it casts. */
-	const PAD = 12;
+	const PAD = 13;
 
 	let active = $state(-1);
 	let centre = $state({ x: 0, y: 0 });
@@ -322,7 +324,7 @@
 						/>
 						<g style="color: {on ? '#fff' : item.color}" transform="translate({p.x} {p.y})">
 							<g transform="translate(-11 -20)">
-								<Icon name={item.icon} size={22} />
+								<Icon name={item.icon} size={24} />
 							</g>
 							<text
 								x="0"

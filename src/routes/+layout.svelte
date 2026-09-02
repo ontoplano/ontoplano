@@ -347,7 +347,7 @@
 				<span>
 					<strong>This is a demo version of ontoplano.</strong>
 					<strong class="text-red-900">
-						Do not put your real data here — this account will be wiped in a few hours.
+						Do not put your real data here — this account is wiped once you stop using it.
 					</strong>
 				</span>
 				{#if data.demoHost}
@@ -524,7 +524,10 @@
 						aria-label="Menu"
 						data-tour="menu"
 					>
-						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<!-- A fifth larger than the icons beside it: it is the way into
+						     everything the bar does not show, and it was reading as the
+						     smallest thing up here. -->
+						<svg class="size-[1.2rem]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path
 								stroke-linecap="square"
 								stroke-linejoin="miter"
