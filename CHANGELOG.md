@@ -10,6 +10,24 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.39.2 — 2026-09-02
+
+- **An import no longer takes your subscription with it.** Restoring an export
+  replaced the whole account, including the rows this instance issues rather
+  than exports — the plan, the payment, the API tokens, the calendar link — and
+  left a paid account looking like a fresh trial. It now replaces only what the
+  file actually carries, and writes a copy of everything it is about to destroy
+  first, in case something goes wrong anyway.
+- **Notes written in a notebook take pictures**, the same way notes written in
+  the diary always could.
+- **A person's face is the way to their picture** — the circle beside the name
+  opens the form, rather than the picture control hiding inside Edit.
+- **The demo forgets you sooner**: a demo account now expires 30 minutes after
+  its last visit rather than three hours.
+- The documentation's search carries the app's magnifier and its ⌘K hint, so
+  the shortcut is visible in both places.
+- The main menu button and the room wheel are bigger.
+
 ## 0.39.1 — 2026-09-02
 
 - **Choosing a picture is the whole gesture** — there is no second button to
