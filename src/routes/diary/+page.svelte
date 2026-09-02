@@ -120,6 +120,10 @@
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
+			// A `<dialog>` closes itself on Escape; `preventDefault()` here cancels
+			// that. Nothing on this page needs the key while one is open.
+			if (document.querySelector('dialog[open]')) return;
+
 			e.preventDefault();
 			showForm = false;
 			showWinsForm = false;

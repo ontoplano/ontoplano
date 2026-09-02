@@ -12,6 +12,7 @@
 	import { cardById, type DashboardCardId } from '$lib/dashboard.js';
 	import { deserialize } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
+	import { cancelFor, changeLater, isPending } from '$lib/undo.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 
 	/** Keep the card a card: the tracker is one click away for the full list. */
@@ -118,8 +119,50 @@
 		return text.slice(0, max).trimEnd() + '…';
 	}
 
+	/**
+	 * Answer for the block on the dashboard, in a few seconds.
+	 *
+	 * The same held-request shape the board uses: nothing is written until the
+	 * window closes, so Undo cancels a request rather than unwinding a write.
+	 * A second press inside the window means the same as pressing Undo.
+	 */
+	function answerLater(task: { id: number | string; name: string }, status: 'done' | 'skipped') {
+		const key = `instance:${task.id}`;
+		if (isPending(key)) {
+			cancelFor(key);
+			return;
+		}
+
+		const said = status === 'done' ? 'Completed' : 'Skipped';
+		changeLater(key, `${said} ${task.name}`, () => {
+			const body = new FormData();
+			body.set('id', String(task.id));
+			body.set('kind', 'instance');
+			body.set('status', status);
+			void fetch('/planner/board?/setStatus', {
+				method: 'POST',
+				headers: { 'x-sveltekit-action': 'true' },
+				body
+			}).then(() => invalidateAll());
+		});
+	}
+
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
+			/*
+			 * A dialog closes itself, and this used to stop it.
+			 *
+			 * `<dialog>` handles Escape in the platform — that is most of why it
+			 * is a dialog — and `preventDefault()` here cancelled it. So the four
+			 * quick-write forms opened with `i`, `t`, `n`, `b` could be dismissed
+			 * by the × and the backdrop and by nothing else, which is the one
+			 * thing somebody who opened it with a keystroke would try.
+			 *
+			 * Nothing else on this page needs Escape while a dialog is up, so the
+			 * whole handler stands aside.
+			 */
+			if (document.querySelector('dialog[open]')) return;
+
 			e.preventDefault();
 			showDiaryForm = false;
 			showWinsForm = false;
@@ -293,20 +336,20 @@
 				is the honest input. Leaving only "Done" meant the only way to tell
 				the truth was to say nothing, which is how a tracker starts lying.
 			-->
-				<div class="mt-3 flex shrink-0 items-center gap-2 sm:mt-0">
-					<form method="post" action="/planner/board?/setStatus" use:enhance>
-						<input type="hidden" name="id" value={task.id} />
-						<input type="hidden" name="kind" value="instance" />
-						<input type="hidden" name="status" value="done" />
-						<button class="btn btn-primary"><Icon name="check" /> Done</button>
-					</form>
+				<!--
+					Both answers wait a few seconds before they are sent.
 
-					<form method="post" action="/planner/board?/setStatus" use:enhance>
-						<input type="hidden" name="id" value={task.id} />
-						<input type="hidden" name="kind" value="instance" />
-						<input type="hidden" name="status" value="skipped" />
-						<button class="btn"><Icon name="skip" /> Skipped</button>
-					</form>
+					This is the pair somebody presses without looking — it is the
+					first thing on the screen and it is under a thumb on a phone —
+					and until now either one was final the instant it landed.
+				-->
+				<div class="mt-3 flex shrink-0 items-center gap-2 sm:mt-0">
+					<button type="button" class="btn btn-primary" onclick={() => answerLater(task, 'done')}>
+						<Icon name="check" /> Done
+					</button>
+					<button type="button" class="btn" onclick={() => answerLater(task, 'skipped')}>
+						<Icon name="skip" /> Skipped
+					</button>
 				</div>
 			</section>
 		{/if}
