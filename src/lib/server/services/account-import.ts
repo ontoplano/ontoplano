@@ -41,12 +41,64 @@
  * inside a single transaction: it either all lands or none of it does, and
  * there is no state where half a week exists.
  */
+import { mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { getTableConfig } from 'drizzle-orm/sqlite-core';
 
 import { db } from '../db/index.js';
 import { record as audit } from './audit.js';
 import { ValidationError } from './errors.js';
-import { USER_TABLES, type AccountExport } from './account.js';
+import { collectAccount, USER_TABLES, type AccountExport } from './account.js';
+import { DATA_DIR } from '../config.js';
+
+/**
+ * A copy of the account, on disk, before an import replaces it.
+ *
+ * An import empties the account and refills it from a file, in one transaction
+ * — so if the file turns out to be the wrong one, or a year older than
+ * somebody thought, there is nothing to go back to. The database snapshot the
+ * deploy takes is the instance's; this is the person's.
+ *
+ * Written beside the database rather than handed to the browser: it is a
+ * safety net rather than a download, and it has to exist whether or not
+ * anybody is still looking at the page. Named for the account and the moment,
+ * so an operator asked "can you put Ana back" has something to answer with —
+ * the path is on the audit line the import writes.
+ *
+ * Best effort by design: a disk that will not take the copy is not a reason to
+ * refuse somebody their own restore. It says so and carries on.
+ */
+export function keepBeforeImport(userId: string, now = new Date()): string | null {
+	try {
+		const dir = join(DATA_DIR, 'before-import');
+		mkdirSync(dir, { recursive: true });
+
+		const stamp = now.toISOString().replace(/[:.]/g, '-');
+		const path = join(dir, `${userId}-${stamp}.json`);
+		writeFileSync(path, JSON.stringify(collectAccount(userId, now)), { mode: 0o600 });
+
+		// Somebody's whole account, in plain JSON. Keep a few and no more: this
+		// is a way back from the last mistake, not an archive.
+		const mine = readdirSync(dir)
+			.filter((f) => f.startsWith(`${userId}-`) && f.endsWith('.json'))
+			.sort();
+		for (const old of mine.slice(0, Math.max(0, mine.length - KEEP_BEFORE_IMPORT)))
+			try {
+				rmSync(join(dir, old));
+			} catch {
+				/* an old copy that will not go is not worth failing the restore */
+			}
+
+		return path;
+	} catch (e) {
+		console.error('import: could not keep a copy before replacing the account', e);
+		return null;
+	}
+}
+
+/** How many of those to keep per account. */
+const KEEP_BEFORE_IMPORT = 3;
 
 /**
  * Rows that are about this instance rather than about the person.
@@ -206,10 +258,30 @@ export function importAccount(userId: string, payload: unknown): ImportResult {
 
 	const counts: { name: string; rows: number }[] = [];
 
+	// A copy of what is about to be destroyed, before anything is.
+	const rescue = keepBeforeImport(userId);
+
 	db.transaction((tx) => {
-		// Emptied first. `USER_TABLES` is ordered children-first for exactly
-		// this, which is why the insert below walks it backwards.
-		for (const table of USER_TABLES) table.remove(tx, userId);
+		/*
+		 * Emptied first — except the tables this import is not going to refill.
+		 *
+		 * This deleted everything and then skipped re-inserting whatever
+		 * `NOT_PORTABLE` names, which meant an import *destroyed* the rows that
+		 * belong to this instance rather than to the file: the subscription, the
+		 * record of what had been paid, the API tokens, the calendar links. A
+		 * paying account that restored a backup was asked to pay again on the
+		 * next page load, and its tokens had silently stopped working.
+		 *
+		 * The rule was always right and only half-applied. A row this import
+		 * will not carry in is a row it has no business carrying out.
+		 *
+		 * `USER_TABLES` is ordered children-first for the delete, which is why
+		 * the insert below walks it backwards.
+		 */
+		for (const table of USER_TABLES) {
+			if (table.name in NOT_PORTABLE) continue;
+			table.remove(tx, userId);
+		}
 
 		/** Old id → new id, per table, keyed by the SQL name a reference uses. */
 		const remap = new Map<string, Map<number, number>>();
@@ -272,7 +344,15 @@ export function importAccount(userId: string, payload: unknown): ImportResult {
 	const total = counts.reduce((sum, c) => sum + c.rows, 0);
 
 	audit(userId, 'data_imported', {
-		detail: { from: parsed.account.email || null, exportedAt: parsed.exportedAt, rows: total }
+		detail: {
+			from: parsed.account.email || null,
+			exportedAt: parsed.exportedAt,
+			rows: total,
+			// Where the account was written before it was replaced, so the log
+			// line is enough to undo this without anybody having to remember a
+			// path or know that a copy was taken at all.
+			rescue
+		}
 	});
 
 	return {

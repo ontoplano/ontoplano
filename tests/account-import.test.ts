@@ -120,6 +120,102 @@ describe('what does not travel', () => {
 		for (const skip of result.skipped) expect(skip.why.length).toBeGreaterThan(10);
 	});
 
+	/**
+	 * Not carrying a row in is not the same as carrying it out.
+	 *
+	 * The import emptied every table and then declined to refill the ones
+	 * `NOT_PORTABLE` names — so restoring a backup *deleted* the rows that
+	 * belong to this instance rather than to the file. On a real instance that
+	 * meant a paying account was asked to pay again on the next page load, its
+	 * API tokens had silently stopped working, and the calendar link handed to
+	 * a phone had gone. Nothing said any of it had happened.
+	 *
+	 * The rule was always right and only half-applied.
+	 */
+	test('leaves this instance’s own rows exactly where they were', async () => {
+		const { db } = await import('../src/lib/server/db/index');
+		const schema = await import('../src/lib/server/db/schema');
+
+		// A subscription and a token, as this instance issued them.
+		db.insert(schema.subscriptions)
+			.values({
+				userId: OWNER,
+				provider: 'paddle',
+				providerSubscriptionId: 'sub_local',
+				plan: 'pro',
+				status: 'active',
+				createdAt: now.toISOString(),
+				updatedAt: now.toISOString()
+			})
+			.run();
+		db.insert(schema.apiTokens)
+			.values({
+				userId: OWNER,
+				name: 'the phone',
+				tokenHash: 'a'.repeat(64),
+				prefix: 'onto_aaaaaa',
+				scopes: 'today:read',
+				createdAt: now.toISOString(),
+				updatedAt: now.toISOString()
+			})
+			.run();
+
+		// A perfectly ordinary export from somewhere else, carrying neither.
+		accountImport.importAccount(OWNER, {
+			exportedAt: now.toISOString(),
+			account: { id: 'elsewhere', name: 'Elsewhere', email: 'elsewhere@example.test' },
+			data: { todoTasks: [{ id: 1, userId: 'elsewhere', title: 'from the file' }] }
+		});
+
+		const subscriptions = db.select().from(schema.subscriptions).all();
+		const tokens = db.select().from(schema.apiTokens).all();
+
+		expect(
+			subscriptions.filter((r) => r.userId === OWNER),
+			'an import must not take the subscription with it'
+		).toHaveLength(1);
+		expect(
+			tokens.filter((r) => r.userId === OWNER),
+			'an import must not take the API tokens with it'
+		).toHaveLength(1);
+		// And the file's own rows did arrive.
+		expect(todos.listTodos(owner()).some((t) => t.title === 'from the file')).toBe(true);
+	});
+
+	/**
+	 * And there is a way back from a restore that was the wrong file.
+	 *
+	 * An import empties the account and refills it in one transaction, so
+	 * without this there is nothing to return to — the deploy's snapshot is the
+	 * instance's, not the person's.
+	 */
+	test('writes the account to disk before replacing it, and says where', async () => {
+		const { readFileSync } = await import('node:fs');
+		const audit = await import('../src/lib/server/services/audit');
+
+		todos.createTodo(owner(), { title: 'about to be destroyed' });
+
+		accountImport.importAccount(OWNER, {
+			exportedAt: now.toISOString(),
+			account: { id: 'elsewhere', name: 'Elsewhere', email: 'elsewhere@example.test' },
+			data: { todoTasks: [{ id: 1, userId: 'elsewhere', title: 'the replacement' }] }
+		});
+
+		const entry = audit
+			.listForSubject(OWNER, 20)
+			.find((e: { event: string }) => e.event === 'data_imported');
+		expect(entry, 'an import is a thing that happened to an account').toBeTruthy();
+
+		const rescue = (entry!.detail as { rescue?: string }).rescue;
+		expect(rescue, 'the log line names the copy').toBeTruthy();
+
+		const kept = JSON.parse(readFileSync(rescue!, 'utf8'));
+		expect(
+			(kept.data.todoTasks as { title: string }[]).some((t) => t.title === 'about to be destroyed'),
+			'the copy holds what the import was about to delete'
+		).toBe(true);
+	});
+
 	test('a table this version has never heard of is reported, not refused', () => {
 		const result = accountImport.importAccount(STRANGER, {
 			exportedAt: now.toISOString(),

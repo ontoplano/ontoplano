@@ -140,6 +140,24 @@ there is no state where half a week exists.
 
 ### Functions
 
+#### `keepBeforeImport(userId, now)`
+
+A copy of the account, on disk, before an import replaces it.
+
+An import empties the account and refills it from a file, in one transaction
+— so if the file turns out to be the wrong one, or a year older than
+somebody thought, there is nothing to go back to. The database snapshot the
+deploy takes is the instance's; this is the person's.
+
+Written beside the database rather than handed to the browser: it is a
+safety net rather than a download, and it has to exist whether or not
+anybody is still looking at the page. Named for the account and the moment,
+so an operator asked "can you put Ana back" has something to answer with —
+the path is on the audit line the import writes.
+
+Best effort by design: a disk that will not take the copy is not a reason to
+refuse somebody their own restore. It says so and carries on.
+
 #### `parseExport(raw)`
 
 The shape `exportAccount` produces, checked rather than trusted.
@@ -186,6 +204,15 @@ How many exports this account's plan allows in a day.
 "in about 7 hours", for a message a person reads once and acts on.
 
 #### `exportAllowance(userId, now)`
+
+#### `collectAccount(userId, now)`
+
+The same file the export produces, without asking permission.
+
+`exportAccount` counts against the day's allowance and writes an audit line,
+both of which are right when a person asks for their data — and both of which
+are wrong when the app is taking a safety copy on their behalf. This is the
+rows and nothing else.
 
 #### `exportAccount(userId, now)`
 

@@ -287,6 +287,28 @@ function recordExport(userId: string, now: Date): void {
 	setUserSetting(userId, EXPORT_LOG_KEY, JSON.stringify(log));
 }
 
+/**
+ * The same file the export produces, without asking permission.
+ *
+ * `exportAccount` counts against the day's allowance and writes an audit line,
+ * both of which are right when a person asks for their data — and both of which
+ * are wrong when the app is taking a safety copy on their behalf. This is the
+ * rows and nothing else.
+ */
+export function collectAccount(userId: string, now: Date = new Date()): AccountExport {
+	const account = db
+		.select({ id: schema.user.id, name: schema.user.name, email: schema.user.email })
+		.from(schema.user)
+		.where(eq(schema.user.id, userId))
+		.get();
+	if (!account) throw new Error('Account not found');
+
+	const data: Record<string, unknown[]> = {};
+	for (const table of USER_TABLES) data[table.name] = table.rows(userId);
+
+	return { exportedAt: now.toISOString(), account, data };
+}
+
 export function exportAccount(userId: string, now: Date = new Date()): AccountExport {
 	const account = db
 		.select({ id: schema.user.id, name: schema.user.name, email: schema.user.email })
