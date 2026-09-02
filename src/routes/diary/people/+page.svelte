@@ -134,21 +134,38 @@
 								letter rather than a grey silhouette — a silhouette says
 								"missing", an initial says "this one".
 							-->
-							{#if person.pictureId}
-								<img
-									src="/media/{person.pictureId}"
-									alt=""
-									loading="lazy"
-									class="size-9 shrink-0 rounded-full border border-gray-200 bg-white object-cover"
-								/>
-							{:else}
-								<span
-									aria-hidden="true"
-									class="flex size-9 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-100 text-sm font-medium text-gray-500"
-								>
-									{person.name.trim().charAt(0).toUpperCase()}
+							<!--
+								…and it is a button, because the picture control lives in the
+								edit form, and a form nobody opens is a feature nobody finds.
+								The face is where somebody looks when they want to change it.
+							-->
+							<button
+								type="button"
+								onclick={() => openEdit(person)}
+								title={person.pictureId
+									? `Change ${person.name}’s picture`
+									: `Add a picture of ${person.name}`}
+								class="shrink-0 rounded-full transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:outline-none"
+							>
+								{#if person.pictureId}
+									<img
+										src="/media/{person.pictureId}"
+										alt=""
+										loading="lazy"
+										class="size-9 rounded-full border border-gray-200 bg-white object-cover"
+									/>
+								{:else}
+									<span
+										aria-hidden="true"
+										class="flex size-9 items-center justify-center rounded-full border border-dashed border-gray-300 bg-gray-100 text-sm font-medium text-gray-500"
+									>
+										{person.name.trim().charAt(0).toUpperCase()}
+									</span>
+								{/if}
+								<span class="sr-only">
+									{person.pictureId ? 'Change' : 'Add'} a picture of {person.name}
 								</span>
-							{/if}
+							</button>
 
 							<a
 								href={resolve(`/diary/people?person=${person.id}`)}

@@ -5,6 +5,7 @@
 	import { autogrow } from '$lib/actions/autogrow';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import { HORIZON_LABELS, type Horizon } from '$lib/goals';
 	import { STATUS_LABELS } from '$lib/task-status';
@@ -38,6 +39,11 @@
 	} = $props();
 
 	let editingNoteId = $state<number | null>(null);
+
+	// The boxes a picture writes its markdown into. Only one note is ever being
+	// edited at a time, so one reference is enough for the whole list.
+	let addBox = $state<HTMLTextAreaElement>();
+	let editBox = $state<HTMLTextAreaElement>();
 	let confirmDeleteNote = $state<number | null>(null);
 
 	/**
@@ -111,6 +117,7 @@
 		>
 			<input type="hidden" name="notebookId" value={notebook.id} />
 			<textarea
+				bind:this={addBox}
 				name="content"
 				rows="2"
 				required
@@ -118,6 +125,10 @@
 				placeholder="Write a note about {notebook.title}"
 				class="textarea"
 			></textarea>
+			<!-- A note written here takes a picture the same way a note written in
+			     the diary does. It was missing here, which made pictures look like
+			     a feature of one screen rather than of notes. -->
+			<PictureAttach target={addBox} />
 			<div class="mt-2 flex justify-end">
 				<button class="btn btn-primary btn-sm"><Icon name="plus" /> Add note</button>
 			</div>
@@ -206,9 +217,15 @@
 							{#if notebookId !== null}
 								<input type="hidden" name="notebookId" value={notebookId} />
 							{/if}
-							<textarea name="content" rows="4" required use:autogrow class="textarea"
-								>{entry.content}</textarea
+							<textarea
+								bind:this={editBox}
+								name="content"
+								rows="4"
+								required
+								use:autogrow
+								class="textarea">{entry.content}</textarea
 							>
+							<PictureAttach target={editBox} />
 							<div class="mt-2 flex justify-end gap-2">
 								<button type="button" class="btn btn-sm" onclick={() => (editingNoteId = null)}
 									>Cancel</button

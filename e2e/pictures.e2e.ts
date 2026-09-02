@@ -151,12 +151,54 @@ test('a person gets one face, and it shows in the list', async ({ page }) => {
 		.click();
 	await page.locator('input[name="label"]').first().fill('Ana');
 	await page.getByRole('button', { name: /add person/i }).click();
-	await expect(page.getByText('Ana')).toBeVisible();
+	await expect(page.getByRole('link', { name: /^Ana/ })).toBeVisible();
 
 	// The control lives in the edit form: a picture belongs to a person who
 	// exists, and there is nowhere to put one before that.
 	await page.getByRole('button', { name: /edit/i }).first().click();
 	await page.locator('input[name="file"]').setInputFiles(SMALL);
 
+	await expect(page.locator('[data-tour="people-list"] img')).toHaveCount(1, { timeout: 20000 });
+});
+
+test('a note written in a notebook takes one too', async ({ page }) => {
+	// Reported as "I don't see how to add media to a notebook note": the control
+	// was on the diary's note form and nowhere else, so pictures looked like a
+	// property of one screen rather than of notes.
+	await page.setViewportSize({ width: 1280, height: 1000 });
+	await register(page, `nb-pics-${Date.now()}@test.invalid`);
+
+	await page.goto('/diary/notebooks', { waitUntil: 'networkidle' });
+	await page
+		.getByRole('button', { name: /new notebook/i })
+		.first()
+		.click();
+	await page.locator('input[name="title"]').first().fill('Kitchen');
+	await page.locator('button[type="submit"]').first().click();
+	await expect(page.getByPlaceholder('Write a note about Kitchen')).toBeVisible();
+
+	const box = page.getByPlaceholder('Write a note about Kitchen');
+	await box.fill('The tiles.');
+	await page.locator('input[type="file"]').first().setInputFiles(SMALL);
+	await expect(box).toHaveValue(/!\[small\.png\]\(\/media\/\d+\)/, { timeout: 20000 });
+});
+
+test('a person’s face is the way in to their picture', async ({ page }) => {
+	// The control only existed inside the edit form, which nobody opens to add a
+	// picture. The face is where somebody looks when they want to change it.
+	await page.setViewportSize({ width: 1280, height: 1000 });
+	await register(page, `face-open-${Date.now()}@test.invalid`);
+
+	await page.goto('/diary/people', { waitUntil: 'networkidle' });
+	await page
+		.getByRole('button', { name: /new person/i })
+		.first()
+		.click();
+	await page.locator('input[name="label"]').first().fill('Ana');
+	await page.getByRole('button', { name: /add person/i }).click();
+	await expect(page.getByRole('link', { name: /^Ana/ })).toBeVisible();
+
+	await page.getByRole('button', { name: /add a picture of ana/i }).click();
+	await page.locator('input[name="file"]').setInputFiles(SMALL);
 	await expect(page.locator('[data-tour="people-list"] img')).toHaveCount(1, { timeout: 20000 });
 });
