@@ -10,6 +10,12 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.35.2 — 2026-09-02
+
+- **The tour stops repeating itself at the end.** The dashboard's last card
+  pointed at the help corner and the card after it pointed at the same corner
+  again, saying the same thing.
+
 ## 0.35.1 — 2026-09-02
 
 - **A dark button keeps its label under the pointer.** Hovering a primary

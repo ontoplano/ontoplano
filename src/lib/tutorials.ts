@@ -59,6 +59,11 @@ export type Tutorial = {
  * Dismissing does not close the tour; it comes here, which is the only place
  * that answers "and how do I get that back". Pressing Next through to the end
  * arrives at the same step, so the way out is the way out.
+ *
+ * Which is also why no tour writes a step of its own about that corner. The
+ * dashboard's used to, and the tour then said the same thing twice in a row —
+ * a card pointing at the help cluster, and then this card pointing at a button
+ * inside it. `tutorials.test.ts` fails on a step that targets either.
  */
 export const CLOSING_STEP: TutorialStep = {
 	target: '[data-tour="tutorial"]',
@@ -115,11 +120,6 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				target: '[data-tour="menu"]',
 				title: 'Yours to change',
 				body: 'Theme, the day your week starts on, which rooms you keep and what colour they are. Your account and your data live here too.'
-			},
-			{
-				target: '[data-tour="help-dock"]',
-				title: 'Help sits in this corner',
-				body: 'The keys for this screen, this tour again, and the documentation.'
 			}
 		]
 	},

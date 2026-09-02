@@ -89,6 +89,29 @@ describe('the guided tours', () => {
 		}
 	});
 
+	/**
+	 * The corner is the closing step's, and nobody else's.
+	 *
+	 * The dashboard's tour used to end on a step pointing at the help cluster,
+	 * and `CLOSING_STEP` — which is appended to every tour — then pointed at a
+	 * button inside that same cluster and said the same thing. Two cards in a
+	 * row about the same corner, and the second one read as the tour failing to
+	 * notice it had already finished.
+	 */
+	it('leaves the help corner to the step that closes every tour', () => {
+		const cluster = ['[data-tour="help-dock"]', '[data-tour="tutorial"]'];
+		const offenders: string[] = [];
+
+		for (const [path, tutorial] of Object.entries(TUTORIALS))
+			for (const step of tutorial.steps)
+				if (step.target && cluster.includes(step.target))
+					offenders.push(`${path}: "${step.title}" points at ${step.target}`);
+
+		expect(offenders, 'a tour saying what the closing step already says').toEqual([]);
+		// And the closing step is still the one that does say it.
+		expect(cluster).toContain(CLOSING_STEP.target);
+	});
+
 	it('resolves a detail page to the tour of the list it came from', () => {
 		expect(tutorialFor('/diary/notebooks/12')).toBe(TUTORIALS['/diary/notebooks']);
 		expect(tutorialFor('/kitchen/recipes/3')).toBe(TUTORIALS['/kitchen/recipes']);
