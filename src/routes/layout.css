@@ -2,7 +2,27 @@
 @import '@fontsource-variable/ibm-plex-sans';
 @import '@fontsource-variable/jetbrains-mono';
 @plugin '@tailwindcss/forms';
-@plugin '@tailwindcss/typography';
+
+/*
+ * The typography plugin is deliberately NOT loaded.
+ *
+ * Nothing in this app uses a `prose` class — the one thing that looks like it,
+ * `max-w-prose`, is core Tailwind and has nothing to do with the plugin. What
+ * the plugin did contribute was one rule, `content: "\`"`, containing a
+ * literal backtick; SvelteKit inlines each stylesheet into a JavaScript
+ * template literal without escaping it, so any build in which Tailwind decided
+ * the plugin's classes were in use died with "Unterminated string constant" in
+ * a generated file, naming nothing anybody had written.
+ *
+ * And Tailwind decides that from prose. The word "prose" in an English sentence
+ * in any scanned file is a candidate class name; it happened first from
+ * comments in generated documentation, and again from one word in a code
+ * comment. `source(none)` narrowed the scan and did not close it, because the
+ * word is a perfectly ordinary one to write in a comment about writing.
+ *
+ * So the plugin is gone rather than guarded. `vite.config.ts` refuses a
+ * stylesheet containing a backtick anyway, with a message that says this.
+ */
 
 /*
  * What Tailwind is allowed to read.
@@ -11,13 +31,9 @@
  * explicitly. Left to itself Tailwind reads the whole repository looking for
  * anything shaped like a class name — including plain English in comments,
  * changelogs and generated files. That is not a theoretical worry: the word
- * "prose", written in build-script comments and copied into the generated wiki,
- * was enough to make Tailwind believe the typography plugin's classes were in
- * use and emit its entire ruleset. One of those rules is `content: "\`"` — a
- * literal backtick — and adapter-node writes each CSS chunk into a JavaScript
- * template literal without escaping it. Every production build then died with
- * "Unterminated string constant" in a generated file, naming nothing anybody
- * had written.
+ * "prose", written in build-script comments and copied into the generated
+ * documentation, was enough to make Tailwind emit an entire plugin's ruleset
+ * (see the note above about why that plugin is no longer loaded at all).
  *
  * So the sources are stated. Markup lives in `src` and nowhere else, which is
  * also a faster scan and a smaller stylesheet.

@@ -32,6 +32,18 @@
 	// key is for the developer, the sentence is for the owner of the data.
 	const scopeSentence = (key: string) => data.scopes.find((s) => s.key === key)?.description ?? key;
 
+	/**
+	 * Tick exactly these and untick the rest.
+	 *
+	 * Set rather than add, so pressing a preset twice is the same as pressing it
+	 * once and the button always leaves the form in the state its label claims.
+	 */
+	let scopeBox = $state<HTMLElement>();
+	function tick(keys: string[]) {
+		for (const box of scopeBox?.querySelectorAll<HTMLInputElement>('input[name="scopes"]') ?? [])
+			box.checked = keys.includes(box.value);
+	}
+
 	function closeForms() {
 		showTokenForm = false;
 		showWebhookForm = false;
@@ -238,7 +250,23 @@
 						<p class="mt-1 mb-2 text-xs text-gray-500">
 							Grant only what the app needs. Anything unticked stays out of reach.
 						</p>
-						<div class="space-y-1">
+						<!--
+							Eighteen checkboxes is a form somebody ticks wrong, and both wrong
+							answers are bad: a token that cannot do its job, or one that can do
+							more than it was made for. The one set anybody grants wholesale is
+							an assistant's, so that set is a button — read from the tools
+							themselves, so a tool added later is in it without anybody
+							remembering.
+						-->
+						<p class="mb-2 flex flex-wrap items-center gap-2">
+							<button type="button" class="btn btn-sm" onclick={() => tick(data.assistantScopes)}>
+								An assistant (MCP)
+							</button>
+							<button type="button" class="btn btn-sm btn-quiet" onclick={() => tick([])}>
+								Clear
+							</button>
+						</p>
+						<div class="space-y-1" bind:this={scopeBox}>
 							{#each data.scopes as scope (scope.key)}
 								<label class="flex items-start gap-2 text-sm text-gray-700">
 									<input type="checkbox" name="scopes" value={scope.key} class="mt-1" />

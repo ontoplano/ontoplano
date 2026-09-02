@@ -1,5 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
 
+import { ASSISTANT_SCOPES } from '$lib/server/mcp/tools';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
 import {
@@ -56,6 +57,15 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			...s,
 			stats: streamStats(ctx, s.id)
 		})),
+		/*
+		 * What an assistant asks for, as one button.
+		 *
+		 * Eighteen checkboxes is a form somebody ticks wrong, and the wrong tick
+		 * here is either a token that cannot do its job or one that can do more
+		 * than it needs. The set is read from the tools themselves, so a tool
+		 * added later is in the preset without anybody remembering.
+		 */
+		assistantScopes: ASSISTANT_SCOPES,
 		scopes: ALL_SCOPES.map((key) => ({
 			key,
 			description: SCOPES[key]

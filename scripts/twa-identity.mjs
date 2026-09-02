@@ -25,6 +25,7 @@ export const PRODUCTION_HOST = 'app.ontoplano.com';
  * A package segment may not start with a digit, so a LAN build — an IP address
  * — is called `local` rather than something Android refuses outright.
  */
+/** @param {string} host @returns {string} */
 export function suffixFor(host) {
 	if (host === PRODUCTION_HOST) return '';
 	const label = String(host)
@@ -34,13 +35,18 @@ export function suffixFor(host) {
 	return !label || /^\d/.test(label) ? 'local' : label;
 }
 
+/** @param {string} host @param {string} [explicit] @returns {string} */
 export function packageIdFor(host, explicit) {
 	if (explicit) return explicit;
 	const suffix = suffixFor(host);
 	return suffix ? `app.ontoplano.twa.${suffix}` : 'app.ontoplano.twa';
 }
 
-/** What to fall back to when the instance cannot be asked. */
+/**
+ * What to fall back to when the instance cannot be asked.
+ *
+ * @param {string} assetOrigin
+ */
 export function defaultIdentity(assetOrigin) {
 	return {
 		name: 'Ontoplano',
@@ -56,13 +62,20 @@ export function defaultIdentity(assetOrigin) {
  * `short_name` is the launcher label because Android truncates it at about a
  * dozen characters — "Ontoplano staging" becomes "Ontoplano s…" and the two
  * apps look identical again, which is the failure this exists to avoid.
+ *
+ * @param {{ name?: string, short_name?: string, icons?: { src?: string, sizes?: string, purpose?: string }[] } | null | undefined} manifest
+ * @param {string} assetOrigin
  */
 export function identityFrom(manifest, assetOrigin) {
 	const fallback = defaultIdentity(assetOrigin);
 	if (!manifest || typeof manifest !== 'object') return fallback;
 
+	/** @param {string} purpose @param {number} size */
 	const icon = (purpose, size) =>
-		manifest.icons?.find((i) => i.purpose === purpose && i.sizes === `${size}x${size}`)?.src;
+		manifest.icons?.find(
+			(/** @type {{ purpose?: string, sizes?: string }} */ i) =>
+				i.purpose === purpose && i.sizes === `${size}x${size}`
+		)?.src;
 	const any = icon('any', 512);
 	const maskable = icon('maskable', 512);
 

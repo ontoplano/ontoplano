@@ -30,6 +30,46 @@ const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { version: strin
 const commit = git('git rev-parse --short HEAD');
 const dirty = git('git status --porcelain') !== '' ? '+' : '';
 
+/**
+ * A stylesheet may not contain a backtick.
+ *
+ * `inlineStyleThreshold` is set high on purpose — a cold first visit was
+ * painting an unstyled page before the stylesheet arrived — so SvelteKit writes
+ * every stylesheet into a JavaScript **template literal** to inline it. It does
+ * not escape the contents, so one backtick anywhere in the CSS closes that
+ * literal and the build dies in a generated file with:
+ *
+ *     RollupError: Unterminated string constant in
+ *     .svelte-kit/adapter-node/stylesheets/0.<hash>.css.js
+ *
+ * which names nothing anybody wrote and is a genuinely hard afternoon. It has
+ * happened twice, both times from Tailwind's typography plugin and its
+ * `content: "\`"` rule — that plugin is no longer loaded (see the note at the
+ * top of `src/routes/layout.css`), and this makes sure the next source of one
+ * announces itself in the language of the problem rather than of the crash.
+ */
+function noBacktickInCss() {
+	return {
+		name: 'ontoplano-no-backtick-in-css',
+		// After the CSS is generated and long before the adapter writes it out.
+		generateBundle(_options: unknown, bundle: Record<string, { type: string; source?: unknown }>) {
+			for (const [file, chunk] of Object.entries(bundle)) {
+				if (chunk.type !== 'asset' || !file.endsWith('.css')) continue;
+				const css = String(chunk.source ?? '');
+				const at = css.indexOf('`');
+				if (at === -1) continue;
+				throw new Error(
+					`${file} contains a backtick, at "${css.slice(Math.max(0, at - 60), at + 20)}".\n` +
+						'SvelteKit inlines each stylesheet into a JavaScript template literal and does\n' +
+						'not escape it, so this would fail the build as "Unterminated string constant"\n' +
+						'in a generated file. Find what emitted it — a Tailwind plugin whose classes\n' +
+						'Tailwind believes are in use is the usual answer — and stop emitting it.'
+				);
+			}
+		}
+	};
+}
+
 export default defineConfig({
 	define: {
 		__APP_VERSION__: JSON.stringify(pkg.version),
@@ -38,7 +78,7 @@ export default defineConfig({
 		__APP_COMMIT__: JSON.stringify(commit === 'unknown' ? commit : commit + dirty),
 		__APP_BUILT_AT__: JSON.stringify(new Date().toISOString())
 	},
-	plugins: [tailwindcss(), sveltekit()],
+	plugins: [tailwindcss(), sveltekit(), noBacktickInCss()],
 	server: {
 		/**
 		 * Listen on every address, not just `localhost`.

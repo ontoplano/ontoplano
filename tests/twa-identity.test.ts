@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-// @ts-expect-error — a build script, plain JS, no types beside it.
 import {
 	defaultIdentity,
 	identityFrom,

@@ -10,6 +10,17 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.37.0 — 2026-09-02
+
+- **You can hand an assistant the keys.** `POST /api/mcp` is a Model Context
+  Protocol server: point Claude or anything else that speaks MCP at it with an
+  API token and it can read today, search everything you have written, add and
+  finish todos, write a diary entry, catch an idea, work the shopping list and
+  add a recipe. It is offered exactly the tools the token's scopes reach, and
+  the scope is checked again on every call.
+- **Seven new scopes to grant it**, and a button on the token form that ticks
+  the set an assistant needs rather than making you find them among eighteen.
+
 ## 0.36.0 — 2026-09-02
 
 - **A staging instance behaves like the real one.** It used to open

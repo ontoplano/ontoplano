@@ -40,7 +40,27 @@ export const SCOPES = {
 	 * that might also write to the shopping list. This grants one thing, the feed
 	 * route accepts nothing else, and what a leaked link costs is bounded.
 	 */
-	'calendar:read': 'Show your plan in a calendar app. It can see the plan and change nothing'
+	'calendar:read': 'Show your plan in a calendar app. It can see the plan and change nothing',
+	/*
+	 * The four an assistant asks for.
+	 *
+	 * `/api/mcp` lets a model do things in here on your behalf, and the useful
+	 * ones are exactly the ones a narrow scope would forbid — "put this on my
+	 * todo list", "write today up in the diary", "what am I meant to be doing".
+	 * They are still four grants rather than one: reading your writing and
+	 * changing your week are different permissions, and a token that only ever
+	 * reads should be refused when it tries to write.
+	 *
+	 * Named for the room rather than the table, because that is what the person
+	 * granting them is picturing.
+	 */
+	'notes:read': 'Read your diary, your notebooks and your ideas',
+	'notes:write': 'Write in your diary and your notebooks, and add ideas',
+	'tasks:read': 'Read your todo list and your goals',
+	'tasks:write': 'Add and finish todos, and move them onto a day',
+	'kitchen:read': 'Read your recipes',
+	'kitchen:write': 'Add and change recipes',
+	'search:read': 'Search everything you have written, in one go'
 } as const;
 
 export type Scope = keyof typeof SCOPES;
