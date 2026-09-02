@@ -71,12 +71,27 @@ const STYLE = `
 .search { position: relative; margin: 0 0 1rem; }
 .search input {
   width: 100%; box-sizing: border-box;
-  padding: 0.45rem 0.6rem;
+  padding: 0.45rem 3.4rem 0.45rem 2rem;
   border: 1px solid var(--line); border-radius: 6px;
   background: var(--soft); color: var(--ink);
   font: inherit; font-size: 0.85rem;
 }
 .search input:focus { outline: 2px solid var(--link); outline-offset: -1px; }
+/* Both sit on top of the field, so neither takes the click that focuses it. */
+.search-glyph {
+  position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%);
+  width: 0.95rem; height: 0.95rem; color: var(--muted); pointer-events: none;
+}
+#docsearch-key {
+  position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%);
+  padding: 0 0.3rem; pointer-events: none;
+  border: 1px solid var(--line); border-radius: 4px;
+  font: inherit; font-size: 0.7rem; color: var(--muted); background: var(--bg);
+}
+/* Once somebody is typing, the hint has done its job and the text needs the
+   room more than the reminder does. */
+.search input:not(:placeholder-shown) ~ #docsearch-key { display: none; }
+@media (max-width: 40rem) { #docsearch-key { display: none; } }
 #docsearch-results {
   position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px);
   margin: 0; padding: 0.25rem; list-style: none;
@@ -399,6 +414,13 @@ if (box) {
 	box.addEventListener('blur', () => setTimeout(() => (list.hidden = true), 150));
 	box.addEventListener('focus', draw);
 
+	// The hint reads the keyboard, like the app's does: Ctrl in the markup
+	// because it is the commoner answer, ⌘ once the page knows better.
+	const hint = document.getElementById('docsearch-key');
+	if (hint && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) {
+		hint.textContent = '⌘ K';
+	}
+
 	// The same two keys the app uses, so the habit carries over.
 	document.addEventListener('keydown', (e) => {
 		if (e.target === box) return;
@@ -442,8 +464,17 @@ function render(page) {
     <nav>
       <a class="brand" href="/">ontoplano docs</a>
       <div class="search">
-        <input id="docsearch" type="search" placeholder="Search the docs  /"
+        <!-- The same magnifier and the same key hint as the app's search
+             button: two places to search one product, and somebody who has
+             learnt the shortcut in one should recognise it in the other. The
+             glyph is the app's own search path, not a second drawing. -->
+        <svg class="search-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="square" aria-hidden="true">
+          <path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM16 16l4 4" />
+        </svg>
+        <input id="docsearch" type="search" placeholder="Search the docs"
                autocomplete="off" aria-label="Search the documentation">
+        <kbd id="docsearch-key">Ctrl K</kbd>
         <ul id="docsearch-results" hidden></ul>
       </div>
       <a class="to-app" href="${APP_URL}">
