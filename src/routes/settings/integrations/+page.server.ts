@@ -58,7 +58,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			stats: streamStats(ctx, s.id)
 		})),
 		/*
-		 * What an assistant asks for, as one button.
+		 * What an AI assistant asks for, as one button.
 		 *
 		 * Eighteen checkboxes is a form somebody ticks wrong, and the wrong tick
 		 * here is either a token that cannot do its job or one that can do more

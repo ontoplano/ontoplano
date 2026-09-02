@@ -18,8 +18,9 @@ than a permission bit: a grant given to a string of jargon is not informed.
 | ----------------- | ------------------------------------------------------------------------ |
 | `streams:write`   | Send readings into your data streams, and create new streams             |
 | `streams:read`    | Read everything your data streams have ever recorded                     |
-| `schedule:read`   | Read everything on your calendar for the days ahead                      |
-| `today:read`      | See today's blocks, habits and tasks — what the phone widget shows       |
+| `schedule:read`   | Read everything on your calendar for the days ahead, today included      |
+| `today:read`      | See today's plan — the blocks and the tasks on it, and nothing else      |
+| `habits:read`     | See your habits, which are due today, and whether you kept them          |
 | `plugin:declare`  | Name and describe itself on your integrations page                       |
 | `webhooks:manage` | Ask to be told when things happen — and manage those subscriptions       |
 | `shopping:read`   | See everything on your shopping list                                     |
@@ -75,12 +76,12 @@ secret the delivery is signed with, so the receiver can tell it is really us.
 A subscription that keeps failing is disabled rather than retried forever, and
 says so on the settings page where it can be revived.
 
-## An assistant, over MCP
+## An AI assistant, over MCP
 
 `POST /api/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io)
 server over these same tokens and scopes — the fifth way in, and the only one
 where the thing at the other end decides what to do. It has [a page of its
-own](an-assistant.md).
+own](ai-agents.md).
 
 ## Two plugins to read
 

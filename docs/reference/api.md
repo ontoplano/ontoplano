@@ -16,8 +16,9 @@ sentence somebody agrees to when they grant it.
 | ----------------- | ------------------------------------------------------------------------ |
 | `streams:write`   | Send readings into your data streams, and create new streams             |
 | `streams:read`    | Read everything your data streams have ever recorded                     |
-| `schedule:read`   | Read everything on your calendar for the days ahead                      |
-| `today:read`      | See today's blocks, habits and tasks — what the phone widget shows       |
+| `schedule:read`   | Read everything on your calendar for the days ahead, today included      |
+| `today:read`      | See today's plan — the blocks and the tasks on it, and nothing else      |
+| `habits:read`     | See your habits, which are due today, and whether you kept them          |
 | `plugin:declare`  | Name and describe itself on your integrations page                       |
 | `webhooks:manage` | Ask to be told when things happen — and manage those subscriptions       |
 | `shopping:read`   | See everything on your shopping list                                     |
@@ -337,12 +338,17 @@ Delete a single point by its producer-supplied id.
 
 ### `/api/v1/today`
 
-Today's blocks, habits and tasks, for the home-screen widget.
+Today's plan, for the home-screen widget.
 
 Separate from `/schedule/upcoming`, which answers "what is coming" for an
 alarm consumer. This answers "what does today look like", which is a
 different question and a different scope: a widget on a lock screen should
 not carry a token that can also read a week ahead.
+
+Habits come with it only for a token that was also granted `habits:read`.
+The two used to be one permission, so the widget's token could report which
+habits were kept — which nobody agreed to by ticking a line about the day's
+plan.
 
 **GET** — requires `today:read`
 

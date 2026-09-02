@@ -51,12 +51,12 @@ secret the delivery is signed with, so the receiver can tell it is really us.
 A subscription that keeps failing is disabled rather than retried forever, and
 says so on the settings page where it can be revived.
 
-## An assistant, over MCP
+## An AI assistant, over MCP
 
 `POST /api/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io)
 server over these same tokens and scopes — the fifth way in, and the only one
 where the thing at the other end decides what to do. It has [a page of its
-own](an-assistant.md).
+own](ai-agents.md).
 
 ## Two plugins to read
 

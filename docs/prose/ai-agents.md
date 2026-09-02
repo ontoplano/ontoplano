@@ -1,12 +1,12 @@
-<!-- title: An assistant -->
-<!-- blurb: pointing Claude, or anything else that speaks MCP, at your own instance -->
+<!-- title: Using with AI agents -->
+<!-- blurb: pointing Claude, or any other AI agent that speaks MCP, at your own instance -->
 
-# An assistant
+# Using with AI agents
 
 `POST /api/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io)
 server: the same API tokens, the same scopes, and a set of tools a model can
 call. It is what "put that on my todo list" means when the thing being asked is
-an assistant rather than the app.
+an AI agent rather than the app.
 
 Point a client at it with an ordinary bearer token. In Claude Code:
 
@@ -58,7 +58,7 @@ As it stands:
 ## Making the token
 
 Settings → Integrations → New token. There is a button on that form called
-**An assistant (MCP)** which ticks exactly the scopes above — grant fewer if you
+**An AI assistant (MCP)** which ticks exactly the scopes above — grant fewer if you
 want it to read and not write, and the tools it was not granted are not offered
 to it at all.
 

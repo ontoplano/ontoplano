@@ -254,13 +254,13 @@
 							Eighteen checkboxes is a form somebody ticks wrong, and both wrong
 							answers are bad: a token that cannot do its job, or one that can do
 							more than it was made for. The one set anybody grants wholesale is
-							an assistant's, so that set is a button — read from the tools
+							an AI assistant's, so that set is a button — read from the tools
 							themselves, so a tool added later is in it without anybody
 							remembering.
 						-->
 						<p class="mb-2 flex flex-wrap items-center gap-2">
 							<button type="button" class="btn btn-sm" onclick={() => tick(data.assistantScopes)}>
-								An assistant (MCP)
+								An AI assistant (MCP)
 							</button>
 							<button type="button" class="btn btn-sm btn-quiet" onclick={() => tick([])}>
 								Clear

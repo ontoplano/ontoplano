@@ -2694,7 +2694,7 @@ thinking.
 
 ### Functions
 
-#### `getTodayBoard(ctx)`
+#### `getTodayBoard(ctx, allowed)`
 
 ### Types
 
@@ -2702,6 +2702,7 @@ thinking.
 - `TodayHabit`
 - `TodayTask`
 - `TodayBoard`
+- `TodayScope` — What a caller is allowed to see of a day.
 
 ## todos
 
