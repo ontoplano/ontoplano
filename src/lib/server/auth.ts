@@ -9,7 +9,6 @@ import { db } from '$lib/server/db';
 import { MIN_PASSWORD_LENGTH } from '$lib/passwords';
 import { sendLogged } from '$lib/server/services/mail-log';
 import { renderEmail } from '$lib/server/email-template';
-import { configuredProviders, type SocialProvider } from '$lib/social';
 
 const verificationMail = (url: string) =>
 	renderEmail({
@@ -30,53 +29,21 @@ const verificationMail = (url: string) =>
  * dig through a mailbox for a link that may never have arrived.
  */
 
-/**
- * Which social sign-ins this instance actually has credentials for.
- *
- * A button that opens a provider and comes back with "invalid client" is worse
- * than no button, so an instance offers exactly what it is configured for and
- * nothing else. Apple and X are deliberately absent: Apple needs a paid
- * developer account and a client secret that has to be re-signed twice a year,
- * and X's OAuth now sits behind their paid API tiers. Both are a day's work
- * with an ongoing cost; Google and GitHub are ten minutes each and free.
- */
-export function configuredSocialProviders(): SocialProvider[] {
-	return configuredProviders(process.env);
-}
-
-function socialProviderConfig() {
-	const config: Record<string, { clientId: string; clientSecret: string }> = {};
-
-	for (const id of configuredSocialProviders()) {
-		config[id] = {
-			clientId: process.env[`${id.toUpperCase()}_CLIENT_ID`]!,
-			clientSecret: process.env[`${id.toUpperCase()}_CLIENT_SECRET`]!
-		};
-	}
-
-	return config;
-}
-
 export const auth = betterAuth({
 	baseURL: env.ORIGIN,
 	secret: env.BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: 'sqlite' }),
-	socialProviders: socialProviderConfig(),
-	account: {
-		accountLinking: {
-			/**
-			 * Same address, same account.
-			 *
-			 * Somebody who signed up with a password and later presses "Sign in with
-			 * Google" on the same address means to get into their own account, not to
-			 * make a second one. Only enabled for providers that verify the address
-			 * themselves, which both of these do — otherwise it is a way to claim
-			 * somebody's account by asserting their email.
-			 */
-			enabled: true,
-			trustedProviders: ['google', 'github']
-		}
-	},
+	/*
+	 * An address and a password, and nothing else.
+	 *
+	 * Signing in with Google or GitHub was offered here and is deliberately
+	 * gone. An account on somebody's own instance should not depend on a company
+	 * neither of us controls: the provider learns every instance a person signs
+	 * into, an account survives only as long as they keep that account, and a
+	 * self-hosted app whose door is somebody else's service is not really
+	 * self-hosted. There is no `socialProviders` key, so there is nothing to
+	 * turn on by setting a variable either.
+	 */
 	emailAndPassword: {
 		enabled: true,
 		requireEmailVerification: false,

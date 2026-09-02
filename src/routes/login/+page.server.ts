@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { auth, configuredSocialProviders } from '$lib/server/auth';
+import { auth } from '$lib/server/auth';
 import { checkPassword } from '$lib/passwords';
 import { APIError } from 'better-auth/api';
 import { isEmailConfigured } from '$lib/server/email';
@@ -51,9 +51,7 @@ export const load: PageServerLoad = async (event) => {
 		invite: invited,
 		isFirstAccount: first,
 		/** Says so before somebody puts their week into a copy of the app. */
-		staging: isStaging(),
-		/** Only the ones this instance actually has credentials for. */
-		social: configuredSocialProviders()
+		staging: isStaging()
 	};
 };
 

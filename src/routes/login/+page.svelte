@@ -1,24 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import { createAuthClient } from 'better-auth/svelte';
-	import { SOCIAL_GLYPHS, SOCIAL_LABELS, type SocialProvider } from '$lib/social';
 	import { MIN_PASSWORD_LENGTH, PASSWORD_RULE } from '$lib/passwords';
 	import Banner from '$lib/components/Banner.svelte';
 	import StagingBand from '$lib/components/StagingBand.svelte';
 	import type { PageServerData, ActionData } from './$types';
-
-	/**
-	 * The social flow is a redirect to the provider and back, which is not
-	 * something a form action can do — the browser has to leave. So this one
-	 * path talks to better-auth from the client, while everything else on this
-	 * page stays a plain form post.
-	 */
-	const authClient = createAuthClient();
-
-	function signInWith(provider: SocialProvider) {
-		authClient.signIn.social({ provider, callbackURL: '/' });
-	}
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 	// Null means "whatever this instance opens on": the first account lands on
@@ -143,37 +129,6 @@
 				{mode === 'login' ? 'Sign in' : mode === 'register' ? 'Create account' : 'Send reset link'}
 			</button>
 		</form>
-
-		<!--
-			Somebody else's account, if this instance is set up for it.
-
-			Only the providers with credentials appear: a button that opens Google
-			and comes back with "invalid client" is worse than no button. Hidden
-			entirely while resetting a password, which is not a thing Google can do
-			for you.
-		-->
-		{#if data.social.length > 0 && mode !== 'forgot'}
-			<div class="my-4 flex items-center gap-3">
-				<span class="h-px flex-1 bg-gray-200"></span>
-				<span class="text-xs text-gray-500">or</span>
-				<span class="h-px flex-1 bg-gray-200"></span>
-			</div>
-
-			<div class="space-y-2">
-				{#each data.social as provider (provider)}
-					<button
-						type="button"
-						onclick={() => signInWith(provider)}
-						class="flex w-full items-center justify-center gap-2 border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 transition hover:bg-gray-50"
-					>
-						<svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-							<path d={SOCIAL_GLYPHS[provider]} />
-						</svg>
-						Continue with {SOCIAL_LABELS[provider]}
-					</button>
-				{/each}
-			</div>
-		{/if}
 
 		<p class="mt-4 text-center text-sm text-gray-500">
 			{#if mode === 'login'}
