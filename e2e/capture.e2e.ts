@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { register } from './helpers/account';
+import { visit } from './helpers/visit';
 
 /**
  * The capture pie.
@@ -37,7 +38,7 @@ async function pieCentre(page: Page) {
 
 test('click the trigger, then pick a wedge', async ({ page }) => {
 	await register(page, `pie-click-${Date.now()}@test.invalid`);
-	await page.goto('/goals', { waitUntil: 'networkidle' });
+	await visit(page, '/goals');
 
 	// A tap is not a gesture: the pie stays open and waits to be clicked.
 	const at = await centreOf(page);
@@ -56,7 +57,7 @@ test('press, flick and release writes the thing', async ({ page }) => {
 
 	// Deliberately not the dashboard: the pie's whole point is being reachable
 	// from wherever you already are, posting to a route you are not on.
-	await page.goto('/diary/notebooks', { waitUntil: 'networkidle' });
+	await visit(page, '/diary/notebooks');
 
 	const at = await centreOf(page);
 	await page.mouse.move(at.x, at.y);
@@ -77,13 +78,13 @@ test('press, flick and release writes the thing', async ({ page }) => {
 	await expect(page.getByRole('heading', { name: /new todo/i })).toBeHidden();
 
 	// And it is really there, in the list that owns it.
-	await page.goto('/planner/todo', { waitUntil: 'networkidle' });
+	await visit(page, '/planner/todo');
 	await expect(page.getByText('buy a bigger pan')).toBeVisible();
 });
 
 test('the arrow keys reach every wedge, and escape leaves', async ({ page }) => {
 	await register(page, `pie-keys-${Date.now()}@test.invalid`);
-	await page.goto('/', { waitUntil: 'networkidle' });
+	await visit(page, '/');
 
 	const at = await centreOf(page);
 	await page.mouse.move(at.x, at.y);
@@ -107,7 +108,7 @@ test('the arrow keys reach every wedge, and escape leaves', async ({ page }) => 
 
 test('letting go in the hole does nothing at all', async ({ page }) => {
 	await register(page, `pie-cancel-${Date.now()}@test.invalid`);
-	await page.goto('/', { waitUntil: 'networkidle' });
+	await visit(page, '/');
 
 	const at = await centreOf(page);
 	await page.mouse.move(at.x, at.y);
@@ -126,7 +127,7 @@ test('letting go in the hole does nothing at all', async ({ page }) => {
 
 test('the thumb trigger is for thumbs, and the header one is for cursors', async ({ page }) => {
 	await register(page, `pie-where-${Date.now()}@test.invalid`);
-	await page.goto('/', { waitUntil: 'networkidle' });
+	await visit(page, '/');
 
 	const triggers = page.getByRole('button', { name: /write something down/i });
 
@@ -145,7 +146,7 @@ test('the thumb trigger is for thumbs, and the header one is for cursors', async
 
 test('the section pie lands you in the room', async ({ page }) => {
 	await register(page, `nav-pie-${Date.now()}@test.invalid`);
-	await page.goto('/', { waitUntil: 'networkidle' });
+	await visit(page, '/');
 
 	const jump = page.getByRole('button', { name: /jump to a section/i });
 	const box = await jump.boundingBox();
@@ -181,7 +182,7 @@ test.describe('with a finger', () => {
 
 	test('a tap opens the pie and it stays open', async ({ page }) => {
 		await register(page, `touch-tap-${Date.now()}@test.invalid`);
-		await page.goto('/', { waitUntil: 'networkidle' });
+		await visit(page, '/');
 
 		/**
 		 * A tap is pointerdown, pointerup, *then* a click — and the click landed
@@ -199,7 +200,7 @@ test.describe('with a finger', () => {
 
 	test('the pie is not text you can select', async ({ page }) => {
 		await register(page, `touch-select-${Date.now()}@test.invalid`);
-		await page.goto('/', { waitUntil: 'networkidle' });
+		await visit(page, '/');
 
 		const box = (await (await trigger(page)).boundingBox())!;
 		await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
@@ -217,7 +218,7 @@ test.describe('with a finger', () => {
 
 	test('the section pie is on the phone, where it was asked for', async ({ page }) => {
 		await register(page, `touch-nav-${Date.now()}@test.invalid`);
-		await page.goto('/', { waitUntil: 'networkidle' });
+		await visit(page, '/');
 
 		const jump = page.getByRole('button', { name: /go to a section/i });
 		const box = (await jump.boundingBox())!;
@@ -245,7 +246,7 @@ test.describe('with a finger', () => {
  */
 test('the Buy capture actually puts something on the shopping list', async ({ page }) => {
 	await register(page, `capture-buy-${Date.now()}@test.invalid`);
-	await page.goto('/', { waitUntil: 'networkidle' });
+	await visit(page, '/');
 
 	await page.getByRole('button', { name: /^Buy/ }).first().click();
 	// Not `.first()` — Buy's form leads with a hidden field saying which list.
@@ -255,6 +256,6 @@ test('the Buy capture actually puts something on the shopping list', async ({ pa
 		.fill('oat milk');
 	await page.getByRole('button', { name: 'Save' }).click();
 
-	await page.goto('/shopping', { waitUntil: 'networkidle' });
+	await visit(page, '/shopping');
 	await expect(page.getByText('oat milk')).toBeVisible();
 });

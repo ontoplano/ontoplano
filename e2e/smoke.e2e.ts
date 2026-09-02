@@ -1,5 +1,6 @@
 import { expect, test, type ConsoleMessage, type Page } from '@playwright/test';
 import { register } from './helpers/account';
+import { visit } from './helpers/visit';
 
 /**
  * Every page, looked at.
@@ -95,7 +96,7 @@ for (const shape of ['desktop', 'mobile'] as const) {
 			await register(page, `smoke-${shape}-${Date.now()}@test.invalid`);
 
 			for (const route of ROUTES) {
-				const response = await page.goto(route, { waitUntil: 'networkidle' });
+				const response = await page.goto(route, { waitUntil: 'load' });
 				expect(response?.status(), `${route} answered ${response?.status()}`).toBeLessThan(400);
 
 				const body = await page.locator('body').innerText();
@@ -123,7 +124,7 @@ test('a long unbroken name does not push its controls off the screen', async ({ 
 	await page.setViewportSize({ width: 390, height: 844 });
 	await register(page, `longword-${Date.now()}@test.invalid`);
 
-	await page.goto('/diary/notebooks', { waitUntil: 'networkidle' });
+	await visit(page, '/diary/notebooks');
 	await page.getByRole('button', { name: 'New notebook' }).first().click();
 	await page.fill('input[name=title]', 'a'.repeat(64));
 	await page
@@ -162,7 +163,7 @@ test('a page title is never squeezed into one word per line', async ({ page }) =
 	const squeezed: string[] = [];
 
 	for (const route of ROUTES) {
-		await page.goto(route, { waitUntil: 'networkidle' });
+		await page.goto(route, { waitUntil: 'load' });
 
 		const bad = await page.evaluate(() => {
 			const out: string[] = [];

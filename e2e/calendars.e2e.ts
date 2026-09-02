@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { register } from './helpers/account';
+import { visit } from './helpers/visit';
 
 /**
  * Subscribing to a calendar somebody else controls.
@@ -11,7 +12,7 @@ import { register } from './helpers/account';
  */
 test('an address pointing at this machine is refused, and says so', async ({ page }) => {
 	await register(page, `ical-${Date.now()}@test.invalid`);
-	await page.goto('/planner/plan', { waitUntil: 'networkidle' });
+	await visit(page, '/planner/plan');
 
 	await page.getByRole('button', { name: /schemes/i }).click();
 	await expect(page.getByText('Calendars you subscribe to')).toBeVisible();

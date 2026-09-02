@@ -18,6 +18,7 @@ import type { Ctx } from '../services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 import { ForbiddenError, ServiceError } from '../services/errors.js';
 import { TOOLS, TOOLS_BY_NAME } from './tools.js';
+import { changed, type Room } from '../live.js';
 
 /** The revision this server speaks. Echoed back at whatever asks. */
 export const PROTOCOL_VERSION = '2025-06-18';
@@ -186,7 +187,20 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 			const args = (params.arguments ?? {}) as Record<string, unknown>;
 			try {
 				assertScope(caller, tool.scope);
-				return ok(id, toolResult(tool.run(caller.ctx, args)));
+				const answer = toolResult(tool.run(caller.ctx, args));
+
+				/*
+				 * And the tabs, if that changed anything.
+				 *
+				 * Here rather than inside each tool, because "a write happened" is
+				 * a property of the tool table — `writes: true` — and a rule that
+				 * has to be remembered per tool is one a tool added next year will
+				 * not have. `rooms` is the tool's own, so a page only reloads when
+				 * something it draws actually moved.
+				 */
+				if (tool.writes) changed(caller.ctx.userId, roomsOf(tool), 'assistant');
+
+				return ok(id, answer);
 			} catch (e) {
 				// Everything a service throws is a sentence written for a person, so
 				// it is the sentence the model gets. Anything else is not.
@@ -207,6 +221,33 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
  * Returns what to send back, or `null` when every message was a notification
  * and the answer is an empty 202.
  */
+/**
+ * Which parts of the app a tool's write touches.
+ *
+ * Derived from the scope rather than listed per tool: a scope is already the
+ * answer to "what does this reach", and a second list beside it would be a
+ * second thing to keep in step. A tool with a scope nobody mapped announces
+ * nothing, which is the safe way to be wrong.
+ */
+function roomsOf(tool: { scope: string }): Room[] {
+	switch (tool.scope) {
+		case 'tasks:write':
+			return ['todos', 'planner', 'goals'];
+		case 'schedule:write':
+			return ['planner'];
+		case 'notes:write':
+			return ['diary', 'notebooks', 'ideas'];
+		case 'shopping:write':
+			return ['shopping'];
+		case 'kitchen:write':
+			return ['kitchen', 'shopping'];
+		case 'streams:write':
+			return ['health'];
+		default:
+			return [];
+	}
+}
+
 export function handleBody(caller: Caller, body: unknown): RpcResponse | RpcResponse[] | null {
 	if (Array.isArray(body)) {
 		if (body.length === 0) return fail(null, INVALID_REQUEST, 'An empty batch is not a request.');

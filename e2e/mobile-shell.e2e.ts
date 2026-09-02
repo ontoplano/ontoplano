@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { register } from './helpers/account';
+import { visit } from './helpers/visit';
 
 /**
  * The shell, held in a hand.
@@ -17,7 +18,7 @@ test('the phone bar carries home and the raised pie; nothing pulls to refresh', 
 	page
 }) => {
 	await register(page, `shell-${Date.now()}@test.invalid`);
-	await page.goto('/', { waitUntil: 'networkidle' });
+	await visit(page, '/');
 
 	const bar = page.locator('nav[aria-label="Primary"]');
 	await expect(bar.getByRole('link', { name: 'Home' })).toBeVisible();
@@ -42,7 +43,7 @@ test('the phone bar carries home and the raised pie; nothing pulls to refresh', 
 
 test('a dialog on the phone is a screen with a back arrow', async ({ page }) => {
 	await register(page, `sheet-${Date.now()}@test.invalid`);
-	await page.goto('/', { waitUntil: 'networkidle' });
+	await visit(page, '/');
 
 	// The capture tiles at the top of the phone dashboard open the shared
 	// Modal, which below `sm` must present as a screen, not a floating card.
@@ -65,7 +66,7 @@ test('a dialog on the phone is a screen with a back arrow', async ({ page }) => 
 
 test('the phone has no top bar — the bottom one carries everything', async ({ page }) => {
 	await register(page, `topbar-${Date.now()}@test.invalid`);
-	await page.goto('/planner/plan', { waitUntil: 'networkidle' });
+	await visit(page, '/planner/plan');
 
 	// The wordmark header is desktop-only now: on a phone it spent a strip of
 	// a small screen saying the app's own name.

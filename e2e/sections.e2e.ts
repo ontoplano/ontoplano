@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { register } from './helpers/account';
+import { visit } from './helpers/visit';
 
 /**
  * A hidden section is put away, not taken away.
@@ -18,12 +19,12 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
 	await register(page, `sections-${Date.now()}@test.invalid`);
 
 	// Visible before: the tab, and the room itself.
-	await page.goto('/', { waitUntil: 'networkidle' });
+	await visit(page, '/');
 	const nav = page.locator('nav');
 	await expect(nav.getByRole('link', { name: 'Shopping' })).toBeVisible();
 
 	// Put it away. Order, colour and this are one list now, so it is one form.
-	await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
+	await visit(page, '/settings/preferences');
 	const menu = page.locator('form[action="?/saveMenu"]');
 	const shopping = menu.locator('div').filter({
 		has: page.getByRole('button', { name: 'Move Shopping up' })
@@ -33,18 +34,18 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
 	await expect(page.getByText('Menu saved.')).toBeVisible();
 
 	// Gone from the navbar…
-	await page.goto('/', { waitUntil: 'networkidle' });
+	await visit(page, '/');
 	await expect(nav.getByRole('link', { name: 'Shopping' })).toHaveCount(0);
 	// …and its tab was not the only casualty check — a neighbour survives.
 	await expect(nav.getByRole('link', { name: 'Recipes' })).toBeVisible();
 
 	// Still answering at its URL: hidden, not blocked.
-	await page.goto('/shopping', { waitUntil: 'networkidle' });
+	await visit(page, '/shopping');
 	await expect(page).toHaveURL(/\/shopping/);
 	await expect(page.getByRole('heading', { name: /shopping/i }).first()).toBeVisible();
 
 	// And it comes back on, bringing the tab with it.
-	await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
+	await visit(page, '/settings/preferences');
 	await page
 		.locator('form[action="?/saveMenu"]')
 		.getByRole('button', { name: 'Show' })
@@ -55,7 +56,7 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
 		.getByRole('button', { name: 'Save menu' })
 		.click();
 	await expect(page.getByText('Menu saved.')).toBeVisible();
-	await page.goto('/', { waitUntil: 'networkidle' });
+	await visit(page, '/');
 	await expect(nav.getByRole('link', { name: 'Shopping' })).toBeVisible();
 });
 
@@ -76,7 +77,7 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
 test('saving the menu does not empty the list', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 800 });
 	await register(page, `sections-keep-${Date.now()}@test.invalid`);
-	await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
+	await visit(page, '/settings/preferences');
 
 	const menu = page.locator('form[action="?/saveMenu"]');
 	const shopping = menu.locator('div').filter({

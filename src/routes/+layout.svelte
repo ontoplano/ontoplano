@@ -3,6 +3,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import { live } from '$lib/live';
 	import { afterNavigate, goto } from '$app/navigation';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
@@ -257,6 +258,36 @@
 	// How long a delete waits before it happens, from the instance's config.
 	$effect(() => {
 		undo.seconds = data.undoSeconds;
+	});
+
+	/*
+	 * "The app is running", said once, where a test can see it.
+	 *
+	 * An effect only ever runs in the browser and only after hydration, so this
+	 * attribute appearing is the exact moment the page starts answering
+	 * keystrokes. The suite used to wait for an idle network to mean the same
+	 * thing, which was always a guess and stopped being true at all the day this
+	 * app started holding a stream open.
+	 */
+	$effect(() => {
+		document.documentElement.dataset.ready = 'true';
+	});
+
+	/*
+	 * The page keeps itself current while something else is writing.
+	 *
+	 * The browser is no longer the only thing that changes this account — an
+	 * assistant with a token writes to it too, and until this existed the tab
+	 * went on showing the week as it was before you asked. One stream for the
+	 * whole app rather than one per page: every screen is drawn by loaders, so
+	 * re-running them is all any of them needs.
+	 *
+	 * Only for somebody signed in, and torn down with the layout. `$effect`
+	 * returns its own cleanup, which is what closes the stream when the tab goes.
+	 */
+	$effect(() => {
+		if (!data.user) return;
+		return live();
 	});
 
 	/* ------------------------------------------------------------- the tour */
@@ -712,7 +743,7 @@
 					<button
 						onpointerdown={(e) => rooms?.summon(e)}
 						style="clip-path: {MARK_CLIP_PATH}"
-						class="tap tap-shape pie-handle absolute -top-9 left-1/2 flex h-24 w-24 -translate-x-1/2 items-center justify-center {roomsOpen
+						class="tap tap-shape pie-handle absolute -top-[1.95rem] left-1/2 flex h-[5.25rem] w-[5.25rem] -translate-x-1/2 items-center justify-center {roomsOpen
 							? 'text-chrome-ink'
 							: 'text-chrome-muted'}"
 						aria-label="Go to a section"
@@ -721,7 +752,7 @@
 					>
 						<!-- Edge to edge: the button's own outline is the mark's, so any
 						     inset here would show as a gap inside its own shape. -->
-						<Logo size={96} />
+						<Logo size={84} />
 					</button>
 				</div>
 
@@ -755,7 +786,7 @@
 			<!--
 				On a phone: a strip sitting on top of the bottom bar, one line
 				tall, its top edge level with the top of the raised pie button
-				— which is 2.25rem proud of the bar, hence the height. Behind the
+				— which is 1.95rem proud of the bar, hence the height. Behind the
 				bar in z-order, so the button tucks into it rather than floating
 				over a gap.
 
@@ -765,7 +796,7 @@
 			-->
 			<div
 				class="fixed inset-x-0 z-30 flex items-center justify-between bg-amber-500 px-3 text-[11px] leading-none font-medium text-amber-950 lg:hidden"
-				style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom)); height: 2.25rem"
+				style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom)); height: 1.95rem"
 			>
 				<!-- Two words, split around the pie button that sits in the middle of
 				     this strip. Anything longer was cut off by the menu button and

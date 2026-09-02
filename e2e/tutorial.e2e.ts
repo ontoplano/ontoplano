@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { register } from './helpers/account';
+import { visit } from './helpers/visit';
 
 /**
  * The guided tour: shown once, dismissed in two, reachable forever after.
@@ -41,7 +42,7 @@ test('a new account is shown around, and dismisses it in two', async ({ page }) 
 	await expect(tour).toBeHidden();
 
 	// And it stays gone, across a reload — the flag is written, not remembered.
-	await page.goto('/', { waitUntil: 'networkidle' });
+	await visit(page, '/');
 	await page.waitForTimeout(1200);
 	await expect(tour).toBeHidden();
 });
@@ -50,7 +51,7 @@ test('the button in the corner opens the tour for the screen you are on', async 
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, `tour-corner-${Date.now()}@test.invalid`);
 
-	await page.goto('/ideas', { waitUntil: 'networkidle' });
+	await visit(page, '/ideas');
 	await page.getByRole('button', { name: 'Show me around this screen' }).click();
 
 	const tour = tourOf(page);
@@ -74,7 +75,7 @@ test('a screen with no tour says so instead of opening nothing', async ({ page }
 	// not learned — so it is what the red button looks like. (A visitor who is
 	// not the instance owner gets a 404 there, which is drawn in the same shell
 	// and is just as untoured, so this holds either way.)
-	await page.goto('/settings/instance', { waitUntil: 'networkidle' });
+	await visit(page, '/settings/instance');
 	const button = page.getByRole('button', { name: 'No tutorial for this screen yet' });
 	await expect(button).toBeVisible();
 	// `aria-disabled`, so it cannot be pressed and there is nothing to open.

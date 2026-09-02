@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { register } from './helpers/account';
+import { visit } from './helpers/visit';
 
 /**
  * The recipe loop, in a browser.
@@ -12,7 +13,7 @@ import { register } from './helpers/account';
 async function makeRecipe(page: import('@playwright/test').Page, title: string): Promise<void> {
 	// Recipes need a category that holds food before anything can be an
 	// ingredient, and that lives behind the shopping list's Categories dialog.
-	await page.goto('/shopping', { waitUntil: 'networkidle' });
+	await visit(page, '/shopping');
 	await page.getByRole('button', { name: 'Categories' }).click();
 
 	const dialog = page.locator('dialog[open]');
@@ -23,7 +24,7 @@ async function makeRecipe(page: import('@playwright/test').Page, title: string):
 	await page.waitForTimeout(500);
 
 	// Navigating away is how the dialog closes; there is nothing to save.
-	await page.goto('/kitchen/recipes', { waitUntil: 'networkidle' });
+	await visit(page, '/kitchen/recipes');
 	await page
 		.getByRole('button', { name: /new recipe/i })
 		.first()
@@ -101,7 +102,7 @@ test('a pasted list becomes the ingredients', async ({ page }) => {
 	// And the new ones are on the shopping list, which is the point of the loop.
 	// The item's own row and the "used in" backlink both name it now, so this
 	// asks for the row rather than the word.
-	await page.goto('/shopping', { waitUntil: 'networkidle' });
+	await visit(page, '/shopping');
 	await expect(page.getByText('pearl barley').first()).toBeVisible();
 });
 
@@ -134,7 +135,7 @@ test.describe('importing a recipe from a pasted page', () => {
 
 	test('reads the recipe, its ingredients and its timing', async ({ page }) => {
 		await register(page, `recipe-paste-${Date.now()}@test.invalid`);
-		await page.goto('/kitchen/recipes', { waitUntil: 'networkidle' });
+		await visit(page, '/kitchen/recipes');
 
 		await page.getByRole('button', { name: 'New recipe' }).first().click();
 		await page.getByPlaceholder('Paste the page here').fill(PAGE);
@@ -155,7 +156,7 @@ test.describe('importing a recipe from a pasted page', () => {
 
 	test('says so plainly when there is no recipe in the paste', async ({ page }) => {
 		await register(page, `recipe-none-${Date.now()}@test.invalid`);
-		await page.goto('/kitchen/recipes', { waitUntil: 'networkidle' });
+		await visit(page, '/kitchen/recipes');
 
 		const result = await page.evaluate(async () => {
 			const body = new FormData();
@@ -174,7 +175,8 @@ test.describe('importing a recipe from a pasted page', () => {
 		expect(result.type).toBe('failure');
 		expect(result.status).toBe(422);
 
-		await page.reload({ waitUntil: 'networkidle' });
+		await page.reload({ waitUntil: 'load' });
+		await page.waitForSelector('html[data-ready]');
 		await expect(page.getByText('No recipes yet')).toBeVisible();
 	});
 });
@@ -193,7 +195,7 @@ test('a recipe put on a day turns into shopping', async ({ page }) => {
 
 	// A food category, because an ingredient is a shopping item and a shopping
 	// item lives in one.
-	await page.goto('/shopping', { waitUntil: 'networkidle' });
+	await visit(page, '/shopping');
 	await page.evaluate(async () => {
 		const body = new FormData();
 		body.append('label', 'Cupboard');
@@ -203,7 +205,7 @@ test('a recipe put on a day turns into shopping', async ({ page }) => {
 			body
 		});
 	});
-	await page.goto('/shopping', { waitUntil: 'networkidle' });
+	await visit(page, '/shopping');
 	// The food ticks live in the Categories dialog, so it has to be open for
 	// them to exist at all.
 	await page.getByRole('button', { name: 'Categories' }).click();
@@ -224,7 +226,7 @@ test('a recipe put on a day turns into shopping', async ({ page }) => {
 	expect(food.type).toBe('success');
 
 	// A recipe with two ingredients.
-	await page.goto('/kitchen/recipes', { waitUntil: 'networkidle' });
+	await visit(page, '/kitchen/recipes');
 	await page
 		.getByRole('button', { name: /new recipe/i })
 		.first()
@@ -274,12 +276,12 @@ test('a recipe put on a day turns into shopping', async ({ page }) => {
 	expect(scheduled, 'putting the recipe on a day').toBe('success');
 
 	// And the week now knows what it needs.
-	await page.goto('/kitchen/meals', { waitUntil: 'networkidle' });
+	await visit(page, '/kitchen/meals');
 	await expect(page.getByText('leeks')).toBeVisible();
 	await expect(page.getByText('potatoes')).toBeVisible();
 
 	// Which is the shopping list, not a second copy of one: the same rows.
-	await page.goto('/shopping', { waitUntil: 'networkidle' });
+	await visit(page, '/shopping');
 	await expect(page.getByText('leeks')).toBeVisible();
 	await expect(page.getByText('potatoes')).toBeVisible();
 });

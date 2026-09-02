@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { register } from './helpers/account';
+import { visit } from './helpers/visit';
 
 /**
  * The shopping list's categories.
@@ -12,7 +13,7 @@ import { register } from './helpers/account';
  */
 test('a new category is created, and can hold food', async ({ page }) => {
 	await register(page, `categories-${Date.now()}@test.invalid`);
-	await page.goto('/shopping', { waitUntil: 'networkidle' });
+	await visit(page, '/shopping');
 
 	await page.getByRole('button', { name: 'Categories' }).click();
 	const dialog = page.locator('dialog[open]');
@@ -29,7 +30,8 @@ test('a new category is created, and can hold food', async ({ page }) => {
 
 	// And it survives a reload, which is what says it reached the database
 	// rather than only the screen.
-	await page.reload({ waitUntil: 'networkidle' });
+	await page.reload({ waitUntil: 'load' });
+	await page.waitForSelector('html[data-ready]');
 	await page.getByRole('button', { name: 'Categories' }).click();
 	await expect(page.locator('dialog[open] li', { hasText: 'Freezer' })).toBeVisible();
 });
@@ -38,10 +40,10 @@ test('a category that holds food makes ingredients possible', async ({ page }) =
 	await register(page, `food-${Date.now()}@test.invalid`);
 
 	// Before: the recipes page says so rather than letting every field fail.
-	await page.goto('/kitchen/recipes', { waitUntil: 'networkidle' });
+	await visit(page, '/kitchen/recipes');
 	await expect(page.getByText(/no food category yet/i)).toBeVisible();
 
-	await page.goto('/shopping', { waitUntil: 'networkidle' });
+	await visit(page, '/shopping');
 	await page.getByRole('button', { name: 'Categories' }).click();
 	const dialog = page.locator('dialog[open]');
 	await dialog.getByRole('button', { name: /new category/i }).click();
@@ -51,7 +53,7 @@ test('a category that holds food makes ingredients possible', async ({ page }) =
 	await expect(dialog.locator('li', { hasText: 'Pantry' })).toBeVisible();
 
 	// After: the warning is gone.
-	await page.goto('/kitchen/recipes', { waitUntil: 'networkidle' });
+	await visit(page, '/kitchen/recipes');
 	await expect(page.getByText(/no food category yet/i)).toHaveCount(0);
 });
 
@@ -71,7 +73,7 @@ test('what you paid is recorded after the tick, and the price shows on the row',
 	page
 }) => {
 	await register(page, `prices-${Date.now()}@test.invalid`);
-	await page.goto('/shopping', { waitUntil: 'networkidle' });
+	await visit(page, '/shopping');
 
 	await page.getByRole('button', { name: /add item/i }).click();
 	const dialog = page.locator('dialog[open]');
@@ -96,6 +98,7 @@ test('what you paid is recorded after the tick, and the price shows on the row',
 
 	// And the expected price is on the row, which is what makes editing it
 	// look like it worked. It did not appear anywhere before.
-	await page.reload({ waitUntil: 'networkidle' });
+	await page.reload({ waitUntil: 'load' });
+	await page.waitForSelector('html[data-ready]');
 	await expect(page.getByText(/1[.,]20/).first()).toBeVisible();
 });

@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type PlaywrightWorkerArgs } from '@playwright/test';
 import { clientAddress, register } from './helpers/account';
+import { visit } from './helpers/visit';
 
 /**
  * An AI assistant, from the outside: a real token over real HTTP.
@@ -200,7 +201,7 @@ test('the address says nothing to somebody without a token', async ({ playwright
  */
 test('the preset ticks exactly the scopes an AI assistant needs', async ({ page }) => {
 	await register(page, `preset-${Date.now()}@test.invalid`);
-	await page.goto('/settings/integrations', { waitUntil: 'networkidle' });
+	await visit(page, '/settings/integrations');
 
 	await page
 		.getByRole('button', { name: /new token/i })

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { register } from './helpers/account';
+import { visit } from './helpers/visit';
 
 /**
  * Making a block with a finger.
@@ -18,7 +19,7 @@ test.describe('with a finger', () => {
 
 	test('press and hold on the grid opens a new block there', async ({ page }) => {
 		await register(page, `plan-hold-${Date.now()}@test.invalid`);
-		await page.goto('/planner/plan', { waitUntil: 'networkidle' });
+		await visit(page, '/planner/plan');
 
 		const body = page.locator('.ec-body').first();
 		await expect(body).toBeVisible();
@@ -45,7 +46,7 @@ test.describe('with a finger', () => {
 
 	test('a swipe over the grid is a scroll, not a new block', async ({ page }) => {
 		await register(page, `plan-swipe-${Date.now()}@test.invalid`);
-		await page.goto('/planner/plan', { waitUntil: 'networkidle' });
+		await visit(page, '/planner/plan');
 
 		const body = page.locator('.ec-body').first();
 		const box = (await body.boundingBox())!;

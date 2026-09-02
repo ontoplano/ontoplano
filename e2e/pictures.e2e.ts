@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { deflateSync } from 'node:zlib';
 import { register } from './helpers/account';
+import { visit } from './helpers/visit';
 
 /**
  * Adding a picture, and being told when one is too big.
@@ -72,7 +73,7 @@ const SMALL = { name: 'small.png', mimeType: 'image/png', buffer: png(24, 8) };
 const HUGE = { name: 'huge.png', mimeType: 'image/png', buffer: png(24, 1100) };
 
 async function newRecipe(page: Page, title: string) {
-	await page.goto('/kitchen/recipes', { waitUntil: 'networkidle' });
+	await visit(page, '/kitchen/recipes');
 	await page
 		.getByRole('button', { name: /new recipe/i })
 		.first()
@@ -120,7 +121,7 @@ test('a note takes one too, and says why when it will not', async ({ page }) => 
 	await page.setViewportSize({ width: 1280, height: 1000 });
 	await register(page, `note-pics-${Date.now()}@test.invalid`);
 
-	await page.goto('/diary', { waitUntil: 'networkidle' });
+	await visit(page, '/diary');
 	await page
 		.getByRole('button', { name: /new entry/i })
 		.first()
@@ -144,7 +145,7 @@ test('a person gets one face, and it shows in the list', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 1000 });
 	await register(page, `face-${Date.now()}@test.invalid`);
 
-	await page.goto('/diary/people', { waitUntil: 'networkidle' });
+	await visit(page, '/diary/people');
 	await page
 		.getByRole('button', { name: /new person/i })
 		.first()
@@ -168,7 +169,7 @@ test('a note written in a notebook takes one too', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 1000 });
 	await register(page, `nb-pics-${Date.now()}@test.invalid`);
 
-	await page.goto('/diary/notebooks', { waitUntil: 'networkidle' });
+	await visit(page, '/diary/notebooks');
 	await page
 		.getByRole('button', { name: /new notebook/i })
 		.first()
@@ -189,7 +190,7 @@ test('a person’s face is the way in to their picture', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 1000 });
 	await register(page, `face-open-${Date.now()}@test.invalid`);
 
-	await page.goto('/diary/people', { waitUntil: 'networkidle' });
+	await visit(page, '/diary/people');
 	await page
 		.getByRole('button', { name: /new person/i })
 		.first()

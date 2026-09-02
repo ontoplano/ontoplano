@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { register } from './helpers/account';
 import { DEFAULT_TAGLINE } from '../src/lib/server/config';
+import { visit } from './helpers/visit';
 
 /**
  * What a stranger sees at `/`.
@@ -15,7 +16,7 @@ import { DEFAULT_TAGLINE } from '../src/lib/server/config';
  * and that nothing is being sold through it.
  */
 test('the front page is a door when signed out', async ({ page }) => {
-	await page.goto('/', { waitUntil: 'networkidle' });
+	await visit(page, '/');
 
 	// Not a redirect to the sign-in form: a stranger should learn what this is.
 	expect(new URL(page.url()).pathname).toBe('/');
@@ -29,7 +30,7 @@ test('the front page is a door when signed out', async ({ page }) => {
 });
 
 test("and it sells nothing — most instances are somebody else's to run", async ({ page }) => {
-	await page.goto('/', { waitUntil: 'networkidle' });
+	await visit(page, '/');
 
 	// A price on a self-hosted instance is a bill somebody is not being sent.
 	// If one reappears here, the marketing site has leaked back into the app.
@@ -40,7 +41,7 @@ test("and it sells nothing — most instances are somebody else's to run", async
 
 test('and the dashboard the moment somebody is signed in', async ({ page }) => {
 	await register(page, `front-door-${Date.now()}@test.invalid`);
-	await page.goto('/', { waitUntil: 'networkidle' });
+	await visit(page, '/');
 
 	await expect(page.getByText(DEFAULT_TAGLINE)).toHaveCount(0);
 	await expect(page.getByRole('button', { name: /arrange/i })).toBeVisible();

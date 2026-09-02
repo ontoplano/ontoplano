@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { register } from './helpers/account';
+import { visit } from './helpers/visit';
 
 /**
  * The daily export allowance.
@@ -10,7 +11,7 @@ import { register } from './helpers/account';
  */
 test('the allowance updates the moment an export lands', async ({ page }) => {
 	await register(page, `export-${Date.now()}@test.invalid`);
-	await page.goto('/settings/account', { waitUntil: 'networkidle' });
+	await visit(page, '/settings/account');
 
 	const download = page.getByRole('button', { name: /download/i });
 	const count = page.getByText(/exports? left today/i);
@@ -42,7 +43,7 @@ test('a Google Keep export lands as todos in a notebook of its own', async ({ pa
 	await register(page, `import-keep-${Date.now()}@test.invalid`);
 
 	// Reached from the account page rather than by knowing the address.
-	await page.goto('/settings/account', { waitUntil: 'networkidle' });
+	await visit(page, '/settings/account');
 	await page.getByRole('link', { name: 'Import' }).click();
 	await page.waitForURL(/\/settings\/account\/import/);
 
@@ -58,6 +59,6 @@ test('a Google Keep export lands as todos in a notebook of its own', async ({ pa
 	await expect(page.getByText(/Google Keep/).first()).toBeVisible();
 
 	// And they are really there, as todos, in one notebook that undoes it.
-	await page.goto('/diary/notebooks', { waitUntil: 'networkidle' });
+	await visit(page, '/diary/notebooks');
 	await expect(page.getByText('Google Keep').first()).toBeVisible();
 });

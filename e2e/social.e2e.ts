@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { visit } from './helpers/visit';
 
 /**
  * Signing in with somebody else's account.
@@ -8,7 +9,7 @@ import { expect, test } from '@playwright/test';
  * back with "invalid client" is worse than one offering nothing.
  */
 test('an instance with no credentials offers no social buttons', async ({ page }) => {
-	await page.goto('/login', { waitUntil: 'networkidle' });
+	await visit(page, '/login');
 
 	await expect(page.getByRole('button', { name: /continue with/i })).toHaveCount(0);
 	await expect(page.getByText('or', { exact: true })).toHaveCount(0);

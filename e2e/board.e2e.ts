@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { register } from './helpers/account';
+import { visit } from './helpers/visit';
 
 /**
  * The board's keyboard, where it destroys things.
@@ -15,7 +16,7 @@ import { register } from './helpers/account';
  */
 
 async function newCard(page: import('@playwright/test').Page, title: string) {
-	await page.goto('/planner/board', { waitUntil: 'networkidle' });
+	await visit(page, '/planner/board');
 	await page.keyboard.press('n');
 	await page.fill('#card-form input[name=title]', title);
 	await page.getByRole('button', { name: 'Add card' }).click();
@@ -42,7 +43,8 @@ test.describe('the board deletes by keyboard', () => {
 		await expect(page.getByText(title, { exact: true })).toBeVisible();
 
 		// A reload proves nothing was written, not merely that nothing redrew.
-		await page.reload({ waitUntil: 'networkidle' });
+		await page.reload({ waitUntil: 'load' });
+		await page.waitForSelector('html[data-ready]');
 		await expect(page.getByText(title, { exact: true })).toBeVisible();
 	});
 
@@ -77,7 +79,8 @@ test.describe('the board deletes by keyboard', () => {
 		await confirm.click();
 
 		await expect(page.getByText(title, { exact: true })).toHaveCount(0);
-		await page.reload({ waitUntil: 'networkidle' });
+		await page.reload({ waitUntil: 'load' });
+		await page.waitForSelector('html[data-ready]');
 		await expect(page.getByText(title, { exact: true })).toHaveCount(0);
 	});
 });
@@ -100,7 +103,7 @@ test.describe('the todo rail', () => {
 
 		// A card made on the Todo tab has no day, which is what puts it in the
 		// rail; one made on Today would be a block on today's board instead.
-		await page.goto('/planner/board', { waitUntil: 'networkidle' });
+		await visit(page, '/planner/board');
 		await todoTab.click();
 		await page.keyboard.press('n');
 		await page.fill('#card-form input[name=title]', title);
@@ -117,7 +120,8 @@ test.describe('the todo rail', () => {
 		await expect(page.getByText(`Completed ${title}`)).toBeVisible();
 		await expect(page.getByText(`Completed ${title}`)).toHaveCount(0, { timeout: 15_000 });
 
-		await page.reload({ waitUntil: 'networkidle' });
+		await page.reload({ waitUntil: 'load' });
+		await page.waitForSelector('html[data-ready]');
 		await expect(rail.getByText(title, { exact: true })).toHaveCount(0);
 	});
 });
@@ -139,7 +143,8 @@ test.describe('undo on a card ticked off', () => {
 		await expect(page.getByText(`Completed ${title}`)).toBeVisible();
 
 		await page.getByRole('button', { name: 'Undo' }).click();
-		await page.reload({ waitUntil: 'networkidle' });
+		await page.reload({ waitUntil: 'load' });
+		await page.waitForSelector('html[data-ready]');
 
 		// Back where it started: still tickable, so still not done.
 		await expect(
@@ -157,7 +162,8 @@ test.describe('undo on a card ticked off', () => {
 
 		// The window is five seconds by default; wait it out rather than racing it.
 		await expect(page.getByText(`Completed ${title}`)).toHaveCount(0, { timeout: 15_000 });
-		await page.reload({ waitUntil: 'networkidle' });
+		await page.reload({ waitUntil: 'load' });
+		await page.waitForSelector('html[data-ready]');
 
 		await expect(
 			page.getByRole('button', { name: `Mark ${title} not done`, exact: true })
@@ -231,7 +237,8 @@ test.describe('dropping on the column switcher', () => {
 		await expect(page.getByText(title, { exact: true })).toBeVisible();
 
 		// And it really moved, rather than only appearing to.
-		await page.reload({ waitUntil: 'networkidle' });
+		await page.reload({ waitUntil: 'load' });
+		await page.waitForSelector('html[data-ready]');
 		await page.getByRole('button', { name: /^Doing/ }).click();
 		await expect(page.getByText(title, { exact: true })).toBeVisible();
 	});

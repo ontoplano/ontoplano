@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { clientAddress } from './helpers/account';
+import { visit } from './helpers/visit';
 
 /**
  * First run, one question at a time.
@@ -15,7 +16,7 @@ import { clientAddress } from './helpers/account';
  */
 async function fresh(page: import('@playwright/test').Page) {
 	await page.setExtraHTTPHeaders({ 'x-forwarded-for': clientAddress() });
-	await page.goto('/login?register', { waitUntil: 'networkidle' });
+	await visit(page, '/login?register');
 
 	const register = page.getByRole('button', { name: 'Register' });
 	if (await register.count()) await register.click();

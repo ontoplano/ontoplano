@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { register } from './helpers/account';
+import { visit } from './helpers/visit';
 
 /**
  * The one thing in this app that reaches out.
@@ -10,7 +11,7 @@ import { register } from './helpers/account';
  */
 test('a reminder is set on a block and arrives on its own', async ({ page }) => {
 	await register(page, `remind-${Date.now()}@test.invalid`);
-	await page.goto('/planner/board', { waitUntil: 'networkidle' });
+	await visit(page, '/planner/board');
 
 	// Onboarding filled today, so there is a block to be reminded about.
 	const card = page.locator('article').first();
@@ -30,7 +31,7 @@ test('a reminder is set on a block and arrives on its own', async ({ page }) => 
 
 test('what fell due arrives, once', async ({ page }) => {
 	await register(page, `remind-due-${Date.now()}@test.invalid`);
-	await page.goto('/planner/board', { waitUntil: 'networkidle' });
+	await visit(page, '/planner/board');
 
 	// A day's lead, so the nudge for one of today's blocks is already in the
 	// past. The editor only offers up to an hour; this posts the same action it
@@ -54,12 +55,13 @@ test('what fell due arrives, once', async ({ page }) => {
 	expect(made).toBe(200);
 
 	// The poller runs on mount and whenever the tab comes back.
-	await page.goto('/', { waitUntil: 'networkidle' });
+	await visit(page, '/');
 	const toast = page.locator('[role=status]').first();
 	await expect(toast).toBeVisible({ timeout: 10_000 });
 
 	// And never again: it is marked delivered the moment it is on screen.
-	await page.reload({ waitUntil: 'networkidle' });
+	await page.reload({ waitUntil: 'load' });
+	await page.waitForSelector('html[data-ready]');
 	await page.waitForTimeout(1500);
 	await expect(page.locator('[role=status]')).toHaveCount(0);
 });
@@ -77,7 +79,7 @@ test('a lead set on a block reminds about every occurrence', async ({ page }) =>
 	// Editing a block the starter week already put there, rather than making
 	// one: what is being checked is that the lead is a property of the block and
 	// comes back when you reopen it.
-	await page.goto('/planner/plan?view=week', { waitUntil: 'networkidle' });
+	await visit(page, '/planner/plan?view=week');
 	await page.locator('.ec-event').first().click();
 
 	const form = page.locator('dialog[open]');
@@ -91,7 +93,8 @@ test('a lead set on a block reminds about every occurrence', async ({ page }) =>
 
 	// Reopened, it still says forty-five — the lead is on the block, not on one
 	// occurrence, so it has to survive the round trip.
-	await page.reload({ waitUntil: 'networkidle' });
+	await page.reload({ waitUntil: 'load' });
+	await page.waitForSelector('html[data-ready]');
 	await page.locator('.ec-event').first().click();
 	await expect(page.locator('dialog[open] input[name=remindLeadMinutes]')).toHaveValue('45');
 
@@ -123,10 +126,10 @@ test('a lead set on a block reminds about every occurrence', async ({ page }) =>
 test('there is no reminders page any more', async ({ page }) => {
 	await register(page, `remind-gone-${Date.now()}@test.invalid`);
 
-	const res = await page.goto('/planner/reminders', { waitUntil: 'networkidle' });
+	const res = await visit(page, '/planner/reminders');
 	expect(res?.status()).toBe(404);
 
-	await page.goto('/planner/todo', { waitUntil: 'networkidle' });
+	await visit(page, '/planner/todo');
 	// A todo has no time, so it has no reminder control.
 	await expect(page.getByRole('button', { name: /remind me about/i })).toHaveCount(0);
 });

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { register } from './helpers/account';
+import { visit } from './helpers/visit';
 
 /**
  * The order of the rooms, and their colours, as the account's own.
@@ -13,7 +14,7 @@ test.describe('the menu order', () => {
 	test('moves the bar and the wheel together', async ({ page }) => {
 		await register(page, `order-${Date.now()}@test.invalid`);
 
-		await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
+		await visit(page, '/settings/preferences');
 		const menu = page.locator('form[action="?/saveMenu"]');
 
 		// Shopping to the top, which is first along the bar and first under the
@@ -26,7 +27,7 @@ test.describe('the menu order', () => {
 		await menu.getByRole('button', { name: 'Save menu' }).click();
 		await page.waitForTimeout(600);
 
-		await page.goto('/', { waitUntil: 'networkidle' });
+		await visit(page, '/');
 
 		// The bar: Shopping now comes before Planner, which it never did.
 		const tabs = page.locator('header a[href], nav a[href]');
@@ -43,7 +44,7 @@ test.describe('the menu order', () => {
 		// is no way to save a stale order through the form.
 		await register(page, `order-new-${Date.now()}@test.invalid`);
 
-		await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
+		await visit(page, '/settings/preferences');
 		await page.evaluate(async () => {
 			const body = new FormData();
 			body.append('room', 'ideas');
@@ -54,7 +55,7 @@ test.describe('the menu order', () => {
 			});
 		});
 
-		await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
+		await visit(page, '/settings/preferences');
 		const menu = page.locator('form[action="?/saveMenu"]');
 		// Ideas first, and every other room still listed behind it.
 		await expect(menu.getByRole('button', { name: 'Move Ideas up' })).toBeDisabled();
@@ -68,7 +69,7 @@ test.describe('the section colours', () => {
 	test('are the account’s, and reach the page', async ({ page }) => {
 		await register(page, `colour-${Date.now()}@test.invalid`);
 
-		await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
+		await visit(page, '/settings/preferences');
 		const form = page.locator('form[action="?/saveMenu"]');
 		await form.locator('input[name="color.planner"]').fill('#123456');
 		await form.getByRole('button', { name: 'Save menu' }).click();
@@ -76,7 +77,7 @@ test.describe('the section colours', () => {
 
 		// The accent is a custom property on the page surface, which is where
 		// every card, rule and tab reads it from.
-		await page.goto('/planner/plan', { waitUntil: 'networkidle' });
+		await visit(page, '/planner/plan');
 		const accent = await page
 			.locator('.page-surface')
 			.first()
@@ -90,7 +91,7 @@ test.describe('the section colours', () => {
 		// way out. This is the second check.
 		await register(page, `colour-bad-${Date.now()}@test.invalid`);
 
-		await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
+		await visit(page, '/settings/preferences');
 		await page.evaluate(async () => {
 			const body = new FormData();
 			body.append('color.planner', 'javascript:alert(1)');
@@ -101,7 +102,7 @@ test.describe('the section colours', () => {
 			});
 		});
 
-		await page.goto('/planner/plan', { waitUntil: 'networkidle' });
+		await visit(page, '/planner/plan');
 		const accent = await page
 			.locator('.page-surface')
 			.first()
@@ -123,7 +124,7 @@ test.describe('the one menu list', () => {
 	test('puts a hidden room at the end, and out of the menus', async ({ page }) => {
 		await register(page, `menu-hide-${Date.now()}@test.invalid`);
 
-		await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
+		await visit(page, '/settings/preferences');
 		const menu = page.locator('form[action="?/saveMenu"]');
 
 		// The row is the one whose Move buttons name Ideas; its Hide is the
@@ -140,17 +141,17 @@ test.describe('the one menu list', () => {
 		await menu.getByRole('button', { name: 'Save menu' }).click();
 		await page.waitForTimeout(600);
 
-		await page.goto('/', { waitUntil: 'networkidle' });
+		await visit(page, '/');
 		await expect(page.getByRole('link', { name: 'Ideas' })).toHaveCount(0);
 
 		// And the page it owns still answers, because hiding is a menu matter.
-		const res = await page.goto('/ideas', { waitUntil: 'networkidle' });
+		const res = await visit(page, '/ideas');
 		expect(res?.status()).toBe(200);
 	});
 
 	test('never lists Home', async ({ page }) => {
 		await register(page, `menu-home-${Date.now()}@test.invalid`);
-		await page.goto('/settings/preferences', { waitUntil: 'networkidle' });
+		await visit(page, '/settings/preferences');
 
 		const menu = page.locator('form[action="?/saveMenu"]');
 		await expect(menu.getByRole('button', { name: 'Move Home up' })).toHaveCount(0);

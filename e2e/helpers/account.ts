@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { visit } from './visit';
 
 /**
  * An account with a week's worth of things in it.
@@ -47,7 +48,11 @@ export async function register(
 ): Promise<void> {
 	await page.setExtraHTTPHeaders({ 'x-forwarded-for': clientAddress() });
 
-	await page.goto('/login', { waitUntil: 'networkidle' });
+	// `load`, not `networkidle`: the app holds a live-update stream open for as
+	// long as a page is, so a network that goes idle is a network that will
+	// never go idle. Waiting on `load` and then on the thing being asserted is
+	// what Playwright recommends anyway.
+	await visit(page, '/login');
 
 	const register = page.getByRole('button', { name: 'Register' });
 	if (await register.count()) {
@@ -91,7 +96,7 @@ export async function register(
 	// what generates the current week's occurrences from the template that
 	// onboarding just installed. Without this the account has weekly slots and
 	// no blocks, which is a state nobody using the app is ever in for long.
-	await page.goto('/', { waitUntil: 'networkidle' });
+	await visit(page, '/');
 
 	// A new account is shown around, once, on this screen — so every test that
 	// makes one would otherwise start behind a modal. Dismissed here rather than

@@ -7,6 +7,7 @@ import { isSelfHosted } from '../settings.js';
 import type { Ctx } from './ctx.js';
 import { stamps } from './time.js';
 import { ForbiddenError, NotFoundError, ValidationError } from './errors.js';
+import { changed, roomsForEvent } from '../live.js';
 
 /**
  * Webhooks: plugins that listen instead of push.
@@ -188,6 +189,16 @@ export function serialiseSubscription(s: Subscription) {
  * has already happened — nothing here may throw into it or slow it down.
  */
 export function emit(ctx: Ctx, event: WebhookEvent, data: Record<string, unknown>): void {
+	// The tabs this person has open, before the receivers out on the internet.
+	// Same announcement, two audiences — so a write that tells the outside world
+	// also tells the screen in front of them, and nothing has to remember both.
+	try {
+		const rooms = roomsForEvent(event);
+		if (rooms.length > 0) changed(ctx.userId, rooms, 'api');
+	} catch {
+		// `changed` swallows its own; this is belt and braces around the import.
+	}
+
 	try {
 		const subs = db
 			.select()
