@@ -10,6 +10,17 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.43.0 — 2026-09-02
+
+- **An assistant can change your week, not only read it.** Two new tools behind
+  a new permission, `schedule:write`: `add_block` puts a real block on a day —
+  a title, a start time and a length — and `finish_block` answers for one that
+  is already there, done or skipped. Asked to "skip the gym and put deep work on
+  from 9 to 11", an assistant could previously do neither: it wrote a todo with
+  the time inside its title and left the gym unanswered.
+- Answering for a one-off block over the API no longer says "task not found"
+  before that day has been opened in the app.
+
 ## 0.42.1 — 2026-09-02
 
 - **The mark on the phone's bottom bar is half again as big**, which is the size
