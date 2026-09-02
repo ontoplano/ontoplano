@@ -9,7 +9,7 @@
  *
  * Supported: headings, horizontal rules, bullet and numbered lists, task
  * lists, block quotes, fenced and inline code, bold, italic, strikethrough,
- * links, and `#12` as a reference to a diary entry.
+ * links, pictures you uploaded here, and `#12` as a reference to a diary entry.
  */
 
 const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
@@ -32,7 +32,25 @@ function safeHref(href: string): string | null {
 function inline(raw: string): string {
 	let html = escape(raw);
 
-	html = html.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (match, label: string, href: string) => {
+	/*
+	 * A picture is one of your own, and nothing else.
+	 *
+	 * `![alt](/media/12)` is what the editor writes when you paste or drop a
+	 * file, and the address it is allowed to point at is exactly that shape. An
+	 * arbitrary one would fetch from a third party every time somebody opened
+	 * the entry — telling that host who is reading, and when — which is not a
+	 * thing a reader agreed to and not a thing the CSP would allow anyway. So
+	 * anything else stays the text that was typed.
+	 */
+	html = html.replace(
+		/!\[([^\]]*)\]\((\/media\/\d+)\)/g,
+		(_match, alt: string, src: string) =>
+			`<img class="md-image" src="${src}" alt="${alt}" loading="lazy">`
+	);
+
+	// `(?<!!)` so what is left of a picture — one this file refused to render —
+	// is not turned into a link with a stray exclamation mark in front of it.
+	html = html.replace(/(?<!!)\[([^\]]+)\]\(([^)\s]+)\)/g, (match, label: string, href: string) => {
 		const safe = safeHref(href);
 		return safe
 			? `<a href="${safe}" rel="noreferrer noopener" target="_blank">${label}</a>`

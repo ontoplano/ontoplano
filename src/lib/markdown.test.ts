@@ -75,3 +75,47 @@ describe('inline', () => {
 		expect(renderMarkdown('# Capítulo 1')).toBe('<h1>Capítulo 1</h1>');
 	});
 });
+
+/**
+ * Pictures, and the addresses they are allowed to have.
+ *
+ * The rule is narrow on purpose: `/media/<id>` is a row in this instance's own
+ * database, and anything else — a third-party host, a `data:` payload, a
+ * traversal dressed up as an id — stays the text that was typed rather than
+ * becoming a tag.
+ */
+describe('pictures', () => {
+	test('one of your own becomes an image', () => {
+		const html = renderMarkdown('![a cake](/media/12)');
+		expect(html).toContain('<img class="md-image" src="/media/12" alt="a cake"');
+		expect(html).toContain('loading="lazy"');
+	});
+
+	test('somebody else’s host does not', () => {
+		for (const src of [
+			'https://tracker.example/pixel.png',
+			'//tracker.example/pixel.png',
+			'data:image/svg+xml;base64,PHN2Zz4=',
+			'/media/12/../../etc/passwd',
+			'/media/abc',
+			'javascript:alert(1)'
+		]) {
+			const html = renderMarkdown(`![x](${src})`);
+			expect(html, src).not.toContain('<img');
+		}
+	});
+
+	test('a refused picture is not turned into a link either', () => {
+		expect(renderMarkdown('![x](https://tracker.example/p.png)')).not.toContain('<a ');
+	});
+
+	test('the alt text cannot carry markup', () => {
+		const html = renderMarkdown('![" onerror="alert(1)](/media/3)');
+		expect(html).not.toContain('onerror="alert');
+		expect(html).toContain('&quot;');
+	});
+
+	test('an ordinary link still works beside them', () => {
+		expect(renderMarkdown('[docs](https://example.com)')).toContain('href="https://example.com"');
+	});
+});

@@ -274,6 +274,13 @@
       "when": 1788244669344,
       "tag": "0038_remind_lead_on_the_block",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "6",
+      "when": 1788322471722,
+      "tag": "0039_nervous_phalanx",
+      "breakpoints": true
     }
   ]
 }

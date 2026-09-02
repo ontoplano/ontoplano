@@ -69,6 +69,12 @@ undo_seconds = "5"
 
 [instance]
 tagline = "Managing life, one week at a time"
+
+[media]
+max_kilobytes = "500"
+recipe_images = "6"
+entry_images = "20"
+account_megabytes = "250"
 `;
 
 /**
@@ -127,6 +133,23 @@ export interface OntoplanoConfig {
 		/** Seconds a delete waits, undoably, before it happens. Zero turns it off. */
 		undoSeconds: number;
 	};
+	media: {
+		/**
+		 * The biggest single picture this instance accepts, in kilobytes.
+		 *
+		 * Enforced on the server against the bytes actually received, not against
+		 * what the browser said it was sending. Pictures are rows in the same
+		 * SQLite file as everything else, so this is also the number that decides
+		 * how fast that file grows.
+		 */
+		maxKilobytes: number;
+		/** How many pictures one recipe may carry. One of them is the main one. */
+		recipeImages: number;
+		/** How many pictures one notebook entry may carry. */
+		entryImages: number;
+		/** Everything one account's pictures may add up to, in megabytes. */
+		accountMegabytes: number;
+	};
 	instance: {
 		/**
 		 * The one line under the name on the signed-out front page.
@@ -181,6 +204,12 @@ undo_seconds = "${config.ui.undoSeconds}"
 
 [instance]
 tagline = "${config.instance.tagline}"
+
+[media]
+max_kilobytes = "${config.media.maxKilobytes}"
+recipe_images = "${config.media.recipeImages}"
+entry_images = "${config.media.entryImages}"
+account_megabytes = "${config.media.accountMegabytes}"
 `;
 }
 
@@ -203,6 +232,11 @@ export function loadConfig(): OntoplanoConfig {
 	const reports = (parsed.reports as Record<string, string>) || {};
 	const ui = (parsed.ui as Record<string, string>) || {};
 	const instance = (parsed.instance as Record<string, string>) || {};
+	const media = (parsed.media as Record<string, string>) || {};
+
+	/** A number from the file, or the default, never NaN and never absurd. */
+	const bounded = (raw: string | undefined, fallback: number, min: number, max: number) =>
+		Math.min(Math.max(parseInt(raw || '', 10) || fallback, min), max);
 
 	return {
 		server: {
@@ -248,6 +282,21 @@ export function loadConfig(): OntoplanoConfig {
 		},
 		instance: {
 			tagline: (instance.tagline || '').trim() || DEFAULT_TAGLINE
+		},
+		media: {
+			/*
+			 * The ceilings on pictures.
+			 *
+			 * Bounded rather than trusted: these are the numbers standing between
+			 * an open registration and a full disk, and a typo that made one of
+			 * them a hundred times bigger would not look like a typo. The upper
+			 * bounds here are the most this code will honour, not a recommendation
+			 * — the defaults are what a sane instance runs.
+			 */
+			maxKilobytes: bounded(media.max_kilobytes, 500, 16, 20_000),
+			recipeImages: bounded(media.recipe_images, 6, 1, 50),
+			entryImages: bounded(media.entry_images, 20, 1, 200),
+			accountMegabytes: bounded(media.account_megabytes, 250, 1, 100_000)
 		}
 	};
 }

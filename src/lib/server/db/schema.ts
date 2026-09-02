@@ -1,4 +1,5 @@
 import {
+	blob,
 	integer,
 	real,
 	sqliteTable,
@@ -675,6 +676,89 @@ export const recipes = sqliteTable(
 		index('recipes_user_idx').on(table.userId),
 		check('recipes_servings_positive', sql`${table.servings} IS NULL OR ${table.servings} > 0`),
 		check('recipes_minutes_positive', sql`${table.minutes} IS NULL OR ${table.minutes} > 0`)
+	]
+);
+
+/**
+ * A picture, kept in the same file as everything else.
+ *
+ * The bytes are a column here rather than a file in a directory beside the
+ * database, and that is the deliberate half. What this app promises is that
+ * your data is one SQLite file you can copy, export and walk away with; a media
+ * directory makes it two things that have to travel together, and the backup
+ * that took one of them and not the other looks exactly like a backup. Under a
+ * megabyte a row SQLite reads a blob faster than the filesystem opens a file,
+ * and the ceiling is the operator's (`[media] max_kilobytes`), so this cannot
+ * quietly become the reason the file is unmanageable.
+ *
+ * `mime` is decided by the server from the bytes themselves, never from what
+ * the browser said it was sending, and SVG is not on the list: it is a document
+ * that can carry script, and it would be served from this app's own origin.
+ */
+export const media = sqliteTable(
+	'media',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		mime: text('mime').notNull(),
+		/** What the person's file was called. Shown; never used as a path. */
+		filename: text('filename').notNull().default(''),
+		alt: text('alt').notNull().default(''),
+		byteSize: integer('byte_size').notNull(),
+		bytes: blob('bytes', { mode: 'buffer' }).notNull(),
+		/** The same picture twice is one row: see `sha256` in `services/media.ts`. */
+		sha256: text('sha256').notNull(),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('media_user_idx').on(table.userId),
+		uniqueIndex('media_user_sha_unique').on(table.userId, table.sha256),
+		check('media_size_positive', sql`${table.byteSize} > 0`)
+	]
+);
+
+/**
+ * Which pictures belong to which recipe, and which one is the recipe.
+ *
+ * An explicit join rather than a markdown reference — the way a notebook entry
+ * carries its pictures — because these are not illustrations inside a text.
+ * They are the recipe's own gallery: they have an order, one of them is the one
+ * the list shows, and the number of them is capped.
+ *
+ * A partial unique index does the "one main" rule in the database rather than
+ * in whichever code path happens to be setting it, so two mains cannot exist
+ * even for a moment.
+ */
+export const recipeImages = sqliteTable(
+	'recipe_images',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		recipeId: integer('recipe_id')
+			.notNull()
+			.references(() => recipes.id, { onDelete: 'cascade' }),
+		mediaId: integer('media_id')
+			.notNull()
+			.references(() => media.id, { onDelete: 'cascade' }),
+		position: integer('position').notNull().default(0),
+		isMain: integer('is_main', { mode: 'boolean' }).notNull().default(false),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('recipe_images_user_idx').on(table.userId),
+		index('recipe_images_recipe_idx').on(table.recipeId),
+		uniqueIndex('recipe_images_once_unique').on(table.recipeId, table.mediaId),
+		uniqueIndex('recipe_images_one_main_unique')
+			.on(table.recipeId)
+			.where(sql`is_main = 1`)
 	]
 );
 
