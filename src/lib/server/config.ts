@@ -12,7 +12,19 @@ const home = homedir();
  * which meant a suite could pass or fail depending on a file outside the repo.
  */
 export const CONFIG_DIR = process.env.ONTOPLANO_CONFIG_DIR || join(home, '.config', 'ontoplano');
-export const DATA_DIR = join(home, '.local', 'share', 'ontoplano');
+
+/**
+ * Where the database and anything else this instance writes lives.
+ *
+ * Overridable for the same reason the config directory is, and for one more:
+ * a distribution package puts the app's data in `/var/lib/ontoplano` and its
+ * settings in `/etc/ontoplano`, because that is where an operator, a backup
+ * tool and a distribution's own conventions all expect to find them. Without
+ * this, the service account's home would have to be bent into
+ * `/var/lib/ontoplano/.local/share/ontoplano/` to satisfy a path written here.
+ */
+export const DATA_DIR =
+	process.env.ONTOPLANO_DATA_DIR || join(home, '.local', 'share', 'ontoplano');
 export const CONFIG_FILE = join(CONFIG_DIR, 'config.toml');
 export const DB_PATH = join(DATA_DIR, 'ontoplano.db');
 

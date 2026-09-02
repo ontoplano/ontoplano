@@ -122,6 +122,7 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_BAN_CONTROL_CMD`        | `src/lib/server/services/protection.ts`                  |
 | `ONTOPLANO_CONFIG_DIR`             | `src/lib/server/config.ts`                               |
 | `ONTOPLANO_CONTACT_EMAIL`          | `src/lib/server/services/legal.ts`                       |
+| `ONTOPLANO_DATA_DIR`               | `scripts/migrate.mjs`, `src/lib/server/config.ts`        |
 | `ONTOPLANO_DEMO`                   | `src/lib/server/settings.ts`                             |
 | `ONTOPLANO_DEMO_MAX_ACCOUNTS`      | `src/lib/server/settings.ts`                             |
 | `ONTOPLANO_DEMO_TTL_MINUTES`       | `src/lib/server/settings.ts`                             |
