@@ -9,6 +9,8 @@ import { loadConfig } from '../config.js';
 import { db } from '../db/index.js';
 import { user, userSettings } from '../db/schema.js';
 import { demoLifetimeMinutes, demoMaxAccounts } from '../settings.js';
+import { USER_TABLES } from './account.js';
+import { NotFoundError } from './errors.js';
 import { deleteAccount } from './account.js';
 
 const run = promisify(execFile);
@@ -133,6 +135,32 @@ async function seed(email: string): Promise<void> {
 	}
 }
 
+/**
+ * Put one demo account back the way it arrived.
+ *
+ * Everything the account owns is deleted and the fixtures are laid down again —
+ * the same script, so what somebody resets to is exactly what the next visitor
+ * would have been given. The account itself, its address and its session all
+ * survive: the point is to undo a mess, not to sign somebody out of a demo they
+ * cannot sign back into.
+ *
+ * The timer is reset with it, because somebody who just asked for a fresh demo
+ * is somebody who intends to keep looking.
+ */
+export async function resetDemoAccount(userId: string): Promise<void> {
+	const account = db.select({ email: user.email }).from(user).where(eq(user.id, userId)).get();
+	if (!account) throw new NotFoundError('account');
+
+	db.transaction((tx) => {
+		// Parents last, the way deleting an account does it — a child row whose
+		// parent is already gone is a foreign key that cannot be satisfied.
+		for (const table of USER_TABLES) table.remove(tx, userId);
+	});
+
+	touchDemoAccount(userId);
+	await seed(account.email);
+}
+
 /** Whether this account is a demo one, and whether its time is up. */
 export function demoExpiry(userId: string): string | null {
 	const row = db
@@ -154,6 +182,37 @@ export function demoExpiry(userId: string): string | null {
  * `deleteAccount` is the same function the account page calls, so a demo
  * account leaves exactly as thoroughly as a real one.
  */
+/**
+ * How often the sweep is worth running, at most.
+ *
+ * It is one indexed query when there is nothing to do, but it is on the path of
+ * every request to a demo instance, and once a minute is far more often than
+ * accounts expire.
+ */
+const SWEEP_EVERY_MS = 60_000;
+let lastSweep = 0;
+
+/**
+ * Sweep, unless one just happened.
+ *
+ * This exists because the sweep used to run in exactly one place: the branch
+ * that hands a *new* visitor an account. So a demo nobody new arrived at never
+ * cleaned up — the accounts sat there past their expiry, and the one person
+ * refreshing the page kept the instance alive without ever triggering the thing
+ * that was supposed to end their session. Called from every demo request now,
+ * which is the only place that is true whether or not anybody new shows up.
+ */
+export function maybeSweepDemoAccounts(now = new Date()): void {
+	if (now.getTime() - lastSweep < SWEEP_EVERY_MS) return;
+	lastSweep = now.getTime();
+	try {
+		sweepDemoAccounts(now);
+	} catch (e) {
+		// A tidy-up that throws must not take the request with it.
+		console.error('demo: sweep failed:', e instanceof Error ? e.message : e);
+	}
+}
+
 export function sweepDemoAccounts(now = new Date()): number {
 	const stamp = now.toISOString();
 	const expired = db

@@ -630,7 +630,21 @@
 								endpoint refuses too; this is so nobody is offered the button
 								in the first place.
 							-->
-							{#if !data.demo}
+							{#if data.demo}
+								<!--
+									Where Sign out would be, on a demo that has no way back in.
+									Somebody who has made a mess of the fixtures wants a clean
+									copy, not the door — and this is where they will look for it.
+								-->
+								<form method="post" action="/login?/resetDemo" use:enhance>
+									<button
+										type="submit"
+										class="w-full px-4 py-2 text-left text-sm {NAV_DROPDOWN_ITEM} transition"
+									>
+										Reset demo account
+									</button>
+								</form>
+							{:else}
 								<form method="post" action="/login?/signOut" use:enhance>
 									<button
 										type="submit"

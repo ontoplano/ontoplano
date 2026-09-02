@@ -76,6 +76,30 @@ const PICTURES = [
 		crop: { x: 0.0, y: 0.34, w: 0.8, h: 0.66 }
 	},
 	{
+		out: 'joao.jpg',
+		object: 435581,
+		what: "a friend's picture on the people page",
+		width: 320,
+		height: 320,
+		crop: { x: 0.12, y: 0.05, w: 0.76, h: 0.52 }
+	},
+	{
+		out: 'marina.jpg',
+		object: 436295,
+		what: "a colleague's picture on the people page",
+		width: 320,
+		height: 320,
+		crop: { x: 0.16, y: 0.04, w: 0.68, h: 0.46 }
+	},
+	{
+		out: 'mum.jpg',
+		object: 436986,
+		what: "a mother's picture on the people page",
+		width: 320,
+		height: 320,
+		crop: { x: 0.14, y: 0.05, w: 0.72, h: 0.5 }
+	},
+	{
 		out: 'horse.jpg',
 		// Not the museum's: Estevão's own photograph, kept beside the script in
 		// `demo-media-src/` so a rebuild does not need the internet for it.

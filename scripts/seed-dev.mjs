@@ -837,7 +837,7 @@ const marina = person('Marina', 'professional', 'runs the Tuesday standup', {
 	phone: '+55 11 90000-0002',
 	email: 'marina@example.test'
 });
-person('Mum', 'family');
+const mum = person('Mum', 'family');
 
 mention(1, ana);
 mention(2, joao);
@@ -1202,13 +1202,23 @@ const picture = (filename, alt, bytes) => {
 };
 
 // A face, so the people page is a page of people rather than of names.
-const anaFace = picture('ana.jpg', 'Ana', demoPicture('ana.jpg'));
-if (anaFace && !one('select id from people where id = ? and picture_id is not null', ana))
-	db.prepare('update people set picture_id = ? where id = ? and user_id = ?').run(
-		anaFace,
-		ana,
-		uid
-	);
+/*
+ * Everybody, not just Ana.
+ *
+ * One face among four initials looked like a feature that had half worked. The
+ * whole point of the page is that a list of faces is a list of people, and it
+ * only reads that way when every row has one.
+ */
+for (const [id, name, file] of [
+	[ana, 'Ana', 'ana.jpg'],
+	[joao, 'João', 'joao.jpg'],
+	[marina, 'Marina', 'marina.jpg'],
+	[mum, 'Mum', 'mum.jpg']
+]) {
+	const face = picture(file, name, demoPicture(file));
+	if (face && !one('select id from people where id = ? and picture_id is not null', id))
+		db.prepare('update people set picture_id = ? where id = ? and user_id = ?').run(face, id, uid);
+}
 
 /*
  * And one inside somebody's writing, which is the other way a picture exists

@@ -4,7 +4,7 @@ import { auth } from '$lib/server/auth';
 import { checkPassword } from '$lib/passwords';
 import { APIError } from 'better-auth/api';
 import { isEmailConfigured } from '$lib/server/email';
-import { isStaging } from '$lib/server/settings';
+import { isDemo, isStaging } from '$lib/server/settings';
 import {
 	checkSignUpAllowed,
 	consumeInvite,
@@ -12,8 +12,9 @@ import {
 	registrationMode
 } from '$lib/server/services/registration';
 import { clientKey, signUpBudget } from '$lib/server/rate-limit';
-import { ServiceError } from '$lib/server/services/errors';
+import { ServiceError, toActionFailure } from '$lib/server/services/errors';
 import { record } from '$lib/server/services/audit';
+import { resetDemoAccount } from '$lib/server/services/demo';
 import { claimFirstAccount } from '$lib/server/services/admin';
 import { onboardEntitlement } from '$lib/server/services/billing';
 
@@ -188,5 +189,30 @@ export const actions: Actions = {
 			headers: event.request.headers
 		});
 		return redirect(302, '/login');
+	},
+
+	/*
+	 * Put the demo back the way it was found.
+	 *
+	 * Here rather than on a settings page because it lives where Sign out lives
+	 * — the demo has no way out, so the menu offers the thing somebody actually
+	 * wants at that moment instead: a clean copy, without losing the session
+	 * they cannot get back.
+	 *
+	 * Refused off a demo instance. Nothing about it would work anywhere else,
+	 * and an action that erases an account is not one to leave lying around.
+	 */
+	resetDemo: async (event) => {
+		if (!isDemo()) return fail(403, { message: 'Only the demo can be reset.' });
+		const user = event.locals.user;
+		if (!user) return fail(401, { message: 'Sign in first' });
+
+		try {
+			await resetDemoAccount(user.id);
+		} catch (e) {
+			return toActionFailure(e);
+		}
+
+		return redirect(303, '/');
 	}
 };

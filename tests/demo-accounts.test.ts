@@ -148,6 +148,40 @@ describe('the sweep', () => {
 	});
 });
 
+/**
+ * The sweep runs on its own, rather than only when a stranger arrives.
+ *
+ * Reported from the live demo: an account was not being wiped after its half
+ * hour. It was not the timer — it was that the only caller of the sweep sat
+ * inside the branch that hands a *new* visitor an account, so a demo nobody
+ * new came to never cleaned up, and the one person refreshing the page kept
+ * their own expired session alive indefinitely.
+ */
+describe('the sweep, unprompted', () => {
+	it('runs on a request that creates nothing', () => {
+		pretendVisitor('visitor-stale', new Date(Date.now() - 60_000).toISOString());
+
+		// The throttle is per-process and other tests have already tripped it,
+		// so this asks for a time far enough ahead to be allowed through.
+		demo.maybeSweepDemoAccounts(new Date(Date.now() + 10 * 60_000));
+
+		expect(demo.demoExpiry('visitor-stale')).toBeNull();
+	});
+
+	it('does not run twice in the same minute', () => {
+		const at = new Date(Date.now() + 40 * 60_000);
+		demo.maybeSweepDemoAccounts(at);
+
+		pretendVisitor('visitor-just-expired', new Date(Date.now() - 60_000).toISOString());
+		// One second later: too soon, so this one survives until the next minute.
+		demo.maybeSweepDemoAccounts(new Date(at.getTime() + 1000));
+		expect(demo.demoExpiry('visitor-just-expired')).toBeTruthy();
+
+		demo.maybeSweepDemoAccounts(new Date(at.getTime() + 61_000));
+		expect(demo.demoExpiry('visitor-just-expired')).toBeNull();
+	});
+});
+
 describe('the ceiling', () => {
 	it('is a number the instance can set', () => {
 		process.env.ONTOPLANO_DEMO_MAX_ACCOUNTS = '3';

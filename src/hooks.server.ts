@@ -5,7 +5,11 @@ import { auth } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { ensureUserCategories } from '$lib/server/db/ensure-categories';
 import { DEFAULT_THEME, getStyle, getTheme, isDemo, isStaging } from '$lib/server/settings';
-import { createDemoAccount, sweepDemoAccounts, touchDemoAccount } from '$lib/server/services/demo';
+import {
+	createDemoAccount,
+	maybeSweepDemoAccounts,
+	touchDemoAccount
+} from '$lib/server/services/demo';
 import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
 import { checkSignUpAllowed, consumeInvite } from '$lib/server/services/registration';
 import { claimFirstAccount } from '$lib/server/services/admin';
@@ -335,6 +339,18 @@ const DEMO_BOUNCE = 'demo';
 const handleDemo: Handle = async ({ event, resolve }) => {
 	if (!isDemo()) return resolve(event);
 
+	/*
+	 * The tidy-up, on every request rather than only when somebody new arrives.
+	 *
+	 * It used to run inside the branch that hands a *first-time* visitor an
+	 * account, which meant a demo nobody new came to never cleaned up: the
+	 * expired accounts stayed, and the one person refreshing the page kept the
+	 * instance busy without ever triggering the thing meant to end their own
+	 * session. `maybeSweep` throttles itself to once a minute, so this costs
+	 * nothing on the other requests.
+	 */
+	maybeSweepDemoAccounts();
+
 	const path = event.url.pathname;
 	const writes = event.request.method !== 'GET' && event.request.method !== 'HEAD';
 
@@ -404,10 +420,6 @@ const handleDemo: Handle = async ({ event, resolve }) => {
 		}
 
 		if (budget.allowed && handshook) {
-			// Cheap when there is nothing to do, and it means a demo whose timer
-			// is not running still clears up after itself.
-			sweepDemoAccounts();
-
 			try {
 				const account = await createDemoAccount(event.url.hostname);
 				if (account) {
