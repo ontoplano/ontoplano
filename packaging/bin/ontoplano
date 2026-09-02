@@ -1,0 +1,52 @@
+#!/bin/sh
+# The command an operator types. Everything it does is something they would
+# otherwise have to remember the systemd spelling of.
+set -e
+
+LIB=/usr/lib/ontoplano
+usage() {
+	cat <<'EOF'
+ontoplano — life management, on your own machine
+
+  ontoplano status        is it running, and since when
+  ontoplano start|stop|restart
+  ontoplano logs          follow the journal
+  ontoplano migrate       bring the database up to the installed version
+  ontoplano config        open /etc/ontoplano/ontoplano.env in $EDITOR
+  ontoplano version       what is installed
+
+The settings live in /etc/ontoplano/ontoplano.env, the database in
+/var/lib/ontoplano. https://docs.ontoplano.com says what each one does.
+EOF
+}
+
+case "${1:-}" in
+	status)  exec systemctl status ontoplano ;;
+	start|stop|restart)
+		# Not `exec systemctl "$1"`: an operator who typed `stop` should be told
+		# they need root rather than shown a permission error from systemd.
+		if [ "$(id -u)" != 0 ]; then
+			echo "ontoplano $1: needs root — try: sudo ontoplano $1" >&2
+			exit 1
+		fi
+		exec systemctl "$1" ontoplano ;;
+	logs)    exec journalctl -u ontoplano -n 200 -f ;;
+	migrate)
+		if [ "$(id -u)" != 0 ]; then
+			echo "ontoplano migrate: needs root — try: sudo ontoplano migrate" >&2
+			exit 1
+		fi
+		# As the service account, so a database it creates is one the service can
+		# still open afterwards. Running this as root is how a file ends up
+		# root-owned and the app cannot write it.
+		exec runuser -u ontoplano -- "$LIB/migrate" ;;
+	config)
+		if [ "$(id -u)" != 0 ]; then
+			echo "ontoplano config: needs root — try: sudo ontoplano config" >&2
+			exit 1
+		fi
+		exec "${EDITOR:-vi}" /etc/ontoplano/ontoplano.env ;;
+	version) cat "$LIB/VERSION" ;;
+	''|-h|--help|help) usage ;;
+	*) echo "ontoplano: no such command: $1" >&2; usage >&2; exit 1 ;;
+esac

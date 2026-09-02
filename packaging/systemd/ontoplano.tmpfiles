@@ -1,0 +1,4 @@
+# The data directory, before the first start. StateDirectory= in the unit would
+# make it too, but only when the service starts — and `ontoplano-migrate`,
+# which an operator may run first, needs it to exist already.
+d /var/lib/ontoplano 0750 ontoplano ontoplano -

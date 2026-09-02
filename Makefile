@@ -41,6 +41,8 @@ help:
 	@echo "  docker-up / docker-down     an instance in a container (docs/DOCKER.md)"
 	@echo "  docker-image                build the published image here, without pushing"
 	@echo "  docker-publish              …and push it — asks first, this project only"
+	@echo "  package [deb|rpm|arch]      the .deb, the .rpm and the AUR PKGBUILD, into dist/"
+	@echo "  package-check               …then unpack them and run what is inside"
 	@echo "  backup-install              Litestream replication (backup-status, backup-drill)"
 	@echo
 	@printf '\033[1mphone & bot\033[0m\n'
@@ -63,10 +65,10 @@ help:
 # them out of the makefiles means the list cannot describe a switch that was
 # renamed — the failure mode of writing this table by hand.
 vars:
-	@sh scripts/make-vars.sh $(MAKEFILE_LIST) defaults.env $(wildcard $(SERVER_SRC)/defaults.env)
+	@sh scripts/make-vars.sh $(sort $(MAKEFILE_LIST) defaults.env $(wildcard $(SERVER_SRC)/defaults.env))
 
 
-.PHONY: vars _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
+.PHONY: vars package package-check _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -463,6 +465,22 @@ docker-image: _docker-safe
 # It builds and audits locally first, then asks — like `make deploy`, and for a
 # stronger reason: a deploy can be redone and a publish cannot be undone.
 #: DOCKER_YES=1  publish the image without stopping to confirm
+# ─── Packages ───────────────────────────────────────────────────────────────
+#
+# What somebody who is not you installs. `scripts/package.mjs` says why the .deb
+# and the .rpm carry their own Node and the Arch one does not.
+#
+#   make package                 all three
+#   make package deb             one of them — or: yarn package deb
+#: PACKAGE=deb  build one format instead of all three (deb, rpm, arch)
+package: build
+	@node scripts/package.mjs $(PACKAGE)
+
+# The half that matters: unpack what was built, run it, and check the unit says
+# what the package does. Nothing is installed on this machine.
+package-check:
+	@bash tests/packaging.sh
+
 # DOCKER_YES=1 skips the prompt for a script that has already asked.
 docker-publish: docker-image
 	@docker buildx version >/dev/null 2>&1 || { \

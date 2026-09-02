@@ -1,0 +1,48 @@
+# The session secret: made once, never regenerated. Changing it signs everybody
+# out, so an upgrade that rewrote it would look like the app losing every login
+# for no reason.
+_secret() {
+	if [ ! -s /etc/ontoplano/secret.env ]; then
+		umask 077
+		printf 'BETTER_AUTH_SECRET=%s\n' "$(head -c 32 /dev/urandom | base64 | tr -d '\n')" \
+			> /etc/ontoplano/secret.env
+	fi
+	chown root:ontoplano /etc/ontoplano/secret.env /etc/ontoplano/ontoplano.env 2>/dev/null || true
+	chmod 640 /etc/ontoplano/secret.env /etc/ontoplano/ontoplano.env
+}
+
+post_install() {
+	# pacman runs sysusers and tmpfiles itself for files under /usr/lib, but
+	# saying so here makes this work when it is installed with -U by hand too.
+	systemd-sysusers /usr/lib/sysusers.d/ontoplano.conf >/dev/null 2>&1 || true
+	systemd-tmpfiles --create /usr/lib/tmpfiles.d/ontoplano.conf >/dev/null 2>&1 || true
+	_secret
+	/usr/lib/ontoplano/migrate >/dev/null || \
+		echo "ontoplano: the database could not be migrated — try: sudo ontoplano migrate"
+	chown -R ontoplano:ontoplano /var/lib/ontoplano 2>/dev/null || true
+
+	cat <<'EOF'
+
+Ontoplano is installed but not started.
+
+  1. sudo ontoplano config      set ORIGIN to the address people will type
+  2. sudo systemctl enable --now ontoplano
+  3. open it, register — the first account owns the instance
+
+It listens on 127.0.0.1:1493. Put a reverse proxy in front of it for TLS.
+EOF
+}
+
+post_upgrade() {
+	_secret
+	/usr/lib/ontoplano/migrate >/dev/null || \
+		echo "ontoplano: the database could not be migrated — try: sudo ontoplano migrate"
+	chown -R ontoplano:ontoplano /var/lib/ontoplano 2>/dev/null || true
+}
+
+post_remove() {
+	cat <<'EOF'
+Your database is still at /var/lib/ontoplano, and the session secret at
+/etc/ontoplano/secret.env. Neither is the package's to delete.
+EOF
+}

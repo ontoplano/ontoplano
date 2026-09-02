@@ -1,0 +1,71 @@
+# Maintainer: Estevão <plano@ontoplano.com>
+#
+# Arch builds on the machine that will run it, which is why this package brings
+# no runtime of its own: better-sqlite3 is compiled here, against the Node that
+# is installed here, and there is only one of it.
+
+pkgname=ontoplano
+pkgver=@VERSION@
+pkgrel=1
+pkgdesc="Life management, on your own machine — planner, diary, cookbook and habits in one SQLite file"
+arch=('x86_64' 'aarch64')
+url="https://ontoplano.com"
+license=('AGPL-3.0-or-later')
+depends=('nodejs>=20' 'systemd')
+makedepends=('yarn' 'python' 'gcc' 'make')
+backup=('etc/ontoplano/ontoplano.env')
+install=ontoplano.install
+source=("$pkgname-$pkgver.tar.gz::https://github.com/ontoplano/ontoplano/archive/refs/tags/@TAG@.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+	cd "$srcdir/$pkgname-$pkgver"
+	yarn install --frozen-lockfile
+	yarn build
+
+	# The production set, taken after the build: `yarn install --production` on a
+	# machine with no compiler cannot rebuild better-sqlite3, so the compiled
+	# module is kept rather than reinstalled.
+	cp -R node_modules "$srcdir/node_modules_dev"
+	yarn install --frozen-lockfile --production
+	cp -R node_modules "$srcdir/node_modules_prod"
+	rm -rf node_modules
+	mv "$srcdir/node_modules_dev" node_modules
+}
+
+package() {
+	cd "$srcdir/$pkgname-$pkgver"
+	local lib="$pkgdir/usr/lib/ontoplano"
+
+	install -dm755 "$lib"
+	cp -R build "$lib/build"
+	cp -R drizzle "$lib/drizzle"
+	cp -R "$srcdir/node_modules_prod" "$lib/node_modules"
+	install -Dm644 scripts/migrate.mjs "$lib/migrate.mjs"
+	install -Dm644 scripts/db-snapshot.mjs "$lib/db-snapshot.mjs"
+
+	# Trimmed to what a running instance reads: the type field, without which
+	# Node treats the .mjs siblings' imports as CommonJS, and the version the app
+	# reports on /healthz.
+	printf '{\n\t"name": "ontoplano",\n\t"version": "%s",\n\t"type": "module"\n}\n' "$pkgver" \
+		> "$lib/package.json"
+	printf '%s\n' "$pkgver" > "$lib/VERSION"
+
+	install -Dm755 packaging/bin/run "$lib/run"
+	install -Dm755 packaging/bin/migrate "$lib/migrate"
+	install -Dm755 packaging/bin/ontoplano "$lib/ontoplano"
+	install -dm755 "$pkgdir/usr/bin"
+	printf '#!/bin/sh\nexec /usr/lib/ontoplano/ontoplano "$@"\n' > "$pkgdir/usr/bin/ontoplano"
+	chmod 755 "$pkgdir/usr/bin/ontoplano"
+
+	install -Dm644 packaging/systemd/ontoplano.service \
+		"$pkgdir/usr/lib/systemd/system/ontoplano.service"
+	install -Dm644 packaging/systemd/ontoplano.sysusers \
+		"$pkgdir/usr/lib/sysusers.d/ontoplano.conf"
+	install -Dm644 packaging/systemd/ontoplano.tmpfiles \
+		"$pkgdir/usr/lib/tmpfiles.d/ontoplano.conf"
+	install -Dm640 packaging/ontoplano.env "$pkgdir/etc/ontoplano/ontoplano.env"
+
+	install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+	install -Dm644 CHANGELOG.md "$pkgdir/usr/share/doc/$pkgname/CHANGELOG.md"
+}

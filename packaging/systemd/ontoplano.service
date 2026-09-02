@@ -1,0 +1,78 @@
+[Unit]
+Description=Ontoplano — life management, on your own machine
+Documentation=https://docs.ontoplano.com
+After=network-online.target
+Wants=network-online.target
+# In [Unit], not [Service]: systemd moved these in v229 and ignores them
+# quietly in the old place. Without it, five restarts in ten seconds and the
+# unit gives up for good — which is how a box is dead at 3am with a clean log.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=ontoplano
+Group=ontoplano
+
+# The runtime that shipped with the package, not whatever `node` happens to be
+# on PATH. better-sqlite3 is compiled against one ABI, and a machine with nvm
+# on it has several — a unit that says `node` is a unit that crash-loops with
+# ERR_DLOPEN_FAILED the day somebody installs a second one.
+ExecStart=/usr/lib/ontoplano/run
+
+WorkingDirectory=/usr/lib/ontoplano
+# Always, not on-failure: a clean exit nobody asked for is still the app being
+# down, and that is the one this has to survive.
+Restart=always
+RestartSec=2
+
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=1493
+# Where the packaged instance keeps its settings and its database. Both are
+# read by the app and by the migrator, so they cannot disagree.
+Environment=ONTOPLANO_CONFIG_DIR=/etc/ontoplano
+Environment=ONTOPLANO_DATA_DIR=/var/lib/ontoplano
+# The biggest request body Node will read. adapter-node defaults to 512kB and
+# refuses anything larger before this app's code runs, which a page waiting for
+# JSON reports as an unexplained crash — and a picture at the instance's own
+# ceiling is already over that default once multipart framing is counted.
+Environment=BODY_SIZE_LIMIT=12M
+
+# Everything an operator sets: the origin, the mail account, who may sign up.
+EnvironmentFile=/etc/ontoplano/ontoplano.env
+# And the session secret, generated on install and kept out of the file the
+# package owns — so an upgrade never overwrites it and never asks about it.
+EnvironmentFile=/etc/ontoplano/secret.env
+
+# ── What it is allowed to do ────────────────────────────────────────────────
+# One Node process that reads and writes one directory and answers one port.
+# Nothing here is defensive about the app; it is about the day something else
+# is running inside it.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+# The one directory it writes. systemd creates it, owns it to the service
+# account and keeps its mode, so nothing in the package has to.
+StateDirectory=ontoplano
+StateDirectoryMode=0750
+ReadWritePaths=/var/lib/ontoplano
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,4 @@
+# The account the service runs as. systemd-sysusers makes it on install, which
+# is the portable way — every distribution this package targets ships it, and
+# hand-rolled useradd in a maintainer script is where the differences live.
+u ontoplano - "Ontoplano service" /var/lib/ontoplano /usr/sbin/nologin

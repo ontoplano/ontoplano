@@ -1,0 +1,22 @@
+#!/bin/sh
+# What the unit executes: the app, under the runtime that shipped with it.
+#
+# A shell line rather than an ExecStart= with the path in it, because the same
+# line has to work for a package that bundles Node (the .deb and the .rpm, which
+# have to run on distributions whose own Node is anything from 18 to 24) and for
+# one that does not (the Arch package, built from source against the Node the
+# machine already has). Whichever it is, this finds it.
+set -e
+
+here=$(dirname "$0")
+
+if [ -x "$here/node/bin/node" ]; then
+	node="$here/node/bin/node"
+elif command -v node >/dev/null 2>&1; then
+	node=$(command -v node)
+else
+	echo "ontoplano: no node runtime found — install nodejs, or reinstall the package" >&2
+	exit 1
+fi
+
+exec "$node" "$here/build/index.js"

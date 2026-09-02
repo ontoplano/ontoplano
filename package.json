@@ -1,6 +1,6 @@
 {
 	"name": "ontoplano",
-	"version": "0.39.2",
+	"version": "0.40.0",
 	"license": "AGPL-3.0-or-later",
 	"scripts": {
 		"dev": "vite dev",
@@ -20,6 +20,8 @@
 		"db:studio": "drizzle-kit studio",
 		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes",
 		"test:unit": "vitest run",
+		"package": "node scripts/package.mjs",
+		"test:packaging": "bash tests/packaging.sh",
 		"icons": "node scripts/build-icons.mjs",
 		"errorpage": "node scripts/build-error-page.mjs",
 		"docs": "node scripts/build-docs.mjs",

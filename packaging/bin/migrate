@@ -1,0 +1,20 @@
+#!/bin/sh
+# The database, brought up to the version that is installed.
+#
+# Run by the package after an upgrade and by `ontoplano migrate` by hand. It
+# reads the same two directories the unit sets, so it can never migrate a
+# different database from the one the service opens.
+set -e
+
+here=$(dirname "$0")
+ONTOPLANO_CONFIG_DIR=${ONTOPLANO_CONFIG_DIR:-/etc/ontoplano}
+ONTOPLANO_DATA_DIR=${ONTOPLANO_DATA_DIR:-/var/lib/ontoplano}
+export ONTOPLANO_CONFIG_DIR ONTOPLANO_DATA_DIR
+
+if [ -x "$here/node/bin/node" ]; then
+	node="$here/node/bin/node"
+else
+	node=$(command -v node)
+fi
+
+exec "$node" "$here/migrate.mjs"

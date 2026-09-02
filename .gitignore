@@ -77,3 +77,7 @@ coverage/
 # of the logo is src/lib/logo/mark.png; a delivery it came in is not an asset.
 /static/*.zip
 /static/*.tar.gz
+
+# Built packages, and the tree they are staged in.
+dist/
+.package-work/
