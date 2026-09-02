@@ -14,6 +14,15 @@
  *    instance rather than the account. A demo visitor is an ordinary member and
  *    should not reach them at all; this is the second lock on that door, for an
  *    instance that hands a demo account more than it should.
+ *  - **Integrations.** A token minted here is a working key to the demo's API
+ *    for as long as the account lives, and the page also mints calendar links
+ *    and connects a phone. The page is worth looking at — it is part of what
+ *    the demo is showing — so it opens and refuses, rather than hiding.
+ *  - **Signing out.** The demo account has no password anybody knows, so
+ *    leaving it is leaving for good: the door closes behind you and the visit
+ *    is over with no way back in. The button is gone from the menu and the
+ *    endpoint refuses, because a demo that can be locked yourself out of is a
+ *    demo somebody tries once.
  *
  * The rules live here rather than in the routes because both areas grow: a new
  * `/admin` action, or a new better-auth endpoint that can change an identity,
@@ -35,7 +44,19 @@ export const DEMO_FORBIDDEN = [
 ];
 
 /** Readable on the demo, never writable. */
-export const DEMO_READ_ONLY = ['/admin', '/settings/instance'];
+export const DEMO_READ_ONLY = ['/admin', '/settings/instance', '/settings/integrations'];
+
+/**
+ * The way out, which on the demo is a way out with no way back.
+ *
+ * There is no password to sign back in with — the account was made for this
+ * visit and handed over by a cookie — so signing out ends the demo without
+ * saying so. Refused here, and the menu does not offer it.
+ */
+export const DEMO_NO_EXIT = ['/api/auth/sign-out', '/logout'];
+
+/** The form action the menu's Sign out posts to: `/login?/signOut`. */
+export const DEMO_NO_EXIT_ACTION = '/signOut';
 
 /**
  * The exception inside the exception.
@@ -61,8 +82,19 @@ export function demoRefusal(method: string, path: string, search = ''): string |
 	if (under(path, DEMO_FORBIDDEN))
 		return 'The demo account is temporary — its address and password cannot be changed.';
 
+	const noWayBack =
+		'The demo has no way back in once you leave it — close the tab when you are done.';
+	if (under(path, DEMO_NO_EXIT)) return noWayBack;
+	if (writes && new URLSearchParams(search).has(DEMO_NO_EXIT_ACTION)) return noWayBack;
+
 	if (writes && path === '/settings/account' && new URLSearchParams(search).has('/delete')) {
 		return 'The demo account is temporary — it deletes itself in a few hours.';
+	}
+
+	if (writes && path.startsWith('/settings/integrations')) {
+		// The sentence he asked for, in the words he asked for them: short, and
+		// about the demo rather than about permissions.
+		return "You're not allowed to do that in the demo.";
 	}
 
 	if (writes && under(path, DEMO_READ_ONLY) && !under(path, DEMO_WRITABLE)) {

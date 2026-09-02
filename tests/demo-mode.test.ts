@@ -101,6 +101,43 @@ describe('the demo refusals', () => {
 		}
 	});
 
+	/**
+	 * The integrations page, which is worth showing and not worth handing over.
+	 *
+	 * A token minted on the demo is a working key to that account's API for as
+	 * long as it lives, and the same page mints calendar links and pairs a
+	 * phone. So the page opens — it is part of what somebody is deciding about —
+	 * and everything on it refuses, in the words somebody reads on a toast.
+	 */
+	it('show the integrations page and refuse everything on it', () => {
+		expect(demoRefusal('GET', '/settings/integrations')).toBeNull();
+
+		for (const path of [
+			'/settings/integrations',
+			'/settings/integrations/widget',
+			'/settings/integrations/calendar'
+		]) {
+			expect(demoRefusal('POST', path), `${path} is writable on the demo`).toBe(
+				"You're not allowed to do that in the demo."
+			);
+		}
+	});
+
+	/**
+	 * Signing out of the demo is signing out for good.
+	 *
+	 * The account was handed over by a cookie and has no password anybody knows,
+	 * so the way out has no way back — somebody who pressed it found the demo
+	 * simply over. Both doors: better-auth's endpoint, and the form action the
+	 * menu posts to.
+	 */
+	it('refuse to let somebody lock themselves out of the demo', () => {
+		expect(demoRefusal('POST', '/api/auth/sign-out')).toMatch(/no way back in/);
+		expect(demoRefusal('POST', '/login', '?/signOut')).toMatch(/no way back in/);
+		// Signing *in* is how somebody arrives; only the way out is closed.
+		expect(demoRefusal('POST', '/login')).toBeNull();
+	});
+
 	it('still let somebody stop impersonating', () => {
 		// The way back from being impersonated has to work wherever
 		// impersonation does, or a visitor is stuck as somebody else.

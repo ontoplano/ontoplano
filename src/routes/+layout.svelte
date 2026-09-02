@@ -592,14 +592,23 @@
 							>
 								Integrations
 							</a>
-							<form method="post" action="/login?/signOut" use:enhance>
-								<button
-									type="submit"
-									class="w-full px-4 py-2 text-left text-sm {NAV_DROPDOWN_ITEM} transition"
-								>
-									Sign out
-								</button>
-							</form>
+							<!--
+								Not on the demo. The account was handed over by a cookie and
+								has no password anybody knows, so signing out of it is leaving
+								for good — the visit ends and the door does not reopen. The
+								endpoint refuses too; this is so nobody is offered the button
+								in the first place.
+							-->
+							{#if !data.demo}
+								<form method="post" action="/login?/signOut" use:enhance>
+									<button
+										type="submit"
+										class="w-full px-4 py-2 text-left text-sm {NAV_DROPDOWN_ITEM} transition"
+									>
+										Sign out
+									</button>
+								</form>
+							{/if}
 						</div>
 					{/if}
 				</div>
