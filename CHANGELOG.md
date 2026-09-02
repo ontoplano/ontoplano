@@ -10,6 +10,12 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.35.1 — 2026-09-02
+
+- **A dark button keeps its label under the pointer.** Hovering a primary
+  button — "New goal", "Save", anything filled — repainted its label into the
+  colour of the button itself, so the words vanished until you moved away.
+
 ## 0.35.0 — 2026-09-01
 
 - **The app shows you around.** On a new account, and on every visit to the

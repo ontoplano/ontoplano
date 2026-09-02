@@ -192,3 +192,76 @@ test('a button you cannot press does not look like one you can', async ({ page }
 		expect(look.cursor).toBe('not-allowed');
 	}
 });
+
+/**
+ * Every button keeps its label under the pointer.
+ *
+ * `.btn:hover` outranks `.btn-primary` — one class and a pseudo-class beats one
+ * class — so the hover rule's `color` repainted the primary button's white
+ * label to gray-900: near-black on near-black in the light theme, near-white on
+ * near-white in the dark one. The label vanished in both, and every other test
+ * here passed, because none of them hovers anything.
+ *
+ * The variants are mounted rather than hunted for on a page. The contract is
+ * the stylesheet's, not any one screen's: a page that happens not to render a
+ * danger button today would quietly stop covering it, which is how the rule got
+ * broken in the first place.
+ */
+test('a button keeps its label under the pointer', async ({ page }) => {
+	await register(page, `hover-${Date.now()}@test.invalid`);
+	await page.goto('/goals', { waitUntil: 'networkidle' });
+
+	const VARIANTS = [
+		'btn',
+		'btn btn-primary',
+		'btn btn-danger',
+		'btn btn-quiet',
+		'btn btn-outline',
+		'btn btn-sm'
+	];
+
+	await page.evaluate((variants) => {
+		const bench = document.createElement('div');
+		bench.id = 'hover-bench';
+		bench.style.cssText = 'position:fixed;top:8px;left:8px;z-index:9999;display:flex;gap:8px';
+		bench.innerHTML = variants
+			.map((c, i) => `<button id="hb${i}" class="${c}">New goal</button>`)
+			.join('');
+		// Also the pressed state, which sets its own ink.
+		bench.insertAdjacentHTML(
+			'beforeend',
+			`<button id="hb${variants.length}" class="btn" aria-pressed="true">On</button>`
+		);
+		document.body.appendChild(bench);
+	}, VARIANTS);
+
+	const faded: string[] = [];
+
+	for (const { theme, style } of COMBINATIONS) {
+		await paint(page, theme, style);
+
+		for (let i = 0; i <= VARIANTS.length; i += 1) {
+			const button = page.locator(`#hb${i}`);
+			await button.hover();
+			// Longer than the 120ms colour transition, or this reads a colour the
+			// button is only passing through.
+			await page.waitForTimeout(200);
+
+			const seen = await button.evaluate((el, tools) => {
+				const { toRGBA, contrast, groundOf } = new Function(tools)();
+				const cs = getComputedStyle(el);
+				return {
+					variant: el.className || 'btn[aria-pressed]',
+					ratio: contrast(toRGBA(cs.color), groundOf(el))
+				};
+			}, COLOUR_TOOLS);
+
+			if (seen.ratio < 4.5)
+				faded.push(`${theme}/${style} — .${seen.variant}: ${seen.ratio.toFixed(2)}:1 on hover`);
+		}
+	}
+
+	await page.evaluate(() => document.getElementById('hover-bench')?.remove());
+
+	expect(faded, 'a button whose label disappears under the pointer').toEqual([]);
+});

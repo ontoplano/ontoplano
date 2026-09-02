@@ -491,6 +491,24 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 	 * that needs them — a control on a ground whose colour we do not own.
 	 */
 	.btn {
+		/*
+		 * The ink is a property, not a declaration, and that is deliberate.
+		 *
+		 * `.btn:hover` outranks `.btn-primary` — one class plus a pseudo-class
+		 * beats one class — so a hover rule that names a colour silently repaints
+		 * every variant under it. It did: a primary button's white label became
+		 * gray-900 under the pointer, which is near-black on near-black in the
+		 * light theme and near-white on near-white in the dark one. Both were
+		 * invisible, and nothing in the app said anything was wrong.
+		 *
+		 * A variant now declares the two inks it wants and the hover rule reads
+		 * whatever it finds. Custom properties resolve on the element rather than
+		 * by selector weight, so a variant cannot be outranked, and a new variant
+		 * that declares neither still gets a sane pair.
+		 */
+		--btn-ink: var(--color-gray-700);
+		--btn-ink-hover: var(--color-gray-900);
+
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -500,7 +518,7 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		padding: 0.5rem 1rem;
 		font-size: 0.875rem;
 		font-weight: 500;
-		color: var(--color-gray-700);
+		color: var(--btn-ink);
 		transition:
 			background-color 120ms ease,
 			border-color 120ms ease,
@@ -516,7 +534,7 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 	 */
 	.btn:hover {
 		background-color: var(--color-gray-200);
-		color: var(--color-gray-900);
+		color: var(--btn-ink-hover);
 		translate: 0 -1px;
 	}
 
@@ -525,10 +543,12 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 	}
 
 	.btn-primary {
+		--btn-ink: var(--color-white);
+		--btn-ink-hover: var(--color-white);
+
 		border-color: var(--color-gray-900);
 		background-color: var(--color-gray-900);
 		font-weight: 500;
-		color: var(--color-white);
 		box-shadow: var(--shadow-card);
 	}
 
@@ -558,26 +578,27 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 
 	/* Red for destruction only, and never as the only cue — the word says it too. */
 	.btn-danger {
+		--btn-ink: var(--color-red-600);
+		--btn-ink-hover: var(--color-red-700);
+
 		background-color: var(--color-red-50);
-		color: var(--color-red-600);
 	}
 
 	.btn-danger:hover {
 		background-color: var(--color-red-100);
-		color: var(--color-red-700);
 	}
 
 	.btn-quiet {
+		--btn-ink: var(--color-gray-500);
+
 		border-color: transparent;
 		background-color: transparent;
 		box-shadow: none;
-		color: var(--color-gray-500);
 	}
 
 	.btn-quiet:hover {
 		background-color: var(--color-gray-100);
 		border-color: transparent;
-		color: var(--color-gray-900);
 		box-shadow: none;
 		translate: 0 0;
 	}
@@ -789,9 +810,10 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 	 * override with utilities, which win over this layer.
 	 */
 	.btn[aria-pressed='true'] {
+		--btn-ink: var(--color-gray-900);
+
 		border-color: var(--color-gray-400);
 		background-color: var(--color-gray-100);
-		color: var(--color-gray-900);
 	}
 }
 
