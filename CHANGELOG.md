@@ -10,6 +10,26 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.41.0 — 2026-09-02
+
+- **Signing in is an address and a password.** "Continue with Google" and
+  "Continue with GitHub" are gone, and there is no setting that brings them
+  back: an account on your own instance should not depend on a company neither
+  of us controls, and a self-hosted app whose front door is somebody else's
+  service is not really self-hosted.
+- **Habits are their own permission.** `today:read` — the scope the phone
+  widget's token holds — used to hand over which habits you had kept as well as
+  what was on your day. It does not any more; that is `habits:read`, granted
+  separately or not at all, and the widget does not ask for it.
+- **The bottom bar answers a touch**, instead of looking dead until the next
+  page arrives.
+- **The demo has real pictures**: a face on a person, a photograph in the
+  kitchen notebook, food on a recipe card, in place of three coloured
+  rectangles.
+- The section wheel's longest name fits inside its slice again.
+- The documentation page about assistants is **Using with AI agents**, and the
+  app calls it an AI assistant everywhere it appears.
+
 ## 0.40.0 — 2026-09-02
 
 - **Ontoplano installs from a package.** A `.deb` for Debian, Ubuntu, Mint and
