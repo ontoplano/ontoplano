@@ -45,11 +45,23 @@ async function account(playwright: PlaywrightWorkerArgs['playwright']) {
 async function mintToken(
 	request: APIRequestContext,
 	cookie: string,
-	scopes: string
+	scopes: string | string[]
 ): Promise<string> {
+	// Repeated fields rather than one comma-joined value: the action reads
+	// `formData.getAll('scopes')`, so a joined string is one scope nobody has.
+	const wanted = Array.isArray(scopes) ? scopes : [scopes];
+	const form = new URLSearchParams();
+	form.set('label', `token ${wanted.join(' ')}`);
+	for (const scope of wanted) form.append('scopes', scope);
+
 	const res = await request.post('/settings/integrations?/createToken', {
-		headers: { Origin: ORIGIN, Cookie: cookie, 'x-sveltekit-action': 'true' },
-		form: { label: `token ${scopes}`, scopes }
+		headers: {
+			Origin: ORIGIN,
+			Cookie: cookie,
+			'x-sveltekit-action': 'true',
+			'content-type': 'application/x-www-form-urlencoded'
+		},
+		data: form.toString()
 	});
 
 	const token = /onto_[A-Za-z0-9_-]+/.exec(await res.text())?.[0];
@@ -72,7 +84,7 @@ test('today is refused without a token, and with the wrong scope', async ({ play
 	await request.dispose();
 });
 
-test('today answers with blocks, habits and tasks in one request', async ({ playwright }) => {
+test('today answers with blocks and tasks in one request', async ({ playwright }) => {
 	const { request, cookie } = await account(playwright);
 	const action = { Origin: ORIGIN, Cookie: cookie, 'x-sveltekit-action': 'true' };
 
@@ -94,7 +106,16 @@ test('today answers with blocks, habits and tasks in one request', async ({ play
 	// The starter week puts blocks on every weekday, so this is only ever
 	// empty on a Saturday or Sunday — the habit is the part that must be there.
 	expect(Array.isArray(body.blocks)).toBe(true);
-	expect(body.habits).toContainEqual(expect.objectContaining({ name: 'drink water', done: false }));
+
+	/*
+	 * And no habits, because this token was not granted them.
+	 *
+	 * The widget's token holds exactly `today:read`, and it used to come back
+	 * with which habits had been kept — a thing nobody agreed to by ticking a
+	 * line about the day's plan, on a screen that is visible while the phone is
+	 * locked.
+	 */
+	expect(body.habits).toBeUndefined();
 
 	// A todo belongs to the day it was pulled onto, which is what the widget
 	// draws: an undated one is not "today" yet.
@@ -111,6 +132,18 @@ test('today answers with blocks, habits and tasks in one request', async ({ play
 
 	expect(second.tasks).toContainEqual(
 		expect.objectContaining({ title: 'book the plumber', overdue: false })
+	);
+
+	// A token that was granted them does get them, in the same request.
+	const both = await mintToken(request, cookie, ['today:read', 'habits:read']);
+	const withHabits = await (
+		await request.get('/api/v1/today', {
+			headers: { Authorization: `Bearer ${both}`, Cookie: '' }
+		})
+	).json();
+
+	expect(withHabits.habits).toContainEqual(
+		expect.objectContaining({ name: 'drink water', done: false })
 	);
 
 	await request.dispose();

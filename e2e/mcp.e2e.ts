@@ -2,7 +2,7 @@ import { expect, test, type APIRequestContext, type PlaywrightWorkerArgs } from 
 import { clientAddress, register } from './helpers/account';
 
 /**
- * An assistant, from the outside: a real token over real HTTP.
+ * An AI assistant, from the outside: a real token over real HTTP.
  *
  * `tests/mcp.test.ts` holds the protocol to its contract with the message
  * handler in front of it. This one is the other question — whether a client
@@ -79,7 +79,7 @@ async function rpc(
 	return { status, body: await res.json() };
 }
 
-test('an assistant introduces itself, is offered what its token holds, and does the work', async ({
+test('an AI assistant introduces itself, is offered what its token holds, and does the work', async ({
 	playwright
 }) => {
 	const { request, cookie } = await account(playwright);
@@ -198,7 +198,7 @@ test('the address says nothing to somebody without a token', async ({ playwright
  * it was made for. The set is derived from the tools, so this also fails the
  * day a tool is added with a scope the preset does not cover.
  */
-test('the preset ticks exactly the scopes an assistant needs', async ({ page }) => {
+test('the preset ticks exactly the scopes an AI assistant needs', async ({ page }) => {
 	await register(page, `preset-${Date.now()}@test.invalid`);
 	await page.goto('/settings/integrations', { waitUntil: 'networkidle' });
 
@@ -209,23 +209,27 @@ test('the preset ticks exactly the scopes an assistant needs', async ({ page }) 
 	const dialog = page.getByRole('dialog');
 	await expect(dialog).toBeVisible();
 
-	await dialog.getByRole('button', { name: /an assistant/i }).click();
+	await dialog.getByRole('button', { name: /an ai assistant/i }).click();
 
 	const ticked = await dialog
 		.locator('input[name="scopes"]:checked')
 		.evaluateAll((boxes) => boxes.map((b) => (b as HTMLInputElement).value).sort());
 
-	// Every writing scope an assistant uses, and no calendar link — that one
+	// Every writing scope an AI assistant uses, and no calendar link — that one
 	// cannot be combined with anything and would make the token unusable.
 	expect(ticked).toContain('tasks:write');
 	expect(ticked).toContain('notes:write');
 	expect(ticked).toContain('today:read');
+	// Including habits, which the widget's token does not get: an assistant
+	// asked "did I keep my habits this week" is a use somebody grants on
+	// purpose, and the preset is the set of grants the tools actually need.
+	expect(ticked).toContain('habits:read');
 	expect(ticked).not.toContain('calendar:read');
 	expect(ticked).not.toContain('streams:write');
 
 	// Pressing it twice leaves the form in the state the label claims, rather
 	// than accumulating.
-	await dialog.getByRole('button', { name: /an assistant/i }).click();
+	await dialog.getByRole('button', { name: /an ai assistant/i }).click();
 	const again = await dialog
 		.locator('input[name="scopes"]:checked')
 		.evaluateAll((boxes) => boxes.map((b) => (b as HTMLInputElement).value).sort());
