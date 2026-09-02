@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.44.0 — 2026-09-02
+
+- **The page updates itself while something else is writing.** Ask an assistant
+  to skip a block or add a todo and every tab you have open shows it, without a
+  reload. It waits while you are typing and while the tab is in the background,
+  and catches up the moment you come back.
+- The mark in the middle of the phone's bottom bar is a third bigger than it
+  was, rather than half again.
+
 ## 0.43.0 — 2026-09-02
 
 - **An assistant can change your week, not only read it.** Two new tools behind
