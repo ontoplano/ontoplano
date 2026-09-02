@@ -234,7 +234,7 @@ function local(date: Date): string {
  * Off unless the box says otherwise. An instance that has not been set up for
  * this shows the bans and no buttons, rather than buttons that fail.
  */
-const CONTROL = process.env.ONTOPLANO_BAN_CONTROL_CMD || '/usr/local/sbin/onto-ban-control';
+const CONTROL = process.env.ONTOPLANO_BAN_CONTROL_CMD || '/usr/local/sbin/ontoplano-ban-control';
 
 export function banControlEnabled(): boolean {
 	return process.env.ONTOPLANO_BAN_CONTROL === 'true';
@@ -261,9 +261,12 @@ function control(args: string[]): string {
 		 * button that had stopped working looked like a button that did nothing.
 		 */
 		const said = String((e as { stderr?: unknown }).stderr ?? '').trim();
-		throw new Error(said || (e instanceof Error ? e.message : 'Could not run onto-ban-control'), {
-			cause: e
-		});
+		throw new Error(
+			said || (e instanceof Error ? e.message : 'Could not run ontoplano-ban-control'),
+			{
+				cause: e
+			}
+		);
 	}
 }
 
