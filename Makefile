@@ -43,6 +43,8 @@ help:
 	@echo "  docker-publish              …and push it — asks first, this project only"
 	@echo "  package [deb|rpm|arch]      the .deb, the .rpm and the AUR PKGBUILD, into dist/"
 	@echo "  package-check               …then unpack them and run what is inside"
+	@echo "  release                     tag it and publish the packages (DRY=1 first)"
+	@echo "  github-push                 mirror master and the tags onto GitHub"
 	@echo "  backup-install              Litestream replication (backup-status, backup-drill)"
 	@echo
 	@printf '\033[1mphone & bot\033[0m\n'
@@ -68,7 +70,7 @@ vars:
 	@sh scripts/make-vars.sh $(sort $(MAKEFILE_LIST) defaults.env $(wildcard $(SERVER_SRC)/defaults.env))
 
 
-.PHONY: vars package package-check _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
+.PHONY: vars package package-check release _release-run github-push _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -693,7 +695,58 @@ android-release: $(APK)
 
 # Where releases go. A fork publishes its own:
 #   make android-release GH_REPO=you/ontoplano
+#: GH_REPO=ontoplano/ontoplano  which GitHub repository releases are published to
 GH_REPO ?= ontoplano/ontoplano
+
+# ─── Publishing a version ───────────────────────────────────────────────────
+#
+# The tag, the packages, and the GitHub release with both attached. What is left
+# afterwards is the AUR, which needs a key on your own machine — the development
+# repo's RELEASING.md has that half.
+#
+#   make release          tag, build, check, publish
+#: DRY=1  say what `make release` would do, and do none of it
+release:
+	@command -v gh >/dev/null || { \
+		echo "The GitHub CLI (gh) is not on PATH — it is what makes the release."; \
+		echo "  https://cli.github.com , then: gh auth login"; exit 1; }
+	@[ "$(DRY)" = 1 ] || gh auth status >/dev/null 2>&1 || { echo "Not signed in: gh auth login"; exit 1; }
+	@# A release is a promise that this is what the code was. A dirty tree makes
+	@# that untrue before anybody has downloaded anything.
+	@[ -z "$$(git status --porcelain)" ] || { \
+		echo "The working tree is dirty. A release has to be a commit anybody can check out:"; \
+		git status --short; exit 1; }
+	@v=v$$(node -p "require('./package.json').version"); \
+	if git rev-parse "$$v" >/dev/null 2>&1; then \
+		echo "$$v already exists as a tag. Bump the version in package.json first."; exit 1; fi; \
+	echo "Releasing $$v to $(GH_REPO), from $$(git rev-parse --short HEAD)"
+	@$(MAKE) -s _release-run
+
+_release-run:
+	@v=v$$(node -p "require('./package.json').version"); \
+	notes=$$(node scripts/changelog-section.mjs); \
+	if [ "$(DRY)" = 1 ]; then \
+		echo; echo "It would:"; \
+		echo "  build the .deb, the .rpm and the PKGBUILD"; \
+		echo "  run make package-check against them"; \
+		echo "  git tag $$v and push it to origin and github"; \
+		echo "  gh release create $$v --repo $(GH_REPO), with the packages attached"; \
+		echo; echo "with these notes:"; echo; echo "$$notes"; exit 0; \
+	fi; \
+	$(MAKE) -s package && $(MAKE) -s package-check && \
+	git tag -a "$$v" -m "$$v" && \
+	git push -q origin "$$v" && git push -q github "$$v" && \
+	gh release create "$$v" dist/ontoplano_*.deb dist/*/ontoplano-*.rpm \
+		--repo $(GH_REPO) --title "$$v" --notes "$$notes" && \
+	echo "https://github.com/$(GH_REPO)/releases/tag/$$v"
+
+# The mirror. `origin` is the forge and stays that way — this only moves what is
+# already committed onto GitHub, where the packages and the issues people open
+# without a forge account live.
+github-push:
+	@git push github master --tags
+	@echo "→ https://github.com/$(GH_REPO)"
+
 
 android-install: $(APK)
 	@command -v adb >/dev/null || { \

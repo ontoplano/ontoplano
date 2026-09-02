@@ -388,7 +388,7 @@ function buildDeb(arch) {
 			'Package: ontoplano',
 			`Version: ${VERSION}`,
 			`Architecture: ${debArch}`,
-			'Maintainer: Estevão <plano@ontoplano.com>',
+			'Maintainer: Estevão <contact@ontoplano.com>',
 			`Installed-Size: ${size}`,
 			// No `nodejs` dependency: the runtime is in the package. `adduser` and
 			// `systemd` are what the maintainer scripts actually call.
@@ -396,9 +396,11 @@ function buildDeb(arch) {
 			'Section: web',
 			'Priority: optional',
 			'Homepage: https://ontoplano.com',
-			'Description: Life management, on your own machine',
-			' A planner, a diary, a cookbook and a set of habits in one place, kept',
-			' in one SQLite file that belongs to you. One process, no database server.',
+			'Description: Life management on your own machine',
+			' A planner, a diary, a cookbook, a shopping list, goals, habits and the',
+			' people in your life — those are some of the rooms, not all of them. It',
+			' keeps everything in one SQLite file that belongs to you: one process,',
+			' no database server, nothing that phones anywhere.',
 			' .',
 			' The service listens on 127.0.0.1:1493 and is not started until you have',
 			' set ORIGIN in /etc/ontoplano/ontoplano.env.'
@@ -481,7 +483,6 @@ function buildArch() {
 	// The .install file systemd packages carry: what to say after installing,
 	// and what to leave alone when removing.
 	cpSync(join(ROOT, 'packaging/arch/ontoplano.install'), join(OUT, 'arch/ontoplano.install'));
-	cpSync(join(ROOT, 'packaging/arch/PUBLISHING.md'), join(OUT, 'arch/PUBLISHING.md'));
 	return join(OUT, 'arch/PKGBUILD');
 }
 

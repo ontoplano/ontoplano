@@ -5,7 +5,7 @@
 Name:           ontoplano
 Version:        @VERSION@
 Release:        1
-Summary:        Life management, on your own machine
+Summary:        Life management on your own machine — planner, diary, cookbook, habits and more
 License:        AGPL-3.0-or-later
 URL:            https://ontoplano.com
 BuildArch:      @ARCH@
@@ -19,9 +19,10 @@ Requires(postun): systemd
 AutoReqProv:    no
 
 %description
-A planner, a diary, a cookbook and a set of habits in one place, kept in one
-SQLite file that belongs to you. One process, no database server, nothing that
-phones anywhere.
+A planner, a diary, a cookbook, a shopping list, goals, habits and the people
+in your life — those are some of the rooms, not all of them. Life management in
+one place, kept in one SQLite file that belongs to you: one process, no database
+server, nothing that phones anywhere.
 
 The service listens on 127.0.0.1:1493 and is not started until you have set
 ORIGIN in /etc/ontoplano/ontoplano.env.
@@ -74,5 +75,5 @@ chown -R ontoplano:ontoplano /var/lib/ontoplano 2>/dev/null || :
 # Removing them is `rm -rf /var/lib/ontoplano`, typed on purpose.
 
 %changelog
-* Wed Sep 02 2026 Estevão <plano@ontoplano.com> - @VERSION@-1
+* Wed Sep 02 2026 Estevão <contact@ontoplano.com> - @VERSION@-1
 - See /usr/share/doc/ontoplano/CHANGELOG.md

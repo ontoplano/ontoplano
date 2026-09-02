@@ -1,4 +1,4 @@
-# Maintainer: Estevão <plano@ontoplano.com>
+# Maintainer: Estevão <contact@ontoplano.com>
 #
 # Arch builds on the machine that will run it, which is why this package brings
 # no runtime of its own: better-sqlite3 is compiled here, against the Node that
@@ -7,7 +7,7 @@
 pkgname=ontoplano
 pkgver=@VERSION@
 pkgrel=1
-pkgdesc="Life management, on your own machine — planner, diary, cookbook and habits in one SQLite file"
+pkgdesc="Life management on your own machine — planner, diary, cookbook, shopping, goals, habits and more, in one SQLite file"
 arch=('x86_64' 'aarch64')
 url="https://ontoplano.com"
 license=('AGPL-3.0-or-later')

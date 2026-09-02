@@ -1,6 +1,23 @@
+<div align="center">
+
+<img src="static/icons/icon-192.png" alt="" width="112" height="112">
+
 # Ontoplano
 
 **Managing life, one week at a time.**
+
+[![checks](https://github.com/ontoplano/ontoplano/actions/workflows/ci.yml/badge.svg)](https://github.com/ontoplano/ontoplano/actions/workflows/ci.yml)
+[![latest release](https://img.shields.io/github/v/release/ontoplano/ontoplano?label=release&color=1f6feb)](https://github.com/ontoplano/ontoplano/releases/latest)
+[![licence AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-1f6feb)](LICENSE)
+[![self-hosted](https://img.shields.io/badge/hosting-yours-1f6feb)](#running-it)
+
+**[ontoplano.com](https://ontoplano.com) · [try the demo](https://demo.ontoplano.com) · [documentation](https://docs.ontoplano.com)**
+
+`.deb` · `.rpm` · AUR · Docker · Android
+
+</div>
+
+---
 
 Everything you are keeping track of, in one place, on one week. It started as a
 weekly planner and the week is still the shape — what goes on it is the rest of
@@ -173,20 +190,10 @@ Three switches worth knowing, all off by default:
   deployment settings from the UI, and the Telegram bot will run; both act for the
   whole instance, so both are off anywhere else.
 
-Signing in with Google or GitHub is optional too, and off unless the
-credentials are there:
-
-```sh
-GOOGLE_CLIENT_ID=… ; GOOGLE_CLIENT_SECRET=…
-GITHUB_CLIENT_ID=… ; GITHUB_CLIENT_SECRET=…
-```
-
-Set the callback to `https://your-host/api/auth/callback/<provider>`. Only
-providers with both halves configured appear on the sign-in page, because a
-button that comes back with "invalid client" is worse than no button. Apple and
-X are deliberately not here: Apple needs a paid developer account and a client
-secret that must be re-signed twice a year, and X's OAuth sits behind their paid
-API tiers.
+Signing in is an address and a password, and nothing else. There is no
+"continue with Google": an account on your own instance should not depend on a
+company neither of us controls, and a self-hosted app whose front door is
+somebody else's service is not really self-hosted.
 
 Email is optional. With `SMTP_HOST` and `SMTP_FROM` set, password resets and
 address confirmations are sent; without them the message — link included — is

@@ -10,7 +10,9 @@ name: checks
 
 on:
   push:
-    branches: [main]
+    # `master` is this repository's branch; `main` is here for a fork that uses
+    # it, so a checks badge is not blank for them.
+    branches: [master, main]
   pull_request:
 
 # A second push to the same branch cancels the first. Nobody needs the result
