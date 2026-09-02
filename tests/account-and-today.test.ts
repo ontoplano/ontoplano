@@ -106,13 +106,12 @@ describe('deleting an account', () => {
 });
 
 describe("the phone widget's one screen", () => {
-	test('answers with the day, its blocks, its habits and its tasks', () => {
+	test('answers with the day, its blocks and its tasks', () => {
 		const board = today.getTodayBoard(theirs);
 
 		expect(board.date).toBe('2026-08-17');
 		expect(board.timezone).toBe('UTC');
 		expect(Array.isArray(board.blocks)).toBe(true);
-		expect(Array.isArray(board.habits)).toBe(true);
 		expect(Array.isArray(board.tasks)).toBe(true);
 	});
 
@@ -135,9 +134,28 @@ describe("the phone widget's one screen", () => {
 		const id = habits.createHabit(theirs, { name: 'water', type: 'good' });
 		habits.logOccurrence(theirs, { habitId: id, date: '2026-08-17' });
 
-		const habit = today.getTodayBoard(theirs).habits.find((h) => h.id === id)!;
+		const habit = today.getTodayBoard(theirs, { habits: true }).habits!.find((h) => h.id === id)!;
 		expect(habit.done).toBe(true);
 		expect(habit.streak).toBeGreaterThanOrEqual(1);
+	});
+
+	/**
+	 * The phone widget sits on a lock screen, and its token was granted a
+	 * sentence about the day's plan. Which habits somebody kept is not that, and
+	 * it used to arrive anyway.
+	 */
+	test('keeps habits out of the day unless they were asked for', () => {
+		const id = habits.createHabit(theirs, { name: 'water', type: 'good' });
+		habits.logOccurrence(theirs, { habitId: id, date: '2026-08-17' });
+
+		const plain = today.getTodayBoard(theirs);
+		expect(plain.habits).toBeUndefined();
+		// The rest of the day is still there — this narrows one thing, not the board.
+		expect(plain.blocks).toBeDefined();
+		expect(plain.tasks).toBeDefined();
+
+		const named = today.getTodayBoard(theirs, { habits: true }).habits!.map((h) => h.name);
+		expect(named).toContain('water');
 	});
 });
 

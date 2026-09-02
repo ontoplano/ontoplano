@@ -53,11 +53,16 @@ function isWrite(method: string): boolean {
  *  - an active session cookie — the app's own frontend, which holds every scope
  *
  * Both resolve to the same `Ctx`, so handlers never care which was used.
+ *
+ * `holds` answers "was this caller granted that as well", for a handler whose
+ * answer has optional parts — today's board includes habits only for a token
+ * that asked for them. A session holds everything, because it is the person
+ * themselves in their own browser.
  */
 export function authenticateApi(
 	event: RequestEvent,
 	scope: Scope
-): { ctx: Ctx; via: 'token' | 'session' } {
+): { ctx: Ctx; via: 'token' | 'session'; holds: (scope: Scope) => boolean } {
 	const header = event.request.headers.get('authorization') ?? '';
 	const now = new Date();
 
@@ -83,12 +88,16 @@ export function authenticateApi(
 		}
 
 		assertNoPaymentHold(token.userId);
-		return { ctx: buildCtx(token.userId, { now }), via: 'token' };
+		return {
+			ctx: buildCtx(token.userId, { now }),
+			via: 'token',
+			holds: (wanted) => token.scopes.includes(wanted)
+		};
 	}
 
 	if (event.locals.user) {
 		assertNoPaymentHold(event.locals.user.id);
-		return { ctx: buildCtx(event.locals.user.id, { now }), via: 'session' };
+		return { ctx: buildCtx(event.locals.user.id, { now }), via: 'session', holds: () => true };
 	}
 
 	throw new UnauthorizedError('Provide a bearer token or sign in');

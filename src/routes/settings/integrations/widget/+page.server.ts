@@ -17,7 +17,8 @@ export const actions: Actions = {
 
 		try {
 			// `today:read` and nothing else: a widget sitting on a lock screen
-			// should not carry a key to the diary.
+			// should not carry a key to the diary — and not to the habits either,
+			// which is why they are `habits:read` now rather than part of this.
 			const token = createToken(ctx, { name: 'Phone widget', scopes: ['today:read'] });
 			return { success: true, token: token.plaintext, origin: url.origin };
 		} catch (e) {

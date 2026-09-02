@@ -24,8 +24,20 @@ import { num, str } from './validate.js';
 export const SCOPES = {
 	'streams:write': 'Send readings into your data streams, and create new streams',
 	'streams:read': 'Read everything your data streams have ever recorded',
-	'schedule:read': 'Read everything on your calendar for the days ahead',
-	'today:read': "See today's blocks, habits and tasks — what the phone widget shows",
+	'schedule:read': 'Read everything on your calendar for the days ahead, today included',
+	'today:read': "See today's plan — the blocks and the tasks on it, and nothing else",
+	/*
+	 * Habits, on their own, because they are not the plan.
+	 *
+	 * They used to arrive inside `today:read`, which meant the phone widget's
+	 * token — the one that sits on a lock screen — also reported which habits
+	 * were kept and which were not. That is the most personal thing on the
+	 * board and the least likely thing somebody wants shown there, and it was
+	 * granted by a permission whose sentence was about the day's plan. A grant
+	 * is only consent if the sentence names what is actually handed over, so
+	 * this is its own line and its own tick.
+	 */
+	'habits:read': 'See your habits, which are due today, and whether you kept them',
 	'plugin:declare': 'Name and describe itself on your integrations page',
 	'webhooks:manage': 'Ask to be told when things happen — and manage those subscriptions',
 	'shopping:read': 'See everything on your shopping list',

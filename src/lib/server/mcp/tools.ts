@@ -91,13 +91,23 @@ export const TOOLS: Tool[] = [
 	// ── Looking ──────────────────────────────────────────────────────────────
 	{
 		name: 'today',
-		title: "Today's board",
+		title: "Today's plan",
 		description:
-			"What is on today: the blocks planned for it, the habits due, and the tasks pulled onto it. This is the answer to 'what am I meant to be doing', and the first thing to reach for before adding anything.",
+			"What is on today: the blocks planned for it and the tasks pulled onto it. This is the answer to 'what am I meant to be doing', and the first thing to reach for before adding anything. Habits are not here — they are their own permission, and their own tool.",
 		scope: 'today:read',
 		writes: false,
 		input: object({}),
 		run: (ctx) => getTodayBoard(ctx)
+	},
+	{
+		name: 'habits',
+		title: 'Habits due today',
+		description:
+			"The habits scheduled for today, each with its streak and whether it has been kept yet. Separate from the day's plan on purpose: whether somebody kept their habits is a more personal thing than what is on their calendar, so it is granted separately.",
+		scope: 'habits:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => getTodayBoard(ctx, { habits: true }).habits ?? []
 	},
 	{
 		name: 'upcoming',

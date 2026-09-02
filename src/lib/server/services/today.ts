@@ -46,11 +46,25 @@ export interface TodayBoard {
 	date: string;
 	timezone: string;
 	blocks: TodayBlock[];
-	habits: TodayHabit[];
+	/**
+	 * Absent unless the caller was allowed to see them.
+	 *
+	 * Habits are the part of a day somebody is least likely to want on a lock
+	 * screen, and they used to arrive with the plan whether or not that was
+	 * asked for. Now they are their own grant, so a widget can show the day
+	 * without a token that also reports which habits were kept.
+	 */
+	habits?: TodayHabit[];
 	tasks: TodayTask[];
 }
 
-export function getTodayBoard(ctx: Ctx): TodayBoard {
+/** What a caller is allowed to see of a day. */
+export interface TodayScope {
+	/** Off by default: the caller has to hold `habits:read` to turn it on. */
+	habits?: boolean;
+}
+
+export function getTodayBoard(ctx: Ctx, allowed: TodayScope = {}): TodayBoard {
 	const date = localDateOf(ctx.now, ctx.tz);
 
 	// Completed ones are included: a widget that hides what you have done all
@@ -68,7 +82,9 @@ export function getTodayBoard(ctx: Ctx): TodayBoard {
 			status: o.status
 		}));
 
-	const all = listHabits(ctx);
+	// Not read at all when they are not going out: a permission that stops the
+	// data at the edge still put it through the database first.
+	const all = allowed.habits ? listHabits(ctx) : [];
 	const doneToday = new Set(
 		all.length === 0
 			? []
@@ -96,15 +112,19 @@ export function getTodayBoard(ctx: Ctx): TodayBoard {
 		blocks,
 		// Only what is due today. A habit scheduled for weekdays is not a thing
 		// you failed to do on Sunday.
-		habits: all
-			.filter((h) => scheduledOn(h, date))
-			.map((h) => ({
-				id: h.id,
-				name: h.name,
-				type: h.type,
-				streak: h.streak,
-				done: doneToday.has(h.id)
-			})),
+		...(allowed.habits
+			? {
+					habits: all
+						.filter((h) => scheduledOn(h, date))
+						.map((h) => ({
+							id: h.id,
+							name: h.name,
+							type: h.type,
+							streak: h.streak,
+							done: doneToday.has(h.id)
+						}))
+				}
+			: {}),
 		tasks: listForDate(ctx, date)
 			.filter((t) => t.status !== 'done' && t.status !== 'skipped')
 			.map((t) => ({
