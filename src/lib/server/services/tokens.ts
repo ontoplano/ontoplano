@@ -25,6 +25,20 @@ export const SCOPES = {
 	'streams:write': 'Send readings into your data streams, and create new streams',
 	'streams:read': 'Read everything your data streams have ever recorded',
 	'schedule:read': 'Read everything on your calendar for the days ahead, today included',
+	/*
+	 * Changing the week, as opposed to reading it.
+	 *
+	 * Everything a token could write used to be a list — todos, entries, ideas,
+	 * shopping — and the week itself was read-only. So an assistant asked to
+	 * "skip the gym and put deep work on this morning" could answer neither: it
+	 * wrote a todo called "deep work 09:00-11:00" and left the gym sitting there
+	 * unanswered, which is a worse day than the one it started with.
+	 *
+	 * Its own grant rather than part of `tasks:write`, because a todo list and a
+	 * calendar are different things to hand over: one is a list somebody re-reads
+	 * and the other is what their day looks like.
+	 */
+	'schedule:write': 'Put one-off blocks on your week, and mark blocks done or skipped',
 	'today:read': "See today's plan — the blocks and the tasks on it",
 	/*
 	 * Habits, on their own, because they are not the plan.

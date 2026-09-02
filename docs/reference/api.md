@@ -17,6 +17,7 @@ sentence somebody agrees to when they grant it.
 | `streams:write`   | Send readings into your data streams, and create new streams                                                 |
 | `streams:read`    | Read everything your data streams have ever recorded                                                         |
 | `schedule:read`   | Read everything on your calendar for the days ahead, today included                                          |
+| `schedule:write`  | Put one-off blocks on your week, and mark blocks done or skipped                                             |
 | `today:read`      | See today's plan — the blocks and the tasks on it                                                            |
 | `habits:read`     | See your habits, which are due today, and whether you kept them                                              |
 | `plugin:declare`  | Name and describe itself on your integrations page                                                           |

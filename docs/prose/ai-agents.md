@@ -46,6 +46,24 @@ the assistant reaches for it instead of asking you to repeat yourself; and it
 says not to write anything yet, so the first thing it does is show you what it
 can see rather than what it has done.
 
+## Blocks and todos are different things
+
+Worth knowing before you ask for anything, because it is the one distinction an
+assistant gets wrong: a **todo** is something to do with no hour attached, and a
+**block** is an hour. "Ring the dentist" is a todo; "deep work from 9 to 11" is
+a block.
+
+An assistant that only has `add_todo` answers the second by writing the time
+into the title — `deep work 09:00–11:00` — and your day still looks empty. With
+`schedule:write` it puts a real block on the day, and it can answer for the ones
+already there:
+
+> Skip the gym and the stretching today, and put deep work on from 9 to 11.
+
+`finish_block` takes both answers. **Skipped is a real answer**, not a failure to
+record one — a week that can only be told about the parts that went well is a
+week that starts lying by the second one.
+
 ## How it behaves
 
 Four things are worth knowing before you grant a token:
@@ -81,6 +99,7 @@ As it stands:
 | `today`                                                | `today:read`                       | The blocks and tasks on today            |
 | `habits`                                               | `habits:read`                      | Today's habits, and which are kept       |
 | `upcoming`                                             | `schedule:read`                    | The days ahead, in order                 |
+| `add_block`, `finish_block`                            | `schedule:write`                   | An hour on a day; done or skipped        |
 | `search`                                               | `search:read`                      | One search over everything written       |
 | `todos`, `add_todo`, `finish_todo`, `schedule_todo`    | `tasks:read` / `tasks:write`       | The todo list, and putting one on a day  |
 | `goals`                                                | `tasks:read`                       | What you are working towards             |

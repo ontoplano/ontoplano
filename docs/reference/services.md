@@ -1205,6 +1205,21 @@ Marking a day's work done at the end of the day makes everything "late",
 which is true of the tick and false of the doing. This is the correction, and
 it is one click on the badge rather than an edit form.
 
+#### `setOccurrenceStatus(ctx, occurrenceId, rawStatus)`
+
+Answer for one occurrence of the plan, by the id the schedule hands out.
+
+`getUpcomingSchedule` — and so `today`, and so anything reading the week over
+the API — identifies an occurrence as `slot:<record>` or
+`exceptional:<one-off>`, because the two come from different tables. Only the
+first of those is a `task_records` row already: a one-off's execution state
+lives on a record that is created lazily, the first time that day is
+generated. Somebody answering for a one-off before that has happened would
+otherwise be told "task not found" about a block they can see on their screen.
+
+So this takes either shape, makes the record exist if it has to, and then does
+the one thing `setInstanceStatus` does.
+
 #### `setInstanceStatus(ctx, id, rawStatus)`
 
 #### `setInstanceLabel(ctx, id, label)`

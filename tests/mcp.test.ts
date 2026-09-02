@@ -29,6 +29,11 @@ beforeAll(async () => {
 	({ handleBody } = await import('../src/lib/server/mcp/protocol'));
 	({ buildCtx } = await import('../src/lib/server/services/ctx'));
 	({ TOOLS } = await import('../src/lib/server/mcp/tools'));
+
+	// A block belongs to a category, and a fresh account has none — the same
+	// state `add_block` refuses with a sentence rather than a crash.
+	const { createCategory } = await import('../src/lib/server/services/activities');
+	createCategory(buildCtx(OWNER, { tz: 'UTC' }), { name: 'work', color: '#1d4ed8' });
 });
 
 const USER = OWNER;
@@ -175,6 +180,105 @@ describe('a tool that runs', () => {
 		expect(answer.error).toBeUndefined();
 		expect(answer.result.isError).toBe(true);
 		expect(answer.result.content[0].text).toMatch(/date/i);
+	});
+
+	/**
+	 * The two things an assistant could not do, reported from a real session.
+	 *
+	 * Asked to skip two blocks and put three real ones on today, it could do
+	 * neither: there was no tool that answers for a block, and none that puts an
+	 * hour on a day. What it did instead was write todos with the times inside
+	 * their titles — "deep work 09:00–11:00" — and leave the blocks it was asked
+	 * to skip sitting there unanswered. Both halves are `schedule:write` now.
+	 */
+	it('puts a block on a day, with an hour on it', () => {
+		const made = call(['schedule:write'], {
+			jsonrpc: '2.0',
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: 'add_block',
+				arguments: {
+					date: '2026-03-14',
+					title: 'Deep work',
+					start_time: '09:00',
+					minutes: 120
+				}
+			}
+		});
+		expect(made.result.isError, JSON.stringify(made.result.content)).toBe(false);
+		expect(made.result.structuredContent.id).toBeGreaterThan(0);
+
+		// And it is on the day, as a block rather than as a task with a time in
+		// its name — which is the whole difference.
+		const board = call(['today:read'], {
+			jsonrpc: '2.0',
+			id: 2,
+			method: 'tools/call',
+			params: { name: 'today', arguments: {} }
+		});
+		const block = board.result.structuredContent.blocks.find(
+			(b: { title: string }) => b.title === 'Deep work'
+		);
+		expect(block, 'the block is not on today').toBeTruthy();
+		expect(block.start_time).toBe('09:00');
+		expect(block.duration_minutes).toBe(120);
+	});
+
+	it('answers for a block, including when the answer is no', () => {
+		call(['schedule:write'], {
+			jsonrpc: '2.0',
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: 'add_block',
+				arguments: { date: '2026-03-14', title: 'Treino', start_time: '18:00' }
+			}
+		});
+
+		const board = call(['today:read'], {
+			jsonrpc: '2.0',
+			id: 2,
+			method: 'tools/call',
+			params: { name: 'today', arguments: {} }
+		});
+		const treino = board.result.structuredContent.blocks.find(
+			(b: { title: string }) => b.title === 'Treino'
+		);
+		expect(treino).toBeTruthy();
+
+		const skipped = call(['schedule:write'], {
+			jsonrpc: '2.0',
+			id: 3,
+			method: 'tools/call',
+			params: { name: 'finish_block', arguments: { id: treino.id, status: 'skipped' } }
+		});
+		expect(skipped.result.isError, JSON.stringify(skipped.result.content)).toBe(false);
+
+		const after = call(['today:read'], {
+			jsonrpc: '2.0',
+			id: 4,
+			method: 'tools/call',
+			params: { name: 'today', arguments: {} }
+		});
+		const again = after.result.structuredContent.blocks.find(
+			(b: { title: string }) => b.title === 'Treino'
+		);
+		expect(again.status).toBe('skipped');
+	});
+
+	/** Reading the week is not permission to change it. */
+	it('refuses to change the week on a read-only token', () => {
+		const answer = call(['schedule:read', 'today:read'], {
+			jsonrpc: '2.0',
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: 'add_block',
+				arguments: { date: '2026-03-14', title: 'nope', start_time: '10:00' }
+			}
+		});
+		expect(answer.result.isError || answer.error).toBeTruthy();
 	});
 
 	it('refuses an empty title the way the form does', () => {

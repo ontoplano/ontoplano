@@ -39,6 +39,9 @@ import { createItem, listItems, setBought } from '../services/shopping.js';
 import { getTodayBoard } from '../services/today.js';
 import { createTodo, listTodos, scheduleTodo, setTodoStatus } from '../services/todos.js';
 import { getUpcomingSchedule } from '../services/schedule.js';
+import { createExceptional } from '../services/slots.js';
+import { setOccurrenceStatus } from '../services/instances.js';
+import { listCategories } from '../services/activities.js';
 import { ValidationError } from '../services/errors.js';
 
 /** JSON Schema, the subset a tool's arguments actually use. */
@@ -108,6 +111,91 @@ export const TOOLS: Tool[] = [
 		writes: false,
 		input: object({}),
 		run: (ctx) => getTodayBoard(ctx, { habits: true }).habits ?? []
+	},
+	{
+		/*
+		 * Answering for a block, which is the other half of reading the day.
+		 *
+		 * The ids are the ones `today` hands back. Both answers are kept: "done"
+		 * and "skipped" are different facts about a week, and a tracker that only
+		 * accepts the good one starts lying by the second week.
+		 */
+		name: 'finish_block',
+		title: 'Mark a block done or skipped',
+		description:
+			'Answer for one block on the day: it happened, or it did not. Takes the id `today` gives for that block. Skipping is a real answer, not a failure to record one — say skipped when the person says they did not do it.',
+		scope: 'schedule:write',
+		writes: true,
+		input: object(
+			{
+				id: text('The block’s id, exactly as `today` gave it — it looks like `slot:42`.'),
+				status: {
+					type: 'string',
+					enum: ['done', 'skipped'],
+					description: 'What actually happened.'
+				}
+			},
+			['id', 'status']
+		),
+		run: (ctx, args) => {
+			setOccurrenceStatus(ctx, args.id, args.status);
+			return { ok: true };
+		}
+	},
+	{
+		/*
+		 * A block on one day, which is not a todo.
+		 *
+		 * A todo is a thing to do with no hour attached; this is an hour. Asked
+		 * for "deep work 9 to 11 today", an assistant with only `add_todo` writes
+		 * the time into the title and the day still looks empty, which is the
+		 * failure this exists to stop.
+		 */
+		name: 'add_block',
+		title: 'Put a block on a day',
+		description:
+			'Add a one-off block to one day: a title, a start time and how long it runs. This is for "deep work from 9 to 11 today" — a thing with an hour. Use `add_todo` instead when there is no time attached. It does not touch the repeating week; this is that day only.',
+		scope: 'schedule:write',
+		writes: true,
+		input: object(
+			{
+				date: text('The day, as YYYY-MM-DD.'),
+				title: text('What it is — shown on the block.'),
+				start_time: text('When it starts, as HH:MM on a 24-hour clock.'),
+				minutes: count('How long it runs, in minutes.', 60),
+				category: text(
+					'Which part of life it belongs to, by name. The first one is used if this is left out or does not match.'
+				)
+			},
+			['date', 'title', 'start_time']
+		),
+		run: (ctx, args) => {
+			// A block belongs to a category — the colour it is drawn in and the
+			// bucket the week is counted into — so one is chosen here rather than
+			// making a model guess an id it has never seen.
+			const categories = listCategories(ctx) as { id: number; name: string }[];
+			if (categories.length === 0)
+				throw new ValidationError(
+					'This account has no categories yet, and a block belongs to one. Make one in the app first.'
+				);
+
+			const wanted = typeof args.category === 'string' ? args.category.trim().toLowerCase() : '';
+			const chosen =
+				categories.find((c) => c.name.toLowerCase() === wanted) ??
+				categories.find((c) => c.name.toLowerCase().includes(wanted) && wanted !== '') ??
+				categories[0];
+
+			const id = createExceptional(ctx, {
+				date: day(args.date, 'date'),
+				mode: 'category',
+				categoryId: chosen.id,
+				label: args.title,
+				startTime: args.start_time,
+				durationMinutes: args.minutes ?? 60
+			});
+
+			return { id, category: chosen.name };
+		}
 	},
 	{
 		name: 'upcoming',

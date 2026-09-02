@@ -459,6 +459,52 @@ export function setInstanceTiming(ctx: Ctx, id: number, raw: unknown): void {
 	if (res.changes === 0) throw new NotFoundError('task');
 }
 
+/**
+ * Answer for one occurrence of the plan, by the id the schedule hands out.
+ *
+ * `getUpcomingSchedule` — and so `today`, and so anything reading the week over
+ * the API — identifies an occurrence as `slot:<record>` or
+ * `exceptional:<one-off>`, because the two come from different tables. Only the
+ * first of those is a `task_records` row already: a one-off's execution state
+ * lives on a record that is created lazily, the first time that day is
+ * generated. Somebody answering for a one-off before that has happened would
+ * otherwise be told "task not found" about a block they can see on their screen.
+ *
+ * So this takes either shape, makes the record exist if it has to, and then does
+ * the one thing `setInstanceStatus` does.
+ */
+export function setOccurrenceStatus(ctx: Ctx, occurrenceId: unknown, rawStatus: unknown): void {
+	const raw = String(occurrenceId ?? '').trim();
+	const [kind, rest] = raw.includes(':') ? raw.split(':', 2) : ['slot', raw];
+	const id = Number(rest);
+
+	if (!Number.isInteger(id) || id < 1)
+		throw new ValidationError(`"${raw}" is not a block id — use the id the day gives you.`);
+
+	if (kind === 'slot') return setInstanceStatus(ctx, id, rawStatus);
+	if (kind !== 'exceptional')
+		throw new ValidationError(`"${raw}" is not a block id — use the id the day gives you.`);
+
+	const one = db
+		.select({ date: exceptionalTasks.date })
+		.from(exceptionalTasks)
+		.where(and(eq(exceptionalTasks.id, id), eq(exceptionalTasks.userId, ctx.userId)))
+		.get();
+	if (!one) throw new NotFoundError('task');
+
+	// The record for that day, made if this is the first thing to ask for it.
+	generateForDate(ctx, new Date(`${one.date}T12:00:00`));
+
+	const record = db
+		.select({ id: taskRecords.id })
+		.from(taskRecords)
+		.where(and(eq(taskRecords.exceptionalSlotId, id), eq(taskRecords.userId, ctx.userId)))
+		.get();
+	if (!record) throw new NotFoundError('task');
+
+	setInstanceStatus(ctx, record.id, rawStatus);
+}
+
 export function setInstanceStatus(ctx: Ctx, id: number, rawStatus: unknown): void {
 	if (!isStatus(rawStatus)) throw new ValidationError('Invalid status');
 	const status = rawStatus;
