@@ -10,6 +10,12 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.42.1 — 2026-09-02
+
+- **The mark on the phone's bottom bar is half again as big**, which is the size
+  it should have been for the one control there that opens a gesture rather than
+  a page.
+
 ## 0.42.0 — 2026-09-02
 
 - **The demo was losing most of its own contents.** The seed reads photographs

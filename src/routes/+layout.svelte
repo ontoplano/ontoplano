@@ -712,7 +712,7 @@
 					<button
 						onpointerdown={(e) => rooms?.summon(e)}
 						style="clip-path: {MARK_CLIP_PATH}"
-						class="tap tap-shape pie-handle absolute -top-6 left-1/2 flex h-16 w-16 -translate-x-1/2 items-center justify-center {roomsOpen
+						class="tap tap-shape pie-handle absolute -top-9 left-1/2 flex h-24 w-24 -translate-x-1/2 items-center justify-center {roomsOpen
 							? 'text-chrome-ink'
 							: 'text-chrome-muted'}"
 						aria-label="Go to a section"
@@ -721,7 +721,7 @@
 					>
 						<!-- Edge to edge: the button's own outline is the mark's, so any
 						     inset here would show as a gap inside its own shape. -->
-						<Logo size={64} />
+						<Logo size={96} />
 					</button>
 				</div>
 
@@ -755,7 +755,7 @@
 			<!--
 				On a phone: a strip sitting on top of the bottom bar, one line
 				tall, its top edge level with the top of the raised pie button
-				— which is 1.5rem proud of the bar, hence the height. Behind the
+				— which is 2.25rem proud of the bar, hence the height. Behind the
 				bar in z-order, so the button tucks into it rather than floating
 				over a gap.
 
@@ -765,7 +765,7 @@
 			-->
 			<div
 				class="fixed inset-x-0 z-30 flex items-center justify-between bg-amber-500 px-3 text-[11px] leading-none font-medium text-amber-950 lg:hidden"
-				style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom)); height: 1.5rem"
+				style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom)); height: 2.25rem"
 			>
 				<!-- Two words, split around the pie button that sits in the middle of
 				     this strip. Anything longer was cut off by the menu button and
