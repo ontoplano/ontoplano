@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { register } from './helpers/account';
 import { visit } from './helpers/visit';
 
@@ -53,7 +56,12 @@ test('a Google Keep export lands as todos in a notebook of its own', async ({ pa
 	]);
 
 	await page.getByPlaceholder('…or paste the file here').fill(notes);
-	await page.getByRole('button', { name: 'Import' }).click();
+	// Scoped to its own form: the page has a second import — a vault — with a
+	// button of the same name, and it should.
+	await page
+		.locator('form[action="?/importTasks"]')
+		.getByRole('button', { name: 'Import' })
+		.click();
 
 	await expect(page.getByText(/Imported 2 into/)).toBeVisible();
 	await expect(page.getByText(/Google Keep/).first()).toBeVisible();
@@ -61,4 +69,40 @@ test('a Google Keep export lands as todos in a notebook of its own', async ({ pa
 	// And they are really there, as todos, in one notebook that undoes it.
 	await visit(page, '/diary/notebooks');
 	await expect(page.getByText('Google Keep').first()).toBeVisible();
+});
+
+/**
+ * A vault, chosen as a folder, becoming entries.
+ *
+ * The folder picker is the part worth driving in a browser: `webkitdirectory`
+ * is the only way a browser hands over a tree, and the path it reports —
+ * `webkitRelativePath`, not `name` — is what carries the folder that becomes a
+ * tag. A test that set the files by name would pass while the structure was
+ * quietly lost.
+ */
+test('an Obsidian vault lands as entries in a notebook of its own', async ({ page }) => {
+	await register(page, `import-vault-${Date.now()}@test.invalid`);
+	await visit(page, '/settings/account/import');
+
+	const vault = mkdtempSync(join(tmpdir(), 'vault-'));
+	mkdirSync(join(vault, 'Books'), { recursive: true });
+	writeFileSync(join(vault, 'Books', 'Republic.md'), '# The Republic\n\nBook one. #philosophy\n');
+	writeFileSync(join(vault, 'Lisbon.md'), 'Three days. #travel\n');
+	writeFileSync(join(vault, 'scratch.md'), '');
+
+	const form = page.locator('form[action="?/importVault"]');
+	await form.locator('input[type=file]').setInputFiles(vault);
+	await expect(page.getByText('3 notes ready.')).toBeVisible();
+
+	await form.getByRole('button', { name: 'Import' }).click();
+
+	// Two of the three: the empty one is named as left behind rather than
+	// silently dropped.
+	await expect(page.getByText(/Imported 2 notes into/)).toBeVisible();
+	await expect(page.getByText(/scratch\.md/)).toBeVisible();
+
+	await visit(page, '/diary/notebooks');
+	await expect(page.getByText('Obsidian').first()).toBeVisible();
+
+	rmSync(vault, { recursive: true, force: true });
 });

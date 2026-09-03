@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**41 pages, 160 actions.**
+**41 pages, 161 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -47,7 +47,7 @@ write surface for everything else; both end up calling the same
 | `/planner/todo`                 | `create`, `update`, `setStatus`, `schedule`, `delete`, `delegate`                                                                                                                                                                                                                                                                                                      |
 | `/search`                       | —                                                                                                                                                                                                                                                                                                                                                                      |
 | `/settings/account`             | `setWeeklyReviewMail`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `delete`                                                                                                                                                                                                                                                                 |
-| `/settings/account/import`      | `importTasks`, `importAccount`                                                                                                                                                                                                                                                                                                                                         |
+| `/settings/account/import`      | `importTasks`, `importVault`, `importAccount`                                                                                                                                                                                                                                                                                                                          |
 | `/settings/billing`             | `addSeat`, `removeSeat`, `checkout`, `switchInterval`                                                                                                                                                                                                                                                                                                                  |
 | `/settings/instance`            | `exportSubscribers`, `setRegistration`, `setEmailChange`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                            |
 | `/settings/integrations`        | `createToken`, `calendarLink`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                                        |
@@ -329,6 +329,16 @@ form. The text arrives in the textarea whether it was pasted or read from
 a chosen file — the page reads the file itself, so what is about to be
 imported is visible before the button is pressed, and no file is ever
 uploaded.
+
+**`importVault`**
+
+A vault of markdown becomes notebook entries.
+
+The files arrive as one JSON array of `{ path, text }`, read in the page:
+the browser can hand over a whole folder, and nothing is uploaded as a
+file — the same arrangement the task import uses, for the same reason.
+The path matters as well as the text, because a vault's folders are
+structure and they come across as tags.
 
 **`importAccount`**
 

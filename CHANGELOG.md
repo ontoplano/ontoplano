@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.51.0 — 2026-09-03
+
+- **An Obsidian vault comes in.** Settings → Account → Bring things in: choose
+  the vault's folder and every note becomes an entry in one notebook, keeping
+  its text, its `#tags`, its frontmatter tags and the folder it was in. Nothing
+  is uploaded — the notes are read in the browser — and deleting the notebook
+  undoes the whole import. Attachments, canvases and plugin data stay in the
+  vault, which is the honest boundary: those are Obsidian's, not markdown's.
+
 ## 0.50.0 — 2026-09-03
 
 - **A third example plugin: a CSV of measurements becomes a data stream.**

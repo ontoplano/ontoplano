@@ -486,14 +486,6 @@ export function importTasks(
 	return { imported: wanted.length, notebook: title, skipped: parsed.skipped, datesDropped };
 }
 
-/**
- * A name that does not collide, because a second import must not fail.
- *
- * `createNotebook` refuses a duplicate title, which is right when a person
- * types one and wrong here: importing two Todoist projects in a row would
- * refuse the second with a message about notebooks. So the date is added, and
- * then a number, until it is free.
- */
 function notebookTitleFor(
 	ctx: Ctx,
 	asked: unknown,
@@ -503,7 +495,24 @@ function notebookTitleFor(
 	const given = typeof asked === 'string' ? asked.trim() : '';
 	// Google names its lists; a Todoist CSV does not say which project it is.
 	const fromFile = tasks.find((t) => t.list)?.list ?? '';
-	const base = (given || fromFile || SOURCE_NAMES[source]).slice(0, MAX_TITLE_LENGTH - 12);
+	return freeNotebookTitle(ctx, given || fromFile, SOURCE_NAMES[source]);
+}
+
+/**
+ * A name that does not collide, because a second import must not fail.
+ *
+ * `createNotebook` refuses a duplicate title, which is right when a person
+ * types one and wrong here: importing two Todoist projects in a row would
+ * refuse the second with a message about notebooks. So the date is added, and
+ * then a number, until it is free.
+ *
+ * Shared with the vault importer, which has the same problem for the same
+ * reason — somebody bringing two vaults in must not meet an error about
+ * notebook titles.
+ */
+export function freeNotebookTitle(ctx: Ctx, asked: unknown, fallback: string): string {
+	const given = typeof asked === 'string' ? asked.trim() : '';
+	const base = (given || fallback).slice(0, MAX_TITLE_LENGTH - 12);
 
 	if (!taken(ctx, base)) return base;
 

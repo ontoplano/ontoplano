@@ -29,6 +29,14 @@ export type TestDatabase = {
 	 * test that is about the service layer.
 	 */
 	exec: (sql: string, ...args: unknown[]) => void;
+	/**
+	 * One row back, for a test that has to count what a service will not show.
+	 *
+	 * `listEntries` deliberately answers with the loose pile and not with what
+	 * is filed in a notebook, so a test about an import into a notebook has no
+	 * service call that sees it. Reading the table is the honest way to ask.
+	 */
+	get: (sql: string, ...args: unknown[]) => unknown;
 };
 
 export function makeDatabase(): TestDatabase {
@@ -51,6 +59,14 @@ export function makeDatabase(): TestDatabase {
 			const db = new Database(path);
 			db.prepare(sql).run(...args);
 			db.close();
+		},
+		get: (sql, ...args) => {
+			// eslint-disable-next-line @typescript-eslint/no-require-imports
+			const Database = require('better-sqlite3');
+			const db = new Database(path);
+			const row = db.prepare(sql).get(...args);
+			db.close();
+			return row;
 		}
 	};
 }

@@ -31,6 +31,7 @@ shows up here on the next build.
 | [`habits`](#habits)                             | Habits are things to do or to avoid, logged one day at a time.                                                                                                                                                                                                       |
 | [`health`](#health)                             | Can this process actually reach the database?                                                                                                                                                                                                                        |
 | [`ideas`](#ideas)                               | Quick capture: a thought, optionally tagged, optionally marked as applied.                                                                                                                                                                                           |
+| [`import-vault`](#import-vault)                 | A vault of markdown becomes notebook entries.                                                                                                                                                                                                                        |
 | [`imports`](#imports)                           | Bringing a list in from somewhere else.                                                                                                                                                                                                                              |
 | [`instances`](#instances)                       | The one answer to "what is on, between these dates".                                                                                                                                                                                                                 |
 | [`legal`](#legal)                               | The facts the policies are written around.                                                                                                                                                                                                                           |
@@ -970,6 +971,67 @@ Applied is a toggle, so the current value is read inside the same scope.
 - `IdeaTag`
 - `Idea`
 
+## import-vault
+
+A vault of markdown becomes notebook entries.
+
+The other importers take a list and make todos, because a list is what
+Todoist and Google Tasks hold. A vault is not a list — it is writing — so it
+lands where writing lands: entries, in one notebook, keeping their text.
+
+An import and not a plugin, which is the whole decision here. A plugin is a
+thing to keep working forever against somebody else's release cycle, and it
+would have to hold a folder open on a machine this app is not running on. An
+import is a button somebody presses once, and Obsidian's format is plain
+files in a folder — the one thing about it that cannot break.
+
+## What comes across
+
+**The text, as written.** Obsidian's markdown is markdown, and entries are
+markdown. `[[wikilinks]]` are left exactly as they are: they are not links
+here, but they are what somebody typed, and rewriting them would be guessing
+at which note was meant across a hundred files.
+
+**The tags**, from `#tag` in the body and from a `tags:` line in the
+frontmatter. Tags are the one piece of structure both apps genuinely share.
+
+**The title**, from the first heading if the file opens with one, and from
+the filename otherwise — which is what Obsidian itself displays.
+
+**The folder**, as a tag. A vault's folders carry meaning, and a notebook per
+folder would make one import into thirty notebooks, which is the opposite of
+the undo the other importers are careful to preserve.
+
+## What does not
+
+Attachments, canvases, plugin data, and the frontmatter beyond tags and a
+date. Those are Obsidian's, not markdown's, and inventing a home for them
+here would be inventing a claim to understand them.
+
+### Functions
+
+#### `parseVaultNote(file)`
+
+One file, read.
+
+Answers null for a file with nothing in it but its frontmatter — an empty
+note is Obsidian's scratch, and importing a hundred of them is the fastest
+way to make somebody regret pressing the button.
+
+#### `importVault(ctx, input)`
+
+Bring a vault in. All of it or none of it, like every other import.
+
+Half a vault arriving is the worst outcome available: nobody can tell which
+half is missing without comparing against the app they just left, and
+pressing the button again would duplicate whatever did land.
+
+### Types
+
+- `VaultFile` — One file out of the vault, as the browser read it.
+- `VaultImportResult`
+- `VaultNote`
+
 ## imports
 
 Bringing a list in from somewhere else.
@@ -1072,6 +1134,19 @@ Read the file, then write what it said.
 account of several years holds thousands of finished tasks, and importing
 them fills the board's Done column with somebody's entire history on their
 first day here. What is worth bringing over is what is still owed.
+
+#### `freeNotebookTitle(ctx, asked, fallback)`
+
+A name that does not collide, because a second import must not fail.
+
+`createNotebook` refuses a duplicate title, which is right when a person
+types one and wrong here: importing two Todoist projects in a row would
+refuse the second with a message about notebooks. So the date is added, and
+then a number, until it is free.
+
+Shared with the vault importer, which has the same problem for the same
+reason — somebody bringing two vaults in must not meet an error about
+notebook titles.
 
 ### Types
 
