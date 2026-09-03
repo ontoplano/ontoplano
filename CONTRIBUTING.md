@@ -1,47 +1,33 @@
 # Contributing
 
-The rules that are not obvious from reading the code, and the reasons for them.
-Everything else — naming, layout, comment density — is "match what is around
-you".
+Match what is around you — naming, layout, comment density. What follows is
+only what you cannot get from reading the code.
 
-## There is no CLA
+## No CLA
 
-Nothing to sign. You keep the copyright in what you write; it goes in under
-the AGPLv3 the rest of the project is under, and that is the whole agreement.
+Nothing to sign. You keep the copyright in what you write and it goes in under
+the AGPLv3. That also means nobody, me included, can relicense this later
+without asking everyone who wrote a line of it.
 
-This is deliberate and it is a promise about the future rather than a
-convenience today. A contributor licence agreement asks you to assign your
-copyright — or license it broadly enough to amount to the same — to whoever
-holds the project. What that buys the holder is the right to relicense the
-whole thing later: to close it, to sell an exception, to move it to a licence
-you would not have contributed under. Every open-source project that has gone
-closed has gone through that door.
+## What a feature has to arrive with
 
-Without a CLA, nobody can do that, including me. Relicensing would need the
-agreement of everybody who has ever contributed, which in practice means it
-will not happen. That is the point: the guarantee is structural rather than a
-line in a README that a new owner could edit.
+All four, or it is not finished:
 
-## Opening something
+- **Tests.** A service test with a real database and an ownership case, and an
+  e2e case for anything a person clicks. A test for a bug must fail against the
+  old code — reintroduce the bug and watch it go red before you believe it.
+- **Docs.** `yarn docs` regenerates them from the source; `yarn lint` fails when
+  they are stale. Anything a person has to be told rather than shown gets a
+  paragraph in the handwritten part.
+- **A tutorial step,** if the thing is not obvious the first time somebody meets
+  it. The in-app tours live in `src/lib/tutorials.ts`, one per room.
+- **A view that works on a phone and on a desktop.** Look at both in a real
+  browser, at 390px and wide. Most of what is wrong with a UI change is wrong at
+  exactly one of the two.
 
-Issues and pull requests have templates, and they ask what they ask because
-each question is something that has been missing from a report here before —
-the version, whose instance, which browser. `.github/` has them.
-
-A security problem is the one thing that does not go in an issue: use a
-[private advisory](https://github.com/ontoplano/ontoplano/security/advisories/new).
-`.github/SECURITY.md` says what is worth reporting and what is not.
-
-Every push runs prettier, eslint, the changelog check, the type check, the unit
-suite and the end-to-end suite. They are the same commands listed below, so a
-red build is reproducible in one line on your own machine.
-
-## What is missing
-
-`ROADMAP.md` is the list of things this app intends to do and does not do yet,
-with the constraints that are already decided written down beside each. If you
-are looking for something to build, start there rather than from a blank page —
-and open an issue saying which one before you write much of it.
+And seed data: `scripts/seed-dev.mjs` fills an account with a realistic week of
+synthetic everything, and every feature adds its own, so a fresh database has a
+little of each thing in it. Never develop against real data.
 
 ## Run it
 
@@ -52,88 +38,58 @@ yarn test           # vitest, then playwright
 yarn lint
 ```
 
-SQLite lives at `~/.local/share/ontoplano/ontoplano.db`, config at
+SQLite at `~/.local/share/ontoplano/ontoplano.db`, config at
 `~/.config/ontoplano/config.toml`. Neither needs to exist first.
 
-Never develop against real data. `scripts/seed-dev.mjs <db> <email>` fills an
-account with a realistic week of synthetic everything, and every new feature is
-expected to seed some, so a fresh database has a little of each thing in it.
+## The invariants
 
-## The four invariants
+A reviewer or a lint rule will stop you on these.
 
-These are the ones a lint rule or a reviewer will stop you on.
-
-**I1 — ownership lives in the `WHERE`.** Every query that touches user data
-filters by the account inside the statement. Not "fetch, then check": that is
-the shape that becomes an IDOR the day somebody forgets the second half.
-
-**I2 — routes do not query the database.** `+page.server.ts` calls a service in
-`src/lib/server/services/`. There is a lint rule; it exists so that I1 has
-exactly one place to be true.
-
-**I3 — "not yours" answers exactly like "does not exist".** A different status,
-a different message, or a different timing is an oracle for what exists. The
-e2e suite has one case per entity for this.
-
-**I8 — strings are bounded at the service.** A field with no ceiling is a way to
-fill the disk with one request.
+- **Ownership lives in the `WHERE`.** Every query touching user data filters by
+  the account inside the statement. Fetch-then-check is the shape that becomes
+  an IDOR the day somebody forgets the second half.
+- **Routes do not query the database.** `+page.server.ts` calls a service in
+  `src/lib/server/services/`. There is a lint rule, so the rule above has one
+  place to be true.
+- **"Not yours" answers exactly like "does not exist"** — same status, same
+  message, same timing. `e2e/idor.e2e.ts` has a case per entity.
+- **Strings are bounded at the service.** A field with no ceiling is a way to
+  fill the disk with one request.
+- **A new table goes in `services/account.ts`,** or export and account deletion
+  silently miss it.
 
 ## Migrations
 
-`yarn db:generate` writes the SQL, and then **you edit it by hand**. Drizzle has
-produced a wrong migration here three times — usually a table rebuild that drops
-a foreign key. `yarn db:push` is for local iteration only and refuses to touch a
-production database; `yarn db:migrate` snapshots first and is what ships.
+`yarn db:generate` writes the SQL and **then you edit it by hand** — Drizzle has
+produced a wrong migration here three times, usually a table rebuild that drops
+a foreign key. `yarn db:push` is local only; `yarn db:migrate` snapshots first
+and is what ships.
 
-## Testing
+## Two things that look like decoration
 
-Three layers, and a change is not finished until all three are green.
+`resolutions` in `package.json`: Yarn 1 will not install vitest beside SvelteKit
+without it, and removing it breaks the production image rather than your
+machine.
 
-**Unit and service** — vitest, in `tests/` and beside the code as `*.test.ts`.
-Services get a real database: the schema is pushed into a throwaway SQLite file
-and `DATABASE_URL` is set _before_ the service is imported, because the
-connection is made at import time. Every service taking an account id gets an
-ownership test.
-
-**Routes and behaviour** — Playwright, in `e2e/`. `smoke.e2e.ts` walks every
-route at desktop and at 390px and asserts the page returns, logs nothing, says
-nothing alarming, and does not scroll sideways. It is the cheapest test here and
-it has caught things people would otherwise report as bugs.
-
-**Appearance** — `e2e/appearance.e2e.ts`. Four combinations ship (light and
-dark, sober and playful) and a rule written for one can be invisible in another.
-Read colours through `e2e/helpers/colour.ts`, **never by parsing a computed
-style by hand**: Tailwind emits `oklch()`, `color(srgb …)` and `rgb()` for the
-same palette, translucent tints have to be composited onto what is behind them,
-and a parser that gets any of that wrong invents failures until somebody deletes
-the test. The helper asks a canvas, which is the browser's own parser.
-
-Two standing rules:
-
-- **A test for a bug is not finished until you reintroduce the bug and watch it
-  fail.** Two tests here passed against the broken code before they were
-  rewritten.
-- **Anything that changes how a page looks gets looked at**, in a real browser,
-  at a phone width and a wide one. Assertions do not see a card whose text has
-  been squeezed into a vertical ribbon.
-
-## Two things that look like decoration and are not
-
-The `resolutions` field in `package.json`: Yarn 1 refuses to install vitest
-beside SvelteKit without it, so removing it breaks the production image and not
-your machine.
-
-`ORIGIN` in a deployment: it is the only CSRF defence here. If it does not match
-the address bar exactly — scheme, host, no trailing slash — every form post is
-rejected, and nothing in the log says why.
+`ORIGIN` in a deployment: the only CSRF defence here. If it does not match the
+address bar exactly — scheme, host, no trailing slash — every form post is
+rejected and nothing in the log says why.
 
 ## Design
 
-Colour belongs to the user's own categories and to the six sections; chrome
-stays quiet. Colour is never the only carrier of meaning — anything coloured is
-also labelled. Destructive actions do not put their confirmation under the
-cursor, and no bare keystroke deletes anything.
+Colour belongs to the user's categories and to the sections; chrome stays quiet.
+Colour is never the only carrier of meaning — anything coloured is also
+labelled, and red/green is never the distinction. Destructive actions do not put
+their confirmation under the cursor, and no bare keystroke deletes anything.
 
-Anything personal or opinionated ships **off by default** and switchable, and
-nothing a person would reasonably want to change is hardcoded. This is meant to
+Anything opinionated ships **off by default** and switchable. This is meant to
 be run by other people, on their own machines, with every feature.
+
+## Opening something
+
+Issues and pull requests have templates in `.github/`. A security problem is the
+one thing that does not go in an issue: use a
+[private advisory](https://github.com/ontoplano/ontoplano/security/advisories/new).
+
+`ROADMAP.md` is what is intended and not built. Say which one you are taking in
+an issue before you write much of it.

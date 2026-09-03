@@ -9,7 +9,7 @@
 [![checks](https://github.com/ontoplano/ontoplano/actions/workflows/ci.yml/badge.svg)](https://github.com/ontoplano/ontoplano/actions/workflows/ci.yml)
 [![latest release](https://img.shields.io/github/v/release/ontoplano/ontoplano?label=release&color=1f6feb)](https://github.com/ontoplano/ontoplano/releases/latest)
 [![licence AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-1f6feb)](LICENSE)
-[![self-hosted](https://img.shields.io/badge/hosting-yours-1f6feb)](#running-it)
+[![self-hosted](https://img.shields.io/badge/host%20it-yourself-1f6feb)](#running-it)
 
 **[ontoplano.com](https://ontoplano.com) · [try the demo](https://demo.ontoplano.com) · [documentation](https://docs.ontoplano.com)**
 
@@ -35,11 +35,19 @@ how it felt. What comes out is the gap between the week you planned and the week
 you had, which is the only thing a planner can honestly tell you.
 
 Goals with real progress, a journal, the people in it, ideas, habits, recipes
-and the shopping that follows from them — and an API that lets other apps push
-data in and read your schedule out. Use the parts you want: every section can be
-switched off, reordered and recoloured.
+and the shopping that follows from them. Use the parts you want: every section
+can be switched off, reordered and recoloured.
 
-Self-hosted, one SQLite file, no account anywhere but your own.
+**Ask it in words.** `/api/mcp` is a Model Context Protocol server, so Claude —
+or anything else that speaks MCP — can read your day and change it: move a
+block, tick a habit, add to the shopping list. Your token, your scopes, revoked
+in one click. Nothing in the app calls a model; the assistant is yours and it
+comes to the app, not the other way round.
+
+**Two ways to have it.** Run your own copy — one SQLite file, no account
+anywhere but your own, no payment code in this repository at all. Or make an
+account on [ontoplano.com](https://ontoplano.com), which is the same software on
+a box I keep, if you would rather not keep one.
 
 ## What is in it
 
@@ -66,7 +74,8 @@ Self-hosted, one SQLite file, no account anywhere but your own.
   have run out of lands on the shopping list. Work planners ignore food and meal
   planners ignore the rest of the week; this is the seam.
 - **Reminders** — set on a block, in minutes before it starts, and every
-  occurrence of it gets one. There is nothing else to keep.
+  occurrence of it gets one. They reach a phone with the app closed, and a
+  birthday in **People** announces itself on the morning.
 - **Dashboard** — the cards you choose, in the order you choose. The rooms of
   the app are yours to order and colour too.
 - **Your data, out and back** — every row as JSON in one click, and the same
@@ -78,13 +87,16 @@ Self-hosted, one SQLite file, no account anywhere but your own.
   see its plan and its history, resend a confirmation, hand out the admin role.
   Signing in as somebody to help them puts an amber banner over every page and a
   line in _their_ history.
-- **Plans** — free and Pro, with ceilings on the things that pile up rather than
-  on use. No feature is behind a plan. A self-hosted instance has no plans, no
-  ceilings and no billing at all, and this repository ships no payment code —
-  see `docs/PLANS.md`.
-- **Plugins** — scoped API tokens, data streams that external apps push into,
-  webhooks they can subscribe, and schedule and shopping endpoints they can
-  read and write. See `docs/PLUGINS.md`.
+- **Plans** — on ontoplano.com it is one subscription with a fourteen-day trial,
+  and the ceilings are on the things that pile up rather than on use. No feature
+  is behind a plan, and an account that stops paying can still be read and
+  exported — the writing is yours. A self-hosted instance has no plans, no
+  ceilings and no billing at all, and this repository ships no payment code at
+  all. `docs/PLANS.md`.
+- **Plugins and the API** — scoped tokens, data streams external apps push
+  into, webhooks they subscribe to, and schedule and shopping endpoints they
+  read and write. `docs/PLUGINS.md`, and `docs/reference/ai-agents.md` for the
+  MCP side.
 - **Share a list with your partner** — `examples/onto-household.mjs` keeps two
   accounts' shopping lists equal over webhooks: add milk on one phone, it is
   on both; tick it in the aisle, it is bought on both. Works across two
