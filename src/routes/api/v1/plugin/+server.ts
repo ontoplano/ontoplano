@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 
 import { authenticateApi, readJson } from '$lib/server/api/auth';
-import { toJsonError } from '$lib/server/services/errors';
+import { toJsonError } from '$lib/server/http-errors';
 import { deleteManifest, listManifests, upsertManifest } from '$lib/server/services/plugins';
 
 /** The manifests this account has been given. */

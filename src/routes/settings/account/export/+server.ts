@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { exportAccount } from '$lib/server/services/account';
-import { toJsonError } from '$lib/server/services/errors';
+import { toJsonError } from '$lib/server/http-errors';
 
 /**
  * The account's data as a JSON download.

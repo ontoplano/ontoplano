@@ -19,7 +19,7 @@ import { loadConfig } from '$lib/server/config';
 import { instanceIsEmpty, registrationMode } from '$lib/server/services/registration';
 import { buildCtx } from '$lib/server/services/ctx';
 import { createEntry, latestEntry, listTags } from '$lib/server/services/diary';
-import { toActionFailure } from '$lib/server/services/errors';
+import { toActionFailure } from '$lib/server/http-errors';
 import { listActiveOn } from '$lib/server/services/goals';
 import { listHabits, today as todayOf } from '$lib/server/services/habits';
 import { generateForDate, listForDate } from '$lib/server/services/instances';

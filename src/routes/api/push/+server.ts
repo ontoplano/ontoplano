@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
 import { removeSubscription, saveSubscription } from '$lib/server/services/push';
-import { toJsonError } from '$lib/server/services/errors';
+import { toJsonError } from '$lib/server/http-errors';
 
 /**
  * A browser signing itself up to be interrupted, or asking to stop.

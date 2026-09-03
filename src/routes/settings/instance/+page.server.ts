@@ -4,7 +4,8 @@ import { loadConfig, saveConfig, isRegistrationMode } from '$lib/server/config';
 import { isDemo, isSelfHosted, isStaging } from '$lib/server/settings';
 import { canEditInstance } from '$lib/server/services/admin';
 import { build } from '$lib/server/services/version';
-import { toActionFailure, ValidationError } from '$lib/server/services/errors';
+import { ValidationError } from '$lib/server/services/errors';
+import { toActionFailure } from '$lib/server/http-errors';
 import { counts, confirmedAddresses, newsletterEnabled } from '$lib/server/services/newsletter';
 import {
 	createInvite,

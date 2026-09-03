@@ -1,7 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
 import { listActivities } from '$lib/server/services/activities';
 import { buildCtx } from '$lib/server/services/ctx';
-import { toActionFailure } from '$lib/server/services/errors';
+import { toActionFailure } from '$lib/server/http-errors';
 import {
 	closeGoal,
 	createArea,

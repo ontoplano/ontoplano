@@ -1,6 +1,6 @@
 import type { Actions } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
-import { toActionFailure } from '$lib/server/services/errors';
+import { toActionFailure } from '$lib/server/http-errors';
 import { createToken } from '$lib/server/services/tokens';
 
 /**

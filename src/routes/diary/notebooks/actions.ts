@@ -2,7 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from '@sveltejs/kit';
 import { buildCtx } from '$lib/server/services/ctx';
 import { createEntry, deleteEntry, updateEntry } from '$lib/server/services/diary';
-import { toActionFailure } from '$lib/server/services/errors';
+import { toActionFailure } from '$lib/server/http-errors';
 import {
 	createNotebook,
 	deleteNotebook,

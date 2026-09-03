@@ -21,7 +21,7 @@ import {
 } from '$lib/server/services/billing';
 import { accessHoldFor, holdDestination } from '$lib/server/services/access';
 import { record } from '$lib/server/services/audit';
-import { toJsonError } from '$lib/server/services/errors';
+import { toJsonError } from '$lib/server/http-errors';
 import { refuse } from '$lib/server/refuse';
 import { demoRefusal } from '$lib/server/demo-guard';
 

@@ -11,7 +11,7 @@ import {
 	setRole
 } from '$lib/server/services/admin';
 import { listForSubject, record } from '$lib/server/services/audit';
-import { toActionFailure } from '$lib/server/services/errors';
+import { toActionFailure } from '$lib/server/http-errors';
 import { isEmailConfigured } from '$lib/server/email';
 
 export const load: PageServerLoad = async ({ locals, params }) => {

@@ -11,7 +11,8 @@ import {
 	unblockForever
 } from '$lib/server/services/protection';
 import { dismissClientError, recentClientErrors } from '$lib/server/services/client-errors';
-import { toActionFailure, ValidationError } from '$lib/server/services/errors';
+import { ValidationError } from '$lib/server/services/errors';
+import { toActionFailure } from '$lib/server/http-errors';
 import { whyItCannotSell } from '$lib/server/services/billing';
 import { isDemo } from '$lib/server/settings';
 

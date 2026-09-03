@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 
 import { authenticateApi, readJson } from '$lib/server/api/auth';
-import { toJsonError } from '$lib/server/services/errors';
+import { toJsonError } from '$lib/server/http-errors';
 import {
 	createSubscription,
 	listSubscriptions,

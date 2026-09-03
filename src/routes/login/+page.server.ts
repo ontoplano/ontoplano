@@ -12,7 +12,8 @@ import {
 	registrationMode
 } from '$lib/server/services/registration';
 import { clientKey, signUpBudget } from '$lib/server/rate-limit';
-import { ServiceError, toActionFailure } from '$lib/server/services/errors';
+import { ServiceError } from '$lib/server/services/errors';
+import { toActionFailure } from '$lib/server/http-errors';
 import { record } from '$lib/server/services/audit';
 import { resetDemoAccount } from '$lib/server/services/demo';
 import { claimFirstAccount } from '$lib/server/services/admin';

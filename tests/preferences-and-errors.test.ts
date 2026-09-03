@@ -20,12 +20,17 @@ afterAll(() => database.remove());
 
 let preferences: typeof import('../src/lib/server/services/preferences');
 let errors: typeof import('../src/lib/server/services/errors');
+// The two that turn a refusal into an HTTP answer live apart from the error
+// classes now: they import SvelteKit, and a service that does cannot be run by
+// the scheduled jobs. See src/lib/server/http-errors.ts.
+let http: typeof import('../src/lib/server/http-errors');
 let settings: typeof import('../src/lib/server/settings');
 let ctx: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
 	preferences = await import('../src/lib/server/services/preferences');
 	errors = await import('../src/lib/server/services/errors');
+	http = await import('../src/lib/server/http-errors');
 	settings = await import('../src/lib/server/settings');
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 });
@@ -111,7 +116,7 @@ describe('the theme and the style', () => {
 
 describe('a refusal, on its way back out', () => {
 	test('keeps its status and its words for a form', () => {
-		const failure = errors.toActionFailure(new errors.ConflictError('Already exists'));
+		const failure = http.toActionFailure(new errors.ConflictError('Already exists'));
 		expect(failure.status).toBe(409);
 		expect(failure.data.message).toBe('Already exists');
 		expect(failure.data.code).toBe('conflict');
@@ -120,12 +125,12 @@ describe('a refusal, on its way back out', () => {
 	test('becomes a 400 for a form when it was a 422', () => {
 		// Form actions historically use 400 for validation; client code checks
 		// `form?.message` and would stop recognising a 422.
-		const failure = errors.toActionFailure(new errors.ValidationError('Too long'));
+		const failure = http.toActionFailure(new errors.ValidationError('Too long'));
 		expect(failure.status).toBe(400);
 	});
 
 	test('keeps its status and its shape for a plugin', async () => {
-		const response = errors.toJsonError(new errors.ForbiddenError('Insufficient scope'));
+		const response = http.toJsonError(new errors.ForbiddenError('Insufficient scope'));
 		expect(response.status).toBe(403);
 		const body = await response.json();
 		expect(body.error.code).toBe('forbidden');
@@ -134,7 +139,7 @@ describe('a refusal, on its way back out', () => {
 
 	test('tells an API client nothing about an error it did not expect', async () => {
 		// Database error text is not something to hand out.
-		const response = errors.toJsonError(new Error('SQLITE_CONSTRAINT: users.email'));
+		const response = http.toJsonError(new Error('SQLITE_CONSTRAINT: users.email'));
 		expect(response.status).toBe(500);
 		const body = await response.json();
 		expect(body.error.message).toBe('Unexpected error');
@@ -142,7 +147,7 @@ describe('a refusal, on its way back out', () => {
 	});
 
 	test('carries the details a plan limit needs to be actionable', async () => {
-		const response = errors.toJsonError(
+		const response = http.toJsonError(
 			new errors.PlanLimitError('Too many notebooks', { limit: 3 })
 		);
 		expect(response.status).toBe(402);
@@ -150,7 +155,7 @@ describe('a refusal, on its way back out', () => {
 	});
 
 	test('says when to come back, when it is a rate limit', () => {
-		const failure = errors.toActionFailure(new errors.RateLimitedError('Try again in 40s'));
+		const failure = http.toActionFailure(new errors.RateLimitedError('Try again in 40s'));
 		expect(failure.status).toBe(429);
 		expect(failure.data.message).toContain('40s');
 	});

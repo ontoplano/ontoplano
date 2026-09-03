@@ -359,6 +359,10 @@ lint:
 	yarn lint
 	@$(MAKE) -s docs-check
 	@yarn -s changelog:check
+	@# The scheduled jobs run under `tsx` in a production install. A service
+	@# that reaches for a development-only package works everywhere except
+	@# there, and the box is where nobody is watching.
+	@node scripts/check-job-deps.mjs
 
 format:
 	yarn format

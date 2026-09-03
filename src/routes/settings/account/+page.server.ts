@@ -12,7 +12,7 @@ import {
 	hoursUntil
 } from '$lib/server/services/account';
 import { buildCtx } from '$lib/server/services/ctx';
-import { toActionFailure } from '$lib/server/services/errors';
+import { toActionFailure } from '$lib/server/http-errors';
 import { listSessions, sessionTokenById } from '$lib/server/services/sessions';
 import { record } from '$lib/server/services/audit';
 import {

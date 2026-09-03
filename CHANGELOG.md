@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.58.1 — 2026-09-03
+
+- **The reminders job runs where it is deployed.** Turning a service's refusal
+  into an HTTP answer needed SvelteKit, which is a development dependency, and
+  every service imported it for its error classes — so the scheduled jobs died
+  on a box that installs production dependencies only. Those two helpers live
+  apart from the error classes now, which is also where the architecture always
+  said they belonged.
+
 ## 0.58.0 — 2026-09-03
 
 - **Charging for accounts is opt-in**, with `ONTOPLANO_SELLS=true`. Nothing else

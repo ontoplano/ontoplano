@@ -5,7 +5,7 @@ import { isStatus, type Status, type Timing } from '$lib/task-status';
 import { listActivities, listCategories } from '$lib/server/services/activities';
 import { goalBacklinks, type GoalBacklink } from '$lib/server/services/backlinks';
 import { buildCtx, type Ctx } from '$lib/server/services/ctx';
-import { toActionFailure } from '$lib/server/services/errors';
+import { toActionFailure } from '$lib/server/http-errors';
 import { createReminder, deleteReminder, listReminders } from '$lib/server/services/reminders';
 import { moveOccurrence } from '$lib/server/services/slots';
 import {

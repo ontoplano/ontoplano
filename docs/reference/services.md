@@ -907,13 +907,7 @@ lets a form action and a JSON endpoint call the same function.
 
 ### Functions
 
-#### `toActionFailure(e)`
-
-Map a thrown service error onto a SvelteKit form-action failure.
-
-#### `toJsonError(e)`
-
-Map a thrown service error onto a JSON API response.
+#### `toServiceError(e)`
 
 ### Types
 

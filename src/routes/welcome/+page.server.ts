@@ -2,7 +2,7 @@ import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { DEFAULT_THEME, DEFAULT_WEEK, getTheme } from '$lib/server/settings';
 import { buildCtx } from '$lib/server/services/ctx';
-import { toActionFailure } from '$lib/server/services/errors';
+import { toActionFailure } from '$lib/server/http-errors';
 import { completeFirstRun, needsFirstRun, TEMPLATES } from '$lib/server/services/onboarding';
 import { HIDEABLE_SECTIONS } from '$lib/sections';
 import { zoneGroups } from '$lib/timezones';

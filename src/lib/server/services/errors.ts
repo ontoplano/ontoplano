@@ -1,5 +1,3 @@
-import { fail, type ActionFailure } from '@sveltejs/kit';
-
 /**
  * Typed errors thrown by service functions.
  *
@@ -80,29 +78,11 @@ export class ForbiddenError extends ServiceError {
 	}
 }
 
-function toServiceError(e: unknown): ServiceError {
+export function toServiceError(e: unknown): ServiceError {
 	if (e instanceof ServiceError) return e;
 	// Anything else is a bug or an infrastructure failure. Log the detail
 	// server-side and tell the caller nothing beyond "500" — error text from
 	// the database is not something to hand to an API client.
 	console.error('Unexpected service error:', e);
 	return new ServiceError('internal', 500, 'Unexpected error');
-}
-
-/** Map a thrown service error onto a SvelteKit form-action failure. */
-export function toActionFailure(e: unknown): ActionFailure<{ message: string; code: ErrorCode }> {
-	const err = toServiceError(e);
-	// Form actions historically use 400 for validation; keep that so existing
-	// client code that checks `form?.message` behaves the same.
-	const status = err.status === 422 ? 400 : err.status;
-	return fail(status, { message: err.message, code: err.code });
-}
-
-/** Map a thrown service error onto a JSON API response. */
-export function toJsonError(e: unknown): Response {
-	const err = toServiceError(e);
-	return Response.json(
-		{ error: { code: err.code, message: err.message, details: err.details } },
-		{ status: err.status }
-	);
 }

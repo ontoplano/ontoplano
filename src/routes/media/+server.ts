@@ -1,7 +1,8 @@
 import type { RequestHandler } from './$types';
 
 import { buildCtx } from '$lib/server/services/ctx';
-import { toJsonError, UnauthorizedError } from '$lib/server/services/errors';
+import { UnauthorizedError } from '$lib/server/services/errors';
+import { toJsonError } from '$lib/server/http-errors';
 import { mediaLimits, store } from '$lib/server/services/media';
 
 /**

@@ -4,7 +4,7 @@ import { listActivities, listCategories } from '$lib/server/services/activities'
 import { goalBacklinks } from '$lib/server/services/backlinks';
 import { buildCtx } from '$lib/server/services/ctx';
 import { pickableNotebooks } from '$lib/server/services/notebooks';
-import { toActionFailure } from '$lib/server/services/errors';
+import { toActionFailure } from '$lib/server/http-errors';
 import {
 	createTodo,
 	delegateTodo,

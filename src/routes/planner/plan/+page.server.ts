@@ -5,7 +5,8 @@ import type { Actions, PageServerLoad } from './$types';
 import { ratingsFromForm } from '$lib/ratings';
 import { listActivities, listCategories } from '$lib/server/services/activities';
 import { buildCtx, type Ctx } from '$lib/server/services/ctx';
-import { ServiceError, toActionFailure } from '$lib/server/services/errors';
+import { ServiceError } from '$lib/server/services/errors';
+import { toActionFailure } from '$lib/server/http-errors';
 import { metaFromFormData, metaPatchFromFormData } from '$lib/server/services/meta';
 import { listManifests } from '$lib/server/services/plugins';
 import {

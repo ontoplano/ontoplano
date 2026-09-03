@@ -55,6 +55,12 @@ jobs:
       # run builds with a secret in its environment.
       - run: yarn build
 
+      # The scheduled jobs, checked the way the box will load them: `tsx` over
+      # a tree installed with `yarn install --production`. A service that
+      # imports a dev-only package runs fine everywhere here and fails there,
+      # once a minute, in a journal nobody is reading.
+      - run: yarn jobs:check
+
       - run: yarn test:unit
 
       # Only the browser the suite actually uses. `--with-deps` because a bare

@@ -9,7 +9,7 @@ import {
 	recordVisitorError,
 	setClientErrorConsent
 } from '$lib/server/services/client-errors';
-import { toJsonError } from '$lib/server/services/errors';
+import { toJsonError } from '$lib/server/http-errors';
 
 /**
  * Where the page sends what broke, and the answer it was given.

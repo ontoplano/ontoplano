@@ -2,7 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { STYLES, STYLE_HINTS, STYLE_LABELS } from '$lib/style';
 import { clientErrorState, setClientErrorConsent } from '$lib/server/services/client-errors';
 import { buildCtx } from '$lib/server/services/ctx';
-import { toActionFailure } from '$lib/server/services/errors';
+import { toActionFailure } from '$lib/server/http-errors';
 import { createQuote, deleteQuote, importQuotes, listQuotes } from '$lib/server/services/quotes';
 import { CURRENCIES, normaliseCurrency } from '$lib/money';
 import { fail } from '@sveltejs/kit';
