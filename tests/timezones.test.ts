@@ -18,9 +18,9 @@ describe('the zones offered', () => {
 	const groups = zoneGroups(new Date('2026-09-03T12:00:00Z'));
 	const all = groups.flatMap((g) => g.zones);
 
-	test('all of them, grouped by part of the world', () => {
+	test('all of them, under a heading that is an offset', () => {
 		expect(all.length).toBeGreaterThan(300);
-		expect(groups.map((g) => g.region)).toEqual(expect.arrayContaining(['America', 'Europe']));
+		expect(groups.map((g) => g.label)).toEqual(expect.arrayContaining(['GMT−3', 'GMT+1']));
 	});
 
 	test('UTC is offerable, whatever the platform lists', () => {
@@ -45,11 +45,18 @@ describe('the zones offered', () => {
 		expect(deep!.region).toBe(deep!.id.split('/')[0]);
 	});
 
-	test('each reads as a place and an offset', () => {
+	test('each reads as a place, with the part of the world that settles it', () => {
 		const sp = all.find((z) => z.id === 'America/Sao_Paulo')!;
-		expect(zoneLabel(sp)).toBe('Sao Paulo · GMT−3');
-		// A real minus sign, not a hyphen: beside a number a hyphen reads as one.
-		expect(zoneLabel(sp)).not.toContain('GMT-');
+		expect(zoneLabel(sp)).toBe('Sao Paulo · America');
+		// The offset is the heading above it, not four hundred repetitions.
+		expect(zoneLabel(sp)).not.toContain('GMT');
+	});
+
+	test('and the heading is a real minus sign, not a hyphen', () => {
+		// Beside a number a hyphen reads as one.
+		const west = groups.find((g) => g.zones.some((z) => z.id === 'America/Sao_Paulo'))!;
+		expect(west.label).toBe('GMT−3');
+		expect(west.label).not.toContain('GMT-');
 	});
 
 	test('the offset is the one in force, not a fixed one', () => {
@@ -65,13 +72,27 @@ describe('the zones offered', () => {
 		expect(winter.offset).toBe('GMT−5');
 	});
 
-	test('sorted by offset inside a group, not alphabetically', () => {
-		const europe = groups.find((g) => g.region === 'Europe')!.zones;
-		const offsets = europe.map((z) => z.minutes);
-		expect(offsets).toEqual([...offsets].sort((a, b) => a - b));
+	/**
+	 * The whole point of the shape. Grouped by continent, finding São Paulo
+	 * meant knowing it is filed under America and scrolling past Argentina;
+	 * the thing somebody actually knows is roughly what their offset is.
+	 */
+	test('the groups run west to east, in one order', () => {
+		const minutes = groups.map((g) => g.zones[0].minutes);
+		expect(minutes).toEqual([...minutes].sort((a, b) => a - b));
+		// And they really are one offset each, or the heading lies.
+		for (const group of groups) {
+			expect(new Set(group.zones.map((z) => z.minutes)).size).toBe(1);
+		}
 	});
 
-	test('the bucket goes last', () => {
-		expect(groups.at(-1)!.region).toBe('Other');
+	test('the cities inside one offset are alphabetical', () => {
+		const group = groups.find((g) => g.zones.length > 5)!;
+		const cities = group.zones.map((z) => z.city);
+		expect(cities).toEqual([...cities].sort((a, b) => a.localeCompare(b)));
+	});
+
+	test('a zone belongs to exactly one group', () => {
+		expect(new Set(all.map((z) => z.id)).size).toBe(all.length);
 	});
 });

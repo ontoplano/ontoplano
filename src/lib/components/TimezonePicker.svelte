@@ -15,8 +15,9 @@
 	 * knows how to make usable — type-to-jump, a full-height list on a laptop, a
 	 * proper wheel on a phone — and none of that is worth rebuilding badly.
 	 *
-	 * The offset beside each city is the one in force today, because that is the
-	 * number somebody is checking against the clock in front of them.
+	 * Ordered by offset, west to east, with the offset as the heading — see
+	 * `$lib/timezones.ts`. It is today's offset, because that is the number
+	 * somebody is checking against the clock in front of them.
 	 */
 	let {
 		groups,
@@ -26,7 +27,7 @@
 		required = false,
 		label = 'Timezone'
 	}: {
-		groups: { region: string; zones: Zone[] }[];
+		groups: { label: string; zones: Zone[] }[];
 		value: string;
 		name?: string;
 		id?: string;
@@ -49,8 +50,8 @@
 	{#if value && !known}
 		<option {value}>{value} (kept as it is)</option>
 	{/if}
-	{#each groups as group (group.region)}
-		<optgroup label={group.region}>
+	{#each groups as group (group.label)}
+		<optgroup label={group.label}>
 			{#each group.zones as zone (zone.id)}
 				<option value={zone.id}>{zoneLabel(zone)}</option>
 			{/each}

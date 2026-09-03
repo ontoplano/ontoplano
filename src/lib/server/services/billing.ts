@@ -3,6 +3,7 @@ import { provider } from '../billing/index.js';
 import type { PlanTier } from '../billing/contract.js';
 import { isSelfHosted, pricing } from '../settings.js';
 import { applySubscription, startTrial, trialCarryover } from './subscriptions.js';
+import { ServiceError } from './errors.js';
 
 /**
  * Billing, as the rest of the app sees it.
@@ -136,13 +137,63 @@ export function checkoutTrialDays(userId: string): number {
 }
 
 /**
+ * Whether this instance is *meant* to sell, whatever it can currently do.
+ *
+ * `isBillingConfigured()` answers "can a checkout be opened right now", which
+ * is a different question and the one that has been quietly wrong. An instance
+ * that intends to charge and cannot — the provider absent from the build, a
+ * price id unset, a key that never made it into the environment — looks from
+ * in here exactly like somebody's own copy running for free. And the code did
+ * the friendly thing with that ambiguity: it started a fourteen-day trial and
+ * said nothing.
+ *
+ * So intent is declared once and explicitly. `ONTOPLANO_SELF_HOST=true` is a
+ * person running this for themselves and nothing about money applies. Anything
+ * else is an instance that sells, and an instance that sells and cannot is
+ * broken rather than generous.
+ */
+export function instanceSells(): boolean {
+	return !isSelfHosted();
+}
+
+/**
+ * What is stopping this instance selling, if anything.
+ *
+ * For the administration page and for the refusal below, which need the same
+ * answer in two registers — a sentence to show somebody, and a reason to stop.
+ * Null means it can sell.
+ */
+export function whyItCannotSell(): string | null {
+	if (!instanceSells()) return null;
+	if (!provider().configured()) {
+		return 'This instance is set up to charge, and has no working payment provider — so no card can be taken.';
+	}
+	if (!pricing().trialRequiresCard) return null;
+	return null;
+}
+
+/**
  * What a brand-new account is entitled to, before it has paid anything.
  *
  * Three answers and only one of them is about money: an invitation hands over
- * a grant outright, an instance that sells sends them to a checkout, and
- * anything else starts a trial. On a self-hosted instance the middle answer
- * never happens, which is why this reads `isBillingConfigured()` rather than
- * asking the provider directly.
+ * a grant outright, an instance that sells sends them to a checkout, and a
+ * self-hosted instance starts a trial because nothing there charges for
+ * anything.
+ *
+ * ## Why the fourth case throws
+ *
+ * There used to be no fourth case. An instance that sells but cannot fell
+ * through to `startTrial` — the same branch as a self-hosted copy — so a
+ * misconfigured production instance handed every new account fourteen free
+ * days, silently, for as long as nobody looked. Nothing on any page said so,
+ * because from the app's point of view nothing was wrong.
+ *
+ * The failure has to be loud and it has to be *early*: refusing registration on
+ * an instance that cannot charge costs the operator the accounts that would
+ * have signed up in the minutes before they notice; the alternative costs them
+ * the money from every account that ever signs up, and they find out months
+ * later. Existing accounts are untouched, and `/admin` can still grant a trial
+ * by hand for anybody who needs one.
  */
 export function onboardEntitlement(
 	userId: string,
@@ -162,7 +213,14 @@ export function onboardEntitlement(
 		);
 		return 'invited';
 	}
+
 	if (isBillingConfigured() && pricing().trialRequiresCard) return 'checkout';
+
+	const broken = whyItCannotSell();
+	// 503 rather than 400: nothing the person typed is wrong, and the operator
+	// is the one who has to act. A monitor watching status codes sees it too.
+	if (broken) throw new ServiceError('internal', 503, broken);
+
 	startTrial(userId, now);
 	return 'trial';
 }

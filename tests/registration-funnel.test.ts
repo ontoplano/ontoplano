@@ -28,8 +28,17 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-/** What the instance's billing looks like, per test. */
-let selling = true;
+/**
+ * What the instance looks like, per test.
+ *
+ * Two switches, not one, because the bug lived in the gap between them:
+ * `selfHosted` is what the operator declared, `providerWorks` is whether a card
+ * can actually be taken. Every earlier version of this file conflated them, so
+ * the state that gave the app away — *not* self-hosted, provider not working —
+ * was not expressible here at all.
+ */
+let selfHosted = false;
+let providerWorks = true;
 let requiresCard = true;
 /** What the last checkout was opened for, so the tier can be asserted on. */
 let opened: { interval?: string; tier?: string } | null = null;
@@ -38,7 +47,7 @@ vi.mock('../src/lib/server/settings', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('../src/lib/server/settings')>();
 	return {
 		...actual,
-		isSelfHosted: () => !selling,
+		isSelfHosted: () => selfHosted,
 		pricing: () => ({ ...actual.pricing(), trialRequiresCard: requiresCard })
 	};
 });
@@ -62,7 +71,7 @@ vi.mock('../src/lib/server/billing/index', async (importOriginal) => {
 			const real = actual.provider();
 			return new Proxy(real, {
 				get(target, key, receiver) {
-					if (key === 'configured') return () => selling;
+					if (key === 'configured') return () => providerWorks;
 					if (key === 'createCheckout') {
 						return async (_id: string, interval?: string, tier?: string) => {
 							opened = { interval, tier };
@@ -89,7 +98,8 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
-	selling = true;
+	selfHosted = false;
+	providerWorks = true;
 	requiresCard = true;
 	opened = null;
 	database.exec('delete from subscriptions');
@@ -134,14 +144,86 @@ describe('an instance that sells', () => {
 
 describe('an instance that does not sell', () => {
 	test('a self-hosted one just starts the trial', () => {
-		selling = false;
+		selfHosted = true;
 		expect(billing.onboardEntitlement(OWNER, null, now)).toBe('trial');
 		expect(access.paymentHoldFor(OWNER)).toBeNull();
 	});
 
+	test('and it does not matter that no provider is compiled in', () => {
+		selfHosted = true;
+		providerWorks = false;
+		expect(billing.onboardEntitlement(OWNER, null, now)).toBe('trial');
+	});
+
 	test('and one that asks for no card starts it too', () => {
 		requiresCard = false;
+		selfHosted = true;
 		expect(billing.onboardEntitlement(OWNER, null, now)).toBe('trial');
+	});
+});
+
+/**
+ * The state that actually happened, and that nothing here could express.
+ *
+ * A production instance whose provider is not working — absent from the build,
+ * a key that never reached the environment, `ONTOPLANO_SELF_HOST` still set
+ * from before it started selling — is indistinguishable, from inside the app,
+ * from somebody's own copy. So it took the friendly branch: fourteen free days,
+ * every registration, silently, for as long as nobody looked. Which is how a
+ * business loses its customers permanently rather than noisily.
+ *
+ * The rule is now: an instance that means to sell and cannot takes nobody's
+ * registration. That costs the accounts of the minutes before somebody notices;
+ * the alternative costs the money of every account that ever signs up.
+ */
+describe('an instance that means to sell and cannot', () => {
+	beforeEach(() => {
+		selfHosted = false;
+		providerWorks = false;
+	});
+
+	test('refuses, rather than handing out a free trial', () => {
+		expect(() => billing.onboardEntitlement(OWNER, null, now)).toThrow(/cannot take|payment/i);
+
+		const rows = database.get('select count(*) as n from subscriptions') as { n: number };
+		expect(rows.n, 'a trial was started on an instance that cannot charge').toBe(0);
+	});
+
+	test('and says so in one sentence, for the administration page', () => {
+		expect(billing.whyItCannotSell()).toMatch(/payment provider/i);
+	});
+
+	test('while a working one says nothing is wrong', () => {
+		providerWorks = true;
+		expect(billing.whyItCannotSell()).toBeNull();
+	});
+
+	test('and a self-hosted instance is never "broken" — it just does not sell', () => {
+		selfHosted = true;
+		expect(billing.whyItCannotSell()).toBeNull();
+	});
+
+	/**
+	 * An invitation is somebody else's seat, already paid for. It must keep
+	 * working while the checkout is broken, or a family cannot be let in.
+	 */
+	test('but an invitation still lands', () => {
+		expect(billing.onboardEntitlement(OWNER, { grantsUntil: null }, now)).toBe('invited');
+	});
+
+	/**
+	 * The refusal has to happen before the account row exists. A registration
+	 * that half-succeeded would leave a real account with no entitlement and no
+	 * way to get one.
+	 */
+	test('the register form checks before it writes anything', async () => {
+		const source = await import('node:fs').then((fs) =>
+			fs.readFileSync('src/routes/login/+page.server.ts', 'utf8')
+		);
+		const guard = source.indexOf('whyItCannotSell()');
+		const signUp = source.indexOf('auth.api.signUpEmail');
+		expect(guard, 'the register action does not check at all').toBeGreaterThan(0);
+		expect(guard, 'it checks after creating the account').toBeLessThan(signUp);
 	});
 });
 

@@ -659,7 +659,27 @@
 									Somebody who has made a mess of the fixtures wants a clean
 									copy, not the door — and this is where they will look for it.
 								-->
-								<form method="post" action="/login?/resetDemo" use:enhance>
+								<!--
+									The menu closes on the press, and the answer arrives as a
+									notice. It used to leave the menu hanging open over a page
+									that had silently been rebuilt underneath it, so the only way
+									to tell it had worked was to close the menu and look.
+								-->
+								<form
+									method="post"
+									action="/login?/resetDemo"
+									use:enhance={() => {
+										menuOpen = false;
+										return async ({ result, update }) => {
+											await update();
+											if (result.type === 'success' || result.type === 'redirect') {
+												notify.success('Fresh demo account — everything is back as it was.');
+											} else {
+												notify.error('That did not work. Reload and try again.');
+											}
+										};
+									}}
+								>
 									<button
 										type="submit"
 										class="w-full px-4 py-2 text-left text-sm {NAV_DROPDOWN_ITEM} transition"

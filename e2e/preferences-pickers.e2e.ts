@@ -27,6 +27,35 @@ test('the timezone is chosen, not typed', async ({ page }) => {
 	await expect(page.locator('select[name="timezone"] option:checked')).toContainText('Lisbon');
 });
 
+/**
+ * And the order it is in, which is the whole reason it is usable.
+ *
+ * Grouped by continent, finding a zone meant knowing which continent the IANA
+ * name files it under and then scrolling an alphabet. The offset is the thing
+ * somebody actually knows about their own timezone, because the clock in front
+ * of them says it.
+ */
+test('the timezones run west to east, by offset', async ({ page }) => {
+	await register(page, `tz-order-${Date.now()}@test.invalid`);
+	await visit(page, '/settings/preferences');
+
+	const headings = await page
+		.locator('select[name="timezone"] optgroup')
+		.evaluateAll((groups) => groups.map((g) => g.getAttribute('label') ?? ''));
+
+	expect(headings.length).toBeGreaterThan(20);
+	expect(headings[0]).toMatch(/^GMT−/);
+	expect(headings.at(-1)).toMatch(/^GMT\+/);
+
+	// Read back as numbers, in the order they are drawn.
+	const minutes = headings.map((h) => {
+		const m = /^GMT([−+])(\d{1,2})(?::(\d{2}))?$/.exec(h);
+		if (!m) throw new Error(`a heading that is not an offset: ${h}`);
+		return (m[1] === '−' ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3] ?? 0));
+	});
+	expect(minutes).toEqual([...minutes].sort((a, b) => a - b));
+});
+
 test('a currency outside the shortlist is accepted, and a made-up one is not', async ({ page }) => {
 	await register(page, `cur-${Date.now()}@test.invalid`);
 	await visit(page, '/settings/preferences');

@@ -450,6 +450,27 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 }
 
 /*
+ * A button says it is a button, under the pointer.
+ *
+ * Tailwind v4's reset gives buttons `cursor: default` — the plain arrow —
+ * where v3 left the browser's own `pointer`. Every link in the app therefore
+ * says "this is pressable" and every button says nothing, which is backwards:
+ * a menu row that submits a form looked dead beside the three above it that
+ * navigate.
+ *
+ * Here rather than on `.btn`, because most of the buttons in this app are not
+ * `.btn` — a menu row, an icon, a chip, a whole card that submits.
+ * `:disabled` keeps its own answer, which the rule below already gives it.
+ */
+button:not(:disabled),
+summary,
+[role='button']:not([aria-disabled='true']),
+label:has(> input[type='checkbox']:not(:disabled)),
+label:has(> input[type='radio']:not(:disabled)) {
+	cursor: pointer;
+}
+
+/*
  * Form controls and buttons, defined once.
  *
  * Every field in the app used to carry the same forty characters of utility

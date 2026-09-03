@@ -12,6 +12,7 @@ import {
 } from '$lib/server/services/protection';
 import { dismissClientError, recentClientErrors } from '$lib/server/services/client-errors';
 import { toActionFailure, ValidationError } from '$lib/server/services/errors';
+import { whyItCannotSell } from '$lib/server/services/billing';
 import { isDemo } from '$lib/server/settings';
 
 /**
@@ -53,6 +54,16 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		// Whether this box has been given the one sudo rule that lets the app
 		// act on a ban. Off means the list is shown and no buttons are.
 		canControlBans: banControlEnabled(),
+		/*
+		 * The one thing an operator must never learn from a bank statement.
+		 *
+		 * An instance set up to charge that cannot — no provider in the build, a
+		 * key that never reached the environment — used to be invisible: every
+		 * registration quietly started a free trial and every page looked normal.
+		 * Registration now refuses outright, and this is what says why, in the
+		 * place somebody looks when something is odd.
+		 */
+		billingBroken: whyItCannotSell(),
 		blockedForever: permanentlyBlocked(),
 		// So the page can leave your own row alone rather than offering a button
 		// the server will refuse.

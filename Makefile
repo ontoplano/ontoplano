@@ -451,14 +451,41 @@ _docker-safe:
 		exit 1; \
 	fi
 	@$(OK) ".dockerignore is an allowlist"
+	@# And every name on the allowlist can actually be matched by the audit.
+	@#
+	@# Not circular: it catches a name the list *contains* and the matcher
+	@# cannot see, which is what happened — the list is written over several
+	@# lines and make keeps the indenting tab, so three legitimate entries were
+	@# reported as things the image should not contain. Checked before the
+	@# build rather than after it, because after it is ten minutes later.
+	@allowed=" $$(echo $(DOCKER_ALLOWED)) "; \
+	blind=''; \
+	for entry in $(DOCKER_ALLOWED); do \
+		case "$$allowed" in *" $$entry "*) ;; *) blind="$$blind $$entry" ;; esac; \
+	done; \
+	if [ -n "$$blind" ]; then \
+		$(NO) "DOCKER_ALLOWED names things the audit cannot match:$$blind"; \
+		echo "  Whitespace in the list, almost certainly. It is flattened before"; \
+		echo "  matching, so this should not be reachable — look at _docker-audit."; \
+		exit 1; \
+	fi
+	@$(OK) "the allowlist is legible to the audit"
 
 # The built image, opened and looked in. Nothing here is about intent.
 _docker-audit:
 	@found=$$(docker run --rm --entrypoint /bin/sh $(IMAGE):$(IMAGE_VERSION) \
 		-c 'ls -A /app' 2>/dev/null); \
+	: "The list, with its whitespace flattened before anything is matched"; \
+	: "against it. It is written over several lines, and make keeps the tab"; \
+	: "each continuation is indented with — so the pattern below, which needs"; \
+	: "a space on both sides, missed every entry that happened to follow one."; \
+	: "package.json, drizzle.config.ts and README.md were all rejected from"; \
+	: "the image they are supposed to be in. Unquoted \$$(echo …) collapses"; \
+	: "every run of whitespace to one space, so an editor cannot break it."; \
+	allowed=" $$(echo $(DOCKER_ALLOWED)) "; \
 	unexpected=''; \
 	for entry in $$found; do \
-		case " $(DOCKER_ALLOWED) " in \
+		case "$$allowed" in \
 			*" $$entry "*) ;; \
 			*) unexpected="$$unexpected $$entry" ;; \
 		esac; \
@@ -761,9 +788,16 @@ GH_REPO ?= ontoplano/ontoplano
 
 # ─── Publishing a version ───────────────────────────────────────────────────
 #
-# The tag, the packages, and the GitHub release with both attached. What is left
-# afterwards is the AUR, which needs a key on your own machine — the development
-# repo's RELEASING.md has that half.
+# The code, the tag, the packages, and the GitHub release with them attached.
+# What is left afterwards is the AUR, which needs a key on your own machine —
+# the development repo's RELEASING.md has that half.
+#
+# The branch goes up before the tag does, to both remotes. It used to push only
+# the tag, so GitHub got a release built from a commit its `master` did not yet
+# show: the download was newer than the source beside it, which is exactly the
+# thing a release is supposed to make checkable. If anything after the tag
+# fails, the tag is deleted again — otherwise the next attempt stops on "that
+# tag already exists" and the fix is a command nobody remembers.
 #
 #   make release          tag, build, check, publish
 #: DRY=1  say what `make release` would do, and do none of it
@@ -790,16 +824,24 @@ _release-run:
 		echo; echo "It would:"; \
 		echo "  build the .deb, the .rpm and the PKGBUILD"; \
 		echo "  run make package-check against them"; \
-		echo "  git tag $$v and push it to origin and github"; \
+		echo "  push this branch to origin and to github FIRST — a release whose"; \
+		echo "    code is not on GitHub yet is a release nobody can read"; \
+		echo "  git tag $$v and push the tag to both"; \
 		echo "  gh release create $$v --repo $(GH_REPO), with the packages attached"; \
 		echo; echo "with these notes:"; echo; echo "$$notes"; exit 0; \
 	fi; \
 	$(MAKE) -s package && $(MAKE) -s package-check && \
+	branch=$$(git rev-parse --abbrev-ref HEAD); \
+	echo "  pushing $$branch to origin and to github"; \
+	git push -q origin "$$branch" && git push -q github "$$branch" && \
 	git tag -a "$$v" -m "$$v" && \
-	git push -q origin "$$v" && git push -q github "$$v" && \
-	gh release create "$$v" dist/ontoplano_*.deb dist/*/ontoplano-*.rpm \
+	{ git push -q origin "$$v" && git push -q github "$$v" && \
+	  gh release create "$$v" dist/ontoplano_*.deb $$(ls dist/*/ontoplano-*.rpm 2>/dev/null) \
 		--repo $(GH_REPO) --title "$$v" --notes "$$notes" && \
-	echo "https://github.com/$(GH_REPO)/releases/tag/$$v"
+	  echo "https://github.com/$(GH_REPO)/releases/tag/$$v"; } || \
+	{ git tag -d "$$v" >/dev/null; \
+	  echo "Something after the tag failed, so the tag is gone again — run this once more."; \
+	  exit 1; }
 
 # The mirror. `origin` is the forge and stays that way — this only moves what is
 # already committed onto GitHub, where the packages and the issues people open

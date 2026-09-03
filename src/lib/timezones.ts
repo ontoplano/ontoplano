@@ -7,8 +7,8 @@
  * why. The two places that asked — first run, and preferences — asked in the
  * one form that can be answered wrongly.
  *
- * So: a list, grouped by part of the world, each entry reading as a place and
- * an offset. `Intl.supportedValuesOf('timeZone')` is where the names come
+ * So: a list, ordered by offset from west to east, each entry reading as a
+ * place. `Intl.supportedValuesOf('timeZone')` is where the names come
  * from, so it is the platform's list rather than one to keep up to date.
  *
  * ## The offset is today's
@@ -66,49 +66,60 @@ function offsetOf(id: string, at: Date): { label: string; minutes: number } {
 				.formatToParts(at)
 				.find((p) => p.type === 'timeZoneName')?.value ?? 'GMT';
 	} catch {
-		return { label: 'GMT', minutes: 0 };
+		return { label: 'GMT+0', minutes: 0 };
 	}
 
+	// No sign and no number is the zero offset — `shortOffset` writes it as a
+	// bare "GMT", which in a column of GMT−3, GMT−2, …, GMT+1 is the one
+	// heading that does not say where it sits.
 	const match = /GMT([+-])(\d{1,2})(?::(\d{2}))?/.exec(raw);
-	if (!match) return { label: 'GMT', minutes: 0 };
+	if (!match) return { label: 'GMT+0', minutes: 0 };
 
 	const sign = match[1] === '-' ? -1 : 1;
 	const minutes = sign * (Number(match[2]) * 60 + Number(match[3] ?? 0));
+
+	// Zero reads as a bare "GMT" out of Intl, which in a column of GMT−3, GMT−2,
+	// GMT, GMT+1 is the one heading that does not say where it sits. It is the
+	// middle of the list and it should look like it.
+	if (minutes === 0) return { label: 'GMT+0', minutes };
 
 	return { label: raw.replace('-', '−'), minutes };
 }
 
 /**
- * The whole list, grouped and sorted.
+ * The whole list, in one order: by offset, west to east.
  *
- * Sorted by offset inside each group rather than alphabetically: somebody
- * looking for their own zone knows roughly what their offset is and does not
- * know whether their city sorts before or after the next one along.
+ * It was grouped by continent, which is how the IANA names are spelled and not
+ * how anybody looks for their own zone. Finding "São Paulo" meant knowing it is
+ * filed under America, scrolling past Argentina and Bahia, and reading a list
+ * whose only ordering principle was the alphabet. The thing somebody actually
+ * knows about their timezone is roughly what it is offset by — the clock in
+ * front of them says so — so that is the ordering, and the headings run
+ * `GMT−8`, `GMT−7`, … `GMT+0`, `GMT+1`, the way a row of clocks on a wall does.
+ *
+ * Inside an offset the cities are alphabetical, because at that point the list
+ * is short and a name is what is being looked for.
  */
-export function zoneGroups(at = new Date()): { region: string; zones: Zone[] }[] {
+export function zoneGroups(at = new Date()): { label: string; zones: Zone[] }[] {
 	const all: Zone[] = supported().map((id) => {
 		const { label, minutes } = offsetOf(id, at);
 		return { id, city: cityOf(id), region: regionOf(id), offset: label, minutes };
 	});
 
-	const byRegion = new Map<string, Zone[]>();
+	const byOffset = new Map<number, Zone[]>();
 	for (const zone of all) {
-		const group = byRegion.get(zone.region) ?? [];
+		const group = byOffset.get(zone.minutes) ?? [];
 		group.push(zone);
-		byRegion.set(zone.region, group);
+		byOffset.set(zone.minutes, group);
 	}
 
-	return (
-		[...byRegion.entries()]
-			.map(([region, zones]) => ({
-				region,
-				zones: zones.sort((a, b) => a.minutes - b.minutes || a.city.localeCompare(b.city))
-			}))
-			// "Other" last: it is the bucket, and a bucket does not go first.
-			.sort((a, b) =>
-				a.region === 'Other' ? 1 : b.region === 'Other' ? -1 : a.region.localeCompare(b.region)
-			)
-	);
+	return [...byOffset.entries()]
+		.sort(([a], [b]) => a - b)
+		.map(([, zones]) => ({
+			// Every zone in the group shares the offset, so any of them can name it.
+			label: zones[0].offset,
+			zones: zones.sort((a, b) => a.city.localeCompare(b.city))
+		}));
 }
 
 /**
@@ -143,7 +154,14 @@ function supported(): string[] {
 	];
 }
 
-/** `São Paulo · GMT−3` — one zone, as the option reads. */
+/**
+ * `São Paulo · America` — one zone, as the option reads.
+ *
+ * The part of the world rather than the offset: the group heading above it is
+ * already the offset, and repeating it on four hundred lines is four hundred
+ * lines of the same three characters. What the region settles is which Georgia,
+ * which Cordoba.
+ */
 export function zoneLabel(zone: Zone): string {
-	return `${zone.city} · ${zone.offset}`;
+	return zone.region === 'Other' ? zone.city : `${zone.city} · ${zone.region}`;
 }

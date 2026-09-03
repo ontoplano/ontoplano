@@ -16,7 +16,7 @@ import { ServiceError, toActionFailure } from '$lib/server/services/errors';
 import { record } from '$lib/server/services/audit';
 import { resetDemoAccount } from '$lib/server/services/demo';
 import { claimFirstAccount } from '$lib/server/services/admin';
-import { onboardEntitlement } from '$lib/server/services/billing';
+import { onboardEntitlement, whyItCannotSell } from '$lib/server/services/billing';
 import { WANTED_PLAN_COOKIE } from '$lib/server/services/plan-intent';
 
 export const load: PageServerLoad = async (event) => {
@@ -133,6 +133,26 @@ export const actions: Actions = {
 		} catch (error) {
 			if (error instanceof ServiceError) return fail(403, { message: error.message });
 			return fail(500, { message: 'Unexpected error' });
+		}
+
+		/*
+		 * An instance that means to charge and cannot takes nobody's registration.
+		 *
+		 * Checked here, before the account row exists, rather than left to
+		 * `onboardEntitlement` below — a refusal after `signUpEmail` would leave a
+		 * real account with no entitlement and no way to get one. An invitation is
+		 * exempt: somebody has already paid for that seat, and nothing about it
+		 * touches a card.
+		 *
+		 * This is the state that gave the app away: registration worked, the
+		 * fourteen days started, and nothing anywhere said the checkout had been
+		 * skipped. Refusing is the smaller loss by a wide margin.
+		 */
+		const cannotSell = invite ? null : whyItCannotSell();
+		if (cannotSell) {
+			return fail(503, {
+				message: 'Registration is closed right now — this instance cannot take a card.'
+			});
 		}
 
 		// Where the fresh account goes. Card-first onboarding sends it to the

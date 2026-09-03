@@ -266,3 +266,38 @@ test('a button keeps its label under the pointer', async ({ page }) => {
 
 	expect(faded, 'a button whose label disappears under the pointer').toEqual([]);
 });
+
+/**
+ * A button says it is a button, under the pointer.
+ *
+ * Tailwind v4's reset gives buttons `cursor: default` where v3 left the
+ * browser's `pointer`. Nothing in the app said otherwise, so every link
+ * advertised itself as pressable and every button did not — a menu row that
+ * submits a form read as dead text beside the three above it that navigate.
+ *
+ * Asked of the real buttons on a real page rather than of the rule, because the
+ * rule is only worth having if it survives the specificity of everything else.
+ */
+test('every button on a page offers a pointer', async ({ page }) => {
+	await register(page, `cursor-${Date.now()}@test.invalid`);
+	await visit(page, '/planner/board');
+
+	const wrong = await page.evaluate(() => {
+		const bad: string[] = [];
+		for (const el of document.querySelectorAll('button')) {
+			const button = el as HTMLButtonElement;
+			if (button.disabled || button.getAttribute('aria-disabled') === 'true') continue;
+			// Only what somebody can actually point at.
+			const box = button.getBoundingClientRect();
+			if (box.width === 0 || box.height === 0) continue;
+
+			const cursor = getComputedStyle(button).cursor;
+			if (cursor !== 'pointer') {
+				bad.push(`${button.textContent?.trim().slice(0, 24) || button.className}: ${cursor}`);
+			}
+		}
+		return bad;
+	});
+
+	expect(wrong, 'buttons that do not look pressable').toEqual([]);
+});

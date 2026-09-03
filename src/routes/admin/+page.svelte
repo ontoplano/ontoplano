@@ -4,6 +4,7 @@
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import Banner from '$lib/components/Banner.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
@@ -59,6 +60,23 @@
 </script>
 
 <FormError message={form?.message} />
+
+<!--
+	Above everything, because it is worth more than everything else on this page.
+	An instance that means to charge and cannot used to look completely normal:
+	registrations succeeded, trials started, nothing anywhere said the card step
+	had been skipped. Registration refuses now — this is the sentence that says
+	why, where somebody will actually be standing when they wonder.
+-->
+{#if data.billingBroken}
+	<div class="mb-4">
+		<Banner kind="error" message={data.billingBroken} />
+		<p class="mt-2 text-sm text-gray-600">
+			Nobody can register until this is fixed. Existing accounts are untouched, and you can still
+			start a trial by hand from an account's page.
+		</p>
+	</div>
+{/if}
 
 <div class="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
 	<Card title="Accounts" description="Search by name or address. Newest first when empty." flush>

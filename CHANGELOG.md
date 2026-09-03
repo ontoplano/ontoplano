@@ -10,6 +10,24 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.58.0 — 2026-09-03
+
+- **An instance that means to charge and cannot now refuses registrations**
+  instead of handing out free trials. It used to be indistinguishable from a
+  self-hosted copy, so a production instance with billing not working gave every
+  new account fourteen free days, silently, for as long as nobody looked.
+  `/admin` says so in one sentence at the top of the page; invitations still
+  work, and existing accounts are untouched.
+- **Timezones are a list from west to east** — GMT−11 down to GMT+14 — instead
+  of continents in alphabetical order. What anybody knows about their own
+  timezone is roughly what it is offset by.
+- **Buttons look pressable again.** Tailwind v4's reset had left every button in
+  the app with the plain arrow cursor while every link said otherwise.
+- Resetting the demo account closes the menu and says it worked.
+- **The scheduled jobs had never run.** The reminders, the weekly mail and the
+  nightly billing reconcile were all pointed at the source checkout, which has
+  no dependencies installed — each died on its first import, in silence.
+
 ## 0.57.3 — 2026-09-03
 
 - **The Docker image would not build.** better-auth is constructed the moment
