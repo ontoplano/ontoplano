@@ -2045,21 +2045,23 @@ html .ec .ec-main {
 }
 
 /*
- * Dragging a block with a finger, without the page moving underneath it.
+ * A finger on a block scrolls the day. Holding still on one moves the block.
  *
- * The calendar starts a touch drag on a long press, but sets no `touch-action`
- * — so the browser was free to scroll at the same time, and a block being
- * dragged travelled while the grid slid under it. Both happened at once, which
- * is exactly as useless as it sounds.
+ * This said `touch-action: none` on every draggable block, so that a drag could
+ * not fight the page for the same gesture. It won that fight by taking the
+ * gesture always — and a block is a big target on a phone, so the grid could
+ * only be scrolled by finding a gap between them. On a full day there is no
+ * gap.
  *
- * `none` on the blocks themselves rather than on the grid: a finger that starts
- * on a block is dragging that block, and a finger that starts anywhere else —
- * the time column, the gutters, an empty half-hour — still scrolls normally. A
- * pointer-driven gesture cannot share a start with the browser's own.
+ * `manipulation` gives panning back to the browser and keeps the double-tap
+ * zoom out of the way. The drag is not lost: the calendar starts one only after
+ * a second of stillness, and from that moment it calls `preventDefault` on
+ * every touchmove itself — a scroll cannot have begun by then, because a finger
+ * that moved cancelled the press.
  */
 @media (pointer: coarse) {
 	html .ec .ec-event.ec-draggable {
-		touch-action: none;
+		touch-action: manipulation;
 	}
 }
 

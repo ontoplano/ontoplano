@@ -256,6 +256,17 @@
 	}
 
 	function showHover(info: { el: HTMLElement; event: Parameters<typeof describeGridEvent>[0] }) {
+		/*
+		 * Never on a touch screen.
+		 *
+		 * A tap synthesises `mouseenter`, and no `mouseleave` ever follows it —
+		 * so the card appeared on the first tap and then sat over the grid for
+		 * the rest of the session, including after the editor it opened was
+		 * cancelled. It is a hover affordance and a phone does not hover; tapping
+		 * a block opens the editor, which says everything this does and more.
+		 */
+		if (typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches) return;
+
 		const rect = info.el.getBoundingClientRect();
 		const flip = rect.right + 260 > window.innerWidth;
 		hovered = {
@@ -2102,8 +2113,18 @@
 					{:else}
 						<div class="divide-y divide-gray-200">
 							{#each data.schemes as scheme (scheme.id)}
-								<div class="flex items-center gap-4 px-4 py-3">
-									<form method="post" action="?/renameScheme" use:enhance class="min-w-0 flex-1">
+								<!--
+									Two rows on a phone, one on a desktop.
+
+									It was a single flex row — name, Rename, Load, Delete — and on
+									a narrow screen the name was the only thing that could give,
+									so it collapsed to a sliver and the schemes were a list of
+									identical unlabelled rows. The name is what somebody is
+									choosing between, so it gets its own line where there is not
+									room for both.
+								-->
+								<div class="space-y-2 px-4 py-3 sm:flex sm:items-center sm:gap-4 sm:space-y-0">
+									<form method="post" action="?/renameScheme" use:enhance class="min-w-0 sm:flex-1">
 										<input type="hidden" name="schemeId" value={scheme.id} />
 										<div class="flex gap-2">
 											<input
@@ -2112,83 +2133,98 @@
 												autocomplete="off"
 												value={scheme.name}
 												required
-												class="w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+												aria-label="Name of this scheme"
+												class="w-full min-w-0 border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 											/>
-											<button type="submit" class="btn"> Rename </button>
+											<button type="submit" class="btn shrink-0"> Rename </button>
 										</div>
 									</form>
-									<div class="flex shrink-0 items-center gap-2">
-										<form
-											method="post"
-											action="?/loadScheme"
-											use:enhance={() => {
-												return async ({ update }) => {
-													await update();
-													confirmingLoadSchemeId = null;
-												};
-											}}
-										>
-											<input type="hidden" name="schemeId" value={scheme.id} />
-											{#if confirmingLoadSchemeId === scheme.id}
-												<button
-													type="submit"
-													class="btn border-blue-200 text-blue-600 hover:bg-blue-50"
-												>
-													<!-- Specific, because the difference matters and is not
-													     guessable: a scheme is the repeating week, and the
-													     one-off blocks somebody put on this week by hand
-													     survive it. That is the right behaviour and it has
-													     to be said before the button is pressed, not
-													     discovered afterwards. -->
-													Replaces your repeating week. One-offs stay. Continue?
-												</button>
-											{:else}
-												<button
-													type="button"
-													onclick={() => {
-														confirmingLoadSchemeId = scheme.id;
-														confirmingDeleteSchemeId = null;
-													}}
-													class="btn"
-												>
-													Load
-												</button>
-											{/if}
-										</form>
 
-										{#if confirmingDeleteSchemeId === scheme.id}
-											<div class="flex items-center gap-2">
+									{#if confirmingLoadSchemeId === scheme.id}
+										<!--
+											The warning as a sentence, and the button as a button.
+
+											It used to BE the button — a paragraph of text in a control,
+											which on a phone was a long dark slab lying across the row
+											and half of the one under it. The words still have to be
+											read before it is pressed; they just are not a target.
+										-->
+										<div class="min-w-0 sm:shrink-0">
+											<p class="mb-1.5 text-xs text-gray-500">
+												Replaces your repeating week. One-off blocks stay.
+											</p>
+											<div class="flex gap-2">
 												<form
 													method="post"
-													action="?/deleteScheme"
+													action="?/loadScheme"
 													use:enhance={() => {
 														return async ({ update }) => {
 															await update();
-															confirmingDeleteSchemeId = null;
+															confirmingLoadSchemeId = null;
 														};
 													}}
 												>
 													<input type="hidden" name="schemeId" value={scheme.id} />
 													<button
 														type="submit"
-														class="border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 shadow-sm transition hover:bg-red-100"
-														use:armed
+														class="btn border-blue-200 text-blue-600 hover:bg-blue-50"
 													>
-														Confirm?
+														Load it
 													</button>
 												</form>
 												<button
 													type="button"
-													onclick={() => (confirmingDeleteSchemeId = null)}
+													onclick={() => (confirmingLoadSchemeId = null)}
 													class="btn"
 												>
 													Cancel
 												</button>
 											</div>
-										{:else}
+										</div>
+									{:else if confirmingDeleteSchemeId === scheme.id}
+										<div class="flex shrink-0 items-center gap-2">
+											<form
+												method="post"
+												action="?/deleteScheme"
+												use:enhance={() => {
+													return async ({ update }) => {
+														await update();
+														confirmingDeleteSchemeId = null;
+													};
+												}}
+											>
+												<input type="hidden" name="schemeId" value={scheme.id} />
+												<button
+													type="submit"
+													class="border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 shadow-sm transition hover:bg-red-100"
+													use:armed
+												>
+													Delete it?
+												</button>
+											</form>
+											<button
+												type="button"
+												onclick={() => (confirmingDeleteSchemeId = null)}
+												class="btn"
+											>
+												Cancel
+											</button>
+										</div>
+									{:else}
+										<div class="flex shrink-0 items-center gap-2">
+											<button
+												type="button"
+												onclick={() => {
+													confirmingLoadSchemeId = scheme.id;
+													confirmingDeleteSchemeId = null;
+												}}
+												class="btn"
+											>
+												Load
+											</button>
 											<button
 												title="Delete"
-												aria-label="Delete"
+												aria-label="Delete {scheme.name}"
 												type="button"
 												onclick={() => {
 													confirmingDeleteSchemeId = scheme.id;
@@ -2198,8 +2234,8 @@
 											>
 												<Icon name="trash" />
 											</button>
-										{/if}
-									</div>
+										</div>
+									{/if}
 								</div>
 							{/each}
 						</div>
@@ -2264,32 +2300,39 @@
 						use:enhance
 						class="border-t border-gray-200 p-4"
 					>
+						<!--
+							The address gets a line of its own on a phone.
+
+							Four controls on one row left it about two characters wide —
+							long enough to show "ht" of an iCal URL, which is the one field
+							here nobody can type from memory and everybody pastes.
+						-->
 						<div class="flex flex-wrap gap-2">
-							<input
-								name="label"
-								placeholder="Work"
-								autocomplete="off"
-								required
-								class="input w-32"
-								aria-label="What to call it"
-							/>
 							<input
 								autocomplete="off"
 								name="url"
 								type="url"
 								placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"
 								required
-								class="input min-w-0 flex-1"
+								class="input w-full min-w-0 sm:order-2 sm:w-auto sm:flex-1"
 								aria-label="The calendar's iCal address"
+							/>
+							<input
+								name="label"
+								placeholder="Work"
+								autocomplete="off"
+								required
+								class="input w-32 sm:order-1"
+								aria-label="What to call it"
 							/>
 							<input
 								name="color"
 								type="color"
 								value="#6b7280"
-								class="h-10 w-12 border border-gray-300"
+								class="h-10 w-12 border border-gray-300 sm:order-3"
 								aria-label="Colour"
 							/>
-							<button class="btn btn-primary" title="Subscribe" aria-label="Subscribe">
+							<button class="btn btn-primary sm:order-4" title="Subscribe" aria-label="Subscribe">
 								<Icon name="plus" />
 							</button>
 						</div>
@@ -3168,6 +3211,7 @@
 	</div>
 	{#if hovered}
 		<div
+			data-block-hover
 			class="pointer-events-none fixed z-50 max-w-[240px] border border-gray-200 bg-white px-3 py-2 shadow-sm"
 			style:top="{hovered.top}px"
 			style:left="{hovered.left}px"

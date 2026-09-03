@@ -76,3 +76,26 @@ test.describe('with a finger', () => {
 		await expect(page.getByRole('heading', { name: 'New block' })).toHaveCount(0);
 	});
 });
+
+/** What a tap on a block must not leave behind. */
+test.describe('tapping a block', () => {
+	test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+	/**
+	 *
+	 * A tap raises `mouseenter` and never raises `mouseleave`, so the hover card
+	 * appeared over the grid on the first tap and stayed for the session —
+	 * including after the editor that same tap opened had been cancelled.
+	 */
+	test('tapping a block leaves no hover card behind', async ({ page }) => {
+		await register(page, `plan-hover-${Date.now()}@test.invalid`);
+		await visit(page, '/planner/plan');
+
+		const block = page.locator('.ec-event.ec-draggable').first();
+		await expect(block).toBeVisible();
+		await block.dispatchEvent('mouseenter');
+		await page.waitForTimeout(200);
+
+		expect(await page.locator('[data-block-hover]').count()).toBe(0);
+	});
+});

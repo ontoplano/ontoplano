@@ -10,6 +10,17 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.57.1 — 2026-09-03
+
+- **The planner scrolls with a finger on a block.** Blocks are big targets and a
+  full day has no gaps between them, so the afternoon could only be reached by
+  finding empty space. Holding still on one still picks it up.
+- Tapping a block no longer leaves a small card stuck over the grid.
+- Schemes are readable on a phone: the name has its own line, and the warning
+  before loading one is a sentence rather than a button the width of the screen.
+- The address box for a calendar you subscribe to is no longer two characters
+  wide on a phone.
+
 ## 0.57.0 — 2026-09-03
 
 - **Reminders reach your phone with the app closed.** Until now one only
