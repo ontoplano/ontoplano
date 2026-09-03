@@ -230,7 +230,7 @@ and nothing anywhere would notice.
 
 So the provider is the single source, this endpoint is how anything outside
 the app reads it, and `make deploy-site` fetches it at build time. Changing a
-price is changing it in Paddle and deploying; nothing is typed twice.
+price is changing it at the provider and deploying; nothing is typed twice.
 
 Public and cacheable on purpose: it is the number on a public page, and it
 discloses nothing an anonymous visitor cannot already read. It carries no

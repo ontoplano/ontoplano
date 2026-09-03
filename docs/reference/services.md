@@ -422,7 +422,7 @@ Whether this instance can actually sell anything.
 
 What the price is, asked of the thing that will charge it.
 
-#### `paddleClientConfig()`
+#### `checkoutClientConfig()`
 
 The token the checkout page needs, when there is a provider with a widget.
 

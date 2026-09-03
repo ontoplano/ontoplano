@@ -786,21 +786,37 @@ function pagesPage() {
 
 /* ---------------------------------------------------------------- config */
 
-/** Every `process.env.ONTOPLANO_*` the source actually reads. */
+/**
+ * Every `ONTOPLANO_*` variable the source actually reads.
+ *
+ * Two patterns, because there are two ways the code reads one. Most places name
+ * it outright — `process.env.ONTOPLANO_DEMO` — and the first expression catches
+ * those. But `settings.ts` reads its numbers through helpers (`int('ONTOPLANO_
+ * PRICE_MONTHLY_CENTS', …)`, `flag('ONTOPLANO_FAMILY_PLAN')`), and a scanner
+ * that only looked for the literal member access silently omitted the whole
+ * pricing block — which is exactly the drift this table exists to prevent. So
+ * the second expression takes any `ONTOPLANO_*` written as a string literal.
+ */
 function environmentVariables() {
 	const files = [
 		...walk(join(ROOT, 'src'), (f) => f.endsWith('.ts')),
 		...walk(join(ROOT, 'scripts'), (f) => f.endsWith('.mjs') || f.endsWith('.ts'))
 	];
 
+	const patterns = [/process\.env\.(ONTOPLANO_[A-Z0-9_]+)/g, /['"`](ONTOPLANO_[A-Z0-9_]+)['"`]/g];
+
 	const found = new Map();
 	for (const file of files) {
-		if (file.includes('.test.')) continue;
+		// Not this file: the comment above names two variables as examples, and a
+		// scanner that reads itself would list itself as their reader.
+		if (file.includes('.test.') || file.endsWith('build-docs.mjs')) continue;
 		const text = readFileSync(file, 'utf8');
-		for (const m of text.matchAll(/process\.env\.(ONTOPLANO_[A-Z0-9_]+)/g)) {
-			const where = relative(ROOT, file);
-			if (!found.has(m[1])) found.set(m[1], new Set());
-			found.get(m[1]).add(where);
+		const where = relative(ROOT, file);
+		for (const pattern of patterns) {
+			for (const m of text.matchAll(pattern)) {
+				if (!found.has(m[1])) found.set(m[1], new Set());
+				found.get(m[1]).add(where);
+			}
 		}
 	}
 
