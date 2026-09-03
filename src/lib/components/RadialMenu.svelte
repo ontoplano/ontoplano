@@ -246,6 +246,23 @@
 	}
 
 	const size = (OUTER + PAD) * 2;
+	/**
+	 * Says on the document that a menu is open, for the things that float.
+	 *
+	 * The reminder card is fixed above everything so that it is seen; the pie is
+	 * fixed above everything because a finger is on it. Both being right is what
+	 * put a toast across the middle of the menu somebody was in the middle of
+	 * using. Rather than another round of z-index — which only decides which one
+	 * covers the other — the floating layers step aside for the duration of a
+	 * gesture and come back when it ends. `layout.css` has the rule.
+	 */
+	$effect(() => {
+		if (typeof document === 'undefined') return;
+		const root = document.documentElement;
+		if (open) root.dataset.pieOpen = '';
+		else delete root.dataset.pieOpen;
+		return () => delete root.dataset.pieOpen;
+	});
 </script>
 
 <svelte:window

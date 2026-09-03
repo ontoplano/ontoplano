@@ -3,133 +3,157 @@ import { register } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
- * The one thing in this app that reaches out.
+ * A reminder actually reaching somebody.
  *
- * The whole point is that it arrives without being asked for, so what matters
- * is the loop: set one on a block, have it fall due, and see it on the screen
- * — and then see it not arrive a second time.
+ * The three things a browser has to do, in the order it does them: notice the
+ * reminder is due, put it on the screen, and — where permission has been given
+ * — raise a system notification. The fourth, reaching a phone with the app
+ * closed, needs the browser vendor's push service and cannot be exercised
+ * offline; `tests/reminders-push.test.ts` covers the server half of it and the
+ * service worker's `push` handler is asserted below by reading the worker the
+ * browser actually registered.
+ *
+ * `Notification` is replaced before any app code runs rather than checked
+ * afterwards: a real one is drawn by the operating system, where Playwright
+ * cannot see it, so what is testable is that the app asked for it and with
+ * what.
  */
-test('a reminder is set on a block and arrives on its own', async ({ page }) => {
-	await register(page, `remind-${Date.now()}@test.invalid`);
-	await visit(page, '/planner/board');
-
-	// Onboarding filled today, so there is a block to be reminded about.
-	const card = page.locator('article').first();
-	await expect(card).toBeVisible();
-	await card.getByRole('button', { name: /^edit/i }).click();
-
-	const editor = page.locator('dialog[open]');
-	await expect(editor.getByText('Remind me')).toBeVisible();
-
-	// An hour before, so it is already overdue for a block earlier in the day —
-	// and if it is not, it still has to be listed as set.
-	await editor.getByRole('button', { name: /1 hour before/i }).click();
-	await page.waitForTimeout(600);
-
-	await expect(page.getByRole('button', { name: /remove the reminder at/i })).toBeVisible();
-});
-
-test('what fell due arrives, once', async ({ page }) => {
-	await register(page, `remind-due-${Date.now()}@test.invalid`);
-	await visit(page, '/planner/board');
-
-	// A day's lead, so the nudge for one of today's blocks is already in the
-	// past. The editor only offers up to an hour; this posts the same action it
-	// does, which is the only way to make "already due" happen inside a test.
-	await page.locator('article').first().getByRole('button', { name: /^edit/i }).click();
-	const editor = page.locator('dialog[open]');
-	await expect(editor.getByText('Remind me')).toBeVisible();
-
-	const id = await editor.locator('form[action="?/remind"] input[name=id]').first().inputValue();
-	const made = await page.evaluate(async (blockId) => {
-		const body = new FormData();
-		body.append('id', blockId);
-		body.append('minutes', String(24 * 60));
-		const res = await fetch('/planner/board?/remind', {
-			method: 'POST',
-			headers: { 'x-sveltekit-action': 'true' },
-			body
-		});
-		return res.status;
-	}, id);
-	expect(made).toBe(200);
-
-	// The poller runs on mount and whenever the tab comes back.
-	await visit(page, '/');
-	const toast = page.locator('[role=status]').first();
-	await expect(toast).toBeVisible({ timeout: 10_000 });
-
-	// And never again: it is marked delivered the moment it is on screen.
-	await page.reload({ waitUntil: 'load' });
-	await page.waitForSelector('html[data-ready]');
-	await page.waitForTimeout(1500);
-	await expect(page.locator('[role=status]')).toHaveCount(0);
-});
 
 /**
- * The lead lives on the block, and reaches every occurrence of it.
+ * A reminder that is already due, made the way the app makes one.
  *
- * This is the shape a reminder has now: said once, on the thing being planned,
- * rather than set again on each occurrence — and there is no way to make one
- * about nothing, which is what used to leave them appearing in no list.
+ * Through the real forms rather than a test-only endpoint: a one-off block that
+ * started a few minutes ago, and the board's own "remind me before this"
+ * control set to a lead that lands in the past. A backdoor that manufactured
+ * the row would prove the card renders and nothing about the path that fills
+ * it.
  */
-test('a lead set on a block reminds about every occurrence', async ({ page }) => {
-	await register(page, `remind-lead-${Date.now()}@test.invalid`);
+async function dueReminder(page: import('@playwright/test').Page, message: string) {
+	await visit(page, '/planner/plan');
 
-	// Editing a block the starter week already put there, rather than making
-	// one: what is being checked is that the lead is a property of the block and
-	// comes back when you reopen it.
-	await visit(page, '/planner/plan?view=week');
-	await page.locator('.ec-event').first().click();
+	const now = new Date();
+	const pad = (n: number) => String(n).padStart(2, '0');
+	const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+	// Far enough back that the lead below is comfortably past, and still today.
+	const started = new Date(now.getTime() - 20 * 60_000);
+	const startTime = `${pad(started.getHours())}:${pad(started.getMinutes())}`;
 
-	const form = page.locator('dialog[open]');
-	await expect(form.getByText('Remind me')).toBeVisible();
+	// Whatever category this account was set up with; the block needs one and
+	// which one it is does not matter here. Asked of the endpoint the capture
+	// dialogs use, because the block form's own select is only in the DOM once
+	// that form is open.
+	const options = await page.request.get('/api/capture-options');
+	const categoryId = ((await options.json()) as { categories: { id: number }[] }).categories[0]?.id;
+	expect(categoryId, 'the account has a category to file a block under').toBeTruthy();
 
-	// A value the chips do not offer, because the chips are shortcuts for
-	// typing a number rather than the only numbers there are.
-	await form.locator('input[name=remindLeadMinutes]').fill('45');
-	await form.getByRole('button', { name: 'Save' }).first().click();
-	await page.waitForTimeout(900);
-
-	// Reopened, it still says forty-five — the lead is on the block, not on one
-	// occurrence, so it has to survive the round trip.
-	await page.reload({ waitUntil: 'load' });
-	await page.waitForSelector('html[data-ready]');
-	await page.locator('.ec-event').first().click();
-	await expect(page.locator('dialog[open] input[name=remindLeadMinutes]')).toHaveValue('45');
-
-	// And a chip writes into the same box rather than being a second answer.
-	await page.locator('dialog[open]').getByRole('button', { name: '10 min' }).click();
-	await expect(page.locator('dialog[open] input[name=remindLeadMinutes]')).toHaveValue('10');
+	// The origin header is what SvelteKit checks a form POST against; a request
+	// made through the API client does not carry one by itself.
+	// One post: the block and the "remind me five minutes before it" together.
+	// A block that started twenty minutes ago therefore has a reminder that fell
+	// due fifteen minutes ago, which is exactly the state being tested.
+	const created = await page.request.post('/planner/plan?/createExceptional', {
+		// The origin header is what SvelteKit checks a form POST against; a
+		// request made through the API client does not carry one by itself.
+		headers: { origin: new URL(page.url()).origin },
+		form: {
+			date: today,
+			startTime,
+			durationMinutes: '60',
+			remindLeadMinutes: '5',
+			mode: 'category',
+			categoryId: String(categoryId),
+			label: message
+		}
+	});
+	expect(created.ok(), `the block was created: ${created.status()}`).toBe(true);
 
 	/*
-	 * Clicking the box and typing gives you what you typed.
-	 *
-	 * A number field showing 10, clicked, puts the caret at the end — so typing
-	 * 2 gave 102, and a field showing 0 gave 02. Real clicks and real keys,
-	 * because this is entirely about what the browser does with a caret and
-	 * nothing about what the app renders.
+	 * Occurrences are made when a day is first looked at, and the reminder rows
+	 * are made with them — so the block above is not yet a thing that can fall
+	 * due. Opening the day is what turns it into one, which is also what happens
+	 * in life: nobody sets a reminder for a day they never open.
 	 */
-	const box = page.locator('dialog[open] input[name=remindLeadMinutes]');
-	await box.click();
-	await page.keyboard.type('2');
-	await expect(box).toHaveValue('2');
+	await visit(page, `/planner/board?date=${today}`);
+}
+
+test('a due reminder arrives on the page, and as a notification', async ({ page, context }) => {
+	await context.grantPermissions(['notifications']);
+
+	// Before the app loads: the page reads `Notification.permission` on mount.
+	await page.addInitScript(() => {
+		const raised: { title: string; tag?: string }[] = [];
+		(window as unknown as { __notifications: typeof raised }).__notifications = raised;
+
+		class Recorded {
+			static permission = 'granted';
+			static requestPermission = async () => 'granted';
+			constructor(title: string, options?: { tag?: string }) {
+				raised.push({ title, tag: options?.tag });
+			}
+		}
+		Object.defineProperty(window, 'Notification', { value: Recorded, configurable: true });
+	});
+
+	await register(page, `reminders-${Date.now()}@test.invalid`);
+	await dueReminder(page, 'Stretch before the call');
+
+	// The card, which is the channel that needs no permission at all.
+	const card = page.getByRole('status').filter({ hasText: 'Stretch before the call' });
+	await expect(card).toBeVisible({ timeout: 90_000 });
+
+	// And the system notification, asked for with the same words.
+	const raised = await page.evaluate(
+		() => (window as unknown as { __notifications: { title: string }[] }).__notifications
+	);
+	expect(raised.map((n) => n.title)).toContain('Stretch before the call');
 });
 
 /**
- * There is no page of reminders, and no way to make one about nothing.
- *
- * Both went together: a reminder that is not about anything has nowhere to
- * lead and nothing to be before, which is why it needed a list of its own in
- * the first place.
+ * The bug in the screenshot: a reminder card lying across the middle of the
+ * radial menu, hiding the wedges being aimed at. Both are fixed layers and both
+ * are right to be — so what floats gets out of the way for the length of the
+ * gesture.
  */
-test('there is no reminders page any more', async ({ page }) => {
-	await register(page, `remind-gone-${Date.now()}@test.invalid`);
+test('a reminder card does not sit on top of the menu', async ({ page }) => {
+	await register(page, `reminder-pie-${Date.now()}@test.invalid`);
+	await dueReminder(page, 'Something is due');
 
-	const res = await visit(page, '/planner/reminders');
-	expect(res?.status()).toBe(404);
+	const card = page.getByRole('status').filter({ hasText: 'Something is due' });
+	await expect(card).toBeVisible({ timeout: 90_000 });
 
-	await visit(page, '/planner/todo');
-	// A todo has no time, so it has no reminder control.
-	await expect(page.getByRole('button', { name: /remind me about/i })).toHaveCount(0);
+	// The rooms pie, opened the way a finger opens it: a press on the handle in
+	// the middle of the bar.
+	const handle = page.locator('[data-tour="rooms"]:visible').first();
+	await handle.hover();
+	await page.mouse.down();
+	await page.mouse.up();
+	const pie = page.locator('.pie-layer');
+	await expect(pie).toBeVisible();
+
+	await expect(card).not.toBeVisible();
+
+	await page.keyboard.press('Escape');
+	await expect(pie).not.toBeVisible();
+	await expect(card).toBeVisible();
+});
+
+/**
+ * The worker is what a phone runs with the app closed, so the handler being
+ * there is the difference between reminders that arrive and reminders that do
+ * not. Read from the file the browser registered rather than from source: a
+ * build that dropped it would still have it in `src`.
+ */
+test('the registered service worker handles a push', async ({ page }) => {
+	await register(page, `sw-push-${Date.now()}@test.invalid`);
+
+	const url = await page.evaluate(async () => {
+		const registration = await navigator.serviceWorker.ready;
+		return registration.active?.scriptURL ?? null;
+	});
+	expect(url, 'the app registered a service worker').not.toBeNull();
+
+	const source = await page.evaluate(async (at: string) => (await fetch(at)).text(), url!);
+	expect(source).toContain('push');
+	expect(source).toContain('showNotification');
+	expect(source).toContain('notificationclick');
 });

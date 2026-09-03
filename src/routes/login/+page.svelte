@@ -39,6 +39,15 @@
 			<div class="mb-5"><StagingBand /></div>
 		{/if}
 
+		<!--
+			Says which plan is being signed up for, because the price is not asked
+			for until two pages later — somebody who pressed the family button
+			should see that choice survived the click.
+		-->
+		{#if mode === 'register' && data.wantedPlan === 'family'}
+			<p class="mb-5 text-sm text-gray-600">Family plan. The card comes after your address.</p>
+		{/if}
+
 		{#if mode === 'register' && data.needsInvite}
 			<div class="mb-5">
 				<Banner

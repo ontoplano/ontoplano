@@ -295,6 +295,20 @@
       "when": 1788414883029,
       "tag": "0041_people_who_asked_to_be_told",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "6",
+      "when": 1788464186027,
+      "tag": "0042_told_on_the_phone",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "6",
+      "when": 1788464397403,
+      "tag": "0043_birthdays_that_tell_you",
+      "breakpoints": true
     }
   ]
 }

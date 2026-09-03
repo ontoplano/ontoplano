@@ -1,0 +1,1 @@
+ALTER TABLE `people` ADD `remind_on_birthday` integer DEFAULT true NOT NULL;

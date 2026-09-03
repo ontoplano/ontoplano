@@ -123,7 +123,11 @@ export const NOT_PORTABLE: Record<string, string> = {
 	webhookSubscriptions: 'a subscription would start posting from here without being asked',
 	// The record of what happened on the old account, on the old instance. The
 	// import writes one event of its own instead.
-	auditEvents: 'the log is a record of an instance, not a possession'
+	auditEvents: 'the log is a record of an instance, not a possession',
+	// An address at a push service, tied to one browser and to the key of the
+	// instance it subscribed to. Nothing here could send to it, and permission
+	// given to one site is not permission given to another.
+	pushSubscriptions: 'a device agreed to hear from the instance it subscribed to'
 };
 
 export type ImportResult = {

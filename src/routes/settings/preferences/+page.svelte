@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import { disablePush, enablePush, pushEnabled, pushSupported } from '$lib/push';
 	import { settingsForm } from '$lib/actions/settings-form';
 	import { isCurrency } from '$lib/money';
 	import TimezonePicker from '$lib/components/TimezonePicker.svelte';
@@ -134,6 +136,37 @@
 			return;
 
 		if (e.key === 'Escape') confirmRemove = null;
+	}
+
+	/*
+	 * Whether this browser is signed up, asked of the browser itself.
+	 *
+	 * The server's row can outlive a subscription the browser quietly dropped —
+	 * cleared site data, a rotated endpoint — and the question on this page is
+	 * "will this device be told", which only the device can answer.
+	 */
+	let notifications = $state<'off' | 'on' | 'denied' | 'unsupported'>('off');
+
+	$effect(() => {
+		if (!pushSupported()) {
+			notifications = 'unsupported';
+			return;
+		}
+		if (Notification.permission === 'denied') {
+			notifications = 'denied';
+			return;
+		}
+		void pushEnabled().then((on) => (notifications = on ? 'on' : 'off'));
+	});
+
+	async function turnOn() {
+		const result = await enablePush(page.data.pushKey ?? null);
+		notifications = result === 'failed' ? 'off' : result;
+	}
+
+	async function turnOff() {
+		await disablePush();
+		notifications = 'off';
 	}
 </script>
 
@@ -288,6 +321,41 @@
 		</div>
 		<button class="btn btn-primary">Save</button>
 	</form>
+
+	<!--
+		Notifications, which are per device and cannot be otherwise.
+
+		Permission belongs to the browser on the machine it was given on, so this
+		is not a setting stored against the account: the phone and the laptop
+		answer separately, and a switch that claimed to speak for both would be
+		lying on one of them. Absent entirely on an instance with no keys, rather
+		than shown and broken.
+	-->
+	{#if page.data.pushKey}
+		<section class="space-y-4 border border-gray-200 bg-white p-6 shadow-card">
+			<div>
+				<h2 class="text-sm font-semibold text-gray-900">Notifications on this device</h2>
+				<p class="mt-1 text-sm text-gray-500">
+					Reminders arrive with the app closed. Asked for once per browser.
+				</p>
+			</div>
+
+			{#if notifications === 'unsupported'}
+				<p class="text-sm text-gray-500">This browser cannot do it.</p>
+			{:else if notifications === 'denied'}
+				<p class="text-sm text-gray-500">
+					Blocked for this site. Its permission has to be changed in the browser.
+				</p>
+			{:else if notifications === 'on'}
+				<div class="flex items-center gap-3">
+					<span class="text-sm text-gray-700">On for this device.</span>
+					<button class="btn btn-sm" onclick={turnOff}>Turn off</button>
+				</div>
+			{:else}
+				<button class="btn btn-primary" onclick={turnOn}>Turn on</button>
+			{/if}
+		</section>
+	{/if}
 
 	<!--
 		The rooms: one list, three answers.

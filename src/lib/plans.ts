@@ -161,6 +161,23 @@ export function formatPrice(cents: number, currency = 'USD'): string {
 	return `${symbol}${(cents / 100).toFixed(2)}`;
 }
 
+/**
+ * One plan's two numbers, in the shape everything already reads.
+ *
+ * The family rate lives in its own fields, so every page that wants to show it
+ * has to branch on which pair of numbers to read — and `describeYearly` and
+ * `formatPrice` would each need a family twin. Swapping the pair in keeps one
+ * set of price-shaped code for both plans.
+ */
+export function tierPricing(pricing: Pricing, tier: 'solo' | 'family'): Pricing {
+	if (tier !== 'family') return pricing;
+	return {
+		...pricing,
+		monthlyCents: pricing.familyMonthlyCents,
+		yearlyCents: pricing.familyYearlyCents
+	};
+}
+
 /** "$30.00 a year — $2.50 a month" and the saving, for the one place it is sold. */
 export function describeYearly(pricing: Pricing): string | null {
 	if (pricing.yearlyCents <= 0 || pricing.monthlyCents <= 0) return null;

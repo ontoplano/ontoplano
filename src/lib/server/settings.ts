@@ -264,6 +264,12 @@ export type GridHours = { start: number; end: number };
 export const DEFAULT_GRID_HOURS: GridHours = { start: 6, end: 24 };
 
 function hour(raw: string | null, fallback: number, max: number): number {
+	// Unset first, and explicitly: `Number(null)` is 0, not NaN, so an hour that
+	// had never been stored read as midnight and passed every check below. An
+	// account with a start hour and no end hour therefore had an end of zero,
+	// which is not a day, and the whole pair was thrown away for the default.
+	if (raw === null || raw.trim() === '') return fallback;
+
 	const n = Number(raw);
 	return Number.isInteger(n) && n >= 0 && n <= max ? n : fallback;
 }

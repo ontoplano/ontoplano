@@ -28,7 +28,7 @@
 
 {#if undo.pending.length > 0}
 	<div
-		class="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-4 lg:bottom-6 lg:left-auto lg:items-end lg:px-6"
+		class="float-layer pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-4 lg:bottom-6 lg:left-auto lg:items-end lg:px-6"
 	>
 		{#each undo.pending as item (item.id)}
 			{@const left = Math.max(0, Math.ceil((item.until - now) / 1000))}

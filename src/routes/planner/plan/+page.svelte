@@ -181,10 +181,63 @@
 	function setZoom(index: number) {
 		const next = Math.min(Math.max(index, 0), GRID_ZOOM_LEVELS.length - 1);
 		if (next === zoomIndex) return;
+
+		/*
+		 * Zooming keeps the hour you were looking at, not the pixel.
+		 *
+		 * Every hour gets taller or shorter under the viewport, and left alone the
+		 * scroller kept its pixel offset — which after a zoom is a different time,
+		 * so examining a busy evening and pressing + threw the view back towards
+		 * the morning. What is remembered is therefore a fraction of the day, not
+		 * a number of pixels, and the anchor is the middle of the viewport rather
+		 * than its top, because that is where somebody is looking.
+		 *
+		 * Put back by the effect below rather than here: the grid has not been
+		 * laid out at the new height yet, and a scrollTop written now is
+		 * overwritten by the calendar's own render.
+		 */
+		const el = scroller();
+		zoomAnchor =
+			el && el.scrollHeight > 0 ? (el.scrollTop + el.clientHeight / 2) / el.scrollHeight : null;
+
 		zoomIndex = next;
 		hovered = null;
 		if (browser) localStorage.setItem(ZOOM_STORAGE_KEY, String(next));
 	}
+
+	/** Where in the day we were, kept across a zoom. Null when nothing is owed. */
+	let zoomAnchor: number | null = null;
+
+	/*
+	 * Put the day back where it was, once the grid is the new height.
+	 *
+	 * Re-applied over a handful of frames on purpose. The calendar re-renders in
+	 * stages after a slot height changes and resets its scroller as it goes, so
+	 * a single write — even one deferred by a frame — is landed on and lost. Six
+	 * frames is a tenth of a second, invisible, and the only version of this that
+	 * actually holds.
+	 */
+	$effect(() => {
+		// The dependency: read into a variable, since a bare expression is a value
+		// thrown away and the dependency goes with it.
+		const height = slotHeight;
+		if (zoomAnchor === null || height <= 0) return;
+
+		const wanted = zoomAnchor;
+		zoomAnchor = null;
+		let frames = 0;
+		let frame = requestAnimationFrame(function settle() {
+			const el = scroller();
+			if (el && el.scrollHeight > 0) {
+				const top = wanted * el.scrollHeight - el.clientHeight / 2;
+				el.scrollTop = Math.max(0, Math.min(top, el.scrollHeight - el.clientHeight));
+				keptScroll = el.scrollTop;
+			}
+			if (frames++ < 6) frame = requestAnimationFrame(settle);
+		});
+
+		return () => cancelAnimationFrame(frame);
+	});
 
 	// Ctrl/Cmd+wheel over the grid zooms the grid instead of the whole page. The listener
 	// must be non-passive for preventDefault() to take effect, hence the manual binding.

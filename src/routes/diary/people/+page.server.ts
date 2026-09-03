@@ -35,6 +35,7 @@ export const actions: Actions = {
 				name: formData.get('label'),
 				relationship: formData.get('relationship'),
 				birthday: formData.get('bornOn'),
+				remindOnBirthday: formData.get('tellMe'),
 				phone: formData.get('theirPhone'),
 				email: formData.get('theirEmail'),
 				notes: formData.get('notes')
@@ -52,6 +53,7 @@ export const actions: Actions = {
 				name: formData.get('label'),
 				relationship: formData.get('relationship'),
 				birthday: formData.get('bornOn'),
+				remindOnBirthday: formData.get('tellMe'),
 				phone: formData.get('theirPhone'),
 				email: formData.get('theirEmail'),
 				notes: formData.get('notes')

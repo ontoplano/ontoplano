@@ -162,6 +162,7 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_HEALTH_TOKEN`               | `src/lib/server/settings.ts`, `src/routes/healthz/+server.ts` |
 | `ONTOPLANO_HTTPS`                      | `src/hooks.server.ts`                                         |
 | `ONTOPLANO_JURISDICTION`               | `src/lib/server/services/legal.ts`                            |
+| `ONTOPLANO_MAIL_FROM`                  | `src/lib/server/services/push.ts`                             |
 | `ONTOPLANO_OPERATOR`                   | `src/lib/server/services/legal.ts`                            |
 | `ONTOPLANO_ORIGIN`                     | `scripts/build-twa.mjs`                                       |
 | `ONTOPLANO_OWNER_ID`                   | `src/lib/server/settings.ts`                                  |
@@ -182,6 +183,8 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_TRIAL_DAYS`                 | `src/lib/server/settings.ts`                                  |
 | `ONTOPLANO_TRIAL_REQUIRES_CARD`        | `src/lib/server/settings.ts`                                  |
 | `ONTOPLANO_TRUST_PROXY`                | `src/lib/server/rate-limit.ts`                                |
+| `ONTOPLANO_VAPID_PRIVATE_KEY`          | `src/lib/server/services/push.ts`                             |
+| `ONTOPLANO_VAPID_PUBLIC_KEY`           | `src/lib/server/services/push.ts`                             |
 
 ## Per-account settings
 

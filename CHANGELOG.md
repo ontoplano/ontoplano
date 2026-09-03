@@ -10,6 +10,29 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.57.0 — 2026-09-03
+
+- **Reminders reach your phone with the app closed.** Until now one only
+  appeared if you already had the app open in front of you — and on a phone it
+  never appeared at all. Turn notifications on under Settings → Preferences, once
+  per device.
+- **Birthdays tell you.** A person with a birthday is announced on the morning of
+  it, at the hour your own day starts, and the reminder leads to them. There is a
+  box beside the date for the birthdays you keep and do not celebrate.
+- **The service worker was never running.** It has been built and shipped on
+  every release and registered by nothing — so the offline page, the shopping
+  list without a signal, and every notification with them.
+- A page in a background tab keeps checking for reminders, five minutes apart,
+  instead of going silent until you look at it.
+- **The family plan can be bought.** Pressing "for the family" on the front page
+  reached a card page that only ever sold one seat. Both plans are offered there
+  now, opening on whichever was chosen.
+- The planner keeps the hour you were looking at when you zoom, instead of
+  jumping back to the start of the day.
+- A reminder card no longer lies across the middle of the menu you are using.
+- A day with a start hour and no end hour drew the default hours instead of the
+  ones set.
+
 ## 0.56.0 — 2026-09-03
 
 - **Confirming your address no longer skips the card.** The link in the

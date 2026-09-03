@@ -21,6 +21,13 @@
 
 	let showForm = $state(false);
 	let editingId = $state<number | null>(null);
+
+	/*
+	 * The birthday as it is being typed, because the checkbox under it appears
+	 * with the date rather than with the saved person.
+	 */
+	let bornOn = $state('');
+	let tellMe = $state(true);
 	/** The face's own form, submitted the moment a file is chosen. */
 	let pictureForm = $state<HTMLFormElement>();
 	let uploadingFace = $state(false);
@@ -36,11 +43,15 @@
 
 	function openCreate() {
 		editingId = null;
+		bornOn = '';
+		tellMe = true;
 		showForm = true;
 	}
 
 	function openEdit(person: Person) {
 		editingId = person.id;
+		bornOn = person.birthday ?? '';
+		tellMe = person.remindOnBirthday;
 		showForm = true;
 	}
 
@@ -322,10 +333,25 @@
 					name="bornOn"
 					autocomplete="off"
 					placeholder="1990-03-14"
-					value={editing?.birthday ?? ''}
+					bind:value={bornOn}
 					class="input"
 				/>
 			</Field>
+
+			<!--
+				Only once there is a date to be told about. A checkbox offering to
+				announce a birthday nobody has entered is a control that does
+				nothing, and it appears the moment one is typed rather than after
+				the form is saved.
+			-->
+			{#if bornOn.trim()}
+				<Field label="On the day" span={4}>
+					<label class="flex items-center gap-2 py-2 text-sm text-gray-700">
+						<input type="checkbox" name="tellMe" checked={tellMe} />
+						Tell me that morning
+					</label>
+				</Field>
+			{/if}
 
 			<Field label="Phone" span={4}>
 				<input

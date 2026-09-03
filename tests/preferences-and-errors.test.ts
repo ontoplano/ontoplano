@@ -69,6 +69,25 @@ describe('the planner grid hours', () => {
 		expect(hours.end).toBe(24);
 	});
 
+	/**
+	 * An hour that was never stored is not midnight.
+	 *
+	 * `Number(null)` is 0 rather than NaN, so an unset end hour passed every
+	 * bound check as zero, made a day that ends before it begins, and threw the
+	 * *stored* start away with it. Found while giving birthday reminders the
+	 * account's own first hour: the setting was there, read correctly, and
+	 * discarded.
+	 */
+	test('a start hour on its own is still honoured', () => {
+		database.exec("delete from user_settings where key like 'planner.grid_%'");
+		database.exec(
+			"insert into user_settings (user_id, key, value) values (?, 'planner.grid_start_hour', '5')",
+			OWNER
+		);
+
+		expect(settings.getGridHours(OWNER).start).toBe(5);
+	});
+
 	test('refuse a day that ends before it starts', () => {
 		// Not a short day — a pair of numbers that renders nothing.
 		expect(() => preferences.saveGridHours(ctx, { start: 18, end: 6 })).toThrow();

@@ -20,6 +20,7 @@ shows up here on the next build.
 | [`audit`](#audit)                               | What happened to an account.                                                                                                                                                                                                                                         |
 | [`backlinks`](#backlinks)                       | Which goal a thing belongs to.                                                                                                                                                                                                                                       |
 | [`billing`](#billing)                           | Billing, as the rest of the app sees it.                                                                                                                                                                                                                             |
+| [`birthdays`](#birthdays)                       | Being told it is somebody's birthday, on the morning of it.                                                                                                                                                                                                          |
 | [`calendar-feed`](#calendar-feed)               | The plan, published as a calendar anybody's software can read.                                                                                                                                                                                                       |
 | [`calendars`](#calendars)                       | Calendars somebody else controls.                                                                                                                                                                                                                                    |
 | [`client-errors`](#client-errors)               | Client-side errors, sent in with permission.                                                                                                                                                                                                                         |
@@ -43,12 +44,15 @@ shows up here on the next build.
 | [`onboarding-templates`](#onboarding-templates) | The starter weeks, as data.                                                                                                                                                                                                                                          |
 | [`onboarding`](#onboarding)                     | First run.                                                                                                                                                                                                                                                           |
 | [`people`](#people)                             | The people in your life, and where they turn up.                                                                                                                                                                                                                     |
+| [`plan-intent`](#plan-intent)                   | Which plan somebody said they wanted, carried from the front page to the card.                                                                                                                                                                                       |
 | [`plugins`](#plugins)                           | Plugin manifests: what a plugin says it understands.                                                                                                                                                                                                                 |
 | [`preferences`](#preferences)                   | The settings a person chooses about themselves.                                                                                                                                                                                                                      |
 | [`protection`](#protection)                     | What the box has blocked, read from fail2ban's own log.                                                                                                                                                                                                              |
+| [`push`](#push)                                 | Telling somebody something while the app is closed.                                                                                                                                                                                                                  |
 | [`quotes`](#quotes)                             | The quotes shown one-per-day on the dashboard.                                                                                                                                                                                                                       |
 | [`recipes`](#recipes)                           | Recipes, and the loop they close.                                                                                                                                                                                                                                    |
 | [`registration`](#registration)                 | Who is allowed to create an account here.                                                                                                                                                                                                                            |
+| [`reminder-delivery`](#reminder-delivery)       | The pass that makes a reminder arrive with the app shut.                                                                                                                                                                                                             |
 | [`reminders`](#reminders)                       | Something that reaches out.                                                                                                                                                                                                                                          |
 | [`review-mail`](#review-mail)                   | Monday morning: what last week actually was, in the inbox.                                                                                                                                                                                                           |
 | [`review`](#review)                             | Closing a week.                                                                                                                                                                                                                                                      |
@@ -482,6 +486,49 @@ a grant outright, an instance that sells sends them to a checkout, and
 anything else starts a trial. On a self-hosted instance the middle answer
 never happens, which is why this reads `isBillingConfigured()` rather than
 asking the provider directly.
+
+## birthdays
+
+Being told it is somebody's birthday, on the morning of it.
+
+An address book that holds a birthday and says nothing on the day is an
+address book that has the information and none of the point of it. This turns
+the stored date into an ordinary reminder row, which means it arrives through
+every channel reminders already arrive through — the card on the planner, the
+notification on a phone — instead of being a fourth kind of thing that has to
+be delivered separately.
+
+## When
+
+The hour the account's own day starts, from the planner grid. Not a constant:
+somebody whose day starts at five wants this at five, and being told at nine
+that it was somebody's birthday since midnight is being told late. The same
+reasoning as the weekly mail, and the same setting.
+
+## Once
+
+The row is the record. A reminder for a person on a date is looked up before
+it is written, so running this every minute, or twice, or after a restart,
+writes one row a year per person. Dismissing it does not bring it back: the
+check is on the date, not on the state.
+
+## The year, when it is known
+
+"Ana turns 34 today" where the year was recorded, "Ana's birthday" where it
+was not — which is the `--MM-DD` shape an address book needs and a date type
+cannot hold. Nothing computes an age from a year it does not have.
+
+### Functions
+
+#### `birthdayMessage(name, birthday, onDate)`
+
+#### `ensureBirthdayReminders(userId, now, tz)`
+
+Make sure today's birthdays exist as reminders for one account.
+
+Answers with how many rows it wrote, which is zero on all but a handful of
+days a year. Cheap enough to call on every delivery pass and from any page
+that is about to read reminders: one indexed query over an address book.
 
 ## calendar-feed
 
@@ -1772,6 +1819,31 @@ The people each of these entries mentions, keyed by entry id.
 - `Person`
 - `Mentioned` — What a mention chip needs: who, and how you know them.
 
+## plan-intent
+
+Which plan somebody said they wanted, carried from the front page to the card.
+
+The choice is made before the account exists — "Ontoplano for the family" is
+a button on ontoplano.com — and the card step is three pages later, after
+registering and confirming an address. Nothing in between has anywhere to put
+it: there is no account row yet at the moment of the click, and adding a
+column to hold an intention that expires in a minute is worse than a cookie
+that does.
+
+It is a preference, never an authority. `/start` offers both plans however
+this reads, and what an account is actually _on_ comes from the provider's
+webhook — so a stale or forged cookie can preselect a button and nothing more.
+
+### Functions
+
+#### `wantedPlan(cookies)`
+
+What the cookie says, treated as a suggestion. Anything unknown is solo.
+
+#### `forgetWantedPlan(cookies)`
+
+Spent the moment a checkout opens: the choice is the provider's now.
+
 ## plugins
 
 Plugin manifests: what a plugin says it understands.
@@ -1895,6 +1967,114 @@ Which addresses are out for good, so the page knows which button to offer.
 
 - `Ban`
 - `Protection`
+
+## push
+
+Telling somebody something while the app is closed.
+
+Until now the app could only interrupt you if you were already looking at it:
+a page open in a visible tab polled once a minute and raised a notification
+from the page itself. That is the wrong shape for the thing reminders are
+for. A reminder you only see when the tab is in front of you is a reminder
+for somebody who did not need one, and on a phone it never worked at all —
+Android refuses `new Notification()` outside a service worker, and with the
+app closed nothing was running to call it anyway.
+
+Web push is the mechanism that does work: the browser keeps a connection to
+its vendor's push service, and that service wakes the service worker whether
+or not the app is open. So a phone with a signal gets the reminder with
+everything closed and the screen off, which is what anybody means by a
+reminder.
+
+## The relay, and why it is acceptable here
+
+There is a third party in the path and it cannot be removed: the push service
+belongs to whoever made the browser, and only that browser can be reached
+through it. It is not, however, in the _trust_ path. The payload is encrypted
+with the subscription's own keys before it leaves this process, so the relay
+carries ciphertext addressed to one browser; it learns that a message went to
+an endpoint and nothing about who or what it is for. Nothing about this
+instance is disclosed either — VAPID identifies the sender to the relay by a
+public key, not by a domain it phones home to.
+
+An instance that would rather not use it simply does not set up keys, and
+everything else keeps working: `configured()` is false, the browser is never
+asked for permission, and reminders stay in-page as before.
+
+## The keys
+
+VAPID is one keypair per instance, not per user. Taken from the environment
+when it is set — an operator who wants them in their secret store can put
+them there — and otherwise generated once and kept in the config directory,
+because an instance that has to be told to run a keygen before notifications
+work is an instance where notifications are broken by default.
+
+They are not rotated automatically. Changing them invalidates every existing
+subscription: browsers pin the key they subscribed with, and the push service
+rejects a message signed with another. Rotating means every device has to be
+asked again, so it is a thing an operator does deliberately, by deleting the
+file.
+
+### Functions
+
+#### `vapidKeys()`
+
+The instance's keypair, made on first use.
+
+Written with the mode of a secret, and read back on later starts: a keypair
+that changed on every restart would silently unsubscribe every device that
+had ever said yes.
+
+#### `forgetKeys()`
+
+Only for tests, which make and throw away config directories.
+
+#### `pushConfigured()`
+
+Whether this instance can push at all.
+
+#### `publicKey()`
+
+What the browser needs to subscribe. Null means "do not ask for permission".
+
+The private half never leaves this module; the public half is meant to be
+public — it is what the browser hands to its push service so that only this
+instance can address the subscription it gets back.
+
+#### `saveSubscription(ctx, subscription, label)`
+
+Remember a browser, or remember it again.
+
+Upsert on the endpoint: a browser that re-subscribes — after a service worker
+update, or because the push service rotated the address — hands back the same
+endpoint, and inserting would either fail on the unique index or grow a row
+per visit. Re-subscribing also clears the failure count, since the thing that
+was failing has just proved it is there.
+
+Taking the account from `ctx` rather than the body: a subscription belongs to
+whoever was signed in when the browser said yes.
+
+#### `removeSubscription(ctx, endpoint)`
+
+A device saying it does not want these any more.
+
+#### `subscriptionsFor(userId)`
+
+The devices signed up for one account, newest first.
+
+#### `pushToUser(userId, payload)`
+
+Push one message to every device an account has signed up.
+
+Answers with how many actually went, because the caller's decision — mark
+this reminder pushed or leave it for next minute — depends on whether
+anybody was reached, not on whether we tried.
+
+### Types
+
+- `Keys`
+- `Subscription`
+- `Payload` — What a notification says and where it goes when tapped.
 
 ## quotes
 
@@ -2112,6 +2292,31 @@ How many invites are outstanding, for the settings page.
 
 - `Invite`
 
+## reminder-delivery
+
+The pass that makes a reminder arrive with the app shut.
+
+Everything else about reminders is written for somebody who is looking: the
+planner card, the poll, the notification raised by an open page. That covers
+the person who did not need reminding. This is the other half — a phone in a
+pocket, a laptop asleep — and it is the reason the feature exists.
+
+Run it every minute. It is cheap on the ordinary minute: one indexed query
+over reminders that are due and unpushed, and on most minutes that answers
+nothing and the pass ends. Safe to run twice — `pushed_at` is stamped only
+after the push actually left, so a crash halfway repeats at most one message
+rather than losing one.
+
+## Birthdays
+
+Written here as well, because the row has to exist before the minute it is
+due — nobody is looking at the app at six in the morning, which is the whole
+point. Idempotent per person per day, so this and the poll cannot make two.
+
+### Functions
+
+#### `deliverDueReminders(now)`
+
 ## reminders
 
 Something that reaches out.
@@ -2179,6 +2384,30 @@ Stamped by whoever showed it, so nothing announces the same thing twice.
 #### `remindersFor(ctx, id)`
 
 The reminders already set on one block, so its editor can show them.
+
+#### `pushableReminders(nowByUser, limit)`
+
+Everything due that no device has been told about, for every account.
+
+The counterpart to `dueReminders`, and deliberately not the same query. That
+one answers "what should this open page show me", is per account, and is
+gated on `delivered_at`. This one answers "whose phone should ring", runs
+from a job with no signed-in user, and is gated on `pushed_at` — the two
+channels have to be able to reach the same reminder, because being at a
+laptop is not a reason for a phone to stay quiet, and having a phone is not a
+reason for the planner to look empty.
+
+Times are wall-clock in each account's own zone, so the comparison cannot be
+done in SQL against one clock. The rows are filtered here instead: due, in
+their own zone, and not yet pushed.
+
+#### `markPushed(ids)`
+
+Say a reminder left for somebody's devices.
+
+Separate from `markDelivered` and stamping a different column — see the note
+on the schema. Nothing here is per account: the job that calls it has no
+signed-in user and the ids come from its own query.
 
 ### Types
 

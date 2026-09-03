@@ -19,6 +19,7 @@ import { listCategories } from '$lib/server/services/activities';
 import { buildCtx } from '$lib/server/services/ctx';
 import { loadConfig } from '$lib/server/config';
 import { mediaLimits } from '$lib/server/services/media';
+import { publicKey } from '$lib/server/services/push';
 
 export const load: LayoutServerLoad = async (event) => {
 	// Anything under /login, not just /login itself — /login/reset is where a
@@ -145,6 +146,15 @@ export const load: LayoutServerLoad = async (event) => {
 		// rather than from configuration: whatever host they reached it on is
 		// the host that will work when they type it again.
 		demoHost: isDemoInstance() ? event.url.host : null,
+		/*
+		 * The key a browser needs to sign itself up for notifications.
+		 *
+		 * Public by definition — it is what the browser hands to its own push
+		 * service so that only this instance can address the subscription that
+		 * comes back — and null on an instance with no keys, which is how the UI
+		 * knows not to offer something that cannot work.
+		 */
+		pushKey: event.locals.user ? publicKey() : null,
 		// The week is the user's, not the instance's.
 		config: { week },
 		// How long a delete waits before it happens. The instance's call.

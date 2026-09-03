@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull, lte, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, lte, sql } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import {
@@ -52,11 +52,11 @@ export const MAX_MESSAGE_LENGTH = 300;
 export type Reminder = {
 	id: number;
 	/**
-	 * Always `instance` for anything made now. `todo` and `free` are rows from
-	 * before there was one kind — they still fire, and they drain as they are
-	 * dismissed, but nothing creates another.
+	 * `instance` for a nudge before a block, `person` for a birthday. `todo` and
+	 * `free` are rows from before there was one kind — they still fire, and they
+	 * drain as they are dismissed, but nothing creates another.
 	 */
-	subjectKind: 'instance' | 'todo' | 'free';
+	subjectKind: 'instance' | 'todo' | 'free' | 'person';
 	subjectId: number | null;
 	remindAt: string;
 	message: string;
@@ -273,4 +273,68 @@ function ownedInstance(ctx: Ctx, id: number): { scheduledAt: string; title: stri
 			categoryName: row.categoryName
 		})
 	};
+}
+
+/**
+ * Everything due that no device has been told about, for every account.
+ *
+ * The counterpart to `dueReminders`, and deliberately not the same query. That
+ * one answers "what should this open page show me", is per account, and is
+ * gated on `delivered_at`. This one answers "whose phone should ring", runs
+ * from a job with no signed-in user, and is gated on `pushed_at` — the two
+ * channels have to be able to reach the same reminder, because being at a
+ * laptop is not a reason for a phone to stay quiet, and having a phone is not a
+ * reason for the planner to look empty.
+ *
+ * Times are wall-clock in each account's own zone, so the comparison cannot be
+ * done in SQL against one clock. The rows are filtered here instead: due, in
+ * their own zone, and not yet pushed.
+ */
+export function pushableReminders(
+	nowByUser: (userId: string) => string,
+	limit = 500
+): (Reminder & { userId: string })[] {
+	const rows = db
+		.select({
+			id: reminders.id,
+			userId: reminders.userId,
+			subjectKind: reminders.subjectKind,
+			subjectId: reminders.subjectId,
+			remindAt: reminders.remindAt,
+			message: reminders.message,
+			deliveredAt: reminders.deliveredAt,
+			dismissedAt: reminders.dismissedAt
+		})
+		.from(reminders)
+		.where(
+			and(
+				isNull(reminders.pushedAt),
+				isNull(reminders.dismissedAt),
+				// A cheap ceiling in SQL before the per-zone comparison below: no
+				// zone is more than a day from any other, so nothing due anywhere
+				// can be past this.
+				lte(reminders.remindAt, new Date(Date.now() + 26 * 3600_000).toISOString().slice(0, 19))
+			)
+		)
+		.orderBy(asc(reminders.remindAt))
+		.limit(limit)
+		.all();
+
+	return rows.filter((row) => row.remindAt <= nowByUser(row.userId));
+}
+
+/**
+ * Say a reminder left for somebody's devices.
+ *
+ * Separate from `markDelivered` and stamping a different column — see the note
+ * on the schema. Nothing here is per account: the job that calls it has no
+ * signed-in user and the ids come from its own query.
+ */
+export function markPushed(ids: number[]): number {
+	if (ids.length === 0) return 0;
+	return db
+		.update(reminders)
+		.set({ pushedAt: sql`(CURRENT_TIMESTAMP)` })
+		.where(inArray(reminders.id, ids))
+		.run().changes;
 }

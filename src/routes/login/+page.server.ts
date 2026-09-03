@@ -17,6 +17,7 @@ import { record } from '$lib/server/services/audit';
 import { resetDemoAccount } from '$lib/server/services/demo';
 import { claimFirstAccount } from '$lib/server/services/admin';
 import { onboardEntitlement } from '$lib/server/services/billing';
+import { WANTED_PLAN_COOKIE } from '$lib/server/services/plan-intent';
 
 export const load: PageServerLoad = async (event) => {
 	if (event.locals.user) {
@@ -34,6 +35,26 @@ export const load: PageServerLoad = async (event) => {
 	 * exists.
 	 */
 	const invited = event.url.searchParams.get('invite')?.trim() ?? '';
+	/*
+	 * "Buy the family plan" is a decision made on the front page, three steps
+	 * before there is anywhere to charge — register, confirm the address, and
+	 * only then the card. It rides along in a cookie so the card step opens on
+	 * the plan that was actually chosen, rather than quietly selling one seat
+	 * to somebody who pressed a button that said five.
+	 *
+	 * Losing it is survivable by design: /start offers both plans whatever the
+	 * cookie says, so a link followed on the phone and confirmed on the laptop
+	 * costs the person a click, not the plan.
+	 */
+	const wantsFamily = event.url.searchParams.get('plan') === 'family';
+	if (wantsFamily) {
+		event.cookies.set(WANTED_PLAN_COOKIE, 'family', {
+			path: '/',
+			httpOnly: true,
+			sameSite: 'lax',
+			maxAge: 60 * 60 * 24 * 30
+		});
+	}
 	// The reset form says so up front when the server cannot send mail, rather
 	// than claiming a link is on its way.
 	//
@@ -51,6 +72,8 @@ export const load: PageServerLoad = async (event) => {
 		/** Prefilled from the link, and shown even where a code is not required. */
 		invite: invited,
 		isFirstAccount: first,
+		/** Named on the register form, so the plan chosen is the plan shown. */
+		wantedPlan: wantsFamily ? ('family' as const) : ('solo' as const),
 		/** Says so before somebody puts their week into a copy of the app. */
 		staging: isStaging()
 	};

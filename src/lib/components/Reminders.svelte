@@ -2,6 +2,8 @@
 	import { browser } from '$app/environment';
 	import Icon from '$lib/components/Icon.svelte';
 	import { reminderHref } from '$lib/reminders';
+	import { enablePush, pushSupported } from '$lib/push';
+	import { page } from '$app/state';
 
 	/**
 	 * The one thing in this app that reaches out.
@@ -12,10 +14,11 @@
 	 * battery complaint — and puts whatever is due on the screen.
 	 *
 	 * If the browser has been given permission it also raises a system
-	 * notification, which needs no push service and therefore nobody else in the
-	 * path. That only works while a tab is open; the channel that works with the
-	 * app closed is the Telegram bot on a self-hosted box, which reads the same
-	 * rows.
+	 * notification from the page itself. That only reaches somebody who has the
+	 * app open; what reaches a phone with everything closed is web push, which
+	 * this component signs the browser up for — see `$lib/push.ts` and the
+	 * delivery job — and which is a separate channel with its own stamp, so the
+	 * two cannot swallow each other.
 	 *
 	 * A reminder is marked delivered only once it is actually on screen, so a
 	 * failed poll loses nothing and one that fell due overnight still arrives.
@@ -24,15 +27,40 @@
 	 * is one you have to remember twice — once because it told you, and again
 	 * because looking at the thing it is about means going and finding it.
 	 */
-	type Due = { id: number; message: string; remindAt: string };
+	type Due = {
+		id: number;
+		message: string;
+		remindAt: string;
+		subjectKind?: string | null;
+		subjectId?: number | null;
+	};
 
 	const EVERY = 60_000;
 
 	let due = $state<Due[]>([]);
 	let asked = $state(false);
+	/** Consecutive polls with the page out of sight, which slows them down. */
+	let outOfSight = 0;
 
 	async function poll() {
-		if (!browser || document.visibilityState !== 'visible') return;
+		if (!browser) return;
+		/*
+		 * A page out of sight still asks, just less often.
+		 *
+		 * It used to skip entirely whenever the tab was not in front — and a tab
+		 * in the background is the ordinary way to have this app open all day, so
+		 * somebody with it open on a second screen was told nothing until they
+		 * looked. Every fifth minute rather than every minute: enough that a
+		 * reminder is never more than five minutes late on a machine that is
+		 * awake, cheap enough that a forgotten tab is not a battery complaint.
+		 * A phone with the screen off is push's job, not this one's.
+		 */
+		if (document.visibilityState !== 'visible') {
+			outOfSight += 1;
+			if (outOfSight % 5 !== 0) return;
+		} else {
+			outOfSight = 0;
+		}
 
 		try {
 			const res = await fetch('/api/reminders');
@@ -67,11 +95,34 @@
 		}
 	}
 
+	/**
+	 * Yes, from a click — which is the only place a browser will take it.
+	 *
+	 * Permission and a push subscription are two different things and both are
+	 * asked for here: granting permission alone would raise notifications while
+	 * the app is open and nothing at all once it is closed, which is the state
+	 * this whole feature exists to leave.
+	 */
 	async function allow() {
 		asked = true;
-		if (typeof Notification === 'undefined') return;
-		await Notification.requestPermission();
+		await enablePush(page.data.pushKey ?? null);
 	}
+
+	/**
+	 * A browser that already said yes, signed up again on every load.
+	 *
+	 * Permission survives forever; a push subscription does not — it is dropped
+	 * when site data is cleared, when the push service rotates it, when the
+	 * worker is replaced. Re-registering costs one request against an upsert and
+	 * is the difference between reminders that keep working for months and
+	 * reminders that stop without anybody noticing.
+	 */
+	$effect(() => {
+		if (!browser || !pushSupported() || Notification.permission !== 'granted') return;
+		const key = page.data.pushKey;
+		if (!key) return;
+		void enablePush(key);
+	});
 
 	async function dismiss(id: number) {
 		due = due.filter((r) => r.id !== id);
@@ -111,7 +162,7 @@
 		never stop you doing the thing it is reminding you about.
 	-->
 	<div
-		class="fixed inset-x-3 z-[70] flex flex-col gap-2 sm:inset-x-auto sm:right-4 sm:w-80"
+		class="float-layer fixed inset-x-3 z-[70] flex flex-col gap-2 sm:inset-x-auto sm:right-4 sm:w-80"
 		style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom) + 5.5rem)"
 	>
 		{#each due as reminder (reminder.id)}
@@ -125,7 +176,7 @@
 					     `$lib/reminders.ts`, which the list uses too. -->
 					<!-- eslint-disable svelte/no-navigation-without-resolve -->
 					<a
-						href={reminderHref(reminder.remindAt)}
+						href={reminderHref(reminder)}
 						onclick={() => dismiss(reminder.id)}
 						class="block text-sm font-medium text-gray-900 hover:underline"
 					>

@@ -266,6 +266,16 @@ export const people = sqliteTable(
 		 * reason.
 		 */
 		birthday: text('birthday'),
+		/**
+		 * Whether the birthday above is worth being interrupted for.
+		 *
+		 * On by default, because somebody who typed a birthday into an address
+		 * book typed it in order to remember it. Off is for the birthdays you
+		 * keep and do not celebrate — a colleague, an ex-landlord — and it is a
+		 * per-person switch rather than one setting for all of them, since that
+		 * is how the wish actually falls.
+		 */
+		remindOnBirthday: integer('remind_on_birthday', { mode: 'boolean' }).notNull().default(true),
 		phone: text('phone'),
 		email: text('email'),
 		notes: text('notes').default(''),
@@ -1564,7 +1574,7 @@ export const reminders = sqliteTable(
 			.notNull()
 			.references(() => user.id),
 		/** What it is about. `free` is a reminder that is only itself. */
-		subjectKind: text('subject_kind', { enum: ['instance', 'todo', 'free'] })
+		subjectKind: text('subject_kind', { enum: ['instance', 'todo', 'free', 'person'] })
 			.notNull()
 			.default('free'),
 		subjectId: integer('subject_id'),
@@ -1579,6 +1589,17 @@ export const reminders = sqliteTable(
 		message: text('message').notNull(),
 		/** Set the moment something showed it to somebody, so nothing fires twice. */
 		deliveredAt: text('delivered_at'),
+		/**
+		 * Set when it was pushed to a device, which is a different question.
+		 *
+		 * `delivered_at` means "an open page has put this on screen"; this means
+		 * "it left the server for somebody's phone". Two stamps because the two
+		 * channels must not consume each other: a reminder that reached a locked
+		 * phone at 08:50 should still be on the planner when the laptop is opened
+		 * at nine, and a card dismissed on the laptop should not cause the phone
+		 * to be pushed the same thing again an hour later.
+		 */
+		pushedAt: text('pushed_at'),
 		/** Set when the person acknowledged it. */
 		dismissedAt: text('dismissed_at'),
 		createdAt: text('created_at')
@@ -1590,6 +1611,62 @@ export const reminders = sqliteTable(
 		// The delivery query is "mine, due, undelivered", and it runs every minute.
 		index('reminders_due_idx').on(table.userId, table.deliveredAt, table.remindAt),
 		index('reminders_subject_idx').on(table.subjectKind, table.subjectId)
+	]
+);
+
+/**
+ * One browser that has agreed to be interrupted.
+ *
+ * A row per device per browser, not per account: somebody granting permission
+ * on a laptop has said nothing about their phone, and revoking it on one must
+ * not silence the other. The endpoint is the address the push service gave us
+ * and it is what identifies the row — the same browser re-subscribing hands
+ * back the same endpoint, so an upsert on it is what keeps this table from
+ * growing a row per visit.
+ *
+ * ## What the keys are, and what they are not
+ *
+ * `p256dh` and `auth` are the browser's half of an encryption pair. Everything
+ * sent through the push service is encrypted with them before it leaves here,
+ * so the relay — Mozilla's, Google's, Apple's — carries ciphertext it cannot
+ * read. They are not credentials for anything of ours: somebody holding this
+ * table can push notifications at these browsers and learn nothing about the
+ * accounts behind them.
+ *
+ * ## Failures are counted, not ignored
+ *
+ * A subscription dies quietly: the browser is uninstalled, the permission
+ * revoked, the phone reset. The push service then answers 404 or 410 for that
+ * endpoint forever, and those two delete the row on the spot. Anything else
+ * increments `failures`, and a row that has failed enough times running is
+ * dropped — an endpoint that is permanently broken but retried every minute is
+ * a request every minute, for years.
+ */
+export const pushSubscriptions = sqliteTable(
+	'push_subscriptions',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		/** The push service's address for this browser. Unique: it is the identity. */
+		endpoint: text('endpoint').notNull(),
+		/** The browser's public key, base64url. */
+		p256dh: text('p256dh').notNull(),
+		/** The browser's auth secret, base64url. */
+		auth: text('auth').notNull(),
+		/** Only so somebody can tell their own devices apart when revoking one. */
+		label: text('label'),
+		/** Consecutive failures. Any success resets it; enough of them drops the row. */
+		failures: integer('failures').notNull().default(0),
+		lastPushAt: text('last_push_at'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('push_subscriptions_user_idx').on(table.userId),
+		uniqueIndex('push_subscriptions_endpoint_idx').on(table.endpoint)
 	]
 );
 

@@ -10,6 +10,7 @@ import {
 import { paymentHoldFor } from '$lib/server/services/access';
 import { exportAllowance } from '$lib/server/services/account';
 import { toActionFailure } from '$lib/server/services/errors';
+import { forgetWantedPlan, wantedPlan } from '$lib/server/services/plan-intent';
 
 /**
  * The card step of the funnel: register → confirm → here.
@@ -19,7 +20,7 @@ import { toActionFailure } from '$lib/server/services/errors';
  * opens — /buy is just the overlay's backdrop. Yearly leads; it is the one
  * worth taking.
  */
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, cookies }) => {
 	if (!locals.user) redirect(302, '/login');
 	if (!isBillingConfigured()) error(404, 'Not found');
 	const hold = paymentHoldFor(locals.user.id);
@@ -34,6 +35,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 		// lapsed account meets — data kept, renew or take it with you.
 		mode: hold,
 		pricing,
+		/*
+		 * Which plan leads. Both are on the page either way — this only decides
+		 * which one is the big button, so somebody who pressed "for the family"
+		 * on the front page is not quietly sold a single seat here.
+		 */
+		wanted: wantedPlan(cookies),
 		trialDaysAhead,
 		yearly: hasYearlyPrice(),
 		exportsLeft: hold === 'expired' ? exportAllowance(locals.user.id).remaining : 0,
@@ -42,15 +49,18 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	checkout: async ({ request, locals }) => {
+	checkout: async ({ request, locals, cookies }) => {
 		const formData = await request.formData();
 		const interval = formData.get('interval') === 'monthly' ? 'monthly' : 'yearly';
+		const tier = formData.get('tier') === 'family' ? 'family' : 'solo';
 		let url: string;
 		try {
-			url = await createCheckout(locals.user!.id, interval);
+			url = await createCheckout(locals.user!.id, interval, tier);
 		} catch (e) {
 			return toActionFailure(e);
 		}
+		// Asked and answered: from here the plan is whatever the provider bills.
+		forgetWantedPlan(cookies);
 		redirect(303, url);
 	}
 };

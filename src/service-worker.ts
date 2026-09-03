@@ -89,9 +89,26 @@ sw.addEventListener('fetch', (event) => {
 	const { request } = event;
 	const url = new URL(request.url);
 
-	// Anything that changes state, and anything cross-origin, goes straight to
-	// the network untouched.
-	if (request.method !== 'GET' || url.origin !== location.origin) return;
+	// Anything cross-origin goes straight to the network, untouched.
+	if (url.origin !== location.origin) return;
+
+	/*
+	 * A write invalidates the pages we are allowed to answer from memory.
+	 *
+	 * `KEEP_FRESH` is served cache-first on purpose — a shopping list is read in
+	 * a basement, and an hour-old copy beats none. But *within a session* that
+	 * is wrong: tick something off, go back to the list, and the cached page
+	 * says it is still there. The page then quietly refreshes behind, so the
+	 * item reappears as done a moment later, which is worse than either answer.
+	 *
+	 * So the cached pages last exactly until the next thing that changes
+	 * something. Untouched otherwise: a mutation still goes straight to the
+	 * network, and nothing is ever replayed.
+	 */
+	if (request.method !== 'GET') {
+		event.waitUntil(caches.delete(PAGE_CACHE));
+		return;
+	}
 
 	// Auth and the API are never served from cache: a cached session check or a
 	// cached token list is a security answer that has gone stale.
@@ -152,5 +169,103 @@ sw.addEventListener('fetch', (event) => {
 
 				return new Response('Offline', { status: 503, statusText: 'Offline' });
 			})
+	);
+});
+
+/**
+ * A reminder arriving while the app is closed.
+ *
+ * This is the whole reason the worker matters on a phone: the push service
+ * wakes it with the tab shut, the browser in the background, or the phone
+ * locked, and it has a few seconds to put something on the screen. Android
+ * refuses `new Notification()` outside here, which is why the in-page path
+ * never worked there.
+ *
+ * `userVisibleOnly` was promised at subscribe time, and browsers enforce it: a
+ * push that shows nothing spends the promise, and enough of them get the site's
+ * permission revoked. So there is always a notification, including for a
+ * payload that fails to parse — silence would be the one outcome that costs us
+ * the permission.
+ */
+sw.addEventListener('push', (event) => {
+	const fallback = { title: 'Ontoplano', body: 'Something is due', url: '/', tag: undefined };
+	let payload: { title: string; body?: string; url?: string; tag?: string } = fallback;
+	try {
+		if (event.data) payload = { ...fallback, ...(event.data.json() as object) };
+	} catch {
+		// A payload we cannot read still has to become a notification.
+	}
+
+	event.waitUntil(
+		sw.registration.showNotification(payload.title, {
+			body: payload.body,
+			// The same reminder pushed twice replaces itself rather than stacking.
+			tag: payload.tag,
+			icon: '/icons/icon-192.png',
+			// Where tapping it goes, read back in the click handler below.
+			data: { url: payload.url ?? '/' }
+		})
+	);
+});
+
+/**
+ * Tapping it.
+ *
+ * A notification you cannot follow is one you have to remember twice, so this
+ * always lands somewhere specific — the day the block is on, the person whose
+ * birthday it is. An already-open window is reused and navigated rather than
+ * joined by a second one: two copies of the app is not what anybody wanted from
+ * tapping a reminder.
+ */
+sw.addEventListener('notificationclick', (event) => {
+	event.notification.close();
+	const target = (event.notification.data as { url?: string } | undefined)?.url ?? '/';
+
+	event.waitUntil(
+		sw.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (windows) => {
+			for (const client of windows) {
+				if (new URL(client.url).origin !== location.origin) continue;
+				await client.focus();
+				if ('navigate' in client) await client.navigate(target).catch(() => {});
+				return;
+			}
+			await sw.clients.openWindow(target);
+		})
+	);
+});
+
+/**
+ * The push service telling us a subscription has been replaced.
+ *
+ * Browsers rotate an endpoint occasionally, and one that is not re-registered
+ * simply stops working — quietly, which is the worst way for a reminder to
+ * fail. There is no session in here, so this re-subscribes with the same
+ * application key and hands the new address to the endpoint that does have one.
+ */
+sw.addEventListener('pushsubscriptionchange', (event) => {
+	const change = event as ExtendableEvent & {
+		oldSubscription?: PushSubscription | null;
+		newSubscription?: PushSubscription | null;
+	};
+
+	change.waitUntil(
+		(async () => {
+			const key = change.oldSubscription?.options?.applicationServerKey;
+			const fresh =
+				change.newSubscription ??
+				(key
+					? await sw.registration.pushManager.subscribe({
+							userVisibleOnly: true,
+							applicationServerKey: key
+						})
+					: null);
+			if (!fresh) return;
+
+			await fetch('/api/push', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ subscription: fresh.toJSON() })
+			}).catch(() => {});
+		})()
 	);
 });

@@ -224,6 +224,29 @@
 	}
 
 	/**
+	 * Register the service worker — which nothing was doing.
+	 *
+	 * `svelte.config.js` sets `serviceWorker.register: false`, for a real reason
+	 * about Vite's module URLs in development. But that flag is not conditional:
+	 * it turns SvelteKit's registration off in the production build too, and
+	 * nothing else here ever called `register()`. So the worker was built and
+	 * shipped on every deploy and never ran anywhere — the offline page, the
+	 * shopping list in a basement, and every push notification with it.
+	 *
+	 * Found while giving reminders a way to reach a phone: the browser had no
+	 * worker to wake. So the registration lives here, where it can be conditional
+	 * — production only, which is exactly what the config comment describes.
+	 */
+	$effect(() => {
+		if (dev || typeof navigator === 'undefined' || !navigator.serviceWorker) return;
+
+		// Classic, not a module: that is how SvelteKit bundles it for a build.
+		void navigator.serviceWorker.register('/service-worker.js').catch(() => {
+			// A browser that refuses one still has an app; nothing here is fatal.
+		});
+	});
+
+	/**
 	 * Get rid of a service worker left over from before it was turned off in dev.
 	 *
 	 * Vite's module URLs carry a version that changes when the dev server

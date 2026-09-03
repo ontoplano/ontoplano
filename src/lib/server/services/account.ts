@@ -103,6 +103,7 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('pricePoints', schema.pricePoints as never),
 	owned('weeklyReviews', schema.weeklyReviews as never),
 	owned('reminders', schema.reminders as never),
+	owned('pushSubscriptions', schema.pushSubscriptions as never),
 	owned('calendarFeeds', schema.calendarFeeds as never),
 	owned('pluginManifests', schema.pluginManifests as never),
 	owned('dailyWins', schema.dailyWins as never),

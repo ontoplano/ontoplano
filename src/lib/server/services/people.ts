@@ -28,6 +28,8 @@ export type Person = {
 	relationship: Relationship;
 	/** `YYYY-MM-DD`, or `--MM-DD` when the year is not known. Null if unset. */
 	birthday: string | null;
+	/** Whether that birthday is announced on the morning. Ignored without one. */
+	remindOnBirthday: boolean;
 	phone: string | null;
 	email: string | null;
 	notes: string;
@@ -58,6 +60,21 @@ function parseBirthday(value: unknown): string | null {
 	throw new ValidationError('A birthday looks like 1990-03-14, or --03-14 without the year');
 }
 
+/**
+ * Whether to be told about it, as a form sends the answer.
+ *
+ * An unticked checkbox is not submitted at all, so `undefined` has to mean
+ * *off* — reading it as "unset, therefore the default" would make the box
+ * impossible to untick. New people arrive through forms that carry it, and the
+ * column's own default covers the rows that existed before there was a box.
+ */
+function wantsBirthday(value: unknown): boolean {
+	if (typeof value === 'boolean') return value;
+	if (value === undefined || value === null) return false;
+	const raw = String(value).trim().toLowerCase();
+	return raw === 'on' || raw === 'true' || raw === '1' || raw === 'yes';
+}
+
 export function listPeople(ctx: Ctx): Person[] {
 	const rows = db
 		.select({
@@ -65,6 +82,7 @@ export function listPeople(ctx: Ctx): Person[] {
 			name: people.name,
 			relationship: people.relationship,
 			birthday: people.birthday,
+			remindOnBirthday: people.remindOnBirthday,
 			phone: people.phone,
 			email: people.email,
 			notes: people.notes,
@@ -108,6 +126,7 @@ export function createPerson(
 		name: unknown;
 		relationship?: unknown;
 		birthday?: unknown;
+		remindOnBirthday?: unknown;
 		phone?: unknown;
 		email?: unknown;
 		notes?: unknown;
@@ -124,6 +143,7 @@ export function createPerson(
 			name,
 			relationship: parseRelationship(raw.relationship),
 			birthday: parseBirthday(raw.birthday),
+			remindOnBirthday: wantsBirthday(raw.remindOnBirthday),
 			phone: optionalStr(raw.phone, 'phone', { max: MAX_PHONE_LENGTH }) || null,
 			email: optionalStr(raw.email, 'email', { max: MAX_EMAIL_LENGTH }) || null,
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH })
@@ -140,6 +160,7 @@ export function updatePerson(
 		name: unknown;
 		relationship?: unknown;
 		birthday?: unknown;
+		remindOnBirthday?: unknown;
 		phone?: unknown;
 		email?: unknown;
 		notes?: unknown;
@@ -156,6 +177,7 @@ export function updatePerson(
 			name,
 			relationship: parseRelationship(raw.relationship),
 			birthday: parseBirthday(raw.birthday),
+			remindOnBirthday: wantsBirthday(raw.remindOnBirthday),
 			phone: optionalStr(raw.phone, 'phone', { max: MAX_PHONE_LENGTH }) || null,
 			email: optionalStr(raw.email, 'email', { max: MAX_EMAIL_LENGTH }) || null,
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),

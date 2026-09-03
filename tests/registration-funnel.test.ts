@@ -31,6 +31,8 @@ afterAll(() => database.remove());
 /** What the instance's billing looks like, per test. */
 let selling = true;
 let requiresCard = true;
+/** What the last checkout was opened for, so the tier can be asserted on. */
+let opened: { interval?: string; tier?: string } | null = null;
 
 vi.mock('../src/lib/server/settings', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('../src/lib/server/settings')>();
@@ -45,7 +47,14 @@ vi.mock('../src/lib/server/billing/index', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('../src/lib/server/billing/index')>();
 	return {
 		...actual,
-		provider: () => ({ ...actual.provider(), configured: () => selling })
+		provider: () => ({
+			...actual.provider(),
+			configured: () => selling,
+			createCheckout: async (_id: string, interval?: string, tier?: string) => {
+				opened = { interval, tier };
+				return 'https://provider.example/checkout/1';
+			}
+		})
 	};
 });
 
@@ -62,6 +71,7 @@ beforeAll(async () => {
 beforeEach(() => {
 	selling = true;
 	requiresCard = true;
+	opened = null;
 	database.exec('delete from subscriptions');
 });
 
@@ -119,5 +129,140 @@ describe('an invitation', () => {
 	test('skips the card entirely, because somebody already paid', () => {
 		expect(billing.onboardEntitlement(OWNER, { grantsUntil: null }, now)).toBe('invited');
 		expect(access.paymentHoldFor(OWNER)).toBeNull();
+	});
+});
+
+/**
+ * The family plan, bought at the moment somebody decides to buy it.
+ *
+ * The front page has sold a household plan for as long as it has had one, and
+ * the app could not complete that sale: the card step offered a single seat and
+ * nothing else, so pressing "Ontoplano for the family" bought one account. The
+ * choice now rides from that button to the card, and the card offers both
+ * either way — a link followed on a phone and confirmed on a laptop loses the
+ * cookie, and must not silently lose the plan with it.
+ */
+describe('choosing the family plan on the front page', () => {
+	/** Just enough of SvelteKit's cookie jar for a load function. */
+	function jar(initial: Record<string, string> = {}) {
+		const held = new Map(Object.entries(initial));
+		return {
+			get: (name: string) => held.get(name),
+			set: (name: string, value: string) => held.set(name, value),
+			delete: (name: string) => held.delete(name),
+			held
+		};
+	}
+
+	test('the register link remembers which plan was pressed', async () => {
+		const { load } = await import('../src/routes/login/+page.server');
+		const cookies = jar();
+
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const data = (await load({
+			locals: {},
+			url: new URL('https://app.example/login?register&plan=family'),
+			cookies
+			// The load reads four fields of the event; the rest of it is not its
+			// business, and building a whole RequestEvent would test SvelteKit.
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		} as any)) as any;
+
+		expect(data.wantedPlan).toBe('family');
+		expect(cookies.held.get('ontoplano_plan')).toBe('family');
+	});
+
+	test('and an ordinary register link does not', async () => {
+		const { load } = await import('../src/routes/login/+page.server');
+		const cookies = jar();
+
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const data = (await load({
+			locals: {},
+			url: new URL('https://app.example/login?register'),
+			cookies
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		} as any)) as any;
+
+		expect(data.wantedPlan).toBe('solo');
+		expect(cookies.held.size).toBe(0);
+	});
+
+	test('the card step opens on the plan that was chosen', async () => {
+		billing.onboardEntitlement(OWNER, null, now);
+		const { load } = await import('../src/routes/start/+page.server');
+
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const data = (await load({
+			locals: { user: { id: OWNER } },
+			cookies: jar({ ontoplano_plan: 'family' })
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		} as any)) as any;
+
+		expect(data.wanted).toBe('family');
+		// And the price to put on the button is really there to be shown.
+		expect(data.pricing.familyMonthlyCents).toBeGreaterThan(0);
+		expect(data.pricing.familySeats).toBeGreaterThan(1);
+	});
+
+	test('and on one seat when nothing was chosen', async () => {
+		billing.onboardEntitlement(OWNER, null, now);
+		const { load } = await import('../src/routes/start/+page.server');
+
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const data = (await load({
+			locals: { user: { id: OWNER } },
+			cookies: jar()
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		} as any)) as any;
+
+		expect(data.wanted).toBe('solo');
+	});
+
+	/**
+	 * The one that matters: the button has to reach the provider as a family
+	 * checkout. This is exactly what was missing — /start's action took an
+	 * interval and no tier at all, so every checkout it opened was for one seat
+	 * however the person got there.
+	 */
+	test('the card step buys the family plan, not one seat', async () => {
+		billing.onboardEntitlement(OWNER, null, now);
+		const { actions } = await import('../src/routes/start/+page.server');
+		const body = new FormData();
+		body.set('interval', 'yearly');
+		body.set('tier', 'family');
+		const cookies = jar({ ontoplano_plan: 'family' });
+
+		await expect(
+			actions.checkout({
+				request: new Request('https://app.example/start?/checkout', { method: 'POST', body }),
+				locals: { user: { id: OWNER } },
+				cookies
+				// A redirect is the success case here, and SvelteKit throws it.
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			} as any)
+		).rejects.toMatchObject({ status: 303 });
+
+		expect(opened).toEqual({ interval: 'yearly', tier: 'family' });
+		// Spent: what the account is on comes from the provider from here.
+		expect(cookies.held.size).toBe(0);
+	});
+
+	test('and one seat when that is what was asked for', async () => {
+		billing.onboardEntitlement(OWNER, null, now);
+		const { actions } = await import('../src/routes/start/+page.server');
+		const body = new FormData();
+		body.set('interval', 'monthly');
+
+		await expect(
+			actions.checkout({
+				request: new Request('https://app.example/start?/checkout', { method: 'POST', body }),
+				locals: { user: { id: OWNER } },
+				cookies: jar()
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			} as any)
+		).rejects.toMatchObject({ status: 303 });
+
+		expect(opened).toEqual({ interval: 'monthly', tier: 'solo' });
 	});
 });

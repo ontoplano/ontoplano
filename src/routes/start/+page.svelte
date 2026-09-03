@@ -3,12 +3,23 @@
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Banner from '$lib/components/Banner.svelte';
-	import { describeYearly, formatPrice } from '$lib/plans';
+	import { describeYearly, formatPrice, tierPricing } from '$lib/plans';
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
-	const yearlyLine = $derived(describeYearly(data.pricing));
+	/*
+	 * Which plan is being bought, here on the page where it is bought.
+	 *
+	 * It opens on whatever was chosen on the front page and stays changeable:
+	 * somebody who came for the family plan should not have to buy one seat and
+	 * then upgrade, and somebody who came for one seat should still be able to
+	 * see there is a household rate before they pay rather than after.
+	 */
+	let tier = $state<'solo' | 'family'>(data.wanted);
+	const familyOffered = $derived(data.pricing.familyMonthlyCents > 0);
+	const prices = $derived(tierPricing(data.pricing, familyOffered ? tier : 'solo'));
+	const yearlyLine = $derived(describeYearly(prices));
 
 	function when(iso: string): string {
 		return new Date(iso).toLocaleDateString(undefined, {
@@ -83,9 +94,41 @@
 			<div class="mt-4"><Banner kind="error" message={form.message} /></div>
 		{/if}
 
+		{#if familyOffered}
+			<!--
+				The plan first, the interval second. Both are on the page whatever
+				the front page said: the cookie carrying that choice is a
+				convenience, and a household that loses it must not end up on one
+				seat without being shown the other price.
+			-->
+			<div class="mt-6 flex gap-2" role="group" aria-label="Plan">
+				<button
+					type="button"
+					onclick={() => (tier = 'solo')}
+					aria-pressed={tier === 'solo'}
+					class="flex-1 border px-3 py-2 text-sm transition {tier === 'solo'
+						? 'border-gray-900 bg-gray-900 text-white'
+						: 'border-gray-300 text-gray-700 hover:bg-gray-50'}"
+				>
+					Just me
+				</button>
+				<button
+					type="button"
+					onclick={() => (tier = 'family')}
+					aria-pressed={tier === 'family'}
+					class="flex-1 border px-3 py-2 text-sm transition {tier === 'family'
+						? 'border-gray-900 bg-gray-900 text-white'
+						: 'border-gray-300 text-gray-700 hover:bg-gray-50'}"
+				>
+					Family — {data.pricing.familySeats} accounts
+				</button>
+			</div>
+		{/if}
+
 		<!-- Full page post on purpose: the answer is a redirect into checkout. -->
-		<form method="post" action="?/checkout" class="mt-6 space-y-2">
-			{#if data.yearly}
+		<form method="post" action="?/checkout" class="mt-3 space-y-2">
+			<input type="hidden" name="tier" value={familyOffered ? tier : 'solo'} />
+			{#if data.yearly && prices.yearlyCents > 0}
 				<button
 					name="interval"
 					value="yearly"
@@ -98,7 +141,7 @@
 					value="monthly"
 					class="w-full border border-gray-300 px-4 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-50"
 				>
-					Monthly — {formatPrice(data.pricing.monthlyCents, data.pricing.currency)} a month
+					Monthly — {formatPrice(prices.monthlyCents, prices.currency)} a month
 				</button>
 			{:else}
 				<button
@@ -106,10 +149,17 @@
 					value="monthly"
 					class="w-full bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"
 				>
-					Start — {formatPrice(data.pricing.monthlyCents, data.pricing.currency)} a month
+					Start — {formatPrice(prices.monthlyCents, prices.currency)} a month
 				</button>
 			{/if}
 		</form>
+
+		{#if familyOffered && tier === 'family'}
+			<p class="mt-2 text-xs text-gray-500">
+				One invoice covers {data.pricing.familySeats} accounts, yours included. You invite the others
+				once you are in.
+			</p>
+		{/if}
 
 		{#if data.mode === 'expired'}
 			{#if data.exportsLeft > 0}

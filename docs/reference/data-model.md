@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**53 tables.**
+**54 tables.**
 
 | Table                                             | Columns | Belongs to a user |
 | ------------------------------------------------- | ------- | ----------------- |
@@ -38,17 +38,18 @@ exist.
 | [`mail_failures`](#mail_failures)                 | 11      | —                 |
 | [`media`](#media)                                 | 9       | yes               |
 | [`notebooks`](#notebooks)                         | 7       | yes               |
-| [`people`](#people)                               | 11      | yes               |
+| [`people`](#people)                               | 12      | yes               |
 | [`plan_members`](#plan_members)                   | 4       | —                 |
 | [`planning_schemes`](#planning_schemes)           | 5       | yes               |
 | [`plugin_manifests`](#plugin_manifests)           | 8       | yes               |
 | [`price_points`](#price_points)                   | 6       | yes               |
+| [`push_subscriptions`](#push_subscriptions)       | 9       | yes               |
 | [`quotes`](#quotes)                               | 5       | yes               |
 | [`recipe_images`](#recipe_images)                 | 7       | yes               |
 | [`recipe_items`](#recipe_items)                   | 8       | yes               |
 | [`recipes`](#recipes)                             | 12      | yes               |
 | [`recurring_tasks`](#recurring_tasks)             | 19      | yes               |
-| [`reminders`](#reminders)                         | 9       | yes               |
+| [`reminders`](#reminders)                         | 10      | yes               |
 | [`scheme_slots`](#scheme_slots)                   | 11      | yes               |
 | [`session`](#session)                             | 9       | yes               |
 | [`shopping_categories`](#shopping_categories)     | 6       | yes               |
@@ -597,19 +598,20 @@ Indexes:
 
 ## people
 
-| Column         | Type    | Null     | Default               | Notes             |
-| -------------- | ------- | -------- | --------------------- | ----------------- |
-| `id`           | integer | not null | —                     | primary key, auto |
-| `user_id`      | text    | not null | —                     | → `user.id`       |
-| `name`         | text    | not null | —                     | —                 |
-| `relationship` | text    | not null | `'other'`             | —                 |
-| `birthday`     | text    | null     | —                     | —                 |
-| `phone`        | text    | null     | —                     | —                 |
-| `email`        | text    | null     | —                     | —                 |
-| `notes`        | text    | null     | `''`                  | —                 |
-| `picture_id`   | integer | null     | —                     | → `media.id`      |
-| `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
-| `updated_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| Column               | Type    | Null     | Default               | Notes             |
+| -------------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`                 | integer | not null | —                     | primary key, auto |
+| `user_id`            | text    | not null | —                     | → `user.id`       |
+| `name`               | text    | not null | —                     | —                 |
+| `relationship`       | text    | not null | `'other'`             | —                 |
+| `birthday`           | text    | null     | —                     | —                 |
+| `remind_on_birthday` | integer | not null | `true`                | —                 |
+| `phone`              | text    | null     | —                     | —                 |
+| `email`              | text    | null     | —                     | —                 |
+| `notes`              | text    | null     | `''`                  | —                 |
+| `picture_id`         | integer | null     | —                     | → `media.id`      |
+| `created_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| `updated_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
 
@@ -678,6 +680,25 @@ Indexes:
 
 - `price_points_user_item_idx` on `user_id`, `item_id`
 - `price_points_date_idx` on `for_date`
+
+## push_subscriptions
+
+| Column         | Type    | Null     | Default               | Notes             |
+| -------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`           | integer | not null | —                     | primary key, auto |
+| `user_id`      | text    | not null | —                     | → `user.id`       |
+| `endpoint`     | text    | not null | —                     | —                 |
+| `p256dh`       | text    | not null | —                     | —                 |
+| `auth`         | text    | not null | —                     | —                 |
+| `label`        | text    | null     | —                     | —                 |
+| `failures`     | integer | not null | `0`                   | —                 |
+| `last_push_at` | text    | null     | —                     | —                 |
+| `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `push_subscriptions_user_idx` on `user_id`
+- `push_subscriptions_endpoint_idx` on `endpoint` — unique
 
 ## quotes
 
@@ -812,6 +833,7 @@ Checks — enforced by the database, not only by the service layer:
 | `remind_at`    | text    | not null | —                     | —                 |
 | `message`      | text    | not null | —                     | —                 |
 | `delivered_at` | text    | null     | —                     | —                 |
+| `pushed_at`    | text    | null     | —                     | —                 |
 | `dismissed_at` | text    | null     | —                     | —                 |
 | `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 

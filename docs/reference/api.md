@@ -49,6 +49,8 @@ sentence somebody agrees to when they grant it.
 | `/api/mcp`                                   | POST   | —                 |
 | `/api/mcp`                                   | GET    | —                 |
 | `/api/pricing`                               | GET    | —                 |
+| `/api/push`                                  | POST   | —                 |
+| `/api/push`                                  | DELETE | —                 |
 | `/api/reminders`                             | GET    | —                 |
 | `/api/reminders`                             | POST   | —                 |
 | `/api/search`                                | GET    | —                 |
@@ -256,6 +258,20 @@ discloses nothing an anonymous visitor cannot already read. It carries no
 account, no ids and no provider keys.
 
 **GET**
+
+### `/api/push`
+
+A browser signing itself up to be interrupted, or asking to stop.
+
+Session-authenticated like `/api/reminders` rather than token-based: the
+caller is the page somebody has open, and the account is taken from that
+session rather than from the body — a subscription belongs to whoever was
+signed in when their browser said yes, and nothing a page sends can make it
+belong to anybody else.
+
+**POST**
+
+**DELETE**
 
 ### `/api/reminders`
 

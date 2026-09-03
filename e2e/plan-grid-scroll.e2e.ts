@@ -57,3 +57,58 @@ test('a day ending at midnight can be scrolled to midnight', async ({ page }) =>
 	// The last hour of the day is on screen once it has.
 	await expect(page.locator('.ec-main').getByText('23:00', { exact: true })).toBeVisible();
 });
+
+/**
+ * Zooming keeps the hour you were looking at.
+ *
+ * The grid's own zoom — the control beside it, and Ctrl+wheel over it — makes
+ * every hour taller or shorter. Left alone the scroller kept its pixel offset,
+ * which after a zoom is a different time: from an evening you were examining
+ * back to first thing in the morning, on every press. That made the zoom
+ * useless for the one thing it is for, looking closely at a busy afternoon.
+ *
+ * The assertion is about the time under the viewport rather than the number of
+ * pixels: what has to be preserved is where you were, and the pixels are how it
+ * happens to be stored.
+ */
+test('zooming keeps the part of the day you were looking at', async ({ page }) => {
+	await register(page, `grid-zoom-${Date.now()}@test.invalid`);
+
+	await visit(page, '/planner/plan');
+	const main = page.locator('.ec-main');
+	await expect(main).toBeVisible();
+
+	// Well into the evening, and not at either end where clamping would hide a
+	// mistake.
+	const where = await main.evaluate((el) => {
+		el.scrollTop = (el.scrollHeight - el.clientHeight) * 0.6;
+		return {
+			// The fraction of the day at the middle of the viewport: the only
+			// thing that has to survive.
+			middle: (el.scrollTop + el.clientHeight / 2) / el.scrollHeight
+		};
+	});
+
+	await page.getByRole('button', { name: 'Zoom in' }).click();
+	// The grid re-lays out over a few frames; measuring inside them measures a
+	// half-drawn grid rather than the answer.
+	await page.waitForTimeout(400);
+
+	const after = await main.evaluate((el) => ({
+		middle: (el.scrollTop + el.clientHeight / 2) / el.scrollHeight,
+		top: el.scrollTop
+	}));
+
+	expect(
+		after.top,
+		`the grid jumped back to the top of the day: ${JSON.stringify(after)}`
+	).toBeGreaterThan(0);
+	/*
+	 * Tight on purpose. A zoom step is around 40% taller, so a scroller that
+	 * simply kept its pixel offset lands about a tenth of the day out — which is
+	 * both the bug and close enough to pass a loose bound. Two per cent is
+	 * roughly twenty minutes of an eighteen-hour day: the rounding, and nothing
+	 * else.
+	 */
+	expect(Math.abs(after.middle - where.middle)).toBeLessThan(0.02);
+});
