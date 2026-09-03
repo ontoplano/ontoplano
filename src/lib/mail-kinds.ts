@@ -13,7 +13,8 @@ export const MAIL_KINDS = {
 	'password-reset': 'Password reset',
 	'address-change': 'Address change',
 	'trial-notice': 'Trial notice',
-	'weekly-review': 'Weekly review'
+	'weekly-review': 'Weekly review',
+	'newsletter-confirm': 'Newsletter confirmation'
 } as const;
 
 export type MailKind = keyof typeof MAIL_KINDS;

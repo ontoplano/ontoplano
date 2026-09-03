@@ -79,6 +79,10 @@ client_errors = "false"
 [ui]
 undo_seconds = "5"
 
+[newsletter]
+enabled = "false"
+origin = ""
+
 [instance]
 tagline = "Managing life, one week at a time"
 
@@ -162,6 +166,30 @@ export interface OntoplanoConfig {
 		/** Everything one account's pictures may add up to, in megabytes. */
 		accountMegabytes: number;
 	};
+	newsletter: {
+		/**
+		 * Whether this instance keeps a list of people to tell when it changes.
+		 *
+		 * Off unless the instance says otherwise, like every other feature that
+		 * collects an address from somebody who is not an account holder: a
+		 * self-hosted install has nothing to announce, and a subscribe form on
+		 * it is a box that fills up with whatever crawlers put in it.
+		 *
+		 * On, it opens one public endpoint — `/api/subscribe` — which takes an
+		 * address, sends one confirmation, and does nothing at all until that
+		 * link is followed.
+		 */
+		enabled: boolean;
+		/**
+		 * The site allowed to post the form, if the form is not on this host.
+		 *
+		 * ontoplano.com is a different origin from app.ontoplano.com, so the
+		 * footer form is a cross-origin POST and the browser will not send it
+		 * without being told. Empty means same-origin only, which is what a
+		 * self-hosted instance wants even with the list turned on.
+		 */
+		origin: string;
+	};
 	instance: {
 		/**
 		 * The one line under the name on the signed-out front page.
@@ -214,6 +242,10 @@ client_errors = "${config.reports.clientErrors}"
 [ui]
 undo_seconds = "${config.ui.undoSeconds}"
 
+[newsletter]
+enabled = "${config.newsletter.enabled}"
+origin = "${config.newsletter.origin}"
+
 [instance]
 tagline = "${config.instance.tagline}"
 
@@ -243,6 +275,7 @@ export function loadConfig(): OntoplanoConfig {
 	const account = (parsed.account as Record<string, string>) || {};
 	const reports = (parsed.reports as Record<string, string>) || {};
 	const ui = (parsed.ui as Record<string, string>) || {};
+	const newsletter = (parsed.newsletter as Record<string, string>) || {};
 	const instance = (parsed.instance as Record<string, string>) || {};
 	const media = (parsed.media as Record<string, string>) || {};
 
@@ -291,6 +324,24 @@ export function loadConfig(): OntoplanoConfig {
 			 * closing the tab.
 			 */
 			undoSeconds: Math.min(Math.max(parseInt(ui.undo_seconds || '5', 10) || 0, 0), 60)
+		},
+		newsletter: {
+			// Silence is no, as everywhere else in this file.
+			enabled: newsletter.enabled === 'true',
+			// A single origin, and only if it is one: anything that is not an
+			// https:// origin with no path is dropped rather than echoed back in
+			// an Access-Control-Allow-Origin header.
+			origin: (() => {
+				const raw = (newsletter.origin || '').trim().replace(/\/+$/, '');
+				if (!raw) return '';
+				try {
+					const url = new URL(raw);
+					if (url.protocol !== 'https:' && url.hostname !== 'localhost') return '';
+					return url.pathname === '/' ? url.origin : '';
+				} catch {
+					return '';
+				}
+			})()
 		},
 		instance: {
 			tagline: (instance.tagline || '').trim() || DEFAULT_TAGLINE

@@ -1747,3 +1747,50 @@ export const mailFailures = sqliteTable(
 	},
 	(table) => [index('mail_failures_open_idx').on(table.resolvedAt)]
 );
+
+/**
+ * People who asked to be told when this changes.
+ *
+ * Not accounts, and deliberately nothing like one: an address, whether it has
+ * been confirmed, and a token. Nobody here can sign in, and no row is joined to
+ * a `user` — somebody who subscribed and later signed up is two unrelated
+ * facts, which is the correct relationship between "wants the newsletter" and
+ * "has an account".
+ *
+ * ## Why the app holds this at all
+ *
+ * Every other way of reaching somebody who liked this — a subreddit, a feed
+ * ranking, a search position — is rented, and the day the algorithm changes the
+ * audience is gone. An address somebody handed over is the one channel nobody
+ * else can take away. The alternative was a hosted list, which means a third
+ * party in the path for the one asset that is supposed to be un-take-away-able.
+ *
+ * It is off unless the instance turns it on: a self-hosted install has no
+ * newsletter to send and this table stays empty forever, which is right.
+ *
+ * ## Double opt-in, and why the token outlives the confirmation
+ *
+ * A row is created unconfirmed and stays that way until its link is followed —
+ * so typing somebody else's address into the form subscribes nobody. The same
+ * token is what the unsubscribe link in every issue carries, which is why it is
+ * not cleared on confirmation: a way in that becomes no way out is the thing
+ * that gets a domain filed as spam.
+ */
+export const subscribers = sqliteTable(
+	'subscribers',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		/** Lower-cased on the way in, so one address cannot be two rows. */
+		email: text('email').notNull().unique(),
+		/** Confirms this address, and later unsubscribes it. Never reissued. */
+		token: text('token').notNull().unique(),
+		/** Where the form was. Nothing personal — 'site', 'app'. */
+		source: text('source').notNull().default('site'),
+		confirmedAt: text('confirmed_at'),
+		unsubscribedAt: text('unsubscribed_at'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [index('subscribers_confirmed_idx').on(table.confirmedAt)]
+);

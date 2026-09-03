@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**39 pages, 159 actions.**
+**41 pages, 160 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -36,6 +36,8 @@ write surface for everything else; both end up calling the same
 | `/login/reset`                  | `reset`                                                                                                                                                                                                                                                                                                                                                                |
 | `/login/verify`                 | `resend`                                                                                                                                                                                                                                                                                                                                                               |
 | `/mail/weekly-review/off`       | —                                                                                                                                                                                                                                                                                                                                                                      |
+| `/newsletter/confirm`           | —                                                                                                                                                                                                                                                                                                                                                                      |
+| `/newsletter/off`               | —                                                                                                                                                                                                                                                                                                                                                                      |
 | `/offline`                      | —                                                                                                                                                                                                                                                                                                                                                                      |
 | `/planner/activities`           | `create`, `update`, `toggleActive`, `delete`, `createCategory`, `updateCategory`, `deleteCategory`                                                                                                                                                                                                                                                                     |
 | `/planner/board`                | `setStatus`, `setTiming`, `reorder`, `schedule`, `promote`, `demote`, `createTodo`, `setRatings`, `remind`, `unremind`, `editInstance`, `resolveActivity`, `deleteInstance`, `deleteTodo`                                                                                                                                                                              |
@@ -47,7 +49,7 @@ write surface for everything else; both end up calling the same
 | `/settings/account`             | `setWeeklyReviewMail`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `delete`                                                                                                                                                                                                                                                                 |
 | `/settings/account/import`      | `importTasks`, `importAccount`                                                                                                                                                                                                                                                                                                                                         |
 | `/settings/billing`             | `addSeat`, `removeSeat`, `checkout`, `switchInterval`                                                                                                                                                                                                                                                                                                                  |
-| `/settings/instance`            | `setRegistration`, `setEmailChange`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                                                 |
+| `/settings/instance`            | `exportSubscribers`, `setRegistration`, `setEmailChange`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                            |
 | `/settings/integrations`        | `createToken`, `calendarLink`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                                        |
 | `/settings/integrations/widget` | `connect`                                                                                                                                                                                                                                                                                                                                                              |
 | `/settings/preferences`         | `setErrorReports`, `saveCurrency`, `saveGridHours`, `saveMenu`, `resetMenu`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setTheme`, `saveWeek`                                                                                                                                                                                 |
@@ -166,6 +168,24 @@ would be a way to turn off anybody's mail by guessing an id.
 It turns off one thing and says so. It cannot turn anything on, so a link
 that leaks does no more harm than the click it was already for, and there is
 nothing here worth replaying.
+
+### `/newsletter/confirm`
+
+The second half of the double opt-in, and the only thing that puts an
+address on the list.
+
+Signed out by definition: the person following it has no account here and
+may never have one. A 404 for a token that is not one, rather than a
+message — the difference between "wrong token" and "no such token" is the
+only thing an enumerator would learn.
+
+### `/newsletter/off`
+
+The link at the bottom of every issue.
+
+One click, no session, no confirmation step. A way out with a form in front
+of it is the thing that makes somebody press the spam button instead, which
+costs the domain far more than the address ever did.
 
 ### `/offline`
 

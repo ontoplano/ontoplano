@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.48.0 — 2026-09-03
+
+- **A mailing list, for instances that want one.** One field in the footer of
+  ontoplano.com: an address, a confirmation to follow, and one click in every
+  message to stop. Nothing is ever sent to an address that did not answer the
+  confirmation, and nothing at all is sent until there is something to say. Off
+  unless `[newsletter] enabled` says otherwise, so a self-hosted install carries
+  an empty table and no public endpoint.
+
 ## 0.47.0 — 2026-09-03
 
 - **The weekly review arrives by mail.** On Monday morning, one message saying

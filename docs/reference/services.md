@@ -37,6 +37,7 @@ shows up here on the next build.
 | [`mail-log`](#mail-log)                         | Mail that must not fail silently.                                                                                                                                                                                                                                    |
 | [`media`](#media)                               | Pictures: what is accepted, where they go, and who may see one.                                                                                                                                                                                                      |
 | [`meta`](#meta)                                 | User-defined key/value metadata attached to planner slots.                                                                                                                                                                                                           |
+| [`newsletter`](#newsletter)                     | The one channel nobody else can take away.                                                                                                                                                                                                                           |
 | [`notebooks`](#notebooks)                       | Notebooks: a subject you write against, with no deadline.                                                                                                                                                                                                            |
 | [`onboarding-templates`](#onboarding-templates) | The starter weeks, as data.                                                                                                                                                                                                                                          |
 | [`onboarding`](#onboarding)                     | First run.                                                                                                                                                                                                                                                           |
@@ -1401,6 +1402,92 @@ still present in the payload and so reads as an explicit `{}`.
 ### Types
 
 - `SlotMeta`
+
+## newsletter
+
+The one channel nobody else can take away.
+
+Every other way of reaching somebody who liked this is rented. A subreddit
+changes its rules, a feed changes its ranking, a search position moves, and
+the audience that took a year to gather is gone in an afternoon. An address
+somebody handed over is not like that.
+
+It is also the only way to tell the hundred people who tried the demo and did
+not sign up that the thing they wanted now exists.
+
+## Not accounts
+
+A subscriber is an address, a flag, and a token. No password, no session, no
+join to `user`. Somebody who subscribed and later signed up is two unrelated
+facts, and keeping them unrelated is what stops "unsubscribe" from ever being
+confused with "delete my account".
+
+## Double opt-in, and what that buys
+
+A row is created unconfirmed. Nothing is ever sent to it but the one
+confirmation, and if the link is never followed the row stays a dead address
+that costs nothing. So typing somebody else's address into the form
+subscribes nobody, which is both the law here and in the EU and the reason a
+list is worth having: everyone on it asked twice.
+
+The confirmation token is _not_ cleared afterwards, because it is also what
+the unsubscribe link in every issue carries. A way in that becomes no way out
+is precisely how a domain gets filed as spam.
+
+## What it never says
+
+Subscribing answers the same thing whether the address was new, already
+confirmed, or previously unsubscribed. The form must not be a way to ask
+"is this person on your list", which it would be the moment the answers
+differed.
+
+### Functions
+
+#### `newsletterEnabled()`
+
+Whether this instance keeps a list at all.
+
+#### `newsletterOrigin()`
+
+The one other origin allowed to post the form, if there is one.
+
+#### `subscribe(rawEmail, source)`
+
+Take an address, and send exactly one confirmation to it.
+
+Answers `true` whatever happened, because the caller is a public form and
+the difference between "new" and "already on the list" is not the form's to
+disclose. A send that fails is a mail-log row like any other; the person is
+told the same thing either way, because "check your inbox" is true and
+"our SMTP is down" is not their problem to act on.
+
+#### `confirm(token)`
+
+Follow the link. Answers the address, or null if the token is not one.
+
+#### `unsubscribe(token)`
+
+Come off the list.
+
+Kept as a row with a date rather than deleted, so that a later subscribe
+knows to ask again instead of quietly resuming — and so the same link
+followed twice says the same thing.
+
+#### `counts()`
+
+How many are actually on the list, and how many have not answered yet.
+
+#### `confirmedAddresses()`
+
+The list, for the one person who runs this instance.
+
+Confirmed and not unsubscribed, and nothing else — the point of an export is
+that it can be pasted into whatever sends the issue, and a list that included
+people who never confirmed would be the thing that gets that sender banned.
+
+### Types
+
+- `Subscriber`
 
 ## notebooks
 

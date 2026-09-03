@@ -5,6 +5,7 @@ import { isDemo, isSelfHosted, isStaging } from '$lib/server/settings';
 import { canEditInstance } from '$lib/server/services/admin';
 import { build } from '$lib/server/services/version';
 import { toActionFailure, ValidationError } from '$lib/server/services/errors';
+import { counts, confirmedAddresses, newsletterEnabled } from '$lib/server/services/newsletter';
 import {
 	createInvite,
 	defaultGrantUntil,
@@ -57,7 +58,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 		// What the invite form opens on: a month from now, as a date field's value.
 		defaultGrantUntil: defaultGrantUntil(new Date()).slice(0, 10),
 		// Whether an invitation is worth anything beyond letting somebody in.
-		sellsAnything: !isSelfHosted()
+		sellsAnything: !isSelfHosted(),
+		// The list, if this instance keeps one. Two numbers rather than the
+		// addresses: a page nobody asked for should not put a hundred people's
+		// email on screen, and the export is one click away when it is wanted.
+		newsletter: newsletterEnabled() && !demo ? counts() : null
 	};
 };
 
@@ -68,6 +73,19 @@ function owner(userId: string): string {
 }
 
 export const actions: Actions = {
+	/*
+	 * The list, as a file.
+	 *
+	 * Confirmed and not unsubscribed, one address per line, because whatever
+	 * sends the issue takes a paste — and because a list that included the
+	 * people who never confirmed is the thing that gets a sender banned.
+	 */
+	exportSubscribers: async ({ locals }) => {
+		owner(locals.user!.id);
+		if (!newsletterEnabled()) error(404, 'Not found');
+		return { success: true, action: 'exportSubscribers', addresses: confirmedAddresses() };
+	},
+
 	/*
 	 * There is no `save` action here any more.
 	 *

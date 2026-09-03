@@ -15,6 +15,28 @@
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
+	/**
+	 * The export, as a file the browser saves rather than a page of addresses.
+	 *
+	 * A `<form>` post rather than a link, so the addresses are never a URL that
+	 * lands in a history, a proxy log or a shoulder. The action answers with the
+	 * list and this turns it into a download without a navigation.
+	 */
+	const exportList = () => {
+		return async ({ result }: { result: { type: string; data?: { addresses?: string[] } } }) => {
+			const addresses = result.type === 'success' ? (result.data?.addresses ?? []) : [];
+			if (addresses.length === 0) return;
+
+			const blob = new Blob([addresses.join('\n') + '\n'], { type: 'text/plain' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = 'subscribers.txt';
+			a.click();
+			URL.revokeObjectURL(url);
+		};
+	};
+
 	let confirmRevoke = $state<number | null>(null);
 	let copied = $state<string | null>(null);
 
@@ -240,6 +262,29 @@
 			<button class="btn btn-primary">Save</button>
 		</form>
 	</Card>
+
+	{#if data.newsletter}
+		{@const list = data.newsletter}
+		<Card
+			title="The mailing list"
+			description="People who asked to be told when this changes. Turned on in config.toml."
+		>
+			{#snippet actions()}
+				<form method="post" action="?/exportSubscribers" use:enhance={exportList}>
+					<button class="btn btn-sm" disabled={list.confirmed === 0}>
+						<Icon name="download" /> Export
+					</button>
+				</form>
+			{/snippet}
+			<p class="text-sm text-gray-500">
+				<span class="font-medium text-gray-900">{list.confirmed}</span>
+				confirmed{#if list.pending > 0}, and {list.pending} who have not followed the link yet{/if}.
+				<!-- Said here because the export is one click away and the rule is
+				     what makes the list worth having. -->
+				Only confirmed addresses are exported.
+			</p>
+		</Card>
+	{/if}
 
 	<Card
 		title="What an account may change"

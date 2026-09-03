@@ -50,6 +50,7 @@ sentence somebody agrees to when they grant it.
 | `/api/reminders`                             | GET    | —                 |
 | `/api/reminders`                             | POST   | —                 |
 | `/api/search`                                | GET    | —                 |
+| `/api/subscribe`                             | POST   | —                 |
 | `/api/tutorial`                              | POST   | —                 |
 | `/api/v1/me`                                 | GET    | —                 |
 | `/api/v1/plugin`                             | GET    | `plugin:declare`  |
@@ -260,6 +261,29 @@ Session-authenticated like the rest of the app rather than token-based like
 `/api/v1` — this exists for the page that is already open, not for a plugin.
 
 **GET**
+
+### `/api/subscribe`
+
+The one public endpoint the newsletter form posts to.
+
+The form is in the footer of ontoplano.com, which is a different origin from
+this app and a directory of static files with nothing behind it — so the
+post comes here, cross-origin, and the browser will not send it without
+being told. Which origin is allowed is the instance's own setting, echoed
+back only when it matches exactly: an `Access-Control-Allow-Origin` that
+reflects whatever asked is not a CORS policy.
+
+On an instance with no newsletter this route is a 404 in both methods, so a
+self-hosted install does not advertise an endpoint it will refuse.
+
+## What it answers
+
+The same thing, always: accepted. Whether the address was new, already on
+the list, or previously unsubscribed is not the form's to disclose — the
+moment those answers differ the form is a way to ask "is this person a
+subscriber?" about anybody.
+
+**POST**
 
 ### `/api/tutorial`
 

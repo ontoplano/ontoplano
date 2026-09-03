@@ -90,6 +90,35 @@ what the browser said it was sending. Pictures are rows in the same
 SQLite file as everything else, so this is also the number that decides
 how fast that file grows.
 
+### `[newsletter]`
+
+| Key       | Type      | Means                                                                 |
+| --------- | --------- | --------------------------------------------------------------------- |
+| `enabled` | `boolean` | Whether this instance keeps a list of people to tell when it changes. |
+| `origin`  | `string`  | The site allowed to post the form, if the form is not on this host.   |
+
+**`enabled`**
+
+Whether this instance keeps a list of people to tell when it changes.
+
+Off unless the instance says otherwise, like every other feature that
+collects an address from somebody who is not an account holder: a
+self-hosted install has nothing to announce, and a subscribe form on
+it is a box that fills up with whatever crawlers put in it.
+
+On, it opens one public endpoint — `/api/subscribe` — which takes an
+address, sends one confirmation, and does nothing at all until that
+link is followed.
+
+**`origin`**
+
+The site allowed to post the form, if the form is not on this host.
+
+ontoplano.com is a different origin from app.ontoplano.com, so the
+footer form is a cross-origin POST and the browser will not send it
+without being told. Empty means same-origin only, which is what a
+self-hosted instance wants even with the list turned on.
+
 ### `[instance]`
 
 | Key       | Type     | Means                                                     |

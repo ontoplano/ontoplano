@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**52 tables.**
+**53 tables.**
 
 | Table                                             | Columns | Belongs to a user |
 | ------------------------------------------------- | ------- | ----------------- |
@@ -53,6 +53,7 @@ exist.
 | [`session`](#session)                             | 9       | yes               |
 | [`shopping_categories`](#shopping_categories)     | 6       | yes               |
 | [`shopping_items`](#shopping_items)               | 12      | yes               |
+| [`subscribers`](#subscribers)                     | 7       | —                 |
 | [`subscriptions`](#subscriptions)                 | 15      | yes               |
 | [`suppressed_slots`](#suppressed_slots)           | 5       | yes               |
 | [`tags`](#tags)                                   | 3       | yes               |
@@ -900,6 +901,24 @@ Indexes:
 - `shopping_items_bought_idx` on `bought`
 - `shopping_items_snoozed_idx` on `snoozed`
 - `shopping_items_category_idx` on `shopping_category_id`
+
+## subscribers
+
+| Column            | Type    | Null     | Default               | Notes             |
+| ----------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`              | integer | not null | —                     | primary key, auto |
+| `email`           | text    | not null | —                     | —                 |
+| `token`           | text    | not null | —                     | —                 |
+| `source`          | text    | not null | `'site'`              | —                 |
+| `confirmed_at`    | text    | null     | —                     | —                 |
+| `unsubscribed_at` | text    | null     | —                     | —                 |
+| `created_at`      | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `subscribers_email_unique` on `email` — unique
+- `subscribers_token_unique` on `token` — unique
+- `subscribers_confirmed_idx` on `confirmed_at`
 
 ## subscriptions
 

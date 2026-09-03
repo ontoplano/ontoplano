@@ -39,6 +39,9 @@ export const load: LayoutServerLoad = async (event) => {
 	// session and never will — that is what makes it one click. It is signed;
 	// see `services/review-mail.ts`.
 	const isMailLink = event.url.pathname.startsWith('/mail/');
+	// Confirming and unsubscribing: the person on the other end of a newsletter
+	// has no account here and may never have one.
+	const isNewsletter = event.url.pathname.startsWith('/newsletter/');
 
 	if (
 		!event.locals.user &&
@@ -47,7 +50,8 @@ export const load: LayoutServerLoad = async (event) => {
 		!isOffline &&
 		!isLegal &&
 		!isFrontPage &&
-		!isMailLink
+		!isMailLink &&
+		!isNewsletter
 	) {
 		return redirect(302, '/login');
 	}

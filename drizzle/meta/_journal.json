@@ -288,6 +288,13 @@
       "when": 1788353516271,
       "tag": "0040_shocking_shinko_yamashiro",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1788414883029,
+      "tag": "0041_people_who_asked_to_be_told",
+      "breakpoints": true
     }
   ]
 }
