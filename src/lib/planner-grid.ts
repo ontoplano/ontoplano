@@ -82,6 +82,15 @@ export const GRID_DEFAULT_ZOOM_INDEX = 1;
 // dropped and the block reads as a plain colour bar (hover or zoom in for the details).
 export const GRID_MIN_TEXT_PX = 18;
 
+/**
+ * How tall a block has to be before it says *when* as well as *what*.
+ *
+ * Two lines of the block's own type plus its padding. Below this the name is
+ * the one that survives — a block that has to choose says what it is, because
+ * its position already says roughly when.
+ */
+export const GRID_MIN_TIME_PX = 34;
+
 export interface GridCategory {
 	id: number;
 	name?: string | null;
@@ -196,15 +205,36 @@ function effectiveCategoryId(item: {
 	return item.categoryId ?? item.activityCategoryId ?? null;
 }
 
-export function contrastText(hex: string): string {
-	const parsed = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-	if (!parsed) return '#111827';
-	const int = parseInt(parsed[1], 16);
-	const r = (int >> 16) & 0xff;
-	const g = (int >> 8) & 0xff;
-	const b = int & 0xff;
-	const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-	return luminance > 0.6 ? '#111827' : '#ffffff';
+/**
+ * A block's category colour, handed to CSS rather than painted here.
+ *
+ * The grid used to be a field of saturated rectangles: every block was its
+ * category at full strength, so six hours of work on a Tuesday was three
+ * hundred pixels of solid blue and the week read as a colour chart rather than
+ * as a schedule. The colour is meant to *identify* a block, and identifying
+ * does not need the whole surface — a tint and a spine do it, and leave the eye
+ * free to read shape and density, which is what a week is looked at for.
+ *
+ * It is a custom property rather than a background because the mix depends on
+ * the theme: 18% of a hue on white is a tint, and 18% on near-black is nothing.
+ * This module does not know which theme is on and should not have to.
+ *
+ * It also retires `contrastText`, which picked white or near-black ink by
+ * luminance — the right answer to the wrong question. White on the kitchen's
+ * #a16207 passed by a hair and looked it; dark ink on a tint of the same hue is
+ * comfortable at every colour a category can be.
+ *
+ * `styles` is event-calendar's escape hatch: entries are appended to the
+ * element's inline style. Nothing else is passed, because with no
+ * `backgroundColor` the library writes no colour declaration at all and the
+ * stylesheet is free to own the whole appearance.
+ */
+export function blockHue(color: string): string {
+	// Anything that is not a plain hex could be arbitrary text out of a category
+	// row, and this string is concatenated into an inline style.
+	const safe = /^#?[0-9a-f]{3,8}$/i.test(color.trim()) ? color.trim() : '';
+	if (!safe) return '--block:var(--color-gray-400)';
+	return `--block:${safe.startsWith('#') ? safe : `#${safe}`}`;
 }
 
 /**
@@ -248,8 +278,10 @@ function slotToEvent(
 		start,
 		end,
 		title: blockName(slot),
-		backgroundColor: bg,
-		textColor: contrastText(bg),
+		// The hue, and nothing else. What is done with it — a tint, a spine, the
+		// ink on top — is `layout.css`, because the answer depends on the theme
+		// and this module has no idea which one is on. See `blockHue`.
+		styles: [blockHue(bg)],
 		editable,
 		classNames,
 		extendedProps: {
@@ -280,8 +312,7 @@ function exceptionalToEvent(
 		start,
 		end,
 		title: blockName(exc),
-		backgroundColor: bg,
-		textColor: contrastText(bg),
+		styles: [blockHue(bg)],
 		editable: true,
 		classNames: ['og-event', 'og-event--exceptional'],
 		extendedProps: {
@@ -396,8 +427,31 @@ interface GridEventLike {
 
 // Whether a block rendered at `slotHeight` is tall enough to show its title.
 export function eventFitsText(event: GridEventLike, slotHeight: number): boolean {
+	return eventHeightPx(event, slotHeight) >= GRID_MIN_TEXT_PX;
+}
+
+/** …and tall enough for the time on a second line under it. */
+export function eventFitsTime(event: GridEventLike, slotHeight: number): boolean {
+	return eventHeightPx(event, slotHeight) >= GRID_MIN_TIME_PX;
+}
+
+function eventHeightPx(event: GridEventLike, slotHeight: number): number {
 	const minutes = (event.end.getTime() - event.start.getTime()) / 60_000;
-	return (minutes / GRID_SLOT_MINUTES) * slotHeight >= GRID_MIN_TEXT_PX;
+	return (minutes / GRID_SLOT_MINUTES) * slotHeight;
+}
+
+/** For a title going into an innerHTML. */
+function escapeHtml(value: string): string {
+	return value
+		.replaceAll('&', '&amp;')
+		.replaceAll('<', '&lt;')
+		.replaceAll('>', '&gt;')
+		.replaceAll('"', '&quot;');
+}
+
+/** `09:00 – 12:00`, in the same 24-hour reading as the gutter beside it. */
+function clockRange(event: GridEventLike): string {
+	return `${formatClock(event.start)}\u2009\u2013\u2009${formatClock(event.end)}`;
 }
 
 export interface GridEventDetail {
@@ -515,9 +569,33 @@ export function baseGridOptions(
 		 * a third of the width of a narrow cell spent on something the order
 		 * already tells you. Dropping it is most of what makes a month readable.
 		 */
+		/*
+		 * What a block says about itself.
+		 *
+		 * It used to say only its name, and a name is not the question somebody
+		 * has when they look at a grid — the position says roughly when, and
+		 * "roughly" is exactly why the eye goes back for a second look at
+		 * anything not starting on an hour line. So the time goes under the
+		 * title wherever there is room for a second line, in the same 24-hour
+		 * reading as the gutter.
+		 *
+		 * Three tiers by height: name and time, name alone, nothing. The last is
+		 * not a failure — a fifteen-minute block at the tightest zoom is eight
+		 * pixels tall, and a clipped word in it is worse than a clean bar you
+		 * can hover.
+		 */
 		eventContent: month
 			? (info) => info.event.title
-			: (info) => (eventFitsText(info.event, slotHeight) ? info.event.title : ''),
+			: (info) => {
+					if (!eventFitsText(info.event, slotHeight)) return '';
+					const title = escapeHtml(String(info.event.title ?? ''));
+					if (!eventFitsTime(info.event, slotHeight)) return title;
+					return {
+						html:
+							`<span class="ec-event-title">${title}</span>` +
+							`<span class="ec-event-time">${escapeHtml(clockRange(info.event))}</span>`
+					};
+				},
 		/*
 		 * A week of columns on a phone has about fifty pixels each, and "Wed" does
 		 * not fit — the header read "31 M…", "2 W…", which is neither the date nor

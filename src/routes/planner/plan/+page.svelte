@@ -36,6 +36,7 @@
 		weekdayToDate,
 		formatLocalDate,
 		describeGridEvent,
+		eventFitsText,
 		GRID_ZOOM_LEVELS,
 		GRID_DEFAULT_ZOOM_INDEX,
 		GRID_DAYS_DESKTOP,
@@ -852,8 +853,26 @@
 	 * so the id is stamped there and read back when the rectangle needs to know
 	 * what it touched.
 	 */
-	function stampEventId(info: { el: HTMLElement; event: { id: string | number } }) {
+	function stampEventId(info: {
+		el: HTMLElement;
+		event: { id: string | number; start: Date; end: Date };
+	}) {
 		info.el.dataset.ogEventId = String(info.event.id);
+		/*
+		 * A block too short for a word is drawn differently, and the class says so.
+		 *
+		 * A fifteen-minute block at the default zoom is fifteen pixels tall. As a
+		 * pale tinted pill with a three-pixel spine it read as a rendering
+		 * artefact — a smudge on the seven o'clock line rather than the thing
+		 * somebody put there. The treatment inverts below this size: no room for
+		 * text means no contrast to protect, so the block goes solid and reads as
+		 * a mark. See `.og-event--tiny` in `layout.css`.
+		 *
+		 * Decided here rather than in CSS because it depends on the zoom, which
+		 * is this page's state, and computed from the duration rather than
+		 * measured because at mount the element has not been laid out yet.
+		 */
+		info.el.classList.toggle('og-event--tiny', !eventFitsText(info.event, slotHeight));
 		// Re-applied here as well as in the effect below, because a block that
 		// mounts after a selection was made would otherwise miss it.
 		info.el.classList.toggle('og-selected', selectedEventIds.has(String(info.event.id)));
@@ -1832,6 +1851,28 @@
 		<!-- Pinned right on a laptop; on a phone it takes the second line whole, so
 		     the two controls sit at the ends instead of huddling in one corner. -->
 		<div class="ml-auto flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+			<!--
+				Schemes: a saved shape of a week, loaded over this one. Here rather
+				than on a line of its own because it is a control, and a control
+				belongs with the other controls.
+			-->
+			<button
+				type="button"
+				onclick={() => {
+					schemesExpanded = !schemesExpanded;
+					if (!schemesExpanded) {
+						confirmingLoadSchemeId = null;
+						confirmingDeleteSchemeId = null;
+					}
+				}}
+				aria-expanded={schemesExpanded}
+				aria-controls="plan-schemes-panel"
+				class="btn btn-sm shrink-0"
+				title="Saved shapes of a week"
+			>
+				Schemes
+			</button>
+
 			<div class="seg" role="group" aria-label="How much to show">
 				{#each [['day', 'Day'], ['week', 'Week'], ['month', 'Month']] as [mode, label] (mode)}
 					<button
@@ -1869,10 +1910,12 @@
 	{/if}
 
 	<!--
-		Schemes had a full-width card of its own to hold one word and "Show" —
-		forty-odd pixels of surface, above the grid, for something most people open
-		once a month. Closed it is now a line; the card appears when there is
-		something in it.
+		The panel, when it is open. The control that opens it is in the toolbar.
+
+		It had a line of its own above the grid, reading "SCHEMES  SHOW" — two
+		uppercase words with a gap, which is not a control, it is a label that
+		looks broken. And it was one of six things stacked between the tabs and
+		the first hour of the week, for something most people open once a month.
 	-->
 	<div
 		class:border={schemesExpanded}
@@ -1880,24 +1923,8 @@
 		class:bg-white={schemesExpanded}
 		class:shadow-card={schemesExpanded}
 		data-tour="plan-schemes"
+		id="plan-schemes-panel"
 	>
-		<button
-			type="button"
-			onclick={() => {
-				schemesExpanded = !schemesExpanded;
-				if (!schemesExpanded) {
-					confirmingLoadSchemeId = null;
-					confirmingDeleteSchemeId = null;
-				}
-			}}
-			class="eyebrow flex items-center gap-2 py-1 text-left text-gray-500 hover:text-gray-900 {schemesExpanded
-				? 'w-full justify-between px-4 py-3'
-				: ''}"
-		>
-			<span>Schemes</span>
-			<span class="text-xs">{schemesExpanded ? 'Hide' : 'Show'}</span>
-		</button>
-
 		{#if schemesExpanded}
 			<div class="space-y-4 border-t border-gray-200 px-4 py-4">
 				<form

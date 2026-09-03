@@ -15,12 +15,14 @@ import { describe, expect, test } from 'vitest';
 import {
 	addDaysStr,
 	baseGridOptions,
+	GRID_ZOOM_LEVELS,
+	GRID_DEFAULT_ZOOM_INDEX,
 	blockName,
 	buildExceptionalEvents,
 	buildSlotEvents,
 	buildSlotEventsForDates,
 	buildSubscribedEvents,
-	contrastText,
+	blockHue,
 	dateToWeekday,
 	decodeEventId,
 	describeGridEvent,
@@ -140,7 +142,9 @@ describe('putting a weekly block on a date', () => {
 		expect(formatClock(event.start as Date)).toBe('09:00');
 		expect(formatClock(event.end as Date)).toBe('10:00');
 		expect(event.title).toBe('Work');
-		expect(event.backgroundColor).toBe('#1d4ed8');
+		// The hue reaches the element as a custom property, not as a background:
+		// what is done with it depends on the theme. See `blockHue`.
+		expect(event.styles).toEqual(['--block:#1d4ed8']);
 	});
 
 	test('one that crosses noon or midday keeps its length', () => {
@@ -159,7 +163,7 @@ describe('putting a weekly block on a date', () => {
 			MONDAY,
 			CATEGORIES
 		);
-		expect(event.backgroundColor).toBe('#fef08a');
+		expect(event.styles).toEqual(['--block:#fef08a']);
 		expect(event.extendedProps?.categoryName).toBe('Rest');
 	});
 
@@ -169,7 +173,7 @@ describe('putting a weekly block on a date', () => {
 			MONDAY,
 			CATEGORIES
 		);
-		expect(event.backgroundColor).toBeTruthy();
+		expect(event.styles?.[0]).toMatch(/^--block:/);
 		expect(event.extendedProps?.categoryName).toBeNull();
 	});
 });
@@ -427,18 +431,66 @@ describe('the small conversions', () => {
 	});
 });
 
-describe('text drawn on a coloured block', () => {
-	test('is dark on a light colour and light on a dark one', () => {
-		expect(contrastText('#fef08a')).toBe('#111827');
-		expect(contrastText('#1d4ed8')).toBe('#ffffff');
+/**
+ * What a block renders, at the three heights it can be.
+ *
+ * `eventContent` is the only place the grid decides what fits, and it is
+ * decided by arithmetic rather than by measuring — at mount the element has no
+ * layout yet. So the arithmetic is what is checked, at the real zoom levels.
+ */
+describe('what a block shows', () => {
+	const content = (durationMinutes: number, slotHeight: number, title = 'Deep work') => {
+		const options = baseGridOptions(MONDAY, { slotHeight });
+		const [event] = buildSlotEvents([aSlot({ durationMinutes, startTime: '09:00' })], MONDAY, [
+			{ id: 1, name: 'Work', color: '#1d4ed8' }
+		]);
+		const render = options.eventContent as (info: { event: unknown }) => unknown;
+		return render({ event: { ...event, title } });
+	};
+
+	test('its name and its time, when there is room for both', () => {
+		const out = content(180, GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX]) as { html: string };
+		expect(out.html).toContain('Deep work');
+		// The same 24-hour reading as the gutter beside it.
+		expect(out.html).toMatch(/09:00.*12:00/);
+	});
+
+	test('its name alone, when the second line will not fit', () => {
+		// Half an hour at the default zoom is 24px: past the text threshold,
+		// short of the one that buys a second line.
+		expect(content(30, GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX])).toBe('Deep work');
+	});
+
+	test('nothing at all, when a word would be clipped', () => {
+		expect(content(15, GRID_ZOOM_LEVELS[0])).toBe('');
+	});
+
+	test('a name with markup in it is text, not markup', () => {
+		const out = content(180, GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX], '<img src=x onerror=1>');
+		expect((out as { html: string }).html).not.toContain('<img');
+		expect((out as { html: string }).html).toContain('&lt;img');
+	});
+});
+
+/**
+ * The hue reaching the element, and nothing else reaching it by accident.
+ *
+ * This string is concatenated into an inline `style` attribute, and the colour
+ * in it comes from a category row somebody typed. A category named
+ * `red;background:url(...)` must not become a declaration.
+ */
+describe('the colour handed to a block', () => {
+	test('is a custom property carrying the hex', () => {
+		expect(blockHue('#1d4ed8')).toBe('--block:#1d4ed8');
 	});
 
 	test('takes a colour with or without its hash, in either case', () => {
-		expect(contrastText('1D4ED8')).toBe('#ffffff');
+		expect(blockHue('1D4ED8')).toBe('--block:#1D4ED8');
 	});
 
-	test('and stays readable when the colour is not one', () => {
-		expect(contrastText('rebeccapurple')).toBe('#111827');
-		expect(contrastText('')).toBe('#111827');
+	test('refuses anything that is not one, and still draws something', () => {
+		for (const bad of ['rebeccapurple', '', 'red;background:url(x)', '#1d4ed8;color:red']) {
+			expect(blockHue(bad)).toBe('--block:var(--color-gray-400)');
+		}
 	});
 });

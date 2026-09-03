@@ -1861,6 +1861,119 @@ html .ec .ec-event {
 }
 
 /*
+ * A block: a tinted surface with the category's colour down its edge.
+ *
+ * It used to be the category at full strength across the whole rectangle. Six
+ * hours of work on a Tuesday was three hundred pixels of solid blue, and a full
+ * week was a colour chart — every block shouting equally, so none of them said
+ * anything, and the shape of the week (where the gaps are, how much is
+ * committed, what runs long) was the one thing you could not see.
+ *
+ * A tint and a three-pixel spine identify a block just as well. What the extra
+ * contrast buys is everything else: the title reads, the time beside it reads,
+ * a short block no longer disappears against a long one, and the grid's own
+ * lines are visible through the week instead of being painted over.
+ *
+ * It also fixes the contrast problem underneath. `contrastText` picked white or
+ * near-black by luminance, which is the right answer to the wrong question:
+ * white on the kitchen's #a16207 passes by a hair and looks it. Dark ink on a
+ * tint of the same hue is comfortable at every colour a category can be.
+ *
+ * `--block` arrives inline, from `blockHue` in `planner-grid.ts`. The mixes are
+ * against `--color-white` and `--color-gray-900`, both of which flip with the
+ * theme, so one rule serves light and dark.
+ */
+html .ec .ec-event.og-event {
+	--block-tint: 18%;
+	--block-ink: 45%;
+	background-color: color-mix(in srgb, var(--block) var(--block-tint), var(--color-white));
+	color: color-mix(in srgb, var(--block) var(--block-ink), var(--color-gray-900));
+	box-shadow: inset 3px 0 0 var(--block);
+	padding-left: 0.5rem;
+}
+
+/*
+ * More of the hue in the dark, and less of it in the ink.
+ *
+ * 13% of a colour on white is a tint you can see; 13% on #101317 is #101317.
+ * The ink goes the other way: `--color-gray-900` is near-white there, so mixing
+ * the hue in darkens rather than lightens, and past about a third it stops
+ * being legible.
+ */
+html[data-theme='dark'] .ec .ec-event.og-event {
+	--block-tint: 28%;
+	--block-ink: 32%;
+}
+
+@media (prefers-color-scheme: dark) {
+	html:not([data-theme='light']) .ec .ec-event.og-event {
+		--block-tint: 28%;
+		--block-ink: 32%;
+	}
+}
+
+/*
+ * The title, and the time under it.
+ *
+ * A block said what it was and never when. On a grid that is *almost* enough —
+ * the position says when — but "almost" is the reason somebody looks twice at a
+ * 45-minute block sitting between two hour lines. The time is quiet, in the
+ * mono face the gutter uses, and only where there is room for a second line:
+ * `ec-short` is the library's own class for a block too small for one.
+ */
+html .ec .ec-event.og-event .ec-event-title {
+	font-weight: 600;
+}
+
+html .ec .ec-event.og-event .ec-event-time {
+	display: block;
+	font-size: 0.6875rem;
+	font-weight: 400;
+	opacity: 0.75;
+}
+
+/* Too short for two lines: the name is the one that survives. */
+html .ec .ec-event.og-event.ec-short .ec-event-time,
+html .ec.ec-month-view .ec-event.og-event .ec-event-time {
+	display: none;
+}
+
+/*
+ * Too short for a word: solid, and unmistakable.
+ *
+ * The treatment inverts below the size where a title fits. A tint works
+ * because there is text on it to protect; with no text there is nothing to
+ * protect and everything to lose — a fifteen-minute block as a pale pill with
+ * a three-pixel spine read as a smudge on the hour line rather than as the
+ * thing somebody put there.
+ *
+ * The corner radius goes with it. A pill is what a rounded rectangle becomes
+ * when it is fifteen pixels tall, and a pill is not a block.
+ */
+html .ec .ec-event.og-event--tiny {
+	background-color: var(--block);
+	box-shadow: none;
+	border-radius: 2px;
+	min-height: 4px;
+	padding: 0;
+}
+
+/*
+ * A block that is not happening: the colour goes, the outline stays.
+ *
+ * Skipped and inactive blocks were the same fill at a lower opacity, which on a
+ * tinted surface is nearly the surface. An outline says "there is something
+ * here and it is not on" in a way a faint fill cannot.
+ */
+html .ec .ec-event.og-event--inactive {
+	background-color: transparent;
+	color: var(--color-gray-500);
+	box-shadow:
+		inset 3px 0 0 color-mix(in srgb, var(--block) 45%, transparent),
+		inset 0 0 0 1px var(--color-gray-200);
+}
+
+/*
  * A month is a different density.
  *
  * In a time grid a block's height *is* its length, so it can afford padding. In
@@ -1919,9 +2032,22 @@ html[data-style='playful'] .ec {
 			box-shadow 120ms ease;
 	}
 
-	html .ec .ec-event:hover {
-		filter: brightness(1.06);
-		box-shadow: var(--shadow-raised);
+	/*
+	 * Hover deepens the tint rather than brightening the element.
+	 *
+	 * `filter: brightness(1.06)` was written for a saturated fill; on a 13% tint
+	 * it is invisible, and in dark mode it washes the block out. Mixing more of
+	 * the hue in reads the same way at both ends.
+	 */
+	html .ec .ec-event.og-event:hover {
+		--block-tint: 28%;
+		box-shadow:
+			inset 3px 0 0 var(--block),
+			var(--shadow-raised);
+	}
+
+	html[data-theme='dark'] .ec .ec-event.og-event:hover {
+		--block-tint: 38%;
 	}
 }
 
@@ -1935,5 +2061,4 @@ html[data-style='playful'] .ec {
 html .ec .ec-event.og-selected {
 	outline: 2px solid var(--color-gray-900);
 	outline-offset: -2px;
-	filter: brightness(1.08);
 }

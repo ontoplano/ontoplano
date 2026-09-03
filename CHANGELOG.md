@@ -10,6 +10,21 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.49.0 — 2026-09-03
+
+- **A week reads as a schedule again.** Every block used to be its category at
+  full strength, so six hours of work on a Tuesday was three hundred pixels of
+  solid blue and a full week was a colour chart — every block shouting equally,
+  which meant none of them said anything. A block is now a tint of its category
+  with the colour down its edge: you can see the shape of the week, the gaps,
+  and the grid's own hour lines through it.
+- **A block says when as well as what**, on a second line under its name,
+  wherever there is room for one. Too short for that and the name survives
+  alone; too short for a word and it is a solid mark in its colour rather than
+  a pale smudge.
+- Schemes moved into the toolbar. It had a line of its own above the grid
+  reading "SCHEMES SHOW", which is not a control.
+
 ## 0.48.0 — 2026-09-03
 
 - **A mailing list, for instances that want one.** One field in the footer of
