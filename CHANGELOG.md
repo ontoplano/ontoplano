@@ -10,6 +10,19 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.57.3 — 2026-09-03
+
+- **The Docker image would not build.** better-auth is constructed the moment
+  its module is imported and refuses to exist without a secret — correctly for a
+  server, wrongly for a build, which has no environment and needs none. A build
+  with nothing configured now finishes, and CI does one on every push so it
+  cannot break again unnoticed.
+- **An administrator can delete an account**, from that account's page in
+  `/admin`, by typing its address. Not a second click: this is the one action
+  with nothing behind it to restore from, and typing the address is what catches
+  having the wrong account open. Your own account and the instance owner's are
+  refused outright.
+
 ## 0.57.2 — 2026-09-03
 
 - **Every list an assistant reads over MCP works again.** The shopping list, the

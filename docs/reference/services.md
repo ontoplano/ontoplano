@@ -338,6 +338,30 @@ Give or take away the role.
 An administrator cannot demote themselves: the instance would be left with
 nobody who can promote anyone, and the way out of that is a database editor.
 
+#### `deleteAccountAsAdmin(actorId, subjectId, typed)`
+
+Erase an account, having been made to type its address.
+
+The friction is the feature. A test account and a real one sit in the same
+list, look alike, and are one row apart — and this is the button in the app
+with no undo behind it at all: `deleteAccount` empties every table the person
+owns inside one transaction, and there is nothing left to restore from
+afterwards except a backup of the whole instance.
+
+So the confirmation is not a second click, which lands under the first. It is
+the address of the account being deleted, typed. Somebody who has the wrong
+row open types the wrong address and is told so, which is the only kind of
+confirmation that catches the mistake it is there for. Case and surrounding
+space are forgiven; nothing else is.
+
+Two accounts are refused outright rather than made harder:
+
+- **Yourself.** An administrator deleting their own account through the
+  administration page is either a mistake or a thing to do from the account
+  page, where it belongs and where it asks properly.
+- **The instance's owner**, who is an administrator by virtue of being first
+  and whose deletion would leave nobody able to undo anything.
+
 #### `recentEvents(limit)`
 
 How many events the instance has recorded lately, for the admin landing.

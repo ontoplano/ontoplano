@@ -5,6 +5,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { env } from '$env/dynamic/private';
 import { getRequestEvent } from '$app/server';
+import { building } from '$app/environment';
 import { db } from '$lib/server/db';
 import { MIN_PASSWORD_LENGTH } from '$lib/passwords';
 import { sendLogged } from '$lib/server/services/mail-log';
@@ -29,9 +30,28 @@ const verificationMail = (url: string) =>
  * dig through a mailbox for a link that may never have arrived.
  */
 
+/**
+ * A secret for the build, which signs nothing.
+ *
+ * better-auth is constructed when this module is imported, and it refuses to
+ * exist without a secret — correctly: a server running on the default one has
+ * sessions anybody can forge. But a *build* imports this module too, while
+ * rendering, and a build has no environment and needs none. So `yarn build`
+ * inside a container, or on a fresh clone with no `.env`, died at "rendering
+ * chunks" with a BetterAuthError about the default secret, which reads like a
+ * misconfigured deployment and is a build with nothing configured at all.
+ *
+ * `building` is SvelteKit's own flag and is false in every running process, so
+ * this cannot become a deployment's secret: a server started without one still
+ * gets the same refusal it gets today, which is the behaviour that matters.
+ * Nothing is signed, verified or written during a build, and the value never
+ * reaches the output — `$env/dynamic/private` is read at runtime, not inlined.
+ */
+const secret = env.BETTER_AUTH_SECRET || (building ? 'build-only-secret-signs-nothing' : undefined);
+
 export const auth = betterAuth({
 	baseURL: env.ORIGIN,
-	secret: env.BETTER_AUTH_SECRET,
+	secret,
 	database: drizzleAdapter(db, { provider: 'sqlite' }),
 	/*
 	 * An address and a password, and nothing else.

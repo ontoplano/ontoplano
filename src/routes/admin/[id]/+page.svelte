@@ -10,6 +10,19 @@
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
+	/*
+	 * Deleting is two steps, and the second is typing the address.
+	 *
+	 * Not a second click: a confirmation that appears where the first one was is
+	 * a confirmation an accidental double-click walks straight through, and this
+	 * is the one action in the app with nothing behind it to restore from. The
+	 * address is also the thing that catches the real mistake — having the wrong
+	 * account open, which no amount of "are you sure" ever catches.
+	 */
+	let deleting = $state(false);
+	let typed = $state('');
+	const matches = $derived(typed.trim().toLowerCase() === data.account.email.toLowerCase());
+
 	function when(iso: string): string {
 		return new Date(iso).toLocaleString(undefined, {
 			day: 'numeric',
@@ -139,6 +152,48 @@
 			</p>
 		{/if}
 	</Card>
+
+	{#if !data.self && !data.account.isOwner}
+		<Card
+			title="Delete this account"
+			description="Everything in it goes, in one transaction, with nothing to restore it from."
+		>
+			{#if !deleting}
+				<button class="btn btn-danger btn-sm" onclick={() => ((deleting = true), (typed = ''))}>
+					<Icon name="trash" /> Delete this account
+				</button>
+			{:else}
+				<form method="post" action="?/deleteAccount" use:enhance class="space-y-3">
+					<p class="text-sm text-gray-700">
+						Type <strong class="text-gray-900">{data.account.email}</strong> to confirm. Every block,
+						entry, note, goal and picture this account owns is deleted, and the export it could have taken
+						with it goes too.
+					</p>
+					<div class="flex flex-wrap items-center gap-2">
+						<!--
+							`off` on every autofill hint: the browser offering to fill in an
+							address here would be filling in the confirmation for you, which
+							is the whole of what this box is for.
+						-->
+						<input
+							name="confirmEmail"
+							bind:value={typed}
+							autocomplete="off"
+							autocapitalize="none"
+							spellcheck="false"
+							placeholder={data.account.email}
+							aria-label="The address of the account being deleted"
+							class="input min-w-0 flex-1 sm:max-w-sm"
+						/>
+						<button class="btn btn-danger btn-sm" disabled={!matches}>Delete for good</button>
+						<button type="button" class="btn btn-sm" onclick={() => (deleting = false)}>
+							Cancel
+						</button>
+					</div>
+				</form>
+			{/if}
+		</Card>
+	{/if}
 
 	<Card title="History" description="What this account did, and what was done to it." flush>
 		{#if data.events.length === 0}

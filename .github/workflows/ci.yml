@@ -47,6 +47,14 @@ jobs:
 
       - run: yarn check
 
+      # A plain build, in an environment with nothing configured — which is what
+      # a fresh clone is, and what the Docker image build is. The image failed
+      # here for a release: better-auth is constructed when its module is
+      # imported and refused to exist without a secret, so `yarn build` died
+      # while rendering. Nothing else in this file would have caught it; the e2e
+      # run builds with a secret in its environment.
+      - run: yarn build
+
       - run: yarn test:unit
 
       # Only the browser the suite actually uses. `--with-deps` because a bare

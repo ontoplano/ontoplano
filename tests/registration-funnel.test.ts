@@ -43,18 +43,38 @@ vi.mock('../src/lib/server/settings', async (importOriginal) => {
 	};
 });
 
+/*
+ * The real provider with two answers replaced — through a Proxy, not a spread.
+ *
+ * `{ ...provider() }` looks equivalent and is not. On a clone with no private
+ * provider compiled in, `provider()` is `NoBilling`, whose methods live on a
+ * class prototype: spreading copies the two fields and drops every method, so
+ * `displayPricing` reached `provider().pricing()` and found nothing there. It
+ * passed on a machine that has the private Paddle module — a plain object,
+ * whose methods spread fine — and failed on CI, which is exactly the wrong way
+ * round for a test about the instance that sells.
+ */
 vi.mock('../src/lib/server/billing/index', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('../src/lib/server/billing/index')>();
 	return {
 		...actual,
-		provider: () => ({
-			...actual.provider(),
-			configured: () => selling,
-			createCheckout: async (_id: string, interval?: string, tier?: string) => {
-				opened = { interval, tier };
-				return 'https://provider.example/checkout/1';
-			}
-		})
+		provider: () => {
+			const real = actual.provider();
+			return new Proxy(real, {
+				get(target, key, receiver) {
+					if (key === 'configured') return () => selling;
+					if (key === 'createCheckout') {
+						return async (_id: string, interval?: string, tier?: string) => {
+							opened = { interval, tier };
+							return 'https://provider.example/checkout/1';
+						};
+					}
+					const value = Reflect.get(target, key, receiver);
+					// Bound, because a method read off a proxy and called loses `this`.
+					return typeof value === 'function' ? value.bind(target) : value;
+				}
+			});
+		}
 	};
 });
 

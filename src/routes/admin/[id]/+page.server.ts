@@ -4,6 +4,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { auth, sendVerificationFor } from '$lib/server/auth';
 import {
 	accountById,
+	deleteAccountAsAdmin,
 	grantTrial,
 	requireAdmin,
 	setPlanEnd,
@@ -79,6 +80,23 @@ export const actions: Actions = {
 			if (e instanceof APIError) return fail(400, { message: e.message });
 			return toActionFailure(e);
 		}
+	},
+
+	/**
+	 * Erase the account, having been made to type its address.
+	 *
+	 * A redirect on success rather than a form message: the page this action
+	 * belongs to is about an account that no longer exists, and re-rendering it
+	 * would be a 404 or, worse, a cached shell of somebody who is gone.
+	 */
+	deleteAccount: async ({ locals, params, request }) => {
+		const formData = await request.formData();
+		try {
+			deleteAccountAsAdmin(locals.user!.id, params.id, formData.get('confirmEmail'));
+		} catch (e) {
+			return toActionFailure(e);
+		}
+		redirect(303, '/admin?deleted=1');
 	},
 
 	/**

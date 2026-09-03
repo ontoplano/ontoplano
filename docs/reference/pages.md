@@ -11,13 +11,13 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**41 pages, 161 actions.**
+**41 pages, 162 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/`                             | `createDiaryEntry`, `saveWins`, `setLayout`, `resetLayout`                                                                                                                                                                                                                                                                                                             |
 | `/admin`                        | `unban`, `blockForever`, `unblockForever`, `dismissReport`, `setRole`, `retryMail`, `dismissMail`                                                                                                                                                                                                                                                                      |
-| `/admin/[id]`                   | `setRole`, `setPlanEnd`, `grantTrial`, `resendVerification`, `impersonate`                                                                                                                                                                                                                                                                                             |
+| `/admin/[id]`                   | `setRole`, `setPlanEnd`, `grantTrial`, `resendVerification`, `deleteAccount`, `impersonate`                                                                                                                                                                                                                                                                            |
 | `/buy`                          | —                                                                                                                                                                                                                                                                                                                                                                      |
 | `/data/[slug]`                  | —                                                                                                                                                                                                                                                                                                                                                                      |
 | `/diary`                        | `create`, `createWins`, `update`, `delete`                                                                                                                                                                                                                                                                                                                             |
@@ -90,6 +90,14 @@ A trial for an account that predates billing — see grantTrial.
 **`resendVerification`**
 
 Send the confirmation link again, for somebody who never got the first.
+
+**`deleteAccount`**
+
+Erase the account, having been made to type its address.
+
+A redirect on success rather than a form message: the page this action
+belongs to is about an account that no longer exists, and re-rendering it
+would be a 404 or, worse, a cached shell of somebody who is gone.
 
 **`impersonate`**
 

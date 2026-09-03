@@ -9,6 +9,7 @@ import { record } from './audit.js';
 import { resolvePlan, startTrial } from './subscriptions.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { str } from './validate.js';
+import { deleteAccount } from './account.js';
 
 /**
  * Administration: looking at somebody else's account.
@@ -270,6 +271,59 @@ export function setRole(actorId: string, subjectId: string, raw: unknown): void 
 	if (result.changes === 0) throw new NotFoundError('account');
 
 	record(subjectId, 'role_changed', { actorId, detail: { to: role } });
+}
+
+/**
+ * Erase an account, having been made to type its address.
+ *
+ * The friction is the feature. A test account and a real one sit in the same
+ * list, look alike, and are one row apart — and this is the button in the app
+ * with no undo behind it at all: `deleteAccount` empties every table the person
+ * owns inside one transaction, and there is nothing left to restore from
+ * afterwards except a backup of the whole instance.
+ *
+ * So the confirmation is not a second click, which lands under the first. It is
+ * the address of the account being deleted, typed. Somebody who has the wrong
+ * row open types the wrong address and is told so, which is the only kind of
+ * confirmation that catches the mistake it is there for. Case and surrounding
+ * space are forgiven; nothing else is.
+ *
+ * Two accounts are refused outright rather than made harder:
+ *
+ * - **Yourself.** An administrator deleting their own account through the
+ *   administration page is either a mistake or a thing to do from the account
+ *   page, where it belongs and where it asks properly.
+ * - **The instance's owner**, who is an administrator by virtue of being first
+ *   and whose deletion would leave nobody able to undo anything.
+ */
+export function deleteAccountAsAdmin(actorId: string, subjectId: string, typed: unknown): void {
+	requireAdmin(actorId);
+
+	if (actorId === subjectId) {
+		throw new ValidationError('Delete your own account from Settings, not from here');
+	}
+	if (isInstanceOwner(subjectId)) {
+		throw new ValidationError('This account owns the instance and cannot be deleted here');
+	}
+
+	const subject = accountById(subjectId);
+	const said = str(typed, 'address', { max: 320 }).trim().toLowerCase();
+	if (said !== subject.email.trim().toLowerCase()) {
+		throw new ValidationError('That is not this account’s address — nothing was deleted');
+	}
+
+	/*
+	 * Written down before it happens, because afterwards there is no row to
+	 * hang it on: `audit_events` is one of the tables the delete empties, and a
+	 * record of the deletion filed against the deleted account would go with
+	 * it. This one is filed against the administrator who did it.
+	 */
+	record(actorId, 'account_deleted', {
+		actorId,
+		detail: { email: subject.email, subjectId }
+	});
+
+	deleteAccount(subjectId);
 }
 
 /** How many events the instance has recorded lately, for the admin landing. */

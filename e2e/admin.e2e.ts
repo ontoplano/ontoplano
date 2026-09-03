@@ -79,3 +79,55 @@ test('says what the box has turned away', async ({ page }) => {
 	// A ban with no duration reads as "forever", which it never is.
 	await expect(blocked).toContainText('still blocked');
 });
+
+/**
+ * Deleting somebody's account, and the box that has to be typed into first.
+ *
+ * The button is one row from every other button on the page and the thing it
+ * does cannot be undone, so what stands in front of it is not a second click —
+ * a click lands where the first one was — but the address of the account being
+ * deleted. That catches the mistake actually worth catching: having the wrong
+ * account open.
+ */
+test('deleting an account asks for its address, and means it', async ({ page }) => {
+	await signInAsOwner(page);
+
+	// Somebody to delete, made through the front door so it is a real account
+	// with real rows behind it.
+	const email = `to-delete-${Date.now()}@test.invalid`;
+	const made = await page.request.post('/api/auth/sign-up/email', {
+		headers: { Origin: ORIGIN, 'x-forwarded-for': '10.32.0.1' },
+		data: { email, password: 'smoke-test-password', name: 'Doomed' }
+	});
+	expect(made.ok(), 'the account to delete was created').toBe(true);
+
+	// Signing up signed us in as them; back to the administrator.
+	await page.request.post('/api/auth/sign-out', { headers: { Origin: ORIGIN } });
+	await signInAsOwner(page);
+
+	await page.goto('/admin');
+	await page.fill('input[name="q"]', email);
+	await page.keyboard.press('Enter');
+	await page
+		.getByRole('link', { name: new RegExp(email, 'i') })
+		.first()
+		.click();
+	await expect(page.getByRole('heading', { name: 'Delete this account' })).toBeVisible();
+
+	await page.getByRole('button', { name: 'Delete this account' }).click();
+	const confirm = page.locator('input[name="confirmEmail"]');
+	await expect(confirm).toBeVisible();
+
+	// The wrong address: the button stays out of reach.
+	await confirm.fill('somebody.else@test.invalid');
+	await expect(page.getByRole('button', { name: 'Delete for good' })).toBeDisabled();
+
+	// The right one, and the account is gone from the search that found it.
+	await confirm.fill(email);
+	await page.getByRole('button', { name: 'Delete for good' }).click();
+	await page.waitForURL(/\/admin/);
+
+	await page.fill('input[name="q"]', email);
+	await page.keyboard.press('Enter');
+	await expect(page.getByText(email, { exact: false })).toHaveCount(0);
+});
