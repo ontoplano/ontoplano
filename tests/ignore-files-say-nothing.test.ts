@@ -45,9 +45,20 @@ describe('the ignore files that ship', () => {
 			if (!existsSync(path)) continue;
 			const published = readFileSync(path, 'utf8');
 
+			const names = new Set(patterns(published));
+
 			for (const name of private_) {
+				/*
+				 * A whole pattern, not a substring.
+				 *
+				 * It compared with `includes`, so `.claude` in the private file
+				 * matched `.claude-docker/` in the published one and reported a
+				 * leak between two unrelated names. What the rule is about is one
+				 * thing being named in both files, and a name is the whole of a
+				 * line rather than any run of characters inside one.
+				 */
 				expect(
-					published.includes(name),
+					names.has(name),
 					`${file} names "${name}", which .git/info/exclude already hides. ` +
 						`A published ignore file announces whatever it ignores — take the line out.`
 				).toBe(false);

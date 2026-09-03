@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.54.0 — 2026-09-03
+
+- **The planner grid scrolls again, and shows the whole day.** A day set to end
+  at midnight drew as far as the late afternoon and stopped, with no scrollbar
+  and nothing below it: the calendar's scroll container is a `<section>`, and
+  the rule that rounds the corners of every card clips those. On a tall screen
+  with the default hours it looked fine, which is why nothing caught it.
+
 ## 0.53.0 — 2026-09-03
 
 - **The timezone is chosen, not typed.** It was a text box wanting

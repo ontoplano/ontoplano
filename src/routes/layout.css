@@ -240,6 +240,11 @@ html[data-style='playful'] article {
  * NOT `.shadow-raised`: the site header wears it, and clipping the header
  * swallowed the account dropdown that opens below it. Raised surfaces are
  * chrome and hover states, not the cards whose corners this exists for.
+ *
+ * `section` is broad, and it has caught something once: event-calendar's
+ * scroll container is a `<section>`, so the planner grid stopped scrolling and
+ * drew only the hours that fitted. Anything here that has to scroll has to say
+ * so louder than this rule does — see `.ec-main` below.
  */
 html[data-style='playful'] .shadow-card,
 html[data-style='playful'] section,
@@ -2014,6 +2019,29 @@ html[data-style='playful'] .ec .ec-event {
 html[data-style='playful'] .ec {
 	border-radius: var(--radius-md);
 	overflow: hidden;
+}
+
+/*
+ * The grid scrolls. It is a `<section>`, which is how it stopped.
+ *
+ * event-calendar renders its scroll container as `<section class="ec-main">`
+ * and gives it `overflow: auto`. This app rounds the corners of every card by
+ * clipping `section, aside, article` — one selector, more specific than a class
+ * — so the calendar's scroller silently became `overflow: clip`, grew to the
+ * full height of the day, and was cut off by `.ec` above.
+ *
+ * What that looked like: a day set to end at midnight drew as far as five in
+ * the afternoon and stopped, with no scrollbar and no way to reach the rest of
+ * it. Worse on a shorter viewport and worse again at 150% zoom, because what
+ * you got was however many hours happened to fit.
+ *
+ * `min-height: 0` is the other half. `.ec` is a flex column, and a flex item's
+ * default `min-height: auto` refuses to shrink below its content — so even with
+ * `overflow: auto` restored, the scroller would have grown instead of scrolling.
+ */
+html .ec .ec-main {
+	overflow: auto;
+	min-height: 0;
 }
 
 /*
