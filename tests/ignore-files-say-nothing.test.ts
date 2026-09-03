@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 
 /**
@@ -57,5 +58,43 @@ describe('the ignore files that ship', () => {
 	it('keeps .dockerignore an allowlist, so a new private file is excluded by default', () => {
 		const rules = patterns(readFileSync(join(ROOT, '.dockerignore'), 'utf8'));
 		expect(rules[0]).toBe('*');
+	});
+});
+
+/**
+ * The one directory a private module is copied into.
+ *
+ * `make billing-provider` copies a payment integration from a checkout beside
+ * this one into `src/lib/server/billing/providers/`, and that file is the whole
+ * of what this repository deliberately does not contain. Nothing but the
+ * directory's own ignore file stands between it and a `git add -A`, so the
+ * ignore file is tested rather than trusted — and it is tested by asking git,
+ * not by reading the patterns, because what matters is the answer git gives.
+ */
+describe('the slot a payment provider is copied into', () => {
+	const dir = join(ROOT, 'src/lib/server/billing/providers');
+
+	it('ignores anything dropped in it', () => {
+		const probe = join(dir, 'probe.ts');
+		try {
+			writeFileSync(probe, '// written by a test\n');
+			const ignored = execFileSync('git', ['check-ignore', probe], {
+				cwd: ROOT,
+				encoding: 'utf8'
+			}).trim();
+			expect(ignored).toBe(probe);
+		} finally {
+			rmSync(probe, { force: true });
+		}
+	});
+
+	it('keeps the two files that describe the empty slot', () => {
+		for (const name of ['.gitignore', 'README.md']) {
+			const tracked = execFileSync('git', ['ls-files', join(dir, name)], {
+				cwd: ROOT,
+				encoding: 'utf8'
+			}).trim();
+			expect(tracked, `${name} has to stay in the repository`).not.toBe('');
+		}
 	});
 });
