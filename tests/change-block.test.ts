@@ -160,6 +160,36 @@ describe('an occurrence of a repeating block', () => {
 	});
 
 	/**
+	 * A ninety-minute block came out of a move as sixty.
+	 *
+	 * The length was read off `durationOverride`, which is null unless that
+	 * particular day had been resized — so `moveOccurrence` fell through to its
+	 * own default of an hour. Moving something is not a reason to shorten it, and
+	 * the first tests here asserted the time and never the length.
+	 */
+	test('keeps its length when it is moved', () => {
+		const block = weekly('14:00', 90, 'Study block');
+
+		instances.changeOccurrence(ctx, block.id, { startTime: '16:00' });
+		expect(dayOf()[0].duration_minutes, 'the move shortened it').toBe(90);
+	});
+
+	test('and when it is moved to another day', () => {
+		const block = weekly('14:00', 90, 'Study block');
+
+		instances.changeOccurrence(ctx, block.id, { date: '2026-08-19' });
+		expect(dayOf('2026-08-19')[0].duration_minutes).toBe(90);
+	});
+
+	test('a day that really was resized keeps the resized length', () => {
+		const block = weekly('14:00', 90, 'Study block');
+		instances.setInstanceDuration(ctx, Number(block.id.split(':')[1]), 45);
+
+		instances.changeOccurrence(ctx, block.id, { startTime: '16:00' });
+		expect(dayOf()[0].duration_minutes).toBe(45);
+	});
+
+	/**
 	 * The distinction the whole thing turns on. A move suppresses the date — "not
 	 * this week" — and a skip is a status that says "I did not do it". Only the
 	 * second is a fact about the person.
@@ -221,6 +251,23 @@ describe('renaming something that was an activity', () => {
 		const day = dayOf();
 		expect(day).toHaveLength(1);
 		expect(day[0].title).toBe('Ontoplano');
+	});
+
+	/**
+	 * A one-off's category, when it comes through an activity.
+	 *
+	 * A block names either a category or an activity, and an activity brings its
+	 * category with it. The schedule API resolved that for recurring blocks and
+	 * not for one-offs — so every activity-shaped one-off read as uncategorised,
+	 * which surfaced the day a moved block became one: the move was right, the
+	 * category was in the row, and the read dropped it.
+	 */
+	test('reads its category through its activity, moved or not', () => {
+		const block = weeklyActivity('deep work');
+		expect(dayOf()[0].category).toBe('Work');
+
+		instances.changeOccurrence(ctx, block.id, { startTime: '16:00' });
+		expect(dayOf()[0].category, 'the move lost the category').toBe('Work');
 	});
 
 	test('and it keeps the part of life it belonged to', () => {

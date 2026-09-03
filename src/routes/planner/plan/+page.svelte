@@ -753,6 +753,82 @@
 	let marquee: Marquee | null = $state<Marquee | null>(null);
 	let gridEl: HTMLElement | undefined = $state();
 
+	/**
+	 * Where the grid was scrolled to, kept across a change.
+	 *
+	 * Everything that edits a block reloads the page's data, the calendar
+	 * re-renders, and event-calendar scrolls back to its `scrollTime` — the
+	 * first hour of the day. So finishing a block at eight in the evening threw
+	 * you back to six in the morning, and every edit cost a scroll.
+	 *
+	 * Kept, not fought: the position is recorded as it changes and put back
+	 * after a re-render that did not mean to move it. A re-render that *did* —
+	 * a different week, a different view — clears it, because landing where you
+	 * were looking at the last week is not helpful.
+	 */
+	let keptScroll = 0;
+
+	/** What a scroll position belongs to. Changing this is a deliberate jump. */
+	const gridKey = $derived(`${effectiveView}:${data.range.from}`);
+
+	function scroller(): HTMLElement | null {
+		return gridEl?.querySelector('.ec-main') ?? null;
+	}
+
+	/*
+	 * Recorded on the way past. `capture: true` because the scroller is inside
+	 * the calendar's own tree and scroll does not bubble.
+	 */
+	$effect(() => {
+		const root = gridEl;
+		if (!root) return;
+
+		const onScroll = (event: Event) => {
+			const target = event.target;
+			if (target instanceof HTMLElement && target.classList.contains('ec-main')) {
+				keptScroll = target.scrollTop;
+			}
+		};
+
+		root.addEventListener('scroll', onScroll, true);
+		return () => root.removeEventListener('scroll', onScroll, true);
+	});
+
+	// A deliberate jump: forget where we were.
+	$effect(() => {
+		// Read into something, not as a bare expression: an expression whose value
+		// is thrown away is one a compiler is free to drop, and the dependency
+		// would go with it.
+		if (gridKey) keptScroll = 0;
+	});
+
+	/*
+	 * Put it back after the data changed.
+	 *
+	 * `data` is the dependency, so this runs on the reload every edit causes.
+	 * `requestAnimationFrame` because the calendar sets its own scrollTop while
+	 * rendering, and setting ours first would be overwritten by it.
+	 */
+	$effect(() => {
+		// `gridEvents`, not `data`: it is what the calendar is actually given, and
+		// it is recomputed whenever anything on the day changes. Read into a
+		// variable rather than named as a bare expression, which is a value
+		// thrown away and a dependency with it.
+		const onTheGrid = gridEvents.length;
+		if (keptScroll <= 0 || onTheGrid < 0) return;
+
+		const wanted = keptScroll;
+		const frame = requestAnimationFrame(() => {
+			const el = scroller();
+			if (!el) return;
+			// Never past the end: a day that lost its last block is shorter than
+			// it was, and scrolling to where the bottom used to be is a blank.
+			el.scrollTop = Math.min(wanted, el.scrollHeight - el.clientHeight);
+		});
+
+		return () => cancelAnimationFrame(frame);
+	});
+
 	const marqueeRect = $derived(
 		marquee
 			? {
@@ -1941,6 +2017,12 @@
 					class="space-y-2"
 				>
 					<div class="text-sm font-medium text-gray-900">Save current plan as scheme</div>
+					<!-- What a scheme is, once, where it is made. Saying it here is
+					     what makes the Load button's warning short enough to read. -->
+					<p class="text-xs text-gray-500">
+						A scheme is your repeating week — the blocks that come back every week. Anything you put
+						on one day only is not part of it, and loading a scheme leaves those where they are.
+					</p>
 					<div class="flex gap-2">
 						<input
 							name="label"
@@ -1999,7 +2081,13 @@
 													type="submit"
 													class="btn border-blue-200 text-blue-600 hover:bg-blue-50"
 												>
-													This will replace your current plan. Continue?
+													<!-- Specific, because the difference matters and is not
+													     guessable: a scheme is the repeating week, and the
+													     one-off blocks somebody put on this week by hand
+													     survive it. That is the right behaviour and it has
+													     to be said before the button is pressed, not
+													     discovered afterwards. -->
+													Replaces your repeating week. One-offs stay. Continue?
 												</button>
 											{:else}
 												<button

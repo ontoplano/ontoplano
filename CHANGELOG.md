@@ -10,6 +10,23 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.56.0 — 2026-09-03
+
+- **Confirming your address no longer skips the card.** The link in the
+  confirmation mail pointed straight into the app, going round the one page that
+  decides what comes next — so on an instance that sells, registering and
+  confirming let somebody in free. It goes back through that page now.
+- **A moved block keeps its length.** A ninety-minute block came out of a move as
+  sixty: the length was read from the one-day override, which is empty unless
+  that day had been resized.
+- **A one-off keeps its category.** A block that takes its category from its
+  activity read as uncategorised everywhere the schedule API is used — which
+  became visible the moment a moved block became a one-off.
+- **The planner keeps its scroll** when something changes underneath it. An edit
+  at eight in the evening used to throw the view back to six in the morning.
+- Loading a scheme says what it replaces: the repeating week, leaving one-off
+  blocks where they are.
+
 ## 0.55.0 — 2026-09-03
 
 - **An assistant can move a block now, instead of improvising one.** Asked to

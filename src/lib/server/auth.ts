@@ -158,7 +158,19 @@ export async function sendVerificationFor(email: string): Promise<{
 		undefined,
 		ctx.options.emailVerification?.expiresIn
 	);
-	const url = `${ctx.baseURL}/verify-email?token=${token}&callbackURL=${encodeURIComponent('/')}`;
+	/*
+	 * Back to the verify page, not to the app.
+	 *
+	 * `callbackURL` was `/`, so following the link in the mail landed somebody
+	 * straight inside — past the one page that decides what comes next. On an
+	 * instance that sells, the next step after confirming an address is the
+	 * card, and `/login/verify` is what knows that; going round it skipped the
+	 * whole billing step of registration and let somebody in for free.
+	 *
+	 * It is idempotent: an already-verified visitor is redirected onwards by
+	 * that page the moment it loads, so nobody sees it twice.
+	 */
+	const url = `${ctx.baseURL}/verify-email?token=${token}&callbackURL=${encodeURIComponent('/login/verify')}`;
 
 	const { delivered } = await sendLogged('verification', {
 		to: email,

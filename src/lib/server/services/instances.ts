@@ -737,14 +737,25 @@ export function changeOccurrence(
 		return { id: `exceptional:${id}` };
 	}
 
+	/*
+	 * The block's length, and where it has to come from.
+	 *
+	 * `durationOverride` is null unless that particular day was resized, so
+	 * reading only the record and falling back to nothing let `moveOccurrence`
+	 * use its own default of an hour — and a ninety-minute study block came out
+	 * the other side of a move as sixty. The override when there is one, the
+	 * block's own length when there is not.
+	 */
 	const record = db
 		.select({
 			id: taskRecords.id,
 			slotId: taskRecords.slotId,
 			scheduledAt: taskRecords.scheduledAt,
-			duration: taskRecords.durationOverride
+			durationOverride: taskRecords.durationOverride,
+			slotDuration: recurringTasks.durationMinutes
 		})
 		.from(taskRecords)
+		.leftJoin(recurringTasks, eq(taskRecords.slotId, recurringTasks.id))
 		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
 		.get();
 	if (!record) throw new NotFoundError('block');
@@ -772,7 +783,9 @@ export function changeOccurrence(
 		fromDate: onDate,
 		date: toDate,
 		startTime: wants('startTime') ? changes.startTime : record.scheduledAt.slice(11, 16),
-		durationMinutes: wants('minutes') ? changes.minutes : (record.duration ?? undefined)
+		durationMinutes: wants('minutes')
+			? changes.minutes
+			: (record.durationOverride ?? record.slotDuration ?? undefined)
 	});
 
 	// The title, on the one-off it just became.

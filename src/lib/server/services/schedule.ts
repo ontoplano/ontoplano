@@ -89,6 +89,7 @@ export function getUpcomingSchedule(
 
 	const slotActivities = alias(activities, 'slot_activities');
 	const activityCategories = alias(categories, 'activity_categories');
+	const exceptionalActivityCategories = alias(categories, 'one_off_activity_categories');
 
 	const instances = db
 		.select({
@@ -134,11 +135,24 @@ export function getUpcomingSchedule(
 			meta: exceptionalTasks.meta,
 			active: exceptionalTasks.active,
 			activityName: activities.name,
-			categoryName: categories.name
+			categoryName: categories.name,
+			// The category a one-off borrows from its activity.
+			//
+			// A block names either a category or an activity, and when it names an
+			// activity the category comes along with it — which the recurring
+			// query above resolves and this one did not, so every activity-shaped
+			// one-off read as uncategorised over the whole schedule API. It became
+			// visible the day a moved block became a one-off: the move was right,
+			// the category was there, and the read dropped it.
+			activityCategoryName: exceptionalActivityCategories.name
 		})
 		.from(exceptionalTasks)
 		.leftJoin(categories, eq(exceptionalTasks.categoryId, categories.id))
 		.leftJoin(activities, eq(exceptionalTasks.activityId, activities.id))
+		.leftJoin(
+			exceptionalActivityCategories,
+			eq(activities.categoryId, exceptionalActivityCategories.id)
+		)
 		.leftJoin(taskRecords, eq(taskRecords.exceptionalSlotId, exceptionalTasks.id))
 		.where(
 			and(
@@ -180,8 +194,8 @@ export function getUpcomingSchedule(
 			local_date: e.date,
 			start_time: e.startTime,
 			duration_minutes: e.durationOverride ?? e.duration,
-			title: e.activityName || e.label || e.categoryName || 'Scheduled',
-			category: e.categoryName ?? null,
+			title: e.activityName || e.label || e.categoryName || e.activityCategoryName || 'Scheduled',
+			category: e.categoryName ?? e.activityCategoryName ?? null,
 			label: e.label ?? '',
 			status: e.status,
 			meta: parseMeta(e.meta)
