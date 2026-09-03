@@ -289,7 +289,7 @@
 			action={editingId ? '?/update' : '?/create'}
 			use:enhance={() => {
 				return async ({ update, result }) => {
-					await update();
+					await update({ reset: false });
 					if (result.type === 'success') closeForms();
 				};
 			}}
@@ -374,7 +374,7 @@
 											action="?/delete"
 											use:enhance={() => {
 												return async ({ update }) => {
-													await update();
+													await update({ reset: false });
 													confirmingDeleteId = null;
 												};
 											}}
@@ -454,7 +454,7 @@
 									data-applied-toggle-id={idea.id}
 									use:enhance={() => {
 										return async ({ update }) => {
-											await update();
+											await update({ reset: false });
 											if (editingAppliedNoteId === idea.id) {
 												editingAppliedNoteId = null;
 												appliedNoteDraft = '';
@@ -489,7 +489,7 @@
 													action="?/updateAppliedNote"
 													use:enhance={() => {
 														return async ({ update }) => {
-															await update();
+															await update({ reset: false });
 															editingAppliedNoteId = null;
 															appliedNoteDraft = '';
 														};

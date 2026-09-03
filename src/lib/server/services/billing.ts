@@ -173,11 +173,30 @@ export function instanceSells(): boolean {
  */
 export function whyItCannotSell(): string | null {
 	if (!instanceSells()) return null;
-	if (!provider().configured()) {
-		return 'This instance is set up to charge, and has no working payment provider — so no card can be taken.';
+
+	const billing = provider();
+	if (billing.configured()) return null;
+
+	/*
+	 * Say which settings, when the provider can name them.
+	 *
+	 * The first version of this said "no working payment provider" and stopped,
+	 * which is a sentence that ends in somebody reading the source at eleven at
+	 * night to discover that one of four variables was empty. What an operator
+	 * needs is the name to grep for.
+	 */
+	const lacking = billing.missing?.() ?? [];
+	if (lacking.length > 0) {
+		return `This instance is set up to charge and cannot: ${lacking.join(', ')} ${
+			lacking.length === 1 ? 'is' : 'are'
+		} not set. Until then no card can be taken and nobody can register.`;
 	}
-	if (!pricing().trialRequiresCard) return null;
-	return null;
+
+	if (billing.name === 'none') {
+		return 'This instance is set up to charge and this build has no payment provider in it at all. Either add one, or unset ONTOPLANO_SELLS.';
+	}
+
+	return 'This instance is set up to charge, and its payment provider is not working — so no card can be taken.';
 }
 
 /**

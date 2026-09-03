@@ -10,6 +10,18 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.58.3 — 2026-09-03
+
+- **A form no longer blanks itself on the way out.** Saving an edit emptied
+  every field for a frame before the dialog closed — most visible on a phone,
+  where the round trip is longer. Thirty-two forms across the app did it.
+- **The billing warning names what is missing.** "No working payment provider"
+  is true and useless; it now says which settings are unset, or that the build
+  has no provider in it at all.
+- `make billing-setup` asks for the family prices, and its flip step sets
+  `ONTOPLANO_SELLS` — removing the self-hosted line is not the same as saying
+  this instance charges people.
+
 ## 0.58.2 — 2026-09-03
 
 - **The scheduled jobs run on the server.** `$lib` is resolved through a

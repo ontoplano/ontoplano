@@ -230,7 +230,7 @@
 			action={editingId ? '?/update' : '?/create'}
 			use:enhance={() => {
 				return async ({ update, result }) => {
-					await update();
+					await update({ reset: false });
 					if (result.type === 'success') {
 						showForm = false;
 						editingId = null;
@@ -279,7 +279,7 @@
 				action="?/delegate"
 				use:enhance={() => {
 					return async ({ update }) => {
-						await update();
+						await update({ reset: false });
 						delegatingId = null;
 					};
 				}}
@@ -473,7 +473,7 @@
 									action="?/delete"
 									use:enhance={() => {
 										return async ({ update }) => {
-											await update();
+											await update({ reset: false });
 											confirmingDelete = null;
 										};
 									}}

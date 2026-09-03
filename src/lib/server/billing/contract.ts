@@ -65,6 +65,18 @@ export interface BillingProvider {
 	/** Whether this instance can actually sell anything. */
 	configured(): boolean;
 
+	/**
+	 * What it is short of, when it cannot.
+	 *
+	 * Names of settings, in the spelling an operator would grep for. `configured()`
+	 * answering false is a fact nobody can act on: "no working payment provider"
+	 * sent somebody to read this repository at eleven at night to find out that
+	 * one of four variables was empty. Optional, because a provider is allowed
+	 * to be configured by something other than variables — absent, the app says
+	 * the general thing it used to say.
+	 */
+	missing?(): string[];
+
 	/** The token a page needs to open the provider's own checkout, if any. */
 	clientConfig(): ClientConfig | null;
 

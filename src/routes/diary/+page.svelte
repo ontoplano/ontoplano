@@ -253,7 +253,7 @@
 			action="?/createWins"
 			use:enhance={() => {
 				return async ({ update }) => {
-					await update();
+					await update({ reset: false });
 					showWinsForm = false;
 					winInputCount = 3;
 				};
@@ -326,7 +326,7 @@
 			action={editingId ? '?/update' : '?/create'}
 			use:enhance={() => {
 				return async ({ update, result }) => {
-					await update();
+					await update({ reset: false });
 					if (result.type === 'success') {
 						showForm = false;
 						editingId = null;
@@ -472,7 +472,7 @@
 									action="?/delete"
 									use:enhance={() => {
 										return async ({ update }) => {
-											await update();
+											await update({ reset: false });
 											confirmingDeleteId = null;
 										};
 									}}

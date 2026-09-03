@@ -235,7 +235,7 @@
 				action="?/createToken"
 				use:enhance={() =>
 					async ({ update, result }) => {
-						await update();
+						await update({ reset: false });
 						if (result.type === 'success') showTokenForm = false;
 					}}
 			>
@@ -523,7 +523,7 @@ Streams push data in, webhooks let your programs listen."
 				action="?/createWebhook"
 				use:enhance={() =>
 					async ({ update, result }) => {
-						await update();
+						await update({ reset: false });
 						if (result.type === 'success') showWebhookForm = false;
 					}}
 			>

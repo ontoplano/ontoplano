@@ -589,7 +589,7 @@
 			action="?/createTodo"
 			use:enhance={() =>
 				async ({ update, result }) => {
-					await update();
+					await update({ reset: false });
 					if (result.type === 'success') showForm = false;
 				}}
 		>

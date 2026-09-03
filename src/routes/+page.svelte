@@ -669,7 +669,7 @@
 						action="?/createDiaryEntry"
 						use:enhance={() => {
 							return async ({ update }) => {
-								await update();
+								await update({ reset: false });
 								showDiaryForm = false;
 							};
 						}}
@@ -704,7 +704,7 @@
 						action="?/createWins"
 						use:enhance={() => {
 							return async ({ update }) => {
-								await update();
+								await update({ reset: false });
 								showWinsForm = false;
 							};
 						}}

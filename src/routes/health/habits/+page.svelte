@@ -347,7 +347,7 @@
 			action={editingId ? '?/update' : '?/create'}
 			use:enhance={() => {
 				return async ({ update, result }) => {
-					await update();
+					await update({ reset: false });
 					if (result.type === 'success') {
 						showForm = false;
 						resetForm();
@@ -729,7 +729,7 @@
 													action="?/deleteOccurrence"
 													use:enhance={() => {
 														return async ({ update }) => {
-															await update();
+															await update({ reset: false });
 															confirmingOccurrenceDelete = null;
 														};
 													}}

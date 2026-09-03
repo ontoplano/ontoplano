@@ -85,6 +85,10 @@ vi.mock('../src/lib/server/billing/index', async (importOriginal) => {
 			return new Proxy(real, {
 				get(target, key, receiver) {
 					if (key === 'configured') return () => providerWorks;
+					// Coherent with the line above: a provider that says it is not
+					// working and then lists nothing missing is a state no real one
+					// is in, and asserting against it would prove nothing.
+					if (key === 'missing') return () => (providerWorks ? [] : ['PADDLE_API_KEY']);
 					if (key === 'createCheckout') {
 						return async (_id: string, interval?: string, tier?: string) => {
 							opened = { interval, tier };
@@ -208,14 +212,22 @@ describe('an instance that means to sell and cannot', () => {
 	});
 
 	test('refuses, rather than handing out a free trial', () => {
-		expect(() => billing.onboardEntitlement(OWNER, null, now)).toThrow(/cannot take|payment/i);
+		expect(() => billing.onboardEntitlement(OWNER, null, now)).toThrow(
+			/set up to charge and cannot/i
+		);
 
 		const rows = database.get('select count(*) as n from subscriptions') as { n: number };
 		expect(rows.n, 'a trial was started on an instance that cannot charge').toBe(0);
 	});
 
 	test('and says so in one sentence, for the administration page', () => {
-		expect(billing.whyItCannotSell()).toMatch(/payment provider/i);
+		const said = billing.whyItCannotSell() ?? '';
+		expect(said).toMatch(/set up to charge/i);
+		// Actionable, not merely true: "no working payment provider" is a
+		// sentence that ends in reading source code.
+		expect(said, 'the message names nothing an operator can act on').toMatch(
+			/[A-Z_]{6,}|no payment provider in it/
+		);
 	});
 
 	test('while a working one says nothing is wrong', () => {

@@ -99,3 +99,52 @@ test.describe('tapping a block', () => {
 		expect(await page.locator('[data-block-hover]').count()).toBe(0);
 	});
 });
+
+/**
+ * Saving an edit does not blank the form on the way out.
+ *
+ * `update()` resets the form element by default, and on a phone the round trip
+ * is long enough to watch it: every field empties, and then the dialog closes
+ * over the empty form it has just made. Nothing wanted that — the form is
+ * destroyed on close, and on a failure the reset would throw away what somebody
+ * typed.
+ */
+test.describe('saving a block', () => {
+	test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+	test('the fields keep their values until the form is gone', async ({ page }) => {
+		await register(page, `plan-save-${Date.now()}@test.invalid`);
+		await visit(page, '/planner/plan');
+
+		const block = page.locator('.ec-event').first();
+		await expect(block).toBeVisible();
+		await block.click();
+
+		const label = page.locator('#block-form input[name="label"]');
+		await expect(label).toBeVisible();
+		await label.fill('Renamed on a phone');
+
+		/*
+		 * Watch for the reset rather than for the frame it draws.
+		 *
+		 * The blank is a frame or two on a fast connection, so racing it from
+		 * outside proves nothing — a test that reads the field at the wrong
+		 * microsecond passes against the bug, which this one did. But
+		 * `form.reset()` dispatches a `reset` event, and that is the thing
+		 * itself: one fires if the form is emptied, none if it is left alone.
+		 */
+		await page.evaluate(() => {
+			const form = document.getElementById('block-form');
+			(window as unknown as { __reset: boolean }).__reset = false;
+			form?.addEventListener('reset', () => {
+				(window as unknown as { __reset: boolean }).__reset = true;
+			});
+		});
+
+		await page.getByRole('button', { name: 'Save' }).click();
+		await expect(page.locator('#block-form')).toHaveCount(0);
+
+		const wasReset = await page.evaluate(() => (window as unknown as { __reset: boolean }).__reset);
+		expect(wasReset, 'the form was blanked while it was still on screen').toBe(false);
+	});
+});

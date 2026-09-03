@@ -274,7 +274,7 @@
 			action={editingId ? '?/update' : '?/create'}
 			use:enhance={() =>
 				async ({ result, update }) => {
-					await update();
+					await update({ reset: false });
 					if (result.type === 'success') {
 						showForm = false;
 						editingId = null;
@@ -588,7 +588,7 @@
 				action="?/setLinks"
 				use:enhance={() =>
 					async ({ update }) => {
-						await update();
+						await update({ reset: false });
 						linkingId = null;
 					}}
 			>

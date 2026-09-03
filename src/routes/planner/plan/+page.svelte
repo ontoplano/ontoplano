@@ -2159,7 +2159,7 @@
 													action="?/loadScheme"
 													use:enhance={() => {
 														return async ({ update }) => {
-															await update();
+															await update({ reset: false });
 															confirmingLoadSchemeId = null;
 														};
 													}}
@@ -2188,7 +2188,7 @@
 												action="?/deleteScheme"
 												use:enhance={() => {
 													return async ({ update }) => {
-														await update();
+														await update({ reset: false });
 														confirmingDeleteSchemeId = null;
 													};
 												}}
@@ -2367,7 +2367,7 @@
 									action="?/applyTemplate"
 									use:enhance={() => {
 										return async ({ update }) => {
-											await update();
+											await update({ reset: false });
 											confirmingTemplate = null;
 										};
 									}}
@@ -2408,7 +2408,7 @@
 				action="?/copyToWeekdays"
 				use:enhance={() => {
 					return async ({ update }) => {
-						await update();
+						await update({ reset: false });
 						showCopyPanel = false;
 						multiselect = false;
 						selectedIds = new Set();
@@ -2477,7 +2477,7 @@
 						action="?/bulkDelete"
 						use:enhance={() => {
 							return async ({ update }) => {
-								await update();
+								await update({ reset: false });
 								confirmingBulkDelete = false;
 								multiselect = false;
 								selectedIds = new Set();
@@ -2524,13 +2524,22 @@
 		description={repeat === 'once' ? 'Happens once, on one day.' : 'Repeats every week.'}
 	>
 		<div bind:this={createFormEl} class="space-y-3">
+			<!--
+				`reset: false`, because this form is about to disappear.
+				
+				SvelteKit's `update()` resets the form element by default, and on a
+				phone the round trip is long enough to see it happen: every field
+				blanks, and then the dialog closes over the empty form it just made.
+				Nothing wanted the reset — the form is destroyed on close, and on a
+				failure it must keep what was typed rather than throw it away.
+			-->
 			<form
 				id="block-form"
 				method="post"
 				action={formAction}
 				use:enhance={() => {
 					return async ({ result, update }) => {
-						await update();
+						await update({ reset: false });
 						if (result.type === 'success') closeForm();
 					};
 				}}
@@ -2869,7 +2878,7 @@
 							action="?/unscheduleBlock"
 							use:enhance={() => {
 								return async ({ update }) => {
-									await update();
+									await update({ reset: false });
 									closeForm();
 								};
 							}}
@@ -2889,7 +2898,7 @@
 									action={editingKind === 'slot' ? '?/delete' : '?/deleteExceptional'}
 									use:enhance={() => {
 										return async ({ update }) => {
-											await update();
+											await update({ reset: false });
 											closeForm();
 										};
 									}}
