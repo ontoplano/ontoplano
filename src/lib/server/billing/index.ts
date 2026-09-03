@@ -17,12 +17,39 @@ import { noBilling } from './none.js';
  *
  * More than one file in there is a mistake rather than a choice, and it is
  * called out at startup rather than resolved by sort order.
+ *
+ * ## Outside Vite
+ *
+ * `import.meta.glob` is Vite's, and the nightly `scripts/reconcile-billing.ts`
+ * runs under plain `tsx`, where it does not exist — so the call is guarded and
+ * such an entry point finds the provider for itself, with `load.ts`, and hands
+ * it over through `useProvider()` before asking anything about billing. The
+ * guard has to be written as a condition around the literal call rather than a
+ * saved reference: Vite rewrites the call expression at build time, and only
+ * recognises it spelled out.
  */
-const found = import.meta.glob<{ provider?: BillingProvider }>('./providers/*.ts', {
-	eager: true
-});
+const found: Record<string, { provider?: BillingProvider } | undefined> =
+	typeof (import.meta as { glob?: unknown }).glob === 'function'
+		? import.meta.glob<{ provider?: BillingProvider }>('./providers/*.ts', { eager: true })
+		: {};
+
+/** Set by an entry point Vite never compiled. See `load.ts`. */
+let registered: BillingProvider | null = null;
+
+/**
+ * Use this provider, for a process that had to find it itself.
+ *
+ * Called before anything asks about billing, and only from a script: inside the
+ * app the glob above has already answered.
+ */
+export function useProvider(found: BillingProvider): void {
+	registered = found;
+	cached = null;
+}
 
 function resolve(): BillingProvider {
+	if (registered) return registered;
+
 	const modules = Object.entries(found).filter(([, m]) => m?.provider);
 
 	if (modules.length === 0) return noBilling;
@@ -34,7 +61,7 @@ function resolve(): BillingProvider {
 		);
 	}
 
-	return modules[0][1].provider as BillingProvider;
+	return modules[0][1]!.provider as BillingProvider;
 }
 
 let cached: BillingProvider | null = null;

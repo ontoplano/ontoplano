@@ -12,7 +12,14 @@
  *
  * Safe to run twice: everything it does is idempotent.
  */
-import { reconcile } from '../src/lib/server/services/billing.js';
+import { loadProvider } from '../src/lib/server/billing/load.js';
+
+// Before the first question about billing: this runs under plain `tsx`, so the
+// build-time resolution the app relies on has not happened. Without it every
+// run would find no provider and quietly check nothing against it.
+await loadProvider();
+
+const { reconcile } = await import('../src/lib/server/services/billing.js');
 
 const result = await reconcile();
 
