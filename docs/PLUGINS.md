@@ -136,6 +136,18 @@ One malformed point doesn't fail the batch:
 
 Rejected points will _never_ succeed — log and drop them. Don't retry them forever.
 
+**The worked example lives in `examples/onto-readings.mjs`**: a CSV of
+measurements becomes one stream per column. Every bathroom scale, sleep
+tracker and blood-pressure cuff has an app that exports one, and this is the
+shortest path from that file to a chart you own — about 200 lines, no
+dependencies, and everything above in one place: declaring a stream at
+startup, batching, `external_id` so re-running the same file adds nothing, and
+naming what was rejected rather than counting it.
+
+It reads a file rather than talking to Withings or Garmin, deliberately. The
+moment a plugin holds somebody else's credentials, the interesting question
+stops being what it does and becomes who else can read your weight.
+
 ---
 
 ## 3. Read the schedule

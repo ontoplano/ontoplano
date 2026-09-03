@@ -10,6 +10,16 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.50.0 — 2026-09-03
+
+- **A third example plugin: a CSV of measurements becomes a data stream.**
+  `examples/onto-readings.mjs` takes the export every bathroom scale, sleep
+  tracker and blood-pressure cuff produces and turns each numeric column into a
+  charted stream you own. Run it again on a longer export and nothing is added
+  twice. It reads a file rather than talking to Withings or Garmin on purpose —
+  a plugin holding somebody else's credentials changes the question from what it
+  does to who else can read your weight.
+
 ## 0.49.0 — 2026-09-03
 
 - **A week reads as a schedule again.** Every block used to be its category at
