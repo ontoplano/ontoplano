@@ -20,12 +20,12 @@
  * that calls a tool needing `notes:write` is refused, and the refusal names the
  * scope it lacked rather than saying no.
  */
-import type { Ctx } from '../services/ctx.js';
+import { localDateOf, type Ctx } from '../services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 
 import { createEntry, listEntries } from '../services/diary.js';
 import { createIdea, listIdeas } from '../services/ideas.js';
-import { listGoals } from '../services/goals.js';
+import { closeGoal, listGoals } from '../services/goals.js';
 import { listNotebooks } from '../services/notebooks.js';
 import {
 	createRecipe,
@@ -35,13 +35,20 @@ import {
 	listRecipes
 } from '../services/recipes.js';
 import { grouped, search } from '../services/search.js';
-import { createItem, listItems, setBought } from '../services/shopping.js';
+import { createItem, deleteItem, listItems, setBought } from '../services/shopping.js';
 import { getTodayBoard } from '../services/today.js';
-import { createTodo, listTodos, scheduleTodo, setTodoStatus } from '../services/todos.js';
+import {
+	createTodo,
+	deleteTodo,
+	listTodos,
+	scheduleTodo,
+	setTodoStatus
+} from '../services/todos.js';
 import { getUpcomingSchedule } from '../services/schedule.js';
 import { createExceptional } from '../services/slots.js';
-import { setOccurrenceStatus } from '../services/instances.js';
+import { cancelOccurrence, changeOccurrence, setOccurrenceStatus } from '../services/instances.js';
 import { listCategories } from '../services/activities.js';
+import { toggleOccurrence } from '../services/habits.js';
 import { ValidationError } from '../services/errors.js';
 
 /** JSON Schema, the subset a tool's arguments actually use. */
@@ -114,6 +121,33 @@ export const TOOLS: Tool[] = [
 	},
 	{
 		/*
+		 * Reading whether somebody kept their habits, and being unable to say
+		 * that they did, is a strange half of a feature: "I did my stretching"
+		 * is the most ordinary sentence there is about a habit.
+		 */
+		name: 'keep_habit',
+		title: 'Mark a habit kept',
+		description:
+			'Record that a habit was kept today, or take that back if it was marked by mistake. Takes the id `habits` gives. Keeping it twice is not an error; the second call unmarks it, which is how the app\u2019s own tick behaves.',
+		scope: 'habits:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The habit\u2019s id, as `habits` gave it.' },
+				date: text('The day, as YYYY-MM-DD. Today if left out.')
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			toggleOccurrence(ctx, {
+				habitId: args.id,
+				date: args.date ?? localDateOf(ctx.now, ctx.tz)
+			});
+			return { ok: true };
+		}
+	},
+	{
+		/*
 		 * Answering for a block, which is the other half of reading the day.
 		 *
 		 * The ids are the ones `today` hands back. Both answers are kept: "done"
@@ -123,7 +157,7 @@ export const TOOLS: Tool[] = [
 		name: 'finish_block',
 		title: 'Mark a block done or skipped',
 		description:
-			'Answer for one block on the day: it happened, or it did not. Takes the id `today` gives for that block. Skipping is a real answer, not a failure to record one — say skipped when the person says they did not do it.',
+			'Answer for one block on the day: it happened, or it did not. Takes the id `today` gives for that block. Skipping is a real answer — say skipped when the person says they did not do it. It is NOT a way to clear something off the day: a skip goes into the week\u2019s record and the review asks about it. To move a block use `change_block`; to take one off because it was never happening use `cancel_block`.',
 		scope: 'schedule:write',
 		writes: true,
 		input: object(
@@ -154,7 +188,7 @@ export const TOOLS: Tool[] = [
 		name: 'add_block',
 		title: 'Put a block on a day',
 		description:
-			'Add a one-off block to one day: a title, a start time and how long it runs. This is for "deep work from 9 to 11 today" — a thing with an hour. Use `add_todo` instead when there is no time attached. It does not touch the repeating week; this is that day only.',
+			'Add a one-off block to one day: a title, a start time and how long it runs. This is for "deep work from 9 to 11 today" — a thing with an hour. Use `add_todo` instead when there is no time attached, and `change_block` to move or rename something already on the day rather than adding a second copy of it. It does not touch the repeating week; this is that day only.',
 		scope: 'schedule:write',
 		writes: true,
 		input: object(
@@ -196,6 +230,57 @@ export const TOOLS: Tool[] = [
 
 			return { id, category: chosen.name };
 		}
+	},
+	{
+		/*
+		 * The verb that was missing, and what its absence cost.
+		 *
+		 * Asked to "push the study block to four", an assistant with only add and
+		 * answer-for invented a move: it added a second block at 16:00 and marked
+		 * the original *skipped* to clear the first one off the grid. The day then
+		 * recorded something that had not happened — and a skip is not cosmetic,
+		 * it is what the weekly review asks about.
+		 *
+		 * A tool surface that cannot express an ordinary request does not produce
+		 * a refusal; it produces a workaround, and the workaround writes to
+		 * somebody's record of their own life.
+		 */
+		name: 'change_block',
+		title: 'Move or rename a block',
+		description:
+			'Change one block on one day: its time, its day, how long it runs, or what it is called. This is "push the study block to four", "make it two hours", "that was actually client work". Takes the id `today` or `upcoming` gives. Only the fields you pass change. It affects that day only — moving this Thursday\u2019s gym does not move gym — and it never edits the repeating week. Renaming keeps which part of life it belongs to and stops it being the named activity it was, because that is what saying it was something else means.',
+		scope: 'schedule:write',
+		writes: true,
+		input: object(
+			{
+				id: text('The block\u2019s id, exactly as the day gave it — like `slot:42`.'),
+				date: text('Move it to this day, as YYYY-MM-DD. Leave out to keep the day it is on.'),
+				start_time: text('The new start, as HH:MM on a 24-hour clock.'),
+				minutes: { type: 'integer', description: 'How long it should run, in minutes.' },
+				title: text('What it should be called instead.')
+			},
+			['id']
+		),
+		run: (ctx, args) =>
+			changeOccurrence(ctx, args.id, {
+				date: args.date,
+				startTime: args.start_time,
+				minutes: args.minutes,
+				title: args.title
+			})
+	},
+	{
+		name: 'cancel_block',
+		title: 'Take a block off the day',
+		description:
+			'Remove a block from a day because it is not happening — the meeting moved, the class was called off, it was put on the wrong day. This is NOT the same as marking it skipped: skipped means it was meant to happen and did not, which is a fact the weekly review asks about, and cancelled means it was never going to. Use `finish_block` with "skipped" for the first and this for the second. A repeating block is only removed from that one day.',
+		scope: 'schedule:write',
+		writes: true,
+		input: object(
+			{ id: text('The block\u2019s id, exactly as the day gave it — like `slot:42`.') },
+			['id']
+		),
+		run: (ctx, args) => cancelOccurrence(ctx, args.id)
 	},
 	{
 		name: 'upcoming',
@@ -272,6 +357,19 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
+		name: 'drop_todo',
+		title: 'Delete a todo',
+		description:
+			'Remove a todo entirely, because it is not going to happen and is not worth a record — "bin that one", "forget it". Different from `finish_todo`, which keeps it as something that was done. Gone for good; prefer finishing it when it actually happened.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The todo\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			deleteTodo(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+	{
 		name: 'schedule_todo',
 		title: 'Put a todo on a day',
 		description:
@@ -291,14 +389,57 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
+		name: 'unschedule_todo',
+		title: 'Take a todo off its day',
+		description:
+			'Take the date off a todo, which moves it back to the list of things with no time yet. This is "not today after all" — the todo is kept, it just stops being on a day.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The todo\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			scheduleTodo(ctx, Number(args.id), null);
+			return { ok: true };
+		}
+	},
+	{
 		name: 'goals',
 		title: 'Goals',
 		description:
-			'What the person is working towards, by horizon, with the work counted against each. Read-only: a goal is a commitment somebody makes, not one an assistant makes for them.',
+			'What the person is working towards, by horizon, with the work counted against each. There is no tool that makes one: a goal is a commitment somebody makes, not one an assistant makes for them. Saying how one ended is different — that is `close_goal`.',
 		scope: 'tasks:read',
 		writes: false,
 		input: object({ includeClosed: { type: 'boolean', default: false } }),
 		run: (ctx, args) => listGoals(ctx, { includeClosed: Boolean(args.includeClosed) })
+	},
+	{
+		/*
+		 * Making a goal is a commitment and stays out of here. Saying how one
+		 * ended is a report — "I finished the book", "that one is not happening
+		 * this year" — and refusing to record it just means it stays open,
+		 * counting against a person who already did the thing.
+		 */
+		name: 'close_goal',
+		title: 'Say how a goal ended',
+		description:
+			'Close a goal: achieved, missed, or abandoned. Missed and abandoned are different — missed is a deadline that passed, abandoned is a decision to stop — and both are worth recording honestly rather than being rounded to one. Takes the id `goals` gives. There is no tool that opens a goal; that is the person\u2019s to make.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The goal\u2019s id.' },
+				status: {
+					type: 'string',
+					enum: ['achieved', 'missed', 'abandoned'],
+					description: 'How it ended.'
+				},
+				note: text('A line about how it went, if they said one.')
+			},
+			['id', 'status']
+		),
+		run: (ctx, args) => {
+			closeGoal(ctx, Number(args.id), { status: args.status, outcome: args.note });
+			return { ok: true };
+		}
 	},
 
 	// ── Writing ──────────────────────────────────────────────────────────────
@@ -415,6 +556,19 @@ export const TOOLS: Tool[] = [
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The item’s id.' } }, ['id']),
 		run: (ctx, args) => setBought(ctx, Number(args.id), true)
+	},
+	{
+		name: 'remove_from_shopping_list',
+		title: 'Take something off the shopping list',
+		description:
+			'Remove an item because it is not wanted — "take milk off", "we already have that". Not the same as `tick_bought`, which records that it *was* bought and keeps it in the history and the price record. Takes the id `shopping_list` gives.',
+		scope: 'shopping:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			deleteItem(ctx, Number(args.id));
+			return { ok: true };
+		}
 	},
 	{
 		name: 'recipes',

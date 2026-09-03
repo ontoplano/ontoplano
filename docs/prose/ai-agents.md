@@ -64,6 +64,24 @@ already there:
 record one — a week that can only be told about the parts that went well is a
 week that starts lying by the second one.
 
+It can also change what is there, which matters more than it sounds:
+
+> Push the study block to four, and put down that I was actually working on
+> Ontoplano for the last hour and a half.
+
+`change_block` moves and renames; `cancel_block` takes something off a day
+because it is not happening. **Cancelled is not skipped.** Skipped means you
+meant to do it and did not, and the weekly review asks about it; cancelled means
+the plan was wrong — the meeting moved, the class was called off. Without both,
+an assistant asked to move something has only one way to clear the old one off
+the grid, and it will use the wrong one: this is not hypothetical, it is what
+happened, and the day ended up holding a duplicate block and a skip that never
+took place.
+
+Everything here is **that day only**. Moving this Thursday's gym never moves gym:
+the occurrence is detached and the weekly plan is left alone, which is the same
+thing alt-dragging it in the app does.
+
 ## How it behaves
 
 Four things are worth knowing before you grant a token:
@@ -94,19 +112,20 @@ The tools are declared in one file — `src/lib/server/mcp/tools.ts` — and eac
 carries the sentence a model reads to decide whether it is the thing it wants.
 As it stands:
 
-| Tool                                                   | Scope it needs                     | What it is for                           |
-| ------------------------------------------------------ | ---------------------------------- | ---------------------------------------- |
-| `today`                                                | `today:read`                       | The blocks and tasks on today            |
-| `habits`                                               | `habits:read`                      | Today's habits, and which are kept       |
-| `upcoming`                                             | `schedule:read`                    | The days ahead, in order                 |
-| `add_block`, `finish_block`                            | `schedule:write`                   | An hour on a day; done or skipped        |
-| `search`                                               | `search:read`                      | One search over everything written       |
-| `todos`, `add_todo`, `finish_todo`, `schedule_todo`    | `tasks:read` / `tasks:write`       | The todo list, and putting one on a day  |
-| `goals`                                                | `tasks:read`                       | What you are working towards             |
-| `diary`, `write_entry`, `notebooks`                    | `notes:read` / `notes:write`       | Entries, and the subjects they belong to |
-| `ideas`, `add_idea`                                    | `notes:read` / `notes:write`       | Things caught before they evaporated     |
-| `shopping_list`, `add_to_shopping_list`, `tick_bought` | `shopping:read` / `shopping:write` | To buy, and the cupboard                 |
-| `recipes`, `add_recipe`                                | `kitchen:read` / `kitchen:write`   | The cookbook, ingredients included       |
+| Tool                                                                                | Scope it needs                     | What it is for                                                                |
+| ----------------------------------------------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------- |
+| `today`                                                                             | `today:read`                       | The blocks and tasks on today                                                 |
+| `habits`                                                                            | `habits:read`                      | Today's habits, and which are kept                                            |
+| `keep_habit`                                                                        | `habits:write`                     | Say one was kept, or take that back                                           |
+| `upcoming`                                                                          | `schedule:read`                    | The days ahead, in order                                                      |
+| `add_block`, `change_block`, `cancel_block`, `finish_block`                         | `schedule:write`                   | An hour on a day: put it there, move or rename it, take it off, answer for it |
+| `search`                                                                            | `search:read`                      | One search over everything written                                            |
+| `todos`, `add_todo`, `finish_todo`, `schedule_todo`, `unschedule_todo`, `drop_todo` | `tasks:read` / `tasks:write`       | The todo list, on and off a day, done or binned                               |
+| `goals`, `close_goal`                                                               | `tasks:read` / `tasks:write`       | What you are working towards, and how one ended                               |
+| `diary`, `write_entry`, `notebooks`                                                 | `notes:read` / `notes:write`       | Entries, and the subjects they belong to                                      |
+| `ideas`, `add_idea`                                                                 | `notes:read` / `notes:write`       | Things caught before they evaporated                                          |
+| `shopping_list`, `add_to_shopping_list`, `tick_bought`, `remove_from_shopping_list` | `shopping:read` / `shopping:write` | To buy, and the cupboard                                                      |
+| `recipes`, `add_recipe`                                                             | `kitchen:read` / `kitchen:write`   | The cookbook, ingredients included                                            |
 
 ## Making the token
 

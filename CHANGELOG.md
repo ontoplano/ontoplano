@@ -10,6 +10,21 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.55.0 — 2026-09-03
+
+- **An assistant can move a block now, instead of improvising one.** Asked to
+  push something to four o'clock it had only _add_ and _mark done or skipped_ —
+  so it added a second copy at the new time and marked the original **skipped**
+  to clear the first off the grid. The day then held a duplicate and a skip that
+  never happened, and a skip is what the weekly review asks about. `change_block`
+  moves, retimes, lengthens and renames; `cancel_block` takes something off a day
+  because it is not happening, which is a different thing from failing to do it.
+- **Six other ordinary things it could not say**: that a habit was kept, how a
+  goal ended, that a todo is off its day or not wanted at all, and that something
+  is off the shopping list.
+- Renaming a block that was a named activity now shows the new name and keeps the
+  part of life it belonged to.
+
 ## 0.54.0 — 2026-09-03
 
 - **The planner grid scrolls again, and shows the whole day.** A day set to end

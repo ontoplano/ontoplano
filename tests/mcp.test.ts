@@ -327,3 +327,178 @@ describe('the descriptions', () => {
 		}
 	});
 });
+
+/**
+ * The afternoon that went wrong, driven through the protocol.
+ *
+ * Asked to "push the study block to four" and "put there that I was actually
+ * working on Ontoplano", an assistant with only `add_block` and `finish_block`
+ * did the only thing those two allow: it added a second block at 16:00 and
+ * marked the original **skipped** to clear the first one off the grid. The day
+ * then held two study blocks and a skip that never happened — and a skip is what
+ * the weekly review asks about, so the workaround wrote a small lie into
+ * somebody's record of their own week.
+ *
+ * A tool surface that cannot express an ordinary request does not produce a
+ * refusal. It produces a workaround.
+ */
+describe('the afternoon that went wrong', () => {
+	const PLANNER = ['today:read', 'schedule:read', 'schedule:write'];
+
+	function tool(name: string, args: Record<string, unknown>) {
+		return call(PLANNER, {
+			jsonrpc: '2.0',
+			id: 90,
+			method: 'tools/call',
+			params: { name, arguments: args }
+		});
+	}
+
+	function today() {
+		const answer = call(PLANNER, {
+			jsonrpc: '2.0',
+			id: 91,
+			method: 'tools/call',
+			params: { name: 'today', arguments: {} }
+		});
+		return JSON.parse(answer.result.content[0].text) as {
+			blocks: { id: string; title: string; start_time: string; status: string }[];
+		};
+	}
+
+	it('moves a block instead of duplicating it', () => {
+		const added = tool('add_block', {
+			date: '2026-03-14',
+			title: 'Study block',
+			start_time: '14:00',
+			minutes: 90
+		});
+		expect(added.error, JSON.stringify(added.error)).toBeUndefined();
+
+		const before = today().blocks.filter((b) => b.title === 'Study block');
+		expect(before).toHaveLength(1);
+
+		const moved = tool('change_block', { id: before[0].id, start_time: '16:00' });
+		expect(moved.error, JSON.stringify(moved.error)).toBeUndefined();
+
+		const after = today().blocks.filter((b) => b.title === 'Study block');
+		// One block, at the new time. Not two, and not one plus a skip.
+		expect(after).toHaveLength(1);
+		expect(after[0].start_time).toBe('16:00');
+		expect(after[0].status).not.toBe('skipped');
+	});
+
+	it('renames a block to what the work actually was', () => {
+		const added = tool('add_block', {
+			date: '2026-03-14',
+			title: 'Study block',
+			start_time: '11:00',
+			minutes: 90
+		});
+		const id = JSON.parse(added.result.content[0].text).id;
+
+		const renamed = tool('change_block', { id: `exceptional:${id}`, title: 'Ontoplano' });
+		expect(renamed.error, JSON.stringify(renamed.error)).toBeUndefined();
+
+		const titles = today().blocks.map((b) => b.title);
+		expect(titles).toContain('Ontoplano');
+	});
+
+	it('takes a block off the day without calling it skipped', () => {
+		const added = tool('add_block', {
+			date: '2026-03-14',
+			title: 'Cancelled thing',
+			start_time: '20:00',
+			minutes: 30
+		});
+		const id = JSON.parse(added.result.content[0].text).id;
+
+		// Counted before and after: other tests in this file skip things on
+		// purpose, and what matters is that cancelling adds none of its own.
+		const skipsBefore = today().blocks.filter((b) => b.status === 'skipped').length;
+
+		const gone = tool('cancel_block', { id: `exceptional:${id}` });
+		expect(gone.error, JSON.stringify(gone.error)).toBeUndefined();
+
+		const blocks = today().blocks;
+		expect(blocks.find((b) => b.title === 'Cancelled thing')).toBeUndefined();
+		expect(blocks.filter((b) => b.status === 'skipped')).toHaveLength(skipsBefore);
+	});
+
+	it('needs schedule:write to change or cancel anything', () => {
+		for (const name of ['change_block', 'cancel_block']) {
+			const answer = call(['today:read', 'schedule:read'], {
+				jsonrpc: '2.0',
+				id: 92,
+				method: 'tools/call',
+				params: { name, arguments: { id: 'exceptional:1', start_time: '10:00' } }
+			});
+			// Named, not merely refused: a client that is told which scope it
+			// lacked can ask for it.
+			expect(answer.result.isError || answer.error, name).toBeTruthy();
+			expect(JSON.stringify(answer)).toContain('schedule:write');
+		}
+	});
+});
+
+/**
+ * Whether the tools cover the verbs a person actually uses.
+ *
+ * Not a style rule: the gap that produced a fake skip was exactly this — a
+ * surface with `add` and `finish` and no way to change or remove. Every kind of
+ * thing an assistant may write to needs the ordinary verbs, or the next missing
+ * one gets improvised too.
+ */
+describe('the shape of the surface', () => {
+	const names = () => new Set(TOOLS.map((t) => t.name));
+
+	it('can change and remove a block on a day, not only add one', () => {
+		for (const verb of ['add_block', 'change_block', 'cancel_block', 'finish_block']) {
+			expect(names().has(verb), verb).toBe(true);
+		}
+	});
+
+	it('can take a todo back off a day, and bin one', () => {
+		for (const verb of [
+			'add_todo',
+			'finish_todo',
+			'schedule_todo',
+			'unschedule_todo',
+			'drop_todo'
+		]) {
+			expect(names().has(verb), verb).toBe(true);
+		}
+	});
+
+	it('can say a habit was kept, not only read whether it was', () => {
+		expect(names().has('keep_habit')).toBe(true);
+	});
+
+	it('can say how a goal ended', () => {
+		expect(names().has('close_goal')).toBe(true);
+	});
+
+	it('can take something off the shopping list as well as tick it bought', () => {
+		expect(names().has('remove_from_shopping_list')).toBe(true);
+	});
+
+	/**
+	 * The description is the whole interface for a model that has never seen this
+	 * app, and the confusion that caused this was between two words. Both tools
+	 * have to say which is which.
+	 */
+	it('tells skipped and cancelled apart, in both directions', () => {
+		const skip = TOOLS.find((t) => t.name === 'finish_block')!.description;
+		const cancel = TOOLS.find((t) => t.name === 'cancel_block')!.description;
+
+		expect(skip).toContain('cancel_block');
+		expect(skip).toContain('change_block');
+		expect(cancel.toLowerCase()).toContain('not the same');
+	});
+
+	it('every writing tool names a write scope', () => {
+		for (const t of TOOLS.filter((t) => t.writes)) {
+			expect(t.scope, t.name).toMatch(/:write|:manage/);
+		}
+	});
+});

@@ -38,7 +38,8 @@ export const SCOPES = {
 	 * calendar are different things to hand over: one is a list somebody re-reads
 	 * and the other is what their day looks like.
 	 */
-	'schedule:write': 'Put one-off blocks on your week, and mark blocks done or skipped',
+	'schedule:write':
+		'Put blocks on your week, move and rename them, take them off a day, and mark them done or skipped',
 	'today:read': "See today's plan — the blocks and the tasks on it",
 	/*
 	 * Habits, on their own, because they are not the plan.
@@ -52,11 +53,12 @@ export const SCOPES = {
 	 * this is its own line and its own tick.
 	 */
 	'habits:read': 'See your habits, which are due today, and whether you kept them',
+	'habits:write': 'Mark a habit kept, or unmark one',
 	'plugin:declare': 'Name and describe itself on your integrations page',
 	'webhooks:manage':
 		'Send itself a message when something changes here — a task finished, a block done — to an address it chooses',
 	'shopping:read': 'See everything on your shopping list',
-	'shopping:write': 'Add to your shopping list, and tick things bought',
+	'shopping:write': 'Add to your shopping list, tick things bought, and take things off it',
 	/*
 	 * The calendar feed's own scope, and the reason it has one.
 	 *
@@ -84,7 +86,7 @@ export const SCOPES = {
 	'notes:read': 'Read your diary, your notebooks and your ideas',
 	'notes:write': 'Write in your diary and your notebooks, and add ideas',
 	'tasks:read': 'Read your todo list and your goals',
-	'tasks:write': 'Add and finish todos, and move them onto a day',
+	'tasks:write': 'Add, finish and delete todos, move them on and off a day, and close a goal',
 	'kitchen:read': 'Read your recipes',
 	'kitchen:write': 'Add and change recipes',
 	'search:read': 'Search everything you have written, in one go'

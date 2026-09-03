@@ -1237,6 +1237,46 @@ Per-day rating overrides.
 On an occurrence these leave the block that produced it — and every other day
 it produces — untouched.
 
+#### `changeOccurrence(ctx, occurrenceId, changes)`
+
+Change one block on one day, by the id the schedule hands out.
+
+## Why this exists
+
+An assistant asked to "push the study block to four" had no way to do it —
+the tools were add, and answer for. So it invented one: it added a second
+block at the new time and marked the original **skipped** to clear it off the
+grid. The day then said something that had not happened. A skip is a fact
+about a week — it feeds the review's "what did not happen" and the history —
+and using it as a tidy-up writes a small lie into somebody's record of their
+own life.
+
+The verb existed everywhere in the app and nowhere in the API. This is it,
+once, for both kinds of block, taking whichever fields are actually changing.
+
+## One day, never the pattern
+
+Moving _this_ Thursday's gym does not move gym. A recurring block's
+occurrence is changed on its own record — the same thing dragging it in the
+grid does — and a move to another day becomes what it already is in this
+app: that day suppressed, and a one-off carrying the same identity at the new
+time. Nothing here edits the weekly plan, because "push it to four" never
+means "and every Thursday from now on".
+
+#### `cancelOccurrence(ctx, occurrenceId)`
+
+Take a block off a day, because it is not happening and never was.
+
+The counterpart to `setOccurrenceStatus(…, 'skipped')`, and the distinction is
+the whole point of having both. **Skipped** is a fact about a week: you meant
+to do it and did not, and the review asks about it. **Cancelled** is the plan
+being wrong: the meeting moved, the lesson was called off, it was put on the
+wrong day. One belongs in the record and one does not, and an assistant with
+only the first will use it for the second — which is exactly what happened.
+
+A one-off is deleted. An occurrence of a recurring block is suppressed for
+that date only, which is reversible in the app and leaves the pattern alone.
+
 ### Types
 
 - `Occurrence` — A single occurrence, whichever kind of block produced it.

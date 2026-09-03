@@ -15,6 +15,12 @@ import { db } from '../db/index.js';
 import { isStatus, isTiming, timingFor } from '../../task-status.js';
 import type { Ctx } from './ctx.js';
 import { createReminder } from './reminders.js';
+import {
+	deleteExceptional,
+	moveOccurrence,
+	suppressOccurrence,
+	updateExceptional
+} from './slots.js';
 import { NotFoundError, ValidationError } from './errors.js';
 // `created` is also a local counter in this file, hence the alias.
 import { created as createdStamp, stamp } from './time.js';
@@ -665,4 +671,233 @@ export function setInstanceRatings(
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('task');
+}
+
+/**
+ * Change one block on one day, by the id the schedule hands out.
+ *
+ * ## Why this exists
+ *
+ * An assistant asked to "push the study block to four" had no way to do it —
+ * the tools were add, and answer for. So it invented one: it added a second
+ * block at the new time and marked the original **skipped** to clear it off the
+ * grid. The day then said something that had not happened. A skip is a fact
+ * about a week — it feeds the review's "what did not happen" and the history —
+ * and using it as a tidy-up writes a small lie into somebody's record of their
+ * own life.
+ *
+ * The verb existed everywhere in the app and nowhere in the API. This is it,
+ * once, for both kinds of block, taking whichever fields are actually changing.
+ *
+ * ## One day, never the pattern
+ *
+ * Moving *this* Thursday's gym does not move gym. A recurring block's
+ * occurrence is changed on its own record — the same thing dragging it in the
+ * grid does — and a move to another day becomes what it already is in this
+ * app: that day suppressed, and a one-off carrying the same identity at the new
+ * time. Nothing here edits the weekly plan, because "push it to four" never
+ * means "and every Thursday from now on".
+ */
+export function changeOccurrence(
+	ctx: Ctx,
+	occurrenceId: unknown,
+	changes: { date?: unknown; startTime?: unknown; minutes?: unknown; title?: unknown }
+): { id: string } {
+	const { kind, id } = parseOccurrenceId(occurrenceId);
+
+	const wants = (key: keyof typeof changes) =>
+		changes[key] !== undefined && changes[key] !== null && changes[key] !== '';
+
+	if (!wants('date') && !wants('startTime') && !wants('minutes') && !wants('title')) {
+		throw new ValidationError('Nothing to change — say a new time, day, length or title.');
+	}
+
+	if (kind === 'exceptional') {
+		const one = db
+			.select()
+			.from(exceptionalTasks)
+			.where(and(eq(exceptionalTasks.id, id), eq(exceptionalTasks.userId, ctx.userId)))
+			.get();
+		if (!one) throw new NotFoundError('block');
+
+		// Everything not being changed is passed back as it was: `updateExceptional`
+		// writes the whole placement, so a partial call would blank the rest.
+		updateExceptional(ctx, id, {
+			date: wants('date') ? changes.date : one.date,
+			startTime: wants('startTime') ? changes.startTime : one.startTime,
+			durationMinutes: wants('minutes') ? changes.minutes : one.durationMinutes,
+			...renamed(ctx, wants('title'), {
+				mode: one.mode,
+				activityId: one.activityId,
+				categoryId: one.categoryId
+			}),
+			label: wants('title') ? changes.title : one.label
+		});
+
+		return { id: `exceptional:${id}` };
+	}
+
+	const record = db
+		.select({
+			id: taskRecords.id,
+			slotId: taskRecords.slotId,
+			scheduledAt: taskRecords.scheduledAt,
+			duration: taskRecords.durationOverride
+		})
+		.from(taskRecords)
+		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
+		.get();
+	if (!record) throw new NotFoundError('block');
+
+	const onDate = record.scheduledAt.slice(0, 10);
+	const toDate = wants('date') ? str(changes.date, 'date', { max: 10 }) : onDate;
+
+	/*
+	 * It becomes a one-off, whether or not the day changes.
+	 *
+	 * The same thing alt-dragging it in the grid does — and it has to be, because
+	 * a recurring occurrence's time and title are read off the *block*, not off
+	 * the record: writing an override onto the record moves it nowhere anybody
+	 * can see. So the occurrence is suppressed on its date and a one-off
+	 * carrying the same identity is created at the new time.
+	 *
+	 * `suppressed` is not `skipped`. One says "not this week", which is what
+	 * moving something means; the other says "I did not do it", which the
+	 * weekly review asks about. Only the second is a fact about a person.
+	 */
+	if (!record.slotId) throw new ValidationError('That block has nothing to move.');
+
+	const movedId = moveOccurrence(ctx, {
+		slotId: record.slotId,
+		fromDate: onDate,
+		date: toDate,
+		startTime: wants('startTime') ? changes.startTime : record.scheduledAt.slice(11, 16),
+		durationMinutes: wants('minutes') ? changes.minutes : (record.duration ?? undefined)
+	});
+
+	// The title, on the one-off it just became.
+	if (wants('title')) {
+		const moved = db
+			.select()
+			.from(exceptionalTasks)
+			.where(and(eq(exceptionalTasks.id, movedId), eq(exceptionalTasks.userId, ctx.userId)))
+			.get();
+		if (moved) {
+			updateExceptional(ctx, movedId, {
+				date: moved.date,
+				startTime: moved.startTime,
+				durationMinutes: moved.durationMinutes,
+				...renamed(ctx, true, {
+					mode: moved.mode,
+					activityId: moved.activityId,
+					categoryId: moved.categoryId
+				}),
+				label: changes.title
+			});
+		}
+	}
+
+	return { id: `exceptional:${movedId}` };
+}
+
+/**
+ * What a rename does to a block that was named by an activity.
+ *
+ * A block gets its name from its activity when it has one, and from its label
+ * otherwise — so setting a label on a block called "deep work" changes nothing
+ * anybody can see. Asked to "put down that I was actually working on
+ * Ontoplano", that reads as the tool silently doing nothing.
+ *
+ * So a rename detaches the activity and keeps the category: the hour is still
+ * Work, still the same colour, still counted the same way, and it is no longer
+ * the deep-work activity — which is exactly what somebody means by saying it
+ * was something else. Nothing is dropped when no new name was given.
+ */
+function renamed(
+	ctx: Ctx,
+	renaming: boolean,
+	current: { mode: string; activityId: number | null; categoryId: number | null }
+): { mode: string; activityId: number | null; categoryId: number | null } {
+	if (!renaming || !current.activityId) {
+		return {
+			mode: current.mode,
+			activityId: current.activityId,
+			categoryId: current.categoryId
+		};
+	}
+
+	// The category has to come with it. A block that names an activity carries
+	// no category of its own — it borrows the activity's — so dropping the
+	// activity and keeping `categoryId` as it was leaves a block belonging to
+	// nothing, which the service rightly refuses with "Category required". The
+	// rename then failed silently through the API: the move went through and the
+	// new name did not.
+	const activity = db
+		.select({ categoryId: activities.categoryId })
+		.from(activities)
+		.where(and(eq(activities.id, current.activityId), eq(activities.userId, ctx.userId)))
+		.get();
+
+	return { mode: 'category', activityId: null, categoryId: activity?.categoryId ?? null };
+}
+
+/**
+ * Take a block off a day, because it is not happening and never was.
+ *
+ * The counterpart to `setOccurrenceStatus(…, 'skipped')`, and the distinction is
+ * the whole point of having both. **Skipped** is a fact about a week: you meant
+ * to do it and did not, and the review asks about it. **Cancelled** is the plan
+ * being wrong: the meeting moved, the lesson was called off, it was put on the
+ * wrong day. One belongs in the record and one does not, and an assistant with
+ * only the first will use it for the second — which is exactly what happened.
+ *
+ * A one-off is deleted. An occurrence of a recurring block is suppressed for
+ * that date only, which is reversible in the app and leaves the pattern alone.
+ */
+export function cancelOccurrence(ctx: Ctx, occurrenceId: unknown): { ok: true } {
+	const { kind, id } = parseOccurrenceId(occurrenceId);
+
+	if (kind === 'exceptional') {
+		deleteExceptional(ctx, id);
+		return { ok: true };
+	}
+
+	const record = db
+		.select({ slotId: taskRecords.slotId, scheduledAt: taskRecords.scheduledAt })
+		.from(taskRecords)
+		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
+		.get();
+	if (!record) throw new NotFoundError('block');
+
+	if (record.slotId) {
+		suppressOccurrence(ctx, record.slotId, record.scheduledAt.slice(0, 10));
+		// And the record it already produced, which suppression alone does not
+		// touch: `generateInstances` skips a suppressed date, but a day that has
+		// already been generated keeps its row, and the day would go on listing a
+		// block that is no longer on it. `moveOccurrence` deletes it for the same
+		// reason.
+		deleteInstance(ctx, id);
+		return { ok: true };
+	}
+
+	deleteInstance(ctx, id);
+	return { ok: true };
+}
+
+/**
+ * `slot:42` or `exceptional:7`, as every id in the schedule is written.
+ *
+ * Shared by the three things that take one, so the message somebody gets for a
+ * malformed id is the same wherever they hit it.
+ */
+function parseOccurrenceId(value: unknown): { kind: 'slot' | 'exceptional'; id: number } {
+	const raw = String(value ?? '').trim();
+	const [prefix, rest] = raw.includes(':') ? raw.split(':', 2) : ['slot', raw];
+	const id = Number(rest);
+
+	if ((prefix !== 'slot' && prefix !== 'exceptional') || !Number.isInteger(id) || id < 1) {
+		throw new ValidationError(`"${raw}" is not a block id — use the id the day gives you.`);
+	}
+
+	return { kind: prefix, id };
 }
