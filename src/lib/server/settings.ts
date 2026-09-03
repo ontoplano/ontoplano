@@ -447,16 +447,23 @@ export function pricing(): Pricing {
 		return Number.isFinite(raw) && raw >= 0 ? Math.round(raw) : fallback;
 	};
 
+	const flag = (name: string) => process.env[name] === 'true';
+
 	return {
 		monthlyCents: int('ONTOPLANO_PRICE_MONTHLY_CENTS', DEFAULT_PRICING.monthlyCents),
 		yearlyCents: int('ONTOPLANO_PRICE_YEARLY_CENTS', DEFAULT_PRICING.yearlyCents),
-		// The family rate is only quoted where the provider has a price for it,
-		// so an instance that has not set one up sells one plan rather than
-		// advertising a second nobody can buy.
-		familyMonthlyCents: process.env.PADDLE_PRICE_ID_FAMILY_MONTHLY
+		// The family rate is only quoted where the instance actually sells one, so
+		// one that has not set it up shows a single plan rather than advertising
+		// a second nobody can buy.
+		//
+		// A flag of the app's own rather than the presence of a provider's price
+		// id: which provider this build carries — if any — is not this file's
+		// business, and reading a provider's own variable here was the last place
+		// where it was.
+		familyMonthlyCents: flag('ONTOPLANO_FAMILY_PLAN')
 			? int('ONTOPLANO_PRICE_FAMILY_MONTHLY_CENTS', DEFAULT_PRICING.familyMonthlyCents)
 			: 0,
-		familyYearlyCents: process.env.PADDLE_PRICE_ID_FAMILY_YEARLY
+		familyYearlyCents: flag('ONTOPLANO_FAMILY_PLAN')
 			? int('ONTOPLANO_PRICE_FAMILY_YEARLY_CENTS', DEFAULT_PRICING.familyYearlyCents)
 			: 0,
 		familySeats: Math.min(

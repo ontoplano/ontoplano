@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { paddleClientConfig } from '$lib/server/services/billing';
+import { checkoutClientConfig } from '$lib/server/services/billing';
 
 /**
  * The one page that loads the payment provider's script.
@@ -12,7 +12,7 @@ import { paddleClientConfig } from '$lib/server/services/billing';
  */
 export const load: PageServerLoad = async ({ locals, url }) => {
 	if (!locals.user) redirect(302, '/login');
-	const paddle = paddleClientConfig();
+	const paddle = checkoutClientConfig();
 	if (!paddle) error(404, 'Not found');
 	if (!url.searchParams.get('_ptxn')) redirect(302, '/settings/billing');
 

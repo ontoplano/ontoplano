@@ -5,8 +5,12 @@
  * that are still running and end within the window, and each exactly once —
  * a nightly job that is not idempotent is a spam cannon on a delay.
  */
+// Skipped on a clone with no payment provider compiled in — everything here
+// is about the provider's own behaviour, which this repository does not ship.
+// See `src/lib/server/billing/contract.ts`. They run in the build that sells.
 import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 import { makeDatabase, OWNER, STRANGER, seedAccounts } from './helpers/db';
+import { hasBillingProvider } from './helpers/billing';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -45,7 +49,7 @@ beforeEach(() => {
 	database.exec('delete from subscriptions');
 });
 
-describe('who is told', () => {
+describe.skipIf(!hasBillingProvider())('who is told', () => {
 	test('a trial ending within two days, once and only once', async () => {
 		trial(OWNER, 1);
 

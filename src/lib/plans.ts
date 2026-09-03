@@ -153,7 +153,7 @@ export const DEFAULT_PRICING: Pricing = {
 	currency: 'USD',
 	trialDays: 14,
 	trialRequiresCard: true,
-	provider: 'Paddle'
+	provider: ''
 };
 
 export function formatPrice(cents: number, currency = 'USD'): string {

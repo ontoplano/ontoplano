@@ -61,7 +61,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		plans: Object.values(PLANS).filter((p) => p.id === 'pro'),
 		limitKeys: LIMIT_KEYS,
 		usage: counts,
-		// Paddle mints a checkout per transaction, so buying is an action, not
+		// A provider mints a checkout per transaction, so buying is an action, not
 		// a link — and only for an account with no live subscription. A
 		// cancelled one still running its period may buy again; the checkout
 		// itself carries over whatever trial is left instead of a fresh one.

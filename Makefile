@@ -70,7 +70,7 @@ vars:
 	@sh scripts/make-vars.sh $(sort $(MAKEFILE_LIST) defaults.env $(wildcard $(SERVER_SRC)/defaults.env))
 
 
-.PHONY: vars package package-check release _release-run github-push _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
+.PHONY: vars billing-provider package package-check release _release-run github-push _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -234,7 +234,29 @@ dev-fg:
 # about 470MB — which is where the adapter-node step ran out. Raising the cap
 # above physical memory is deliberate: swap carries the difference, slowly, and
 # the build finishes instead of dying at 53 seconds with a core dump.
-build:
+# ─── The payment provider, if this build is one that sells ───────────────────
+#
+# This repository ships no payment code. A build that takes money copies one
+# module into `src/lib/server/billing/providers/` first, from a checkout of the
+# private repository sitting beside this one; with nothing there the app builds
+# and runs completely, minus the ability to sell.
+#
+# Copied rather than symlinked so that what was built is a file in the tree, and
+# `git status` in the private repo still says whether it has been edited here.
+#: BILLING_SRC=ontoplano-billing  where the payment provider is checked out
+BILLING_SRC ?= ontoplano-billing
+
+billing-provider:
+	@if [ -f "$(BILLING_SRC)/paddle.ts" ]; then \
+		cp "$(BILLING_SRC)/paddle.ts" src/lib/server/billing/providers/paddle.ts; \
+		echo "billing: using $(BILLING_SRC)/paddle.ts"; \
+	elif [ -f src/lib/server/billing/providers/paddle.ts ]; then \
+		echo "billing: using the provider already in the tree"; \
+	else \
+		echo "billing: no provider — this build cannot sell anything (that is fine)"; \
+	fi
+
+build: billing-provider
 	@heap=$$(free -m 2>/dev/null | awk '/^Mem:/ {print $$2}'); \
 	if [ -n "$(NODE_OPTIONS)" ]; then \
 		yarn build; \

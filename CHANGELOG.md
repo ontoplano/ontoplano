@@ -10,6 +10,19 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.46.0 — 2026-09-02
+
+- **This repository no longer contains any payment code.** Taking money is not a
+  property of the software: what remains here is an interface, an implementation
+  that answers "this instance takes no payments", and an empty slot a build that
+  sells copies one module into. A self-hoster reading this repo no longer reads
+  the plumbing of somebody else's business, and nothing about the app changed
+  for anybody using it.
+- Everything about **entitlement** — the plan, the trial, the seats, the
+  ceilings — is unchanged and still here. `docs/PLANS.md` replaces
+  `docs/BILLING.md` and says what a plan decides, plus what writing your own
+  provider takes.
+
 ## 0.45.0 — 2026-09-02
 
 - **Escape closes the quick-write forms again.** The dashboard's own Escape

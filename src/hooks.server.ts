@@ -1,4 +1,5 @@
 import { redirect, type Handle, type HandleServerError } from '@sveltejs/kit';
+import { provider } from '$lib/server/billing/index';
 import { sequence } from '@sveltejs/kit/hooks';
 import { building } from '$app/environment';
 import { auth } from '$lib/server/auth';
@@ -203,19 +204,27 @@ const handleTheme: Handle = ({ event, resolve }) => {
 const handleSecurityHeaders: Handle = async ({ event, resolve }) => {
 	const response = await resolve(event);
 
-	// The one page allowed to load the payment provider's script. Paddle's
-	// overlay checkout is their JS on our page framing their origin — that is
-	// what "the provider handles the card" means in the web flow — and /buy
-	// exists so the rest of the app never widens its CSP for it.
+	/*
+	 * The one page allowed to load a payment provider's script.
+	 *
+	 * An overlay checkout is the provider's JavaScript on our page framing their
+	 * origin — that is what "the provider handles the card" means in a browser —
+	 * so /buy exists precisely so the rest of the app never widens its CSP.
+	 *
+	 * Which origins those are is the provider's business, not this file's: it
+	 * asks. A build with no provider widens nothing, because there is nothing to
+	 * widen it for.
+	 */
 	if (event.url.pathname === '/buy') {
-		const csp = response.headers.get('content-security-policy');
-		if (csp) {
+		const origins = provider().checkoutOrigins?.();
+		const csp = origins ? response.headers.get('content-security-policy') : null;
+		if (csp && origins) {
 			response.headers.set(
 				'content-security-policy',
 				csp
-					.replace('script-src', 'script-src https://cdn.paddle.com')
-					.replace('connect-src', 'connect-src https://*.paddle.com https://*.paddle.io') +
-					"; frame-src 'self' https://*.paddle.com https://*.paddle.io"
+					.replace('script-src', `script-src ${origins.script}`)
+					.replace('connect-src', `connect-src ${origins.connect}`) +
+					`; frame-src 'self' ${origins.frame}`
 			);
 		}
 	}

@@ -1,0 +1,4 @@
+# Everything except the two files that describe the empty slot.
+*
+!.gitignore
+!README.md

@@ -74,8 +74,9 @@ Self-hosted, one SQLite file, no account anywhere but your own.
   Signing in as somebody to help them puts an amber banner over every page and a
   line in _their_ history.
 - **Plans** — free and Pro, with ceilings on the things that pile up rather than
-  on use. A self-hosted instance has no plans, no ceilings and no billing at
-  all. See `docs/BILLING.md`.
+  on use. No feature is behind a plan. A self-hosted instance has no plans, no
+  ceilings and no billing at all, and this repository ships no payment code —
+  see `docs/PLANS.md`.
 - **Plugins** — scoped API tokens, data streams that external apps push into,
   webhooks they can subscribe, and schedule and shopping endpoints they can
   read and write. See `docs/PLUGINS.md`.

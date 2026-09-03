@@ -19,7 +19,7 @@ shows up here on the next build.
 | [`admin`](#admin)                               | Administration: looking at somebody else's account.                                                                                                                                                                                                                  |
 | [`audit`](#audit)                               | What happened to an account.                                                                                                                                                                                                                                         |
 | [`backlinks`](#backlinks)                       | Which goal a thing belongs to.                                                                                                                                                                                                                                       |
-| [`billing`](#billing)                           | Paddle, and the rules for talking to it.                                                                                                                                                                                                                             |
+| [`billing`](#billing)                           | Billing, as the rest of the app sees it.                                                                                                                                                                                                                             |
 | [`calendar-feed`](#calendar-feed)               | The plan, published as a calendar anybody's software can read.                                                                                                                                                                                                       |
 | [`calendars`](#calendars)                       | Calendars somebody else controls.                                                                                                                                                                                                                                    |
 | [`client-errors`](#client-errors)               | Client-side errors, sent in with permission.                                                                                                                                                                                                                         |
@@ -393,33 +393,24 @@ for something almost always empty.
 
 ## billing
 
-Paddle, and the rules for talking to it.
+Billing, as the rest of the app sees it.
 
-They are merchant of record, which is the whole reason: a solo founder
-selling worldwide does not want to be the one who owes VAT in twenty
-countries. (Lemon Squeezy came first and could not pay out to Brazil —
-it pays sellers through Stripe Connect, which does not reach here.)
+Every name here is the name it always had, and every caller is unchanged —
+what moved is where the answers come from. The payment provider is behind
+`../billing/`: an interface this repository ships, and an implementation it
+does not. See `../billing/contract.ts` for why.
 
-Three rules, and they are the ones that make billing survivable:
+Two things stayed on this side, because they were never about a provider:
 
-- The webhook is the source of truth. Nothing in the app decides that
-  somebody has paid; it only records what the provider said.
-- Every webhook is verified and stored by the provider's own event id, so a
-  retry — and they do retry — is applied exactly once.
-- The webhook is never the ONLY way to learn. Every checkout is written down
-  when it is opened, so the app can ask what became of it — on the customer's
-  way back, and again nightly for anybody who closed the tab.
+- **`onboardEntitlement`** decides what a brand-new account gets — an
+  invitation's grant, a checkout, or a trial. Only one of its three answers
+  involves money at all.
+- **`checkoutTrialDays`** is arithmetic over this account's own history.
 
-That third rule is not theoretical. The webhook destination was left pointing
-at a hostname that had become a redirect; the provider does not follow those,
-so every billing event failed silently for hours. A customer paid, got a
-receipt by mail, came back, and was shown the pay page again — the worst
-thing this code can do. The nightly pass could not save it either, because it
-walked subscription rows and the row is exactly what never got written.
-
-Sandbox and live are entirely separate Paddle accounts; which one this
-instance talks to is decided by the API key alone (pdl*sdbx*… keys reach
-sandbox-api.paddle.com), so there is no mode flag to forget.
+And everything about _entitlement_ — the plan, the seats, the limits — is in
+`subscriptions.ts` and never left. A self-hoster still has all of it; what
+they no longer have in their copy of this repository is somebody else's
+merchant integration.
 
 ### Functions
 
@@ -429,159 +420,65 @@ Whether this instance can actually sell anything.
 
 #### `displayPricing()`
 
+What the price is, asked of the thing that will charge it.
+
 #### `paddleClientConfig()`
 
-What the /buy page needs to start Paddle.js — null when there is no selling.
+The token the checkout page needs, when there is a provider with a widget.
 
 #### `hasYearlyPrice()`
 
+Whether there is a yearly price to switch to.
+
 #### `createCheckout(userId, interval, tier)`
 
-Mint a checkout for one account, right now.
+Open a checkout, and answer with the provider's id for it.
 
-Paddle has no static buy link that can carry our account id, so the buy
-button is an action: a transaction is created with the id in custom_data —
-which is what every later webhook matches on, because the address on the
-receipt is the provider's business and may not be the one they signed in
-with — and the customer lands on /buy with that transaction loaded.
-Our own page, not Paddle's hosted checkout: the hosted one is gated
-behind approval on live accounts, and /buy is the same overlay without
-the gate.
-
-#### `settleCheckout(transactionId, by)`
-
-Mark a checkout done, and say which route found out.
-
-#### `hasUnsettledCheckout(userId)`
-
-Is there anything to ask about for this account? One indexed read.
-
-#### `seatsFromItems(items)`
-
-How many accounts a subscription covers, read off what it is paying for.
-
-The seat count belongs to the price, not to this app's guess: the family
-prices carry `{"seats": 5}` in their custom data, and the price id is the
-fallback for a provider that does not hand custom data back on a
-subscription. Anything else is one seat, which is the safe reading — a
-mistake here gives away paid access.
-
-#### `claimCheckouts(userId, now)`
-
-Ask the provider what became of the checkouts this account opened.
-
-Called on the way back from the payment window, before the gate that would
-otherwise send a paying customer to the pay page. Cheap and bounded: it only
-runs when there is an unsettled checkout row, and only touches that account.
-
-A checkout that produced a subscription is applied and settled. One that
-produced nothing — abandoned, or a card that was declined — is settled too
-once it is old enough, so the question is not asked forever.
-
-Returns true when something was actually applied, which the caller uses to
-decide whether to recompute access before answering the request.
-
-#### `claimAbandonedCheckouts(now)`
-
-The same question for everybody, on the nightly pass.
-
-This is what covers the customer who paid and never came back to the tab.
-
-#### `chasedCheckouts(since)`
-
-Checkouts the app had to chase, because nobody told it.
-
-Zero is the healthy number. Anything else means the provider's notification
-destination is not reaching this instance, and every one of those customers
-saw the pay page after paying until something asked on their behalf.
+That id is what the browser carries to the checkout page and what the webhook
+will name later, which is how a payment finds its way back to an account even
+when the webhook is the thing that failed.
 
 #### `portalUrl(userId)`
 
-Where an existing customer manages their card or cancels.
-
-Portal links carry a short-lived token and are not to be stored, so a fresh
-session is created each time somebody looks at the billing page. Null when
-there is nothing to manage or the provider does not answer — the page just
-drops the button.
-
 #### `verifySignature(rawBody, signature, now)`
-
-Is this really from them?
-
-`Paddle-Signature: ts=…;h1=…` — HMAC-SHA256 of `ts:rawBody` with the
-endpoint's secret, compared in constant time. The _raw_ body:
-re-serialising the JSON first would change a byte somewhere and the
-comparison would fail for a reason nobody could see. More than one h1 can
-appear while a secret is being rotated; any of them passing is a pass.
-
-#### `mapStatus(raw)`
-
-What Paddle's statuses mean here. Paused is not entitled to anything.
-
-#### `onboardEntitlement(userId, invite, now)`
-
-What a brand-new account is entitled to, decided once at registration.
-
-Invited with no end date: the alpha deal — Pro, no billing UI, until the
-operator changes it. Invited with one: Pro until that moment, paid for by
-nobody, with the billing pages available throughout so the person can decide
-to stay before it runs out. Neither spends a free trial: the invitation is
-instead of the fourteen days, not on top of them.
-
-Open registration on a selling instance with card-first trials: nothing yet
-— the fourteen days start at the provider's checkout, card in hand, and the
-caller sends the person there. Everything else (an instance that sells but
-does not require the card, mainly): the internal no-card trial, as before.
-
-#### `checkoutTrialDays(userId)`
-
-The trial the NEXT checkout would carry, for the pages that sell it: the
-full run for a fresh account, the carried-over remainder for a returning
-one, zero when there is nothing left to carry.
-
-#### `currentInterval(userId)`
-
-Which cycle the standing subscription bills on, asked of the provider.
-
-#### `changeInterval(userId, interval)`
-
-Move the standing subscription to the other cycle, in place.
-
-The one-click upgrade: no cancel-and-rebuy, no second trial. Mid-trial
-nothing is billed (the new cycle starts when the trial does); on a paid
-subscription the difference is prorated immediately, which is the honest
-way to sell an upgrade. The webhook writes the outcome back as always.
 
 #### `handleWebhook(rawBody, fallbackId, now)`
 
-Apply one webhook, exactly once.
+#### `currentInterval(userId)`
 
-The event is written down before it is applied, and the unique index on
-(provider, event id) is what makes "exactly once" true rather than intended.
+#### `changeInterval(userId, interval)`
 
-Two event families matter. `subscription.*` carries the subscription
-entity itself. `transaction.completed` is handled too because it is the
-one place our own custom_data is certain to arrive — it is set on the
-transaction the checkout was minted from — so the very first payment can
-bind subscription to account even if the subscription events carry no
-custom_data of their own.
+#### `claimCheckouts(userId, now)`
+
+#### `claimAbandonedCheckouts(now)`
+
+#### `hasUnsettledCheckout(userId)`
+
+#### `chasedCheckouts(since)`
 
 #### `reconcile(now)`
 
-The nightly pass.
-
-Two jobs. Anything whose period has run out is marked expired, which is what
-a missed "subscription_expired" webhook would have done. And, when an API key
-is configured, every subscription the provider still knows about is fetched
-and compared — a webhook that never arrived leaves nothing to notice, and
-this is the noticing.
-
 #### `sendTrialEndingNotices(now)`
 
-### Types
+#### `mapStatus(raw)`
 
-- `PlanTier` — Which of the two plans is being bought.
-- `WebhookOutcome`
+#### `checkoutTrialDays(userId)`
+
+The trial the next checkout would carry.
+
+The full run for a fresh account, whatever is left of one for a returning
+account, and zero when there is nothing left to carry. This account's own
+history, so no provider is asked.
+
+#### `onboardEntitlement(userId, invite, now)`
+
+What a brand-new account is entitled to, before it has paid anything.
+
+Three answers and only one of them is about money: an invitation hands over
+a grant outright, an instance that sells sends them to a checkout, and
+anything else starts a trial. On a self-hosted instance the middle answer
+never happens, which is why this reads `isBillingConfigured()` rather than
+asking the provider directly.
 
 ## calendar-feed
 
@@ -792,21 +689,35 @@ Returns null when the instance is at its ceiling — the caller then shows the
 front page rather than a broken app, which is the honest failure for "the
 demo is busy".
 
+#### `resetDemoAccount(userId)`
+
+Put one demo account back the way it arrived.
+
+Everything the account owns is deleted and the fixtures are laid down again —
+the same script, so what somebody resets to is exactly what the next visitor
+would have been given. The account itself, its address and its session all
+survive: the point is to undo a mess, not to sign somebody out of a demo they
+cannot sign back into.
+
+The timer is reset with it, because somebody who just asked for a fresh demo
+is somebody who intends to keep looking.
+
 #### `demoExpiry(userId)`
 
 Whether this account is a demo one, and whether its time is up.
 
+#### `maybeSweepDemoAccounts(now)`
+
+Sweep, unless one just happened.
+
+This exists because the sweep used to run in exactly one place: the branch
+that hands a _new_ visitor an account. So a demo nobody new arrived at never
+cleaned up — the accounts sat there past their expiry, and the one person
+refreshing the page kept the instance alive without ever triggering the thing
+that was supposed to end their session. Called from every demo request now,
+which is the only place that is true whether or not anybody new shows up.
+
 #### `sweepDemoAccounts(now)`
-
-Delete every demo account whose time has passed.
-
-Run from the box's timer, and also opportunistically when a new visitor
-arrives — so a demo nobody has swept still cleans up after itself, and the
-ceiling above is a ceiling on _live_ accounts rather than on all the accounts
-there have ever been.
-
-`deleteAccount` is the same function the account page calls, so a demo
-account leaves exactly as thoroughly as a real one.
 
 #### `touchDemoAccount(userId, now)`
 

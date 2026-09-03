@@ -16,8 +16,12 @@
  * stubbed, and the first of them fails on the old code — there was nothing to
  * ask with.
  */
+// Skipped on a clone with no payment provider compiled in — everything here
+// is about the provider's own behaviour, which this repository does not ship.
+// See `src/lib/server/billing/contract.ts`. They run in the build that sells.
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
+import { hasBillingProvider } from './helpers/billing';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -73,7 +77,7 @@ afterAll(() => {
 	process.env.ONTOPLANO_SELF_HOST = 'true';
 });
 
-describe('a checkout the provider never reported', () => {
+describe.skipIf(!hasBillingProvider())('a checkout the provider never reported', () => {
 	test('opening one writes it down, before the customer leaves', async () => {
 		vi.stubGlobal(
 			'fetch',
@@ -128,7 +132,7 @@ describe('a checkout the provider never reported', () => {
 	});
 });
 
-describe('a checkout that came to nothing', () => {
+describe.skipIf(!hasBillingProvider())('a checkout that came to nothing', () => {
 	const ABANDONED = 'txn_test_0002';
 
 	test('is left open while the customer might still be typing', async () => {
