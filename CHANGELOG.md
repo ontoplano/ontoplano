@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.47.0 — 2026-09-03
+
+- **The weekly review arrives by mail.** On Monday morning, one message saying
+  what last week was — how much of what you planned you did, where most of it
+  went, and what is still sitting there — with a link to the page where you
+  close it. Nothing is sent about a week you did not plan, nothing is sent
+  twice, and every message carries a link that stops them in one click with
+  nothing to sign in to. Turn it on or off under Settings → Account.
+
 ## 0.46.0 — 2026-09-02
 
 - **This repository no longer contains any payment code.** Taking money is not a

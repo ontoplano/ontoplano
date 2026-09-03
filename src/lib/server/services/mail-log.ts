@@ -21,7 +21,8 @@ import { NotFoundError, ValidationError } from './errors.js';
  * subscriptions has no business dropping the one mail money depends on.
  */
 
-export type MailKind = 'verification' | 'password-reset' | 'address-change' | 'trial-notice';
+export type { MailKind } from '../../mail-kinds.js';
+import type { MailKind } from '../../mail-kinds.js';
 
 type Options = {
 	/** Keep the body so the mail can be re-sent as it was. Only for mail whose links do not expire. */

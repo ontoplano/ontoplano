@@ -35,8 +35,20 @@ export const load: LayoutServerLoad = async (event) => {
 	// straight to a sign-in form asks them to commit before they know what this
 	// is, which is the shortest possible funnel and the wrong one.
 	const isFrontPage = event.url.pathname === '/';
+	// A one-click unsubscribe has to work from a mail client, which has no
+	// session and never will — that is what makes it one click. It is signed;
+	// see `services/review-mail.ts`.
+	const isMailLink = event.url.pathname.startsWith('/mail/');
 
-	if (!event.locals.user && !isLoginPage && !isAuthApi && !isOffline && !isLegal && !isFrontPage) {
+	if (
+		!event.locals.user &&
+		!isLoginPage &&
+		!isAuthApi &&
+		!isOffline &&
+		!isLegal &&
+		!isFrontPage &&
+		!isMailLink
+	) {
 		return redirect(302, '/login');
 	}
 

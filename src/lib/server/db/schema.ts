@@ -10,6 +10,7 @@ import {
 } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 import { user } from './auth.schema.js';
+import { MAIL_KIND_NAMES } from '../../mail-kinds.js';
 
 export const categories = sqliteTable(
 	'categories',
@@ -1725,9 +1726,10 @@ export const mailFailures = sqliteTable(
 	'mail_failures',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
-		kind: text('kind', {
-			enum: ['verification', 'password-reset', 'address-change', 'trial-notice']
-		}).notNull(),
+		// From `$lib/mail-kinds`, so a new kind of mail cannot be storable without
+		// also being nameable in the list on /admin. Text either way in SQLite —
+		// the enum is drizzle's, so no migration follows from adding one.
+		kind: text('kind', { enum: MAIL_KIND_NAMES }).notNull(),
 		toEmail: text('to_email').notNull(),
 		subject: text('subject').notNull(),
 		/** What sending reported, trimmed — shown verbatim on /admin. */

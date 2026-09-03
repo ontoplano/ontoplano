@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**38 pages, 158 actions.**
+**39 pages, 159 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -35,6 +35,7 @@ write surface for everything else; both end up calling the same
 | `/login`                        | `signIn`, `signUp`, `requestReset`, `signOut`, `resetDemo`                                                                                                                                                                                                                                                                                                             |
 | `/login/reset`                  | `reset`                                                                                                                                                                                                                                                                                                                                                                |
 | `/login/verify`                 | `resend`                                                                                                                                                                                                                                                                                                                                                               |
+| `/mail/weekly-review/off`       | —                                                                                                                                                                                                                                                                                                                                                                      |
 | `/offline`                      | —                                                                                                                                                                                                                                                                                                                                                                      |
 | `/planner/activities`           | `create`, `update`, `toggleActive`, `delete`, `createCategory`, `updateCategory`, `deleteCategory`                                                                                                                                                                                                                                                                     |
 | `/planner/board`                | `setStatus`, `setTiming`, `reorder`, `schedule`, `promote`, `demote`, `createTodo`, `setRatings`, `remind`, `unremind`, `editInstance`, `resolveActivity`, `deleteInstance`, `deleteTodo`                                                                                                                                                                              |
@@ -43,7 +44,7 @@ write surface for everything else; both end up calling the same
 | `/planner/review`               | `saveLines`, `keepStale`, `completeStale`, `dropStale`, `resolve`, `carry`                                                                                                                                                                                                                                                                                             |
 | `/planner/todo`                 | `create`, `update`, `setStatus`, `schedule`, `delete`, `delegate`                                                                                                                                                                                                                                                                                                      |
 | `/search`                       | —                                                                                                                                                                                                                                                                                                                                                                      |
-| `/settings/account`             | `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `delete`                                                                                                                                                                                                                                                                                        |
+| `/settings/account`             | `setWeeklyReviewMail`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `delete`                                                                                                                                                                                                                                                                 |
 | `/settings/account/import`      | `importTasks`, `importAccount`                                                                                                                                                                                                                                                                                                                                         |
 | `/settings/billing`             | `addSeat`, `removeSeat`, `checkout`, `switchInterval`                                                                                                                                                                                                                                                                                                                  |
 | `/settings/instance`            | `setRegistration`, `setEmailChange`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                                                 |
@@ -151,6 +152,20 @@ Signed in, address unconfirmed — the one page such an account can reach
 while `ONTOPLANO_REQUIRE_VERIFIED_EMAIL=true` (the gate is in
 hooks.server.ts). It says so plainly and offers exactly one act: sending
 the mail again.
+
+### `/mail/weekly-review/off`
+
+The link at the bottom of the weekly review, and the only thing it does.
+
+Reachable with no session on purpose: somebody who has stopped opening the
+app is exactly who this mail is for, and asking them to sign in before they
+can make it stop is how a lifecycle mail becomes a complaint. The signature
+in the URL is what makes naming an account in it safe — without one, this
+would be a way to turn off anybody's mail by guessing an id.
+
+It turns off one thing and says so. It cannot turn anything on, so a link
+that leaks does no more harm than the click it was already for, and there is
+nothing here worth replaying.
 
 ### `/offline`
 

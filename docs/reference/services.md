@@ -48,6 +48,7 @@ shows up here on the next build.
 | [`recipes`](#recipes)                           | Recipes, and the loop they close.                                                                                                                                                                                                                                    |
 | [`registration`](#registration)                 | Who is allowed to create an account here.                                                                                                                                                                                                                            |
 | [`reminders`](#reminders)                       | Something that reaches out.                                                                                                                                                                                                                                          |
+| [`review-mail`](#review-mail)                   | Monday morning: what last week actually was, in the inbox.                                                                                                                                                                                                           |
 | [`review`](#review)                             | Closing a week.                                                                                                                                                                                                                                                      |
 | [`schedule`](#schedule)                         | Read-only view of what's coming up.                                                                                                                                                                                                                                  |
 | [`schemes`](#schemes)                           | Saved weeks.                                                                                                                                                                                                                                                         |
@@ -1232,7 +1233,6 @@ How many mails are sitting failed — one number, for the health probe.
 
 ### Types
 
-- `MailKind`
 - `MailFailure`
 
 ## media
@@ -1981,6 +1981,65 @@ The reminders already set on one block, so its editor can show them.
 ### Types
 
 - `Reminder`
+
+## review-mail
+
+Monday morning: what last week actually was, in the inbox.
+
+The review page has held these numbers since the beginning and nothing ever
+asked anybody to look at them — the app only helps on the days you remember
+to open it, which is why most people who try a planner stop in week two. A
+report over data already collected is the cheapest thing there is that
+brings somebody back, and unlike a notification it is not asking for
+anything: it says what happened and leaves the door open.
+
+## What it will not do
+
+**Send about a week that had nothing in it.** The rule is `reviewPending()`,
+the same one the dashboard's own prompt uses, so the mail and the app never
+disagree about whether there is a week worth looking at. Somebody who did
+not plan gets no mail at all rather than a mail full of zeroes.
+
+**Send twice.** The week it last wrote about is stored, so a timer that
+fires hourly, a box that reboots, and a run somebody starts by hand all
+produce one mail.
+
+**Send to an address nobody confirmed.** An unverified address is one
+somebody typed, possibly somebody else's.
+
+## On by default
+
+It is about your own data, it arrives once a week, and every one of them
+carries a link that turns it off in a click with nothing to sign in to. A
+lifecycle mail nobody is opted into reaches nobody, and this one exists
+precisely for the person who has stopped opening the app.
+
+### Functions
+
+#### `weeklyReviewMailEnabled(userId)`
+
+#### `setWeeklyReviewMail(ctx, on)`
+
+#### `unsubscribeToken(userId)`
+
+#### `unsubscribeTokenValid(userId, token)`
+
+#### `weeklyReviewMail(ctx, weekStart)`
+
+A week, in the four sentences worth reading over breakfast.
+
+Not a rendering of the review page. The page is where you _do_ something
+about a week; the mail's job is to make somebody want to open it, so it says
+the shape of the week and stops. The one number that carries the feeling is
+how much of what you meant to do you did.
+
+#### `sendWeeklyReviews(now)`
+
+Write to everybody whose Monday it is. Answers with how many went.
+
+Run hourly: the account decides the hour, because the account decides the
+timezone, and a job that ran once a day could only ever be right for one
+of them.
 
 ## review
 

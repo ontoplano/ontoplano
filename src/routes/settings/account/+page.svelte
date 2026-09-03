@@ -139,6 +139,30 @@
 		</p>
 	</Card>
 
+	<Card title="Weekly review">
+		{#snippet actions()}
+			<form method="post" action="?/setWeeklyReviewMail" use:enhance>
+				<input type="hidden" name="on" value={data.weeklyReviewMail ? 'false' : 'true'} />
+				<button type="submit" class="btn btn-sm">
+					{data.weeklyReviewMail ? 'Turn off' : 'Turn on'}
+				</button>
+			</form>
+		{/snippet}
+		<p class="text-sm text-gray-500">
+			{#if data.weeklyReviewMail}
+				On Monday mornings you get one message with what last week was — planned against done, and
+				what is still loose. Nothing is sent about a week you did not plan.
+			{:else}
+				Off. Nothing is sent on a Monday.
+			{/if}
+			{#if !data.emailConfigured}
+				<span class="block"
+					>This instance has no mail transport, so nothing is sent either way.</span
+				>
+			{/if}
+		</p>
+	</Card>
+
 	<Modal
 		open={editing === 'email' && data.emailChangeAllowed}
 		error={form?.message}

@@ -7,6 +7,7 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
+	import { mailKindLabel } from '$lib/mail-kinds';
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -37,13 +38,7 @@
 		};
 	};
 
-	const KIND_LABELS: Record<string, string> = {
-		verification: 'Address confirmation',
-		'password-reset': 'Password reset',
-		'address-change': 'Address change',
-		'trial-notice': 'Trial notice'
-	};
-	const kindLabel = (kind: string) => KIND_LABELS[kind] ?? kind;
+	const kindLabel = mailKindLabel;
 
 	function when(iso: string): string {
 		return new Date(iso).toLocaleDateString(undefined, {

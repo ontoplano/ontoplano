@@ -15,6 +15,7 @@ import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
 import { listSessions, sessionTokenById } from '$lib/server/services/sessions';
 import { record } from '$lib/server/services/audit';
+import { setWeeklyReviewMail, weeklyReviewMailEnabled } from '$lib/server/services/review-mail';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	return {
@@ -27,6 +28,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		emailConfigured: isEmailConfigured(),
 		// Whether this instance lets an account move to another address at all.
 		emailChangeAllowed: loadConfig().account.allowEmailChange,
+		weeklyReviewMail: weeklyReviewMailEnabled(locals.user!.id),
 		exports: (() => {
 			const allowance = exportAllowance(locals.user!.id);
 			return {
@@ -47,6 +49,12 @@ function authFailure(error: unknown, fallback: string) {
 }
 
 export const actions: Actions = {
+	setWeeklyReviewMail: async ({ request, locals }) => {
+		const formData = await request.formData();
+		setWeeklyReviewMail(buildCtx(locals.user!.id), formData.get('on') === 'true');
+		return { success: true, action: 'setWeeklyReviewMail' };
+	},
+
 	/**
 	 * Ask to move the account to another address, where the instance allows it.
 	 *

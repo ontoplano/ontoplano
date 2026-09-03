@@ -198,3 +198,36 @@ makes and revokes them.
 
 An instance on the open internet with sign-up left open is one that somebody
 else will use.
+
+## The weekly review, by mail
+
+On Monday morning ontoplano can send one message saying what last week was:
+how much of what you planned you did, where most of it went, and what is still
+sitting there unanswered. It links to `/planner/review`, which is where you do
+something about a week.
+
+It is on for an account whose address has been confirmed, and every message
+carries a link that turns it off in one click with nothing to sign in to.
+Nobody is written to about a week they did not plan, and nobody is written to
+twice — the week last written about is remembered per account.
+
+Nothing is sent unless the instance has SMTP configured, so a self-hosted
+install with no mail transport is simply an install with no Monday mail.
+
+**It needs something to run it.** The app has no scheduler of its own; the mail
+goes out when `scripts/weekly-reviews.ts` runs:
+
+```sh
+npx tsx scripts/weekly-reviews.ts
+```
+
+Hourly, from cron or a systemd timer:
+
+```
+5 * * * * cd /path/to/ontoplano && npx tsx scripts/weekly-reviews.ts
+```
+
+Hourly rather than daily because the hour belongs to the account: seven in the
+morning is a different instant for everybody, and each account is checked
+against its own timezone. Twenty-three of those runs do nothing, and running it
+twice is safe.
