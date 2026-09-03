@@ -104,11 +104,36 @@ export function visibleTools(caller: Caller) {
  * show. The text is JSON rather than a sentence, because the reader is a model
  * and a model reading JSON is reading the answer rather than a description of
  * it.
+ *
+ * ## Why a list is wrapped
+ *
+ * `structuredContent` is an *object* in the protocol, and clients validate it
+ * as one. Half the tools here answer with a list — the shopping list, the
+ * todos, the notebooks — and handing the bare array over made every one of
+ * those reads fail at a strict client with "expected record, received array",
+ * while every write went through. It looked like one broken tool and was
+ * actually every read.
+ *
+ * So a list becomes `{ items, count }` and anything else that is not an object
+ * becomes `{ result }`. `count` because it is the question that follows a list
+ * often enough to be worth answering unasked, and because a model that has been
+ * handed a truncated list can see that it was.
  */
+function structuredFrom(value: unknown): Record<string, unknown> {
+	if (Array.isArray(value)) return { items: value, count: value.length };
+	if (value !== null && typeof value === 'object') return value as Record<string, unknown>;
+	// A tool that answered with nothing, a number, or a bare string. Rare, and
+	// still not allowed to be the top level of a structured result.
+	return { result: value ?? null };
+}
+
 function toolResult(value: unknown) {
+	const structured = structuredFrom(value);
 	return {
-		content: [{ type: 'text', text: JSON.stringify(value ?? null, null, 2) }],
-		structuredContent: value === undefined ? null : value,
+		// The same object, not the raw value: two encodings of one answer that
+		// disagreed about its shape would be worse than either alone.
+		content: [{ type: 'text', text: JSON.stringify(structured, null, 2) }],
+		structuredContent: structured,
 		isError: false
 	};
 }

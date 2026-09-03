@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.57.2 — 2026-09-03
+
+- **Every list an assistant reads over MCP works again.** The shopping list, the
+  todos, the notebooks and the ideas answered with a bare list where the protocol
+  requires an object, so a strict client refused all of them while writes went
+  through — it looked like one broken tool and was every read. A list now arrives
+  as `items` with a `count` beside it.
+
 ## 0.57.1 — 2026-09-03
 
 - **The planner scrolls with a finger on a block.** Blocks are big targets and a

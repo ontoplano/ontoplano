@@ -141,6 +141,67 @@ describe('a tool that runs', () => {
 		expect(JSON.parse(answer.result.content[0].text).date).toBe('2026-03-14');
 	});
 
+	/**
+	 * A list is still an object at the top.
+	 *
+	 * `structuredContent` is a record in the protocol and clients validate it as
+	 * one, so a tool that answered with a bare array failed at the client with
+	 * "expected record, received array" — while every write went through. It
+	 * read as one broken tool and was in fact every read that returns a list:
+	 * the shopping list, the todos, the notebooks, the ideas.
+	 */
+	it('wraps a list rather than handing back a bare array', () => {
+		const answer = call(['shopping:read'], {
+			jsonrpc: '2.0',
+			id: 1,
+			method: 'tools/call',
+			params: { name: 'shopping_list', arguments: {} }
+		});
+
+		expect(answer.result.isError).toBe(false);
+		expect(Array.isArray(answer.result.structuredContent)).toBe(false);
+		expect(Array.isArray(answer.result.structuredContent.items)).toBe(true);
+		// The count answers the question that follows a list, and shows a model
+		// when it has been handed a truncated one.
+		expect(answer.result.structuredContent.count).toBe(
+			answer.result.structuredContent.items.length
+		);
+		// The text half says the same thing, in the same shape.
+		expect(JSON.parse(answer.result.content[0].text).count).toBe(
+			answer.result.structuredContent.count
+		);
+	});
+
+	/**
+	 * And the same asked of every read there is.
+	 *
+	 * A guard rather than four more examples: the next tool to answer with a
+	 * list is written by somebody who has never read the paragraph above, and
+	 * this is what tells them.
+	 */
+	it('answers every read with a record, whatever the service returned', () => {
+		const wrong: string[] = [];
+
+		for (const tool of TOOLS.filter((t) => !t.writes)) {
+			const answer = call([tool.scope], {
+				jsonrpc: '2.0',
+				id: 1,
+				method: 'tools/call',
+				params: { name: tool.name, arguments: {} }
+			});
+
+			const structured = answer.result?.structuredContent;
+			// A tool that refused the empty arguments has said so properly; what
+			// it refused with is another test's business.
+			if (answer.result?.isError) continue;
+			if (structured === null || typeof structured !== 'object' || Array.isArray(structured)) {
+				wrong.push(`${tool.name}: ${Array.isArray(structured) ? 'array' : typeof structured}`);
+			}
+		}
+
+		expect(wrong).toEqual([]);
+	});
+
 	it('writes, and the write is the service’s own', () => {
 		const made = call(['tasks:write'], {
 			jsonrpc: '2.0',
@@ -159,7 +220,7 @@ describe('a tool that runs', () => {
 			params: { name: 'todos', arguments: {} }
 		});
 		expect(
-			listed.result.structuredContent.some((t: { title: string }) => t.title === 'Buy garlic')
+			listed.result.structuredContent.items.some((t: { title: string }) => t.title === 'Buy garlic')
 		).toBe(true);
 	});
 
