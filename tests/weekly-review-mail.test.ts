@@ -4,12 +4,13 @@ import { makeDatabase, OWNER, STRANGER, seedAccounts } from './helpers/db';
 /**
  * Monday's mail: who gets one, when, and how many times.
  *
- * The three ways a lifecycle mail goes wrong are all here. It goes to somebody
- * who did nothing that week and reads as a page of zeroes. It goes twice,
- * because the job runs hourly and nothing remembered the first one. Or it goes
- * on a Wednesday, because the clock it read was the server's rather than the
- * reader's — which is the one that would only ever have shown up in a bug
- * report from somebody twelve hours away.
+ * The four ways a lifecycle mail goes wrong are all here. It goes to somebody
+ * who never asked for it. It goes to somebody who did nothing that week and
+ * reads as a page of zeroes. It goes twice, because the job runs hourly and
+ * nothing remembered the first one. Or it goes on a Wednesday, because the
+ * clock it read was the server's rather than the reader's — which is the one
+ * that would only ever have shown up in a bug report from somebody twelve
+ * hours away.
  */
 
 const database = makeDatabase();
@@ -58,6 +59,8 @@ beforeAll(async () => {
 /** A week with something in it: one block a day, some of them done. */
 function planLastWeek(userId: string, done: number) {
 	const ctx = ctxFor(userId);
+	// Off unless asked for, so every test that expects a mail has to ask.
+	mail.setWeeklyReviewMail(ctx, true);
 	const category = activities.createCategory(ctx, { name: 'Work', color: '#1d4ed8' });
 	const activity = activities.createActivity(ctx, { name: 'Deep work', categoryId: category });
 
@@ -139,6 +142,18 @@ describe('who gets one', () => {
 		expect((await mail.sendWeeklyReviews(MONDAY)).sent).toBe(0);
 	});
 
+	/**
+	 * The one that matters most: mail nobody asked for is spam however useful it
+	 * is, and "it is about your own data" does not change whose inbox it is.
+	 */
+	test('nobody who never asked for it', async () => {
+		planLastWeek(OWNER, 1);
+		database.exec(`delete from user_settings where key = 'mail.weekly-review'`);
+
+		expect((await mail.sendWeeklyReviews(MONDAY)).sent).toBe(0);
+		expect(sendEmail).not.toHaveBeenCalled();
+	});
+
 	test('nobody whose address is unconfirmed', async () => {
 		planLastWeek(OWNER, 1);
 		database.exec(`update user set email_verified = 0 where id = '${OWNER}'`);
@@ -165,11 +180,36 @@ describe('when', () => {
 		expect((await mail.sendWeeklyReviews(tuesday)).sent).toBe(0);
 	});
 
-	test('not at four in the morning', async () => {
+	test('not before their own hour', async () => {
 		planLastWeek(OWNER, 1);
 		const tooEarly = new Date('2026-08-24T04:00:00Z');
 
 		expect((await mail.sendWeeklyReviews(tooEarly)).sent).toBe(0);
+	});
+
+	/**
+	 * The hour is the account's, not the app's: the start of its planner grid
+	 * plus the instance's offset. Somebody whose day starts at 06:00 is up an
+	 * hour before somebody whose day starts at 09:00.
+	 */
+	test("it follows the planner's own start of day", async () => {
+		planLastWeek(OWNER, 1);
+		const { setGridHours } = await import('../src/lib/server/settings');
+
+		setGridHours(OWNER, { start: 5, end: 22 });
+		expect(mail.reviewMailHour(OWNER)).toBe(5 + mail.reviewMailOffsetHours());
+
+		// 06:00 is now their hour, and it was not before.
+		expect((await mail.sendWeeklyReviews(new Date('2026-08-24T06:00:00Z'))).sent).toBe(1);
+	});
+
+	test('a grid that starts late does not push the mail into tomorrow', async () => {
+		planLastWeek(OWNER, 1);
+		const { setGridHours } = await import('../src/lib/server/settings');
+
+		setGridHours(OWNER, { start: 23, end: 24 });
+		// 23 + 1 would be midnight, which is the morning of nothing.
+		expect(mail.reviewMailHour(OWNER)).toBe(23);
 	});
 
 	test("in the account's own timezone, not the server's", async () => {

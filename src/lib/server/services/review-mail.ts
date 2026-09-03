@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { user } from '../db/schema.js';
 import { renderEmail } from '../email-template.js';
-import { getUserSetting, setUserSetting } from '../settings.js';
+import { getGridHours, getUserSetting, setUserSetting } from '../settings.js';
 import { addDays } from '../week-generator.js';
 import { buildCtx, localDateOf, type Ctx } from './ctx.js';
 import { sendLogged } from './mail-log.js';
@@ -34,30 +34,55 @@ import { readWeek, reviewPending } from './review.js';
  * **Send to an address nobody confirmed.** An unverified address is one
  * somebody typed, possibly somebody else's.
  *
- * ## On by default
+ * **Send to anybody who did not ask.** Off unless the account turns it on,
+ * under Settings → Account. Mail somebody did not ask for is spam however
+ * useful it is, and the fact that it is about their own data does not change
+ * whose inbox it lands in. Every message carries a link that stops them in one
+ * click with nothing to sign in to, which is the other half of the same rule.
  *
- * It is about your own data, it arrives once a week, and every one of them
- * carries a link that turns it off in a click with nothing to sign in to. A
- * lifecycle mail nobody is opted into reaches nobody, and this one exists
- * precisely for the person who has stopped opening the app.
+ * ## When
+ *
+ * The hour is the account's own: the start of its planner grid, plus an offset.
+ * Somebody whose day starts at 06:00 is up an hour before somebody whose day
+ * starts at 09:00, and both of them want this over the first coffee rather than
+ * at a time the app chose. The offset is one setting for the whole instance
+ * rather than a number in this file — see `REVIEW_MAIL_OFFSET_HOURS`.
  */
 
-/** Set to `off` to stop them. Absent means on. */
+/** Set to `on` to get them. Absent means off: nobody is mailed unasked. */
 export const REVIEW_MAIL_KEY = 'mail.weekly-review';
 
 /** The Monday of the week last written about, so it is written about once. */
 const LAST_SENT_KEY = 'mail.weekly-review.last';
 
 /**
- * Local hour on a Monday, at or after which the mail goes.
+ * Hours after the planner's own start of day.
  *
- * Early enough to be there when somebody sits down, late enough not to be the
- * thing that wakes them.
+ * An hour, unless the instance says otherwise. Not a constant in the middle of
+ * a function: "why does mine arrive at eight" has an answer somebody can change
+ * without editing this file, and the number is a judgement rather than a fact.
+ * Bounded to a day, since past that it is no longer the same morning.
  */
-const SEND_HOUR = 7;
+export function reviewMailOffsetHours(): number {
+	const raw = Number(process.env.ONTOPLANO_REVIEW_MAIL_OFFSET_HOURS);
+	if (!Number.isFinite(raw)) return 1;
+	return Math.min(Math.max(Math.round(raw), 0), 23);
+}
 
+/** Off unless the account said otherwise. Nobody is mailed unasked. */
 export function weeklyReviewMailEnabled(userId: string): boolean {
-	return getUserSetting(userId, REVIEW_MAIL_KEY) !== 'off';
+	return getUserSetting(userId, REVIEW_MAIL_KEY) === 'on';
+}
+
+/**
+ * The hour this account's mail goes out, in its own timezone.
+ *
+ * The planner's first hour plus the offset, clamped to the day: a grid that
+ * starts at 23:00 would otherwise send at midnight tomorrow, which is not the
+ * morning of anything.
+ */
+export function reviewMailHour(userId: string): number {
+	return Math.min(getGridHours(userId).start + reviewMailOffsetHours(), 23);
 }
 
 export function setWeeklyReviewMail(ctx: Ctx, on: boolean): void {
@@ -163,8 +188,8 @@ export function weeklyReviewMail(
 	});
 }
 
-/** Whether it is the hour, where they are, on the day this goes out. */
-function isSendTime(now: Date, tz: string): boolean {
+/** Whether it is their hour, where they are, on the day this goes out. */
+function isSendTime(now: Date, tz: string, hour: number): boolean {
 	const parts = new Intl.DateTimeFormat('en-GB', {
 		timeZone: tz,
 		weekday: 'short',
@@ -173,9 +198,9 @@ function isSendTime(now: Date, tz: string): boolean {
 	}).formatToParts(now);
 
 	const weekday = parts.find((p) => p.type === 'weekday')?.value;
-	const hour = Number(parts.find((p) => p.type === 'hour')?.value);
+	const local = Number(parts.find((p) => p.type === 'hour')?.value);
 
-	return weekday === 'Mon' && Number.isFinite(hour) && hour >= SEND_HOUR;
+	return weekday === 'Mon' && Number.isFinite(local) && local >= hour;
 }
 
 /**
@@ -215,7 +240,7 @@ export async function sendWeeklyReviews(now = new Date()): Promise<{
 		if (!weeklyReviewMailEnabled(account.id)) continue;
 
 		const ctx = buildCtx(account.id, { now });
-		if (!isSendTime(now, ctx.tz)) continue;
+		if (!isSendTime(now, ctx.tz, reviewMailHour(account.id))) continue;
 
 		const local = buildCtx(account.id, { tz: ctx.tz, now: localNoon(now, ctx.tz) });
 

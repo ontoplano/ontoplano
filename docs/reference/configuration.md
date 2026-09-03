@@ -156,8 +156,8 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_DEMO_EMAIL`                 | `src/lib/server/settings.ts`                                  |
 | `ONTOPLANO_DEMO_MAX_ACCOUNTS`          | `src/lib/server/settings.ts`                                  |
 | `ONTOPLANO_DEMO_TTL_MINUTES`           | `src/lib/server/settings.ts`                                  |
+| `ONTOPLANO_DOCS_URL`                   | `src/lib/server/settings.ts`                                  |
 | `ONTOPLANO_FAIL2BAN_LOG`               | `src/lib/server/services/protection.ts`                       |
-| `ONTOPLANO_FAMILY_PLAN`                | `src/lib/server/settings.ts`                                  |
 | `ONTOPLANO_FAMILY_SEATS`               | `src/lib/server/settings.ts`                                  |
 | `ONTOPLANO_HEALTH_TOKEN`               | `src/lib/server/settings.ts`, `src/routes/healthz/+server.ts` |
 | `ONTOPLANO_HTTPS`                      | `src/hooks.server.ts`                                         |
@@ -174,7 +174,9 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_PRICE_YEARLY_CENTS`         | `src/lib/server/settings.ts`                                  |
 | `ONTOPLANO_REGISTRATION`               | `src/lib/server/services/registration.ts`                     |
 | `ONTOPLANO_REQUIRE_VERIFIED_EMAIL`     | `src/lib/server/services/access.ts`                           |
+| `ONTOPLANO_REVIEW_MAIL_OFFSET_HOURS`   | `src/lib/server/services/review-mail.ts`                      |
 | `ONTOPLANO_SELF_HOST`                  | `src/lib/server/settings.ts`                                  |
+| `ONTOPLANO_SITE_URL`                   | `src/lib/server/settings.ts`                                  |
 | `ONTOPLANO_SKIP_MIGRATION_CHECK`       | `src/lib/server/db/assert-migrated.ts`                        |
 | `ONTOPLANO_STAGING`                    | `src/lib/server/settings.ts`                                  |
 | `ONTOPLANO_TRIAL_DAYS`                 | `src/lib/server/settings.ts`                                  |

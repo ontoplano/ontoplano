@@ -4,6 +4,10 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { settingsForm } from '$lib/actions/settings-form';
 	import type { ActionData } from './$types';
+	import { IMPORT_KINDS } from '$lib/imports-catalogue';
+
+	/** The ones this card takes: a file, worked out by what is in it. */
+	const fromFiles = IMPORT_KINDS.filter((k) => k.becomes === 'todos');
 
 	let { form }: { form: ActionData } = $props();
 
@@ -102,10 +106,18 @@
 	</p>
 
 	<Card title="From another app">
+		<!--
+			Named from `$lib/imports-catalogue`, which is also what `/api/imports`
+			answers with and what ontoplano.com's FAQ is built from. Three places
+			listed these by hand and the site was a source behind for weeks.
+		-->
 		<p class="text-sm text-gray-500">
-			<strong>Todoist</strong> (a project exported as CSV), <strong>Google Tasks</strong>
-			(Takeout's <code class="text-xs">Tasks.json</code>) or <strong>Google Keep</strong>
-			(Takeout writes a file per note — choose them all). Which one it is is worked out from the file.
+			{#each fromFiles as kind, i (kind.id)}<strong>{kind.name}</strong> ({kind.file}){i <
+				fromFiles.length - 2
+					? ', '
+					: i === fromFiles.length - 2
+						? ' or '
+						: '. '}{/each}Which one it is is worked out from the file.
 		</p>
 
 		<form

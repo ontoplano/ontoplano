@@ -150,10 +150,14 @@
 		{/snippet}
 		<p class="text-sm text-gray-500">
 			{#if data.weeklyReviewMail}
-				On Monday mornings you get one message with what last week was — planned against done, and
-				what is still loose. Nothing is sent about a week you did not plan.
+				One message on a Monday at {data.weeklyReviewHour} with what last week was — planned against done,
+				and what is still loose. Nothing is sent about a week you did not plan, and every message has
+				a link that stops them.
 			{:else}
-				Off. Nothing is sent on a Monday.
+				<!-- Off is the default: mail nobody asked for is spam however useful
+				     it is. What it would be is said here, not after it arrives. -->
+				Off. Turn it on and you get one message on a Monday at {data.weeklyReviewHour} with what last
+				week was — planned against done, and what is still loose.
 			{/if}
 			{#if !data.emailConfigured}
 				<span class="block"

@@ -10,6 +10,25 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.52.0 — 2026-09-03
+
+- **The weekly review is off until you ask for it**, and it arrives at your own
+  hour: the start of your planner's day plus an hour, in your timezone. Mail
+  nobody asked for is spam however useful it is, and the app should not decide
+  when your morning starts.
+- **The mark in the middle of the phone bar no longer jumps sideways when you
+  press it.** It moved forty-two pixels left for as long as a finger was on it,
+  which is the whole of the gesture — so the wheel opened beside the mark
+  instead of around it.
+- **What the app can import is listed in one place**, and `/api/imports` is how
+  anything outside reads it. The import page and ontoplano.com's FAQ are both
+  written from it, so a new importer reaches them by being built.
+- The family plan no longer needs a switch of its own. It briefly had one when
+  the payment provider left the repository; the product offers a family plan,
+  and a second variable saying so was a thing to remember to set.
+- The two links on the signed-out front page follow the deployment they are on,
+  so a staging instance no longer sends you to production to read its own hero.
+
 ## 0.51.0 — 2026-09-03
 
 - **An Obsidian vault comes in.** Settings → Account → Bring things in: choose

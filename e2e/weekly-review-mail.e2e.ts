@@ -11,7 +11,7 @@ import { visit } from './helpers/visit';
  * and a mail whose unsubscribe does not work is the kind of thing a mailbox
  * provider notices before a person complains.
  */
-test('the weekly review can be turned off from the account page', async ({ page }) => {
+test('the weekly review is off until it is asked for', async ({ page }) => {
 	await register(page, `review-mail-${Date.now()}@test.invalid`);
 	await visit(page, '/settings/account');
 
@@ -19,16 +19,18 @@ test('the weekly review can be turned off from the account page', async ({ page 
 	// component and its wrapper is its own business.
 	const toggle = page.locator('form[action="?/setWeeklyReviewMail"] button');
 
-	await expect(page.getByText(/On Monday mornings/)).toBeVisible();
-	await expect(toggle).toHaveText('Turn off');
+	// Off is what a new account gets: mail nobody asked for is spam however
+	// useful it is.
+	await expect(page.getByText(/^Off\./)).toBeVisible();
+	await expect(toggle).toHaveText('Turn on');
 
 	await toggle.click();
-	await expect(page.getByText(/Nothing is sent on a Monday/)).toBeVisible();
-	await expect(toggle).toHaveText('Turn on');
+	await expect(page.getByText(/One message on a Monday at \d\d:00/)).toBeVisible();
+	await expect(toggle).toHaveText('Turn off');
 
 	// And back, because a switch that only goes one way is a trap.
 	await toggle.click();
-	await expect(page.getByText(/On Monday mornings/)).toBeVisible();
+	await expect(toggle).toHaveText('Turn on');
 });
 
 test('an unsigned unsubscribe link is a 404, not a way in', async ({ page }) => {

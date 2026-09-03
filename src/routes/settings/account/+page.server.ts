@@ -15,7 +15,11 @@ import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
 import { listSessions, sessionTokenById } from '$lib/server/services/sessions';
 import { record } from '$lib/server/services/audit';
-import { setWeeklyReviewMail, weeklyReviewMailEnabled } from '$lib/server/services/review-mail';
+import {
+	reviewMailHour,
+	setWeeklyReviewMail,
+	weeklyReviewMailEnabled
+} from '$lib/server/services/review-mail';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	return {
@@ -29,6 +33,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		// Whether this instance lets an account move to another address at all.
 		emailChangeAllowed: loadConfig().account.allowEmailChange,
 		weeklyReviewMail: weeklyReviewMailEnabled(locals.user!.id),
+		// The hour it would arrive, so the switch says when rather than leaving
+		// somebody to find out on a Monday.
+		weeklyReviewHour: `${String(reviewMailHour(locals.user!.id)).padStart(2, '0')}:00`,
 		exports: (() => {
 			const allowance = exportAllowance(locals.user!.id);
 			return {

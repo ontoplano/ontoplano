@@ -21,11 +21,23 @@
 	 */
 	let {
 		canRegister = false,
-		tagline
+		tagline,
+		siteUrl,
+		docsUrl
 	}: {
 		canRegister?: boolean;
 		/** The instance's own line, from config.toml. See `DEFAULT_TAGLINE`. */
 		tagline: string;
+		/**
+		 * Where this deployment's own site and docs are.
+		 *
+		 * Not hardcoded, because staging is a whole deployment: it has a site and
+		 * documentation of its own, and a staging front door whose two links leave
+		 * for production is a staging instance you cannot look at the hero on. See
+		 * `siteUrl` in `server/settings.ts`.
+		 */
+		siteUrl: string;
+		docsUrl: string;
 	} = $props();
 </script>
 
@@ -58,16 +70,12 @@
 	{/if}
 
 	<p class="mt-10 text-sm text-gray-500">
-		<a
-			class="underline underline-offset-2 hover:text-gray-900"
-			href="https://ontoplano.com"
-			rel="external">What ontoplano is</a
+		<a class="underline underline-offset-2 hover:text-gray-900" href={siteUrl} rel="external"
+			>What ontoplano is</a
 		>
 		·
-		<a
-			class="underline underline-offset-2 hover:text-gray-900"
-			href="https://docs.ontoplano.com"
-			rel="external">How it works</a
+		<a class="underline underline-offset-2 hover:text-gray-900" href={docsUrl} rel="external"
+			>How it works</a
 		>
 	</p>
 </div>

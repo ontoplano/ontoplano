@@ -1571,11 +1571,21 @@ html .ec {
 	transform: scale(0.94);
 }
 
-/* The one that is its own shape: it presses, but a rectangle behind an octagon
-   would be worse than nothing. */
+/*
+ * The one that is its own shape: it presses, but a rectangle behind an octagon
+ * would be worse than nothing.
+ *
+ * `scale` alone, and the centring left to whatever put it there. This used to
+ * say `translate(-50%, 0) scale(0.92)` and the mark jumped forty-two pixels to
+ * the left for as long as a finger was on it — which is the whole of the
+ * gesture, so the wheel opened around a mark that had walked off the middle of
+ * the bar. `left-1/2 -translate-x-1/2` centres it with the `translate`
+ * property, which composes with this rather than being replaced by it, so
+ * repeating the -50% here applied it twice.
+ */
 .tap-shape:active {
 	background-color: transparent;
-	transform: translate(-50%, 0) scale(0.92);
+	transform: scale(0.92);
 }
 
 /*

@@ -8,7 +8,13 @@ import {
 	serialiseLayout,
 	type DashboardCardId
 } from '$lib/dashboard';
-import { getHiddenSections, getUserSetting, setUserSetting } from '$lib/server/settings';
+import {
+	docsUrl,
+	getHiddenSections,
+	getUserSetting,
+	setUserSetting,
+	siteUrl
+} from '$lib/server/settings';
 import { loadConfig } from '$lib/server/config';
 import { instanceIsEmpty, registrationMode } from '$lib/server/services/registration';
 import { buildCtx } from '$lib/server/services/ctx';
@@ -44,7 +50,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 			frontDoor: {
 				canRegister: instanceIsEmpty() || registrationMode() !== 'closed',
 				// The operator's sentence, not the app's — see config.toml.
-				tagline: loadConfig().instance.tagline
+				tagline: loadConfig().instance.tagline,
+				// Where this deployment's own site and docs are. Production
+				// answers with the project's; staging answers with staging's.
+				siteUrl: siteUrl(),
+				docsUrl: docsUrl()
 			}
 		};
 	}

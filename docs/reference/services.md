@@ -2169,16 +2169,42 @@ produce one mail.
 **Send to an address nobody confirmed.** An unverified address is one
 somebody typed, possibly somebody else's.
 
-## On by default
+**Send to anybody who did not ask.** Off unless the account turns it on,
+under Settings → Account. Mail somebody did not ask for is spam however
+useful it is, and the fact that it is about their own data does not change
+whose inbox it lands in. Every message carries a link that stops them in one
+click with nothing to sign in to, which is the other half of the same rule.
 
-It is about your own data, it arrives once a week, and every one of them
-carries a link that turns it off in a click with nothing to sign in to. A
-lifecycle mail nobody is opted into reaches nobody, and this one exists
-precisely for the person who has stopped opening the app.
+## When
+
+The hour is the account's own: the start of its planner grid, plus an offset.
+Somebody whose day starts at 06:00 is up an hour before somebody whose day
+starts at 09:00, and both of them want this over the first coffee rather than
+at a time the app chose. The offset is one setting for the whole instance
+rather than a number in this file — see `REVIEW_MAIL_OFFSET_HOURS`.
 
 ### Functions
 
+#### `reviewMailOffsetHours()`
+
+Hours after the planner's own start of day.
+
+An hour, unless the instance says otherwise. Not a constant in the middle of
+a function: "why does mine arrive at eight" has an answer somebody can change
+without editing this file, and the number is a judgement rather than a fact.
+Bounded to a day, since past that it is no longer the same morning.
+
 #### `weeklyReviewMailEnabled(userId)`
+
+Off unless the account said otherwise. Nobody is mailed unasked.
+
+#### `reviewMailHour(userId)`
+
+The hour this account's mail goes out, in its own timezone.
+
+The planner's first hour plus the offset, clamped to the day: a grid that
+starts at 23:00 would otherwise send at midnight tomorrow, which is not the
+morning of anything.
 
 #### `setWeeklyReviewMail(ctx, on)`
 

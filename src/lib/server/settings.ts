@@ -389,6 +389,28 @@ export function isStaging(): boolean {
 }
 
 /**
+ * Where the project's own pages are, for the two links on the front door.
+ *
+ * The marketing site and the documentation are separate deployments, so the
+ * app has to name them — and on the *hosted* instance that is
+ * ontoplano.com and docs.ontoplano.com, which is also the right answer for a
+ * self-hoster: those are the project's home, not this box's.
+ *
+ * Overridable because staging is a whole deployment, not a flag. Staging has a
+ * site and docs of its own (`site.staging.…`, `docs.staging.…`), and a staging
+ * app whose links leave for production is a staging app you cannot look at the
+ * hero on. Its env file points these two at its own pair, and no code anywhere
+ * asks whether it is staging (S-STAGING).
+ */
+export function siteUrl(): string {
+	return (process.env.ONTOPLANO_SITE_URL || 'https://ontoplano.com').replace(/\/+$/, '');
+}
+
+export function docsUrl(): string {
+	return (process.env.ONTOPLANO_DOCS_URL || 'https://docs.ontoplano.com').replace(/\/+$/, '');
+}
+
+/**
  * The public demo.
  *
  * Every visitor gets an account of their own, seeded with a week worth looking
@@ -447,25 +469,23 @@ export function pricing(): Pricing {
 		return Number.isFinite(raw) && raw >= 0 ? Math.round(raw) : fallback;
 	};
 
-	const flag = (name: string) => process.env[name] === 'true';
-
 	return {
 		monthlyCents: int('ONTOPLANO_PRICE_MONTHLY_CENTS', DEFAULT_PRICING.monthlyCents),
 		yearlyCents: int('ONTOPLANO_PRICE_YEARLY_CENTS', DEFAULT_PRICING.yearlyCents),
-		// The family rate is only quoted where the instance actually sells one, so
-		// one that has not set it up shows a single plan rather than advertising
-		// a second nobody can buy.
-		//
-		// A flag of the app's own rather than the presence of a provider's price
-		// id: which provider this build carries — if any — is not this file's
-		// business, and reading a provider's own variable here was the last place
-		// where it was.
-		familyMonthlyCents: flag('ONTOPLANO_FAMILY_PLAN')
-			? int('ONTOPLANO_PRICE_FAMILY_MONTHLY_CENTS', DEFAULT_PRICING.familyMonthlyCents)
-			: 0,
-		familyYearlyCents: flag('ONTOPLANO_FAMILY_PLAN')
-			? int('ONTOPLANO_PRICE_FAMILY_YEARLY_CENTS', DEFAULT_PRICING.familyYearlyCents)
-			: 0,
+		// The family rate, always quoted. It briefly had a switch of its own —
+		// the family plan used to be inferred from a payment provider's price id
+		// being present, and when the provider left this repository something had
+		// to replace that. But the product offers a family plan; a second
+		// variable saying so is a thing to remember to set, and the day that
+		// changes is a day the pricing page is being redesigned anyway.
+		familyMonthlyCents: int(
+			'ONTOPLANO_PRICE_FAMILY_MONTHLY_CENTS',
+			DEFAULT_PRICING.familyMonthlyCents
+		),
+		familyYearlyCents: int(
+			'ONTOPLANO_PRICE_FAMILY_YEARLY_CENTS',
+			DEFAULT_PRICING.familyYearlyCents
+		),
 		familySeats: Math.min(
 			Math.max(int('ONTOPLANO_FAMILY_SEATS', DEFAULT_PRICING.familySeats), 2),
 			20
