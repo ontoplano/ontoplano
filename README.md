@@ -17,6 +17,11 @@
 
 </div>
 
+> [!WARNING]
+> This product was released on September 4th, 2026. It's still experimental, and
+> it may contain bugs. Please be patient, and help me improve it by making pull
+> requests.
+
 ---
 
 Everything you are keeping track of, in one place, on one week. It started as a
