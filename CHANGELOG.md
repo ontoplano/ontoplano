@@ -10,6 +10,20 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.59.0 — 2026-09-03
+
+- **"Send a test" under Settings → Preferences.** Six things stand between
+  pressing allow and a phone buzzing; this walks all of them for real and says
+  which one broke, instead of leaving you to set a reminder and wait.
+- The reminders job says what it did on every run — how many devices are signed
+  up, whether the instance has keys at all — rather than being silent whether it
+  works or not.
+- `/healthz` reports whether the instance can take money, so a deploy can check
+  it: a build made without the payment provider is invisible from the outside,
+  and used to be found hours later on `/admin`.
+- The health warnings include load per core, which is the number that moves
+  first when people arrive.
+
 ## 0.58.3 — 2026-09-03
 
 - **A form no longer blanks itself on the way out.** Saving an edit emptied

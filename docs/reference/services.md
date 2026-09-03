@@ -534,6 +534,16 @@ For the administration page and for the refusal below, which need the same
 answer in two registers — a sentence to show somebody, and a reason to stop.
 Null means it can sell.
 
+#### `billingStatus()`
+
+What this instance can do about money, in three fields.
+
+For `/healthz`, and through it for the deploy: the payment provider is copied
+into the tree at build time from a checkout that lives outside this
+repository, so a build made on a machine without that checkout produces an
+app that cannot sell and looks exactly like one that can. The only place that
+difference is visible is inside the running process, which is here.
+
 #### `onboardEntitlement(userId, invite, now)`
 
 What a brand-new account is entitled to, before it has paid anything.

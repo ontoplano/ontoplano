@@ -1,5 +1,6 @@
 import type { RequestHandler } from './$types';
 import { databaseReachable, resources, tokenMatches, warnings } from '$lib/server/services/health';
+import { billingStatus } from '$lib/server/services/billing';
 import { build } from '$lib/server/services/version';
 import { healthToken } from '$lib/server/settings';
 
@@ -45,7 +46,27 @@ export const GET: RequestHandler = async ({ request, url }) => {
 			// Which build is answering, for the same audience as the numbers: the
 			// machine watching this wants to say "still on 0.2.0" without an ssh
 			// session, and a version string tells a stranger which bugs to try.
-			...(detail ? { resources: detail, warnings: warnings(detail), build: build() } : {})
+			...(detail
+				? {
+						resources: detail,
+						warnings: warnings(detail),
+						build: build(),
+						/*
+						 * Whether this instance can take money, from the instance
+						 * itself.
+						 *
+						 * The provider is copied into the tree at build time from a
+						 * checkout that lives outside this repository, so a build made
+						 * on a machine without it ships an app that cannot sell — and
+						 * looks identical from the outside. That happened, and the
+						 * first anybody knew was a banner on /admin hours later.
+						 *
+						 * Behind the token with the rest of the detail: which payment
+						 * provider an instance uses is nobody else's business.
+						 */
+						billing: billingStatus()
+					}
+				: {})
 		}),
 		{
 			status: ok ? 200 : 503,

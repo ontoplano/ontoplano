@@ -164,6 +164,31 @@
 		notifications = result === 'failed' ? 'off' : result;
 	}
 
+	/** What a test push is doing, and what it answered. */
+	let testing = $state(false);
+	let tested = $state('');
+
+	async function sendTest() {
+		testing = true;
+		tested = '';
+		try {
+			const response = await fetch('/api/push/test', { method: 'POST' });
+			const body = (await response.json()) as {
+				ok: boolean;
+				sent?: number;
+				devices?: number;
+				why?: string | null;
+			};
+			tested = body.ok
+				? `Sent to ${body.sent} of ${body.devices} device${body.devices === 1 ? '' : 's'}. If nothing appeared, the browser is holding it back.`
+				: (body.why ?? 'It did not go.');
+		} catch {
+			tested = 'The request did not reach the server.';
+		} finally {
+			testing = false;
+		}
+	}
+
 	async function turnOff() {
 		await disablePush();
 		notifications = 'off';
@@ -347,10 +372,23 @@
 					Blocked for this site. Its permission has to be changed in the browser.
 				</p>
 			{:else if notifications === 'on'}
-				<div class="flex items-center gap-3">
+				<div class="flex flex-wrap items-center gap-3">
 					<span class="text-sm text-gray-700">On for this device.</span>
+					<!--
+						Six links between "allow" and a phone buzzing, and when nothing
+						arrives every one of them is a candidate. This walks the whole
+						chain for real — the same code a reminder takes — and says which
+						link broke, instead of leaving somebody to set a reminder and
+						wait a minute to find out.
+					-->
+					<button class="btn btn-sm" onclick={sendTest} disabled={testing}>
+						{testing ? 'Sending…' : 'Send a test'}
+					</button>
 					<button class="btn btn-sm" onclick={turnOff}>Turn off</button>
 				</div>
+				{#if tested}
+					<p class="mt-2 text-sm text-gray-600">{tested}</p>
+				{/if}
 			{:else}
 				<button class="btn btn-primary" onclick={turnOn}>Turn on</button>
 			{/if}

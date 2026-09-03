@@ -1,5 +1,5 @@
 import { db } from '../db/index.js';
-import { user } from '../db/schema.js';
+import { pushSubscriptions, user } from '../db/schema.js';
 import { buildCtx } from './ctx.js';
 import { ensureBirthdayReminders } from './birthdays.js';
 import { markPushed, pushableReminders } from './reminders.js';
@@ -29,6 +29,14 @@ import { localOfInstant } from './time.js';
 export async function deliverDueReminders(now = new Date()): Promise<{
 	pushed: number;
 	accounts: number;
+	/** Browsers signed up across every account. Zero is the commonest answer. */
+	devices: number;
+	/** Due and unpushed at the moment of the pass. */
+	due: number;
+	/** Birthday rows written by this pass. */
+	birthdays: number;
+	/** False when the instance has no keys, so nothing can be pushed at all. */
+	configured: boolean;
 }> {
 	/*
 	 * Every account, not only the ones with a confirmed address.
@@ -43,15 +51,19 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 
 	// Today's birthdays first: a row written now can be due now, and doing this
 	// after the query below would delay every one of them by a minute.
+	let birthdays = 0;
 	for (const account of accounts) {
 		if (account.banned) continue;
 		const ctx = buildCtx(account.id, { now });
-		ensureBirthdayReminders(account.id, now, ctx.tz);
+		birthdays += ensureBirthdayReminders(account.id, now, ctx.tz);
 	}
+
+	const devices = db.select({ id: pushSubscriptions.id }).from(pushSubscriptions).all().length;
+	const summary = { accounts: accounts.length, devices, birthdays };
 
 	// Nothing below can do anything without keys, but the birthdays above still
 	// had to be written: an instance that does not push still shows them.
-	if (!pushConfigured()) return { pushed: 0, accounts: accounts.length };
+	if (!pushConfigured()) return { ...summary, pushed: 0, due: 0, configured: false };
 
 	const zones = new Map<string, string>();
 	const localFor = (userId: string) => {
@@ -64,7 +76,7 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 	};
 
 	const due = pushableReminders(localFor);
-	if (due.length === 0) return { pushed: 0, accounts: accounts.length };
+	if (due.length === 0) return { ...summary, pushed: 0, due: 0, configured: true };
 
 	const byAccount = new Map<string, typeof due>();
 	for (const reminder of due) {
@@ -97,7 +109,7 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 		}
 	}
 
-	return { pushed, accounts: accounts.length };
+	return { ...summary, pushed, due: due.length, configured: true };
 }
 
 /**

@@ -51,6 +51,7 @@ sentence somebody agrees to when they grant it.
 | `/api/pricing`                               | GET    | —                 |
 | `/api/push`                                  | POST   | —                 |
 | `/api/push`                                  | DELETE | —                 |
+| `/api/push/test`                             | POST   | —                 |
 | `/api/reminders`                             | GET    | —                 |
 | `/api/reminders`                             | POST   | —                 |
 | `/api/search`                                | GET    | —                 |
@@ -272,6 +273,21 @@ belong to anybody else.
 **POST**
 
 **DELETE**
+
+### `/api/push/test`
+
+Push one notification to this account's devices, now.
+
+The chain between "I pressed allow" and "my phone buzzed" has six links in
+it — permission, a subscription, a row, keys, a timer, a push service — and
+when nothing arrives, every one of them is a candidate. Nobody should have to
+bisect that by setting a reminder and waiting a minute.
+
+So: the same code path a real reminder takes, on demand, answering with what
+happened rather than with a status code. It is not a debug endpoint that
+bypasses anything — it pushes for real, which is the point.
+
+**POST**
 
 ### `/api/reminders`
 

@@ -1,5 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
-import { freemem, loadavg, totalmem } from 'node:os';
+import { cpus, freemem, loadavg, totalmem } from 'node:os';
 import { statSync, statfsSync } from 'node:fs';
 import { sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
@@ -118,7 +118,16 @@ export const LIMITS = {
 	/** And this full is worth mentioning too, unless there is plenty left. */
 	diskUsedPercent: 90,
 	/** Beyond which the kernel is about to start choosing what to kill. */
-	memoryUsedPercent: 92
+	memoryUsedPercent: 92,
+	/**
+	 * Load per core, sustained, before a box is behind rather than busy.
+	 *
+	 * One per core means every core has work and nothing is queueing; the
+	 * queue starts above that, and it is the first number that moves when
+	 * traffic arrives — before memory, long before disk. Two is chosen rather
+	 * than one so that a build or a backup does not page anybody.
+	 */
+	loadPerCore: 2
 } as const;
 
 /** Whatever is currently over the line, as sentences a person can read. */
@@ -133,6 +142,17 @@ export function warnings(r: Resources = resources()): string[] {
 	}
 	if (r.memoryUsedPercent >= LIMITS.memoryUsedPercent) {
 		out.push(`memory ${r.memoryUsedPercent}% used, ${r.memoryFreeMb}MB free`);
+	}
+	/*
+	 * The one that moves first when people arrive.
+	 *
+	 * Disk and memory are slow problems; load is the launch-day one, and it is
+	 * the number that says "resize the box" while the box is still answering.
+	 * Per core, because a load of 4 is idle on eight cores and a queue on two.
+	 */
+	const cores = Math.max(1, cpus().length);
+	if (r.load1 >= LIMITS.loadPerCore * cores) {
+		out.push(`load ${r.load1.toFixed(2)} on ${cores} core${cores === 1 ? '' : 's'}`);
 	}
 	// Failed mail belongs here because this is the channel somebody is already
 	// watching: the guard timer and the off-box watcher alert on a warning
