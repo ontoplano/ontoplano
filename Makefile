@@ -70,7 +70,7 @@ vars:
 	@sh scripts/make-vars.sh $(sort $(MAKEFILE_LIST) defaults.env $(wildcard $(SERVER_SRC)/defaults.env))
 
 
-.PHONY: vars billing-provider package package-check release _release-run github-push _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
+.PHONY: _docker-builder vars billing-provider package package-check release _release-run github-push _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -524,9 +524,48 @@ docker-publish: docker-image
 		read -r answer </dev/tty 2>/dev/null || answer=; \
 		case "$$answer" in [yY]*) ;; *) echo "Not confirmed — nothing was pushed."; exit 1;; esac; \
 	fi
-	@docker buildx build --platform $(PLATFORMS) \
+	@$(MAKE) -s _docker-builder
+	@docker buildx build --builder ontoplano --platform $(PLATFORMS) \
 		-t $(IMAGE):$(IMAGE_VERSION) -t $(IMAGE):latest \
-		--push .
+		--push . || { \
+		echo; \
+		$(LOUD) "The push failed. The three reasons it ever is:"; \
+		echo "  · not signed in as the owner of $(IMAGE)"; \
+		echo "      docker login -u $(firstword $(subst /, ,$(IMAGE)))"; \
+		echo "  · signed in with a token that has no write scope — read-only"; \
+		echo "      tokens fail here and nowhere else, so this is the usual one"; \
+		echo "  · $(IMAGE) belongs to somebody else — publish under your own name:"; \
+		echo "      make docker-publish IMAGE=yourname/ontoplano"; \
+		exit 1; }
+
+# The builder a multi-platform push needs, made once and kept.
+#
+# Docker's default builder uses the `docker` driver, which cannot build for two
+# architectures at all: `docker buildx build --platform linux/amd64,linux/arm64`
+# fails on it outright, which is a confusing way to be told to make a builder.
+# So this makes one — a `docker-container` builder called `ontoplano` — and
+# checks the machine can actually emulate the architectures asked for before a
+# ten-minute build finds out it cannot.
+_docker-builder:
+	@if ! docker buildx inspect ontoplano >/dev/null 2>&1; then \
+		echo "  making the 'ontoplano' buildx builder — the default one cannot do two architectures"; \
+		docker buildx create --name ontoplano --driver docker-container >/dev/null || exit 1; \
+	fi
+	@docker buildx inspect ontoplano --bootstrap >/dev/null 2>&1 || { \
+		echo "the 'ontoplano' builder would not start. 'docker buildx rm ontoplano' and try again."; \
+		exit 1; }
+	@# One node per line, and a builder can have several — newlines become commas
+	@# too, or a platform at the start of the second node's list never matches.
+	@have=$$(docker buildx inspect ontoplano | sed -n 's/^ *Platforms: *//p' | tr -d ' ' | tr '\n' ','); \
+	for want in $$(echo "$(PLATFORMS)" | tr ',' ' '); do \
+		case ",$$have," in *",$$want,"*) ;; *) \
+			echo "  ! this machine cannot build $$want."; \
+			echo "    QEMU does it, once, and then every later build has it:"; \
+			echo "      docker run --privileged --rm tonistiigi/binfmt --install all"; \
+			echo "    or build only what it can: make docker-publish PLATFORMS=linux/amd64"; \
+			exit 1 ;; \
+		esac; \
+	done
 
 logs:
 	journalctl --user -u ontoplano -f

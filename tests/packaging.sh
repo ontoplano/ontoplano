@@ -39,6 +39,17 @@ ok()   { echo "  ${blue}✓${off} $1"; }
 bad()  { echo "  ${red}✗${off} $1"; fails=$((fails + 1)); }
 head_() { echo; echo "${dim}$1${off}"; }
 
+# A format this machine cannot build is not a failure of the packaging.
+#
+# `scripts/package.mjs` skips a format whose tool is missing and says so — and
+# this file used to call the resulting absence a failed check, so `make release`
+# died at the last step on any machine without rpmbuild, having built everything
+# it could. Missing *tool* is a skip, named here and again in the summary so a
+# release is never published under the impression it carried something it did
+# not. Missing *artifact with the tool present* is still a failure.
+skipped=""
+skip() { echo "  ${dim}— $1${off}"; skipped="$skipped $2"; }
+
 # `check <description> <command...>` — the command's success is the assertion.
 check() { local what=$1; shift; if "$@" >/dev/null 2>&1; then ok "$what"; else bad "$what"; fi; }
 
@@ -69,8 +80,10 @@ PKGBUILD=$ROOT/dist/arch/PKGBUILD
 
 # ── What is in them ────────────────────────────────────────────────────────
 head_ "The .deb"
-if [ ! -f "$DEB" ]; then
-	bad "no .deb at $DEB"
+if [ ! -f "$DEB" ] && ! command -v dpkg-deb >/dev/null; then
+	skip "not built: dpkg-deb is not on this machine (apt install dpkg, pacman -S dpkg)" deb
+elif [ ! -f "$DEB" ]; then
+	bad "no .deb at $DEB, though dpkg-deb is installed"
 else
 	list=$(dpkg-deb -c "$DEB")
 	control=$(dpkg-deb -I "$DEB")
@@ -107,8 +120,10 @@ else
 fi
 
 head_ "The .rpm"
-if [ ! -f "$RPM" ]; then
-	bad "no .rpm at $RPM"
+if [ ! -f "$RPM" ] && ! command -v rpmbuild >/dev/null; then
+	skip "not built: rpmbuild is not on this machine (apt install rpm, pacman -S rpm-tools, dnf install rpm-build)" rpm
+elif [ ! -f "$RPM" ]; then
+	bad "no .rpm at $RPM, though rpmbuild is installed"
 elif ! command -v rpm >/dev/null; then
 	echo "  ${dim}rpm is not installed here — skipping${off}"
 else
@@ -203,4 +218,10 @@ check "restarts always"                grep -qx "Restart=always" "$UNIT"
 check "cannot gain privileges"         grep -qx "NoNewPrivileges=true" "$UNIT"
 
 echo
+if [ -n "$skipped" ]; then
+	# Loud, and last: this is the line that decides whether a release page is
+	# honest about what it carries.
+	echo "${red}not built here:${off}${skipped} — a release from this machine will not have"
+	echo "${dim}them. Install the tool named above, or say on the release which formats it has.${off}"
+fi
 if [ "$fails" = 0 ]; then echo "${blue}all good${off}"; else echo "${red}$fails failed${off}"; exit 1; fi
