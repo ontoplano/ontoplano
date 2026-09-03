@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.58.2 — 2026-09-03
+
+- **The scheduled jobs run on the server.** `$lib` is resolved through a
+  tsconfig the build generates and the deploy never sent, so the reminders, the
+  weekly mail and the nightly reconcile all died on it. The deployed directory
+  gets a tsconfig of its own, and `tests/jobs-as-deployed.sh` runs every job
+  from a copy of exactly what the deploy sends — which is the only check that
+  could have caught any of the three ways this has now failed.
+
 ## 0.58.1 — 2026-09-03
 
 - **The reminders job runs where it is deployed.** Turning a service's refusal

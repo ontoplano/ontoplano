@@ -61,6 +61,12 @@ jobs:
       # once a minute, in a journal nobody is reading.
       - run: yarn jobs:check
 
+      # …and then actually run them, from a copy of the directory the deploy
+      # makes: the same files, no `.svelte-kit`, nothing else. Reading the
+      # imports catches a missing package; only running them in the right shape
+      # catches a missing tsconfig, which is how `$lib` stopped resolving.
+      - run: yarn jobs:run
+
       - run: yarn test:unit
 
       # Only the browser the suite actually uses. `--with-deps` because a bare

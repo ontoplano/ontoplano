@@ -1,6 +1,6 @@
 {
 	"name": "ontoplano",
-	"version": "0.58.1",
+	"version": "0.58.2",
 	"license": "AGPL-3.0-or-later",
 	"scripts": {
 		"dev": "vite dev",
@@ -30,7 +30,8 @@
 		"changelog:check": "node scripts/check-changelog.mjs",
 		"docs:site": "node scripts/build-docs-site.mjs",
 		"test:coverage": "vitest run --coverage",
-		"jobs:check": "node scripts/check-job-deps.mjs"
+		"jobs:check": "node scripts/check-job-deps.mjs",
+		"jobs:run": "bash tests/jobs-as-deployed.sh"
 	},
 	"private": true,
 	"type": "module",
