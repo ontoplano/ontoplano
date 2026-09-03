@@ -12,9 +12,17 @@ import { expect, test, type Page } from '@playwright/test';
  *
  * The toggle back is the "Have an account? Sign in" link under the form, which
  * is not the submit button — hence the paragraph-scoped locator.
+ *
+ * It waits for hydration before it returns, and that is not belt-and-braces:
+ * the mode toggle is a client handler, so a test that clicks it against
+ * server-rendered HTML clicks nothing and reads the mode it started in. That
+ * only ever showed up in a full run — on its own this file opens in register
+ * mode, and the toggle back below happens to wait for hydration on the way
+ * past.
  */
 async function openSignIn(page: Page) {
 	await page.goto('/login');
+	await page.waitForSelector('html[data-ready]', { timeout: 20_000 });
 	const submit = page.locator('button[type="submit"]');
 	if ((await submit.innerText()) !== 'Sign in') {
 		await page.locator('p', { hasText: 'Have an account?' }).getByRole('button').click();
