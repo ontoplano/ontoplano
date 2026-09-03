@@ -4,6 +4,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import type { PageServerData, ActionData } from './$types';
 	import Banner from '$lib/components/Banner.svelte';
+	import TimezonePicker from '$lib/components/TimezonePicker.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { Theme } from '$lib/theme';
 
@@ -188,14 +189,14 @@
 
 						<div class="mt-4">
 							{#if s.key === 'where'}
-								<input
-									autocomplete="off"
-									name="timezone"
-									bind:value={timezone}
-									required
-									aria-label="Your timezone"
-									class="input max-w-sm"
-								/>
+								<div class="max-w-sm">
+									<TimezonePicker
+										groups={data.zones}
+										bind:value={timezone}
+										required
+										label="Your timezone"
+									/>
+								</div>
 							{:else if s.key === 'week'}
 								<div class="flex flex-wrap gap-2">
 									{#each DAYS as day, index (day)}

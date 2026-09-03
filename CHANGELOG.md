@@ -10,6 +10,24 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.53.0 — 2026-09-03
+
+- **The timezone is chosen, not typed.** It was a text box wanting
+  `America/Sao_Paulo`; get a letter wrong and every date in the app is a day out
+  with nothing on screen to say why. It is a list now, grouped by part of the
+  world, each entry reading as a place and the offset in force today — on first
+  run and in preferences both.
+- **Any currency, not eight.** The shortlist stays for one click; beside it is a
+  field for anything else, checked against the platform's own list and shown
+  back as a price and the currency's name before it is saved. Prices in
+  currencies with no minor unit — won, yen, króna — and with three of them —
+  dinar — are no longer stored a hundred times wrong.
+- **Ticking something off Today's tasks can be undone.** It was the one place
+  left that wrote the moment it was pressed, and it is a column of checkboxes
+  beside eight lines of small type.
+- **People in a diary entry wear an `@`**, the way tags wear a `#`. Same chip,
+  same row, two different kinds of thing, and nothing said which.
+
 ## 0.52.0 — 2026-09-03
 
 - **The weekly review is off until you ask for it**, and it arrives at your own

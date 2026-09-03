@@ -4,7 +4,7 @@ import { clientErrorState, setClientErrorConsent } from '$lib/server/services/cl
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
 import { createQuote, deleteQuote, importQuotes, listQuotes } from '$lib/server/services/quotes';
-import { CURRENCIES, isCurrency } from '$lib/money';
+import { CURRENCIES, normaliseCurrency } from '$lib/money';
 import { fail } from '@sveltejs/kit';
 import {
 	DASHBOARD_LAYOUT_KEY,
@@ -16,6 +16,7 @@ import {
 } from '$lib/dashboard';
 import { HIDEABLE_SECTIONS, isHideableSection } from '$lib/sections';
 import { placesFor } from '$lib/nav-order';
+import { zoneGroups } from '$lib/timezones';
 import { NAV_PLACES } from '$lib/sections-nav';
 import { SECTIONS } from '$lib/colors';
 import {
@@ -57,6 +58,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		currency: getCurrency(ctx.userId),
 		currencies: CURRENCIES,
 		timezone: getTimezone(ctx.userId) ?? ctx.tz,
+		// Built here rather than in the browser: it is four hundred entries and
+		// the offsets are today's, which the server already knows.
+		zones: zoneGroups(),
 		theme: getTheme(ctx.userId),
 		style: getStyle(ctx.userId),
 		// A hidden section's card is not offered here either — one toggle, one
@@ -131,8 +135,14 @@ export const actions: Actions = {
 	},
 	saveCurrency: async ({ request, locals }) => {
 		const formData = await request.formData();
-		const chosen = formData.get('currency');
-		if (!isCurrency(chosen)) return fail(400, { message: 'Unknown currency' });
+		// Any ISO code the platform will print, not just the eight on the list —
+		// and normalised, because somebody typing it will type `brl`.
+		const chosen = normaliseCurrency(formData.get('currency'));
+		if (!chosen) {
+			return fail(400, {
+				message: 'That is not a currency code — three letters, like PLN or ZAR.'
+			});
+		}
 
 		setCurrency(locals.user!.id, chosen);
 		return { success: true, action: 'saveCurrency' };

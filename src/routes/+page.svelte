@@ -383,23 +383,37 @@
 					{#if data.tasksTodo.length > 0}
 						<ul class="mt-3 divide-y divide-gray-100 border-t border-gray-100">
 							{#each data.tasksTodo.slice(0, TODO_PREVIEW) as task (`${task.kind}-${task.id}`)}
+								{@const pending = isPending(`instance:${task.id}`)}
 								<li class="flex items-center gap-3 py-1.5">
-									<!-- Finishing something from the screen you are already on. It
-								     used to be a list you could only read. -->
-									<form method="post" action="/planner/board?/setStatus" use:enhance>
-										<input type="hidden" name="id" value={task.id} />
-										<input type="hidden" name="kind" value="instance" />
-										<input type="hidden" name="status" value="done" />
-										<button
-											class="-m-1 flex shrink-0 items-center justify-center p-1 pointer-coarse:w-11"
-											title="Done"
-											aria-label="Mark {task.name} done"
+									<!--
+										Finishing something from the screen you are already on. It
+										used to be a list you could only read, and then a form that
+										wrote the moment it was pressed.
+
+										Held for a few seconds now, like the card above and like
+										everything else in the app that changes a day: a checkbox
+										beside eight lines of small type is the easiest thing on
+										this page to tick by accident, and it is somebody's record
+										of what they actually did. Pressing it again inside the
+										window means the same as pressing Undo.
+									-->
+									<button
+										type="button"
+										onclick={() => answerLater({ id: task.id, name: task.name }, 'done')}
+										class="-m-1 flex shrink-0 items-center justify-center p-1 pointer-coarse:w-11"
+										title={pending ? 'Undo' : 'Done'}
+										aria-label={pending
+											? `Undo marking ${task.name} done`
+											: `Mark ${task.name} done`}
+									>
+										<span
+											class="flex h-4 w-4 items-center justify-center border {pending
+												? 'border-gray-900 bg-gray-900 text-white'
+												: 'border-gray-400 bg-white'}"
 										>
-											<span
-												class="flex h-4 w-4 items-center justify-center border border-gray-400 bg-white"
-											></span>
-										</button>
-									</form>
+											{#if pending}<Icon name="check" size={12} />{/if}
+										</span>
+									</button>
 									<span
 										class="w-1 shrink-0 self-stretch"
 										style="background-color: {task.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
@@ -407,7 +421,11 @@
 									<span class="tabular w-12 shrink-0 font-mono text-xs text-gray-500"
 										>{task.startTime}</span
 									>
-									<span class="truncate text-sm text-gray-900">{task.name}</span>
+									<span
+										class="truncate text-sm {pending
+											? 'text-gray-400 line-through'
+											: 'text-gray-900'}">{task.name}</span
+									>
 									{#if task.kind === 'once'}
 										<span
 											class="ml-auto shrink-0 text-[10px] tracking-wide text-blue-600 uppercase"

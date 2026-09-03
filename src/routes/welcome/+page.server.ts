@@ -5,6 +5,7 @@ import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/services/errors';
 import { completeFirstRun, needsFirstRun, TEMPLATES } from '$lib/server/services/onboarding';
 import { HIDEABLE_SECTIONS } from '$lib/sections';
+import { zoneGroups } from '$lib/timezones';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	// Coming back here after setup would offer to seed a second starter week.
@@ -12,6 +13,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		week: DEFAULT_WEEK,
+		// Four hundred entries with today's offsets on them, built where the
+		// clock already is.
+		zones: zoneGroups(),
 		// The rooms somebody can turn off, with the sentence that says what each
 		// one is — the same list preferences shows, so the two cannot disagree.
 		rooms: HIDEABLE_SECTIONS,

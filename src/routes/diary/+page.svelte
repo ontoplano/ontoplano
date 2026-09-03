@@ -439,9 +439,18 @@
 						{#if entry.updatedAt !== entry.createdAt}
 							<span class="text-xs text-gray-500">· edited {formatDate(entry.updatedAt)}</span>
 						{/if}
+						<!--
+							`@` in front of a person, the way `#` goes in front of a tag.
+
+							They are the same chip in the same row and they were telling
+							you two different kinds of thing with nothing to say which:
+							"Ana" beside "#running" reads as another tag until you know
+							the people list. One character, and the row is legible without
+							knowing anything.
+						-->
 						{#each entry.people as person (person.id)}
 							<a href={resolve('/diary/people')} class="chip">
-								{person.name}
+								@{person.name}
 							</a>
 						{/each}
 						{#each entry.tags as tag (tag.id)}

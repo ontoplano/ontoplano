@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { settingsForm } from '$lib/actions/settings-form';
+	import { isCurrency } from '$lib/money';
+	import TimezonePicker from '$lib/components/TimezonePicker.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
@@ -9,6 +11,45 @@
 	import type { DashboardCardId } from '$lib/dashboard.js';
 
 	let { data }: { data: PageServerData } = $props();
+
+	/**
+	 * The currency, chosen from the shortlist or typed.
+	 *
+	 * `currency` is what the form posts, so the two controls have one answer
+	 * between them and the server sees one field either way. The preview is the
+	 * honest check: if the browser can print a price in it, the app can.
+	 */
+	const OTHER = '__other__';
+	const shortlist: readonly string[] = data.currencies;
+
+	let currencyChoice = $state(shortlist.includes(data.currency) ? data.currency : OTHER);
+	let otherCurrency = $state(shortlist.includes(data.currency) ? '' : data.currency);
+
+	const currency = $derived(
+		currencyChoice === OTHER ? otherCurrency.trim().toUpperCase() : currencyChoice
+	);
+
+	/**
+	 * What the code means, if it means anything.
+	 *
+	 * `Intl.NumberFormat` is not the check — it formats *any* three letters,
+	 * printing the code where the symbol goes, so `ZZZ` looked fine. `isCurrency`
+	 * asks the platform's ISO 4217 list. The name beside the price is what
+	 * actually confirms it: "zł 12,50" could be a typo, "Polish Zloty" could not.
+	 */
+	const preview = $derived.by(() => {
+		if (!isCurrency(currency)) return null;
+		let name = '';
+		try {
+			name = new Intl.DisplayNames(undefined, { type: 'currency' }).of(currency) ?? '';
+		} catch {
+			/* a runtime without display names still gets the price */
+		}
+		return {
+			price: new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(12.5),
+			name: name && name.toUpperCase() !== currency ? name : ''
+		};
+	});
 
 	// Local copy so a card can be toggled and reordered before saving.
 	let layout: DashboardCardId[] = $state([...data.layout]);
@@ -134,7 +175,7 @@
 		</div>
 		<label class="block max-w-xs">
 			<span class="eyebrow text-gray-600">Timezone</span>
-			<input autocomplete="off" name="timezone" value={data.timezone} class="input mt-1" />
+			<TimezonePicker groups={data.zones} value={data.timezone} />
 		</label>
 		<button class="btn btn-primary">Save</button>
 	</form>
@@ -150,15 +191,62 @@
 			<h2 class="text-sm font-semibold text-gray-900">Money</h2>
 			<p class="mt-1 text-sm text-gray-500">What prices on the shopping list are in.</p>
 		</div>
-		<label class="block max-w-[10rem]">
-			<span class="eyebrow text-gray-600">Currency</span>
-			<select name="currency" class="select mt-1">
-				{#each data.currencies as code (code)}
-					<option value={code} selected={data.currency === code}>{code}</option>
-				{/each}
-			</select>
-		</label>
-		<button class="btn btn-primary">Save</button>
+		<!--
+			Eight in a list, and a field for the rest.
+
+			The eight cover most people in one click; they were also the whole of
+			what the app would take, so somebody paid in zloty or rand could not
+			record what they spend. Anything ISO 4217 is accepted now, and the
+			check is whether the browser will print it — which is the boundary
+			that actually matters, since a code it cannot format throws on every
+			price on the page.
+		-->
+		<div class="flex flex-wrap items-end gap-3">
+			<label class="block w-[12rem]">
+				<span class="eyebrow text-gray-600">Currency</span>
+				<select bind:value={currencyChoice} aria-label="Currency" class="select mt-1">
+					{#each data.currencies as code (code)}
+						<option value={code}>{code}</option>
+					{/each}
+					<option value={OTHER}>Another…</option>
+				</select>
+			</label>
+
+			{#if currencyChoice === OTHER}
+				<label class="block max-w-[9rem]">
+					<span class="eyebrow text-gray-600">Its code</span>
+					<input
+						bind:value={otherCurrency}
+						maxlength="3"
+						autocomplete="off"
+						spellcheck="false"
+						placeholder="PLN"
+						aria-label="Currency code"
+						class="input mt-1 uppercase"
+					/>
+				</label>
+			{/if}
+
+			<!-- One field reaches the server, whichever way it was answered. -->
+			<input type="hidden" name="currency" value={currency} />
+		</div>
+
+		{#if currencyChoice === OTHER}
+			<p class="text-sm text-gray-500">
+				{#if preview}
+					Prices will read <span class="font-medium text-gray-900">{preview.price}</span
+					>{#if preview.name}&nbsp;— {preview.name}{/if}.
+				{:else if otherCurrency.trim().length === 3}
+					<span class="text-red-700"
+						>{otherCurrency.trim().toUpperCase()} is not a currency code this browser knows.</span
+					>
+				{:else}
+					Three letters — the ISO code, like PLN or ZAR.
+				{/if}
+			</p>
+		{/if}
+
+		<button class="btn btn-primary" disabled={currencyChoice === OTHER && !preview}>Save</button>
 	</form>
 
 	<!--
