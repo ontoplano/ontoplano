@@ -12,6 +12,9 @@ version.
 
 ## 0.58.0 — 2026-09-03
 
+- **Charging for accounts is opt-in**, with `ONTOPLANO_SELLS=true`. Nothing else
+  implies it, so a copy that never mentions money never asks for a card and
+  never refuses anybody.
 - **An instance that means to charge and cannot now refuses registrations**
   instead of handing out free trials. It used to be indistinguishable from a
   self-hosted copy, so a production instance with billing not working gave every

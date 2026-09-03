@@ -506,17 +506,25 @@ history, so no provider is asked.
 Whether this instance is _meant_ to sell, whatever it can currently do.
 
 `isBillingConfigured()` answers "can a checkout be opened right now", which
-is a different question and the one that has been quietly wrong. An instance
-that intends to charge and cannot — the provider absent from the build, a
-price id unset, a key that never made it into the environment — looks from
-in here exactly like somebody's own copy running for free. And the code did
-the friendly thing with that ambiguity: it started a fourteen-day trial and
-said nothing.
+is a different question and the one that was quietly wrong. An instance that
+intends to charge and cannot — the provider absent from the build, a price id
+unset, a key that never made it into the environment — looks from in here
+exactly like somebody's own copy running for free. And the code did the
+friendly thing with that ambiguity: it started a fourteen-day trial and said
+nothing, for every account, for as long as nobody looked.
 
-So intent is declared once and explicitly. `ONTOPLANO_SELF_HOST=true` is a
-person running this for themselves and nothing about money applies. Anything
-else is an instance that sells, and an instance that sells and cannot is
-broken rather than generous.
+## Selling is declared, and nothing else implies it
+
+The first attempt at this read "not self-hosted" as "sells", which is wrong
+in the direction that matters: almost every copy of this app is somebody's
+own, most of them never set `ONTOPLANO_SELF_HOST` because they have no reason
+to, and the refusal below would have met them on their first registration.
+The overwhelmingly common instance must be the one that needs no
+configuration at all.
+
+So there is one variable and it is opt-in: `ONTOPLANO_SELLS=true`. An
+instance that says it sells and cannot is broken and says so; an instance
+that never mentions money is a personal one and gets on with it.
 
 #### `whyItCannotSell()`
 

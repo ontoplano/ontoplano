@@ -43,6 +43,19 @@ let requiresCard = true;
 /** What the last checkout was opened for, so the tier can be asserted on. */
 let opened: { interval?: string; tier?: string } | null = null;
 
+/**
+ * Whether the instance says it sells — an environment variable, so a test sets
+ * the environment.
+ *
+ * It is opt-in on purpose. Almost every copy of this app is somebody's own and
+ * never configures anything about money; if "not self-hosted" implied "sells",
+ * the refusal below would meet a self-hoster on their first registration.
+ */
+function declareSelling(yes: boolean): void {
+	if (yes) process.env.ONTOPLANO_SELLS = 'true';
+	else delete process.env.ONTOPLANO_SELLS;
+}
+
 vi.mock('../src/lib/server/settings', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('../src/lib/server/settings')>();
 	return {
@@ -102,6 +115,7 @@ beforeEach(() => {
 	providerWorks = true;
 	requiresCard = true;
 	opened = null;
+	declareSelling(true);
 	database.exec('delete from subscriptions');
 });
 
@@ -143,6 +157,16 @@ describe('an instance that sells', () => {
 });
 
 describe('an instance that does not sell', () => {
+	test('one that never mentions money just starts the trial', () => {
+		// No flags at all: a fresh clone, which is the commonest instance there
+		// is and the one that must need no configuration.
+		declareSelling(false);
+		providerWorks = false;
+		expect(billing.onboardEntitlement(OWNER, null, now)).toBe('trial');
+		expect(access.paymentHoldFor(OWNER)).toBeNull();
+		expect(billing.whyItCannotSell(), 'a personal instance is not broken').toBeNull();
+	});
+
 	test('a self-hosted one just starts the trial', () => {
 		selfHosted = true;
 		expect(billing.onboardEntitlement(OWNER, null, now)).toBe('trial');
@@ -179,6 +203,7 @@ describe('an instance that does not sell', () => {
 describe('an instance that means to sell and cannot', () => {
 	beforeEach(() => {
 		selfHosted = false;
+		declareSelling(true);
 		providerWorks = false;
 	});
 
@@ -201,6 +226,12 @@ describe('an instance that means to sell and cannot', () => {
 	test('and a self-hosted instance is never "broken" — it just does not sell', () => {
 		selfHosted = true;
 		expect(billing.whyItCannotSell()).toBeNull();
+	});
+
+	test('nor is one that simply never said it sells', () => {
+		declareSelling(false);
+		expect(billing.whyItCannotSell()).toBeNull();
+		expect(billing.onboardEntitlement(OWNER, null, now)).toBe('trial');
 	});
 
 	/**

@@ -207,6 +207,10 @@ Three switches worth knowing, all off by default:
 - `ONTOPLANO_SELF_HOST=true` — this is one person's instance. The owner may edit
   deployment settings from the UI, and the Telegram bot will run; both act for the
   whole instance, so both are off anywhere else.
+- `ONTOPLANO_SELLS=true` — this instance charges for accounts. Off unless it is
+  said, so nothing about money happens on a copy that never mentions it, and an
+  instance that says it sells and cannot take a card refuses registrations and
+  says why on `/admin` rather than handing out free trials.
 
 Signing in is an address and a password, and nothing else. There is no
 "continue with Google": an account on your own instance should not depend on a

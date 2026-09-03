@@ -59,6 +59,9 @@ const aTrialingSubscription = {
 
 beforeAll(async () => {
 	process.env.ONTOPLANO_SELF_HOST = 'false';
+	// Selling is opt-in and nothing implies it: not being self-hosted is not a
+	// declaration that this instance charges anybody. See `instanceSells`.
+	process.env.ONTOPLANO_SELLS = 'true';
 	process.env.PADDLE_API_KEY = 'pdl_sdbx_apikey_' + 'x'.repeat(20);
 	process.env.PADDLE_CLIENT_TOKEN = 'test_clienttoken';
 	process.env.PADDLE_PRICE_ID_MONTHLY = 'pri_test_monthly';
@@ -75,6 +78,7 @@ afterEach(() => {
 
 afterAll(() => {
 	process.env.ONTOPLANO_SELF_HOST = 'true';
+	delete process.env.ONTOPLANO_SELLS;
 });
 
 describe.skipIf(!hasBillingProvider())('a checkout the provider never reported', () => {
