@@ -70,7 +70,7 @@ vars:
 	@sh scripts/make-vars.sh $(sort $(MAKEFILE_LIST) defaults.env $(wildcard $(SERVER_SRC)/defaults.env))
 
 
-.PHONY: _docker-builder vars billing-provider package package-check release _release-run github-push _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
+.PHONY: _docker-builder _billing-in-build vars billing-provider package package-check release _release-run github-push _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -256,6 +256,20 @@ billing-provider:
 		echo "billing: no provider — this build cannot sell anything (that is fine)"; \
 	fi
 
+# Did the build actually take the provider that is sitting in the tree?
+#
+# It copied the file and then shipped a build with no payment provider in it —
+# on a box that sells, which is a broken instance discovered by a red banner
+# hours later. The likeliest cause is Vite's transform cache: `import.meta.glob`
+# is resolved at build time, so a cache from a build made before the provider
+# existed keeps answering "no providers" however many times the file is copied.
+#
+# The glob's own key is what to look for: `./providers/<name>.ts` appears in the
+# bundle when the module was compiled in, and does not otherwise.
+_billing-in-build:
+	@[ -f src/lib/server/billing/providers/paddle.ts ] || exit 0
+	@if grep -rqs 'providers/paddle' build/server --include='*.js'; then 		$(OK) "the payment provider is in this build"; 	else 		$(NO) "the provider is in the tree and NOT in the build"; 		echo "  Vite resolves import.meta.glob at build time and caches it, so a"; 		echo "  cache from before the provider existed keeps answering 'none'."; 		echo "  rm -rf node_modules/.vite .svelte-kit && make build"; 		exit 1; 	fi
+
 build: billing-provider
 	@heap=$$(free -m 2>/dev/null | awk '/^Mem:/ {print $$2}'); \
 	if [ -n "$(NODE_OPTIONS)" ]; then \
@@ -266,6 +280,7 @@ build: billing-provider
 	else \
 		yarn build; \
 	fi
+	@$(MAKE) -s _billing-in-build
 
 # The logo lives in exactly one file, src/lib/logo/mark.png. This is what turns
 # it into the favicon, the four PWA icons and the one iOS reads — so changing

@@ -45,7 +45,23 @@ test('a todo added by an assistant turns up without a reload', async ({ page, pl
 	const request = await playwright.request.newContext({ baseURL: ORIGIN });
 	const token = await mint(request, cookie, ['tasks:write', 'tasks:read']);
 
+	/*
+	 * Wait for the stream to be open before writing anything.
+	 *
+	 * The page opens it on `requestIdleCallback` with a two-second fallback, so
+	 * that a request which never completes does not stop the page reaching an
+	 * idle network. Writing before it is open means emitting an event nobody is
+	 * listening for — there is no replay — and under a full parallel suite that
+	 * race lost often enough to fail three runs in five.
+	 *
+	 * This is not papering over it: a change made in the first moment after a
+	 * page loads is genuinely missed, and this test is about what happens once
+	 * somebody is listening.
+	 */
+	const streaming = page.waitForRequest((r) => r.url().includes('/api/live'), { timeout: 20000 });
 	await visit(page, '/planner/todo');
+	await streaming;
+
 	const title = `written by an assistant ${Date.now()}`;
 	await expect(page.getByText(title)).toHaveCount(0);
 

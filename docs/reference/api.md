@@ -45,6 +45,7 @@ sentence somebody agrees to when they grant it.
 | `/api/capture-options`                       | GET    | —                 |
 | `/api/client-errors`                         | POST   | —                 |
 | `/api/imports`                               | GET    | —                 |
+| `/api/jobs/reminders`                        | POST   | —                 |
 | `/api/live`                                  | GET    | —                 |
 | `/api/mcp`                                   | POST   | —                 |
 | `/api/mcp`                                   | GET    | —                 |
@@ -187,6 +188,26 @@ Public and cacheable, and it discloses nothing: it is a list of other
 people's products, identical on every instance of this version.
 
 **GET**
+
+### `/api/jobs/reminders`
+
+The minute's reminders, done by the process that is already running.
+
+The timer used to be `npx tsx scripts/deliver-reminders.ts`, which is a fresh
+Node, a fresh TypeScript compile of the whole service graph and a fresh
+database handle — about three seconds of CPU and a hundred megabytes, every
+minute, for a job whose usual answer is "nothing is due". That is four per
+cent of a core burned permanently on a small box, and it was noticed exactly
+as it should have been: by somebody reading the journal and asking whether
+that could possibly be right.
+
+The app has the code loaded and the database open. Asking it costs a request.
+
+Behind the health token, which the box already has for `/healthz`: this
+writes and sends, so it is not for the public. Absent token, absent
+endpoint — never open, whatever is misconfigured.
+
+**POST**
 
 ### `/api/live`
 

@@ -10,6 +10,17 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.62.0 — 2026-09-04
+
+- **The reminders timer costs a request, not a process.** It ran `npx tsx` every
+  minute — a fresh Node, a fresh compile of every service it touches and a fresh
+  database handle, three seconds of CPU and a hundred megabytes to usually send
+  nothing. It asks the running app now: eighteen milliseconds.
+- **A build that dropped the payment provider is refused before it ships.** The
+  file can be sitting in the tree and absent from the build — Vite resolves
+  `import.meta.glob` once and caches it — which produced an instance that could
+  not sell and looked exactly like one that could.
+
 ## 0.61.0 — 2026-09-04
 
 - **The wheel says what is under your thumb**, at the top of the screen, in the
