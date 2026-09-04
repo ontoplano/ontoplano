@@ -2,11 +2,12 @@
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
+	import { base, resolve } from '$app/paths';
 	import Banner from '$lib/components/Banner.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import { LIMIT_LABELS, describeYearly, formatPrice } from '$lib/plans';
+	import { LIMIT_LABELS, describeYearly, formatPrice, tierPricing } from '$lib/plans';
 	import type { ActionData, PageServerData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -27,10 +28,23 @@
 	}
 
 	const current = $derived(data.plans.find((p) => p.id === data.entitlement.plan) ?? data.plans[0]);
-	const yearlyLine = $derived(describeYearly(data.pricing));
+
+	/**
+	 * The rate this account is on, not the one at the top of the price list.
+	 *
+	 * Everything that describes the *current* subscription — what it costs, what
+	 * yearly would save, what monthly would cost over a year — reads `mine`.
+	 * The buy buttons below still read `data.pricing`, because there the two
+	 * plans are being offered side by side.
+	 */
+	const mine = $derived(tierPricing(data.pricing, data.tier));
+	const yearlyLine = $derived(describeYearly(mine));
 
 	/** Downgrading asks once — twelve months of monthly costs more. */
 	let confirmMonthly = $state(false);
+
+	/** "I should be on my partner's plan" — shown instead of buying twice. */
+	let onSomebodyElses = $state(false);
 
 	/**
 	 * Coming back from checkout, the webhook may still be a few seconds out —
@@ -95,13 +109,18 @@
 			{#if data.hasProviderSub && data.interval}
 				<span class="text-sm text-gray-500">
 					{data.interval === 'year'
-						? `${formatPrice(data.pricing.yearlyCents, data.pricing.currency)} a year`
-						: `${formatPrice(data.pricing.monthlyCents, data.pricing.currency)} a month`}
+						? `${formatPrice(mine.yearlyCents, mine.currency)} a year`
+						: `${formatPrice(mine.monthlyCents, mine.currency)} a month`}
 				</span>
 			{:else if current.id === 'pro'}
 				<span class="text-sm text-gray-500">
-					{formatPrice(data.pricing.monthlyCents, data.pricing.currency)} a month
+					{formatPrice(mine.monthlyCents, mine.currency)} a month
 				</span>
+			{/if}
+
+			{#if data.tier === 'family'}
+				<span class="chip">Family — {data.seats} accounts</span>
+				<a class="text-sm underline" href={resolve('/settings/family')}>Who is on it</a>
 			{/if}
 
 			{#if data.entitlement.until}
@@ -140,10 +159,9 @@
 			{#if confirmMonthly}
 				<div class="mt-4 flex flex-wrap items-center gap-2">
 					<span class="text-sm text-gray-700">
-						Monthly is {formatPrice(data.pricing.monthlyCents * 12, data.pricing.currency)} over a year
-						— {formatPrice(
-							data.pricing.monthlyCents * 12 - data.pricing.yearlyCents,
-							data.pricing.currency
+						Monthly is {formatPrice(mine.monthlyCents * 12, mine.currency)} over a year — {formatPrice(
+							mine.monthlyCents * 12 - mine.yearlyCents,
+							mine.currency
 						)} more for the same thing.
 					</span>
 					<form method="post" action="?/switchInterval" use:enhance>
@@ -237,6 +255,40 @@
 						This instance has no payment provider configured yet, so there is nothing to buy.
 					</p>
 				{/if}
+
+				<!--
+					The third answer to "how do I pay for this": somebody already has.
+					Without it the only route was to buy a second subscription and
+					then ask for a refund, which is what one person did.
+				-->
+				{#if !onSomebodyElses}
+					<button
+						type="button"
+						class="btn btn-sm btn-quiet mt-4"
+						onclick={() => (onSomebodyElses = true)}
+					>
+						Somebody else's plan should cover me
+					</button>
+				{:else}
+					<div class="mt-4 border border-gray-200 bg-gray-50 p-3">
+						<p class="text-sm text-gray-700">
+							Ask them to add you. On their account: Settings → Family → your email address → Add to
+							my plan.
+						</p>
+						<img
+							src="{base}/help/family-seat.png"
+							alt="The Family tab, with a field for an email address and an Add to my plan button"
+							class="mt-3 w-full max-w-2xl border border-gray-200"
+							loading="lazy"
+						/>
+						<p class="mt-2 text-xs text-gray-500">
+							It takes effect here straight away, and this page goes quiet.
+						</p>
+						<button type="button" class="btn btn-sm mt-3" onclick={() => (onSomebodyElses = false)}>
+							<Icon name="arrow-left" /> Back
+						</button>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</Card>
@@ -269,64 +321,4 @@
 			{/each}
 		</div>
 	</Card>
-
-	<!--
-		Who else is on this plan.
-		
-		Shown to the payer when their plan has room, and to a member as a single
-		sentence saying who is covering them — a seat grants access, never the
-		ability to spend, so there are no buttons on that side.
-	-->
-	{#if data.seatOwner}
-		<Card title="Your plan" accent="var(--section-accent)">
-			<p class="text-sm text-gray-600">
-				Somebody else's plan covers this account, so there is nothing to pay here. Ask them to take
-				you off it if you would rather pay for yourself.
-			</p>
-		</Card>
-	{:else if data.seats > 1}
-		<Card title="Who is on your plan" accent="var(--section-accent)">
-			<p class="text-sm text-gray-600">
-				Your plan covers {data.seats} accounts — yours and {data.seats - 1} more. Everybody keeps their
-				own week; the only thing shared is the invoice.
-			</p>
-
-			{#if data.members.length > 0}
-				<ul class="mt-3 divide-y divide-gray-200 border-y border-gray-200">
-					{#each data.members as member (member.id)}
-						<li class="flex items-center justify-between gap-3 py-2">
-							<span class="min-w-0">
-								<span class="block truncate text-sm text-gray-900">{member.name}</span>
-								<span class="block truncate text-xs text-gray-500">{member.email}</span>
-							</span>
-							<form method="post" action="?/removeSeat" use:enhance>
-								<input type="hidden" name="member" value={member.id} />
-								<button class="btn btn-sm" title="Take them off this plan">
-									<Icon name="close" size={14} />
-								</button>
-							</form>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-
-			{#if data.members.length < data.seats - 1}
-				<form method="post" action="?/addSeat" use:enhance class="mt-3 flex flex-wrap gap-2">
-					<input
-						name="who"
-						type="email"
-						required
-						placeholder="their email address"
-						class="input flex-1"
-					/>
-					<button class="btn btn-sm btn-primary">Add to my plan</button>
-				</form>
-				<p class="mt-2 text-xs text-gray-500">
-					They need an account here already. Adding somebody does not create one.
-				</p>
-			{:else}
-				<p class="mt-3 text-xs text-gray-500">Every seat is taken.</p>
-			{/if}
-		</Card>
-	{/if}
 </div>

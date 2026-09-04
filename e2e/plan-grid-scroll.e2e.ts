@@ -112,3 +112,62 @@ test('zooming keeps the part of the day you were looking at', async ({ page }) =
 	 */
 	expect(Math.abs(after.middle - where.middle)).toBeLessThan(0.02);
 });
+
+/**
+ * A block scrolled half out of view keeps its name over its time.
+ *
+ * The library pins the title alone — `position: sticky` inside the time grid —
+ * so a block whose top had gone past the edge kept its name at the edge while
+ * the time stayed where it was drawn. As the block left, the two met on the
+ * same line and read as one bundled string. Both lines are pinned as one now.
+ */
+test('a half-scrolled block does not fold its time into its title', async ({ page }) => {
+	await register(page, `grid-sticky-${Date.now()}@test.invalid`);
+
+	// Something long enough to still be on screen once its top is not. Posted
+	// to the action rather than driven through the form: this test is about
+	// what a block looks like when scrolled, not about creating one.
+	await visit(page, '/planner/plan');
+	const options = await page.request.get('/api/capture-options');
+	const categoryId = ((await options.json()) as { categories: { id: number }[] }).categories[0]?.id;
+	const today = new Date().toISOString().slice(0, 10);
+	const created = await page.request.post('/planner/plan?/createExceptional', {
+		headers: { origin: new URL(page.url()).origin },
+		form: {
+			date: today,
+			startTime: '09:00',
+			durationMinutes: '240',
+			mode: 'category',
+			categoryId: String(categoryId),
+			label: 'a long block'
+		}
+	});
+	expect(created.ok(), `the block was created: ${created.status()}`).toBe(true);
+
+	await visit(page, '/planner/plan?view=day');
+	await expect(page.locator('.ec-event').filter({ hasText: 'a long block' })).toBeVisible();
+
+	const main = page.locator('.ec-main');
+	// Far enough that the block's own top is above the top of the scroller.
+	await main.evaluate((el) => {
+		const event = [...el.querySelectorAll('.ec-event')].find((e) =>
+			e.textContent?.includes('a long block')
+		);
+		el.scrollTop = event.offsetTop + 60;
+	});
+	await page.waitForTimeout(300);
+
+	const boxes = await main.evaluate((el) => {
+		const event = [...el.querySelectorAll('.ec-event')].find((e) =>
+			e.textContent?.includes('a long block')
+		);
+		const rect = (sel) => {
+			const r = event.querySelector(sel).getBoundingClientRect();
+			return { top: r.top, bottom: r.bottom };
+		};
+		return { title: rect('.ec-event-title'), time: rect('.ec-event-time') };
+	});
+
+	// The time is under the title, and they do not share a line.
+	expect(boxes.time.top).toBeGreaterThanOrEqual(boxes.title.bottom - 1);
+});

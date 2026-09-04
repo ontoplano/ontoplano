@@ -117,33 +117,42 @@ export function deleteIdea(ctx: Ctx, id: number): void {
 	cleanupOrphanTags(ctx.userId);
 }
 
-/** Applied is a toggle, so the current value is read inside the same scope. */
+/**
+ * Applied is a toggle, so the current value is read inside the same scope.
+ *
+ * It deliberately leaves `updatedAt` alone. The card writes "· edited <date>"
+ * whenever that differs from the creation date, so marking an idea applied
+ * added a line of text to the row and reflowed everything under it — an edit
+ * marker for something nobody edited.
+ */
 export function toggleApplied(ctx: Ctx, id: number, note: unknown): void {
 	const existing = ownedIdea(ctx, id);
 	const isApplied = !existing.isApplied;
 	const appliedNote = isApplied ? optionalNote(note) : null;
 
 	db.update(ideas)
-		.set({ isApplied, appliedNote, updatedAt: stamp(ctx) })
+		.set({ isApplied, appliedNote })
 		.where(and(eq(ideas.id, id), eq(ideas.userId, ctx.userId)))
 		.run();
 }
 
+/** The note beside an applied idea, which is not the idea. See `toggleApplied`. */
 export function updateAppliedNote(ctx: Ctx, id: number, note: unknown): void {
 	const existing = ownedIdea(ctx, id);
 	if (!existing.isApplied) throw new ValidationError('Idea is not marked as applied');
 
 	db.update(ideas)
-		.set({ appliedNote: optionalNote(note), updatedAt: stamp(ctx) })
+		.set({ appliedNote: optionalNote(note) })
 		.where(and(eq(ideas.id, id), eq(ideas.userId, ctx.userId)))
 		.run();
 }
 
+/** Starring an idea is not editing it either. See `toggleApplied`. */
 export function toggleFavorite(ctx: Ctx, id: number): void {
 	const existing = ownedIdea(ctx, id);
 
 	db.update(ideas)
-		.set({ favorite: !existing.favorite, updatedAt: stamp(ctx) })
+		.set({ favorite: !existing.favorite })
 		.where(and(eq(ideas.id, id), eq(ideas.userId, ctx.userId)))
 		.run();
 }

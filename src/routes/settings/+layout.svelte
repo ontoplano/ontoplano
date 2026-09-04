@@ -11,6 +11,7 @@
 
 	<SettingsTabs
 		billable={data.billable}
+		family={data.family}
 		canEditInstance={data.canEditInstance}
 		canAdminister={data.canAdminister}
 	/>

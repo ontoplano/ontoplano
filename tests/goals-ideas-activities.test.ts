@@ -179,6 +179,27 @@ describe('ideas', () => {
 		expect(ideas.listIdeas(ctx).find((i) => i.id === id)!.isApplied).toBeFalsy();
 	});
 
+	/**
+	 * The card writes "· edited <date>" whenever `updatedAt` differs from the
+	 * creation date. Marking an idea applied used to move it, so a status
+	 * change grew the row by a line of text and reflowed the card under it.
+	 */
+	test('marking one applied is not an edit of it', () => {
+		const id = ideas.createIdea(ctx, { content: 'Read the long one' });
+		const before = ideas.listIdeas(ctx).find((i) => i.id === id)!;
+
+		ideas.toggleApplied(ctx, id, 'read it on the train');
+		ideas.toggleFavorite(ctx, id);
+		ideas.updateAppliedNote(ctx, id, 'read it twice');
+
+		const after = ideas.listIdeas(ctx).find((i) => i.id === id)!;
+		expect(after.updatedAt).toBe(before.updatedAt);
+		// Which is the same as saying the card shows no edit marker at all: the
+		// suite's clock does not move, so "unchanged" and "stamped again" would
+		// look alike if this compared two stamps.
+		expect(after.updatedAt).toBe(after.createdAt);
+	});
+
 	test('can be starred', () => {
 		const id = ideas.createIdea(ctx, { content: 'Worth keeping' });
 		ideas.toggleFavorite(ctx, id);

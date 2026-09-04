@@ -417,6 +417,23 @@ export function docsUrl(): string {
 }
 
 /**
+ * The domain a "you are signed in" hint may be written for.
+ *
+ * The marketing site and the app are two deployments on two hostnames, and
+ * the session cookie belongs to the app's. So somebody who is signed in and
+ * lands on the front page is a stranger as far as that page can tell, and it
+ * shows them the pitch and a sign-up button.
+ *
+ * A cookie on the shared parent domain fixes that, and it carries nothing:
+ * one bit saying an account is open somewhere. It is off unless an operator
+ * names the domain, because a self-hosted instance has no second hostname to
+ * tell and no business writing cookies for anybody's parent domain.
+ */
+export function siteCookieDomain(): string {
+	return (process.env.ONTOPLANO_SITE_COOKIE_DOMAIN || '').trim();
+}
+
+/**
  * The public demo.
  *
  * Every visitor gets an account of their own, seeded with a week worth looking

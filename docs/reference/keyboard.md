@@ -160,7 +160,7 @@ works is a key listed here and the reverse.
 | <kbd>x</kbd> | Ask to delete selected        |
 | <kbd>p</kbd> | Copy to days (multiselect)    |
 
-## Todo — `/planner/todo`
+## To-do — `/planner/todo`
 
 | Key          | Does          |
 | ------------ | ------------- |

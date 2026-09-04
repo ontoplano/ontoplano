@@ -10,6 +10,26 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.65.0 — 2026-09-04
+
+- **A family plan is quoted the family price.** The billing page read the list
+  price whatever the account was on, so a household paying for five accounts was
+  shown the solo rate and offered a yearly saving that was not theirs.
+- **Family is its own tab**, for the payer and for anybody on somebody else's
+  plan. Managing seats was a card at the bottom of Billing, which a member —
+  who has no billing page — could not reach at all.
+- **"Somebody else's plan should cover me"** on the billing page, with a picture
+  of what to ask them for. The only route before was to buy a second
+  subscription.
+- **A card's buttons are blocked into its corner**, edit and its friends on the
+  top line and delete on the bottom, the same way on ideas and on to-dos.
+- **Marking an idea applied is no longer an edit of it** — it stamped the idea,
+  which added "· edited" to the card and reflowed everything under it.
+- **A block half scrolled out of the grid keeps its name above its time.** They
+  were pinned separately, so as the block left the two met on one line.
+- Adding a quote shows what one looks like, and the paste box no longer explains
+  itself in terms of commas.
+
 ## 0.64.0 — 2026-09-04
 
 - **The loading bar at the top is the only thing a slow page shows.** The

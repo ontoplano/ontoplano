@@ -655,6 +655,7 @@
 					name="text"
 					required
 					autocomplete="off"
+					placeholder={'\u201cPlans are worthless, but planning is everything.\u201d'}
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>
@@ -689,12 +690,11 @@
 						name="quotes"
 						rows="6"
 						class="textarea mt-1"
-						placeholder={'Plans are worthless, but planning is everything. — Eisenhower\nWhat gets measured gets managed -- Drucker\nA quote with nobody to attribute it to'}
+						placeholder={'Plans are worthless, but planning is everything. — Eisenhower\nWhat gets measured gets managed — Drucker'}
 					></textarea>
 				</label>
 				<p class="text-xs text-gray-500">
-					Not CSV: half of all quotes have a comma in them. The author is whatever follows the last
-					dash on the line, and duplicates are skipped.
+					One quote per line. Whatever follows the last dash is the author.
 				</p>
 				<button class="btn btn-primary"><Icon name="plus" /> Import</button>
 			</form>

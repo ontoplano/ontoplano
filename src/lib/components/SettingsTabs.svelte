@@ -13,9 +13,16 @@
 	 */
 	let {
 		billable = false,
+		family = false,
 		canEditInstance = false,
 		canAdminister = false
-	}: { billable?: boolean; canEditInstance?: boolean; canAdminister?: boolean } = $props();
+	}: {
+		billable?: boolean;
+		/** Only an account actually on a family plan has anybody to manage. */
+		family?: boolean;
+		canEditInstance?: boolean;
+		canAdminister?: boolean;
+	} = $props();
 
 	// One idea, one place. The three pages used to be /config, /account and
 	// /settings/integrations, which is why nobody could find anything.
@@ -43,6 +50,7 @@
 		{ path: '/settings/account', label: 'Account' } as const,
 		{ path: '/settings/preferences', label: 'Preferences' } as const,
 		...(billable ? [{ path: '/settings/billing', label: 'Billing' } as const] : []),
+		...(family ? [{ path: '/settings/family', label: 'Family' } as const] : []),
 		{ path: '/settings/integrations', label: 'Integrations' } as const,
 		...(canEditInstance ? [{ path: '/settings/instance', label: 'Instance' } as const] : []),
 		...(canAdminister ? [{ path: '/admin', label: 'Administration' } as const] : [])

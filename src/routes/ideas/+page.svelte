@@ -409,71 +409,16 @@
 						</form>
 
 						<div class="min-w-0 flex-1">
-							<!-- Buttons beside the text squeeze it to a ribbon on a phone. -->
-							<div
-								class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
-							>
-								<p class="text-sm whitespace-pre-wrap text-gray-900">{idea.content}</p>
-								<div class="flex flex-wrap items-center justify-end gap-2 sm:shrink-0">
-									{#if confirmingDeleteId === idea.id}
-										<form
-											method="post"
-											action="?/delete"
-											use:enhance={() => {
-												return async ({ update }) => {
-													await update({ reset: false });
-													confirmingDeleteId = null;
-												};
-											}}
-										>
-											<input type="hidden" name="id" value={idea.id} />
-											<button
-												type="submit"
-												class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
-												use:armed
-											>
-												Confirm?
-											</button>
-										</form>
-										<button
-											type="button"
-											onclick={() => {
-												confirmingDeleteId = null;
-											}}
-											class="btn btn-sm"
-										>
-											Cancel
-										</button>
-									{:else}
-										<button
-											title="Edit"
-											aria-label="Edit"
-											onclick={() => openIdeaForm(idea.id)}
-											class="btn btn-sm"
-										>
-											<Icon name="edit" />
-										</button>
-										<button
-											title="Delete"
-											aria-label="Delete"
-											type="button"
-											onclick={() => {
-												confirmingDeleteId = idea.id;
-											}}
-											class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
-										>
-											<Icon name="trash" />
-										</button>
-									{/if}
-								</div>
-							</div>
+							<p class="text-sm whitespace-pre-wrap text-gray-900">{idea.content}</p>
 
-							<!-- Date, tags and the applied toggle share a line and have to wrap
-							     as one row; nested un-wrapping rows put the button in the middle
-							     of the tags on a phone. -->
+							<!-- Date and tags wrap as one row. The buttons are not in here any
+							     more: they are the column up the right-hand edge. -->
 							<div class="mt-2 flex flex-wrap items-center gap-2">
 								<div class="flex flex-wrap items-center gap-2">
 									<span class="text-xs text-gray-500">{formatDate(idea.createdAt)}</span>
+									{#if idea.isApplied}
+										<span class="text-xs font-medium text-blue-700">applied</span>
+									{/if}
 									{#if idea.updatedAt !== idea.createdAt}
 										<span class="text-xs text-gray-500">· edited {formatDate(idea.updatedAt)}</span>
 									{/if}
@@ -493,32 +438,6 @@
 										</div>
 									{/if}
 								</div>
-
-								<form
-									method="post"
-									action="?/toggleApplied"
-									class="ml-auto"
-									data-applied-toggle-id={idea.id}
-									use:enhance={() => {
-										return async ({ update }) => {
-											await update({ reset: false });
-											if (editingAppliedNoteId === idea.id) {
-												editingAppliedNoteId = null;
-												appliedNoteDraft = '';
-											}
-										};
-									}}
-								>
-									<input type="hidden" name="id" value={idea.id} />
-									<button
-										type="submit"
-										class="border px-2 py-1 text-xs font-medium shadow-sm transition {idea.isApplied
-											? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
-											: 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}"
-									>
-										{idea.isApplied ? 'Applied' : 'Mark applied'}
-									</button>
-								</form>
 							</div>
 
 							{#if idea.isApplied && i === clampedSelectedIndex}
@@ -587,6 +506,92 @@
 										{/if}
 									</div>
 								</div>
+							{/if}
+						</div>
+
+						<!--
+							The card's actions, stacked up its right-hand edge: edit and the
+							applied toggle at the top, delete as far from them as the card is
+							tall. They used to be a row above the text, which squeezed it and
+							put delete under the thumb.
+						-->
+						<div class="row-actions-stack">
+							{#if confirmingDeleteId === idea.id}
+								<form
+									method="post"
+									action="?/delete"
+									use:enhance={() => {
+										return async ({ update }) => {
+											await update({ reset: false });
+											confirmingDeleteId = null;
+										};
+									}}
+								>
+									<input type="hidden" name="id" value={idea.id} />
+									<button
+										type="submit"
+										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+										use:armed
+									>
+										Confirm?
+									</button>
+								</form>
+								<button
+									type="button"
+									onclick={() => {
+										confirmingDeleteId = null;
+									}}
+									class="btn btn-sm"
+								>
+									Cancel
+								</button>
+							{:else}
+								<button
+									title="Edit"
+									aria-label="Edit"
+									onclick={() => openIdeaForm(idea.id)}
+									class="icon-btn"
+								>
+									<Icon name="edit" />
+								</button>
+
+								<form
+									method="post"
+									action="?/toggleApplied"
+									data-applied-toggle-id={idea.id}
+									use:enhance={() => {
+										return async ({ update }) => {
+											await update({ reset: false });
+											if (editingAppliedNoteId === idea.id) {
+												editingAppliedNoteId = null;
+												appliedNoteDraft = '';
+											}
+										};
+									}}
+								>
+									<input type="hidden" name="id" value={idea.id} />
+									<button
+										type="submit"
+										title={idea.isApplied ? 'Applied — undo' : 'Mark applied'}
+										aria-label={idea.isApplied ? 'Applied — undo' : 'Mark applied'}
+										aria-pressed={idea.isApplied}
+										class="icon-btn {idea.isApplied ? 'text-blue-700' : ''}"
+									>
+										<Icon name="check" />
+									</button>
+								</form>
+
+								<button
+									title="Delete"
+									aria-label="Delete"
+									type="button"
+									onclick={() => {
+										confirmingDeleteId = idea.id;
+									}}
+									class="icon-btn icon-btn-danger row-actions-last"
+								>
+									<Icon name="trash" />
+								</button>
 							{/if}
 						</div>
 					</div>

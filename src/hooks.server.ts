@@ -5,7 +5,14 @@ import { building } from '$app/environment';
 import { auth } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { ensureUserCategories } from '$lib/server/db/ensure-categories';
-import { DEFAULT_THEME, getStyle, getTheme, isDemo, isStaging } from '$lib/server/settings';
+import {
+	DEFAULT_THEME,
+	getStyle,
+	getTheme,
+	isDemo,
+	isStaging,
+	siteCookieDomain
+} from '$lib/server/settings';
 import {
 	createDemoAccount,
 	maybeSweepDemoAccounts,
@@ -151,6 +158,45 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
 	}
 
 	return svelteKitHandler({ event, resolve, auth, building });
+};
+
+/**
+ * One bit for the marketing site: somebody is signed in here.
+ *
+ * ontoplano.com is a different deployment on a different hostname, so a
+ * visitor with an open session looks exactly like a stranger to it — and the
+ * front page answers with the pitch and a sign-up button, which is the wrong
+ * thing to show somebody who already pays. This writes a cookie on the shared
+ * parent domain that says only that, and the site's own script turns it into a
+ * redirect into the app.
+ *
+ * Off unless an operator names the domain: a self-hosted instance has one
+ * hostname, nobody to tell, and no business writing cookies for a parent
+ * domain it does not own.
+ */
+const SIGNED_IN_HINT = 'ontoplano_signed_in';
+
+const handleSiteHint: Handle = async ({ event, resolve }) => {
+	const domain = siteCookieDomain();
+	if (!domain) return resolve(event);
+
+	const stated = event.cookies.get(SIGNED_IN_HINT) === '1';
+	if (event.locals.user && !stated) {
+		event.cookies.set(SIGNED_IN_HINT, '1', {
+			domain,
+			path: '/',
+			// The site's own script reads it, so it cannot be HttpOnly. It says
+			// nothing a session cookie says: no id, no name, no token.
+			httpOnly: false,
+			secure: true,
+			sameSite: 'lax',
+			maxAge: 60 * 60 * 24 * 90
+		});
+	} else if (!event.locals.user && stated) {
+		event.cookies.delete(SIGNED_IN_HINT, { domain, path: '/' });
+	}
+
+	return resolve(event);
 };
 
 /**
@@ -522,6 +568,7 @@ export const handle: Handle = sequence(
 	handleDemo,
 	handleAccessHolds,
 	handleSignedOutWrites,
+	handleSiteHint,
 	handleTheme
 );
 

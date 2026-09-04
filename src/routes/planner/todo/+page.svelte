@@ -442,9 +442,9 @@
 						</button>
 					</form>
 
-					<!-- Title and buttons side by side needs about 500px. Below `sm` the
-					     buttons go under the title instead of over it. -->
-					<div class="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+					<!-- One row at every width: the actions are a narrow column of icons
+					     now, which fits beside the title on a phone. -->
+					<div class="flex min-w-0 flex-1 gap-3">
 						<div class="min-w-0 flex-1">
 							<div class="flex flex-wrap items-center gap-2">
 								{#if todo.categoryColor}
@@ -478,7 +478,11 @@
 							/>
 						</div>
 
-						<div class="row-actions gap-1">
+						<!--
+							Stacked up the right-hand edge, delete at the bottom: the same
+							column an idea card has, so the two rooms behave alike.
+						-->
+						<div class="row-actions-stack">
 							{#if !isDone(todo)}
 								<!-- One column changes; nothing is copied anywhere. -->
 								<form method="post" action="?/schedule" use:enhance>
@@ -490,17 +494,25 @@
 									/>
 									<button
 										type="submit"
-										class="btn btn-sm"
+										class="icon-btn"
 										aria-pressed={!!todo.scheduledDate}
+										aria-label={todo.scheduledDate
+											? 'Put back on the general list'
+											: 'Pull onto today'}
 										title={todo.scheduledDate ? 'Put back on the general list' : 'Pull onto today'}
 									>
-										{todo.scheduledDate ? 'On a day' : 'Today'}
+										<Icon name="calendar" />
 									</button>
 								</form>
 							{/if}
 							{#if !isDone(todo)}
-								<button onclick={() => startDelegate(todo)} class="btn btn-sm btn-quiet">
-									Delegate
+								<button
+									onclick={() => startDelegate(todo)}
+									class="icon-btn"
+									title="Delegate"
+									aria-label="Delegate"
+								>
+									<Icon name="user" />
 								</button>
 							{/if}
 							<button
@@ -543,7 +555,7 @@
 									onclick={() => {
 										confirmingDelete = todo.id;
 									}}
-									class="icon-btn icon-btn-danger"
+									class="icon-btn icon-btn-danger row-actions-last"
 								>
 									<Icon name="trash" />
 								</button>

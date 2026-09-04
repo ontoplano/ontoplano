@@ -28,7 +28,7 @@ under the pointer.
 | `/planner/board`         | Board        | 4     |
 | `/planner/history`       | History      | 3     |
 | `/planner/plan`          | Plan         | 5     |
-| `/planner/todo`          | Todo         | 3     |
+| `/planner/todo`          | To-do        | 3     |
 | `/settings/account`      | Account      | 3     |
 | `/settings/integrations` | Integrations | 3     |
 | `/shopping`              | Shopping     | 3     |
@@ -140,7 +140,7 @@ at the button that reopens it, so it is not listed here.
 2. Say it in your own words
 3. Nothing carries itself over
 
-### `/planner/todo` — Todo
+### `/planner/todo` — To-do
 
 1. The things without a day yet
 2. One line is enough

@@ -736,14 +736,58 @@ label:has(> input[type='radio']:not(:disabled)) {
 		margin-left: auto;
 	}
 
+	/*
+	 * A card's actions, blocked into the corner rather than strung along a row.
+	 *
+	 * They used to be a row above the text, which squeezed it and put delete
+	 * next to edit. Two abreast puts the safe ones on the top line and delete
+	 * on the bottom, and — unlike a single column — a card with four actions
+	 * does not end up three times taller than the line of text it holds.
+	 */
+	.row-actions-stack {
+		display: grid;
+		grid-template-columns: repeat(2, auto);
+		flex: none;
+		align-self: start;
+		justify-items: end;
+		gap: 0.25rem;
+		margin-left: auto;
+	}
+
+	/*
+	 * Delete is last, so it lands in the bottom corner. When it is alone on
+	 * that line it keeps the right-hand column, as far from the button above
+	 * it as the grid is wide.
+	 */
+	.row-actions-last {
+		grid-column: 2;
+	}
+
+	/*
+	 * Compact with a mouse. A finger keeps the 44px every other control has.
+	 */
+	@media (pointer: fine) {
+		.row-actions-stack .icon-btn {
+			width: 1.75rem;
+			height: 1.75rem;
+		}
+	}
+
 	@media (hover: hover) {
 		.row-actions {
 			opacity: 0.35;
 		}
 
+		.row-actions-stack {
+			opacity: 0.35;
+		}
+
 		*:hover > .row-actions,
 		*:focus-within > .row-actions,
-		.row-actions:focus-within {
+		.row-actions:focus-within,
+		*:hover > .row-actions-stack,
+		*:focus-within > .row-actions-stack,
+		.row-actions-stack:focus-within {
 			opacity: 1;
 		}
 	}
@@ -1966,6 +2010,27 @@ html .ec .ec-event.og-event .ec-event-time {
 	font-size: 0.6875rem;
 	font-weight: 400;
 	opacity: 0.75;
+}
+
+/*
+ * Title and time travel together when a block is half scrolled away.
+ *
+ * The library makes the title alone `position: sticky`, so a block whose top
+ * has gone under the header keeps its name pinned at the edge while the time
+ * stays where it was drawn — and at the moment the block is about to
+ * disappear the two land on the same line and read as one string. Sticking
+ * the body instead moves both, in order, as the one thing they are.
+ */
+html .ec.ec-time-grid .ec-event.og-event .ec-event-title {
+	position: static;
+}
+
+html .ec.ec-time-grid .ec-event.og-event .ec-event-body {
+	/* Its own height, not the block's: a flex item stretched to fill the box
+	   has nowhere to travel, so sticky would never engage. */
+	align-self: flex-start;
+	position: sticky;
+	inset-block-start: var(--ec-header-height);
 }
 
 /* Too short for two lines: the name is the one that survives. */

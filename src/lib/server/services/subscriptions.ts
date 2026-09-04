@@ -442,6 +442,25 @@ export function seatOwnerOf(memberId: string): string | null {
 }
 
 /**
+ * Who is paying, by name, for a page that has to say so.
+ *
+ * `seatOwnerOf` answers with an id, which is the right answer for a check and
+ * the wrong one for a sentence. Nothing private crosses: the payer put this
+ * account on their plan by typing its address, so the two already know each
+ * other.
+ */
+export function seatOwnerAccount(memberId: string): { id: string; name: string } | null {
+	const owner = seatOwnerOf(memberId);
+	if (!owner) return null;
+	const row = db
+		.select({ id: user.id, name: user.name })
+		.from(user)
+		.where(eq(user.id, owner))
+		.get();
+	return row ?? null;
+}
+
+/**
  * Put an account on somebody's plan.
  *
  * By address, and the account has to exist already: this hands somebody a paid

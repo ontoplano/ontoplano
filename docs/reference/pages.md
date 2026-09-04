@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**41 pages, 162 actions.**
+**42 pages, 162 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -48,7 +48,8 @@ write surface for everything else; both end up calling the same
 | `/search`                       | —                                                                                                                                                                                                                                                                                                                                                                      |
 | `/settings/account`             | `setWeeklyReviewMail`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `delete`                                                                                                                                                                                                                                                                 |
 | `/settings/account/import`      | `importTasks`, `importVault`, `importAccount`                                                                                                                                                                                                                                                                                                                          |
-| `/settings/billing`             | `addSeat`, `removeSeat`, `checkout`, `switchInterval`                                                                                                                                                                                                                                                                                                                  |
+| `/settings/billing`             | `checkout`, `switchInterval`                                                                                                                                                                                                                                                                                                                                           |
+| `/settings/family`              | `addSeat`, `removeSeat`                                                                                                                                                                                                                                                                                                                                                |
 | `/settings/instance`            | `exportSubscribers`, `setRegistration`, `setEmailChange`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                            |
 | `/settings/integrations`        | `createToken`, `calendarLink`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                                        |
 | `/settings/integrations/widget` | `connect`                                                                                                                                                                                                                                                                                                                                                              |
@@ -363,6 +364,16 @@ What this account is on, and what it is using.
 
 A self-hosted instance sells nothing, so the page says so and stops — the
 same answer the Telegram bot and the deployment settings give.
+
+### `/settings/family`
+
+Who else is on this plan.
+
+This was a card at the bottom of Billing, which put the one thing a family
+payer comes back for — adding the fourth person, months later — underneath
+the prices and the usage bars. It is its own tab now, and the tab only
+exists for an account that is on a family plan: the payer, or somebody
+whose seat is on somebody else's.
 
 ### `/settings/instance`
 
