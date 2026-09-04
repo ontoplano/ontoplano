@@ -17,13 +17,7 @@
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
 	import { RATINGS, type Rating } from '$lib/ratings.js';
 	import { getAction, keyFor } from '$lib/shortcuts';
-	import {
-		CLOSED_STATUSES,
-		STATUSES,
-		STATUS_LABELS,
-		TIMING_LABELS,
-		type Status
-	} from '$lib/task-status.js';
+	import { CLOSED_STATUSES, STATUSES, STATUS_LABELS, type Status } from '$lib/task-status.js';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { cancelFor, changeLater, isPending } from '$lib/undo.svelte';
 
@@ -943,7 +937,6 @@
 									(card.kind === 'todo' &&
 										!!card.scheduledDate &&
 										card.scheduledDate < data.date) ||
-									(!!card.timing && card.kind === 'instance') ||
 									card.goals.length > 0 ||
 									card.ratings.urgency != null ||
 									card.ratings.interest != null ||
@@ -1049,30 +1042,6 @@
 													{/if}
 													{#if card.kind === 'todo' && card.scheduledDate && card.scheduledDate < data.date}
 														<span class="text-[10px] text-gray-500">carried over</span>
-													{/if}
-													<!--
-													Ticking a whole day off at bedtime marks everything late,
-													which is true of the tick and false of the doing. The badge
-													is the correction: click it and it cycles early → on time →
-													late, no form.
-												-->
-													{#if card.timing && card.kind === 'instance'}
-														{@const next =
-															card.timing === 'late'
-																? 'early'
-																: card.timing === 'early'
-																	? 'on_time'
-																	: 'late'}
-														<form method="post" action="?/setTiming" use:enhance>
-															<input type="hidden" name="id" value={card.id} />
-															<input type="hidden" name="timing" value={next} />
-															<button
-																class="text-[10px] text-gray-500 underline decoration-dotted underline-offset-2 hover:text-gray-900"
-																title="Actually {TIMING_LABELS[next]} — click to change"
-															>
-																{TIMING_LABELS[card.timing]}
-															</button>
-														</form>
 													{/if}
 													<RatingBadges values={card.ratings} />
 													<!--

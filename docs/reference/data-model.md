@@ -58,7 +58,7 @@ exist.
 | [`subscriptions`](#subscriptions)                 | 15      | yes               |
 | [`suppressed_slots`](#suppressed_slots)           | 5       | yes               |
 | [`tags`](#tags)                                   | 3       | yes               |
-| [`task_records`](#task_records)                   | 16      | yes               |
+| [`task_records`](#task_records)                   | 15      | yes               |
 | [`todo_tasks`](#todo_tasks)                       | 15      | yes               |
 | [`user`](#user)                                   | 11      | —                 |
 | [`user_settings`](#user_settings)                 | 4       | yes               |
@@ -1005,7 +1005,6 @@ Indexes:
 | `exceptional_slot_id`  | integer | null     | —                     | → `exceptional_tasks.id` |
 | `scheduled_at`         | text    | not null | —                     | —                        |
 | `status`               | text    | not null | `'todo'`              | —                        |
-| `timing`               | text    | null     | —                     | —                        |
 | `completed_at`         | text    | null     | —                     | —                        |
 | `notes`                | text    | null     | `''`                  | —                        |
 | `resolved_activity_id` | integer | null     | —                     | → `activities.id`        |

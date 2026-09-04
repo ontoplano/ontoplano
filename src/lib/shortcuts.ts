@@ -105,17 +105,6 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: '9', action: 'filter-9', description: 'Toggle category filter' }
 		]
 	},
-	'/planner/history': {
-		label: 'History',
-		shortcuts: [
-			{ key: 'j', action: 'navigate-down', description: 'Navigate tasks' },
-			{ key: 'k', action: 'navigate-up', description: 'Navigate tasks' },
-			{ key: 'h', action: 'prev-day', description: 'Switch day' },
-			{ key: 'l', action: 'next-day', description: 'Switch day' },
-			{ key: '[', action: 'prev-week', description: 'Switch week' },
-			{ key: ']', action: 'next-week', description: 'Switch week' }
-		]
-	},
 	'/planner/todo': {
 		label: 'To-do',
 		shortcuts: [

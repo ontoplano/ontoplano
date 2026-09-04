@@ -8,21 +8,18 @@
 
 	/**
 	 * The plan comes first: it is what the section is for. Then today's version
-	 * of it, then what has no day yet, then the vocabulary, then what happened.
+	 * of it, then what has no day yet, then the vocabulary, then the write-up.
 	 *
-	 * Track is gone: it was the same occurrences the board already shows, listed
-	 * instead of arranged, and everything it could do to one of them the board's
-	 * card editor now does.
-	 *
-	 * Review comes after History for the same reason: History is the record and
-	 * Review is what you do with it.
+	 * Track and History are both gone, for the same reason: each was the same
+	 * occurrences another tab already shows. Track listed what the board
+	 * arranges; History tabled what the plan now shows by walking backwards —
+	 * and it missed one-off blocks entirely. The old route redirects.
 	 */
 	const tabs = [
 		{ href: resolve('/planner/plan'), label: 'Plan' },
 		{ href: resolve('/planner/board'), label: 'Board' },
 		{ href: resolve('/planner/todo'), label: 'To-do' },
 		{ href: resolve('/planner/activities'), label: 'Activities' },
-		{ href: resolve('/planner/history'), label: 'History' },
 		{ href: resolve('/planner/review'), label: 'Review' }
 	];
 

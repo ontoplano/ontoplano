@@ -544,14 +544,13 @@ const instance = (slotId, scheduledAt, status, extra = {}) => {
 	if (existing) return existing.id;
 	return run(
 		`insert into task_records
-		 (user_id, slot_id, exceptional_slot_id, scheduled_at, status, timing, completed_at, notes, resolved_activity_id)
-		 values (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		 (user_id, slot_id, exceptional_slot_id, scheduled_at, status, completed_at, notes, resolved_activity_id)
+		 values (?, ?, ?, ?, ?, ?, ?, ?)`,
 		uid,
 		slotId,
 		extra.exceptionalSlotId ?? null,
 		scheduledAt,
 		status,
-		extra.timing ?? null,
 		extra.completedAt ?? null,
 		extra.notes ?? '',
 		extra.resolvedActivityId ?? null
@@ -735,7 +734,6 @@ if (deepWorkSlot) {
 		const at = `${iso(d)}T09:00:00`;
 		const status = back % 4 === 0 ? 'skipped' : 'done';
 		instance(deepWorkSlot.id, at, status, {
-			timing: status === 'done' ? (back % 3 === 0 ? 'late' : 'on_time') : null,
 			completedAt: status === 'done' ? `${iso(d)}T12:0${back % 6}:00` : null,
 			notes: back === 1 ? 'finished the migration' : ''
 		});
@@ -1721,10 +1719,7 @@ for (let daysAgo = 1; daysAgo <= HISTORY_WEEKS * 7; daysAgo++) {
 		// are still open, which is what an account in use looks like — not a
 		// wall of green.
 		const status = roll < 0.78 ? 'done' : roll < 0.9 ? 'skipped' : daysAgo < 4 ? 'todo' : 'done';
-		const timing =
-			status === 'done' ? pick(['on_time', 'on_time', 'on_time', 'early', 'late']) : null;
 		instance(s.id, `${date}T${s.startTime}:00`, status, {
-			timing,
 			completedAt: status === 'done' ? `${date}T${s.startTime}:00` : null
 		});
 		if (status === 'done') kept++;

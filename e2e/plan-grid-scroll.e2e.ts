@@ -201,3 +201,60 @@ test('the plan can be walked into last week', async ({ page }) => {
 	await page.getByRole('button', { name: 'Today' }).click();
 	await expect(page.locator('.og-past')).toHaveCount(0);
 });
+
+/**
+ * Ticking a block off from its own form.
+ *
+ * The board is where a day is worked; this is for the glance at the plan that
+ * ends with "that did happen". The button sits next to Skip, leads, and undoes
+ * itself — and the grid answers with the tick in the block's corner.
+ */
+test('a block can be marked done from the plan, and undone', async ({ page }) => {
+	await register(page, `grid-tick-${Date.now()}@test.invalid`);
+	await visit(page, '/planner/plan?view=day');
+
+	const options = await page.request.get('/api/capture-options');
+	const categoryId = ((await options.json()) as { categories: { id: number }[] }).categories[0]?.id;
+	const today = new Date().toISOString().slice(0, 10);
+	const created = await page.request.post('/planner/plan?/createExceptional', {
+		headers: { origin: new URL(page.url()).origin },
+		form: {
+			date: today,
+			startTime: '09:00',
+			durationMinutes: '90',
+			mode: 'category',
+			categoryId: String(categoryId),
+			label: 'tick me'
+		}
+	});
+	expect(created.ok(), `the block was created: ${created.status()}`).toBe(true);
+
+	await visit(page, '/planner/plan?view=day');
+	await page.locator('.ec-event').filter({ hasText: 'tick me' }).click();
+
+	const done = page.getByRole('button', { name: 'Mark as done' });
+	await expect(done).toBeVisible();
+	await done.click();
+
+	// The form knows, and offers the way back.
+	await expect(page.getByRole('button', { name: /Done ✓ — undo/ })).toBeVisible();
+	// And the grid says so in the block's corner.
+	await expect(
+		page.locator('.ec-event').filter({ hasText: 'tick me' }).locator('.ec-event-mark--done')
+	).toBeVisible();
+
+	await page.getByRole('button', { name: /Done ✓ — undo/ }).click();
+	await expect(page.getByRole('button', { name: 'Mark as done' })).toBeVisible();
+});
+
+/**
+ * History's tab is gone; its bookmarks are not.
+ */
+test('an old history link lands on the plan, a week back', async ({ page }) => {
+	await register(page, `grid-hist-${Date.now()}@test.invalid`);
+
+	await page.goto('/planner/history?week=2026-08-24');
+	await expect(page).toHaveURL(/planner\/plan\?view=week&from=2026-08-24/);
+	// And the tab row does not offer what no longer exists.
+	await expect(page.getByRole('link', { name: 'History' })).toHaveCount(0);
+});

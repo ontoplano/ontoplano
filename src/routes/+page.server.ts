@@ -76,7 +76,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 		durationMinutes: o.durationMinutes,
 		name: o.title,
 		status: o.status,
-		timing: o.timing,
 		categoryName: o.categoryName,
 		categoryColor: o.categoryColor
 	}));
@@ -118,11 +117,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		done: done.length,
 		doing: todayTasks.filter((t) => t.status === 'doing').length,
 		skipped: todayTasks.filter((t) => t.status === 'skipped').length,
-		todo: todayTasks.filter((t) => t.status === 'todo').length,
+		todo: todayTasks.filter((t) => t.status === 'todo').length
 		// Timing describes the finished ones, so it is counted among them rather
 		// than sitting alongside the states.
-		late: done.filter((t) => t.timing === 'late').length,
-		early: done.filter((t) => t.timing === 'early').length
 	};
 
 	// Hidden sections take their dashboard cards along — filtered on read,

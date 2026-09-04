@@ -12,7 +12,7 @@ until somebody writes one in `src/lib/tutorials.ts`. The same gap is visible
 in the app: the `?` button goes red on a screen with no tour and says so
 under the pointer.
 
-**16 of 16 screens have one.**
+**15 of 15 screens have one.**
 
 | Screen                   | Tour         | Steps |
 | ------------------------ | ------------ | ----- |
@@ -26,7 +26,6 @@ under the pointer.
 | `/kitchen/recipes`       | Recipes      | 4     |
 | `/planner/activities`    | Activities   | 3     |
 | `/planner/board`         | Board        | 4     |
-| `/planner/history`       | History      | 3     |
 | `/planner/plan`          | Plan         | 5     |
 | `/planner/todo`          | To-do        | 3     |
 | `/settings/account`      | Account      | 3     |
@@ -119,12 +118,6 @@ at the button that reopens it, so it is not listed here.
 2. Today, or everything else
 3. Drag a card, or carry it
 4. Urgency, interest, energy
-
-### `/planner/history` — History
-
-1. What actually happened
-2. Walk back through the weeks
-3. Done, skipped, and late
 
 ### `/planner/plan` — Plan
 

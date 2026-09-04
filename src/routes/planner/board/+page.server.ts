@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { ratingsFromForm } from '$lib/ratings';
-import { isStatus, type Status, type Timing } from '$lib/task-status';
+import { isStatus, type Status } from '$lib/task-status';
 import { listActivities, listCategories } from '$lib/server/services/activities';
 import { goalBacklinks, type GoalBacklink } from '$lib/server/services/backlinks';
 import { buildCtx, type Ctx } from '$lib/server/services/ctx';
@@ -17,7 +17,6 @@ import {
 	setInstanceLabel,
 	setInstanceRatings,
 	setInstanceStatus,
-	setInstanceTiming,
 	setInstanceTime
 } from '$lib/server/services/instances';
 import {
@@ -79,7 +78,6 @@ export type Card = {
 	title: string;
 	notes: string;
 	status: Status;
-	timing: Timing | null;
 	sortOrder: number;
 	startTime: string | null;
 	scheduledDate: string | null;
@@ -128,7 +126,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			title: o.title,
 			notes: o.notes,
 			status: o.status,
-			timing: o.timing,
 			// A scheduled block's position is its time; the board keeps them in that
 			// order rather than letting a drag pretend otherwise.
 			sortOrder: i,
@@ -158,7 +155,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		title: t.title,
 		notes: t.notes,
 		status: t.status,
-		timing: null,
 		sortOrder: t.sortOrder,
 		startTime: null,
 		scheduledDate: t.scheduledDate,
@@ -233,21 +229,6 @@ export const actions: Actions = {
 			if (target.kind === 'instance') setInstanceStatus(ctx, target.id, status);
 			else setTodoStatus(ctx, target.id, status);
 			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	/** Correct when something actually happened. See `setInstanceTiming`. */
-	setTiming: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			setInstanceTiming(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('timing')
-			);
-			return { success: true, action: 'setTiming' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

@@ -127,7 +127,7 @@ describe('an occurrence of a block', () => {
 		expect(id).toBeTruthy();
 	});
 
-	test('gains a timing when it is finished, and loses it when reopened', () => {
+	test('finishing stamps when, and reopening forgets it', () => {
 		const id = anOccurrence();
 
 		instances.setInstanceStatus(ctx, id, 'done');
@@ -135,27 +135,45 @@ describe('an occurrence of a block', () => {
 			.listForDate(ctx, new Date('2026-08-17T00:00:00'))
 			.find((o) => o.id === id)!;
 		expect(done.status).toBe('done');
-		expect(done.timing).toBeTruthy();
+		expect(done.completedAt).toBeTruthy();
 
 		instances.setInstanceStatus(ctx, id, 'todo');
 		const reopened = instances
 			.listForDate(ctx, new Date('2026-08-17T00:00:00'))
 			.find((o) => o.id === id)!;
-		// A record that says a thing was "late" when it has not happened is a
+		// A record that says a thing finished when it has not happened is a
 		// record that is wrong.
-		expect(reopened.timing).toBeNull();
+		expect(reopened.completedAt).toBeNull();
 	});
 
-	test('can have its timing corrected by hand', () => {
-		const id = anOccurrence();
-		instances.setInstanceStatus(ctx, id, 'done');
+	/*
+	 * Ticking from the plan: a block and a date, not an occurrence id — the
+	 * record may not exist yet, because records are made when a day is first
+	 * looked at. `setStatusOn` makes the day and moves the one record.
+	 */
+	test('a block can be ticked off by date, before its day was ever opened', () => {
+		const slot = slots.createSlot(ctx, {
+			weekday: 1,
+			startTime: '10:00',
+			durationMinutes: 30,
+			mode: 'category',
+			categoryId: work,
+			label: 'Ticked from the plan'
+		});
 
-		instances.setInstanceTiming(ctx, id, 'early');
+		// No generateInstances first, on purpose: the day has never been opened.
+		instances.setStatusOn(ctx, 'slot', slot, '2026-08-18', 'done');
+		const rows = instances.listForDate(ctx, new Date('2026-08-18T00:00:00'));
+		expect(rows.find((o) => o.slotId === slot)!.status).toBe('done');
+
+		instances.setStatusOn(ctx, 'slot', slot, '2026-08-18', 'todo');
 		expect(
-			instances.listForDate(ctx, new Date('2026-08-17T00:00:00')).find((o) => o.id === id)!.timing
-		).toBe('early');
+			instances.listForDate(ctx, new Date('2026-08-18T00:00:00')).find((o) => o.slotId === slot)!
+				.status
+		).toBe('todo');
 
-		expect(() => instances.setInstanceTiming(ctx, id, 'whenever')).toThrow();
+		expect(() => instances.setStatusOn(ctx, 'slot', slot, 'not-a-date', 'done')).toThrow();
+		expect(() => instances.setStatusOn(ctx, 'slot', 999999, '2026-08-18', 'done')).toThrow();
 	});
 
 	test('refuses a status that is not one', () => {

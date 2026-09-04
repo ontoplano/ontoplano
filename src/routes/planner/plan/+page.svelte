@@ -1960,15 +1960,15 @@
 	-->
 	<div class="flex flex-wrap items-center gap-x-4 gap-y-2" data-tour="plan-toolbar">
 		<!--
-			The two arrows go to the two ends, with where you are between them.
+			One block: ← date →, arrows hugging the date they move.
 
-			They used to sit together in a cluster on the left, small, with the
-			date orphaned beside them — so on a phone the target for "next day"
-			was a 32px glyph in the middle of the screen, next to an identical one
-			that goes the other way. At the ends they are unmistakable, they are
-			the size of a thumb, and the direction is the side it is on.
+			On a phone the block is the full row and the arrows go to its two
+			ends, thumb-sized, the direction being the side it is on. On a
+			desktop it stays compact — stretched, the right arrow ended up at the
+			far edge of a wide screen, a metre of nothing between it and the date
+			it belonged to.
 		-->
-		<div class="flex w-full items-center gap-2 sm:w-auto sm:flex-1">
+		<div class="flex w-full items-center gap-2 sm:w-auto">
 			<button
 				onclick={goToPrevWeek}
 				disabled={!data.range.prev}
@@ -1980,7 +1980,7 @@
 			</button>
 
 			<!-- Where you are, in words, between the two things that change it. -->
-			<span class="min-w-0 flex-1 truncate text-center text-sm text-gray-600 sm:text-left">
+			<span class="min-w-0 flex-1 truncate text-center text-sm text-gray-600 sm:flex-none">
 				{#if effectiveView === 'month'}
 					{monthLabel(data.range.from)}
 				{:else if effectiveView === 'day'}
@@ -2880,6 +2880,39 @@
 			     nothing to show here. -->
 			{#if editingKind}
 				<div class="flex flex-wrap items-center gap-2 border-t border-gray-200 pt-3">
+					{#if editingBlockId !== null}
+						<!--
+							The tick, from the grid. The board is where a day is worked,
+							but half the time the form is open because somebody glanced at
+							the plan and thought "that did happen" — so the answer lives
+							next to Skip, and leads. Done is blue, like every done here.
+						-->
+						{@const tickDate = editingKind === 'slot' ? selectedDateStr() : formDate}
+						{@const tickKey = `${editingKind === 'slot' ? 's' : 'x'}${editingBlockId}|${tickDate}`}
+						{@const ticked = data.marks[tickKey] === 'done'}
+						<form
+							method="post"
+							action="?/setStatus"
+							use:enhance={() =>
+								async ({ update }) =>
+									update()}
+						>
+							<input type="hidden" name="kind" value={editingKind} />
+							<input type="hidden" name="refId" value={editingBlockId} />
+							<input type="hidden" name="date" value={tickDate} />
+							<input type="hidden" name="status" value={ticked ? 'todo' : 'done'} />
+							<button
+								type="submit"
+								title={ticked ? 'Put it back to pending' : 'It happened'}
+								class="border px-3 py-2 text-sm font-medium transition {ticked
+									? 'border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100'
+									: 'border-blue-700 bg-blue-700 text-white hover:bg-blue-800'}"
+							>
+								{ticked ? `Done ✓ — undo` : `Mark as done`}
+							</button>
+						</form>
+					{/if}
+
 					{#if editingKind === 'slot' && editingBlockId !== null}
 						<!-- Skipping and deleting are different intentions on a recurring block:
 					     one drops a single occurrence, the other stops it happening at all.

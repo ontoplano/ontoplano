@@ -49,7 +49,7 @@ import {
 	listUnscheduled,
 	promoteTodo
 } from '$lib/server/services/todos';
-import { listInstances } from '$lib/server/services/instances';
+import { listInstances, setStatusOn } from '$lib/server/services/instances';
 import { addDays } from '$lib/server/week-generator';
 import { getGridHours } from '$lib/server/settings';
 
@@ -564,6 +564,29 @@ export const actions: Actions = {
 				durationMinutes: formData.get('durationMinutes')
 			});
 			return { success: true, id };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/*
+	 * Ticking a block off without leaving the grid.
+	 *
+	 * The board is where a day is worked; this is for the glance at the plan
+	 * that ends with "oh — that did happen". Same service the board's tick
+	 * uses, addressed by block and date because that is what the grid knows.
+	 */
+	setStatus: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			setStatusOn(
+				buildCtx(locals.user!.id),
+				formData.get('kind') === 'exceptional' ? 'exceptional' : 'slot',
+				Number(formData.get('refId')),
+				String(formData.get('date') ?? ''),
+				formData.get('status')
+			);
+			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);
 		}

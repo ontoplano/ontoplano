@@ -479,12 +479,6 @@
 						{#if data.taskSummary.skipped > 0}
 							<span>{data.taskSummary.skipped} skipped</span>
 						{/if}
-						{#if data.taskSummary.late > 0}
-							<span>{data.taskSummary.late} late</span>
-						{/if}
-						{#if data.taskSummary.early > 0}
-							<span>{data.taskSummary.early} early</span>
-						{/if}
 					</div>
 				{/if}
 			</Card>

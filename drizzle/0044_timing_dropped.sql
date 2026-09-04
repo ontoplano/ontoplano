@@ -1,0 +1,1 @@
+ALTER TABLE `task_records` DROP COLUMN `timing`;

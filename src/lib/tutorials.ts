@@ -219,26 +219,6 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/planner/history': {
-		label: 'History',
-		steps: [
-			{
-				title: 'What actually happened',
-				body: 'Week by week, against what you had planned — including the blocks you skipped, which are the interesting ones.'
-			},
-			{
-				target: '[data-tour="history-week"]',
-				title: 'Walk back through the weeks',
-				body: '[ and ] do the same thing without the mouse.'
-			},
-			{
-				target: '[data-tour="history-summary"]',
-				title: 'Done, skipped, and late',
-				body: 'Early, on time or late is worked out from when you finished against when you meant to. Nobody sets it by hand.'
-			}
-		]
-	},
-
 	'/planner/review': {
 		label: 'Review',
 		steps: [

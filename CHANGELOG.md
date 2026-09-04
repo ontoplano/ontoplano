@@ -10,6 +10,20 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.67.0 — 2026-09-04
+
+- **A block can be ticked off from the plan.** Click it, and "Mark as done"
+  leads the form's footer, next to Skip; ticked, the same button undoes it and
+  the grid shows the tick in the block's corner.
+- **The History tab is gone.** It drew last week as a table, missed one-off
+  blocks entirely, and the plan itself walks backwards now. Old links land on
+  the plan, on the week they named.
+- **Early, on time and late are gone too.** Ticking a day off at bedtime marked
+  everything late, correcting it was a chore nobody did, and nothing ever read
+  the answer back. Done is done.
+- The planner's arrows hug the date they move, instead of the right one sitting
+  at the far edge of a wide screen.
+
 ## 0.66.0 — 2026-09-04
 
 - **The planner goes back.** The window walks a whole week — or day, or month —

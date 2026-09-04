@@ -12,7 +12,7 @@ import { and, asc, eq, gte, lt } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 
 import { db } from '../db/index.js';
-import { isStatus, isTiming, timingFor } from '../../task-status.js';
+import { isStatus } from '../../task-status.js';
 import type { Ctx } from './ctx.js';
 import { createReminder } from './reminders.js';
 import {
@@ -34,7 +34,7 @@ import {
 	recurringTasks
 } from '../db/schema.js';
 
-import type { Status, Timing } from '../../task-status.js';
+import type { Status } from '../../task-status.js';
 import type { RatingValues } from '../../ratings.js';
 import { occursOn, parseRecurrence } from '../../recurrence.js';
 
@@ -53,7 +53,6 @@ export type Occurrence = {
 	/** The override on its own, so an editor can show "unset" as empty. */
 	durationOverride: number | null;
 	status: Status;
-	timing: Timing | null;
 	completedAt: string | null;
 	notes: string;
 	mode: 'category' | 'activity';
@@ -290,7 +289,6 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 			exceptionalSlotId: taskRecords.exceptionalSlotId,
 			scheduledAt: taskRecords.scheduledAt,
 			status: taskRecords.status,
-			timing: taskRecords.timing,
 			completedAt: taskRecords.completedAt,
 			notes: taskRecords.notes,
 			labelOverride: taskRecords.labelOverride,
@@ -400,7 +398,6 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 			durationMinutes: r.durationOverride ?? duration,
 			durationOverride: r.durationOverride,
 			status: r.status,
-			timing: r.timing,
 			completedAt: r.completedAt,
 			notes: r.notes ?? '',
 			mode,
@@ -440,44 +437,8 @@ export const MAX_LABEL_LENGTH = 300;
 /**
  * Move an occurrence between statuses.
  *
- * Timing is derived, not chosen: it is a fact about a finished task, so it only
- * exists once one is done and is cleared whenever it is reopened. Resetting or
- * skipping a category-mode task also forgets which activity it turned out to
- * be, since that answer belonged to the attempt.
- */
-/**
- * Say when it actually happened, rather than when the clock says you said so.
- *
- * Marking a day's work done at the end of the day makes everything "late",
- * which is true of the tick and false of the doing. This is the correction, and
- * it is one click on the badge rather than an edit form.
- */
-export function setInstanceTiming(ctx: Ctx, id: number, raw: unknown): void {
-	const timing = raw === '' || raw === null || raw === undefined ? null : raw;
-	if (timing !== null && !isTiming(timing)) throw new ValidationError('Unknown timing');
-
-	const res = db
-		.update(taskRecords)
-		.set({ timing })
-		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
-		.run();
-
-	if (res.changes === 0) throw new NotFoundError('task');
-}
-
-/**
- * Answer for one occurrence of the plan, by the id the schedule hands out.
- *
- * `getUpcomingSchedule` — and so `today`, and so anything reading the week over
- * the API — identifies an occurrence as `slot:<record>` or
- * `exceptional:<one-off>`, because the two come from different tables. Only the
- * first of those is a `task_records` row already: a one-off's execution state
- * lives on a record that is created lazily, the first time that day is
- * generated. Somebody answering for a one-off before that has happened would
- * otherwise be told "task not found" about a block they can see on their screen.
- *
- * So this takes either shape, makes the record exist if it has to, and then does
- * the one thing `setInstanceStatus` does.
+ * Resetting or skipping a category-mode task also forgets which activity it
+ * turned out to be, since that answer belonged to the attempt.
  */
 export function setOccurrenceStatus(ctx: Ctx, occurrenceId: unknown, rawStatus: unknown): void {
 	const raw = String(occurrenceId ?? '').trim();
@@ -511,6 +472,47 @@ export function setOccurrenceStatus(ctx: Ctx, occurrenceId: unknown, rawStatus: 
 	setInstanceStatus(ctx, record.id, rawStatus);
 }
 
+/**
+ * Tick a block off — or back on — straight from the plan.
+ *
+ * The plan knows a block and a date, not an occurrence id: the occurrence may
+ * not exist yet, because records are made when a day is first looked at. So
+ * the day is generated first, the way opening the board does it, and then the
+ * one record for that block on that date is moved.
+ */
+export function setStatusOn(
+	ctx: Ctx,
+	kind: 'slot' | 'exceptional',
+	refId: number,
+	dateStr: string,
+	rawStatus: unknown
+): void {
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) throw new ValidationError('Invalid date');
+	if (!Number.isInteger(refId) || refId < 1) throw new ValidationError('Invalid block');
+
+	// The one-off carries its own date, and the id resolver already exists.
+	if (kind === 'exceptional') return setOccurrenceStatus(ctx, `exceptional:${refId}`, rawStatus);
+
+	generateForDate(ctx, new Date(`${dateStr}T12:00:00`));
+
+	const record = db
+		.select({ id: taskRecords.id })
+		.from(taskRecords)
+		.where(
+			and(
+				eq(taskRecords.userId, ctx.userId),
+				eq(taskRecords.slotId, refId),
+				gte(taskRecords.scheduledAt, `${dateStr}T00:00`),
+				lt(taskRecords.scheduledAt, `${dateStr}T24`)
+			)
+		)
+		.get();
+	// A skipped-on-that-day block has no record and nothing to tick.
+	if (!record) throw new NotFoundError('task');
+
+	setInstanceStatus(ctx, record.id, rawStatus);
+}
+
 export function setInstanceStatus(ctx: Ctx, id: number, rawStatus: unknown): void {
 	if (!isStatus(rawStatus)) throw new ValidationError('Invalid status');
 	const status = rawStatus;
@@ -530,9 +532,8 @@ export function setInstanceStatus(ctx: Ctx, id: number, rawStatus: unknown): voi
 	if (!instance) throw new NotFoundError('task');
 
 	const completedAt = status === 'done' ? stamp(ctx) : null;
-	const timing = completedAt ? timingFor(instance.scheduledAt, completedAt) : null;
 
-	const values: Record<string, unknown> = { status, completedAt, timing };
+	const values: Record<string, unknown> = { status, completedAt };
 	const mode = instance.slotMode ?? instance.oneOffMode;
 	if ((status === 'todo' || status === 'skipped') && mode === 'category')
 		values.resolvedActivityId = null;

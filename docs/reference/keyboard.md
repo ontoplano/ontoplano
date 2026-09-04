@@ -124,17 +124,6 @@ works is a key listed here and the reverse.
 | <kbd>y</kbd>     | Number keys set energy        |
 | <kbd>x</kbd>     | Ask to delete card            |
 
-## History — `/planner/history`
-
-| Key          | Does           |
-| ------------ | -------------- |
-| <kbd>j</kbd> | Navigate tasks |
-| <kbd>k</kbd> | Navigate tasks |
-| <kbd>h</kbd> | Switch day     |
-| <kbd>l</kbd> | Switch day     |
-| <kbd>[</kbd> | Switch week    |
-| <kbd>]</kbd> | Switch week    |
-
 ## Plan — `/planner/plan`
 
 | Key          | Does                          |

@@ -163,7 +163,6 @@ export const taskRecords = sqliteTable(
 		// When it happened relative to plan. Set only once something is done —
 		// `delayed` and `early` used to be statuses, but both mean *done*, which
 		// is why there was nothing for a board column to map onto.
-		timing: text('timing', { enum: ['early', 'on_time', 'late'] }),
 		completedAt: text('completed_at'),
 		notes: text('notes').default(''),
 		resolvedActivityId: integer('resolved_activity_id').references(() => activities.id),
@@ -1708,7 +1707,7 @@ export const pricePoints = sqliteTable(
 /**
  * What a week came to.
  *
- * `/planner/history` has always held the numbers and nothing ever asked anyone
+ * The planner has always held the numbers and nothing ever asked anyone
  * to look at them, which is the difference between a tracker and a habit. A
  * review is written once per week and is the only thing in the app that is
  * *about* a stretch of time rather than a moment in it.

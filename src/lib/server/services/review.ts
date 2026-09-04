@@ -13,7 +13,7 @@ import { str } from './validate.js';
 /**
  * Closing a week.
  *
- * `/planner/history` has held these numbers since the beginning and nothing
+ * The planner has recorded these numbers since the beginning and nothing
  * ever asked anybody to look at them. That is the difference between a tracker
  * and a habit: the app records what happened and never once says "that was
  * your week, what do you want to do about it".
