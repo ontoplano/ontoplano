@@ -41,9 +41,10 @@
 	let label = $state('');
 
 	const step = $derived(steps[index]);
-	/** The closing step is the last one and is never counted as part of the tour. */
-	const total = $derived(Math.max(steps.length - 1, 1));
-	const isClosing = $derived(index === steps.length - 1);
+	/** The closing step, when there is one, is not counted as part of the tour. */
+	let hasClosing = $state(true);
+	const total = $derived(Math.max(steps.length - (hasClosing ? 1 : 0), 1));
+	const isClosing = $derived(hasClosing && index === steps.length - 1);
 
 	/* ------------------------------------------------------------ the target */
 
@@ -69,18 +70,27 @@
 	 * which is how one tour serves the phone and the laptop, and how a step
 	 * about a card somebody has put away stops existing.
 	 */
-	function resolveSteps(path: string): TutorialStep[] | null {
+	function resolveSteps(path: string, closing: boolean): TutorialStep[] | null {
 		const tutorial = tutorialFor(path);
 		if (!tutorial) return null;
 		const usable = tutorial.steps.filter((s) => !s.target || firstVisible(s.target));
-		return [...usable, CLOSING_STEP];
+		return closing ? [...usable, CLOSING_STEP] : usable;
 	}
 
-	export function start() {
+	/**
+	 * `asked` means somebody pressed the help button to get here.
+	 *
+	 * The closing step points at that button and says "click here if you ever
+	 * need this help", which is the right last word for a tour that ran unasked
+	 * on somebody's first morning — and a silly one for somebody who has just
+	 * clicked it. They know where it is; they used it.
+	 */
+	export function start(asked = false) {
 		const path = page.url.pathname;
-		const resolved = resolveSteps(path);
-		if (!resolved) return;
+		const resolved = resolveSteps(path, !asked);
+		if (!resolved || resolved.length === 0) return;
 		label = tutorialFor(path)?.label ?? '';
+		hasClosing = !asked;
 		steps = resolved;
 		index = 0;
 		open = true;
@@ -243,8 +253,11 @@
 	/* -------------------------------------------------------------- the moves */
 
 	function next() {
-		if (isClosing) return close();
-		index = Math.min(index + 1, steps.length - 1);
+		// The end is the end whether or not there is a closing step: a tour
+		// somebody asked for has none, and Next on its last card must still
+		// leave rather than sit there doing nothing.
+		if (isClosing || index === steps.length - 1) return close();
+		index = index + 1;
 	}
 
 	function back() {
@@ -260,7 +273,7 @@
 	 * only person who will never reach that step by pressing Next.
 	 */
 	function dismiss() {
-		if (isClosing) return close();
+		if (isClosing || !hasClosing) return close();
 		index = steps.length - 1;
 	}
 

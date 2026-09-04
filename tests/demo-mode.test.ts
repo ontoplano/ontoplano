@@ -175,3 +175,83 @@ describe('the demo refusals', () => {
 		expect(demoRefusal('POST', '/api/auth/sign-in/email')).toBeNull();
 	});
 });
+
+/**
+ * The waiting room.
+ *
+ * Making a demo account writes a row and seeds a week, which took seconds
+ * behind a blank page. `/demo` is the screen that wait is spent on — and it is
+ * a page anybody signed out can reach and can POST to, which is exactly the
+ * shape of thing that has to be nailed down: it exists only on the demo, and
+ * it will only send somebody to a path on this instance.
+ */
+describe("the demo's front door", () => {
+	async function door() {
+		const { vi } = await import('vitest');
+		vi.resetModules();
+		return import('../src/routes/demo/+page.server');
+	}
+
+	it('is not there at all off a demo instance', async () => {
+		const { load } = await door();
+		await expect(async () =>
+			load({ url: new URL('http://x/demo'), locals: {} } as never)
+		).rejects.toMatchObject({ status: 404 });
+	});
+
+	it('sends you on to where you were going', async () => {
+		process.env.ONTOPLANO_DEMO = 'true';
+		const { load } = await door();
+		const data = await load({
+			url: new URL('http://x/demo?next=/planner/plan'),
+			locals: {}
+		} as never);
+		expect(data).toEqual({ next: '/planner/plan' });
+	});
+
+	it('and never off this instance', async () => {
+		process.env.ONTOPLANO_DEMO = 'true';
+		const { load } = await door();
+		for (const next of ['https://elsewhere.example/', '//elsewhere.example/', 'javascript:1']) {
+			const data = await load({
+				url: new URL(`http://x/demo?next=${encodeURIComponent(next)}`),
+				locals: {}
+			} as never);
+			expect(data, next).toEqual({ next: '/' });
+		}
+	});
+
+	it('does not send you back to itself, which would start the wait again', async () => {
+		process.env.ONTOPLANO_DEMO = 'true';
+		const { load } = await door();
+		expect(await load({ url: new URL('http://x/demo?next=/demo'), locals: {} } as never)).toEqual({
+			next: '/'
+		});
+	});
+
+	/*
+	 * The door creates an account without one being signed in, which is the
+	 * one place in the app where that is true. It has to carry the same budget
+	 * the hook carries, or it is the way around it.
+	 */
+	it('is held to the same per-address budget as the hook', async () => {
+		const door = readFileSync('src/routes/demo/+page.server.ts', 'utf8');
+		expect(door).toContain('rateLimit(');
+		expect(door).toContain('DEMO_ACCOUNTS_PER_ADDRESS');
+		// One definition, imported by both — not two numbers to keep in step.
+		expect(door).toContain("from '$lib/server/services/demo'");
+		expect(hooks).toContain('DEMO_ACCOUNTS_PER_ADDRESS');
+		expect(hooks).not.toMatch(/const DEMO_ACCOUNTS_PER_ADDRESS *=/);
+	});
+
+	/*
+	 * And the two guards that let a signed-out visitor reach it at all. Both
+	 * are lists in files this test does not import — the layout would pull the
+	 * whole app in — so they are read as text, which is what `hooks` above does
+	 * for the same reason.
+	 */
+	it('is reachable, and postable, by somebody with no account', () => {
+		expect(readFileSync('src/routes/+layout.server.ts', 'utf8')).toContain("=== '/demo'");
+		expect(hooks).toMatch(/PUBLIC_WRITES = \[[^\]]*'\/demo'/);
+	});
+});

@@ -809,17 +809,6 @@ How many demo accounts exist right now.
 
 #### `createDemoAccount(host)`
 
-Make one, seed it, and hand back what to sign in with.
-
-The password is generated and never shown: the session cookie is how the
-visitor stays in, and an address nobody can read mail for cannot be recovered
-anyway. Returning it is only so the caller can complete the sign-in in the
-same request.
-
-Returns null when the instance is at its ceiling — the caller then shows the
-front page rather than a broken app, which is the honest failure for "the
-demo is busy".
-
 #### `resetDemoAccount(userId)`
 
 Put one demo account back the way it arrived.
@@ -1101,9 +1090,18 @@ Quick capture: a thought, optionally tagged, optionally marked as applied.
 
 Applied is a toggle, so the current value is read inside the same scope.
 
+It deliberately leaves `updatedAt` alone. The card writes "· edited <date>"
+whenever that differs from the creation date, so marking an idea applied
+added a line of text to the row and reflowed everything under it — an edit
+marker for something nobody edited.
+
 #### `updateAppliedNote(ctx, id, note)`
 
+The note beside an applied idea, which is not the idea. See `toggleApplied`.
+
 #### `toggleFavorite(ctx, id)`
+
+Starring an idea is not editing it either. See `toggleApplied`.
 
 ### Types
 

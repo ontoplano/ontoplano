@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**42 pages, 162 actions.**
+**43 pages, 163 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -20,6 +20,7 @@ write surface for everything else; both end up calling the same
 | `/admin/[id]`                   | `setRole`, `setPlanEnd`, `grantTrial`, `resendVerification`, `deleteAccount`, `impersonate`                                                                                                                                                                                                                                                                            |
 | `/buy`                          | —                                                                                                                                                                                                                                                                                                                                                                      |
 | `/data/[slug]`                  | —                                                                                                                                                                                                                                                                                                                                                                      |
+| `/demo`                         | `default`                                                                                                                                                                                                                                                                                                                                                              |
 | `/diary`                        | `create`, `createWins`, `update`, `delete`                                                                                                                                                                                                                                                                                                                             |
 | `/diary/notebooks`              | —                                                                                                                                                                                                                                                                                                                                                                      |
 | `/diary/notebooks/[id]`         | —                                                                                                                                                                                                                                                                                                                                                                      |
@@ -115,6 +116,19 @@ A checkout action mints a transaction and lands here with `?_ptxn=…`;
 Paddle.js reads that itself and opens its overlay. The page is only the
 overlay's backdrop — the terms were already read on /start or the
 billing page, so nothing here competes with the payment window.
+
+### `/demo`
+
+The demo's front door.
+
+Making a demo account is not free: a row, a password hash, and a week of
+seeded data written to SQLite. That took a few seconds while the browser
+showed nothing at all — a white page, then the dashboard — which reads as a
+slow site rather than as something being built for you.
+
+So the wait has a screen. It also has somewhere to go: with the work behind
+a page the visitor is already looking at, the seed can be made slower under
+load without anybody experiencing a hang.
 
 ### `/diary/notebooks`
 

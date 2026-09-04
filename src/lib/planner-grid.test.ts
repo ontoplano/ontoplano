@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { blockName, hourToTime, windowForEvents } from './planner-grid';
+import { baseGridOptions, blockName, hourToTime, windowForEvents } from './planner-grid';
 
 /**
  * What a block is called. The rule got this wrong once and a goal picker
@@ -99,5 +99,71 @@ describe('the stretch of day the grid draws', () => {
 		expect(
 			windowForEvents(asked, [{ start: 'not a date' }, {}, { start: at('2026-09-02T05:00:00') }])
 		).toEqual({ start: 5, end: 22 });
+	});
+});
+
+/**
+ * Looking backwards: what happened, drawn on the plan.
+ *
+ * The grid can be walked into last week now, and a week that has been is not
+ * the same thing as a week that has not: its days are drawn quieter and each
+ * block says whether it was done. Both come out of `baseGridOptions`, which is
+ * where a page hands it today and a way to ask about an occurrence.
+ */
+describe('a week that has already happened', () => {
+	const at = (iso: string) => new Date(iso);
+	const event = (kind: string, refId: number, iso: string) => ({
+		event: {
+			title: 'deep work',
+			start: at(iso),
+			end: at(iso.replace('T09', 'T12')),
+			extendedProps: { kind, refId }
+		}
+	});
+
+	const options = baseGridOptions('2026-08-28', {
+		today: '2026-09-04',
+		markOf: (kind, refId, date) => {
+			if (date > '2026-09-04') return null;
+			if (kind === 'slot' && refId === 1) return date === '2026-08-31' ? 'done' : 'undone';
+			return null;
+		}
+	});
+
+	const html = (content: unknown) =>
+		typeof content === 'string' ? content : ((content as { html: string }).html ?? '');
+
+	test('a block that was done carries a tick', () => {
+		const drawn = html(
+			(options.eventContent as (i: unknown) => unknown)(event('slot', 1, '2026-08-31T09:00:00'))
+		);
+		expect(drawn).toContain('✓');
+		expect(drawn).toContain('deep work');
+	});
+
+	test('and one that was not carries an empty box', () => {
+		const drawn = html(
+			(options.eventContent as (i: unknown) => unknown)(event('slot', 1, '2026-09-01T09:00:00'))
+		);
+		expect(drawn).toContain('☐');
+	});
+
+	test('a block nobody has an answer about carries nothing', () => {
+		const drawn = html(
+			(options.eventContent as (i: unknown) => unknown)(event('slot', 9, '2026-09-01T09:00:00'))
+		);
+		expect(drawn).not.toContain('☐');
+		expect(drawn).not.toContain('✓');
+	});
+
+	test('a day that has been is washed, and today is not', () => {
+		const cell = options.dayCellContent as (i: { date: Date }) => unknown;
+		expect(html(cell({ date: at('2026-09-01T00:00:00') }))).toContain('og-past');
+		expect(html(cell({ date: at('2026-09-04T00:00:00') }))).toBe('');
+		expect(html(cell({ date: at('2026-09-05T00:00:00') }))).toBe('');
+	});
+
+	test('a grid that was never told today washes nothing', () => {
+		expect(baseGridOptions('2026-08-28').dayCellContent).toBeUndefined();
 	});
 });

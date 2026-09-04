@@ -178,6 +178,7 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_REVIEW_MAIL_OFFSET_HOURS`   | `src/lib/server/services/review-mail.ts`                                                                  |
 | `ONTOPLANO_SELF_HOST`                  | `src/lib/server/services/billing.ts`, `src/lib/server/settings.ts`                                        |
 | `ONTOPLANO_SELLS`                      | `src/lib/server/services/billing.ts`                                                                      |
+| `ONTOPLANO_SITE_COOKIE_DOMAIN`         | `src/lib/server/settings.ts`                                                                              |
 | `ONTOPLANO_SITE_URL`                   | `src/lib/server/settings.ts`                                                                              |
 | `ONTOPLANO_SKIP_MIGRATION_CHECK`       | `src/lib/server/db/assert-migrated.ts`                                                                    |
 | `ONTOPLANO_STAGING`                    | `src/lib/server/settings.ts`                                                                              |

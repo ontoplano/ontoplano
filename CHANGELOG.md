@@ -10,6 +10,21 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.66.0 — 2026-09-04
+
+- **The planner goes back.** The window walks a whole week — or day, or month —
+  into the past instead of stopping at today. Days that have been are washed
+  grey, and every block on one carries a tick or an empty box in its corner, so
+  the plan is also the record of what happened to it.
+- **The demo has a waiting room.** Making a copy of the app for a visitor writes
+  an account and seeds a week, which used to be a blank page for however long
+  that took. It now says what it is doing while it does it.
+- **The tour stops ending by pointing at the button you pressed to open it.**
+  The tour that runs unasked on a new account still says where to find it again.
+- **ontoplano.com sends somebody who is already signed in to their week**, rather
+  than showing them the pitch. A link from the app, a link to a section, and
+  `?stay` all still reach the page itself.
+
 ## 0.65.0 — 2026-09-04
 
 - **A family plan is quoted the family price.** The billing page read the list

@@ -516,6 +516,21 @@ export function baseGridOptions(
 		maxTime?: string;
 		/** A phone: the column headers get one letter rather than three. */
 		narrow?: boolean;
+		/**
+		 * Today, in the account's own zone, as `YYYY-MM-DD`.
+		 *
+		 * The grid can be walked backwards now, so it has to be able to say
+		 * which of the columns it is drawing have already happened.
+		 */
+		today?: string;
+		/**
+		 * What became of one occurrence, for a day that has been.
+		 *
+		 * `null` for a day still ahead, and for a block that has no occurrence
+		 * on that date at all. The grid draws the plan; this is the only place
+		 * it says anything about what was actually done.
+		 */
+		markOf?: (kind: string, refId: number, date: string) => 'done' | 'undone' | null;
 	} = {}
 ): Calendar.Options {
 	const slotHeight = opts.slotHeight ?? GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX];
@@ -527,6 +542,32 @@ export function baseGridOptions(
 	// look". Times stop mattering, so it is a day grid rather than a time grid.
 	const month = opts.month === true;
 	const narrow = opts.narrow === true;
+	const today = opts.today ?? '';
+	const markOf = opts.markOf;
+
+	/** A block's own date, in the same `YYYY-MM-DD` the server speaks. */
+	const dateOf = (start: Date) =>
+		`${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(
+			start.getDate()
+		).padStart(2, '0')}`;
+
+	/**
+	 * The corner mark: a tick for done, an empty box for not.
+	 *
+	 * Only where there is an answer — a day that has happened, and an
+	 * occurrence that exists. A box on every block of next week would be a
+	 * hundred unticked boxes for things nobody has had the chance to do.
+	 */
+	const markHtml = (info: { event: GridEventLike }) => {
+		if (!markOf) return '';
+		const props = (info.event.extendedProps ?? {}) as { kind?: string; refId?: number };
+		if (!props.kind || typeof props.refId !== 'number') return '';
+		const mark = markOf(props.kind, props.refId, dateOf(info.event.start));
+		if (!mark) return '';
+		return `<span class="ec-event-mark ec-event-mark--${mark}" aria-hidden="true">${
+			mark === 'done' ? '✓' : '☐'
+		}</span>`;
+	};
 
 	/*
 	 * Every key is present in both shapes, always.
@@ -587,15 +628,34 @@ export function baseGridOptions(
 		eventContent: month
 			? (info) => info.event.title
 			: (info) => {
-					if (!eventFitsText(info.event, slotHeight)) return '';
+					const mark = markHtml(info as { event: GridEventLike });
+					if (!eventFitsText(info.event, slotHeight)) {
+						return mark ? { html: mark } : '';
+					}
 					const title = escapeHtml(String(info.event.title ?? ''));
-					if (!eventFitsTime(info.event, slotHeight)) return title;
+					if (!eventFitsTime(info.event, slotHeight)) {
+						// The plain string when there is nothing to add to it: that is
+						// what the calendar draws with the least ceremony.
+						return mark ? { html: `<span class="ec-event-title">${title}</span>${mark}` } : title;
+					}
 					return {
 						html:
 							`<span class="ec-event-title">${title}</span>` +
-							`<span class="ec-event-time">${escapeHtml(clockRange(info.event))}</span>`
+							`<span class="ec-event-time">${escapeHtml(clockRange(info.event))}</span>` +
+							mark
 					};
 				},
+		/*
+		 * A day that has already happened is drawn quieter than one that has not.
+		 *
+		 * The library has no class for "past", and the app can now walk the grid
+		 * backwards — so the wash is a element the day cell draws for itself.
+		 * Today is not past: it is the day being lived.
+		 */
+		dayCellContent: today
+			? (info: { date: Date }) =>
+					dateOf(info.date) < today ? { html: '<span class="og-past"></span>' } : ''
+			: undefined,
 		/*
 		 * A week of columns on a phone has about fifty pixels each, and "Wed" does
 		 * not fit — the header read "31 M…", "2 W…", which is neither the date nor

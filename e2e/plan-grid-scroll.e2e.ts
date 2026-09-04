@@ -171,3 +171,33 @@ test('a half-scrolled block does not fold its time into its title', async ({ pag
 	// The time is under the title, and they do not share a line.
 	expect(boxes.time.top).toBeGreaterThanOrEqual(boxes.title.bottom - 1);
 });
+
+/**
+ * The plan goes backwards, and says what happened there.
+ *
+ * The window used to clamp to today: `from` in the past was silently the
+ * present, and the back button was disabled on the current week. So the one
+ * question somebody brings to a planner on a Monday — what did last week
+ * actually look like — was the one it could not answer.
+ */
+test('the plan can be walked into last week', async ({ page }) => {
+	await register(page, `grid-back-${Date.now()}@test.invalid`);
+	await visit(page, '/planner/plan?view=week');
+
+	const back = page.getByRole('button', { name: 'Back one week' });
+	await expect(back).toBeEnabled();
+	await back.click();
+
+	// A week earlier, and the page says so rather than bouncing to today.
+	await expect(page).toHaveURL(/from=\d{4}-\d{2}-\d{2}/);
+	const from = new URL(page.url()).searchParams.get('from')!;
+	const today = new Date();
+	expect(new Date(`${from}T00:00:00`).getTime()).toBeLessThan(today.getTime());
+
+	// Those days are drawn as days that have been.
+	await expect(page.locator('.og-past').first()).toBeAttached();
+
+	// And there is a way home.
+	await page.getByRole('button', { name: 'Today' }).click();
+	await expect(page.locator('.og-past')).toHaveCount(0);
+});

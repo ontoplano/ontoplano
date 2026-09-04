@@ -43,6 +43,9 @@ export const load: LayoutServerLoad = async (event) => {
 	// Confirming and unsubscribing: the person on the other end of a newsletter
 	// has no account here and may never have one.
 	const isNewsletter = event.url.pathname.startsWith('/newsletter/');
+	// The demo's waiting room is where an account is made, so by definition
+	// nobody is signed in while it is drawn. It 404s off a demo instance.
+	const isDemoDoor = event.url.pathname === '/demo';
 
 	if (
 		!event.locals.user &&
@@ -52,7 +55,8 @@ export const load: LayoutServerLoad = async (event) => {
 		!isLegal &&
 		!isFrontPage &&
 		!isMailLink &&
-		!isNewsletter
+		!isNewsletter &&
+		!isDemoDoor
 	) {
 		return redirect(302, '/login');
 	}

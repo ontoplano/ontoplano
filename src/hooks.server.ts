@@ -15,6 +15,8 @@ import {
 } from '$lib/server/settings';
 import {
 	createDemoAccount,
+	DEMO_ACCOUNTS_PER_ADDRESS,
+	DEMO_WINDOW_MS,
 	maybeSweepDemoAccounts,
 	touchDemoAccount
 } from '$lib/server/services/demo';
@@ -377,15 +379,6 @@ const handleDemoGuard: Handle = ({ event, resolve }) => {
 	return resolve(event);
 };
 
-/**
- * How many demo accounts one address may be given, and how quickly.
- *
- * A person opening the demo, closing it and opening it again wants a handful; a
- * script wants thousands. Both are answered by the same number.
- */
-const DEMO_ACCOUNTS_PER_ADDRESS = 5;
-const DEMO_WINDOW_MS = 60 * 60 * 1000;
-
 /** Set on the first page view, returned by anything that keeps cookies. */
 const DEMO_HANDSHAKE = 'onto_demo';
 /** Says "you have already been bounced once", so a cookieless client stops. */
@@ -407,6 +400,15 @@ const handleDemo: Handle = async ({ event, resolve }) => {
 	maybeSweepDemoAccounts();
 
 	const path = event.url.pathname;
+
+	/*
+	 * The waiting room makes its own account, from its own action.
+	 *
+	 * Left to this handle, arriving at /demo with the handshake cookie would
+	 * create the account and redirect before a pixel of the page was drawn —
+	 * which is the blank wait the page exists to replace.
+	 */
+	if (path === '/demo' || path.startsWith('/demo/')) return resolve(event);
 	const writes = event.request.method !== 'GET' && event.request.method !== 'HEAD';
 
 	/*
@@ -469,6 +471,20 @@ const handleDemo: Handle = async ({ event, resolve }) => {
 				maxAge: 600
 			});
 			const target = path.endsWith(dataSuffix) ? path.slice(0, -dataSuffix.length) || '/' : path;
+
+			/*
+			 * A browser is sent to the waiting room, which draws the wait and
+			 * then makes the account. Anything else — a data request from a tab
+			 * whose session the hourly reset took away — bounces back to where it
+			 * was and is dealt with below, because a client waiting for JSON has
+			 * no use for a page.
+			 */
+			if (!isData) {
+				const room = new URL('/demo', event.url.origin);
+				if (target !== '/') room.searchParams.set('next', target);
+				redirect(303, room.pathname + room.search);
+			}
+
 			const url = new URL(target + event.url.search, event.url.origin);
 			url.searchParams.set(DEMO_BOUNCE, '1');
 			redirect(303, url.pathname + url.search);
@@ -544,7 +560,10 @@ const handleAccessHolds: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-const PUBLIC_WRITES = ['/login', '/api/auth'];
+// `/demo` makes the demo's account from its own action, which is a POST by
+// somebody who is not signed in — that is the whole point of it. It answers
+// 404 unless this instance is the demo.
+const PUBLIC_WRITES = ['/login', '/api/auth', '/demo'];
 
 const handleSignedOutWrites: Handle = ({ event, resolve }) => {
 	const writes = event.request.method !== 'GET' && event.request.method !== 'HEAD';

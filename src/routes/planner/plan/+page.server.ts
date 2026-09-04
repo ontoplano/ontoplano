@@ -49,6 +49,7 @@ import {
 	listUnscheduled,
 	promoteTodo
 } from '$lib/server/services/todos';
+import { listInstances } from '$lib/server/services/instances';
 import { addDays } from '$lib/server/week-generator';
 import { getGridHours } from '$lib/server/settings';
 
@@ -105,12 +106,44 @@ function monthGridStart(date: Date): Date {
 	return first;
 }
 
+/**
+ * The window's first day, forwards or back.
+ *
+ * It used to clamp anything in the past to today, on the argument that a plan
+ * is for what is ahead. That made the one question the grid could not answer
+ * "what did last week actually look like" — which is the question somebody
+ * brings to it on a Monday morning. Past days are drawn quieter and their
+ * blocks carry what became of them; the window itself is just a window.
+ */
 function parseFromParam(param: string | null, today: Date): Date {
 	if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
 		const parsed = new Date(`${param}T00:00:00`);
-		if (!isNaN(parsed.getTime()) && parsed.getTime() > today.getTime()) return parsed;
+		if (!isNaN(parsed.getTime())) return parsed;
 	}
 	return today;
+}
+
+/**
+ * What happened to each occurrence in a window, keyed by block and date.
+ *
+ * `s12|2026-08-31` is the recurring block 12 on that Monday; `x7|…` is the
+ * one-off. Only two answers are kept — it was done, or it was not — because
+ * that is what a corner of a block can say without becoming a second UI.
+ */
+function marksFor(ctx: Ctx, from: Date, to: Date): Record<string, 'done' | 'undone'> {
+	const marks: Record<string, 'done' | 'undone'> = {};
+	for (const occurrence of listInstances(ctx, from, to)) {
+		const ref =
+			occurrence.slotId != null
+				? `s${occurrence.slotId}`
+				: occurrence.exceptionalSlotId != null
+					? `x${occurrence.exceptionalSlotId}`
+					: null;
+		if (!ref) continue;
+		marks[`${ref}|${formatDate(new Date(occurrence.scheduledAt))}`] =
+			occurrence.status === 'done' ? 'done' : 'undone';
+	}
+	return marks;
 }
 
 /**
@@ -230,9 +263,9 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 		};
 	});
 
-	// Stepping back is clamped to today rather than hidden, so the button still
-	// returns you to the live window from anywhere ahead of it. A month may go
-	// backwards: there is nothing to plan there, but plenty to look at.
+	// Backwards is a whole span, wherever you are: the grid is a record as well
+	// as a plan, and "what did last week look like" is asked of it far more
+	// often than it was ever asked of the history page.
 	const prevFrom = addDays(from, -span);
 	const range = {
 		from: formatDate(from),
@@ -241,12 +274,7 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 			view === 'month'
 				? formatDate(from) === formatDate(monthGridStart(today))
 				: formatDate(from) === formatDate(today),
-		prev:
-			view === 'month'
-				? formatDate(monthGridStart(addDays(from, -1)))
-				: formatDate(from) === formatDate(today)
-					? null
-					: formatDate(prevFrom.getTime() < today.getTime() ? today : prevFrom),
+		prev: view === 'month' ? formatDate(monthGridStart(addDays(from, -1))) : formatDate(prevFrom),
 		next: view === 'month' ? formatDate(monthGridStart(addDays(to, 1))) : formatDate(to),
 		days
 	};
@@ -277,6 +305,15 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 		templates: TEMPLATES.map((t) => ({ key: t.key, label: t.label, description: t.description })),
 		weekdays: WEEKDAYS,
 		today: formatDate(today),
+		/*
+		 * What became of each block, for the days that have been.
+		 *
+		 * The grid draws the plan — the recurring blocks and the one-offs — and
+		 * says nothing about whether any of it happened, which is fine looking
+		 * forwards and useless looking back. One key per occurrence, read from
+		 * the same service the history page and the `past` tool read.
+		 */
+		marks: marksFor(ctx, from, to),
 		suppressions: listSuppressions(ctx, formatDate(from), formatDate(to)),
 		exceptionals: listExceptionals(ctx, formatDate(from), formatDate(to)),
 		/**

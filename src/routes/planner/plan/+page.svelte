@@ -1444,6 +1444,20 @@
 		...buildSubscribedEvents(data.subscribed)
 	]);
 
+	/**
+	 * What became of a block on a day that has been.
+	 *
+	 * The server hands over one key per occurrence; this is the lookup the grid
+	 * calls while drawing. A day still ahead has no answer and gets no mark —
+	 * an empty box on every block of next week would say something false about
+	 * a week nobody has had yet.
+	 */
+	function markOf(kind: string, refId: number, date: string): 'done' | 'undone' | null {
+		if (date > data.today) return null;
+		const prefix = kind === 'exceptional' ? 'x' : 's';
+		return data.marks[`${prefix}${refId}|${date}`] ?? null;
+	}
+
 	/*
 	 * The hours the account asked for in Preferences, widened to hold whatever
 	 * is actually on the grid — see `windowForEvents`. A block above the first
@@ -1472,7 +1486,9 @@
 			slotHeight,
 			days: gridDays,
 			month: effectiveView === 'month',
-			narrow: narrowScreen
+			narrow: narrowScreen,
+			today: data.today,
+			markOf: markOf
 		}),
 		events: gridEvents,
 		editable: true,
@@ -1957,7 +1973,7 @@
 				onclick={goToPrevWeek}
 				disabled={!data.range.prev}
 				class="icon-btn h-11 w-11 shrink-0 disabled:opacity-30"
-				title={data.range.prev ? `Back one ${effectiveView} ([)` : 'Already starting today'}
+				title={`Back one ${effectiveView} ([)`}
 				aria-label="Back one {effectiveView}"
 			>
 				<Icon name="arrow-left" size={22} />

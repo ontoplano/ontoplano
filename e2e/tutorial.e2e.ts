@@ -31,7 +31,8 @@ test('a new account is shown around, and dismisses it in two', async ({ page }) 
 	await expect(tour.getByText('This is ontoplano')).toHaveCount(0);
 
 	// The first Dismiss is not a dismissal: it goes to the step that says how to
-	// get the tour back, and the tour is still up.
+	// get the tour back, and the tour is still up. (This tour ran unasked, so
+	// it has that step; one somebody opened themselves does not.)
 	await tour.getByRole('button', { name: 'Dismiss' }).click();
 	await expect(tour).toBeVisible();
 	await expect(tour.getByText('Click here if you ever need this help')).toBeVisible();
@@ -60,9 +61,15 @@ test('the button in the corner opens the tour for the screen you are on', async 
 	await expect(tour.getByText('Ideas', { exact: true })).toBeVisible();
 	await expect(tour.getByText('Catch it now, judge it later')).toBeVisible();
 
-	// Escape is a dismiss, which means the closing step rather than the end.
-	await page.keyboard.press('Escape');
-	await expect(tour.getByText('Click here if you ever need this help')).toBeVisible();
+	/*
+	 * And it does not end by pointing at the button they just pressed.
+	 *
+	 * The closing step says "click here if you ever need this help", which is
+	 * the right last word for the tour that runs unasked on somebody's first
+	 * morning and a silly one for somebody who arrived by clicking exactly
+	 * that. A tour somebody asked for has no closing step, so Escape ends it.
+	 */
+	await expect(tour.getByText('Click here if you ever need this help')).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(tour).toBeHidden();
 });

@@ -82,6 +82,18 @@ export function demoAccountCount(): number {
  * front page rather than a broken app, which is the honest failure for "the
  * demo is busy".
  */
+/**
+ * How many demo accounts one address may be given, and how quickly.
+ *
+ * A person opening the demo, closing it and opening it again wants a handful;
+ * a script wants thousands. Both are answered by the same number — and it
+ * lives here rather than beside one caller, because there are two ways in: the
+ * hook that signs a returning visitor in, and the waiting room that makes the
+ * account for a new one.
+ */
+export const DEMO_ACCOUNTS_PER_ADDRESS = 5;
+export const DEMO_WINDOW_MS = 60 * 60 * 1000;
+
 export async function createDemoAccount(host: string): Promise<DemoAccount | null> {
 	if (demoAccountCount() >= demoMaxAccounts()) return null;
 

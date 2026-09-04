@@ -897,7 +897,7 @@
 			</div>
 		{/if}
 
-		<HelpDock demo={data.demo} onstart={() => tour?.start()} />
+		<HelpDock demo={data.demo} onstart={() => tour?.start(true)} />
 		<Tutorial bind:this={tour} accent={section.accent} ondismiss={tourDismissed} />
 		<CommandPalette hidden={data.hiddenSections} />
 		<CapturePie bind:this={pie} onopenchange={(v) => (pieOpen = v)} hidden={data.hiddenSections} />
