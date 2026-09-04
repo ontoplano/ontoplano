@@ -272,33 +272,21 @@
 	});
 
 	/*
-	 * What a click gets you before the page does.
+	 * The loading bar gives up eventually.
 	 *
-	 * Three attempts, and the first two are why this one looks like it does.
-	 * Keying the page on the pathname rebuilds the whole subtree, chrome
-	 * included, so switching Settings tabs made the tab row jump. The View
-	 * Transitions API froze the document in testing — URL changed, old page
-	 * still painted. And sliding the new page in from the left, which is what
-	 * replaced them, flicked: a page that has already loaded is not arriving
-	 * from anywhere, and animating it every time reads as a flashbang.
-	 *
-	 * What was actually missing is feedback at the moment of the click, not
-	 * decoration at the moment of the answer. So: the bar across the top, and —
-	 * for a navigation slow enough to notice — the page it is leaving goes
-	 * quiet and a plain skeleton stands in its place. Deliberately page
-	 * agnostic: a few grey blocks that could become any screen, so nothing has
-	 * to be kept in step with the page it stands for.
+	 * `navigating` is SvelteKit's and it should clear itself; a navigation that
+	 * is superseded or abandoned can leave it set, and then the indicator says
+	 * "still working" for the rest of the session. Twenty seconds is far past
+	 * any real page here, so past it the honest thing is silence: the page under
+	 * it is the real page, and it is already on screen.
 	 */
-	let waiting = $state(false);
+	let givenUp = $state(false);
 	$effect(() => {
 		if (!navigating.to) {
-			waiting = false;
+			givenUp = false;
 			return;
 		}
-		// Not immediately. Most navigations here land inside a frame or two, and
-		// a skeleton that flashes on every one of them makes a fast app feel
-		// broken — which is the complaint the sliding version earned.
-		const timer = setTimeout(() => (waiting = true), 220);
+		const timer = setTimeout(() => (givenUp = true), 20_000);
 		return () => clearTimeout(timer);
 	});
 
@@ -743,9 +731,14 @@
 			After a beat, not immediately — most navigations here are faster than
 			the eye, and a bar that flashes on every one of them is worse than
 			none. `navigating` is SvelteKit's own, so it covers a link, a
-			redirect and a form action alike.
+			redirect and a form action alike — and it stops after twenty seconds
+			whatever `navigating` still says, because a loading indicator that
+			never ends is not information. The skeleton that used to stand here
+			was removed for exactly that: it got stuck on a navigation that never
+			finished, and a screen of grey blocks reads as a broken app rather
+			than a slow one.
 		-->
-		{#if navigating.to}
+		{#if navigating.to && !givenUp}
 			<div class="nav-progress" role="status" aria-label="Loading"></div>
 		{/if}
 
@@ -753,38 +746,6 @@
 			bind:this={scroller}
 			class="relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto overscroll-y-contain px-4 pt-[calc(var(--safe-top)+1rem)] pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+0.75rem)] sm:px-6 lg:overflow-visible lg:pt-6 lg:pb-6"
 		>
-			<!--
-				The shape of a page, while the page is on its way.
-
-				Six grey blocks and nothing else: a heading, a couple of cards, a list.
-				Every screen in this app is some arrangement of those, so this reads as
-				"the next one is coming" on all of them without being right about any
-				of them in particular — which is what keeps it from having to be
-				maintained alongside eight different layouts.
-			-->
-			{#if waiting}
-				<div class="page-skeleton" aria-hidden="true">
-					<div class="sk sk-title"></div>
-					<div class="sk sk-card"></div>
-					<div class="sk sk-row"></div>
-					<div class="sk sk-row"></div>
-					<div class="sk sk-row sk-short"></div>
-				</div>
-			{/if}
-			<!--
-				No entrance animation, and no `{#key}` around the page.
-
-				It used to be keyed on the pathname with a 6px rise, so arriving
-				anywhere replayed a small step upward. What that actually did was
-				throw away and rebuild the whole subtree on every navigation —
-				including any nested layout's own chrome. Switching between two
-				Settings tabs made the tab row itself jump, which is the one part of
-				the screen that did not change and the one part the eye is fixed on
-				while clicking.
-
-				A page that simply swaps its contents is smoother than any animation
-				of it, so there is nothing here to animate.
-			-->
 			{@render children()}
 		</main>
 

@@ -62,6 +62,52 @@ function svelteFiles(dir: string, found: string[] = []): string[] {
 	return found;
 }
 
+/**
+ * The element decides it, not the attributes.
+ *
+ * Android's autofill service offers its key/card/pin bar over an `<input>` and
+ * never over a `<textarea>`. Nothing reaches that: the quick todo form carried
+ * `autocomplete="off"`, every ignore flag `$lib/autofill` stamps, and a field
+ * name no classifier reads as an address — and still raised the bar, while the
+ * idea form beside it, identical but for leading with a textarea, never did.
+ *
+ * So the four quick-capture forms lead with a textarea. `OneLine.svelte` is the
+ * one that looks and behaves like a single-line field, and this is what stops
+ * somebody putting a plain `<input>` back.
+ */
+describe('the quick capture forms', () => {
+	const LEADS = [
+		'src/lib/components/fields/TodoFields.svelte',
+		'src/lib/components/fields/IdeaFields.svelte',
+		'src/lib/components/fields/NoteFields.svelte',
+		'src/lib/components/fields/BuyFields.svelte'
+	];
+
+	it('lead with something Android will not offer an address over', () => {
+		const offenders: string[] = [];
+
+		for (const file of LEADS) {
+			const source = readFileSync(file, 'utf8');
+			// The first field in the file is the lead one: the single thing the
+			// phone shows before "more options".
+			const firstInput = source.indexOf('<input');
+			const firstTextarea = source.indexOf('<textarea');
+			const firstOneLine = source.indexOf('<OneLine');
+
+			const first = [firstInput, firstTextarea, firstOneLine]
+				.filter((at) => at !== -1)
+				.sort((a, b) => a - b)[0];
+
+			if (first === firstInput) offenders.push(file);
+		}
+
+		expect(
+			offenders,
+			`These lead with an <input>, which puts the autofill bar over the keyboard.\nUse <OneLine> or a textarea:\n  ${offenders.join('\n  ')}`
+		).toEqual([]);
+	});
+});
+
 describe('form field names', () => {
 	it('never hand a browser a field it will read as part of an address', () => {
 		const offenders: string[] = [];

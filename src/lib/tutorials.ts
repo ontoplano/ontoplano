@@ -134,7 +134,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 			{
 				target: '[data-tour="planner-tabs"]',
 				title: 'Six views of the same week',
-				body: 'Plan is the shape of it, Board is today, Todo is everything with no date yet, History is what actually happened.'
+				body: 'Plan is the shape of it, Board is today, To-do is everything with no date yet, History is what actually happened.'
 			},
 			{
 				target: '[data-tour="plan-grid"]',
@@ -164,7 +164,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 			{
 				target: '[data-tour="board-tabs"]',
 				title: 'Today, or everything else',
-				body: 'Today is the day in front of you. Todo is everything you have written down without a date; pulling one onto today gives it one.'
+				body: 'Today is the day in front of you. To-do is everything you have written down without a date; pulling one onto today gives it one.'
 			},
 			{
 				target: '[data-tour="board-columns"]',
@@ -180,7 +180,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 	},
 
 	'/planner/todo': {
-		label: 'Todo',
+		label: 'To-do',
 		steps: [
 			{
 				title: 'The things without a day yet',

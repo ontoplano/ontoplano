@@ -7,7 +7,7 @@ describe('matching what somebody types', () => {
 	});
 
 	test('scattered letters still match', () => {
-		expect(matchScore('Planner Todo', 'pltd')).not.toBeNull();
+		expect(matchScore('Planner To-do', 'pltd')).not.toBeNull();
 	});
 
 	test('letters in the wrong order do not', () => {

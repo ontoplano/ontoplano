@@ -78,7 +78,7 @@ async function newRecipe(page: Page, title: string) {
 		.getByRole('button', { name: /new recipe/i })
 		.first()
 		.click();
-	await page.locator('input[name="heading"]').first().fill(title);
+	await page.locator('[name="heading"]').first().fill(title);
 	await page.locator('button[type="submit"]').first().click();
 	await page.waitForURL(/\/kitchen\/recipes\/\d+/, { timeout: 20000 });
 }
@@ -150,7 +150,7 @@ test('a person gets one face, and it shows in the list', async ({ page }) => {
 		.getByRole('button', { name: /new person/i })
 		.first()
 		.click();
-	await page.locator('input[name="label"]').first().fill('Ana');
+	await page.locator('[name="label"]').first().fill('Ana');
 	await page.getByRole('button', { name: /add person/i }).click();
 	await expect(page.getByRole('link', { name: /^Ana/ })).toBeVisible();
 
@@ -174,7 +174,7 @@ test('a note written in a notebook takes one too', async ({ page }) => {
 		.getByRole('button', { name: /new notebook/i })
 		.first()
 		.click();
-	await page.locator('input[name="heading"]').first().fill('Kitchen');
+	await page.locator('[name="heading"]').first().fill('Kitchen');
 	await page.locator('button[type="submit"]').first().click();
 	await expect(page.getByPlaceholder('Write a note about Kitchen')).toBeVisible();
 
@@ -195,7 +195,7 @@ test('a person’s face is the way in to their picture', async ({ page }) => {
 		.getByRole('button', { name: /new person/i })
 		.first()
 		.click();
-	await page.locator('input[name="label"]').first().fill('Ana');
+	await page.locator('[name="label"]').first().fill('Ana');
 	await page.getByRole('button', { name: /add person/i }).click();
 	await expect(page.getByRole('link', { name: /^Ana/ })).toBeVisible();
 

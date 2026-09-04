@@ -20,7 +20,7 @@
 	const tabs = [
 		{ href: resolve('/planner/plan'), label: 'Plan' },
 		{ href: resolve('/planner/board'), label: 'Board' },
-		{ href: resolve('/planner/todo'), label: 'Todo' },
+		{ href: resolve('/planner/todo'), label: 'To-do' },
 		{ href: resolve('/planner/activities'), label: 'Activities' },
 		{ href: resolve('/planner/history'), label: 'History' },
 		{ href: resolve('/planner/review'), label: 'Review' }

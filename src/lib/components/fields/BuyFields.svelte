@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Field from '$lib/components/Field.svelte';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 
 	/**
@@ -28,7 +29,8 @@
 </script>
 
 <Field label="Item" span={compact ? 12 : 8} required>
-	<input name="label" type="text" autocomplete="off" required bind:value={label} class="input" />
+	<!-- Same reason as the todo's title: see `OneLine.svelte`. -->
+	<OneLine name="label" required bind:value={label} />
 </Field>
 
 {#snippet rest()}

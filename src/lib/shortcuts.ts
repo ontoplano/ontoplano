@@ -117,7 +117,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 	'/planner/todo': {
-		label: 'Todo',
+		label: 'To-do',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate list' },
 			{ key: 'k', action: 'navigate-up', description: 'Navigate list' },

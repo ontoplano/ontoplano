@@ -801,7 +801,7 @@
 		{/snippet}
 
 		{#snippet card_latestTodos()}
-			<Card title="Latest todos" accent={SECTION_COLORS.planner}>
+			<Card title="Latest to-dos" accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
 					<div class="flex items-center gap-2">
 						<!--

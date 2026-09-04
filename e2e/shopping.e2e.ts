@@ -19,7 +19,7 @@ test('a new category is created, and can hold food', async ({ page }) => {
 	const dialog = page.locator('dialog[open]');
 
 	await dialog.getByRole('button', { name: /new category/i }).click();
-	await dialog.locator('input[name=label]').fill('Freezer');
+	await dialog.locator('[name=label]').fill('Freezer');
 	await dialog.locator('input[name=isFood]').check();
 	await dialog.getByRole('button', { name: /add the category/i }).click();
 
@@ -47,7 +47,7 @@ test('a category that holds food makes ingredients possible', async ({ page }) =
 	await page.getByRole('button', { name: 'Categories' }).click();
 	const dialog = page.locator('dialog[open]');
 	await dialog.getByRole('button', { name: /new category/i }).click();
-	await dialog.locator('input[name=label]').fill('Pantry');
+	await dialog.locator('[name=label]').fill('Pantry');
 	await dialog.locator('input[name=isFood]').check();
 	await dialog.getByRole('button', { name: /add the category/i }).click();
 	await expect(dialog.locator('li', { hasText: 'Pantry' })).toBeVisible();
@@ -77,8 +77,8 @@ test('what you paid is recorded after the tick, and the price shows on the row',
 
 	await page.getByRole('button', { name: /add item/i }).click();
 	const dialog = page.locator('dialog[open]');
-	await dialog.locator('input[name=label]').fill('oat milk');
-	await dialog.locator('input[name=label]').press('Enter');
+	await dialog.locator('[name=label]').fill('oat milk');
+	await dialog.locator('[name=label]').press('Enter');
 	await expect(page.getByText('oat milk')).toBeVisible();
 
 	// Ticking never asks for a price.

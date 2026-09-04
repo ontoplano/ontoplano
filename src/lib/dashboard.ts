@@ -87,7 +87,7 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 	},
 	{
 		id: 'latestTodos',
-		label: 'Latest todos',
+		label: 'Latest to-dos',
 		description: 'The most recent things you wrote down, newest first.',
 		defaultOn: true,
 		width: 'half'

@@ -48,7 +48,7 @@
 	let dropping = $state<string | null>(null);
 
 	const SORT_LABELS: Record<string, string> = {
-		todo: 'Todo',
+		todo: 'To-do',
 		idea: 'Idea',
 		shopping: 'Someday'
 	};

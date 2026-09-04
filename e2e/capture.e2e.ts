@@ -71,11 +71,11 @@ test('press, flick and release writes the thing', async ({ page }) => {
 	await page.mouse.move(pie.x + 70, pie.y - 40, { steps: 8 });
 	await page.mouse.up();
 
-	await expect(page.getByRole('heading', { name: /new todo/i })).toBeVisible();
-	await page.locator('input[name=heading]').fill('buy a bigger pan');
+	await expect(page.getByRole('heading', { name: /new to-do/i })).toBeVisible();
+	await page.locator('[name=heading]').fill('buy a bigger pan');
 	await page.getByRole('button', { name: 'Save' }).click();
 
-	await expect(page.getByRole('heading', { name: /new todo/i })).toBeHidden();
+	await expect(page.getByRole('heading', { name: /new to-do/i })).toBeHidden();
 
 	// And it is really there, in the list that owns it.
 	await visit(page, '/planner/todo');

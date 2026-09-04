@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Field from '$lib/components/Field.svelte';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
@@ -39,7 +40,11 @@
 </script>
 
 <Field label="Title" span={12} required>
-	<input name="heading" type="text" required autocomplete="off" value={title} class="input" />
+	<!--
+		A textarea, not an input: Android offers its saved addresses over one and
+		not the other, and no attribute changes that. `OneLine.svelte` says more.
+	-->
+	<OneLine name="heading" required value={title} />
 </Field>
 
 {#snippet details()}

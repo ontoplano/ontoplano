@@ -120,7 +120,7 @@ test.describe('saving a block', () => {
 		await expect(block).toBeVisible();
 		await block.click();
 
-		const label = page.locator('#block-form input[name="label"]');
+		const label = page.locator('#block-form [name="label"]');
 		await expect(label).toBeVisible();
 		await label.fill('Renamed on a phone');
 

@@ -10,6 +10,17 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.64.0 — 2026-09-04
+
+- **The loading bar at the top is the only thing a slow page shows.** The
+  page-shaped placeholder went with it: it could be left on screen by a
+  navigation that never resolved, which is worse than a blank wait.
+- **The quick capture fields stop the phone offering passwords and cards.**
+  Android decides that from the element, not the attributes, so the first
+  field of a quick todo or a quick buy is a one-line text area that still
+  saves on Enter.
+- **"Todo" is written "To-do"** everywhere it is read rather than typed.
+
 ## 0.63.0 — 2026-09-04
 
 - **Forms stop blanking themselves on the way out** — the quick capture ones

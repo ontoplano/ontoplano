@@ -18,7 +18,7 @@ import { visit } from './helpers/visit';
 async function newCard(page: import('@playwright/test').Page, title: string) {
 	await visit(page, '/planner/board');
 	await page.keyboard.press('n');
-	await page.fill('#card-form input[name=heading]', title);
+	await page.fill('#card-form [name=heading]', title);
 	await page.getByRole('button', { name: 'Add card' }).click();
 	await expect(page.getByText(title, { exact: true })).toBeVisible();
 }
@@ -97,8 +97,8 @@ test.describe('the todo rail', () => {
 	test('drops a todo once it is done', async ({ page }) => {
 		await register(page, `board-rail-${Date.now()}@example.test`);
 		const title = 'A rail todo that gets finished';
-		const rail = page.getByRole('complementary', { name: 'Todo list' });
-		const todoTab = page.getByRole('button', { name: 'Todo', exact: true });
+		const rail = page.getByRole('complementary', { name: 'To-do list' });
+		const todoTab = page.getByRole('button', { name: 'To-do', exact: true });
 		const todayTab = page.getByRole('button', { name: 'Today', exact: true });
 
 		// A card made on the Todo tab has no day, which is what puts it in the
@@ -106,7 +106,7 @@ test.describe('the todo rail', () => {
 		await visit(page, '/planner/board');
 		await todoTab.click();
 		await page.keyboard.press('n');
-		await page.fill('#card-form input[name=heading]', title);
+		await page.fill('#card-form [name=heading]', title);
 		await page.getByRole('button', { name: 'Add card' }).click();
 		await expect(page.getByText(title, { exact: true }).first()).toBeVisible();
 

@@ -487,7 +487,7 @@
 
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div class="flex items-center gap-1" data-tour="board-tabs">
-			{#each [{ v: 'today', l: 'Today' }, { v: 'general', l: 'Todo' }] as t (t.v)}
+			{#each [{ v: 'today', l: 'Today' }, { v: 'general', l: 'To-do' }] as t (t.v)}
 				<button
 					onclick={() => {
 						tab = t.v as typeof tab;
@@ -1153,7 +1153,7 @@
 			<!-- The todo list stays visible beside Today so the two can actually
 			     interact: drag one across and it becomes a scheduled task. -->
 			<aside
-				aria-label="Todo list"
+				aria-label="To-do list"
 				class="w-full shrink-0 border bg-gray-50 md:w-64 lg:w-72 xl:w-80 {railOver
 					? 'border-gray-900'
 					: 'border-gray-200'}"
@@ -1169,7 +1169,7 @@
 				>
 					<!-- Todo, like the tab and the plan's rail. The status column beside
 					     it is "Pending", which is what stops the two reading as one word. -->
-					<span class="eyebrow text-gray-600">Todo</span>
+					<span class="eyebrow text-gray-600">To-do</span>
 					<span class="tabular text-xs text-gray-500">{railCards.length}</span>
 				</header>
 				<div class="space-y-2 p-2">

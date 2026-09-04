@@ -253,7 +253,7 @@
 			</button>
 		</div>
 		<button onclick={startNew} class="btn btn-primary btn-sm" data-tour="todo-new">
-			<Icon name="plus" /> New todo
+			<Icon name="plus" /> New to-do
 			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
 				>{keyFor('/planner/todo', 'new')}</kbd
 			>
@@ -265,7 +265,7 @@
 	<Modal
 		bind:open={showForm}
 		error={form?.message}
-		title={editingId ? 'Edit todo' : 'New todo'}
+		title={editingId ? 'Edit to-do' : 'New to-do'}
 		onclose={() => (editingId = null)}
 	>
 		{@const editing = editingTodo()}
@@ -390,7 +390,7 @@
 				title={showCompleted ? 'Nothing here yet' : 'Nothing waiting'}
 				description={showCompleted
 					? 'Anything you finish shows up here.'
-					: 'A todo is a task with no day on it. Put one here and drag it onto the board when it has a home.'}
+					: 'A to-do is a task with no day on it. Put one here and drag it onto the board when it has a home.'}
 			/>
 		</div>
 	{:else}

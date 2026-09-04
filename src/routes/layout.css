@@ -2149,75 +2149,6 @@ html[data-pie-open] .float-layer {
 }
 
 /*
- * The shape of a page, while the page is on its way.
- *
- * It covers `<main>` rather than replacing it, so nothing is unmounted and the
- * page underneath keeps its scroll and its state — if the navigation turns out
- * to be quick, this simply lifts off it again.
- *
- * The pulse is opacity only. A shimmer that slides across is a second
- * animation to get wrong, and the last attempt at motion here — the whole page
- * sliding in from the left — is what earned the word flashbang.
- */
-.page-skeleton {
-	position: absolute;
-	inset: 0;
-	z-index: 5;
-	display: flex;
-	flex-direction: column;
-	gap: 1rem;
-	/* Inside `<main>`, which is the box it stands in for — so it lines up with
-	   the page rather than with the window, and `main`'s own padding is what
-	   sets the margins. */
-	padding: 0;
-	background: var(--color-gray-50);
-	overflow: hidden;
-}
-
-.sk {
-	border-radius: 2px;
-	background: var(--color-gray-200);
-	animation: sk-pulse 1.4s ease-in-out infinite;
-}
-
-.sk-title {
-	height: 1.75rem;
-	width: min(18rem, 60%);
-}
-
-.sk-card {
-	height: 8rem;
-	/* A beat behind the heading, so the block reads as one thing settling
-	   rather than four things blinking together. */
-	animation-delay: 90ms;
-}
-
-.sk-row {
-	height: 3rem;
-	animation-delay: 180ms;
-}
-
-.sk-short {
-	width: 70%;
-}
-
-@keyframes sk-pulse {
-	0%,
-	100% {
-		opacity: 1;
-	}
-	50% {
-		opacity: 0.55;
-	}
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.sk {
-		animation: none;
-	}
-}
-
-/*
  * A navigation in flight, said across the top of the window.
  *
  * Indeterminate on purpose: nothing here knows how far along a load is, and a
@@ -2273,4 +2204,17 @@ html[data-pie-open] .float-layer {
 		background: var(--color-gray-900);
 		background-size: 100% 100%;
 	}
+}
+
+/*
+ * A textarea pretending to be an input, because Android's autofill will not
+ * offer its saved addresses over one. See `OneLine.svelte` for why.
+ */
+.one-line {
+	resize: none;
+	overflow: hidden;
+	/* One row exactly, whatever the line-height inherits to. */
+	height: calc(1lh + 1rem + 2px);
+	min-height: 0;
+	white-space: pre;
 }

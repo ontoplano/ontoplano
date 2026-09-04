@@ -36,7 +36,7 @@ export const CAPTURES: Capture[] = [
 	{
 		key: 'todo',
 		shortcut: 't',
-		label: 'Todo',
+		label: 'To-do',
 		icon: 'check',
 		color: SECTION_COLORS.planner,
 		action: '/planner/todo?/create'
