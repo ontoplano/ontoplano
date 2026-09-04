@@ -61,7 +61,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			createGoal(buildCtx(locals.user!.id), {
-				title: formData.get('title'),
+				title: formData.get('heading'),
 				horizon: formData.get('horizon'),
 				notes: formData.get('notes'),
 				startDate: formData.get('startDate'),
@@ -81,7 +81,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			updateGoal(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				title: formData.get('title'),
+				title: formData.get('heading'),
 				notes: formData.get('notes'),
 				areaId: formData.get('areaId'),
 				notebookId: formData.get('notebookId'),

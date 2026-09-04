@@ -32,20 +32,33 @@ export const POST: RequestHandler = async ({ locals }) => {
 		});
 	}
 
-	const sent = await pushToUser(locals.user.id, {
+	const { sent, failed } = await pushToUser(locals.user.id, {
 		title: 'Ontoplano',
 		body: 'This is what a reminder will look like.',
 		url: '/',
 		tag: 'ontoplano-test'
 	});
 
+	/*
+	 * Which device, and why — not a count.
+	 *
+	 * "Sent to 1 of 2 devices" is the least useful true sentence available: it
+	 * says something is wrong and nothing about what, and the obvious reading —
+	 * "the phone was not seen" — is the one thing it does not mean. Every
+	 * failure here names the device and the reason, and the commonest reason,
+	 * a subscription made against a key this instance no longer has, comes with
+	 * the thing to do about it.
+	 */
 	return json({
-		ok: sent > 0,
+		ok: sent > 0 && failed.length === 0,
 		devices: devices.length,
 		sent,
+		failed,
 		why:
-			sent > 0
-				? null
-				: 'The push service refused every device. They may have been revoked in the browser.'
+			failed.length > 0
+				? failed.map((f) => `${f.device}: ${f.why}`).join('. ')
+				: sent > 0
+					? null
+					: 'Nothing went, and nothing said why — which should not happen.'
 	});
 };

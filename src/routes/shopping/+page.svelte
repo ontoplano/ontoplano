@@ -337,7 +337,9 @@
 						}
 
 						priceError = null;
-						await update({ reset: true });
+						// It closes on success and is destroyed; resetting only makes the
+						// fields blank for a frame first. On a failure it keeps what was typed.
+						await update({ reset: false });
 						if (result.type === 'success') pricing = null;
 					};
 				}}

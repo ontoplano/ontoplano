@@ -97,9 +97,10 @@ describe('pushing', () => {
 		push.saveSubscription(ctx(), device('https://push.example/laptop'));
 		push.saveSubscription(ctx(), device('https://push.example/phone'));
 
-		const sent = await push.pushToUser(OWNER, { title: 'Gym in ten minutes' });
+		const { sent, failed } = await push.pushToUser(OWNER, { title: 'Gym in ten minutes' });
 
 		expect(sent).toBe(2);
+		expect(failed).toEqual([]);
 		expect(sends.map((s) => s.endpoint).sort()).toEqual([
 			'https://push.example/laptop',
 			'https://push.example/phone'
@@ -143,7 +144,39 @@ describe('pushing', () => {
 	});
 
 	test('an account with no devices is not an error', async () => {
-		expect(await push.pushToUser(OWNER, { title: 'Anything' })).toBe(0);
+		expect(await push.pushToUser(OWNER, { title: 'Anything' })).toEqual({ sent: 0, failed: [] });
+	});
+
+	/**
+	 * A subscription made against a key this instance no longer has.
+	 *
+	 * The push service answers 403: the browser pinned the old key when it
+	 * subscribed, so this can never succeed. Left in the table it fails every
+	 * minute forever while somebody wonders why their phone is quiet — and the
+	 * count that reported it, "sent to 1 of 2 devices", reads as "the phone was
+	 * not seen", which is the one thing it does not mean.
+	 */
+	test('a subscription for a different key is dropped, and says so', async () => {
+		push.saveSubscription(ctx(), device('https://push.example/old-key'), 'Chrome on Android');
+		outcome = { status: 403 };
+
+		const { sent, failed } = await push.pushToUser(OWNER, { title: 'Anything' });
+
+		expect(sent).toBe(0);
+		expect(push.subscriptionsFor(OWNER), 'it will fail forever if it is kept').toHaveLength(0);
+		expect(failed).toHaveLength(1);
+		expect(failed[0].device).toBe('Chrome on Android');
+		expect(failed[0].why, 'the message does not say what to do').toMatch(/turn notifications on/i);
+	});
+
+	test('and a device that merely failed is named too', async () => {
+		push.saveSubscription(ctx(), device('https://push.example/flaky2'), 'Firefox on Linux');
+		outcome = { status: 500 };
+
+		const { failed } = await push.pushToUser(OWNER, { title: 'Anything' });
+
+		expect(failed[0].device).toBe('Firefox on Linux');
+		expect(failed[0].why).toContain('500');
 	});
 });
 

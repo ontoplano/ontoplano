@@ -98,7 +98,17 @@
 			action={open.action}
 			use:enhance={() =>
 				async ({ update, result }) => {
-					await update({ reset: true });
+					/*
+					 * `reset: false`, because this form is about to disappear.
+					 *
+					 * `update()` empties the form element before the dialog closes,
+					 * and on a phone the round trip is long enough to watch it
+					 * happen: every field blanks, and then the screen closes over
+					 * the empty form it just made. The form is destroyed on close,
+					 * so nothing wanted the reset — and on a failure it has to keep
+					 * what was typed rather than throw it away.
+					 */
+					await update({ reset: false });
 					if (result.type === 'success') open = null;
 				}}
 		>

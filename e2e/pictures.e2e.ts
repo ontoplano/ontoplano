@@ -78,7 +78,7 @@ async function newRecipe(page: Page, title: string) {
 		.getByRole('button', { name: /new recipe/i })
 		.first()
 		.click();
-	await page.locator('input[name="title"]').first().fill(title);
+	await page.locator('input[name="heading"]').first().fill(title);
 	await page.locator('button[type="submit"]').first().click();
 	await page.waitForURL(/\/kitchen\/recipes\/\d+/, { timeout: 20000 });
 }
@@ -174,7 +174,7 @@ test('a note written in a notebook takes one too', async ({ page }) => {
 		.getByRole('button', { name: /new notebook/i })
 		.first()
 		.click();
-	await page.locator('input[name="title"]').first().fill('Kitchen');
+	await page.locator('input[name="heading"]').first().fill('Kitchen');
 	await page.locator('button[type="submit"]').first().click();
 	await expect(page.getByPlaceholder('Write a note about Kitchen')).toBeVisible();
 

@@ -288,7 +288,7 @@
 			<FormGrid>
 				<Field label="Goal" span={12} required>
 					<input
-						name="title"
+						name="heading"
 						required
 						use:autofocus
 						autocomplete="off"

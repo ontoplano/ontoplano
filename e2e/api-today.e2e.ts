@@ -121,7 +121,7 @@ test('today answers with blocks and tasks in one request', async ({ playwright }
 	// draws: an undated one is not "today" yet.
 	await request.post('/planner/todo?/create', {
 		headers: action,
-		form: { title: 'book the plumber', scheduledDate: body.date }
+		form: { heading: 'book the plumber', scheduledDate: body.date }
 	});
 
 	const second = await (

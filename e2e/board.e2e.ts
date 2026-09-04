@@ -18,7 +18,7 @@ import { visit } from './helpers/visit';
 async function newCard(page: import('@playwright/test').Page, title: string) {
 	await visit(page, '/planner/board');
 	await page.keyboard.press('n');
-	await page.fill('#card-form input[name=title]', title);
+	await page.fill('#card-form input[name=heading]', title);
 	await page.getByRole('button', { name: 'Add card' }).click();
 	await expect(page.getByText(title, { exact: true })).toBeVisible();
 }
@@ -106,7 +106,7 @@ test.describe('the todo rail', () => {
 		await visit(page, '/planner/board');
 		await todoTab.click();
 		await page.keyboard.press('n');
-		await page.fill('#card-form input[name=title]', title);
+		await page.fill('#card-form input[name=heading]', title);
 		await page.getByRole('button', { name: 'Add card' }).click();
 		await expect(page.getByText(title, { exact: true }).first()).toBeVisible();
 

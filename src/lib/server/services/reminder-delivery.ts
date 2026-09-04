@@ -88,7 +88,7 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 	let pushed = 0;
 	for (const [userId, items] of byAccount) {
 		for (const reminder of items) {
-			const sent = await pushToUser(userId, {
+			const { sent, failed } = await pushToUser(userId, {
 				title: reminder.message,
 				body: reminder.remindAt.slice(11, 16),
 				url: hrefFor(reminder),
@@ -106,6 +106,12 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 			 */
 			markPushed([reminder.id]);
 			pushed += sent > 0 ? 1 : 0;
+			// Said out loud: a device that keeps refusing is the difference
+			// between "the timer works" and "my phone is silent", and the journal
+			// is where somebody looks for that.
+			for (const { device, why } of failed) {
+				console.error(`reminders: ${device} did not take it — ${why}`);
+			}
 		}
 	}
 

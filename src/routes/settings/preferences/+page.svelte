@@ -179,9 +179,17 @@
 				devices?: number;
 				why?: string | null;
 			};
-			tested = body.ok
-				? `Sent to ${body.sent} of ${body.devices} device${body.devices === 1 ? '' : 's'}. If nothing appeared, the browser is holding it back.`
-				: (body.why ?? 'It did not go.');
+			/*
+			 * The reason, not the arithmetic.
+			 *
+			 * "Sent to 1 of 2 devices" says something is wrong and nothing about
+			 * what — and its obvious reading, "the phone was not seen", is the one
+			 * thing it does not mean. The server names each device that refused
+			 * and why; if any did, that is the sentence worth showing.
+			 */
+			tested = body.why
+				? body.why
+				: `Sent to ${body.sent} device${body.sent === 1 ? '' : 's'}. If nothing appeared, the browser is holding it back.`;
 		} catch {
 			tested = 'The request did not reach the server.';
 		} finally {

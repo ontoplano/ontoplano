@@ -151,8 +151,8 @@ test.describe('one account cannot reach another account by id', () => {
 			name: 'todo',
 			page: '/planner/todo',
 			payloadKey: 'todos',
-			create: { path: '/planner/todo?/create', form: { title: "alice's todo" } },
-			attack: (id) => ({ path: '/planner/todo?/update', form: { id, title: 'taken' } })
+			create: { path: '/planner/todo?/create', form: { heading: "alice's todo" } },
+			attack: (id) => ({ path: '/planner/todo?/update', form: { id, heading: 'taken' } })
 		},
 		{
 			name: 'habit',
@@ -170,9 +170,9 @@ test.describe('one account cannot reach another account by id', () => {
 			payloadKey: 'goals',
 			create: {
 				path: '/goals?/create',
-				form: { title: "alice's goal", horizon: 'week' }
+				form: { heading: "alice's goal", horizon: 'week' }
 			},
-			attack: (id) => ({ path: '/goals?/update', form: { id, title: 'taken' } })
+			attack: (id) => ({ path: '/goals?/update', form: { id, heading: 'taken' } })
 		},
 		{
 			name: 'goal area',
@@ -229,8 +229,8 @@ test.describe('one account cannot reach another account by id', () => {
 			name: 'notebook',
 			page: '/diary/notebooks',
 			payloadKey: 'notebooks',
-			create: { path: '/diary/notebooks?/create', form: { title: "alice's notebook" } },
-			attack: (id) => ({ path: '/diary/notebooks?/update', form: { id, title: 'taken' } })
+			create: { path: '/diary/notebooks?/create', form: { heading: "alice's notebook" } },
+			attack: (id) => ({ path: '/diary/notebooks?/update', form: { id, heading: 'taken' } })
 		},
 		{
 			name: 'api token',
@@ -259,8 +259,8 @@ test.describe('one account cannot reach another account by id', () => {
 			name: 'recipe',
 			page: '/kitchen/recipes',
 			payloadKey: 'recipes',
-			create: { path: '/kitchen/recipes?/create', form: { title: "alice's recipe" } },
-			attack: (id) => ({ path: '/kitchen/recipes?/update', form: { id, title: 'taken' } })
+			create: { path: '/kitchen/recipes?/create', form: { heading: "alice's recipe" } },
+			attack: (id) => ({ path: '/kitchen/recipes?/update', form: { id, heading: 'taken' } })
 		},
 		{
 			// A category is what half the other entities hang off, so reaching one
@@ -378,7 +378,7 @@ test.describe('one account cannot reach another account by id', () => {
 		const request = await playwright.request.newContext({ baseURL: ORIGIN });
 
 		const created = await action(request, alice, '/kitchen/recipes?/create', {
-			title: "alice's photographed recipe"
+			heading: "alice's photographed recipe"
 		});
 		expect(['success', 'redirect']).toContain(created.type);
 		const recipeId = await firstId(request, alice, '/kitchen/recipes', 'recipes');

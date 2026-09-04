@@ -329,7 +329,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			createTodo(buildCtx(locals.user!.id), {
-				title: formData.get('title'),
+				title: formData.get('heading'),
 				notes: formData.get('notes'),
 				categoryId: formData.get('categoryId'),
 				scheduledDate: formData.get('scheduledDate'),

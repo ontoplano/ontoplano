@@ -272,30 +272,34 @@
 	});
 
 	/*
-	 * The next page arrives from the left.
+	 * What a click gets you before the page does.
 	 *
-	 * Two other ways were tried and both were worse. Keying the page on the
-	 * pathname throws the whole subtree away on every navigation, including a
-	 * nested layout's chrome — switching Settings tabs made the tab row jump.
-	 * The View Transitions API, which is the right tool on paper and animates
-	 * the outgoing page too, froze the document in the browser this is tested
-	 * in: the URL changed and the old page stayed painted, `skipTransition()`
-	 * included. A navigation that can hang is not worth an animation.
+	 * Three attempts, and the first two are why this one looks like it does.
+	 * Keying the page on the pathname rebuilds the whole subtree, chrome
+	 * included, so switching Settings tabs made the tab row jump. The View
+	 * Transitions API froze the document in testing — URL changed, old page
+	 * still painted. And sliding the new page in from the left, which is what
+	 * replaced them, flicked: a page that has already loaded is not arriving
+	 * from anywhere, and animating it every time reads as a flashbang.
 	 *
-	 * So: no interception and no remounting. The pathname changes, the class is
-	 * replayed on `<main>`, and its contents slide in. Nothing can stall,
-	 * because nothing is waiting on anything.
+	 * What was actually missing is feedback at the moment of the click, not
+	 * decoration at the moment of the answer. So: the bar across the top, and —
+	 * for a navigation slow enough to notice — the page it is leaving goes
+	 * quiet and a plain skeleton stands in its place. Deliberately page
+	 * agnostic: a few grey blocks that could become any screen, so nothing has
+	 * to be kept in step with the page it stands for.
 	 */
+	let waiting = $state(false);
 	$effect(() => {
-		const path = page.url.pathname;
-		const el = scroller;
-		if (!el || !path) return;
-
-		el.classList.remove('page-arriving');
-		// Read a layout property to restart the animation: without it the class
-		// goes off and on inside one frame and the browser sees no change.
-		void el.offsetWidth;
-		el.classList.add('page-arriving');
+		if (!navigating.to) {
+			waiting = false;
+			return;
+		}
+		// Not immediately. Most navigations here land inside a frame or two, and
+		// a skeleton that flashes on every one of them makes a fast app feel
+		// broken — which is the complaint the sliding version earned.
+		const timer = setTimeout(() => (waiting = true), 220);
+		return () => clearTimeout(timer);
 	});
 
 	// Reads the keyboard on hydration; `Ctrl` until then, which is the
@@ -750,6 +754,24 @@
 			class="relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto overscroll-y-contain px-4 pt-[calc(var(--safe-top)+1rem)] pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+0.75rem)] sm:px-6 lg:overflow-visible lg:pt-6 lg:pb-6"
 		>
 			<!--
+				The shape of a page, while the page is on its way.
+
+				Six grey blocks and nothing else: a heading, a couple of cards, a list.
+				Every screen in this app is some arrangement of those, so this reads as
+				"the next one is coming" on all of them without being right about any
+				of them in particular — which is what keeps it from having to be
+				maintained alongside eight different layouts.
+			-->
+			{#if waiting}
+				<div class="page-skeleton" aria-hidden="true">
+					<div class="sk sk-title"></div>
+					<div class="sk sk-card"></div>
+					<div class="sk sk-row"></div>
+					<div class="sk sk-row"></div>
+					<div class="sk sk-row sk-short"></div>
+				</div>
+			{/if}
+			<!--
 				No entrance animation, and no `{#key}` around the page.
 
 				It used to be keyed on the pathname with a 6px rise, so arriving
@@ -795,18 +817,24 @@
 					glyph, which was a sun with rays: on a phone bar, next to search
 					and a plus, that reads as a brightness control and nothing else.
 				-->
+				<!--
+					Home, search, the pies, the plus, the account — in that order.
+					
+					It read account, search, home, plus: the one destination nobody
+					visits twice a day sat under the first thumb position, and home was
+					fourth. The two raised pies keep the middle, which is the reach a
+					thumb actually has.
+				-->
+				<!-- Home by name, since the pie no longer offers it. -->
 				<a
-					href={resolve('/settings/account')}
-					class="tap flex flex-1 items-center justify-center {page.url.pathname.startsWith(
-						'/settings'
-					)
+					href={resolve('/')}
+					class="tap flex flex-1 items-center justify-center {page.url.pathname === '/'
 						? 'text-chrome-ink'
 						: 'text-chrome-muted'}"
-					aria-label="Account"
-					title="Account"
-					data-tour="menu"
+					aria-label="Home"
+					title="Home"
 				>
-					<Icon name="user" size={22} />
+					<Icon name="home" size={22} />
 				</a>
 
 				<button
@@ -856,18 +884,6 @@
 					</button>
 				</div>
 
-				<!-- Home by name, since the pie no longer offers it. -->
-				<a
-					href={resolve('/')}
-					class="tap flex flex-1 items-center justify-center {page.url.pathname === '/'
-						? 'text-chrome-ink'
-						: 'text-chrome-muted'}"
-					aria-label="Home"
-					title="Home"
-				>
-					<Icon name="home" size={22} />
-				</a>
-
 				<button
 					onpointerdown={(e) => pie?.summon(e)}
 					class="tap pie-handle flex flex-1 items-center justify-center {pieOpen
@@ -879,6 +895,20 @@
 				>
 					<Icon name="plus" size={24} />
 				</button>
+
+				<a
+					href={resolve('/settings/account')}
+					class="tap flex flex-1 items-center justify-center {page.url.pathname.startsWith(
+						'/settings'
+					)
+						? 'text-chrome-ink'
+						: 'text-chrome-muted'}"
+					aria-label="Account"
+					title="Account"
+					data-tour="menu"
+				>
+					<Icon name="user" size={22} />
+				</a>
 			</div>
 		</nav>
 

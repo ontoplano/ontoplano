@@ -32,7 +32,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			createTodo(buildCtx(locals.user!.id), {
-				title: formData.get('title'),
+				title: formData.get('heading'),
 				notes: formData.get('notes'),
 				categoryId: formData.get('categoryId'),
 				notebookId: formData.get('notebookId'),
@@ -59,7 +59,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		try {
 			updateTodo(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				title: formData.get('title'),
+				title: formData.get('heading'),
 				notes: formData.get('notes'),
 				categoryId: formData.get('categoryId'),
 				notebookId: formData.get('notebookId'),

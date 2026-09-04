@@ -2156,17 +2156,12 @@ The devices signed up for one account, newest first.
 
 #### `pushToUser(userId, payload)`
 
-Push one message to every device an account has signed up.
-
-Answers with how many actually went, because the caller's decision — mark
-this reminder pushed or leave it for next minute — depends on whether
-anybody was reached, not on whether we tried.
-
 ### Types
 
 - `Keys`
 - `Subscription`
 - `Payload` — What a notification says and where it goes when tapped.
+- `PushOutcome` — Push one message to every device an account has signed up.
 
 ## quotes
 

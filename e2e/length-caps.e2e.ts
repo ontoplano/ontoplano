@@ -19,12 +19,12 @@ const TOO_LONG = 'x'.repeat(60_000);
 const CASES: { name: string; path: string; form: Record<string, string> }[] = [
 	{ name: 'diary entry', path: '/diary?/create', form: { content: TOO_LONG } },
 	{ name: 'diary tags', path: '/diary?/create', form: { content: 'fine', tags: TOO_LONG } },
-	{ name: 'todo title', path: '/planner/todo?/create', form: { title: TOO_LONG } },
-	{ name: 'todo notes', path: '/planner/todo?/create', form: { title: 'fine', notes: TOO_LONG } },
+	{ name: 'todo title', path: '/planner/todo?/create', form: { heading: TOO_LONG } },
+	{ name: 'todo notes', path: '/planner/todo?/create', form: { heading: 'fine', notes: TOO_LONG } },
 	{
 		name: 'notebook title',
 		path: '/diary/notebooks?/create',
-		form: { title: TOO_LONG }
+		form: { heading: TOO_LONG }
 	},
 	{ name: 'person name', path: '/diary/people?/create', form: { label: TOO_LONG } },
 	{
@@ -35,7 +35,7 @@ const CASES: { name: string; path: string; form: Record<string, string> }[] = [
 	{
 		name: 'goal title',
 		path: '/goals?/create',
-		form: { title: TOO_LONG, horizon: 'week' }
+		form: { heading: TOO_LONG, horizon: 'week' }
 	},
 	{ name: 'idea', path: '/ideas?/create', form: { content: TOO_LONG } },
 	{ name: 'shopping item', path: '/shopping?/create', form: { label: TOO_LONG } },

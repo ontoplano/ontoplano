@@ -209,7 +209,10 @@
 							action="?/updateEntry"
 							use:enhance={() =>
 								async ({ update, result }) => {
-									await update();
+									// The editor closes on success and is destroyed with its
+									// fields; resetting only blanks them for a frame first, and
+									// on a failure it would throw away what was written.
+									await update({ reset: false });
 									if (result.type === 'success') editingNoteId = null;
 								}}
 						>
@@ -258,7 +261,7 @@
 										action="?/deleteEntry"
 										use:enhance={() =>
 											async ({ update }) => {
-												await update();
+												await update({ reset: false });
 												confirmDeleteNote = null;
 											}}
 										class="flex items-center gap-2"

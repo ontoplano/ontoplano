@@ -243,7 +243,7 @@
 		<FormGrid>
 			<Field label="Title" span={12} required>
 				<input
-					name="title"
+					name="heading"
 					required
 					autocomplete="off"
 					value={editing?.title ?? ''}

@@ -427,7 +427,18 @@
 		display: none;
 	}
 
-	@media (pointer: coarse) {
+	/*
+	 * Where the phone bar is, whatever the pointer is.
+	 *
+	 * This was `(pointer: coarse)` and it should have been the width: a desktop
+	 * window narrowed past `lg` gets the phone's bar and the phone's wheel, with
+	 * a mouse — and got the old wedge labels with them, because the pointer was
+	 * still fine. The two have to agree, or the same control is two controls.
+	 *
+	 * `1023px` is one below Tailwind's `lg`, which is where the bottom bar takes
+	 * over from the header.
+	 */
+	@media (pointer: coarse), (max-width: 1023px) {
 		.pie-hud {
 			position: fixed;
 			/* A fifth of the way down: clear of the status bar and the app's own

@@ -126,7 +126,7 @@ test('a long unbroken name does not push its controls off the screen', async ({ 
 
 	await visit(page, '/diary/notebooks');
 	await page.getByRole('button', { name: 'New notebook' }).first().click();
-	await page.fill('input[name=title]', 'a'.repeat(64));
+	await page.fill('input[name=heading]', 'a'.repeat(64));
 	await page
 		.getByRole('button', { name: /Create|Save|Add/ })
 		.last()

@@ -106,7 +106,13 @@
 		<input type="hidden" name="id" value={data.notebook.id} />
 		<FormGrid>
 			<Field label="Title" span={12} required>
-				<input name="title" required autocomplete="off" value={data.notebook.title} class="input" />
+				<input
+					name="heading"
+					required
+					autocomplete="off"
+					value={data.notebook.title}
+					class="input"
+				/>
 			</Field>
 			<Field label="What it is for" span={12}>
 				<textarea name="description" rows="2" class="textarea">{data.notebook.description}</textarea

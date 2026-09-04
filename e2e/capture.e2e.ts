@@ -72,7 +72,7 @@ test('press, flick and release writes the thing', async ({ page }) => {
 	await page.mouse.up();
 
 	await expect(page.getByRole('heading', { name: /new todo/i })).toBeVisible();
-	await page.locator('input[name=title]').fill('buy a bigger pan');
+	await page.locator('input[name=heading]').fill('buy a bigger pan');
 	await page.getByRole('button', { name: 'Save' }).click();
 
 	await expect(page.getByRole('heading', { name: /new todo/i })).toBeHidden();

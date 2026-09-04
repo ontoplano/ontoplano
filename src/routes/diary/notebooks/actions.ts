@@ -22,7 +22,7 @@ export const notebookActions = {
 		const formData = await request.formData();
 		try {
 			createNotebook(buildCtx(locals.user!.id), {
-				title: formData.get('title'),
+				title: formData.get('heading'),
 				description: formData.get('description')
 			});
 			return { success: true };
@@ -35,7 +35,7 @@ export const notebookActions = {
 		const formData = await request.formData();
 		try {
 			updateNotebook(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				title: formData.get('title'),
+				title: formData.get('heading'),
 				description: formData.get('description')
 			});
 			return { success: true };

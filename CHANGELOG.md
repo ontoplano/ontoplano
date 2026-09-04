@@ -10,6 +10,27 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.63.0 — 2026-09-04
+
+- **Forms stop blanking themselves on the way out** — the quick capture ones
+  included, which had written the reset out in full and survived the last sweep.
+  A test now refuses any form that resets and then closes, because this is the
+  third time it has come back.
+- **The phone keyboard stops offering addresses on a new todo.** Chrome reads a
+  field called `title` as an honorific prefix — Mr, Mrs — so a task title was,
+  to it, part of a saved address. Everything called `title` is `heading` now,
+  and the rule that catches it knows the name.
+- **The bar reads home, search, plus, account** — the one destination nobody
+  visits twice a day was under the first thumb.
+- The wheel's big label follows the bar rather than the pointer, so a narrowed
+  desktop window gets it too.
+- A slow navigation shows the shape of the page that is coming, instead of the
+  whole page sliding in from the left on every navigation.
+- **A notification that does not arrive says which device and why.** "Sent to 1
+  of 2 devices" is true and useless; a subscription made against a key the
+  instance no longer has is now named, explained and dropped rather than retried
+  forever.
+
 ## 0.62.1 — 2026-09-04
 
 - **Billing worked in the build and not in the running app.** The payment

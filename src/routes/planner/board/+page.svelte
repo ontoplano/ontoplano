@@ -599,7 +599,7 @@
 
 			<FormGrid>
 				<Field label="Title" span={12} required>
-					<input name="title" required autocomplete="off" class="input" />
+					<input name="heading" required autocomplete="off" class="input" />
 				</Field>
 
 				<Field label="Category" span={12}>

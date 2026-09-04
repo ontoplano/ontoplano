@@ -31,8 +31,8 @@ async function makeRecipe(page: import('@playwright/test').Page, title: string):
 		.click();
 
 	const form = page.locator('dialog[open]');
-	await form.locator('input[name=title]').fill(title);
-	await form.locator('input[name=title]').press('Enter');
+	await form.locator('input[name=heading]').fill(title);
+	await form.locator('input[name=heading]').press('Enter');
 	await page.waitForURL(/\/kitchen\/recipes\/\d+/, { timeout: 10_000 });
 }
 
@@ -231,7 +231,7 @@ test('a recipe put on a day turns into shopping', async ({ page }) => {
 		.getByRole('button', { name: /new recipe/i })
 		.first()
 		.click();
-	await page.locator('#recipe-form input[name=title]').fill('Leek soup');
+	await page.locator('#recipe-form input[name=heading]').fill('Leek soup');
 	await page.getByRole('button', { name: 'Create', exact: true }).click();
 	await page.waitForURL(/\/kitchen\/recipes\/\d+/);
 

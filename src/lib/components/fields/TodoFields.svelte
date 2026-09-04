@@ -39,7 +39,7 @@
 </script>
 
 <Field label="Title" span={12} required>
-	<input name="title" type="text" required autocomplete="off" value={title} class="input" />
+	<input name="heading" type="text" required autocomplete="off" value={title} class="input" />
 </Field>
 
 {#snippet details()}

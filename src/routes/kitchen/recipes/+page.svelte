@@ -200,7 +200,7 @@
 	<form id="recipe-form" method="post" action="?/create" use:enhance>
 		<FormGrid>
 			<Field label="What it is" span={12} required>
-				<input name="title" required autocomplete="off" class="input" />
+				<input name="heading" required autocomplete="off" class="input" />
 			</Field>
 			<Field label="Serves" span={4}>
 				<input autocomplete="off" name="servings" type="number" min="1" class="input" />

@@ -37,7 +37,7 @@ export const recipeActions = {
 		let id: number;
 		try {
 			id = createRecipe(buildCtx(locals.user!.id), {
-				title: formData.get('title'),
+				title: formData.get('heading'),
 				method: formData.get('method'),
 				notes: formData.get('notes'),
 				servings: formData.get('servings'),
@@ -110,7 +110,7 @@ export const recipeActions = {
 		const formData = await request.formData();
 		try {
 			updateRecipe(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				title: formData.get('title'),
+				title: formData.get('heading'),
 				method: formData.get('method'),
 				notes: formData.get('notes'),
 				servings: formData.get('servings'),

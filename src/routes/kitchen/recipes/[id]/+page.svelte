@@ -243,7 +243,9 @@
 						action="?/importIngredients"
 						use:enhance={() =>
 							async ({ update, result }) => {
-								await update({ reset: true });
+								// It closes on success and is destroyed; resetting only makes the
+								// fields blank for a frame first. On a failure it keeps what was typed.
+								await update({ reset: false });
 								if (result.type === 'success') pasting = false;
 							}}
 					>
@@ -492,7 +494,7 @@
 		<input type="hidden" name="id" value={data.recipe.id} />
 		<FormGrid>
 			<Field label="What it is" span={12} required>
-				<input name="title" required value={data.recipe.title} autocomplete="off" class="input" />
+				<input name="heading" required value={data.recipe.title} autocomplete="off" class="input" />
 			</Field>
 			<Field label="Serves" span={4}>
 				<input

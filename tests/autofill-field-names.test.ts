@@ -37,7 +37,17 @@ const MAGNETS = [
 	'given-name',
 	'family-name',
 	'cc-number',
-	'cc-name'
+	'cc-name',
+	/*
+	 * `title` is one of these, which is not obvious.
+	 *
+	 * Chrome's name classifier reads it as an honorific prefix — Mr, Mrs, Dr —
+	 * so a task called "title" is, to the autofill heuristic, part of a saved
+	 * address profile. It raised the key/card/pin row over the keyboard on the
+	 * quick todo form while the idea form beside it, whose field is `content`,
+	 * raised nothing at all. Everything that was `title` is `heading` now.
+	 */
+	'title'
 ];
 
 /** Where a browser's autofill is welcome, and declared. */

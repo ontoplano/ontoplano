@@ -33,12 +33,27 @@ test('the phone bar carries home and the raised pie; nothing pulls to refresh', 
 	expect(behavior.root).toBe('contain');
 	expect(behavior.main).toBe('contain');
 
-	// The pie offers rooms, not Home — Home is a plain button now.
+	/*
+	 * The pie offers rooms, not Home — Home is a plain button in the bar.
+	 *
+	 * The wedges carry icons here rather than names: the finger covers the one
+	 * it is on, so the name is drawn at the top of the screen instead. Aiming at
+	 * a wedge is therefore how you ask what it is.
+	 */
 	await bar
 		.getByRole('button', { name: 'Go to a section' })
 		.dispatchEvent('pointerdown', { pointerId: 1, clientX: 195, clientY: 780 });
-	await expect(page.locator('svg text', { hasText: 'Planner' }).first()).toBeVisible();
-	await expect(page.locator('svg text', { hasText: 'Home' })).toHaveCount(0);
+
+	const wedges = page.locator('.pie [role="menuitem"]');
+	await expect(wedges.first()).toBeVisible();
+
+	const named: string[] = [];
+	for (let i = 0; i < (await wedges.count()); i += 1) {
+		await wedges.nth(i).hover();
+		named.push(((await page.locator('.pie-hud').textContent()) ?? '').trim());
+	}
+	expect(named).toContain('Planner');
+	expect(named, 'Home is a button in the bar, not a wedge').not.toContain('Home');
 });
 
 test('a dialog on the phone is a screen with a back arrow', async ({ page }) => {

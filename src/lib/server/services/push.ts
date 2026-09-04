@@ -225,16 +225,23 @@ export type Payload = {
  * this reminder pushed or leave it for next minute — depends on whether
  * anybody was reached, not on whether we tried.
  */
-export async function pushToUser(userId: string, payload: Payload): Promise<number> {
+export type PushOutcome = {
+	sent: number;
+	/** One line per device that did not take it, in words an operator can act on. */
+	failed: { device: string; why: string }[];
+};
+
+export async function pushToUser(userId: string, payload: Payload): Promise<PushOutcome> {
 	const keys = vapidKeys();
-	if (!keys) return 0;
+	if (!keys) return { sent: 0, failed: [] };
 
 	const devices = subscriptionsFor(userId);
-	if (devices.length === 0) return 0;
+	if (devices.length === 0) return { sent: 0, failed: [] };
 
 	webpush.setVapidDetails(contact(), keys.publicKey, keys.privateKey);
 	const body = JSON.stringify(payload);
 	let sent = 0;
+	const failed: { device: string; why: string }[] = [];
 
 	for (const device of devices) {
 		try {
@@ -250,23 +257,51 @@ export async function pushToUser(userId: string, payload: Payload): Promise<numb
 				.run();
 		} catch (error) {
 			const status = (error as { statusCode?: number })?.statusCode;
-			// 404: the push service never heard of it. 410: it is gone for good.
-			// Both are the browser telling us this subscription is over.
-			if (status === 404 || status === 410) {
+			const named = device.label ?? 'a device';
+
+			/*
+			 * Three ways a push fails, and only one of them is worth retrying.
+			 *
+			 * 404 and 410: the push service never heard of this subscription, or
+			 * it is gone for good — an uninstalled browser, a revoked permission.
+			 *
+			 * 403: the subscription is real and belongs to a *different* VAPID
+			 * key. That happens when the instance's keys change, and it can never
+			 * succeed — the browser pinned the old key when it subscribed. Left in
+			 * the table it fails every minute forever while the person wonders why
+			 * their phone is quiet, so it goes the same way, and the person is
+			 * told to turn notifications on again on that device.
+			 */
+			if (status === 404 || status === 410 || status === 403) {
 				db.delete(pushSubscriptions).where(eq(pushSubscriptions.id, device.id)).run();
+				failed.push({
+					device: named,
+					why:
+						status === 403
+							? 'it subscribed with a different key — turn notifications on again there'
+							: 'the push service says it is gone — turn notifications on again there'
+				});
 				continue;
 			}
+
 			const failures = device.failures + 1;
 			if (failures >= GIVE_UP_AFTER) {
 				db.delete(pushSubscriptions).where(eq(pushSubscriptions.id, device.id)).run();
+				failed.push({ device: named, why: `failed ${failures} times running, so it was dropped` });
 			} else {
 				db.update(pushSubscriptions)
 					.set({ failures })
 					.where(eq(pushSubscriptions.id, device.id))
 					.run();
+				failed.push({
+					device: named,
+					why: status
+						? `the push service answered ${status}`
+						: 'the push service could not be reached'
+				});
 			}
 		}
 	}
 
-	return sent;
+	return { sent, failed };
 }
