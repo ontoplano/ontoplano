@@ -2847,6 +2847,15 @@ Put a replenish item back on the list; a wishlist item has nothing to restock.
 
 #### `toggleSnoozed(ctx, id)`
 
+#### `setSnoozed(ctx, id, snoozed)`
+
+Snoozed, or not, said rather than flipped.
+
+A toggle is the right control under a finger and the wrong one for a caller
+that knows what it wants: "put this back on the list" through a toggle is
+read-then-flip, which is a race and, worse, silently does the opposite when
+the read was stale. Everything outside the page itself asks for a state.
+
 #### `listToBuy(ctx)`
 
 What is still to buy, for the dashboard card.

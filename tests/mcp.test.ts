@@ -202,6 +202,58 @@ describe('a tool that runs', () => {
 		expect(wrong).toEqual([]);
 	});
 
+	/**
+	 * Every state a tool can put something into, it can take it back out of.
+	 *
+	 * This is the rule the surface kept breaking. An assistant could tick a
+	 * shopping item bought and not untick it, finish a todo and not reopen it,
+	 * close a goal and not reopen it, add an idea and not remove it — and a
+	 * one-way verb does not produce a refusal, it produces a workaround: delete
+	 * the row and make a new one, losing its category, its notes and its price
+	 * history. The same shape as the assistant that "moved" a block by adding a
+	 * duplicate and marking the original skipped.
+	 *
+	 * A pairing rather than an assertion about names: what matters is that
+	 * something answers, not what it is called.
+	 */
+	it('offers a way back from everything it can do', () => {
+		const names = new Set(TOOLS.map((t) => t.name));
+		const oneWay: string[] = [];
+
+		const pairs: [string, string[]][] = [
+			['tick_bought', ['untick_bought']],
+			['snooze_item', ['unsnooze_item']],
+			['add_to_shopping_list', ['remove_from_shopping_list']],
+			['finish_todo', ['reopen_todo']],
+			['drop_todo', ['reopen_todo']],
+			['schedule_todo', ['unschedule_todo']],
+			['add_todo', ['drop_todo']],
+			['close_goal', ['reopen_goal']],
+			['add_idea', ['remove_idea']],
+			['add_block', ['cancel_block']],
+			['keep_habit', ['keep_habit']]
+		];
+
+		for (const [verb, backs] of pairs) {
+			if (!names.has(verb)) continue;
+			if (!backs.some((back) => names.has(back))) oneWay.push(verb);
+		}
+
+		expect(oneWay, 'these can be done and not undone').toEqual([]);
+	});
+
+	/**
+	 * And the answer for a block, which is a state rather than a pair of tools:
+	 * `todo` is how a tick is taken back.
+	 */
+	it('lets a block\u2019s answer be taken back', () => {
+		const finish = TOOLS.find((t) => t.name === 'finish_block');
+		const status = (finish?.input as { properties?: Record<string, { enum?: string[] }> })
+			?.properties?.status;
+
+		expect(status?.enum).toContain('todo');
+	});
+
 	it('writes, and the write is the service’s own', () => {
 		const made = call(['tasks:write'], {
 			jsonrpc: '2.0',

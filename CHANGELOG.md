@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.60.0 — 2026-09-04
+
+- **An assistant can undo what it does.** Over MCP it could tick a shopping item
+  bought and never untick it, finish a todo and never reopen it, close a goal,
+  add an idea — all one-way. So tidying a list meant deleting a row and retyping
+  it, losing its category, its notes and its price history. Six tools added —
+  `untick_bought`, `snooze_item`, `unsnooze_item`, `reopen_todo`, `reopen_goal`,
+  `remove_idea` — and a block's answer can be taken back.
+
 ## 0.59.0 — 2026-09-03
 
 - **"Send a test" under Settings → Preferences.** Six things stand between

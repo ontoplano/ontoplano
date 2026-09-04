@@ -240,3 +240,57 @@ test('the preset ticks exactly the scopes an AI assistant needs', async ({ page 
 	await dialog.getByRole('button', { name: /^clear$/i }).click();
 	expect(await dialog.locator('input[name="scopes"]:checked').count()).toBe(0);
 });
+
+/**
+ * Tidying a shopping list, which is what an assistant is actually asked to do.
+ *
+ * The surface could add, tick and delete — and nothing else. So an assistant
+ * asked to bring an item back out of the cupboard had one move available:
+ * delete the row and make a new one, losing its category, its notes and every
+ * price ever recorded against it. This walks the round trip over real HTTP, the
+ * way the thing that reported it does.
+ */
+test('an assistant can undo everything it can do to a shopping list', async ({ playwright }) => {
+	const { request, cookie } = await account(playwright);
+	const token = await mintToken(request, cookie, ['shopping:read', 'shopping:write']);
+
+	const call = async (name: string, args: Record<string, unknown>) => {
+		const res = await rpc(request, token, {
+			jsonrpc: '2.0',
+			id: 9,
+			method: 'tools/call',
+			params: { name, arguments: args }
+		});
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const body = res.body as any;
+		expect(body.result?.isError, `${name}: ${body.result?.content?.[0]?.text}`).toBe(false);
+		return body.result.structuredContent;
+	};
+
+	const list = async () => (await call('shopping_list', {})).items as Record<string, unknown>[];
+	const find = async (name: string) => (await list()).find((i) => i.name === name);
+
+	await call('add_to_shopping_list', { name: 'Cebola' });
+	expect((await find('Cebola'))?.bought, 'a new item starts on the list').toBe(false);
+
+	// Into the cupboard…
+	const onion = await find('Cebola');
+	await call('tick_bought', { id: onion!.id });
+	expect((await find('Cebola'))?.bought).toBe(true);
+
+	// …and back out again, which is the whole point.
+	await call('untick_bought', { id: onion!.id });
+	expect((await find('Cebola'))?.bought, 'it could not be brought back').toBe(false);
+
+	// Aside for now, and back.
+	await call('snooze_item', { id: onion!.id });
+	expect((await find('Cebola'))?.snoozed).toBe(true);
+	await call('unsnooze_item', { id: onion!.id });
+	expect((await find('Cebola'))?.snoozed, 'it could not be woken').toBe(false);
+
+	// And the row is the same row throughout — not a replacement, which is what
+	// delete-and-recreate would have left behind.
+	expect((await find('Cebola'))?.id).toBe(onion!.id);
+
+	await request.dispose();
+});

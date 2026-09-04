@@ -334,11 +334,26 @@ export function restockItem(ctx: Ctx, id: number): void {
 
 export function toggleSnoozed(ctx: Ctx, id: number): void {
 	const item = ownedItem(ctx, id);
+	setSnoozed(ctx, id, !item.snoozed);
+}
+
+/**
+ * Snoozed, or not, said rather than flipped.
+ *
+ * A toggle is the right control under a finger and the wrong one for a caller
+ * that knows what it wants: "put this back on the list" through a toggle is
+ * read-then-flip, which is a race and, worse, silently does the opposite when
+ * the read was stale. Everything outside the page itself asks for a state.
+ */
+export function setSnoozed(ctx: Ctx, id: number, snoozed: boolean): { changed: boolean } {
+	const item = ownedItem(ctx, id);
+	if (item.snoozed === snoozed) return { changed: false };
 
 	db.update(shoppingItems)
-		.set({ snoozed: !item.snoozed, updatedAt: stamp(ctx) })
+		.set({ snoozed, updatedAt: stamp(ctx) })
 		.where(and(eq(shoppingItems.id, id), eq(shoppingItems.userId, ctx.userId)))
 		.run();
+	return { changed: true };
 }
 
 function ownedItem(ctx: Ctx, id: number) {

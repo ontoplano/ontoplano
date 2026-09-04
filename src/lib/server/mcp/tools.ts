@@ -24,7 +24,7 @@ import { localDateOf, type Ctx } from '../services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 
 import { createEntry, listEntries } from '../services/diary.js';
-import { createIdea, listIdeas } from '../services/ideas.js';
+import { createIdea, deleteIdea, listIdeas } from '../services/ideas.js';
 import { closeGoal, listGoals } from '../services/goals.js';
 import { listNotebooks } from '../services/notebooks.js';
 import {
@@ -35,7 +35,7 @@ import {
 	listRecipes
 } from '../services/recipes.js';
 import { grouped, search } from '../services/search.js';
-import { createItem, deleteItem, listItems, setBought } from '../services/shopping.js';
+import { createItem, deleteItem, listItems, setBought, setSnoozed } from '../services/shopping.js';
 import { getTodayBoard } from '../services/today.js';
 import {
 	createTodo,
@@ -157,7 +157,7 @@ export const TOOLS: Tool[] = [
 		name: 'finish_block',
 		title: 'Mark a block done or skipped',
 		description:
-			'Answer for one block on the day: it happened, or it did not. Takes the id `today` gives for that block. Skipping is a real answer — say skipped when the person says they did not do it. It is NOT a way to clear something off the day: a skip goes into the week\u2019s record and the review asks about it. To move a block use `change_block`; to take one off because it was never happening use `cancel_block`.',
+			'Answer for one block on the day: it happened, or it did not. Takes the id `today` gives for that block. Skipping is a real answer — say skipped when the person says they did not do it. It is NOT a way to clear something off the day: a skip goes into the week\u2019s record and the review asks about it. To move a block use `change_block`; to take one off because it was never happening use `cancel_block`. `todo` takes an answer back, for one ticked by mistake.',
 		scope: 'schedule:write',
 		writes: true,
 		input: object(
@@ -165,7 +165,7 @@ export const TOOLS: Tool[] = [
 				id: text('The block’s id, exactly as `today` gave it — it looks like `slot:42`.'),
 				status: {
 					type: 'string',
-					enum: ['done', 'skipped'],
+					enum: ['done', 'skipped', 'todo'],
 					description: 'What actually happened.'
 				}
 			},
@@ -370,6 +370,26 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
+		/*
+		 * Both closing verbs have one way back, and it is the same way back.
+		 *
+		 * `finish_todo` and `drop_todo` each set a status; nothing set it to
+		 * `todo` again. So "actually I haven't done that yet" had no answer,
+		 * and the workaround is a second row with the same words on it.
+		 */
+		name: 'reopen_todo',
+		title: 'Put a todo back on the list',
+		description:
+			'Undo a finish or a drop: the todo goes back to not-done. Use it when something was ticked by mistake, or when a dropped thing turns out to matter after all. It keeps its notes, its day and everything linked to it.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The todo\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			setTodoStatus(ctx, Number(args.id), 'todo');
+			return { ok: true };
+		}
+	},
+	{
 		name: 'schedule_todo',
 		title: 'Put a todo on a day',
 		description:
@@ -444,6 +464,24 @@ export const TOOLS: Tool[] = [
 
 	// ── Writing ──────────────────────────────────────────────────────────────
 	{
+		/*
+		 * `close_goal` already takes the status the app uses, and `open` is one
+		 * of them — but the tool's enum did not offer it, so a goal could be
+		 * closed by an assistant and only reopened by hand.
+		 */
+		name: 'reopen_goal',
+		title: 'Reopen a goal',
+		description:
+			'Put a closed goal back to open. Its outcome note is cleared and the date it was closed on goes with it, so a reopened goal does not read as having been finished at some point in the past.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The goal\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			closeGoal(ctx, Number(args.id), { status: 'open' });
+			return { ok: true };
+		}
+	},
+	{
 		name: 'diary',
 		title: 'Recent diary entries',
 		description:
@@ -510,6 +548,24 @@ export const TOOLS: Tool[] = [
 
 	// ── The kitchen and the list ─────────────────────────────────────────────
 	{
+		/*
+		 * Anything an assistant can create, it has to be able to take back.
+		 * `add_idea` with no `remove_idea` means a misheard sentence is a row
+		 * somebody else has to go and delete.
+		 */
+		name: 'remove_idea',
+		title: 'Delete an idea',
+		description:
+			'Delete an idea — for one added by mistake, or one that has been dealt with. It is gone, not archived, so prefer leaving it alone unless the person asked.',
+		scope: 'notes:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The idea\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			deleteIdea(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+	{
 		name: 'shopping_list',
 		title: 'The shopping list',
 		description:
@@ -556,6 +612,51 @@ export const TOOLS: Tool[] = [
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The item’s id.' } }, ['id']),
 		run: (ctx, args) => setBought(ctx, Number(args.id), true)
+	},
+	{
+		/*
+		 * The way back out of the cupboard.
+		 *
+		 * Every verb here had exactly one direction, and an assistant tidying a
+		 * list found the wall immediately: it could tick a thing bought and it
+		 * could delete a row, so the only way to undo a mistaken tick was to
+		 * destroy the item and make a new one — losing its category, its notes
+		 * and every price ever recorded against it. A one-way tool does not
+		 * produce a refusal; it produces a workaround, and the workaround is
+		 * always worse than the thing it stands in for.
+		 */
+		name: 'untick_bought',
+		title: 'Put something back on the list',
+		description:
+			'Undo a tick: the item comes out of the cupboard and back onto "to buy". Use it when something was marked bought by mistake, or when it has run out again. Nothing is lost either way — the row, its category and its price history are the same row.',
+		scope: 'shopping:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),
+		run: (ctx, args) => setBought(ctx, Number(args.id), false)
+	},
+	{
+		/*
+		 * Snoozing is how the list stays short without anybody losing anything,
+		 * so it needs both directions for the same reason ticking does.
+		 */
+		name: 'snooze_item',
+		title: 'Put something aside for now',
+		description:
+			'Take an item off the visible list without deleting it — for something not wanted this week. It keeps everything about itself and comes back with `unsnooze_item`. Prefer this to removing when somebody says "not now" rather than "never".',
+		scope: 'shopping:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),
+		run: (ctx, args) => setSnoozed(ctx, Number(args.id), true)
+	},
+	{
+		name: 'unsnooze_item',
+		title: 'Bring something back to the list',
+		description:
+			'Wake an item that was put aside, so it shows on the list again. `shopping_list` says which items are snoozed.',
+		scope: 'shopping:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),
+		run: (ctx, args) => setSnoozed(ctx, Number(args.id), false)
 	},
 	{
 		name: 'remove_from_shopping_list',
