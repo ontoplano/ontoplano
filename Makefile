@@ -70,7 +70,7 @@ vars:
 	@sh scripts/make-vars.sh $(sort $(MAKEFILE_LIST) defaults.env $(wildcard $(SERVER_SRC)/defaults.env))
 
 
-.PHONY: _docker-builder _billing-in-build vars billing-provider package package-check release _release-run github-push _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
+.PHONY: site-shots _docker-builder _billing-in-build vars billing-provider package package-check release _release-run github-push _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -307,6 +307,12 @@ build: billing-provider
 # The logo lives in exactly one file, src/lib/logo/mark.png. This is what turns
 # it into the favicon, the four PWA icons and the one iOS reads — so changing
 # the logo is changing a file, not finding eight copies of it.
+# The screenshots ontoplano.com shows, retaken from the live code. Writes
+# straight into ../ontoplano-site/assets/ — look at them, then commit THAT
+# repo. SHOT_DIR=… to aim somewhere else first. The video slide is not touched.
+site-shots:
+	node scripts/site-shots.mjs
+
 icons:
 	@yarn -s icons
 

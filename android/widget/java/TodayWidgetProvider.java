@@ -80,8 +80,17 @@ public class TodayWidgetProvider extends AppWidgetProvider {
 
         // One template for every row: a widget cannot give each item its own
         // pending intent, so the list sets a fill-in intent and this carries it.
-        Intent open = new Intent(context, WidgetConfigureActivity.class);
-        open.putExtra(WidgetConfigureActivity.EXTRA_FROM_WIDGET, true);
+        //
+        // A connected widget's rows are today's plan, so tapping one opens the
+        // board — the screen those rows are a picture of. The setup screen is
+        // only where an UNCONFIGURED tap lands; sending a configured widget's
+        // taps there put a "connect me" form in front of somebody who already
+        // had, with nothing to do but press back.
+        Intent open =
+                WidgetSettings.configured(context)
+                        ? boardIntent(context)
+                        : new Intent(context, WidgetConfigureActivity.class)
+                                .putExtra(WidgetConfigureActivity.EXTRA_FROM_WIDGET, true);
         views.setPendingIntentTemplate(
                 R.id.widget_list,
                 PendingIntent.getActivity(context, widgetId, open, flags(PendingIntent.FLAG_MUTABLE)));
@@ -90,7 +99,31 @@ public class TodayWidgetProvider extends AppWidgetProvider {
                 R.id.widget_header,
                 PendingIntent.getActivity(context, widgetId, launchApp(context), flags(0)));
 
+        // The empty state is a row too, in spirit: "Nothing today" opens the
+        // board, where putting something on today lives.
+        views.setOnClickPendingIntent(
+                R.id.widget_empty,
+                PendingIntent.getActivity(
+                        context,
+                        widgetId,
+                        WidgetSettings.configured(context)
+                                ? boardIntent(context)
+                                : new Intent(context, WidgetConfigureActivity.class)
+                                        .putExtra(WidgetConfigureActivity.EXTRA_FROM_WIDGET, true),
+                        flags(0)));
+
         return views;
+    }
+
+    /**
+     * The board, inside this app: a VIEW on the instance's own address, which
+     * the app claims — so it opens here rather than in a browser tab.
+     */
+    private static Intent boardIntent(Context context) {
+        Intent view =
+                new Intent(Intent.ACTION_VIEW, Uri.parse(WidgetSettings.origin(context) + "/planner/board"));
+        view.setPackage(context.getPackageName());
+        return view;
     }
 
     /** Opens the app itself — whatever the launcher would open. */

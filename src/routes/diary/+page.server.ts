@@ -2,6 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { DASHBOARD_LAYOUT_KEY, parseLayout } from '$lib/dashboard';
 import { getUserSetting } from '$lib/server/settings';
 import { buildCtx } from '$lib/server/services/ctx';
+import { pickableNotebooks } from '$lib/server/services/notebooks';
 import {
 	createEntry,
 	createWins,
@@ -24,6 +25,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		entries: entries.map((e) => ({ ...e, people: mentions.get(e.id) ?? [] })),
+		// For the entry form's notebook picker — a note written from the diary
+		// can be filed the same way one written from the capture wheel can.
+		notebooks: pickableNotebooks(ctx),
 		allTags: listTags(ctx),
 		allPeople: listPeople(ctx),
 		// Three wins is a personal habit, not everyone's: one switch governs it,
@@ -41,7 +45,8 @@ export const actions: Actions = {
 			const ctx = buildCtx(locals.user!.id);
 			const id = createEntry(ctx, {
 				content: formData.get('content'),
-				tags: formData.get('tags')
+				tags: formData.get('tags'),
+				notebookId: formData.get('notebookId')
 			});
 			setEntryPeople(ctx, id, formData.get('people'));
 			return { success: true };
@@ -76,7 +81,8 @@ export const actions: Actions = {
 			const id = Number(formData.get('id'));
 			updateEntry(ctx, id, {
 				content: formData.get('content'),
-				tags: formData.get('tags')
+				tags: formData.get('tags'),
+				notebookId: formData.get('notebookId')
 			});
 			setEntryPeople(ctx, id, formData.get('people'));
 			return { success: true };

@@ -29,15 +29,6 @@ body:
     validations:
       required: true
 
-  - type: input
-    id: version
-    attributes:
-      label: Version
-      description: Settings → Instance shows it, beside the commit and the build time.
-      placeholder: 0.29.0
-    validations:
-      required: true
-
   - type: dropdown
     id: instance
     attributes:
@@ -48,6 +39,17 @@ body:
         - The demo
     validations:
       required: true
+
+  # After the instance, and optional: app.ontoplano.com and the demo run one
+  # version and we know which. Only somebody running their own copy can be on
+  # anything else. (Issue forms cannot show a field conditionally, so the
+  # description carries the condition instead.)
+  - type: input
+    id: version
+    attributes:
+      label: Version — only if you run your own instance
+      description: Settings → Instance shows it, beside the commit and the build time.
+      placeholder: 0.29.0
 
   - type: input
     id: where

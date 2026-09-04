@@ -63,6 +63,7 @@ export async function register(
 	await page.fill('input[name=name]', name);
 	await page.fill('input[name=email]', email);
 	await page.fill('input[name=password]', PASSWORD);
+	await page.fill('input[name=confirm]', PASSWORD);
 	await page.getByRole('button', { name: 'Create account' }).click();
 
 	try {

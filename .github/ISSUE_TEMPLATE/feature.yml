@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Check [ROADMAP.md](https://github.com/ontoplano/ontoplano/blob/main/ROADMAP.md)
+        Check [ROADMAP.md](https://github.com/ontoplano/ontoplano/blob/master/ROADMAP.md)
         first — it lists what is already intended, with the constraints that are
         already decided. If yours is on it, say so in an issue and take it on
         rather than opening a second one.
@@ -13,22 +13,22 @@ body:
   - type: textarea
     id: problem
     attributes:
-      label: What are you trying to do
+      label: What do you want to do
       description: >
-        The situation, not the solution. "I cook from a plan and end up at the
-        shop without the list" is something to build for; "add a share button"
-        is a guess at how.
+        The thing itself — "share my shopping list with my partner",
+        "see the week as a calendar file".
     validations:
       required: true
 
   - type: textarea
     id: today
     attributes:
-      label: How you handle it today
-      description: Another app, a workaround here, or not at all.
+      label: How do you do that currently
+      description: Optional. Another app, a workaround here, or not at all.
 
   - type: textarea
     id: idea
     attributes:
-      label: What you think it should do
-      description: Optional. The problem above is the part that matters.
+      label: How do you think Ontoplano could be changed to do it better
+    validations:
+      required: true

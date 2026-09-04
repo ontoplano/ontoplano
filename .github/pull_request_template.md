@@ -7,11 +7,12 @@ Closes #
 ## Checks
 
 - [ ] `yarn lint` and `yarn test` pass.
-- [ ] `CHANGELOG.md` has a line, under a version that moved in this same commit.
+- [ ] `CHANGELOG.md` has a line, under a version that moves in this same PR.
 - [ ] `yarn docs` was run if the schema, the API, the routes or the keyboard
-      changed.
+      changed. (CI regenerates them and fails on any difference, so this is
+      about saving yourself the round trip.)
 
-## A feature arrives with four things
+## A feature should arrive with other things
 
 Tick what applies; say why for anything you left out.
 

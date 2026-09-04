@@ -62,3 +62,24 @@ describe('a form that closes on success', () => {
 		).toEqual([]);
 	});
 });
+
+/**
+ * The note forms actually carry the notebook they offer.
+ *
+ * The field can render and the action ignore it — which is exactly how the
+ * diary's create action shipped: `NotebookField` was in the component and
+ * `notebookId` never left the form. Both ends are pinned as source, because
+ * the alternative is an e2e that creates a notebook per run.
+ */
+it('a note form offers a notebook, and its actions read it', () => {
+	const fields = readFileSync('src/lib/components/fields/NoteFields.svelte', 'utf8');
+	expect(fields).toContain('NotebookField');
+
+	const action = readFileSync('src/routes/diary/+page.server.ts', 'utf8');
+	// Both writes: the quick create and the edit.
+	expect(action.match(/notebookId: formData\.get\('notebookId'\)/g)?.length).toBe(2);
+
+	// And the capture wheel hands the list over, or the field renders empty.
+	const capture = readFileSync('src/lib/components/CaptureForm.svelte', 'utf8');
+	expect(capture).toMatch(/NoteFields compact notebooks=\{options\.notebooks\}/);
+});

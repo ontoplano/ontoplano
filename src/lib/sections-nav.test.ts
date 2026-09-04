@@ -19,12 +19,12 @@ describe('the places the app can take you', () => {
 		expect(ROOMS.map((r) => r.key)).toEqual(NAV_PLACES.map((p) => p.key));
 	});
 
-	it('has Notebooks and People among them', () => {
-		// Named rather than left to the count: these two are the ones that went
-		// missing, and they went missing because nothing said they had to be here.
-		for (const key of ['notebooks', 'people']) {
-			expect(roomFor(key), `${key} is not a place the pie can reach`).toBeTruthy();
-		}
+	it('has People among them, and deliberately not Notebooks', () => {
+		// People went missing once because nothing said it had to be here.
+		// Notebooks is the opposite case: it is the second tab of Notes, not a
+		// room — an entry of its own would put the same shelf in the bar twice.
+		expect(roomFor('people'), 'people is not a place the pie can reach').toBeTruthy();
+		expect(roomFor('notebooks')).toBeUndefined();
 	});
 
 	it('sends every place somewhere, once', () => {

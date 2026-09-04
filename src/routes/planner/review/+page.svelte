@@ -84,12 +84,26 @@
 </script>
 
 <div class="space-y-4">
-	<div class="flex flex-wrap items-center justify-between gap-3">
-		<div>
+	<!-- ← week → as one block, arrows hugging what they move — the same shape
+	     the plan's header has, because they are the same control. -->
+	<div class="flex items-center gap-2">
+		<button
+			class="icon-btn h-11 w-11 shrink-0"
+			title="Previous week ([)"
+			aria-label="Previous week"
+			onclick={() =>
+				// The route is resolved; the rule cannot see through the query string.
+				// eslint-disable-next-line svelte/no-navigation-without-resolve
+				goto(`${resolve('/planner/review')}?week=${data.week.prev}`)}
+		>
+			<Icon name="arrow-left" size={22} />
+		</button>
+
+		<div class="min-w-0">
 			<h2 class="text-base font-semibold text-gray-900">
 				Week {data.week.number}, {data.week.year}
 			</h2>
-			<p class="text-sm text-gray-500">
+			<p class="truncate text-sm text-gray-500">
 				{pretty(data.reading.weekStart)} — {pretty(data.reading.weekEnd)}
 				{#if data.week.isCurrent}
 					· still running
@@ -97,30 +111,17 @@
 			</p>
 		</div>
 
-		<div class="flex items-center gap-2">
-			<button
-				class="btn btn-sm"
-				title="Previous week"
-				aria-label="Previous week"
-				onclick={() =>
-					// The route is resolved; the rule cannot see through the query string.
-					// eslint-disable-next-line svelte/no-navigation-without-resolve
-					goto(`${resolve('/planner/review')}?week=${data.week.prev}`)}
-			>
-				<Icon name="chevron-left" size={16} />
-			</button>
-			<button
-				class="btn btn-sm"
-				title="Next week"
-				aria-label="Next week"
-				onclick={() =>
-					// The route is resolved; the rule cannot see through the query string.
-					// eslint-disable-next-line svelte/no-navigation-without-resolve
-					goto(`${resolve('/planner/review')}?week=${data.week.next}`)}
-			>
-				<Icon name="chevron-right" size={16} />
-			</button>
-		</div>
+		<button
+			class="icon-btn h-11 w-11 shrink-0"
+			title="Next week (])"
+			aria-label="Next week"
+			onclick={() =>
+				// The route is resolved; the rule cannot see through the query string.
+				// eslint-disable-next-line svelte/no-navigation-without-resolve
+				goto(`${resolve('/planner/review')}?week=${data.week.next}`)}
+		>
+			<Icon name="arrow-right" size={22} />
+		</button>
 	</div>
 
 	{#if data.reading.planned === 0}

@@ -38,7 +38,7 @@
 		plan, which is what somebody opened this to look at.
 	-->
 	<div class="hidden flex-wrap items-center justify-between gap-3 sm:flex">
-		<h1 class="shrink-0 text-lg font-bold text-gray-900">Weekly Planner</h1>
+		<h1 class="shrink-0 text-lg font-bold text-gray-900">Tasks</h1>
 	</div>
 
 	<!--

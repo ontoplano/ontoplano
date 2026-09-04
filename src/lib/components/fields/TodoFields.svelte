@@ -73,7 +73,7 @@
 {/snippet}
 
 {#if compact}
-	<MoreOptions label="Category, notes, ratings" count={filled}>
+	<MoreOptions label="Category, notebook, notes, ratings" count={filled}>
 		{@render details()}
 		{@render scales()}
 	</MoreOptions>

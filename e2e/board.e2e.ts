@@ -248,3 +248,26 @@ test.describe('dropping on the column switcher', () => {
 function makeDataTransfer(page: import('@playwright/test').Page) {
 	return page.evaluateHandle(() => new DataTransfer());
 }
+
+/**
+ * The keyboard drives the board.
+ *
+ * Pinned after a report that the shortcuts were dead: they were not, on this
+ * build — but nothing was holding them, so nothing would have said so if they
+ * were. `n` is the one that needs no cards to exist, and `g` the one that
+ * needs no form to open.
+ */
+test('n opens a new card and g switches the tab, from the keyboard', async ({ page }) => {
+	await register(page, `board-keys-${Date.now()}@test.invalid`);
+	await visit(page, '/planner/board');
+
+	await page.keyboard.press('g');
+	await expect(page.getByRole('button', { name: 'To-do', exact: true })).toHaveClass(
+		/font-semibold/
+	);
+
+	await page.keyboard.press('n');
+	await expect(page.getByRole('dialog')).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog')).toBeHidden();
+});

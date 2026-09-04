@@ -386,7 +386,7 @@
 					use:keepInView={i === clampedSelectedIndex}
 					class="lift relative border border-gray-200 bg-white p-4 shadow-card transition-all {i ===
 					clampedSelectedIndex
-						? 'border-l-4 border-l-indigo-300/60 ring-2 ring-indigo-400 ring-inset'
+						? 'kb-cursor'
 						: ''}"
 				>
 					<div class="mb-2 flex items-start gap-4">

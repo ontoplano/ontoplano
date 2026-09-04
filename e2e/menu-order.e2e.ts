@@ -29,11 +29,11 @@ test.describe('the menu order', () => {
 
 		await visit(page, '/');
 
-		// The bar: Shopping now comes before Planner, which it never did.
+		// The bar: Shopping now comes before Tasks, which it never did.
 		const tabs = page.locator('header a[href], nav a[href]');
 		const labels = (await tabs.allTextContents()).map((t) => t.trim()).filter(Boolean);
 		const shopping = labels.findIndex((t) => t.includes('Shopping'));
-		const planner = labels.findIndex((t) => t.includes('Planner'));
+		const planner = labels.findIndex((t) => t.includes('Tasks'));
 		expect(shopping).toBeGreaterThanOrEqual(0);
 		expect(shopping).toBeLessThan(planner);
 	});
@@ -61,7 +61,8 @@ test.describe('the menu order', () => {
 		await expect(menu.getByRole('button', { name: 'Move Ideas up' })).toBeDisabled();
 		// Every room but Home, which is never listed: it is always on and is not
 		// on the wheel, so a row for it would be one with nothing to change.
-		await expect(menu.getByRole('button', { name: /^Move .* up$/ })).toHaveCount(9);
+		// Eight rooms since Notebooks folded into Notes as a tab.
+		await expect(menu.getByRole('button', { name: /^Move .* up$/ })).toHaveCount(8);
 	});
 });
 

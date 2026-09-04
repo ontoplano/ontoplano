@@ -123,6 +123,13 @@ export const actions: Actions = {
 		const name = formData.get('name')?.toString() ?? '';
 		const now = new Date();
 
+		// Typed twice, because this is the one password field with no way to
+		// find out about a typo: there is no old password to compare against,
+		// and the next time it is asked for is the next sign-in.
+		if (password !== (formData.get('confirm')?.toString() ?? '')) {
+			return fail(400, { message: 'The two passwords are not the same.' });
+		}
+
 		// Before the account exists, so a refused password does not burn an
 		// invitation code or leave a half-made row behind.
 		const weak = checkPassword(password);

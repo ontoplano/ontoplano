@@ -1538,7 +1538,6 @@ const rand = () => {
 	seedState = (seedState * 1664525 + 1013904223) % 4294967296;
 	return seedState / 4294967296;
 };
-const pick = (list) => list[Math.floor(rand() * list.length)];
 
 const HISTORY_WEEKS = 9;
 const dayAt = (daysAgo) => {

@@ -42,8 +42,17 @@ jobs:
 
       - run: yarn install --frozen-lockfile
 
-      # prettier, eslint, the changelog check and the docs freshness check.
+      # prettier and eslint.
       - run: yarn lint
+
+      # The generated docs, regenerated and compared. The PR template asks for
+      # `yarn docs` on the honour system; this is the part that is not honour —
+      # a branch whose docs do not match its code fails here, including one
+      # where the generated files were edited by hand after the fact.
+      - run: yarn docs:check
+
+      # Every changelog line sits under the version this branch ships.
+      - run: node scripts/check-changelog.mjs
 
       - run: yarn check
 

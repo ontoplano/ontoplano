@@ -128,7 +128,7 @@ Register at `/login`. The first account is always allowed and owns the
 instance; the first screen asks for your timezone and which day your week
 starts, and offers a starter week to argue with.
 
-[docs/DOCKER.md](https://github.com/ontoplano/ontoplano/blob/main/docs/DOCKER.md)
+[docs/DOCKER.md](https://github.com/ontoplano/ontoplano/blob/master/docs/DOCKER.md)
 has the reverse proxy, upgrading and backups.
 
 ## On Windows
@@ -144,7 +144,7 @@ A proper installer is a good first contribution, and an unusually
 self-contained one: the app itself is one Node process and one SQLite file, so
 what is missing is the packaging around it — an MSI or a winget manifest, a
 service registration, and somewhere sensible to put the database. If you want to
-build it, [CONTRIBUTING.md](https://github.com/ontoplano/ontoplano/blob/main/CONTRIBUTING.md)
+build it, [CONTRIBUTING.md](https://github.com/ontoplano/ontoplano/blob/master/CONTRIBUTING.md)
 says how the repository works and how to send it, and opening an issue first is
 welcome so nobody does the same work twice.
 

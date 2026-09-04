@@ -131,6 +131,29 @@
 					{/if}
 				</label>
 			{/if}
+			{#if mode === 'register'}
+				<label class="mb-4 block">
+					<span class="text-sm font-medium text-gray-700">Password, again</span>
+					<input
+						name="confirm"
+						type="password"
+						required
+						minlength={MIN_PASSWORD_LENGTH}
+						autocomplete="new-password"
+						oninput={(e) => {
+							const field = e.currentTarget;
+							const password = field.form?.elements.namedItem('password') as HTMLInputElement;
+							// The browser's own refusal, at the field, before the round trip.
+							field.setCustomValidity(
+								password && field.value && field.value !== password.value
+									? 'The two passwords are not the same.'
+									: ''
+							);
+						}}
+						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					/>
+				</label>
+			{/if}
 			<button
 				type="submit"
 				class="w-full bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"

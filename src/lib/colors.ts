@@ -50,9 +50,9 @@ export type SectionKey =
 
 export const SECTIONS: Record<SectionKey, { accent: string; label: string }> = {
 	home: { accent: '#475569', label: 'Home' },
-	planner: { accent: '#1d4ed8', label: 'Planner' },
+	planner: { accent: '#1d4ed8', label: 'Tasks' },
 	goals: { accent: '#7c2d12', label: 'Goals' },
-	diary: { accent: '#b45309', label: 'Diary' },
+	diary: { accent: '#b45309', label: 'Notes' },
 	ideas: { accent: '#6d28d9', label: 'Ideas' },
 	health: { accent: '#0f766e', label: 'Health' },
 	shopping: { accent: '#9d174d', label: 'Shopping' },

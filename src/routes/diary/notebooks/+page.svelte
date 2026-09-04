@@ -77,7 +77,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<h1 class="text-lg font-bold text-gray-900">Notebooks</h1>
+	<!-- The heading is the layout's — Notes, with this tab lit. -->
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<p class="page-intro">
 			A subject you write against with no deadline — a book you are reading, a trip, a renovation.

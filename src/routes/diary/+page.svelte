@@ -178,10 +178,9 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<!-- Title and its buttons on one line, as everywhere else — the button had a
-	     row of its own, which is a lot of a phone screen to spend on nothing. -->
-	<div class="flex flex-wrap items-center justify-between gap-3">
-		<h1 class="text-lg font-bold text-gray-900">Diary</h1>
+	<!-- The heading is the layout's — Notes, with the Diary tab lit. This row
+	     only holds the page's own buttons, pushed to the end. -->
+	<div class="flex flex-wrap items-center justify-end gap-3">
 		<div class="flex flex-wrap items-center gap-2">
 			{#if winsEnabled}
 				<button
@@ -342,6 +341,7 @@
 				<NoteFields
 					content={editingId ? (editingEntry()?.content ?? '') : ''}
 					tags={editingId ? editingTagString() : ''}
+					notebooks={data.notebooks}
 				/>
 
 				<Field label="People" span={6} hint="Anyone this was about.">
@@ -411,7 +411,7 @@
 					id="diary-{entry.seq}"
 					class="lift relative border border-gray-200 bg-white p-4 shadow-card transition-all {i ===
 					selectedIndex
-						? 'border-l-4 border-l-amber-300/60 ring-2 ring-amber-400 ring-inset'
+						? 'kb-cursor'
 						: ''}"
 				>
 					<div class="md mb-2 text-sm text-gray-900">

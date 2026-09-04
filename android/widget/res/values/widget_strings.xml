@@ -3,7 +3,7 @@
     <string name="widget_label">Ontoplano — today</string>
     <string name="widget_description">Today\'s blocks, habits and tasks.</string>
     <string name="widget_date_format">EEEE d MMM</string>
-    <string name="widget_refresh">Refresh</string>
+    <string name="widget_refresh">\u21bb</string>
     <string name="widget_refresh_description">Read today again</string>
     <string name="widget_empty">Nothing today.</string>
     <string name="widget_blocks">Blocks</string>

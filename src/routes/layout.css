@@ -792,6 +792,25 @@ label:has(> input[type='radio']:not(:disabled)) {
 		}
 	}
 
+	/*
+	 * The keyboard cursor: which card j/k is standing on.
+	 *
+	 * Outside the card, not inside it — an inset ring redrew the card's own
+	 * border and squeezed its content, so selecting a card made it flinch. And
+	 * only where there is a keyboard: on a phone the "cursor" is the finger,
+	 * and a permanently highlighted first card read as meaning something.
+	 */
+	.kb-cursor {
+		outline: none;
+	}
+
+	@media (pointer: fine) {
+		.kb-cursor {
+			outline: 2px solid var(--color-gray-900);
+			outline-offset: 3px;
+		}
+	}
+
 	.btn-sm {
 		padding: 0.25rem 0.625rem;
 		font-size: 0.75rem;

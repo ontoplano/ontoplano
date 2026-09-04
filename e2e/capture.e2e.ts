@@ -154,16 +154,15 @@ test('the section pie lands you in the room', async ({ page }) => {
 	await page.mouse.down();
 	await page.mouse.up();
 
-	// Every place the navigation bar offers — including Notebooks and People,
-	// which the pie simply did not have while it kept a list of its own. No
-	// Home: the bar carries that as a plain button, so no wedge is spent on it.
+	// Every place the navigation bar offers. No Notebooks wedge: it is the
+	// second tab of Notes now, not a room of its own. No Home: the bar carries
+	// that as a plain button, so no wedge is spent on it.
 	await expect(page.getByText('cancel')).toBeVisible();
 	for (const room of [
-		'Planner',
+		'Tasks',
 		'Goals',
-		'Diary',
+		'Notes',
 		'People',
-		'Notebooks',
 		'Ideas',
 		'Health',
 		'Shopping',
@@ -246,7 +245,7 @@ test.describe('with a finger', () => {
 			named.push(((await page.locator('.pie-hud').textContent()) ?? '').trim());
 		}
 
-		for (const room of ['Planner', 'Goals', 'Diary', 'Shopping']) {
+		for (const room of ['Tasks', 'Goals', 'Notes', 'Shopping']) {
 			expect(named, `${room} was never named while it was aimed at`).toContain(room);
 		}
 

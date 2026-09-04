@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Field from '$lib/components/Field.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
+	import NotebookField from '$lib/components/NotebookField.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import { autogrow } from '$lib/actions/autogrow';
 
@@ -14,10 +15,19 @@
 	let {
 		content = '',
 		tags = '',
+		notebookId = null,
+		notebooks = [],
 		compact = false,
 		/** Off where there is no room for it, like the capture sheet's four rows. */
 		pictures = true
-	}: { content?: string; tags?: string; compact?: boolean; pictures?: boolean } = $props();
+	}: {
+		content?: string;
+		tags?: string;
+		notebookId?: number | null;
+		notebooks?: { id: number; title: string }[];
+		compact?: boolean;
+		pictures?: boolean;
+	} = $props();
 
 	let box = $state<HTMLTextAreaElement>();
 </script>
@@ -37,6 +47,8 @@
 </Field>
 
 {#snippet rest()}
+	<NotebookField {notebooks} value={notebookId} span={12} />
+
 	<Field label="Tags" span={12} hint="Separate with commas or spaces. A leading # is fine.">
 		<input
 			name="tags"
@@ -50,7 +62,9 @@
 {/snippet}
 
 {#if compact}
-	<MoreOptions label="Tags" count={tags ? 1 : 0}>{@render rest()}</MoreOptions>
+	<MoreOptions label="Notebook, tags" count={(tags ? 1 : 0) + (notebookId ? 1 : 0)}>
+		{@render rest()}
+	</MoreOptions>
 {:else}
 	{@render rest()}
 {/if}

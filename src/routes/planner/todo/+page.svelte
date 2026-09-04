@@ -401,9 +401,11 @@
 			{#each visibleTodos as todo, i (todo.id)}
 				<div
 					use:keepInView={selectedIndex === i}
-					class="flex items-start gap-4 px-4 py-3 {selectedIndex === i
-						? 'ring-2 ring-gray-900 ring-inset'
-						: ''} {isDone(todo) ? 'opacity-50' : ''}"
+					class="flex items-start gap-4 px-4 py-3 {selectedIndex === i ? 'kb-cursor' : ''} {isDone(
+						todo
+					)
+						? 'opacity-50'
+						: ''}"
 				>
 					<form
 						id="toggle-form-{todo.id}"
@@ -501,7 +503,7 @@
 											: 'Pull onto today'}
 										title={todo.scheduledDate ? 'Put back on the general list' : 'Pull onto today'}
 									>
-										<Icon name="calendar" />
+										<Icon name={todo.scheduledDate ? 'undo' : 'arrow-down'} />
 									</button>
 								</form>
 							{/if}
@@ -509,10 +511,10 @@
 								<button
 									onclick={() => startDelegate(todo)}
 									class="icon-btn"
-									title="Delegate"
-									aria-label="Delegate"
+									title="Delegate to a day"
+									aria-label="Delegate to a day"
 								>
-									<Icon name="user" />
+									<Icon name="calendar" />
 								</button>
 							{/if}
 							<button

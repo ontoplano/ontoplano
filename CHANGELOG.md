@@ -10,6 +10,29 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.68.0 — 2026-09-04
+
+- **Planner is called Tasks**, everywhere it is read.
+- **Diary is called Notes, and holds two tabs: Diary and Notebooks.** Notebooks
+  leaves the navigation bar and the wheel; it is the second shelf of the same
+  room. The preference that hid it hides the tab instead.
+- **A note can be filed into a notebook as it is written** — from the diary's
+  form and from the capture wheel. The quick to-do's fold now says the notebook
+  picker is in it, which it always was.
+- **The keyboard cursor sits outside the card** it is on, instead of redrawing
+  the card's own border — and it does not appear on a phone, where the cursor
+  is your finger.
+- **On a to-do, the down arrow pulls it onto today and the calendar delegates
+  it to a day.** The calendar used to mean "today" and a person meant the
+  calendar, which read backwards.
+- **The Review's arrows hug the week they move**, the same shape the plan has.
+- **Creating an account asks for the password twice.** It is the one password
+  field where a typo has no way of being found out.
+- **The Android widget opens the board.** Tapping a row used to open the
+  widget's own setup screen — for a widget that was already set up.
+- **A reminder on Android arrives as Ontoplano**, not as Chrome, once the app
+  is updated: notifications are delegated to the app itself.
+
 ## 0.67.0 — 2026-09-04
 
 - **A block can be ticked off from the plan.** Click it, and "Mark as done"

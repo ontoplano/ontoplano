@@ -145,7 +145,16 @@ const twaManifest = {
 	navigationDividerColor: '#111827',
 	navigationDividerColorDark: '#111827',
 	backgroundColor: '#111827',
-	enableNotifications: false,
+	/*
+	 * Delegated to the app, so a reminder arrives as Ontoplano.
+	 *
+	 * Web push from a TWA is otherwise shown by the browser — a Chrome icon
+	 * and the word "Chrome" over the app's own name, which reads as somebody
+	 * else's notification. Delegation hands it to this package: same push,
+	 * our icon, our name. (A PWA installed from the browser instead of this
+	 * APK keeps the browser's badge; that part is Android's, not ours.)
+	 */
+	enableNotifications: true,
 	startUrl: '/',
 	iconUrl: app.iconUrl,
 	maskableIconUrl: app.maskableIconUrl,
