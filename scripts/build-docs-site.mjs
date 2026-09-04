@@ -217,9 +217,43 @@ kbd { font-family: var(--mono); font-size: 0.8em; border: 1px solid var(--line);
 [data-step][hidden], [hidden] { display: none; }
 footer { margin-top: 4rem; padding-top: 1rem; border-top: 1px solid var(--line);
          color: var(--muted); font-size: 0.85rem; }
+/*
+ * On a phone: the page somebody followed a link to, first.
+ *
+ * The sidebar lists every page in the docs, and stacking it above the article
+ * meant a link to a section landed a screenful and a half above the section —
+ * indistinguishable, from the reader's side, from a link that goes to the top
+ * of the docs. Which is what it was reported as.
+ *
+ * The brand and the search stay at the top, because a page with no header on a
+ * phone reads as a fragment. The list of pages goes underneath the article,
+ * where an index belongs when it is not a sidebar.
+ */
 @media (max-width: 60rem) {
-  .wrap { display: block; padding-top: 1.25rem; }
-  nav { position: static; margin-bottom: 2rem; }
+  /* The 3rem gap is the space between a sidebar and an article. Stacked, it
+     is three of those above the thing somebody came to read. */
+  .wrap { display: flex; flex-direction: column; gap: 0; padding-top: 1.25rem; }
+  nav { position: static; display: contents; }
+  /* The header, tightened: these margins were spacing out a sidebar, and
+     stacked they push the article most of a screen down on their own. */
+  nav .brand, nav .search, nav .to-app { order: 1; }
+  nav .brand { margin-bottom: 0.6rem; }
+  nav .search { margin-bottom: 0.6rem; }
+  nav .to-app { margin: 0 0 1.25rem; }
+  main { order: 2; }
+  nav .pages {
+    order: 3;
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+  }
+  nav .pages::before {
+    content: 'All of the docs';
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text);
+  }
 }
 `.trim();
 
@@ -484,7 +518,7 @@ function render(page) {
           <path d="M5 12h14M13 6l6 6-6 6"/>
         </svg>
       </a>
-      <ul>
+      <ul class="pages">
         ${nav}
       </ul>
     </nav>

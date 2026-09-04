@@ -15,7 +15,9 @@ test('an address pointing at this machine is refused, and says so', async ({ pag
 	await visit(page, '/planner/plan');
 
 	await page.getByRole('button', { name: /schemes/i }).click();
-	await expect(page.getByText('Calendars you subscribe to')).toBeVisible();
+	// The panel is folded now — it is set up once and read never, and the drawer
+	// it lives in is opened for the schemes above it.
+	await page.getByRole('button', { name: /Calendars you subscribe to/ }).click();
 
 	await page.locator('input[name=label]').last().fill('Sneaky');
 	await page.locator('input[name=url]').fill('http://127.0.0.1:1493/private.ics');

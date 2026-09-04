@@ -52,11 +52,46 @@
 		return `todo:${todo.id}`;
 	}
 
-	let visibleTodos = $derived(
-		showCompleted
+	/*
+	 * Newest first, and the other way if you ask.
+	 *
+	 * The service hands these back in the order they were put in, which is the
+	 * order a hand-sorted list wants and the wrong one for a list you keep
+	 * adding to: the thing just written was at the bottom, under everything
+	 * already ignored. Newest first is what somebody is looking for; oldest
+	 * first is the deliberate question — what has been on here longest.
+	 *
+	 * Kept in this browser: it is a way of looking at a list rather than a fact
+	 * about the account, and flipping it on a phone says nothing about a laptop.
+	 */
+	let newestFirst = $state(true);
+	$effect(() => {
+		try {
+			const held = localStorage.getItem('ontoplano:todos-newest');
+			if (held !== null) newestFirst = held === '1';
+		} catch {
+			// A private window, or storage refused. The default stands.
+		}
+	});
+
+	function flipOrder() {
+		newestFirst = !newestFirst;
+		try {
+			localStorage.setItem('ontoplano:todos-newest', newestFirst ? '1' : '0');
+		} catch {
+			// It still flips for this visit; only the memory is lost.
+		}
+	}
+
+	let visibleTodos = $derived.by(() => {
+		const shown = showCompleted
 			? data.todos
-			: data.todos.filter((t: Todo) => !CLOSED_STATUSES.includes(shownStatus(t)))
-	);
+			: data.todos.filter((t: Todo) => !CLOSED_STATUSES.includes(shownStatus(t)));
+
+		return [...shown].sort((a: Todo, b: Todo) =>
+			newestFirst ? b.createdAt.localeCompare(a.createdAt) : a.createdAt.localeCompare(b.createdAt)
+		);
+	});
 
 	function isDone(todo: Todo): boolean {
 		return shownStatus(todo) === 'done';
@@ -205,6 +240,16 @@
 		<div class="flex items-center gap-3">
 			<button onclick={() => (showCompleted = !showCompleted)} class="btn btn-sm">
 				{showCompleted ? 'Hide completed' : 'Show completed'}
+			</button>
+			<button
+				onclick={flipOrder}
+				class="btn btn-sm"
+				title={newestFirst
+					? 'Newest at the top — press for the oldest'
+					: 'Oldest at the top — press for the newest'}
+			>
+				<Icon name={newestFirst ? 'chevron-down' : 'chevron-up'} />
+				{newestFirst ? 'Newest first' : 'Oldest first'}
 			</button>
 		</div>
 		<button onclick={startNew} class="btn btn-primary btn-sm" data-tour="todo-new">

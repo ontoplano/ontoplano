@@ -970,6 +970,23 @@ Self-reported progress, for goals with a target and no linked tasks.
 
 Replace a goal's links wholesale — simpler than diffing, and idempotent.
 
+#### `addGoalLinks(ctx, id, links)`
+
+Add work to a goal without disturbing what is already on it.
+
+`setGoalLinks` replaces the whole set, which is right for the page — a form
+that shows every checkbox and posts all of them — and dangerous for anybody
+else. A caller that knows about three todos and calls it unlinks everything
+it did not know about, silently, and the progress bar drops with no
+explanation on screen. An assistant asked to "make tasks for this goal" is
+exactly that caller.
+
+So: additive, idempotent, and it answers with how many links are new.
+
+#### `removeGoalLinks(ctx, id, links)`
+
+And the way back off it, one link at a time.
+
 #### `deleteGoal(ctx, id)`
 
 ### Types
@@ -2680,12 +2697,6 @@ knows nothing about alarms, ringtones, or wifi.
 ### Functions
 
 #### `getUpcomingSchedule(ctx, opts)`
-
-Upcoming occurrences over the next `days` days, ordered by time.
-
-Includes both generated task instances (from the weekly plan) and one-off
-exceptional slots. Suppressed slots never produce task instances, so they're
-excluded for free.
 
 ### Types
 

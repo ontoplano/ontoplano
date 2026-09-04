@@ -54,6 +54,34 @@
 
 	const eventLabel = (key: string) => data.webhookEvents.find((e) => e.key === key)?.label ?? key;
 
+	/**
+	 * The two things somebody pastes, with the token already in them.
+	 *
+	 * The same words as `docs/prose/ai-agents.md`, at the moment the token
+	 * exists — a token that is shown once, so sending somebody to the docs to
+	 * fetch a prompt and back again is three steps at the one moment they
+	 * cannot afford to lose this tab. The endpoint is this instance's own,
+	 * because a self-hosted copy is not app.ontoplano.com.
+	 */
+	function mcpCommand(token: string): string {
+		return `claude mcp add --transport http ontoplano ${data.origin}/api/mcp \\\n  --header "Authorization: Bearer ${token}"`;
+	}
+
+	function mcpPrompt(token: string): string {
+		return `I use ontoplano — a life management app with an MCP server. Please connect to it
+and use it whenever I ask you about my week, my todos, my diary, my notebooks,
+my shopping list or my recipes.
+
+  MCP endpoint:  ${data.origin}/api/mcp
+  Transport:     streamable HTTP (stateless — no session, GET is not supported)
+  Auth:          an Authorization: Bearer header
+
+Once connected, list the tools you were offered and tell me what I asked you to
+do today. Do not write anything into my account until I ask you to.
+
+Token: ${token}`;
+	}
+
 	async function copyToken(value: string) {
 		try {
 			await navigator.clipboard.writeText(value);
@@ -129,7 +157,51 @@
 				link away, and this is the moment to offer it rather than the
 				documentation index.
 			-->
-			<p class="mt-3 border-t border-blue-200 pt-2 text-xs">
+			<!--
+				And the prompt itself, here, with the token already in it.
+				
+				Sending somebody to the documentation to copy a prompt and then
+				back here to copy a token — a token they are told will never be
+				shown again — is three steps at the one moment they cannot afford
+				to lose the tab. Folded, because it is only for the people who
+				came to connect an assistant.
+			-->
+			<details class="mt-3 border-t border-blue-200 pt-2">
+				<summary class="cursor-pointer text-xs font-medium text-blue-900">
+					Connect an AI assistant with it
+				</summary>
+
+				<p class="mt-2 text-xs text-blue-900">One command, if it has a shell:</p>
+				<div class="mt-1 flex items-start gap-2">
+					<code
+						class="flex-1 overflow-x-auto border border-blue-200 bg-white px-3 py-2 font-mono text-[11px] whitespace-pre text-gray-900"
+						>{mcpCommand(newToken.plaintext)}</code
+					>
+					<button
+						type="button"
+						onclick={() => copyToken(mcpCommand(newToken.plaintext))}
+						class="btn shrink-0">Copy</button
+					>
+				</div>
+
+				<p class="mt-3 text-xs text-blue-900">
+					Or paste this to it in words — it says what the app is for, so the assistant reaches for
+					it instead of asking you to repeat yourself:
+				</p>
+				<div class="mt-1 flex items-start gap-2">
+					<pre
+						class="flex-1 overflow-x-auto border border-blue-200 bg-white px-3 py-2 font-mono text-[11px] whitespace-pre-wrap text-gray-900">{mcpPrompt(
+							newToken.plaintext
+						)}</pre>
+					<button
+						type="button"
+						onclick={() => copyToken(mcpPrompt(newToken.plaintext))}
+						class="btn shrink-0">Copy</button
+					>
+				</div>
+			</details>
+
+			<p class="mt-3 text-xs">
 				<a
 					href="https://docs.ontoplano.com/ai-agents"
 					target="_blank"

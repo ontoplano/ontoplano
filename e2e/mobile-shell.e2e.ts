@@ -45,9 +45,18 @@ test('a dialog on the phone is a screen with a back arrow', async ({ page }) => 
 	await register(page, `sheet-${Date.now()}@test.invalid`);
 	await visit(page, '/');
 
-	// The capture tiles at the top of the phone dashboard open the shared
-	// Modal, which below `sm` must present as a screen, not a floating card.
-	await page.getByRole('button', { name: 'Idea' }).first().click();
+	/*
+	 * The capture pie in the bottom bar opens the shared Modal, which below
+	 * `sm` must present as a screen rather than a floating card.
+	 *
+	 * It used to be the four tiles at the top of the dashboard. They are gone:
+	 * the pie is the same four, under the thumb, and costs no room on the page.
+	 */
+	const plus = page.getByRole('button', { name: /write something down/i }).first();
+	await plus.hover();
+	await page.mouse.down();
+	await page.mouse.up();
+	await page.locator('.pie [role="menuitem"]').first().click();
 	const dialog = page.locator('dialog[open]');
 	await expect(dialog).toBeVisible();
 	// A back arrow where a back arrow belongs, not an × in a corner.

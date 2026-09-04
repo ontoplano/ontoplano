@@ -2,7 +2,7 @@
 	import './layout.css';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import { page } from '$app/state';
+	import { navigating, page } from '$app/state';
 	import { live } from '$lib/live';
 	import { afterNavigate, goto } from '$app/navigation';
 	import type { LayoutServerData } from './$types';
@@ -269,6 +269,33 @@
 
 			location.reload();
 		});
+	});
+
+	/*
+	 * The next page arrives from the left.
+	 *
+	 * Two other ways were tried and both were worse. Keying the page on the
+	 * pathname throws the whole subtree away on every navigation, including a
+	 * nested layout's chrome — switching Settings tabs made the tab row jump.
+	 * The View Transitions API, which is the right tool on paper and animates
+	 * the outgoing page too, froze the document in the browser this is tested
+	 * in: the URL changed and the old page stayed painted, `skipTransition()`
+	 * included. A navigation that can hang is not worth an animation.
+	 *
+	 * So: no interception and no remounting. The pathname changes, the class is
+	 * replayed on `<main>`, and its contents slide in. Nothing can stall,
+	 * because nothing is waiting on anything.
+	 */
+	$effect(() => {
+		const path = page.url.pathname;
+		const el = scroller;
+		if (!el || !path) return;
+
+		el.classList.remove('page-arriving');
+		// Read a layout property to restart the animation: without it the class
+		// goes off and on inside one frame and the browser sees no change.
+		void el.offsetWidth;
+		el.classList.add('page-arriving');
 	});
 
 	// Reads the keyboard on hydration; `Ctrl` until then, which is the
@@ -702,6 +729,22 @@
 				</div>
 			</div>
 		</header>
+		<!--
+			That something is happening, when it takes long enough to wonder.
+			
+			A tap that loads a page from the server has no answer for a moment,
+			and a moment with no answer reads as a tap that missed. This is the
+			answer: a bar across the top while a navigation is in flight.
+			
+			After a beat, not immediately — most navigations here are faster than
+			the eye, and a bar that flashes on every one of them is worse than
+			none. `navigating` is SvelteKit's own, so it covers a link, a
+			redirect and a form action alike.
+		-->
+		{#if navigating.to}
+			<div class="nav-progress" role="status" aria-label="Loading"></div>
+		{/if}
+
 		<main
 			bind:this={scroller}
 			class="relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto overscroll-y-contain px-4 pt-[calc(var(--safe-top)+1rem)] pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+0.75rem)] sm:px-6 lg:overflow-visible lg:pt-6 lg:pb-6"

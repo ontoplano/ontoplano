@@ -25,7 +25,7 @@ import type { Scope } from '../services/tokens.js';
 
 import { createEntry, listEntries } from '../services/diary.js';
 import { createIdea, deleteIdea, listIdeas } from '../services/ideas.js';
-import { closeGoal, listGoals } from '../services/goals.js';
+import { addGoalLinks, closeGoal, listGoals, removeGoalLinks } from '../services/goals.js';
 import { listNotebooks } from '../services/notebooks.js';
 import {
 	createRecipe,
@@ -293,6 +293,40 @@ export const TOOLS: Tool[] = [
 		run: (ctx, args) => getUpcomingSchedule(ctx, { days: args.days ?? 7 })
 	},
 	{
+		/*
+		 * The week that has already happened, which nothing could reach.
+		 *
+		 * Answering for a block always worked on any block, past or future —
+		 * but the only lists were `today` and `upcoming`, so a block from last
+		 * Tuesday had no id anybody could name. "I did not actually do Monday's
+		 * run, and I did do the reading" was unanswerable for want of a
+		 * listing, and a week's record that can only be corrected on the day is
+		 * a week's record that quietly drifts from the truth.
+		 */
+		name: 'past',
+		title: 'The days behind',
+		description:
+			'What was on the days that have already happened, with what each one was answered — done, skipped, or nothing yet. Use it before correcting a week: it gives the ids `finish_block` needs. Ask for a week back with `days: 7`, or name the day it starts on.',
+		scope: 'schedule:read',
+		writes: false,
+		input: object({
+			days: count('How many days to look back over, up to 31.', 7),
+			startingOn: text(
+				'The first day to include, as YYYY-MM-DD. Left out, it is that many days before today.'
+			)
+		}),
+		run: (ctx, args) => {
+			const days = Number(args.days ?? 7);
+			// Counted back from today unless a day is named, so `days: 7` means
+			// "the last week" rather than "the week starting a week ago and
+			// ending now" — which is the same range, said the way people say it.
+			const startingOn =
+				args.startingOn ?? localDateOf(new Date(ctx.now.getTime() - days * 86400_000), ctx.tz);
+
+			return getUpcomingSchedule(ctx, { days, startingOn, includeCompleted: true });
+		}
+	},
+	{
 		name: 'search',
 		title: 'Search everything written',
 		description:
@@ -330,7 +364,12 @@ export const TOOLS: Tool[] = [
 			{
 				title: text('What the task is, in the person’s own words.'),
 				notes: text('Anything else about it.'),
-				scheduledDate: text('The day to put it on, as YYYY-MM-DD. Usually omitted.')
+				scheduledDate: text('The day to put it on, as YYYY-MM-DD. Usually omitted.'),
+				goalId: {
+					type: 'integer',
+					description:
+						'A goal to count this towards, as `goals` gives its id. Breaking a goal into tasks is the ordinary reason to make several at once, and a task linked here moves that goal’s progress when it is finished.'
+				}
 			},
 			['title']
 		),
@@ -340,6 +379,14 @@ export const TOOLS: Tool[] = [
 				notes: args.notes ?? '',
 				scheduledDate: args.scheduledDate ? day(args.scheduledDate, 'scheduledDate') : null
 			});
+			/*
+			 * Linked in the same call, because the alternative is two calls with a
+			 * new id in between and an assistant that forgets the second one half
+			 * the time. Additive: it cannot disturb what is already on the goal.
+			 */
+			if (args.goalId !== undefined) {
+				addGoalLinks(ctx, Number(args.goalId), { todoIds: [id] });
+			}
 			return { id };
 		}
 	},
@@ -469,6 +516,71 @@ export const TOOLS: Tool[] = [
 		 * of them — but the tool's enum did not offer it, so a goal could be
 		 * closed by an assistant and only reopened by hand.
 		 */
+		/*
+		 * Putting existing work against a goal.
+		 *
+		 * `add_todo` links what it creates, which covers "break this goal into
+		 * tasks". This is the other half: work that already exists and turns out
+		 * to belong to something.
+		 *
+		 * Additive on purpose. The page's own save replaces the whole set — it
+		 * shows every checkbox, so it can — and a caller that knows about three
+		 * todos calling that would silently unlink everything else on the goal.
+		 */
+		name: 'link_to_goal',
+		title: 'Count work towards a goal',
+		description:
+			'Attach todos or repeating blocks to a goal, so finishing them moves its progress. Adds to what is already linked; nothing is replaced. `goals` gives the goal id and what it already has on it.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object(
+			{
+				goalId: { type: 'integer', description: 'The goal’s id, as `goals` gave it.' },
+				todoIds: {
+					type: 'array',
+					items: { type: 'integer' },
+					description: 'Todo ids, as `todos` gives them.'
+				},
+				slotIds: {
+					type: 'array',
+					items: { type: 'integer' },
+					description: 'Ids of repeating blocks, for a goal met by doing something weekly.'
+				}
+			},
+			['goalId']
+		),
+		run: (ctx, args) =>
+			addGoalLinks(ctx, Number(args.goalId), {
+				todoIds: (args.todoIds as unknown[]) ?? [],
+				slotIds: (args.slotIds as unknown[]) ?? []
+			})
+	},
+	{
+		name: 'unlink_from_goal',
+		title: 'Take work off a goal',
+		description:
+			'Detach todos or blocks from a goal. Only the ones named; everything else it counts stays.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object(
+			{
+				goalId: { type: 'integer', description: 'The goal’s id.' },
+				todoIds: { type: 'array', items: { type: 'integer' }, description: 'Todo ids.' },
+				slotIds: {
+					type: 'array',
+					items: { type: 'integer' },
+					description: 'Ids of repeating blocks.'
+				}
+			},
+			['goalId']
+		),
+		run: (ctx, args) =>
+			removeGoalLinks(ctx, Number(args.goalId), {
+				todoIds: (args.todoIds as unknown[]) ?? [],
+				slotIds: (args.slotIds as unknown[]) ?? []
+			})
+	},
+	{
 		name: 'reopen_goal',
 		title: 'Reopen a goal',
 		description:

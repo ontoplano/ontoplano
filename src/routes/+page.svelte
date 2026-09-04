@@ -26,7 +26,6 @@
 	// would fight every click you actually meant.
 	let arranging = $state(false);
 	let capture = $state<QuickCapture | undefined>();
-	let captureTiles = $state<QuickCapture | undefined>();
 	let order: DashboardCardId[] = $state([]);
 	let dragging: DashboardCardId | null = $state(null);
 	let dragOver: DashboardCardId | null = $state(null);
@@ -39,6 +38,28 @@
 	 * data say what they mean when there is none.
 	 */
 	const layout = $derived(arranging ? order : (data.layout ?? []));
+
+	/*
+	 * Which end of the todo list the card shows.
+	 *
+	 * Kept in this browser rather than on the account: it is a way of looking at
+	 * a list, closer to a scroll position than to a setting, and somebody who
+	 * flips it on a phone has not said anything about their laptop.
+	 */
+	let todosNewestFirst = $state(true);
+	$effect(() => {
+		try {
+			const held = localStorage.getItem('ontoplano:dash-todos-newest');
+			if (held !== null) todosNewestFirst = held === '1';
+		} catch {
+			// A private window, or storage refused. The default stands.
+		}
+	});
+	const sortedTodos = $derived.by(() => {
+		// Signed out, this page is the pitch and there is no list at all.
+		const todos = data.latestTodos ?? [];
+		return todosNewestFirst ? todos : [...todos].reverse();
+	});
 
 	function startArranging() {
 		order = [...layout];
@@ -179,7 +200,7 @@
 
 		// Quick capture first: those four keys belong to it wherever it is shown.
 		// Both shapes are mounted; only one is visible, and either will do.
-		if (capture?.openByShortcut(e.key) || captureTiles?.openByShortcut(e.key)) {
+		if (capture?.openByShortcut(e.key)) {
 			e.preventDefault();
 			return;
 		}
@@ -252,13 +273,18 @@
 			{/if}
 		</div>
 
-		<!-- Phone-first: the reason someone opens this app at a bus stop is to write
-	     one thing down before it evaporates. -->
-		<QuickCapture
-			bind:this={captureTiles}
-			error={form?.message}
-			hidden={data.hiddenSections ?? []}
-		/>
+		<!--
+			The four tiles that used to sit here are gone from the phone.
+
+			They were the phone's answer to "write one thing down before it
+			evaporates", and then the capture pie became a better one: the + in the
+			bottom bar is under the thumb, opens the same four, and needs no room
+			on the page at all. Two controls doing one job, and this was the one
+			costing a fifth of the first screen before anything about the day.
+
+			The desktop row stays, inline in the header above: there is no pie
+			under a mouse, and it costs one line.
+		-->
 
 		<!--
 	An empty card says what the thing is for and offers the way in.
@@ -774,6 +800,86 @@
 			</Card>
 		{/snippet}
 
+		{#snippet card_latestTodos()}
+			<Card title="Latest todos" accent={SECTION_COLORS.planner}>
+				{#snippet actions()}
+					<div class="flex items-center gap-2">
+						<!--
+							Newest first, and reversible.
+
+							The newest is what somebody just wrote and is looking for; the
+							oldest is the one that has been avoided longest, which is worth
+							being able to look at on purpose. The order is remembered for
+							this browser — a preference about a list, not about an account.
+						-->
+						<button
+							type="button"
+							onclick={() => {
+								todosNewestFirst = !todosNewestFirst;
+								try {
+									localStorage.setItem('ontoplano:dash-todos-newest', todosNewestFirst ? '1' : '0');
+								} catch {
+									// It still flips for this visit; only the memory is lost.
+								}
+							}}
+							class="text-xs text-gray-500 hover:text-gray-900"
+							title={todosNewestFirst ? 'Showing newest first' : 'Showing oldest first'}
+						>
+							{todosNewestFirst ? 'Newest' : 'Oldest'} first
+						</button>
+						<a href={resolve('/planner/todo')} class="text-xs text-gray-500 hover:text-gray-900"
+							>Open →</a
+						>
+					</div>
+				{/snippet}
+				{#if sortedTodos.length === 0}
+					{@render nothingYet(
+						'Nothing on the list. Anything with no day yet lives here.',
+						'/planner/todo',
+						'Add a todo'
+					)}
+				{:else}
+					<div class="space-y-1">
+						{#each sortedTodos.slice(0, 6) as todo (todo.id)}
+							<div class="flex items-baseline gap-2">
+								<span class="min-w-0 flex-1 truncate text-sm text-gray-700">{todo.title}</span>
+								{#if todo.categoryName}
+									<span class="shrink-0 text-[10px] text-gray-500">{todo.categoryName}</span>
+								{/if}
+							</div>
+						{/each}
+						{#if sortedTodos.length > 6}
+							<span class="text-xs text-gray-500">+{sortedTodos.length - 6} more</span>
+						{/if}
+					</div>
+				{/if}
+			</Card>
+		{/snippet}
+
+		{#snippet card_ideas()}
+			<Card title="Ideas" accent={SECTION_COLORS.ideas}>
+				{#snippet actions()}
+					<a href={resolve('/ideas')} class="text-xs text-gray-500 hover:text-gray-900">Open →</a>
+				{/snippet}
+				{#if (data.latestIdeas ?? []).length === 0}
+					{@render nothingYet(
+						'No ideas yet. This is the place for the ones with nowhere else to go.',
+						'/ideas',
+						'Write one down'
+					)}
+				{:else}
+					<div class="space-y-1">
+						{#each (data.latestIdeas ?? []).slice(0, 5) as idea (idea.id)}
+							<p class="truncate text-sm text-gray-700">{idea.content}</p>
+						{/each}
+						{#if (data.latestIdeas ?? []).length > 5}
+							<span class="text-xs text-gray-500">+{(data.latestIdeas ?? []).length - 5} more</span>
+						{/if}
+					</div>
+				{/if}
+			</Card>
+		{/snippet}
+
 		{#snippet card_shopping()}
 			<Card title="Shopping" accent={SECTION_COLORS.shopping}>
 				{#snippet actions()}
@@ -934,6 +1040,8 @@
 						{:else if id === 'shopping'}{@render card_shopping()}
 						{:else if id === 'quote'}{@render card_quote()}
 						{:else if id === 'threeWins'}{@render card_threeWins()}
+						{:else if id === 'latestTodos'}{@render card_latestTodos()}
+						{:else if id === 'ideas'}{@render card_ideas()}
 						{/if}
 					</div>
 				{/if}

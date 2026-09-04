@@ -224,8 +224,30 @@ test.describe('with a finger', () => {
 		const box = (await jump.boundingBox())!;
 		await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
 
+		/*
+		 * The wedges carry icons on a phone, not names.
+		 *
+		 * The name of the one being aimed at is drawn at the top of the screen
+		 * instead: the finger covers the wedge it is on, so the label was the
+		 * one thing the gesture depends on and the one thing hidden while it was
+		 * being made.
+		 *
+		 * So this aims at each wedge in turn and collects what the screen said —
+		 * which asserts the new behaviour without pinning the order, since the
+		 * order is a setting.
+		 */
+		const wedges = page.locator('.pie [role="menuitem"]');
+		const count = await wedges.count();
+		expect(count).toBeGreaterThan(4);
+
+		const named: string[] = [];
+		for (let i = 0; i < count; i += 1) {
+			await wedges.nth(i).hover();
+			named.push(((await page.locator('.pie-hud').textContent()) ?? '').trim());
+		}
+
 		for (const room of ['Planner', 'Goals', 'Diary', 'Shopping']) {
-			await expect(page.locator('.pie').getByText(room, { exact: true })).toBeVisible();
+			expect(named, `${room} was never named while it was aimed at`).toContain(room);
 		}
 
 		// Settings and search are not wedges — they are destinations, and they sit

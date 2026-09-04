@@ -330,6 +330,12 @@
 	let confirmingLoadSchemeId: number | null = $state(null);
 	let confirmingDeleteSchemeId: number | null = $state(null);
 	let confirmingTemplate: string | null = $state(null);
+	/*
+	 * The subscribed-calendars panel, folded to begin with. It is set up once
+	 * and then read never, and the drawer it lives in is opened for the schemes
+	 * above it.
+	 */
+	let calendarsOpen = $state(false);
 	let showCsvImport = $state(false);
 
 	let timeInput: HTMLInputElement | undefined = $state(undefined);
@@ -2251,96 +2257,116 @@
 					Calendar it is Settings → your calendar → "Secret address in iCal
 					format".
 				-->
+				<!--
+					Folded to begin with.
+
+					Subscribing to a calendar is a thing somebody does once, and the
+					panel is a paragraph of instructions and three fields — which sat
+					under the schemes, open, every time the drawer was opened for the
+					schemes. It is not the reason anybody comes here.
+				-->
 				<div class="border border-gray-200 bg-white shadow-card">
-					<div class="eyebrow border-b border-gray-200 px-4 py-2.5 text-gray-500">
-						Calendars you subscribe to
-					</div>
-
-					{#if data.feeds.length === 0}
-						<div class="px-3">
-							<EmptyState icon="calendar" title="No calendars subscribed yet" compact />
-						</div>
-					{:else}
-						<ul class="divide-y divide-gray-200">
-							{#each data.feeds as feed (feed.id)}
-								<li class="flex flex-wrap items-center gap-3 px-4 py-3">
-									<span class="h-3 w-1 shrink-0 rounded-full" style="background-color: {feed.color}"
-									></span>
-									<div class="min-w-0 flex-1">
-										<p class="truncate text-sm text-gray-900">{feed.name}</p>
-										{#if feed.lastError}
-											<p class="truncate text-xs text-amber-700">
-												Last fetch failed: {feed.lastError}
-											</p>
-										{:else if feed.fetchedAt}
-											<p class="text-xs text-gray-500">
-												Read {feed.fetchedAt.slice(0, 16).replace('T', ' ')}
-											</p>
-										{/if}
-									</div>
-									<form method="post" action="?/removeCalendar" use:enhance class="shrink-0">
-										<input type="hidden" name="id" value={feed.id} />
-										<button
-											class="btn btn-danger btn-sm"
-											title="Stop subscribing"
-											aria-label="Stop subscribing to {feed.name}"
-											use:armed
-										>
-											<Icon name="trash" size={14} />
-										</button>
-									</form>
-								</li>
-							{/each}
-						</ul>
-					{/if}
-
-					<form
-						method="post"
-						action="?/addCalendar"
-						use:enhance
-						class="border-t border-gray-200 p-4"
+					<button
+						type="button"
+						onclick={() => (calendarsOpen = !calendarsOpen)}
+						class="eyebrow flex w-full items-center gap-1.5 border-b border-gray-200 px-4 py-2.5 text-left text-gray-500 hover:text-gray-900"
+						aria-expanded={calendarsOpen}
 					>
-						<!--
+						<Icon name={calendarsOpen ? 'chevron-down' : 'chevron-right'} size={14} />
+						Calendars you subscribe to
+						{#if data.feeds.length > 0}
+							<span class="text-gray-400">({data.feeds.length})</span>
+						{/if}
+					</button>
+					{#if calendarsOpen}
+						{#if data.feeds.length === 0}
+							<div class="px-3">
+								<EmptyState icon="calendar" title="No calendars subscribed yet" compact />
+							</div>
+						{:else}
+							<ul class="divide-y divide-gray-200">
+								{#each data.feeds as feed (feed.id)}
+									<li class="flex flex-wrap items-center gap-3 px-4 py-3">
+										<span
+											class="h-3 w-1 shrink-0 rounded-full"
+											style="background-color: {feed.color}"
+										></span>
+										<div class="min-w-0 flex-1">
+											<p class="truncate text-sm text-gray-900">{feed.name}</p>
+											{#if feed.lastError}
+												<p class="truncate text-xs text-amber-700">
+													Last fetch failed: {feed.lastError}
+												</p>
+											{:else if feed.fetchedAt}
+												<p class="text-xs text-gray-500">
+													Read {feed.fetchedAt.slice(0, 16).replace('T', ' ')}
+												</p>
+											{/if}
+										</div>
+										<form method="post" action="?/removeCalendar" use:enhance class="shrink-0">
+											<input type="hidden" name="id" value={feed.id} />
+											<button
+												class="btn btn-danger btn-sm"
+												title="Stop subscribing"
+												aria-label="Stop subscribing to {feed.name}"
+												use:armed
+											>
+												<Icon name="trash" size={14} />
+											</button>
+										</form>
+									</li>
+								{/each}
+							</ul>
+						{/if}
+
+						<form
+							method="post"
+							action="?/addCalendar"
+							use:enhance
+							class="border-t border-gray-200 p-4"
+						>
+							<!--
 							The address gets a line of its own on a phone.
 
 							Four controls on one row left it about two characters wide —
 							long enough to show "ht" of an iCal URL, which is the one field
 							here nobody can type from memory and everybody pastes.
 						-->
-						<div class="flex flex-wrap gap-2">
-							<input
-								autocomplete="off"
-								name="url"
-								type="url"
-								placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"
-								required
-								class="input w-full min-w-0 sm:order-2 sm:w-auto sm:flex-1"
-								aria-label="The calendar's iCal address"
-							/>
-							<input
-								name="label"
-								placeholder="Work"
-								autocomplete="off"
-								required
-								class="input w-32 sm:order-1"
-								aria-label="What to call it"
-							/>
-							<input
-								name="color"
-								type="color"
-								value="#6b7280"
-								class="h-10 w-12 border border-gray-300 sm:order-3"
-								aria-label="Colour"
-							/>
-							<button class="btn btn-primary sm:order-4" title="Subscribe" aria-label="Subscribe">
-								<Icon name="plus" />
-							</button>
-						</div>
-						<p class="mt-2 text-xs text-gray-500">
-							In Google Calendar: Settings → the calendar → “Secret address in iCal format”.
-							Ontoplano only reads that calendar; nothing you do here changes it.
-						</p>
-					</form>
+							<div class="flex flex-wrap gap-2">
+								<input
+									autocomplete="off"
+									name="url"
+									type="url"
+									placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"
+									required
+									class="input w-full min-w-0 sm:order-2 sm:w-auto sm:flex-1"
+									aria-label="The calendar's iCal address"
+								/>
+								<input
+									name="label"
+									placeholder="Work"
+									autocomplete="off"
+									required
+									class="input w-32 sm:order-1"
+									aria-label="What to call it"
+								/>
+								<input
+									name="color"
+									type="color"
+									value="#6b7280"
+									class="h-10 w-12 border border-gray-300 sm:order-3"
+									aria-label="Colour"
+								/>
+								<button class="btn btn-primary sm:order-4" title="Subscribe" aria-label="Subscribe">
+									<Icon name="plus" />
+								</button>
+							</div>
+							<p class="mt-2 text-xs text-gray-500">
+								In Google Calendar: Settings → the calendar → “Secret address in iCal format”.
+								Ontoplano only reads that calendar; nothing you do here changes it.
+							</p>
+						</form>
+					{/if}
 				</div>
 
 				<!--

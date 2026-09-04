@@ -6,7 +6,7 @@
  * point of linking — a self-reported number tells you what you believe, and the
  * execution log tells you what happened.
  */
-import { and, asc, eq, gte, inArray, lt } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, lt, type SQL } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import {
@@ -453,6 +453,90 @@ export function setGoalLinks(
 		for (const todoId of todoIds) link({ todoId });
 		for (const activityId of activityIds) link({ activityId });
 	});
+}
+
+/**
+ * Add work to a goal without disturbing what is already on it.
+ *
+ * `setGoalLinks` replaces the whole set, which is right for the page — a form
+ * that shows every checkbox and posts all of them — and dangerous for anybody
+ * else. A caller that knows about three todos and calls it unlinks everything
+ * it did not know about, silently, and the progress bar drops with no
+ * explanation on screen. An assistant asked to "make tasks for this goal" is
+ * exactly that caller.
+ *
+ * So: additive, idempotent, and it answers with how many links are new.
+ */
+export function addGoalLinks(
+	ctx: Ctx,
+	id: number,
+	links: { slotIds?: unknown[]; todoIds?: unknown[]; activityIds?: unknown[] }
+): { added: number } {
+	assertOwnedGoal(ctx, id);
+
+	const slotIds = ownedIds(links.slotIds ?? [], ownedSlotIds(ctx));
+	const todoIds = ownedIds(links.todoIds ?? [], ownedTodoIds(ctx));
+	const activityIds = ownedIds(links.activityIds ?? [], ownedActivityIds(ctx));
+
+	const existing = db
+		.select({
+			slotId: goalLinks.slotId,
+			todoId: goalLinks.todoId,
+			activityId: goalLinks.activityId
+		})
+		.from(goalLinks)
+		.where(and(eq(goalLinks.goalId, id), eq(goalLinks.userId, ctx.userId)))
+		.all();
+
+	const has = (kind: 'slotId' | 'todoId' | 'activityId', value: number) =>
+		existing.some((row) => row[kind] === value);
+
+	let added = 0;
+	db.transaction((tx) => {
+		const link = (values: { slotId?: number; todoId?: number; activityId?: number }) => {
+			tx.insert(goalLinks)
+				.values({ userId: ctx.userId, goalId: id, ...values })
+				.run();
+			added += 1;
+		};
+
+		for (const slotId of slotIds) if (!has('slotId', slotId)) link({ slotId });
+		for (const todoId of todoIds) if (!has('todoId', todoId)) link({ todoId });
+		for (const activityId of activityIds) if (!has('activityId', activityId)) link({ activityId });
+	});
+
+	return { added };
+}
+
+/** And the way back off it, one link at a time. */
+export function removeGoalLinks(
+	ctx: Ctx,
+	id: number,
+	links: { slotIds?: unknown[]; todoIds?: unknown[]; activityIds?: unknown[] }
+): { removed: number } {
+	assertOwnedGoal(ctx, id);
+
+	const slotIds = ownedIds(links.slotIds ?? [], ownedSlotIds(ctx));
+	const todoIds = ownedIds(links.todoIds ?? [], ownedTodoIds(ctx));
+	const activityIds = ownedIds(links.activityIds ?? [], ownedActivityIds(ctx));
+
+	let removed = 0;
+	db.transaction((tx) => {
+		// A condition rather than a column: the three columns are three distinct
+		// types to Drizzle, and one helper cannot take all of them.
+		const drop = (which: SQL) => {
+			removed += tx
+				.delete(goalLinks)
+				.where(and(eq(goalLinks.goalId, id), eq(goalLinks.userId, ctx.userId), which))
+				.run().changes;
+		};
+
+		for (const slotId of slotIds) drop(eq(goalLinks.slotId, slotId));
+		for (const todoId of todoIds) drop(eq(goalLinks.todoId, todoId));
+		for (const activityId of activityIds) drop(eq(goalLinks.activityId, activityId));
+	});
+
+	return { removed };
 }
 
 export function deleteGoal(ctx: Ctx, id: number): void {

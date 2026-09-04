@@ -13,6 +13,7 @@ import { generateWeekInstances, getMonday, toLocalISOString, addDays } from '../
 import type { Ctx } from './ctx.js';
 import { parseMeta, type SlotMeta } from './meta.js';
 import { num } from './validate.js';
+import { ValidationError } from './errors.js';
 
 /**
  * Read-only view of what's coming up.
@@ -68,13 +69,44 @@ function startOfDay(d: Date): Date {
  * exceptional slots. Suppressed slots never produce task instances, so they're
  * excluded for free.
  */
+/**
+ * `YYYY-MM-DD`, as the start of that day in the account's own zone.
+ *
+ * Bounded to a year either way: this materialises every week the range
+ * touches, so an unbounded date is a request to generate a decade of weeks.
+ */
+function dayFrom(raw: unknown): Date {
+	const text = String(raw ?? '').trim();
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+		throw new ValidationError('A day looks like 2026-09-01');
+	}
+
+	const day = new Date(`${text}T00:00:00`);
+	if (Number.isNaN(day.getTime())) throw new ValidationError('A day looks like 2026-09-01');
+
+	const year = 365 * 24 * 3600_000;
+	if (Math.abs(day.getTime() - Date.now()) > year) {
+		throw new ValidationError('That is more than a year away — ask about a nearer week');
+	}
+	return day;
+}
+
 export function getUpcomingSchedule(
 	ctx: Ctx,
-	opts: { days?: unknown; includeCompleted?: boolean } = {}
+	opts: { days?: unknown; includeCompleted?: boolean; startingOn?: unknown } = {}
 ): { timezone: string; from: string; to: string; occurrences: ScheduleOccurrence[] } {
 	const days = opts.days === undefined ? 7 : num(opts.days, 'days', { min: 1, max: 31, int: true });
 
-	const from = startOfDay(ctx.now);
+	/*
+	 * Where the window starts, which is today unless somebody says otherwise.
+	 *
+	 * A caller could only ever ask about the future, which made half the
+	 * ordinary sentences about a week unanswerable: "I did not actually do
+	 * Monday's run" needs Monday's blocks, and they have ids only if something
+	 * can list them. Answering *for* a past block always worked — nothing could
+	 * reach one.
+	 */
+	const from = opts.startingOn === undefined ? startOfDay(ctx.now) : dayFrom(opts.startingOn);
 	const to = addDays(from, days);
 
 	// Materialise every week the requested range touches, not just the current

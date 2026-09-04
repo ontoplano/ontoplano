@@ -23,10 +23,12 @@ import { toActionFailure } from '$lib/server/http-errors';
 import { listActiveOn } from '$lib/server/services/goals';
 import { listHabits, today as todayOf } from '$lib/server/services/habits';
 import { generateForDate, listForDate } from '$lib/server/services/instances';
+import { listIdeas } from '$lib/server/services/ideas';
 import { listQuotes } from '$lib/server/services/quotes';
 import { reviewPending } from '$lib/server/services/review';
 import { listToBuy } from '$lib/server/services/shopping';
 import { listActiveWeeklySlots } from '$lib/server/services/slots';
+import { listTodos } from '$lib/server/services/todos';
 import { listWins, saveWins } from '$lib/server/services/wins';
 import { generateCurrentWeek } from '$lib/server/week-generator';
 
@@ -157,6 +159,24 @@ export const load: PageServerLoad = async ({ locals }) => {
 			streak: h.streak
 		})),
 		shoppingToBuy: listToBuy(ctx),
+		/*
+		 * The last few things written down, and the last few ideas.
+		 *
+		 * Both are "what have I been putting in here lately", which is a
+		 * different question from "what is due today" and the one somebody
+		 * actually opens the app with. Newest first, and the card can flip that
+		 * — the oldest todo on a list is the one that has been avoided longest,
+		 * which is worth being able to look at on purpose.
+		 *
+		 * Sliced generously rather than exactly: the card decides how many to
+		 * draw, and reversing a list of eight in the browser beats a round trip.
+		 */
+		latestTodos: listTodos(ctx)
+			.filter((t) => t.status === 'todo' || t.status === 'doing')
+			.slice()
+			.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+			.slice(0, 12),
+		latestIdeas: listIdeas(ctx).slice(0, 12),
 		/** Set when last week had blocks in it and nobody has written it up yet. */
 		pendingReview: reviewPending(ctx),
 		weekSlots: listActiveWeeklySlots(ctx),

@@ -21,6 +21,12 @@
 	let appliedNoteDraft = $state('');
 	let selectedIndex = $state(0);
 	let filterTag: string | null = $state(null);
+	/*
+	 * The tag list is folded to begin with. Somebody opening Ideas came to read
+	 * ideas; the tags are how you narrow them once you know what you are after,
+	 * and every tag ever used is a wall of chips above the thing itself.
+	 */
+	let tagsOpen = $state(false);
 	let filterApplied: 'all' | 'applied' | 'not-applied' = $state('all');
 	let filterFavorite: 'all' | 'favorite' | 'not-favorite' = $state('all');
 	let confirmingDeleteId: number | null = $state(null);
@@ -167,7 +173,48 @@
 		</button>
 	</div>
 
+	<!--
+		The tags fold away, and start folded.
+
+		Every tag anybody has ever used, above everything, is a wall of chips
+		between the page and the ideas — and an idea list gathers tags faster than
+		almost anything else here. It is a filter, which is something you go
+		looking for; the ideas are what the page is.
+
+		The one it is filtered by stays visible while the rest are folded, or
+		closing the list would hide the fact that a filter is on.
+	-->
 	{#if data.allTags.length > 0}
+		<div class="space-y-2">
+			<button
+				type="button"
+				onclick={() => (tagsOpen = !tagsOpen)}
+				class="flex items-center gap-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase hover:text-gray-900"
+				aria-expanded={tagsOpen}
+			>
+				<Icon name={tagsOpen ? 'chevron-down' : 'chevron-right'} size={14} />
+				Tags
+				<span class="text-gray-400">({data.allTags.length})</span>
+			</button>
+
+			{#if filterTag && !tagsOpen}
+				<div class="flex flex-wrap items-center gap-2">
+					<span class="chip border-indigo-500 bg-indigo-50 text-indigo-700">#{filterTag}</span>
+					<button
+						onclick={() => {
+							filterTag = null;
+							selectedIndex = 0;
+						}}
+						class="border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-500 transition hover:text-gray-600"
+					>
+						clear
+					</button>
+				</div>
+			{/if}
+		</div>
+	{/if}
+
+	{#if data.allTags.length > 0 && tagsOpen}
 		<div class="flex flex-wrap gap-2">
 			{#each data.allTags as tag (tag.id)}
 				<button

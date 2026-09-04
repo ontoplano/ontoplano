@@ -16,7 +16,9 @@ export type DashboardCardId =
 	| 'diary'
 	| 'shopping'
 	| 'quote'
-	| 'threeWins';
+	| 'threeWins'
+	| 'latestTodos'
+	| 'ideas';
 
 export type DashboardCard = {
 	id: DashboardCardId;
@@ -82,6 +84,21 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 		defaultOn: true,
 		width: 'full',
 		hide: 'diary'
+	},
+	{
+		id: 'latestTodos',
+		label: 'Latest todos',
+		description: 'The most recent things you wrote down, newest first.',
+		defaultOn: true,
+		width: 'half'
+	},
+	{
+		id: 'ideas',
+		label: 'Ideas',
+		description: 'The last few ideas you had.',
+		defaultOn: true,
+		width: 'half',
+		hide: 'ideas'
 	},
 	{
 		id: 'shopping',

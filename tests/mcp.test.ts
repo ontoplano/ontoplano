@@ -254,6 +254,139 @@ describe('a tool that runs', () => {
 		expect(status?.enum).toContain('todo');
 	});
 
+	/**
+	 * Correcting a week that has already happened.
+	 *
+	 * Answering for a block always worked on any block; the only lists were
+	 * today and the days ahead, so a block from last Tuesday had no id anybody
+	 * could name. "I did not actually do Monday's run" was unanswerable for
+	 * want of a listing.
+	 */
+	it('can see the days behind, and answer for them', () => {
+		const seen = call(['schedule:read'], {
+			jsonrpc: '2.0',
+			id: 1,
+			method: 'tools/call',
+			params: { name: 'past', arguments: { days: 7 } }
+		});
+
+		expect(seen.result.isError, seen.result.content?.[0]?.text).toBe(false);
+		const { from, to } = seen.result.structuredContent;
+		// The window ends today and starts a week before it.
+		expect(from < to).toBe(true);
+		expect(from.slice(0, 10) < '2026-03-14').toBe(true);
+	});
+
+	it('and refuses a day it cannot mean', () => {
+		const answer = call(['schedule:read'], {
+			jsonrpc: '2.0',
+			id: 1,
+			method: 'tools/call',
+			params: { name: 'past', arguments: { startingOn: 'last tuesday' } }
+		});
+
+		expect(answer.result.isError).toBe(true);
+		expect(answer.result.content[0].text).toContain('2026-09-01');
+	});
+
+	/**
+	 * "Read this goal and make tasks out of it" — the whole sentence.
+	 *
+	 * Reading the goal worked and making the todos worked; what was missing was
+	 * the third act, so the tasks existed and counted towards nothing. And the
+	 * only linking the app had replaces the whole set, which for a caller that
+	 * knows about three todos means unlinking everything it does not know about.
+	 */
+	it('breaks a goal into tasks that count towards it', () => {
+		const goal = call(['tasks:write'], {
+			jsonrpc: '2.0',
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: 'add_todo',
+				arguments: { title: 'A task with no goal' }
+			}
+		});
+		expect(goal.result.isError).toBe(false);
+		const orphan = goal.result.structuredContent.id as number;
+
+		// A goal to hang work on, made by the service the page uses.
+		const madeGoal = call(['tasks:read'], {
+			jsonrpc: '2.0',
+			id: 2,
+			method: 'tools/call',
+			params: { name: 'goals', arguments: {} }
+		});
+		expect(madeGoal.result.isError).toBe(false);
+
+		const goalId = database.get(
+			'select id from goals where user_id = ? order by id desc limit 1',
+			USER
+		) as { id: number } | undefined;
+		if (!goalId) {
+			// No goal in the fixture: make one the same way the page does.
+			database.exec(
+				`insert into goals (user_id, title, notes, horizon, period_start, unit, status, created_at, updated_at)
+				 values (?, 'Learn to swim', 'Lessons, then a lake.', 'quarter', '2026-01-01', '', 'open',
+				         '2026-01-01T00:00:00', '2026-01-01T00:00:00')`,
+				USER
+			);
+		}
+		const target = (
+			database.get('select id from goals where user_id = ? order by id desc limit 1', USER) as {
+				id: number;
+			}
+		).id;
+
+		// One call makes the task and attaches it.
+		const linked = call(['tasks:write'], {
+			jsonrpc: '2.0',
+			id: 3,
+			method: 'tools/call',
+			params: {
+				name: 'add_todo',
+				arguments: { title: 'Book the first lesson', goalId: target }
+			}
+		});
+		expect(linked.result.isError, linked.result.content?.[0]?.text).toBe(false);
+		const linkedId = linked.result.structuredContent.id as number;
+
+		const links = () =>
+			database.get('select count(*) as n from goal_links where goal_id = ?', target) as {
+				n: number;
+			};
+		expect(links().n).toBe(1);
+
+		// And existing work goes on without disturbing what is there.
+		const also = call(['tasks:write'], {
+			jsonrpc: '2.0',
+			id: 4,
+			method: 'tools/call',
+			params: { name: 'link_to_goal', arguments: { goalId: target, todoIds: [orphan] } }
+		});
+		expect(also.result.isError).toBe(false);
+		expect(links().n, 'linking one unlinked the other').toBe(2);
+
+		// Twice is not two links.
+		call(['tasks:write'], {
+			jsonrpc: '2.0',
+			id: 5,
+			method: 'tools/call',
+			params: { name: 'link_to_goal', arguments: { goalId: target, todoIds: [orphan] } }
+		});
+		expect(links().n).toBe(2);
+
+		// And off again, one at a time.
+		call(['tasks:write'], {
+			jsonrpc: '2.0',
+			id: 6,
+			method: 'tools/call',
+			params: { name: 'unlink_from_goal', arguments: { goalId: target, todoIds: [orphan] } }
+		});
+		expect(links().n).toBe(1);
+		expect(linkedId).toBeGreaterThan(0);
+	});
+
 	it('writes, and the write is the service’s own', () => {
 		const made = call(['tasks:write'], {
 			jsonrpc: '2.0',

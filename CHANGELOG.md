@@ -10,6 +10,28 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.61.0 — 2026-09-04
+
+- **The wheel says what is under your thumb**, at the top of the screen, in the
+  section's own colour — the finger covers the wedge it is on, which was the one
+  thing the gesture depends on. The wedges keep their icons.
+- **The dashboard has your latest todos and your latest ideas**, and the todos
+  can be flipped oldest-first. The four capture tiles are gone from the phone:
+  the + in the bottom bar is the same four, under your thumb, costing no room.
+- Todos are newest first, with a button to reverse it.
+- **An assistant can break a goal into tasks.** `add_todo` takes a goal, and
+  `link_to_goal` attaches work that already exists — additively, so it cannot
+  quietly unlink everything it did not know about. `unlink_from_goal` is the way
+  back.
+- **And it can correct a week that has already happened**: `past` lists the days
+  behind with what each block was answered, which is what `finish_block` needs
+  to change one.
+- A page slides in when you go somewhere, and a bar across the top says a slow
+  one is loading.
+- The tag list on Ideas and the subscribed-calendars panel start folded.
+- On a phone the docs open on the page you followed a link to, rather than
+  under the whole index.
+
 ## 0.60.0 — 2026-09-04
 
 - **An assistant can undo what it does.** Over MCP it could tick a shopping item

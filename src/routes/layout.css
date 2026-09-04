@@ -2147,3 +2147,91 @@ html[data-pie-open] .float-layer {
 	opacity: 0;
 	pointer-events: none;
 }
+
+/*
+ * The page arrives from the left; the app around it does not move.
+ *
+ * Only the contents of `<main>` — the header, the bottom bar and the pies stay
+ * exactly where they are, because it is the page that went somewhere, not the
+ * app. Replayed by the layout when the pathname changes, so nothing is
+ * remounted and no component loses its state.
+ *
+ * The outgoing page is deliberately not animated. Doing that needs the old DOM
+ * to still exist, which means the View Transitions API — and that froze the
+ * document in testing, URL changed and old page still painted. A navigation
+ * that can hang is not worth half an animation.
+ */
+main.page-arriving > * {
+	animation: page-arriving 180ms cubic-bezier(0, 0, 0.2, 1) both;
+}
+
+@keyframes page-arriving {
+	from {
+		opacity: 0;
+		transform: translateX(-1.25rem);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	main.page-arriving > * {
+		animation: none;
+	}
+}
+
+/*
+ * A navigation in flight, said across the top of the window.
+ *
+ * Indeterminate on purpose: nothing here knows how far along a load is, and a
+ * bar that pretends to is a bar that sits at 80% for a second. This one sweeps,
+ * which says "working" without claiming a number.
+ *
+ * The delay is the whole design. Most navigations in this app finish inside a
+ * frame or two, and a bar that appears and vanishes on every tap is visual
+ * noise that makes a fast app feel busy. It waits a quarter of a second — past
+ * which somebody has started to wonder — and only then fades in.
+ */
+.nav-progress {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 80;
+	height: 2px;
+	pointer-events: none;
+	background: linear-gradient(
+		90deg,
+		transparent,
+		var(--color-gray-900) 35%,
+		var(--color-gray-900) 65%,
+		transparent
+	);
+	background-size: 40% 100%;
+	background-repeat: no-repeat;
+	opacity: 0;
+	animation:
+		nav-progress-show 120ms ease 250ms forwards,
+		nav-progress-sweep 900ms ease-in-out 250ms infinite;
+}
+
+@keyframes nav-progress-show {
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes nav-progress-sweep {
+	from {
+		background-position: -40% 0;
+	}
+	to {
+		background-position: 140% 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.nav-progress {
+		animation: nav-progress-show 120ms ease 250ms forwards;
+		background: var(--color-gray-900);
+		background-size: 100% 100%;
+	}
+}
