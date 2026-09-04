@@ -268,7 +268,29 @@ billing-provider:
 # bundle when the module was compiled in, and does not otherwise.
 _billing-in-build:
 	@[ -f src/lib/server/billing/providers/paddle.ts ] || exit 0
-	@if grep -rqs 'providers/paddle' build/server --include='*.js'; then 		$(OK) "the payment provider is in this build"; 	else 		$(NO) "the provider is in the tree and NOT in the build"; 		echo "  Vite resolves import.meta.glob at build time and caches it, so a"; 		echo "  cache from before the provider existed keeps answering 'none'."; 		echo "  rm -rf node_modules/.vite .svelte-kit && make build"; 		exit 1; 	fi
+	@# Nothing may throw the provider away at run time.
+	@#
+	@# `import.meta.glob` is a build-time rewrite of the CALL, not a function
+	@# that exists in Node. A `typeof import.meta.glob === 'function'` guard
+	@# around it survives into the bundle, evaluates false there, and discards
+	@# the provider — which is exactly what shipped: the module bundled,
+	@# imported and dropped. Nothing failed and nothing logged; the app simply
+	@# decided it could not sell, for a fortnight.
+	@if grep -rqs 'typeof import.meta.glob' build/server --include='*.js'; then \
+		$(NO) "this build guards import.meta.glob at run time"; \
+		echo "  It is undefined in Node, so that guard is always false and the"; \
+		echo "  provider it protects is discarded. src/lib/server/billing/index.ts."; \
+		exit 1; \
+	fi
+	@# And the provider is actually in the bundle. It can be sitting in the tree
+	@# and absent from the build — Vite resolves the glob once and caches it.
+	@if grep -rqs 'providers/paddle' build/server --include='*.js'; then \
+		$(OK) "the payment provider is in this build"; \
+	else \
+		$(NO) "the provider is in the tree and NOT in the build"; \
+		echo "  rm -rf node_modules/.vite .svelte-kit && make build"; \
+		exit 1; \
+	fi
 
 build: billing-provider
 	@heap=$$(free -m 2>/dev/null | awk '/^Mem:/ {print $$2}'); \

@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.62.1 — 2026-09-04
+
+- **Billing worked in the build and not in the running app.** The payment
+  provider was compiled in and then discarded on every start by a guard that
+  tested, at run time, something Vite resolves at build time — so an instance
+  that sells could not, and nothing anywhere said so. It has been that way since
+  the payment code moved to its own repository.
+
 ## 0.62.0 — 2026-09-04
 
 - **The reminders timer costs a request, not a process.** It ran `npx tsx` every

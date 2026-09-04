@@ -28,10 +28,37 @@ import { noBilling } from './none.js';
  * saved reference: Vite rewrites the call expression at build time, and only
  * recognises it spelled out.
  */
-const found: Record<string, { provider?: BillingProvider } | undefined> =
-	typeof (import.meta as { glob?: unknown }).glob === 'function'
-		? import.meta.glob<{ provider?: BillingProvider }>('./providers/*.ts', { eager: true })
-		: {};
+/*
+ * Whatever provider was compiled in, or nothing.
+ *
+ * `import.meta.glob` is Vite's, and it is a *build-time rewrite of the call
+ * expression* rather than a function that exists at runtime. That distinction
+ * cost this project its whole billing integration for a fortnight, silently.
+ *
+ * The guard used to read `typeof import.meta.glob === 'function' ? glob(…) : {}`
+ * — written that way so that a plain `tsx` script, where Vite never ran, would
+ * not call something that does not exist. Vite duly replaced the call and left
+ * the condition alone, so the built server shipped:
+ *
+ *     typeof import.meta.glob === "function" ? { "./providers/paddle.ts": … } : {}
+ *
+ * `import.meta.glob` is undefined in Node. The condition was false in every
+ * production build, the object was discarded, and the app decided it had no
+ * payment provider — while the provider sat in the bundle, imported and unused.
+ * Nothing failed, nothing logged, and an instance that sells simply could not.
+ *
+ * A `try` instead. Under Vite the call is already an object literal by the time
+ * this runs, so the `try` is inert; under `tsx` the call throws on undefined and
+ * the catch leaves this empty, which is exactly what `load.ts` and
+ * `useProvider()` are for. The difference is that this version cannot be true
+ * at build time and false at run time.
+ */
+let found: Record<string, { provider?: BillingProvider } | undefined> = {};
+try {
+	found = import.meta.glob<{ provider?: BillingProvider }>('./providers/*.ts', { eager: true });
+} catch {
+	// No Vite: a script running under tsx. `useProvider()` is how it is told.
+}
 
 /** Set by an entry point Vite never compiled. See `load.ts`. */
 let registered: BillingProvider | null = null;
