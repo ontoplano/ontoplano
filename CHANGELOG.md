@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.79.1 — 2026-09-05
+
+- **The day number stays in the month view** — it had leaked onto every week
+  and day column, whose headers already say the date.
+- **The planner grid is square inside.** Header cells, day cells and the hour
+  sidebar all tiled with rounded corners, leaving triangles and holes at
+  every seam; only the calendar's outer frame and the blocks themselves keep
+  a radius.
+
 ## 0.79.0 — 2026-09-05
 
 - **The month view works and looks like the app.** The forward arrow moves

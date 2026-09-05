@@ -156,14 +156,25 @@ describe('a week that has already happened', () => {
 		expect(drawn).not.toContain('✓');
 	});
 
-	test('a day that has been is washed, and today is not — and every day is numbered', () => {
+	test('a day that has been is washed, and today is not', () => {
 		const cell = options.dayCellContent as (i: { date: Date }) => unknown;
+		expect(html(cell({ date: at('2026-09-01T00:00:00') }))).toContain('og-past');
+		// No number outside the month view: the week's header already says the
+		// date, and the number briefly leaked onto every timeGrid column.
+		expect(html(cell({ date: at('2026-09-01T00:00:00') }))).not.toContain('1');
+		expect(html(cell({ date: at('2026-09-04T00:00:00') }))).toBe('');
+		expect(html(cell({ date: at('2026-09-05T00:00:00') }))).toBe('');
+	});
+
+	test('the month numbers every day, wash or no wash', () => {
+		const monthly = baseGridOptions('2026-08-31', { month: true, today: '2026-09-05' });
+		const cell = monthly.dayCellContent as (i: { date: Date }) => unknown;
 		// This content REPLACES the library's own day number, so it has to
 		// carry one — the month view once lost its dates to a wash-only span.
-		expect(html(cell({ date: at('2026-09-01T00:00:00') }))).toContain('og-past');
-		expect(html(cell({ date: at('2026-09-01T00:00:00') }))).toContain('1');
-		expect(html(cell({ date: at('2026-09-04T00:00:00') }))).toBe('4');
-		expect(html(cell({ date: at('2026-09-05T00:00:00') }))).toBe('5');
+		const past = html(cell({ date: at('2026-09-01T00:00:00') }));
+		expect(past).toContain('og-past');
+		expect(past).toContain('1');
+		expect(html(cell({ date: at('2026-09-07T00:00:00') }))).toBe('7');
 	});
 
 	test('a grid that was never told today washes nothing', () => {

@@ -1918,25 +1918,19 @@ html .ec {
 }
 
 /*
- * The header's day cells are one strip, not seven pills.
+ * Inside the calendar, everything tiles: everything square.
  *
- * The playful style rounds every div with a background, which here put a
- * radius on each day cell and left little triangles of the row behind showing
- * at every seam. Inner corners go square; the strip keeps its rounding at the
- * two ends — whatever day happens to sit there.
+ * The playful style rounds every div, span and aside with a background, which
+ * here rounded the header cells, the day cells and the hour sidebar — pills
+ * with triangles of the row behind at every seam, and little holes at each
+ * grid corner. A sweep rather than a list of the library's class names,
+ * because the names move (ec-day-head became ec-col-head between versions
+ * and a list quietly stopped matching). Only two things in a calendar are
+ * shapes rather than tiles: the blocks, and the "+2 more" popup. The frame's
+ * own outer radius survives because the playful `.ec` clips its content.
  */
-html .ec .ec-header .ec-day {
+html .ec *:not(.ec-event, .ec-event *, .ec-popup, .ec-popup *) {
 	border-radius: 0;
-}
-
-html .ec .ec-header .ec-day:first-of-type {
-	border-start-start-radius: var(--radius);
-	border-end-start-radius: var(--radius);
-}
-
-html .ec .ec-header .ec-day:last-of-type {
-	border-start-end-radius: var(--radius);
-	border-end-end-radius: var(--radius);
 }
 
 /* Day names read as card labels, not as a table header. */
