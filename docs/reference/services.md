@@ -2466,9 +2466,11 @@ May this sign-up proceed?
 
 Returns the invite it consumed, if any, so the caller can mark it used once
 the account actually exists. Throwing here is what a refused sign-up looks
-like — the message is deliberately the same for "closed" and "no code",
-because a stranger learning _why_ they were refused learns how the instance
-is configured.
+like. A closed instance answers flatly; an invite-only one says what was
+wrong with the code — the register form already announces that codes exist,
+so "not accepting new accounts" to somebody holding a mistyped one was
+secrecy about a fact the same page states, and read as "your invitation is
+worthless".
 
 #### `consumeInvite(id, userId, now)`
 
