@@ -104,8 +104,8 @@ a green light.
 
 - **The config file.** `~/.config/ontoplano/config.toml` and the env file are not
   in the replica. They are small; copy them somewhere yourself.
-- **Uploads.** There are none yet. When there are, they need their own answer —
-  Litestream replicates one SQLite database, nothing else.
+- **Uploads.** Pictures are blobs inside the database, so replication covers
+  them — it is also why the file grows faster than the row counts suggest.
 - **Alerting.** Silence is the default failure mode of every backup. `make
 backup-status` shows replication lag; check it, or wire it into whatever
   already watches the machine.

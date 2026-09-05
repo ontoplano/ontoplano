@@ -24,13 +24,14 @@ and links to `goals` like everything else.
 
 ### Trips
 
-A date range with a place, and things hanging off it: what to pack, what it
-cost, what happened. Most of those units exist; the work is the linking and the
-one page that shows a trip whole.
+Notebooks already hold a trip's writing. What is missing is the date range
+with a place and the one page that shows a trip whole — what to pack, what it
+cost, what happened. The work is the linking, not new units.
 
 ### The rest of the REST API
 
-`/api/v1` covers `me`, today, the schedule, shopping, streams and webhooks. MCP
+`/api/v1` covers `me`, today, the schedule, shopping, streams, webhooks and
+plugin manifests. MCP
 reaches further — todos, diary, notebooks, ideas, goals, habits, recipes — and
 those have no REST equivalent.
 
@@ -52,9 +53,11 @@ Not in scope: right-to-left layout, translating the docs.
 
 ### Sharing, narrowly
 
-A family plan shares a bill and nothing else. The first thing worth actually
-sharing is a **shopping category** — one household, one list of what is out of
-milk. Per category, opt-in, never a default.
+A family plan shares a bill and nothing else, and `examples/onto-household.mjs`
+already keeps two accounts' shopping lists equal over webhooks — from outside.
+The first thing worth sharing **in the app** is a shopping category: one
+household, one list of what is out of milk. Per category, opt-in, never a
+default.
 
 Everything else stays private. "Share your diary with your family" is not
 somewhere this is heading.

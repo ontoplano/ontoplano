@@ -1061,8 +1061,8 @@ function indexPage(pages, written) {
 		'## What is not here\n',
 		'The reasoning behind a particular line lives in the comment above that',
 		'line, where it moves with the code — these pages collect those rather than',
-		'restating them. The guides for running an instance — deployment, backups,',
-		'billing, the Android build — are in `docs/` beside this directory, because',
+		'restating them. The guides for running an instance — Docker, backups, plans,',
+		'plugins, the Android build — are in `docs/` beside this directory, because',
 		'they describe things outside this repository that no generator can read.'
 	].join('\n');
 }

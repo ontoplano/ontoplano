@@ -16,7 +16,7 @@ All four, or it is not finished:
 - **Tests.** A service test with a real database and an ownership case, and an
   e2e case for anything a person clicks. A test for a bug must fail against the
   old code — reintroduce the bug and watch it go red before you believe it.
-- **Docs.** `yarn docs` regenerates them from the source; `yarn lint` fails when
+- **Docs.** `yarn docs` regenerates them from the source; `make lint` fails when
   they are stale. Anything a person has to be told rather than shown gets a
   paragraph in the handwritten part.
 - **A tutorial step,** if the thing is not obvious the first time somebody meets
@@ -33,9 +33,9 @@ little of each thing in it. Never develop against real data.
 
 ```sh
 yarn install
-yarn dev            # http://localhost:1493
-yarn test           # vitest, then playwright
-yarn lint
+make dev            # http://localhost:1493, as a systemd user service (yarn dev elsewhere)
+make lint           # prettier + eslint, and that the generated docs are current
+make test           # the Playwright e2e suite; yarn test:unit for the unit half
 ```
 
 SQLite at `~/.local/share/ontoplano/ontoplano.db`, config at

@@ -46,6 +46,7 @@ sentence somebody agrees to when they grant it.
 | `/api/client-errors`                         | POST   | —                 |
 | `/api/imports`                               | GET    | —                 |
 | `/api/jobs/reminders`                        | POST   | —                 |
+| `/api/jobs/weekly-reviews`                   | POST   | —                 |
 | `/api/live`                                  | GET    | —                 |
 | `/api/mcp`                                   | POST   | —                 |
 | `/api/mcp`                                   | GET    | —                 |
@@ -206,6 +207,22 @@ The app has the code loaded and the database open. Asking it costs a request.
 Behind the health token, which the box already has for `/healthz`: this
 writes and sends, so it is not for the public. Absent token, absent
 endpoint — never open, whatever is misconfigured.
+
+**POST**
+
+### `/api/jobs/weekly-reviews`
+
+The hour's weekly review mail, done by the process that is already running.
+
+The same shape as `/api/jobs/reminders`, for the same reason: the app has
+the code loaded and the database open, so a timer — or the Docker image's
+own scheduler, which has no systemd to lean on — asks it instead of booting
+a second copy of everything. Hourly, because seven in the morning is a
+different instant for every timezone; `sendWeeklyReviews` already does
+nothing for the twenty-three runs that are not somebody's seven.
+
+Behind the health token, like the reminders job: it sends mail, so it is
+not for the public. Absent token, absent endpoint.
 
 **POST**
 

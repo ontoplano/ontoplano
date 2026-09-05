@@ -141,52 +141,52 @@ read. A variable that stops being consulted leaves this table by
 itself, which is the point — an env var nobody reads any more is the
 kind of thing that stays in a deployment script for years.
 
-| Variable                               | Read in                                                                                                   |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `ONTOPLANO_ALLOW_PUSH`                 | `scripts/guard-push.mjs`                                                                                  |
-| `ONTOPLANO_APP_URL`                    | `scripts/build-docs-site.mjs`                                                                             |
-| `ONTOPLANO_ASSET_ORIGIN`               | `scripts/build-twa.mjs`                                                                                   |
-| `ONTOPLANO_BACKUP_RETENTION_DAYS`      | `src/lib/server/services/legal.ts`                                                                        |
-| `ONTOPLANO_BAN_CONTROL`                | `src/lib/server/services/protection.ts`                                                                   |
-| `ONTOPLANO_BAN_CONTROL_CMD`            | `src/lib/server/services/protection.ts`                                                                   |
-| `ONTOPLANO_CONFIG_DIR`                 | `src/lib/server/config.ts`                                                                                |
-| `ONTOPLANO_CONTACT_EMAIL`              | `src/lib/server/services/legal.ts`                                                                        |
-| `ONTOPLANO_DATA_DIR`                   | `scripts/migrate.mjs`, `src/lib/server/config.ts`                                                         |
-| `ONTOPLANO_DEMO`                       | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_DEMO_EMAIL`                 | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_DEMO_MAX_ACCOUNTS`          | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_DEMO_TTL_MINUTES`           | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_DOCS_URL`                   | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_FAIL2BAN_LOG`               | `src/lib/server/services/protection.ts`                                                                   |
-| `ONTOPLANO_FAMILY_SEATS`               | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_HEALTH_TOKEN`               | `src/lib/server/settings.ts`, `src/routes/api/jobs/reminders/+server.ts`, `src/routes/healthz/+server.ts` |
-| `ONTOPLANO_HTTPS`                      | `src/hooks.server.ts`                                                                                     |
-| `ONTOPLANO_JURISDICTION`               | `src/lib/server/services/legal.ts`                                                                        |
-| `ONTOPLANO_MAIL_FROM`                  | `src/lib/server/services/push.ts`                                                                         |
-| `ONTOPLANO_OPERATOR`                   | `src/lib/server/services/legal.ts`                                                                        |
-| `ONTOPLANO_ORIGIN`                     | `scripts/build-twa.mjs`                                                                                   |
-| `ONTOPLANO_OWNER_ID`                   | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_PAYMENT_PROVIDER`           | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_POLICY_UPDATED`             | `src/lib/server/services/legal.ts`                                                                        |
-| `ONTOPLANO_PRICE_CURRENCY`             | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_PRICE_FAMILY_MONTHLY_CENTS` | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_PRICE_FAMILY_YEARLY_CENTS`  | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_PRICE_MONTHLY_CENTS`        | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_PRICE_YEARLY_CENTS`         | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_REGISTRATION`               | `src/lib/server/services/registration.ts`                                                                 |
-| `ONTOPLANO_REQUIRE_VERIFIED_EMAIL`     | `src/lib/server/services/access.ts`                                                                       |
-| `ONTOPLANO_REVIEW_MAIL_OFFSET_HOURS`   | `src/lib/server/services/review-mail.ts`                                                                  |
-| `ONTOPLANO_SELF_HOST`                  | `src/lib/server/services/billing.ts`, `src/lib/server/settings.ts`                                        |
-| `ONTOPLANO_SELLS`                      | `src/lib/server/services/billing.ts`                                                                      |
-| `ONTOPLANO_SITE_COOKIE_DOMAIN`         | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_SITE_URL`                   | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_SKIP_MIGRATION_CHECK`       | `src/lib/server/db/assert-migrated.ts`                                                                    |
-| `ONTOPLANO_STAGING`                    | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_TRIAL_DAYS`                 | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_TRIAL_REQUIRES_CARD`        | `src/lib/server/settings.ts`                                                                              |
-| `ONTOPLANO_TRUST_PROXY`                | `src/lib/server/rate-limit.ts`                                                                            |
-| `ONTOPLANO_VAPID_PRIVATE_KEY`          | `src/lib/server/services/push.ts`                                                                         |
-| `ONTOPLANO_VAPID_PUBLIC_KEY`           | `src/lib/server/services/push.ts`                                                                         |
+| Variable                               | Read in                                                                                                                                                    |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ONTOPLANO_ALLOW_PUSH`                 | `scripts/guard-push.mjs`                                                                                                                                   |
+| `ONTOPLANO_APP_URL`                    | `scripts/build-docs-site.mjs`                                                                                                                              |
+| `ONTOPLANO_ASSET_ORIGIN`               | `scripts/build-twa.mjs`                                                                                                                                    |
+| `ONTOPLANO_BACKUP_RETENTION_DAYS`      | `src/lib/server/services/legal.ts`                                                                                                                         |
+| `ONTOPLANO_BAN_CONTROL`                | `src/lib/server/services/protection.ts`                                                                                                                    |
+| `ONTOPLANO_BAN_CONTROL_CMD`            | `src/lib/server/services/protection.ts`                                                                                                                    |
+| `ONTOPLANO_CONFIG_DIR`                 | `src/lib/server/config.ts`                                                                                                                                 |
+| `ONTOPLANO_CONTACT_EMAIL`              | `src/lib/server/services/legal.ts`                                                                                                                         |
+| `ONTOPLANO_DATA_DIR`                   | `scripts/migrate.mjs`, `src/lib/server/config.ts`                                                                                                          |
+| `ONTOPLANO_DEMO`                       | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_DEMO_EMAIL`                 | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_DEMO_MAX_ACCOUNTS`          | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_DEMO_TTL_MINUTES`           | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_DOCS_URL`                   | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_FAIL2BAN_LOG`               | `src/lib/server/services/protection.ts`                                                                                                                    |
+| `ONTOPLANO_FAMILY_SEATS`               | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_HEALTH_TOKEN`               | `src/lib/server/settings.ts`, `src/routes/api/jobs/reminders/+server.ts`, `src/routes/api/jobs/weekly-reviews/+server.ts`, `src/routes/healthz/+server.ts` |
+| `ONTOPLANO_HTTPS`                      | `src/hooks.server.ts`                                                                                                                                      |
+| `ONTOPLANO_JURISDICTION`               | `src/lib/server/services/legal.ts`                                                                                                                         |
+| `ONTOPLANO_MAIL_FROM`                  | `src/lib/server/services/push.ts`                                                                                                                          |
+| `ONTOPLANO_OPERATOR`                   | `src/lib/server/services/legal.ts`                                                                                                                         |
+| `ONTOPLANO_ORIGIN`                     | `scripts/build-twa.mjs`                                                                                                                                    |
+| `ONTOPLANO_OWNER_ID`                   | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_PAYMENT_PROVIDER`           | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_POLICY_UPDATED`             | `src/lib/server/services/legal.ts`                                                                                                                         |
+| `ONTOPLANO_PRICE_CURRENCY`             | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_PRICE_FAMILY_MONTHLY_CENTS` | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_PRICE_FAMILY_YEARLY_CENTS`  | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_PRICE_MONTHLY_CENTS`        | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_PRICE_YEARLY_CENTS`         | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_REGISTRATION`               | `src/lib/server/services/registration.ts`                                                                                                                  |
+| `ONTOPLANO_REQUIRE_VERIFIED_EMAIL`     | `src/lib/server/services/access.ts`                                                                                                                        |
+| `ONTOPLANO_REVIEW_MAIL_OFFSET_HOURS`   | `src/lib/server/services/review-mail.ts`                                                                                                                   |
+| `ONTOPLANO_SELF_HOST`                  | `src/lib/server/services/billing.ts`, `src/lib/server/settings.ts`                                                                                         |
+| `ONTOPLANO_SELLS`                      | `src/lib/server/services/billing.ts`                                                                                                                       |
+| `ONTOPLANO_SITE_COOKIE_DOMAIN`         | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_SITE_URL`                   | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_SKIP_MIGRATION_CHECK`       | `src/lib/server/db/assert-migrated.ts`                                                                                                                     |
+| `ONTOPLANO_STAGING`                    | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_TRIAL_DAYS`                 | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_TRIAL_REQUIRES_CARD`        | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_TRUST_PROXY`                | `src/lib/server/rate-limit.ts`                                                                                                                             |
+| `ONTOPLANO_VAPID_PRIVATE_KEY`          | `src/lib/server/services/push.ts`                                                                                                                          |
+| `ONTOPLANO_VAPID_PUBLIC_KEY`           | `src/lib/server/services/push.ts`                                                                                                                          |
 
 ## Per-account settings
 

@@ -31,10 +31,10 @@ export interface ScheduleOccurrence {
 	/**
 	 * Local wall-clock, 'YYYY-MM-DDTHH:MM:SS', with no offset.
 	 *
-	 * Instants are still stored in server-local time (finding S7 — not yet
-	 * migrated), so this is emitted as naive local time and the response
-	 * carries the timezone separately. When S7 lands this gains a UTC `at`
-	 * alongside, and `at_local` keeps its meaning.
+	 * Deliberately naive, with the timezone carried separately on the
+	 * response: a consumer setting an alarm wants the wall-clock time in the
+	 * account's own zone, not an instant to convert back. If a UTC `at` is
+	 * ever added alongside, `at_local` keeps its meaning.
 	 */
 	at_local: string;
 	local_date: string;

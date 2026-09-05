@@ -118,8 +118,8 @@ docker run -d --name ontoplano -p 1493:1493 \
 Or with compose, which is the same thing written down:
 
 ```sh
-curl -O https://raw.githubusercontent.com/ontoplano/ontoplano/main/docker-compose.yml
-curl -o .env https://raw.githubusercontent.com/ontoplano/ontoplano/main/.env.example
+curl -O https://raw.githubusercontent.com/ontoplano/ontoplano/master/docker-compose.yml
+curl -o .env https://raw.githubusercontent.com/ontoplano/ontoplano/master/.env.example
 # set ORIGIN and BETTER_AUTH_SECRET in .env
 docker compose up -d
 ```

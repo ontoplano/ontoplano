@@ -49,7 +49,7 @@ body:
     attributes:
       label: Version — only if you run your own instance
       description: Settings → Instance shows it, beside the commit and the build time.
-      placeholder: 0.29.0
+      placeholder: 0.70.0
 
   - type: input
     id: where

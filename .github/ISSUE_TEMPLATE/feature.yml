@@ -15,8 +15,8 @@ body:
     attributes:
       label: What do you want to do
       description: >
-        The thing itself — "share my shopping list with my partner",
-        "see the week as a calendar file".
+        The thing itself — "track a small business next to the rest of my
+        life", "use it in Portuguese".
     validations:
       required: true
 

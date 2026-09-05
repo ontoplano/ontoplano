@@ -16,19 +16,10 @@ readings, and reads upcoming planner slots to decide when to ring.
 
 ## 1. Get a token
 
-The user creates one at **Settings → Integrations**, choosing scopes:
-
-| Scope             | Grants                                                        |
-| ----------------- | ------------------------------------------------------------- |
-| `streams:write`   | declare streams, push and delete points                       |
-| `streams:read`    | read points back                                              |
-| `schedule:read`   | read upcoming scheduled tasks                                 |
-| `today:read`      | read today's blocks, habits and tasks                         |
-| `webhooks:manage` | subscribe addresses to events, and manage those subscriptions |
-| `shopping:read`   | read the shopping list                                        |
-| `shopping:write`  | add items, set them bought                                    |
-
-Ask for the narrowest set that works. A token with only `streams:write` cannot read
+The user creates one at **Settings → Integrations**, choosing scopes. The full
+list of scopes and what each grants is generated from the code in
+[`docs/reference/ways-in.md`](reference/ways-in.md) — a table here would only
+drift from it. Ask for the narrowest set that works. A token with only `streams:write` cannot read
 anything the user has — which is the point, because tokens live on phones.
 
 The plaintext token (`onto_…`) is shown **once**. Store it in the OS keychain, not a
@@ -178,8 +169,8 @@ GET /api/v1/schedule/upcoming?days=7
 Only pending occurrences by default; pass `include_completed=true` for all.
 
 **`at_local` is naive local wall-clock time** — no offset — and `timezone` tells you how to
-interpret it. (Ontoplano still stores instants in server-local time; when that's migrated
-to UTC this response gains an `at` field alongside, and `at_local` keeps its meaning.)
+interpret it. That is deliberate: a consumer setting an alarm wants the wall-clock
+time in the account's own zone, not an instant it has to convert back.
 
 ### Deciding what to do with an occurrence is _your_ job
 
@@ -262,14 +253,14 @@ nothing above: scoped tokens, the shopping API, self-managed webhooks.
 { "error": { "code": "not_found", "message": "Stream not found" } }
 ```
 
-| Status | Code               | What to do                                                     |
-| ------ | ------------------ | -------------------------------------------------------------- |
-| 401    | `unauthorized`     | token bad/revoked/expired — stop, prompt the user to reconnect |
-| 403    | `forbidden`        | token lacks the scope — stop, don't retry                      |
-| 404    | `not_found`        | stream missing (or not yours) — re-declare once, then retry    |
-| 409    | `conflict`         | duplicate resource                                             |
-| 422    | `validation_error` | malformed — **don't retry**, it will never succeed             |
-| 402    | `plan_limit`       | tier limit — surface the message, don't retry                  |
+| Status | Code               | What to do                                                                            |
+| ------ | ------------------ | ------------------------------------------------------------------------------------- |
+| 401    | `unauthorized`     | token bad/revoked/expired — stop, prompt the user to reconnect                        |
+| 403    | `forbidden`        | token lacks the scope — stop, don't retry                                             |
+| 404    | `not_found`        | stream missing (or not yours) — re-declare once, then retry                           |
+| 409    | `conflict`         | duplicate resource                                                                    |
+| 422    | `validation_error` | malformed — **don't retry**, it will never succeed                                    |
+| 402    | `plan_limit`       | a storage ceiling — surface the message, don't retry. A self-hosted instance has none |
 
 A resource belonging to another user returns exactly what a nonexistent one returns. Don't
 read anything into a 404 beyond "not available to you".

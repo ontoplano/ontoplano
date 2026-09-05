@@ -12,6 +12,14 @@ version.
 
 ## 0.70.0 — 2026-09-05
 
+- **A truth pass over the public docs.** The compose commands curl the
+  branch that exists; the plugin guide points at the generated scope list
+  instead of keeping a stale copy, stops describing the old timestamp
+  storage, and says a self-hosted instance has no storage ceilings; the
+  Android page admits push and the widget shipped; the backup page admits
+  pictures are in the database and therefore replicated; CONTRIBUTING says
+  `make lint` and `make dev`; the roadmap and issue templates stop offering
+  shipped features as missing ones.
 - **The legal pages stop inventing a contact address.** An instance that
   never set `ONTOPLANO_CONTACT_EMAIL` used to tell its users to write to a
   mailbox its operator does not own; now the pages say to ask whoever runs

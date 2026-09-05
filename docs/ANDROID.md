@@ -5,11 +5,12 @@ inside our own APK. The app _is_ the PWA rather than a second implementation of
 it, which means shipping a change is a deploy, not a store review, and offline
 behaviour comes from the service worker the web app already has.
 
-The trade is that native APIs are limited to what the web platform offers. If
-push notifications, biometric lock or home-screen widgets become requirements,
-that is the point to revisit Capacitor —
-which also notes that a bundled Capacitor build needs a JSON API first, since a
-static bundle has no server to run the current form actions against.
+The trade is that native APIs are limited to what the web platform offers —
+which turned out to be most of what was wanted: push notifications work, and so
+does the home-screen widget (both below). Biometric lock is the remaining
+native gap. If it becomes a requirement, that is the point to revisit
+Capacitor, which would also need a JSON API first, since a static bundle has no
+server to run the current form actions against.
 
 ## Getting it onto a phone
 
