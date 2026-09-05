@@ -93,4 +93,41 @@ test('re-saving the choosing modal keeps the done todo linked', async ({ page })
 
 	// Still 1 of 2 — nothing fell off.
 	await expect(page.getByText('1 of 2 done')).toBeVisible();
+
+	// And the other direction: a to-do finished BEFORE it was ever linked can
+	// still be linked — the completed list unfolds behind its own button.
+	await visit(page, '/tasks/todo');
+	{
+		const field = page.locator('[name="heading"]');
+		await expect(async () => {
+			await page
+				.getByRole('button', { name: /New to-do/ })
+				.first()
+				.click();
+			await expect(field).toBeVisible({ timeout: 2000 });
+		}).toPass({ timeout: 15000 });
+		await field.fill('third chore');
+		await page.getByRole('button', { name: 'Create todo' }).click();
+		await page.waitForTimeout(500);
+	}
+	await page.getByRole('button', { name: 'Mark complete' }).first().click();
+	await page.waitForTimeout(600);
+
+	await visit(page, '/goals');
+	if (!(await foldOpen()))
+		await page
+			.locator('button', { hasText: /^Tasks \(/ })
+			.first()
+			.click();
+	await page.getByRole('button', { name: 'Choose tasks' }).click();
+	// Done and never linked: not offered until the completed list unfolds.
+	await expect(dialog.locator('label', { hasText: 'third chore' })).toHaveCount(0);
+	await dialog.getByRole('button', { name: 'Show completed to-dos' }).click();
+	await dialog
+		.locator('label', { hasText: 'third chore' })
+		.locator('input[type="checkbox"]')
+		.check();
+	await page.getByRole('button', { name: 'Save links' }).click();
+	await page.waitForTimeout(600);
+	await expect(page.getByText('2 of 3 done')).toBeVisible();
 });

@@ -15,8 +15,10 @@ version.
 - **Adding a task to a goal no longer drops the ones already done.** The
   choosing modal hid finished todos, and saving it replaces the whole set —
   so linking a new task silently unlinked every done one and the progress
-  fell to zero. Done todos stay in the modal now, ticked and struck through,
+  fell to zero. Done to-dos stay in the modal now, ticked and struck through,
   until you untick them yourself.
+- **A goal can count a to-do that was finished before it was linked** — the
+  choosing modal's Show completed to-dos button unfolds the finished list.
 
 ## 0.78.0 — 2026-09-05
 

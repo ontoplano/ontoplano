@@ -33,6 +33,14 @@
 	let showAreas = $state(false);
 	let editingId: number | null = $state(null);
 	let linkingId: number | null = $state(null);
+	/*
+	 * Completed to-dos in the choosing modal, off until asked for. Linked done
+	 * ones always show (unlisting them is how saving used to unlink them); the
+	 * REST of the finished list only appears on request, because a goal made
+	 * of work already done is the exception and forty struck-through lines are
+	 * not a picker.
+	 */
+	let showDoneTodos = $state(false);
 	/** Whose linked tasks are unfolded on the card. */
 	let openTasksId: number | null = $state(null);
 	let confirmingDelete: number | null = $state(null);
@@ -622,7 +630,10 @@
 									<button
 										type="button"
 										class="btn btn-sm mt-2"
-										onclick={() => (linkingId = goal.id)}
+										onclick={() => {
+											showDoneTodos = false;
+											linkingId = goal.id;
+										}}
 									>
 										Choose tasks
 									</button>
@@ -701,18 +712,20 @@
 						</div>
 					</div>
 					<div>
-						<span class="eyebrow text-gray-600">Todos</span>
+						<span class="eyebrow text-gray-600">To-dos</span>
 						<div class="mt-2 max-h-64 space-y-1 overflow-y-auto">
 							<!--
-								Open todos, plus any DONE todo this goal already counts.
+								Open to-dos, plus any DONE one this goal already counts.
 
 								setGoalLinks replaces the whole set, which is only safe while
 								this form shows a checkbox for everything linked — and it
-								stopped: done todos left the list, so saving the form silently
+								stopped: done to-dos left the list, so saving the form silently
 								unlinked them and the progress bar dropped. They stay here,
-								ticked and struck through, until somebody unticks them.
+								ticked and struck through, until somebody unticks them; the
+								rest of the finished list unfolds on request below, so a goal
+								can also count something already done.
 							-->
-							{#each [...data.todos, ...data.allTodos.filter((t) => t.status === 'done' && linking.linkedTodoIds.includes(t.id))] as t (t.id)}
+							{#each [...data.todos, ...data.allTodos.filter((t) => t.status === 'done' && (showDoneTodos || linking.linkedTodoIds.includes(t.id)))] as t (t.id)}
 								<label class="flex items-center gap-2 text-sm text-gray-700">
 									<input
 										type="checkbox"
@@ -730,6 +743,15 @@
 								<p class="text-xs text-gray-500">No open todos.</p>
 							{/each}
 						</div>
+						{#if !showDoneTodos}
+							<button
+								type="button"
+								class="btn btn-sm btn-quiet mt-2"
+								onclick={() => (showDoneTodos = true)}
+							>
+								Show completed to-dos
+							</button>
+						{/if}
 					</div>
 				</div>
 			</form>
