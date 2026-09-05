@@ -134,7 +134,12 @@ test('a flagged account is walked to the password page, and through it', async (
 		headers: { Cookie: seat.cookie }
 	});
 	expect(pwPage.status()).toBe(200);
-	expect(await pwPage.text()).toContain('Choose your password');
+	const pwHtml = await pwPage.text();
+	expect(pwHtml).toContain('Choose your password');
+	expect(pwHtml).toContain('Confirm password');
+	// Nothing to navigate to yet: the account is half-made, so this screen
+	// carries no nav bar however signed-in the session technically is.
+	expect(pwHtml).not.toContain('data-tour="nav"');
 
 	// Two fields that disagree are refused with the reason.
 	const wrong = await seat.request.post('/welcome/password', {
