@@ -10,6 +10,12 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.79.4 — 2026-09-05
+
+- **A phone can sign out.** Sign out lived only in the desktop header's menu,
+  which the phone's bottom bar does not carry. It is a card on the account
+  page now, above Delete your account.
+
 ## 0.79.3 — 2026-09-05
 
 - **The confirm-your-address page opens with its resend button already

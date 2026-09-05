@@ -97,3 +97,23 @@ test('the phone has no top bar — the bottom one carries everything', async ({ 
 	await expect(page.locator('header a', { hasText: 'ontoplano' })).toBeHidden();
 	await expect(page.locator('nav[aria-label="Primary"]')).toBeVisible();
 });
+
+/**
+ * The phone can sign out.
+ *
+ * The desktop keeps Sign out in the header menu; the bottom bar has no menu,
+ * so for weeks a phone simply had no door out. It lives on the account page
+ * now, above the delete card.
+ */
+test('the account page signs a phone out', async ({ page }) => {
+	await register(page, `phone-out-${Date.now()}@example.test`);
+	await page.setViewportSize({ width: 390, height: 800 });
+	await visit(page, '/settings/account');
+
+	await page.getByRole('button', { name: 'Sign out', exact: true }).first().click();
+	await page.waitForTimeout(1000);
+	// Signed out means the door: the login page, not an error and not a stale app shell.
+	await expect(page.getByRole('button', { name: /Sign in|Create account/ }).first()).toBeVisible({
+		timeout: 10000
+	});
+});

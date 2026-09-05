@@ -437,6 +437,20 @@
 		</p>
 	</Card>
 
+	<!--
+		The phone's only door out. The desktop has Sign out in the header menu;
+		the bottom bar carries no menu, so this page — where the account's other
+		session controls already live — is where a finger finds it.
+	-->
+	<Card title="Sign out">
+		{#snippet actions()}
+			<form method="post" action="/login?/signOut" use:enhance>
+				<button type="submit" class="btn btn-sm">Sign out</button>
+			</form>
+		{/snippet}
+		<p class="text-sm text-gray-500">This device only. The sessions above list the others.</p>
+	</Card>
+
 	<Card title="Delete your account" accent="#b91c1c">
 		{#snippet actions()}
 			<button onclick={() => (confirming = true)} class="btn btn-danger btn-sm">
