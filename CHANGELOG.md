@@ -10,6 +10,12 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.79.5 — 2026-09-05
+
+- **HTML responses say charset=utf-8 in the header.** Link scrapers trust the
+  header over the meta tag, so reddit's preview read the title's em dash as
+  Latin-1 and showed "Ontoplano â".
+
 ## 0.79.4 — 2026-09-05
 
 - **A phone can sign out.** Sign out lived only in the desktop header's menu,

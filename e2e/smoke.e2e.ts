@@ -187,3 +187,16 @@ test('a page title is never squeezed into one word per line', async ({ page }) =
 
 	expect(squeezed, 'headings crushed by whatever sits beside them').toEqual([]);
 });
+
+/**
+ * Every HTML answer names its encoding in the header.
+ *
+ * Kit sends a bare text/html and link scrapers trust the header over the
+ * meta tag — reddit read the title's em dash as Latin-1 and previewed
+ * "Ontoplano â". The static site gets the same guarantee from nginx's
+ * `charset utf-8`; this pins the half the app itself serves.
+ */
+test('an HTML response says charset=utf-8 in its header', async ({ request }) => {
+	const res = await request.get('/login');
+	expect(res.headers()['content-type']).toBe('text/html; charset=utf-8');
+});

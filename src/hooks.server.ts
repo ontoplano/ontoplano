@@ -280,6 +280,19 @@ const handleSecurityHeaders: Handle = async ({ event, resolve }) => {
 	response.headers.set('X-Content-Type-Options', 'nosniff');
 	response.headers.set('X-Frame-Options', 'DENY');
 	response.headers.set('Referrer-Policy', 'same-origin');
+
+	/*
+	 * The header says the encoding, not only the meta tag.
+	 *
+	 * Kit answers pages with a bare `text/html`, and link scrapers trust the
+	 * header over the markup — reddit read the title's em dash as Latin-1 and
+	 * previewed "Ontoplano â". The pages ARE UTF-8; this makes the header say
+	 * so wherever it was silent.
+	 */
+	const contentType = response.headers.get('content-type');
+	if (contentType === 'text/html') {
+		response.headers.set('content-type', 'text/html; charset=utf-8');
+	}
 	response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 	// Only meaningful over TLS, and harmful if the deployment is plain HTTP —
 	// so the deployment has to say it terminates TLS.
