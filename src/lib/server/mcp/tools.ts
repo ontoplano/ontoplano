@@ -77,12 +77,16 @@ import {
 } from '../services/recipes.js';
 import { grouped, search } from '../services/search.js';
 import {
+	createCategory as createShoppingCategory,
 	createItem,
+	deleteCategory as deleteShoppingCategory,
 	deleteItem,
 	listItems,
 	listCategories as listShoppingCategories,
 	recordPaid,
+	renameCategory,
 	setBought,
+	setCategoryFood,
 	setSnoozed
 } from '../services/shopping.js';
 import { getTodayBoard } from '../services/today.js';
@@ -1150,6 +1154,66 @@ export const TOOLS: Tool[] = [
 		writes: false,
 		input: object({}),
 		run: (ctx) => listShoppingCategories(ctx)
+	},
+	{
+		name: 'add_shopping_category',
+		title: 'Add a shopping section',
+		description:
+			'Make a new section for the shopping list — and say whether it holds food, because only food sections can feed recipes as ingredients.',
+		scope: 'shopping:write',
+		writes: true,
+		input: object(
+			{
+				name: text('The section\u2019s name — "Frozen", "Cleaning".'),
+				holdsFood: {
+					type: 'boolean',
+					description: 'Whether what is in it is food. Off if left out.'
+				}
+			},
+			['name']
+		),
+		run: (ctx, args) => ({
+			id: createShoppingCategory(ctx, { name: args.name, isFood: args.holdsFood === true })
+		})
+	},
+	{
+		name: 'change_shopping_category',
+		title: 'Rename a shopping section',
+		description:
+			'Rename a section, or change whether it holds food. Only the fields given change; the items filed under it stay exactly where they are.',
+		scope: 'shopping:write',
+		writes: true,
+		input: object(
+			{
+				id: {
+					type: 'integer',
+					description: 'The section\u2019s id, as `shopping_categories` gives it.'
+				},
+				name: text('The new name.'),
+				holdsFood: { type: 'boolean', description: 'Whether what is in it is food.' }
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			if (args.name !== undefined && args.name !== null && args.name !== '')
+				renameCategory(ctx, Number(args.id), args.name);
+			if (args.holdsFood !== undefined && args.holdsFood !== null)
+				setCategoryFood(ctx, Number(args.id), Boolean(args.holdsFood));
+			return { ok: true };
+		}
+	},
+	{
+		name: 'remove_shopping_category',
+		title: 'Delete a shopping section',
+		description:
+			'Delete a section. Its items are not touched — they stay on the list, just unfiled. A section is a shelf label, and removing the label must not empty the shelf.',
+		scope: 'shopping:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The section\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			deleteShoppingCategory(ctx, Number(args.id));
+			return { ok: true };
+		}
 	},
 	{
 		name: 'record_price',

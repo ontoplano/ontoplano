@@ -276,16 +276,17 @@ test.describe('one account cannot reach another account by id', () => {
 				path: '/tasks/activities?/updateCategory',
 				form: { id, label: 'taken', color: '#b91c1c' }
 			})
+		},
+		{
+			// Renaming and deleting take a category by id now, so the shape the
+			// old comment praised — no id-taking action at all — is gone, and
+			// the ownership WHERE is what stands between accounts.
+			name: 'shopping category',
+			page: '/shopping',
+			payloadKey: 'shoppingCategories',
+			create: { path: '/shopping?/createCategory', form: { label: "alice's shelf" } },
+			attack: (id) => ({ path: '/shopping?/renameCategory', form: { id, name: 'taken' } })
 		}
-		/*
-		 * Not here, and deliberately: a shopping category.
-		 *
-		 * There is no action that takes one by id. `saveCategories` walks the
-		 * account's own list and writes each row it finds, so a form naming
-		 * somebody else's id has nothing to name it *to* — the id never leaves
-		 * the server. That is a stronger shape than a checked id, and a test
-		 * here would be asserting against an attack that cannot be expressed.
-		 */
 	];
 
 	for (const c of cases) {

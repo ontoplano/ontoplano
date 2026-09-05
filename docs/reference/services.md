@@ -2864,12 +2864,20 @@ when it runs out, a someday item is done.
 
 #### `createCategory(ctx, raw)`
 
-#### `setCategoryFood(ctx, id, isFood)`
+#### `renameCategory(ctx, id, raw)`
 
 Whether things in this category can be an ingredient.
 
 One tick per category rather than per item: otherwise every tin of tomatoes
 has to be marked by hand, and the television has to be marked as not.
+
+#### `deleteCategory(ctx, id)`
+
+Deleting a category unfiles its items rather than taking them along: the
+category is organisation, the items are somebody's cupboard, and removing a
+shelf label must not empty the shelf.
+
+#### `setCategoryFood(ctx, id, isFood)`
 
 #### `createItem(ctx, raw)`
 

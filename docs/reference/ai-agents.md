@@ -392,6 +392,24 @@ How the shopping list is sectioned — produce, cleaning, whatever the person ke
 
 _Needs `shopping:read`; read-only._
 
+### `add_shopping_category` — Add a shopping section
+
+Make a new section for the shopping list — and say whether it holds food, because only food sections can feed recipes as ingredients.
+
+_Needs `shopping:write`; writes._
+
+### `change_shopping_category` — Rename a shopping section
+
+Rename a section, or change whether it holds food. Only the fields given change; the items filed under it stay exactly where they are.
+
+_Needs `shopping:write`; writes._
+
+### `remove_shopping_category` — Delete a shopping section
+
+Delete a section. Its items are not touched — they stay on the list, just unfiled. A section is a shelf label, and removing the label must not empty the shelf.
+
+_Needs `shopping:write`; writes._
+
 ### `record_price` — Record what an item cost
 
 Write down what was paid for a shopping item — "milk was 6,50 today". The list keeps a small price history per item, which is how it can notice drift. Takes the id `shopping_list` gives, and the price as the person said it.

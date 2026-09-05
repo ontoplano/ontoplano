@@ -45,6 +45,9 @@
 	}
 	let showCategories = $state(false);
 	let addingCategory = $state(false);
+	/** The category being renamed in place, and the one waiting on its delete. */
+	let editingCategory = $state<number | null>(null);
+	let confirmDeleteCategory = $state<number | null>(null);
 
 	/**
 	 * Confirm, then five seconds to change your mind.
@@ -800,37 +803,112 @@
 	description="Tick the ones that hold food. Only those can be ingredients in a recipe."
 	size="sm"
 >
-	<form
-		id="categories-form"
-		method="post"
-		action="?/saveCategories"
-		use:enhance={() =>
-			async ({ update, result }) => {
-				await update({ reset: false });
-				if (result.type === 'success') showCategories = false;
-			}}
-		class="space-y-3"
-	>
-		<ul class="space-y-1">
-			{#each data.shoppingCategories as category (category.id)}
-				<li>
-					<label class="flex items-center gap-2 text-sm text-gray-900">
-						<input type="checkbox" name="food" value={category.id} checked={category.isFood} />
-						{category.name}
-					</label>
-				</li>
-			{/each}
-		</ul>
-		<div class="mt-3 flex justify-end">
-			<button
-				type="submit"
-				form="categories-form"
-				class="btn btn-primary btn-sm"
-				title="Save"
-				aria-label="Save which categories hold food"><Icon name="check" /></button
-			>
-		</div>
-	</form>
+	<!-- Every tick saves as it lands and every row manages itself — there is
+	     nothing here a Save button would add, so Close only closes. -->
+	<ul class="space-y-1">
+		{#each data.shoppingCategories as category (category.id)}
+			<li class="flex items-center gap-2 text-sm text-gray-900">
+				{#if editingCategory === category.id}
+					<form
+						method="post"
+						action="?/renameCategory"
+						use:enhance={() =>
+							async ({ update, result }) => {
+								await update({ reset: false });
+								if (result.type === 'success') editingCategory = null;
+							}}
+						class="flex flex-1 items-center gap-2"
+					>
+						<input type="hidden" name="id" value={category.id} />
+						<!-- svelte-ignore a11y_autofocus -->
+						<input
+							name="name"
+							value={category.name}
+							required
+							autocomplete="off"
+							autofocus
+							class="input flex-1"
+						/>
+						<button class="btn btn-sm" title="Save the name" aria-label="Save the name">
+							<Icon name="check" size={14} />
+						</button>
+						<button
+							type="button"
+							class="btn btn-sm"
+							title="Keep the old name"
+							aria-label="Keep the old name"
+							onclick={() => (editingCategory = null)}
+						>
+							<Icon name="close" size={14} />
+						</button>
+					</form>
+				{:else}
+					<form
+						method="post"
+						action="?/setCategoryFood"
+						use:enhance={() =>
+							async ({ update }) => {
+								await update({ reset: false });
+							}}
+						class="contents"
+					>
+						<input type="hidden" name="id" value={category.id} />
+						<input type="hidden" name="isFood" value={category.isFood ? 'false' : 'true'} />
+						<label class="flex flex-1 items-center gap-2">
+							<input
+								type="checkbox"
+								checked={category.isFood}
+								onchange={(e) => e.currentTarget.form?.requestSubmit()}
+							/>
+							{category.name}
+						</label>
+					</form>
+					{#if confirmDeleteCategory === category.id}
+						<form
+							method="post"
+							action="?/deleteCategory"
+							use:enhance={() =>
+								async ({ update }) => {
+									confirmDeleteCategory = null;
+									await update({ reset: false });
+								}}
+							class="flex shrink-0 items-center gap-1"
+						>
+							<input type="hidden" name="id" value={category.id} />
+							<button
+								type="button"
+								class="btn btn-sm"
+								onclick={() => (confirmDeleteCategory = null)}
+							>
+								Keep
+							</button>
+							<!-- Its items stay, unfiled — the shelf label goes, not the shelf. -->
+							<button class="btn btn-danger btn-sm" use:armed>Delete</button>
+						</form>
+					{:else}
+						<button
+							type="button"
+							class="btn btn-sm shrink-0"
+							title="Rename"
+							aria-label="Rename {category.name}"
+							onclick={() => (editingCategory = category.id)}
+						>
+							<Icon name="edit" size={14} />
+						</button>
+						<button
+							type="button"
+							class="btn btn-sm shrink-0"
+							title="Delete"
+							aria-label="Delete {category.name}"
+							onclick={() => (confirmDeleteCategory = category.id)}
+						>
+							<Icon name="trash" size={14} />
+						</button>
+					{/if}
+				{/if}
+			</li>
+		{/each}
+	</ul>
 
 	<!-- Its own form and its own button, behind a disclosure: making a category
 	     and saying which categories hold food are two acts, and one Save cannot

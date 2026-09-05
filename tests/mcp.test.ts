@@ -1099,3 +1099,45 @@ describe('the call budget', () => {
 		expect(refused).toContain('Too many requests');
 	});
 });
+
+/**
+ * The shopping sections, managed by the same hands that fill them.
+ *
+ * The rule this pins: anything trivial the app lets a person do gets its MCP
+ * tool. Sections are organisation, not history, so — unlike people, habits
+ * and goals — deleting one is allowed, and deleting one unfiles its items
+ * rather than taking them along.
+ */
+describe('shopping sections', () => {
+	const rpc = (id: number, name: string, args: Record<string, unknown>, scopes: string[]) =>
+		call(scopes, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
+
+	it('adds one, renames it, flips its food flag, and deletes it — items unharmed', () => {
+		const made = rpc(1, 'add_shopping_category', { name: 'Frozen', holdsFood: true }, [
+			'shopping:write'
+		]);
+		expect(made.result.isError, made.result.content?.[0]?.text).toBe(false);
+		const id = made.result.structuredContent.id as number;
+
+		const renamed = rpc(2, 'change_shopping_category', { id, name: 'Freezer', holdsFood: false }, [
+			'shopping:write'
+		]);
+		expect(renamed.result.isError, renamed.result.content?.[0]?.text).toBe(false);
+
+		const listed = rpc(3, 'shopping_categories', {}, ['shopping:read']);
+		const row = listed.result.structuredContent.items.find((c: { id: number }) => c.id === id);
+		expect(row.name).toBe('Freezer');
+		expect(row.isFood).toBe(false);
+
+		// An item filed under it survives the section's deletion, unfiled.
+		const item = rpc(4, 'add_to_shopping_list', { name: 'peas' }, ['shopping:write']);
+		expect(item.result.isError, item.result.content?.[0]?.text).toBe(false);
+
+		const gone = rpc(5, 'remove_shopping_category', { id }, ['shopping:write']);
+		expect(gone.result.isError).toBe(false);
+		const after = rpc(6, 'shopping_list', {}, ['shopping:read']);
+		expect(
+			after.result.structuredContent.items.some((i: { name: string }) => i.name === 'peas')
+		).toBe(true);
+	});
+});

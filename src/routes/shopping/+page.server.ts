@@ -5,6 +5,8 @@ import { recipesByItem } from '$lib/server/services/recipes';
 import { getCurrency } from '$lib/server/settings';
 import {
 	createCategory,
+	deleteCategory,
+	renameCategory,
 	createItem,
 	deleteItem,
 	listCategories,
@@ -31,6 +33,41 @@ export const load: PageServerLoad = async ({ locals }) => {
 /** Every action here is the same shape: read the form, call the service, map errors. */
 export const actions: Actions = {
 	/** Which categories hold food, and therefore what can be an ingredient. */
+	/** One tick, saved as it lands — the modal has no save button any more. */
+	setCategoryFood: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			setCategoryFood(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('isFood') === 'true'
+			);
+			return { success: true, action: 'setCategoryFood' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	renameCategory: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			renameCategory(buildCtx(locals.user!.id), Number(formData.get('id')), formData.get('name'));
+			return { success: true, action: 'renameCategory' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	deleteCategory: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			deleteCategory(buildCtx(locals.user!.id), Number(formData.get('id')));
+			return { success: true, action: 'deleteCategory' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	saveCategories: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const ctx = buildCtx(locals.user!.id);

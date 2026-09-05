@@ -283,6 +283,13 @@ Token: ${token}`;
 	<!-- API tokens -->
 	<Card title="API tokens" flush>
 		{#snippet actions()}
+			{#if data.tokens.length === 0}
+				<!-- Beside the button it points at, small, and gone with the first
+				     token: connecting an assistant is what a first visit is for. -->
+				<span class="mr-2 border border-blue-200 bg-blue-50 px-2 py-1 text-xs text-blue-900">
+					Create a token to connect an AI assistant →
+				</span>
+			{/if}
 			<button
 				type="button"
 				onclick={() => (showTokenForm = true)}
@@ -350,7 +357,13 @@ Token: ${token}`;
 							remembering.
 						-->
 						<p class="mb-2 flex flex-wrap items-center gap-2">
-							<button type="button" class="btn btn-sm" onclick={() => tick(data.assistantScopes)}>
+							<!-- Blue like the nudge that pointed here: the preset is the
+							     press a first visitor came to make. -->
+							<button
+								type="button"
+								class="btn btn-sm border-blue-200 bg-blue-50 text-blue-900 hover:bg-blue-100"
+								onclick={() => tick(data.assistantScopes)}
+							>
 								An AI assistant (MCP)
 							</button>
 							<button type="button" class="btn btn-sm btn-quiet" onclick={() => tick([])}>
@@ -388,14 +401,6 @@ Token: ${token}`;
 		</Modal>
 
 		{#if data.tokens.length === 0}
-			<!-- The one thing a first visit is likeliest here for, said beside the
-			     button that does it — and gone the moment a token exists. -->
-			<div class="mx-3 mb-2 border border-blue-200 bg-blue-50 p-3">
-				<p class="text-sm text-blue-900">
-					<strong>New token</strong> is how an AI assistant gets in — press it, then the
-					<strong>An AI assistant (MCP)</strong> button ticks everything one needs.
-				</p>
-			</div>
 			<div class="px-3">
 				<EmptyState icon="key" title="No tokens yet — create one to let another app in" compact />
 			</div>

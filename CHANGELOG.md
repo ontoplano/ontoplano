@@ -12,6 +12,15 @@ version.
 
 ## 0.74.0 — 2026-09-05
 
+- **Shopping sections are managed in place.** A tick in the categories
+  window saves the moment it lands — no per-row save button, and Close only
+  closes. Every section can be renamed and deleted from the same window;
+  deleting one leaves its items on the list, unfiled. The assistant can do
+  the same: new MCP tools `add_shopping_category`,
+  `change_shopping_category` and `remove_shopping_category`.
+- The first-visit nudge on Integrations sits beside the New token button as
+  one small line instead of a box, and the "An AI assistant (MCP)" preset
+  button wears the same blue.
 - **The assistant can no longer delete what is rarely deleted.** The MCP
   tools `remove_person`, `remove_habit`, `remove_goal` and `remove_goal_area`
   are gone: people, habits with their history, goals and their areas are

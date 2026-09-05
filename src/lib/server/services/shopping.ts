@@ -106,6 +106,52 @@ export function createCategory(ctx: Ctx, raw: { name: unknown; isFood?: unknown 
  * One tick per category rather than per item: otherwise every tin of tomatoes
  * has to be marked by hand, and the television has to be marked as not.
  */
+export function renameCategory(ctx: Ctx, id: number, raw: unknown): void {
+	const name = str(raw, 'name', { max: 60 });
+
+	const clash = db
+		.select({ id: shoppingCategories.id })
+		.from(shoppingCategories)
+		.where(
+			and(
+				eq(shoppingCategories.userId, ctx.userId),
+				sql`lower(${shoppingCategories.name}) = lower(${name})`
+			)
+		)
+		.get();
+	if (clash && clash.id !== id)
+		throw new ValidationError('There is already a category with that name');
+
+	const res = db
+		.update(shoppingCategories)
+		.set({ name })
+		.where(and(eq(shoppingCategories.id, id), eq(shoppingCategories.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('category');
+}
+
+/**
+ * Deleting a category unfiles its items rather than taking them along: the
+ * category is organisation, the items are somebody's cupboard, and removing a
+ * shelf label must not empty the shelf.
+ */
+export function deleteCategory(ctx: Ctx, id: number): void {
+	db.transaction(() => {
+		db.update(shoppingItems)
+			.set({ shoppingCategoryId: null })
+			.where(and(eq(shoppingItems.shoppingCategoryId, id), eq(shoppingItems.userId, ctx.userId)))
+			.run();
+
+		const res = db
+			.delete(shoppingCategories)
+			.where(and(eq(shoppingCategories.id, id), eq(shoppingCategories.userId, ctx.userId)))
+			.run();
+
+		if (res.changes === 0) throw new NotFoundError('category');
+	});
+}
+
 export function setCategoryFood(ctx: Ctx, id: number, isFood: boolean): void {
 	const res = db
 		.update(shoppingCategories)
