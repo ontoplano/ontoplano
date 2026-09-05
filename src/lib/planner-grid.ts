@@ -653,8 +653,14 @@ export function baseGridOptions(
 		 * Today is not past: it is the day being lived.
 		 */
 		dayCellContent: today
-			? (info: { date: Date }) =>
-					dateOf(info.date) < today ? { html: '<span class="og-past"></span>' } : ''
+			? (info: { date: Date }) => ({
+					// The wash AND the number: this content replaces the library's
+					// default day number, so leaving the number out of it is how the
+					// month lost its dates. The wash span rides along on past days.
+					html:
+						(dateOf(info.date) < today ? '<span class="og-past"></span>' : '') +
+						String(info.date.getDate())
+				})
 			: undefined,
 		/*
 		 * A week of columns on a phone has about fifty pixels each, and "Wed" does

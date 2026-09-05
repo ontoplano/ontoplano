@@ -1982,7 +1982,7 @@
 			<!-- Where you are, in words, between the two things that change it. -->
 			<span class="min-w-0 flex-1 truncate text-center text-sm text-gray-600 sm:flex-none">
 				{#if effectiveView === 'month'}
-					{monthLabel(data.range.from)}
+					{monthLabel(data.range.month)}
 				{:else if effectiveView === 'day'}
 					<!-- One day is one date. "Sep 1 — Sep 1" is a range with nothing
 					     in it, and it read as a bug every time. -->

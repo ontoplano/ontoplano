@@ -241,9 +241,18 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 	const today = startOfDay(ctx.now);
 	// A month is read more than edited, so it starts where the month does rather
 	// than being clamped forward to today like a plan you are still writing.
+	//
+	// The anchor is any date INSIDE the month being shown, and it matters that
+	// it stays one: the grid starts on the Monday on or before the 1st, which
+	// is usually a date in the PREVIOUS month — so an anchor derived from the
+	// grid's own edges names the wrong month, and navigation snaps back. June
+	// 2026 found it: June starts on a Monday, its grid start IS June 1, and
+	// "next" pointed at July's grid start, June 29 — a June date, so following
+	// it landed on June again and the forward arrow did nothing.
+	const anchor = parseAnchor(url.searchParams.get('from'), today);
 	const from =
 		view === 'month'
-			? monthGridStart(parseAnchor(url.searchParams.get('from'), today))
+			? monthGridStart(anchor)
 			: parseFromParam(url.searchParams.get('from'), today);
 	const to = addDays(from, span);
 
@@ -267,15 +276,24 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 	// as a plan, and "what did last week look like" is asked of it far more
 	// often than it was ever asked of the history page.
 	const prevFrom = addDays(from, -span);
+	// Neighbouring months by their own first day — always a date inside the
+	// month it names, whatever weekday it falls on.
+	const monthFirst = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+	const prevMonth = new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1);
+	const nextMonth = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1);
 	const range = {
 		from: formatDate(from),
 		last: formatDate(addDays(from, span - 1)),
+		// What the heading names: the month itself, not the grid's first cell,
+		// which usually belongs to the month before.
+		month: formatDate(monthFirst),
 		isCurrent:
 			view === 'month'
-				? formatDate(from) === formatDate(monthGridStart(today))
+				? monthFirst.getFullYear() === today.getFullYear() &&
+					monthFirst.getMonth() === today.getMonth()
 				: formatDate(from) === formatDate(today),
-		prev: view === 'month' ? formatDate(monthGridStart(addDays(from, -1))) : formatDate(prevFrom),
-		next: view === 'month' ? formatDate(monthGridStart(addDays(to, 1))) : formatDate(to),
+		prev: view === 'month' ? formatDate(prevMonth) : formatDate(prevFrom),
+		next: view === 'month' ? formatDate(nextMonth) : formatDate(to),
 		days
 	};
 

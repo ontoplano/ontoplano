@@ -1917,6 +1917,28 @@ html .ec {
 	font-family: inherit;
 }
 
+/*
+ * The header's day cells are one strip, not seven pills.
+ *
+ * The playful style rounds every div with a background, which here put a
+ * radius on each day cell and left little triangles of the row behind showing
+ * at every seam. Inner corners go square; the strip keeps its rounding at the
+ * two ends — whatever day happens to sit there.
+ */
+html .ec .ec-header .ec-day {
+	border-radius: 0;
+}
+
+html .ec .ec-header .ec-day:first-of-type {
+	border-start-start-radius: var(--radius);
+	border-end-start-radius: var(--radius);
+}
+
+html .ec .ec-header .ec-day:last-of-type {
+	border-start-end-radius: var(--radius);
+	border-end-end-radius: var(--radius);
+}
+
 /* Day names read as card labels, not as a table header. */
 html .ec .ec-header .ec-day,
 html .ec .ec-header .ec-day > * {
@@ -2079,8 +2101,15 @@ html .ec .ec-event.og-event .ec-event-mark--done {
  * keep their category colours, which is what makes a past week readable as the
  * same week you planned. Today is not washed — it is the day being lived.
  */
-/* The cell is the wash's frame, and the library does not position it. */
-html .ec .ec-day:has(> .og-past) {
+/*
+ * The cell is the wash's frame, and the library does not position it.
+ *
+ * A descendant match, not a child one: the wash span lives inside the day
+ * number's <time> now, and with `>` nothing matched — so every past day's
+ * absolutely-positioned wash anchored on the whole grid instead of its own
+ * cell and the month came out uniformly grey.
+ */
+html .ec .ec-day:has(.og-past) {
 	position: relative;
 }
 
@@ -2092,16 +2121,21 @@ html .ec .ec-day .og-past {
 	pointer-events: none;
 }
 
+/*
+ * Like the scrim, the wash always darkens — it must not ride the gray ramp.
+ * gray-900 flips to near-white in the dark theme, and a quarter-strength
+ * near-white over every past day is a lit month, not a dimmed one.
+ */
 @media (prefers-color-scheme: dark) {
 	html:not([data-theme='light']) .ec .ec-day .og-past {
-		background-color: var(--color-gray-900);
-		opacity: 0.25;
+		background-color: rgb(0 0 0 / 1);
+		opacity: 0.35;
 	}
 }
 
 html[data-theme='dark'] .ec .ec-day .og-past {
-	background-color: var(--color-gray-900);
-	opacity: 0.25;
+	background-color: rgb(0 0 0 / 1);
+	opacity: 0.35;
 }
 
 /* Too short for two lines: the name is the one that survives. */

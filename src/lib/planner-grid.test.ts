@@ -156,11 +156,14 @@ describe('a week that has already happened', () => {
 		expect(drawn).not.toContain('✓');
 	});
 
-	test('a day that has been is washed, and today is not', () => {
+	test('a day that has been is washed, and today is not — and every day is numbered', () => {
 		const cell = options.dayCellContent as (i: { date: Date }) => unknown;
+		// This content REPLACES the library's own day number, so it has to
+		// carry one — the month view once lost its dates to a wash-only span.
 		expect(html(cell({ date: at('2026-09-01T00:00:00') }))).toContain('og-past');
-		expect(html(cell({ date: at('2026-09-04T00:00:00') }))).toBe('');
-		expect(html(cell({ date: at('2026-09-05T00:00:00') }))).toBe('');
+		expect(html(cell({ date: at('2026-09-01T00:00:00') }))).toContain('1');
+		expect(html(cell({ date: at('2026-09-04T00:00:00') }))).toBe('4');
+		expect(html(cell({ date: at('2026-09-05T00:00:00') }))).toBe('5');
 	});
 
 	test('a grid that was never told today washes nothing', () => {
