@@ -47,6 +47,13 @@
 				{#if data.notebook.closedAt}
 					<span class="eyebrow ml-2 align-middle text-gray-500">closed</span>
 				{/if}
+				{#if !data.notebook.mine}
+					<span class="eyebrow ml-2 align-middle text-gray-500"
+						>shared by {data.notebook.sharedBy}</span
+					>
+				{:else if data.notebook.sharedWithFamily}
+					<span class="eyebrow ml-2 align-middle text-gray-500">shared with family</span>
+				{/if}
 			</h1>
 			{#if data.notebook.description}
 				<p class="mt-1 max-w-prose text-sm text-gray-500">{data.notebook.description}</p>
@@ -54,30 +61,58 @@
 		</div>
 
 		<div class="flex flex-wrap items-center gap-2">
-			<button onclick={() => (editing = true)} class="btn btn-sm" title="Rename" aria-label="Rename"
-				><Icon name="edit" /></button
-			>
-			<form
-				method="post"
-				action="?/setClosed"
-				use:enhance={() =>
-					async ({ update }) => {
-						await update({ reset: false });
-					}}
-			>
-				<input type="hidden" name="id" value={data.notebook.id} />
-				<input type="hidden" name="closed" value={data.notebook.closedAt ? 'false' : 'true'} />
-				<button class="btn btn-sm">
-					{#if data.notebook.closedAt}
-						<Icon name="undo" /> Reopen
-					{:else}
-						<Icon name="check" /> Close
-					{/if}
+			{#if data.notebook.mine && data.onFamilyPlan}
+				<!-- The owner's switch: everybody on the plan reads it and writes
+				     their own entries into it. Entries keep their writers. -->
+				<form
+					method="post"
+					action="?/setShared"
+					use:enhance={() =>
+						async ({ update }) => {
+							await update({ reset: false });
+						}}
+				>
+					<input type="hidden" name="id" value={data.notebook.id} />
+					<input
+						type="hidden"
+						name="shared"
+						value={data.notebook.sharedWithFamily ? 'false' : 'true'}
+					/>
+					<button class="btn btn-sm">
+						<Icon name="user" />
+						{data.notebook.sharedWithFamily ? 'Stop sharing' : 'Share with family'}
+					</button>
+				</form>
+			{/if}
+			{#if data.notebook.mine}
+				<button
+					onclick={() => (editing = true)}
+					class="btn btn-sm"
+					title="Rename"
+					aria-label="Rename"><Icon name="edit" /></button
+				>
+				<form
+					method="post"
+					action="?/setClosed"
+					use:enhance={() =>
+						async ({ update }) => {
+							await update({ reset: false });
+						}}
+				>
+					<input type="hidden" name="id" value={data.notebook.id} />
+					<input type="hidden" name="closed" value={data.notebook.closedAt ? 'false' : 'true'} />
+					<button class="btn btn-sm">
+						{#if data.notebook.closedAt}
+							<Icon name="undo" /> Reopen
+						{:else}
+							<Icon name="check" /> Close
+						{/if}
+					</button>
+				</form>
+				<button onclick={() => (confirmingDelete = true)} class="btn btn-danger btn-sm">
+					<Icon name="trash" /> Delete
 				</button>
-			</form>
-			<button onclick={() => (confirmingDelete = true)} class="btn btn-danger btn-sm">
-				<Icon name="trash" /> Delete
-			</button>
+			{/if}
 		</div>
 	</div>
 

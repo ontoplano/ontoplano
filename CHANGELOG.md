@@ -12,7 +12,17 @@ version.
 
 ## 0.74.0 — 2026-09-05
 
-- The demo's horse is Rosa Bonheur's *The Horse Fair* — the Met's, CC0 like
+- **Share with the family.** On a family plan, a shopping section and a
+  notebook each carry their owner's share switch: a shared section appears on
+  everybody's list — add milk on one phone, tick it bought in the aisle on
+  another — and a shared notebook is read by the whole plan, everybody
+  writing their own entries, each note wearing its writer's name. Sharing
+  widens who can reach a thing, never who owns it: renaming, deleting and
+  the switches stay the owner's, notes are edited only by whoever wrote
+  them, and accounts outside the plan see nothing. The assistant can flip
+  the same switches: `share_notebook`, and `shareWithFamily` on
+  `change_shopping_category`.
+- The demo's horse is Rosa Bonheur's _The Horse Fair_ — the Met's, CC0 like
   every other picture in the demo.
 - **Org mode imports.** Paste or choose a `.org` file: `TODO`/`NEXT`/
   `WAITING` headings become open tasks and `DONE`/`CANCELLED` finished ones,

@@ -64,7 +64,7 @@ import {
 	setGoalProgress,
 	updateGoal
 } from '../services/goals.js';
-import { listNotebooks } from '../services/notebooks.js';
+import { listNotebooks, setNotebookShared } from '../services/notebooks.js';
 import {
 	cooked,
 	createRecipe,
@@ -87,6 +87,7 @@ import {
 	renameCategory,
 	setBought,
 	setCategoryFood,
+	setCategoryShared,
 	setSnoozed
 } from '../services/shopping.js';
 import { getTodayBoard } from '../services/today.js';
@@ -836,6 +837,29 @@ export const TOOLS: Tool[] = [
 		run: (ctx) => listNotebooks(ctx)
 	},
 	{
+		name: 'share_notebook',
+		title: 'Share a notebook with the family',
+		description:
+			'Share one of the person\u2019s notebooks with everybody on their family plan — they read it and write their own entries into it — or stop sharing with `shared: false`. Only its owner\u2019s to flip, and only when they asked.',
+		scope: 'notes:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The notebook\u2019s id, as `notebooks` gives it.' },
+				shared: { type: 'boolean', description: 'False stops the sharing. True if left out.' }
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			setNotebookShared(
+				ctx,
+				Number(args.id),
+				args.shared === undefined ? true : Boolean(args.shared)
+			);
+			return { ok: true };
+		}
+	},
+	{
 		name: 'ideas',
 		title: 'Ideas',
 		description:
@@ -1190,7 +1214,12 @@ export const TOOLS: Tool[] = [
 					description: 'The section\u2019s id, as `shopping_categories` gives it.'
 				},
 				name: text('The new name.'),
-				holdsFood: { type: 'boolean', description: 'Whether what is in it is food.' }
+				holdsFood: { type: 'boolean', description: 'Whether what is in it is food.' },
+				shareWithFamily: {
+					type: 'boolean',
+					description:
+						'Share the section with everybody on the family plan, or stop. Only its owner\u2019s to flip.'
+				}
 			},
 			['id']
 		),
@@ -1199,6 +1228,8 @@ export const TOOLS: Tool[] = [
 				renameCategory(ctx, Number(args.id), args.name);
 			if (args.holdsFood !== undefined && args.holdsFood !== null)
 				setCategoryFood(ctx, Number(args.id), Boolean(args.holdsFood));
+			if (args.shareWithFamily !== undefined && args.shareWithFamily !== null)
+				setCategoryShared(ctx, Number(args.id), Boolean(args.shareWithFamily));
 			return { ok: true };
 		}
 	},

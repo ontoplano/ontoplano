@@ -842,6 +842,13 @@
 							<Icon name="close" size={14} />
 						</button>
 					</form>
+				{:else if !category.mine}
+					<!-- A shelf shared into this list: fill it, tick it, but its
+					     switches belong to whoever owns it. -->
+					<span class="flex flex-1 items-center gap-2">
+						{category.name}
+						<span class="eyebrow text-gray-500">family</span>
+					</span>
 				{:else}
 					<form
 						method="post"
@@ -863,6 +870,35 @@
 							{category.name}
 						</label>
 					</form>
+					{#if data.onFamilyPlan}
+						<form
+							method="post"
+							action="?/setCategoryShared"
+							use:enhance={() =>
+								async ({ update }) => {
+									await update({ reset: false });
+								}}
+							class="contents"
+						>
+							<input type="hidden" name="id" value={category.id} />
+							<input
+								type="hidden"
+								name="shared"
+								value={category.sharedWithFamily ? 'false' : 'true'}
+							/>
+							<label
+								class="flex shrink-0 items-center gap-1 text-xs text-gray-500"
+								title="Everybody on your family plan sees this section and can fill it"
+							>
+								<input
+									type="checkbox"
+									checked={category.sharedWithFamily}
+									onchange={(e) => e.currentTarget.form?.requestSubmit()}
+								/>
+								Family
+							</label>
+						</form>
+					{/if}
 					{#if confirmDeleteCategory === category.id}
 						<form
 							method="post"

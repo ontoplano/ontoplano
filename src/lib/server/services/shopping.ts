@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, or, sql } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { pricePoints, shoppingCategories, shoppingItems } from '../db/schema.js';
@@ -9,6 +9,7 @@ import { emit } from './webhooks.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
 import { parseMoney } from '../../money.js';
 import { getCurrency } from '../settings.js';
+import { familyUserIds } from './subscriptions.js';
 
 /**
  * Two lists that share a table: `replenish` is stock you keep, `someday` is a
@@ -30,6 +31,51 @@ export type ItemInput = {
 	shoppingCategoryId?: unknown;
 };
 
+/*
+ * SHARING, AND WHERE IT STOPS
+ *
+ * A section marked shared-with-family widens who may REACH its items — the
+ * payer and the seats of its owner's plan can see them, add to them, tick
+ * them bought. It never widens who OWNS anything: rows keep their writers'
+ * user_id, and managing the section itself (rename, delete, the food flag,
+ * the share flag) stays the owner's alone. Alone on no plan, the family
+ * circle is just yourself and every predicate below collapses to the
+ * ordinary ownership check.
+ */
+
+/**
+ * Ids of every family-shared section in this account's circle — the whole
+ * circle, its own included: a member's milk filed under the OWNER's shared
+ * shelf has to reach the owner too, and rows only meet across accounts
+ * through one of these.
+ */
+function sharedCategoryIds(ctx: Ctx): number[] {
+	const circle = familyUserIds(ctx.userId);
+	if (circle.length <= 1) return [];
+	return db
+		.select({ id: shoppingCategories.id })
+		.from(shoppingCategories)
+		.where(
+			and(inArray(shoppingCategories.userId, circle), eq(shoppingCategories.sharedWithFamily, true))
+		)
+		.all()
+		.map((row) => row.id);
+}
+
+/** The condition for an item this account may see and act on. */
+function itemReach(ctx: Ctx) {
+	const shared = sharedCategoryIds(ctx);
+	if (shared.length === 0) return eq(shoppingItems.userId, ctx.userId);
+	return or(
+		eq(shoppingItems.userId, ctx.userId),
+		inArray(shoppingItems.shoppingCategoryId, shared)
+	)!;
+}
+
+function itemWhere(ctx: Ctx, id: number) {
+	return and(eq(shoppingItems.id, id), itemReach(ctx));
+}
+
 export function listItems(ctx: Ctx) {
 	return db
 		.select({
@@ -43,27 +89,54 @@ export function listItems(ctx: Ctx) {
 			priceCents: shoppingItems.priceCents,
 			boughtAt: shoppingItems.boughtAt,
 			snoozed: shoppingItems.snoozed,
-			createdAt: shoppingItems.createdAt
+			createdAt: shoppingItems.createdAt,
+			ownerId: shoppingItems.userId
 		})
 		.from(shoppingItems)
 		.leftJoin(shoppingCategories, eq(shoppingItems.shoppingCategoryId, shoppingCategories.id))
-		.where(eq(shoppingItems.userId, ctx.userId))
+		.where(itemReach(ctx))
 		.orderBy(shoppingItems.bought, desc(shoppingItems.createdAt))
-		.all();
+		.all()
+		.map(({ ownerId, ...item }) => ({ ...item, mine: ownerId === ctx.userId }));
 }
 
 export function listCategories(ctx: Ctx) {
+	const others = familyUserIds(ctx.userId).filter((id) => id !== ctx.userId);
 	return db
 		.select({
 			id: shoppingCategories.id,
 			name: shoppingCategories.name,
 			isFood: shoppingCategories.isFood,
-			sortOrder: shoppingCategories.sortOrder
+			sortOrder: shoppingCategories.sortOrder,
+			sharedWithFamily: shoppingCategories.sharedWithFamily,
+			ownerId: shoppingCategories.userId
 		})
 		.from(shoppingCategories)
-		.where(eq(shoppingCategories.userId, ctx.userId))
+		.where(
+			others.length === 0
+				? eq(shoppingCategories.userId, ctx.userId)
+				: or(
+						eq(shoppingCategories.userId, ctx.userId),
+						and(
+							inArray(shoppingCategories.userId, others),
+							eq(shoppingCategories.sharedWithFamily, true)
+						)
+					)!
+		)
 		.orderBy(shoppingCategories.sortOrder)
-		.all();
+		.all()
+		.map(({ ownerId, ...category }) => ({ ...category, mine: ownerId === ctx.userId }));
+}
+
+/** Share a section with the family, or stop. The owner's switch alone. */
+export function setCategoryShared(ctx: Ctx, id: number, shared: boolean): void {
+	const res = db
+		.update(shoppingCategories)
+		.set({ sharedWithFamily: shared })
+		.where(and(eq(shoppingCategories.id, id), eq(shoppingCategories.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('category');
 }
 
 export function createCategory(ctx: Ctx, raw: { name: unknown; isFood?: unknown }): number {
@@ -214,17 +287,14 @@ export function updateItem(ctx: Ctx, id: number, raw: ItemInput): void {
 	const res = db
 		.update(shoppingItems)
 		.set({ ...values, updatedAt: stamp(ctx) })
-		.where(and(eq(shoppingItems.id, id), eq(shoppingItems.userId, ctx.userId)))
+		.where(itemWhere(ctx, id))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('item');
 }
 
 export function deleteItem(ctx: Ctx, id: number): void {
-	const res = db
-		.delete(shoppingItems)
-		.where(and(eq(shoppingItems.id, id), eq(shoppingItems.userId, ctx.userId)))
-		.run();
+	const res = db.delete(shoppingItems).where(itemWhere(ctx, id)).run();
 
 	if (res.changes === 0) throw new NotFoundError('item');
 }
@@ -236,7 +306,7 @@ export function toggleBought(ctx: Ctx, id: number, raw: { paid?: unknown } = {})
 
 	db.update(shoppingItems)
 		.set({ bought: buying, boughtAt: buying ? now : null, updatedAt: now })
-		.where(and(eq(shoppingItems.id, id), eq(shoppingItems.userId, ctx.userId)))
+		.where(itemWhere(ctx, id))
 		.run();
 
 	// A price given at the same time is the same act, but the tick never waits
@@ -312,7 +382,7 @@ export function recordPaid(ctx: Ctx, id: number, raw: unknown): void {
 		// A confirmed price is the best "about" there is.
 		tx.update(shoppingItems)
 			.set({ priceCents: paid, updatedAt: stamp(ctx) })
-			.where(and(eq(shoppingItems.id, id), eq(shoppingItems.userId, ctx.userId)))
+			.where(itemWhere(ctx, id))
 			.run();
 	});
 }
@@ -374,7 +444,7 @@ export function restockItem(ctx: Ctx, id: number): void {
 
 	db.update(shoppingItems)
 		.set({ bought: false, boughtAt: null, updatedAt: stamp(ctx) })
-		.where(and(eq(shoppingItems.id, id), eq(shoppingItems.userId, ctx.userId)))
+		.where(itemWhere(ctx, id))
 		.run();
 }
 
@@ -397,7 +467,7 @@ export function setSnoozed(ctx: Ctx, id: number, snoozed: boolean): { changed: b
 
 	db.update(shoppingItems)
 		.set({ snoozed, updatedAt: stamp(ctx) })
-		.where(and(eq(shoppingItems.id, id), eq(shoppingItems.userId, ctx.userId)))
+		.where(itemWhere(ctx, id))
 		.run();
 	return { changed: true };
 }
@@ -412,7 +482,7 @@ function ownedItem(ctx: Ctx, id: number) {
 			snoozed: shoppingItems.snoozed
 		})
 		.from(shoppingItems)
-		.where(and(eq(shoppingItems.id, id), eq(shoppingItems.userId, ctx.userId)))
+		.where(itemWhere(ctx, id))
 		.get();
 
 	if (!row) throw new NotFoundError('item');
@@ -439,13 +509,26 @@ function parseCategoryId(ctx: Ctx, value: unknown): number | null {
 	if (value === undefined || value === null || value === '') return null;
 
 	const id = num(value, 'category', { int: true, min: 1 });
-	const owned = db
+	// Yours, or a family member's shared section — filing into a shared shelf
+	// is the point of it being shared.
+	const reachable = db
 		.select({ id: shoppingCategories.id })
 		.from(shoppingCategories)
-		.where(and(eq(shoppingCategories.id, id), eq(shoppingCategories.userId, ctx.userId)))
+		.where(
+			and(
+				eq(shoppingCategories.id, id),
+				or(
+					eq(shoppingCategories.userId, ctx.userId),
+					and(
+						inArray(shoppingCategories.userId, familyUserIds(ctx.userId)),
+						eq(shoppingCategories.sharedWithFamily, true)
+					)
+				)
+			)
+		)
 		.get();
 
-	if (!owned) throw new NotFoundError('category');
+	if (!reachable) throw new NotFoundError('category');
 	return id;
 }
 
@@ -454,7 +537,7 @@ export function listToBuy(ctx: Ctx) {
 	return db
 		.select({ id: shoppingItems.id, name: shoppingItems.name, type: shoppingItems.type })
 		.from(shoppingItems)
-		.where(and(eq(shoppingItems.userId, ctx.userId), eq(shoppingItems.bought, false)))
+		.where(and(itemReach(ctx), eq(shoppingItems.bought, false)))
 		.orderBy(desc(shoppingItems.createdAt))
 		.all();
 }

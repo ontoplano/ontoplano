@@ -215,6 +215,12 @@ export const notebooks = sqliteTable(
 			.references(() => user.id),
 		title: text('title').notNull(),
 		description: text('description').default(''),
+		/**
+		 * Opt-in, per notebook, by its owner: everybody on the owner's family
+		 * plan can read it and write their own entries into it. The rows keep
+		 * their writers' user_id — sharing widens who may look, never who owns.
+		 */
+		sharedWithFamily: integer('shared_with_family', { mode: 'boolean' }).notNull().default(false),
 		// Closed rather than deleted: a finished trip should stop cluttering the
 		// list without taking its entries' context with it.
 		closedAt: text('closed_at'),
@@ -599,6 +605,12 @@ export const shoppingCategories = sqliteTable(
 			.notNull()
 			.references(() => user.id),
 		name: text('name').notNull(),
+		/**
+		 * Opt-in, per section, by its owner: everybody on the owner's family
+		 * plan sees the section and its items, and can add, tick and remove
+		 * items in it — one household, one list of what is out of milk.
+		 */
+		sharedWithFamily: integer('shared_with_family', { mode: 'boolean' }).notNull().default(false),
 		/**
 		 * Whether things in this category can be an ingredient.
 		 *

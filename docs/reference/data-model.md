@@ -37,7 +37,7 @@ exist.
 | [`invites`](#invites)                             | 9       | —                 |
 | [`mail_failures`](#mail_failures)                 | 11      | —                 |
 | [`media`](#media)                                 | 9       | yes               |
-| [`notebooks`](#notebooks)                         | 7       | yes               |
+| [`notebooks`](#notebooks)                         | 8       | yes               |
 | [`people`](#people)                               | 12      | yes               |
 | [`plan_members`](#plan_members)                   | 4       | —                 |
 | [`planning_schemes`](#planning_schemes)           | 5       | yes               |
@@ -52,7 +52,7 @@ exist.
 | [`reminders`](#reminders)                         | 10      | yes               |
 | [`scheme_slots`](#scheme_slots)                   | 11      | yes               |
 | [`session`](#session)                             | 9       | yes               |
-| [`shopping_categories`](#shopping_categories)     | 6       | yes               |
+| [`shopping_categories`](#shopping_categories)     | 7       | yes               |
 | [`shopping_items`](#shopping_items)               | 12      | yes               |
 | [`subscribers`](#subscribers)                     | 7       | —                 |
 | [`subscriptions`](#subscriptions)                 | 15      | yes               |
@@ -581,15 +581,16 @@ Checks — enforced by the database, not only by the service layer:
 
 ## notebooks
 
-| Column        | Type    | Null     | Default               | Notes             |
-| ------------- | ------- | -------- | --------------------- | ----------------- |
-| `id`          | integer | not null | —                     | primary key, auto |
-| `user_id`     | text    | not null | —                     | → `user.id`       |
-| `title`       | text    | not null | —                     | —                 |
-| `description` | text    | null     | `''`                  | —                 |
-| `closed_at`   | text    | null     | —                     | —                 |
-| `created_at`  | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
-| `updated_at`  | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| Column               | Type    | Null     | Default               | Notes             |
+| -------------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`                 | integer | not null | —                     | primary key, auto |
+| `user_id`            | text    | not null | —                     | → `user.id`       |
+| `title`              | text    | not null | —                     | —                 |
+| `description`        | text    | null     | `''`                  | —                 |
+| `shared_with_family` | integer | not null | `false`               | —                 |
+| `closed_at`          | text    | null     | —                     | —                 |
+| `created_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| `updated_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
 
@@ -885,14 +886,15 @@ Indexes:
 
 ## shopping_categories
 
-| Column       | Type    | Null     | Default               | Notes             |
-| ------------ | ------- | -------- | --------------------- | ----------------- |
-| `id`         | integer | not null | —                     | primary key, auto |
-| `user_id`    | text    | not null | —                     | → `user.id`       |
-| `name`       | text    | not null | —                     | —                 |
-| `is_food`    | integer | not null | `false`               | —                 |
-| `sort_order` | integer | not null | `0`                   | —                 |
-| `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| Column               | Type    | Null     | Default               | Notes             |
+| -------------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`                 | integer | not null | —                     | primary key, auto |
+| `user_id`            | text    | not null | —                     | → `user.id`       |
+| `name`               | text    | not null | —                     | —                 |
+| `shared_with_family` | integer | not null | `false`               | —                 |
+| `is_food`            | integer | not null | `false`               | —                 |
+| `sort_order`         | integer | not null | `0`                   | —                 |
+| `created_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
 

@@ -432,6 +432,21 @@ export function membersOf(ownerId: string): { id: string; name: string; email: s
 }
 
 /** Whose plan is paying for this account, if it is not their own. */
+/**
+ * Everybody on this account's family plan, this account included.
+ *
+ * The circle that "share with family" shares into: the payer and every seat,
+ * whichever of them is asking. An account on no family plan is a circle of
+ * one, which is what makes the sharing predicates below safe to apply
+ * unconditionally — alone, they reduce to the ordinary ownership check.
+ */
+export function familyUserIds(userId: string): string[] {
+	const payer = seatOwnerOf(userId) ?? userId;
+	const seats = membersOf(payer).map((m) => m.id);
+	const circle = new Set([payer, ...seats, userId]);
+	return [...circle];
+}
+
 export function seatOwnerOf(memberId: string): string | null {
 	const row = db
 		.select({ ownerId: planMembers.ownerId })

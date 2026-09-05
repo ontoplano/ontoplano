@@ -1906,6 +1906,10 @@ not own is a 404, not a silent null (I3).
 
 The open notebooks, for the selector on every form that can point at one.
 
+#### `setNotebookShared(ctx, id, shared)`
+
+Share a notebook with the family, or stop. The owner's switch alone.
+
 ### Types
 
 - `Notebook`
@@ -2880,6 +2884,10 @@ when it runs out, a someday item is done.
 
 #### `listCategories(ctx)`
 
+#### `setCategoryShared(ctx, id, shared)`
+
+Share a section with the family, or stop. The owner's switch alone.
+
 #### `createCategory(ctx, raw)`
 
 #### `renameCategory(ctx, id, raw)`
@@ -3246,9 +3254,16 @@ How many accounts this subscription is allowed to cover.
 
 The accounts on somebody's plan, the payer excluded.
 
-#### `seatOwnerOf(memberId)`
+#### `familyUserIds(userId)`
 
-Whose plan is paying for this account, if it is not their own.
+Everybody on this account's family plan, this account included.
+
+The circle that "share with family" shares into: the payer and every seat,
+whichever of them is asking. An account on no family plan is a circle of
+one, which is what makes the sharing predicates below safe to apply
+unconditionally — alone, they reduce to the ordinary ownership check.
+
+#### `seatOwnerOf(memberId)`
 
 #### `seatOwnerAccount(memberId)`
 

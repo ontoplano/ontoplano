@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
+import { familyUserIds } from '$lib/server/services/subscriptions';
 import { NotFoundError } from '$lib/server/services/errors';
 import { contentsOf, getNotebook } from '$lib/server/services/notebooks';
 import { notebookActions } from '../actions';
@@ -20,7 +21,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	try {
 		return {
 			notebook: getNotebook(ctx, id),
-			contents: contentsOf(ctx, id)
+			contents: contentsOf(ctx, id),
+			onFamilyPlan: familyUserIds(ctx.userId).length > 1
 		};
 	} catch (e) {
 		// Somebody else's notebook and one that does not exist answer the same

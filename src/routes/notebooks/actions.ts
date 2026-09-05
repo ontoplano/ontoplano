@@ -7,6 +7,7 @@ import {
 	createNotebook,
 	deleteNotebook,
 	setNotebookClosed,
+	setNotebookShared,
 	updateNotebook
 } from '$lib/server/services/notebooks';
 
@@ -38,6 +39,21 @@ export const notebookActions = {
 				title: formData.get('heading'),
 				description: formData.get('description')
 			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** The owner's switch: everybody on their family plan may read and write. */
+	setShared: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			setNotebookShared(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('shared') === 'true'
+			);
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

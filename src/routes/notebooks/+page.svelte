@@ -128,6 +128,11 @@
 								class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
 							>
 								<span class:text-gray-500={notebook.closedAt}>{notebook.title}</span>
+								{#if !notebook.mine}
+									<span class="eyebrow ml-1 text-gray-500">{notebook.sharedBy}’s</span>
+								{:else if notebook.sharedWithFamily}
+									<span class="eyebrow ml-1 text-gray-500">family</span>
+								{/if}
 								{#if notebook.closedAt}
 									<span class="eyebrow ml-2 text-gray-500">closed</span>
 								{/if}

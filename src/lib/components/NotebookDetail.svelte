@@ -246,9 +246,17 @@
 						<div class="mt-1 flex flex-wrap items-center gap-2">
 							<span class="tabular text-xs text-gray-500">
 								{entry.seq === null ? '' : `#${entry.seq} · `}{when(entry.createdAt)}
+								{#if 'author' in entry && entry.author}
+									· {entry.author}
+								{/if}
 							</span>
 
-							<div class="ml-auto flex items-center gap-2">
+							<!-- In a shared notebook everybody reads everything, but a note
+							     is edited and deleted only by whoever wrote it. -->
+							<div
+								class="ml-auto flex items-center gap-2"
+								hidden={'mine' in entry && entry.mine === false}
+							>
 								<button
 									onclick={() => (editingNoteId = entry.id)}
 									class="icon-btn"

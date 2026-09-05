@@ -290,6 +290,12 @@ The subjects being written against — a trip, a renovation, a book. Ask for the
 
 _Needs `notes:read`; read-only._
 
+### `share_notebook` — Share a notebook with the family
+
+Share one of the person’s notebooks with everybody on their family plan — they read it and write their own entries into it — or stop sharing with `shared: false`. Only its owner’s to flip, and only when they asked.
+
+_Needs `notes:write`; writes._
+
 ### `ideas` — Ideas
 
 Things caught before they evaporated, newest first. An idea is not a task: nobody has committed to doing it, which is what makes it cheap to write down.

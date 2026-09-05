@@ -1,5 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
+import { familyUserIds } from '$lib/server/services/subscriptions';
 import { toActionFailure } from '$lib/server/http-errors';
 import { recipesByItem } from '$lib/server/services/recipes';
 import { getCurrency } from '$lib/server/settings';
@@ -7,6 +8,7 @@ import {
 	createCategory,
 	deleteCategory,
 	renameCategory,
+	setCategoryShared,
 	createItem,
 	deleteItem,
 	listCategories,
@@ -26,7 +28,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		/** Which recipes use each item — the other half of the ingredient link. */
 		usedIn: recipesByItem(ctx),
 		shoppingCategories: listCategories(ctx),
-		currency: getCurrency(ctx.userId)
+		currency: getCurrency(ctx.userId),
+		// Whether the share-with-family switch has anybody to share with.
+		onFamilyPlan: familyUserIds(ctx.userId).length > 1
 	};
 };
 
@@ -43,6 +47,21 @@ export const actions: Actions = {
 				formData.get('isFood') === 'true'
 			);
 			return { success: true, action: 'setCategoryFood' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** The owner's switch: the family sees the section and fills it. */
+	setCategoryShared: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			setCategoryShared(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('shared') === 'true'
+			);
+			return { success: true, action: 'setCategoryShared' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

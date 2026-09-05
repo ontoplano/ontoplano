@@ -1,6 +1,8 @@
-import { and, count, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, inArray, or, count, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
+import { user } from '../db/auth.schema.js';
+import { familyUserIds } from './subscriptions.js';
 import { diaryEntries, exceptionalTasks, goals, notebooks, todoTasks } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError } from './errors.js';
@@ -25,6 +27,11 @@ export type Notebook = {
 	title: string;
 	description: string;
 	closedAt: string | null;
+	/** Whether this account owns it — false for one shared into the family. */
+	mine: boolean;
+	sharedWithFamily: boolean;
+	/** The owner's name, for a notebook that arrived by sharing; null on your own. */
+	sharedBy?: string | null;
 	entries: number;
 	tasks: number;
 	goals: number;
@@ -93,18 +100,37 @@ function tallies(ctx: Ctx): Map<number, Tally> {
 export function listNotebooks(ctx: Ctx): Notebook[] {
 	const totals = tallies(ctx);
 
+	const others = familyUserIds(ctx.userId).filter((one) => one !== ctx.userId);
+
 	return db
 		.select({
 			id: notebooks.id,
 			title: notebooks.title,
 			description: notebooks.description,
-			closedAt: notebooks.closedAt
+			closedAt: notebooks.closedAt,
+			sharedWithFamily: notebooks.sharedWithFamily,
+			ownerId: notebooks.userId,
+			ownerName: user.name
 		})
 		.from(notebooks)
-		.where(eq(notebooks.userId, ctx.userId))
+		.innerJoin(user, eq(notebooks.userId, user.id))
+		.where(
+			others.length === 0
+				? eq(notebooks.userId, ctx.userId)
+				: or(
+						eq(notebooks.userId, ctx.userId),
+						and(inArray(notebooks.userId, others), eq(notebooks.sharedWithFamily, true))
+					)!
+		)
 		.orderBy(notebooks.closedAt, notebooks.title)
 		.all()
-		.map((n) => ({ ...n, description: n.description ?? '', ...(totals.get(n.id) ?? NOTHING) }));
+		.map(({ ownerId, ownerName, ...n }) => ({
+			...n,
+			description: n.description ?? '',
+			mine: ownerId === ctx.userId,
+			sharedBy: ownerId === ctx.userId ? null : ownerName,
+			...(totals.get(n.id) ?? NOTHING)
+		}));
 }
 
 /**
@@ -136,31 +162,44 @@ export function listOrphanedNotes(ctx: Ctx) {
 }
 
 export function getNotebook(ctx: Ctx, id: number): Notebook {
+	assertReachable(ctx, id);
 	const found = db
 		.select({
 			id: notebooks.id,
 			title: notebooks.title,
 			description: notebooks.description,
-			closedAt: notebooks.closedAt
+			closedAt: notebooks.closedAt,
+			sharedWithFamily: notebooks.sharedWithFamily,
+			ownerId: notebooks.userId,
+			ownerName: user.name
 		})
 		.from(notebooks)
-		.where(and(eq(notebooks.id, id), eq(notebooks.userId, ctx.userId)))
+		.innerJoin(user, eq(notebooks.userId, user.id))
+		.where(eq(notebooks.id, id))
 		.get();
 
 	if (!found) throw new NotFoundError('notebook');
 
+	const { ownerId, ownerName, ...rest } = found;
 	return {
-		...found,
-		description: found.description ?? '',
+		...rest,
+		description: rest.description ?? '',
+		mine: ownerId === ctx.userId,
+		sharedBy: ownerId === ctx.userId ? null : ownerName,
 		...(tallies(ctx).get(id) ?? NOTHING)
 	};
 }
 
 /** Everything pointed at this notebook, in the three shapes it can arrive in. */
 export function contentsOf(ctx: Ctx, id: number) {
-	assertOwned(ctx, id);
+	assertReachable(ctx, id);
+	const circle = familyUserIds(ctx.userId);
 
 	return {
+		// The entries are the shared half: in a shared notebook everybody on the
+		// plan reads everybody's, each carrying its writer's name. Tasks, blocks
+		// and goals below stay each person's own — a notebook shares its writing,
+		// not each other's planners.
 		entries: db
 			.select({
 				id: diaryEntries.id,
@@ -169,12 +208,20 @@ export function contentsOf(ctx: Ctx, id: number) {
 				seq: diaryEntries.notebookSeq,
 				content: diaryEntries.content,
 				forDate: diaryEntries.forDate,
-				createdAt: diaryEntries.createdAt
+				createdAt: diaryEntries.createdAt,
+				ownerId: diaryEntries.userId,
+				authorName: user.name
 			})
 			.from(diaryEntries)
-			.where(and(eq(diaryEntries.notebookId, id), eq(diaryEntries.userId, ctx.userId)))
+			.innerJoin(user, eq(diaryEntries.userId, user.id))
+			.where(and(eq(diaryEntries.notebookId, id), inArray(diaryEntries.userId, circle)))
 			.orderBy(desc(diaryEntries.createdAt))
-			.all(),
+			.all()
+			.map(({ ownerId, authorName, ...entry }) => ({
+				...entry,
+				mine: ownerId === ctx.userId,
+				author: ownerId === ctx.userId ? null : authorName
+			})),
 
 		todos: db
 			.select({
@@ -316,16 +363,29 @@ export function ownedNotebookId(ctx: Ctx, value: unknown): number | null {
 	if (value === undefined || value === null || value === '') return null;
 
 	const id = num(value, 'notebook', { int: true, min: 1 });
-	assertOwned(ctx, id);
+	// Reachable, not owned: writing an entry into a family member's shared
+	// notebook is the point of it being shared. The entry stays the writer's.
+	assertReachable(ctx, id);
 	return id;
 }
 
 /** The open notebooks, for the selector on every form that can point at one. */
 export function pickableNotebooks(ctx: Ctx) {
+	const others = familyUserIds(ctx.userId).filter((one) => one !== ctx.userId);
 	return db
 		.select({ id: notebooks.id, title: notebooks.title })
 		.from(notebooks)
-		.where(and(eq(notebooks.userId, ctx.userId), isNull(notebooks.closedAt)))
+		.where(
+			and(
+				others.length === 0
+					? eq(notebooks.userId, ctx.userId)
+					: or(
+							eq(notebooks.userId, ctx.userId),
+							and(inArray(notebooks.userId, others), eq(notebooks.sharedWithFamily, true))
+						)!,
+				isNull(notebooks.closedAt)
+			)
+		)
 		.orderBy(notebooks.title)
 		.all();
 }
@@ -346,4 +406,45 @@ function assertOwned(ctx: Ctx, id: number): void {
 		.get();
 
 	if (!owned) throw new NotFoundError('notebook');
+}
+
+/*
+ * SHARING, AND WHERE IT STOPS
+ *
+ * A notebook marked shared-with-family can be read by everybody on its
+ * owner's plan, and they may write their own entries into it. Rows keep
+ * their writers' user_id; managing the notebook itself — rename, close,
+ * delete, the share switch — stays the owner's alone, which is why the
+ * writers below still call `assertOwned` and the readers call this.
+ */
+function assertReachable(ctx: Ctx, id: number): void {
+	const others = familyUserIds(ctx.userId).filter((one) => one !== ctx.userId);
+	const reachable = db
+		.select({ id: notebooks.id })
+		.from(notebooks)
+		.where(
+			and(
+				eq(notebooks.id, id),
+				others.length === 0
+					? eq(notebooks.userId, ctx.userId)
+					: or(
+							eq(notebooks.userId, ctx.userId),
+							and(inArray(notebooks.userId, others), eq(notebooks.sharedWithFamily, true))
+						)!
+			)
+		)
+		.get();
+
+	if (!reachable) throw new NotFoundError('notebook');
+}
+
+/** Share a notebook with the family, or stop. The owner's switch alone. */
+export function setNotebookShared(ctx: Ctx, id: number, shared: boolean): void {
+	const res = db
+		.update(notebooks)
+		.set({ sharedWithFamily: shared })
+		.where(and(eq(notebooks.id, id), eq(notebooks.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('notebook');
 }
