@@ -32,7 +32,9 @@ export const POST: RequestHandler = async (event) => {
 		const token = authenticateToken(header.slice(7).trim(), new Date());
 		const caller = {
 			ctx: buildCtx(token.userId),
-			scopes: token.scopes
+			scopes: token.scopes,
+			// The same call budget the REST API spends, keyed to this token.
+			tokenId: token.tokenId
 		};
 
 		let body: unknown;

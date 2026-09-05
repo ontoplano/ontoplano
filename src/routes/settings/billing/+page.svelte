@@ -153,7 +153,6 @@
 				<button name="interval" value="yearly" class="btn btn-primary">
 					<Icon name="arrow-right" /> Switch to yearly — {yearlyLine}
 				</button>
-				<p class="mt-2 text-xs text-gray-500">You can switch twice a day.</p>
 			</form>
 		{:else if data.hasProviderSub && data.interval === 'year'}
 			{#if confirmMonthly}
@@ -183,11 +182,9 @@
 				</button>
 			{/if}
 
-			<!--
-				The ceiling, said before it is hit rather than only as a refusal.
-				Quiet: it is a fact about the control above it, not a warning.
-			-->
-			<p class="mt-2 text-xs text-gray-500">You can switch twice a day.</p>
+			<!-- The twice-a-day ceiling is only spoken as its refusal: the third
+			     press is told "you can switch again tomorrow", and nobody who
+			     never meets the limit reads about it. -->
 		{/if}
 
 		{#if data.canCheckout}

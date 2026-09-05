@@ -19,6 +19,7 @@ import type { Scope } from '../services/tokens.js';
 import { ForbiddenError, ServiceError } from '../services/errors.js';
 import { TOOLS, TOOLS_BY_NAME } from './tools.js';
 import { changed, type Room } from '../live.js';
+import { spendCallBudget } from '../api/auth.js';
 
 /** The revision this server speaks. Echoed back at whatever asks. */
 export const PROTOCOL_VERSION = '2025-06-18';
@@ -70,6 +71,11 @@ const fail = (id: Id, code: number, message: string, data?: unknown): RpcRespons
 export type Caller = {
 	ctx: Ctx;
 	scopes: readonly string[];
+	/**
+	 * The token's own id, for the call budget it shares with the REST API.
+	 * Absent in unit tests, which are not the thing the budget is about.
+	 */
+	tokenId?: number;
 };
 
 function assertScope(caller: Caller, scope: Scope): void {
@@ -215,6 +221,13 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 			const args = (params.arguments ?? {}) as Record<string, unknown>;
 			try {
 				assertScope(caller, tool.scope);
+				/*
+				 * The same budget a plugin spends on the REST API: reads are cheap
+				 * and writes grow the database, so "make a thousand goals" is told
+				 * to slow down after the sixtieth, not obeyed at machine speed.
+				 */
+				if (caller.tokenId !== undefined)
+					spendCallBudget(caller.tokenId, caller.ctx.userId, tool.writes);
 				const answer = toolResult(tool.run(caller.ctx, args));
 
 				/*

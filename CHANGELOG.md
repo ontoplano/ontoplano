@@ -10,6 +10,23 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.74.0 — 2026-09-05
+
+- **The assistant can no longer delete what is rarely deleted.** The MCP
+  tools `remove_person`, `remove_habit`, `remove_goal` and `remove_goal_area`
+  are gone: people, habits with their history, goals and their areas are
+  deleted by the person, in the app. Blocks, reminders, ideas, todos and
+  shopping items keep their remove verbs.
+- **MCP calls spend the API's own budget** — 60 writes and 240 reads a
+  minute per token, with the account ceiling above it — so "create a
+  thousand goals" is told to slow down, not obeyed at machine speed.
+- `keep_habit` is `tick_habit`: for something being avoided, the tick means
+  it happened, and "kept" read backwards.
+- A family seat's Settings hides the Billing tab it could only 404 on, and
+  its Family tab says whose plan it is on and stops.
+- The billing page no longer announces the twice-a-day switch ceiling —
+  only the third press in a day meets it, as a refusal that names tomorrow.
+
 ## 0.73.0 — 2026-09-05
 
 - **The Notes room is Notebooks now, at `/notebooks`.** Notebooks is the

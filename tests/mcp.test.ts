@@ -231,16 +231,15 @@ describe('a tool that runs', () => {
 			['close_goal', ['reopen_goal']],
 			['add_idea', ['remove_idea']],
 			['add_block', ['cancel_block']],
-			['keep_habit', ['keep_habit']],
-			['add_goal', ['remove_goal']],
-			['add_goal_area', ['remove_goal_area']],
-			['add_habit', ['remove_habit']],
-			['add_person', ['remove_person']],
+			['tick_habit', ['tick_habit']],
 			['add_repeating_block', ['remove_repeating_block']],
 			['remind_before_block', ['dismiss_reminder']],
 			['apply_idea', ['apply_idea']],
 			['favorite_idea', ['favorite_idea']],
 			['archive_recipe', ['archive_recipe']]
+			// add_goal, add_goal_area, add_habit and add_person have no delete
+			// on purpose — see the block comment in tools.ts: precious data is
+			// deleted by the person, in the app.
 		];
 
 		for (const [verb, backs] of pairs) {
@@ -725,8 +724,8 @@ describe('the shape of the surface', () => {
 		}
 	});
 
-	it('can say a habit was kept, not only read whether it was', () => {
-		expect(names().has('keep_habit')).toBe(true);
+	it('can tick a habit, not only read whether it was ticked', () => {
+		expect(names().has('tick_habit')).toBe(true);
 	});
 
 	it('can say how a goal ended', () => {
@@ -990,8 +989,13 @@ describe('the opened rooms', () => {
 
 		const both = rpc(14, 'log_goal_progress', { id, delta: 1, value: 9 }, ['tasks:write']);
 		expect(both.result.isError).toBe(true);
+	});
 
-		expect(rpc(15, 'remove_goal', { id }, ['tasks:write']).result.isError).toBe(false);
+	it('offers no delete for the precious things — the person does those in the app', () => {
+		for (const gone of ['remove_goal', 'remove_goal_area', 'remove_habit', 'remove_person']) {
+			const answer = rpc(30, gone, { id: 1 }, ['tasks:write', 'habits:write', 'people:write']);
+			expect(answer.result?.isError ?? answer.error !== undefined, gone).toBe(true);
+		}
 	});
 
 	it('keeps a person, answers whose birthday is coming, and forgets on request', () => {
@@ -1018,8 +1022,6 @@ describe('the opened rooms', () => {
 		const refused = rpc(18, 'people', {}, ['shopping:read']);
 		expect(refused.result.isError).toBe(true);
 		expect(refused.result.content[0].text).toContain('people:read');
-
-		expect(rpc(19, 'remove_person', { id }, ['people:write']).result.isError).toBe(false);
 	});
 
 	it('records the day’s wins into the empty lines, and refuses a fourth', () => {
@@ -1060,5 +1062,40 @@ describe('the opened rooms', () => {
 		const answer = rpc(25, 'log_data_point', { stream: 'weightt', value: 82 }, ['streams:write']);
 		expect(answer.result.isError).toBe(true);
 		expect(answer.result.content[0].text).toMatch(/No stream called|no data streams yet/);
+	});
+});
+
+/**
+ * The budget an assistant spends, which is the API's own.
+ *
+ * "Create a thousand goals named bla" must not run at machine speed: a token
+ * making MCP write calls spends the same per-token budget a plugin spends on
+ * the REST API, and the sixty-first write in a minute is a sentence about
+ * slowing down rather than a sixty-first row.
+ */
+describe('the call budget', () => {
+	it('refuses the write that crosses it, with the retry in the sentence', () => {
+		const budgeted = {
+			ctx: buildCtx(USER, { tz: 'UTC' }),
+			scopes: ['ideas:write'],
+			tokenId: 999901
+		};
+		let refused: string | null = null;
+
+		for (let i = 0; i < 70; i++) {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const answer = handleBody(budgeted as any, {
+				jsonrpc: '2.0',
+				id: i,
+				method: 'tools/call',
+				params: { name: 'add_idea', arguments: { content: `idea ${i}` } }
+			}) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+			if (answer.result.isError) {
+				refused = answer.result.content[0].text as string;
+				break;
+			}
+		}
+
+		expect(refused).toContain('Too many requests');
 	});
 });

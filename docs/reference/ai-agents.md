@@ -66,8 +66,8 @@ week that starts lying by the second one.
 
 It can also change what is there, which matters more than it sounds:
 
-> Push the study block to four, and put down that I was actually working on
-> Ontoplano for the last hour and a half.
+> Push the study block to four, and put down that I was actually organizing
+> my bird pictures for the last hour and a half.
 
 `change_block` moves and renames; `cancel_block` takes something off a day
 because it is not happening. **Cancelled is not skipped.** Skipped means you
@@ -103,34 +103,15 @@ because there is no server-initiated stream to open.
 tool content the model can read and act on, not as a protocol error it can only
 give up on.
 
-The tools are declared in one file, `src/lib/server/mcp/tools.ts`, and each one
-carries the sentence a model reads to decide whether it is the thing it wants.
-
-## What it can do
-
 The tools are declared in one file — `src/lib/server/mcp/tools.ts` — and each
 carries the sentence a model reads to decide whether it is the thing it wants.
-As it stands:
-
-| Tool                                                                                | Scope it needs                     | What it is for                                                                |
-| ----------------------------------------------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------- |
-| `today`                                                                             | `today:read`                       | The blocks and tasks on today                                                 |
-| `habits`                                                                            | `habits:read`                      | Today's habits, and which are kept                                            |
-| `keep_habit`                                                                        | `habits:write`                     | Say one was kept, or take that back                                           |
-| `upcoming`                                                                          | `schedule:read`                    | The days ahead, in order                                                      |
-| `add_block`, `change_block`, `cancel_block`, `finish_block`                         | `schedule:write`                   | An hour on a day: put it there, move or rename it, take it off, answer for it |
-| `search`                                                                            | `search:read`                      | One search over everything written                                            |
-| `todos`, `add_todo`, `finish_todo`, `schedule_todo`, `unschedule_todo`, `drop_todo` | `tasks:read` / `tasks:write`       | The to-do list, on and off a day, done or binned                              |
-| `goals`, `close_goal`                                                               | `tasks:read` / `tasks:write`       | What you are working towards, and how one ended                               |
-| `diary`, `write_entry`, `notebooks`                                                 | `notes:read` / `notes:write`       | Entries, and the subjects they belong to                                      |
-| `ideas`, `add_idea`                                                                 | `notes:read` / `notes:write`       | Things caught before they evaporated                                          |
-| `shopping_list`, `add_to_shopping_list`, `tick_bought`, `remove_from_shopping_list` | `shopping:read` / `shopping:write` | To buy, and the cupboard                                                      |
-| `recipes`, `add_recipe`                                                             | `kitchen:read` / `kitchen:write`   | The cookbook, ingredients included                                            |
+[The tools](#the-tools) below lists every one, generated from that file, with
+the scope each needs.
 
 ## Making the token
 
 Settings → Integrations → **New token**. There is a button on that form called
-**An AI assistant (MCP)** which ticks exactly the scopes in the table above.
+**An AI assistant (MCP)** which ticks exactly the scopes the tools need.
 Grant fewer if you want it to read and not write: the tools it was not granted
 are not offered to it at all, so an assistant with a read-only token does not
 know that `add_todo` exists.
@@ -159,9 +140,9 @@ The habits scheduled for today, each with its streak and whether it has been kep
 
 _Needs `habits:read`; read-only._
 
-### `keep_habit` — Mark a habit kept
+### `tick_habit` — Tick a habit
 
-Record that a habit was kept today, or take that back if it was marked by mistake. Takes the id `habits` gives. Keeping it twice is not an error; the second call unmarks it, which is how the app’s own tick behaves.
+Tick a habit for a day: for something being built, the tick means it was done; for something being avoided, it means it happened. Takes the id `habits` gives. Ticking twice is not an error; the second call takes it back, which is how the app’s own tick behaves.
 
 _Needs `habits:write`; writes._
 
@@ -441,18 +422,6 @@ Make a new area to file goals under. Only when the person named one that does no
 
 _Needs `tasks:write`; writes._
 
-### `remove_goal` — Delete a goal
-
-Erase a goal outright — for one added by mistake or misheard. A goal that was real and ended belongs to `close_goal` instead: closed keeps the record, deleted has none.
-
-_Needs `tasks:write`; writes._
-
-### `remove_goal_area` — Delete a goal area
-
-Delete an area — for one made by mistake. The service refuses while goals still point at it, and says so.
-
-_Needs `tasks:write`; writes._
-
 ### `all_habits` — Every habit
 
 The full list of habits, due today or not — id, name, type and which days each is scheduled. `habits` is today’s view with streaks; this is the one to read before adding or changing one.
@@ -468,12 +437,6 @@ _Needs `habits:write`; writes._
 ### `change_habit` — Change a habit
 
 Rename a habit or change its type, description or days. Only the fields given change; its history of kept days stays exactly as it was.
-
-_Needs `habits:write`; writes._
-
-### `remove_habit` — Delete a habit
-
-Stop tracking a habit and drop its history — for one added by mistake, or one the person asked to be rid of. It is gone, not paused; prefer leaving it alone unless they asked.
 
 _Needs `habits:write`; writes._
 
@@ -552,12 +515,6 @@ _Needs `people:write`; writes._
 ### `change_person` — Change a person’s page
 
 Correct or extend what is recorded about somebody — a birthday learnt, a number changed. Only the fields given change. Takes the id `people` gives.
-
-_Needs `people:write`; writes._
-
-### `remove_person` — Delete a person’s page
-
-Delete somebody’s page — for one added by mistake, or when the person asked. What they were mentioned in stays written; the page collecting those mentions is what goes.
 
 _Needs `people:write`; writes._
 

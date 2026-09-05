@@ -20,9 +20,7 @@
 			state of the plan and no buttons.
 		-->
 		<Card title="You are on {data.seatOwner.name}'s plan" accent="var(--section-accent)">
-			<p class="text-sm text-gray-600">
-				Nothing to pay here. Ask them to take you off it if you would rather pay for yourself.
-			</p>
+			{#snippet children()}{/snippet}
 		</Card>
 	{:else}
 		<Card

@@ -66,8 +66,8 @@ week that starts lying by the second one.
 
 It can also change what is there, which matters more than it sounds:
 
-> Push the study block to four, and put down that I was actually working on
-> Ontoplano for the last hour and a half.
+> Push the study block to four, and put down that I was actually organizing
+> my bird pictures for the last hour and a half.
 
 `change_block` moves and renames; `cancel_block` takes something off a day
 because it is not happening. **Cancelled is not skipped.** Skipped means you
@@ -103,34 +103,15 @@ because there is no server-initiated stream to open.
 tool content the model can read and act on, not as a protocol error it can only
 give up on.
 
-The tools are declared in one file, `src/lib/server/mcp/tools.ts`, and each one
-carries the sentence a model reads to decide whether it is the thing it wants.
-
-## What it can do
-
 The tools are declared in one file — `src/lib/server/mcp/tools.ts` — and each
 carries the sentence a model reads to decide whether it is the thing it wants.
-As it stands:
-
-| Tool                                                                                | Scope it needs                     | What it is for                                                                |
-| ----------------------------------------------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------- |
-| `today`                                                                             | `today:read`                       | The blocks and tasks on today                                                 |
-| `habits`                                                                            | `habits:read`                      | Today's habits, and which are kept                                            |
-| `keep_habit`                                                                        | `habits:write`                     | Say one was kept, or take that back                                           |
-| `upcoming`                                                                          | `schedule:read`                    | The days ahead, in order                                                      |
-| `add_block`, `change_block`, `cancel_block`, `finish_block`                         | `schedule:write`                   | An hour on a day: put it there, move or rename it, take it off, answer for it |
-| `search`                                                                            | `search:read`                      | One search over everything written                                            |
-| `todos`, `add_todo`, `finish_todo`, `schedule_todo`, `unschedule_todo`, `drop_todo` | `tasks:read` / `tasks:write`       | The to-do list, on and off a day, done or binned                              |
-| `goals`, `close_goal`                                                               | `tasks:read` / `tasks:write`       | What you are working towards, and how one ended                               |
-| `diary`, `write_entry`, `notebooks`                                                 | `notes:read` / `notes:write`       | Entries, and the subjects they belong to                                      |
-| `ideas`, `add_idea`                                                                 | `notes:read` / `notes:write`       | Things caught before they evaporated                                          |
-| `shopping_list`, `add_to_shopping_list`, `tick_bought`, `remove_from_shopping_list` | `shopping:read` / `shopping:write` | To buy, and the cupboard                                                      |
-| `recipes`, `add_recipe`                                                             | `kitchen:read` / `kitchen:write`   | The cookbook, ingredients included                                            |
+[The tools](#the-tools) below lists every one, generated from that file, with
+the scope each needs.
 
 ## Making the token
 
 Settings → Integrations → **New token**. There is a button on that form called
-**An AI assistant (MCP)** which ticks exactly the scopes in the table above.
+**An AI assistant (MCP)** which ticks exactly the scopes the tools need.
 Grant fewer if you want it to read and not write: the tools it was not granted
 are not offered to it at all, so an assistant with a read-only token does not
 know that `add_todo` exists.

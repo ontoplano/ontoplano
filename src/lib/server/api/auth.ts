@@ -46,6 +46,31 @@ function isWrite(method: string): boolean {
 }
 
 /**
+ * One call against the token's and the account's budget, or a refusal.
+ *
+ * Shared with the MCP server, which is the same token knocking on a different
+ * door: an assistant asked to "create 1000 goals" spends this budget one
+ * write at a time and is told to slow down, exactly as a plugin would be.
+ */
+export function spendCallBudget(tokenId: number, userId: string, write: boolean): void {
+	const perToken = rateLimit(
+		`api:${tokenId}:${write ? 'w' : 'r'}`,
+		write ? WRITE_LIMIT : READ_LIMIT,
+		WINDOW_MS
+	);
+	const perAccount = rateLimit(
+		`api:acct:${userId}:${write ? 'w' : 'r'}`,
+		write ? ACCOUNT_WRITE_LIMIT : ACCOUNT_READ_LIMIT,
+		WINDOW_MS
+	);
+
+	if (!perToken.allowed || !perAccount.allowed) {
+		const retryAfterSeconds = Math.max(perToken.retryAfterSeconds, perAccount.retryAfterSeconds);
+		throw new RateLimitedError(`Too many requests. Try again in ${retryAfterSeconds} seconds.`);
+	}
+}
+
+/**
  * Authenticate an API request and check its scope.
  *
  * Two ways in:
@@ -70,22 +95,7 @@ export function authenticateApi(
 		const token = authenticateToken(header.slice(7).trim(), now);
 		requireScope(token, scope);
 
-		const write = isWrite(event.request.method);
-		const perToken = rateLimit(
-			`api:${token.tokenId}:${write ? 'w' : 'r'}`,
-			write ? WRITE_LIMIT : READ_LIMIT,
-			WINDOW_MS
-		);
-		const perAccount = rateLimit(
-			`api:acct:${token.userId}:${write ? 'w' : 'r'}`,
-			write ? ACCOUNT_WRITE_LIMIT : ACCOUNT_READ_LIMIT,
-			WINDOW_MS
-		);
-
-		if (!perToken.allowed || !perAccount.allowed) {
-			const retryAfterSeconds = Math.max(perToken.retryAfterSeconds, perAccount.retryAfterSeconds);
-			throw new RateLimitedError(`Too many requests. Try again in ${retryAfterSeconds} seconds.`);
-		}
+		spendCallBudget(token.tokenId, token.userId, isWrite(event.request.method));
 
 		assertNoPaymentHold(token.userId);
 		return {

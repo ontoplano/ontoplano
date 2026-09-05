@@ -33,7 +33,7 @@ import {
 	HABIT_TYPES
 } from '../services/habits.js';
 import { createReminder, dismissReminder, listReminders } from '../services/reminders.js';
-import { createPerson, deletePerson, listPeople, updatePerson } from '../services/people.js';
+import { createPerson, listPeople, updatePerson } from '../services/people.js';
 import { RELATIONSHIPS } from '../../people.js';
 import { listWins, saveWins, WINS_PER_DAY } from '../services/wins.js';
 import {
@@ -58,8 +58,6 @@ import {
 	closeGoal,
 	createArea,
 	createGoal,
-	deleteArea,
-	deleteGoal,
 	listAreas,
 	listGoals,
 	removeGoalLinks,
@@ -178,6 +176,18 @@ const ratingsOf = (args: Record<string, unknown>) => ({
 const gaveARating = (args: Record<string, unknown>) =>
 	args.urgency !== undefined || args.interest !== undefined || args.energy !== undefined;
 
+/*
+ * WHAT NEVER GETS A DELETE TOOL
+ *
+ * Deletion verbs here exist only for cheap, often-reversed things: blocks and
+ * repeating blocks, reminders, ideas, todos, shopping items. Data that
+ * accumulates a story or stands for people and commitments — a person's page,
+ * a habit and its kept days, a goal, a goal area — is never deletable through
+ * a tool, however symmetric that would look beside its add_*. A
+ * mis-transcription is fixed with the change_* verb; a real deletion is rare,
+ * and the person does it themselves in the app.
+ */
+
 /**
  * The category the caller named, refused loudly when it names nothing.
  *
@@ -233,10 +243,10 @@ export const TOOLS: Tool[] = [
 		 * that they did, is a strange half of a feature: "I did my stretching"
 		 * is the most ordinary sentence there is about a habit.
 		 */
-		name: 'keep_habit',
-		title: 'Mark a habit kept',
+		name: 'tick_habit',
+		title: 'Tick a habit',
 		description:
-			'Record that a habit was kept today, or take that back if it was marked by mistake. Takes the id `habits` gives. Keeping it twice is not an error; the second call unmarks it, which is how the app\u2019s own tick behaves.',
+			'Tick a habit for a day: for something being built, the tick means it was done; for something being avoided, it means it happened. Takes the id `habits` gives. Ticking twice is not an error; the second call takes it back, which is how the app\u2019s own tick behaves.',
 		scope: 'habits:write',
 		writes: true,
 		input: object(
@@ -1276,38 +1286,6 @@ export const TOOLS: Tool[] = [
 		),
 		run: (ctx, args) => ({ id: createArea(ctx, { name: args.name, color: args.color }) })
 	},
-	{
-		/*
-		 * Anything an assistant can create, it has to be able to take back.
-		 * This is for a goal transcribed by mistake — a real goal that ran its
-		 * course ends through `close_goal`, achieved, missed or abandoned,
-		 * which keeps its record. Deleting erases it.
-		 */
-		name: 'remove_goal',
-		title: 'Delete a goal',
-		description:
-			'Erase a goal outright — for one added by mistake or misheard. A goal that was real and ended belongs to `close_goal` instead: closed keeps the record, deleted has none.',
-		scope: 'tasks:write',
-		writes: true,
-		input: object({ id: { type: 'integer', description: 'The goal\u2019s id.' } }, ['id']),
-		run: (ctx, args) => {
-			deleteGoal(ctx, Number(args.id));
-			return { ok: true };
-		}
-	},
-	{
-		name: 'remove_goal_area',
-		title: 'Delete a goal area',
-		description:
-			'Delete an area — for one made by mistake. The service refuses while goals still point at it, and says so.',
-		scope: 'tasks:write',
-		writes: true,
-		input: object({ id: { type: 'integer', description: 'The area\u2019s id.' } }, ['id']),
-		run: (ctx, args) => {
-			deleteArea(ctx, Number(args.id));
-			return { ok: true };
-		}
-	},
 
 	// ── Habits, whole ────────────────────────────────────────────────────────
 	{
@@ -1377,19 +1355,6 @@ export const TOOLS: Tool[] = [
 				description: args.description ?? current.description,
 				scheduledDays: args.scheduledDays ?? current.scheduledDays
 			});
-			return { ok: true };
-		}
-	},
-	{
-		name: 'remove_habit',
-		title: 'Delete a habit',
-		description:
-			'Stop tracking a habit and drop its history — for one added by mistake, or one the person asked to be rid of. It is gone, not paused; prefer leaving it alone unless they asked.',
-		scope: 'habits:write',
-		writes: true,
-		input: object({ id: { type: 'integer', description: 'The habit\u2019s id.' } }, ['id']),
-		run: (ctx, args) => {
-			deleteHabit(ctx, Number(args.id));
 			return { ok: true };
 		}
 	},
@@ -1706,19 +1671,6 @@ export const TOOLS: Tool[] = [
 				email: args.email ?? current.email,
 				notes: args.notes ?? current.notes
 			});
-			return { ok: true };
-		}
-	},
-	{
-		name: 'remove_person',
-		title: 'Delete a person\u2019s page',
-		description:
-			'Delete somebody\u2019s page — for one added by mistake, or when the person asked. What they were mentioned in stays written; the page collecting those mentions is what goes.',
-		scope: 'people:write',
-		writes: true,
-		input: object({ id: { type: 'integer', description: 'The person\u2019s id.' } }, ['id']),
-		run: (ctx, args) => {
-			deletePerson(ctx, Number(args.id));
 			return { ok: true };
 		}
 	},
