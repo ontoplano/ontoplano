@@ -60,7 +60,12 @@ export const actions: Actions = {
 		}
 	},
 
-	default: async ({ request, locals }) => {
+	/*
+	 * Named, not `default`: a page cannot mix a default action with named
+	 * ones, and the assistant-token action above is named. Every form that
+	 * finishes the wizard posts here explicitly.
+	 */
+	finish: async ({ request, locals }) => {
 		const formData = await request.formData();
 
 		try {

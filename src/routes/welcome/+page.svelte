@@ -195,7 +195,7 @@ at a time, and show me what you will write before writing it.`
 	     interactive element, and Enter bubbles to it from every field anyway. -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div {onkeydown}>
-		<form method="post" use:enhance class="space-y-6">
+		<form method="post" action="?/finish" use:enhance class="space-y-6">
 			<!--
 			Where you are in it, as dots rather than a number: five is few enough to
 			see, and a bar that fills is a promise about how long the rest takes.

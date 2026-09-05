@@ -34,7 +34,7 @@ async function register(request: APIRequestContext, email: string): Promise<Acco
 
 	// A new account lands on first run, and every other page redirects there
 	// until it is done. Take the blank week: the tests bring their own rows.
-	const welcome = await request.post('/welcome', {
+	const welcome = await request.post('/welcome?/finish', {
 		headers: {
 			Origin: ORIGIN,
 			Cookie: cookie,

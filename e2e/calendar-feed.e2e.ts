@@ -34,7 +34,7 @@ async function account(playwright: PlaywrightWorkerArgs['playwright']) {
 		.split(';')[0]
 		.trim();
 
-	await request.post('/welcome', {
+	await request.post('/welcome?/finish', {
 		headers: { Origin: ORIGIN, Cookie: cookie, 'x-sveltekit-action': 'true' },
 		form: {
 			timezone: 'America/Sao_Paulo',

@@ -93,7 +93,7 @@ async function register(email, name) {
 	});
 	if (!signUp.ok) throw new Error(`sign-up failed: ${await signUp.text()}`);
 	const cookie = (signUp.headers.get('set-cookie') ?? '').split(';')[0].trim();
-	await fetch(`${ORIGIN}/welcome`, {
+	await fetch(`${ORIGIN}/welcome?/finish`, {
 		method: 'POST',
 		headers: {
 			Origin: ORIGIN,

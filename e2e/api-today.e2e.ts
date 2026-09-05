@@ -29,7 +29,7 @@ async function account(playwright: PlaywrightWorkerArgs['playwright']) {
 		.trim();
 
 	// A new account meets first run before anything else answers.
-	await request.post('/welcome', {
+	await request.post('/welcome?/finish', {
 		headers: { Origin: ORIGIN, Cookie: cookie, 'x-sveltekit-action': 'true' },
 		form: {
 			timezone: 'America/Sao_Paulo',
