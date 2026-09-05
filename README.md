@@ -111,10 +111,9 @@ something at `/healthz`.
 full list of settings, `docs/BACKUP.md` covers backups, `docs/ANDROID.md` the
 phone.
 
-Signing in is an address and a password;
+Signing in is an address and a password.
 Email is optional — without SMTP settings, confirmation and reset links are
 written to the server log instead of sent.
-
 
 ## Sponsors
 
