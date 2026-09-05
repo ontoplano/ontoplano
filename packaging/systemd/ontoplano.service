@@ -37,6 +37,10 @@ Environment=ONTOPLANO_DATA_DIR=/var/lib/ontoplano
 # JSON reports as an unexplained crash — and a picture at the instance's own
 # ceiling is already over that default once multipart framing is counted.
 Environment=BODY_SIZE_LIMIT=12M
+# A package install is somebody's own instance: no trials, no ceilings, no
+# billing anywhere in the interface. The env file loads after, so a hosted
+# deployment overrides this with one line rather than a unit edit.
+Environment=ONTOPLANO_SELF_HOST=true
 
 # Everything an operator sets: the origin, the mail account, who may sign up.
 EnvironmentFile=/etc/ontoplano/ontoplano.env

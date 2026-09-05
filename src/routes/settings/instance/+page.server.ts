@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { loadConfig, saveConfig, isRegistrationMode } from '$lib/server/config';
+import { instanceSells } from '$lib/server/services/billing';
 import { companions } from '$lib/server/services/companions';
 import { isDemo, isSelfHosted, isStaging } from '$lib/server/settings';
 import { canEditInstance } from '$lib/server/services/admin';
@@ -63,7 +64,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 		// What the invite form opens on: a month from now, as a date field's value.
 		defaultGrantUntil: defaultGrantUntil(new Date()).slice(0, 10),
 		// Whether an invitation is worth anything beyond letting somebody in.
-		sellsAnything: !isSelfHosted(),
+		// `instanceSells()`, not `!isSelfHosted()`: an instance that never said
+		// ONTOPLANO_SELLS=true has no billing for an invitation to waive, and a
+		// fresh clone must not open its life dressed as the one that charges.
+		sellsAnything: instanceSells(),
 		// The list, if this instance keeps one. Two numbers rather than the
 		// addresses: a page nobody asked for should not put a hundred people's
 		// email on screen, and the export is one click away when it is wanted.

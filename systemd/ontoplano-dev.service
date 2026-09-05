@@ -22,6 +22,10 @@ Environment=PATH=${NODE_DIR}:/usr/local/bin:/usr/bin:/bin
 # Empty when make dev was run without one; an empty value falls through to
 # the default path everywhere it is read.
 Environment=DATABASE_URL=${DATABASE_URL}
+# A checkout is somebody's own instance until it says otherwise: no trials, no
+# billing pages, no selling copy. `make dev ONTOPLANO_SELF_HOST=false` is how
+# the hosted configuration is developed, and it is a sentence somebody typed.
+Environment=ONTOPLANO_SELF_HOST=${ONTOPLANO_SELF_HOST}
 
 [Install]
 WantedBy=default.target

@@ -86,6 +86,7 @@ dev: _dev-port _dev-deps _dev-migrated
 	@mkdir -p ~/.config/systemd/user
 	@REPO_DIR="$(CURDIR)" NODE_BIN="$(NODE_BIN)" NODE_DIR="$$(dirname "$(NODE_BIN)")" \
 		YARN_BIN="$(YARN_BIN)" DATABASE_URL="$${DATABASE_URL:-}" \
+		ONTOPLANO_SELF_HOST="$${ONTOPLANO_SELF_HOST:-true}" \
 		envsubst < systemd/ontoplano-dev.service > ~/.config/systemd/user/ontoplano-dev.service
 	@systemctl --user daemon-reload
 	@mark=$$(mktemp); systemctl --user restart ontoplano-dev; \

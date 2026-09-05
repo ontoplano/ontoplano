@@ -34,6 +34,10 @@ Environment=PORT=1493
 # 12M leaves room for the account import (nginx allows 8M on that one path) and
 # for any picture ceiling somebody sets. nginx is the real gate in front of it.
 Environment=BODY_SIZE_LIMIT=12M
+# Somebody's own instance, until the env file below says otherwise — it loads
+# after, so a hosted deployment overrides this with one line. Self-hosted means
+# no trials, no ceilings and no billing anywhere in the interface.
+Environment=ONTOPLANO_SELF_HOST=true
 EnvironmentFile=%h/.config/ontoplano/env
 
 [Install]
