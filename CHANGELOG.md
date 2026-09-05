@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.78.1 — 2026-09-05
+
+- **Adding a task to a goal no longer drops the ones already done.** The
+  choosing modal hid finished todos, and saving it replaces the whole set —
+  so linking a new task silently unlinked every done one and the progress
+  fell to zero. Done todos stay in the modal now, ticked and struck through,
+  until you untick them yourself.
+
 ## 0.78.0 — 2026-09-05
 
 - **Days moved before 0.77.0 come back to their block's hour.** The fix in

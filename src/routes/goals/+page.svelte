@@ -703,7 +703,16 @@
 					<div>
 						<span class="eyebrow text-gray-600">Todos</span>
 						<div class="mt-2 max-h-64 space-y-1 overflow-y-auto">
-							{#each data.todos as t (t.id)}
+							<!--
+								Open todos, plus any DONE todo this goal already counts.
+
+								setGoalLinks replaces the whole set, which is only safe while
+								this form shows a checkbox for everything linked — and it
+								stopped: done todos left the list, so saving the form silently
+								unlinked them and the progress bar dropped. They stay here,
+								ticked and struck through, until somebody unticks them.
+							-->
+							{#each [...data.todos, ...data.allTodos.filter((t) => t.status === 'done' && linking.linkedTodoIds.includes(t.id))] as t (t.id)}
 								<label class="flex items-center gap-2 text-sm text-gray-700">
 									<input
 										type="checkbox"
@@ -712,7 +721,10 @@
 										checked={linking.linkedTodoIds.includes(t.id)}
 										class="h-3 w-3"
 									/>
-									{t.title}
+									<span
+										class={'status' in t && t.status === 'done' ? 'text-gray-400 line-through' : ''}
+										>{t.title}</span
+									>
 								</label>
 							{:else}
 								<p class="text-xs text-gray-500">No open todos.</p>
