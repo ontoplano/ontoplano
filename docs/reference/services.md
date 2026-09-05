@@ -2926,6 +2926,14 @@ Returns whether it was a name already held, so the page can say so.
 
 #### `updateItem(ctx, id, raw)`
 
+#### `setItemCategory(ctx, id, categoryId)`
+
+File an item into a section, or out of every one, touching nothing else.
+
+`updateItem` re-parses the whole row, so filing through it means re-sending
+name and type just to move a thing — which is exactly the call an assistant
+gets wrong. One field, one change.
+
 #### `deleteItem(ctx, id)`
 
 #### `toggleBought(ctx, id, raw)`
