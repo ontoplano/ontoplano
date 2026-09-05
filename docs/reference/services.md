@@ -859,9 +859,16 @@ cannot sign back into.
 The timer is reset with it, because somebody who just asked for a fresh demo
 is somebody who intends to keep looking.
 
-#### `demoExpiry(userId)`
+#### `isDemoAccount(userId)`
 
-Whether this account is a demo one, and whether its time is up.
+Whether an account is one of the demo's throwaway copies.
+
+The expiry stamp IS the distinction: a visitor's account carries one from
+birth, and an account somebody made deliberately — the operator's — never
+does. It is also why the sweep cannot eat the operator: it only ever
+deletes what carries the stamp.
+
+#### `demoExpiry(userId)`
 
 #### `maybeSweepDemoAccounts(now)`
 
