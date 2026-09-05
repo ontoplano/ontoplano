@@ -10,6 +10,13 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.70.0 — 2026-09-05
+
+- **`make deploy-local` works on a fresh clone.** The build check that guards
+  the payment provider ran its verdict even on trees that have no provider —
+  which is every public clone — and failed the deploy with a complaint about
+  a file that was never there.
+
 ## 0.69.0 — 2026-09-05
 
 - **Inviting somebody to the family plan makes their account.** Type an email

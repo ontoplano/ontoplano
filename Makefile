@@ -276,30 +276,36 @@ _billing-provider:
 #
 # The glob's own key is what to look for: `./providers/<name>.ts` appears in the
 # bundle when the module was compiled in, and does not otherwise.
+# Two checks, in one shell on purpose: every recipe line is its own shell, so
+# a guard line saying `exit 0` only ends that line — the checks after it still
+# ran, and a fresh clone with no provider at all failed a check about the
+# provider it does not have. No provider in the tree means nothing to verify.
+#
+# First check: nothing may throw the provider away at run time.
+# `import.meta.glob` is a build-time rewrite of the CALL, not a function that
+# exists in Node. A `typeof import.meta.glob === 'function'` guard around it
+# survives into the bundle, evaluates false there, and discards the provider —
+# which is exactly what shipped: the module bundled, imported and dropped.
+# Nothing failed and nothing logged; the app simply decided it could not sell,
+# for a fortnight.
+#
+# Second: the provider is actually in the bundle. It can be sitting in the
+# tree and absent from the build — Vite resolves the glob once and caches it.
 _billing-in-build:
-	@[ -f src/lib/server/billing/providers/paddle.ts ] || exit 0
-	@# Nothing may throw the provider away at run time.
-	@#
-	@# `import.meta.glob` is a build-time rewrite of the CALL, not a function
-	@# that exists in Node. A `typeof import.meta.glob === 'function'` guard
-	@# around it survives into the bundle, evaluates false there, and discards
-	@# the provider — which is exactly what shipped: the module bundled,
-	@# imported and dropped. Nothing failed and nothing logged; the app simply
-	@# decided it could not sell, for a fortnight.
-	@if grep -rqs 'typeof import.meta.glob' build/server --include='*.js'; then \
-		$(NO) "this build guards import.meta.glob at run time"; \
-		echo "  It is undefined in Node, so that guard is always false and the"; \
-		echo "  provider it protects is discarded. src/lib/server/billing/index.ts."; \
-		exit 1; \
-	fi
-	@# And the provider is actually in the bundle. It can be sitting in the tree
-	@# and absent from the build — Vite resolves the glob once and caches it.
-	@if grep -rqs 'providers/paddle' build/server --include='*.js'; then \
-		$(OK) "the payment provider is in this build"; \
-	else \
-		$(NO) "the provider is in the tree and NOT in the build"; \
-		echo "  rm -rf node_modules/.vite .svelte-kit && make build"; \
-		exit 1; \
+	@if [ -f src/lib/server/billing/providers/paddle.ts ]; then \
+		if grep -rqs 'typeof import.meta.glob' build/server --include='*.js'; then \
+			$(NO) "this build guards import.meta.glob at run time"; \
+			echo "  It is undefined in Node, so that guard is always false and the"; \
+			echo "  provider it protects is discarded. src/lib/server/billing/index.ts."; \
+			exit 1; \
+		fi; \
+		if grep -rqs 'providers/paddle' build/server --include='*.js'; then \
+			$(OK) "the payment provider is in this build"; \
+		else \
+			$(NO) "the provider is in the tree and NOT in the build"; \
+			echo "  rm -rf node_modules/.vite .svelte-kit && make build"; \
+			exit 1; \
+		fi; \
 	fi
 
 build: _billing-provider
