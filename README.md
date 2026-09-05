@@ -49,8 +49,11 @@ sudo apt install ./ontoplano_amd64.deb
 # Fedora, RHEL, openSUSE
 sudo dnf install ./ontoplano.x86_64.rpm
 
-# Arch, Manjaro
-yay -S ontoplano
+# Arch, Manjaro (not on the AUR yet, they have supended new accounts for the time being)
+mkdir ontoplano && cd ontoplano
+curl -LO https://github.com/ontoplano/ontoplano/releases/latest/download/PKGBUILD
+curl -LO https://github.com/ontoplano/ontoplano/releases/latest/download/ontoplano.install
+makepkg -si
 ```
 
 then `sudo ontoplano config` to set the origin and
