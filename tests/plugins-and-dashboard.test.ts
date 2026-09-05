@@ -207,3 +207,38 @@ describe('what the instance says about itself', () => {
 		expect(built.commit).toBeTruthy();
 	});
 });
+
+/**
+ * The refunds page, and the promise in it.
+ *
+ * It exists because Brazilian consumer law gives seven days to change your
+ * mind about anything bought at a distance, and because a page saying so is
+ * the difference between a policy and a claim nobody can check. The numbers
+ * in it are the same ones the terms quote — they come from the provider, not
+ * from a sentence somebody typed.
+ */
+describe('the refunds page', () => {
+	test('is written from the same facts as the rest of the policies', async () => {
+		const facts = await legal.legalFacts();
+		expect(facts.trialDays).toBeGreaterThan(0);
+		// `provider` is empty on an instance that sells nothing, which is why
+		// the page names one only when there is one to name — an earlier draft
+		// said "handled by  as merchant of record" on every self-hosted copy.
+		const source = await import('node:fs').then((fs) =>
+			fs.readFileSync('src/routes/legal/refunds/+page.svelte', 'utf8')
+		);
+		expect(source).toContain('{#if data.provider}');
+		expect(source).toContain('{#if !data.hosted}');
+	});
+
+	test('says seven days, which is the law and not a preference', async () => {
+		const source = await import('node:fs').then((fs) =>
+			fs.readFileSync('src/routes/legal/refunds/+page.svelte', 'utf8')
+		);
+		expect(source).toContain('Código de Defesa do Consumidor');
+		expect(source).toContain('seven days');
+		// And it must not promise deletion of anything: an ended subscription
+		// leaves the writing where it is, which every other page also says.
+		expect(source).toContain('Nothing is deleted');
+	});
+});

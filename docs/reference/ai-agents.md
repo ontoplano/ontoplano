@@ -142,7 +142,7 @@ _Needs `habits:read`; read-only._
 
 ### `tick_habit` — Tick a habit
 
-Tick a habit for a day: for something being built, the tick means it was done; for something being avoided, it means it happened. Takes the id `habits` gives. Ticking twice is not an error; the second call takes it back, which is how the app’s own tick behaves.
+Tick a habit for a day: for something being built, the tick means it was done; for something being avoided, it means it happened. Name it or give the id `habits` gave; a name that matches two habits is refused rather than guessed. Ticking twice is not an error; the second call takes it back, which is how the app’s own tick behaves.
 
 _Needs `habits:write`; writes._
 
@@ -484,13 +484,13 @@ _Needs `schedule:write`; writes._
 
 ### `repeating_week` — The week as it repeats
 
-The blocks that make up every week — each with its weekday, time, length and category. This is the template the days are generated from; `today` and `upcoming` show what it produced. Read it before changing Tuesdays rather than a Tuesday.
+The blocks that make up every week — each with its weekday, time, length and category. Weekdays are numbered from Monday: 0 is Monday, 6 is Sunday. This is the template the days are generated from; `today` and `upcoming` show what it produced. Read it before changing Tuesdays rather than a Tuesday.
 
 _Needs `schedule:read`; read-only._
 
 ### `add_repeating_block` — Put a block on every week
 
-Add a block that repeats weekly — "gym on Tuesdays at seven". This changes every week from now on; `add_block` is the one for a single day. Weekday 0 is Sunday through 6 for Saturday.
+Add a block that repeats weekly — "gym on Tuesdays at seven". This changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. A block can be a bare category rather than a named thing — leave the title out and it shows as the category itself, which is what "put work in those hours" means.
 
 _Needs `schedule:write`; writes._
 
@@ -514,9 +514,21 @@ _Needs `schedule:read`; read-only._
 
 ### `activities` — The named recurring things
 
-Activities are the named things inside categories — "piano", not just "music". A block can name one instead of a bare category. Read-only here; the app is where they are managed.
+Activities are the named things inside categories — "piano", not just "music". A block can name one instead of a bare category. `add_activity` and `change_activity` write them.
 
 _Needs `schedule:read`; read-only._
+
+### `add_activity` — Name a new recurring thing
+
+Add an activity — a named thing inside a category, like "piano" inside "music" — so blocks can name it instead of the bare category.
+
+_Needs `schedule:write`; writes._
+
+### `change_activity` — Rename an activity, or say what it is
+
+Change an activity: its name, the line describing it, or which category it belongs to. Takes the id `activities` gives. Only the fields you pass change. Blocks that name it follow the change; nothing on any day is moved.
+
+_Needs `schedule:write`; writes._
 
 ### `people` — The people in their life
 

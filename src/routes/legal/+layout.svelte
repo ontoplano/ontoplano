@@ -8,7 +8,8 @@
 
 	const pages = [
 		{ path: '/legal/privacy', label: 'Privacy' },
-		{ path: '/legal/terms', label: 'Terms' }
+		{ path: '/legal/terms', label: 'Terms' },
+		{ path: '/legal/refunds', label: 'Refunds' }
 	] as const;
 </script>
 

@@ -192,6 +192,8 @@
 			<a href={resolve('/legal/privacy')} class="hover:text-gray-600">Privacy</a>
 			·
 			<a href={resolve('/legal/terms')} class="hover:text-gray-600">Terms</a>
+			·
+			<a href={resolve('/legal/refunds')} class="hover:text-gray-600">Refunds</a>
 		</p>
 
 		{#if mode === 'forgot' && !data.emailConfigured}

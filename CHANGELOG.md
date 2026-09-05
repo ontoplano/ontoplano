@@ -10,6 +10,25 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.77.0 — 2026-09-05
+
+- **Moving a repeating block moves the days it already made.** The template
+  changed and the generated days did not, so the calendar feed kept exporting
+  the old hour and the reminder still went off at it. Days already past keep
+  the time they happened at.
+- **An assistant can edit an activity** — its name, its description, its
+  category — and add one. It could rewrite every block that used an activity
+  and not the sentence saying what it was.
+- **A habit can be ticked by name**, so `habits:write` is a grant that works
+  on its own instead of needing `habits:read` to find the id first. The token
+  form now says when a write grant will not work without its read.
+- **The assistant is told the right weekdays.** Both repeating-block tools
+  documented 0 as Sunday; every weekday in the app counts from Monday, so
+  "gym on Tuesdays" landed on Wednesday.
+- **A refunds page** at /legal/refunds — the seven days Brazilian law gives
+  to change your mind, what happens after them, and what a refund does to the
+  account. Linked beside Privacy and Terms.
+
 ## 0.76.0 — 2026-09-05
 
 - **The demo and dev data reads like somebody's actual life.** The kitchen
