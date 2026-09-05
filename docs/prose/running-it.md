@@ -214,17 +214,18 @@ twice — the week last written about is remembered per account.
 Nothing is sent unless the instance has SMTP configured, so a self-hosted
 install with no mail transport is simply an install with no Monday mail.
 
-**It needs something to run it.** The app has no scheduler of its own; the mail
-goes out when `scripts/weekly-reviews.ts` runs:
+**It needs something to run it.** The app has no scheduler of its own — but
+every shipped install brings one: the `.deb` and `.rpm` install an
+`ontoplano-weekly-review.timer` beside the service, the Docker image runs the
+clock itself, and `make install-service` sets the timer up for a from-source
+install. The same is true of reminders, which are asked for every minute.
+Settings → Instance shows both jobs and when they last ran.
 
-```sh
-npx tsx scripts/weekly-reviews.ts
+Anything else that can make an hourly HTTP request works too — the timers are
+only asking the app's own endpoint:
+
 ```
-
-Hourly, from cron or a systemd timer:
-
-```
-5 * * * * cd /path/to/ontoplano && npx tsx scripts/weekly-reviews.ts
+5 * * * * curl -fsS -m 30 -X POST -H "x-health-token: $ONTOPLANO_HEALTH_TOKEN" http://127.0.0.1:1493/api/jobs/weekly-reviews
 ```
 
 Hourly rather than daily because the hour belongs to the account: seven in the
