@@ -487,7 +487,7 @@
 		   letters do: its own stroke widened, drawn under itself. */
 		.pie-hud-icon :global(svg) {
 			stroke-width: 2.25;
-			filter: drop-shadow(0 0 3px var(--color-white)) drop-shadow(0 0 3px var(--color-white));
+			filter: drop-shadow(0 0 10px var(--color-white)) drop-shadow(0 0 20px var(--color-white));
 		}
 
 		/* The wedge keeps the icon, which is what the muscle memory is for —
