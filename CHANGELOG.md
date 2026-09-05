@@ -10,6 +10,12 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.79.3 — 2026-09-05
+
+- **The confirm-your-address page opens with its resend button already
+  counting down.** Registration sent the mail seconds ago; the button said
+  "Send it again" anyway and the click it invited was refused.
+
 ## 0.79.2 — 2026-09-05
 
 - **A wrong invitation code says so.** Invite-only instances answered "not

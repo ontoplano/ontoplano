@@ -11,7 +11,7 @@ import {
 	instanceIsEmpty,
 	registrationMode
 } from '$lib/server/services/registration';
-import { clientKey, signUpBudget } from '$lib/server/rate-limit';
+import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
 import { ServiceError } from '$lib/server/services/errors';
 import { toActionFailure } from '$lib/server/http-errors';
 import { record } from '$lib/server/services/audit';
@@ -191,7 +191,13 @@ export const actions: Actions = {
 				// SMTP the confirmation goes to the log, and a page telling
 				// somebody to check a mailbox that will stay empty is a worse
 				// first step than no step.
-				if (!created.user.emailVerified && isEmailConfigured()) landing = '/login/verify';
+				if (!created.user.emailVerified && isEmailConfigured()) {
+					landing = '/login/verify';
+					// The mail that just went out is the minute's one send: seed
+					// the resend bucket so the verify page opens with its button
+					// counting down instead of inviting a refusal.
+					rateLimit(`verify-resend:${created.user.id}`, 1, 60 * 1000);
+				}
 			}
 		} catch (error) {
 			if (error instanceof APIError) {

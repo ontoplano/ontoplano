@@ -22,6 +22,15 @@
 		}, 1000);
 	}
 
+	// The page opens owing whatever the server says is left of the minute —
+	// registration sent the mail seconds ago, and a button that read "Send it
+	// again" on arrival was inviting a click the action would refuse.
+	$effect(() => {
+		if (data.retryAfterSeconds > 0 && secondsLeft === 0 && !timer) {
+			startCooldown(data.retryAfterSeconds);
+		}
+	});
+
 	$effect(() => {
 		const wait = form?.retryAfterSeconds;
 		if (wait) startCooldown(wait);

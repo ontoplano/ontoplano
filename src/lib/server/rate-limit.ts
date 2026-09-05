@@ -48,6 +48,21 @@ export function resetRateLimit(key: string): void {
 }
 
 /**
+ * How long a key has to wait, without spending anything.
+ *
+ * For a page that draws a countdown on arrival: the verify screen's resend
+ * button counted down only after a click, so it invited a click the server
+ * would refuse — the mail had just been sent by registration, and the bucket
+ * knew, but only the action ever asked it.
+ */
+export function rateLimitWait(key: string, limit: number): number {
+	const bucket = buckets.get(key);
+	if (!bucket || bucket.resetAt <= Date.now()) return 0;
+	if (bucket.count < limit) return 0;
+	return Math.ceil((bucket.resetAt - Date.now()) / 1000);
+}
+
+/**
  * Best-effort client address.
  *
  * Behind a reverse proxy the socket address is the proxy, so the forwarded

@@ -163,3 +163,41 @@ describe('the token meter on the billing page', () => {
 		expect(s.subscriptions.usage(OWNER).apiTokens).toBe(before);
 	});
 });
+
+/**
+ * The verify page's countdown starts on arrival.
+ *
+ * Registration sends the confirmation mail and seeds the resend bucket; the
+ * page's load then asks — without spending anything — how much of the minute
+ * is owed, so the button opens counting instead of inviting a click the
+ * action would refuse.
+ */
+describe('peeking at a rate limit', () => {
+	test('sees the wait a spent bucket owes, and spends nothing looking', async () => {
+		const { rateLimit, rateLimitWait, resetRateLimit } =
+			await import('../src/lib/server/rate-limit');
+		const key = 'verify-resend:peek-test';
+		resetRateLimit(key);
+
+		expect(rateLimitWait(key, 1)).toBe(0);
+
+		rateLimit(key, 1, 60_000);
+		const owed = rateLimitWait(key, 1);
+		expect(owed).toBeGreaterThan(0);
+		expect(owed).toBeLessThanOrEqual(60);
+
+		// Peeking twice changes nothing: the next real send is still the one
+		// the bucket already counted.
+		expect(rateLimitWait(key, 1)).toBe(owed);
+		resetRateLimit(key);
+	});
+
+	test('and the register action actually seeds that bucket', async () => {
+		// Source-level, like the funnel tests: the seeding lives inside a
+		// better-auth callback a unit cannot reach without a whole request.
+		const source = await import('node:fs').then((fs) =>
+			fs.readFileSync('src/routes/login/+page.server.ts', 'utf8')
+		);
+		expect(source).toContain('rateLimit(`verify-resend:${created.user.id}`');
+	});
+});

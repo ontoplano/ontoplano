@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { sendVerificationFor } from '$lib/server/auth';
-import { rateLimit } from '$lib/server/rate-limit';
+import { rateLimit, rateLimitWait } from '$lib/server/rate-limit';
 import { paymentHoldFor } from '$lib/server/services/access';
 
 /**
@@ -25,14 +25,20 @@ function onwards(userId: string): string {
 	return paymentHoldFor(userId) === 'billing' ? '/start' : '/';
 }
 
+/** One resend a minute, per account — the button counts the same 60 down. */
+const RESEND_COOLDOWN_MS = 60 * 1000;
+
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) redirect(302, '/login');
 	if (locals.user.emailVerified) redirect(302, onwards(locals.user.id));
-	return { email: locals.user.email };
+	return {
+		email: locals.user.email,
+		// The wait already owed, so the button opens counting instead of
+		// inviting a click the action would refuse: registration sent the mail
+		// seconds ago and seeded this same bucket.
+		retryAfterSeconds: rateLimitWait(`verify-resend:${locals.user.id}`, 1)
+	};
 };
-
-/** One resend a minute, per account — the button counts the same 60 down. */
-const RESEND_COOLDOWN_MS = 60 * 1000;
 
 export const actions: Actions = {
 	resend: async ({ locals }) => {
