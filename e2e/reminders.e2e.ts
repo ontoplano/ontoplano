@@ -33,9 +33,13 @@ async function dueReminder(page: import('@playwright/test').Page, message: strin
 
 	const now = new Date();
 	const pad = (n: number) => String(n).padStart(2, '0');
-	const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-	// Far enough back that the lead below is comfortably past, and still today.
+	// Far enough back that the lead below is comfortably past. The block's
+	// date comes from that moment, not from now: run between 00:00 and 00:20
+	// UTC, "twenty minutes ago" is yesterday, and stamping it with today's
+	// date put the reminder in the future — the suite failed for twenty
+	// minutes every midnight.
 	const started = new Date(now.getTime() - 20 * 60_000);
+	const today = `${started.getFullYear()}-${pad(started.getMonth() + 1)}-${pad(started.getDate())}`;
 	const startTime = `${pad(started.getHours())}:${pad(started.getMinutes())}`;
 
 	// Whatever category this account was set up with; the block needs one and

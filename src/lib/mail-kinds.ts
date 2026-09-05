@@ -12,6 +12,7 @@ export const MAIL_KINDS = {
 	verification: 'Address confirmation',
 	'password-reset': 'Password reset',
 	'address-change': 'Address change',
+	'family-invite': 'Family invitation',
 	'trial-notice': 'Trial notice',
 	'weekly-review': 'Weekly review',
 	'newsletter-confirm': 'Newsletter confirmation'

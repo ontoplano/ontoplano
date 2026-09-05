@@ -509,7 +509,7 @@
 											ta?.focus();
 										});
 									}}
-									class="btn btn-sm"
+									class="icon-btn"
 								>
 									<Icon name="edit" />
 								</button>
@@ -520,7 +520,7 @@
 									onclick={() => {
 										confirmingDeleteId = entry.id;
 									}}
-									class="border border-red-200 bg-white px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+									class="icon-btn icon-btn-danger"
 								>
 									<Icon name="trash" />
 								</button>

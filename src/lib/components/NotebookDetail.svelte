@@ -251,7 +251,7 @@
 							<div class="ml-auto flex items-center gap-2">
 								<button
 									onclick={() => (editingNoteId = entry.id)}
-									class="btn btn-sm"
+									class="icon-btn"
 									title="Edit this note"
 									aria-label="Edit this note"><Icon name="edit" /></button
 								>
@@ -277,7 +277,7 @@
 								{:else}
 									<button
 										onclick={() => (confirmDeleteNote = entry.id)}
-										class="btn btn-danger btn-sm"
+										class="icon-btn icon-btn-danger"
 										title="Delete this note"
 										aria-label="Delete this note"><Icon name="trash" /></button
 									>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Banner from '$lib/components/Banner.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -29,6 +30,15 @@
 			</p>
 
 			<div class="mt-3"><FormError message={form?.message} /></div>
+
+			{#if form && 'invited' in form && form.invited}
+				<div class="mt-3">
+					<Banner
+						kind="success"
+						message="Invitation sent. Their account is made; the email opens it."
+					/>
+				</div>
+			{/if}
 
 			{#if data.members.length > 0}
 				<ul class="mt-3 divide-y divide-gray-200 border-y border-gray-200">
@@ -63,7 +73,8 @@
 					</button>
 				</form>
 				<p class="mt-2 text-xs text-gray-500">
-					They need an account here already. Adding somebody does not create one.
+					With an account here, they are on the plan at once. Without one, they get an email that
+					opens an account already made for them.
 				</p>
 			{:else}
 				<p class="mt-3 text-xs text-gray-500">Every seat is taken.</p>

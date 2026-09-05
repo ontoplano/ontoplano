@@ -201,7 +201,7 @@
 									title="Edit"
 									aria-label="Edit"
 									onclick={() => openEdit(person)}
-									class="btn btn-sm"
+									class="icon-btn"
 								>
 									<Icon name="edit" />
 								</button>
@@ -228,7 +228,7 @@
 										title="Delete"
 										aria-label="Delete"
 										onclick={() => (confirmDelete = person.id)}
-										class="btn btn-danger btn-sm"
+										class="icon-btn icon-btn-danger"
 									>
 										<Icon name="trash" />
 									</button>

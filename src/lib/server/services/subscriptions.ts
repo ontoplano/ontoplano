@@ -23,8 +23,8 @@ import { ForbiddenError } from './errors.js';
  *
  * Everything asks `resolvePlan`; nothing asks "is this account paying". A
  * self-hosted instance is not a customer at all — it answers Pro, forever, with
- * no billing anywhere in the interface, exactly as the Telegram bot and the
- * deployment settings work.
+ * no billing anywhere in the interface, exactly as the deployment settings
+ * work.
  */
 
 export type Entitlement = {

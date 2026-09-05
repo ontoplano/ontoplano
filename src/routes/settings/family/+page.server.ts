@@ -3,12 +3,12 @@ import type { Actions, PageServerLoad } from './$types';
 import { isSelfHosted } from '$lib/server/settings';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
-	addToPlan,
 	membersOf,
 	removeFromPlan,
 	seatOwnerAccount,
 	seatsFor
 } from '$lib/server/services/subscriptions';
+import { inviteToPlan } from '$lib/server/services/family-invite';
 
 /**
  * Who else is on this plan.
@@ -40,8 +40,8 @@ export const actions: Actions = {
 	addSeat: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
-			const added = addToPlan(locals.user!.id, String(formData.get('who') ?? ''));
-			return { success: true, added: added.name };
+			const added = await inviteToPlan(locals.user!.id, String(formData.get('who') ?? ''));
+			return { success: true, added: added.name, invited: added.invited };
 		} catch (e) {
 			return toActionFailure(e);
 		}

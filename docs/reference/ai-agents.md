@@ -5,7 +5,7 @@
 
 `POST /api/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io)
 server: the same API tokens, the same scopes, and a set of tools a model can
-call. It is what "put that on my todo list" means when the thing being asked is
+call. It is what "put that on my to-do list" means when the thing being asked is
 an AI agent rather than the app.
 
 ## The short version
@@ -46,11 +46,11 @@ the assistant reaches for it instead of asking you to repeat yourself; and it
 says not to write anything yet, so the first thing it does is show you what it
 can see rather than what it has done.
 
-## Blocks and todos are different things
+## Blocks and to-dos are different things
 
 Worth knowing before you ask for anything, because it is the one distinction an
-assistant gets wrong: a **todo** is something to do with no hour attached, and a
-**block** is an hour. "Ring the dentist" is a todo; "deep work from 9 to 11" is
+assistant gets wrong: a **to-do** is something to do with no hour attached, and a
+**block** is an hour. "Ring the dentist" is a to-do; "deep work from 9 to 11" is
 a block.
 
 An assistant that only has `add_todo` answers the second by writing the time
@@ -120,7 +120,7 @@ As it stands:
 | `upcoming`                                                                          | `schedule:read`                    | The days ahead, in order                                                      |
 | `add_block`, `change_block`, `cancel_block`, `finish_block`                         | `schedule:write`                   | An hour on a day: put it there, move or rename it, take it off, answer for it |
 | `search`                                                                            | `search:read`                      | One search over everything written                                            |
-| `todos`, `add_todo`, `finish_todo`, `schedule_todo`, `unschedule_todo`, `drop_todo` | `tasks:read` / `tasks:write`       | The todo list, on and off a day, done or binned                               |
+| `todos`, `add_todo`, `finish_todo`, `schedule_todo`, `unschedule_todo`, `drop_todo` | `tasks:read` / `tasks:write`       | The to-do list, on and off a day, done or binned                              |
 | `goals`, `close_goal`                                                               | `tasks:read` / `tasks:write`       | What you are working towards, and how one ended                               |
 | `diary`, `write_entry`, `notebooks`                                                 | `notes:read` / `notes:write`       | Entries, and the subjects they belong to                                      |
 | `ideas`, `add_idea`                                                                 | `notes:read` / `notes:write`       | Things caught before they evaporated                                          |

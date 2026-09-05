@@ -10,6 +10,7 @@ import { db } from '$lib/server/db';
 import { MIN_PASSWORD_LENGTH } from '$lib/passwords';
 import { sendLogged } from '$lib/server/services/mail-log';
 import { renderEmail } from '$lib/server/email-template';
+import { familyInviteMail, takeFamilyInvite } from '$lib/server/services/family-invite';
 
 const verificationMail = (url: string) =>
 	renderEmail({
@@ -130,6 +131,21 @@ export const auth = betterAuth({
 		sendOnSignUp: true,
 		autoSignInAfterVerification: true,
 		sendVerificationEmail: async ({ user, url }) => {
+			/*
+			 * The same link, a different letter. An account made by a family
+			 * invitation gets the invitation — "X is paying for an account for
+			 * you" — because "confirm the address you registered with" is a
+			 * sentence about something they never did. The link still verifies,
+			 * still signs them in, still lands on /welcome.
+			 */
+			const invite = takeFamilyInvite(user.email);
+			if (invite) {
+				await sendLogged('family-invite', {
+					to: user.email,
+					...familyInviteMail(url, invite.ownerName)
+				});
+				return;
+			}
 			await sendLogged('verification', {
 				to: user.email,
 				...verificationMail(url)

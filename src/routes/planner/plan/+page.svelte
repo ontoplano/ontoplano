@@ -2960,7 +2960,7 @@
 						>
 							<input type="hidden" name="id" value={editingBlockId} />
 							<button type="submit" class="btn btn-sm" title="Take it off the day, keep the task">
-								Back to todo
+								Back to to-do
 							</button>
 						</form>
 					{/if}

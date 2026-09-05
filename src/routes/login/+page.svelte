@@ -45,7 +45,7 @@
 			should see that choice survived the click.
 		-->
 		{#if mode === 'register' && data.wantedPlan === 'family'}
-			<p class="mb-5 text-sm text-gray-600">Family plan. The card comes after your address.</p>
+			<p class="mb-5 text-sm text-gray-600">Family plan.</p>
 		{/if}
 
 		{#if mode === 'register' && data.needsInvite}

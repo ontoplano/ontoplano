@@ -14,11 +14,12 @@ yourself.
 the instance does. This is the right answer for almost everybody, and the rest
 of this page is about it.
 
-**The Android package.** A signed `.apk` you download and install. It is the
-same app in a wrapper — no extra features, no faster, and it does not update
-itself. There is exactly one reason to want it: **the home-screen widget**,
-which Android only lets an installed app provide. [The package, and how to
-install it](#the-android-package-and-the-one-thing-it-adds) is at the bottom.
+**The Android package.** A signed `.apk` you download once. Same app, plus the
+things Android reserves for real apps: the **home-screen widget**, and
+**notifications that arrive as Ontoplano** rather than as your browser. It does
+not update itself — the app inside is always current, the wrapper you replace
+when a release says to. [The package, and how to install
+it](#the-android-package-and-what-it-adds) is at the bottom.
 
 Answer the three questions and the steps below narrow to yours. Nothing is
 sent anywhere — the answers stay in this page.
@@ -64,17 +65,16 @@ you are looking at the app, signed in, in the browser you chose.
 
 Open your own instance and sign in.
 
-Two things have to be true before a browser will offer to install it, and if
-neither the prompt nor the menu item appears, one of them is why:
+If the browser never offers to install, the address is why: browsers only
+install web apps from **HTTPS** (or `http://localhost`), and a self-signed
+certificate does not count. Everything still works in a tab either way.
 
-- **It has to be served over HTTPS.** A browser will not install a web app from
-  a plain `http://` address — the one exception is `http://localhost`, which is
-  treated as secure for exactly this reason. A self-signed certificate does not
-  count either.
-- **The manifest has to load.** Ontoplano serves it at `/manifest.webmanifest`;
-  open that address directly and you should get JSON rather than an error page.
-
-[Running it yourself](running-it.md) has the deployment side of both.
+No HTTPS and you still want an icon and a full screen? Build the Android
+package against your own instance — `make android` in a checkout, with
+`ONTOPLANO_ORIGIN` pointed at your box. It installs and works over plain HTTP
+too; the one cost is an address bar across the top until your instance serves
+HTTPS and the app's signing fingerprint (`ANDROID_CERT_FINGERPRINTS` — [Running
+it yourself](running-it.md) has it).
 
 </div>
 
@@ -116,7 +116,7 @@ top.
 ### Android, Firefox
 
 1. Tap the **⋮** menu.
-2. Choose **Install**, or **Add to Home screen** on older versions.
+2. Choose **Add to Home screen**.
 3. Confirm.
 
 Firefox on Android installs web apps properly, but it has historically been
@@ -253,18 +253,22 @@ No, and it would be the same thing if it were: the store build is this app in a
 thin wrapper. Installing from the browser costs nothing and stays current by
 itself.
 
-## The Android package, and the one thing it adds
+## The Android package, and what it adds
 
-There is a signed `.apk`, published with each release:
-**<https://github.com/ontoplano/ontoplano/releases/latest>**.
+A signed `.apk`, on the releases page:
+**<https://github.com/ontoplano/ontoplano/releases/latest>**. It is built for
+app.ontoplano.com; running your own instance, build your own with
+`make android`.
 
-It is the same app. No extra features, and it does **not** update itself — you
-download a new one when there is one, where a browser install is always current.
-The one reason to want it:
+Same app, plus what Android reserves for installed apps:
 
-**The home-screen widget.** Android only lets an installed _app_ provide a
-widget. A web app added from the browser is not one, however much it behaves
-like one, so today's blocks on your home screen need the package.
+- **The home-screen widget** — today's blocks, habits and tasks without opening
+  anything.
+- **Notifications arrive as Ontoplano** — its icon and its name, instead of a
+  reminder dressed as your browser.
+
+The app inside is the live one, so its features are always current; you only
+download a new `.apk` when a release says the wrapper itself changed.
 
 ### Installing it
 

@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { loadConfig, saveConfig, isRegistrationMode } from '$lib/server/config';
+import { companions } from '$lib/server/services/companions';
 import { isDemo, isSelfHosted, isStaging } from '$lib/server/settings';
 import { canEditInstance } from '$lib/server/services/admin';
 import { build } from '$lib/server/services/version';
@@ -52,6 +53,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		// What is running, so "did my deploy land" is answerable from here rather
 		// than from an ssh session.
 		build: build(),
+		// The processes the app needs beside itself — the reminders timer above
+		// all. The demo has no business showing the demo box's units.
+		companions: demo ? [] : await companions(),
 		staging: isStaging(),
 		// The file says one thing and the environment may say another; the page
 		// should show what is actually in force, not what is written down.

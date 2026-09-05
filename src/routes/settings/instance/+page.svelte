@@ -174,6 +174,46 @@
 		{/if}
 	</Card>
 
+	{#if data.companions.length > 0}
+		<!--
+			The processes the app needs beside itself.
+
+			`ontoplano.service` alone is an app that works perfectly and never
+			reminds anybody of anything: reminders, the weekly review mail and
+			(where this instance sells) billing reconciliation each fire from a
+			timer of their own. This says which of them this box actually has —
+			and for reminders it reads the app's own record of being asked, which
+			is true whatever is doing the asking.
+
+			Blue for running and red for not, never green — and the word carries
+			the meaning either way.
+		-->
+		<Card
+			title="The services beside the app"
+			description="The app answers requests; these are the timers that make the rest happen."
+		>
+			<ul class="divide-y divide-gray-200">
+				{#each data.companions as row (row.unit)}
+					<li class="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2">
+						<span
+							class="h-2 w-2 shrink-0 self-center rounded-full {row.ok
+								? 'bg-blue-600'
+								: 'bg-red-600'}"
+							aria-hidden="true"
+						></span>
+						<span class="text-sm font-medium text-gray-900">{row.label}</span>
+						<span class="text-sm {row.ok ? 'text-gray-600' : 'text-red-700'}">{row.detail}</span>
+						{#if row.fix}
+							<code class="tabular basis-full pl-5 text-xs text-gray-600 sm:basis-auto sm:pl-0"
+								>{row.fix}</code
+							>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		</Card>
+	{/if}
+
 	<div class="grid gap-4 lg:grid-cols-2">
 		<!--
 			Read, not edit.

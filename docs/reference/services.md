@@ -24,10 +24,12 @@ shows up here on the next build.
 | [`calendar-feed`](#calendar-feed)               | The plan, published as a calendar anybody's software can read.                                                                                                                                                                                                       |
 | [`calendars`](#calendars)                       | Calendars somebody else controls.                                                                                                                                                                                                                                    |
 | [`client-errors`](#client-errors)               | Client-side errors, sent in with permission.                                                                                                                                                                                                                         |
+| [`companions`](#companions)                     | The processes an instance needs BESIDE the app, and whether they exist.                                                                                                                                                                                              |
 | [`ctx`](#ctx)                                   | The single argument every service function takes.                                                                                                                                                                                                                    |
 | [`demo`](#demo)                                 | A demo where everybody gets their own copy.                                                                                                                                                                                                                          |
 | [`diary`](#diary)                               | The journal: free text, free-form tags, one running number per account.                                                                                                                                                                                              |
 | [`errors`](#errors)                             | Typed errors thrown by service functions.                                                                                                                                                                                                                            |
+| [`family-invite`](#family-invite)               | The handshake between "invite somebody to the plan" and the mail that goes out.                                                                                                                                                                                      |
 | [`goals`](#goals)                               | Goals, and the progress that makes them more than a wish list.                                                                                                                                                                                                       |
 | [`habits`](#habits)                             | Habits are things to do or to avoid, logged one day at a time.                                                                                                                                                                                                       |
 | [`health`](#health)                             | Can this process actually reach the database?                                                                                                                                                                                                                        |
@@ -752,6 +754,41 @@ Forget one, once it has been dealt with.
 - `ClientErrorState`
 - `ReportedError`
 
+## companions
+
+The processes an instance needs BESIDE the app, and whether they exist.
+
+`ontoplano.service` is not the whole deployment: reminders fire from a
+systemd timer that asks `/api/jobs/reminders` once a minute, the weekly
+review mail from another, billing reconciliation from a third. A
+self-hoster who set up the service alone has an app that works perfectly
+and never reminds them of anything — and nothing anywhere said so. This is
+what the instance page reads to say so.
+
+Two authorities, in order of honesty:
+
+- For reminders, the app itself: the endpoint stamps every call, so "last
+  asked 40 seconds ago" is true whatever is doing the asking — systemd,
+  cron, or a curl in a loop.
+- For the rest, systemd: `is-active`, asked of the user manager and then
+  the system one, because the deb installs system units and the by-hand
+  setup installs user units. Reading state needs no privileges.
+
+### Functions
+
+#### `markJobRan(job)`
+
+#### `lastRanAt(job)`
+
+#### `companions()`
+
+The rows the instance page shows. Async and shelling out, so it is called
+from that one page's load and nowhere hot.
+
+### Types
+
+- `Companion`
+
 ## ctx
 
 The single argument every service function takes.
@@ -911,6 +948,45 @@ lets a form action and a JSON endpoint call the same function.
 ### Types
 
 - `ErrorCode`
+
+## family-invite
+
+The handshake between "invite somebody to the plan" and the mail that goes out.
+
+Inviting an address with no account creates the account, and better-auth
+insists on mailing every new account its verification link — which is the
+right mail for somebody who registered and the wrong one for somebody whose
+partner just added them. This map is how `sendVerificationEmail` knows which
+is which: the invite registers the address here for the duration of the
+sign-up call, and the sender swaps the letter, keeping the same link.
+
+The link itself is better-auth's ordinary verification URL, which verifies
+the address, signs the new account in, and lands it on /welcome — three
+things this module would otherwise need a token table to do.
+
+### Functions
+
+#### `expectFamilyInvite(email, ownerName)`
+
+#### `takeFamilyInvite(email)`
+
+One look, and the entry is gone — the ordinary mail returns for a resend.
+
+#### `familyInviteMail(url, ownerName)`
+
+#### `inviteToPlan(ownerId, email)`
+
+Put somebody on the plan whether or not they have an account yet.
+
+With an account, this is `addToPlan` — the seat lands instantly. Without
+one, the account is made on the spot with a password nobody knows, the seat
+attached, and the invitation mail carries better-auth's own verification
+link — which verifies the address, signs the new account in and lands it on
+/welcome. No second token system; the one the funnel already has.
+
+Creation is only offered where registration is open. On an invite-only or
+closed instance a payer typing addresses must not be a way to mint
+accounts, so those fall back to the old rule: the account has to exist.
 
 ## goals
 
@@ -2422,9 +2498,7 @@ and applies to every gym. The rows below are those occurrences.
 Times are wall-clock, like a block's, because "remind me at ten to nine"
 means ten to nine wherever you are. Delivery is deliberately somebody else's
 job: a row that is due is a row anything with the database can deliver — the
-page you have open, and on a self-hosted box the Telegram bot, which is the
-only channel that works while the app is closed without putting a stranger
-in the path.
+page you have open, or the push delivery job while the app is closed.
 
 ### Functions
 
@@ -3070,8 +3144,8 @@ What an account may do, and until when.
 
 Everything asks `resolvePlan`; nothing asks "is this account paying". A
 self-hosted instance is not a customer at all — it answers Pro, forever, with
-no billing anywhere in the interface, exactly as the Telegram bot and the
-deployment settings work.
+no billing anywhere in the interface, exactly as the deployment settings
+work.
 
 ### Functions
 

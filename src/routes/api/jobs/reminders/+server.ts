@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { tokenMatches } from '$lib/server/services/health';
 import { deliverDueReminders } from '$lib/server/services/reminder-delivery';
+import { markJobRan } from '$lib/server/services/companions';
 
 /**
  * The minute's reminders, done by the process that is already running.
@@ -26,6 +27,10 @@ export const POST: RequestHandler = async ({ request, url }) => {
 
 	// No token set means no way in, rather than a way in for everybody.
 	if (!want || !tokenMatches(want, given)) return json({ ok: false }, { status: 404 });
+
+	// The instance page reads this stamp: "last asked a minute ago" is the
+	// honest answer to "are reminders running", whoever is doing the asking.
+	markJobRan('reminders');
 
 	const result = await deliverDueReminders();
 	return json({ ok: true, ...result });

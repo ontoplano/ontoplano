@@ -10,6 +10,23 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.69.0 — 2026-09-05
+
+- **Inviting somebody to the family plan makes their account.** Type an email
+  on Settings → Family: with an account it lands on the plan at once; without
+  one, an account is made on the spot and the mail's link opens it — verified,
+  signed in, at first-run setup. Only where registration is open.
+- **The admin list says who pays for whom** — a family payer reads "pro
+  (family payer, 3 of 5 seats)" and a member "pro (on Ana's plan)".
+- The register page's family note says "Family plan." and stops.
+- **Edit and delete are the same quiet icons everywhere** — habits, people,
+  diary entries and notebook notes had kept the old bordered buttons.
+- The docs call Tasks "Tasks" and to-dos "to-dos"; installing on a phone now
+  says what the Android package actually adds (the widget, and notifications
+  that arrive as Ontoplano), that Firefox's menu item is "Add to Home screen",
+  and what a self-hoster without HTTPS can still do (build the APK). The
+  family plan has a page of its own.
+
 ## 0.68.0 — 2026-09-04
 
 - **Planner is called Tasks**, everywhere it is read.

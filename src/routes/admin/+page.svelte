@@ -109,6 +109,10 @@
 								{account.name} · joined {when(account.createdAt)} ·
 								{account.sessions}
 								{account.sessions === 1 ? 'session' : 'sessions'}
+								<!-- Who pays: a family payer and their riders read differently
+								     from a plain subscriber, and support's first question when a
+								     family's card fails is which four accounts hang off it. -->
+								· {account.plan}
 								{#if !account.emailVerified}· unverified{/if}
 							</span>
 						</a>

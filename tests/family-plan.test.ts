@@ -12,10 +12,23 @@
  * everybody with it, and nothing about one account is visible to another.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
 
 const database = makeDatabase();
 seedAccounts(database.path);
+/*
+ * The registration-mode config, before anything imports the config module —
+ * it reads ONTOPLANO_CONFIG_DIR once, at load. The invite tests below rewrite
+ * this file to move between open and closed.
+ */
+const configDir = dirname(database.path);
+process.env.ONTOPLANO_CONFIG_DIR = configDir;
+writeFileSync(
+	join(configDir, 'config.toml'),
+	'[server]\n\n[database]\n\n[week]\n\n[registration]\nmode = "open"\n'
+);
 afterAll(() => database.remove());
 
 let subscriptions: typeof import('../src/lib/server/services/subscriptions');
@@ -252,3 +265,88 @@ describe('deleting an account takes its seats with it', () => {
  * "switch to yearly" line offered them a saving that belonged to a different
  * plan. The seat count is the fact that decides it.
  */
+
+/**
+ * Inviting an address that has no account yet.
+ *
+ * The payer types an email; the account is made on the spot with a password
+ * nobody knows, the seat attached, and the mail carries better-auth's own
+ * verification link — which verifies, signs in, and lands on /welcome. Only
+ * where registration is open: anywhere else, a payer typing addresses must
+ * not be a way to mint accounts.
+ */
+describe('inviting somebody with no account', () => {
+	function setRegistration(mode: string) {
+		writeFileSync(
+			join(configDir, 'config.toml'),
+			`[server]\n\n[database]\n\n[week]\n\n[registration]\nmode = "${mode}"\n`
+		);
+	}
+
+	test('makes the account, seats it, and swaps the letter', async () => {
+		payerHas(5);
+		setRegistration('open');
+
+		const invite = await import('../src/lib/server/services/family-invite');
+		const { inviteToPlan } = invite;
+		const before = subscriptions.membersOf(OWNER).length;
+
+		const made = await inviteToPlan(OWNER, 'partner@example.test');
+		expect(made.invited).toBe(true);
+		expect(subscriptions.membersOf(OWNER).length).toBe(before + 1);
+
+		// The seat resolves like any other.
+		expect(subscriptions.resolvePlan(made.id).source).toBe('family');
+
+		// The verification sender took the invite entry, so a later resend gets
+		// the ordinary letter rather than a second invitation.
+		expect(invite.takeFamilyInvite('partner@example.test')).toBeNull();
+	});
+
+	test('an existing account still lands instantly, not by mail', async () => {
+		payerHas(5);
+		const { inviteToPlan } = await import('../src/lib/server/services/family-invite');
+		// The account the first test minted, taken off the plan and re-added:
+		// this time it exists, so no mail and no second account.
+		const partner = subscriptions.membersOf(OWNER).find((m) => m.email.startsWith('partner@'))!;
+		subscriptions.removeFromPlan(OWNER, partner.id);
+		const added = await inviteToPlan(OWNER, 'partner@example.test');
+		expect(added.invited).toBe(false);
+		expect(added.id).toBe(partner.id);
+	});
+
+	test('a closed instance refuses to mint an account for a seat', async () => {
+		payerHas(5);
+		const { inviteToPlan } = await import('../src/lib/server/services/family-invite');
+		setRegistration('invite');
+		await expect(inviteToPlan(OWNER, 'nobody-here@example.test')).rejects.toThrow(
+			/No account here uses that address/
+		);
+		setRegistration('open');
+	});
+});
+
+/**
+ * The instance page's answer to "are reminders actually running".
+ *
+ * The app's own record of being asked outranks systemd: the endpoint stamps
+ * every call, so "last asked a minute ago" is true whether the asker is the
+ * timer, cron, or a curl in a loop — and it needs no permissions at all.
+ */
+describe('the companion services card', () => {
+	test('a fresh stamp reads as running, and its absence as silence', async () => {
+		const { markJobRan, companions } = await import('../src/lib/server/services/companions');
+
+		markJobRan('reminders');
+		const rows = await companions();
+		const reminders = rows.find((r) => r.label === 'Reminders')!;
+		expect(reminders.ok).toBe(true);
+		expect(reminders.detail).toContain('last asked this app');
+		expect(reminders.fix).toBe('');
+
+		// Every row that is not fine ends with the command that fixes it.
+		for (const row of rows.filter((r) => !r.ok)) {
+			expect(row.fix, `${row.label} has no fix command`).toContain('systemctl');
+		}
+	});
+});

@@ -6,7 +6,7 @@ import { auditEvents, subscriptions } from '../db/schema.js';
 import { ROLES, type Role } from '../../roles.js';
 import { isInstanceOwner, isSelfHosted } from '../settings.js';
 import { record } from './audit.js';
-import { resolvePlan, startTrial } from './subscriptions.js';
+import { membersOf, resolvePlan, seatOwnerAccount, seatsFor, startTrial } from './subscriptions.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { str } from './validate.js';
 import { deleteAccount } from './account.js';
@@ -350,6 +350,22 @@ function describePlan(userId: string): string {
 	if (entitlement.source === 'self-hosted') return 'self-hosted';
 	if (entitlement.source === 'trial') return `${entitlement.plan} (trial)`;
 	if (entitlement.source === 'lapsed') return 'free (lapsed)';
+
+	/*
+	 * A family plan, said from whichever end this account is.
+	 *
+	 * The payer used to read as a plain "pro" and a member as another plain
+	 * "pro", so the operator could not tell one paid account from five riding
+	 * on it — the exact question support gets when a family's card fails.
+	 */
+	if (entitlement.source === 'family') {
+		const owner = seatOwnerAccount(userId);
+		return owner ? `pro (on ${owner.name}'s plan)` : 'pro (family seat)';
+	}
+	const seats = seatsFor(userId);
+	if (seats > 1) {
+		return `${entitlement.plan} (family payer, ${membersOf(userId).length + 1} of ${seats} seats)`;
+	}
 	return entitlement.plan;
 }
 
