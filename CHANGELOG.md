@@ -12,6 +12,12 @@ version.
 
 ## 0.72.0 — 2026-09-05
 
+- **Integrations, three small honesties**: the caution under `search:read`
+  is bordered to its own row instead of reading like a warning about the
+  whole form; the freshly-created token's card links "How Ontoplano's MCP
+  server works, tool by tool" instead of re-explaining what the prompt above
+  it already does; and an empty token list says, beside the button, that
+  New token → "An AI assistant (MCP)" is how an assistant gets in.
 - The welcome tour names the rooms as they are named — Tasks and Notes, not
   "the planner" and "the diary" — and the architecture page stops claiming
   there are no other running parts: the two job timers are named, with what

@@ -208,7 +208,7 @@ Token: ${token}`;
 					rel="noreferrer"
 					class="text-blue-800 underline decoration-blue-300 underline-offset-2 hover:text-blue-900"
 				>
-					See how to use this with an AI assistant →
+					How Ontoplano’s MCP server works, tool by tool →
 				</a>
 			</p>
 		</div>
@@ -365,7 +365,11 @@ Token: ${token}`;
 										<code class="font-mono text-xs text-gray-900">{scope.key}</code>
 										<span class="text-gray-500">— {scope.description}</span>
 										{#if scope.caution}
-											<span class="mt-0.5 block text-xs font-medium text-amber-700">
+											<!-- Bordered to this row: at the list's foot it read as a
+											     warning about the whole form, and it is about this tick. -->
+											<span
+												class="mt-1 mb-0.5 block border-l-2 border-amber-600 pl-2 text-xs font-medium text-amber-700"
+											>
 												Careful: {scope.caution}
 											</span>
 										{/if}
@@ -384,6 +388,14 @@ Token: ${token}`;
 		</Modal>
 
 		{#if data.tokens.length === 0}
+			<!-- The one thing a first visit is likeliest here for, said beside the
+			     button that does it — and gone the moment a token exists. -->
+			<div class="mx-3 mb-2 border border-blue-200 bg-blue-50 p-3">
+				<p class="text-sm text-blue-900">
+					<strong>New token</strong> is how an AI assistant gets in — press it, then the
+					<strong>An AI assistant (MCP)</strong> button ticks everything one needs.
+				</p>
+			</div>
 			<div class="px-3">
 				<EmptyState icon="key" title="No tokens yet — create one to let another app in" compact />
 			</div>
