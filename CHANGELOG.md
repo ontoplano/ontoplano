@@ -10,6 +10,21 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.78.0 — 2026-09-05
+
+- **Days moved before 0.77.0 come back to their block's hour.** The fix in
+  0.77.0 moves generated days when the template moves, but rows moved before
+  it kept the old hour forever. Generation now re-aligns any future unfinished
+  day whose clock disagrees with its block, reminders included — no manual
+  step, it heals on the next visit.
+- **A goal's card unfolds what already counts towards it.** Tasks (n) opens a
+  list on the card: linked todos with a checkbox that finishes and reopens
+  them, linked blocks and activities as lines, and the choosing modal behind a
+  button inside the fold.
+- **`change_repeating_block` says plainly that `title` edits the block's text
+  and keeps it the activity it is** — an assistant read the old wording as
+  "renaming unmakes the activity" and gave up.
+
 ## 0.77.0 — 2026-09-05
 
 - **Moving a repeating block moves the days it already made.** The template
