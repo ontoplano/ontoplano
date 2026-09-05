@@ -18,6 +18,15 @@ whoever owns the data, and the picker shows the sentence.
 Grant the narrowest set that works. A token lives on a phone, in a config
 file, in somebody else's service — what it cannot read cannot leak.
 
+One thing to know before granting a `:write` on its own: writing does **not**
+imply reading, and most changes name the thing they change by the id the
+matching read handed out. `tasks:write` alone can add a todo and cannot find
+the todo you asked it to finish. Where naming a thing is unambiguous the write
+tool takes a name instead — `tick_habit` accepts `"stretching"` — so
+`habits:write` on its own is a usable grant. Everywhere else, pair the two.
+The token form says so under the tick rather than leaving you to find out from
+an assistant that cannot do what you asked.
+
 <!-- generated: permissions -->
 
 The REST side of the same table — which endpoint asks for which scope — is

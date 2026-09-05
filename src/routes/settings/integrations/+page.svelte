@@ -396,6 +396,28 @@ Token: ${token}`;
 									<span>
 										<code class="font-mono text-xs text-gray-900">{scope.key}</code>
 										<span class="text-gray-500">— {scope.description}</span>
+										{#if scope.key.endsWith(':write') && cautionsArmed[scope.key] && !cautionsArmed[scope.key.replace(':write', ':read')]}
+											<!--
+												Write without read.
+
+												Most write tools take an id, and ids come from the read
+												tool next to them: `habits:write` alone can tick a habit
+												by name and nothing else, and `tasks:write` alone cannot
+												find the todo it is meant to finish. The pair is not
+												forced — a token that may add to the shopping list
+												without reading the list is a real thing to want — but a
+												grant that will not work is worth one sentence before it
+												is made.
+											-->
+											<span
+												class="mt-1 mb-0.5 block border-l-2 border-blue-600 pl-2 text-xs font-medium text-blue-700"
+											>
+												Without <code class="font-mono">{scope.key.replace(':write', ':read')}</code
+												>
+												it can write but not look: most changes name a thing by the id the matching read
+												gives.
+											</span>
+										{/if}
 										{#if scope.caution && cautionsArmed[scope.key]}
 											<!-- Only once the tick is in: a warning about a grant nobody
 											     is granting is noise, and named for its permission. -->
