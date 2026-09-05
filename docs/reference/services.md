@@ -979,6 +979,14 @@ Hashed and stored the way better-auth stores every credential, so the next
 sign-in is an ordinary sign-in. Clears the pending flag, which is what lets
 /welcome proceed.
 
+#### `familyOfferMail(url, ownerName)`
+
+The mail an account that already exists gets: a question, not news.
+
+Nothing has happened to their account when this lands — the seat is an
+offer sitting in the app, and the link goes to the page with the two
+buttons on it.
+
 #### `familyInviteMail(url, ownerName)`
 
 #### `inviteToPlan(ownerId, email)`
@@ -3252,7 +3260,19 @@ How many accounts this subscription is allowed to cover.
 
 #### `membersOf(ownerId)`
 
-The accounts on somebody's plan, the payer excluded.
+The accounts on somebody's plan, the payer excluded. Accepted seats only.
+
+#### `invitesOf(ownerId)`
+
+The people this plan has offered a seat to, who have not answered yet.
+
+#### `invitationFor(memberId)`
+
+The offer waiting for this account, if there is one.
+
+What the band at the top of every page is made of: who is offering, and
+whether saying yes would cost this account a subscription it is paying for
+itself. Both have to be on the screen where the button is.
 
 #### `familyUserIds(userId)`
 
@@ -3264,6 +3284,14 @@ one, which is what makes the sharing predicates below safe to apply
 unconditionally — alone, they reduce to the ordinary ownership check.
 
 #### `seatOwnerOf(memberId)`
+
+#### `seatsTaken(ownerId)`
+
+Seats spoken for: the members plus the offers still out.
+
+An unanswered offer holds its seat. Otherwise a five-seat plan could have
+twenty invitations out and the fifth acceptance would be the one that
+fails, which is a rule the payer meets at the worst possible moment.
 
 #### `seatOwnerAccount(memberId)`
 
@@ -3285,6 +3313,24 @@ registration must not gain a back door because a payer typed an address.
 Refuses when the plan has no room, when the account already has a plan of its
 own — being on two at once is a question with no good answer, and the second
 payer would be paying for nothing — and when the payer is not paying.
+
+#### `acceptPlanInvite(memberId)`
+
+Say yes to an offer.
+
+Refused while the account pays for itself, and deliberately: accepting
+would leave them on somebody else's plan and still being charged by the
+provider for their own. Cancelling somebody's subscription as a side effect
+of pressing Accept is not a thing this app will do to a card, so the answer
+is to cancel it themselves first, which the message says.
+
+#### `declinePlanInvite(memberId)`
+
+Say no to it. The row goes; the payer sees the seat free again.
+
+#### `cancelPlanInvite(ownerId, memberId)`
+
+And the payer can take the offer back while it is still unanswered.
 
 #### `removeFromPlan(ownerId, memberId)`
 

@@ -455,6 +455,48 @@
 			</div>
 		{/if}
 
+		{#if data.familyOffer}
+			<!--
+				Somebody has offered to pay for this account, and nothing has
+				happened to it yet. The band asks; the two buttons answer.
+
+				Blue rather than amber: this is not a warning, it is an offer —
+				and the sentence about a subscription of one's own only appears
+				for the account that has one, because for everybody else it is a
+				complication that does not apply to them.
+			-->
+			<div
+				class="relative z-50 flex flex-wrap items-center justify-between gap-2 bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+			>
+				<span>
+					<strong>{data.familyOffer.ownerName}</strong> offers to pay for your account.
+					{#if data.familyOffer.ownPlanEnds}
+						You pay for it yourself today — cancel your own subscription first, then accept.
+					{:else}
+						Your notes and your week stay yours; only the invoice changes.
+					{/if}
+				</span>
+				<span class="flex shrink-0 items-center gap-1">
+					<form method="post" action="/settings/billing?/declineFamilyOffer" use:enhance>
+						<button
+							class="border border-blue-200 px-2 py-1 text-xs font-semibold hover:bg-blue-500"
+						>
+							No thanks
+						</button>
+					</form>
+					{#if !data.familyOffer.ownPlanEnds}
+						<form method="post" action="/settings/billing?/acceptFamilyOffer" use:enhance>
+							<button
+								class="border border-white bg-white px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+							>
+								Accept
+							</button>
+						</form>
+					{/if}
+				</span>
+			</div>
+		{/if}
+
 		{#if data.impersonatedBy}
 			<!--
 				Loud on purpose. An administrator looking at somebody's account is a

@@ -1,4 +1,4 @@
-import { and, count, eq, isNull } from 'drizzle-orm';
+import { and, count, eq, isNotNull, isNull } from 'drizzle-orm';
 
 import {
 	LIMIT_LABELS,
@@ -87,7 +87,9 @@ export function resolvePlan(userId: string, now = new Date()): Entitlement {
 		const seat = db
 			.select({ ownerId: planMembers.ownerId })
 			.from(planMembers)
-			.where(eq(planMembers.memberId, userId))
+			// Accepted only. An offer nobody has answered grants nothing, or a
+			// payer could move somebody onto their plan by typing an address.
+			.where(and(eq(planMembers.memberId, userId), isNotNull(planMembers.acceptedAt)))
 			.get();
 
 		if (seat) {
@@ -431,15 +433,52 @@ export function seatsFor(userId: string): number {
 	return row?.seats ?? 1;
 }
 
-/** The accounts on somebody's plan, the payer excluded. */
+/** The accounts on somebody's plan, the payer excluded. Accepted seats only. */
 export function membersOf(ownerId: string): { id: string; name: string; email: string }[] {
 	return db
 		.select({ id: user.id, name: user.name, email: user.email })
 		.from(planMembers)
 		.innerJoin(user, eq(planMembers.memberId, user.id))
-		.where(eq(planMembers.ownerId, ownerId))
+		.where(and(eq(planMembers.ownerId, ownerId), isNotNull(planMembers.acceptedAt)))
 		.orderBy(user.name)
 		.all();
+}
+
+/** The people this plan has offered a seat to, who have not answered yet. */
+export function invitesOf(ownerId: string): { id: string; name: string; email: string }[] {
+	return db
+		.select({ id: user.id, name: user.name, email: user.email })
+		.from(planMembers)
+		.innerJoin(user, eq(planMembers.memberId, user.id))
+		.where(and(eq(planMembers.ownerId, ownerId), isNull(planMembers.acceptedAt)))
+		.orderBy(user.name)
+		.all();
+}
+
+/**
+ * The offer waiting for this account, if there is one.
+ *
+ * What the band at the top of every page is made of: who is offering, and
+ * whether saying yes would cost this account a subscription it is paying for
+ * itself. Both have to be on the screen where the button is.
+ */
+export function invitationFor(
+	memberId: string
+): { ownerId: string; ownerName: string; ownPlanEnds: string | null } | null {
+	const row = db
+		.select({ ownerId: planMembers.ownerId, ownerName: user.name })
+		.from(planMembers)
+		.innerJoin(user, eq(planMembers.ownerId, user.id))
+		.where(and(eq(planMembers.memberId, memberId), isNull(planMembers.acceptedAt)))
+		.get();
+	if (!row) return null;
+
+	const own = resolvePlan(memberId);
+	return {
+		ownerId: row.ownerId,
+		ownerName: row.ownerName,
+		ownPlanEnds: own.billable && own.plan !== 'none' ? own.until : null
+	};
 }
 
 /** Whose plan is paying for this account, if it is not their own. */
@@ -462,9 +501,23 @@ export function seatOwnerOf(memberId: string): string | null {
 	const row = db
 		.select({ ownerId: planMembers.ownerId })
 		.from(planMembers)
-		.where(eq(planMembers.memberId, memberId))
+		.where(and(eq(planMembers.memberId, memberId), isNotNull(planMembers.acceptedAt)))
 		.get();
 	return row?.ownerId ?? null;
+}
+
+/**
+ * Seats spoken for: the members plus the offers still out.
+ *
+ * An unanswered offer holds its seat. Otherwise a five-seat plan could have
+ * twenty invitations out and the fifth acceptance would be the one that
+ * fails, which is a rule the payer meets at the worst possible moment.
+ */
+export function seatsTaken(ownerId: string): number {
+	return (
+		db.select({ n: count() }).from(planMembers).where(eq(planMembers.ownerId, ownerId)).get()?.n ??
+		0
+	);
 }
 
 /**
@@ -505,8 +558,8 @@ export function addToPlan(ownerId: string, email: string): { id: string; name: s
 	if (seats <= 1) throw new ValidationError('This plan covers one account');
 
 	// The payer holds a seat too, which is why the comparison is against
-	// seats - 1 rather than seats.
-	if (membersOf(ownerId).length >= seats - 1) {
+	// seats - 1 rather than seats. Offers count: see `seatsTaken`.
+	if (seatsTaken(ownerId) >= seats - 1) {
 		throw new ValidationError(`This plan covers ${seats} accounts, and they are all taken`);
 	}
 
@@ -523,6 +576,7 @@ export function addToPlan(ownerId: string, email: string): { id: string; name: s
 	}
 
 	if (seatOwnerOf(account.id)) throw new ValidationError('That account is already on a plan');
+	if (invitationFor(account.id)) throw new ValidationError('That account has already been asked');
 
 	const theirs = db
 		.select({ id: subscriptions.id })
@@ -533,10 +587,75 @@ export function addToPlan(ownerId: string, email: string): { id: string; name: s
 		throw new ValidationError('That account already pays for itself');
 	}
 
+	// An offer, not a seat. `accepted_at` stays null until the other account
+	// says yes — see the column's own note for why a payer cannot simply move
+	// somebody onto their plan.
 	db.insert(planMembers).values({ ownerId, memberId: account.id }).run();
-	record(ownerId, 'seat_added', { detail: { member: account.id } });
+	record(ownerId, 'seat_offered', { detail: { member: account.id } });
 
 	return { id: account.id, name: account.name };
+}
+
+/**
+ * Say yes to an offer.
+ *
+ * Refused while the account pays for itself, and deliberately: accepting
+ * would leave them on somebody else's plan and still being charged by the
+ * provider for their own. Cancelling somebody's subscription as a side effect
+ * of pressing Accept is not a thing this app will do to a card, so the answer
+ * is to cancel it themselves first, which the message says.
+ */
+export function acceptPlanInvite(memberId: string): { ownerId: string } {
+	const row = db
+		.select({ id: planMembers.id, ownerId: planMembers.ownerId })
+		.from(planMembers)
+		.where(and(eq(planMembers.memberId, memberId), isNull(planMembers.acceptedAt)))
+		.get();
+	if (!row) throw new NotFoundError('There is no invitation waiting');
+
+	const own = resolvePlan(memberId);
+	if (own.billable && own.plan !== 'none') {
+		throw new ValidationError(
+			'You are paying for this account yourself. Cancel your own subscription first, then accept.'
+		);
+	}
+
+	if (resolvePlan(row.ownerId).plan === 'none') {
+		throw new ValidationError('That plan is no longer active');
+	}
+
+	db.update(planMembers)
+		.set({ acceptedAt: new Date().toISOString() })
+		.where(eq(planMembers.id, row.id))
+		.run();
+	record(memberId, 'seat_accepted', { detail: { owner: row.ownerId } });
+	return { ownerId: row.ownerId };
+}
+
+/** Say no to it. The row goes; the payer sees the seat free again. */
+export function declinePlanInvite(memberId: string): void {
+	const result = db
+		.delete(planMembers)
+		.where(and(eq(planMembers.memberId, memberId), isNull(planMembers.acceptedAt)))
+		.run();
+	if (result.changes === 0) throw new NotFoundError('There is no invitation waiting');
+	record(memberId, 'seat_declined');
+}
+
+/** And the payer can take the offer back while it is still unanswered. */
+export function cancelPlanInvite(ownerId: string, memberId: string): void {
+	const result = db
+		.delete(planMembers)
+		.where(
+			and(
+				eq(planMembers.ownerId, ownerId),
+				eq(planMembers.memberId, memberId),
+				isNull(planMembers.acceptedAt)
+			)
+		)
+		.run();
+	if (result.changes === 0) throw new NotFoundError('There is no invitation waiting');
+	record(ownerId, 'seat_offer_withdrawn', { detail: { member: memberId } });
 }
 
 /** Take an account off a plan. Their data is untouched; only the seat goes. */

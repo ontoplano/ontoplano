@@ -39,7 +39,7 @@ exist.
 | [`media`](#media)                                 | 9       | yes               |
 | [`notebooks`](#notebooks)                         | 8       | yes               |
 | [`people`](#people)                               | 12      | yes               |
-| [`plan_members`](#plan_members)                   | 4       | —                 |
+| [`plan_members`](#plan_members)                   | 5       | —                 |
 | [`planning_schemes`](#planning_schemes)           | 5       | yes               |
 | [`plugin_manifests`](#plugin_manifests)           | 8       | yes               |
 | [`price_points`](#price_points)                   | 6       | yes               |
@@ -621,12 +621,13 @@ Indexes:
 
 ## plan_members
 
-| Column       | Type    | Null     | Default               | Notes             |
-| ------------ | ------- | -------- | --------------------- | ----------------- |
-| `id`         | integer | not null | —                     | primary key, auto |
-| `owner_id`   | text    | not null | —                     | → `user.id`       |
-| `member_id`  | text    | not null | —                     | → `user.id`       |
-| `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| Column        | Type    | Null     | Default               | Notes             |
+| ------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`          | integer | not null | —                     | primary key, auto |
+| `owner_id`    | text    | not null | —                     | → `user.id`       |
+| `member_id`   | text    | not null | —                     | → `user.id`       |
+| `accepted_at` | text    | null     | —                     | —                 |
+| `created_at`  | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
 

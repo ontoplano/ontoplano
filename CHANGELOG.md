@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.76.0 — 2026-09-05
+
+- **Nobody joins a family plan without being asked.** Typing the address of
+  an account that already exists now offers it a seat: a band at the top of
+  their app and an email, with Accept and No thanks. The seat is held while
+  they decide, the payer can withdraw the offer, and an account that pays for
+  its own subscription has to cancel that first. An address with no account
+  behind it is unchanged — the account is made for them, as before.
+
 ## 0.75.2 — 2026-09-05
 
 - **The family plan's year is $99.00** (it was $100.80 — a round number

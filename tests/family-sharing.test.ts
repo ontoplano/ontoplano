@@ -50,7 +50,10 @@ beforeAll(async () => {
 		currentPeriodEnd: '2126-01-01T00:00:00.000Z',
 		seats: 5
 	});
+	// Offered and accepted: a seat exists only when the other account has said
+	// yes to it, which is what stops a payer moving somebody onto their plan.
 	subscriptions.addToPlan(OWNER, 'stranger@test.invalid');
+	subscriptions.acceptPlanInvite(STRANGER);
 });
 
 afterAll(() => {

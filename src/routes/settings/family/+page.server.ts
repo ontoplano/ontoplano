@@ -3,6 +3,8 @@ import type { Actions, PageServerLoad } from './$types';
 import { isSelfHosted } from '$lib/server/settings';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
+	cancelPlanInvite,
+	invitesOf,
 	membersOf,
 	removeFromPlan,
 	seatOwnerAccount,
@@ -26,7 +28,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const owner = seatOwnerAccount(locals.user!.id);
 	if (seats <= 1 && !owner) error(404, 'Not found');
 
-	return { seats, members: membersOf(locals.user!.id), seatOwner: owner };
+	return {
+		seats,
+		members: membersOf(locals.user!.id),
+		// Offers nobody has answered. They hold their seat and grant nothing,
+		// so the payer has to be able to see them and take them back.
+		invited: invitesOf(locals.user!.id),
+		seatOwner: owner
+	};
 };
 
 export const actions: Actions = {
@@ -42,6 +51,16 @@ export const actions: Actions = {
 		try {
 			const added = await inviteToPlan(locals.user!.id, String(formData.get('who') ?? ''));
 			return { success: true, added: added.name, invited: added.invited };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	withdrawInvite: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			cancelPlanInvite(locals.user!.id, String(formData.get('member') ?? ''));
+			return { success: true, withdrawn: true };
 		} catch (e) {
 			return toActionFailure(e);
 		}

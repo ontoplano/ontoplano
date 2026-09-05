@@ -41,8 +41,13 @@
 				</div>
 			{:else if form && 'added' in form && form.added}
 				<div class="mt-3">
-					<Banner kind="success" message="Added — they are on the plan now." />
+					<Banner
+						kind="success"
+						message="Asked — the seat is theirs when they accept. They have an email about it."
+					/>
 				</div>
+			{:else if form && 'withdrawn' in form && form.withdrawn}
+				<div class="mt-3"><Banner kind="success" message="The offer is withdrawn." /></div>
 			{/if}
 
 			{#if data.members.length > 0}
@@ -88,7 +93,32 @@
 				</ul>
 			{/if}
 
-			{#if data.members.length < data.seats - 1}
+			{#if data.invited.length > 0}
+				<!--
+					Offers, not members. An account that already existed is asked
+					rather than moved, so these sit apart from the seats that are
+					actually in use — and each one can be taken back.
+				-->
+				<p class="eyebrow mt-4 text-gray-500">Waiting for an answer</p>
+				<ul class="mt-1 divide-y divide-gray-200 border-y border-gray-200">
+					{#each data.invited as person (person.id)}
+						<li class="flex items-center justify-between gap-3 py-2">
+							<span class="min-w-0">
+								<span class="block truncate text-sm text-gray-900">{person.email}</span>
+								<span class="block truncate text-xs text-gray-500">
+									asked — the seat is held until they answer
+								</span>
+							</span>
+							<form method="post" action="?/withdrawInvite" use:enhance class="shrink-0">
+								<input type="hidden" name="member" value={person.id} />
+								<button class="btn btn-sm">Withdraw</button>
+							</form>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+
+			{#if data.members.length + data.invited.length < data.seats - 1}
 				<form method="post" action="?/addSeat" use:enhance class="mt-3 flex flex-wrap gap-2">
 					<input
 						name="who"
@@ -102,8 +132,8 @@
 					</button>
 				</form>
 				<p class="mt-2 text-xs text-gray-500">
-					With an account here, they are on the plan at once. Without one, they get an email that
-					opens an account already made for them.
+					With an account here, they are asked first and the seat is theirs once they accept.
+					Without one, they get an email that opens an account already made for them.
 				</p>
 			{:else}
 				<p class="mt-3 text-xs text-gray-500">Every seat is taken.</p>

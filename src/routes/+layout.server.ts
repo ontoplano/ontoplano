@@ -20,6 +20,7 @@ import { buildCtx } from '$lib/server/services/ctx';
 import { loadConfig } from '$lib/server/config';
 import { mediaLimits } from '$lib/server/services/media';
 import { publicKey } from '$lib/server/services/push';
+import { invitationFor } from '$lib/server/services/subscriptions';
 
 export const load: LayoutServerLoad = async (event) => {
 	// Anything under /login, not just /login itself — /login/reset is where a
@@ -113,8 +114,19 @@ export const load: LayoutServerLoad = async (event) => {
 		tutorialPending = isDemoInstance() || !hasSeenTutorial(ctx.userId);
 	}
 
+	/*
+	 * A family plan offering to pay for this account.
+	 *
+	 * On every page rather than on the billing tab, because it is a question
+	 * somebody else asked about this account and the answer is not urgent
+	 * enough to visit a settings page for — and until it is answered nothing
+	 * has changed, which is exactly the state a band is for.
+	 */
+	const familyOffer = event.locals.user ? invitationFor(event.locals.user.id) : null;
+
 	return {
 		user: event.locals.user ?? null,
+		familyOffer,
 		// Set while an administrator is borrowing this session. The banner it
 		// draws is the whole point: nobody should be able to look at somebody's
 		// diary without the screen saying so.

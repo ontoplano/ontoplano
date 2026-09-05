@@ -31,6 +31,10 @@ export const AUDIT_EVENTS = [
 	// Somebody being given or taken off a paid seat is somebody's access
 	// changing without them doing anything, which is exactly what a log is for.
 	'seat_added',
+	'seat_offered',
+	'seat_offer_withdrawn',
+	'seat_accepted',
+	'seat_declined',
 	'seat_removed'
 ] as const;
 

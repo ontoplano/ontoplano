@@ -4,7 +4,13 @@ import { LIMIT_KEYS, PLANS } from '$lib/plans';
 import { isSelfHosted } from '$lib/server/settings';
 import { buildCtx } from '$lib/server/services/ctx';
 import { exportAllowance } from '$lib/server/services/account';
-import { resolvePlan, seatsFor, usage } from '$lib/server/services/subscriptions';
+import {
+	acceptPlanInvite,
+	declinePlanInvite,
+	resolvePlan,
+	seatsFor,
+	usage
+} from '$lib/server/services/subscriptions';
 import {
 	changeInterval,
 	checkoutTrialDays,
@@ -84,6 +90,31 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
+	/*
+	 * The two answers to a family plan's offer.
+	 *
+	 * Here rather than on a page of their own because the band that asks the
+	 * question is on every page, and billing is where the consequence lands —
+	 * somebody who wants to look before answering is already on the right tab.
+	 */
+	acceptFamilyOffer: async ({ locals }) => {
+		try {
+			acceptPlanInvite(locals.user!.id);
+			return { success: true, joined: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	declineFamilyOffer: async ({ locals }) => {
+		try {
+			declinePlanInvite(locals.user!.id);
+			return { success: true, declined: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	checkout: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const interval = formData.get('interval') === 'yearly' ? 'yearly' : 'monthly';

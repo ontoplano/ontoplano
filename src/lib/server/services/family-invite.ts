@@ -58,6 +58,25 @@ export async function chooseFirstPassword(userId: string, password: unknown): Pr
 	setUserSetting(userId, PASSWORD_PENDING_KEY, 'false');
 }
 
+/**
+ * The mail an account that already exists gets: a question, not news.
+ *
+ * Nothing has happened to their account when this lands — the seat is an
+ * offer sitting in the app, and the link goes to the page with the two
+ * buttons on it.
+ */
+export function familyOfferMail(url: string, ownerName: string) {
+	return renderEmail({
+		subject: `${ownerName} offered to pay for your ontoplano account`,
+		lines: [
+			`${ownerName} has a family plan and would like your account on it. Nothing has changed yet: it is yours until you accept.`,
+			'If you accept, they pay and you keep everything — your notes and your week stay your own, and the only thing shared is the invoice.'
+		],
+		action: { label: 'Look at the offer', url },
+		small: ['If you were not expecting this, decline it and nothing happens.']
+	});
+}
+
 export function familyInviteMail(url: string, ownerName: string) {
 	return renderEmail({
 		subject: `${ownerName} added you to their ontoplano plan`,
@@ -93,7 +112,18 @@ export async function inviteToPlan(
 		.toLowerCase();
 
 	const existing = db.select().from(user).where(eq(user.email, wanted)).get();
-	if (existing) return { ...addToPlan(ownerId, wanted), invited: false };
+	if (existing) {
+		// An account that already exists is asked, never moved. `addToPlan`
+		// writes the offer; this sends the mail that lets them answer it
+		// without waiting to notice the band in the app.
+		const offered = addToPlan(ownerId, wanted);
+		const payer = db.select({ name: user.name }).from(user).where(eq(user.id, ownerId)).get();
+		await sendLogged('family-offer', {
+			to: wanted,
+			...familyOfferMail(`${process.env.ORIGIN ?? ''}/settings/billing`, payer?.name ?? 'Somebody')
+		});
+		return { ...offered, invited: false };
+	}
 
 	// The seat checks, before an account is made for a plan with no room.
 	const owner = resolvePlan(ownerId);
@@ -145,7 +175,11 @@ export async function inviteToPlan(
 	const memberId = created.id;
 	markPasswordPending(memberId);
 
-	db.insert(planMembers).values({ ownerId, memberId }).run();
+	// Accepted on the spot, unlike an offer to an account that already exists:
+	// this one was made by the payer a line ago and has never been anybody's,
+	// so there is nobody to ask. The mail below is how its owner first hears
+	// of it at all.
+	db.insert(planMembers).values({ ownerId, memberId, acceptedAt: new Date().toISOString() }).run();
 	record(ownerId, 'seat_added', { detail: { member: memberId, invited: true } });
 
 	// Delivery is not the transaction: the seat exists either way, the failure

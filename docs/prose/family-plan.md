@@ -17,11 +17,17 @@ whoever holds the card.
 That is the whole procedure, and it does not matter whether that address has
 an account yet:
 
-- **Already has one** — they are on your plan the moment you press the button.
+- **Already has one** — they are asked. A band appears at the top of their
+  app, and an email goes out saying you have offered; the seat is held for
+  them but nothing about their account changes until they accept. You can
+  withdraw the offer while it is unanswered, and they can decline it. An
+  account that pays for its own subscription has to cancel that first —
+  otherwise accepting would leave them on your plan and still paying.
 - **Does not** — an account is made for them on the spot, and they get an
   email saying you are paying for it. The link in it opens their account,
   already signed in, asks them to choose a password, and goes on to the
-  first-run setup.
+  first-run setup. Nothing is asked of them, because the account did not
+  exist a minute ago.
 
 ## Leaving, and ending
 

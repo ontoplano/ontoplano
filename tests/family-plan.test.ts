@@ -11,7 +11,7 @@
  * whatever the plan actually has room for, cancelling the payer's plan takes
  * everybody with it, and nothing about one account is visible to another.
  */
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -79,11 +79,34 @@ describe('seats', () => {
 		expect(() => subscriptions.addToPlan(OWNER, strangerEmail())).toThrow(/covers one account/);
 	});
 
-	test('a family plan lets the payer put somebody on it', () => {
+	test('a family plan lets the payer OFFER a seat — and nothing more', () => {
 		payerHas(5);
 		const added = subscriptions.addToPlan(OWNER, strangerEmail());
 		expect(added.id).toBe(STRANGER);
+
+		/*
+		 * The hijack this exists to stop: typing somebody's address used to put
+		 * their account on the payer's plan, which is a thing done TO an account
+		 * by a stranger who knows its email address. Until it is accepted the
+		 * offer grants nothing and takes nothing.
+		 */
+		expect(subscriptions.membersOf(OWNER)).toEqual([]);
+		expect(subscriptions.invitesOf(OWNER).map((m) => m.id)).toEqual([STRANGER]);
+		expect(subscriptions.seatOwnerOf(STRANGER)).toBe(null);
+		expect(subscriptions.resolvePlan(STRANGER).plan).toBe('none');
+		expect(subscriptions.familyUserIds(OWNER)).toEqual([OWNER]);
+	});
+
+	test('the offer holds its seat, so a payer cannot ask more people than it covers', () => {
+		expect(subscriptions.seatsTaken(OWNER)).toBe(1);
+	});
+
+	test('accepting is what puts them on it', () => {
+		expect(subscriptions.invitationFor(STRANGER)?.ownerId).toBe(OWNER);
+		subscriptions.acceptPlanInvite(STRANGER);
 		expect(subscriptions.membersOf(OWNER).map((m) => m.id)).toEqual([STRANGER]);
+		expect(subscriptions.invitesOf(OWNER)).toEqual([]);
+		expect(subscriptions.invitationFor(STRANGER)).toBe(null);
 	});
 
 	test('and that account is subscribed without paying for anything', () => {
@@ -233,9 +256,95 @@ describe('the Family tab', () => {
 	test("and for somebody on somebody else's plan", async () => {
 		payerHas(5);
 		if (subscriptions.membersOf(OWNER).length === 0) {
+			// Offered, then accepted — a seat only exists once both have happened.
 			subscriptions.addToPlan(OWNER, strangerEmail());
+			subscriptions.acceptPlanInvite(STRANGER);
 		}
 		expect((await settingsLoad({ locals: { user: { id: STRANGER } } })).family).toBe(true);
+	});
+});
+
+/**
+ * Nobody joins a plan they were not asked about.
+ *
+ * The failure this guards against is somebody typing an address they do not
+ * own and the account behind it becoming theirs to pay for — and, with that,
+ * theirs to take the plan away from again. The offer is the whole fix: it
+ * holds a seat and changes nothing until the other account answers.
+ */
+describe('an offer nobody has answered', () => {
+	beforeEach(() => {
+		payerHas(5);
+		// Whatever the tests above left behind.
+		try {
+			subscriptions.removeFromPlan(OWNER, STRANGER);
+		} catch {
+			/* not on the plan */
+		}
+		try {
+			subscriptions.cancelPlanInvite(OWNER, STRANGER);
+		} catch {
+			/* nothing outstanding */
+		}
+	});
+
+	test('can be declined, and then there is nothing left of it', () => {
+		subscriptions.addToPlan(OWNER, strangerEmail());
+		expect(subscriptions.invitationFor(STRANGER)).not.toBe(null);
+
+		subscriptions.declinePlanInvite(STRANGER);
+		expect(subscriptions.invitationFor(STRANGER)).toBe(null);
+		expect(subscriptions.invitesOf(OWNER)).toEqual([]);
+		expect(subscriptions.membersOf(OWNER)).toEqual([]);
+		expect(subscriptions.seatsTaken(OWNER)).toBe(0);
+	});
+
+	test('can be withdrawn by the payer while it is unanswered', () => {
+		subscriptions.addToPlan(OWNER, strangerEmail());
+		subscriptions.cancelPlanInvite(OWNER, STRANGER);
+		expect(subscriptions.invitesOf(OWNER)).toEqual([]);
+		expect(() => subscriptions.cancelPlanInvite(OWNER, STRANGER)).toThrow(/no invitation/i);
+	});
+
+	test('cannot be answered by an account that was never asked', () => {
+		expect(() => subscriptions.acceptPlanInvite(STRANGER)).toThrow(/no invitation/i);
+		expect(() => subscriptions.declinePlanInvite(STRANGER)).toThrow(/no invitation/i);
+	});
+
+	test('is not sent twice to the same account', () => {
+		subscriptions.addToPlan(OWNER, strangerEmail());
+		expect(() => subscriptions.addToPlan(OWNER, strangerEmail())).toThrow(/already been asked/);
+	});
+
+	test('cannot be accepted by somebody paying for their own account', () => {
+		subscriptions.addToPlan(OWNER, strangerEmail());
+
+		// They start paying for themselves after being asked. Accepting now
+		// would leave them on this plan and still being charged for their own,
+		// so it is refused with the thing to do about it.
+		subscriptions.applySubscription(STRANGER, {
+			plan: 'pro',
+			status: 'active',
+			provider: 'paddle',
+			providerSubscriptionId: 'sub_their_own',
+			currentPeriodEnd: '2126-01-01T00:00:00.000Z',
+			seats: 1
+		});
+		expect(subscriptions.invitationFor(STRANGER)?.ownPlanEnds).toBeTruthy();
+		expect(() => subscriptions.acceptPlanInvite(STRANGER)).toThrow(/Cancel your own subscription/);
+
+		// And once they stop paying for themselves, it goes through.
+		subscriptions.applySubscription(STRANGER, {
+			plan: 'none',
+			status: 'canceled',
+			provider: 'paddle',
+			providerSubscriptionId: 'sub_their_own',
+			currentPeriodEnd: '2020-01-01T00:00:00.000Z',
+			seats: 1
+		});
+		expect(() => subscriptions.acceptPlanInvite(STRANGER)).not.toThrow();
+		expect(subscriptions.membersOf(OWNER).map((m) => m.id)).toEqual([STRANGER]);
+		subscriptions.removeFromPlan(OWNER, STRANGER);
 	});
 });
 
@@ -252,6 +361,7 @@ describe('deleting an account takes its seats with it', () => {
 		// wants exactly one member on the plan before it deletes the account.
 		if (subscriptions.membersOf(OWNER).length === 0) {
 			subscriptions.addToPlan(OWNER, strangerEmail());
+			subscriptions.acceptPlanInvite(STRANGER);
 		}
 		expect(subscriptions.membersOf(OWNER)).toHaveLength(1);
 

@@ -13,6 +13,7 @@ export const MAIL_KINDS = {
 	'password-reset': 'Password reset',
 	'address-change': 'Address change',
 	'family-invite': 'Family invitation',
+	'family-offer': 'Family plan offer',
 	'trial-notice': 'Trial notice',
 	'weekly-review': 'Weekly review',
 	'newsletter-confirm': 'Newsletter confirmation'

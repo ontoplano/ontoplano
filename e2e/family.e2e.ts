@@ -52,8 +52,8 @@ function makePayer(userId: string) {
 	const db = openDb();
 	db.prepare(
 		`insert into subscriptions (user_id, plan, status, provider, provider_subscription_id, current_period_end, seats)
-		 values (?, 'pro', 'active', 'paddle', 'sub_family_e2e', '2126-01-01T00:00:00.000Z', 5)`
-	).run(userId);
+		 values (?, 'pro', 'active', 'paddle', ?, '2126-01-01T00:00:00.000Z', 5)`
+	).run(userId, `sub_family_e2e_${userId}`);
 	db.close();
 }
 
@@ -170,4 +170,76 @@ test('a flagged account is walked to the password page, and through it', async (
 	});
 	expect(signIn.ok(), await signIn.text()).toBeTruthy();
 	await fresh.dispose();
+});
+
+/**
+ * An account that already exists is asked, never taken.
+ *
+ * The hijack: type the address of somebody who already has an account and
+ * their account becomes yours to pay for — and, with that, yours to take the
+ * plan away from. It has to be an offer they answer, and until they answer it
+ * nothing about their account may change.
+ */
+test('an existing account is offered a seat, and joins only by accepting', async ({
+	playwright
+}) => {
+	const payer = await account(playwright, 'payer2');
+	makePayer(payer.id);
+	const member = await account(playwright, 'member');
+	// Past first-run, so the shell — and the band it draws — is on the page at
+	// all: /welcome carries no chrome, by design.
+	// Both past first-run, so the pages they are asked about have their shell:
+	// /welcome carries no chrome, by design, and everything else redirects to
+	// it until the wizard is done.
+	const onboard = openDb();
+	for (const id of [payer.id, member.id]) {
+		onboard
+			.prepare(
+				"insert into user_settings (user_id, key, value) values (?, 'onboarding.done', 'true')"
+			)
+			.run(id);
+	}
+	onboard.close();
+
+	const offered = await payer.request.post('/settings/family?/addSeat', {
+		headers: { Origin: ORIGIN, Cookie: payer.cookie, 'x-sveltekit-action': 'true' },
+		form: { who: member.email }
+	});
+	expect(offered.status(), await offered.text()).toBe(200);
+
+	// Nothing has happened to their account: no seat, and the row that would
+	// grant one is unanswered.
+	const db = openDb();
+	const seat = db
+		.prepare('select accepted_at from plan_members where member_id = ?')
+		.get(member.id) as { accepted_at: string | null } | undefined;
+	db.close();
+	expect(seat, 'the offer exists').toBeTruthy();
+	expect(seat!.accepted_at, 'and it is unanswered').toBe(null);
+
+	// They are asked in the band the shell draws, on any page that has one.
+	const anyPage = await member.request.get('/settings/billing', {
+		headers: { Cookie: member.cookie }
+	});
+	expect(await anyPage.text()).toContain('offers to pay for your account');
+
+	// (What the payer's Family tab shows is a unit test's business: these
+	// settings pages answer 404 on a self-hosted instance, which is what the
+	// e2e server is, and only the actions run.)
+
+	// And it is the invited account that decides.
+	const accepted = await member.request.post('/settings/billing?/acceptFamilyOffer', {
+		headers: { Origin: ORIGIN, Cookie: member.cookie, 'x-sveltekit-action': 'true' },
+		// An action with no fields still posts a form: SvelteKit answers 415 to
+		// a POST that carries no body at all.
+		form: {}
+	});
+	expect(accepted.status(), await accepted.text()).toBe(200);
+
+	const after = openDb();
+	const seated = after
+		.prepare('select accepted_at from plan_members where member_id = ?')
+		.get(member.id) as { accepted_at: string | null } | undefined;
+	after.close();
+	expect(seated!.accepted_at).not.toBe(null);
 });

@@ -1030,6 +1030,20 @@ export const planMembers = sqliteTable(
 		memberId: text('member_id')
 			.notNull()
 			.references(() => user.id),
+		/**
+		 * When the account agreed to it — null while it is only an offer.
+		 *
+		 * A payer typing an address must not be able to move somebody else's
+		 * account onto their plan: being a member is a thing with consequences
+		 * (their billing page becomes somebody else's, and the payer can take
+		 * the seat away again), so it is something the other account says yes
+		 * to. A pending row holds the seat and grants nothing.
+		 *
+		 * The exception is an account this payer had made for them a minute
+		 * ago, which is accepted on creation: it never existed independently,
+		 * so there is nobody to ask.
+		 */
+		acceptedAt: text('accepted_at'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
