@@ -92,6 +92,10 @@
 </p>
 
 <h2>Asking about any of this</h2>
-<p>
-	Write to <a href="mailto:{data.contactEmail}">{data.contactEmail}</a>. It is read by a person.
-</p>
+{#if data.contactEmail}
+	<p>
+		Write to <a href="mailto:{data.contactEmail}">{data.contactEmail}</a>. It is read by a person.
+	</p>
+{:else}
+	<p>Ask whoever runs this instance.</p>
+{/if}

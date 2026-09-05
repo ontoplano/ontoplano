@@ -183,9 +183,22 @@ describe('what the instance says about itself', () => {
 		// it cannot be this instance's env guessing.
 		const facts = await legal.legalFacts();
 		expect(facts.operator).toBeTruthy();
-		expect(facts.contactEmail).toContain('@');
 		expect(typeof facts.hosted).toBe('boolean');
 		expect(facts.monthly).toMatch(/\d/);
+	});
+
+	test('invents no contact address — unset means ask the operator', async () => {
+		// It used to default to hello@ontoplano.app, a mailbox no self-hoster
+		// owns, on every privacy page that never set ONTOPLANO_CONTACT_EMAIL.
+		const had = process.env.ONTOPLANO_CONTACT_EMAIL;
+		delete process.env.ONTOPLANO_CONTACT_EMAIL;
+		expect((await legal.legalFacts()).contactEmail).toBeNull();
+
+		process.env.ONTOPLANO_CONTACT_EMAIL = 'operator@example.test';
+		expect((await legal.legalFacts()).contactEmail).toBe('operator@example.test');
+
+		if (had === undefined) delete process.env.ONTOPLANO_CONTACT_EMAIL;
+		else process.env.ONTOPLANO_CONTACT_EMAIL = had;
 	});
 
 	test('reports a build even when nothing was stamped into it', () => {

@@ -20,7 +20,8 @@
 	content for anything; it is stored so it can be shown back to you.
 </p>
 <p>
-	Keep your password to yourself, and tell {data.contactEmail} if you think somebody else has it.
+	Keep your password to yourself, and tell {data.contactEmail ?? 'whoever runs this instance'} if
+	you think somebody else has it.
 </p>
 
 <h2>What you may not do with it</h2>
@@ -55,8 +56,8 @@
 	is open, you can always run your own copy instead and take the export with you.
 </p>
 <p>
-	If a charge was wrong, write to {data.contactEmail} and it will be refunded. That is a promise rather
-	than a policy: the sums involved are not worth arguing about.
+	If a charge was wrong, write to {data.contactEmail ?? 'whoever runs this instance'} and it will be
+	refunded. That is a promise rather than a policy: the sums involved are not worth arguing about.
 </p>
 
 <h2>What is promised about it working</h2>

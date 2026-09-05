@@ -12,6 +12,10 @@ version.
 
 ## 0.70.0 — 2026-09-05
 
+- **The legal pages stop inventing a contact address.** An instance that
+  never set `ONTOPLANO_CONTACT_EMAIL` used to tell its users to write to a
+  mailbox its operator does not own; now the pages say to ask whoever runs
+  the instance.
 - **The README is a front door.** The feature catalogue is gone — the docs
   are the tour — and what remains is what a newcomer needs: how to run it,
   how to develop it (`make dev`, and bare `make` for the rest), how to deploy
