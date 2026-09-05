@@ -30,8 +30,7 @@
 		"changelog:check": "node scripts/check-changelog.mjs",
 		"docs:site": "node scripts/build-docs-site.mjs",
 		"test:coverage": "vitest run --coverage",
-		"jobs:check": "node scripts/check-job-deps.mjs",
-		"jobs:run": "bash tests/jobs-as-deployed.sh"
+		"jobs:check": "node scripts/check-job-deps.mjs"
 	},
 	"private": true,
 	"type": "module",
