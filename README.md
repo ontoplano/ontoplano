@@ -22,6 +22,10 @@
 > it may contain bugs. Please be patient, and help me improve it by creating issues
 > and pull requests.
 
+> [!NOTE]
+> Due to problems with payment providers, registrations in the official app.ontoplano.com
+> instance are limited to invite-only. I'll open it as soon as I can.
+
 ---
 
 Ontoplano is a life management app built around planning your week. Besides planning
