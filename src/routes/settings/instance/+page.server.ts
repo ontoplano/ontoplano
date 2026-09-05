@@ -3,7 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { loadConfig, saveConfig, isRegistrationMode } from '$lib/server/config';
 import { instanceSells } from '$lib/server/services/billing';
 import { companions } from '$lib/server/services/companions';
-import { isDemo, isSelfHosted, isStaging } from '$lib/server/settings';
+import { isDemo, isStaging } from '$lib/server/settings';
 import { canEditInstance } from '$lib/server/services/admin';
 import { build } from '$lib/server/services/version';
 import { ValidationError } from '$lib/server/services/errors';
