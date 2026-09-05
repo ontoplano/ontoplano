@@ -67,14 +67,10 @@ jobs:
       # The scheduled jobs, checked the way the box will load them: `tsx` over
       # a tree installed with `yarn install --production`. A service that
       # imports a dev-only package runs fine everywhere here and fails there,
-      # once a minute, in a journal nobody is reading.
+      # once a minute, in a journal nobody is reading. Actually *running* them
+      # in the deployed shape needs the deploy repository's unit files, so that
+      # half of the check lives with the deploy tooling rather than here.
       - run: yarn jobs:check
-
-      # …and then actually run them, from a copy of the directory the deploy
-      # makes: the same files, no `.svelte-kit`, nothing else. Reading the
-      # imports catches a missing package; only running them in the right shape
-      # catches a missing tsconfig, which is how `$lib` stopped resolving.
-      - run: yarn jobs:run
 
       - run: yarn test:unit
 
