@@ -368,7 +368,7 @@ import that fails is an import that half-succeeds over a real week.
 What this account is on, and what it is using.
 
 A self-hosted instance sells nothing, so the page says so and stops — the
-same answer the Telegram bot and the deployment settings give.
+same answer the deployment settings give.
 
 ### `/settings/family`
 

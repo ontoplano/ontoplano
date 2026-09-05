@@ -30,6 +30,9 @@ version.
   that arrive as Ontoplano), that Firefox's menu item is "Add to Home screen",
   and what a self-hoster without HTTPS can still do (build the APK). The
   family plan has a page of its own.
+- **The self-host Telegram bot is retired** — it predates the app, and the
+  app does its whole job now. Scripts that push your day to a Telegram chat
+  through the API keep working; they are your crontab, not a bot.
 
 ## 0.68.0 — 2026-09-04
 

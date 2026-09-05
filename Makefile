@@ -47,12 +47,11 @@ help:
 	@echo "  github-push                 mirror master and the tags onto GitHub"
 	@echo "  backup-install              Litestream replication (backup-status, backup-drill)"
 	@echo
-	@printf '\033[1mphone & bot\033[0m\n'
+	@printf '\033[1mphone\033[0m\n'
 	@echo "  android                     build the APK (android-install / android-share to get it on)"
 	@echo "  android-lan                 an APK pointed at this machine, over wifi"
 	@echo "  android-staging             …and one for staging, installable beside the real one"
 	@echo "  android-release             publish the signed APK to GitHub Releases"
-	@echo "  telegram-install            the bot on a self-hosted box (telegram-dev to try it)"
 	@if [ -f local.mk ]; then echo; \
 		printf '\033[1mthis instance (local.mk)\033[0m\n'; \
 		echo "  deploy [-app|-site|-docs|-demo]   ship it; bare deploy is all four"; \
@@ -70,7 +69,7 @@ vars:
 	@sh scripts/make-vars.sh $(sort $(MAKEFILE_LIST) defaults.env $(wildcard $(SERVER_SRC)/defaults.env))
 
 
-.PHONY: site-shots _docker-builder _billing-in-build vars billing-provider package package-check release _release-run github-push _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs telegram-install telegram-dev telegram-logs install-telegram-service uninstall-telegram-service https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
+.PHONY: site-shots _docker-builder _billing-in-build vars billing-provider package package-check release _release-run github-push _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -696,34 +695,6 @@ uninstall-service:
 	@rm -f ~/.config/systemd/user/ontoplano.service
 	@systemctl --user daemon-reload
 	@echo "Service uninstalled."
-
-# ─── Telegram Bot ────────────────────────────────────────────────────────────
-
-telegram-install:
-	cd telegram && yarn install
-
-telegram-dev:
-	cd telegram && yarn dev
-
-telegram-logs:
-	journalctl --user -u ontoplano-telegram -f
-
-install-telegram-service: telegram-install
-	@echo "Installing ontoplano-telegram systemd service..."
-	@mkdir -p ~/.config/systemd/user
-	@envsubst < systemd/ontoplano-telegram.service > ~/.config/systemd/user/ontoplano-telegram.service
-	@systemctl --user daemon-reload
-	@systemctl --user enable ontoplano-telegram
-	@systemctl --user start ontoplano-telegram
-	@echo "Telegram bot service installed. Check: systemctl --user status ontoplano-telegram"
-
-uninstall-telegram-service:
-	@systemctl --user stop ontoplano-telegram || true
-	@systemctl --user disable ontoplano-telegram || true
-	@rm -f ~/.config/systemd/user/ontoplano-telegram.service
-	@systemctl --user daemon-reload
-	@echo "Telegram bot service uninstalled."
-
 
 # ─── Android ─────────────────────────────────────────────────────────────────
 #

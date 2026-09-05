@@ -42,9 +42,7 @@ import { num, str } from './validate.js';
  * Times are wall-clock, like a block's, because "remind me at ten to nine"
  * means ten to nine wherever you are. Delivery is deliberately somebody else's
  * job: a row that is due is a row anything with the database can deliver — the
- * page you have open, and on a self-hosted box the Telegram bot, which is the
- * only channel that works while the app is closed without putting a stranger
- * in the path.
+ * page you have open, or the push delivery job while the app is closed.
  */
 
 export const MAX_MESSAGE_LENGTH = 300;

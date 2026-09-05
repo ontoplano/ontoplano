@@ -107,8 +107,6 @@ a box I keep, if you would rather not keep one.
   the API, and the place to start reading.
 - **Phone** — an installable PWA, and an Android app that wraps it
   (`docs/ANDROID.md`).
-- **Telegram** — a bot for the plan, the list and quick capture, on a
-  self-hosted box only (`docs/TELEGRAM.md`).
 
 ## Running it
 
@@ -205,8 +203,8 @@ Three switches worth knowing, all off by default:
   forge their address.
 - `ONTOPLANO_HTTPS=true` — adds HSTS. Harmful over plain http, hence opt-in.
 - `ONTOPLANO_SELF_HOST=true` — this is one person's instance. The owner may edit
-  deployment settings from the UI, and the Telegram bot will run; both act for the
-  whole instance, so both are off anywhere else.
+  deployment settings from the UI; they act for the whole instance, so they are
+  off anywhere else.
 - `ONTOPLANO_SELLS=true` — this instance charges for accounts. Off unless it is
   said, so nothing about money happens on a copy that never mentions it, and an
   instance that says it sells and cannot take a card refuses registrations and

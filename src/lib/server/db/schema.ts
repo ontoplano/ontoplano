@@ -1561,9 +1561,8 @@ export const calendarFeeds = sqliteTable(
  *
  * Deliberately a row rather than a rule on the block: a rule would have to be
  * evaluated everywhere, and a row can be delivered by anything with the
- * database — the page you have open, and the Telegram bot on a self-hosted box,
- * which is the only delivery that works while the app is closed and does not
- * put anybody else in the path.
+ * database — the page you have open, or the push delivery job while the app
+ * is closed, with nobody else in the path.
  */
 export const reminders = sqliteTable(
 	'reminders',

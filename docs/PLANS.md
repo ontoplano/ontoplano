@@ -3,7 +3,7 @@
 Only a hosted instance sells anything. On a self-hosted one —
 `ONTOPLANO_SELF_HOST=true` — every account is Pro forever, `/settings/billing`
 says so in one sentence, and there is nothing to configure. That is the same
-rule the Telegram bot and the deployment settings follow: the things that exist
+rule the deployment settings follow: the things that exist
 because somebody is running this _as a service_ are off when nobody is.
 
 ## What a plan actually decides

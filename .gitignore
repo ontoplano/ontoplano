@@ -30,9 +30,6 @@ test-results
 # SQLite
 *.db
 
-# Telegram bot
-telegram/node_modules
-
 # Android (TWA)
 # The generated Gradle project is build output — `node scripts/build-twa.mjs`
 # recreates it. twa-manifest.json is generated too, from the environment.

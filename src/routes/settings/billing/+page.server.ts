@@ -24,7 +24,7 @@ import { rateLimit } from '$lib/server/rate-limit';
  * What this account is on, and what it is using.
  *
  * A self-hosted instance sells nothing, so the page says so and stops — the
- * same answer the Telegram bot and the deployment settings give.
+ * same answer the deployment settings give.
  */
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
