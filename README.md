@@ -114,3 +114,8 @@ phone.
 Signing in is an address and a password;
 Email is optional — without SMTP settings, confirmation and reset links are
 written to the server log instead of sent.
+
+
+## Sponsors
+
+Sponsor me at https://github.com/sponsors/chedieck
