@@ -573,7 +573,10 @@ docker-image: _docker-safe
 #   make package                 all three
 #   make package deb             one of them — or: yarn package deb
 #: PACKAGE=deb  build one format instead of all three (deb, rpm, arch)
-package: build
+#: PACKAGE_BUILD=false  package build/ as it stands, do not build again
+PACKAGE_BUILD_DEP := $(if $(filter false 0 no,$(PACKAGE_BUILD)),,build)
+package: $(PACKAGE_BUILD_DEP)
+	@[ -f build/index.js ] || { echo "no build/ to package — run make build, or drop PACKAGE_BUILD=false"; exit 1; }
 	@node scripts/package.mjs $(PACKAGE)
 
 # The half that matters: unpack what was built, run it, and check the unit says
