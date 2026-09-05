@@ -1,4 +1,4 @@
-import { and, count, eq } from 'drizzle-orm';
+import { and, count, eq, isNull } from 'drizzle-orm';
 
 import {
 	LIMIT_LABELS,
@@ -369,8 +369,19 @@ export function usage(userId: string): Record<LimitKey, number> {
 	const countOf = (table: typeof apiTokens | typeof dataStreams | typeof dataPoints) =>
 		db.select({ n: count() }).from(table).where(eq(table.userId, userId)).get()?.n ?? 0;
 
+	// A revoked token is a row we keep so an old secret can never be honoured
+	// again; it is not a token the account has. Counting them made the meter
+	// climb with every token ever made and would have refused a new one at
+	// twenty revocations.
+	const liveTokens =
+		db
+			.select({ n: count() })
+			.from(apiTokens)
+			.where(and(eq(apiTokens.userId, userId), isNull(apiTokens.revokedAt)))
+			.get()?.n ?? 0;
+
 	return {
-		apiTokens: countOf(apiTokens),
+		apiTokens: liveTokens,
 		dataStreams: countOf(dataStreams),
 		dataPoints: countOf(dataPoints),
 		// Not a stored count: the export log answers this one, and the account

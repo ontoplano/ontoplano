@@ -21,6 +21,7 @@ type Services = {
 	api: typeof import('../src/lib/server/api/auth');
 	tokens: typeof import('../src/lib/server/services/tokens');
 	errors: typeof import('../src/lib/server/services/errors');
+	subscriptions: typeof import('../src/lib/server/services/subscriptions');
 };
 
 let s: Services;
@@ -42,7 +43,8 @@ beforeAll(async () => {
 	s = {
 		api: await import('../src/lib/server/api/auth'),
 		tokens: await import('../src/lib/server/services/tokens'),
-		errors: await import('../src/lib/server/services/errors')
+		errors: await import('../src/lib/server/services/errors'),
+		subscriptions: await import('../src/lib/server/services/subscriptions')
 	};
 
 	const ctx = { userId: OWNER, now: new Date('2026-08-27T09:00:00'), tz: 'UTC' };
@@ -141,5 +143,23 @@ describe('what it will read', () => {
 		} as unknown as Parameters<Services['api']['readJson']>[0];
 
 		await expect(s.api.readJson(event)).resolves.toEqual({ slug: 'weight' });
+	});
+});
+
+describe('the token meter on the billing page', () => {
+	test('counts the tokens an account holds, not the ones it has revoked', () => {
+		const ctx = { userId: OWNER, now: new Date('2026-08-27T09:00:00'), tz: 'UTC' };
+		const before = s.subscriptions.usage(OWNER).apiTokens;
+
+		const made = s.tokens.createToken(ctx, { name: 'short-lived', scopes: ['today:read'] });
+		expect(s.subscriptions.usage(OWNER).apiTokens).toBe(before + 1);
+
+		// The row stays behind so the old secret can never be honoured again,
+		// but the account does not hold that token any more. Counting the row
+		// made the meter climb with every token ever made and would have refused
+		// a twenty-first after twenty revocations.
+		s.tokens.revokeToken(ctx, made.id);
+		expect(s.tokens.listTokens(ctx).some((t) => t.id === made.id)).toBe(false);
+		expect(s.subscriptions.usage(OWNER).apiTokens).toBe(before);
 	});
 });
