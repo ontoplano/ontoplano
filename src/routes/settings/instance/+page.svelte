@@ -270,9 +270,8 @@
 			-->
 			<div class="mb-4">
 				<Banner kind="warning">
-					<strong>{data.effectiveRegistration}</strong> right now, set in the server's environment —
-					{#if data.staging}ONTOPLANO_STAGING{:else}ONTOPLANO_REGISTRATION{/if} overrides what is chosen
-					here. These buttons are what will apply once it is unset.
+					<strong>{data.effectiveRegistration}</strong> right now, set in the server's environment — ONTOPLANO_REGISTRATION
+					overrides what is chosen here. These buttons are what will apply once it is unset.
 				</Banner>
 			</div>
 		{/if}

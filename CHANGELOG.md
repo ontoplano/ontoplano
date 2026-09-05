@@ -10,6 +10,17 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.79.2 — 2026-09-05
+
+- **A wrong invitation code says so.** Invite-only instances answered "not
+  accepting new accounts" to a mistyped code — the closed instance's sentence,
+  on a form whose own copy says codes exist. Missing and invalid codes each
+  get their own answer now; a closed instance still says only that it is
+  closed.
+- The registration banner on the instance page names `ONTOPLANO_REGISTRATION`
+  as the environment override — `ONTOPLANO_STAGING` stopped forcing anything
+  long ago.
+
 ## 0.79.1 — 2026-09-05
 
 - **The day number stays in the month view** — it had leaked onto every week

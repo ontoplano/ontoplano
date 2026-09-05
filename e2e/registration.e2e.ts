@@ -94,6 +94,30 @@ test('an open instance takes anybody', async ({ playwright }) => {
 	await request.dispose();
 });
 
+/**
+ * A wrong code in invite mode says so.
+ *
+ * It used to answer "not accepting new accounts" — the closed instance's
+ * sentence — to somebody holding a mistyped invitation, on a form whose own
+ * copy says codes exist. The only thing that secrecy protected was a fact
+ * the page states; what it cost was a person concluding their invitation
+ * was worthless.
+ */
+test('an invite-only instance names the problem with a bad code', async ({ playwright }) => {
+	const request = await playwright.request.newContext({ baseURL: ORIGIN });
+	setMode('invite');
+
+	const missing = await signUp(request);
+	expect(missing.status()).toBe(403);
+	expect(await missing.text()).toContain('takes an invitation code');
+
+	const wrong = await signUp(request, 'not-a-real-code');
+	expect(wrong.status()).toBe(403);
+	expect(await wrong.text()).toContain('not valid, or has been used');
+
+	await request.dispose();
+});
+
 test('a closed instance refuses a sign-up', async ({ playwright }) => {
 	const request = await playwright.request.newContext({ baseURL: ORIGIN });
 	setMode('closed');
