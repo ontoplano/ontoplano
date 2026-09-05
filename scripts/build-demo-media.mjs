@@ -101,8 +101,8 @@ const PICTURES = [
 	},
 	{
 		out: 'horse.jpg',
-		// Not the museum's: Estevão's own photograph, kept beside the script in
-		// `demo-media-src/` so a rebuild does not need the internet for it.
+		// Not the museum's: the maintainer's own AI-generated image, kept beside
+		// the script in `demo-media-src/` so a rebuild does not need the internet.
 		file: 'horse.jpg',
 		what: 'a picture inside a note, drawn at the width of the writing',
 		width: 640,
