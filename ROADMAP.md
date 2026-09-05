@@ -51,25 +51,19 @@ Every string is written into its page in English.
 
 Not in scope: right-to-left layout, translating the docs.
 
-### Sharing, narrowly
-
-A family plan shares a bill and nothing else, and `examples/onto-household.mjs`
-already keeps two accounts' shopping lists equal over webhooks — from outside.
-The first thing worth sharing **in the app** is a shopping category: one
-household, one list of what is out of milk. Per category, opt-in, never a
-default.
-
-Everything else stays private. "Share your diary with your family" is not
-somewhere this is heading.
-
 ---
 
 ## Small improvements
 
+- **Sharing beyond shopping and notebooks.** A family plan can share a
+  shopping category and a notebook today, opt-in, owner-controlled. Whether
+  tasks or goals inside a shared notebook should travel with it is an open
+  question — the diary never will be.
+
 - **Audio on notes**, by the path images already take.
-- **An `.ics` importer**, beside the Todoist, Google Tasks, Google Keep and
-  Obsidian ones. Subscribing to a calendar already works; importing one does
-  not.
+- **An `.ics` importer**, beside the Todoist, Google Tasks, Google Keep,
+  org-mode and Obsidian ones. Subscribing to a calendar already works;
+  importing one does not.
 - **Reorder the capture wheel.** The rooms wheel is arrangeable; the four
   capture kinds are not.
 - **A scheme you can schedule** rather than apply by hand.
