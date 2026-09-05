@@ -12,6 +12,7 @@
  * everybody with it, and nothing about one account is visible to another.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { eq } from 'drizzle-orm';
 import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
@@ -35,6 +36,7 @@ let subscriptions: typeof import('../src/lib/server/services/subscriptions');
 let access: typeof import('../src/lib/server/services/access');
 let db: typeof import('../src/lib/server/db');
 let schema: typeof import('../src/lib/server/db/schema');
+let authSchema: typeof import('../src/lib/server/db/auth.schema');
 
 /** The seeded second account's address, read rather than assumed. */
 function strangerEmail(): string {
@@ -63,6 +65,7 @@ beforeAll(async () => {
 	access = await import('../src/lib/server/services/access');
 	db = await import('../src/lib/server/db');
 	schema = await import('../src/lib/server/db/schema');
+	authSchema = await import('../src/lib/server/db/auth.schema');
 });
 
 afterAll(() => {
@@ -283,7 +286,7 @@ describe('inviting somebody with no account', () => {
 		);
 	}
 
-	test('makes the account, seats it, and swaps the letter', async () => {
+	test('makes the account, seats it, and signs nobody in', async () => {
 		payerHas(5);
 		setRegistration('open');
 
@@ -298,9 +301,39 @@ describe('inviting somebody with no account', () => {
 		// The seat resolves like any other.
 		expect(subscriptions.resolvePlan(made.id).source).toBe('family');
 
-		// The verification sender took the invite entry, so a later resend gets
-		// the ordinary letter rather than a second invitation.
-		expect(invite.takeFamilyInvite('partner@example.test')).toBeNull();
+		/*
+		 * No session was minted for the new account. It used to be created
+		 * through the sign-up endpoint, which signs its account in — and the
+		 * cookie hook wrote that session onto the payer's own response, so the
+		 * person who typed the address found themselves signed in as the
+		 * brand-new unverified member, staring at the verify wall.
+		 */
+		const theirs = db.db
+			.select({ id: authSchema.session.id })
+			.from(authSchema.session)
+			.where(eq(authSchema.session.userId, made.id))
+			.all();
+		expect(theirs.length).toBe(0);
+
+		// And the account is flagged as never having chosen a password, which
+		// is what routes its first visit to the set-password page.
+		expect(invite.passwordPending(made.id)).toBe(true);
+	});
+
+	test('the mailed password, once chosen, replaces the random one', async () => {
+		const invite = await import('../src/lib/server/services/family-invite');
+		const partner = subscriptions.membersOf(OWNER).find((m) => m.email.startsWith('partner@'))!;
+
+		await expect(invite.chooseFirstPassword(partner.id, 'short')).rejects.toThrow(/characters/);
+		await invite.chooseFirstPassword(partner.id, 'a-real-password-8');
+
+		expect(invite.passwordPending(partner.id)).toBe(false);
+
+		// The credential is stored the way better-auth stores one, so an
+		// ordinary sign-in verifies it.
+		const { verifyPassword } = await import('../src/lib/server/auth');
+		expect(await verifyPassword(partner.id, 'a-real-password-8')).toBe(true);
+		expect(await verifyPassword(partner.id, 'not-that-password')).toBe(false);
 	});
 
 	test('an existing account still lands instantly, not by mail', async () => {
@@ -323,6 +356,36 @@ describe('inviting somebody with no account', () => {
 			/No account here uses that address/
 		);
 		setRegistration('open');
+	});
+});
+
+/**
+ * Five accounts, and not a sixth.
+ *
+ * The payer holds a seat too, so a five-seat plan has room for four others.
+ * Both doors — seating an existing account and minting one by mail — refuse
+ * at the ceiling, with the sentence that says why.
+ */
+describe('the seat ceiling', () => {
+	test('a five-seat plan seats the payer and four others, and refuses a sixth', async () => {
+		// Registration is open here: the closed-instance test above put it back.
+		payerHas(5);
+		const { inviteToPlan } = await import('../src/lib/server/services/family-invite');
+
+		for (const m of subscriptions.membersOf(OWNER)) subscriptions.removeFromPlan(OWNER, m.id);
+
+		for (let i = 1; i <= 4; i++) {
+			await inviteToPlan(OWNER, `seat-${i}@example.test`);
+		}
+		expect(subscriptions.membersOf(OWNER).length).toBe(4);
+
+		// The fifth other person is the sixth account, and both doors say no —
+		// minting a new account, and seating one that exists (partner@ does,
+		// from the invite tests above, and is off the plan by now).
+		await expect(inviteToPlan(OWNER, 'seat-5@example.test')).rejects.toThrow(/all taken/);
+		await expect(inviteToPlan(OWNER, 'partner@example.test')).rejects.toThrow(/all taken/);
+		expect(() => subscriptions.addToPlan(OWNER, 'partner@example.test')).toThrow(/all taken/);
+		expect(subscriptions.membersOf(OWNER).length).toBe(4);
 	});
 });
 

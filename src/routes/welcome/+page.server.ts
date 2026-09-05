@@ -4,10 +4,15 @@ import { DEFAULT_THEME, DEFAULT_WEEK, getTheme } from '$lib/server/settings';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
 import { completeFirstRun, needsFirstRun, TEMPLATES } from '$lib/server/services/onboarding';
+import { passwordPending } from '$lib/server/services/family-invite';
 import { HIDEABLE_SECTIONS } from '$lib/sections';
 import { zoneGroups } from '$lib/timezones';
 
 export const load: PageServerLoad = async ({ locals }) => {
+	// An account minted by a family invitation chooses its password first —
+	// its only credential so far is one nobody knows.
+	if (passwordPending(locals.user!.id)) redirect(302, '/welcome/password');
+
 	// Coming back here after setup would offer to seed a second starter week.
 	if (!needsFirstRun(locals.user!.id)) redirect(302, '/planner/plan');
 

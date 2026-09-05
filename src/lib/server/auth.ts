@@ -10,7 +10,6 @@ import { db } from '$lib/server/db';
 import { MIN_PASSWORD_LENGTH } from '$lib/passwords';
 import { sendLogged } from '$lib/server/services/mail-log';
 import { renderEmail } from '$lib/server/email-template';
-import { familyInviteMail, takeFamilyInvite } from '$lib/server/services/family-invite';
 
 const verificationMail = (url: string) =>
 	renderEmail({
@@ -130,22 +129,10 @@ export const auth = betterAuth({
 	emailVerification: {
 		sendOnSignUp: true,
 		autoSignInAfterVerification: true,
+		// Family invitations do not pass through here: their accounts are made
+		// through the internal adapter and their letter is sent by
+		// `inviteToPlan` itself, with a link from `familyInviteLinkFor` below.
 		sendVerificationEmail: async ({ user, url }) => {
-			/*
-			 * The same link, a different letter. An account made by a family
-			 * invitation gets the invitation — "X is paying for an account for
-			 * you" — because "confirm the address you registered with" is a
-			 * sentence about something they never did. The link still verifies,
-			 * still signs them in, still lands on /welcome.
-			 */
-			const invite = takeFamilyInvite(user.email);
-			if (invite) {
-				await sendLogged('family-invite', {
-					to: user.email,
-					...familyInviteMail(url, invite.ownerName)
-				});
-				return;
-			}
 			await sendLogged('verification', {
 				to: user.email,
 				...verificationMail(url)
@@ -214,6 +201,27 @@ export async function sendVerificationFor(email: string): Promise<{
 	});
 
 	return { delivered, url };
+}
+
+/**
+ * The link a family invitation carries.
+ *
+ * better-auth's own verification URL, pointed at the set-password step: it
+ * verifies the address, signs the new account in, and lands it there, with
+ * /welcome after. Minted the way `sendVerificationFor` mints one, and for the
+ * same reason — the `sendVerificationEmail` endpoint refuses while a session
+ * for a different address is present, which is exactly this situation: the
+ * payer is signed in, and the mail is for somebody else.
+ */
+export async function familyInviteLinkFor(email: string): Promise<string> {
+	const ctx = await auth.$context;
+	const token = await createEmailVerificationToken(
+		ctx.secret,
+		email,
+		undefined,
+		ctx.options.emailVerification?.expiresIn
+	);
+	return `${ctx.baseURL}/verify-email?token=${token}&callbackURL=${encodeURIComponent('/welcome/password')}`;
 }
 
 /**

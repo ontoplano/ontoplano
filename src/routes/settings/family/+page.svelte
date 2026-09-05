@@ -35,8 +35,12 @@
 				<div class="mt-3">
 					<Banner
 						kind="success"
-						message="Invitation sent. Their account is made; the email opens it."
+						message="They have been sent an email to open their account and choose a password."
 					/>
+				</div>
+			{:else if form && 'added' in form && form.added}
+				<div class="mt-3">
+					<Banner kind="success" message="Added — they are on the plan now." />
 				</div>
 			{/if}
 
