@@ -496,7 +496,7 @@ _Needs `schedule:write`; writes._
 
 ### `change_repeating_block` — Change a repeating block
 
-Change every future occurrence of a repeating block: its weekday, time, length, name, category or reminder. This is "move gym to Wednesdays"; `change_block` is "move this Wednesday’s gym". Only the fields given change. Takes the id `repeating_week` gives.
+Change every future occurrence of a repeating block: its weekday, time, length, the text on it, its category or its reminder. This is "move gym to Wednesdays"; `change_block` is "move this Wednesday’s gym". Only the fields given change. Takes the id `repeating_week` gives.
 
 _Needs `schedule:write`; writes._
 
