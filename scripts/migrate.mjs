@@ -8,9 +8,9 @@
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { snapshot } from './db-snapshot.mjs';
 
@@ -26,6 +26,11 @@ const path =
 
 const isNew = !existsSync(path);
 if (!isNew) snapshot('pre-migrate');
+
+// A fresh machine has no ~/.local/share/ontoplano yet, and better-sqlite3
+// refuses to create a database inside a directory that does not exist — so
+// the very first `make dev` died here before this line made the directory.
+mkdirSync(dirname(path), { recursive: true });
 
 const client = new Database(path);
 client.pragma('journal_mode = WAL');

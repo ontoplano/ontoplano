@@ -65,7 +65,7 @@ vars:
 	@sh scripts/make-vars.sh $(sort $(MAKEFILE_LIST) defaults.env $(wildcard $(SERVER_SRC)/defaults.env))
 
 
-.PHONY: _billing-in-build vars _billing-provider package package-check _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: _billing-in-build vars _billing-provider package package-check _dev-port _dev-deps _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -80,7 +80,7 @@ YARN_BIN ?= $(shell command -v yarn)
 # prompt: a backup needs no ceremony, only doing — `deploy` is the one that
 # stops to ask. `dev-fg` is the old foreground behaviour, for when you want
 # vite's output in the terminal you are sitting at.
-dev: _dev-port _dev-migrated
+dev: _dev-port _dev-deps _dev-migrated
 	@[ -n "$(NODE_BIN)" ] || { echo "no node on PATH"; exit 1; }
 	@[ -n "$(YARN_BIN)" ] || { echo "no yarn on PATH"; exit 1; }
 	@mkdir -p ~/.config/systemd/user
@@ -140,6 +140,21 @@ _dev-port:
 		fi; \
 	fi; \
 	exit 1
+
+# Dependencies that are actually installed.
+#
+# The first thing a fresh clone runs is `make dev`, and the first thing THAT
+# did was open the database through better-sqlite3 — a package nothing had
+# installed, because nothing had ever run `yarn install`. So it is run here,
+# when node_modules is missing or older than yarn.lock; the integrity file is
+# what yarn itself writes last, so a half-finished install does not count as
+# one.
+_dev-deps:
+	@[ -n "$(YARN_BIN)" ] || { echo "no yarn on PATH"; exit 1; }
+	@if [ ! -e node_modules/.yarn-integrity ] || [ yarn.lock -nt node_modules/.yarn-integrity ]; then \
+		echo "Installing dependencies — first run, or yarn.lock moved."; \
+		yarn install; \
+	fi
 
 # A database behind the code.
 #
@@ -221,7 +236,7 @@ dev-logs:
 	journalctl --user -u ontoplano-dev -f
 
 # The dev server in this terminal, the old way. Snapshots first, like the unit.
-dev-fg:
+dev-fg: _dev-deps _dev-migrated
 	@yarn -s db:snapshot dev
 	yarn dev --port 1493
 

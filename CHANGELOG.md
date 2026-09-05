@@ -38,6 +38,9 @@ version.
 - **The self-host Telegram bot is retired** — it predates the app, and the
   app does its whole job now. Scripts that push your day to a Telegram chat
   through the API keep working; they are your crontab, not a bot.
+- **`make dev` works on a fresh clone**: it installs the dependencies and
+  creates the data directory itself, instead of crashing twice before the
+  server ever starts.
 
 ## 0.68.0 — 2026-09-04
 
