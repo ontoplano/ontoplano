@@ -101,13 +101,13 @@ const PICTURES = [
 	},
 	{
 		out: 'horse.jpg',
-		// Not the museum's: the maintainer's own AI-generated image, kept beside
-		// the script in `demo-media-src/` so a rebuild does not need the internet.
-		file: 'horse.jpg',
+		// Rosa Bonheur's The Horse Fair — the Met's, CC0 like everything else
+		// here, and a real horse at last.
+		object: 435702,
 		what: 'a picture inside a note, drawn at the width of the writing',
 		width: 640,
 		height: 440,
-		crop: { x: 0.02, y: 0.16, w: 0.96, h: 0.66 }
+		crop: { x: 0.36, y: 0.2, w: 0.42, h: 0.57 }
 	},
 	{
 		out: 'tomato-pasta.jpg',

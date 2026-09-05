@@ -12,6 +12,8 @@ version.
 
 ## 0.74.0 — 2026-09-05
 
+- The demo's horse is Rosa Bonheur's *The Horse Fair* — the Met's, CC0 like
+  every other picture in the demo.
 - **Org mode imports.** Paste or choose a `.org` file: `TODO`/`NEXT`/
   `WAITING` headings become open tasks and `DONE`/`CANCELLED` finished ones,
   `SCHEDULED:` and `DEADLINE:` dates come along, bodies land in the notes,
