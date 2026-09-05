@@ -25,11 +25,10 @@
 ---
 
 Ontoplano is a life management app built around planning your week. Besides planning
-recurring or one-off tasks, stuff on a to-do backlog, you can also write
-**Notebooks** (notebooks and a diary), register goals with measured progress, habits,
-ideas, the people in your life, recipes and the shopping list they feed. Every
-section can be turned off, reordered and recoloured. Full tour:
-[docs.ontoplano.com](https://docs.ontoplano.com).
+recurring tasks, exceptional stuff you will have to do on a date or random stuff to do
+someday, you can also write notebooks, register goals with measured progress, habits,
+ideas, the people in your life, recipes and the shopping list.
+[Check the demo to get the idea.](https://demo.ontoplano.com).
 
 **MCP built in.** `/api/mcp` is a Model Context Protocol server: any AI with MCP
 capabilities can read your day and change it, with a scoped token you can revoke.
@@ -61,7 +60,7 @@ their own Node, so there is nothing else to install. A packaged install keeps
 its settings in `/etc/ontoplano/` and its database in `/var/lib/ontoplano/`.
 There is no Windows installer yet — [help build one](CONTRIBUTING.md).
 
-Or with Docker, which needs nothing but Docker:
+Or with Docker:
 
 ```sh
 docker run -d --name ontoplano -p 1493:1493 \
@@ -74,7 +73,7 @@ docker run -d --name ontoplano -p 1493:1493 \
 Register at `/login` — **the first account owns the instance**, and after it
 registration is closed until changed at `/settings/instance`.
 
-Reminders come installed. The optional Monday review mail does not — it needs
+Reminders service come installed. The optional Monday review mail does not — it needs
 SMTP; [the docs](https://docs.ontoplano.com/running-it) set it up.
 
 ## Developing it
@@ -86,18 +85,11 @@ make dev-logs   # follow it; make dev-stop stops it; make dev-fg holds the termi
 make db-seed    # synthetic data for the dev account
 ```
 
-Bare `make` prints every target; `make vars` every variable a command line can
-carry. `make dev` wants Linux with systemd — on anything else, `yarn dev` runs
+`make dev` wants Linux with systemd — on anything else, `yarn dev` runs
 the same server in the foreground. A from-source instance keeps its settings in
 `~/.config/ontoplano/` and its database in `~/.local/share/ontoplano/`.
 
-Before a pull request: `make lint`, `yarn test:unit`, `make test` (the
-Playwright suite). `CONTRIBUTING.md` has the conventions that are not obvious
-from the code, and the reasons for them.
-
-**[`docs/reference/`](docs/reference/) is how the app works, generated from
-the app** — every table, endpoint, service and keyboard shortcut, rebuilt by
-`yarn docs`.
+See `CONTRIBUTING.md` for details on helping with the code.
 
 ## Deploying it
 
@@ -119,6 +111,6 @@ something at `/healthz`.
 full list of settings, `docs/BACKUP.md` covers backups, `docs/ANDROID.md` the
 phone.
 
-Signing in is an address and a password; there is no "continue with Google".
+Signing in is an address and a password;
 Email is optional — without SMTP settings, confirmation and reset links are
 written to the server log instead of sent.

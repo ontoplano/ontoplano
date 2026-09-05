@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for contributing! Ontoplano is one person's project, so every issue,
+Thanks for contributing! As of now, Ontoplano is one person's project, so every issue,
 fix and pull request genuinely moves it.
 
 ## Ways to contribute
@@ -67,8 +67,10 @@ reviewer or a lint rule will stop you on:
   `services/account.ts` or export and deletion silently miss it.
 - **Migrations are read before they run**: `yarn db:generate`, then edit the
   SQL by hand — Drizzle has produced wrong migrations here before.
-- **Colour never carries meaning alone**, red/green is never the
-  distinction, and no bare keystroke deletes anything.
-- **A user-visible capability ships everywhere its object lives** — the
-  matching MCP tool included, unless it is security surface or deletion of
-  personal data.
+- **Use blue for 'yes' and red for 'no'**, I am red/green colorblind,
+  so the convention here is to use blue, instead of green, to indicate success.
+- **A feature works everywhere its thing lives.** If you add renaming to
+  shopping sections, it belongs on the page, in the API and as an MCP tool —
+  not on the page alone. Two exceptions: anything to do with security, and
+  deleting personal data (people, habits, goals). Those stay in the app,
+  where the person does them by hand.
