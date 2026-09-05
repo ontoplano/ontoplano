@@ -128,6 +128,14 @@ test('a flagged account is walked to the password page, and through it', async (
 	expect(welcome.status()).toBe(302);
 	expect(welcome.headers()['location']).toContain('/welcome/password');
 
+	// And the password page itself answers — the layout's first-run gate must
+	// not bounce it back to /welcome, which was a redirect loop.
+	const pwPage = await seat.request.get('/welcome/password', {
+		headers: { Cookie: seat.cookie }
+	});
+	expect(pwPage.status()).toBe(200);
+	expect(await pwPage.text()).toContain('Choose your password');
+
 	// Two fields that disagree are refused with the reason.
 	const wrong = await seat.request.post('/welcome/password', {
 		headers: { Origin: ORIGIN, Cookie: seat.cookie, 'x-sveltekit-action': 'true' },

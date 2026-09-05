@@ -64,7 +64,10 @@ export const load: LayoutServerLoad = async (event) => {
 	// A new account meets first run before anything else: an empty grid is what
 	// a stranger churns on. It asks twice for a timezone and a starting week,
 	// then never appears again.
-	const isWelcome = event.url.pathname === '/welcome';
+	// /welcome and what sits under it — the set-password step included, or the
+	// gate and the page would bounce a fresh invited account between them.
+	const isWelcome =
+		event.url.pathname === '/welcome' || event.url.pathname.startsWith('/welcome/');
 	// The hold pages sit outside first-run on purpose: the gates in
 	// hooks.server.ts bounce /welcome to them, and first-run sending the
 	// visitor back again is a loop, not an onboarding.
