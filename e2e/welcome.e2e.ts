@@ -43,9 +43,19 @@ test('it asks one thing at a time, and the rooms you keep are the rooms you get'
 
 	// One question on screen: the others are in the document and hidden, which
 	// is what keeps their answers in the submission.
-	await expect(page.getByRole('heading', { name: 'Where are you?' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Use it with an AI' })).toBeVisible();
 	await expect(page.getByRole('heading', { name: 'Which rooms do you want?' })).toBeHidden();
-	await expect(page.getByText('Step 1 of 5')).toBeVisible();
+	await expect(page.getByText('Step 1 of 6')).toBeVisible();
+
+	// One press mints the key and shows the prompt around it — without moving
+	// the wizard, whose own answers must survive the round trip.
+	await page.getByRole('button', { name: 'Create the key and the prompt' }).click();
+	await expect(page.locator('code', { hasText: '/api/mcp' })).toBeVisible();
+	await expect(page.locator('code', { hasText: 'onto_' })).toBeVisible();
+	await expect(page.getByText('Step 1 of 6')).toBeVisible();
+
+	await page.getByRole('button', { name: 'Next' }).click();
+	await expect(page.getByRole('heading', { name: 'Where are you?' })).toBeVisible();
 
 	await page.getByRole('button', { name: 'Next' }).click();
 	await expect(page.getByRole('heading', { name: 'When does your week start?' })).toBeVisible();

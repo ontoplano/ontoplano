@@ -12,6 +12,12 @@ version.
 
 ## 0.71.0 — 2026-09-05
 
+- **The welcome wizard starts with "Use it with an AI".** One press mints an
+  assistant key and a short prompt to paste into Claude (or anything that
+  speaks MCP): connect, then interview the new account's owner — routine,
+  commitments, market staples, meals — with short, precise questions, and
+  set the week up from the answers. Entirely skippable; Settings →
+  Integrations has the same thing later.
 - **Adding somebody to the family plan no longer signs you in as them.**
   Creating their account used to ride the sign-up endpoint, whose brand-new
   session landed on the payer's own browser — straight to the verify wall.

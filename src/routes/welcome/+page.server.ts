@@ -5,10 +5,12 @@ import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
 import { completeFirstRun, needsFirstRun, TEMPLATES } from '$lib/server/services/onboarding';
 import { passwordPending } from '$lib/server/services/family-invite';
+import { createToken } from '$lib/server/services/tokens';
+import { ASSISTANT_SCOPES } from '$lib/server/mcp/tools';
 import { HIDEABLE_SECTIONS } from '$lib/sections';
 import { zoneGroups } from '$lib/timezones';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	// An account minted by a family invitation chooses its password first —
 	// its only credential so far is one nobody knows.
 	if (passwordPending(locals.user!.id)) redirect(302, '/welcome/password');
@@ -17,6 +19,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 	if (!needsFirstRun(locals.user!.id)) redirect(302, '/planner/plan');
 
 	return {
+		// For the assistant step's prompt: this instance's own address, because
+		// a self-hosted copy is not app.ontoplano.com.
+		origin: url.origin,
 		week: DEFAULT_WEEK,
 		// Four hundred entries with today's offsets on them, built where the
 		// clock already is.
@@ -35,6 +40,26 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
+	/*
+	 * The wizard's first step: a token for an assistant, in one press.
+	 *
+	 * The scopes are the preset the integrations page offers — read from the
+	 * tools themselves — and the plaintext rides back once, inside the prompt
+	 * the step shows. Its own form on the page, so pressing it never submits
+	 * the wizard.
+	 */
+	assistantToken: async ({ locals }) => {
+		try {
+			const token = createToken(buildCtx(locals.user!.id), {
+				name: 'AI assistant',
+				scopes: ASSISTANT_SCOPES
+			});
+			return { success: true, assistantToken: token.plaintext };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	default: async ({ request, locals }) => {
 		const formData = await request.formData();
 

@@ -40,6 +40,43 @@
 	let firstDay = $state(String(data.week.firstDay));
 	let template = $state('remote');
 
+	/** The one-press assistant key, and the prompt built around it. */
+	const assistantToken = $derived(
+		form && 'assistantToken' in form ? (form.assistantToken as string) : null
+	);
+	let copiedPrompt = $state(false);
+
+	/*
+	 * Deliberately short: it connects, then hands the wheel to the assistant —
+	 * whose questions it asks to keep short and precise, because a brand-new
+	 * account's owner is one screen away from closing the tab.
+	 */
+	const assistantPrompt = $derived(
+		assistantToken === null
+			? ''
+			: `I use ontoplano — a life management app with an MCP server. Connect to it:
+
+  MCP endpoint:  ${data.origin}/api/mcp
+  Transport:     streamable HTTP (stateless — no session, GET is not supported)
+  Auth:          an Authorization: Bearer header
+  Token:         ${assistantToken}
+
+My account is brand new and empty. Interview me and set it up from my answers:
+my weekly routine, standing commitments, things I keep meaning to do, what I
+usually buy at the market, meals I cook. Ask short, precise questions, a few
+at a time, and show me what you will write before writing it.`
+	);
+
+	async function copyPrompt() {
+		try {
+			await navigator.clipboard.writeText(assistantPrompt);
+			copiedPrompt = true;
+			setTimeout(() => (copiedPrompt = false), 2000);
+		} catch {
+			copiedPrompt = false;
+		}
+	}
+
 	/**
 	 * The look, applied to the page as it is picked: a theme you cannot see is
 	 * not a choice. `system` follows the device, which is the default.
@@ -83,6 +120,11 @@
 	// ── The steps ─────────────────────────────────────────────────────────────
 
 	const STEPS = [
+		{
+			key: 'assistant',
+			title: 'Use it with an AI',
+			hint: 'Optional — an assistant can set your week up by asking you about it.'
+		},
 		{ key: 'where', title: 'Where are you?', hint: 'It decides what counts as today.' },
 		{
 			key: 'week',
@@ -138,7 +180,7 @@
 		<h1 class="text-lg font-bold text-gray-900">Welcome to ontoplano</h1>
 		<p class="mt-1 text-sm text-gray-500">
 			{#if stepping}
-				{STEPS.length} quick questions. All of it is editable later.
+				{STEPS.length} quick steps. All of it is editable later.
 			{:else}
 				A few questions and a week to start from. All of it is editable later.
 			{/if}
@@ -188,7 +230,36 @@
 						<p class="mt-1 text-sm text-gray-500">{s.hint}</p>
 
 						<div class="mt-4">
-							{#if s.key === 'where'}
+							{#if s.key === 'assistant'}
+								{#if assistantToken}
+									<p class="text-sm text-gray-700">
+										Paste this to Claude — or anything that speaks MCP. The key is shown only now;
+										revoke it any time under Settings → Integrations.
+									</p>
+									<div class="mt-3 flex items-start gap-2">
+										<code
+											class="flex-1 overflow-x-auto border border-blue-200 bg-blue-50 px-3 py-2 font-mono text-[11px] whitespace-pre-wrap text-gray-900"
+											>{assistantPrompt}</code
+										>
+										<button type="button" onclick={copyPrompt} class="btn btn-sm">
+											<Icon name="copy" />
+											{copiedPrompt ? 'Copied' : 'Copy'}
+										</button>
+									</div>
+								{:else}
+									<p class="text-sm text-gray-700">
+										Claude — or anything that speaks MCP — can read your week and write to it, with
+										a key you can revoke. It will ask about your routine and set the week up for
+										you.
+									</p>
+									<button form="assistant-token" class="btn mt-3">
+										Create the key and the prompt
+									</button>
+									<p class="mt-2 text-xs text-gray-500">
+										Or press Next — Settings → Integrations has this whenever you want it.
+									</p>
+								{/if}
+							{:else if s.key === 'where'}
 								<div class="max-w-sm">
 									<TimezonePicker
 										groups={data.zones}
@@ -337,5 +408,22 @@
 				</div>
 			</div>
 		</form>
+
+		<!--
+			The assistant key's own form. The button on the first step belongs to
+			it by its form= attribute, so pressing it never submits the wizard —
+			and the wizard's Enter handling never reaches it.
+		-->
+		<form
+			id="assistant-token"
+			method="post"
+			action="?/assistantToken"
+			use:enhance={() =>
+				async ({ update }) => {
+					// Keep the wizard's own answers: the default reset would blank
+					// the fields of the form this one deliberately is not.
+					await update({ reset: false });
+				}}
+		></form>
 	</div>
 </div>
