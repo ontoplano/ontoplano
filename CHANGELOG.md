@@ -21,6 +21,10 @@ version.
 - The register page's family note says "Family plan." and stops.
 - **Edit and delete are the same quiet icons everywhere** — habits, people,
   diary entries and notebook notes had kept the old bordered buttons.
+- **Settings → Instance lists the services beside the app** — the reminders
+  timer, the weekly review mail, reconciliation and backups — blue when
+  running, red with the command that fixes it when not. Reminders are judged
+  by when they last asked the app, which is true whatever does the asking.
 - The docs call Tasks "Tasks" and to-dos "to-dos"; installing on a phone now
   says what the Android package actually adds (the widget, and notifications
   that arrive as Ontoplano), that Firefox's menu item is "Add to Home screen",
