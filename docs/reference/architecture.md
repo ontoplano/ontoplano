@@ -3,9 +3,14 @@
 
 # Architecture
 
-One SvelteKit application, one SQLite file, no other running parts. Everything
-below follows from that: there is no queue, no cache to invalidate and no
-second service to be out of step with.
+One SvelteKit application, one SQLite file, and two small clocks beside it —
+timers that ask the app to deliver due reminders every minute and to send the
+weekly review mail every hour. The clocks own no logic and no data: each is a
+POST to the app's own job endpoint, so the app is still the only thing that
+thinks. Everything below follows from that shape: there is no queue, no cache
+to invalidate and no second service to be out of step with — a companion that
+dies means late reminders, never wrong data, and Settings → Instance shows
+whether each is running.
 
 ## Where a request goes
 

@@ -89,7 +89,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 			{
 				target: '[data-tour="nav"]',
 				title: 'One room per kind of thing',
-				body: 'The planner holds your week, the diary holds what happened, ideas hold what you thought of on the bus. Preferences reorders them and puts away the ones you do not want.'
+				body: 'Tasks hold your week, Notes hold what happened — the diary and your notebooks — and ideas hold what you thought of on the bus. Preferences reorders the rooms and puts away the ones you do not want.'
 			},
 			{
 				target: '[data-tour="mobile-bar"]',

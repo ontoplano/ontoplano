@@ -12,6 +12,10 @@ version.
 
 ## 0.72.0 — 2026-09-05
 
+- The welcome tour names the rooms as they are named — Tasks and Notes, not
+  "the planner" and "the diary" — and the architecture page stops claiming
+  there are no other running parts: the two job timers are named, with what
+  breaks (late reminders, never wrong data) when one is down.
 - **The docs grew two pages that cannot drift**: every MCP tool with the
   exact description a model is handed, generated from the array that serves
   them, on the AI-agents page — and a permissions page for the one scope
