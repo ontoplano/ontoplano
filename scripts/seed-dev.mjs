@@ -841,6 +841,51 @@ mention(1, ana);
 mention(2, joao);
 mention(4, marina);
 
+/*
+ * A person is worth opening when there is something under their name.
+ *
+ * One mention each made every page in this section read as an empty right-hand
+ * panel with a face above it — true to the data model and a poor picture of
+ * what the page is for, which is remembering what you and somebody have
+ * actually been doing. So the people who recur, recur.
+ */
+diary(
+	13,
+	'Ana wants the last two days of the trip left loose. She is right.',
+	['travel'],
+	iso(dayOffset(-3))
+);
+diary(
+	14,
+	'Ana’s birthday is in March — the place by the water takes bookings a season out.',
+	['family'],
+	iso(dayOffset(-11))
+);
+diary(
+	15,
+	'Ana finished the Le Guin before me and has said nothing about the ending.',
+	['reading'],
+	iso(dayOffset(-19))
+);
+diary(
+	16,
+	'Marina moved the standup to Tuesdays for good, so the morning block survives.',
+	['work'],
+	iso(dayOffset(-6))
+);
+diary(
+	17,
+	'João is running the half in October and wants company on the long ones.',
+	['health'],
+	iso(dayOffset(-8))
+);
+
+mention(13, ana);
+mention(14, ana);
+mention(15, ana);
+mention(16, marina);
+mention(17, joao);
+
 diary(5, 'The plumber says the wall can go, but not before the pipes move.', ['home']);
 diary(6, 'Finished The Dispossessed. The two timelines land better than I expected.', ['reading']);
 diary(7, 'Booked the flights. Three days in Lisbon, then the train south.', ['travel']);
@@ -1227,7 +1272,7 @@ for (const [id, name, file] of [
  */
 const kitchenPicture = picture(
 	'kitchen.jpg',
-	'The kitchen as it is now',
+	'Sorgh’s kitchen, 1643 — the open shelves and the light from one side',
 	demoPicture('kitchen.jpg')
 );
 if (kitchenPicture) {
@@ -1236,7 +1281,9 @@ if (kitchenPicture) {
 		uid,
 		kitchen
 	);
-	const reference = `![The kitchen as it is now](/media/${kitchenPicture})`;
+	const reference =
+		`The shelf idea, before anybody talks me out of it:\n\n` +
+		`![Sorgh’s kitchen, 1643 — open shelves, light from one side](/media/${kitchenPicture})`;
 	if (entry && !entry.content.includes(reference))
 		db.prepare('update diary_entries set content = ? where id = ?').run(
 			`${entry.content}\n\n${reference}`,
@@ -1755,16 +1802,17 @@ Worth keeping: the diary form does a lot of the work. He is writing things down 
 		34,
 		`## Three quotes in
 
-They disagree about **the wall**, not about the price:
+All three agree the pipes have to move. They disagree about **the wall**, and
+the price follows from that:
 
-1. move the pipes, rebuild — €4,100
-2. move the pipes, rebuild — €3,850
-3. wall is not structural, box the pipes in — €780
+1. take the wall out, move the pipes, rebuild — €4,100
+2. same, keeping the existing opening — €3,850
+3. leave the wall, box the pipes in along it — €780
 
 The third is either right or about to cost me a ceiling. Ringing the building
-manager on Monday to find out which.
+manager on Monday to find out whether the wall is holding anything up.
 
-Nothing gets ordered until that is settled. The counter is the expensive part
+Nothing gets ordered until that is settled: the counter is the expensive part
 and it is cut to whatever the wall ends up being.`
 	],
 	[

@@ -12,6 +12,10 @@ version.
 
 ## 0.76.0 — 2026-09-05
 
+- **The demo and dev data reads like somebody's actual life.** The kitchen
+  notebook's quotes agree with the sentence above them, the picture in it is
+  a reference rather than a photograph of a room it cannot be, and the people
+  who recur in the diary recur more than once.
 - **Nobody joins a family plan without being asked.** Typing the address of
   an account that already exists now offers it a seat: a band at the top of
   their app and an email, with Accept and No thanks. The seat is held while
