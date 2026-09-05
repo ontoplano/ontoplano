@@ -12,6 +12,14 @@ version.
 
 ## 0.70.0 — 2026-09-05
 
+- **There is no "Pro".** The word is gone — from the buy buttons, the invite
+  form and the docs. An account is subscribed, on trial, invited or not
+  subscribed, and the admin list now says those words instead of a plan id.
+- **A fresh install is self-hosted by default.** `make dev`, the from-source
+  unit and the packages set `ONTOPLANO_SELF_HOST=true` themselves, so a new
+  checkout or package install has no trials, no ceilings and no selling copy
+  anywhere — a hosted deployment is the one that declares itself. The invite
+  form's grant-date field now appears only on an instance that actually sells.
 - **`make deploy-local` works on a fresh clone.** The build check that guards
   the payment provider ran its verdict even on trees that have no provider —
   which is every public clone — and failed the deploy with a complaint about

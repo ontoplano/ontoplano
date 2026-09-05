@@ -95,7 +95,7 @@
 					? // An invitation, not a trial: nothing was charged and no card was
 						// asked for. Say when it runs out, because the buttons below are
 						// only useful to somebody who knows that it does.
-						`You were invited, and you are on Pro until ${when(data.entitlement.until)}. No card, and nothing charged.`
+						`You were invited, and your account runs until ${when(data.entitlement.until)}. No card, and nothing charged.`
 					: current.blurb}
 	>
 		{#snippet actions()}
@@ -202,7 +202,7 @@
 						{#if data.yearly}
 							<button class="btn btn-primary" name="interval" value="yearly">
 								<Icon name="arrow-right" />
-								{trialFirst ? `Start your free ${data.trialDaysAhead} days` : 'Go Pro'} — yearly
+								{trialFirst ? `Start your free ${data.trialDaysAhead} days` : 'Subscribe'} — yearly
 							</button>
 							<button class="btn" name="interval" value="monthly">
 								{formatPrice(data.pricing.monthlyCents, data.pricing.currency)} monthly
@@ -210,7 +210,7 @@
 						{:else}
 							<button class="btn btn-primary" name="interval" value="monthly">
 								<Icon name="arrow-right" />
-								{trialFirst ? `Start your free ${data.trialDaysAhead} days` : 'Go Pro'}
+								{trialFirst ? `Start your free ${data.trialDaysAhead} days` : 'Subscribe'}
 							</button>
 						{/if}
 					</form>

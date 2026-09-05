@@ -1187,14 +1187,14 @@ export const invites = sqliteTable(
 		createdBy: text('created_by').notNull(),
 		expiresAt: text('expires_at'),
 		/**
-		 * How long the account it creates is Pro for, as an instant.
+		 * How long what the invitation hands over lasts, as an instant.
 		 *
 		 * Two different clocks live on this row and confusing them is the whole
 		 * reason for this comment. `expires_at` is the code's own life — after it,
 		 * the code no longer works. This is the life of what the code hands over:
-		 * the account is Pro until this moment, then it lapses like any other.
+		 * the account runs until this moment, then it lapses like any other.
 		 *
-		 * Null is the alpha invitation: Pro with no end date and no billing
+		 * Null is the alpha invitation: no end date and no billing
 		 * anywhere in its interface, until the operator says otherwise.
 		 */
 		grantsUntil: text('grants_until'),

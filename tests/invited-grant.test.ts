@@ -1,11 +1,11 @@
 /**
- * A month of Pro handed over at sign-up.
+ * A month of the app handed over at sign-up.
  *
  * The invitation an operator sends before there is anything to buy — and, once
- * there is, instead of it. The account is Pro from the moment it is made,
+ * there is, instead of it. The account is subscribed from the moment it is made,
  * having paid nothing and having spent none of its free days, and then it
  * lapses like any other. Two things had to be got right and both are here:
- * the grant ends (an `invited` row used to mean Pro forever, unconditionally),
+ * the grant ends (an `invited` row used to mean full access forever, unconditionally),
  * and while it runs the account can still see the billing pages — because a
  * month on the house is only worth giving away if the person can decide to
  * stay before it runs out.
@@ -38,7 +38,7 @@ describe('an account let in by an invitation that names an end date', () => {
 		billing.onboardEntitlement(OWNER, { grantsUntil: inAMonth }, now);
 	});
 
-	test('is on Pro straight away, from the invitation rather than a trial', () => {
+	test('is subscribed straight away, from the invitation rather than a trial', () => {
 		const plan = subscriptions.resolvePlan(OWNER, now);
 		expect(plan.plan).toBe('pro');
 		expect(plan.source).toBe('invited');
@@ -70,7 +70,7 @@ describe('an account let in by an invitation with no end date', () => {
 		billing.onboardEntitlement(STRANGER, { grantsUntil: null }, now);
 	});
 
-	test('is the alpha deal: Pro, no end, and no billing in its interface', () => {
+	test('is the alpha deal: full access, no end, and no billing in its interface', () => {
 		const plan = subscriptions.resolvePlan(STRANGER, now);
 		expect(plan.plan).toBe('pro');
 		expect(plan.source).toBe('invited');
@@ -78,7 +78,7 @@ describe('an account let in by an invitation with no end date', () => {
 		expect(plan.billable).toBe(false);
 	});
 
-	test('and it is still Pro a year later', () => {
+	test('and it still holds a year later', () => {
 		const plan = subscriptions.resolvePlan(STRANGER, new Date('2027-08-17T09:00:00Z'));
 		expect(plan.plan).toBe('pro');
 	});

@@ -1,7 +1,7 @@
 # Plans
 
 Only a hosted instance sells anything. On a self-hosted one —
-`ONTOPLANO_SELF_HOST=true` — every account is Pro forever, `/settings/billing`
+`ONTOPLANO_SELF_HOST=true` — every account is the whole app forever, `/settings/billing`
 says so in one sentence, and there is nothing to configure. That is the same
 rule the deployment settings follow: the things that exist
 because somebody is running this _as a service_ are off when nobody is.
@@ -11,17 +11,24 @@ because somebody is running this _as a service_ are off when nobody is.
 Everything about entitlement is in `src/lib/server/services/subscriptions.ts`
 and is part of this repository:
 
-|                                                             | free      | Pro                        |
-| ----------------------------------------------------------- | --------- | -------------------------- |
-| the week, the diary, the notebooks, the people, the kitchen | all of it | all of it                  |
-| how much of it piles up                                     | ceilings  | no ceilings                |
-| accounts on one invoice                                     | 1         | up to 5 on the family plan |
-| exports a day                                               | a few     | more                       |
+There is no free tier on a hosted instance — the free version of ontoplano is
+the one you host. What exists beside "subscribed" is what an account becomes
+when the subscription ends:
 
-**No feature is behind a plan.** The ceilings are on the things that accumulate
-— entries, pictures, streams — because those are what cost somebody money to
-keep, and a limit on _use_ would make the free version a demo. A self-hosted
-instance has none of them, because nobody is paying for that disk but you.
+|                                                             | not subscribed       | subscribed                 |
+| ----------------------------------------------------------- | -------------------- | -------------------------- |
+| the week, the diary, the notebooks, the people, the kitchen | readable, exportable | all of it                  |
+| writing more                                                | no                   | yes                        |
+| API tokens and data streams                                 | none                 | with ceilings on pile-up   |
+| exports a day                                               | a couple             | more                       |
+| accounts on one invoice                                     | —                    | up to 5 on the family plan |
+
+**No feature is behind a plan.** The only ceilings are on the things that
+accumulate — stored data points, exports — because those are what cost somebody
+money to keep, and a limit on _use_ would make the app a demo. An account that
+stops paying keeps everything it wrote, readable and exportable: the writing is
+yours. A self-hosted instance has no ceilings at all, because nobody is paying
+for that disk but you.
 
 ## Taking money is not in this repository
 

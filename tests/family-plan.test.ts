@@ -83,7 +83,7 @@ describe('seats', () => {
 		expect(subscriptions.membersOf(OWNER).map((m) => m.id)).toEqual([STRANGER]);
 	});
 
-	test('and that account is Pro without paying for anything', () => {
+	test('and that account is subscribed without paying for anything', () => {
 		const theirs = subscriptions.resolvePlan(STRANGER);
 		expect(theirs.plan).toBe('pro');
 		expect(theirs.source).toBe('family');

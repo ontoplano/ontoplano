@@ -3143,7 +3143,7 @@ Serialise a point for the API — snake_case, matching the documented contract.
 What an account may do, and until when.
 
 Everything asks `resolvePlan`; nothing asks "is this account paying". A
-self-hosted instance is not a customer at all — it answers Pro, forever, with
+self-hosted instance is not a customer at all — it answers everything, forever,
 no billing anywhere in the interface, exactly as the deployment settings
 work.
 
@@ -3155,7 +3155,7 @@ work.
 
 Give a new account its trial.
 
-Fourteen days of Pro without a card, because a planner is not something you
+Fourteen days without a card, because a planner is not something you
 can judge in an afternoon — the point of it only shows up in the second week.
 
 #### `applySubscription(userId, input, now)`

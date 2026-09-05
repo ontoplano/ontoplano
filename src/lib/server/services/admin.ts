@@ -344,29 +344,30 @@ export function recentEvents(limit = 25) {
 		.all();
 }
 
-/** "pro (trial)" reads better here than a status code. */
+/** Words, not plan ids: "trial" and "lapsed" answer the operator's question. */
 function describePlan(userId: string): string {
 	const entitlement = resolvePlan(userId);
 	if (entitlement.source === 'self-hosted') return 'self-hosted';
-	if (entitlement.source === 'trial') return `${entitlement.plan} (trial)`;
-	if (entitlement.source === 'lapsed') return 'free (lapsed)';
+	if (entitlement.source === 'trial') return 'trial';
+	if (entitlement.source === 'lapsed') return 'lapsed';
+	if (entitlement.source === 'invited') return 'invited';
 
 	/*
 	 * A family plan, said from whichever end this account is.
 	 *
-	 * The payer used to read as a plain "pro" and a member as another plain
-	 * "pro", so the operator could not tell one paid account from five riding
-	 * on it — the exact question support gets when a family's card fails.
+	 * The payer and a member used to read as the same bare plan id, so the
+	 * operator could not tell one paid account from five riding on it — the
+	 * exact question support gets when a family's card fails.
 	 */
 	if (entitlement.source === 'family') {
 		const owner = seatOwnerAccount(userId);
-		return owner ? `pro (on ${owner.name}'s plan)` : 'pro (family seat)';
+		return owner ? `on ${owner.name}'s plan` : 'family seat';
 	}
 	const seats = seatsFor(userId);
 	if (seats > 1) {
-		return `${entitlement.plan} (family payer, ${membersOf(userId).length + 1} of ${seats} seats)`;
+		return `family payer, ${membersOf(userId).length + 1} of ${seats} seats`;
 	}
-	return entitlement.plan;
+	return entitlement.plan === 'pro' ? 'subscribed' : 'not subscribed';
 }
 
 function sessionCount(userId: string): number {

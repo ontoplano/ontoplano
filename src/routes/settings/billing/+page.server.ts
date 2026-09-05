@@ -37,8 +37,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		(PLANS[entitlement.plan].limits.exportsPerDay ?? 0) - exportAllowance(ctx.userId).remaining;
 
 	// A self-hosted instance sells nothing, so this page is not there at all.
-	// Somebody running the software on their own machine who is shown "Upgrade
-	// to Pro" has just been told the free version is a demo. It is not.
+	// Somebody running the software on their own machine who is shown an
+	// upgrade button has just been told the free version is a demo. It is not.
 	if (isSelfHosted()) error(404, 'Not found');
 
 	// A card on file changes everything the page offers: no buy buttons (a

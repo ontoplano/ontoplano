@@ -86,7 +86,7 @@
 				date costs nothing.
 			</p>
 		{:else}
-			<h1 class="mb-4 text-xl font-bold tracking-tight text-gray-900">Go Pro</h1>
+			<h1 class="mb-4 text-xl font-bold tracking-tight text-gray-900">Subscribe</h1>
 			<p class="text-sm text-gray-700">Billed today — the trial was already used.</p>
 		{/if}
 

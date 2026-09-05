@@ -396,14 +396,14 @@
 
 		They used to be: open registration ignored a code outright, so on the
 		instance that actually sells something an invitation meant nothing. What it
-		means now is the thing worth giving away — a month of Pro handed over at
+		means now is the thing worth giving away — a month of the app handed over at
 		sign-up, no card asked for and no trial spent. The code still lets somebody
 		in where the instance is closed; that is the smaller half of its job.
 	-->
 	<Card
 		title="Invitations"
 		description={data.sellsAnything
-			? 'A code somebody types when they create their account. It works once, and it hands them Pro until the date you set.'
+			? 'A code somebody types when they create their account. It works once, and it hands them the app until the date you set.'
 			: 'A code somebody types when they create their account. It works once.'}
 	>
 		{#snippet actions()}
@@ -467,9 +467,9 @@
 						it hands over lasts.
 					-->
 					<Field
-						label="Pro until"
+						label="Free until"
 						span={6}
-						hint="They start paid, on the house — no card, no free days. Empty means no end date."
+						hint="A full account, on the house — no card, no trial days spent. Empty means no end date."
 					>
 						<input
 							autocomplete="off"
@@ -510,8 +510,8 @@
 								{/if}
 								{#if data.sellsAnything}
 									· {invite.grantsUntil
-										? `Pro until ${when(invite.grantsUntil)}`
-										: 'Pro with no end date'}
+										? `free until ${when(invite.grantsUntil)}`
+										: 'free with no end date'}
 								{/if}
 							</span>
 						</span>

@@ -28,14 +28,14 @@ export type Invite = {
 	createdAt: string;
 	/** When the code stops working. */
 	expiresAt: string | null;
-	/** When the Pro it hands over runs out. Null is the open-ended alpha grant. */
+	/** When what it hands over runs out. Null is the open-ended alpha grant. */
 	grantsUntil: string | null;
 	usedAt: string | null;
 	usedBy: string | null;
 };
 
 /**
- * How long a month of Pro is, when nobody says otherwise.
+ * How long the grant lasts, when nobody says otherwise.
  *
  * The point of an invitation on a paying instance is to hand somebody the app
  * for a while without asking for a card first — so the default is a month, and
@@ -102,7 +102,7 @@ export function checkSignUpAllowed(code: unknown, now: Date): { invite: Invite |
 	 * Open registration still honours a code.
 	 *
 	 * Anybody may sign up, so a code is not permission — it is what it grants: a
-	 * month of Pro handed over directly, with no card and no trial. Without this
+	 * month of the app handed over directly, with no card and no trial. Without this
 	 * branch an invitation was silently ignored the moment the instance opened,
 	 * and the person it was sent to met the checkout like everybody else.
 	 *
@@ -194,7 +194,7 @@ export function revokeInvite(id: number): void {
 }
 
 /**
- * When the Pro this invitation hands over runs out.
+ * When what this invitation hands over runs out.
  *
  * A date from the form (`<input type="date">`), read as the end of that day so
  * that "until the 30th" includes the 30th. Empty means the open-ended alpha

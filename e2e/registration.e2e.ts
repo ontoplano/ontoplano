@@ -245,3 +245,23 @@ test('the instance page says what version is running', async ({ request }) => {
 	// Whatever package.json says — this checks the value arrived, not what it is.
 	expect(html).toMatch(/data-testid="app-version"[^>]*>\s*\d+\.\d+\.\d+/);
 });
+
+/**
+ * An instance that sells nothing shows nothing about selling.
+ *
+ * The suite runs as a self-hosted instance, which is exactly the shape of a
+ * fresh clone — and a fresh clone once opened this page offering to hand out
+ * "Pro until" a date, words from a product it is not. Two pins: the invite
+ * form carries no grant date, and the word "Pro" appears nowhere; there is no
+ * Pro, there are only accounts.
+ */
+test('an instance that sells nothing shows no selling copy', async ({ request }) => {
+	const cookie = await signInAsOwner(request);
+
+	const res = await request.get('/settings/instance', { headers: { cookie } });
+	expect(res.ok()).toBeTruthy();
+
+	const html = await res.text();
+	expect(html).not.toContain('grantsUntil');
+	expect(html).not.toMatch(/\bPro\b/);
+});

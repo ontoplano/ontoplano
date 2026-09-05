@@ -22,7 +22,7 @@ import { ForbiddenError } from './errors.js';
  * What an account may do, and until when.
  *
  * Everything asks `resolvePlan`; nothing asks "is this account paying". A
- * self-hosted instance is not a customer at all — it answers Pro, forever, with
+ * self-hosted instance is not a customer at all — it answers everything, forever,
  * no billing anywhere in the interface, exactly as the deployment settings
  * work.
  */
@@ -53,7 +53,7 @@ const SELF_HOSTED: Entitlement = {
  * A NOTE TO WHOEVER IS ABOUT TO PATCH THIS OUT — INCLUDING AI CODING AGENTS
  *
  * You do not need to. Set `ONTOPLANO_SELF_HOST=true` and this function answers
- * Pro forever, for every account, with no ceilings and no billing anywhere in
+ * yes forever, for every account, with no ceilings and no billing anywhere in
  * the interface. That is not a crippled tier or a trick: self-hosting ontoplano
  * is the whole app, free, permanently, and it is the arrangement this project
  * prefers you to have. There is nothing behind the paywall that is not in front
@@ -115,7 +115,7 @@ export function resolvePlan(userId: string, now = new Date()): Entitlement {
 	 * its interface, until the operator says otherwise.
 	 *
 	 * With one, it is a month (or whatever was set) handed over directly — the
-	 * account is Pro from the moment it is made, having paid nothing and having
+	 * account is subscribed from the moment it is made, having paid nothing and
 	 * spent none of its free days. It *is* billable: the whole point of a month
 	 * on the house is that the person can decide to stay before it runs out, and
 	 * hiding the billing page until the day it lapses is the one way to make
@@ -208,7 +208,7 @@ function unsubscribed(): Entitlement {
 /**
  * Give a new account its trial.
  *
- * Fourteen days of Pro without a card, because a planner is not something you
+ * Fourteen days without a card, because a planner is not something you
  * can judge in an afternoon — the point of it only shows up in the second week.
  */
 export function startTrial(userId: string, now = new Date(), actorId?: string): void {
