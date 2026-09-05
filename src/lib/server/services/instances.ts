@@ -8,7 +8,7 @@
  * dashboard omitted one-offs entirely and the tracker's day tabs counted a
  * different set of tasks than the list beneath them displayed.
  */
-import { and, asc, eq, gte, lt } from 'drizzle-orm';
+import { and, asc, eq, gte, isNull, lt, ne, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 
 import { db } from '../db/index.js';
@@ -29,6 +29,7 @@ import {
 	activities,
 	categories,
 	exceptionalTasks,
+	reminders,
 	suppressedSlots,
 	taskRecords,
 	recurringTasks
@@ -144,6 +145,66 @@ function remindFor(
 	}
 }
 
+/**
+ * Re-align future days whose clock has drifted from their block's.
+ *
+ * Every generated day stores its own `scheduled_at`. `updateSlot` moves them
+ * along when the template moves — but only since it learned to, so any row
+ * moved before that carries the old hour forever: the API answered with the
+ * block's new `start_time` and the row's old `at_local` for the same
+ * occurrence, the calendar feed exported the old hour, and the reminder fired
+ * at it. Rows like that exist in the wild, so generation — which runs on
+ * every visit — heals them rather than waiting for a migration someone must
+ * remember production needs.
+ *
+ * Untouched future rows only: `todo`, from today on. A finished or skipped
+ * occurrence is a record of a day, and days already past happened at the time
+ * they happened at.
+ */
+function repairDriftedDays(ctx: Ctx, fromStr: string): void {
+	const drifted = db
+		.select({
+			id: taskRecords.id,
+			scheduledAt: taskRecords.scheduledAt,
+			startTime: recurringTasks.startTime,
+			lead: recurringTasks.remindLeadMinutes
+		})
+		.from(taskRecords)
+		.innerJoin(recurringTasks, eq(taskRecords.slotId, recurringTasks.id))
+		.where(
+			and(
+				eq(taskRecords.userId, ctx.userId),
+				eq(taskRecords.status, 'todo'),
+				gte(taskRecords.scheduledAt, fromStr),
+				ne(sql`substr(${taskRecords.scheduledAt}, 12, 5)`, recurringTasks.startTime)
+			)
+		)
+		.all();
+
+	for (const row of drifted) {
+		const moved = `${row.scheduledAt.slice(0, 10)}T${row.startTime}:00`;
+		db.update(taskRecords).set({ scheduledAt: moved }).where(eq(taskRecords.id, row.id)).run();
+
+		// The reminder that was armed off the old hour moves with it. Recomputed
+		// from the block's lead rather than shifted, so a reminder that was
+		// already wrong twice over comes out right rather than differently wrong.
+		if (row.lead !== null && row.lead !== undefined) {
+			const at = new Date(Date.parse(`${moved}Z`) - row.lead * 60000).toISOString().slice(0, 19);
+			db.update(reminders)
+				.set({ remindAt: at })
+				.where(
+					and(
+						eq(reminders.userId, ctx.userId),
+						eq(reminders.subjectKind, 'instance'),
+						eq(reminders.subjectId, row.id),
+						isNull(reminders.deliveredAt)
+					)
+				)
+				.run();
+		}
+	}
+}
+
 export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 	const fromDate = formatDate(from);
 	const toDate = formatDate(to);
@@ -151,6 +212,8 @@ export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 	const toStr = localISO(new Date(to.getFullYear(), to.getMonth(), to.getDate()));
 
 	let created = 0;
+
+	repairDriftedDays(ctx, fromStr);
 
 	const slots = db
 		.select()

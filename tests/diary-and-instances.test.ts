@@ -179,6 +179,47 @@ describe('an occurrence of a block', () => {
 		);
 	});
 
+	/**
+	 * Rows moved before updateSlot learned to bring them along.
+	 *
+	 * Production carries occurrences whose scheduled_at still holds the hour
+	 * the block used to start at. No update will ever touch them again, so
+	 * generation — which runs on every visit — is what heals them.
+	 */
+	test('a day whose clock drifted from its block is healed by the next generation', () => {
+		const slot = slots.createSlot(ctx, {
+			weekday: 0,
+			startTime: '07:15',
+			durationMinutes: 30,
+			mode: 'category',
+			categoryId: work,
+			label: 'Drifted routine'
+		});
+		instances.generateInstances(
+			ctx,
+			new Date('2026-08-17T00:00:00'),
+			new Date('2026-08-18T00:00:00')
+		);
+
+		// Simulate the old bug: the block moved and the row did not.
+		database.exec(
+			"update task_records set scheduled_at = '2026-08-17T08:00:00' where slot_id = ?",
+			slot
+		);
+
+		instances.generateInstances(
+			ctx,
+			new Date('2026-08-17T00:00:00'),
+			new Date('2026-08-18T00:00:00')
+		);
+
+		const healed = schedule
+			.getUpcomingSchedule(ctx, { days: 1, includeCompleted: true, startingOn: '2026-08-17' })
+			.occurrences.find((o) => o.title === 'Drifted routine')!;
+		expect(healed.at_local).toBe('2026-08-17T07:15:00');
+		expect(healed.start_time).toBe('07:15');
+	});
+
 	test('finishing stamps when, and reopening forgets it', () => {
 		const id = anOccurrence();
 
