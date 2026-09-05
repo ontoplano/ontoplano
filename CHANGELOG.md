@@ -12,6 +12,12 @@ version.
 
 ## 0.70.0 — 2026-09-05
 
+- **The README is a front door.** The feature catalogue is gone — the docs
+  are the tour — and what remains is what a newcomer needs: how to run it,
+  how to develop it (`make dev`, and bare `make` for the rest), how to deploy
+  it, and where the detail lives. It also stops claiming there is "no payment
+  code at all" — what is absent is the payment provider, and `docs/PLANS.md`
+  says exactly where that seam is.
 - **Every install gets the companion timers.** The reminders and
   weekly-review timers now ship here instead of living in the maintainer's
   tooling: `make install-service` installs and starts them, generating the

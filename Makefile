@@ -19,11 +19,10 @@ help:
 	@echo
 	@printf '\033[1mdevelop\033[0m\n'
 	@echo "  dev / dev-stop / dev-logs   the app, as a user service (dev-fg holds the terminal)"
-	@echo "  dev-docs · dev-site         the docs and the marketing site, served here"
-	@echo "  dev-all                     all three at once"
+	@echo "  dev-docs                    the documentation, built and served here"
 	@echo "  vars                        every variable a make command line can carry"
 	@echo "  lint · format               prettier+eslint, prettier --write"
-	@echo "  test                        the Playwright e2e suite (yarn test for units)"
+	@echo "  test                        the Playwright e2e suite (yarn test:unit for units)"
 	@echo "  icons                       redraw every icon from src/lib/logo/mark.png"
 	@echo "  docs                        rebuild docs/reference from the code (lint checks it is current)"
 	@echo "  docs-site                   …and render it to build-docs/ as a static site"
@@ -49,6 +48,7 @@ help:
 	@echo "  android-lan                 an APK pointed at this machine, over wifi"
 	@if [ -f local.mk ]; then echo; \
 		printf '\033[1mthis instance (local.mk)\033[0m\n'; \
+		echo "  dev-site · dev-all                the site checkout served here, and all three"; \
 		echo "  deploy [-app|-site|-docs|-demo]   ship it; bare deploy is all four"; \
 		echo "  deploy-staging [-app|-site|-docs]  the staging instance on the box"; \
 		echo "  restart [-app|-site|-docs|-demo]  without shipping anything"; \

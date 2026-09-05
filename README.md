@@ -11,7 +11,7 @@
 [![licence AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-1f6feb)](LICENSE)
 [![self-hosted](https://img.shields.io/badge/host%20it-yourself-1f6feb)](#running-it)
 
-**[ontoplano.com](https://ontoplano.com) · [try the demo](https://demo.ontoplano.com) · [documentation](https://docs.ontoplano.com)**
+**[ontoplano.com](https://ontoplano.com) · [make an account](https://app.ontoplano.com) · [try the demo](https://demo.ontoplano.com) · [documentation](https://docs.ontoplano.com)**
 
 `.deb` · `.rpm` · AUR · Docker · Android
 
@@ -28,85 +28,24 @@ Everything you are keeping track of, in one place, on one week. It started as a
 weekly planner and the week is still the shape — what goes on it is the rest of
 a life.
 
-You describe the week you intend to have — blocks of time, recurring or one-off,
-each belonging to an area of your life. Ontoplano turns that into the days as
-they arrive, and records what actually happened: what you did, when, how late,
-how it felt. What comes out is the gap between the week you planned and the week
-you had, which is the only thing a planner can honestly tell you.
-
-Goals with real progress, a journal, the people in it, ideas, habits, recipes
-and the shopping that follows from them. Use the parts you want: every section
-can be switched off, reordered and recoloured.
+You describe the week you intend to have; Ontoplano turns it into the days as
+they arrive and records what actually happened. Around that sit the other
+rooms: **Tasks** (the plan, today's board, the weekly review), **Notes** (a
+diary and notebooks), goals with real progress, the people in your life,
+habits, ideas, recipes and the shopping that follows from them. Use the parts
+you want — every section can be switched off, reordered and recoloured. The
+full tour is at [docs.ontoplano.com](https://docs.ontoplano.com).
 
 **Ask it in words.** `/api/mcp` is a Model Context Protocol server, so Claude —
-or anything else that speaks MCP — can read your day and change it: move a
-block, tick a habit, add to the shopping list. Your token, your scopes, revoked
-in one click. Nothing in the app calls a model; the assistant is yours and it
-comes to the app, not the other way round.
+or anything else that speaks MCP — can read your day and change it, with your
+token and your scopes. Nothing in the app calls a model; the assistant is yours
+and it comes to the app, not the other way round.
 
-**Two ways to have it.** Run your own copy — one SQLite file, no account
-anywhere but your own, no payment code in this repository at all. Or make an
-account on [ontoplano.com](https://ontoplano.com), which is the same software on
-a box I keep, if you would rather not keep one.
-
-## What is in it
-
-- **Plan** — a week grid. Drag to make a block; alt-drag one occurrence to move
-  just that day. Blocks name a category or a specific activity, repeat weekly or
-  on an interval, and can be saved as a scheme to put back later.
-- **Board** — today as a kanban, plus everything with no date yet. Mark things
-  done, doing, skipped; timing (early, on time, late) is derived from when you
-  finished, never chosen. Drag a card onto a day and it becomes a real block.
-- **Review** — what you planned against what you did, week by week, and three
-  lines you will actually want to read in a year.
-- **Goals** — by horizon, from a day to a year. Link a goal to the tasks that
-  count towards it and the progress bar is your execution log, not a number you
-  typed.
-- **Diary, ideas, habits, shopping** — a journal with free-form tags, quick
-  capture, habits logged per day with a heatmap, and inventory-vs-wishlist
-  shopping.
-- **People** — mention someone in an entry and every mention collects on their
-  page; a tag cannot do that, because a tag has no identity beyond its spelling.
-- **Notebooks** — a subject you write against with no deadline: a book, a trip,
-  a renovation. Entries, tasks and goals can belong to one, and deleting it
-  leaves every one of them where it is.
-- **Recipes and meals** — a recipe with its ingredients, put on a day; what you
-  have run out of lands on the shopping list. Work planners ignore food and meal
-  planners ignore the rest of the week; this is the seam.
-- **Reminders** — set on a block, in minutes before it starts, and every
-  occurrence of it gets one. They reach a phone with the app closed, and a
-  birthday in **People** announces itself on the morning.
-- **Dashboard** — the cards you choose, in the order you choose. The rooms of
-  the app are yours to order and colour too.
-- **Your data, out and back** — every row as JSON in one click, and the same
-  file restored into any instance. That is what makes leaving possible, so it
-  is a feature rather than a promise.
-- **Calendar feed** — a private iCal URL your week shows up in, wherever you
-  already look.
-- **Administration** — `/admin` for whoever runs the instance: find an account,
-  see its plan and its history, resend a confirmation, hand out the admin role.
-  Signing in as somebody to help them puts an amber banner over every page and a
-  line in _their_ history.
-- **Plans** — on ontoplano.com it is one subscription with a fourteen-day trial,
-  and the ceilings are on the things that pile up rather than on use. No feature
-  is behind a plan, and an account that stops paying can still be read and
-  exported — the writing is yours. A self-hosted instance has no plans, no
-  ceilings and no billing at all, and this repository ships no payment code at
-  all. `docs/PLANS.md`.
-- **Plugins and the API** — scoped tokens, data streams external apps push
-  into, webhooks they subscribe to, and schedule and shopping endpoints they
-  read and write. `docs/PLUGINS.md`, and `docs/reference/ai-agents.md` for the
-  MCP side.
-- **Share a list with your partner** — `examples/onto-household.mjs` keeps two
-  accounts' shopping lists equal over webhooks: add milk on one phone, it is
-  on both; tick it in the aisle, it is bought on both. Works across two
-  separate instances.
-- **Today, pushed to you** — `examples/onto-morning.mjs` is one token, one GET
-  and one message: your blocks, habits and carried-over tasks to ntfy or
-  Telegram from a crontab line. It is the shortest thing you can write against
-  the API, and the place to start reading.
-- **Phone** — an installable PWA, and an Android app that wraps it
-  (`docs/ANDROID.md`).
+**Two ways to have it.** Run your own copy — one SQLite file, one process, no
+account anywhere but your own, and no payment provider in this repository
+(`docs/PLANS.md` explains the seam). Or make an account on
+[app.ontoplano.com](https://app.ontoplano.com), which is the same software on a
+box I keep, if you would rather not keep one.
 
 ## Running it
 
@@ -127,8 +66,9 @@ yay -S ontoplano
 then `sudo ontoplano config` to set the origin and
 `sudo systemctl enable --now ontoplano`. The `.deb` and the `.rpm` are on the
 [releases page](https://github.com/ontoplano/ontoplano/releases); they carry
-their own Node, so there is nothing else to install. There is no Windows
-installer yet — [help build one](CONTRIBUTING.md).
+their own Node, so there is nothing else to install. A packaged install keeps
+its settings in `/etc/ontoplano/` and its database in `/var/lib/ontoplano/`.
+There is no Windows installer yet — [help build one](CONTRIBUTING.md).
 
 Or with Docker, which needs nothing but Docker:
 
@@ -140,136 +80,68 @@ docker run -d --name ontoplano -p 1493:1493 \
   ontoplano/ontoplano:latest
 ```
 
-One container, one volume, no database server — migrations run when it starts.
-`docs/DOCKER.md` has the reverse proxy, the upgrade and the backup.
+One container, one volume, no database server — migrations run when it starts,
+and the container runs its own scheduled jobs. `docs/DOCKER.md` has the reverse
+proxy, the upgrade and the backup.
 
-From the source instead:
+Register at `/login` — **the first account owns the instance**, and after it
+registration is closed until `/settings/instance` says otherwise: closed, by
+invitation, or open.
+
+**The app is not the whole deployment.** Reminders and the Monday review mail
+are asked of the app by two small timers. The packages install them, the Docker
+image runs them itself, and `make install-service` sets them up for a
+from-source install; Settings → Instance shows whether they are running and
+how to fix them when not.
+
+## Developing it
 
 ```sh
 yarn
-cp .env.example .env      # set ORIGIN and BETTER_AUTH_SECRET
-yarn db:migrate           # create the database
-yarn dev                  # http://localhost:1493
+make dev        # dev server at http://localhost:1493, as a systemd user service
+make dev-logs   # follow it; make dev-stop stops it; make dev-fg holds the terminal
+make db-seed    # synthetic data for the dev account
 ```
 
-Register at `/login`; the first screen asks for your timezone and which day your
-week starts, and offers a starter week you can then argue with.
+Bare `make` prints every target; `make vars` every variable a command line can
+carry. `make dev` wants Linux with systemd — on anything else, `yarn dev` runs
+the same server in the foreground. A from-source instance keeps its settings in
+`~/.config/ontoplano/` and its database in `~/.local/share/ontoplano/`.
 
-Config and data live outside the repo and are created on first run:
+Before a pull request: `make lint`, `yarn test:unit`, `make test` (the
+Playwright suite). `CONTRIBUTING.md` has the conventions that are not obvious
+from the code, and the reasons for them.
 
-- `~/.config/ontoplano/config.toml` — bind address, port, database path, who may
-  register, and whether an account may change its own address
-- `~/.config/ontoplano/env` — `ORIGIN`, `BETTER_AUTH_SECRET`, SMTP, backups
-- `~/.local/share/ontoplano/` — the database
+**[`docs/reference/`](docs/reference/) is how the app works, generated from
+the app** — every table, endpoint, service and keyboard shortcut, rebuilt by
+`yarn docs` and checked by `make lint` so it cannot quietly stop being true.
+Press `?` on any page of the running app for that page's shortcuts.
 
-Everything a person would want to change — week start, timezone, theme,
-dashboard layout — is a per-account setting under `/settings`, not a config
-file.
+## Deploying it
 
-**Registration is closed by default.** The first account is always allowed —
-it is the one that owns the instance — and after that, `/settings/instance`
-decides whether anybody else can make one: closed, by invitation, or open. An
-invitation is a code that works once, and the page makes and revokes them.
-
-## Keyboard
-
-Every list takes `j`/`k`, every form closes on `Escape`, `n` makes a new one of
-whatever the page is about, and `J`/`K` move between pages. Press `?` on any
-page for its own shortcuts — that list is generated from the code, so it does
-not go stale the way a table in a README does.
-
-The plan grid has a few of its own: `g` toggles grid and list, `[` and `]` move
-a week, `Ctrl`+drag duplicates a block, `Ctrl`+scroll (or `+` / `-` / `0`) zooms.
-
-## Deployment
-
-A systemd user service, behind whatever proxy you already run:
+From source on the machine you are sitting at:
 
 ```sh
 # ~/.config/ontoplano/env
-ORIGIN=https://ontoplano.example.com     # must be the public origin, or CSRF rejects forms
-BETTER_AUTH_SECRET=…                     # openssl rand -hex 16
+ORIGIN=https://ontoplano.example.com   # must be the public origin, or CSRF rejects every form
+BETTER_AUTH_SECRET=…                   # openssl rand -base64 32
+
+make install-service   # build, migrate, install the service and its timers
+make update            # after a git pull: rebuild, redeploy, restart
+make deploy-local      # the build-and-copy step alone, no service touched
 ```
 
-```sh
-make install-service     # build, migrate, install and start the unit
-make update              # deploy a new version and restart
-```
+Keep it on `127.0.0.1` behind a reverse proxy that terminates TLS, and point
+something at `/healthz`. Every shipped install says `ONTOPLANO_SELF_HOST=true`
+for itself, which means no trials, no ceilings and no billing anywhere — the
+hosted instance is the one that declares otherwise.
+[`docs/reference/configuration.md`](docs/reference/configuration.md) is the
+full list of settings, `docs/BACKUP.md` the backup story, `docs/ANDROID.md`
+the phone.
 
-Three switches worth knowing, all off by default:
-
-- `ONTOPLANO_TRUST_PROXY=true` — rate limiting reads `X-Forwarded-For`. Only
-  behind a proxy you control; trusting that header unconditionally lets anyone
-  forge their address.
-- `ONTOPLANO_HTTPS=true` — adds HSTS. Harmful over plain http, hence opt-in.
-- `ONTOPLANO_SELF_HOST=true` — this is one person's instance. The owner may edit
-  deployment settings from the UI; they act for the whole instance, so they are
-  off anywhere else.
-- `ONTOPLANO_SELLS=true` — this instance charges for accounts. Off unless it is
-  said, so nothing about money happens on a copy that never mentions it, and an
-  instance that says it sells and cannot take a card refuses registrations and
-  says why on `/admin` rather than handing out free trials.
-
-Signing in is an address and a password, and nothing else. There is no
-"continue with Google": an account on your own instance should not depend on a
-company neither of us controls, and a self-hosted app whose front door is
-somebody else's service is not really self-hosted.
-
-Email is optional. With `SMTP_HOST` and `SMTP_FROM` set, password resets and
-address confirmations are sent; without them the message — link included — is
-written to the server log, so a single-user install is not forced to run a mail
-server. What it never does is claim to have sent something it did not.
-
-Putting it on a public box means four things and no more: run it as a service
-that survives logout (`make install-service`), keep it on `127.0.0.1` behind a
-reverse proxy that terminates TLS, set `ORIGIN` to exactly what the address bar
-will say — it is the only CSRF defence here, and a wrong one rejects every form
-post with nothing in the log to explain it — and point something off the box at
-`/healthz`, which touches the database before answering.
-
-`/healthz` will also report disk, memory, load and database size to a request
-carrying `ONTOPLANO_HEALTH_TOKEN`, and nothing to anyone else. Storage is the
-one that creeps up on a small machine: SQLite only grows, and a snapshot copies
-the whole file beside itself.
-
-### Backups
-
-`docs/BACKUP.md`. Snapshots cover a bad migration and are taken automatically
-before every one; Litestream replication to an S3-compatible bucket covers a
-dead disk. `scripts/restore-drill.sh` restores into a scratch directory and
-checks the result — do that once before you need it.
-
-### Migrations
-
-`yarn db:generate` → read the SQL → `yarn db:migrate`, which snapshots first.
-`db:push` refuses a real database on purpose: it rebuilds tables to change them
-and has dropped data here before.
-
-## Development
-
-```sh
-yarn dev              # dev server on 1493
-yarn build            # production build
-yarn check            # svelte-check
-yarn lint             # prettier + eslint, and checks the docs is current
-yarn test:e2e         # Playwright
-yarn docs             # rebuild docs/reference from the code
-make db-snapshot      # a consistent copy, before you do something regrettable
-```
-
-Data access lives in `src/lib/server/services/`; routes are adapters that read a
-form, call a service and map errors. A lint rule stops `$lib/server/db` being
-imported under `src/routes/`. Colours live in `src/lib/colors.ts`, form controls
-and buttons in `src/routes/layout.css`. `CONTRIBUTING.md` has the conventions
-that are not obvious from the code, and the reasons for them.
-
-**[`docs/reference/`](docs/reference/) is how the app works, generated from the app.**
-Every table and column, every endpoint with the scope it demands, the service
-layer module by module, and every keyboard shortcut — built by
-`scripts/build-docs.mjs` from the migration snapshot, the route files, the
-scope table and the shortcut map. `make lint` fails if what is committed is out
-of date, so it cannot quietly stop being true. Do not edit those pages; change
-the code and run `yarn docs`.
+Signing in is an address and a password; there is no "continue with Google".
+Email is optional — without SMTP settings, confirmation and reset links are
+written to the server log instead of sent.
 
 ## Stack
 
