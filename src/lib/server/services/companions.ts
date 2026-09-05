@@ -106,8 +106,28 @@ export async function companions(): Promise<Companion[]> {
 		});
 	}
 
+	// The weekly review mail: stamped by its job endpoint, like reminders, so a
+	// container's own scheduler counts the same as a systemd timer. The window
+	// is generous because the timer is hourly, not minutely.
+	const askedReview = lastRanAt('weekly-reviews');
+	if (askedReview !== null) {
+		const minutes = Math.round((Date.now() - askedReview) / MINUTE);
+		const fresh = Date.now() - askedReview < 3 * 60 * MINUTE;
+		rows.push({
+			label: 'Weekly review mail',
+			unit: 'ontoplano-weekly-review.timer',
+			ok: fresh,
+			detail: fresh
+				? `running — last asked this app ${minutes <= 1 ? 'a minute' : `${minutes} minutes`} ago`
+				: `stopped asking — last heard from ${minutes} minutes ago`,
+			fix: fresh ? '' : 'systemctl --user restart ontoplano-weekly-review.timer'
+		});
+	}
+
 	const timers: [string, string][] = [
-		['Weekly review mail', 'ontoplano-weekly-review.timer'],
+		...(askedReview === null
+			? [['Weekly review mail', 'ontoplano-weekly-review.timer'] as [string, string]]
+			: []),
 		...(instanceSells()
 			? [['Billing reconciliation', 'ontoplano-reconcile.timer'] as [string, string]]
 			: []),

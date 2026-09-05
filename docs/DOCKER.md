@@ -100,6 +100,19 @@ The compilers that build `better-sqlite3` are in an earlier build stage and do
 not ship. `tini` is PID 1, so the container stops when it is asked to rather
 than being killed ten seconds later mid-write.
 
+## The jobs run themselves
+
+The app needs two things asking it on a clock: reminders every minute, and the
+weekly review mail every hour. On a bare install those are systemd timers; a
+container has no systemd, so the entrypoint runs the clock itself and asks the
+app's own job endpoints. Nothing to configure and nothing extra to run —
+Settings → Instance shows both jobs and when they last asked.
+
+The endpoints sit behind `ONTOPLANO_HEALTH_TOKEN`. If you set one, the
+container's clock uses yours; if you set none, it mints a random one at start
+that never leaves the container. Both jobs are safe to trigger twice, so
+running your own timers against the container as well costs nothing.
+
 ---
 
 ## The image and what gets into it — if you fork this

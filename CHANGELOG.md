@@ -12,6 +12,12 @@ version.
 
 ## 0.70.0 — 2026-09-05
 
+- **The Docker image runs the companion jobs itself.** Reminders every
+  minute and the weekly review mail every hour, asked of the app by the
+  container's own clock — no systemd, nothing to configure. A new
+  `/api/jobs/weekly-reviews` endpoint (health-token gated, like reminders)
+  makes the hourly job reachable, and Settings → Instance shows both jobs by
+  when they last asked, whatever is doing the asking.
 - **There is no "Pro".** The word is gone — from the buy buttons, the invite
   form and the docs. An account is subscribed, on trial, invited or not
   subscribed, and the admin list now says those words instead of a plan id.

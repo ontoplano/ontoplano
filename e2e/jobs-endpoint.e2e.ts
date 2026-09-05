@@ -49,3 +49,35 @@ test('and does the round with it', async ({ request }) => {
 	expect(typeof body.accounts).toBe('number');
 	expect(typeof body.configured).toBe('boolean');
 });
+
+/**
+ * The hourly job, behind the same door.
+ *
+ * The Docker image's entrypoint asks this once an hour, because a container
+ * has no systemd to hang a timer on — so the endpoint is what makes the
+ * Monday mail exist there at all. It sends mail, so unauthenticated it must
+ * look like a route that does not exist.
+ */
+test('the weekly review job refuses anybody without the health token', async ({ request }) => {
+	const bare = await request.post('/api/jobs/weekly-reviews');
+	expect(bare.status()).toBe(404);
+
+	const wrong = await request.post('/api/jobs/weekly-reviews', {
+		headers: { 'x-health-token': 'not-the-token' }
+	});
+	expect(wrong.status()).toBe(404);
+});
+
+test('and does the hour with it', async ({ request }) => {
+	const ran = await request.post('/api/jobs/weekly-reviews', {
+		headers: { 'x-health-token': 'playwright-health-token' }
+	});
+
+	expect(ran.status(), await ran.text()).toBe(200);
+	const body = (await ran.json()) as { ok: boolean; sent: number; considered: number };
+	expect(body.ok).toBe(true);
+	// The same two numbers the script prints: how many went out, how many had
+	// a week worth writing about.
+	expect(typeof body.sent).toBe('number');
+	expect(typeof body.considered).toBe('number');
+});
