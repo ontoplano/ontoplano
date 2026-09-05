@@ -10,6 +10,12 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.78.2 — 2026-09-05
+
+- **The family plan's copy says who pays, plainly** — the doc, the settings
+  page, the offer band and both mails. The invoice was never shared; the
+  payer pays it.
+
 ## 0.78.1 — 2026-09-05
 
 - **Adding a task to a goal no longer drops the ones already done.** The

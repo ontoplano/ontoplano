@@ -473,7 +473,7 @@
 					{#if data.familyOffer.ownPlanEnds}
 						You pay for it yourself today — cancel your own subscription first, then accept.
 					{:else}
-						Your notes and your week stay yours; only the invoice changes.
+						Your notes and your week stay yours; they just pay for the account.
 					{/if}
 				</span>
 				<span class="flex shrink-0 items-center gap-1">

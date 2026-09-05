@@ -70,7 +70,7 @@ export function familyOfferMail(url: string, ownerName: string) {
 		subject: `${ownerName} offered to pay for your ontoplano account`,
 		lines: [
 			`${ownerName} has a family plan and would like your account on it. Nothing has changed yet: it is yours until you accept.`,
-			'If you accept, they pay and you keep everything — your notes and your week stay your own, and the only thing shared is the invoice.'
+			'If you accept, they pay and you keep everything — your notes and your week stay your own.'
 		],
 		action: { label: 'Look at the offer', url },
 		small: ['If you were not expecting this, decline it and nothing happens.']
@@ -82,7 +82,7 @@ export function familyInviteMail(url: string, ownerName: string) {
 		subject: `${ownerName} added you to their ontoplano plan`,
 		lines: [
 			`${ownerName} is paying for an ontoplano account for you. It is already made — the button below opens it and asks you to choose your password.`,
-			'Your notes and your week are your own; the only thing shared is the invoice.'
+			'Your notes and your week are your own; they just pay for the account.'
 		],
 		action: { label: 'Open your account', url },
 		small: ['If you were not expecting this, ignore it and nothing happens.']

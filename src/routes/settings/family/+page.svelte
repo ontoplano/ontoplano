@@ -26,9 +26,7 @@
 			title="Who is on your plan"
 			description="Your plan covers {data.seats} accounts — yours and {data.seats - 1} more."
 		>
-			<p class="text-sm text-gray-600">
-				Everybody keeps their own week; the only thing shared is the invoice.
-			</p>
+			<p class="text-sm text-gray-600">Everybody keeps their own week; you just pay for it.</p>
 
 			<div class="mt-3"><FormError message={form?.message} /></div>
 

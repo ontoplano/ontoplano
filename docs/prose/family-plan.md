@@ -3,10 +3,9 @@
 
 # The family plan
 
-One subscription covering up to five accounts. Everybody keeps their own week,
-their own notes, their own everything — nothing is shared but the invoice. A
-seat is access, never the ability to spend: the billing pages belong to
-whoever holds the card.
+One subscription, up to five accounts, one person paying for all of them.
+Everybody keeps their own week, their own notes, their own everything. Only
+the payer sees the billing pages and can change the plan.
 
 ## Setting it up
 
