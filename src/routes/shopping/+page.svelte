@@ -862,8 +862,12 @@
 						<input type="hidden" name="id" value={category.id} />
 						<input type="hidden" name="isFood" value={category.isFood ? 'false' : 'true'} />
 						<label class="flex flex-1 items-center gap-2">
+							<!-- The name is for tests and tools that find the tick by what
+							     it means; the value rides the hidden field beside it. -->
 							<input
 								type="checkbox"
+								name="food"
+								value={category.id}
 								checked={category.isFood}
 								onchange={(e) => e.currentTarget.form?.requestSubmit()}
 							/>

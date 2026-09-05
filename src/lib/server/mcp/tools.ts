@@ -25,13 +25,7 @@ import type { Scope } from '../services/tokens.js';
 
 import { createEntry, listEntries } from '../services/diary.js';
 import { listActivities } from '../services/activities.js';
-import {
-	createHabit,
-	deleteHabit,
-	listHabits,
-	updateHabit,
-	HABIT_TYPES
-} from '../services/habits.js';
+import { createHabit, listHabits, updateHabit, HABIT_TYPES } from '../services/habits.js';
 import { createReminder, dismissReminder, listReminders } from '../services/reminders.js';
 import { createPerson, listPeople, updatePerson } from '../services/people.js';
 import { RELATIONSHIPS } from '../../people.js';

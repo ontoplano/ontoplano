@@ -398,16 +398,6 @@ function notebookTitled(ctx: Ctx, title: string) {
 		.get();
 }
 
-function assertOwned(ctx: Ctx, id: number): void {
-	const owned = db
-		.select({ id: notebooks.id })
-		.from(notebooks)
-		.where(and(eq(notebooks.id, id), eq(notebooks.userId, ctx.userId)))
-		.get();
-
-	if (!owned) throw new NotFoundError('notebook');
-}
-
 /*
  * SHARING, AND WHERE IT STOPS
  *
@@ -415,7 +405,7 @@ function assertOwned(ctx: Ctx, id: number): void {
  * owner's plan, and they may write their own entries into it. Rows keep
  * their writers' user_id; managing the notebook itself — rename, close,
  * delete, the share switch — stays the owner's alone, which is why the
- * writers below still call `assertOwned` and the readers call this.
+ * writers below keep their own userId WHERE and the readers call this.
  */
 function assertReachable(ctx: Ctx, id: number): void {
 	const others = familyUserIds(ctx.userId).filter((one) => one !== ctx.userId);

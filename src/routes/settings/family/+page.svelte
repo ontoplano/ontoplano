@@ -20,7 +20,7 @@
 			state of the plan and no buttons.
 		-->
 		<Card title="You are on {data.seatOwner.name}'s plan" accent="var(--section-accent)">
-			{#snippet children()}{/snippet}
+			<!-- The title is the whole message. -->
 		</Card>
 	{:else}
 		<Card
