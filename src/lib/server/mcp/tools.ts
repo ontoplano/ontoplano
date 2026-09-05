@@ -1594,7 +1594,7 @@ export const TOOLS: Tool[] = [
 		name: 'change_repeating_block',
 		title: 'Change a repeating block',
 		description:
-			'Change every future occurrence of a repeating block: its weekday, time, length, name, category or reminder. This is "move gym to Wednesdays"; `change_block` is "move this Wednesday\u2019s gym". Only the fields given change. Takes the id `repeating_week` gives.',
+			'Change every future occurrence of a repeating block: its weekday, time, length, the text on it, its category or its reminder. This is "move gym to Wednesdays"; `change_block` is "move this Wednesday\u2019s gym". Only the fields given change. Takes the id `repeating_week` gives.',
 		scope: 'schedule:write',
 		writes: true,
 		input: object(
@@ -1609,7 +1609,9 @@ export const TOOLS: Tool[] = [
 				},
 				start_time: text('The new start, as HH:MM.'),
 				minutes: { type: 'integer', description: 'The new length, in minutes.' },
-				title: text('The new name.'),
+				title: text(
+					'The text shown on the block. A block that names an activity stays that activity — this only changes what the block says, which is how "add stretching to the morning routine\u2019s text" is done.'
+				),
 				category: text('Refile it under this part of life, by name.'),
 				remind_minutes: { type: 'integer', description: 'The new reminder lead. 0 turns it off.' }
 			},
