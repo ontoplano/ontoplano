@@ -1270,30 +1270,12 @@ for (const [id, name, file] of [
  * Appended to an entry that already belongs to a notebook, so the demo shows a
  * notebook with a picture in it rather than a bare one.
  */
-const kitchenPicture = picture(
-	'kitchen.jpg',
-	'Sorgh’s kitchen, 1643 — the open shelves and the light from one side',
-	demoPicture('kitchen.jpg')
-);
-if (kitchenPicture) {
-	const entry = one(
-		'select id, content from diary_entries where user_id = ? and notebook_id = ? order by id limit 1',
-		uid,
-		kitchen
-	);
-	const reference =
-		`The shelf idea, before anybody talks me out of it:\n\n` +
-		`![Sorgh’s kitchen, 1643 — open shelves, light from one side](/media/${kitchenPicture})`;
-	if (entry && !entry.content.includes(reference))
-		db.prepare('update diary_entries set content = ? where id = ?').run(
-			`${entry.content}\n\n${reference}`,
-			entry.id
-		);
-}
-
 /*
- * And one in the trip notebook, because two notebooks with pictures is a
- * pattern and one is an accident.
+ * The one picture inside somebody's writing: a horse, in the trip notebook,
+ * which is a photograph a traveller would actually keep. The kitchen notebook
+ * used to carry a 17th-century painting captioned as a shelf reference, and
+ * however it was framed it read as a non sequitur — a notebook of quotes and
+ * measurements argues for itself better in words.
  *
  * Written into the entry that is already there rather than appended as a bare
  * line: a picture in this app lives inside the writing, and a demo showing one
@@ -1858,6 +1840,20 @@ for (const [seq, book, daysAgo, content] of longNotes) {
 	diary(seq, content, [], iso(dayAt(daysAgo)));
 	if (book) inNotebook('diary_entries', 'seq', seq, book);
 }
+
+/*
+ * The kitchen notebook opens on the quotes, not on the one-liner.
+ *
+ * Entries render newest-first, and both of these land in the same second when
+ * the seed runs, so which led was luck — and the screenshots kept opening on
+ * "The plumber says the wall can go", which tells a stranger nothing. The
+ * note with the substance gets the newer stamp.
+ */
+run(
+	"update diary_entries set created_at = datetime('now', '-2 days') where user_id = ? and seq = 5",
+	uid
+);
+run("update diary_entries set created_at = datetime('now') where user_id = ? and seq = 10", uid);
 
 // Somebody who has been here two months has written up most of their weeks.
 const REVIEWS = [
