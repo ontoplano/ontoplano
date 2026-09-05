@@ -12,7 +12,7 @@
 		"lint": "prettier --check . --ignore-path .gitignore --ignore-path .prettierignore --ignore-path .ignore.local && eslint .",
 		"format": "prettier --write . --ignore-path .gitignore --ignore-path .prettierignore --ignore-path .ignore.local",
 		"test:e2e": "playwright test",
-		"test": "npm run test:unit && npm run test:e2e",
+		"test": "yarn test:unit && yarn test:e2e",
 		"db:push": "node scripts/guard-push.mjs && drizzle-kit push",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "node scripts/migrate.mjs",
@@ -77,7 +77,11 @@
 		"vitest": "^4.1.11"
 	},
 	"keywords": [
-		"svelte"
+		"planner",
+		"life-management",
+		"self-hosted",
+		"sveltekit",
+		"sqlite"
 	],
 	"dependencies": {
 		"@event-calendar/core": "^5.12.0",
