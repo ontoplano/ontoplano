@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, lt, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 
 import { ratingsFromForm, type RatingValues } from '../../ratings.js';
 import {
@@ -12,11 +12,12 @@ import {
 	categories,
 	exceptionalTasks,
 	recipes,
+	reminders,
 	suppressedSlots,
 	taskRecords,
 	recurringTasks
 } from '../db/schema.js';
-import type { Ctx } from './ctx.js';
+import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { created, stamp, stamps } from './time.js';
 import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
@@ -193,6 +194,14 @@ export function updateSlot(ctx: Ctx, id: number, raw: BlockInput & { weekday: un
 	const placement = parseBlock(ctx, raw);
 	const weekday = num(raw.weekday, 'weekday', { int: true, min: 0, max: 6 });
 
+	// What it was, before it moves: the days already generated from it carry
+	// their own copy of the start time, and something has to bring them along.
+	const before = db
+		.select({ weekday: recurringTasks.weekday, startTime: recurringTasks.startTime })
+		.from(recurringTasks)
+		.where(and(eq(recurringTasks.id, id), eq(recurringTasks.userId, ctx.userId)))
+		.get();
+
 	const res = db
 		.update(recurringTasks)
 		.set({
@@ -207,6 +216,119 @@ export function updateSlot(ctx: Ctx, id: number, raw: BlockInput & { weekday: un
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('slot');
+	if (before) moveGeneratedDays(ctx, id, before, { weekday, startTime: placement.startTime });
+}
+
+/**
+ * Bring the already-generated days along when the template moves.
+ *
+ * A week is generated ahead of itself, and each occurrence stores its own
+ * `scheduled_at` — which is what the calendar feed publishes and what every
+ * reminder was armed from. Moving the repeating block changed the template
+ * and left those rows behind: the API answered with the new `start_time` and
+ * the old `at_local` for the same occurrence, an assistant that moved
+ * somebody's morning saw it unmoved, the calendar app kept showing the old
+ * hour, and the alarm still went off at it.
+ *
+ * Only days from today onward move. What already happened happened at the
+ * time it happened, and a history that rewrites itself is worse than one that
+ * disagrees with the template.
+ */
+function moveGeneratedDays(
+	ctx: Ctx,
+	slotId: number,
+	before: { weekday: number; startTime: string },
+	after: { weekday: number; startTime: string }
+): void {
+	if (before.weekday === after.weekday && before.startTime === after.startTime) return;
+
+	const from = `${localDateOf(ctx.now, ctx.tz)}T00:00:00`;
+
+	if (before.weekday !== after.weekday) {
+		/*
+		 * A different day of the week: these occurrences are on dates that no
+		 * longer belong to the block at all, so they go and the next generation
+		 * puts them where they now belong. Only the untouched ones — an
+		 * occurrence somebody has marked done or renamed is a record of their day.
+		 */
+		const stale = db
+			.select({ id: taskRecords.id })
+			.from(taskRecords)
+			.where(
+				and(
+					eq(taskRecords.userId, ctx.userId),
+					eq(taskRecords.slotId, slotId),
+					gte(taskRecords.scheduledAt, from),
+					eq(taskRecords.status, 'todo')
+				)
+			)
+			.all()
+			.map((r) => r.id);
+
+		if (stale.length > 0) {
+			db.delete(reminders)
+				.where(
+					and(
+						eq(reminders.userId, ctx.userId),
+						eq(reminders.subjectKind, 'instance'),
+						inArray(reminders.subjectId, stale)
+					)
+				)
+				.run();
+			db.delete(taskRecords).where(inArray(taskRecords.id, stale)).run();
+		}
+		return;
+	}
+
+	// Same days, new time: the occurrences stay, their clock moves — and the
+	// reminders armed off the old time move with them rather than firing at it.
+	const moving = db
+		.select({ id: taskRecords.id, scheduledAt: taskRecords.scheduledAt })
+		.from(taskRecords)
+		.where(
+			and(
+				eq(taskRecords.userId, ctx.userId),
+				eq(taskRecords.slotId, slotId),
+				gte(taskRecords.scheduledAt, from)
+			)
+		)
+		.all();
+
+	for (const row of moving) {
+		const moved = `${row.scheduledAt.slice(0, 10)}T${after.startTime}:00`;
+		db.update(taskRecords).set({ scheduledAt: moved }).where(eq(taskRecords.id, row.id)).run();
+
+		const shift = minutesBetween(row.scheduledAt, moved);
+		if (shift === 0) continue;
+		const armed = db
+			.select({ id: reminders.id, remindAt: reminders.remindAt })
+			.from(reminders)
+			.where(
+				and(
+					eq(reminders.userId, ctx.userId),
+					eq(reminders.subjectKind, 'instance'),
+					eq(reminders.subjectId, row.id),
+					isNull(reminders.deliveredAt)
+				)
+			)
+			.all();
+		for (const reminder of armed) {
+			db.update(reminders)
+				.set({ remindAt: addMinutesTo(reminder.remindAt, shift) })
+				.where(eq(reminders.id, reminder.id))
+				.run();
+		}
+	}
+}
+
+/** Wall-clock minutes from one naive local stamp to another. */
+function minutesBetween(from: string, to: string): number {
+	return Math.round((Date.parse(`${to}Z`) - Date.parse(`${from}Z`)) / 60000);
+}
+
+function addMinutesTo(stampAt: string, minutes: number): string {
+	const shifted = new Date(Date.parse(`${stampAt}Z`) + minutes * 60000);
+	return shifted.toISOString().slice(0, 19);
 }
 
 export function toggleSlotActive(ctx: Ctx, id: number): void {

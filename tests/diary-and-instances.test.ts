@@ -17,6 +17,7 @@ afterAll(() => database.remove());
 let diary: typeof import('../src/lib/server/services/diary');
 let instances: typeof import('../src/lib/server/services/instances');
 let slots: typeof import('../src/lib/server/services/slots');
+let schedule: typeof import('../src/lib/server/services/schedule');
 let activities: typeof import('../src/lib/server/services/activities');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
@@ -26,6 +27,7 @@ beforeAll(async () => {
 	diary = await import('../src/lib/server/services/diary');
 	instances = await import('../src/lib/server/services/instances');
 	slots = await import('../src/lib/server/services/slots');
+	schedule = await import('../src/lib/server/services/schedule');
 	activities = await import('../src/lib/server/services/activities');
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
@@ -125,6 +127,56 @@ describe('an occurrence of a block', () => {
 		// that only shows up as a slowly filling grid.
 		expect(instances.listForDate(ctx, new Date('2026-08-17T00:00:00'))).toHaveLength(before);
 		expect(id).toBeTruthy();
+	});
+
+	/**
+	 * Moving the template has to move the days it already made.
+	 *
+	 * Each generated day stores its own `scheduled_at`, which is what the API
+	 * publishes as `at_local`, what the calendar feed exports, and what every
+	 * reminder was armed from. Changing the block's time used to leave all
+	 * three at the old hour while the block itself reported the new one — an
+	 * assistant that moved somebody's morning was told the move had not
+	 * happened, and the alarm still went off at the old time.
+	 */
+	test('moving the block moves the days already generated from it', () => {
+		// Its own block and its own label: this file makes several, and the one
+		// being moved has to be the one being asserted about.
+		const slot = slots.createSlot(ctx, {
+			weekday: 0,
+			startTime: '09:00',
+			durationMinutes: 60,
+			mode: 'category',
+			categoryId: work,
+			label: 'Morning routine'
+		});
+		instances.generateInstances(
+			ctx,
+			new Date('2026-08-17T00:00:00'),
+			new Date('2026-08-18T00:00:00')
+		);
+
+		const of = (title: string) =>
+			schedule
+				.getUpcomingSchedule(ctx, { days: 1, includeCompleted: true, startingOn: '2026-08-17' })
+				.occurrences.find((o) => o.title === title)!;
+
+		expect(of('Morning routine').at_local).toBe('2026-08-17T09:00:00');
+
+		slots.updateSlot(ctx, slot, {
+			weekday: 0,
+			startTime: '11:00',
+			durationMinutes: 60,
+			mode: 'category',
+			categoryId: work,
+			label: 'Morning routine'
+		});
+
+		const after = of('Morning routine');
+		expect(after.start_time).toBe('11:00');
+		expect(after.at_local, 'the two must agree, or every consumer picks one').toBe(
+			'2026-08-17T11:00:00'
+		);
 	});
 
 	test('finishing stamps when, and reopening forgets it', () => {
