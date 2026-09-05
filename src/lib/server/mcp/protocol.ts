@@ -186,10 +186,13 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				capabilities: { tools: { listChanged: false } },
 				serverInfo: SERVER_INFO,
 				instructions:
-					'Ontoplano is one app for a whole life: the week as blocks, todos, a diary and ' +
-					'notebooks, ideas, goals, habits, the shopping list and recipes. Ask `today` before ' +
-					'answering "what should I be doing", and `search` before guessing which room a thing ' +
-					'is in. Write in the person’s own words — an entry you compose for them is not their diary.'
+					'Ontoplano is one app for a whole life: the week as blocks — one-off and repeating — ' +
+					'todos, a diary and notebooks, ideas, goals, habits, reminders, the people in it, ' +
+					'the weekly review, three daily wins, data streams, the shopping list and recipes. ' +
+					'Ask `today` before answering "what should I be doing", and `search` before guessing ' +
+					'which room a thing is in. The tools offered follow the token\u2019s grants: a tool ' +
+					'missing from the list is a permission not held, not a feature that does not exist. ' +
+					'Write in the person\u2019s own words — an entry you compose for them is not their diary.'
 			});
 
 		// A client says it has finished starting up. Nothing to do, and nothing
@@ -268,6 +271,8 @@ function roomsOf(tool: { scope: string }): Room[] {
 			return ['shopping'];
 		case 'kitchen:write':
 			return ['kitchen', 'shopping'];
+		case 'people:write':
+			return ['people'];
 		case 'streams:write':
 			return ['health'];
 		default:

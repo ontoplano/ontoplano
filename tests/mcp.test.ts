@@ -231,7 +231,16 @@ describe('a tool that runs', () => {
 			['close_goal', ['reopen_goal']],
 			['add_idea', ['remove_idea']],
 			['add_block', ['cancel_block']],
-			['keep_habit', ['keep_habit']]
+			['keep_habit', ['keep_habit']],
+			['add_goal', ['remove_goal']],
+			['add_goal_area', ['remove_goal_area']],
+			['add_habit', ['remove_habit']],
+			['add_person', ['remove_person']],
+			['add_repeating_block', ['remove_repeating_block']],
+			['remind_before_block', ['dismiss_reminder']],
+			['apply_idea', ['apply_idea']],
+			['favorite_idea', ['favorite_idea']],
+			['archive_recipe', ['archive_recipe']]
 		];
 
 		for (const [verb, backs] of pairs) {
@@ -852,5 +861,204 @@ describe('editing what was created', () => {
 		const write = rpc(13, 'add_idea', { content: 'no' }, ['notes:write']);
 		expect(write.result.isError).toBe(true);
 		expect(write.result.content[0].text).toContain('ideas:write');
+	});
+});
+
+/**
+ * The rooms that had no door, opened.
+ *
+ * A week of real use found what the surface could not say: the repeating
+ * week was read-only, reminders and people were unreachable, a goal's own
+ * number could not move, and a mistyped category was silently filed under
+ * the first one and reported as success. What is pinned here is the shape of
+ * each new door — and that the category miss is now a refusal that names the
+ * real choices.
+ */
+describe('the opened rooms', () => {
+	const rpc = (id: number, name: string, args: Record<string, unknown>, scopes: string[]) =>
+		call(scopes, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
+
+	it('refuses a category that names nothing, listing the real ones', () => {
+		const answer = rpc(
+			1,
+			'add_block',
+			{
+				date: '2026-03-14',
+				title: 'deep work',
+				start_time: '09:00',
+				category: 'wrok'
+			},
+			['schedule:write']
+		);
+		expect(answer.result.isError).toBe(true);
+		expect(answer.result.content[0].text).toContain('No category called "wrok"');
+		expect(answer.result.content[0].text).toContain('work');
+	});
+
+	it('adds to the repeating week, changes it, and takes it out again', () => {
+		const made = rpc(
+			2,
+			'add_repeating_block',
+			{
+				weekday: 2,
+				title: 'gym',
+				start_time: '07:00',
+				minutes: 60,
+				category: 'work',
+				urgency: 4
+			},
+			['schedule:write']
+		);
+		expect(made.result.isError, made.result.content?.[0]?.text).toBe(false);
+		const id = made.result.structuredContent.id as number;
+
+		const week = rpc(3, 'repeating_week', {}, ['schedule:read']);
+		const row = week.result.structuredContent.items.find((w: { id: number }) => w.id === id);
+		expect(row.weekday).toBe(2);
+		expect(row.urgency).toBe(4);
+
+		const moved = rpc(4, 'change_repeating_block', { id, weekday: 3, minutes: 90 }, [
+			'schedule:write'
+		]);
+		expect(moved.result.isError, moved.result.content?.[0]?.text).toBe(false);
+		const after = rpc(5, 'repeating_week', {}, ['schedule:read']);
+		const changed = after.result.structuredContent.items.find((w: { id: number }) => w.id === id);
+		expect(changed.weekday).toBe(3);
+		expect(changed.durationMinutes).toBe(90);
+		expect(changed.label).toBe('gym');
+
+		const gone = rpc(6, 'remove_repeating_block', { id }, ['schedule:write']);
+		expect(gone.result.isError).toBe(false);
+	});
+
+	it('hangs a reminder on a block, lists it, and dismisses it', () => {
+		const block = rpc(
+			7,
+			'add_block',
+			{
+				date: '2026-03-15',
+				title: 'call the dentist',
+				start_time: '15:00',
+				category: 'work'
+			},
+			['schedule:write']
+		);
+		expect(block.result.isError, block.result.content?.[0]?.text).toBe(false);
+		const blockId = block.result.structuredContent.id as number;
+
+		const set = rpc(
+			8,
+			'remind_before_block',
+			{
+				id: `exceptional:${blockId}`,
+				minutes: 15
+			},
+			['schedule:write']
+		);
+		expect(set.result.isError, set.result.content?.[0]?.text).toBe(false);
+		const reminderId = set.result.structuredContent.id as number;
+
+		const list = rpc(9, 'reminders', {}, ['schedule:read']);
+		const mine = list.result.structuredContent.items.find(
+			(r: { id: number }) => r.id === reminderId
+		);
+		expect(mine.message).toContain('call the dentist');
+
+		const off = rpc(10, 'dismiss_reminder', { id: reminderId }, ['schedule:write']);
+		expect(off.result.isError).toBe(false);
+	});
+
+	it('transcribes a goal, moves its number by delta, and can erase a mistake', () => {
+		const made = rpc(
+			11,
+			'add_goal',
+			{
+				title: 'apply to twenty companies',
+				horizon: 'quarter',
+				targetValue: 20,
+				unit: 'applications'
+			},
+			['tasks:write']
+		);
+		expect(made.result.isError, made.result.content?.[0]?.text).toBe(false);
+		const id = made.result.structuredContent.id as number;
+
+		const logged = rpc(12, 'log_goal_progress', { id, delta: 3 }, ['tasks:write']);
+		expect(logged.result.structuredContent.currentValue).toBe(3);
+		const more = rpc(13, 'log_goal_progress', { id, delta: 2 }, ['tasks:write']);
+		expect(more.result.structuredContent.currentValue).toBe(5);
+
+		const both = rpc(14, 'log_goal_progress', { id, delta: 1, value: 9 }, ['tasks:write']);
+		expect(both.result.isError).toBe(true);
+
+		expect(rpc(15, 'remove_goal', { id }, ['tasks:write']).result.isError).toBe(false);
+	});
+
+	it('keeps a person, answers whose birthday is coming, and forgets on request', () => {
+		// ctx.now is 2026-03-14, so the 19th of March is five days out.
+		const made = rpc(
+			16,
+			'add_person',
+			{
+				name: 'Tia Carmen',
+				relationship: 'family',
+				birthday: '--03-19'
+			},
+			['people:write']
+		);
+		expect(made.result.isError, made.result.content?.[0]?.text).toBe(false);
+		const id = made.result.structuredContent.id as number;
+
+		const coming = rpc(17, 'upcoming_birthdays', { days: 10 }, ['people:read']);
+		const carmen = coming.result.structuredContent.items.find((b: { id: number }) => b.id === id);
+		expect(carmen.inDays).toBe(5);
+		expect(carmen.date).toBe('2026-03-19');
+
+		// people:read does not write, and shopping tokens learn nobody's name.
+		const refused = rpc(18, 'people', {}, ['shopping:read']);
+		expect(refused.result.isError).toBe(true);
+		expect(refused.result.content[0].text).toContain('people:read');
+
+		expect(rpc(19, 'remove_person', { id }, ['people:write']).result.isError).toBe(false);
+	});
+
+	it('records the day’s wins into the empty lines, and refuses a fourth', () => {
+		for (const win of ['ran before work', 'called mum', 'shipped the fix']) {
+			const wrote = rpc(20, 'record_win', { content: win, date: '2026-03-14' }, ['notes:write']);
+			expect(wrote.result.isError, wrote.result.content?.[0]?.text).toBe(false);
+		}
+		const fourth = rpc(21, 'record_win', { content: 'one too many', date: '2026-03-14' }, [
+			'notes:write'
+		]);
+		expect(fourth.result.isError).toBe(true);
+		expect(fourth.result.content[0].text).toContain('already written');
+
+		const read = rpc(22, 'daily_wins', { date: '2026-03-14' }, ['notes:read']);
+		expect(read.result.structuredContent.items.length).toBe(3);
+	});
+
+	it('reads a week whole and writes its three lines', () => {
+		const wrote = rpc(
+			23,
+			'write_review_lines',
+			{
+				weekStart: '2026-03-09',
+				lines: ['a good week', 'too many meetings']
+			},
+			['tasks:write']
+		);
+		expect(wrote.result.isError, wrote.result.content?.[0]?.text).toBe(false);
+
+		const read = rpc(24, 'weekly_review', { weekStart: '2026-03-09' }, ['tasks:read']);
+		expect(read.result.isError).toBe(false);
+		expect(read.result.structuredContent.weekStart).toBe('2026-03-09');
+		const lines = read.result.structuredContent.lines as { content: string }[];
+		expect(lines.some((l) => l.content === 'a good week')).toBe(true);
+	});
+
+	it('refuses to log into a stream that does not exist, naming what does', () => {
+		const answer = rpc(25, 'log_data_point', { stream: 'weightt', value: 82 }, ['streams:write']);
+		expect(answer.result.isError).toBe(true);
+		expect(answer.result.content[0].text).toMatch(/No stream called|no data streams yet/);
 	});
 });

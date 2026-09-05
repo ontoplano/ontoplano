@@ -440,7 +440,16 @@ export const MAX_LABEL_LENGTH = 300;
  * Resetting or skipping a category-mode task also forgets which activity it
  * turned out to be, since that answer belonged to the attempt.
  */
-export function setOccurrenceStatus(ctx: Ctx, occurrenceId: unknown, rawStatus: unknown): void {
+/**
+ * The occurrence's record id, whichever shape of id the caller holds.
+ *
+ * A `slot:N` id already IS a record id; an `exceptional:N` id names the
+ * one-off, whose record may not exist until its day is first looked at — so
+ * the day is generated the way opening the board does it, then the one record
+ * is read. Reminders hang off records, which is why this exists apart from
+ * `setOccurrenceStatus`.
+ */
+export function recordIdOf(ctx: Ctx, occurrenceId: unknown): number {
 	const raw = String(occurrenceId ?? '').trim();
 	const [kind, rest] = raw.includes(':') ? raw.split(':', 2) : ['slot', raw];
 	const id = Number(rest);
@@ -448,7 +457,7 @@ export function setOccurrenceStatus(ctx: Ctx, occurrenceId: unknown, rawStatus: 
 	if (!Number.isInteger(id) || id < 1)
 		throw new ValidationError(`"${raw}" is not a block id — use the id the day gives you.`);
 
-	if (kind === 'slot') return setInstanceStatus(ctx, id, rawStatus);
+	if (kind === 'slot') return id;
 	if (kind !== 'exceptional')
 		throw new ValidationError(`"${raw}" is not a block id — use the id the day gives you.`);
 
@@ -469,7 +478,11 @@ export function setOccurrenceStatus(ctx: Ctx, occurrenceId: unknown, rawStatus: 
 		.get();
 	if (!record) throw new NotFoundError('task');
 
-	setInstanceStatus(ctx, record.id, rawStatus);
+	return record.id;
+}
+
+export function setOccurrenceStatus(ctx: Ctx, occurrenceId: unknown, rawStatus: unknown): void {
+	setInstanceStatus(ctx, recordIdOf(ctx, occurrenceId), rawStatus);
 }
 
 /**
@@ -702,15 +715,30 @@ export function setInstanceRatings(
 export function changeOccurrence(
 	ctx: Ctx,
 	occurrenceId: unknown,
-	changes: { date?: unknown; startTime?: unknown; minutes?: unknown; title?: unknown }
+	changes: {
+		date?: unknown;
+		startTime?: unknown;
+		minutes?: unknown;
+		title?: unknown;
+		/** Already resolved to an owned category — the caller's job to look up. */
+		categoryId?: number;
+	}
 ): { id: string } {
 	const { kind, id } = parseOccurrenceId(occurrenceId);
 
 	const wants = (key: keyof typeof changes) =>
 		changes[key] !== undefined && changes[key] !== null && changes[key] !== '';
 
-	if (!wants('date') && !wants('startTime') && !wants('minutes') && !wants('title')) {
-		throw new ValidationError('Nothing to change — say a new time, day, length or title.');
+	if (
+		!wants('date') &&
+		!wants('startTime') &&
+		!wants('minutes') &&
+		!wants('title') &&
+		!wants('categoryId')
+	) {
+		throw new ValidationError(
+			'Nothing to change — say a new time, day, length, title or category.'
+		);
 	}
 
 	if (kind === 'exceptional') {
@@ -723,15 +751,23 @@ export function changeOccurrence(
 
 		// Everything not being changed is passed back as it was: `updateExceptional`
 		// writes the whole placement, so a partial call would blank the rest.
+		// Refiling wins over renaming's bookkeeping: a block moved to another
+		// category stops being the named activity it was, exactly as a rename
+		// does, because the activity carried the old category.
+		const kept = renamed(ctx, wants('title'), {
+			mode: one.mode,
+			activityId: one.activityId,
+			categoryId: one.categoryId
+		});
+		const filed = wants('categoryId')
+			? { mode: 'category', activityId: null, categoryId: changes.categoryId! }
+			: kept;
+
 		updateExceptional(ctx, id, {
 			date: wants('date') ? changes.date : one.date,
 			startTime: wants('startTime') ? changes.startTime : one.startTime,
 			durationMinutes: wants('minutes') ? changes.minutes : one.durationMinutes,
-			...renamed(ctx, wants('title'), {
-				mode: one.mode,
-				activityId: one.activityId,
-				categoryId: one.categoryId
-			}),
+			...filed,
 			label: wants('title') ? changes.title : one.label
 		});
 
@@ -807,6 +843,25 @@ export function changeOccurrence(
 					categoryId: moved.categoryId
 				}),
 				label: changes.title
+			});
+		}
+	}
+
+	if (wants('categoryId')) {
+		const made = db
+			.select()
+			.from(exceptionalTasks)
+			.where(and(eq(exceptionalTasks.id, movedId), eq(exceptionalTasks.userId, ctx.userId)))
+			.get();
+		if (made) {
+			updateExceptional(ctx, movedId, {
+				date: made.date,
+				startTime: made.startTime,
+				durationMinutes: made.durationMinutes,
+				mode: 'category',
+				activityId: null,
+				categoryId: changes.categoryId!,
+				label: made.label
 			});
 		}
 	}

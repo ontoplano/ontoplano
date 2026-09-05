@@ -39,7 +39,7 @@ export const SCOPES = {
 	 * and the other is what their day looks like.
 	 */
 	'schedule:write':
-		'Put blocks on your week, move and rename them, take them off a day, and mark them done or skipped',
+		'Put blocks on your week — one-off and repeating — move and rename them, take them off a day, set reminders on them, and mark them done or skipped',
 	'today:read': "See today's plan — the blocks and the tasks on it",
 	/*
 	 * Habits, on their own, because they are not the plan.
@@ -99,6 +99,14 @@ export const SCOPES = {
 	'tasks:write': 'Add, finish and delete todos, move them on and off a day, and close a goal',
 	'kitchen:read': 'Read your recipes',
 	'kitchen:write': 'Add and change recipes',
+	/*
+	 * People, apart from everything: names, birthdays and phone numbers are
+	 * other people's facts, held in this account — the one part of the data
+	 * that is not only the owner's to hand over. Their own tick, so a token
+	 * for the shopping list never learns who is in somebody's life.
+	 */
+	'people:read': 'See the people in your life, and whose birthday is coming',
+	'people:write': 'Add people, and change what is recorded about them',
 	'search:read': 'Search everything you have written, in one go'
 } as const;
 

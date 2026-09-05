@@ -10,6 +10,31 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.72.0 — 2026-09-05
+
+- **The MCP surface covers what the app can do.** A week of real assistant
+  use found rooms with no door; they have doors now: the repeating week
+  (`repeating_week`, `add/change/remove_repeating_block` — "move gym to
+  Wednesdays", not just this Wednesday), reminders (`reminders`,
+  `remind_before_block`, `dismiss_reminder`), people and their birthdays
+  (`people`, `upcoming_birthdays`, `add/change/remove_person`, behind new
+  `people:read`/`people:write` grants), goals that move (`add_goal` —
+  transcribed, never invented — `log_goal_progress`, `goal_areas`,
+  `remove_goal`), habits managed whole (`all_habits`, `add/change/remove_habit`),
+  the day's three wins, the weekly review read and written, data streams
+  (`data_streams`, `log_data_point`), the kitchen's missing verbs
+  (`cooked_recipe`, `archive_recipe`, `record_price`, `shopping_categories`)
+  and ideas' other halves (`apply_idea`, `favorite_idea`).
+- **No more blind category writes.** `add_block` used to file a mistyped
+  category under the first one and report success; an unmatched name is now
+  refused with the real names listed, `categories` and `activities` can be
+  read, and `change_block` can refile a block. Urgency, interest and energy
+  (1–5) can now be set through `add_todo`, `change_todo`, `add_block` and
+  the repeating week.
+- The MCP server's opening instructions map the new rooms and say plainly
+  that a missing tool means a permission not held, not a feature that does
+  not exist.
+
 ## 0.71.0 — 2026-09-05
 
 - **Taking somebody off the family plan asks first.** The × was one click

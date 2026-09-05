@@ -24,25 +24,69 @@ import { localDateOf, type Ctx } from '../services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 
 import { createEntry, listEntries } from '../services/diary.js';
-import { createIdea, deleteIdea, listIdeas, updateIdea } from '../services/ideas.js';
+import { listActivities } from '../services/activities.js';
+import {
+	createHabit,
+	deleteHabit,
+	listHabits,
+	updateHabit,
+	HABIT_TYPES
+} from '../services/habits.js';
+import { createReminder, dismissReminder, listReminders } from '../services/reminders.js';
+import { createPerson, deletePerson, listPeople, updatePerson } from '../services/people.js';
+import { RELATIONSHIPS } from '../../people.js';
+import { listWins, saveWins, WINS_PER_DAY } from '../services/wins.js';
+import {
+	listLines,
+	readWeek,
+	saveLines,
+	weekStartOf,
+	LINES_PER_REVIEW
+} from '../services/review.js';
+import { getStreamBySlug, listStreams, pushPoints, serialiseStream } from '../services/streams.js';
+import { createSlot, deleteSlots, listWeeklySlots, updateSlot } from '../services/slots.js';
+import {
+	createIdea,
+	deleteIdea,
+	listIdeas,
+	toggleApplied,
+	toggleFavorite,
+	updateIdea
+} from '../services/ideas.js';
 import {
 	addGoalLinks,
 	closeGoal,
+	createArea,
+	createGoal,
+	deleteArea,
+	deleteGoal,
+	listAreas,
 	listGoals,
 	removeGoalLinks,
+	setGoalProgress,
 	updateGoal
 } from '../services/goals.js';
 import { listNotebooks } from '../services/notebooks.js';
 import {
+	cooked,
 	createRecipe,
 	getRecipe,
 	importIngredients,
 	ingredientsOf,
 	listRecipes,
+	setArchived,
 	updateRecipe
 } from '../services/recipes.js';
 import { grouped, search } from '../services/search.js';
-import { createItem, deleteItem, listItems, setBought, setSnoozed } from '../services/shopping.js';
+import {
+	createItem,
+	deleteItem,
+	listItems,
+	listCategories as listShoppingCategories,
+	recordPaid,
+	setBought,
+	setSnoozed
+} from '../services/shopping.js';
 import { getTodayBoard } from '../services/today.js';
 import {
 	createTodo,
@@ -54,7 +98,12 @@ import {
 } from '../services/todos.js';
 import { getUpcomingSchedule } from '../services/schedule.js';
 import { createExceptional } from '../services/slots.js';
-import { cancelOccurrence, changeOccurrence, setOccurrenceStatus } from '../services/instances.js';
+import {
+	cancelOccurrence,
+	changeOccurrence,
+	recordIdOf,
+	setOccurrenceStatus
+} from '../services/instances.js';
 import { listCategories } from '../services/activities.js';
 import { toggleOccurrence } from '../services/habits.js';
 import { NotFoundError, ValidationError } from '../services/errors.js';
@@ -103,6 +152,57 @@ function limitOf(args: Record<string, unknown>, fallback: number, ceiling = 200)
 	const raw = Number(args.limit ?? fallback);
 	if (!Number.isFinite(raw) || raw < 1) return fallback;
 	return Math.min(Math.floor(raw), ceiling);
+}
+
+/** A 1–5 rating, or nothing. Bad numbers are refused before a service sees them. */
+const rating = (value: unknown, what: string): number | undefined => {
+	if (value === undefined || value === null) return undefined;
+	const n = Number(value);
+	if (!Number.isInteger(n) || n < 1 || n > 5)
+		throw new ValidationError(`${what} is a whole number from 1 to 5.`);
+	return n;
+};
+
+const ratingArgs = {
+	urgency: { type: 'integer', description: 'How soon it has to happen, 1–5.' },
+	interest: { type: 'integer', description: 'How much they want to do it, 1–5.' },
+	energy: { type: 'integer', description: 'How much it will take out of them, 1–5.' }
+};
+
+const ratingsOf = (args: Record<string, unknown>) => ({
+	urgency: rating(args.urgency, 'urgency') ?? null,
+	interest: rating(args.interest, 'interest') ?? null,
+	energy: rating(args.energy, 'energy') ?? null
+});
+
+const gaveARating = (args: Record<string, unknown>) =>
+	args.urgency !== undefined || args.interest !== undefined || args.energy !== undefined;
+
+/**
+ * The category the caller named, refused loudly when it names nothing.
+ *
+ * This used to fall back to the first category on a miss, so a typo filed
+ * work under the wrong part of life and reported success. A blind write is
+ * worse than a refusal: the refusal lists the names to pick from.
+ */
+function categoryByName(ctx: Ctx, wanted: unknown): { id: number; name: string } {
+	const all = listCategories(ctx) as { id: number; name: string }[];
+	if (all.length === 0)
+		throw new ValidationError(
+			'This account has no categories yet, and a block belongs to one. Make one in the app first.'
+		);
+
+	const said = typeof wanted === 'string' ? wanted.trim().toLowerCase() : '';
+	if (!said) return all[0];
+
+	const hit =
+		all.find((c) => c.name.toLowerCase() === said) ??
+		all.find((c) => c.name.toLowerCase().includes(said));
+	if (!hit)
+		throw new ValidationError(
+			`No category called "${String(wanted)}". This account has: ${all.map((c) => c.name).join(', ')}.`
+		);
+	return hit;
 }
 
 export const TOOLS: Tool[] = [
@@ -206,26 +306,18 @@ export const TOOLS: Tool[] = [
 				start_time: text('When it starts, as HH:MM on a 24-hour clock.'),
 				minutes: count('How long it runs, in minutes.', 60),
 				category: text(
-					'Which part of life it belongs to, by name. The first one is used if this is left out or does not match.'
-				)
+					'Which part of life it belongs to, by name — `categories` lists them. A name that matches nothing is refused, never guessed. The first category is used only when this is left out entirely.'
+				),
+				...ratingArgs
 			},
 			['date', 'title', 'start_time']
 		),
 		run: (ctx, args) => {
 			// A block belongs to a category — the colour it is drawn in and the
-			// bucket the week is counted into — so one is chosen here rather than
-			// making a model guess an id it has never seen.
-			const categories = listCategories(ctx) as { id: number; name: string }[];
-			if (categories.length === 0)
-				throw new ValidationError(
-					'This account has no categories yet, and a block belongs to one. Make one in the app first.'
-				);
-
-			const wanted = typeof args.category === 'string' ? args.category.trim().toLowerCase() : '';
-			const chosen =
-				categories.find((c) => c.name.toLowerCase() === wanted) ??
-				categories.find((c) => c.name.toLowerCase().includes(wanted) && wanted !== '') ??
-				categories[0];
+			// bucket the week is counted into — resolved by name and refused on a
+			// miss, because a typo silently filed under the wrong life was worse
+			// than an error.
+			const chosen = categoryByName(ctx, args.category);
 
 			const id = createExceptional(ctx, {
 				date: day(args.date, 'date'),
@@ -233,7 +325,8 @@ export const TOOLS: Tool[] = [
 				categoryId: chosen.id,
 				label: args.title,
 				startTime: args.start_time,
-				durationMinutes: args.minutes ?? 60
+				durationMinutes: args.minutes ?? 60,
+				...(gaveARating(args) ? { ratings: ratingsOf(args) } : {})
 			});
 
 			return { id, category: chosen.name };
@@ -265,7 +358,10 @@ export const TOOLS: Tool[] = [
 				date: text('Move it to this day, as YYYY-MM-DD. Leave out to keep the day it is on.'),
 				start_time: text('The new start, as HH:MM on a 24-hour clock.'),
 				minutes: { type: 'integer', description: 'How long it should run, in minutes.' },
-				title: text('What it should be called instead.')
+				title: text('What it should be called instead.'),
+				category: text(
+					'Refile it under this part of life, by name — `categories` lists them. Affects that day only, like everything here.'
+				)
 			},
 			['id']
 		),
@@ -274,7 +370,10 @@ export const TOOLS: Tool[] = [
 				date: args.date,
 				startTime: args.start_time,
 				minutes: args.minutes,
-				title: args.title
+				title: args.title,
+				...(args.category !== undefined && args.category !== null && args.category !== ''
+					? { categoryId: categoryByName(ctx, args.category).id }
+					: {})
 			})
 	},
 	{
@@ -455,7 +554,8 @@ export const TOOLS: Tool[] = [
 			{
 				id: { type: 'integer', description: 'The todo\u2019s id, as `todos` gives it.' },
 				title: text('The new title, in the person\u2019s own words.'),
-				notes: text('The new notes.')
+				notes: text('The new notes.'),
+				...ratingArgs
 			},
 			['id']
 		),
@@ -466,7 +566,16 @@ export const TOOLS: Tool[] = [
 				title: args.title ?? current.title,
 				notes: args.notes ?? current.notes,
 				categoryId: current.categoryId,
-				notebookId: current.notebookId
+				notebookId: current.notebookId,
+				...(gaveARating(args)
+					? {
+							ratings: {
+								urgency: rating(args.urgency, 'urgency') ?? current.ratings.urgency,
+								interest: rating(args.interest, 'interest') ?? current.ratings.interest,
+								energy: rating(args.energy, 'energy') ?? current.ratings.energy
+							}
+						}
+					: {})
 			});
 			return { ok: true };
 		}
@@ -507,7 +616,7 @@ export const TOOLS: Tool[] = [
 		name: 'goals',
 		title: 'Goals',
 		description:
-			'What the person is working towards, by horizon, with the work counted against each. There is no tool that makes one: a goal is a commitment somebody makes, not one an assistant makes for them. Saying how one ended is different — that is `close_goal`.',
+			'What the person is working towards, by horizon, with the work counted against each. `add_goal` transcribes one they just said; `close_goal` says how one ended.',
 		scope: 'tasks:read',
 		writes: false,
 		input: object({ includeClosed: { type: 'boolean', default: false } }),
@@ -969,6 +1078,815 @@ export const TOOLS: Tool[] = [
 			});
 			const added = args.ingredients ? importIngredients(ctx, id, args.ingredients) : 0;
 			return { ok: true, ingredients: added };
+		}
+	},
+	{
+		name: 'cooked_recipe',
+		title: 'Say a recipe was cooked',
+		description:
+			'Record that a meal was made — `recipes` shows when each was last cooked, and this is what sets it. Name the ingredient ids that ran out and they land back on the shopping list, which is the loop the kitchen exists to close.',
+		scope: 'kitchen:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The recipe\u2019s id, as `recipes` gives it.' },
+				ranOutOf: {
+					type: 'array',
+					items: { type: 'integer' },
+					description:
+						'Ingredient item ids that were used up, as the recipe\u2019s ingredient list gives them.'
+				}
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			cooked(ctx, Number(args.id), ((args.ranOutOf as unknown[]) ?? []).map(Number));
+			return { ok: true };
+		}
+	},
+	{
+		name: 'archive_recipe',
+		title: 'Put a recipe away',
+		description:
+			'Archive a recipe — out of the everyday list, not deleted — or bring one back with `archived: false`. For the dish nobody makes any more that somebody may yet ask for.',
+		scope: 'kitchen:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The recipe\u2019s id.' },
+				archived: {
+					type: 'boolean',
+					description: 'False brings it back. True if left out.',
+					default: true
+				}
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			setArchived(
+				ctx,
+				Number(args.id),
+				args.archived === undefined ? true : Boolean(args.archived)
+			);
+			return { ok: true };
+		}
+	},
+	{
+		name: 'shopping_categories',
+		title: 'The shopping list\u2019s sections',
+		description:
+			'How the shopping list is sectioned — produce, cleaning, whatever the person keeps. Read it before filing an item somewhere.',
+		scope: 'shopping:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => listShoppingCategories(ctx)
+	},
+	{
+		name: 'record_price',
+		title: 'Record what an item cost',
+		description:
+			'Write down what was paid for a shopping item — "milk was 6,50 today". The list keeps a small price history per item, which is how it can notice drift. Takes the id `shopping_list` gives, and the price as the person said it.',
+		scope: 'shopping:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The item\u2019s id.' },
+				price: text('The price, in the account\u2019s own currency — "6,50" or "6.50" both work.')
+			},
+			['id', 'price']
+		),
+		run: (ctx, args) => {
+			recordPaid(ctx, Number(args.id), args.price);
+			return { ok: true };
+		}
+	},
+
+	// ── Goals, and where they stand ──────────────────────────────────────────
+	{
+		/*
+		 * Creation arrived late, and the earlier refusal is kept in the words:
+		 * a goal is a commitment the person makes. This transcribes one they
+		 * just said — it must never be a way for an assistant to invent one.
+		 */
+		name: 'add_goal',
+		title: 'Write down a goal they made',
+		description:
+			'Transcribe a goal the person just committed to, in their own words — "apply to twenty companies this quarter". Never invent one, and never add a goal they did not say: a goal is a commitment, and the commitment is theirs. `goal_areas` lists the areas one can be filed under.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object(
+			{
+				title: text('The goal, in the person\u2019s own words.'),
+				horizon: text('week, month, quarter, semester or year.'),
+				notes: text('Anything else they said about it.'),
+				startDate: text('The day its period starts from, as YYYY-MM-DD. Today if left out.'),
+				area: text('The area to file it under, by name — `goal_areas` lists them.'),
+				targetValue: {
+					type: 'number',
+					description: 'The number it aims at, when it counts something.'
+				},
+				unit: text('What the target counts — applications, km, pages.')
+			},
+			['title', 'horizon']
+		),
+		run: (ctx, args) => {
+			let areaId: number | undefined;
+			if (args.area !== undefined && args.area !== null && args.area !== '') {
+				const areas = listAreas(ctx);
+				const said = String(args.area).trim().toLowerCase();
+				const hit = areas.find((a) => a.name.toLowerCase() === said);
+				if (!hit)
+					throw new ValidationError(
+						`No area called "${String(args.area)}". This account has: ${areas.map((a) => a.name).join(', ') || 'none yet'}.`
+					);
+				areaId = hit.id;
+			}
+			const id = createGoal(ctx, {
+				title: args.title,
+				horizon: args.horizon,
+				notes: args.notes,
+				startDate: args.startDate,
+				areaId,
+				targetValue: args.targetValue,
+				unit: args.unit
+			});
+			return { id };
+		}
+	},
+	{
+		/*
+		 * `goals.current_value` used to move only when a linked todo finished,
+		 * so a goal counted by hand — CVs sent, pages read — sat at zero
+		 * however much was done. Saying "I sent three today" is a report, and
+		 * reports get recorded.
+		 */
+		name: 'log_goal_progress',
+		title: 'Move a goal\u2019s number',
+		description:
+			'Record progress on a goal that counts something: pass `value` to set where it stands, or `delta` to add what just happened — "I sent three more CVs" is `delta: 3`. Exactly one of the two. `goals` shows the current number.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The goal\u2019s id.' },
+				value: { type: 'number', description: 'Where it stands now, absolute.' },
+				delta: { type: 'number', description: 'How much just happened, added to where it stands.' }
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const gaveValue = args.value !== undefined && args.value !== null;
+			const gaveDelta = args.delta !== undefined && args.delta !== null;
+			if (gaveValue === gaveDelta)
+				throw new ValidationError('Say either `value` or `delta` — exactly one.');
+
+			const current = listGoals(ctx, { includeClosed: true }).find((g) => g.id === Number(args.id));
+			if (!current) throw new NotFoundError('goal');
+
+			const next = gaveValue
+				? Number(args.value)
+				: Number(current.currentValue ?? 0) + Number(args.delta);
+			setGoalProgress(ctx, current.id, next);
+			return { ok: true, currentValue: next };
+		}
+	},
+	{
+		name: 'goal_areas',
+		title: 'The areas goals are filed under',
+		description:
+			'The areas of life a goal can belong to — career, health, whatever the person keeps. Read it before filing a goal; `add_goal_area` makes a missing one.',
+		scope: 'tasks:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => listAreas(ctx)
+	},
+	{
+		name: 'add_goal_area',
+		title: 'Add a goal area',
+		description:
+			'Make a new area to file goals under. Only when the person named one that does not exist — `goal_areas` says what already does.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object(
+			{
+				name: text('The area\u2019s name.'),
+				color: text('A hex colour like #1d4ed8, if they chose one.')
+			},
+			['name']
+		),
+		run: (ctx, args) => ({ id: createArea(ctx, { name: args.name, color: args.color }) })
+	},
+	{
+		/*
+		 * Anything an assistant can create, it has to be able to take back.
+		 * This is for a goal transcribed by mistake — a real goal that ran its
+		 * course ends through `close_goal`, achieved, missed or abandoned,
+		 * which keeps its record. Deleting erases it.
+		 */
+		name: 'remove_goal',
+		title: 'Delete a goal',
+		description:
+			'Erase a goal outright — for one added by mistake or misheard. A goal that was real and ended belongs to `close_goal` instead: closed keeps the record, deleted has none.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The goal\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			deleteGoal(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+	{
+		name: 'remove_goal_area',
+		title: 'Delete a goal area',
+		description:
+			'Delete an area — for one made by mistake. The service refuses while goals still point at it, and says so.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The area\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			deleteArea(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+
+	// ── Habits, whole ────────────────────────────────────────────────────────
+	{
+		name: 'all_habits',
+		title: 'Every habit',
+		description:
+			'The full list of habits, due today or not — id, name, type and which days each is scheduled. `habits` is today\u2019s view with streaks; this is the one to read before adding or changing one.',
+		scope: 'habits:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => listHabits(ctx)
+	},
+	{
+		name: 'add_habit',
+		title: 'Add a habit',
+		description:
+			'Start tracking a habit: something to keep doing (`good`), to avoid (`bad`), or just to watch (`neutral`). Scheduled days come in the same shape `all_habits` shows for existing ones; leave them out for every day.',
+		scope: 'habits:write',
+		writes: true,
+		input: object(
+			{
+				name: text('The habit, in the person\u2019s own words.'),
+				type: {
+					type: 'string',
+					enum: [...HABIT_TYPES],
+					description: 'good to keep, bad to avoid, neutral to watch.'
+				},
+				description: text('Anything else about it.'),
+				scheduledDays: text(
+					'The days it is due, in the shape `all_habits` shows. Every day if left out.'
+				)
+			},
+			['name']
+		),
+		run: (ctx, args) => ({
+			id: createHabit(ctx, {
+				name: args.name,
+				type: args.type,
+				description: args.description,
+				scheduledDays: args.scheduledDays
+			})
+		})
+	},
+	{
+		name: 'change_habit',
+		title: 'Change a habit',
+		description:
+			'Rename a habit or change its type, description or days. Only the fields given change; its history of kept days stays exactly as it was.',
+		scope: 'habits:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The habit\u2019s id, as `all_habits` gives it.' },
+				name: text('The new name.'),
+				type: { type: 'string', enum: [...HABIT_TYPES], description: 'good, bad or neutral.' },
+				description: text('The new description.'),
+				scheduledDays: text('The new days, in the shape `all_habits` shows.')
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const current = listHabits(ctx).find((h) => h.id === Number(args.id));
+			if (!current) throw new NotFoundError('habit');
+			updateHabit(ctx, current.id, {
+				name: args.name ?? current.name,
+				type: args.type ?? current.type,
+				description: args.description ?? current.description,
+				scheduledDays: args.scheduledDays ?? current.scheduledDays
+			});
+			return { ok: true };
+		}
+	},
+	{
+		name: 'remove_habit',
+		title: 'Delete a habit',
+		description:
+			'Stop tracking a habit and drop its history — for one added by mistake, or one the person asked to be rid of. It is gone, not paused; prefer leaving it alone unless they asked.',
+		scope: 'habits:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The habit\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			deleteHabit(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+
+	// ── Reminders ────────────────────────────────────────────────────────────
+	{
+		name: 'reminders',
+		title: 'What will reach out, and when',
+		description:
+			'The reminders set to fire — each hangs off a block, because a reminder here is "tell me before this starts". Include the past to see what already fired.',
+		scope: 'schedule:read',
+		writes: false,
+		input: object({ includePast: { type: 'boolean', default: false } }),
+		run: (ctx, args) => listReminders(ctx, { includePast: Boolean(args.includePast) })
+	},
+	{
+		/*
+		 * There is deliberately no free-floating reminder. "Remind me at three
+		 * to call the dentist" is a thing happening at three — put it on the day
+		 * with `add_block`, then hang the reminder on it. The description says
+		 * so, because the model will be asked exactly that sentence.
+		 */
+		name: 'remind_before_block',
+		title: 'Set a reminder on a block',
+		description:
+			'Be told some minutes before a block starts — it reaches the phone even with the app closed. A reminder belongs to a block: for "remind me at three to call the dentist", first `add_block` the call at three, then set the reminder on it. Takes the id the day gives, like `slot:42`.',
+		scope: 'schedule:write',
+		writes: true,
+		input: object(
+			{
+				id: text('The block\u2019s id, exactly as the day gave it.'),
+				minutes: {
+					type: 'integer',
+					description: 'How many minutes before the start. 0 is at the start.'
+				},
+				message: text('What the nudge should say. The block\u2019s own name if left out.')
+			},
+			['id', 'minutes']
+		),
+		run: (ctx, args) => ({
+			id: createReminder(ctx, {
+				subjectId: recordIdOf(ctx, args.id),
+				at: args.minutes,
+				message: args.message
+			})
+		})
+	},
+	{
+		name: 'dismiss_reminder',
+		title: 'Dismiss a reminder',
+		description:
+			'Wave one reminder off so it does not fire — for "no need to remind me about that any more". Takes the id `reminders` gives; the block it sat on is untouched.',
+		scope: 'schedule:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The reminder\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			dismissReminder(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+
+	// ── The repeating week ───────────────────────────────────────────────────
+	{
+		name: 'repeating_week',
+		title: 'The week as it repeats',
+		description:
+			'The blocks that make up every week — each with its weekday, time, length and category. This is the template the days are generated from; `today` and `upcoming` show what it produced. Read it before changing Tuesdays rather than a Tuesday.',
+		scope: 'schedule:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => listWeeklySlots(ctx)
+	},
+	{
+		name: 'add_repeating_block',
+		title: 'Put a block on every week',
+		description:
+			'Add a block that repeats weekly — "gym on Tuesdays at seven". This changes every week from now on; `add_block` is the one for a single day. Weekday 0 is Sunday through 6 for Saturday.',
+		scope: 'schedule:write',
+		writes: true,
+		input: object(
+			{
+				weekday: { type: 'integer', description: '0 (Sunday) to 6 (Saturday).' },
+				title: text('What it is — shown on the block.'),
+				start_time: text('When it starts, as HH:MM on a 24-hour clock.'),
+				minutes: count('How long it runs, in minutes.', 60),
+				category: text('Which part of life it belongs to, by name — `categories` lists them.'),
+				remind_minutes: {
+					type: 'integer',
+					description: 'Minutes before each occurrence to be reminded. No reminder if left out.'
+				},
+				...ratingArgs
+			},
+			['weekday', 'title', 'start_time']
+		),
+		run: (ctx, args) => {
+			const chosen = categoryByName(ctx, args.category);
+			const id = createSlot(ctx, {
+				weekday: args.weekday,
+				startTime: args.start_time,
+				durationMinutes: args.minutes ?? 60,
+				mode: 'category',
+				categoryId: chosen.id,
+				label: args.title,
+				remindLeadMinutes: args.remind_minutes,
+				...(gaveARating(args) ? { ratings: ratingsOf(args) } : {})
+			});
+			return { id, category: chosen.name };
+		}
+	},
+	{
+		name: 'change_repeating_block',
+		title: 'Change a repeating block',
+		description:
+			'Change every future occurrence of a repeating block: its weekday, time, length, name, category or reminder. This is "move gym to Wednesdays"; `change_block` is "move this Wednesday\u2019s gym". Only the fields given change. Takes the id `repeating_week` gives.',
+		scope: 'schedule:write',
+		writes: true,
+		input: object(
+			{
+				id: {
+					type: 'integer',
+					description: 'The repeating block\u2019s id, as `repeating_week` gives it.'
+				},
+				weekday: { type: 'integer', description: 'The new weekday, 0 (Sunday) to 6 (Saturday).' },
+				start_time: text('The new start, as HH:MM.'),
+				minutes: { type: 'integer', description: 'The new length, in minutes.' },
+				title: text('The new name.'),
+				category: text('Refile it under this part of life, by name.'),
+				remind_minutes: { type: 'integer', description: 'The new reminder lead. 0 turns it off.' }
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const current = listWeeklySlots(ctx).find((w) => w.id === Number(args.id));
+			if (!current) throw new NotFoundError('block');
+
+			const refiled =
+				args.category !== undefined && args.category !== null && args.category !== ''
+					? {
+							mode: 'category',
+							categoryId: categoryByName(ctx, args.category).id,
+							activityId: null
+						}
+					: { mode: current.mode, categoryId: current.categoryId, activityId: current.activityId };
+
+			updateSlot(ctx, current.id, {
+				weekday: args.weekday ?? current.weekday,
+				startTime: args.start_time ?? current.startTime,
+				durationMinutes: args.minutes ?? current.durationMinutes,
+				...refiled,
+				label: args.title ?? current.label,
+				remindLeadMinutes: args.remind_minutes ?? current.remindLeadMinutes,
+				recurrence: current.recurrence ?? undefined
+			});
+			return { ok: true };
+		}
+	},
+	{
+		name: 'remove_repeating_block',
+		title: 'Take a block out of the week',
+		description:
+			'Remove a repeating block from every week to come. Its past occurrences and their record stay. For one day only, use `cancel_block` instead — this is the whole pattern.',
+		scope: 'schedule:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The repeating block\u2019s id.' } }, [
+			'id'
+		]),
+		run: (ctx, args) => {
+			deleteSlots(ctx, [Number(args.id)]);
+			return { ok: true };
+		}
+	},
+	{
+		name: 'categories',
+		title: 'The parts of a life',
+		description:
+			'The categories blocks are filed under — the areas of this person\u2019s life, each with its colour. Read it before writing a block, so the name is real rather than guessed.',
+		scope: 'schedule:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => listCategories(ctx)
+	},
+	{
+		name: 'activities',
+		title: 'The named recurring things',
+		description:
+			'Activities are the named things inside categories — "piano", not just "music". A block can name one instead of a bare category. Read-only here; the app is where they are managed.',
+		scope: 'schedule:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => listActivities(ctx)
+	},
+
+	// ── People ───────────────────────────────────────────────────────────────
+	{
+		name: 'people',
+		title: 'The people in their life',
+		description:
+			'Everybody the person keeps a page for — name, relationship, birthday, contact details. These are other people\u2019s facts held in this account, which is why they sit behind their own permission.',
+		scope: 'people:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => listPeople(ctx)
+	},
+	{
+		name: 'upcoming_birthdays',
+		title: 'Whose birthday is coming',
+		description:
+			'Birthdays in the days ahead, soonest first — the answer to "whose birthday is coming up". Only people with a birthday written down appear.',
+		scope: 'people:read',
+		writes: false,
+		input: object({ days: count('How many days ahead to look.', 30) }),
+		run: (ctx, args) => {
+			const horizon = Math.min(Math.max(Number(args.days ?? 30), 1), 366);
+			const today = localDateOf(ctx.now, ctx.tz);
+			const start = new Date(`${today}T12:00:00`);
+
+			const coming: { id: number; name: string; birthday: string; date: string; inDays: number }[] =
+				[];
+			for (const person of listPeople(ctx)) {
+				if (!person.birthday) continue;
+				const monthDay = person.birthday.slice(-5); // both shapes end -MM-DD
+				for (let ahead = 0; ahead <= horizon; ahead++) {
+					const at = new Date(start.getTime() + ahead * 24 * 60 * 60 * 1000);
+					const local = at.toISOString().slice(0, 10);
+					if (local.slice(5) === monthDay) {
+						coming.push({
+							id: person.id,
+							name: person.name,
+							birthday: person.birthday,
+							date: local,
+							inDays: ahead
+						});
+						break;
+					}
+				}
+			}
+			return coming.sort((a, b) => a.inDays - b.inDays);
+		}
+	},
+	{
+		name: 'add_person',
+		title: 'Add a person',
+		description:
+			'Keep a page for somebody — name at minimum; birthday as YYYY-MM-DD, or --MM-DD when the year is unknown. A birthday written down announces itself on the morning, unless told not to.',
+		scope: 'people:write',
+		writes: true,
+		input: object(
+			{
+				name: text('Their name, as the person says it.'),
+				relationship: {
+					type: 'string',
+					enum: [...RELATIONSHIPS],
+					description: 'The nearest of these — "sister" is family, "landlord" is professional.'
+				},
+				birthday: text('YYYY-MM-DD, or --MM-DD without a year.'),
+				remindOnBirthday: {
+					type: 'boolean',
+					description: 'Announce the birthday that morning. On if left out.'
+				},
+				phone: text('A phone number.'),
+				email: text('An email address.'),
+				notes: text('Anything else worth keeping.')
+			},
+			['name']
+		),
+		run: (ctx, args) => ({
+			id: createPerson(ctx, {
+				name: args.name,
+				relationship: args.relationship,
+				birthday: args.birthday,
+				remindOnBirthday: args.remindOnBirthday,
+				phone: args.phone,
+				email: args.email,
+				notes: args.notes
+			})
+		})
+	},
+	{
+		name: 'change_person',
+		title: 'Change a person\u2019s page',
+		description:
+			'Correct or extend what is recorded about somebody — a birthday learnt, a number changed. Only the fields given change. Takes the id `people` gives.',
+		scope: 'people:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The person\u2019s id.' },
+				name: text('The new name.'),
+				relationship: {
+					type: 'string',
+					enum: [...RELATIONSHIPS],
+					description: 'The new relationship, one of these.'
+				},
+				birthday: text('YYYY-MM-DD, or --MM-DD without a year.'),
+				remindOnBirthday: {
+					type: 'boolean',
+					description: 'Whether the birthday announces itself.'
+				},
+				phone: text('The new phone number.'),
+				email: text('The new email address.'),
+				notes: text('The new notes.')
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const current = listPeople(ctx).find((one) => one.id === Number(args.id));
+			if (!current) throw new NotFoundError('person');
+			updatePerson(ctx, current.id, {
+				name: args.name ?? current.name,
+				relationship: args.relationship ?? current.relationship,
+				birthday: args.birthday ?? current.birthday,
+				remindOnBirthday: args.remindOnBirthday ?? current.remindOnBirthday,
+				phone: args.phone ?? current.phone,
+				email: args.email ?? current.email,
+				notes: args.notes ?? current.notes
+			});
+			return { ok: true };
+		}
+	},
+	{
+		name: 'remove_person',
+		title: 'Delete a person\u2019s page',
+		description:
+			'Delete somebody\u2019s page — for one added by mistake, or when the person asked. What they were mentioned in stays written; the page collecting those mentions is what goes.',
+		scope: 'people:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The person\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			deletePerson(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+
+	// ── The day's wins, and the week's review ────────────────────────────────
+	{
+		name: 'daily_wins',
+		title: 'Three things that went well',
+		description:
+			'The day\u2019s three wins, as written. A practice, not a log: three lines a day, and blank ones are simply not written yet.',
+		scope: 'notes:read',
+		writes: false,
+		input: object({ date: text('The day, as YYYY-MM-DD. Today if left out.') }),
+		run: (ctx, args) =>
+			listWins(ctx, args.date ? day(args.date, 'date') : localDateOf(ctx.now, ctx.tz))
+	},
+	{
+		name: 'record_win',
+		title: 'Record a win',
+		description:
+			'Write one of the day\u2019s three good things, in the person\u2019s own words, into the first empty line. Refused when all three are written — a day holds three, and the fourth is tomorrow\u2019s first.',
+		scope: 'notes:write',
+		writes: true,
+		input: object(
+			{
+				content: text('The win, exactly as they said it.'),
+				date: text('The day it belongs to, as YYYY-MM-DD. Today if left out.')
+			},
+			['content']
+		),
+		run: (ctx, args) => {
+			const forDate = args.date ? day(args.date, 'date') : localDateOf(ctx.now, ctx.tz);
+			const existing = listWins(ctx, forDate);
+			const contents: string[] = [];
+			for (let position = 1; position <= WINS_PER_DAY; position++) {
+				contents.push(existing.find((w) => w.position === position)?.content ?? '');
+			}
+			const empty = contents.findIndex((c) => !c.trim());
+			if (empty === -1)
+				throw new ValidationError('All three wins are already written for that day.');
+			contents[empty] = String(args.content ?? '');
+			saveWins(ctx, { forDate, contents });
+			return { ok: true, position: empty + 1 };
+		}
+	},
+	{
+		name: 'weekly_review',
+		title: 'How a week actually went',
+		description:
+			'A week read whole: planned against done, by category, with the three lines written about it. The heart of the app — this is what the Monday mail says, and what closing a week means. Defaults to the week now running.',
+		scope: 'tasks:read',
+		writes: false,
+		input: object({
+			weekStart: text('The Monday the week starts on, as YYYY-MM-DD. This week if left out.')
+		}),
+		run: (ctx, args) => {
+			const weekStart = weekStartOf(args.weekStart, ctx.now);
+			const { reading, loose } = readWeek(ctx, weekStart);
+			return { weekStart, reading, loose, lines: listLines(ctx, weekStart) };
+		}
+	},
+	{
+		name: 'write_review_lines',
+		title: 'Write the week\u2019s three lines',
+		description:
+			'Replace the three lines of a week\u2019s review — in the person\u2019s own words, and only when they said them. These are what they will reread in a year; never compose them unasked.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object(
+			{
+				lines: {
+					type: 'array',
+					items: { type: 'string' },
+					description: 'Up to three lines, replacing what was there.'
+				},
+				weekStart: text('The Monday the week starts on. This week if left out.')
+			},
+			['lines']
+		),
+		run: (ctx, args) => {
+			const lines = (args.lines as unknown[]) ?? [];
+			if (!Array.isArray(lines) || lines.length === 0 || lines.length > LINES_PER_REVIEW)
+				throw new ValidationError(`A review holds up to ${LINES_PER_REVIEW} lines.`);
+			const weekStart = weekStartOf(args.weekStart, ctx.now);
+			saveLines(ctx, { weekStart, contents: lines });
+			return { ok: true, weekStart };
+		}
+	},
+
+	// ── Data streams ─────────────────────────────────────────────────────────
+	{
+		name: 'data_streams',
+		title: 'The numbers being tracked',
+		description:
+			'The account\u2019s data streams — weight, mood, sleep, anything a plugin or a person logs over time — each with its slug, kind and unit. `log_data_point` writes into one by its slug.',
+		scope: 'streams:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => listStreams(ctx).map((one) => serialiseStream(one))
+	},
+	{
+		name: 'log_data_point',
+		title: 'Log a reading',
+		description:
+			'Write one point into a data stream — "I weigh 82 today", "slept 6 hours". Takes the stream\u2019s slug as `data_streams` gives it; a slug that names nothing is refused with the list, never created on the quiet.',
+		scope: 'streams:write',
+		writes: true,
+		input: object(
+			{
+				stream: text('The stream\u2019s slug, as `data_streams` gives it.'),
+				value: { type: 'number', description: 'The reading.' },
+				at: text('When it was taken, as an ISO instant. Now if left out.'),
+				text: text('A word beside the number, if they said one.')
+			},
+			['stream', 'value']
+		),
+		run: (ctx, args) => {
+			const slug = String(args.stream ?? '').trim();
+			const stream = getStreamBySlug(ctx, slug, { throwIfMissing: false });
+			if (!stream) {
+				const known = listStreams(ctx).map((one) => one.slug);
+				throw new ValidationError(
+					known.length
+						? `No stream called "${slug}". This account has: ${known.join(', ')}.`
+						: 'This account has no data streams yet — declare one in the app or over the API first.'
+				);
+			}
+			return pushPoints(ctx, slug, [
+				{
+					at: args.at ?? ctx.now.toISOString(),
+					value: args.value,
+					...(args.text !== undefined && args.text !== null ? { text: args.text } : {})
+				}
+			]);
+		}
+	},
+
+	// ── Ideas, the other halves ──────────────────────────────────────────────
+	{
+		name: 'apply_idea',
+		title: 'Mark an idea applied',
+		description:
+			'Say an idea was acted on, with a note about what came of it — or take that back by calling it again. Applied is not deleted: the idea stays, wearing what happened.',
+		scope: 'ideas:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The idea\u2019s id, as `ideas` gives it.' },
+				note: text('What came of it, if they said.')
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			toggleApplied(ctx, Number(args.id), args.note);
+			return { ok: true };
+		}
+	},
+	{
+		name: 'favorite_idea',
+		title: 'Star an idea',
+		description:
+			'Star an idea, or unstar it by calling this again. A star is the person\u2019s to ask for — never decorate their inbox on your own judgement.',
+		scope: 'ideas:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The idea\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			toggleFavorite(ctx, Number(args.id));
+			return { ok: true };
 		}
 	}
 ];
