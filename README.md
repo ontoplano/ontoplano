@@ -17,7 +17,7 @@
 
 </div>
 
-> [!WARNING]
+> [!NOTE]
 > This software was released on September 5th, 2026. It's still maturing, and
 > it may contain bugs. Please be patient, and help me improve it by creating issues
 > and pull requests.
