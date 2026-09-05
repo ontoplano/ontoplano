@@ -17,6 +17,7 @@ import {
 	createDemoAccount,
 	DEMO_ACCOUNTS_PER_ADDRESS,
 	DEMO_WINDOW_MS,
+	isDemoAccount,
 	maybeSweepDemoAccounts,
 	touchDemoAccount
 } from '$lib/server/services/demo';
@@ -383,11 +384,28 @@ const HOLD_EXEMPT = [
  * Which requests are refused, and why, is `$lib/server/demo-guard`. This is
  * only where it is applied.
  */
-const handleDemoGuard: Handle = ({ event, resolve }) => {
+const handleDemoGuard: Handle = async ({ event, resolve }) => {
 	if (!isDemo()) return resolve(event);
 
-	const said = demoRefusal(event.request.method, event.url.pathname, event.url.search);
-	if (said) return refuse(event.request, said);
+	const refusal = demoRefusal(event.request.method, event.url.pathname, event.url.search);
+	if (refusal) {
+		if (refusal.scope === 'everyone') return refuse(event.request, refusal.said);
+
+		/*
+		 * Account-scoped: the rule binds the throwaway copies, not the box.
+		 *
+		 * This hook runs before the auth handle populates locals — it has to,
+		 * or better-auth answers the guarded endpoints itself — so it asks for
+		 * the session directly, and only on the rare guarded paths. No session
+		 * passes through: the endpoint's own auth answers that case, and an
+		 * operator signing IN is exactly a guarded-path request with no session
+		 * yet.
+		 */
+		const session = await auth.api.getSession({ headers: event.request.headers });
+		if (!session?.user?.id || isDemoAccount(session.user.id)) {
+			return refuse(event.request, refusal.said);
+		}
+	}
 
 	return resolve(event);
 };
@@ -422,6 +440,15 @@ const handleDemo: Handle = async ({ event, resolve }) => {
 	 * which is the blank wait the page exists to replace.
 	 */
 	if (path === '/demo' || path.startsWith('/demo/')) return resolve(event);
+
+	/*
+	 * The operator's door. Auto-minting an account on every signed-out page
+	 * view made /login unreachable, which made the demo a box its own
+	 * operator could not sign into. Nothing links here from the demo; a
+	 * visitor who types it sees a sign-in form for an instance whose
+	 * registration is closed, which is a dead end, not a way in.
+	 */
+	if (path === '/login' || path.startsWith('/login/')) return resolve(event);
 	const writes = event.request.method !== 'GET' && event.request.method !== 'HEAD';
 
 	/*

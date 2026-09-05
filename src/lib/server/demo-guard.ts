@@ -76,32 +76,56 @@ const under = (path: string, prefixes: string[]) =>
  * form action names itself there — `?/delete` — and the account page's delete
  * is one of the ways to end the demo.
  */
-export function demoRefusal(method: string, path: string, search = ''): string | null {
+/**
+ * Which refusals apply to whom.
+ *
+ * Every rule here used to bind every session, which made the demo box a place
+ * its own operator could not sign into, out of, or administer. The rules are
+ * about DEMO accounts — the throwaway copies handed to visitors — so each
+ * refusal now says whether it binds everyone on the box or only them, and the
+ * hook asks who is calling before enforcing the second kind. An operator's
+ * account (made deliberately, no expiry, a password somebody knows) is an
+ * ordinary account that happens to live on the demo box.
+ */
+export type DemoRefusal = { said: string; scope: 'everyone' | 'demo-account' };
+
+export function demoRefusal(method: string, path: string, search = ''): DemoRefusal | null {
 	const writes = method !== 'GET' && method !== 'HEAD';
 
 	if (under(path, DEMO_FORBIDDEN))
-		return 'The demo account is temporary — its address and password cannot be changed.';
+		return {
+			said: 'The demo account is temporary — its address and password cannot be changed.',
+			scope: 'demo-account'
+		};
 
 	const noWayBack =
 		'The demo has no way back in once you leave it — close the tab when you are done.';
-	if (under(path, DEMO_NO_EXIT)) return noWayBack;
-	if (writes && new URLSearchParams(search).has(DEMO_NO_EXIT_ACTION)) return noWayBack;
+	if (under(path, DEMO_NO_EXIT)) return { said: noWayBack, scope: 'demo-account' };
+	if (writes && new URLSearchParams(search).has(DEMO_NO_EXIT_ACTION))
+		return { said: noWayBack, scope: 'demo-account' };
 
 	if (writes && path === '/settings/account' && new URLSearchParams(search).has('/delete')) {
-		return 'The demo account is temporary — it deletes itself in a few hours.';
+		return {
+			said: 'The demo account is temporary — it deletes itself in a few hours.',
+			scope: 'demo-account'
+		};
 	}
 
 	if (writes && path.startsWith('/settings/integrations')) {
 		// The sentence he asked for, in the words he asked for them: short, and
 		// about the demo rather than about permissions.
-		return "You're not allowed to do that in the demo.";
+		return { said: "You're not allowed to do that in the demo.", scope: 'demo-account' };
 	}
 
 	if (writes && under(path, DEMO_READ_ONLY) && !under(path, DEMO_WRITABLE)) {
 		// Named, not general: everything else on the demo IS editable, and a
 		// message saying otherwise sends somebody away thinking the whole thing
-		// is a screenshot.
-		return 'The demo can look at the administration pages but not change them.';
+		// is a screenshot. Everyone, operator included: the box that exists to
+		// be thrown away hourly is not the place anybody administers from.
+		return {
+			said: 'The demo can look at the administration pages but not change them.',
+			scope: 'everyone'
+		};
 	}
 
 	return null;

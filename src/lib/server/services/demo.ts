@@ -174,6 +174,18 @@ export async function resetDemoAccount(userId: string): Promise<void> {
 }
 
 /** Whether this account is a demo one, and whether its time is up. */
+/**
+ * Whether an account is one of the demo's throwaway copies.
+ *
+ * The expiry stamp IS the distinction: a visitor's account carries one from
+ * birth, and an account somebody made deliberately — the operator's — never
+ * does. It is also why the sweep cannot eat the operator: it only ever
+ * deletes what carries the stamp.
+ */
+export function isDemoAccount(userId: string): boolean {
+	return demoExpiry(userId) !== null;
+}
+
 export function demoExpiry(userId: string): string | null {
 	const row = db
 		.select({ value: userSettings.value })

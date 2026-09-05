@@ -10,6 +10,16 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.80.0 — 2026-09-05
+
+- **The demo box can have an operator.** The demo's rules — no sign-out, no
+  identity changes, no tokens — bind the throwaway visitor copies now, not
+  every session on the box, so an account made deliberately signs in and out
+  and watches sign-ups on /admin like any admin. /login is reachable by URL
+  on a demo (nothing links to it), and `scripts/make-operator.mjs` promotes
+  a registered account from the box's own shell. The hourly sweep still only
+  eats accounts carrying the demo expiry stamp, which the operator never has.
+
 ## 0.79.5 — 2026-09-05
 
 - **HTML responses say charset=utf-8 in the header.** Link scrapers trust the
