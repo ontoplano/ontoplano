@@ -33,6 +33,8 @@
 	let showAreas = $state(false);
 	let editingId: number | null = $state(null);
 	let linkingId: number | null = $state(null);
+	/** Whose linked tasks are unfolded on the card. */
+	let openTasksId: number | null = $state(null);
 	let confirmingDelete: number | null = $state(null);
 	let areaFilter: number | null = $state(null);
 	let formHorizon: Horizon = $state('week');
@@ -503,13 +505,17 @@
 								-->
 								<div class="row-actions gap-1">
 									<button
-										onclick={() => (linkingId = linkingId === goal.id ? null : goal.id)}
+										onclick={() => (openTasksId = openTasksId === goal.id ? null : goal.id)}
 										class="btn btn-sm btn-quiet"
-										title="Choose which tasks count towards this"
+										title="What counts towards this goal"
 									>
 										Tasks ({goal.linkedSlotIds.length +
 											goal.linkedTodoIds.length +
 											goal.linkedActivityIds.length})
+										<Icon
+											name={openTasksId === goal.id ? 'chevron-up' : 'chevron-down'}
+											size={12}
+										/>
 									</button>
 									{#if goal.status === 'open'}
 										<!--
@@ -562,6 +568,66 @@
 									{/if}
 								</div>
 							</div>
+
+							{#if openTasksId === goal.id}
+								<!--
+									What already counts, on the card. The modal is for choosing;
+									this is for looking and ticking — a list you could see but not
+									tick sent you to the todo page for the one action the list
+									exists for.
+								-->
+								<div class="mt-3 border border-gray-200 bg-gray-50 p-3">
+									{#each data.allTodos.filter( (t) => goal.linkedTodoIds.includes(t.id) ) as todo (todo.id)}
+										<form method="post" action="?/setTodoStatus" use:enhance class="contents">
+											<input type="hidden" name="todoId" value={todo.id} />
+											<input
+												type="hidden"
+												name="status"
+												value={todo.status === 'done' ? 'todo' : 'done'}
+											/>
+											<label class="flex cursor-pointer items-center gap-2 py-1 text-sm">
+												<input
+													type="checkbox"
+													checked={todo.status === 'done'}
+													onchange={(e) => e.currentTarget.form?.requestSubmit()}
+													class="h-3.5 w-3.5"
+												/>
+												<span
+													class={todo.status === 'done'
+														? 'text-gray-400 line-through'
+														: 'text-gray-800'}>{todo.title}</span
+												>
+											</label>
+										</form>
+									{/each}
+
+									{#each data.slots.filter( (sl) => goal.linkedSlotIds.includes(sl.id) ) as sl (sl.id)}
+										<p class="py-1 text-xs text-gray-500">
+											<span class="tabular">{sl.startTime}</span>
+											{sl.name} — every week; its occurrences count as they are done
+										</p>
+									{/each}
+									{#each data.activities.filter( (a) => goal.linkedActivityIds.includes(a.id) ) as a (a.id)}
+										<p class="py-1 text-xs text-gray-500">
+											{a.name} — every block of it counts as it is done
+										</p>
+									{/each}
+
+									{#if goal.linkedTodoIds.length + goal.linkedSlotIds.length + goal.linkedActivityIds.length === 0}
+										<p class="py-1 text-xs text-gray-500">
+											Nothing linked yet — progress is the number you type in.
+										</p>
+									{/if}
+
+									<button
+										type="button"
+										class="btn btn-sm mt-2"
+										onclick={() => (linkingId = goal.id)}
+									>
+										Choose tasks
+									</button>
+								</div>
+							{/if}
 						</div>
 					{/each}
 

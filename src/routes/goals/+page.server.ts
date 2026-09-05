@@ -16,7 +16,7 @@ import {
 	updateGoal
 } from '$lib/server/services/goals';
 import { pickableNotebooks } from '$lib/server/services/notebooks';
-import { listTodos } from '$lib/server/services/todos';
+import { listTodos, setTodoStatus } from '$lib/server/services/todos';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
@@ -29,11 +29,38 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		includeClosed,
 		slots: linkableSlots(ctx),
 		todos: listTodos(ctx).filter((t) => t.status !== 'done'),
+		/*
+		 * Every todo, done ones included, for the card's own task list. The
+		 * `todos` list above deliberately hides finished ones — a linking modal
+		 * offering somebody a done todo to link is offering busywork — but the
+		 * list on the card is the other direction: what is already linked, and
+		 * whether it happened, which needs the finished ones most of all.
+		 */
+		allTodos: listTodos(ctx).map((t) => ({ id: t.id, title: t.title, status: t.status })),
 		activities: listActivities(ctx, { activeOnly: true }).map((a) => ({ id: a.id, name: a.name }))
 	};
 };
 
 export const actions: Actions = {
+	/*
+	 * Tick a linked todo from the goal card. The card lists what counts
+	 * towards the goal, and a list you can see but not tick sends you to
+	 * another page for the one action the list exists for.
+	 */
+	setTodoStatus: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			setTodoStatus(
+				buildCtx(locals.user!.id),
+				Number(formData.get('todoId')),
+				String(formData.get('status'))
+			);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	createArea: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
