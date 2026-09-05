@@ -7,7 +7,7 @@
  * by Playwright. Rebuilding them after a UI change is one command instead of
  * an afternoon of cropping:
  *
- *     node scripts/site-shots.mjs                # writes ../ontoplano-site/assets/
+ *     make shots                                 # in the SITE repo, which owns the assets
  *     SHOT_DIR=/tmp/look node scripts/site-shots.mjs   # somewhere else first
  *
  * Needs `cwebp` (apt: webp) — the site serves webp — and ImageMagick's

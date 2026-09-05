@@ -39,25 +39,21 @@ help:
 	@echo "  build · preview             production build, and serve it locally"
 	@echo "  install-service / update    the systemd user service: first install, then updates"
 	@echo "  docker-up / docker-down     an instance in a container (docs/DOCKER.md)"
-	@echo "  docker-image                build the published image here, without pushing"
-	@echo "  docker-publish              …and push it — asks first, this project only"
+	@echo "  docker-image                build the published image here, and audit it"
 	@echo "  package [deb|rpm|arch]      the .deb, the .rpm and the AUR PKGBUILD, into dist/"
 	@echo "  package-check               …then unpack them and run what is inside"
-	@echo "  release                     tag it and publish the packages (DRY=1 first)"
-	@echo "  github-push                 mirror master and the tags onto GitHub"
 	@echo "  backup-install              Litestream replication (backup-status, backup-drill)"
 	@echo
 	@printf '\033[1mphone\033[0m\n'
 	@echo "  android                     build the APK (android-install / android-share to get it on)"
 	@echo "  android-lan                 an APK pointed at this machine, over wifi"
-	@echo "  android-staging             …and one for staging, installable beside the real one"
-	@echo "  android-release             publish the signed APK to GitHub Releases"
 	@if [ -f local.mk ]; then echo; \
 		printf '\033[1mthis instance (local.mk)\033[0m\n'; \
 		echo "  deploy [-app|-site|-docs|-demo]   ship it; bare deploy is all four"; \
 		echo "  deploy-staging [-app|-site|-docs]  the staging instance on the box"; \
 		echo "  restart [-app|-site|-docs|-demo]  without shipping anything"; \
 		echo "  prune-assets                      drop the old hashed chunks the box keeps"; \
+		echo "  release · docker-publish · github-push   publishing (release.mk)"; \
 		echo "  logs-app · logs-staging · setup   see local.mk for the rest"; \
 	fi
 
@@ -69,7 +65,7 @@ vars:
 	@sh scripts/make-vars.sh $(sort $(MAKEFILE_LIST) defaults.env $(wildcard $(SERVER_SRC)/defaults.env))
 
 
-.PHONY: site-shots _docker-builder _billing-in-build vars billing-provider package package-check release _release-run github-push _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-staging android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down docker-publish _docker-safe _docker-audit logs https-tailscale https-tailscale-off android android-install android-uninstall android-share android-release android-fingerprint android-keystore-reset android-clean
+.PHONY: _billing-in-build vars _billing-provider package package-check _dev-port _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -245,7 +241,7 @@ dev-fg:
 #: BILLING_SRC=ontoplano-billing  where the payment provider is checked out
 BILLING_SRC ?= ontoplano-billing
 
-billing-provider:
+_billing-provider:
 	@if [ -f "$(BILLING_SRC)/paddle.ts" ]; then \
 		cp "$(BILLING_SRC)/paddle.ts" src/lib/server/billing/providers/paddle.ts; \
 		echo "billing: using $(BILLING_SRC)/paddle.ts"; \
@@ -291,7 +287,7 @@ _billing-in-build:
 		exit 1; \
 	fi
 
-build: billing-provider
+build: _billing-provider
 	@heap=$$(free -m 2>/dev/null | awk '/^Mem:/ {print $$2}'); \
 	if [ -n "$(NODE_OPTIONS)" ]; then \
 		yarn build; \
@@ -306,12 +302,6 @@ build: billing-provider
 # The logo lives in exactly one file, src/lib/logo/mark.png. This is what turns
 # it into the favicon, the four PWA icons and the one iOS reads — so changing
 # the logo is changing a file, not finding eight copies of it.
-# The screenshots ontoplano.com shows, retaken from the live code. Writes
-# straight into ../ontoplano-site/assets/ — look at them, then commit THAT
-# repo. SHOT_DIR=… to aim somewhere else first. The video slide is not touched.
-site-shots:
-	node scripts/site-shots.mjs
-
 icons:
 	@yarn -s icons
 
@@ -431,13 +421,14 @@ test:
 
 # ─── Docker ───────────────────────────────────────────────────────────────────
 #
-# Two audiences and two jobs. `docker-up` / `docker-down` / `docker-build` run
-# an instance HERE, which is what anybody self-hosting wants. `docker-publish`
-# pushes the image to the registry, which only this project does — see
-# docs/DOCKER.md for what it needs the first time.
+# `docker-up` / `docker-down` / `docker-build` run an instance HERE, which is
+# what anybody self-hosting wants. `docker-image` builds the image the project
+# publishes — the exact thing a self-hoster pulls — and audits what went into
+# it; pushing it to the registry is the maintainer's job and lives with the
+# maintainer's tooling, not in this Makefile.
 #
-# The name and the tags are variables so a fork publishes its own:
-#   make docker-publish IMAGE=you/ontoplano
+# The name and the tags are variables so a fork builds its own:
+#   make docker-image IMAGE=you/ontoplano
 
 # Printing, defined here rather than borrowed. `local.mk` has its own set, and
 # a public checkout has no local.mk at all — a target that only prints properly
@@ -450,11 +441,6 @@ LOUD = printf '\033[1m%s\033[0m\n'
 IMAGE ?= ontoplano/ontoplano
 # The tags a push writes: the version in package.json, and `latest`.
 IMAGE_VERSION = $(shell node -p "require('./package.json').version")
-# What `docker-publish` builds for. arm64 is not decoration: the cheap boxes
-# people self-host on are increasingly Ampere, and a Raspberry Pi is the single
-# commonest thing this runs on.
-#: PLATFORMS=linux/amd64,linux/arm64  architectures docker-publish builds for
-PLATFORMS ?= linux/amd64,linux/arm64
 
 docker-build:
 	docker compose build
@@ -553,15 +539,8 @@ docker-image: _docker-safe
 	@echo "Building $(IMAGE):$(IMAGE_VERSION) for this machine's architecture"
 	@docker build -t $(IMAGE):$(IMAGE_VERSION) -t $(IMAGE):latest .
 	@$(MAKE) -s _docker-audit
-	@$(OK) "built. 'make docker-up' runs it, 'make docker-publish' pushes it"
+	@$(OK) "built. 'make docker-up' runs it"
 
-# One image, both architectures, pushed. buildx builds arm64 under emulation on
-# an x86 machine, which is slow and correct; there is no second command and no
-# manifest to assemble by hand.
-#
-# It builds and audits locally first, then asks — like `make deploy`, and for a
-# stronger reason: a deploy can be redone and a publish cannot be undone.
-#: DOCKER_YES=1  publish the image without stopping to confirm
 # ─── Packages ───────────────────────────────────────────────────────────────
 #
 # What somebody who is not you installs. `scripts/package.mjs` says why the .deb
@@ -577,68 +556,6 @@ package: build
 # what the package does. Nothing is installed on this machine.
 package-check:
 	@bash tests/packaging.sh
-
-# DOCKER_YES=1 skips the prompt for a script that has already asked.
-docker-publish: docker-image
-	@docker buildx version >/dev/null 2>&1 || { \
-		echo "docker buildx is missing — it ships with Docker Desktop and with"; \
-		echo "the docker-buildx-plugin package on Linux."; exit 1; }
-	@echo
-	@$(LOUD) "This PUBLISHES $(IMAGE):$(IMAGE_VERSION) and $(IMAGE):latest"
-	@echo "  to a public registry, for $(PLATFORMS)"
-	@echo "  it cannot be unpublished — somebody may have pulled it before you changed your mind"
-	@echo "  and every layer stays readable, including files a later layer deletes"
-	@if [ -n "$$(git status --porcelain)" ]; then \
-		echo "  ! the working tree is DIRTY — the image is built from what is on disk:"; \
-		git status --porcelain | head -5 | sed 's/^/      /'; \
-	fi
-	@if [ "$(DOCKER_YES)" = 1 ]; then echo "  confirmed by DOCKER_YES=1"; else \
-		printf 'Publish? [y/N] '; \
-		read -r answer </dev/tty 2>/dev/null || answer=; \
-		case "$$answer" in [yY]*) ;; *) echo "Not confirmed — nothing was pushed."; exit 1;; esac; \
-	fi
-	@$(MAKE) -s _docker-builder
-	@docker buildx build --builder ontoplano --platform $(PLATFORMS) \
-		-t $(IMAGE):$(IMAGE_VERSION) -t $(IMAGE):latest \
-		--push . || { \
-		echo; \
-		$(LOUD) "The push failed. The three reasons it ever is:"; \
-		echo "  · not signed in as the owner of $(IMAGE)"; \
-		echo "      docker login -u $(firstword $(subst /, ,$(IMAGE)))"; \
-		echo "  · signed in with a token that has no write scope — read-only"; \
-		echo "      tokens fail here and nowhere else, so this is the usual one"; \
-		echo "  · $(IMAGE) belongs to somebody else — publish under your own name:"; \
-		echo "      make docker-publish IMAGE=yourname/ontoplano"; \
-		exit 1; }
-
-# The builder a multi-platform push needs, made once and kept.
-#
-# Docker's default builder uses the `docker` driver, which cannot build for two
-# architectures at all: `docker buildx build --platform linux/amd64,linux/arm64`
-# fails on it outright, which is a confusing way to be told to make a builder.
-# So this makes one — a `docker-container` builder called `ontoplano` — and
-# checks the machine can actually emulate the architectures asked for before a
-# ten-minute build finds out it cannot.
-_docker-builder:
-	@if ! docker buildx inspect ontoplano >/dev/null 2>&1; then \
-		echo "  making the 'ontoplano' buildx builder — the default one cannot do two architectures"; \
-		docker buildx create --name ontoplano --driver docker-container >/dev/null || exit 1; \
-	fi
-	@docker buildx inspect ontoplano --bootstrap >/dev/null 2>&1 || { \
-		echo "the 'ontoplano' builder would not start. 'docker buildx rm ontoplano' and try again."; \
-		exit 1; }
-	@# One node per line, and a builder can have several — newlines become commas
-	@# too, or a platform at the start of the second node's list never matches.
-	@have=$$(docker buildx inspect ontoplano | sed -n 's/^ *Platforms: *//p' | tr -d ' ' | tr '\n' ','); \
-	for want in $$(echo "$(PLATFORMS)" | tr ',' ' '); do \
-		case ",$$have," in *",$$want,"*) ;; *) \
-			echo "  ! this machine cannot build $$want."; \
-			echo "    QEMU does it, once, and then every later build has it:"; \
-			echo "      docker run --privileged --rm tonistiigi/binfmt --install all"; \
-			echo "    or build only what it can: make docker-publish PLATFORMS=linux/amd64"; \
-			exit 1 ;; \
-		esac; \
-	done
 
 logs:
 	journalctl --user -u ontoplano -f
@@ -739,14 +656,6 @@ android:
 android-lan:
 	@$(MAKE) android ONTOPLANO_ORIGIN=http://$(LAN_IP):$(APP_PORT)
 
-# The staging instance, as its own app.
-#
-# A different package id, so it installs beside the real one rather than over
-# it, and its name and icon come from the manifest staging itself serves — the
-# marked ones. Two apps on the phone, and no way to confuse them.
-android-staging:
-	@$(MAKE) android ONTOPLANO_ORIGIN=https://$(ONTOPLANO_STAGING_HOST)
-
 # Does the server agree that this app is allowed to drop its URL bar?
 #
 # The single most common TWA complaint is "it works but it looks like a
@@ -772,103 +681,6 @@ android-check:
 	fi
 
 # Straight onto a phone over USB or wireless debugging.
-# ─── Publishing the APK ──────────────────────────────────────────────────────
-#
-# The widget is the reason this exists. Android only lets an installed *app*
-# provide a home-screen widget, and a web app added from the browser is not
-# one — so anybody who wants today's blocks on their home screen needs the
-# package, and there has to be somewhere to get it.
-#
-# GitHub Releases rather than a file on the site: it is versioned, it has a
-# stable address per release, and a browser downloading from it does not
-# have to trust a host nobody has heard of. The tag is the app's version, so
-# `package.json` is still the one place a version is decided.
-android-release: $(APK)
-	@command -v gh >/dev/null || { \
-		echo "The GitHub CLI (gh) is not on PATH — it is what uploads the file."; \
-		echo "  https://cli.github.com , then: gh auth login"; exit 1; }
-	@gh auth status >/dev/null 2>&1 || { echo "Not signed in: gh auth login"; exit 1; }
-	@v=v$$(node -p "require('./package.json').version"); \
-	echo "Publishing $(APK) as $$v to $(GH_REPO)"; \
-	if gh release view "$$v" --repo $(GH_REPO) >/dev/null 2>&1; then \
-		gh release upload "$$v" $(APK) --repo $(GH_REPO) --clobber; \
-	else \
-		gh release create "$$v" $(APK) --repo $(GH_REPO) \
-			--title "$$v" \
-			--notes "The Android package for this version. Everything in it is also in the web app; the one thing it adds is the home-screen widget, which Android only lets an installed app provide."; \
-	fi
-	@echo "Done. It is at https://github.com/$(GH_REPO)/releases/latest"
-
-# Where releases go. A fork publishes its own:
-#   make android-release GH_REPO=you/ontoplano
-#: GH_REPO=ontoplano/ontoplano  which GitHub repository releases are published to
-GH_REPO ?= ontoplano/ontoplano
-
-# ─── Publishing a version ───────────────────────────────────────────────────
-#
-# The code, the tag, the packages, and the GitHub release with them attached.
-# What is left afterwards is the AUR, which needs a key on your own machine —
-# the development repo's RELEASING.md has that half.
-#
-# The branch goes up before the tag does, to both remotes. It used to push only
-# the tag, so GitHub got a release built from a commit its `master` did not yet
-# show: the download was newer than the source beside it, which is exactly the
-# thing a release is supposed to make checkable. If anything after the tag
-# fails, the tag is deleted again — otherwise the next attempt stops on "that
-# tag already exists" and the fix is a command nobody remembers.
-#
-#   make release          tag, build, check, publish
-#: DRY=1  say what `make release` would do, and do none of it
-release:
-	@command -v gh >/dev/null || { \
-		echo "The GitHub CLI (gh) is not on PATH — it is what makes the release."; \
-		echo "  https://cli.github.com , then: gh auth login"; exit 1; }
-	@[ "$(DRY)" = 1 ] || gh auth status >/dev/null 2>&1 || { echo "Not signed in: gh auth login"; exit 1; }
-	@# A release is a promise that this is what the code was. A dirty tree makes
-	@# that untrue before anybody has downloaded anything.
-	@[ -z "$$(git status --porcelain)" ] || { \
-		echo "The working tree is dirty. A release has to be a commit anybody can check out:"; \
-		git status --short; exit 1; }
-	@v=v$$(node -p "require('./package.json').version"); \
-	if git rev-parse "$$v" >/dev/null 2>&1; then \
-		echo "$$v already exists as a tag. Bump the version in package.json first."; exit 1; fi; \
-	echo "Releasing $$v to $(GH_REPO), from $$(git rev-parse --short HEAD)"
-	@$(MAKE) -s _release-run
-
-_release-run:
-	@v=v$$(node -p "require('./package.json').version"); \
-	notes=$$(node scripts/changelog-section.mjs); \
-	if [ "$(DRY)" = 1 ]; then \
-		echo; echo "It would:"; \
-		echo "  build the .deb, the .rpm and the PKGBUILD"; \
-		echo "  run make package-check against them"; \
-		echo "  push this branch to origin and to github FIRST — a release whose"; \
-		echo "    code is not on GitHub yet is a release nobody can read"; \
-		echo "  git tag $$v and push the tag to both"; \
-		echo "  gh release create $$v --repo $(GH_REPO), with the packages attached"; \
-		echo; echo "with these notes:"; echo; echo "$$notes"; exit 0; \
-	fi; \
-	$(MAKE) -s package && $(MAKE) -s package-check && \
-	branch=$$(git rev-parse --abbrev-ref HEAD); \
-	echo "  pushing $$branch to origin and to github"; \
-	git push -q origin "$$branch" && git push -q github "$$branch" && \
-	git tag -a "$$v" -m "$$v" && \
-	{ git push -q origin "$$v" && git push -q github "$$v" && \
-	  gh release create "$$v" dist/ontoplano_*.deb $$(ls dist/*/ontoplano-*.rpm 2>/dev/null) \
-		--repo $(GH_REPO) --title "$$v" --notes "$$notes" && \
-	  echo "https://github.com/$(GH_REPO)/releases/tag/$$v"; } || \
-	{ git tag -d "$$v" >/dev/null; \
-	  echo "Something after the tag failed, so the tag is gone again — run this once more."; \
-	  exit 1; }
-
-# The mirror. `origin` is the forge and stays that way — this only moves what is
-# already committed onto GitHub, where the packages and the issues people open
-# without a forge account live.
-github-push:
-	@git push github master --tags
-	@echo "→ https://github.com/$(GH_REPO)"
-
-
 android-install: $(APK)
 	@command -v adb >/dev/null || { \
 		echo "adb not found. Install android-tools-adb, or use 'make android-share'"; \

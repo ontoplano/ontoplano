@@ -30,6 +30,11 @@ version.
   that arrive as Ontoplano), that Firefox's menu item is "Add to Home screen",
   and what a self-hoster without HTTPS can still do (build the APK). The
   family plan has a page of its own.
+- **A fresh clone's `make` offers only what a fresh clone can run.** The
+  maintainer's targets — publishing the image and the APK, mirroring to
+  GitHub, cutting a release, the staging build, the site's screenshots —
+  moved out of the public Makefile into the private tooling behind
+  `local.mk`.
 - **The self-host Telegram bot is retired** — it predates the app, and the
   app does its whole job now. Scripts that push your day to a Telegram chat
   through the API keep working; they are your crontab, not a bot.

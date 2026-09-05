@@ -75,8 +75,9 @@ describe('the ignore files that ship', () => {
 /**
  * The one directory a private module is copied into.
  *
- * `make billing-provider` copies a payment integration from a checkout beside
- * this one into `src/lib/server/billing/providers/`, and that file is the whole
+ * `make _billing-provider`, a step of `make build`, copies a payment
+ * integration from a checkout beside this one into
+ * `src/lib/server/billing/providers/`, and that file is the whole
  * of what this repository deliberately does not contain. Nothing but the
  * directory's own ignore file stands between it and a `git add -A`, so the
  * ignore file is tested rather than trusted — and it is tested by asking git,

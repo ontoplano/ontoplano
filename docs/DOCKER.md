@@ -102,53 +102,23 @@ than being killed ten seconds later mid-write.
 
 ---
 
-## Publishing it — for whoever maintains this
+## The image and what gets into it — if you fork this
 
-Only the project does this; skip it if you are running an instance.
+Publishing the official image is the maintainer's job; the machinery for it
+lives with the maintainer's private tooling, not in this repository. What is
+public is the recipe: `make docker-image` builds exactly the image the project
+publishes, for this machine's architecture, and a fork can push the result
+under its own name with plain `docker push`.
 
-**The first time.** Make a [Docker Hub](https://hub.docker.com) account, then an
-organisation or a repository named `ontoplano/ontoplano`. Under **Account
-settings → Personal access tokens**, make a token with _Read, Write, Delete_ and
-keep it — the password itself should never be typed into a terminal. Then, once
-per machine:
+Two guarantees the build enforces, because a published image is permanent,
+public, and readable layer by layer:
 
-```sh
-docker login -u <username>
-# paste the ACCESS TOKEN, not the password
-```
-
-The login is stored in `~/.docker/config.json`, base64-encoded rather than
-encrypted, so on a shared machine use a credential helper.
-
-**Every release:**
-
-```sh
-make docker-publish
-```
-
-That builds for `linux/amd64` and `linux/arm64` and pushes two tags: the version
-in `package.json`, and `latest`. arm64 is not decoration — the cheap boxes people
-self-host on are increasingly Ampere, and a Raspberry Pi is the commonest single
-thing this runs on. Building it on an x86 machine goes through emulation, so it
-is slow the first time and cached after.
-
-It needs `docker buildx`, which ships with Docker Desktop and comes from the
-`docker-buildx-plugin` package on Linux. To publish somewhere else — a fork, or
-a private registry — override the name:
-
-```sh
-make docker-publish IMAGE=ghcr.io/you/ontoplano
-```
-
-**Two things to check before the first push:**
-
-- **`.dockerignore` is an allowlist**, and it has to stay one. The first rule is
-  `*` — everything excluded — and the build's inputs are named back in. A list
-  of exclusions fails open: anything added to the checkout later ships until
-  somebody remembers to exclude it, and a published image is a permanent,
-  public, layer-by-layer copy of whatever the build could see. `make
-docker-image` refuses to build if that first rule changes, and then opens the
-  image it built and refuses to publish if anything unexpected is inside it.
+- **`.dockerignore` is an allowlist**, and it has to stay one. The first rule
+  is `*` — everything excluded — and the build's inputs are named back in. A
+  list of exclusions fails open: anything added to the checkout later ships
+  until somebody remembers to exclude it. `make docker-image` refuses to build
+  if that first rule changes, and then opens the image it built and refuses it
+  if anything unexpected is inside.
 - The version in `package.json` is the tag. Bump it in the same commit as the
   work, as always — a second push of the same version overwrites a tag people
   may already be pinning.
