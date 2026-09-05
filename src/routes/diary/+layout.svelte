@@ -43,8 +43,9 @@
 		<h1 class="text-lg font-bold text-gray-900">Notes</h1>
 		<nav class="flex gap-1 border-b border-gray-200" aria-label="Notes sections">
 			{#each tabs as tab (tab.href)}
-				<!-- Already a resolve() result; the rule cannot see through the array. -->
-				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+				<!-- Already a resolve() result; the rule cannot see through the array,
+				     and -next-line cannot reach an attribute two lines down. -->
+				<!-- eslint-disable svelte/no-navigation-without-resolve -->
 				<a
 					href={tab.href}
 					aria-current={active(tab.href) ? 'page' : undefined}
@@ -56,6 +57,7 @@
 				>
 					{tab.label}
 				</a>
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			{/each}
 		</nav>
 	</div>
