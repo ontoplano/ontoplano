@@ -12,6 +12,9 @@ version.
 
 ## 0.71.0 — 2026-09-05
 
+- **Taking somebody off the family plan asks first.** The × was one click
+  from locking a person out of writing; it now arms a second, deliberate
+  button that is not under the cursor.
 - **The welcome wizard starts with "Use it with an AI".** One press mints an
   assistant key and a short prompt to paste into Claude (or anything that
   speaks MCP): connect, then interview the new account's owner — routine,

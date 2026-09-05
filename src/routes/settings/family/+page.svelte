@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { armed } from '$lib/actions/armed';
 	import Banner from '$lib/components/Banner.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -7,6 +8,9 @@
 	import type { ActionData, PageServerData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+
+	/** Which member's removal is waiting for its second, deliberate press. */
+	let confirmRemove = $state<string | null>(null);
 </script>
 
 <div class="space-y-4">
@@ -52,12 +56,36 @@
 								<span class="block truncate text-sm text-gray-900">{member.name}</span>
 								<span class="block truncate text-xs text-gray-500">{member.email}</span>
 							</span>
-							<form method="post" action="?/removeSeat" use:enhance>
-								<input type="hidden" name="member" value={member.id} />
-								<button class="btn btn-sm" title="Take them off this plan">
+							{#if confirmRemove === member.id}
+								<!-- Two presses, and the second is not under the cursor: taking
+								     a seat away locks a person out of writing until somebody
+								     pays, which one slipped click must never do. -->
+								<form
+									method="post"
+									action="?/removeSeat"
+									use:enhance={() =>
+										async ({ update }) => {
+											confirmRemove = null;
+											await update();
+										}}
+									class="flex shrink-0 items-center gap-1"
+								>
+									<input type="hidden" name="member" value={member.id} />
+									<button type="button" onclick={() => (confirmRemove = null)} class="btn btn-sm">
+										Keep them
+									</button>
+									<button class="btn btn-danger btn-sm" use:armed>Take them off the plan</button>
+								</form>
+							{:else}
+								<button
+									type="button"
+									onclick={() => (confirmRemove = member.id)}
+									class="btn btn-sm"
+									title="Take them off this plan"
+								>
 									<Icon name="close" size={14} />
 								</button>
-							</form>
+							{/if}
 						</li>
 					{/each}
 				</ul>
