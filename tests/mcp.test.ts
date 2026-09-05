@@ -949,6 +949,51 @@ describe('the opened rooms', () => {
 	 * the activity, rewrite every block that used it, and not change the one
 	 * sentence saying what the routine is: activities were read-only here.
 	 */
+	it('files a shopping item into a section, by name', () => {
+		const section = rpc(60, 'add_shopping_category', { name: 'Dairy', holdsFood: true }, [
+			'shopping:write'
+		]);
+		expect(section.result.isError, section.result.content?.[0]?.text).toBe(false);
+
+		const milk = rpc(61, 'add_to_shopping_list', { name: 'milk', section: 'dairy' }, [
+			'shopping:write'
+		]);
+		expect(milk.result.isError, milk.result.content?.[0]?.text).toBe(false);
+
+		const list = rpc(62, 'shopping_list', {}, ['shopping:read']);
+		const row = list.result.structuredContent.items.find(
+			(i: { name: string }) => i.name === 'milk'
+		);
+		expect(row.shoppingCategoryId).toBe(section.result.structuredContent.id);
+
+		// And out again: an empty section name unfiles.
+		const out = rpc(63, 'file_shopping_item', { id: row.id, section: '' }, ['shopping:write']);
+		expect(out.result.isError).toBe(false);
+
+		// A section nobody has is refused with the ones that exist.
+		const missing = rpc(64, 'file_shopping_item', { id: row.id, section: 'aisle nine' }, [
+			'shopping:write'
+		]);
+		expect(missing.result.isError).toBe(true);
+		expect(missing.result.content?.[0]?.text).toContain('Dairy');
+	});
+
+	it('removes an empty notebook, and refuses one holding writing', () => {
+		const empty = rpc(65, 'add_notebook', { title: 'made by mistake' }, ['notes:write']);
+		const emptyId = empty.result.structuredContent?.id as number;
+		expect(empty.result.isError, empty.result.content?.[0]?.text).toBe(false);
+
+		const gone = rpc(66, 'remove_notebook', { id: emptyId }, ['notes:write']);
+		expect(gone.result.isError, gone.result.content?.[0]?.text).toBe(false);
+
+		const kept = rpc(67, 'add_notebook', { title: 'the trip' }, ['notes:write']);
+		const keptId = kept.result.structuredContent?.id as number;
+		rpc(68, 'write_entry', { content: 'Vans booked.', notebookId: keptId }, ['notes:write']);
+		const refused = rpc(69, 'remove_notebook', { id: keptId }, ['notes:write']);
+		expect(refused.result.isError).toBe(true);
+		expect(refused.result.content?.[0]?.text).toContain('deleted by the person');
+	});
+
 	it('adds an activity and changes what it says', () => {
 		const made = rpc(
 			55,

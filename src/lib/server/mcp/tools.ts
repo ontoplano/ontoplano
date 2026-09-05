@@ -58,7 +58,13 @@ import {
 	setGoalProgress,
 	updateGoal
 } from '../services/goals.js';
-import { listNotebooks, setNotebookShared } from '../services/notebooks.js';
+import {
+	contentsOf,
+	createNotebook,
+	deleteNotebook,
+	listNotebooks,
+	setNotebookShared
+} from '../services/notebooks.js';
 import {
 	cooked,
 	createRecipe,
@@ -82,7 +88,8 @@ import {
 	setBought,
 	setCategoryFood,
 	setCategoryShared,
-	setSnoozed
+	setSnoozed,
+	setItemCategory
 } from '../services/shopping.js';
 import { getTodayBoard } from '../services/today.js';
 import {
@@ -832,7 +839,7 @@ export const TOOLS: Tool[] = [
 		name: 'write_entry',
 		title: 'Write a diary entry',
 		description:
-			'Add an entry. Markdown, in the person’s own voice — an assistant writing a diary entry is transcribing, not composing. Put it in a notebook when it is about one subject; leave the notebook off for an ordinary day.',
+			'Add an entry. Markdown. Writing one when asked is the point of this tool — keep their words and their voice where you have them, and do not invent an entry nobody asked for. Put it in a notebook when it is about one subject; leave the notebook off for an ordinary day.',
 		scope: 'notes:write',
 		writes: true,
 		input: object(
@@ -861,6 +868,57 @@ export const TOOLS: Tool[] = [
 		writes: false,
 		input: object({}),
 		run: (ctx) => listNotebooks(ctx)
+	},
+	{
+		name: 'add_notebook',
+		title: 'Make a notebook',
+		description:
+			'Make a notebook — a subject written against with no deadline: a book, a trip, a renovation. `write_entry` files notes into it by name.',
+		scope: 'notes:write',
+		writes: true,
+		input: object(
+			{
+				title: text('What it is about.'),
+				description: text('A line under the title, shown on its page.')
+			},
+			['title']
+		),
+		run: (ctx, args) => ({
+			id: createNotebook(ctx, { title: args.title, description: args.description })
+		})
+	},
+	{
+		/*
+		 * The one notebook deletion an assistant gets: an empty one.
+		 *
+		 * Notebooks with anything in them are under the same rule as people,
+		 * habits and goals — never deletable through a tool, because what they
+		 * hold is somebody's writing. But a notebook made by mistake a minute
+		 * ago holds nothing, and "remove it in the app yourself" for a thing
+		 * the assistant just created is ceremony with no one to protect.
+		 */
+		name: 'remove_notebook',
+		title: 'Remove an empty notebook',
+		description:
+			'Delete a notebook that holds nothing — no notes, no tasks, no goals. One with anything in it is refused with what it holds: somebody\u2019s writing is deleted by them in the app, never through a tool. For a notebook made by mistake.',
+		scope: 'notes:write',
+		writes: true,
+		input: object(
+			{ id: { type: 'integer', description: 'The notebook\u2019s id, as `notebooks` gives it.' } },
+			['id']
+		),
+		run: (ctx, args) => {
+			const held = contentsOf(ctx, Number(args.id));
+			const entries = held.entries.length;
+			const tasks = held.todos.length + held.blocks.length;
+			const goals = held.goals.length;
+			if (entries + tasks + goals > 0)
+				throw new ValidationError(
+					`That notebook holds ${entries} note(s), ${tasks} task(s) and ${goals} goal(s). What is written in it is deleted by the person, in the app — not through a tool.`
+				);
+			deleteNotebook(ctx, Number(args.id));
+			return { ok: true };
+		}
 	},
 	{
 		name: 'share_notebook',
@@ -977,16 +1035,32 @@ export const TOOLS: Tool[] = [
 						'`replenish` is something the cupboard runs out of and wants again; `someday` is a wishlist item. Default `replenish`.',
 					default: 'replenish'
 				},
-				notes: text('Anything else about it.')
+				notes: text('Anything else about it.'),
+				section: text('The section to file it under, by name — `shopping_categories` lists them.')
 			},
 			['name']
 		),
-		run: (ctx, args) =>
-			createItem(ctx, {
+		run: (ctx, args) => {
+			let shoppingCategoryId: number | undefined;
+			const said = typeof args.section === 'string' ? args.section.trim().toLowerCase() : '';
+			if (said) {
+				const all = listShoppingCategories(ctx) as { id: number; name: string }[];
+				const hit =
+					all.find((c) => c.name.toLowerCase() === said) ??
+					all.find((c) => c.name.toLowerCase().includes(said));
+				if (!hit)
+					throw new ValidationError(
+						`No section called "${String(args.section)}". This list has: ${all.map((c) => c.name).join(', ') || 'none yet'}.`
+					);
+				shoppingCategoryId = hit.id;
+			}
+			return createItem(ctx, {
 				name: args.name,
 				type: args.type ?? 'replenish',
-				notes: args.notes ?? ''
-			})
+				notes: args.notes ?? '',
+				...(shoppingCategoryId !== undefined ? { shoppingCategoryId } : {})
+			});
+		}
 	},
 	{
 		name: 'tick_bought',
@@ -1192,6 +1266,38 @@ export const TOOLS: Tool[] = [
 				Number(args.id),
 				args.archived === undefined ? true : Boolean(args.archived)
 			);
+			return { ok: true };
+		}
+	},
+	{
+		name: 'file_shopping_item',
+		title: 'File an item into a section',
+		description:
+			'Move a shopping item into a section — "put the milk under Dairy". Takes the item\u2019s id from `shopping_list` and the section by name from `shopping_categories`; an empty section name unfiles it. A name matching no section is refused with the ones that exist.',
+		scope: 'shopping:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The item\u2019s id, as `shopping_list` gives it.' },
+				section: text('The section, by name. Empty unfiles the item.')
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const said = typeof args.section === 'string' ? args.section.trim().toLowerCase() : '';
+			let categoryId: number | null = null;
+			if (said) {
+				const all = listShoppingCategories(ctx) as { id: number; name: string }[];
+				const hit =
+					all.find((c) => c.name.toLowerCase() === said) ??
+					all.find((c) => c.name.toLowerCase().includes(said));
+				if (!hit)
+					throw new ValidationError(
+						`No section called "${String(args.section)}". This list has: ${all.map((c) => c.name).join(', ') || 'none yet'}.`
+					);
+				categoryId = hit.id;
+			}
+			setItemCategory(ctx, Number(args.id), categoryId);
 			return { ok: true };
 		}
 	},

@@ -293,6 +293,27 @@ export function updateItem(ctx: Ctx, id: number, raw: ItemInput): void {
 	if (res.changes === 0) throw new NotFoundError('item');
 }
 
+/**
+ * File an item into a section, or out of every one, touching nothing else.
+ *
+ * `updateItem` re-parses the whole row, so filing through it means re-sending
+ * name and type just to move a thing — which is exactly the call an assistant
+ * gets wrong. One field, one change.
+ */
+export function setItemCategory(ctx: Ctx, id: number, categoryId: number | null): void {
+	// The same reachability rule the full update applies — yours, or a
+	// family member's shared shelf.
+	const filed = parseCategoryId(ctx, categoryId);
+
+	const res = db
+		.update(shoppingItems)
+		.set({ shoppingCategoryId: filed, updatedAt: stamp(ctx) })
+		.where(itemWhere(ctx, id))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('item');
+}
+
 export function deleteItem(ctx: Ctx, id: number): void {
 	const res = db.delete(shoppingItems).where(itemWhere(ctx, id)).run();
 
