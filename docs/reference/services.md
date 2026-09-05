@@ -1347,6 +1347,24 @@ whole import.
 Trashed notes are never imported. Archived ones are, because archived in
 Keep means "dealt with but keep it", which is not the same as deleted.
 
+#### `parseOrg(text)`
+
+Org mode, which is plain text with stars.
+
+What a heading becomes:
+
+- `* TODO Buy milk` (or NEXT, WAITING) is a task; `* DONE` and
+  `* CANCELLED` are tasks already finished. A `SCHEDULED:` or `DEADLINE:`
+  date on the lines under it becomes the task's date; the rest of the body
+  goes in its notes.
+- A heading with no keyword and no body is structure, and structure is not
+  imported. One WITH a body is writing — it becomes a note, its `:tags:`
+  carried across.
+
+`#+TITLE:` names the notebook everything lands in. Nothing else from the
+preamble is read: org files carry a person's whole configuration, and an
+import that guessed at the rest would be wrong in interesting ways.
+
 #### `importTasks(ctx, input)`
 
 Read the file, then write what it said.

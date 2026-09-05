@@ -12,6 +12,11 @@ version.
 
 ## 0.74.0 — 2026-09-05
 
+- **Org mode imports.** Paste or choose a `.org` file: `TODO`/`NEXT`/
+  `WAITING` headings become open tasks and `DONE`/`CANCELLED` finished ones,
+  `SCHEDULED:` and `DEADLINE:` dates come along, bodies land in the notes,
+  a keyword-less heading with writing under it becomes a note with its
+  `:tags:`, and `#+TITLE` names the notebook it all lands in.
 - **Shopping sections are managed in place.** A tick in the categories
   window saves the moment it lands — no per-row save button, and Close only
   closes. Every section can be renamed and deleted from the same window;

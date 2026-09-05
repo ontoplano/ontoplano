@@ -60,6 +60,8 @@ export type ParseResult = {
 	notes: ImportedNote[];
 	/** Lines we understood well enough to know we were dropping them. */
 	skipped: string[];
+	/** A name the file itself carries — org's #+TITLE — for the notebook. */
+	suggestedNotebook?: string;
 };
 
 export type ImportResult = {
@@ -77,13 +79,14 @@ export type ImportResult = {
 const MAX_INPUT = 2_000_000;
 const MAX_TASKS = 2000;
 
-export type ImportSource = 'todoist' | 'google-tasks' | 'google-keep';
+export type ImportSource = 'todoist' | 'google-tasks' | 'google-keep' | 'org';
 
 /** What each is called, where a person will read it. */
 export const SOURCE_NAMES: Record<ImportSource, string> = {
 	todoist: 'Todoist',
 	'google-tasks': 'Google Tasks',
-	'google-keep': 'Google Keep'
+	'google-keep': 'Google Keep',
+	org: 'Org mode'
 };
 
 /**
@@ -105,6 +108,13 @@ export function detectSource(text: string): ImportSource | null {
 			: 'google-tasks';
 	}
 	if (/^\s*"?TYPE"?\s*,/i.test(head)) return 'todoist';
+	// Org mode: star headings, and at least one of the marks only org makes —
+	// a TODO/DONE keyword on a heading, or a #+ directive.
+	if (
+		/^\*+\s/m.test(head) &&
+		(/^\*+\s+(TODO|NEXT|WAITING|DONE|CANCELLED)\b/m.test(head) || /^#\+/m.test(head))
+	)
+		return 'org';
 	return null;
 }
 
@@ -414,6 +424,82 @@ export function parseGoogleKeep(text: string): ParseResult {
 	return { tasks, notes, skipped };
 }
 
+/* ------------------------------------------------------------------ org */
+
+/**
+ * Org mode, which is plain text with stars.
+ *
+ * What a heading becomes:
+ *
+ * - `* TODO Buy milk` (or NEXT, WAITING) is a task; `* DONE` and
+ *   `* CANCELLED` are tasks already finished. A `SCHEDULED:` or `DEADLINE:`
+ *   date on the lines under it becomes the task's date; the rest of the body
+ *   goes in its notes.
+ * - A heading with no keyword and no body is structure, and structure is not
+ *   imported. One WITH a body is writing — it becomes a note, its `:tags:`
+ *   carried across.
+ *
+ * `#+TITLE:` names the notebook everything lands in. Nothing else from the
+ * preamble is read: org files carry a person's whole configuration, and an
+ * import that guessed at the rest would be wrong in interesting ways.
+ */
+export function parseOrg(text: string): ParseResult {
+	const tasks: ImportedTask[] = [];
+	const notes: ImportedNote[] = [];
+	const skipped: string[] = [];
+
+	const title = /^#\+TITLE:\s*(.+)$/im.exec(text)?.[1]?.trim();
+
+	type Open = { keyword: string | null; heading: string; tags: string; body: string[] };
+	let open: Open | null = null;
+
+	const dateIn = (line: string): string | null =>
+		/(?:SCHEDULED|DEADLINE):\s*[<[](\d{4}-\d{2}-\d{2})/.exec(line)?.[1] ?? null;
+
+	const close = (one: Open | null) => {
+		if (!one) return;
+		const bodyLines = one.body.filter((l) => !/^\s*(?:SCHEDULED|DEADLINE):/.test(l));
+		const body = bodyLines.join('\n').trim();
+		const due = one.body.map(dateIn).find((d) => d !== null) ?? null;
+
+		if (one.keyword) {
+			tasks.push({
+				title: one.heading.slice(0, MAX_TITLE_LENGTH),
+				notes: body.slice(0, MAX_NOTES_LENGTH),
+				done: one.keyword === 'DONE' || one.keyword === 'CANCELLED',
+				dueDate: due,
+				rawDate: due,
+				list: null
+			});
+		} else if (body) {
+			notes.push({ title: one.heading || null, body, tags: one.tags });
+		}
+		// A bare heading with nothing under it is structure, silently so — an
+		// org file's outline is not a list of things somebody meant to keep.
+	};
+
+	for (const raw of text.split('\n')) {
+		const heading = /^(\*+)\s+(?:(TODO|NEXT|WAITING|DONE|CANCELLED)\s+)?(.*)$/.exec(raw);
+		if (heading) {
+			close(open);
+			let rest = heading[3].trim();
+			let tags = '';
+			const tagged = /^(.*?)\s+:([\w:@%-]+):\s*$/.exec(rest);
+			if (tagged) {
+				rest = tagged[1].trim();
+				tags = tagged[2].split(':').filter(Boolean).join(', ');
+			}
+			open = { keyword: heading[2] ?? null, heading: rest, tags, body: [] };
+			continue;
+		}
+		if (/^#\+/.test(raw)) continue;
+		if (open) open.body.push(raw);
+	}
+	close(open);
+
+	return { tasks, notes, skipped, ...(title ? { suggestedNotebook: title } : {}) };
+}
+
 /* ------------------------------------------------------------------ into */
 
 /**
@@ -435,7 +521,7 @@ export function importTasks(
 	const source = detectSource(text);
 	if (!source) {
 		throw new ValidationError(
-			'That is not a Todoist CSV, a Google Tasks export or a Google Keep note.'
+			'That is not a Todoist CSV, a Google Tasks export, a Google Keep note or an org file.'
 		);
 	}
 
@@ -444,7 +530,9 @@ export function importTasks(
 			? parseTodoistCsv(text)
 			: source === 'google-keep'
 				? parseGoogleKeep(text)
-				: parseGoogleTasks(text);
+				: source === 'org'
+					? parseOrg(text)
+					: parseGoogleTasks(text);
 
 	const wanted = parsed.tasks.filter((t) => input.includeDone || !t.done);
 	const notes = parsed.notes;
@@ -461,7 +549,8 @@ export function importTasks(
 		);
 	}
 
-	const title = notebookTitleFor(ctx, input.notebook, source, wanted);
+	const asked = typeof input.notebook === 'string' ? input.notebook.trim() : '';
+	const title = notebookTitleFor(ctx, asked || parsed.suggestedNotebook, source, wanted);
 
 	/*
 	 * All of it or none of it.

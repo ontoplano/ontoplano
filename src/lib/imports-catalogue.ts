@@ -39,6 +39,7 @@ export const IMPORT_KINDS: ImportKind[] = [
 		file: 'the files Takeout writes, one per note',
 		becomes: 'todos and notes'
 	},
+	{ id: 'org', name: 'Org mode', file: 'a .org file', becomes: 'todos and notes' },
 	{ id: 'obsidian', name: 'Obsidian', file: "the vault's folder", becomes: 'entries' }
 ];
 

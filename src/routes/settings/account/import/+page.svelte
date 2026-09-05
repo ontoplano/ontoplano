@@ -134,7 +134,7 @@
 			<input
 				type="file"
 				multiple
-				accept=".csv,.json,text/csv,application/json"
+				accept=".csv,.json,.org,text/csv,application/json,text/plain"
 				class="input"
 				onchange={readTasks}
 			/>

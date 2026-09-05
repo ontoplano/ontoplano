@@ -344,3 +344,65 @@ describe('what the import writes', () => {
 		);
 	});
 });
+
+/**
+ * Org mode, which is plain text with stars.
+ *
+ * Keyword headings are tasks — DONE arriving done — with SCHEDULED dates and
+ * bodies carried along; a keyword-less heading with writing under it is a
+ * note with its :tags:; a bare heading is outline, and outlines are not
+ * imported. #+TITLE names the notebook.
+ */
+const ORG = [
+	'#+TITLE: Winter plans',
+	'',
+	'* Projects',
+	'** TODO Fix the fence :house:',
+	'   SCHEDULED: <2026-11-02 Mon>',
+	'   The east side, where the wind took it.',
+	'** DONE Order firewood',
+	'* Reading',
+	'  Notes on what to read when it is dark at four.',
+	'* NEXT Call the chimney sweep'
+].join('\n');
+
+describe('an org file', () => {
+	it('is recognised by its stars and keywords', () => {
+		expect(imports.detectSource(ORG)).toBe('org');
+		expect(imports.detectSource('just some text\nwith lines')).toBeNull();
+	});
+
+	it('turns keyword headings into tasks, dates and bodies included', () => {
+		const { tasks } = imports.parseOrg(ORG);
+
+		const fence = tasks.find((t) => t.title === 'Fix the fence')!;
+		expect(fence.done).toBe(false);
+		expect(fence.dueDate).toBe('2026-11-02');
+		expect(fence.notes).toContain('east side');
+
+		expect(tasks.find((t) => t.title === 'Order firewood')!.done).toBe(true);
+		expect(tasks.find((t) => t.title === 'Call the chimney sweep')!.done).toBe(false);
+	});
+
+	it('keeps heading tags off the title and carries them as tags', () => {
+		const { tasks, notes } = imports.parseOrg(ORG);
+		expect(tasks.map((t) => t.title)).not.toContain('Fix the fence :house:');
+
+		const reading = notes.find((n) => n.title === 'Reading')!;
+		expect(reading.body).toContain('dark at four');
+	});
+
+	it('imports the outline as nothing, and writing as notes', () => {
+		const { tasks, notes } = imports.parseOrg(ORG);
+		// "Projects" has no keyword and no body of its own: structure.
+		expect(tasks.map((t) => t.title)).not.toContain('Projects');
+		expect(notes.map((n) => n.title)).not.toContain('Projects');
+	});
+
+	it('names the notebook after #+TITLE', () => {
+		const result = imports.importTasks(ctx, { text: ORG, includeDone: true });
+		expect(result.notebook).toContain('Winter plans');
+		expect(result.importedTasks).toBe(3);
+		expect(result.importedNotes).toBe(1);
+	});
+});
