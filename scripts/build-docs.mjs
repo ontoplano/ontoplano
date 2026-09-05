@@ -260,6 +260,69 @@ function scopeTable() {
 	return rows;
 }
 
+/** The SCOPE_CAUTIONS map, for the grants said louder. */
+function cautionTable() {
+	const source = parse(join(ROOT, 'src/lib/server/services/tokens.ts'));
+	const rows = [];
+	const visit = (n) => {
+		if (
+			ts.isVariableDeclaration(n) &&
+			n.name.getText(source) === 'SCOPE_CAUTIONS' &&
+			n.initializer
+		) {
+			const obj = ts.isAsExpression(n.initializer) ? n.initializer.expression : n.initializer;
+			if (ts.isObjectLiteralExpression(obj)) {
+				for (const prop of obj.properties) {
+					if (!ts.isPropertyAssignment(prop)) continue;
+					const key = prop.name.getText(source).replace(/['"]/g, '');
+					const value = ts.isStringLiteral(prop.initializer) ? prop.initializer.text : '';
+					rows.push({ key, value });
+				}
+			}
+		}
+		ts.forEachChild(n, visit);
+	};
+	visit(source);
+	return rows;
+}
+
+/**
+ * Every MCP tool, read from the array that serves them.
+ *
+ * The descriptions are the ones a model is handed, which is the point of
+ * publishing them: what the docs promise and what an assistant is told are
+ * the same strings.
+ */
+function mcpTools() {
+	const source = parse(join(ROOT, 'src/lib/server/mcp/tools.ts'));
+	const tools = [];
+	const visit = (n) => {
+		if (
+			ts.isVariableDeclaration(n) &&
+			n.name.getText(source) === 'TOOLS' &&
+			n.initializer &&
+			ts.isArrayLiteralExpression(n.initializer)
+		) {
+			for (const el of n.initializer.elements) {
+				if (!ts.isObjectLiteralExpression(el)) continue;
+				const tool = {};
+				for (const prop of el.properties) {
+					if (!ts.isPropertyAssignment(prop)) continue;
+					const key = prop.name.getText(source);
+					if (['name', 'title', 'description', 'scope'].includes(key)) {
+						if (ts.isStringLiteral(prop.initializer)) tool[key] = prop.initializer.text;
+					}
+					if (key === 'writes') tool.writes = prop.initializer.kind === ts.SyntaxKind.TrueKeyword;
+				}
+				if (tool.name) tools.push(tool);
+			}
+		}
+		ts.forEachChild(n, visit);
+	};
+	visit(source);
+	return tools;
+}
+
 function apiPage() {
 	/*
 	 * Every endpoint the app serves, not only the ones under `/api`.
@@ -994,6 +1057,34 @@ const FRAGMENTS = {
 			'| --- | --- |',
 			...scopeTable().map((r) => `| \`${r.key}\` | ${r.value} |`)
 		].join('\n'),
+	'mcp-tools': () => {
+		const tools = mcpTools();
+		return tools
+			.map(
+				(t) =>
+					`### \`${t.name}\` — ${t.title}\n\n${t.description}\n\n_Needs \`${t.scope}\`; ${t.writes ? 'writes' : 'read-only'}._`
+			)
+			.join('\n\n');
+	},
+	permissions: () => {
+		const uses = new Map();
+		for (const t of mcpTools()) {
+			if (!uses.has(t.scope)) uses.set(t.scope, []);
+			uses.get(t.scope).push(t.name);
+		}
+		const cautions = new Map(cautionTable().map((r) => [r.key, r.value]));
+		return [
+			'| Scope | What granting it allows | MCP tools behind it |',
+			'| --- | --- | --- |',
+			...scopeTable().map((r) => {
+				const said = cautions.has(r.key)
+					? `${r.value}.<br>**Careful:** ${cautions.get(r.key)}`
+					: r.value;
+				const tools = (uses.get(r.key) ?? []).map((n) => `\`${n}\``).join(', ') || '—';
+				return `| \`${r.key}\` | ${said} | ${tools} |`;
+			})
+		].join('\n');
+	},
 	'webhook-events': () =>
 		[
 			'| Event | When it fires |',

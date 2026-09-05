@@ -138,3 +138,13 @@ know that `add_todo` exists.
 The token is shown once, on the screen where you made it, with a link back to
 this page. It is revoked from the same place, and revoking it takes effect on
 the next request — there is no session to expire.
+
+## The tools
+
+Every tool the server offers, with the exact description a model is handed —
+published from the same array that serves them, so the two cannot drift. A
+token is only offered the tools its scopes reach: a tool missing from
+`tools/list` is a permission not granted, not a feature that does not exist.
+The scopes themselves are on [the permissions page](permissions.md).
+
+<!-- generated: mcp-tools -->

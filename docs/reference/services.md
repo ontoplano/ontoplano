@@ -1406,12 +1406,17 @@ exclusive, both dates rather than datetimes.
 
 Everything on one date.
 
+#### `recordIdOf(ctx, occurrenceId)`
+
+The occurrence's record id, whichever shape of id the caller holds.
+
+A `slot:N` id already IS a record id; an `exceptional:N` id names the
+one-off, whose record may not exist until its day is first looked at — so
+the day is generated the way opening the board does it, then the one record
+is read. Reminders hang off records, which is why this exists apart from
+`setOccurrenceStatus`.
+
 #### `setOccurrenceStatus(ctx, occurrenceId, rawStatus)`
-
-Move an occurrence between statuses.
-
-Resetting or skipping a category-mode task also forgets which activity it
-turned out to be, since that answer belonged to the attempt.
 
 #### `setStatusOn(ctx, kind, refId, dateStr, rawStatus)`
 

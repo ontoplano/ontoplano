@@ -138,3 +138,473 @@ know that `add_todo` exists.
 The token is shown once, on the screen where you made it, with a link back to
 this page. It is revoked from the same place, and revoking it takes effect on
 the next request — there is no session to expire.
+
+## The tools
+
+Every tool the server offers, with the exact description a model is handed —
+published from the same array that serves them, so the two cannot drift. A
+token is only offered the tools its scopes reach: a tool missing from
+`tools/list` is a permission not granted, not a feature that does not exist.
+The scopes themselves are on [the permissions page](permissions.md).
+
+### `today` — Today's plan
+
+What is on today: the blocks planned for it and the tasks pulled onto it. This is the answer to 'what am I meant to be doing', and the first thing to reach for before adding anything. Habits are not here — they are their own permission, and their own tool.
+
+_Needs `today:read`; read-only._
+
+### `habits` — Habits due today
+
+The habits scheduled for today, each with its streak and whether it has been kept yet. Separate from the day's plan on purpose: whether somebody kept their habits is a more personal thing than what is on their calendar, so it is granted separately.
+
+_Needs `habits:read`; read-only._
+
+### `keep_habit` — Mark a habit kept
+
+Record that a habit was kept today, or take that back if it was marked by mistake. Takes the id `habits` gives. Keeping it twice is not an error; the second call unmarks it, which is how the app’s own tick behaves.
+
+_Needs `habits:write`; writes._
+
+### `finish_block` — Mark a block done or skipped
+
+Answer for one block on the day: it happened, or it did not. Takes the id `today` gives for that block. Skipping is a real answer — say skipped when the person says they did not do it. It is NOT a way to clear something off the day: a skip goes into the week’s record and the review asks about it. To move a block use `change_block`; to take one off because it was never happening use `cancel_block`. `todo` takes an answer back, for one ticked by mistake.
+
+_Needs `schedule:write`; writes._
+
+### `add_block` — Put a block on a day
+
+Add a one-off block to one day: a title, a start time and how long it runs. This is for "deep work from 9 to 11 today" — a thing with an hour. Use `add_todo` instead when there is no time attached, and `change_block` to move or rename something already on the day rather than adding a second copy of it. It does not touch the repeating week; this is that day only.
+
+_Needs `schedule:write`; writes._
+
+### `change_block` — Move or rename a block
+
+Change one block on one day: its time, its day, how long it runs, or what it is called. This is "push the study block to four", "make it two hours", "that was actually client work". Takes the id `today` or `upcoming` gives. Only the fields you pass change. It affects that day only — moving this Thursday’s gym does not move gym — and it never edits the repeating week. Renaming keeps which part of life it belongs to and stops it being the named activity it was, because that is what saying it was something else means.
+
+_Needs `schedule:write`; writes._
+
+### `cancel_block` — Take a block off the day
+
+Remove a block from a day because it is not happening — the meeting moved, the class was called off, it was put on the wrong day. This is NOT the same as marking it skipped: skipped means it was meant to happen and did not, which is a fact the weekly review asks about, and cancelled means it was never going to. Use `finish_block` with "skipped" for the first and this for the second. A repeating block is only removed from that one day.
+
+_Needs `schedule:write`; writes._
+
+### `upcoming` — The days ahead
+
+Everything planned from today onwards — the blocks of the week, in order. Use it to answer questions about a day that is not today.
+
+_Needs `schedule:read`; read-only._
+
+### `past` — The days behind
+
+What was on the days that have already happened, with what each one was answered — done, skipped, or nothing yet. Use it before correcting a week: it gives the ids `finish_block` needs. Ask for a week back with `days: 7`, or name the day it starts on.
+
+_Needs `schedule:read`; read-only._
+
+### `search` — Search everything written
+
+One search over diary entries, notebooks, notes, ideas, goals, people, recipes and todos. Prefer this to guessing which room a thing is in.
+
+_Needs `search:read`; read-only._
+
+### `todos` — The todo list
+
+Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week.
+
+_Needs `tasks:read`; read-only._
+
+### `add_todo` — Add a todo
+
+Put a task on the todo list. Leave the date off unless the person said when — a todo with no date is the normal case here, not an unfinished one.
+
+_Needs `tasks:write`; writes._
+
+### `finish_todo` — Finish a todo
+
+Mark a todo done, which is what "I did that" means here — it is not deleted, it moves to done and stays in the record. Ask `todos` first for the id.
+
+_Needs `tasks:write`; writes._
+
+### `drop_todo` — Delete a todo
+
+Remove a todo entirely, because it is not going to happen and is not worth a record — "bin that one", "forget it". Different from `finish_todo`, which keeps it as something that was done. Gone for good; prefer finishing it when it actually happened.
+
+_Needs `tasks:write`; writes._
+
+### `reopen_todo` — Put a todo back on the list
+
+Undo a finish or a drop: the todo goes back to not-done. Use it when something was ticked by mistake, or when a dropped thing turns out to matter after all. It keeps its notes, its day and everything linked to it.
+
+_Needs `tasks:write`; writes._
+
+### `change_todo` — Change a todo
+
+Rewrite a todo’s title or notes. Only the fields given change. Moving it on or off a day is `schedule_todo`; done and not-done are `finish_todo` and `reopen_todo`.
+
+_Needs `tasks:write`; writes._
+
+### `schedule_todo` — Put a todo on a day
+
+Give a todo a date, which moves it onto that day’s board. This is what "do it on Thursday" means here.
+
+_Needs `tasks:write`; writes._
+
+### `unschedule_todo` — Take a todo off its day
+
+Take the date off a todo, which moves it back to the list of things with no time yet. This is "not today after all" — the todo is kept, it just stops being on a day.
+
+_Needs `tasks:write`; writes._
+
+### `goals` — Goals
+
+What the person is working towards, by horizon, with the work counted against each. `add_goal` transcribes one they just said; `close_goal` says how one ended.
+
+_Needs `tasks:read`; read-only._
+
+### `close_goal` — Say how a goal ended
+
+Close a goal: achieved, missed, or abandoned. Missed and abandoned are different — missed is a deadline that passed, abandoned is a decision to stop — and both are worth recording honestly rather than being rounded to one. Takes the id `goals` gives. There is no tool that opens a goal; that is the person’s to make.
+
+_Needs `tasks:write`; writes._
+
+### `link_to_goal` — Count work towards a goal
+
+Attach todos or repeating blocks to a goal, so finishing them moves its progress. Adds to what is already linked; nothing is replaced. `goals` gives the goal id and what it already has on it.
+
+_Needs `tasks:write`; writes._
+
+### `unlink_from_goal` — Take work off a goal
+
+Detach todos or blocks from a goal. Only the ones named; everything else it counts stays.
+
+_Needs `tasks:write`; writes._
+
+### `reopen_goal` — Reopen a goal
+
+Put a closed goal back to open. Its outcome note is cleared and the date it was closed on goes with it, so a reopened goal does not read as having been finished at some point in the past.
+
+_Needs `tasks:write`; writes._
+
+### `change_goal` — Change a goal
+
+Rename a goal, or change its notes, horizon, start date, target or unit. Only the fields given change. Saying how it ended is `close_goal`, not this.
+
+_Needs `tasks:write`; writes._
+
+### `diary` — Recent diary entries
+
+What has been written lately, newest first. An entry can belong to a notebook or to no notebook at all.
+
+_Needs `notes:read`; read-only._
+
+### `write_entry` — Write a diary entry
+
+Add an entry. Markdown, in the person’s own voice — an assistant writing a diary entry is transcribing, not composing. Put it in a notebook when it is about one subject; leave the notebook off for an ordinary day.
+
+_Needs `notes:write`; writes._
+
+### `notebooks` — Notebooks
+
+The subjects being written against — a trip, a renovation, a book. Ask for these before writing an entry into one.
+
+_Needs `notes:read`; read-only._
+
+### `ideas` — Ideas
+
+Things caught before they evaporated, newest first. An idea is not a task: nobody has committed to doing it, which is what makes it cheap to write down.
+
+_Needs `ideas:read`; read-only._
+
+### `add_idea` — Catch an idea
+
+Write an idea down without deciding where it belongs. The lowest-friction thing here; prefer it to a todo when the person has not said they will do it.
+
+_Needs `ideas:write`; writes._
+
+### `remove_idea` — Delete an idea
+
+Delete an idea — for one added by mistake, or one that has been dealt with. It is gone, not archived, so prefer leaving it alone unless the person asked.
+
+_Needs `ideas:write`; writes._
+
+### `change_idea` — Change an idea
+
+Rewrite an idea, or retag it. Only the fields given change — this is for a misheard word or a better tag, not for turning it into something else.
+
+_Needs `ideas:write`; writes._
+
+### `shopping_list` — The shopping list
+
+What is to buy and what is already in the cupboard. An item is a thing, not a line: ticking it bought puts it back in the cupboard rather than deleting it.
+
+_Needs `shopping:read`; read-only._
+
+### `add_to_shopping_list` — Add to the shopping list
+
+Put something on the list. If the cupboard already has it, this says so rather than adding a second one.
+
+_Needs `shopping:write`; writes._
+
+### `tick_bought` — Tick something bought
+
+Mark an item bought, which moves it out of "to buy" and into the cupboard. The row stays: the same thing is bought again the next time it runs out.
+
+_Needs `shopping:write`; writes._
+
+### `untick_bought` — Put something back on the list
+
+Undo a tick: the item comes out of the cupboard and back onto "to buy". Use it when something was marked bought by mistake, or when it has run out again. Nothing is lost either way — the row, its category and its price history are the same row.
+
+_Needs `shopping:write`; writes._
+
+### `snooze_item` — Put something aside for now
+
+Take an item off the visible list without deleting it — for something not wanted this week. It keeps everything about itself and comes back with `unsnooze_item`. Prefer this to removing when somebody says "not now" rather than "never".
+
+_Needs `shopping:write`; writes._
+
+### `unsnooze_item` — Bring something back to the list
+
+Wake an item that was put aside, so it shows on the list again. `shopping_list` says which items are snoozed.
+
+_Needs `shopping:write`; writes._
+
+### `remove_from_shopping_list` — Take something off the shopping list
+
+Remove an item because it is not wanted — "take milk off", "we already have that". Not the same as `tick_bought`, which records that it _was_ bought and keeps it in the history and the price record. Takes the id `shopping_list` gives.
+
+_Needs `shopping:write`; writes._
+
+### `recipes` — Recipes
+
+Every recipe, with its ingredients. An ingredient here is a shopping item with an amount, which is what lets a meal on a day fill the shopping list.
+
+_Needs `kitchen:read`; read-only._
+
+### `add_recipe` — Add a recipe
+
+Write a recipe down. Ingredients are one per line — "200 g flour", "2 eggs" — and each becomes a shopping item, so the list knows about them the day the meal is planned.
+
+_Needs `kitchen:write`; writes._
+
+### `change_recipe` — Change a recipe
+
+Change a recipe’s title, method, servings, time or source, and add ingredients — one per line, quantity first. Only the fields given change, and existing ingredients stay.
+
+_Needs `kitchen:write`; writes._
+
+### `cooked_recipe` — Say a recipe was cooked
+
+Record that a meal was made — `recipes` shows when each was last cooked, and this is what sets it. Name the ingredient ids that ran out and they land back on the shopping list, which is the loop the kitchen exists to close.
+
+_Needs `kitchen:write`; writes._
+
+### `archive_recipe` — Put a recipe away
+
+Archive a recipe — out of the everyday list, not deleted — or bring one back with `archived: false`. For the dish nobody makes any more that somebody may yet ask for.
+
+_Needs `kitchen:write`; writes._
+
+### `shopping_categories` — The shopping list’s sections
+
+How the shopping list is sectioned — produce, cleaning, whatever the person keeps. Read it before filing an item somewhere.
+
+_Needs `shopping:read`; read-only._
+
+### `record_price` — Record what an item cost
+
+Write down what was paid for a shopping item — "milk was 6,50 today". The list keeps a small price history per item, which is how it can notice drift. Takes the id `shopping_list` gives, and the price as the person said it.
+
+_Needs `shopping:write`; writes._
+
+### `add_goal` — Write down a goal they made
+
+Transcribe a goal the person just committed to, in their own words — "apply to twenty companies this quarter". Never invent one, and never add a goal they did not say: a goal is a commitment, and the commitment is theirs. `goal_areas` lists the areas one can be filed under.
+
+_Needs `tasks:write`; writes._
+
+### `log_goal_progress` — Move a goal’s number
+
+Record progress on a goal that counts something: pass `value` to set where it stands, or `delta` to add what just happened — "I sent three more CVs" is `delta: 3`. Exactly one of the two. `goals` shows the current number.
+
+_Needs `tasks:write`; writes._
+
+### `goal_areas` — The areas goals are filed under
+
+The areas of life a goal can belong to — career, health, whatever the person keeps. Read it before filing a goal; `add_goal_area` makes a missing one.
+
+_Needs `tasks:read`; read-only._
+
+### `add_goal_area` — Add a goal area
+
+Make a new area to file goals under. Only when the person named one that does not exist — `goal_areas` says what already does.
+
+_Needs `tasks:write`; writes._
+
+### `remove_goal` — Delete a goal
+
+Erase a goal outright — for one added by mistake or misheard. A goal that was real and ended belongs to `close_goal` instead: closed keeps the record, deleted has none.
+
+_Needs `tasks:write`; writes._
+
+### `remove_goal_area` — Delete a goal area
+
+Delete an area — for one made by mistake. The service refuses while goals still point at it, and says so.
+
+_Needs `tasks:write`; writes._
+
+### `all_habits` — Every habit
+
+The full list of habits, due today or not — id, name, type and which days each is scheduled. `habits` is today’s view with streaks; this is the one to read before adding or changing one.
+
+_Needs `habits:read`; read-only._
+
+### `add_habit` — Add a habit
+
+Start tracking a habit: something to keep doing (`good`), to avoid (`bad`), or just to watch (`neutral`). Scheduled days come in the same shape `all_habits` shows for existing ones; leave them out for every day.
+
+_Needs `habits:write`; writes._
+
+### `change_habit` — Change a habit
+
+Rename a habit or change its type, description or days. Only the fields given change; its history of kept days stays exactly as it was.
+
+_Needs `habits:write`; writes._
+
+### `remove_habit` — Delete a habit
+
+Stop tracking a habit and drop its history — for one added by mistake, or one the person asked to be rid of. It is gone, not paused; prefer leaving it alone unless they asked.
+
+_Needs `habits:write`; writes._
+
+### `reminders` — What will reach out, and when
+
+The reminders set to fire — each hangs off a block, because a reminder here is "tell me before this starts". Include the past to see what already fired.
+
+_Needs `schedule:read`; read-only._
+
+### `remind_before_block` — Set a reminder on a block
+
+Be told some minutes before a block starts — it reaches the phone even with the app closed. A reminder belongs to a block: for "remind me at three to call the dentist", first `add_block` the call at three, then set the reminder on it. Takes the id the day gives, like `slot:42`.
+
+_Needs `schedule:write`; writes._
+
+### `dismiss_reminder` — Dismiss a reminder
+
+Wave one reminder off so it does not fire — for "no need to remind me about that any more". Takes the id `reminders` gives; the block it sat on is untouched.
+
+_Needs `schedule:write`; writes._
+
+### `repeating_week` — The week as it repeats
+
+The blocks that make up every week — each with its weekday, time, length and category. This is the template the days are generated from; `today` and `upcoming` show what it produced. Read it before changing Tuesdays rather than a Tuesday.
+
+_Needs `schedule:read`; read-only._
+
+### `add_repeating_block` — Put a block on every week
+
+Add a block that repeats weekly — "gym on Tuesdays at seven". This changes every week from now on; `add_block` is the one for a single day. Weekday 0 is Sunday through 6 for Saturday.
+
+_Needs `schedule:write`; writes._
+
+### `change_repeating_block` — Change a repeating block
+
+Change every future occurrence of a repeating block: its weekday, time, length, name, category or reminder. This is "move gym to Wednesdays"; `change_block` is "move this Wednesday’s gym". Only the fields given change. Takes the id `repeating_week` gives.
+
+_Needs `schedule:write`; writes._
+
+### `remove_repeating_block` — Take a block out of the week
+
+Remove a repeating block from every week to come. Its past occurrences and their record stay. For one day only, use `cancel_block` instead — this is the whole pattern.
+
+_Needs `schedule:write`; writes._
+
+### `categories` — The parts of a life
+
+The categories blocks are filed under — the areas of this person’s life, each with its colour. Read it before writing a block, so the name is real rather than guessed.
+
+_Needs `schedule:read`; read-only._
+
+### `activities` — The named recurring things
+
+Activities are the named things inside categories — "piano", not just "music". A block can name one instead of a bare category. Read-only here; the app is where they are managed.
+
+_Needs `schedule:read`; read-only._
+
+### `people` — The people in their life
+
+Everybody the person keeps a page for — name, relationship, birthday, contact details. These are other people’s facts held in this account, which is why they sit behind their own permission.
+
+_Needs `people:read`; read-only._
+
+### `upcoming_birthdays` — Whose birthday is coming
+
+Birthdays in the days ahead, soonest first — the answer to "whose birthday is coming up". Only people with a birthday written down appear.
+
+_Needs `people:read`; read-only._
+
+### `add_person` — Add a person
+
+Keep a page for somebody — name at minimum; birthday as YYYY-MM-DD, or --MM-DD when the year is unknown. A birthday written down announces itself on the morning, unless told not to.
+
+_Needs `people:write`; writes._
+
+### `change_person` — Change a person’s page
+
+Correct or extend what is recorded about somebody — a birthday learnt, a number changed. Only the fields given change. Takes the id `people` gives.
+
+_Needs `people:write`; writes._
+
+### `remove_person` — Delete a person’s page
+
+Delete somebody’s page — for one added by mistake, or when the person asked. What they were mentioned in stays written; the page collecting those mentions is what goes.
+
+_Needs `people:write`; writes._
+
+### `daily_wins` — Three things that went well
+
+The day’s three wins, as written. A practice, not a log: three lines a day, and blank ones are simply not written yet.
+
+_Needs `notes:read`; read-only._
+
+### `record_win` — Record a win
+
+Write one of the day’s three good things, in the person’s own words, into the first empty line. Refused when all three are written — a day holds three, and the fourth is tomorrow’s first.
+
+_Needs `notes:write`; writes._
+
+### `weekly_review` — How a week actually went
+
+A week read whole: planned against done, by category, with the three lines written about it. The heart of the app — this is what the Monday mail says, and what closing a week means. Defaults to the week now running.
+
+_Needs `tasks:read`; read-only._
+
+### `write_review_lines` — Write the week’s three lines
+
+Replace the three lines of a week’s review — in the person’s own words, and only when they said them. These are what they will reread in a year; never compose them unasked.
+
+_Needs `tasks:write`; writes._
+
+### `data_streams` — The numbers being tracked
+
+The account’s data streams — weight, mood, sleep, anything a plugin or a person logs over time — each with its slug, kind and unit. `log_data_point` writes into one by its slug.
+
+_Needs `streams:read`; read-only._
+
+### `log_data_point` — Log a reading
+
+Write one point into a data stream — "I weigh 82 today", "slept 6 hours". Takes the stream’s slug as `data_streams` gives it; a slug that names nothing is refused with the list, never created on the quiet.
+
+_Needs `streams:write`; writes._
+
+### `apply_idea` — Mark an idea applied
+
+Say an idea was acted on, with a note about what came of it — or take that back by calling it again. Applied is not deleted: the idea stays, wearing what happened.
+
+_Needs `ideas:write`; writes._
+
+### `favorite_idea` — Star an idea
+
+Star an idea, or unstar it by calling this again. A star is the person’s to ask for — never decorate their inbox on your own judgement.
+
+_Needs `ideas:write`; writes._

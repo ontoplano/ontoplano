@@ -12,6 +12,11 @@ version.
 
 ## 0.72.0 — 2026-09-05
 
+- **The docs grew two pages that cannot drift**: every MCP tool with the
+  exact description a model is handed, generated from the array that serves
+  them, on the AI-agents page — and a permissions page for the one scope
+  system the API, the MCP server and the calendar link all share, each grant
+  with the tools that sit behind it.
 - **The MCP surface covers what the app can do.** A week of real assistant
   use found rooms with no door; they have doors now: the repeating week
   (`repeating_week`, `add/change/remove_repeating_block` — "move gym to
