@@ -10,6 +10,11 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.75.2 — 2026-09-05
+
+- **The family plan's year is $99.00** (it was $100.80 — a round number
+  instead of exactly 30% off the month).
+
 ## 0.75.1 — 2026-09-05
 
 - **The set-password screen an invited member lands on carries no nav bar.**

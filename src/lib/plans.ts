@@ -129,15 +129,24 @@ export type Pricing = {
  * What an instance quotes before the provider has told it otherwise.
  *
  * One rate and one discount: a month costs what it costs, a family is a bigger
- * number for up to five accounts, and a year is the same thing 30% off. The
- * yearly figures are derived rather than typed, so the discount cannot drift
- * from the sentence describing it.
+ * number for up to five accounts, and a year is the same thing 30% off —
+ * derived rather than typed, so the discount cannot drift from the sentence
+ * describing it.
+ *
+ * The family year is the exception, and it is deliberate: 30% off $12 a month
+ * is $100.80, and the price actually charged is the round $99. A number a
+ * person can hold beats a number a formula produced, so this one is typed and
+ * the percentage follows from it rather than the other way round.
+ *
+ * These are only what an instance quotes before Paddle answers. The catalogue
+ * is the authority — `make billing-doctor` prints what it says.
  */
 export const YEARLY_DISCOUNT = 0.3;
 
 /** The one number to change, and the one to change beside it. */
 const MONTHLY_CENTS = 500;
 const FAMILY_MONTHLY_CENTS = 1200;
+const FAMILY_YEARLY_CENTS = 9900;
 
 /** A year at the monthly rate, less the discount, to the cent. */
 export const yearlyOf = (monthlyCents: number) =>
@@ -147,7 +156,7 @@ export const DEFAULT_PRICING: Pricing = {
 	monthlyCents: MONTHLY_CENTS,
 	yearlyCents: yearlyOf(MONTHLY_CENTS),
 	familyMonthlyCents: FAMILY_MONTHLY_CENTS,
-	familyYearlyCents: yearlyOf(FAMILY_MONTHLY_CENTS),
+	familyYearlyCents: FAMILY_YEARLY_CENTS,
 	/** How many accounts one family subscription covers, the payer included. */
 	familySeats: 5,
 	currency: 'USD',
