@@ -27,6 +27,15 @@ let clients = 0;
 const WORKER = Number(process.env.TEST_PARALLEL_INDEX ?? 0);
 
 /**
+ * And a salt per PROCESS, because the worker index survives a restart while
+ * the counter above does not: a worker respawned after one failure started
+ * again at 10.x.0.1, reused every address its predecessor had spent, and the
+ * rate limiter — correctly — refused the retry. Sign-up budgets are per
+ * address and tight on purpose, so the retry has to arrive from somewhere new.
+ */
+const SALT = Math.floor(Math.random() * 200);
+
+/**
  * A distinct address per account, for any test that makes one.
  *
  * Not decoration: account creation is rate limited per address, tightly and on
@@ -36,7 +45,7 @@ const WORKER = Number(process.env.TEST_PARALLEL_INDEX ?? 0);
  */
 export function clientAddress(): string {
 	clients += 1;
-	return `10.${42 + WORKER}.${Math.floor(clients / 250)}.${(clients % 250) + 1}`;
+	return `10.${42 + WORKER}.${SALT + Math.floor(clients / 250)}.${(clients % 250) + 1}`;
 }
 
 export async function register(
