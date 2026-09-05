@@ -622,16 +622,31 @@ install-service: deploy-local
 	}
 	@mkdir -p ~/.config/systemd/user
 	@NODE_BIN="$(NODE_BIN)" envsubst < systemd/ontoplano.service > ~/.config/systemd/user/ontoplano.service
+	@# The companion timers: reminders every minute, the weekly review mail
+	@# every hour. They ask the app's job endpoints, which sit behind the
+	@# health token — generated here once, into the env file the units and the
+	@# app both read, so nothing has to be remembered.
+	@mkdir -p ~/.config/ontoplano; touch ~/.config/ontoplano/env
+	@grep -q '^ONTOPLANO_HEALTH_TOKEN=' ~/.config/ontoplano/env || \
+		printf 'ONTOPLANO_HEALTH_TOKEN=%s\n' "$$(head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9')" >> ~/.config/ontoplano/env
+	@for unit in ontoplano-reminders ontoplano-weekly-review; do \
+		NODE_BIN="$(NODE_BIN)" envsubst < systemd/$$unit.service > ~/.config/systemd/user/$$unit.service; \
+		cp systemd/$$unit.timer ~/.config/systemd/user/$$unit.timer; \
+	done
 	@echo "The service will run $(NODE_BIN) ($$($(NODE_BIN) -v))"
 	@systemctl --user daemon-reload
 	@systemctl --user enable ontoplano
 	@systemctl --user start ontoplano
-	@echo "Service installed and started. Check: systemctl --user status ontoplano"
+	@systemctl --user enable --now ontoplano-reminders.timer ontoplano-weekly-review.timer
+	@echo "Service and timers installed and started. Check: systemctl --user status ontoplano"
 
 uninstall-service:
 	@systemctl --user stop ontoplano || true
 	@systemctl --user disable ontoplano || true
-	@rm -f ~/.config/systemd/user/ontoplano.service
+	@systemctl --user disable --now ontoplano-reminders.timer ontoplano-weekly-review.timer 2>/dev/null || true
+	@rm -f ~/.config/systemd/user/ontoplano.service \
+		~/.config/systemd/user/ontoplano-reminders.service ~/.config/systemd/user/ontoplano-reminders.timer \
+		~/.config/systemd/user/ontoplano-weekly-review.service ~/.config/systemd/user/ontoplano-weekly-review.timer
 	@systemctl --user daemon-reload
 	@echo "Service uninstalled."
 

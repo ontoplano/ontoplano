@@ -127,7 +127,7 @@ function stage({ bundleNode, arch }) {
 	stripBinShims(lib);
 	assertOpens(lib, runtime);
 
-	for (const name of ['run', 'migrate', 'ontoplano']) {
+	for (const name of ['run', 'migrate', 'ontoplano', 'jobs']) {
 		cpSync(join(ROOT, 'packaging/bin', name), join(lib, name));
 		chmodSync(join(lib, name), 0o755);
 	}
@@ -144,6 +144,17 @@ function stage({ bundleNode, arch }) {
 		join(ROOT, 'packaging/systemd/ontoplano.service'),
 		join(root, 'usr/lib/systemd/system/ontoplano.service')
 	);
+	// The companion timers: reminders and the weekly review mail, asking the
+	// running app's job endpoints. Without them the app works perfectly and
+	// never reminds anybody of anything.
+	for (const unit of [
+		'ontoplano-reminders.service',
+		'ontoplano-reminders.timer',
+		'ontoplano-weekly-review.service',
+		'ontoplano-weekly-review.timer'
+	]) {
+		cpSync(join(ROOT, 'packaging/systemd', unit), join(root, 'usr/lib/systemd/system', unit));
+	}
 	cpSync(
 		join(ROOT, 'packaging/systemd/ontoplano.sysusers'),
 		join(root, 'usr/lib/sysusers.d/ontoplano.conf')
@@ -341,6 +352,13 @@ secret=/etc/ontoplano/secret.env
 if [ ! -s "$secret" ]; then
 	umask 077
 	printf 'BETTER_AUTH_SECRET=%s\\n' "$(head -c 32 /dev/urandom | base64 | tr -d '\\n')" > "$secret"
+fi
+# The health token: what the companion timers ask the app's job endpoints
+# with. Appended rather than rewritten, because the secret above may already
+# be there from an earlier version.
+if ! grep -q '^ONTOPLANO_HEALTH_TOKEN=' "$secret" 2>/dev/null; then
+	umask 077
+	printf 'ONTOPLANO_HEALTH_TOKEN=%s\\n' "$(head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9')" >> "$secret"
 fi
 chown root:ontoplano "$secret" 2>/dev/null || true
 chmod 640 "$secret"

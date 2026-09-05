@@ -1,0 +1,16 @@
+[Unit]
+Description=Ontoplano — due reminders, every minute
+
+[Timer]
+# Every minute, because a reminder is a time: "ten minutes before gym" told at
+# twenty past is not a reminder. Most runs do nothing and cost one indexed
+# query.
+OnCalendar=*-*-* *:*:00
+# Deliberately NOT Persistent: a machine that was off for an hour should not
+# wake up and fire an hour of reminders at once, all about times that have
+# passed. The ones that matter are still on the planner when it is opened.
+Persistent=false
+AccuracySec=15s
+
+[Install]
+WantedBy=timers.target

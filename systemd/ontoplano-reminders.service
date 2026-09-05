@@ -1,0 +1,13 @@
+[Unit]
+Description=Ontoplano — due reminders, asked of the running app
+
+[Service]
+Type=oneshot
+# The env file the app already reads: the health token this asks with, and
+# PORT if it is not the default. `make install-service` generates the token
+# into it when there is none.
+EnvironmentFile=%h/.config/ontoplano/env
+# A request to the running app, not a second copy of the app: the app has the
+# code loaded and the database open, and asking it costs a request instead of
+# a fresh Node compiling the whole service graph once a minute.
+ExecStart=${NODE_BIN} -e "const job='reminders';const port=process.env.PORT||1493;fetch('http://127.0.0.1:'+port+'/api/jobs/'+job,{method:'POST',headers:{'x-health-token':process.env.ONTOPLANO_HEALTH_TOKEN||''}}).then(function(res){if(!res.ok){console.error('jobs/'+job+' answered '+res.status);process.exit(1);}}).catch(function(error){console.error(String(error));process.exit(1);})"

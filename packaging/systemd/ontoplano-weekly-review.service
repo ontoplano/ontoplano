@@ -1,0 +1,11 @@
+[Unit]
+Description=Ontoplano — Monday's weekly review mail, for whoever's Monday it is
+
+[Service]
+Type=oneshot
+User=ontoplano
+Group=ontoplano
+# What the app reads, and what holds the health token this asks with.
+EnvironmentFile=/etc/ontoplano/ontoplano.env
+EnvironmentFile=/etc/ontoplano/secret.env
+ExecStart=/usr/lib/ontoplano/jobs weekly-reviews

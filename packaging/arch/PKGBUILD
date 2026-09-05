@@ -51,12 +51,17 @@ package() {
 	install -Dm755 packaging/bin/run "$lib/run"
 	install -Dm755 packaging/bin/migrate "$lib/migrate"
 	install -Dm755 packaging/bin/ontoplano "$lib/ontoplano"
+	install -Dm755 packaging/bin/jobs "$lib/jobs"
 	install -dm755 "$pkgdir/usr/bin"
 	printf '#!/bin/sh\nexec /usr/lib/ontoplano/ontoplano "$@"\n' > "$pkgdir/usr/bin/ontoplano"
 	chmod 755 "$pkgdir/usr/bin/ontoplano"
 
 	install -Dm644 packaging/systemd/ontoplano.service \
 		"$pkgdir/usr/lib/systemd/system/ontoplano.service"
+	for unit in ontoplano-reminders.service ontoplano-reminders.timer \
+		ontoplano-weekly-review.service ontoplano-weekly-review.timer; do
+		install -Dm644 "packaging/systemd/$unit" "$pkgdir/usr/lib/systemd/system/$unit"
+	done
 	install -Dm644 packaging/systemd/ontoplano.sysusers \
 		"$pkgdir/usr/lib/sysusers.d/ontoplano.conf"
 	install -Dm644 packaging/systemd/ontoplano.tmpfiles \

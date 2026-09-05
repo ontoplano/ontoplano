@@ -1,0 +1,47 @@
+#!/bin/sh
+# Ask the running app to do a scheduled job: `jobs reminders`, `jobs weekly-reviews`.
+#
+# A request to the app that is already running, not a second copy of the app —
+# the app has the code loaded and the database open, and asking it costs a
+# request. The endpoints sit behind ONTOPLANO_HEALTH_TOKEN, which the package
+# generates into /etc/ontoplano/secret.env on install; the timer units load
+# that file before calling this.
+#
+# The same node-finding dance as `run`, for the same reason: the runtime that
+# shipped with the package when there is one, the machine's otherwise.
+set -e
+
+here=$(dirname "$0")
+
+if [ -x "$here/node/bin/node" ]; then
+	node="$here/node/bin/node"
+elif command -v node >/dev/null 2>&1; then
+	node=$(command -v node)
+else
+	echo "ontoplano: no node runtime found — install nodejs, or reinstall the package" >&2
+	exit 1
+fi
+
+job="$1"
+[ -n "$job" ] || { echo "usage: jobs <reminders|weekly-reviews>" >&2; exit 2; }
+
+exec "$node" -e '
+const job = process.argv[1];
+const port = process.env.PORT || 1493;
+fetch("http://127.0.0.1:" + port + "/api/jobs/" + job, {
+	method: "POST",
+	headers: { "x-health-token": process.env.ONTOPLANO_HEALTH_TOKEN || "" }
+}).then(async (res) => {
+	if (!res.ok) {
+		console.error("ontoplano: jobs/" + job + " answered " + res.status);
+		process.exit(1);
+	}
+	// Quiet when nothing happened: the app stamps every ask, and the instance
+	// page reads the stamp — so an empty journal is not a broken timer.
+	const body = await res.json();
+	if (body.pushed || body.sent) console.log("ontoplano: jobs/" + job, JSON.stringify(body));
+}).catch((error) => {
+	console.error("ontoplano: jobs/" + job + ": " + error);
+	process.exit(1);
+});
+' "$job"

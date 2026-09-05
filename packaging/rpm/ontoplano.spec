@@ -32,6 +32,10 @@ ORIGIN in /etc/ontoplano/ontoplano.env.
 /usr/lib/ontoplano/*
 /usr/bin/ontoplano
 /usr/lib/systemd/system/ontoplano.service
+/usr/lib/systemd/system/ontoplano-reminders.service
+/usr/lib/systemd/system/ontoplano-reminders.timer
+/usr/lib/systemd/system/ontoplano-weekly-review.service
+/usr/lib/systemd/system/ontoplano-weekly-review.timer
 /usr/lib/sysusers.d/ontoplano.conf
 /usr/lib/tmpfiles.d/ontoplano.conf
 %dir %attr(0750, root, root) /etc/ontoplano
@@ -64,13 +68,19 @@ if ! /usr/lib/ontoplano/migrate >/dev/null; then
 fi
 chown -R ontoplano:ontoplano /var/lib/ontoplano 2>/dev/null || :
 
-%systemd_post ontoplano.service
+# The health token, for the companion timers that ask the app's job endpoints.
+if ! grep -q '^ONTOPLANO_HEALTH_TOKEN=' /etc/ontoplano/secret.env 2>/dev/null; then
+	umask 077
+	printf 'ONTOPLANO_HEALTH_TOKEN=%s\n' "$(head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9')" >> /etc/ontoplano/secret.env
+fi
+
+%systemd_post ontoplano.service ontoplano-reminders.timer ontoplano-weekly-review.timer
 
 %preun
-%systemd_preun ontoplano.service
+%systemd_preun ontoplano.service ontoplano-reminders.timer ontoplano-weekly-review.timer
 
 %postun
-%systemd_postun_with_restart ontoplano.service
+%systemd_postun_with_restart ontoplano.service ontoplano-reminders.timer ontoplano-weekly-review.timer
 # The database and the secret stay: they are the person's, not the package's.
 # Removing them is `rm -rf /var/lib/ontoplano`, typed on purpose.
 

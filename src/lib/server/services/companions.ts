@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { instanceSells } from './billing.js';
 
 /**
@@ -72,6 +73,19 @@ export type Companion = {
 const MINUTE = 60_000;
 
 /**
+ * The command that fixes a missing unit, said for the install that is here.
+ *
+ * A package ships system units under /usr/lib/systemd/system; the from-source
+ * install puts user units in ~/.config/systemd/user. Telling a .deb operator
+ * to run `systemctl --user` fixes nothing, so look before speaking.
+ */
+function enableCommand(unit: string, verb: 'enable --now' | 'restart'): string {
+	return existsSync(`/usr/lib/systemd/system/${unit}`)
+		? `sudo systemctl ${verb} ${unit}`
+		: `systemctl --user ${verb} ${unit}`;
+}
+
+/**
  * The rows the instance page shows. Async and shelling out, so it is called
  * from that one page's load and nowhere hot.
  */
@@ -90,7 +104,7 @@ export async function companions(): Promise<Companion[]> {
 			detail: fresh
 				? `running — last asked this app ${minutes <= 1 ? 'a minute' : `${minutes} minutes`} ago`
 				: `stopped asking — last heard from ${minutes} minutes ago`,
-			fix: fresh ? '' : 'systemctl --user restart ontoplano-reminders.timer'
+			fix: fresh ? '' : enableCommand('ontoplano-reminders.timer', 'restart')
 		});
 	} else {
 		const state = await unitState('ontoplano-reminders.timer');
@@ -102,7 +116,7 @@ export async function companions(): Promise<Companion[]> {
 				state === 'active'
 					? 'timer running; nothing has come due since the app started'
 					: 'nothing is asking this app to deliver reminders, so none go out',
-			fix: state === 'active' ? '' : 'systemctl --user enable --now ontoplano-reminders.timer'
+			fix: state === 'active' ? '' : enableCommand('ontoplano-reminders.timer', 'enable --now')
 		});
 	}
 
@@ -120,7 +134,7 @@ export async function companions(): Promise<Companion[]> {
 			detail: fresh
 				? `running — last asked this app ${minutes <= 1 ? 'a minute' : `${minutes} minutes`} ago`
 				: `stopped asking — last heard from ${minutes} minutes ago`,
-			fix: fresh ? '' : 'systemctl --user restart ontoplano-weekly-review.timer'
+			fix: fresh ? '' : enableCommand('ontoplano-weekly-review.timer', 'restart')
 		});
 	}
 
@@ -145,7 +159,7 @@ export async function companions(): Promise<Companion[]> {
 					: state === 'inactive'
 						? 'installed but not running'
 						: 'not installed on this machine',
-			fix: state === 'active' ? '' : `systemctl --user enable --now ${unit}`
+			fix: state === 'active' ? '' : enableCommand(unit, 'enable --now')
 		});
 	}
 

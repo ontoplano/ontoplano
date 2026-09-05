@@ -7,6 +7,12 @@ _secret() {
 		printf 'BETTER_AUTH_SECRET=%s\n' "$(head -c 32 /dev/urandom | base64 | tr -d '\n')" \
 			> /etc/ontoplano/secret.env
 	fi
+	# The health token, for the companion timers that ask the app's job endpoints.
+	if ! grep -q '^ONTOPLANO_HEALTH_TOKEN=' /etc/ontoplano/secret.env 2>/dev/null; then
+		umask 077
+		printf 'ONTOPLANO_HEALTH_TOKEN=%s\n' "$(head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9')" \
+			>> /etc/ontoplano/secret.env
+	fi
 	chown root:ontoplano /etc/ontoplano/secret.env /etc/ontoplano/ontoplano.env 2>/dev/null || true
 	chmod 640 /etc/ontoplano/secret.env /etc/ontoplano/ontoplano.env
 }

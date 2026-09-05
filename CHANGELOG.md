@@ -12,6 +12,13 @@ version.
 
 ## 0.70.0 — 2026-09-05
 
+- **Every install gets the companion timers.** The reminders and
+  weekly-review timers now ship here instead of living in the maintainer's
+  tooling: `make install-service` installs and starts them, generating the
+  health token they ask with, and the `.deb`, `.rpm` and AUR packages carry
+  them as system units with the token made on install. The instance page's
+  fix commands now say `sudo systemctl` on a package install and
+  `systemctl --user` elsewhere — whichever is true on this machine.
 - **The Docker image runs the companion jobs itself.** Reminders every
   minute and the weekly review mail every hour, asked of the app by the
   container's own clock — no systemd, nothing to configure. A new
