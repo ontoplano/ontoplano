@@ -225,8 +225,11 @@ test('the preset ticks exactly the scopes an AI assistant needs', async ({ page 
 	// asked "did I keep my habits this week" is a use somebody grants on
 	// purpose, and the preset is the set of grants the tools actually need.
 	expect(ticked).toContain('habits:read');
+	// And the rooms that opened later: people and the data streams both have
+	// tools now, so their grants belong to the preset too.
+	expect(ticked).toContain('people:read');
+	expect(ticked).toContain('streams:write');
 	expect(ticked).not.toContain('calendar:read');
-	expect(ticked).not.toContain('streams:write');
 
 	// Pressing it twice leaves the form in the state the label claims, rather
 	// than accumulating.

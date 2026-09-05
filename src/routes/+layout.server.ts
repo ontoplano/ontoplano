@@ -66,8 +66,7 @@ export const load: LayoutServerLoad = async (event) => {
 	// then never appears again.
 	// /welcome and what sits under it — the set-password step included, or the
 	// gate and the page would bounce a fresh invited account between them.
-	const isWelcome =
-		event.url.pathname === '/welcome' || event.url.pathname.startsWith('/welcome/');
+	const isWelcome = event.url.pathname === '/welcome' || event.url.pathname.startsWith('/welcome/');
 	// The hold pages sit outside first-run on purpose: the gates in
 	// hooks.server.ts bounce /welcome to them, and first-run sending the
 	// visitor back again is a loop, not an onboarding.
