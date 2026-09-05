@@ -930,6 +930,97 @@ describe('the opened rooms', () => {
 		expect(gone.result.isError).toBe(false);
 	});
 
+	/**
+	 * The weekday a model is told about has to be the weekday the app means.
+	 *
+	 * Both write tools documented "0 (Sunday)" while every weekday in this
+	 * codebase counts from Monday, so an assistant asked for Tuesdays put the
+	 * block on Wednesdays and the person had to notice for it.
+	 */
+	/**
+	 * `habits:write` on its own used to be a permission that could not be used:
+	 * the tick takes an id, and ids only come from `habits`, which is behind
+	 * `habits:read`. Rather than have one grant imply the other — a tick is not
+	 * a licence to read a month of somebody's slips — the write tool finds the
+	 * habit itself.
+	 */
+	/**
+	 * An assistant asked to fold stretching into the morning routine could read
+	 * the activity, rewrite every block that used it, and not change the one
+	 * sentence saying what the routine is: activities were read-only here.
+	 */
+	it('adds an activity and changes what it says', () => {
+		const made = rpc(
+			55,
+			'add_activity',
+			{ name: 'morning routine', category: 'work', description: 'coffee, plants' },
+			['schedule:write']
+		);
+		expect(made.result.isError, made.result.content?.[0]?.text).toBe(false);
+		const id = made.result.structuredContent.id as number;
+
+		const changed = rpc(56, 'change_activity', { id, description: 'coffee, plants, stretching' }, [
+			'schedule:write'
+		]);
+		expect(changed.result.isError, changed.result.content?.[0]?.text).toBe(false);
+
+		const list = rpc(57, 'activities', {}, ['schedule:read']);
+		const row = list.result.structuredContent.items.find((a: { id: number }) => a.id === id);
+		expect(row.description).toBe('coffee, plants, stretching');
+		// The name it was given is untouched by a change that did not mention it.
+		expect(row.name).toBe('morning routine');
+	});
+
+	it('ticks a habit by name, with the write grant alone', () => {
+		const made = rpc(50, 'add_habit', { name: 'stretching', kind: 'good' }, ['habits:write']);
+		const habitId = made.result.structuredContent?.id as number | undefined;
+		expect(made.result.isError, made.result.content?.[0]?.text).toBe(false);
+
+		const ticked = rpc(51, 'tick_habit', { name: 'stretching' }, ['habits:write']);
+		expect(ticked.result.isError, ticked.result.content?.[0]?.text).toBe(false);
+
+		// A name nobody has is refused with what the account does have, and a
+		// name that matches two is refused rather than guessed: ticking the
+		// wrong habit is a lie in somebody's history.
+		const missing = rpc(52, 'tick_habit', { name: 'nothing like this' }, ['habits:write']);
+		expect(missing.result.isError).toBe(true);
+		expect(habitId).toBeTruthy();
+	});
+
+	it('numbers weekdays from Monday, as the tool descriptions now say', () => {
+		const names = TOOLS.filter((t) => 'weekday' in (t.input.properties ?? {}));
+		expect(names.length).toBeGreaterThan(0);
+		for (const tool of names) {
+			const said = JSON.stringify(tool.input.properties.weekday);
+			expect(said, `${tool.name} still documents the old numbering`).toContain('Monday');
+			expect(said).not.toContain('0 (Sunday)');
+		}
+
+		// And the behaviour the sentence describes: weekday 0 is a Monday.
+		const made = rpc(
+			40,
+			'add_repeating_block',
+			{ weekday: 0, title: 'monday probe', start_time: '06:00', category: 'work' },
+			['schedule:write']
+		);
+		const id = made.result.structuredContent.id as number;
+		const week = rpc(41, 'repeating_week', {}, ['schedule:read']);
+		const row = week.result.structuredContent.items.find((w: { id: number }) => w.id === id);
+		expect(row.weekday).toBe(0);
+		rpc(42, 'remove_repeating_block', { id }, ['schedule:write']);
+	});
+
+	it('takes a block with no title at all — the bare category', () => {
+		const made = rpc(
+			43,
+			'add_repeating_block',
+			{ weekday: 1, start_time: '09:00', minutes: 120, category: 'work' },
+			['schedule:write']
+		);
+		expect(made.result.isError, made.result.content?.[0]?.text).toBe(false);
+		rpc(44, 'remove_repeating_block', { id: made.result.structuredContent.id }, ['schedule:write']);
+	});
+
 	it('hangs a reminder on a block, lists it, and dismisses it', () => {
 		const block = rpc(
 			7,

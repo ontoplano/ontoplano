@@ -24,7 +24,7 @@ import { localDateOf, type Ctx } from '../services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 
 import { createEntry, listEntries } from '../services/diary.js';
-import { listActivities } from '../services/activities.js';
+import { createActivity, listActivities, updateActivity } from '../services/activities.js';
 import { createHabit, listHabits, updateHabit, HABIT_TYPES } from '../services/habits.js';
 import { createReminder, dismissReminder, listReminders } from '../services/reminders.js';
 import { createPerson, listPeople, updatePerson } from '../services/people.js';
@@ -214,6 +214,39 @@ function categoryByName(ctx: Ctx, wanted: unknown): { id: number; name: string }
 	return hit;
 }
 
+/**
+ * A habit by name, for a token that may write habits and not read them.
+ *
+ * `habits:write` on its own was a permission that could not be used: the tick
+ * takes an id, and the only thing that hands out ids is `habits`, which is
+ * behind `habits:read`. Rather than have one grant quietly imply the other —
+ * a tick is not a licence to read a month of somebody's slips — the write
+ * tool can find the habit itself.
+ *
+ * Names are not unique, so an ambiguous one is refused rather than guessed:
+ * ticking the wrong habit is a lie in somebody's history.
+ */
+function habitByName(ctx: Ctx, wanted: unknown): { id: number; name: string } {
+	const said = typeof wanted === 'string' ? wanted.trim().toLowerCase() : '';
+	if (!said) throw new ValidationError('Which habit? Give its name or its id.');
+
+	const all = listHabits(ctx) as { id: number; name: string }[];
+	const exact = all.filter((h) => h.name.toLowerCase() === said);
+	const near = exact.length > 0 ? exact : all.filter((h) => h.name.toLowerCase().includes(said));
+
+	if (near.length === 0)
+		throw new ValidationError(
+			`No habit called "${String(wanted)}"${
+				all.length > 0 ? `. This account has: ${all.map((h) => h.name).join(', ')}.` : '.'
+			}`
+		);
+	if (near.length > 1)
+		throw new ValidationError(
+			`More than one habit matches "${String(wanted)}": ${near.map((h) => h.name).join(', ')}. Use the exact name.`
+		);
+	return near[0];
+}
+
 export const TOOLS: Tool[] = [
 	// ── Looking ──────────────────────────────────────────────────────────────
 	{
@@ -245,22 +278,21 @@ export const TOOLS: Tool[] = [
 		name: 'tick_habit',
 		title: 'Tick a habit',
 		description:
-			'Tick a habit for a day: for something being built, the tick means it was done; for something being avoided, it means it happened. Takes the id `habits` gives. Ticking twice is not an error; the second call takes it back, which is how the app\u2019s own tick behaves.',
+			'Tick a habit for a day: for something being built, the tick means it was done; for something being avoided, it means it happened. Name it or give the id `habits` gave; a name that matches two habits is refused rather than guessed. Ticking twice is not an error; the second call takes it back, which is how the app\u2019s own tick behaves.',
 		scope: 'habits:write',
 		writes: true,
-		input: object(
-			{
-				id: { type: 'integer', description: 'The habit\u2019s id, as `habits` gave it.' },
-				date: text('The day, as YYYY-MM-DD. Today if left out.')
-			},
-			['id']
-		),
+		input: object({
+			id: { type: 'integer', description: 'The habit\u2019s id, as `habits` gave it.' },
+			name: text('The habit by name, when the id is not to hand — "stretching".'),
+			date: text('The day, as YYYY-MM-DD. Today if left out.')
+		}),
 		run: (ctx, args) => {
+			const habit = args.id ? { id: args.id, name: '' } : habitByName(ctx, args.name);
 			toggleOccurrence(ctx, {
-				habitId: args.id,
+				habitId: habit.id,
 				date: args.date ?? localDateOf(ctx.now, ctx.tz)
 			});
-			return { ok: true };
+			return { ok: true, habit: habit.name || undefined };
 		}
 	},
 	{
@@ -1510,7 +1542,7 @@ export const TOOLS: Tool[] = [
 		name: 'repeating_week',
 		title: 'The week as it repeats',
 		description:
-			'The blocks that make up every week — each with its weekday, time, length and category. This is the template the days are generated from; `today` and `upcoming` show what it produced. Read it before changing Tuesdays rather than a Tuesday.',
+			'The blocks that make up every week — each with its weekday, time, length and category. Weekdays are numbered from Monday: 0 is Monday, 6 is Sunday. This is the template the days are generated from; `today` and `upcoming` show what it produced. Read it before changing Tuesdays rather than a Tuesday.',
 		scope: 'schedule:read',
 		writes: false,
 		input: object({}),
@@ -1520,13 +1552,18 @@ export const TOOLS: Tool[] = [
 		name: 'add_repeating_block',
 		title: 'Put a block on every week',
 		description:
-			'Add a block that repeats weekly — "gym on Tuesdays at seven". This changes every week from now on; `add_block` is the one for a single day. Weekday 0 is Sunday through 6 for Saturday.',
+			'Add a block that repeats weekly — "gym on Tuesdays at seven". This changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. A block can be a bare category rather than a named thing — leave the title out and it shows as the category itself, which is what "put work in those hours" means.',
 		scope: 'schedule:write',
 		writes: true,
 		input: object(
 			{
-				weekday: { type: 'integer', description: '0 (Sunday) to 6 (Saturday).' },
-				title: text('What it is — shown on the block.'),
+				weekday: {
+					type: 'integer',
+					description: '0 is Monday, 6 is Sunday — the week starts on Monday here.'
+				},
+				title: text(
+					'What it is — shown on the block. Leave it out for a block that is just the category.'
+				),
 				start_time: text('When it starts, as HH:MM on a 24-hour clock.'),
 				minutes: count('How long it runs, in minutes.', 60),
 				category: text('Which part of life it belongs to, by name — `categories` lists them.'),
@@ -1536,7 +1573,7 @@ export const TOOLS: Tool[] = [
 				},
 				...ratingArgs
 			},
-			['weekday', 'title', 'start_time']
+			['weekday', 'start_time']
 		),
 		run: (ctx, args) => {
 			const chosen = categoryByName(ctx, args.category);
@@ -1566,7 +1603,10 @@ export const TOOLS: Tool[] = [
 					type: 'integer',
 					description: 'The repeating block\u2019s id, as `repeating_week` gives it.'
 				},
-				weekday: { type: 'integer', description: 'The new weekday, 0 (Sunday) to 6 (Saturday).' },
+				weekday: {
+					type: 'integer',
+					description: 'The new weekday. 0 is Monday, 6 is Sunday.'
+				},
 				start_time: text('The new start, as HH:MM.'),
 				minutes: { type: 'integer', description: 'The new length, in minutes.' },
 				title: text('The new name.'),
@@ -1629,11 +1669,77 @@ export const TOOLS: Tool[] = [
 		name: 'activities',
 		title: 'The named recurring things',
 		description:
-			'Activities are the named things inside categories — "piano", not just "music". A block can name one instead of a bare category. Read-only here; the app is where they are managed.',
+			'Activities are the named things inside categories — "piano", not just "music". A block can name one instead of a bare category. `add_activity` and `change_activity` write them.',
 		scope: 'schedule:read',
 		writes: false,
 		input: object({}),
 		run: (ctx) => listActivities(ctx)
+	},
+	{
+		name: 'add_activity',
+		title: 'Name a new recurring thing',
+		description:
+			'Add an activity — a named thing inside a category, like "piano" inside "music" — so blocks can name it instead of the bare category.',
+		scope: 'schedule:write',
+		writes: true,
+		input: object(
+			{
+				name: text('What it is called.'),
+				category: text('The category it belongs to, by name — `categories` lists them.'),
+				description: text('A line about it, shown where it is edited.')
+			},
+			['name']
+		),
+		run: (ctx, args) => {
+			const chosen = categoryByName(ctx, args.category);
+			const id = createActivity(ctx, {
+				name: args.name,
+				categoryId: chosen.id,
+				description: args.description
+			});
+			return { id, category: chosen.name };
+		}
+	},
+	{
+		/*
+		 * The gap an assistant hit: asked to fold stretching into the morning
+		 * routine, it could read the activity, rewrite every block that used
+		 * it, and not change the one sentence describing what the routine is.
+		 */
+		name: 'change_activity',
+		title: 'Rename an activity, or say what it is',
+		description:
+			'Change an activity: its name, the line describing it, or which category it belongs to. Takes the id `activities` gives. Only the fields you pass change. Blocks that name it follow the change; nothing on any day is moved.',
+		scope: 'schedule:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The activity\u2019s id, as `activities` gave it.' },
+				name: text('A new name.'),
+				description: text('A new line about it. Pass an empty string to clear it.'),
+				category: text('Move it to this category, by name.')
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const current = (
+				listActivities(ctx) as {
+					id: number;
+					name: string;
+					categoryId: number;
+					description: string | null;
+				}[]
+			).find((a) => a.id === Number(args.id));
+			if (!current) throw new NotFoundError('activity');
+
+			updateActivity(ctx, Number(args.id), {
+				name: args.name ?? current.name,
+				categoryId:
+					args.category === undefined ? current.categoryId : categoryByName(ctx, args.category).id,
+				description: args.description === undefined ? current.description : args.description
+			});
+			return { ok: true };
+		}
 	},
 
 	// ── People ───────────────────────────────────────────────────────────────
