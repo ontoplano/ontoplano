@@ -261,7 +261,9 @@ function roomsOf(tool: { scope: string }): Room[] {
 		case 'schedule:write':
 			return ['planner'];
 		case 'notes:write':
-			return ['diary', 'notebooks', 'ideas'];
+			return ['diary', 'notebooks'];
+		case 'ideas:write':
+			return ['ideas'];
 		case 'shopping:write':
 			return ['shopping'];
 		case 'kitchen:write':

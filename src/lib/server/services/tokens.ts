@@ -83,8 +83,18 @@ export const SCOPES = {
 	 * Named for the room rather than the table, because that is what the person
 	 * granting them is picturing.
 	 */
-	'notes:read': 'Read your diary, your notebooks and your ideas',
-	'notes:write': 'Write in your diary and your notebooks, and add ideas',
+	'notes:read': 'Read your diary and your notebooks',
+	'notes:write': 'Write in your diary and your notebooks',
+	/*
+	 * Ideas, apart from notes.
+	 *
+	 * They rode inside `notes:*`, so a token that could add to the idea inbox
+	 * could also read the diary — the most personal writing in the app,
+	 * granted by a sentence about capturing thoughts. A capture tool needs
+	 * the inbox and nothing else.
+	 */
+	'ideas:read': 'See your ideas',
+	'ideas:write': 'Add ideas, change them, and remove them',
 	'tasks:read': 'Read your todo list and your goals',
 	'tasks:write': 'Add, finish and delete todos, move them on and off a day, and close a goal',
 	'kitchen:read': 'Read your recipes',
@@ -93,6 +103,18 @@ export const SCOPES = {
 } as const;
 
 export type Scope = keyof typeof SCOPES;
+
+/**
+ * The grants that deserve a louder line than their sentence.
+ *
+ * `search:read` is one tick that reads across every room. The sentence above
+ * says what it does; this says what that means, before somebody grants it to
+ * a widget that only wanted the shopping list.
+ */
+export const SCOPE_CAUTIONS: Partial<Record<Scope, string>> = {
+	'search:read':
+		'One grant that reads across everything — diary, notebooks, ideas, goals, people, recipes and todos. Only for something you would show all of that.'
+};
 
 export const ALL_SCOPES = Object.keys(SCOPES) as Scope[];
 

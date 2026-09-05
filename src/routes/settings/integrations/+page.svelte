@@ -364,6 +364,11 @@ Token: ${token}`;
 									<span>
 										<code class="font-mono text-xs text-gray-900">{scope.key}</code>
 										<span class="text-gray-500">— {scope.description}</span>
+										{#if scope.caution}
+											<span class="mt-0.5 block text-xs font-medium text-amber-700">
+												Careful: {scope.caution}
+											</span>
+										{/if}
 									</span>
 								</label>
 							{/each}

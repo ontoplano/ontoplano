@@ -14,6 +14,7 @@ import {
 	ALL_SCOPES,
 	CALENDAR_LINK_LIMIT,
 	SCOPES,
+	SCOPE_CAUTIONS,
 	createToken,
 	isCalendarLink,
 	listTokens,
@@ -68,7 +69,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		assistantScopes: ASSISTANT_SCOPES,
 		scopes: ALL_SCOPES.map((key) => ({
 			key,
-			description: SCOPES[key]
+			description: SCOPES[key],
+			// The louder line under the wide grants, said before the tick.
+			caution: SCOPE_CAUTIONS[key] ?? null
 		})),
 		displays: STREAM_DISPLAYS,
 		webhooks: listSubscriptions(ctx).map((s) => ({

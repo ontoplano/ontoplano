@@ -748,3 +748,109 @@ describe('the shape of the surface', () => {
 		}
 	});
 });
+
+/**
+ * The edit verbs, and the fence around ideas.
+ *
+ * The write surface could add todos, ideas, recipes and a goal's links but
+ * change none of them — a typo was a delete-and-retype, and `kitchen:write`'s
+ * own sentence had promised "add and change recipes" all along. What all four
+ * change tools share: only the fields given change.
+ *
+ * Ideas also moved out of `notes:*` into scopes of their own, because a token
+ * that could add to the idea inbox could read the diary — so the old grant
+ * reaching them is exactly what must now fail.
+ */
+describe('editing what was created', () => {
+	const rpc = (id: number, name: string, args: Record<string, unknown>, scopes: string[]) =>
+		call(scopes, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
+
+	it('changes a todo, and only the fields given', () => {
+		const made = rpc(1, 'add_todo', { title: 'buy stamps', notes: 'the square ones' }, [
+			'tasks:write'
+		]);
+		const id = made.result.structuredContent.id as number;
+
+		const changed = rpc(2, 'change_todo', { id, title: 'buy ten stamps' }, ['tasks:write']);
+		expect(changed.result.isError).toBe(false);
+
+		const list = rpc(3, 'todos', {}, ['tasks:read']);
+		const row = list.result.structuredContent.items.find((t: { id: number }) => t.id === id);
+		expect(row.title).toBe('buy ten stamps');
+		expect(row.notes).toBe('the square ones');
+	});
+
+	it('changes a goal the person already committed to', () => {
+		database.exec(
+			`insert into goals (user_id, title, notes, horizon, period_start, unit, status, created_at, updated_at)
+			 values (?, 'Swim across', 'The far pier.', 'quarter', '2026-01-01', '', 'open',
+			         '2026-01-01T00:00:00', '2026-01-01T00:00:00')`,
+			USER
+		);
+		const target = (
+			database.get('select id from goals where user_id = ? order by id desc limit 1', USER) as {
+				id: number;
+			}
+		).id;
+
+		const changed = rpc(
+			4,
+			'change_goal',
+			{ id: target, title: 'Swim across the bay', targetValue: 12, unit: 'sessions' },
+			['tasks:write']
+		);
+		expect(changed.result.isError).toBe(false);
+
+		const goals = rpc(5, 'goals', {}, ['tasks:read']);
+		const row = goals.result.structuredContent.items.find((g: { id: number }) => g.id === target);
+		expect(row.title).toBe('Swim across the bay');
+		expect(row.unit).toBe('sessions');
+		// What was not said stayed.
+		expect(row.notes).toBe('The far pier.');
+	});
+
+	it('rewrites an idea and keeps its tags', () => {
+		const made = rpc(6, 'add_idea', { content: 'a sauna in the garden', tags: 'house, someday' }, [
+			'ideas:write'
+		]);
+		const id = made.result.structuredContent.id as number;
+
+		rpc(7, 'change_idea', { id, content: 'a sauna by the lake' }, ['ideas:write']);
+
+		const list = rpc(8, 'ideas', {}, ['ideas:read']);
+		const row = list.result.structuredContent.items.find((i: { id: number }) => i.id === id);
+		expect(row.content).toBe('a sauna by the lake');
+		expect(row.tags.map((t: { name: string }) => t.name).sort()).toEqual(['house', 'someday']);
+	});
+
+	it('changes a recipe and adds ingredients without losing the old ones', () => {
+		const made = rpc(
+			9,
+			'add_recipe',
+			{ title: 'Pão de queijo', ingredients: '500 g polvilho\n2 eggs', method: 'Mix. Bake.' },
+			['kitchen:write']
+		);
+		const id = made.result.structuredContent.id as number;
+
+		const changed = rpc(10, 'change_recipe', { id, minutes: 40, ingredients: '100 g parmesan' }, [
+			'kitchen:write'
+		]);
+		expect(changed.result.isError).toBe(false);
+
+		const read = rpc(11, 'recipes', { id }, ['kitchen:read']);
+		expect(read.result.structuredContent.title).toBe('Pão de queijo');
+		expect(read.result.structuredContent.minutes).toBe(40);
+		expect(read.result.structuredContent.method).toBe('Mix. Bake.');
+		expect(read.result.structuredContent.ingredients.length).toBe(3);
+	});
+
+	it('keeps ideas behind their own gate, apart from notes', () => {
+		const read = rpc(12, 'ideas', {}, ['notes:read', 'notes:write']);
+		expect(read.result.isError).toBe(true);
+		expect(read.result.content[0].text).toContain('ideas:read');
+
+		const write = rpc(13, 'add_idea', { content: 'no' }, ['notes:write']);
+		expect(write.result.isError).toBe(true);
+		expect(write.result.content[0].text).toContain('ideas:write');
+	});
+});

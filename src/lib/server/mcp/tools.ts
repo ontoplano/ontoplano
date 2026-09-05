@@ -24,15 +24,22 @@ import { localDateOf, type Ctx } from '../services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 
 import { createEntry, listEntries } from '../services/diary.js';
-import { createIdea, deleteIdea, listIdeas } from '../services/ideas.js';
-import { addGoalLinks, closeGoal, listGoals, removeGoalLinks } from '../services/goals.js';
+import { createIdea, deleteIdea, listIdeas, updateIdea } from '../services/ideas.js';
+import {
+	addGoalLinks,
+	closeGoal,
+	listGoals,
+	removeGoalLinks,
+	updateGoal
+} from '../services/goals.js';
 import { listNotebooks } from '../services/notebooks.js';
 import {
 	createRecipe,
 	getRecipe,
 	importIngredients,
 	ingredientsOf,
-	listRecipes
+	listRecipes,
+	updateRecipe
 } from '../services/recipes.js';
 import { grouped, search } from '../services/search.js';
 import { createItem, deleteItem, listItems, setBought, setSnoozed } from '../services/shopping.js';
@@ -42,14 +49,15 @@ import {
 	deleteTodo,
 	listTodos,
 	scheduleTodo,
-	setTodoStatus
+	setTodoStatus,
+	updateTodo
 } from '../services/todos.js';
 import { getUpcomingSchedule } from '../services/schedule.js';
 import { createExceptional } from '../services/slots.js';
 import { cancelOccurrence, changeOccurrence, setOccurrenceStatus } from '../services/instances.js';
 import { listCategories } from '../services/activities.js';
 import { toggleOccurrence } from '../services/habits.js';
-import { ValidationError } from '../services/errors.js';
+import { NotFoundError, ValidationError } from '../services/errors.js';
 
 /** JSON Schema, the subset a tool's arguments actually use. */
 type Shape = {
@@ -437,6 +445,33 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
+		name: 'change_todo',
+		title: 'Change a todo',
+		description:
+			'Rewrite a todo\u2019s title or notes. Only the fields given change. Moving it on or off a day is `schedule_todo`; done and not-done are `finish_todo` and `reopen_todo`.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The todo\u2019s id, as `todos` gives it.' },
+				title: text('The new title, in the person\u2019s own words.'),
+				notes: text('The new notes.')
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const current = listTodos(ctx).find((t) => t.id === Number(args.id));
+			if (!current) throw new NotFoundError('todo');
+			updateTodo(ctx, current.id, {
+				title: args.title ?? current.title,
+				notes: args.notes ?? current.notes,
+				categoryId: current.categoryId,
+				notebookId: current.notebookId
+			});
+			return { ok: true };
+		}
+	},
+	{
 		name: 'schedule_todo',
 		title: 'Put a todo on a day',
 		description:
@@ -594,6 +629,46 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
+		/*
+		 * Editing is not committing. The goal exists because the person made
+		 * it; a rename, a fixed target or a horizon that turned out wrong is
+		 * theirs to ask for. Making one is still not a tool — see `goals`.
+		 */
+		name: 'change_goal',
+		title: 'Change a goal',
+		description:
+			'Rename a goal, or change its notes, horizon, start date, target or unit. Only the fields given change. Saying how it ended is `close_goal`, not this.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The goal\u2019s id, as `goals` gives it.' },
+				title: text('The new name, in the person\u2019s own words.'),
+				notes: text('The new notes.'),
+				horizon: text('week, month, quarter, semester or year.'),
+				startDate: text('The day its period starts from, as YYYY-MM-DD.'),
+				targetValue: { type: 'number', description: 'The number it is aiming at.' },
+				unit: text('What the target counts — pages, km, sessions.')
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const current = listGoals(ctx, { includeClosed: true }).find((g) => g.id === Number(args.id));
+			if (!current) throw new NotFoundError('goal');
+			updateGoal(ctx, current.id, {
+				title: args.title ?? current.title,
+				notes: args.notes ?? current.notes ?? '',
+				areaId: current.areaId,
+				notebookId: current.notebookId,
+				targetValue: args.targetValue ?? current.targetValue,
+				unit: args.unit ?? current.unit,
+				horizon: args.horizon ?? current.horizon,
+				startDate: args.startDate ? day(args.startDate, 'startDate') : undefined
+			});
+			return { ok: true };
+		}
+	},
+	{
 		name: 'diary',
 		title: 'Recent diary entries',
 		description:
@@ -642,7 +717,7 @@ export const TOOLS: Tool[] = [
 		title: 'Ideas',
 		description:
 			'Things caught before they evaporated, newest first. An idea is not a task: nobody has committed to doing it, which is what makes it cheap to write down.',
-		scope: 'notes:read',
+		scope: 'ideas:read',
 		writes: false,
 		input: object({ limit: count('How many.', 50) }),
 		run: (ctx, args) => listIdeas(ctx).slice(0, limitOf(args, 50))
@@ -652,7 +727,7 @@ export const TOOLS: Tool[] = [
 		title: 'Catch an idea',
 		description:
 			'Write an idea down without deciding where it belongs. The lowest-friction thing here; prefer it to a todo when the person has not said they will do it.',
-		scope: 'notes:write',
+		scope: 'ideas:write',
 		writes: true,
 		input: object({ content: text('The idea.'), tags: text('Comma-separated tags.') }, ['content']),
 		run: (ctx, args) => ({ id: createIdea(ctx, { content: args.content, tags: args.tags ?? '' }) })
@@ -669,11 +744,36 @@ export const TOOLS: Tool[] = [
 		title: 'Delete an idea',
 		description:
 			'Delete an idea — for one added by mistake, or one that has been dealt with. It is gone, not archived, so prefer leaving it alone unless the person asked.',
-		scope: 'notes:write',
+		scope: 'ideas:write',
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The idea\u2019s id.' } }, ['id']),
 		run: (ctx, args) => {
 			deleteIdea(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+	{
+		name: 'change_idea',
+		title: 'Change an idea',
+		description:
+			'Rewrite an idea, or retag it. Only the fields given change — this is for a misheard word or a better tag, not for turning it into something else.',
+		scope: 'ideas:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The idea\u2019s id, as `ideas` gives it.' },
+				content: text('The idea, rewritten.'),
+				tags: text('Comma-separated tags, replacing the old ones.')
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const current = listIdeas(ctx).find((i) => i.id === Number(args.id));
+			if (!current) throw new NotFoundError('idea');
+			updateIdea(ctx, current.id, {
+				content: args.content ?? current.content,
+				tags: args.tags ?? current.tags.map((t) => t.name).join(', ')
+			});
 			return { ok: true };
 		}
 	},
@@ -829,6 +929,46 @@ export const TOOLS: Tool[] = [
 			// recipe added here and one pasted in behave identically afterwards.
 			const added = args.ingredients ? importIngredients(ctx, id, args.ingredients) : 0;
 			return { id, ingredients: added };
+		}
+	},
+	{
+		/*
+		 * `kitchen:write`\u2019s sentence has promised "add and change recipes"
+		 * since the scope was written; this is the change half. Ingredients are
+		 * additive here — replacing the whole set from a partial list would
+		 * silently delete shopping items other meals point at.
+		 */
+		name: 'change_recipe',
+		title: 'Change a recipe',
+		description:
+			'Change a recipe\u2019s title, method, servings, time or source, and add ingredients — one per line, quantity first. Only the fields given change, and existing ingredients stay.',
+		scope: 'kitchen:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The recipe\u2019s id, as `recipes` gives it.' },
+				title: text('The new name.'),
+				method: text('How to make it, as Markdown.'),
+				ingredients: text('Ingredients to add, one per line.'),
+				servings: { type: 'integer', description: 'How many it feeds.' },
+				minutes: { type: 'integer', description: 'How long it takes.' },
+				source: text('Where it came from.')
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const id = Number(args.id);
+			const current = getRecipe(ctx, id);
+			updateRecipe(ctx, id, {
+				title: args.title ?? current.title,
+				method: args.method ?? current.method,
+				notes: current.notes,
+				servings: args.servings ?? current.servings,
+				minutes: args.minutes ?? current.minutes,
+				source: args.source ?? current.source
+			});
+			const added = args.ingredients ? importIngredients(ctx, id, args.ingredients) : 0;
+			return { ok: true, ingredients: added };
 		}
 	}
 ];
