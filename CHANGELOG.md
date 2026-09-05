@@ -10,6 +10,26 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.71.0 — 2026-09-05
+
+- **Adding somebody to the family plan no longer signs you in as them.**
+  Creating their account used to ride the sign-up endpoint, whose brand-new
+  session landed on the payer's own browser — straight to the verify wall.
+  Now the account is made quietly, the page says the mail went out, and
+  nobody's session moves.
+- **An invited account chooses its password first.** The mail's button opens
+  a page with two fields — the password, and the password again — and the
+  welcome wizard comes after. No more "use Forgot password later".
+- **Ideas have their own token scopes.** `ideas:read` and `ideas:write` are
+  separate grants from `notes:*`, so a capture tool can reach the idea inbox
+  without being able to read the diary. A token minted earlier with `notes:*`
+  needs the new scopes ticked to keep touching ideas.
+- **`search:read` says what it really grants.** The scope picker carries a
+  louder line under it: one tick reads across everything.
+- **An assistant can edit what it can create.** New MCP tools `change_goal`,
+  `change_todo`, `change_idea` and `change_recipe` — only the fields given
+  change, and `kitchen:write` finally does what its sentence always said.
+
 ## 0.70.0 — 2026-09-05
 
 - **A truth pass over the public docs.** The compose commands curl the

@@ -29,7 +29,7 @@ shows up here on the next build.
 | [`demo`](#demo)                                 | A demo where everybody gets their own copy.                                                                                                                                                                                                                          |
 | [`diary`](#diary)                               | The journal: free text, free-form tags, one running number per account.                                                                                                                                                                                              |
 | [`errors`](#errors)                             | Typed errors thrown by service functions.                                                                                                                                                                                                                            |
-| [`family-invite`](#family-invite)               | The handshake between "invite somebody to the plan" and the mail that goes out.                                                                                                                                                                                      |
+| [`family-invite`](#family-invite)               | Inviting somebody to the plan, and the account that makes for them.                                                                                                                                                                                                  |
 | [`goals`](#goals)                               | Goals, and the progress that makes them more than a wish list.                                                                                                                                                                                                       |
 | [`habits`](#habits)                             | Habits are things to do or to avoid, logged one day at a time.                                                                                                                                                                                                       |
 | [`health`](#health)                             | Can this process actually reach the database?                                                                                                                                                                                                                        |
@@ -951,26 +951,33 @@ lets a form action and a JSON endpoint call the same function.
 
 ## family-invite
 
-The handshake between "invite somebody to the plan" and the mail that goes out.
+Inviting somebody to the plan, and the account that makes for them.
 
-Inviting an address with no account creates the account, and better-auth
-insists on mailing every new account its verification link — which is the
-right mail for somebody who registered and the wrong one for somebody whose
-partner just added them. This map is how `sendVerificationEmail` knows which
-is which: the invite registers the address here for the duration of the
-sign-up call, and the sender swaps the letter, keeping the same link.
-
-The link itself is better-auth's ordinary verification URL, which verifies
-the address, signs the new account in, and lands it on /welcome — three
-things this module would otherwise need a token table to do.
+An address with no account gets one made on the spot — with a password
+nobody knows — and a mail whose link verifies the address, signs the new
+account in and lands it on the set-password step. The link is better-auth's
+ordinary verification URL, minted directly (`familyInviteLinkFor` in
+auth.ts), so there is no second token system.
 
 ### Functions
 
-#### `expectFamilyInvite(email, ownerName)`
+#### `passwordPending(userId)`
 
-#### `takeFamilyInvite(email)`
+Whether this account has never chosen a password.
 
-One look, and the entry is gone — the ordinary mail returns for a resend.
+True only for accounts minted by a family invitation, from creation until
+the set-password step (or a password reset) replaces the random one. The
+/welcome funnel reads it to put the password page first.
+
+#### `markPasswordPending(userId)`
+
+#### `chooseFirstPassword(userId, password)`
+
+The invited account's first password, chosen on the page the mail opens.
+
+Hashed and stored the way better-auth stores every credential, so the next
+sign-in is an ordinary sign-in. Clears the pending flag, which is what lets
+/welcome proceed.
 
 #### `familyInviteMail(url, ownerName)`
 
@@ -982,7 +989,8 @@ With an account, this is `addToPlan` — the seat lands instantly. Without
 one, the account is made on the spot with a password nobody knows, the seat
 attached, and the invitation mail carries better-auth's own verification
 link — which verifies the address, signs the new account in and lands it on
-/welcome. No second token system; the one the funnel already has.
+the set-password page, and /welcome after that. No second token system; the
+one the funnel already has.
 
 Creation is only offered where registration is open. On an invite-only or
 closed instance a payer typing addresses must not be a way to mint

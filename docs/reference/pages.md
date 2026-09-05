@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**42 pages, 163 actions.**
+**43 pages, 164 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -57,6 +57,7 @@ write surface for everything else; both end up calling the same
 | `/shopping`                     | `saveCategories`, `createCategory`, `create`, `update`, `toggleBought`, `paid`, `delete`, `restock`, `toggleSnoozed`                                                                                                                                                                                                                                                                |
 | `/start`                        | `checkout`                                                                                                                                                                                                                                                                                                                                                                          |
 | `/welcome`                      | `default`                                                                                                                                                                                                                                                                                                                                                                           |
+| `/welcome/password`             | `default`                                                                                                                                                                                                                                                                                                                                                                           |
 
 ## What these pages do
 
@@ -461,3 +462,13 @@ The billing-hold gate in hooks.server.ts routes a verified account with no
 plan yet to this page, so the terms are read BEFORE any payment window
 opens — /buy is just the overlay's backdrop. Yearly leads; it is the one
 worth taking.
+
+### `/welcome/password`
+
+The one page between a family invitation's link and the app.
+
+The account it opens was made with a password nobody knows, so the first
+thing to do with it is choose one — before the welcome wizard, because a
+person who closes the tab after setup would otherwise own an account they
+cannot get back into except through a password reset they don't know to ask
+for.

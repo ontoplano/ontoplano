@@ -26,8 +26,10 @@ sentence somebody agrees to when they grant it.
 | `shopping:read`   | See everything on your shopping list                                                                         |
 | `shopping:write`  | Add to your shopping list, tick things bought, and take things off it                                        |
 | `calendar:read`   | Show your plan in a calendar app. It can see the plan and change nothing                                     |
-| `notes:read`      | Read your diary, your notebooks and your ideas                                                               |
-| `notes:write`     | Write in your diary and your notebooks, and add ideas                                                        |
+| `notes:read`      | Read your diary and your notebooks                                                                           |
+| `notes:write`     | Write in your diary and your notebooks                                                                       |
+| `ideas:read`      | See your ideas                                                                                               |
+| `ideas:write`     | Add ideas, change them, and remove them                                                                      |
 | `tasks:read`      | Read your todo list and your goals                                                                           |
 | `tasks:write`     | Add, finish and delete todos, move them on and off a day, and close a goal                                   |
 | `kitchen:read`    | Read your recipes                                                                                            |
