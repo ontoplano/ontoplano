@@ -19,6 +19,9 @@ version.
 - **The billing page counts the API tokens you hold, not the ones you have
   revoked.** An account with two tokens read eleven, and twenty revocations
   would have refused a new one.
+- **The habit log button is the target glyph alone**, right-aligned with the
+  card's other actions — the word said what the colour and the icon already
+  say.
 
 ## 0.75.0 — 2026-09-05
 
