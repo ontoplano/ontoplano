@@ -20,8 +20,8 @@ an account yet:
 - **Already has one** — they are on your plan the moment you press the button.
 - **Does not** — an account is made for them on the spot, and they get an
   email saying you are paying for it. The link in it opens their account,
-  already signed in, at the first-run setup. They pick a password whenever
-  they like with "Forgot password" on the sign-in page.
+  already signed in, asks them to choose a password, and goes on to the
+  first-run setup.
 
 ## Leaving, and ending
 
