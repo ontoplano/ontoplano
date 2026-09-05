@@ -53,6 +53,8 @@ function signUp(request: APIRequestContext, invite?: string) {
  * whichever account another test file made first — so it is looked up rather
  * than assumed. Every account the suite creates uses the same password.
  */
+let ownerSignIns = 0;
+
 async function signInAsOwner(request: APIRequestContext): Promise<string> {
 	// Not read-only: the server keeps this database in WAL mode, and a read-only
 	// connection cannot attach to the shared-memory index — it would quietly see
@@ -67,7 +69,10 @@ async function signInAsOwner(request: APIRequestContext): Promise<string> {
 	expect(first, 'no accounts in the test database').toBeTruthy();
 
 	const res = await request.post('/api/auth/sign-in/email', {
-		headers: { Origin: ORIGIN, 'x-forwarded-for': '10.9.9.9' },
+		// Its own address per call, like signUp: credential submission is
+		// rate-limited per address, and one fixed address spends the budget by
+		// the fourth sign-in in this file.
+		headers: { Origin: ORIGIN, 'x-forwarded-for': `10.9.9.${++ownerSignIns}` },
 		data: { email: first!.email, password: 'hunter2hunter2' }
 	});
 	expect(res.ok(), await res.text()).toBeTruthy();
@@ -262,6 +267,8 @@ test('an instance that sells nothing shows no selling copy', async ({ request })
 	expect(res.ok()).toBeTruthy();
 
 	const html = await res.text();
-	expect(html).not.toContain('grantsUntil');
+	// The word appears in serialized invite rows whatever the instance is —
+	// what must be gone is the form control that would set it.
+	expect(html).not.toContain('name="grantsUntil"');
 	expect(html).not.toMatch(/\bPro\b/);
 });
