@@ -18,34 +18,25 @@
 </div>
 
 > [!WARNING]
-> This product was released on September 4th, 2026. It's still experimental, and
+> This product was released on September 5th, 2026. It's still experimental, and
 > it may contain bugs. Please be patient, and help me improve it by making pull
 > requests.
 
 ---
 
-Everything you are keeping track of, in one place, on one week. It started as a
-weekly planner and the week is still the shape — what goes on it is the rest of
-a life.
+Ontoplano is a life management app built around planning your week. Besides planning
+recurring or one-off tasks,  stuff on a to-do backlog, you can also write
+**Notebooks** (notebooks and a diary), register goals with measured progress, habits,
+ideas, the people in your life, recipes and the shopping list they feed. Every
+section can be turned off, reordered and recoloured. Full tour:
+[docs.ontoplano.com](https://docs.ontoplano.com).
 
-You describe the week you intend to have; Ontoplano turns it into the days as
-they arrive and records what actually happened. Around that sit the other
-rooms: **Tasks** (the plan, today's board, the weekly review), **Notebooks**
-(your notebooks, and a diary), goals with real progress, the people in your life,
-habits, ideas, recipes and the shopping that follows from them. Use the parts
-you want — every section can be switched off, reordered and recoloured. The
-full tour is at [docs.ontoplano.com](https://docs.ontoplano.com).
+**MCP built in.** `/api/mcp` is a Model Context Protocol server: any AI with MCP
+capabilities can read your day and change it, with a scoped token you can revoke.
+Nothing in the app calls a model; you bring your own assistant.
 
-**Ask it in words.** `/api/mcp` is a Model Context Protocol server, so Claude —
-or anything else that speaks MCP — can read your day and change it, with your
-token and your scopes. Nothing in the app calls a model; the assistant is yours
-and it comes to the app, not the other way round.
-
-**Two ways to have it.** Run your own copy — one SQLite file, one process, no
-account anywhere but your own, and no payment provider in this repository
-(`docs/PLANS.md` explains the seam). Or make an account on
-[app.ontoplano.com](https://app.ontoplano.com), which is the same software on a
-box I keep, if you would rather not keep one.
+**Two ways to run it.** Self-host it or on [app.ontoplano.com](https://app.ontoplano.com), the same software on a box I
+keep.
 
 ## Running it
 
@@ -80,19 +71,11 @@ docker run -d --name ontoplano -p 1493:1493 \
   ontoplano/ontoplano:latest
 ```
 
-One container, one volume, no database server — migrations run when it starts,
-and the container runs its own scheduled jobs. `docs/DOCKER.md` has the reverse
-proxy, the upgrade and the backup.
 
 Register at `/login` — **the first account owns the instance**, and after it
-registration is closed until `/settings/instance` says otherwise: closed, by
-invitation, or open.
+registration is closed until changed at `/settings/instance`.
 
-**The app is not the whole deployment.** Reminders and the Monday review mail
-are asked of the app by two small timers. The packages install them, the Docker
-image runs them itself, and `make install-service` sets them up for a
-from-source install; Settings → Instance shows whether they are running and
-how to fix them when not.
+>>> explain here that no weekly mails included. No more than 150 chars for that.
 
 ## Developing it
 
@@ -114,8 +97,7 @@ from the code, and the reasons for them.
 
 **[`docs/reference/`](docs/reference/) is how the app works, generated from
 the app** — every table, endpoint, service and keyboard shortcut, rebuilt by
-`yarn docs` and checked by `make lint` so it cannot quietly stop being true.
-Press `?` on any page of the running app for that page's shortcuts.
+`yarn docs`.
 
 ## Deploying it
 
@@ -127,31 +109,17 @@ ORIGIN=https://ontoplano.example.com   # must be the public origin, or CSRF reje
 BETTER_AUTH_SECRET=…                   # openssl rand -base64 32
 
 make install-service   # build, migrate, install the service and its timers
-make update            # after a git pull: rebuild, redeploy, restart
 make deploy-local      # the build-and-copy step alone, no service touched
+make update            # after a git pull: rebuild, redeploy, restart
+>>> This is confusing, does it git pull? If no, why would it expect it? If yes, just name it as the other shit: git pull, rebuild, redeploy. Anyways, delete this command enitrely, deploy-local simply should restart the process too
 ```
 
 Keep it on `127.0.0.1` behind a reverse proxy that terminates TLS, and point
-something at `/healthz`. Every shipped install says `ONTOPLANO_SELF_HOST=true`
-for itself, which means no trials, no ceilings and no billing anywhere — the
-hosted instance is the one that declares otherwise.
+something at `/healthz`.
 [`docs/reference/configuration.md`](docs/reference/configuration.md) is the
-full list of settings, `docs/BACKUP.md` the backup story, `docs/ANDROID.md`
-the phone.
+full list of settings, `docs/BACKUP.md` covers backups, `docs/ANDROID.md` the
+phone.
 
 Signing in is an address and a password; there is no "continue with Google".
 Email is optional — without SMTP settings, confirmation and reset links are
 written to the server log instead of sent.
-
-## Stack
-
-SvelteKit · Svelte 5 (runes) · SQLite via Drizzle · better-auth · Tailwind CSS v4
-· adapter-node
-
-## Licence
-
-[AGPL-3.0-or-later](LICENSE). Run it, change it, host it — if you host a
-modified version for other people, they get the source too.
-
-The licence covers the code. It does not hand over the project's name: call
-your fork something of your own, and say plainly what it is built on.
