@@ -10,6 +10,16 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.75.1 — 2026-09-05
+
+- **The set-password screen an invited member lands on carries no nav bar.**
+  It offered rooms to an account that was not set up yet.
+- **Both password confirmations are labelled "Confirm password"** — on
+  register and on that screen.
+- **The billing page counts the API tokens you hold, not the ones you have
+  revoked.** An account with two tokens read eleven, and twenty revocations
+  would have refused a new one.
+
 ## 0.75.0 — 2026-09-05
 
 - **The weekly review mail is opt-in everywhere.** The packages and
