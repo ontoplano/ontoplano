@@ -10,6 +10,21 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.79.0 — 2026-09-05
+
+- **The month view works and looks like the app.** The forward arrow moves
+  forward (it snapped back in months that start on a Monday), every cell
+  carries its day number, past days dim instead of lighting up in dark mode,
+  and the weekday header is one strip instead of seven pills.
+- **An assistant can file shopping items into sections** — `add_to_shopping_list`
+  takes a section by name, and `file_shopping_item` moves one later.
+- **An assistant can make a notebook, and remove an empty one.** A notebook
+  holding any writing is still refused: what is written is deleted by the
+  person, in the app.
+- **Asked for a diary entry, an assistant writes it.** The guidance read as a
+  refusal; it now says the true half — keep their words, and never invent an
+  entry nobody asked for.
+
 ## 0.78.2 — 2026-09-05
 
 - **The family plan's copy says who pays, plainly** — the doc, the settings

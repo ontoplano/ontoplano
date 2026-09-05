@@ -251,9 +251,7 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 	// it landed on June again and the forward arrow did nothing.
 	const anchor = parseAnchor(url.searchParams.get('from'), today);
 	const from =
-		view === 'month'
-			? monthGridStart(anchor)
-			: parseFromParam(url.searchParams.get('from'), today);
+		view === 'month' ? monthGridStart(anchor) : parseFromParam(url.searchParams.get('from'), today);
 	const to = addDays(from, span);
 
 	// Before anything is read, so a stale copy is not what gets drawn. A failure
