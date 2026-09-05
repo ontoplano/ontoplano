@@ -4,6 +4,7 @@ import { db } from '../db/index.js';
 import { notebooks } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { ValidationError } from './errors.js';
+import { createEntry, MAX_ENTRY_LENGTH } from './diary.js';
 import { createNotebook } from './notebooks.js';
 import { createTodo, MAX_NOTES_LENGTH, MAX_TITLE_LENGTH } from './todos.js';
 
@@ -45,14 +46,27 @@ export type ImportedTask = {
 	list: string | null;
 };
 
+/** A text note, which is writing rather than a thing to do. */
+export type ImportedNote = {
+	title: string | null;
+	body: string;
+	/** Comma-separated, the way the entry service reads tags. */
+	tags: string;
+};
+
 export type ParseResult = {
 	tasks: ImportedTask[];
+	/** Notes that are writing, not tasks — they become notebook entries. */
+	notes: ImportedNote[];
 	/** Lines we understood well enough to know we were dropping them. */
 	skipped: string[];
 };
 
 export type ImportResult = {
+	/** Everything that landed, tasks and notes together. */
 	imported: number;
+	importedTasks: number;
+	importedNotes: number;
 	notebook: string;
 	skipped: string[];
 	/** How many carried a date the source wrote in a way we do not read. */
@@ -179,7 +193,7 @@ const ISO_DATE = /^(\d{4}-\d{2}-\d{2})/;
  */
 export function parseTodoistCsv(text: string): ParseResult {
 	const rows = parseCsv(text);
-	if (rows.length === 0) return { tasks: [], skipped: [] };
+	if (rows.length === 0) return { tasks: [], notes: [], skipped: [] };
 
 	const header = rows[0].map((h) => h.trim().toUpperCase());
 	const at = (name: string) => header.indexOf(name);
@@ -234,7 +248,7 @@ export function parseTodoistCsv(text: string): ParseResult {
 		});
 	}
 
-	return { tasks, skipped };
+	return { tasks, notes: [], skipped };
 }
 
 /* ---------------------------------------------------------- Google Tasks */
@@ -293,7 +307,7 @@ export function parseGoogleTasks(text: string): ParseResult {
 		}
 	}
 
-	return { tasks, skipped };
+	return { tasks, notes: [], skipped };
 }
 
 /* ----------------------------------------------------------- Google Keep */
@@ -321,13 +335,13 @@ type KeepNote = {
  * - A checklist note (`listContent`) becomes one todo per line, which is what
  *   its ticks already were. The note's title, if it has one, goes in the notes
  *   of each so the line keeps its context.
- * - A text note becomes one todo: the title if there is one, the first line
- *   otherwise, and the body in the notes.
+ * - A text note becomes a notebook note — it is writing, not a thing to do,
+ *   and a body buried in a todo's notes field is a body nobody reads again.
+ *   The title becomes a heading over it, and Keep's labels come across as
+ *   tags.
  *
- * Todos, and not diary entries or ideas, for the same reason the other two
- * imports land there: it is one shape, in one notebook, and deleting that
- * notebook undoes the whole thing. Sorting somebody's four hundred notes into
- * the right rooms of a new app is a job for them, not for a parser guessing.
+ * Both land in the one notebook, so deleting that notebook still undoes the
+ * whole import.
  *
  * Trashed notes are never imported. Archived ones are, because archived in
  * Keep means "dealt with but keep it", which is not the same as deleted.
@@ -340,11 +354,12 @@ export function parseGoogleKeep(text: string): ParseResult {
 		throw new ValidationError('That file is not JSON — export Keep from Google Takeout');
 	}
 
-	const notes = Array.isArray(parsed) ? parsed : [parsed];
+	const files = Array.isArray(parsed) ? parsed : [parsed];
 	const tasks: ImportedTask[] = [];
+	const notes: ImportedNote[] = [];
 	const skipped: string[] = [];
 
-	for (const raw of notes as KeepNote[]) {
+	for (const raw of files as KeepNote[]) {
 		if (!raw || typeof raw !== 'object') continue;
 
 		if (raw.isTrashed === true) {
@@ -381,20 +396,22 @@ export function parseGoogleKeep(text: string): ParseResult {
 			continue;
 		}
 
-		// A note with no title of its own is named by its first line, and that
-		// line is not then repeated in the body.
-		const [firstLine, ...rest] = body.split('\n');
-		tasks.push({
-			title: (title || firstLine).trim().slice(0, MAX_TITLE_LENGTH),
-			notes: (title ? body : rest.join('\n')).trim().slice(0, MAX_NOTES_LENGTH),
-			done: false,
-			dueDate: null,
-			rawDate: null,
-			list: null
+		// Writing, not a task. Keep's labels are its own tags, and they come
+		// across as ours.
+		const labels = Array.isArray(raw.labels) ? raw.labels : [];
+		notes.push({
+			title: title || null,
+			body,
+			tags: labels
+				.map((l) =>
+					typeof (l as { name?: unknown })?.name === 'string' ? (l as { name: string }).name : ''
+				)
+				.filter(Boolean)
+				.join(', ')
 		});
 	}
 
-	return { tasks, skipped };
+	return { tasks, notes, skipped };
 }
 
 /* ------------------------------------------------------------------ into */
@@ -430,15 +447,18 @@ export function importTasks(
 				: parseGoogleTasks(text);
 
 	const wanted = parsed.tasks.filter((t) => input.includeDone || !t.done);
-	if (wanted.length === 0) {
+	const notes = parsed.notes;
+	if (wanted.length === 0 && notes.length === 0) {
 		throw new ValidationError(
 			parsed.tasks.length > 0
 				? 'Every task in that file is already done — tick the box to bring those too.'
-				: 'No tasks in that file.'
+				: 'Nothing to import in that file.'
 		);
 	}
-	if (wanted.length > MAX_TASKS) {
-		throw new ValidationError(`That is ${wanted.length} tasks; ${MAX_TASKS} is the most at once.`);
+	if (wanted.length + notes.length > MAX_TASKS) {
+		throw new ValidationError(
+			`That is ${wanted.length + notes.length} things; ${MAX_TASKS} is the most at once.`
+		);
 	}
 
 	const title = notebookTitleFor(ctx, input.notebook, source, wanted);
@@ -481,9 +501,28 @@ export function importTasks(
 				status: task.done ? 'done' : 'todo'
 			});
 		}
+		// The writing, beside the tasks in the same notebook — a Keep text note
+		// is a note here too, with its title as a heading and its labels as tags.
+		for (const note of notes) {
+			createEntry(ctx, {
+				content: (note.title ? `# ${note.title}\n\n${note.body}` : note.body).slice(
+					0,
+					MAX_ENTRY_LENGTH
+				),
+				tags: note.tags,
+				notebookId
+			});
+		}
 	});
 
-	return { imported: wanted.length, notebook: title, skipped: parsed.skipped, datesDropped };
+	return {
+		imported: wanted.length + notes.length,
+		importedTasks: wanted.length,
+		importedNotes: notes.length,
+		notebook: title,
+		skipped: parsed.skipped,
+		datesDropped
+	};
 }
 
 function notebookTitleFor(

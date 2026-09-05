@@ -10,6 +10,16 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.73.0 — 2026-09-05
+
+- **A Google Keep text note imports as a note.** It used to become a todo
+  named by the title with the body buried in the todo's notes field; now
+  checklists become todos and text notes become notebook notes — title as a
+  heading, Keep's labels as tags — all in the one notebook that undoes the
+  import. The toast and the message say what actually arrived: "Imported 2
+  tasks and 3 notes into …", and every settings toast now carries the
+  action's own sentence when it wrote one.
+
 ## 0.72.0 — 2026-09-05
 
 - **Integrations, three small honesties**: the caution under `search:read`

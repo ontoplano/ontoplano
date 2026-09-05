@@ -43,9 +43,17 @@ export const actions: Actions = {
 				includeDone: formData.get('includeDone') === 'on'
 			});
 
-			// Everything it did and everything it did not: a count somebody can
+			// Everything it did and everything it did not: counts somebody can
 			// check against the app they came from, and what was left behind.
-			const parts = [`Imported ${result.imported} into \u201c${result.notebook}\u201d.`];
+			const brought = [
+				result.importedTasks &&
+					`${result.importedTasks} ${result.importedTasks === 1 ? 'task' : 'tasks'}`,
+				result.importedNotes &&
+					`${result.importedNotes} ${result.importedNotes === 1 ? 'note' : 'notes'}`
+			]
+				.filter(Boolean)
+				.join(' and ');
+			const parts = [`Imported ${brought} into \u201c${result.notebook}\u201d.`];
 			if (result.datesDropped > 0) {
 				parts.push(
 					`${result.datesDropped} had a date this does not read \u2014 a repeat rule, or "tomorrow".`

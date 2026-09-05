@@ -30,7 +30,12 @@ export function settingsForm(node: HTMLFormElement, options: { notice?: string }
 		// and a confirmation drawn above the first card is invisible to somebody
 		// who scrolled to the last one to press the button — which is exactly
 		// how the Sections card reported success on a phone.
-		if (result.type === 'success' && options.notice) notify.success(options.notice);
+		if (result.type === 'success' && options.notice) {
+			// The action's own sentence when it wrote one — "Imported 3 tasks and
+			// 2 notes…" says more than the caller's generic word can.
+			const said = (result.data as { message?: unknown } | undefined)?.message;
+			notify.success(typeof said === 'string' && said ? said : options.notice);
+		}
 		if (result.type === 'failure') {
 			const data = result.data as { message?: unknown; refused?: unknown } | undefined;
 			// A refusal from a hook is announced by the root layout, for every form

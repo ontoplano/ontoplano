@@ -202,19 +202,38 @@ describe('a Google Keep export', () => {
 		expect(tasks.map((t) => t.title)).not.toContain('');
 	});
 
-	it('turns a text note into one todo, body in the notes', () => {
-		const { tasks } = imports.parseGoogleKeep(KEEP);
-		const note = tasks.find((t) => t.title === 'Bike shop')!;
+	/*
+	 * A text note is writing, and used to arrive as a todo with its body
+	 * buried in the todo's notes field — "it used the title to create a task
+	 * and ignored completely the textContent". It becomes a notebook note now,
+	 * body and all.
+	 */
+	it('turns a text note into a note, not a todo — the body is the point', () => {
+		const { tasks, notes } = imports.parseGoogleKeep(KEEP);
 
-		expect(note.notes).toContain('closes at six');
-		expect(note.done).toBe(false);
+		expect(tasks.map((t) => t.title)).not.toContain('Bike shop');
+		const note = notes.find((n) => n.title === 'Bike shop')!;
+		expect(note.body).toContain('closes at six');
+		expect(note.body).toContain('Ask about the rack');
 	});
 
-	it('names an untitled note by its first line, and does not repeat it', () => {
-		const { tasks } = imports.parseGoogleKeep(KEEP);
-		const note = tasks.find((t) => t.title === 'Remember the umbrella')!;
+	it('keeps an untitled note whole, with no invented heading', () => {
+		const { notes } = imports.parseGoogleKeep(KEEP);
+		const note = notes.find((n) => n.body.startsWith('Remember the umbrella'))!;
 
-		expect(note.notes).toBe('it is in the hall');
+		expect(note.title).toBeNull();
+		expect(note.body).toContain('it is in the hall');
+	});
+
+	it('carries Keep labels across as tags', () => {
+		const { notes } = imports.parseGoogleKeep(
+			JSON.stringify({
+				title: 'Trip',
+				textContent: 'pack light',
+				labels: [{ name: 'travel' }, { name: 'someday' }]
+			})
+		);
+		expect(notes[0].tags).toBe('travel, someday');
 	});
 
 	it('leaves the bin alone and says it did', () => {
@@ -226,17 +245,27 @@ describe('a Google Keep export', () => {
 	});
 
 	it('accepts one note on its own, which is what one Takeout file holds', () => {
-		const { tasks } = imports.parseGoogleKeep(
+		const { notes } = imports.parseGoogleKeep(
 			JSON.stringify({ title: 'Just this', textContent: 'one file, one note' })
 		);
-		expect(tasks).toHaveLength(1);
-		expect(tasks[0].title).toBe('Just this');
+		expect(notes).toHaveLength(1);
+		expect(notes[0].title).toBe('Just this');
 	});
 
-	it('lands in a notebook of its own, named for where it came from', () => {
-		const result = imports.importTasks(ctx, { text: KEEP });
+	it('lands in a notebook of its own, tasks and notes both counted', () => {
+		const result = imports.importTasks(ctx, { text: KEEP, includeDone: true });
 		expect(result.notebook).toContain('Google Keep');
-		expect(result.imported).toBeGreaterThan(0);
+		// Two checklist lines become tasks; two text notes become notes.
+		expect(result.importedTasks).toBe(2);
+		expect(result.importedNotes).toBe(2);
+		expect(result.imported).toBe(4);
+
+		// And the notes are really written, in the same notebook as the tasks.
+		const book = notebooks.listNotebooks(ctx).find((n) => n.title === result.notebook)!;
+		const { entries } = notebooks.contentsOf(ctx, book.id);
+		expect(entries.length).toBe(2);
+		expect(entries.map((e) => e.content).join(' ')).toContain('closes at six');
+		expect(entries.map((e) => e.content).join(' ')).toContain('# Bike shop');
 	});
 });
 

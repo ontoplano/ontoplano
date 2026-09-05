@@ -22,7 +22,7 @@ export type ImportKind = {
 	/** What they actually have to hand over, in their words. */
 	file: string;
 	/** What it becomes here — the answer to "where does it go". */
-	becomes: 'todos' | 'entries';
+	becomes: 'todos' | 'entries' | 'todos and notes';
 };
 
 export const IMPORT_KINDS: ImportKind[] = [
@@ -37,7 +37,7 @@ export const IMPORT_KINDS: ImportKind[] = [
 		id: 'google-keep',
 		name: 'Google Keep',
 		file: 'the files Takeout writes, one per note',
-		becomes: 'todos'
+		becomes: 'todos and notes'
 	},
 	{ id: 'obsidian', name: 'Obsidian', file: "the vault's folder", becomes: 'entries' }
 ];
