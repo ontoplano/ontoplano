@@ -13,7 +13,7 @@
  *   node scripts/seed-dev.mjs <path-to-dev.db> [email]
  *
  * Expects the schema to exist (`yarn db:migrate`) and a registered user. It
- * seeds `dev@semotina.user` when that account exists, otherwise the first user
+ * seeds `dev@ontoplano.test` when that account exists, otherwise the first user
  * it finds. Re-runnable: every write is get-or-create.
  */
 import { createHash, randomBytes } from 'node:crypto';
@@ -26,7 +26,7 @@ import Database from 'better-sqlite3';
 const here = dirname(fileURLToPath(import.meta.url));
 
 const path = process.argv[2];
-const wantedEmail = process.argv[3] ?? 'dev@semotina.user';
+const wantedEmail = process.argv[3] ?? 'dev@ontoplano.test';
 
 if (!path) {
 	console.error('usage: node scripts/seed-dev.mjs <path-to-dev.db> [email]');
@@ -1552,14 +1552,14 @@ const mailFailure = (kind, toEmail, subject, error, bodyText) => {
 
 mailFailure(
 	'trial-notice',
-	'marina@semotina.user',
+	'marina@ontoplano.test',
 	'Your ontoplano trial ends on ' + iso(new Date(now.getTime() + 2 * 86400_000)),
 	'connect ECONNREFUSED 127.0.0.1:25',
 	'Your trial ends in two days — everything you wrote stays yours and stays readable.'
 );
 mailFailure(
 	'verification',
-	'joao@semotina.user',
+	'joao@ontoplano.test',
 	'Confirm your ontoplano address',
 	'454 4.7.1 Relay access denied',
 	null
