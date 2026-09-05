@@ -110,7 +110,12 @@ test('re-saving the choosing modal keeps the done todo linked', async ({ page })
 		await page.getByRole('button', { name: 'Create todo' }).click();
 		await page.waitForTimeout(500);
 	}
-	await page.getByRole('button', { name: 'Mark complete' }).first().click();
+	// Scoped to its own row: the list's order is not this test's to assume,
+	// and the first Mark complete on the page is sometimes another to-do's.
+	await page
+		.locator('div.flex.items-start', { hasText: 'third chore' })
+		.getByRole('button', { name: 'Mark complete' })
+		.click();
 	await page.waitForTimeout(600);
 
 	await visit(page, '/goals');
