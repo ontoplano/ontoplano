@@ -133,7 +133,7 @@
 			{/if}
 			{#if mode === 'register'}
 				<label class="mb-4 block">
-					<span class="text-sm font-medium text-gray-700">Password, again</span>
+					<span class="text-sm font-medium text-gray-700">Confirm password</span>
 					<input
 						name="confirm"
 						type="password"

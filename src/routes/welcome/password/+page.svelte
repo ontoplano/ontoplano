@@ -35,7 +35,7 @@
 			</label>
 
 			<label class="mb-6 block">
-				<span class="text-sm font-medium text-gray-700">The same one, again</span>
+				<span class="text-sm font-medium text-gray-700">Confirm password</span>
 				<input
 					name="confirm"
 					type="password"
