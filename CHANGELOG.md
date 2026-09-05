@@ -10,6 +10,28 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.75.0 — 2026-09-05
+
+- **The weekly review mail is opt-in everywhere.** The packages and
+  `make install-service` install the app and the reminders timer only; the
+  mail timer — useless without SMTP — is its own deliberate step
+  (`make install-mail-service`, or a manual unit on a packaged box). The
+  instance page's row says "needs SMTP" instead of pretending a mail with
+  no transport is running.
+- **`make deploy-local` restarts the installed service** — a deploy that
+  leaves the old build running was a copy — and `make update` is gone.
+- **A selling instance holding a sandbox payment key says so**: a red banner
+  on /admin, a `sandbox` flag on the health check, and the deploy's billing
+  check refuses production over play money. Staging is the one place it is
+  the point.
+- The scope picker's caution appears only once its scope is ticked, named
+  by the permission (`search:read — …`); the wizard's token step carries a
+  quiet note that the key holds most permissions, with the docs to restrict
+  a later one; the wizard's starter week defaults to Blank; a section
+  shared into your shopping list aligns its "family" chip with the buttons.
+- The README says less and means it, and CONTRIBUTING opens with thanks and
+  the ways to contribute instead of a CLA disclaimer.
+
 ## 0.74.0 — 2026-09-05
 
 - **Share with the family.** On a family plan, a shopping section and a

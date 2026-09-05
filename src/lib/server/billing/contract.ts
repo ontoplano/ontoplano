@@ -66,6 +66,16 @@ export interface BillingProvider {
 	configured(): boolean;
 
 	/**
+	 * Whether the provider is talking to a TEST environment — Paddle's
+	 * sandbox, a stripe test key, whatever the provider calls play money.
+	 * Optional: a provider that cannot tell says nothing, and the app treats
+	 * that as real. A selling production instance where this is true is a
+	 * shop taking toy payments, which the admin page and the deploy both
+	 * shout about.
+	 */
+	sandbox?(): boolean;
+
+	/**
 	 * What it is short of, when it cannot.
 	 *
 	 * Names of settings, in the spelling an operator would grep for. `configured()`

@@ -68,6 +68,14 @@
 	had been skipped. Registration refuses now — this is the sentence that says
 	why, where somebody will actually be standing when they wonder.
 -->
+{#if data.billingSandbox}
+	<div class="mb-4">
+		<Banner
+			kind="error"
+			message="Billing is configured with a SANDBOX key — every charge here is play money. The live key belongs in PADDLE_API_KEY before this instance sells for real."
+		/>
+	</div>
+{/if}
 {#if data.billingBroken}
 	<div class="mb-4">
 		<Banner kind="error" message={data.billingBroken} />

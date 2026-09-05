@@ -39,9 +39,28 @@
 	 * once and the button always leaves the form in the state its label claims.
 	 */
 	let scopeBox = $state<HTMLElement>();
+
+	/**
+	 * Which cautioned scopes are currently ticked, read from the DOM.
+	 *
+	 * From the DOM rather than bound state, because the preset and Clear
+	 * buttons set `.checked` directly — a binding would go stale the moment
+	 * either was pressed.
+	 */
+	let cautionsArmed = $state<Record<string, boolean>>({});
+	function syncCautions() {
+		const armed: Record<string, boolean> = {};
+		for (const box of scopeBox?.querySelectorAll<HTMLInputElement>(
+			'input[name="scopes"]:checked'
+		) ?? [])
+			armed[box.value] = true;
+		cautionsArmed = armed;
+	}
+
 	function tick(keys: string[]) {
 		for (const box of scopeBox?.querySelectorAll<HTMLInputElement>('input[name="scopes"]') ?? [])
 			box.checked = keys.includes(box.value);
+		syncCautions();
 	}
 
 	function closeForms() {
@@ -370,20 +389,20 @@ Token: ${token}`;
 								Clear
 							</button>
 						</p>
-						<div class="space-y-1" bind:this={scopeBox}>
+						<div class="space-y-1" bind:this={scopeBox} onchange={syncCautions}>
 							{#each data.scopes as scope (scope.key)}
 								<label class="flex items-start gap-2 text-sm text-gray-700">
 									<input type="checkbox" name="scopes" value={scope.key} class="mt-1" />
 									<span>
 										<code class="font-mono text-xs text-gray-900">{scope.key}</code>
 										<span class="text-gray-500">— {scope.description}</span>
-										{#if scope.caution}
-											<!-- Bordered to this row: at the list's foot it read as a
-											     warning about the whole form, and it is about this tick. -->
+										{#if scope.caution && cautionsArmed[scope.key]}
+											<!-- Only once the tick is in: a warning about a grant nobody
+											     is granting is noise, and named for its permission. -->
 											<span
 												class="mt-1 mb-0.5 block border-l-2 border-amber-600 pl-2 text-xs font-medium text-amber-700"
 											>
-												Careful: {scope.caution}
+												<code class="font-mono">{scope.key}</code> — {scope.caution}
 											</span>
 										{/if}
 									</span>

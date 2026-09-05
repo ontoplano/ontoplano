@@ -89,6 +89,9 @@ export async function register(
 			await next.click();
 			await page.waitForTimeout(150);
 		}
+		// The wizard defaults to Blank now; the fixtures want a full week.
+		const remote = page.getByText('Remote worker', { exact: true });
+		if ((await remote.count()) > 0) await remote.click();
 		await page.getByRole('button', { name: 'Start planning' }).click();
 		await page.waitForTimeout(1500);
 	}

@@ -13,7 +13,7 @@ import {
 import { dismissClientError, recentClientErrors } from '$lib/server/services/client-errors';
 import { ValidationError } from '$lib/server/services/errors';
 import { toActionFailure } from '$lib/server/http-errors';
-import { whyItCannotSell } from '$lib/server/services/billing';
+import { billingStatus, whyItCannotSell } from '$lib/server/services/billing';
 import { isDemo } from '$lib/server/settings';
 
 /**
@@ -65,6 +65,11 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		 * place somebody looks when something is odd.
 		 */
 		billingBroken: whyItCannotSell(),
+		// Configured and selling, but against the provider's TEST environment —
+		// every charge is play money, and this banner says so. No staging
+		// exemption, on principle: staging behaves exactly like production,
+		// and there the banner is simply a true sentence.
+		billingSandbox: billingStatus().sells && billingStatus().ready && billingStatus().sandbox,
 		blockedForever: permanentlyBlocked(),
 		// So the page can leave your own row alone rather than offering a button
 		// the server will refuse.

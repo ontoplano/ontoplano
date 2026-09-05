@@ -38,7 +38,7 @@
 		typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC'
 	);
 	let firstDay = $state(String(data.week.firstDay));
-	let template = $state('remote');
+	let template = $state('blank');
 
 	/** The one-press assistant key, and the prompt built around it. */
 	const assistantToken = $derived(
@@ -246,6 +246,16 @@ at a time, and show me what you will write before writing it.`
 											{copiedPrompt ? 'Copied' : 'Copy'}
 										</button>
 									</div>
+									<p class="mt-2 text-xs text-gray-500">
+										This token gives the AI most permissions to edit your account. Create a new
+										token later to restrict its
+										<a
+											href="https://docs.ontoplano.com/permissions"
+											target="_blank"
+											rel="noreferrer"
+											class="underline">permissions</a
+										>.
+									</p>
 								{:else}
 									<p class="text-sm text-gray-700">
 										Claude — or anything that speaks MCP — can read your week and write to it, with

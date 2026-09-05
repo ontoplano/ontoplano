@@ -144,15 +144,12 @@ function stage({ bundleNode, arch }) {
 		join(ROOT, 'packaging/systemd/ontoplano.service'),
 		join(root, 'usr/lib/systemd/system/ontoplano.service')
 	);
-	// The companion timers: reminders and the weekly review mail, asking the
-	// running app's job endpoints. Without them the app works perfectly and
-	// never reminds anybody of anything.
-	for (const unit of [
-		'ontoplano-reminders.service',
-		'ontoplano-reminders.timer',
-		'ontoplano-weekly-review.service',
-		'ontoplano-weekly-review.timer'
-	]) {
+	// The reminders timer rides along — without it the app works perfectly
+	// and never reminds anybody of anything. The weekly review mail does NOT:
+	// it needs SMTP, which a packaged install rarely has, and a timer that can
+	// never send reads as working. Setting it up is docs/running-it's manual
+	// step.
+	for (const unit of ['ontoplano-reminders.service', 'ontoplano-reminders.timer']) {
 		cpSync(join(ROOT, 'packaging/systemd', unit), join(root, 'usr/lib/systemd/system', unit));
 	}
 	cpSync(

@@ -844,11 +844,10 @@
 					</form>
 				{:else if !category.mine}
 					<!-- A shelf shared into this list: fill it, tick it, but its
-					     switches belong to whoever owns it. -->
-					<span class="flex flex-1 items-center gap-2">
-						{category.name}
-						<span class="eyebrow text-gray-500">family</span>
-					</span>
+					     switches belong to whoever owns it. The chip sits where the
+					     buttons sit on your own rows, so the columns line up. -->
+					<span class="flex-1">{category.name}</span>
+					<span class="eyebrow shrink-0 text-gray-500">family</span>
 				{:else}
 					<form
 						method="post"

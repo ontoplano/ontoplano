@@ -19,9 +19,8 @@
 			A seat grants access, never the ability to spend, so this side has the
 			state of the plan and no buttons.
 		-->
-		<Card title="You are on {data.seatOwner.name}'s plan" accent="var(--section-accent)">
-			<!-- The title is the whole message. -->
-		</Card>
+		<!-- The title is the whole message. -->
+		<Card title="You are on {data.seatOwner.name}'s plan" accent="var(--section-accent)" />
 	{:else}
 		<Card
 			title="Who is on your plan"

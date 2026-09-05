@@ -25,7 +25,7 @@
 ---
 
 Ontoplano is a life management app built around planning your week. Besides planning
-recurring or one-off tasks,  stuff on a to-do backlog, you can also write
+recurring or one-off tasks, stuff on a to-do backlog, you can also write
 **Notebooks** (notebooks and a diary), register goals with measured progress, habits,
 ideas, the people in your life, recipes and the shopping list they feed. Every
 section can be turned off, reordered and recoloured. Full tour:
@@ -71,11 +71,11 @@ docker run -d --name ontoplano -p 1493:1493 \
   ontoplano/ontoplano:latest
 ```
 
-
 Register at `/login` — **the first account owns the instance**, and after it
 registration is closed until changed at `/settings/instance`.
 
->>> explain here that no weekly mails included. No more than 150 chars for that.
+Reminders come installed. The optional Monday review mail does not — it needs
+SMTP; [the docs](https://docs.ontoplano.com/running-it) set it up.
 
 ## Developing it
 
@@ -101,17 +101,16 @@ the app** — every table, endpoint, service and keyboard shortcut, rebuilt by
 
 ## Deploying it
 
-From source on the machine you are sitting at:
+The same from-source install, kept running as a service:
 
 ```sh
 # ~/.config/ontoplano/env
 ORIGIN=https://ontoplano.example.com   # must be the public origin, or CSRF rejects every form
 BETTER_AUTH_SECRET=…                   # openssl rand -base64 32
 
-make install-service   # build, migrate, install the service and its timers
-make deploy-local      # the build-and-copy step alone, no service touched
-make update            # after a git pull: rebuild, redeploy, restart
->>> This is confusing, does it git pull? If no, why would it expect it? If yes, just name it as the other shit: git pull, rebuild, redeploy. Anyways, delete this command enitrely, deploy-local simply should restart the process too
+make install-service        # build, migrate, install the service + reminders
+make deploy-local           # after changes: rebuild, redeploy, restart
+make install-mail-service   # the weekly mail, if you run SMTP
 ```
 
 Keep it on `127.0.0.1` behind a reverse proxy that terminates TLS, and point

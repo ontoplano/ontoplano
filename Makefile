@@ -36,7 +36,9 @@ help:
 	@echo
 	@printf '\033[1mrun it for real\033[0m\n'
 	@echo "  build · preview             production build, and serve it locally"
-	@echo "  install-service / update    the systemd user service: first install, then updates"
+	@echo "  install-service             the app + reminders as a systemd user service"
+	@echo "  install-mail-service        …and the weekly review mail, if you run SMTP"
+	@echo "  deploy-local                rebuild, redeploy and restart the installed service"
 	@echo "  docker-up / docker-down     an instance in a container (docs/DOCKER.md)"
 	@echo "  docker-image                build the published image here, and audit it"
 	@echo "  package [deb|rpm|arch]      the .deb, the .rpm and the AUR PKGBUILD, into dist/"
@@ -65,7 +67,7 @@ vars:
 	@sh scripts/make-vars.sh $(sort $(MAKEFILE_LIST) defaults.env $(wildcard $(SERVER_SRC)/defaults.env))
 
 
-.PHONY: _billing-in-build vars _billing-provider package package-check _dev-port _dev-deps _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service uninstall-service update db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: _billing-in-build vars _billing-provider package package-check _dev-port _dev-deps _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -596,12 +598,14 @@ deploy-local: build db-migrate
 	@cp -r build $(PROD_DIR)/build
 	@cp package.json $(PROD_DIR)/package.json
 	@rsync -a --delete node_modules $(PROD_DIR)/
-	@echo "Deploy complete."
-
-update: deploy-local
-	@echo "Restarting ontoplano service..."
-	@systemctl --user restart ontoplano
-	@echo "Update complete. Check: systemctl --user status ontoplano"
+	@# And the service picks it up, when there is one — a deploy that leaves
+	@# the old build running is not a deploy, it is a copy.
+	@if systemctl --user cat ontoplano >/dev/null 2>&1; then \
+		systemctl --user restart ontoplano; \
+		echo "Deployed and restarted. Check: systemctl --user status ontoplano"; \
+	else \
+		echo "Deploy complete."; \
+	fi
 
 up-phone: android android-install
 	@echo "Phone updated against $(ONTOPLANO_ORIGIN)."
@@ -622,23 +626,34 @@ install-service: deploy-local
 	}
 	@mkdir -p ~/.config/systemd/user
 	@NODE_BIN="$(NODE_BIN)" envsubst < systemd/ontoplano.service > ~/.config/systemd/user/ontoplano.service
-	@# The companion timers: reminders every minute, the weekly review mail
-	@# every hour. They ask the app's job endpoints, which sit behind the
-	@# health token — generated here once, into the env file the units and the
-	@# app both read, so nothing has to be remembered.
+	@# The reminders timer rides along: it asks the app's job endpoint, behind
+	@# the health token — generated here once, into the env file the unit and
+	@# the app both read. The weekly review mail does NOT: it needs SMTP, which
+	@# most installs never configure — \`make install-mail-service\` is its own
+	@# deliberate step.
 	@mkdir -p ~/.config/ontoplano; touch ~/.config/ontoplano/env
 	@grep -q '^ONTOPLANO_HEALTH_TOKEN=' ~/.config/ontoplano/env || \
 		printf 'ONTOPLANO_HEALTH_TOKEN=%s\n' "$$(head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9')" >> ~/.config/ontoplano/env
-	@for unit in ontoplano-reminders ontoplano-weekly-review; do \
-		NODE_BIN="$(NODE_BIN)" envsubst < systemd/$$unit.service > ~/.config/systemd/user/$$unit.service; \
-		cp systemd/$$unit.timer ~/.config/systemd/user/$$unit.timer; \
-	done
+	@NODE_BIN="$(NODE_BIN)" envsubst < systemd/ontoplano-reminders.service > ~/.config/systemd/user/ontoplano-reminders.service
+	@cp systemd/ontoplano-reminders.timer ~/.config/systemd/user/ontoplano-reminders.timer
 	@echo "The service will run $(NODE_BIN) ($$($(NODE_BIN) -v))"
 	@systemctl --user daemon-reload
 	@systemctl --user enable ontoplano
 	@systemctl --user start ontoplano
-	@systemctl --user enable --now ontoplano-reminders.timer ontoplano-weekly-review.timer
-	@echo "Service and timers installed and started. Check: systemctl --user status ontoplano"
+	@systemctl --user enable --now ontoplano-reminders.timer
+	@echo "Service and reminders installed and started. Check: systemctl --user status ontoplano"
+	@echo "The weekly review mail is not installed — it needs SMTP. make install-mail-service adds it."
+
+# The Monday mail, as its own deliberate step: it needs SMTP configured in
+# ~/.config/ontoplano/env, and an install that cannot send should not carry a
+# timer that pretends it might.
+install-mail-service:
+	@mkdir -p ~/.config/systemd/user
+	@NODE_BIN="$(NODE_BIN)" envsubst < systemd/ontoplano-weekly-review.service > ~/.config/systemd/user/ontoplano-weekly-review.service
+	@cp systemd/ontoplano-weekly-review.timer ~/.config/systemd/user/ontoplano-weekly-review.timer
+	@systemctl --user daemon-reload
+	@systemctl --user enable --now ontoplano-weekly-review.timer
+	@echo "Weekly review mail timer installed. It sends nothing until SMTP_HOST is set in ~/.config/ontoplano/env."
 
 uninstall-service:
 	@systemctl --user stop ontoplano || true

@@ -165,7 +165,7 @@ For a box you keep, without Docker:
 
 ```sh
 make install-service      # build, migrate, install and start a systemd user unit
-make update               # after a git pull: rebuild, migrate, restart
+make deploy-local         # after changes: rebuild, migrate, redeploy, restart
 ```
 
 The unit runs as your own user, keeps running after logout, and snapshots the
@@ -214,12 +214,15 @@ twice — the week last written about is remembered per account.
 Nothing is sent unless the instance has SMTP configured, so a self-hosted
 install with no mail transport is simply an install with no Monday mail.
 
-**It needs something to run it.** The app has no scheduler of its own — but
-every shipped install brings one: the `.deb` and `.rpm` install an
-`ontoplano-weekly-review.timer` beside the service, the Docker image runs the
-clock itself, and `make install-service` sets the timer up for a from-source
-install. The same is true of reminders, which are asked for every minute.
-Settings → Instance shows both jobs and when they last ran.
+**It needs SMTP, and its own switch.** Reminders come installed everywhere —
+the packages and `make install-service` bring the timer, the Docker image
+runs the clock itself. The weekly mail is opt-in, because it can send
+nothing without SMTP configured: from source, `make install-mail-service`;
+on a packaged install, a systemd timer that POSTs
+`/api/jobs/weekly-reviews` hourly with the health token (the from-source
+unit in `systemd/ontoplano-weekly-review.service` is the template). The
+Docker image asks the endpoint regardless — harmless without SMTP.
+Settings → Instance shows the jobs and when they last ran.
 
 Anything else that can make an hourly HTTP request works too — the timers are
 only asking the app's own endpoint:

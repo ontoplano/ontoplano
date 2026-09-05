@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { instanceSells } from './billing.js';
+import { isEmailConfigured } from '../email.js';
 
 /**
  * The processes an instance needs BESIDE the app, and whether they exist.
@@ -123,8 +124,23 @@ export async function companions(): Promise<Companion[]> {
 	// The weekly review mail: stamped by its job endpoint, like reminders, so a
 	// container's own scheduler counts the same as a systemd timer. The window
 	// is generous because the timer is hourly, not minutely.
+	//
+	// Without SMTP it has nothing to send with, and that is a fact about the
+	// instance rather than a fault — the timer costs a clock read, and most
+	// self-hosted boxes never configure mail. Saying "installed and running"
+	// over a transport that cannot exist reads as working, which is the lie
+	// this card exists to prevent — so that case is its own quiet row.
+	const mailReady = isEmailConfigured();
 	const askedReview = lastRanAt('weekly-reviews');
-	if (askedReview !== null) {
+	if (!mailReady) {
+		rows.push({
+			label: 'Weekly review mail',
+			unit: 'ontoplano-weekly-review.timer',
+			ok: true,
+			detail: 'needs SMTP to send — none is configured, so nothing goes out',
+			fix: ''
+		});
+	} else if (askedReview !== null) {
 		const minutes = Math.round((Date.now() - askedReview) / MINUTE);
 		const fresh = Date.now() - askedReview < 3 * 60 * MINUTE;
 		rows.push({
@@ -139,7 +155,7 @@ export async function companions(): Promise<Companion[]> {
 	}
 
 	const timers: [string, string][] = [
-		...(askedReview === null
+		...(mailReady && askedReview === null
 			? [['Weekly review mail', 'ontoplano-weekly-review.timer'] as [string, string]]
 			: []),
 		...(instanceSells()

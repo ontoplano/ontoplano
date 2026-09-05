@@ -29,7 +29,8 @@
 		accent?: string;
 		flush?: boolean;
 		actions?: Snippet;
-		children: Snippet;
+		/** Optional: a card can be its title alone — the family seat's is. */
+		children?: Snippet;
 	} = $props();
 </script>
 
@@ -74,6 +75,6 @@
 	</header>
 
 	<div class={flush ? 'flex-1' : 'flex-1 p-4'}>
-		{@render children()}
+		{@render children?.()}
 	</div>
 </section>

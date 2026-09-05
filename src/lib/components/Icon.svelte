@@ -43,6 +43,9 @@
 		diary: 'M5 3h14v18H5zM9 3v18M12 8h4M12 12h4',
 		ideas: 'M9 21h6M10 18h4M12 3a6 6 0 0 1 4 10.5V16H8v-2.5A6 6 0 0 1 12 3z',
 		health: 'M3 12h4l2 6 4-14 2 8h6',
+		// Concentric rings and the bullseye: logging a habit is hitting the mark.
+		target:
+			'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 11.25a0.75 0.75 0 1 0 0 1.5 0.75 0.75 0 0 0 0-1.5z',
 		shopping: 'M4 7h16l-1.5 12h-13zM9 7V5a3 3 0 0 1 6 0v2',
 		// A gear. What was here was a disc with eight rays coming off it, which is
 		// the universal symbol for screen brightness — and it sat in the mobile

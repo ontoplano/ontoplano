@@ -96,7 +96,6 @@ else
 		./usr/bin/ontoplano \
 		./usr/lib/systemd/system/ontoplano.service \
 		./usr/lib/systemd/system/ontoplano-reminders.timer \
-		./usr/lib/systemd/system/ontoplano-weekly-review.timer \
 		./usr/lib/ontoplano/jobs \
 		./usr/lib/sysusers.d/ontoplano.conf \
 		./usr/lib/tmpfiles.d/ontoplano.conf \
@@ -137,7 +136,6 @@ else
 		/usr/bin/ontoplano \
 		/usr/lib/systemd/system/ontoplano.service \
 		/usr/lib/systemd/system/ontoplano-reminders.timer \
-		/usr/lib/systemd/system/ontoplano-weekly-review.timer \
 		/etc/ontoplano/ontoplano.env
 	do
 		if grep -qx "$path" <<<"$files"; then ok "carries $path"; else bad "missing $path"; fi

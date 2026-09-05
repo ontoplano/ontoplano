@@ -58,8 +58,7 @@ package() {
 
 	install -Dm644 packaging/systemd/ontoplano.service \
 		"$pkgdir/usr/lib/systemd/system/ontoplano.service"
-	for unit in ontoplano-reminders.service ontoplano-reminders.timer \
-		ontoplano-weekly-review.service ontoplano-weekly-review.timer; do
+	for unit in ontoplano-reminders.service ontoplano-reminders.timer; do
 		install -Dm644 "packaging/systemd/$unit" "$pkgdir/usr/lib/systemd/system/$unit"
 	done
 	install -Dm644 packaging/systemd/ontoplano.sysusers \

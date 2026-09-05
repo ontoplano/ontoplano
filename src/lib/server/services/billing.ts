@@ -213,13 +213,18 @@ export function billingStatus(): {
 	provider: string;
 	missing: string[];
 	ready: boolean;
+	sandbox: boolean;
 } {
 	const billing = provider();
 	return {
 		sells: instanceSells(),
 		provider: billing.name,
 		missing: billing.configured() ? [] : (billing.missing?.() ?? []),
-		ready: isBillingConfigured()
+		ready: isBillingConfigured(),
+		// True when the provider says it holds a TEST key. On staging that is
+		// the point; on the selling instance it means every charge is play
+		// money, and the admin page and the deploy check both say so.
+		sandbox: billing.sandbox?.() ?? false
 	};
 }
 

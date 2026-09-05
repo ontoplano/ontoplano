@@ -536,7 +536,8 @@
 													? 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
 													: 'border-blue-200 bg-white text-blue-600 hover:bg-blue-50'} px-2 py-1 text-xs transition"
 										>
-											{isBad ? 'I slipped' : isNeutral ? 'Log ✓' : 'Done ✓'}
+											<Icon name="target" size={12} />
+											{isBad ? 'I slipped' : isNeutral ? 'Log' : 'Done'}
 										</button>
 									</div>
 								</form>
@@ -554,9 +555,11 @@
 									expandedHabitId = expandedHabitId === habit.id ? null : habit.id;
 									confirmingDeleteId = null;
 								}}
-								class="btn btn-sm"
+								class="icon-btn"
+								title={expandedHabitId === habit.id ? 'Collapse' : 'Expand'}
+								aria-label={expandedHabitId === habit.id ? 'Collapse' : 'Expand'}
 							>
-								{expandedHabitId === habit.id ? 'Collapse' : 'Expand'}
+								<Icon name={expandedHabitId === habit.id ? 'chevron-up' : 'chevron-down'} />
 							</button>
 							{#if confirmingDeleteId === habit.id}
 								<form method="post" action="?/delete" use:enhance>
