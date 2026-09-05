@@ -22,7 +22,7 @@ const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 const prod = new Set(Object.keys(pkg.dependencies ?? {}));
 const dev = new Set(Object.keys(pkg.devDependencies ?? {}));
 
-/** The systemd units run these. One line each in ontoplano-server/systemd. */
+/** What scheduled jobs and operators run by hand outside the built app. */
 const JOBS = [
 	'scripts/deliver-reminders.ts',
 	'scripts/weekly-reviews.ts',

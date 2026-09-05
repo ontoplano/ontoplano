@@ -81,9 +81,9 @@ export function reconcileBodyLimit(
 		`ontoplano: BODY_SIZE_LIMIT is ${raw ?? "unset (adapter-node's 512K default)"}, which is ` +
 			`smaller than the ${configuredKilobytes}KB pictures config.toml asks for. Accepting ` +
 			`${kilobytes}KB instead — a bigger upload would be refused by the server before this app ` +
-			`saw it, with a body no page can read. Add BODY_SIZE_LIMIT=12M to the unit ` +
-			`(ontoplano-server/systemd/*.service ship it) and restart, or lower [media] ` +
-			`max_kilobytes.`
+			`saw it, with a body no page can read. Add BODY_SIZE_LIMIT=12M to the environment ` +
+			`(systemd/ontoplano.service and docker-compose.yml both ship it) and restart, or ` +
+			`lower [media] max_kilobytes.`
 	);
 	return kilobytes;
 }

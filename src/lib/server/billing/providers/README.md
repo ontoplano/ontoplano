@@ -11,8 +11,8 @@ A build that is meant to take money drops exactly one module in here before
 export const provider: BillingProvider = new Paddle();
 ```
 
-`make deploy` copies it from a sibling checkout automatically when one is there
-(see `ontoplano-server/deploy.mk`). With nothing here the app builds and runs
+`make build` copies it in automatically when a checkout of the provider sits
+beside this repository (`BILLING_SRC` in the Makefile). With nothing here the app builds and runs
 completely, minus the ability to sell: `none.ts` answers every question with
 "this instance takes no payments", the pages that would sell disappear, and the
 webhook route refuses.
