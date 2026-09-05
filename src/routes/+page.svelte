@@ -160,7 +160,7 @@
 			body.set('id', String(task.id));
 			body.set('kind', 'instance');
 			body.set('status', status);
-			void fetch('/planner/board?/setStatus', {
+			void fetch('/tasks/board?/setStatus', {
 				method: 'POST',
 				headers: { 'x-sveltekit-action': 'true' },
 				body
@@ -310,7 +310,7 @@
 	-->
 		{#if data.pendingReview}
 			<a
-				href="{resolve('/planner/review')}?week={data.pendingReview.weekStart}"
+				href="{resolve('/tasks/review')}?week={data.pendingReview.weekStart}"
 				class="flex items-center gap-3 border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:bg-gray-50"
 			>
 				<span class="text-gray-500"><Icon name="clock" size={16} /></span>
@@ -383,14 +383,14 @@
 		{#snippet card_todayTasks()}
 			<Card title="Today's Tasks" accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
-					<a href={resolve('/planner/board')} class="text-xs text-gray-500 hover:text-gray-900">
+					<a href={resolve('/tasks/board')} class="text-xs text-gray-500 hover:text-gray-900">
 						Open →
 					</a>
 				{/snippet}
 				{#if data.taskSummary.total === 0}
 					{@render nothingYet(
 						'Nothing is planned for today. A block is a time you have given to something.',
-						'/planner/plan',
+						'/tasks/plan',
 						'Open the plan'
 					)}
 				{:else}
@@ -584,7 +584,7 @@
 			].sort()}
 			<Card title="Week Plan" accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
-					<a href={resolve('/planner/plan')} class="text-xs text-gray-500 hover:text-gray-900"
+					<a href={resolve('/tasks/plan')} class="text-xs text-gray-500 hover:text-gray-900"
 						>Edit →</a
 					>
 				{/snippet}
@@ -648,7 +648,7 @@
 			<Card title="Diary" accent={SECTION_COLORS.diary}>
 				{#snippet actions()}
 					<div class="flex items-center gap-3">
-						<a href={resolve('/diary')} class="text-xs text-gray-500 hover:text-gray-900">
+						<a href={resolve('/notebooks/diary')} class="text-xs text-gray-500 hover:text-gray-900">
 							All entries →
 						</a>
 						{#if winsEnabled}
@@ -787,7 +787,7 @@
 				{:else}
 					{@render nothingYet(
 						'Nothing written yet. Whatever happened today, in as many or as few words as you like.',
-						'/diary',
+						'/notebooks/diary',
 						'New entry'
 					)}
 				{/if}
@@ -821,7 +821,7 @@
 						>
 							{todosNewestFirst ? 'Newest' : 'Oldest'} first
 						</button>
-						<a href={resolve('/planner/todo')} class="text-xs text-gray-500 hover:text-gray-900"
+						<a href={resolve('/tasks/todo')} class="text-xs text-gray-500 hover:text-gray-900"
 							>Open →</a
 						>
 					</div>
@@ -829,7 +829,7 @@
 				{#if sortedTodos.length === 0}
 					{@render nothingYet(
 						'Nothing on the list. Anything with no day yet lives here.',
-						'/planner/todo',
+						'/tasks/todo',
 						'Add a todo'
 					)}
 				{:else}

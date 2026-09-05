@@ -94,7 +94,7 @@
 			onclick={() =>
 				// The route is resolved; the rule cannot see through the query string.
 				// eslint-disable-next-line svelte/no-navigation-without-resolve
-				goto(`${resolve('/planner/review')}?week=${data.week.prev}`)}
+				goto(`${resolve('/tasks/review')}?week=${data.week.prev}`)}
 		>
 			<Icon name="arrow-left" size={22} />
 		</button>
@@ -118,7 +118,7 @@
 			onclick={() =>
 				// The route is resolved; the rule cannot see through the query string.
 				// eslint-disable-next-line svelte/no-navigation-without-resolve
-				goto(`${resolve('/planner/review')}?week=${data.week.next}`)}
+				goto(`${resolve('/tasks/review')}?week=${data.week.next}`)}
 		>
 			<Icon name="arrow-right" size={22} />
 		</button>
@@ -439,7 +439,7 @@
 					{#each data.past as week (week.weekStart)}
 						<li class="px-4 py-3">
 							<a
-								href="{resolve('/planner/review')}?week={week.weekStart}"
+								href="{resolve('/tasks/review')}?week={week.weekStart}"
 								class="tabular text-xs text-gray-500 hover:text-gray-900 hover:underline"
 							>
 								{pretty(week.weekStart)}

@@ -367,6 +367,6 @@ describe('a birthday', () => {
 		expect(payload.title).toBe('Ana turns 34 today');
 		// It leads to the person, not to a day on the planner: a notification you
 		// cannot follow is one you have to remember twice.
-		expect(payload.url).toMatch(/^\/diary\/people\?person=\d+$/);
+		expect(payload.url).toMatch(/^\/notebooks\/people\?person=\d+$/);
 	});
 });

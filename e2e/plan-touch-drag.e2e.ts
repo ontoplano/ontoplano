@@ -28,7 +28,7 @@ test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 800 }
 
 test('a block does not take the scroll gesture away from the page', async ({ page }) => {
 	await register(page, `touch-${Date.now()}@test.invalid`);
-	await visit(page, '/planner/plan');
+	await visit(page, '/tasks/plan');
 
 	const block = page.locator('.ec-event.ec-draggable').first();
 	if ((await block.count()) === 0) test.skip(true, 'no blocks on this week to drag');

@@ -57,7 +57,7 @@ test('press, flick and release writes the thing', async ({ page }) => {
 
 	// Deliberately not the dashboard: the pie's whole point is being reachable
 	// from wherever you already are, posting to a route you are not on.
-	await visit(page, '/diary/notebooks');
+	await visit(page, '/notebooks');
 
 	const at = await centreOf(page);
 	await page.mouse.move(at.x, at.y);
@@ -78,7 +78,7 @@ test('press, flick and release writes the thing', async ({ page }) => {
 	await expect(page.getByRole('heading', { name: /new to-do/i })).toBeHidden();
 
 	// And it is really there, in the list that owns it.
-	await visit(page, '/planner/todo');
+	await visit(page, '/tasks/todo');
 	await expect(page.getByText('buy a bigger pan')).toBeVisible();
 });
 
@@ -161,7 +161,7 @@ test('the section pie lands you in the room', async ({ page }) => {
 	for (const room of [
 		'Tasks',
 		'Goals',
-		'Notes',
+		'Notebooks',
 		'People',
 		'Ideas',
 		'Health',
@@ -245,7 +245,7 @@ test.describe('with a finger', () => {
 			named.push(((await page.locator('.pie-hud').textContent()) ?? '').trim());
 		}
 
-		for (const room of ['Tasks', 'Goals', 'Notes', 'Shopping']) {
+		for (const room of ['Tasks', 'Goals', 'Notebooks', 'Shopping']) {
 			expect(named, `${room} was never named while it was aimed at`).toContain(room);
 		}
 

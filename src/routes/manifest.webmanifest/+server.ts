@@ -27,14 +27,14 @@ const SHORTCUTS = [
 	{
 		name: 'Board',
 		short_name: 'Board',
-		url: '/planner/board',
+		url: '/tasks/board',
 		description: "Today's columns",
 		icon: 'shortcut-board'
 	},
 	{
 		name: 'New diary entry',
 		short_name: 'Diary',
-		url: '/diary',
+		url: '/notebooks/diary',
 		description: 'Write an entry',
 		icon: 'shortcut-diary'
 	},

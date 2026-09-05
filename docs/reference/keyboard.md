@@ -25,29 +25,6 @@ works is a key listed here and the reverse.
 | <kbd>n</kbd> | New diary entry          |
 | <kbd>w</kbd> | New wins                 |
 
-## Diary — `/diary`
-
-| Key          | Does             |
-| ------------ | ---------------- |
-| <kbd>j</kbd> | Navigate entries |
-| <kbd>k</kbd> | Navigate entries |
-| <kbd>n</kbd> | New entry        |
-| <kbd>e</kbd> | Edit entry       |
-
-## Notebooks — `/diary/notebooks`
-
-| Key          | Does         |
-| ------------ | ------------ |
-| <kbd>n</kbd> | New notebook |
-
-## People — `/diary/people`
-
-| Key          | Does            |
-| ------------ | --------------- |
-| <kbd>j</kbd> | Navigate people |
-| <kbd>k</kbd> | Navigate people |
-| <kbd>n</kbd> | New person      |
-
 ## Goals — `/goals`
 
 | Key          | Does          |
@@ -82,84 +59,28 @@ works is a key listed here and the reverse.
 | ------------ | ---------- |
 | <kbd>n</kbd> | New recipe |
 
-## Activities — `/planner/activities`
+## Notebooks — `/notebooks`
 
-| Key          | Does                   |
-| ------------ | ---------------------- |
-| <kbd>j</kbd> | Navigate list          |
-| <kbd>k</kbd> | Navigate list          |
-| <kbd>n</kbd> | New activity           |
-| <kbd>1</kbd> | Toggle category filter |
-| <kbd>2</kbd> | Toggle category filter |
-| <kbd>3</kbd> | Toggle category filter |
-| <kbd>4</kbd> | Toggle category filter |
-| <kbd>5</kbd> | Toggle category filter |
-| <kbd>6</kbd> | Toggle category filter |
-| <kbd>7</kbd> | Toggle category filter |
-| <kbd>8</kbd> | Toggle category filter |
-| <kbd>9</kbd> | Toggle category filter |
+| Key          | Does         |
+| ------------ | ------------ |
+| <kbd>n</kbd> | New notebook |
 
-## Board — `/planner/board`
+## Diary — `/notebooks/diary`
 
-| Key              | Does                          |
-| ---------------- | ----------------------------- |
-| <kbd>h</kbd>     | Move between columns          |
-| <kbd>j</kbd>     | Move between cards            |
-| <kbd>k</kbd>     | Move between cards            |
-| <kbd>l</kbd>     | Move between columns          |
-| <kbd>H</kbd>     | Carry card to previous column |
-| <kbd>L</kbd>     | Carry card to next column     |
-| <kbd>c</kbd>     | Mark done / reopen            |
-| <kbd>t</kbd>     | Pull onto today / put back    |
-| <kbd>g</kbd>     | Switch Today / General        |
-| <kbd>n</kbd>     | New card                      |
-| <kbd>Enter</kbd> | Open the card                 |
-| <kbd>1</kbd>     | Set the active rating         |
-| <kbd>2</kbd>     | Set the active rating         |
-| <kbd>3</kbd>     | Set the active rating         |
-| <kbd>4</kbd>     | Set the active rating         |
-| <kbd>5</kbd>     | Set the active rating         |
-| <kbd>u</kbd>     | Number keys set urgency       |
-| <kbd>i</kbd>     | Number keys set interest      |
-| <kbd>y</kbd>     | Number keys set energy        |
-| <kbd>x</kbd>     | Ask to delete card            |
+| Key          | Does             |
+| ------------ | ---------------- |
+| <kbd>j</kbd> | Navigate entries |
+| <kbd>k</kbd> | Navigate entries |
+| <kbd>n</kbd> | New entry        |
+| <kbd>e</kbd> | Edit entry       |
 
-## Plan — `/planner/plan`
+## People — `/notebooks/people`
 
-| Key          | Does                          |
-| ------------ | ----------------------------- |
-| <kbd>j</kbd> | Navigate slots                |
-| <kbd>k</kbd> | Navigate slots                |
-| <kbd>g</kbd> | Toggle list/grid view         |
-| <kbd>+</kbd> | Zoom in (grid)                |
-| <kbd>=</kbd> | Zoom in (grid)                |
-| <kbd>-</kbd> | Zoom out (grid)               |
-| <kbd>0</kbd> | Reset zoom (grid)             |
-| <kbd>h</kbd> | Switch day                    |
-| <kbd>l</kbd> | Switch day                    |
-| <kbd>[</kbd> | Switch week                   |
-| <kbd>]</kbd> | Switch week                   |
-| <kbd>n</kbd> | New weekly block              |
-| <kbd>N</kbd> | New one-off block             |
-| <kbd>e</kbd> | Edit block                    |
-| <kbd>d</kbd> | Toggle active                 |
-| <kbd>D</kbd> | Delete block                  |
-| <kbd>v</kbd> | Toggle multiselect            |
-| <kbd> </kbd> | Select/deselect (multiselect) |
-| <kbd>x</kbd> | Ask to delete selected        |
-| <kbd>p</kbd> | Copy to days (multiselect)    |
-
-## To-do — `/planner/todo`
-
-| Key          | Does          |
-| ------------ | ------------- |
-| <kbd>j</kbd> | Navigate list |
-| <kbd>k</kbd> | Navigate list |
-| <kbd>n</kbd> | New todo      |
-| <kbd>e</kbd> | Edit todo     |
-| <kbd>c</kbd> | Toggle done   |
-| <kbd>g</kbd> | Delegate      |
-| <kbd>x</kbd> | Ask to delete |
+| Key          | Does            |
+| ------------ | --------------- |
+| <kbd>j</kbd> | Navigate people |
+| <kbd>k</kbd> | Navigate people |
+| <kbd>n</kbd> | New person      |
 
 ## Account — `/settings/account`
 
@@ -191,3 +112,82 @@ works is a key listed here and the reverse.
 | <kbd>2</kbd> | Toggle replenish filter |
 | <kbd>b</kbd> | Toggle show bought      |
 | <kbd>s</kbd> | Toggle show snoozed     |
+
+## Activities — `/tasks/activities`
+
+| Key          | Does                   |
+| ------------ | ---------------------- |
+| <kbd>j</kbd> | Navigate list          |
+| <kbd>k</kbd> | Navigate list          |
+| <kbd>n</kbd> | New activity           |
+| <kbd>1</kbd> | Toggle category filter |
+| <kbd>2</kbd> | Toggle category filter |
+| <kbd>3</kbd> | Toggle category filter |
+| <kbd>4</kbd> | Toggle category filter |
+| <kbd>5</kbd> | Toggle category filter |
+| <kbd>6</kbd> | Toggle category filter |
+| <kbd>7</kbd> | Toggle category filter |
+| <kbd>8</kbd> | Toggle category filter |
+| <kbd>9</kbd> | Toggle category filter |
+
+## Board — `/tasks/board`
+
+| Key              | Does                          |
+| ---------------- | ----------------------------- |
+| <kbd>h</kbd>     | Move between columns          |
+| <kbd>j</kbd>     | Move between cards            |
+| <kbd>k</kbd>     | Move between cards            |
+| <kbd>l</kbd>     | Move between columns          |
+| <kbd>H</kbd>     | Carry card to previous column |
+| <kbd>L</kbd>     | Carry card to next column     |
+| <kbd>c</kbd>     | Mark done / reopen            |
+| <kbd>t</kbd>     | Pull onto today / put back    |
+| <kbd>g</kbd>     | Switch Today / General        |
+| <kbd>n</kbd>     | New card                      |
+| <kbd>Enter</kbd> | Open the card                 |
+| <kbd>1</kbd>     | Set the active rating         |
+| <kbd>2</kbd>     | Set the active rating         |
+| <kbd>3</kbd>     | Set the active rating         |
+| <kbd>4</kbd>     | Set the active rating         |
+| <kbd>5</kbd>     | Set the active rating         |
+| <kbd>u</kbd>     | Number keys set urgency       |
+| <kbd>i</kbd>     | Number keys set interest      |
+| <kbd>y</kbd>     | Number keys set energy        |
+| <kbd>x</kbd>     | Ask to delete card            |
+
+## Plan — `/tasks/plan`
+
+| Key          | Does                          |
+| ------------ | ----------------------------- |
+| <kbd>j</kbd> | Navigate slots                |
+| <kbd>k</kbd> | Navigate slots                |
+| <kbd>g</kbd> | Toggle list/grid view         |
+| <kbd>+</kbd> | Zoom in (grid)                |
+| <kbd>=</kbd> | Zoom in (grid)                |
+| <kbd>-</kbd> | Zoom out (grid)               |
+| <kbd>0</kbd> | Reset zoom (grid)             |
+| <kbd>h</kbd> | Switch day                    |
+| <kbd>l</kbd> | Switch day                    |
+| <kbd>[</kbd> | Switch week                   |
+| <kbd>]</kbd> | Switch week                   |
+| <kbd>n</kbd> | New weekly block              |
+| <kbd>N</kbd> | New one-off block             |
+| <kbd>e</kbd> | Edit block                    |
+| <kbd>d</kbd> | Toggle active                 |
+| <kbd>D</kbd> | Delete block                  |
+| <kbd>v</kbd> | Toggle multiselect            |
+| <kbd> </kbd> | Select/deselect (multiselect) |
+| <kbd>x</kbd> | Ask to delete selected        |
+| <kbd>p</kbd> | Copy to days (multiselect)    |
+
+## To-do — `/tasks/todo`
+
+| Key          | Does          |
+| ------------ | ------------- |
+| <kbd>j</kbd> | Navigate list |
+| <kbd>k</kbd> | Navigate list |
+| <kbd>n</kbd> | New todo      |
+| <kbd>e</kbd> | Edit todo     |
+| <kbd>c</kbd> | Toggle done   |
+| <kbd>g</kbd> | Delegate      |
+| <kbd>x</kbd> | Ask to delete |

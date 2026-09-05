@@ -265,7 +265,7 @@
 	}
 
 	function refresh() {
-		return goto(resolve(`/planner/board?date=${data.date}`), {
+		return goto(resolve(`/tasks/board?date=${data.date}`), {
 			invalidateAll: true,
 			noScroll: true,
 			keepFocus: true
@@ -357,7 +357,7 @@
 
 		// Every other key answers to the registry in $lib/shortcuts.ts — the
 		// binding lives there, only the behaviour lives here.
-		const action = getAction('/planner/board', e.key);
+		const action = getAction('/tasks/board', e.key);
 		if (!action) return;
 
 		switch (action) {
@@ -469,7 +469,7 @@
 		d.setDate(d.getDate() + days);
 		const pad = (n: number) => String(n).padStart(2, '0');
 		goto(
-			resolve(`/planner/board?date=${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`)
+			resolve(`/tasks/board?date=${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`)
 		);
 	}
 </script>
@@ -505,7 +505,7 @@
 					aria-label="Previous day">&larr;</button
 				>
 				<button
-					onclick={() => goto(resolve('/planner/board'))}
+					onclick={() => goto(resolve('/tasks/board'))}
 					class="tabular border px-2 py-1 text-sm shadow-sm {data.date === data.today
 						? 'border-gray-900 bg-gray-900 text-white'
 						: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
@@ -520,7 +520,7 @@
 			{/if}
 			<button onclick={openForm} class="btn btn-primary btn-sm">
 				New <kbd class="ml-1 border border-gray-600 bg-gray-800 px-1 text-xs"
-					>{keyFor('/planner/board', 'new')}</kbd
+					>{keyFor('/tasks/board', 'new')}</kbd
 				>
 			</button>
 		</div>
@@ -1179,40 +1179,40 @@
 
 	<p class="kbd-hint text-xs text-gray-500">
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/planner/board', 'prev-column')}</kbd
+			>{keyFor('/tasks/board', 'prev-column')}</kbd
 		>
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/planner/board', 'next-card')}</kbd
+			>{keyFor('/tasks/board', 'next-card')}</kbd
 		>
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/planner/board', 'prev-card')}</kbd
+			>{keyFor('/tasks/board', 'prev-card')}</kbd
 		>
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/planner/board', 'next-column')}</kbd
+			>{keyFor('/tasks/board', 'next-column')}</kbd
 		>
 		move ·
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/planner/board', 'carry-left')}</kbd
+			>{keyFor('/tasks/board', 'carry-left')}</kbd
 		>
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/planner/board', 'carry-right')}</kbd
+			>{keyFor('/tasks/board', 'carry-right')}</kbd
 		>
 		carry card ·
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/planner/board', 'toggle-done')}</kbd
+			>{keyFor('/tasks/board', 'toggle-done')}</kbd
 		>
 		done ·
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/planner/board', 'toggle-today')}</kbd
+			>{keyFor('/tasks/board', 'toggle-today')}</kbd
 		>
 		today ·
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/planner/board', 'switch-tab')}</kbd
+			>{keyFor('/tasks/board', 'switch-tab')}</kbd
 		>
 		switch tab ·
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">1-5</kbd> rate ·
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/planner/board', 'delete')}</kbd
+			>{keyFor('/tasks/board', 'delete')}</kbd
 		> delete
 	</p>
 </div>

@@ -90,7 +90,7 @@ test('a dialog on the phone is a screen with a back arrow', async ({ page }) => 
 
 test('the phone has no top bar — the bottom one carries everything', async ({ page }) => {
 	await register(page, `topbar-${Date.now()}@test.invalid`);
-	await visit(page, '/planner/plan');
+	await visit(page, '/tasks/plan');
 
 	// The wordmark header is desktop-only now: on a phone it spent a strip of
 	// a small screen saying the app's own name.

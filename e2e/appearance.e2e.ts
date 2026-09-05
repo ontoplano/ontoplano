@@ -32,7 +32,7 @@ async function paint(page: Page, theme: string, style: string): Promise<void> {
 
 test('the tick on a ticked box can be seen', async ({ page }) => {
 	await register(page, `tick-${Date.now()}@test.invalid`);
-	await visit(page, '/planner/board');
+	await visit(page, '/tasks/board');
 
 	const box = page.locator('input[type=checkbox]').first();
 	await expect(box).toBeVisible();
@@ -62,7 +62,7 @@ test('the tick on a ticked box can be seen', async ({ page }) => {
 
 test('a checkbox is a square, in every style', async ({ page }) => {
 	await register(page, `shapes-${Date.now()}@test.invalid`);
-	await visit(page, '/planner/board');
+	await visit(page, '/tasks/board');
 
 	const box = page.locator('input[type=checkbox]').first();
 	await expect(box).toBeVisible();
@@ -84,7 +84,7 @@ test('a checkbox is a square, in every style', async ({ page }) => {
 
 test('an unticked box is not the same colour as the page', async ({ page }) => {
 	await register(page, `empty-${Date.now()}@test.invalid`);
-	await visit(page, '/planner/board');
+	await visit(page, '/tasks/board');
 
 	const box = page.locator('input[type=checkbox]').first();
 	await expect(box).toBeVisible();
@@ -113,11 +113,11 @@ test('text stands off its background, on every theme', async ({ page }) => {
 
 	for (const route of [
 		'/',
-		'/planner/board',
+		'/tasks/board',
 		'/shopping',
 		'/goals',
-		'/diary',
-		'/diary/notebooks'
+		'/notebooks/diary',
+		'/notebooks'
 	]) {
 		await page.goto(route, { waitUntil: 'load' });
 
@@ -175,7 +175,7 @@ test('a button you cannot press does not look like one you can', async ({ page }
 	// the general case: a form whose action needs a selection. Onboarding filled
 	// *this* week, and the page defaults to the last one, so ask for this one.
 	const today = new Date().toISOString().slice(0, 10);
-	await visit(page, `/planner/review?week=${today}`);
+	await visit(page, `/tasks/review?week=${today}`);
 
 	const carry = page.getByRole('button', { name: /carry into the todo list/i });
 	await expect(carry).toBeVisible();
@@ -280,7 +280,7 @@ test('a button keeps its label under the pointer', async ({ page }) => {
  */
 test('every button on a page offers a pointer', async ({ page }) => {
 	await register(page, `cursor-${Date.now()}@test.invalid`);
-	await visit(page, '/planner/board');
+	await visit(page, '/tasks/board');
 
 	const wrong = await page.evaluate(() => {
 		const bad: string[] = [];

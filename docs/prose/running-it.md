@@ -203,7 +203,7 @@ else will use.
 
 On Monday morning ontoplano can send one message saying what last week was:
 how much of what you planned you did, where most of it went, and what is still
-sitting there unanswered. It links to `/planner/review`, which is where you do
+sitting there unanswered. It links to `/tasks/review`, which is where you do
 something about a week.
 
 It is on for an account whose address has been confirmed, and every message

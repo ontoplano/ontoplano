@@ -150,7 +150,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			snippet: inNotebook
 				? `in ${row.notebookTitle} · ${snippetOf(row.content, query, 90)}`
 				: `#${row.seq} · ${snippetOf(row.content, query, 100)}`,
-			href: inNotebook ? `/diary/notebooks/${row.notebookId}` : `/diary#diary-${row.seq}`
+			href: inNotebook ? `/notebooks/${row.notebookId}` : `/notebooks/diary#diary-${row.seq}`
 		});
 	}
 
@@ -170,7 +170,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			id: row.id,
 			title: row.title,
 			snippet: firstLine(row.description ?? ''),
-			href: `/diary/notebooks/${row.id}`
+			href: `/notebooks/${row.id}`
 		});
 
 	for (const row of db
@@ -206,7 +206,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			id: row.id,
 			title: row.title,
 			snippet: firstLine(row.notes ?? ''),
-			href: '/planner/todo'
+			href: '/tasks/todo'
 		});
 
 	for (const row of db
@@ -224,7 +224,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			id: row.id,
 			title: row.label || 'Untitled',
 			snippet: `every week at ${row.startTime}`,
-			href: '/planner/plan'
+			href: '/tasks/plan'
 		});
 
 	for (const row of db
@@ -250,7 +250,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			id: row.id,
 			title: row.label || 'Untitled',
 			snippet: `${row.date} at ${row.startTime}`,
-			href: `/planner/plan?from=${row.date}`
+			href: `/tasks/plan?from=${row.date}`
 		});
 
 	// --- what you are aiming at -------------------------------------------------
@@ -288,7 +288,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			id: row.id,
 			title: row.name,
 			snippet: firstLine(row.notes ?? ''),
-			href: `/diary/people?person=${row.id}`
+			href: `/notebooks/people?person=${row.id}`
 		});
 
 	for (const row of db
@@ -326,7 +326,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			id: row.id,
 			title: row.name,
 			snippet: firstLine(row.description ?? ''),
-			href: '/planner/activities'
+			href: '/tasks/activities'
 		});
 
 	return hits;

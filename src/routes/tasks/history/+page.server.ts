@@ -11,5 +11,5 @@ import type { PageServerLoad } from './$types';
  */
 export const load: PageServerLoad = ({ url }) => {
 	const week = url.searchParams.get('week');
-	redirect(301, week ? `/planner/plan?view=week&from=${week}` : '/planner/plan?view=week');
+	redirect(301, week ? `/tasks/plan?view=week&from=${week}` : '/tasks/plan?view=week');
 };

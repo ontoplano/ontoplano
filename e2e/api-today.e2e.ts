@@ -119,7 +119,7 @@ test('today answers with blocks and tasks in one request', async ({ playwright }
 
 	// A todo belongs to the day it was pulled onto, which is what the widget
 	// draws: an undated one is not "today" yet.
-	await request.post('/planner/todo?/create', {
+	await request.post('/tasks/todo?/create', {
 		headers: action,
 		form: { heading: 'book the plumber', scheduledDate: body.date }
 	});

@@ -17,16 +17,20 @@ const ORIGIN = 'http://localhost:4173';
 const TOO_LONG = 'x'.repeat(60_000);
 
 const CASES: { name: string; path: string; form: Record<string, string> }[] = [
-	{ name: 'diary entry', path: '/diary?/create', form: { content: TOO_LONG } },
-	{ name: 'diary tags', path: '/diary?/create', form: { content: 'fine', tags: TOO_LONG } },
-	{ name: 'todo title', path: '/planner/todo?/create', form: { heading: TOO_LONG } },
-	{ name: 'todo notes', path: '/planner/todo?/create', form: { heading: 'fine', notes: TOO_LONG } },
+	{ name: 'diary entry', path: '/notebooks/diary?/create', form: { content: TOO_LONG } },
+	{
+		name: 'diary tags',
+		path: '/notebooks/diary?/create',
+		form: { content: 'fine', tags: TOO_LONG }
+	},
+	{ name: 'todo title', path: '/tasks/todo?/create', form: { heading: TOO_LONG } },
+	{ name: 'todo notes', path: '/tasks/todo?/create', form: { heading: 'fine', notes: TOO_LONG } },
 	{
 		name: 'notebook title',
-		path: '/diary/notebooks?/create',
+		path: '/notebooks?/create',
 		form: { heading: TOO_LONG }
 	},
-	{ name: 'person name', path: '/diary/people?/create', form: { label: TOO_LONG } },
+	{ name: 'person name', path: '/notebooks/people?/create', form: { label: TOO_LONG } },
 	{
 		name: 'habit name',
 		path: '/health/habits?/create',

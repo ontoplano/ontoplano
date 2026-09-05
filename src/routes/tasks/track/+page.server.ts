@@ -28,5 +28,5 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const target = offset === null ? ctx.now : addDays(monday, offset);
 	const date = `${target.getFullYear()}-${pad(target.getMonth() + 1)}-${pad(target.getDate())}`;
 
-	redirect(308, `/planner/board?date=${date}`);
+	redirect(308, `/tasks/board?date=${date}`);
 };

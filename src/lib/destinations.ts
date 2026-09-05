@@ -27,23 +27,29 @@ export type Destination = {
 export const DESTINATIONS: Destination[] = [
 	{ label: 'Today', group: '', href: '/', icon: 'home' },
 
-	{ label: 'Plan', group: 'Tasks', href: '/planner/plan', icon: 'planner' },
-	{ label: 'Board', group: 'Tasks', href: '/planner/board', icon: 'planner' },
-	{ label: 'To-do', group: 'Tasks', href: '/planner/todo', icon: 'check' },
-	{ label: 'Activities', group: 'Tasks', href: '/planner/activities', icon: 'tag' },
-	{ label: 'Review', group: 'Tasks', href: '/planner/review', icon: 'check' },
+	{ label: 'Plan', group: 'Tasks', href: '/tasks/plan', icon: 'planner' },
+	{ label: 'Board', group: 'Tasks', href: '/tasks/board', icon: 'planner' },
+	{ label: 'To-do', group: 'Tasks', href: '/tasks/todo', icon: 'check' },
+	{ label: 'Activities', group: 'Tasks', href: '/tasks/activities', icon: 'tag' },
+	{ label: 'Review', group: 'Tasks', href: '/tasks/review', icon: 'check' },
 
 	{ label: 'Goals', group: '', href: '/goals', icon: 'goals', hide: 'goals' },
 
-	{ label: 'Diary', group: 'Notes', href: '/diary', icon: 'diary', hide: 'diary' },
 	{
 		label: 'Notebooks',
-		group: 'Notes',
-		href: '/diary/notebooks',
+		group: 'Notebooks',
+		href: '/notebooks',
 		icon: 'notebook',
 		hide: 'notebooks'
 	},
-	{ label: 'People', group: 'Notes', href: '/diary/people', icon: 'user', hide: 'people' },
+	{ label: 'Diary', group: 'Notebooks', href: '/notebooks/diary', icon: 'diary', hide: 'diary' },
+	{
+		label: 'People',
+		group: 'Notebooks',
+		href: '/notebooks/people',
+		icon: 'user',
+		hide: 'people'
+	},
 	{ label: 'Ideas', group: 'Writing', href: '/ideas', icon: 'ideas', hide: 'ideas' },
 
 	{ label: 'Habits', group: 'Health', href: '/health/habits', icon: 'health', hide: 'health' },

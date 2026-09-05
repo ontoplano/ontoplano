@@ -12,6 +12,13 @@ version.
 
 ## 0.73.0 — 2026-09-05
 
+- **The Notes room is Notebooks now, at `/notebooks`.** Notebooks is the
+  general thing and names the room; the diary is its second tab, at
+  `/notebooks/diary`. Every old `/diary…` address redirects, so bookmarks,
+  installed apps and old links keep working.
+- **`/planner/*` is `/tasks/*`** — the room has been called Tasks since the
+  nav rename, and its addresses now agree. The old paths redirect, review
+  mails included.
 - **A Google Keep text note imports as a note.** It used to become a todo
   named by the title with the body buried in the todo's notes field; now
   checklists become todos and text notes become notebook notes — title as a

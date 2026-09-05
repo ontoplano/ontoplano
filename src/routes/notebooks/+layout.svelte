@@ -7,31 +7,31 @@
 	let { children, data }: { children: Snippet; data: LayoutData } = $props();
 
 	/**
-	 * Notes is one room with two shelves: the diary, and the notebooks.
+	 * Notebooks is one room with two shelves — the notebooks, and the diary.
 	 *
-	 * Notebooks had a navigation entry of its own for a while, which made the
-	 * bar longer without making anything easier to find — both are places you
-	 * write, and somebody looking for either thinks "notes" first. People stays
-	 * its own entry: it reads like a directory, not like writing.
+	 * Notebooks is the general one, which is why it names the room and comes
+	 * first: a diary is one notebook-shaped practice among the subjects you
+	 * write against. People stays its own entry: it reads like a directory,
+	 * not like writing.
 	 */
-	// The preference that used to put the Notebooks nav entry away puts its
-	// tab away instead — same switch, same meaning.
+	// The preference that hides the notebooks section hides its tab; the room
+	// then opens on the diary.
 	const tabs = $derived([
-		{ href: resolve('/diary'), label: 'Diary' },
 		...(data.hiddenSections.includes('notebooks')
 			? []
-			: [{ href: resolve('/diary/notebooks'), label: 'Notebooks' }])
+			: [{ href: resolve('/notebooks'), label: 'Notebooks' }]),
+		{ href: resolve('/notebooks/diary'), label: 'Diary' }
 	]);
 
-	/** People lives under /diary for its colour, not for these tabs. */
-	const showTabs = $derived(!page.url.pathname.startsWith('/diary/people'));
+	/** People lives under /notebooks for its colour, not for these tabs. */
+	const showTabs = $derived(!page.url.pathname.startsWith('/notebooks/people'));
 
 	function active(href: string): boolean {
-		if (href === '/diary') {
+		if (href === '/notebooks') {
 			return (
-				page.url.pathname === '/diary' ||
-				(page.url.pathname.startsWith('/diary/') &&
-					!page.url.pathname.startsWith('/diary/notebooks'))
+				page.url.pathname === '/notebooks' ||
+				(page.url.pathname.startsWith('/notebooks/') &&
+					!page.url.pathname.startsWith('/notebooks/diary'))
 			);
 		}
 		return page.url.pathname.startsWith(href);
@@ -40,8 +40,8 @@
 
 {#if showTabs}
 	<div class="mb-4 space-y-3">
-		<h1 class="text-lg font-bold text-gray-900">Notes</h1>
-		<nav class="flex gap-1 border-b border-gray-200" aria-label="Notes sections">
+		<h1 class="text-lg font-bold text-gray-900">Notebooks</h1>
+		<nav class="flex gap-1 border-b border-gray-200" aria-label="Notebooks sections">
 			{#each tabs as tab (tab.href)}
 				<!-- Already a resolve() result; the rule cannot see through the array,
 				     and -next-line cannot reach an attribute two lines down. -->

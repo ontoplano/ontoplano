@@ -53,7 +53,7 @@
 			confirmingDelete = false;
 			return;
 		}
-		if (getAction('/diary/notebooks', e.key) === 'new') {
+		if (getAction('/notebooks', e.key) === 'new') {
 			e.preventDefault();
 			openCreate();
 		}
@@ -86,7 +86,7 @@
 		<button onclick={openCreate} class="btn btn-primary btn-sm" data-tour="notebook-new">
 			<Icon name="plus" /> New notebook
 			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
-				>{keyFor('/diary/notebooks', 'new')}</kbd
+				>{keyFor('/notebooks', 'new')}</kbd
 			>
 		</button>
 	</div>
@@ -124,7 +124,7 @@
 								column now (Open, above), where the thing it opens is.
 							-->
 							<a
-								href="{resolve('/diary/notebooks')}?notebook={notebook.id}"
+								href="{resolve('/notebooks')}?notebook={notebook.id}"
 								class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
 							>
 								<span class:text-gray-500={notebook.closedAt}>{notebook.title}</span>
@@ -166,7 +166,7 @@
 					-->
 					{#if orphaned.length > 0}
 						<a
-							href="{resolve('/diary/notebooks')}?notebook=orphaned"
+							href="{resolve('/notebooks')}?notebook=orphaned"
 							class="mt-auto block px-4 py-3 text-sm hover:underline {showingOrphans
 								? 'bg-gray-100'
 								: ''}"
@@ -196,10 +196,7 @@
 				{#if selected}
 					<!-- The way to the notebook's own page, from the column that is
 					     showing it. The list on the left chooses what appears here. -->
-					<a
-						href={resolve('/diary/notebooks/[id]', { id: String(selected.id) })}
-						class="btn btn-sm"
-					>
+					<a href={resolve('/notebooks/[id]', { id: String(selected.id) })} class="btn btn-sm">
 						Open <Icon name="arrow-right" />
 					</a>
 					<!-- The confirmation is a dialog, not a second button in the same

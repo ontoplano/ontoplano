@@ -174,7 +174,7 @@ export function weeklyReviewMail(
 
 	lines.push('Three lines about the week is the part worth reading in a year.');
 
-	const link = origin() ? `${origin()}/planner/review?week=${weekStart}` : '';
+	const link = origin() ? `${origin()}/tasks/review?week=${weekStart}` : '';
 	const off = origin()
 		? `${origin()}/mail/weekly-review/off?u=${encodeURIComponent(ctx.userId)}` +
 			`&t=${unsubscribeToken(ctx.userId)}`

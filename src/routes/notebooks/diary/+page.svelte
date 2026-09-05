@@ -141,7 +141,7 @@
 			return;
 
 		const items = filteredEntries();
-		const action = getAction('/diary', e.key);
+		const action = getAction('/notebooks/diary', e.key);
 		if (!action) return;
 		e.preventDefault();
 
@@ -449,7 +449,7 @@
 							knowing anything.
 						-->
 						{#each entry.people as person (person.id)}
-							<a href={resolve('/diary/people')} class="chip">
+							<a href={resolve('/notebooks/people')} class="chip">
 								@{person.name}
 							</a>
 						{/each}

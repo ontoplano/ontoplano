@@ -113,10 +113,10 @@ describe('the guided tours', () => {
 	});
 
 	it('resolves a detail page to the tour of the list it came from', () => {
-		expect(tutorialFor('/diary/notebooks/12')).toBe(TUTORIALS['/diary/notebooks']);
+		expect(tutorialFor('/notebooks/12')).toBe(TUTORIALS['/notebooks']);
 		expect(tutorialFor('/kitchen/recipes/3')).toBe(TUTORIALS['/kitchen/recipes']);
 		// And the longest match wins, so People does not fall back to the diary.
-		expect(tutorialFor('/diary/people')).toBe(TUTORIALS['/diary/people']);
+		expect(tutorialFor('/notebooks/people')).toBe(TUTORIALS['/notebooks/people']);
 		// Home is a tour, not a prefix of every path in the app.
 		expect(tutorialFor('/admin')).toBeNull();
 	});

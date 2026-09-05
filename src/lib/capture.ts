@@ -39,7 +39,7 @@ export const CAPTURES: Capture[] = [
 		label: 'To-do',
 		icon: 'check',
 		color: SECTION_COLORS.planner,
-		action: '/planner/todo?/create'
+		action: '/tasks/todo?/create'
 	},
 	{
 		key: 'note',
@@ -47,7 +47,7 @@ export const CAPTURES: Capture[] = [
 		label: 'Note',
 		icon: 'diary',
 		color: SECTION_COLORS.diary,
-		action: '/diary?/create',
+		action: '/notebooks/diary?/create',
 		hide: 'diary'
 	},
 	{

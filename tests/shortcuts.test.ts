@@ -31,14 +31,14 @@ describe('the registry', () => {
 	});
 
 	test('keyFor answers for a real binding and refuses a missing one', () => {
-		expect(keyFor('/planner/todo', 'new')).toBe('n');
-		expect(() => keyFor('/planner/todo', 'no-such-action')).toThrow(/no-such-action/);
+		expect(keyFor('/tasks/todo', 'new')).toBe('n');
+		expect(() => keyFor('/tasks/todo', 'no-such-action')).toThrow(/no-such-action/);
 		expect(() => keyFor('/no/such/page', 'new')).toThrow();
 	});
 
 	test('getAction answers keys and stays silent otherwise', () => {
-		expect(getAction('/planner/board', 'Enter')).toBe('edit');
-		expect(getAction('/planner/board', '3')).toBe('rate');
-		expect(getAction('/planner/board', 'z')).toBeNull();
+		expect(getAction('/tasks/board', 'Enter')).toBe('edit');
+		expect(getAction('/tasks/board', '3')).toBe('rate');
+		expect(getAction('/tasks/board', 'z')).toBeNull();
 	});
 });

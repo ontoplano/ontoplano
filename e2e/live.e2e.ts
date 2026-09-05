@@ -72,7 +72,7 @@ test('a todo added by an assistant turns up without a reload', async ({ page, pl
 	 * somebody is listening.
 	 */
 	const streaming = page.waitForRequest((r) => r.url().includes('/api/live'), { timeout: 20000 });
-	await visit(page, '/planner/todo');
+	await visit(page, '/tasks/todo');
 	await streaming;
 
 	const title = `written by an assistant ${Date.now()}`;

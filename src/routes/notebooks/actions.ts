@@ -130,6 +130,6 @@ export const notebookActions = {
 		// The URL still names the notebook that was just deleted, and reloading
 		// it would answer 404 — correctly, and unhelpfully, to the person who
 		// deleted it.
-		redirect(303, '/diary/notebooks');
+		redirect(303, '/notebooks');
 	}
 } satisfies Actions;

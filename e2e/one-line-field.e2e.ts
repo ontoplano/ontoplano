@@ -18,7 +18,7 @@ import { visit } from './helpers/visit';
  */
 test('a quick form still saves on Enter, with a textarea for a title', async ({ page }) => {
 	await register(page, `one-line-${Date.now()}@test.invalid`);
-	await visit(page, '/planner/todo');
+	await visit(page, '/tasks/todo');
 
 	await page.getByRole('button', { name: 'New to-do' }).click();
 	const lead = page.locator('[name="heading"]').first();

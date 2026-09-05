@@ -65,7 +65,7 @@
 			return;
 
 		const items = filteredActivities();
-		const action = getAction('/planner/activities', e.key);
+		const action = getAction('/tasks/activities', e.key);
 		if (!action) return;
 		e.preventDefault();
 

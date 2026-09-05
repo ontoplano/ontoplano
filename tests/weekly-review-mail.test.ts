@@ -233,7 +233,7 @@ describe('what it says', () => {
 		const sent = sendEmail.mock.calls[0][0];
 		expect(sent.subject).toBe('Your week: 1 of 2');
 		expect(sent.text).toContain('1 of the 2 blocks');
-		expect(sent.text).toContain(`/planner/review?week=${LAST_WEEK}`);
+		expect(sent.text).toContain(`/tasks/review?week=${LAST_WEEK}`);
 	});
 
 	test('what did not happen, by name', async () => {

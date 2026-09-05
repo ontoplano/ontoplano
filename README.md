@@ -30,8 +30,8 @@ a life.
 
 You describe the week you intend to have; Ontoplano turns it into the days as
 they arrive and records what actually happened. Around that sit the other
-rooms: **Tasks** (the plan, today's board, the weekly review), **Notes** (a
-diary and notebooks), goals with real progress, the people in your life,
+rooms: **Tasks** (the plan, today's board, the weekly review), **Notebooks**
+(your notebooks, and a diary), goals with real progress, the people in your life,
 habits, ideas, recipes and the shopping that follows from them. Use the parts
 you want — every section can be switched off, reordered and recoloured. The
 full tour is at [docs.ontoplano.com](https://docs.ontoplano.com).

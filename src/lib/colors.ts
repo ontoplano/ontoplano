@@ -52,7 +52,7 @@ export const SECTIONS: Record<SectionKey, { accent: string; label: string }> = {
 	home: { accent: '#475569', label: 'Home' },
 	planner: { accent: '#1d4ed8', label: 'Tasks' },
 	goals: { accent: '#7c2d12', label: 'Goals' },
-	diary: { accent: '#b45309', label: 'Notes' },
+	diary: { accent: '#b45309', label: 'Notebooks' },
 	ideas: { accent: '#6d28d9', label: 'Ideas' },
 	health: { accent: '#0f766e', label: 'Health' },
 	shopping: { accent: '#9d174d', label: 'Shopping' },
@@ -61,10 +61,12 @@ export const SECTIONS: Record<SectionKey, { accent: string; label: string }> = {
 
 /** Which section a pathname belongs to. */
 export function sectionFor(pathname: string): SectionKey {
-	if (pathname.startsWith('/planner')) return 'planner';
+	if (pathname.startsWith('/tasks')) return 'planner';
 	if (pathname.startsWith('/goals')) return 'goals';
 	if (pathname.startsWith('/health')) return 'health';
-	if (pathname.startsWith('/diary')) return 'diary';
+	// The whole Notebooks room wears the diary section's colour, as the room
+	// did when it lived at /diary.
+	if (pathname.startsWith('/notebooks')) return 'diary';
 	if (pathname.startsWith('/ideas')) return 'ideas';
 	if (pathname.startsWith('/shopping')) return 'shopping';
 	if (pathname.startsWith('/kitchen')) return 'kitchen';

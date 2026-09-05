@@ -41,8 +41,8 @@ export type Room = {
  * should never be.
  *
  * `section` is which room's colour and glyph it belongs to; `key` is its own
- * identity, because People lives in the Notes section and is not the diary.
- * Notebooks has no entry of its own any more: it is the second tab of Notes,
+ * identity, because People lives in the Notebooks section and is not the diary.
+ * Notebooks names the room and its first tab; the diary is the second,
  * which is where somebody looking for their notes actually looks.
  */
 export type NavPlace = {
@@ -57,15 +57,22 @@ export type NavPlace = {
 };
 
 export const NAV_PLACES: NavPlace[] = [
-	{ key: 'planner', label: 'Tasks', section: 'planner', icon: 'planner', href: '/planner/plan' },
+	{ key: 'planner', label: 'Tasks', section: 'planner', icon: 'planner', href: '/tasks/plan' },
 	{ key: 'goals', label: 'Goals', section: 'goals', icon: 'goals', href: '/goals', hide: 'goals' },
-	{ key: 'diary', label: 'Notes', section: 'diary', icon: 'diary', href: '/diary', hide: 'diary' },
+	{
+		key: 'diary',
+		label: 'Notebooks',
+		section: 'diary',
+		icon: 'diary',
+		href: '/notebooks',
+		hide: 'diary'
+	},
 	{
 		key: 'people',
 		label: 'People',
 		section: 'diary',
 		icon: 'user',
-		href: '/diary/people',
+		href: '/notebooks/people',
 		hide: 'people'
 	},
 	{ key: 'ideas', label: 'Ideas', section: 'ideas', icon: 'ideas', href: '/ideas', hide: 'ideas' },

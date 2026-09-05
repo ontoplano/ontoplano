@@ -75,7 +75,7 @@ it('a note form offers a notebook, and its actions read it', () => {
 	const fields = readFileSync('src/lib/components/fields/NoteFields.svelte', 'utf8');
 	expect(fields).toContain('NotebookField');
 
-	const action = readFileSync('src/routes/diary/+page.server.ts', 'utf8');
+	const action = readFileSync('src/routes/notebooks/diary/+page.server.ts', 'utf8');
 	// Both writes: the quick create and the edit.
 	expect(action.match(/notebookId: formData\.get\('notebookId'\)/g)?.length).toBe(2);
 

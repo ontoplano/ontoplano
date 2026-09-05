@@ -17,28 +17,28 @@ under the pointer.
 | Screen                   | Tour         | Steps |
 | ------------------------ | ------------ | ----- |
 | `/`                      | Ontoplano    | 8     |
-| `/diary`                 | Diary        | 4     |
-| `/diary/notebooks`       | Notebooks    | 2     |
-| `/diary/people`          | People       | 3     |
 | `/goals`                 | Goals        | 4     |
 | `/health/habits`         | Habits       | 3     |
 | `/ideas`                 | Ideas        | 3     |
 | `/kitchen/recipes`       | Recipes      | 4     |
-| `/planner/activities`    | Activities   | 3     |
-| `/planner/board`         | Board        | 4     |
-| `/planner/plan`          | Plan         | 5     |
-| `/planner/todo`          | To-do        | 3     |
+| `/notebooks`             | Notebooks    | 2     |
+| `/notebooks/diary`       | Diary        | 4     |
+| `/notebooks/people`      | People       | 3     |
 | `/settings/account`      | Account      | 3     |
 | `/settings/integrations` | Integrations | 3     |
 | `/shopping`              | Shopping     | 3     |
+| `/tasks/activities`      | Activities   | 3     |
+| `/tasks/board`           | Board        | 4     |
+| `/tasks/plan`            | Plan         | 5     |
+| `/tasks/todo`            | To-do        | 3     |
 
 Toured as well, though nothing obliges them to be — a screen reached from
 a link rather than from the navigation:
 
 - `/kitchen/meals` — Meals
-- `/planner/review` — Review
 - `/search` — Search
 - `/settings/preferences` — Preferences
+- `/tasks/review` — Review
 
 ## What each one says
 
@@ -55,24 +55,6 @@ at the button that reopens it, so it is not listed here.
 6. Everything you have written
 7. What today looks like
 8. Yours to change
-
-### `/diary` — Diary
-
-1. What happened, in your words
-2. Tags and people, as you write
-3. Three wins
-4. Find it again by tag
-
-### `/diary/notebooks` — Notebooks
-
-1. For the things that are not a day
-2. One notebook per subject
-
-### `/diary/people` — People
-
-1. A person is not a tag
-2. A name is enough to start
-3. Every mention, in one place
 
 ### `/goals` — Goals
 
@@ -106,38 +88,23 @@ at the button that reopens it, so it is not listed here.
 3. And what it looks like
 4. An ingredient is a shopping item
 
-### `/planner/activities` — Activities
+### `/notebooks` — Notebooks
 
-1. The named things you keep doing
-2. Categories are the colours
-3. Retire one without losing it
+1. For the things that are not a day
+2. One notebook per subject
 
-### `/planner/board` — Board
+### `/notebooks/diary` — Diary
 
-1. Today, as cards
-2. Today, or everything else
-3. Drag a card, or carry it
-4. Urgency, interest, energy
+1. What happened, in your words
+2. Tags and people, as you write
+3. Three wins
+4. Find it again by tag
 
-### `/planner/plan` — Plan
+### `/notebooks/people` — People
 
-1. The shape of a normal week
-2. Six views of the same week
-3. Drag to make a block
-4. Where you are, and what shape
-5. A week you can lay down again
-
-### `/planner/review` — Review
-
-1. Closing a week
-2. Say it in your own words
-3. Nothing carries itself over
-
-### `/planner/todo` — To-do
-
-1. The things without a day yet
-2. One line is enough
-3. j and k move, e edits, c finishes
+1. A person is not a tag
+2. A name is enough to start
+3. Every mention, in one place
 
 ### `/search` — Search
 
@@ -167,3 +134,36 @@ at the button that reopens it, so it is not listed here.
 1. Two lists, one page
 2. Which list, and where it lives
 3. Bought, and back again
+
+### `/tasks/activities` — Activities
+
+1. The named things you keep doing
+2. Categories are the colours
+3. Retire one without losing it
+
+### `/tasks/board` — Board
+
+1. Today, as cards
+2. Today, or everything else
+3. Drag a card, or carry it
+4. Urgency, interest, energy
+
+### `/tasks/plan` — Plan
+
+1. The shape of a normal week
+2. Six views of the same week
+3. Drag to make a block
+4. Where you are, and what shape
+5. A week you can lay down again
+
+### `/tasks/review` — Review
+
+1. Closing a week
+2. Say it in your own words
+3. Nothing carries itself over
+
+### `/tasks/todo` — To-do
+
+1. The things without a day yet
+2. One line is enough
+3. j and k move, e edits, c finishes

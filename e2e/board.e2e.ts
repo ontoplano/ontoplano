@@ -16,7 +16,7 @@ import { visit } from './helpers/visit';
  */
 
 async function newCard(page: import('@playwright/test').Page, title: string) {
-	await visit(page, '/planner/board');
+	await visit(page, '/tasks/board');
 	await page.keyboard.press('n');
 	await page.fill('#card-form [name=heading]', title);
 	await page.getByRole('button', { name: 'Add card' }).click();
@@ -103,7 +103,7 @@ test.describe('the todo rail', () => {
 
 		// A card made on the Todo tab has no day, which is what puts it in the
 		// rail; one made on Today would be a block on today's board instead.
-		await visit(page, '/planner/board');
+		await visit(page, '/tasks/board');
 		await todoTab.click();
 		await page.keyboard.press('n');
 		await page.fill('#card-form [name=heading]', title);
@@ -259,7 +259,7 @@ function makeDataTransfer(page: import('@playwright/test').Page) {
  */
 test('n opens a new card and g switches the tab, from the keyboard', async ({ page }) => {
 	await register(page, `board-keys-${Date.now()}@test.invalid`);
-	await visit(page, '/planner/board');
+	await visit(page, '/tasks/board');
 
 	await page.keyboard.press('g');
 	await expect(page.getByRole('button', { name: 'To-do', exact: true })).toHaveClass(

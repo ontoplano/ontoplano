@@ -89,7 +89,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 			{
 				target: '[data-tour="nav"]',
 				title: 'One room per kind of thing',
-				body: 'Tasks hold your week, Notes hold what happened — the diary and your notebooks — and ideas hold what you thought of on the bus. Preferences reorders the rooms and puts away the ones you do not want.'
+				body: 'Tasks hold your week, Notebooks hold what you write — the diary included — and ideas hold what you thought of on the bus. Preferences reorders the rooms and puts away the ones you do not want.'
 			},
 			{
 				target: '[data-tour="mobile-bar"]',
@@ -124,12 +124,12 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/planner/plan': {
+	'/tasks/plan': {
 		label: 'Plan',
 		steps: [
 			{
 				title: 'The shape of a normal week',
-				body: 'Not a calendar of appointments — the blocks you mean to repeat. Everything else in the planner is built out of this.'
+				body: 'Not a calendar of appointments — the blocks you mean to repeat. Everything else in Tasks is built out of this.'
 			},
 			{
 				target: '[data-tour="planner-tabs"]',
@@ -154,7 +154,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/planner/board': {
+	'/tasks/board': {
 		label: 'Board',
 		steps: [
 			{
@@ -179,7 +179,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/planner/todo': {
+	'/tasks/todo': {
 		label: 'To-do',
 		steps: [
 			{
@@ -199,7 +199,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/planner/activities': {
+	'/tasks/activities': {
 		label: 'Activities',
 		steps: [
 			{
@@ -219,7 +219,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/planner/review': {
+	'/tasks/review': {
 		label: 'Review',
 		steps: [
 			{
@@ -264,7 +264,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/diary': {
+	'/notebooks/diary': {
 		label: 'Diary',
 		steps: [
 			{
@@ -289,7 +289,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/diary/people': {
+	'/notebooks/people': {
 		label: 'People',
 		steps: [
 			{
@@ -309,7 +309,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/diary/notebooks': {
+	'/notebooks': {
 		label: 'Notebooks',
 		steps: [
 			{
@@ -509,7 +509,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
  * The tour for a path, or nothing.
  *
  * Exact first, then the longest registered path this one sits under — so a
- * notebook's own page is toured as Notebooks, while `/diary/people` keeps its
+ * notebook's own page is toured as Notebooks, while `/notebooks/people` keeps its
  * own tour rather than falling back to the diary's.
  */
 export function tutorialFor(path: string): Tutorial | null {

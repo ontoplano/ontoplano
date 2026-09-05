@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	if (passwordPending(locals.user!.id)) redirect(302, '/welcome/password');
 
 	// Coming back here after setup would offer to seed a second starter week.
-	if (!needsFirstRun(locals.user!.id)) redirect(302, '/planner/plan');
+	if (!needsFirstRun(locals.user!.id)) redirect(302, '/tasks/plan');
 
 	return {
 		// For the assistant step's prompt: this instance's own address, because
@@ -88,6 +88,6 @@ export const actions: Actions = {
 			return toActionFailure(e);
 		}
 
-		redirect(303, '/planner/plan?welcome=1');
+		redirect(303, '/tasks/plan?welcome=1');
 	}
 };

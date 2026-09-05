@@ -37,7 +37,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 
-	'/planner/board': {
+	'/tasks/board': {
 		label: 'Board',
 		shortcuts: [
 			{ key: 'h', action: 'prev-column', description: 'Move between columns' },
@@ -63,7 +63,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 
-	'/planner/plan': {
+	'/tasks/plan': {
 		label: 'Plan',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate slots' },
@@ -88,7 +88,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'p', action: 'copy-to-days', description: 'Copy to days (multiselect)' }
 		]
 	},
-	'/planner/activities': {
+	'/tasks/activities': {
 		label: 'Activities',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate list' },
@@ -105,7 +105,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: '9', action: 'filter-9', description: 'Toggle category filter' }
 		]
 	},
-	'/planner/todo': {
+	'/tasks/todo': {
 		label: 'To-do',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate list' },
@@ -117,7 +117,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'x', action: 'delete', description: 'Ask to delete' }
 		]
 	},
-	'/diary': {
+	'/notebooks/diary': {
 		label: 'Diary',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate entries' },
@@ -162,11 +162,11 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'Enter', action: 'toggle-expand', description: 'Expand/collapse' }
 		]
 	},
-	'/diary/notebooks': {
+	'/notebooks': {
 		label: 'Notebooks',
 		shortcuts: [{ key: 'n', action: 'new', description: 'New notebook' }]
 	},
-	'/diary/people': {
+	'/notebooks/people': {
 		label: 'People',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate people' },

@@ -207,8 +207,8 @@ describe('the sections a person can put away', () => {
 
 describe('which section a page belongs to', () => {
 	test('is read off the path, sub-pages included', () => {
-		expect(sectionFor('/planner')).toBe('planner');
-		expect(sectionFor('/planner/todo')).toBe('planner');
+		expect(sectionFor('/tasks')).toBe('planner');
+		expect(sectionFor('/tasks/todo')).toBe('planner');
 		expect(sectionFor('/shopping/list/3')).toBe('shopping');
 		expect(sectionFor('/kitchen')).toBe('kitchen');
 	});

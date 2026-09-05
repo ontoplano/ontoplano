@@ -16,7 +16,7 @@ test('a form action posted without a session redirects to the login page', async
 }) => {
 	const request = await playwright.request.newContext({ baseURL: ORIGIN });
 
-	const res = await request.post('/diary/notebooks?/create', {
+	const res = await request.post('/notebooks?/create', {
 		headers: { Origin: ORIGIN, 'x-sveltekit-action': 'true' },
 		form: { heading: 'written by nobody' },
 		maxRedirects: 0
@@ -33,7 +33,7 @@ test('a plain form submit without a session redirects to the login page', async 
 }) => {
 	const request = await playwright.request.newContext({ baseURL: ORIGIN });
 
-	const res = await request.post('/planner/todo?/create', {
+	const res = await request.post('/tasks/todo?/create', {
 		headers: { Origin: ORIGIN, Accept: 'text/html' },
 		form: { heading: 'written by nobody' },
 		maxRedirects: 0

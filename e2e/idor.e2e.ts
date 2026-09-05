@@ -129,10 +129,10 @@ test.describe('one account cannot reach another account by id', () => {
 		},
 		{
 			name: 'diary entry',
-			page: '/diary',
+			page: '/notebooks/diary',
 			payloadKey: 'entries',
-			create: { path: '/diary?/create', form: { content: "alice's entry" } },
-			attack: (id) => ({ path: '/diary?/update', form: { id, content: 'taken' } })
+			create: { path: '/notebooks/diary?/create', form: { content: "alice's entry" } },
+			attack: (id) => ({ path: '/notebooks/diary?/update', form: { id, content: 'taken' } })
 		},
 		{
 			name: 'shopping item',
@@ -149,10 +149,10 @@ test.describe('one account cannot reach another account by id', () => {
 		},
 		{
 			name: 'todo',
-			page: '/planner/todo',
+			page: '/tasks/todo',
 			payloadKey: 'todos',
-			create: { path: '/planner/todo?/create', form: { heading: "alice's todo" } },
-			attack: (id) => ({ path: '/planner/todo?/update', form: { id, heading: 'taken' } })
+			create: { path: '/tasks/todo?/create', form: { heading: "alice's todo" } },
+			attack: (id) => ({ path: '/tasks/todo?/update', form: { id, heading: 'taken' } })
 		},
 		{
 			name: 'habit',
@@ -183,33 +183,33 @@ test.describe('one account cannot reach another account by id', () => {
 		},
 		{
 			name: 'activity',
-			page: '/planner/activities',
+			page: '/tasks/activities',
 			payloadKey: 'activities',
 			create: {
-				path: '/planner/activities?/create',
+				path: '/tasks/activities?/create',
 				form: { label: "alice's activity", categoryId: '' }
 			},
 			attack: (id) => ({
-				path: '/planner/activities?/toggleActive',
+				path: '/tasks/activities?/toggleActive',
 				form: { id }
 			})
 		},
 		{
 			name: 'weekly slot',
-			page: '/planner/plan',
+			page: '/tasks/plan',
 			payloadKey: 'slots',
 			create: {
-				path: '/planner/plan?/create',
+				path: '/tasks/plan?/create',
 				form: { weekday: '1', startTime: '09:00', mode: 'category', categoryId: '' }
 			},
-			attack: (id) => ({ path: '/planner/plan?/delete', form: { id } })
+			attack: (id) => ({ path: '/tasks/plan?/delete', form: { id } })
 		},
 		{
 			name: 'planning scheme',
-			page: '/planner/plan',
+			page: '/tasks/plan',
 			payloadKey: 'schemes',
-			create: { path: '/planner/plan?/saveScheme', form: { label: "alice's scheme" } },
-			attack: (id) => ({ path: '/planner/plan?/loadScheme', form: { schemeId: id } })
+			create: { path: '/tasks/plan?/saveScheme', form: { label: "alice's scheme" } },
+			attack: (id) => ({ path: '/tasks/plan?/loadScheme', form: { schemeId: id } })
 		},
 		{
 			name: 'quote',
@@ -220,17 +220,17 @@ test.describe('one account cannot reach another account by id', () => {
 		},
 		{
 			name: 'person',
-			page: '/diary/people',
+			page: '/notebooks/people',
 			payloadKey: 'people',
-			create: { path: '/diary/people?/create', form: { label: "alice's friend" } },
-			attack: (id) => ({ path: '/diary/people?/update', form: { id, label: 'taken' } })
+			create: { path: '/notebooks/people?/create', form: { label: "alice's friend" } },
+			attack: (id) => ({ path: '/notebooks/people?/update', form: { id, label: 'taken' } })
 		},
 		{
 			name: 'notebook',
-			page: '/diary/notebooks',
+			page: '/notebooks',
 			payloadKey: 'notebooks',
-			create: { path: '/diary/notebooks?/create', form: { heading: "alice's notebook" } },
-			attack: (id) => ({ path: '/diary/notebooks?/update', form: { id, heading: 'taken' } })
+			create: { path: '/notebooks?/create', form: { heading: "alice's notebook" } },
+			attack: (id) => ({ path: '/notebooks?/update', form: { id, heading: 'taken' } })
 		},
 		{
 			name: 'api token',
@@ -266,14 +266,14 @@ test.describe('one account cannot reach another account by id', () => {
 			// A category is what half the other entities hang off, so reaching one
 			// would be reaching into everything attached to it.
 			name: 'category',
-			page: '/planner/activities',
+			page: '/tasks/activities',
 			payloadKey: 'categories',
 			create: {
-				path: '/planner/activities?/createCategory',
+				path: '/tasks/activities?/createCategory',
 				form: { label: "alice's category", color: '#1d4ed8' }
 			},
 			attack: (id) => ({
-				path: '/planner/activities?/updateCategory',
+				path: '/tasks/activities?/updateCategory',
 				form: { id, label: 'taken', color: '#b91c1c' }
 			})
 		}
@@ -298,7 +298,7 @@ test.describe('one account cannot reach another account by id', () => {
 			// left the field blank.
 			const form = { ...c.create.form };
 			if ('categoryId' in form && form.categoryId === '')
-				form.categoryId = await firstId(request, alice, '/planner/activities', 'categories');
+				form.categoryId = await firstId(request, alice, '/tasks/activities', 'categories');
 
 			const created = await action(request, alice, c.create.path, form);
 			// A create that ends in a redirect — the recipe editor opens on the new

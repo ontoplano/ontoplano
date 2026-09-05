@@ -69,7 +69,7 @@
 			confirmDelete = null;
 			return;
 		}
-		const action = getAction('/diary/people', e.key);
+		const action = getAction('/notebooks/people', e.key);
 		if (action === 'new') {
 			e.preventDefault();
 			openCreate();
@@ -103,7 +103,7 @@
 		<button onclick={openCreate} class="btn btn-primary btn-sm" data-tour="people-new">
 			<Icon name="plus" /> New person
 			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
-				>{keyFor('/diary/people', 'new')}</kbd
+				>{keyFor('/notebooks/people', 'new')}</kbd
 			>
 		</button>
 	</div>
@@ -179,7 +179,7 @@
 							</button>
 
 							<a
-								href={resolve(`/diary/people?person=${person.id}`)}
+								href={resolve(`/notebooks/people?person=${person.id}`)}
 								class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
 							>
 								{person.name}

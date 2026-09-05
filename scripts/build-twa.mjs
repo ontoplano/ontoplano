@@ -184,7 +184,7 @@ const twaManifest = {
 		{
 			name: 'Board',
 			shortName: 'Board',
-			url: `${origin}/planner/board`,
+			url: `${origin}/tasks/board`,
 			chosenIconUrl: `${assetOrigin}/icons/shortcut-board.png`
 		},
 		{

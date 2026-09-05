@@ -57,7 +57,7 @@ describe('finding things', () => {
 
 	test('a hit says where it came from', () => {
 		const hit = search.search(ctx, 'tiler').find((h) => h.kind === 'entry')!;
-		expect(hit.href).toMatch(/^\/diary/);
+		expect(hit.href).toMatch(/^\/notebooks\/diary/);
 		expect(hit.snippet.toLowerCase()).toContain('tiler');
 	});
 });

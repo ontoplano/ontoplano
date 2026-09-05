@@ -28,7 +28,7 @@
 	<p class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
 		{#if notebook}
 			<a
-				href={resolve('/diary/notebooks/[id]', { id: String(notebook.id) })}
+				href={resolve('/notebooks/[id]', { id: String(notebook.id) })}
 				class="inline-flex items-center gap-1 hover:text-gray-900 hover:underline"
 				title="Notebook"
 			>

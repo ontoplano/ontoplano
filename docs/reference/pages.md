@@ -21,10 +21,6 @@ write surface for everything else; both end up calling the same
 | `/buy`                          | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/data/[slug]`                  | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/demo`                         | `default`                                                                                                                                                                                                                                                                                                                                                                           |
-| `/diary`                        | `create`, `createWins`, `update`, `delete`                                                                                                                                                                                                                                                                                                                                          |
-| `/diary/notebooks`              | —                                                                                                                                                                                                                                                                                                                                                                                   |
-| `/diary/notebooks/[id]`         | —                                                                                                                                                                                                                                                                                                                                                                                   |
-| `/diary/people`                 | `create`, `update`, `setPicture`, `removePicture`, `delete`                                                                                                                                                                                                                                                                                                                         |
 | `/goals`                        | `createArea`, `deleteArea`, `create`, `update`, `setProgress`, `close`, `setLinks`, `remove`                                                                                                                                                                                                                                                                                        |
 | `/health/habits`                | `create`, `update`, `delete`, `logOccurrence`, `toggleOccurrence`, `updateOccurrence`, `deleteOccurrence`                                                                                                                                                                                                                                                                           |
 | `/ideas`                        | `create`, `update`, `delete`, `toggleApplied`, `updateAppliedNote`, `toggleFavorite`                                                                                                                                                                                                                                                                                                |
@@ -39,12 +35,11 @@ write surface for everything else; both end up calling the same
 | `/mail/weekly-review/off`       | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/newsletter/confirm`           | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/newsletter/off`               | —                                                                                                                                                                                                                                                                                                                                                                                   |
+| `/notebooks`                    | —                                                                                                                                                                                                                                                                                                                                                                                   |
+| `/notebooks/[id]`               | —                                                                                                                                                                                                                                                                                                                                                                                   |
+| `/notebooks/diary`              | `create`, `createWins`, `update`, `delete`                                                                                                                                                                                                                                                                                                                                          |
+| `/notebooks/people`             | `create`, `update`, `setPicture`, `removePicture`, `delete`                                                                                                                                                                                                                                                                                                                         |
 | `/offline`                      | —                                                                                                                                                                                                                                                                                                                                                                                   |
-| `/planner/activities`           | `create`, `update`, `toggleActive`, `delete`, `createCategory`, `updateCategory`, `deleteCategory`                                                                                                                                                                                                                                                                                  |
-| `/planner/board`                | `setStatus`, `reorder`, `schedule`, `promote`, `demote`, `createTodo`, `setRatings`, `remind`, `unremind`, `editInstance`, `resolveActivity`, `deleteInstance`, `deleteTodo`                                                                                                                                                                                                        |
-| `/planner/plan`                 | `create`, `update`, `toggleActive`, `delete`, `bulkDelete`, `copyToWeekdays`, `addCalendar`, `removeCalendar`, `applyTemplate`, `saveScheme`, `loadScheme`, `deleteScheme`, `renameScheme`, `scheduleTodo`, `unscheduleBlock`, `convertRepeat`, `moveOccurrence`, `setStatus`, `suppress`, `unsuppress`, `createExceptional`, `updateExceptional`, `deleteExceptional`, `importCsv` |
-| `/planner/review`               | `saveLines`, `keepStale`, `completeStale`, `dropStale`, `resolve`, `carry`                                                                                                                                                                                                                                                                                                          |
-| `/planner/todo`                 | `create`, `update`, `setStatus`, `schedule`, `delete`, `delegate`                                                                                                                                                                                                                                                                                                                   |
 | `/search`                       | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/settings/account`             | `setWeeklyReviewMail`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `delete`                                                                                                                                                                                                                                                                              |
 | `/settings/account/import`      | `importTasks`, `importVault`, `importAccount`                                                                                                                                                                                                                                                                                                                                       |
@@ -56,6 +51,11 @@ write surface for everything else; both end up calling the same
 | `/settings/preferences`         | `setErrorReports`, `saveCurrency`, `saveGridHours`, `saveMenu`, `resetMenu`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setTheme`, `saveWeek`                                                                                                                                                                                              |
 | `/shopping`                     | `saveCategories`, `createCategory`, `create`, `update`, `toggleBought`, `paid`, `delete`, `restock`, `toggleSnoozed`                                                                                                                                                                                                                                                                |
 | `/start`                        | `checkout`                                                                                                                                                                                                                                                                                                                                                                          |
+| `/tasks/activities`             | `create`, `update`, `toggleActive`, `delete`, `createCategory`, `updateCategory`, `deleteCategory`                                                                                                                                                                                                                                                                                  |
+| `/tasks/board`                  | `setStatus`, `reorder`, `schedule`, `promote`, `demote`, `createTodo`, `setRatings`, `remind`, `unremind`, `editInstance`, `resolveActivity`, `deleteInstance`, `deleteTodo`                                                                                                                                                                                                        |
+| `/tasks/plan`                   | `create`, `update`, `toggleActive`, `delete`, `bulkDelete`, `copyToWeekdays`, `addCalendar`, `removeCalendar`, `applyTemplate`, `saveScheme`, `loadScheme`, `deleteScheme`, `renameScheme`, `scheduleTodo`, `unscheduleBlock`, `convertRepeat`, `moveOccurrence`, `setStatus`, `suppress`, `unsuppress`, `createExceptional`, `updateExceptional`, `deleteExceptional`, `importCsv` |
+| `/tasks/review`                 | `saveLines`, `keepStale`, `completeStale`, `dropStale`, `resolve`, `carry`                                                                                                                                                                                                                                                                                                          |
+| `/tasks/todo`                   | `create`, `update`, `setStatus`, `schedule`, `delete`, `delegate`                                                                                                                                                                                                                                                                                                                   |
 | `/welcome`                      | `assistantToken`, `finish`                                                                                                                                                                                                                                                                                                                                                          |
 | `/welcome/password`             | `default`                                                                                                                                                                                                                                                                                                                                                                           |
 
@@ -130,18 +130,6 @@ So the wait has a screen. It also has somewhere to go: with the work behind
 a page the visitor is already looking at, the seed can be made slower under
 load without anybody experiencing a hang.
 
-### `/diary/notebooks`
-
-The query value that stands for the orphaned notes rather than a notebook.
-
-### `/diary/notebooks/[id]`
-
-One notebook, with nothing else on the page.
-
-The index shows a notebook beside the list of them, which is the right shape
-for moving between subjects and the wrong one for sitting inside a single
-one. This is the same notebook with the whole width.
-
 ### `/kitchen/meals`
 
 The seven days from a date, as `YYYY-MM-DD`.
@@ -210,6 +198,18 @@ One click, no session, no confirmation step. A way out with a form in front
 of it is the thing that makes somebody press the spam button instead, which
 costs the domain far more than the address ever did.
 
+### `/notebooks`
+
+The query value that stands for the orphaned notes rather than a notebook.
+
+### `/notebooks/[id]`
+
+One notebook, with nothing else on the page.
+
+The index shows a notebook beside the list of them, which is the right shape
+for moving between subjects and the wrong one for sitting inside a single
+one. This is the same notebook with the whole width.
+
 ### `/offline`
 
 Public on purpose.
@@ -217,76 +217,6 @@ Public on purpose.
 The layout guard sends signed-out visitors to /login, but this page is what a
 failed navigation falls back to — including one where the session could not be
 checked because there is no network.
-
-### `/planner/board`
-
-Next sensible start time on a day.
-
-Today gets the next half hour from now so a promoted todo lands ahead of you
-rather than in the past; another day starts at nine.
-
-**`reorder`**
-
-Where a card sits within its column.
-
-Only todos have a position to remember — an occurrence's place is its time
-of day, and letting a drag override that would put the board and the
-calendar into disagreement over the same task.
-
-**`schedule`**
-
-Dragging between the two tabs: a todo gains a day, or gives one up.
-
-**`promote`**
-
-Turn a todo into a real scheduled task.
-
-A todo pulled onto a day stops being a todo: it becomes a one-off block
-with a time, which is what makes it show up on the grid, in the tracker,
-and against a goal. The row moves rather than being copied, so there is
-never a todo and a task that are secretly the same thing.
-
-**`demote`**
-
-The reverse: a one-off goes back to being an undated todo.
-
-**`remind`**
-
-"Remind me before this one." A lead time, not a clock reading.
-
-**`resolveActivity`**
-
-Which activity a category-shaped block turned out to be.
-
-### `/planner/plan`
-
-What the browser last knew about its own width.
-
-Not a preference and not a setting — a fact about the screen, written by the
-page that can see one, read by the render that cannot.
-
-**`scheduleTodo`**
-
-Drop an undated todo onto the grid: it becomes a block at that hour.
-
-**`unscheduleBlock`**
-
-A block dragged off the grid and back onto the todo strip.
-
-The reverse of `scheduleTodo`, and the reason the strip is a drop target:
-scheduling used to be one-way, so changing your mind meant deleting the
-block and typing it in again.
-
-### `/planner/review`
-
-Last week by default.
-
-You review a week once it is over; landing on the current one would invite
-writing three lines about a Wednesday.
-
-**`resolve`**
-
-Done, or skipped — the two answers that are not "carry it forward".
 
 ### `/settings/account`
 
@@ -462,6 +392,76 @@ The billing-hold gate in hooks.server.ts routes a verified account with no
 plan yet to this page, so the terms are read BEFORE any payment window
 opens — /buy is just the overlay's backdrop. Yearly leads; it is the one
 worth taking.
+
+### `/tasks/board`
+
+Next sensible start time on a day.
+
+Today gets the next half hour from now so a promoted todo lands ahead of you
+rather than in the past; another day starts at nine.
+
+**`reorder`**
+
+Where a card sits within its column.
+
+Only todos have a position to remember — an occurrence's place is its time
+of day, and letting a drag override that would put the board and the
+calendar into disagreement over the same task.
+
+**`schedule`**
+
+Dragging between the two tabs: a todo gains a day, or gives one up.
+
+**`promote`**
+
+Turn a todo into a real scheduled task.
+
+A todo pulled onto a day stops being a todo: it becomes a one-off block
+with a time, which is what makes it show up on the grid, in the tracker,
+and against a goal. The row moves rather than being copied, so there is
+never a todo and a task that are secretly the same thing.
+
+**`demote`**
+
+The reverse: a one-off goes back to being an undated todo.
+
+**`remind`**
+
+"Remind me before this one." A lead time, not a clock reading.
+
+**`resolveActivity`**
+
+Which activity a category-shaped block turned out to be.
+
+### `/tasks/plan`
+
+What the browser last knew about its own width.
+
+Not a preference and not a setting — a fact about the screen, written by the
+page that can see one, read by the render that cannot.
+
+**`scheduleTodo`**
+
+Drop an undated todo onto the grid: it becomes a block at that hour.
+
+**`unscheduleBlock`**
+
+A block dragged off the grid and back onto the todo strip.
+
+The reverse of `scheduleTodo`, and the reason the strip is a drop target:
+scheduling used to be one-way, so changing your mind meant deleting the
+block and typing it in again.
+
+### `/tasks/review`
+
+Last week by default.
+
+You review a week once it is over; landing on the current one would invite
+writing three lines about a Wednesday.
+
+**`resolve`**
+
+Done, or skipped — the two answers that are not "carry it forward".
 
 ### `/welcome/password`
 

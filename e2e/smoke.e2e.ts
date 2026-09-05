@@ -17,17 +17,18 @@ import { visit } from './helpers/visit';
  */
 const ROUTES = [
 	'/',
-	'/planner/plan',
-	'/planner/plan?view=day',
-	'/planner/plan?view=month',
-	'/planner/board',
-	'/planner/todo',
-	'/planner/activities',
-	'/planner/review',
+	'/tasks/plan',
+	'/tasks/plan?view=day',
+	'/tasks/plan?view=month',
+	'/tasks/board',
+	'/tasks/todo',
+	'/tasks/activities',
+	'/tasks/review',
 	'/goals',
-	'/diary',
-	'/diary/notebooks',
-	'/diary/people',
+	'/notebooks',
+	'/notebooks/diary',
+	'/notebooks',
+	'/notebooks/people',
 	'/ideas',
 	'/health/habits',
 	'/shopping',
@@ -123,7 +124,7 @@ test('a long unbroken name does not push its controls off the screen', async ({ 
 	await page.setViewportSize({ width: 390, height: 844 });
 	await register(page, `longword-${Date.now()}@test.invalid`);
 
-	await visit(page, '/diary/notebooks');
+	await visit(page, '/notebooks');
 	await page.getByRole('button', { name: 'New notebook' }).first().click();
 	await page.fill('[name=heading]', 'a'.repeat(64));
 	await page

@@ -118,11 +118,11 @@
 	 * People and Notebooks both belong to the Diary section, so keying the
 	 * background off the section alone drew a journal behind all three — and the
 	 * whole point of the wash is that a room looks like itself. Longest prefix
-	 * wins, so `/diary/notebooks` beats `/diary`.
+	 * wins, so `/notebooks` beats `/diary`.
 	 */
 	const ROUTE_GLYPH: [string, IconName][] = [
-		['/diary/notebooks', 'notebook'],
-		['/diary/people', 'user'],
+		['/notebooks', 'notebook'],
+		['/notebooks/people', 'user'],
 		['/kitchen/recipes', 'utensils'],
 		['/kitchen/meals', 'utensils'],
 		// Settings belongs to no room, so it fell through to home — and the
@@ -140,10 +140,15 @@
 
 	function isNavActive(href: string): boolean {
 		if (href === '/') return page.url.pathname === '/';
-		// People and notebooks sit beside the journal in the bar, not under it, so
-		// Diary means the entries and nothing else.
-		if (href === '/diary') return page.url.pathname === '/diary';
-		if (href === '/planner/plan') return page.url.pathname.startsWith('/planner');
+		// People sits beside the writing in the bar, not under it, so the
+		// Notebooks entry means the notebooks and the diary and nothing else.
+		if (href === '/notebooks')
+			return (
+				page.url.pathname === '/notebooks' ||
+				(page.url.pathname.startsWith('/notebooks/') &&
+					!page.url.pathname.startsWith('/notebooks/people'))
+			);
+		if (href === '/tasks/plan') return page.url.pathname.startsWith('/tasks');
 		if (href === '/goals') return page.url.pathname.startsWith('/goals');
 		if (href === '/health/habits') return page.url.pathname.startsWith('/health');
 		return page.url.pathname === href;

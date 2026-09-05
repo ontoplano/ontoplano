@@ -16,11 +16,11 @@
 	 * and it missed one-off blocks entirely. The old route redirects.
 	 */
 	const tabs = [
-		{ href: resolve('/planner/plan'), label: 'Plan' },
-		{ href: resolve('/planner/board'), label: 'Board' },
-		{ href: resolve('/planner/todo'), label: 'To-do' },
-		{ href: resolve('/planner/activities'), label: 'Activities' },
-		{ href: resolve('/planner/review'), label: 'Review' }
+		{ href: resolve('/tasks/plan'), label: 'Plan' },
+		{ href: resolve('/tasks/board'), label: 'Board' },
+		{ href: resolve('/tasks/todo'), label: 'To-do' },
+		{ href: resolve('/tasks/activities'), label: 'Activities' },
+		{ href: resolve('/tasks/review'), label: 'Review' }
 	];
 
 	function isActive(href: string): boolean {

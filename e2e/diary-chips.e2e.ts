@@ -12,7 +12,7 @@ import { visit } from './helpers/visit';
  */
 test('people wear an @ and tags wear a #', async ({ page }) => {
 	await register(page, `chips-${Date.now()}@test.invalid`);
-	await visit(page, '/diary');
+	await visit(page, '/notebooks/diary');
 
 	// The form is a modal; the page's own button opens it.
 	await page.locator('[data-tour="diary-new"]').click();

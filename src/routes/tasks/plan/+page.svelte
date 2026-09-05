@@ -1129,7 +1129,7 @@
 	function goToRange(from: string | null) {
 		const parts: string[] = [`view=${viewMode}`];
 		if (from) parts.push(`from=${from}`);
-		goto(resolve(`/planner/plan?${parts.join('&')}`));
+		goto(resolve(`/tasks/plan?${parts.join('&')}`));
 	}
 
 	function goToPrevWeek() {
@@ -1182,7 +1182,7 @@
 		)
 			return;
 
-		const action = getAction('/planner/plan', e.key);
+		const action = getAction('/tasks/plan', e.key);
 		if (!action) {
 			if (showCopyPanel) {
 				return;
@@ -1385,7 +1385,7 @@
 		pendingView = mode;
 		const parts: string[] = [`view=${mode}`];
 		if (!data.range.isCurrent) parts.push(`from=${data.range.from}`);
-		goto(resolve(`/planner/plan?${parts.join('&')}`), {
+		goto(resolve(`/tasks/plan?${parts.join('&')}`), {
 			replaceState: true,
 			keepFocus: true,
 			noScroll: true

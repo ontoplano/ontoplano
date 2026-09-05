@@ -20,7 +20,7 @@ export function reminderHref(reminder: {
 	subjectId?: number | null;
 }): string {
 	if (reminder.subjectKind === 'person' && reminder.subjectId) {
-		return `${resolve('/diary/people')}?person=${reminder.subjectId}`;
+		return `${resolve('/notebooks/people')}?person=${reminder.subjectId}`;
 	}
-	return `${resolve('/planner/board')}?date=${reminder.remindAt.slice(0, 10)}`;
+	return `${resolve('/tasks/board')}?date=${reminder.remindAt.slice(0, 10)}`;
 }

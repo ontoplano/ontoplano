@@ -170,7 +170,7 @@
 		)
 			return;
 
-		const action = getAction('/planner/todo', e.key);
+		const action = getAction('/tasks/todo', e.key);
 		if (!action) return;
 		e.preventDefault();
 
@@ -255,7 +255,7 @@
 		<button onclick={startNew} class="btn btn-primary btn-sm" data-tour="todo-new">
 			<Icon name="plus" /> New to-do
 			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
-				>{keyFor('/planner/todo', 'new')}</kbd
+				>{keyFor('/tasks/todo', 'new')}</kbd
 			>
 		</button>
 	</div>

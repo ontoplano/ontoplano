@@ -127,7 +127,7 @@ export async function deliverDueReminders(now = new Date()): Promise<{
  */
 function hrefFor(reminder: { subjectKind: string; subjectId: number | null; remindAt: string }) {
 	if (reminder.subjectKind === 'person' && reminder.subjectId) {
-		return `/diary/people?person=${reminder.subjectId}`;
+		return `/notebooks/people?person=${reminder.subjectId}`;
 	}
-	return `/planner/board?date=${reminder.remindAt.slice(0, 10)}`;
+	return `/tasks/board?date=${reminder.remindAt.slice(0, 10)}`;
 }

@@ -121,7 +121,7 @@ test('a note takes one too, and says why when it will not', async ({ page }) => 
 	await page.setViewportSize({ width: 1280, height: 1000 });
 	await register(page, `note-pics-${Date.now()}@test.invalid`);
 
-	await visit(page, '/diary');
+	await visit(page, '/notebooks/diary');
 	await page
 		.getByRole('button', { name: /new entry/i })
 		.first()
@@ -145,7 +145,7 @@ test('a person gets one face, and it shows in the list', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 1000 });
 	await register(page, `face-${Date.now()}@test.invalid`);
 
-	await visit(page, '/diary/people');
+	await visit(page, '/notebooks/people');
 	await page
 		.getByRole('button', { name: /new person/i })
 		.first()
@@ -169,7 +169,7 @@ test('a note written in a notebook takes one too', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 1000 });
 	await register(page, `nb-pics-${Date.now()}@test.invalid`);
 
-	await visit(page, '/diary/notebooks');
+	await visit(page, '/notebooks');
 	await page
 		.getByRole('button', { name: /new notebook/i })
 		.first()
@@ -190,7 +190,7 @@ test('a person’s face is the way in to their picture', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 1000 });
 	await register(page, `face-open-${Date.now()}@test.invalid`);
 
-	await visit(page, '/diary/people');
+	await visit(page, '/notebooks/people');
 	await page
 		.getByRole('button', { name: /new person/i })
 		.first()

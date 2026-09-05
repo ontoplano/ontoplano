@@ -1336,13 +1336,13 @@ What a note becomes:
 - A checklist note (`listContent`) becomes one todo per line, which is what
   its ticks already were. The note's title, if it has one, goes in the notes
   of each so the line keeps its context.
-- A text note becomes one todo: the title if there is one, the first line
-  otherwise, and the body in the notes.
+- A text note becomes a notebook note — it is writing, not a thing to do,
+  and a body buried in a todo's notes field is a body nobody reads again.
+  The title becomes a heading over it, and Keep's labels come across as
+  tags.
 
-Todos, and not diary entries or ideas, for the same reason the other two
-imports land there: it is one shape, in one notebook, and deleting that
-notebook undoes the whole thing. Sorting somebody's four hundred notes into
-the right rooms of a new app is a job for them, not for a parser guessing.
+Both land in the one notebook, so deleting that notebook still undoes the
+whole import.
 
 Trashed notes are never imported. Archived ones are, because archived in
 Keep means "dealt with but keep it", which is not the same as deleted.
@@ -1372,6 +1372,7 @@ notebook titles.
 ### Types
 
 - `ImportedTask` — One task, in the shape both sources are reduced to before anything is written.
+- `ImportedNote` — A text note, which is writing rather than a thing to do.
 - `ParseResult`
 - `ImportResult`
 - `ImportSource`

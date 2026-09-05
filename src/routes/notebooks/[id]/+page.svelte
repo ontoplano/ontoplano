@@ -37,7 +37,7 @@
 	<div class="flex flex-wrap items-start justify-between gap-3">
 		<div class="min-w-0">
 			<a
-				href={resolve('/diary/notebooks')}
+				href={resolve('/notebooks')}
 				class="text-xs text-gray-500 hover:text-gray-900 hover:underline"
 			>
 				&larr; All notebooks

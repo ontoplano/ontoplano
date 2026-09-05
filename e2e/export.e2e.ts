@@ -42,7 +42,7 @@ test('the allowance updates the moment an export lands', async ({ page }) => {
  * a different product from Google Tasks and arrives as one file per note —
  * is recognised as itself.
  */
-test('a Google Keep export lands as todos in a notebook of its own', async ({ page }) => {
+test('a Google Keep export lands as todos and notes in a notebook of its own', async ({ page }) => {
 	await register(page, `import-keep-${Date.now()}@test.invalid`);
 
 	// Reached from the account page rather than by knowing the address.
@@ -63,11 +63,13 @@ test('a Google Keep export lands as todos in a notebook of its own', async ({ pa
 		.getByRole('button', { name: 'Import' })
 		.click();
 
-	await expect(page.getByText(/Imported 2 into/)).toBeVisible();
+	// The checklist line arrived as a task, the text note as a note — and the
+	// message says which was which. `.first()`: the toast says it too.
+	await expect(page.getByText(/Imported 1 task and 1 note into/).first()).toBeVisible();
 	await expect(page.getByText(/Google Keep/).first()).toBeVisible();
 
-	// And they are really there, as todos, in one notebook that undoes it.
-	await visit(page, '/diary/notebooks');
+	// And they are really there, in one notebook that undoes it.
+	await visit(page, '/notebooks');
 	await expect(page.getByText('Google Keep').first()).toBeVisible();
 });
 
@@ -98,10 +100,10 @@ test('an Obsidian vault lands as entries in a notebook of its own', async ({ pag
 
 	// Two of the three: the empty one is named as left behind rather than
 	// silently dropped.
-	await expect(page.getByText(/Imported 2 notes into/)).toBeVisible();
-	await expect(page.getByText(/scratch\.md/)).toBeVisible();
+	await expect(page.getByText(/Imported 2 notes into/).first()).toBeVisible();
+	await expect(page.getByText(/scratch\.md/).first()).toBeVisible();
 
-	await visit(page, '/diary/notebooks');
+	await visit(page, '/notebooks');
 	await expect(page.getByText('Obsidian').first()).toBeVisible();
 
 	rmSync(vault, { recursive: true, force: true });

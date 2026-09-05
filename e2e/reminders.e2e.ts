@@ -29,7 +29,7 @@ import { visit } from './helpers/visit';
  * it.
  */
 async function dueReminder(page: import('@playwright/test').Page, message: string) {
-	await visit(page, '/planner/plan');
+	await visit(page, '/tasks/plan');
 
 	const now = new Date();
 	const pad = (n: number) => String(n).padStart(2, '0');
@@ -55,7 +55,7 @@ async function dueReminder(page: import('@playwright/test').Page, message: strin
 	// One post: the block and the "remind me five minutes before it" together.
 	// A block that started twenty minutes ago therefore has a reminder that fell
 	// due fifteen minutes ago, which is exactly the state being tested.
-	const created = await page.request.post('/planner/plan?/createExceptional', {
+	const created = await page.request.post('/tasks/plan?/createExceptional', {
 		// The origin header is what SvelteKit checks a form POST against; a
 		// request made through the API client does not carry one by itself.
 		headers: { origin: new URL(page.url()).origin },
@@ -77,7 +77,7 @@ async function dueReminder(page: import('@playwright/test').Page, message: strin
 	 * due. Opening the day is what turns it into one, which is also what happens
 	 * in life: nobody sets a reminder for a day they never open.
 	 */
-	await visit(page, `/planner/board?date=${today}`);
+	await visit(page, `/tasks/board?date=${today}`);
 }
 
 test('a due reminder arrives on the page, and as a notification', async ({ page, context }) => {

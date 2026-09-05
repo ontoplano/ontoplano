@@ -19,7 +19,7 @@ test.describe('with a finger', () => {
 
 	test('press and hold on the grid opens a new block there', async ({ page }) => {
 		await register(page, `plan-hold-${Date.now()}@test.invalid`);
-		await visit(page, '/planner/plan');
+		await visit(page, '/tasks/plan');
 
 		const body = page.locator('.ec-body').first();
 		await expect(body).toBeVisible();
@@ -46,7 +46,7 @@ test.describe('with a finger', () => {
 
 	test('a swipe over the grid is a scroll, not a new block', async ({ page }) => {
 		await register(page, `plan-swipe-${Date.now()}@test.invalid`);
-		await visit(page, '/planner/plan');
+		await visit(page, '/tasks/plan');
 
 		const body = page.locator('.ec-body').first();
 		const box = (await body.boundingBox())!;
@@ -89,7 +89,7 @@ test.describe('tapping a block', () => {
 	 */
 	test('tapping a block leaves no hover card behind', async ({ page }) => {
 		await register(page, `plan-hover-${Date.now()}@test.invalid`);
-		await visit(page, '/planner/plan');
+		await visit(page, '/tasks/plan');
 
 		const block = page.locator('.ec-event.ec-draggable').first();
 		await expect(block).toBeVisible();
@@ -114,7 +114,7 @@ test.describe('saving a block', () => {
 
 	test('the fields keep their values until the form is gone', async ({ page }) => {
 		await register(page, `plan-save-${Date.now()}@test.invalid`);
-		await visit(page, '/planner/plan');
+		await visit(page, '/tasks/plan');
 
 		const block = page.locator('.ec-event').first();
 		await expect(block).toBeVisible();
