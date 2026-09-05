@@ -164,6 +164,17 @@
 		return days.map((d) => FULL_DAY_LABELS[d]).join(', ');
 	}
 
+	/**
+	 * What the log button does, for the tooltip and the screen reader.
+	 *
+	 * The button itself is the target glyph alone, like every other row action
+	 * on the card — the word only ever said what the colour and the icon
+	 * already say.
+	 */
+	function logLabel(habit: { type: string }): string {
+		return habit.type === 'bad' ? 'I slipped' : habit.type === 'neutral' ? 'Log' : 'Done';
+	}
+
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
 			e.preventDefault();
@@ -505,7 +516,7 @@
 							{/if}
 						</div>
 
-						<div class="flex flex-wrap items-center gap-2 sm:shrink-0">
+						<div class="ml-auto flex items-center gap-2 sm:shrink-0">
 							{#if todayLogged}
 								<span
 									class="border {isBad
@@ -530,14 +541,15 @@
 										/>
 										<button
 											type="submit"
-											class="border {isBad
+											title={logLabel(habit)}
+											aria-label={logLabel(habit)}
+											class="flex h-9 w-9 items-center justify-center border {isBad
 												? 'border-red-200 bg-white text-red-600 hover:bg-red-50'
 												: isNeutral
 													? 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
-													: 'border-blue-200 bg-white text-blue-600 hover:bg-blue-50'} px-2 py-1 text-xs transition"
+													: 'border-blue-200 bg-white text-blue-600 hover:bg-blue-50'} transition"
 										>
-											<Icon name="target" size={12} />
-											{isBad ? 'I slipped' : isNeutral ? 'Log' : 'Done'}
+											<Icon name="target" size={16} />
 										</button>
 									</div>
 								</form>
