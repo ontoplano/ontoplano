@@ -15,7 +15,7 @@ describe('migrating on a fresh machine', () => {
 		const dir = mkdtempSync(join(tmpdir(), 'onto-fresh-'));
 		const dataDir = join(dir, 'not', 'yet', 'made');
 		try {
-			const env = { ...process.env, ONTOPLANO_DATA_DIR: dataDir };
+			const env: NodeJS.ProcessEnv = { ...process.env, ONTOPLANO_DATA_DIR: dataDir };
 			delete env.DATABASE_URL;
 			execFileSync(process.execPath, ['scripts/migrate.mjs'], { env, stdio: 'pipe' });
 			expect(existsSync(join(dataDir, 'ontoplano.db'))).toBe(true);
