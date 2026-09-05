@@ -279,7 +279,8 @@
 							loading="lazy"
 						/>
 						<p class="mt-2 text-xs text-gray-500">
-							It takes effect here straight away, and this page goes quiet.
+							A band appears at the top of your app asking whether to accept. Say yes and this page
+							goes quiet.
 						</p>
 						<button type="button" class="btn btn-sm mt-3" onclick={() => (onSomebodyElses = false)}>
 							<Icon name="arrow-left" /> Back

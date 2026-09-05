@@ -133,10 +133,11 @@ db.prepare(
 	   current_period_end = '2126-01-01T00:00:00.000Z', seats = 5`
 ).run(idOf('ana@example.com'));
 for (const member of ['bruno@example.com', 'clara@example.com']) {
-	db.prepare('insert into plan_members (owner_id, member_id) values (?, ?)').run(
-		idOf('ana@example.com'),
-		idOf(member)
-	);
+	// Accepted seats: an unanswered offer renders as "Waiting for an answer",
+	// and this picture's job is to show what a filled plan looks like.
+	db.prepare(
+		'insert into plan_members (owner_id, member_id, accepted_at) values (?, ?, CURRENT_TIMESTAMP)'
+	).run(idOf('ana@example.com'), idOf(member));
 }
 db.close();
 
