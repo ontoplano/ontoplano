@@ -4,17 +4,7 @@
 [a private security advisory](https://github.com/ontoplano/ontoplano/security/advisories/new),
 which is visible only to the maintainers until there is a fix.
 
-That link needs **private vulnerability reporting** switched on for the
-repository — Settings → Advanced Security → Private vulnerability reporting. It
-is off by default and the link 404s until it is on, which reads to a reporter as
-"this project does not want to hear from me". If it does not work, say so in an
-issue with no detail in it — "I have something for you, privately" — and I will
-open a channel.
-
-I am one person, so an honest expectation rather than a promise: I will
-acknowledge within a few days and tell you what I think and when I can fix it.
-If it is serious and I have gone quiet for two weeks, disclose it — a silent
-maintainer is not a reason to leave people exposed.
+I'll look at it carefully and work on a fix so it can be disclosed.
 
 ## What is worth reporting
 
