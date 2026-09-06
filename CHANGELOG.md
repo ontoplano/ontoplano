@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.80.1 — 2026-09-06
+
+- **`make-operator.mjs` creates the account it is asked for.** It used to
+  only promote one that already existed and point you at the registration
+  form — a bootstrap that depended on a second door. Now a missing account is
+  made on the spot: the password asked for without echo (or piped in), hashed
+  by the same better-auth the app runs, verified, admin, ready to sign in at
+  /login.
+
 ## 0.80.0 — 2026-09-05
 
 - **The demo box can have an operator.** The demo's rules — no sign-out, no
