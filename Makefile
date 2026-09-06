@@ -32,6 +32,7 @@ help:
 	@echo "  db-migrate                  apply migrations (snapshots first)"
 	@echo "  db-snapshot                 a consistent copy, before something regrettable"
 	@echo "  db-seed                     synthetic data for the dev account"
+	@echo "  reset-dev                   a fresh dev database (old one kept beside itself)"
 	@echo "  db-import FILE= EMAIL=      restore an exported account over that address"
 	@echo
 	@printf '\033[1mrun it for real\033[0m\n'
@@ -67,7 +68,7 @@ vars:
 	@sh scripts/make-vars.sh $(sort $(MAKEFILE_LIST) defaults.env $(wildcard $(SERVER_SRC)/defaults.env))
 
 
-.PHONY: _billing-in-build vars _billing-provider package package-check _dev-port _dev-deps _dev-migrated help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: _billing-in-build vars _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -172,6 +173,21 @@ _dev-deps:
 _dev-migrated:
 	@out=$$(yarn -s db:migrate 2>&1) || { echo "$$out"; exit 1; }; \
 	case "$$out" in *"migration"*) echo "$$out" | grep -v '^Snapshot:' ;; esac
+
+# The way out of a wedged dev database — a migration mismatch, an experiment
+# gone sideways. The old file is kept beside itself, never deleted; then a
+# clean migrate, a dev account, and the seed. One command, no questions.
+reset-dev:
+	@db="$${DATABASE_URL:-$$HOME/.local/share/ontoplano/ontoplano.db}"; \
+	if [ -f "$$db" ]; then \
+		kept="$$db.kept-$$(date +%Y%m%dT%H%M%S)"; \
+		mv "$$db" "$$kept"; rm -f "$$db-wal" "$$db-shm"; \
+		echo "old database kept at $$kept"; \
+	fi; \
+	DATABASE_URL="$$db" node scripts/migrate.mjs && \
+	printf 'ontoplano-dev\n' | DATABASE_URL="$$db" node scripts/make-operator.mjs dev@ontoplano.test >/dev/null && \
+	node scripts/seed-dev.mjs "$$db" dev@ontoplano.test && \
+	echo "fresh — sign in as dev@ontoplano.test / ontoplano-dev"
 
 dev-stop:
 	@systemctl --user stop ontoplano-dev

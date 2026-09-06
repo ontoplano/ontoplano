@@ -8,7 +8,8 @@
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -62,6 +63,45 @@ function appliedCount() {
 }
 
 const before = appliedCount();
+
+/*
+ * Refuse a database that ran migrations this code has never heard of.
+ *
+ * Drizzle records each applied migration as the sha256 of its file. If the
+ * database holds a hash the repo does not — a feature branch's migration that
+ * was renamed or renumbered before merging, a rolled-back release — then the
+ * migrator would happily re-run DDL against tables that already exist and die
+ * halfway through a CREATE. Caught here instead, BEFORE anything runs, with
+ * the situation named: nothing is touched, and the fix is a decision rather
+ * than an autopsy.
+ */
+if (before > 0) {
+	const journal = JSON.parse(readFileSync('./drizzle/meta/_journal.json', 'utf8'));
+	const known = new Set(
+		journal.entries.map((entry) =>
+			createHash('sha256')
+				.update(readFileSync(`./drizzle/${entry.tag}.sql`))
+				.digest('hex')
+		)
+	);
+	const strangers = client
+		.prepare('SELECT hash FROM __drizzle_migrations')
+		.all()
+		.filter((row) => !known.has(row.hash));
+	if (strangers.length > 0) {
+		console.error(
+			`\nThis database has applied ${strangers.length} migration(s) this build has never heard of.\n\n` +
+				'That usually means it ran a migration that was later renamed or renumbered —\n' +
+				'a feature branch tried out before its migrations were re-stacked, or a\n' +
+				'rollback to an older release. Running the migrator now would re-create\n' +
+				'tables that already exist, so nothing has been touched.\n\n' +
+				'On a dev machine: make reset-dev  (fresh database, dev account, seed).\n' +
+				'On a server: stop — restore the pre-migrate snapshot beside the database\n' +
+				'and work out which build this database belongs to before going further.'
+		);
+		process.exit(1);
+	}
+}
 
 try {
 	migrate(drizzle(client), { migrationsFolder: './drizzle' });
