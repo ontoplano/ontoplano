@@ -10,6 +10,34 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.83.0 — 2026-09-06
+
+- **Finance, and its first tab: Bills.** What you expect to pay, on a rhythm
+  — weekly, monthly, yearly or one-off — and what you actually paid, which
+  can differ. That gap is the number the section keeps: the month shows
+  expected, paid, and the difference in words. Add, edit, mark paid, undo a
+  payment, archive; a bill you delete for good is confirmed in its own dialog
+  and only reachable from the archived list, because its payment history is
+  the point. There is a card for it on the dashboard, and an assistant can
+  keep it over MCP.
+- **A bill says when to pay it, and the week says so too.** The due day is
+  the last day it can be paid; a bill can now say how many days before that
+  it wants doing. The planner draws each one on that day, and ticking it
+  there marks the bill paid — so the money is a consequence of the week's own
+  gesture rather than a second chore.
+- **An undone tick no longer blinks back.** Ticking a to-do off showed it
+  done, then — the moment the undo window closed — showed it undone again for
+  an instant before it finally went. The held action now keeps the row's new
+  state until the write has actually landed.
+- **The development server wears its own mark.** `make dev` saved to a phone
+  was the same tile and the same name as the real app. It has its own icon,
+  its own name (Ontoplano — Dev) and its own install identity now, the way
+  staging does.
+- **A database from a different history is refused, not half-migrated.** A
+  database that ran a migration this build has never heard of used to die
+  part-way through a `CREATE TABLE`; it now stops before anything runs and
+  says what happened. `make reset-dev` is the way out on a dev machine.
+
 ## 0.82.0 — 2026-09-06
 
 - **The "payment without a webhook" alert stops crying wolf.** It fired
