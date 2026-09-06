@@ -10,6 +10,18 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.84.0 — 2026-09-06
+
+- **The app sells through Google Play when it comes from Google Play.** The
+  store requires it, so the copy installed from Play opens Play's own
+  purchase sheet, and every other copy goes on using the payment provider as
+  before — the buttons tell the two apart by themselves. A purchase is
+  verified with Google before it counts, acknowledged so it cannot be
+  refunded out from under the account, and kept in step afterwards, so a
+  renewal or a cancellation reaches the app without anybody opening it. It is
+  one subscription either way: what changes is only which company took the
+  money.
+
 ## 0.83.0 — 2026-09-06
 
 - **Finance, and its first tab: Bills.** What you expect to pay, on a rhythm

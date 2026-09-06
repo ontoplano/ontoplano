@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import {
 	checkoutTrialDays,
 	createCheckout,
+	playConfigured,
 	displayPricing,
 	hasYearlyPrice,
 	isBillingConfigured
@@ -53,6 +54,16 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const interval = formData.get('interval') === 'monthly' ? 'monthly' : 'yearly';
 		const tier = formData.get('tier') === 'family' ? 'family' : 'solo';
+
+		// The store copy pays through Play, not Paddle — the page said so (it
+		// found the Digital Goods API, which only the Play-installed app has),
+		// and no Paddle transaction is minted for a purchase Paddle will never
+		// see. Everyone else falls through to the provider as before.
+		if (formData.get('channel') === 'play' && playConfigured()) {
+			forgetWantedPlan(cookies);
+			redirect(303, `/buy?play=1&interval=${interval}&tier=${tier}`);
+		}
+
 		let url: string;
 		try {
 			url = await createCheckout(locals.user!.id, interval, tier);

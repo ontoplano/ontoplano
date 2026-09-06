@@ -280,3 +280,37 @@ export function onboardEntitlement(
 	startTrial(userId, now);
 	return 'trial';
 }
+
+// --- The Play channel -------------------------------------------------------
+//
+// Google Play Billing, for the copy installed from the store. Same seam idea
+// as the provider above: the app asks these and the answer to "is Play a
+// thing here" is null on every instance that is not in the store.
+
+import { playChannel } from '../billing/index.js';
+
+export function playConfigured(): boolean {
+	return playChannel()?.configured() ?? false;
+}
+
+export function playMissing(): string[] {
+	return playChannel()?.missing() ?? ['the Play channel is not compiled into this build'];
+}
+
+export function playSkus() {
+	return playChannel()?.skus() ?? null;
+}
+
+export function playClaim(userId: string, input: { sku: string; purchaseToken: string }) {
+	const channel = playChannel();
+	if (!channel || !channel.configured())
+		throw new Error('Play billing is not configured on this instance.');
+	return channel.claim(userId, input);
+}
+
+export function playRtdn(rawBody: string) {
+	const channel = playChannel();
+	if (!channel || !channel.configured())
+		return Promise.resolve({ applied: false as const, reason: 'not_configured' });
+	return channel.handleRtdn(rawBody);
+}

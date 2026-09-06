@@ -151,3 +151,45 @@ export interface BillingProvider {
 	/** Translate the provider's word for a subscription's state into ours. */
 	mapStatus(raw: unknown): SubscriptionStatus;
 }
+
+/**
+ * The Play channel: Google Play Billing, for the copy installed from the
+ * store.
+ *
+ * Not a second `BillingProvider` — a different shape entirely. Paddle opens a
+ * checkout we mint; Play purchases happen on the device (the Digital Goods
+ * API inside the trusted web activity) and the server's whole job is to
+ * VERIFY the purchase token with Google and keep the entitlement in step
+ * afterwards. Both write the same subscription rows through the same
+ * `applySubscription`, which is what makes the two channels seamless: a row
+ * says which company charged for it, and nothing else cares.
+ */
+export interface PlayChannel {
+	/** Stored on the subscription row: 'play'. */
+	readonly name: string;
+	configured(): boolean;
+	/** Setting names an operator would grep for, when it cannot. */
+	missing(): string[];
+	/** The Android package this listens for. */
+	packageName(): string;
+	/** The Play product ids, keyed the way /start thinks about plans. */
+	skus(): { monthly: string; yearly: string; familyMonthly: string; familyYearly: string };
+	/**
+	 * Verify a purchase token with Google, acknowledge it, and write the
+	 * entitlement. Refuses loudly on an unknown sku or a token Google does
+	 * not recognise — a claim is money, and a quiet failure here is a
+	 * customer who paid and got nothing.
+	 */
+	claim(
+		userId: string,
+		input: { sku: string; purchaseToken: string }
+	): Promise<{ plan: string; status: string }>;
+	/**
+	 * One real-time developer notification (Pub/Sub push body). The state is
+	 * re-fetched from Google rather than trusted from the message, so a
+	 * replayed or malformed notification can only ever cause a re-sync.
+	 */
+	handleRtdn(
+		rawBody: string
+	): Promise<{ applied: true; userId: string; event: string } | { applied: false; reason: string }>;
+}

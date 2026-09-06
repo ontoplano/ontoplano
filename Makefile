@@ -279,6 +279,10 @@ _billing-provider:
 	@if [ -f "$(BILLING_SRC)/paddle.ts" ]; then \
 		cp "$(BILLING_SRC)/paddle.ts" src/lib/server/billing/providers/paddle.ts; \
 		echo "billing: using $(BILLING_SRC)/paddle.ts"; \
+		if [ -f "$(BILLING_SRC)/play.ts" ]; then \
+			cp "$(BILLING_SRC)/play.ts" src/lib/server/billing/providers/play.ts; \
+			echo "billing: using $(BILLING_SRC)/play.ts (the Play channel)"; \
+		fi; \
 	elif [ -f src/lib/server/billing/providers/paddle.ts ]; then \
 		echo "billing: using the provider already in the tree"; \
 	else \

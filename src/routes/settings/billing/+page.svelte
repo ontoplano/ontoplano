@@ -1,4 +1,9 @@
 <script lang="ts">
+	/** Only the Play-installed copy has the Digital Goods API — see /start. */
+	let payChannel = $state('');
+	$effect(() => {
+		if ('getDigitalGoodsService' in window) payChannel = 'play';
+	});
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
@@ -195,6 +200,7 @@
 					     provider's checkout, which enhance would swallow. Yearly
 					     leads; it is the one worth taking. -->
 					<form method="post" action="?/checkout" class="flex flex-wrap items-center gap-2">
+						<input type="hidden" name="channel" value={payChannel} />
 						<input type="hidden" name="tier" value="solo" />
 						{#if data.yearly}
 							<button class="btn btn-primary" name="interval" value="yearly">
@@ -225,6 +231,7 @@
 							class="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-200 pt-3"
 						>
 							<input type="hidden" name="tier" value="family" />
+							<input type="hidden" name="channel" value={payChannel} />
 							<span class="text-sm text-gray-600">
 								For up to {data.pricing.familySeats} accounts on one invoice:
 							</span>

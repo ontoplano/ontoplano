@@ -571,6 +571,16 @@ the money from every account that ever signs up, and they find out months
 later. Existing accounts are untouched, and `/admin` can still grant a trial
 by hand for anybody who needs one.
 
+#### `playConfigured()`
+
+#### `playMissing()`
+
+#### `playSkus()`
+
+#### `playClaim(userId, input)`
+
+#### `playRtdn(rawBody)`
+
 ## bills
 
 Bills: money expected to go out, on a rhythm.

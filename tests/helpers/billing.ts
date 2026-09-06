@@ -21,3 +21,8 @@ export function hasBillingProvider(): boolean {
 	if (!existsSync(PROVIDERS)) return false;
 	return readdirSync(PROVIDERS).some((file) => file.endsWith('.ts'));
 }
+
+/** Whether the Play channel is compiled in — same idea, its own file. */
+export function hasPlayChannel(): boolean {
+	return existsSync(join(PROVIDERS, 'play.ts'));
+}

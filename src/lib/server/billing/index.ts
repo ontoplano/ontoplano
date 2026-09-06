@@ -1,4 +1,4 @@
-import type { BillingProvider } from './contract.js';
+import type { BillingProvider, PlayChannel } from './contract.js';
 import { noBilling } from './none.js';
 
 /**
@@ -53,9 +53,13 @@ import { noBilling } from './none.js';
  * `useProvider()` are for. The difference is that this version cannot be true
  * at build time and false at run time.
  */
-let found: Record<string, { provider?: BillingProvider } | undefined> = {};
+let found: Record<string, { provider?: BillingProvider; playChannel?: PlayChannel } | undefined> =
+	{};
 try {
-	found = import.meta.glob<{ provider?: BillingProvider }>('./providers/*.ts', { eager: true });
+	found = import.meta.glob<{ provider?: BillingProvider; playChannel?: PlayChannel }>(
+		'./providers/*.ts',
+		{ eager: true }
+	);
 } catch {
 	// No Vite: a script running under tsx. `useProvider()` is how it is told.
 }
@@ -113,3 +117,29 @@ export function hasBillingProvider(): boolean {
 
 export type { BillingProvider } from './contract.js';
 export type { PlanTier, ClientConfig, WebhookOutcome } from './contract.js';
+
+/* ── The Play channel ─────────────────────────────────────────────────────────
+ *
+ * Resolved from the same glob, by a different export: a module that says
+ * `playChannel` is the Play half, and the one that says `provider` is the
+ * checkout provider — so the two coexist in providers/ without the
+ * one-provider rule tripping over the store's billing. Null is the ordinary
+ * answer: a self-hosted copy, a dev machine, an instance not in the store.
+ */
+let registeredPlay: PlayChannel | null = null;
+
+/** For a script outside Vite, the way `useProvider` is. */
+export function usePlayChannel(channel: PlayChannel): void {
+	registeredPlay = channel;
+	cachedPlay = undefined;
+}
+
+let cachedPlay: PlayChannel | null | undefined;
+
+export function playChannel(): PlayChannel | null {
+	if (cachedPlay === undefined) {
+		cachedPlay =
+			registeredPlay ?? Object.values(found).find((m) => m?.playChannel)?.playChannel ?? null;
+	}
+	return cachedPlay;
+}

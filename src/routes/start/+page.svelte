@@ -1,4 +1,14 @@
 <script lang="ts">
+	/**
+	 * Which way money goes. Only the copy installed from Google Play has the
+	 * Digital Goods API; when it is there, the checkout action routes to Play
+	 * Billing instead of minting a provider transaction. Detected once — a
+	 * browser never grows the API mid-visit.
+	 */
+	let payChannel = $state('');
+	$effect(() => {
+		if ('getDigitalGoodsService' in window) payChannel = 'play';
+	});
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -128,6 +138,7 @@
 		<!-- Full page post on purpose: the answer is a redirect into checkout. -->
 		<form method="post" action="?/checkout" class="mt-3 space-y-2">
 			<input type="hidden" name="tier" value={familyOffered ? tier : 'solo'} />
+			<input type="hidden" name="channel" value={payChannel} />
 			{#if data.yearly && prices.yearlyCents > 0}
 				<button
 					name="interval"

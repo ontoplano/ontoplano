@@ -47,6 +47,8 @@ sentence somebody agrees to when they grant it.
 | `/.well-known/assetlinks.json`               | GET    | —                 |
 | `/account/export`                            | GET    | —                 |
 | `/api/billing/paddle`                        | POST   | —                 |
+| `/api/billing/play/claim`                    | POST   | —                 |
+| `/api/billing/play/rtdn`                     | POST   | —                 |
 | `/api/capture-options`                       | GET    | —                 |
 | `/api/client-errors`                         | POST   | —                 |
 | `/api/imports`                               | GET    | —                 |
@@ -142,6 +144,34 @@ see.
 Always answers 200 once the signature checks out, including for events it
 ignores: a provider that gets an error retries, and retrying something we
 deliberately did nothing with is noise for both sides.
+
+**POST**
+
+### `/api/billing/play/claim`
+
+The store copy hands over its purchase.
+
+The purchase already happened on the device, inside Play's own sheet — what
+arrives here is the purchase token, and the only trustworthy thing to do
+with it is ask Google. The claim verifies the token, checks it is for the
+plan the client says it bought, acknowledges it (Play refunds anything
+unacknowledged after three days), and writes the entitlement. Signed-in
+only: a purchase belongs to the account that made it.
+
+**POST**
+
+### `/api/billing/play/rtdn`
+
+Where Google's Pub/Sub tells us a subscription changed.
+
+The push subscription is configured with this URL carrying a shared token —
+that token is the authentication, compared in constant time. The message
+itself is never trusted: the handler re-fetches the purchase's state from
+Google, so the worst a forged or replayed body can cause is a re-sync.
+
+Always 200 once the token checks out, whatever we did with the message: a
+non-2xx makes Pub/Sub retry, and retrying something deliberately ignored is
+noise on both sides.
 
 **POST**
 

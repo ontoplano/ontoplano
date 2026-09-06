@@ -15,6 +15,7 @@ import {
 	changeInterval,
 	checkoutTrialDays,
 	createCheckout,
+	playConfigured,
 	currentInterval,
 	displayPricing,
 	hasYearlyPrice,
@@ -119,6 +120,10 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const interval = formData.get('interval') === 'yearly' ? 'yearly' : 'monthly';
 		const tier = formData.get('tier') === 'family' ? 'family' : 'solo';
+		// The store copy pays through Play — see /start, same rule.
+		if (formData.get('channel') === 'play' && playConfigured()) {
+			redirect(303, `/buy?play=1&interval=${interval}&tier=${tier}`);
+		}
 		let url: string;
 		try {
 			url = await createCheckout(locals.user!.id, interval, tier);

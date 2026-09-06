@@ -172,8 +172,17 @@ const twaManifest = {
 	// A TWA that cannot verify its domain falls back to a Custom Tab, which at
 	// least keeps the app usable rather than showing an error.
 	fallbackType: 'customtabs',
-	features: {},
-	alphaDependencies: { enabled: false },
+	/*
+	 * Play Billing, inside the trusted web activity.
+	 *
+	 * The store copy must sell through Play, and the bridge is this feature:
+	 * it adds the android-browser-helper billing extension so the web app's
+	 * Digital Goods API calls reach Play's purchase sheet. The extension is
+	 * published under alpha dependencies, which is why those are on — it is
+	 * Google's own naming, not an instability we chose.
+	 */
+	features: { playBilling: { enabled: true } },
+	alphaDependencies: { enabled: true },
 	enableSiteSettingsShortcut: true,
 	isChromeOSOnly: false,
 	isMetaQuest: false,
