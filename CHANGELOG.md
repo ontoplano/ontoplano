@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.84.1 — 2026-09-06
+
+- **The privacy page no longer claims an administrator can sign in as you.**
+  They cannot — that was removed in 0.81.0 — and a privacy page saying
+  otherwise is the worst kind of thing to leave stale. It now says what is
+  true: the administration pages hold accounts and coarse events, never what
+  anybody wrote.
+
 ## 0.84.0 — 2026-09-06
 
 - **The app sells through Google Play when it comes from Google Play.** The
