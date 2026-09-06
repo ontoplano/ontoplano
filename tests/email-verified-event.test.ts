@@ -27,7 +27,10 @@ test('clicking the confirmation link lands in the account log', async () => {
 	);
 
 	const { url } = await auth.sendVerificationFor('hopeful@example.test');
-	const token = new URL(url).searchParams.get('token');
+	// Parsed against a base, because the link is only absolute where the
+	// instance knows its own origin — CI sets none, and the token is the same
+	// either way. What the link points AT is `registration-funnel`'s business.
+	const token = new URL(url, 'https://example.test').searchParams.get('token');
 	expect(token).toBeTruthy();
 
 	// Outside a real request, the sveltekit cookie plugin's after-hook throws

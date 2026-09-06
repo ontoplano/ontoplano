@@ -57,7 +57,6 @@
 </p>
 <p>
 	If a charge was wrong, write to {data.contactEmail ?? 'whoever runs this instance'} and it will be refunded.
-	That is a promise rather than a policy: the sums involved are not worth arguing about.
 </p>
 
 <h2>What is promised about it working</h2>

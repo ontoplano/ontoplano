@@ -7,11 +7,12 @@
 <svelte:head><title>Privacy · ontoplano</title></svelte:head>
 
 <h1>Privacy</h1>
-<p class="updated">Last updated {data.updated}. Written to be read, not to be survived.</p>
+<p class="updated">Last updated {data.updated}.</p>
 
 <p>
-	ontoplano holds a diary. That is the whole reason this page is specific rather than a template:
-	the thing you are storing here is the sort of thing you would not want read.
+	ontoplano holds a diary, your notes, your goals and the record of your days. That is why this page
+	is specific rather than a template: what you keep here is the sort of thing you would not want
+	read.
 </p>
 
 <h2>What is stored</h2>
@@ -35,8 +36,7 @@
 		? 'the server that runs this instance'
 		: 'the machine you installed it on'}.
 	{#if data.hosted}
-		Backups are replicated to object storage so a dead disk is an inconvenience rather than the end
-		of your diary.
+		Backups are replicated to object storage.
 	{:else}
 		Backups are whatever you configured; nobody else has a copy.
 	{/if}
@@ -45,10 +45,9 @@
 <h2>Who can see it</h2>
 <p>
 	{#if data.hosted}
-		The person running this instance can, technically — it is their database, and an administrator
-		can sign in as an account to help with a problem. When that happens the screen says so in a
-		banner the whole time, and it is written into your account's history where you can read it
-		afterwards. Nobody else has access.
+		The person running this instance can, technically — it is their database. There is no way to
+		sign in as your account: the administration pages list accounts and coarse events like a
+		registration or a plan change, and nothing of what you wrote. Nobody else has access.
 	{:else}
 		Whoever administers the machine, which is you.
 	{/if}
