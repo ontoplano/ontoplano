@@ -20,7 +20,8 @@ import {
 	isLeaving,
 	isPending,
 	takeBack,
-	undo
+	undo,
+	undoable
 } from '../src/lib/undo.svelte';
 import { mergeSuggestions, parseSlotMeta, SUGGESTED_KEYS } from '../src/lib/meta-keys';
 import { commandKey } from '../src/lib/platform';
@@ -159,6 +160,72 @@ describe('a delete that is still on its way', () => {
 		expect(undo.pending).toHaveLength(0);
 		vi.advanceTimersByTime(60_000);
 		expect(send).not.toHaveBeenCalled();
+	});
+});
+
+/**
+ * The blink: a ticked todo coming back for a moment before leaving.
+ *
+ * The entry used to be dropped the instant the window closed, and the send
+ * left running. For the length of that round trip the list was drawing the
+ * server's OLD answer — the todo undone — so it reappeared and then vanished
+ * when the reload landed. Reported as "the undo feature is kind of fucked",
+ * and it is: the tick looked like it had failed.
+ *
+ * So an entry now outlives its own window and is dropped when the write has
+ * actually landed. The toast still goes at the window, because by then there
+ * is nothing left to take back.
+ */
+describe('an action whose window has closed but whose write is still in flight', () => {
+	test('keeps holding the new state until the write lands', async () => {
+		vi.useFakeTimers();
+		let land: () => void = () => {};
+		const send = vi.fn(() => new Promise<void>((resolve) => (land = resolve)));
+
+		changeLater('todo:9', 'Completed the thing', send);
+		expect(isPending('todo:9')).toBe(true);
+
+		vi.advanceTimersByTime(5000);
+		expect(send).toHaveBeenCalledTimes(1);
+		// The window is over, but the row must not blink back to undone.
+		expect(isPending('todo:9')).toBe(true);
+		// …and there is nothing left to offer an Undo for.
+		expect(undoable()).toHaveLength(0);
+
+		land();
+		await vi.waitFor(() => expect(isPending('todo:9')).toBe(false));
+	});
+
+	test('lets go when the write fails, rather than lying about it', async () => {
+		vi.useFakeTimers();
+		let fail: (e: unknown) => void = () => {};
+		changeLater(
+			'todo:10',
+			'Completed the thing',
+			() => new Promise((_, reject) => (fail = reject))
+		);
+
+		vi.advanceTimersByTime(5000);
+		expect(isPending('todo:10')).toBe(true);
+
+		fail(new Error('the server said no'));
+		await vi.waitFor(() => expect(isPending('todo:10')).toBe(false));
+	});
+
+	test('cannot be taken back once it has gone', () => {
+		vi.useFakeTimers();
+		const send = vi.fn(() => new Promise<void>(() => {}));
+		changeLater('todo:11', 'Completed the thing', send);
+		const { id } = undo.pending[0];
+
+		vi.advanceTimersByTime(5000);
+		takeBack(id);
+		cancelFor('todo:11');
+
+		// Still held: the request is on its way, and pretending otherwise would
+		// leave the screen disagreeing with the server.
+		expect(isPending('todo:11')).toBe(true);
+		expect(send).toHaveBeenCalledTimes(1);
 	});
 });
 

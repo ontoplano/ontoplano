@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { beforeNavigate } from '$app/navigation';
 	import Icon from '$lib/components/Icon.svelte';
-	import { flushNow, takeBack, undo } from '$lib/undo.svelte';
+	import { flushNow, takeBack, undoable } from '$lib/undo.svelte';
 
 	/**
 	 * What just happened, and the way back.
@@ -12,8 +12,12 @@
 	 */
 	let now = $state(Date.now());
 
+	// Only what can still be taken back — an entry past its window is holding
+	// the row on screen until the write lands, and has no toast to show.
+	const waiting = $derived(undoable());
+
 	$effect(() => {
-		if (undo.pending.length === 0) return;
+		if (waiting.length === 0) return;
 
 		const tick = setInterval(() => (now = Date.now()), 200);
 		return () => clearInterval(tick);
@@ -26,11 +30,11 @@
 
 <svelte:window onbeforeunload={flushNow} />
 
-{#if undo.pending.length > 0}
+{#if waiting.length > 0}
 	<div
 		class="float-layer pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-4 lg:bottom-6 lg:left-auto lg:items-end lg:px-6"
 	>
-		{#each undo.pending as item (item.id)}
+		{#each waiting as item (item.id)}
 			{@const left = Math.max(0, Math.ceil((item.until - now) / 1000))}
 			<div
 				class="pointer-events-auto flex w-full max-w-sm items-center gap-3 border border-gray-700 bg-gray-900 px-4 py-3 text-sm text-white shadow-overlay"

@@ -30,7 +30,19 @@ export type Pending = {
 	key: string;
 	/** Whether the row is hidden from lists while this waits. */
 	hides: boolean;
-	send: () => void;
+	/**
+	 * Sent, and now waiting on the server rather than on the person.
+	 *
+	 * The window ending is not the end of this entry. The request has to go,
+	 * come back, and the page has to reload its data — and for those few
+	 * hundred milliseconds the screen is still drawing the OLD answer. An
+	 * entry dropped at the timer made a ticked todo reappear for a blink and
+	 * then vanish, which reads as a bug in the tick. So it stays, holding the
+	 * outcome on screen, until the write has actually landed; only the toast
+	 * goes at the timer, because by then there is nothing left to take back.
+	 */
+	sent: boolean;
+	send: () => void | Promise<unknown>;
 	timer: ReturnType<typeof setTimeout>;
 	until: number;
 };
@@ -52,6 +64,11 @@ export function isPending(key: string): boolean {
 	return undo.pending.some((p) => p.key === key);
 }
 
+/** The ones still worth a toast: sent is past taking back. */
+export function undoable(): Pending[] {
+	return undo.pending.filter((p) => !p.sent);
+}
+
 /**
  * Hold an action for the undo window, then send it.
  *
@@ -59,9 +76,14 @@ export function isPending(key: string): boolean {
  * this off wants. A second action on the same row replaces the first: two holds
  * on one todo would fire in whichever order their timers landed.
  */
-function hold(key: string, message: string, hides: boolean, send: () => void): void {
+function hold(
+	key: string,
+	message: string,
+	hides: boolean,
+	send: () => void | Promise<unknown>
+): void {
 	if (undo.seconds <= 0) {
-		send();
+		void send();
 		return;
 	}
 
@@ -69,15 +91,47 @@ function hold(key: string, message: string, hides: boolean, send: () => void): v
 	undo.pending = undo.pending.filter((p) => p.key !== key);
 
 	const id = nextId++;
-	const timer = setTimeout(() => {
-		undo.pending = undo.pending.filter((p) => p.id !== id);
-		send();
-	}, undo.seconds * 1000);
+	const timer = setTimeout(() => dispatch(id), undo.seconds * 1000);
 
 	undo.pending = [
 		...undo.pending,
-		{ id, message, key, hides, send, timer, until: Date.now() + undo.seconds * 1000 }
+		{ id, message, key, hides, sent: false, send, timer, until: Date.now() + undo.seconds * 1000 }
 	];
+}
+
+/**
+ * The window is over: send it, and hold the row's new state until it lands.
+ *
+ * Marked sent rather than dropped, so `isPending` stays true across the round
+ * trip and the row does not flicker back to how it was. Dropped when the send
+ * settles — or at once for a sender that hands back nothing to wait on, which
+ * is the old behaviour and no worse than it was.
+ */
+function dispatch(id: number): void {
+	const found = undo.pending.find((p) => p.id === id);
+	if (!found || found.sent) return;
+
+	clearTimeout(found.timer);
+	undo.pending = undo.pending.map((p) => (p.id === id ? { ...p, sent: true } : p));
+
+	const drop = () => {
+		undo.pending = undo.pending.filter((p) => p.id !== id);
+	};
+
+	let result: void | Promise<unknown>;
+	try {
+		result = found.send();
+	} catch {
+		drop();
+		return;
+	}
+	// A rejected send drops the entry too: holding the outcome on screen for a
+	// write that failed is the one lie this must not tell.
+	if (result && typeof (result as Promise<unknown>).then === 'function') {
+		void (result as Promise<unknown>).then(drop, drop);
+	} else {
+		drop();
+	}
 }
 
 /** A row that leaves the screen now and is deleted in a few seconds. */
@@ -90,15 +144,21 @@ export function changeLater(key: string, message: string, send: () => void): voi
 	hold(key, message, false, send);
 }
 
-/** Take back whatever is waiting on one row — clicking the tick again. */
+/**
+ * Take back whatever is waiting on one row — clicking the tick again.
+ *
+ * Only what has not gone yet. An entry already sent is a request in flight,
+ * and pretending it can be cancelled would leave the screen disagreeing with
+ * the server.
+ */
 export function cancelFor(key: string): void {
-	for (const p of undo.pending.filter((p) => p.key === key)) clearTimeout(p.timer);
-	undo.pending = undo.pending.filter((p) => p.key !== key);
+	for (const p of undo.pending.filter((p) => p.key === key && !p.sent)) clearTimeout(p.timer);
+	undo.pending = undo.pending.filter((p) => p.key !== key || p.sent);
 }
 
 export function takeBack(id: number): void {
 	const found = undo.pending.find((p) => p.id === id);
-	if (!found) return;
+	if (!found || found.sent) return;
 
 	clearTimeout(found.timer);
 	undo.pending = undo.pending.filter((p) => p.id !== id);
@@ -111,9 +171,9 @@ export function takeBack(id: number): void {
  * quietly forgotten because they clicked a link four seconds later.
  */
 export function flushNow(): void {
-	for (const p of undo.pending) {
+	for (const p of undo.pending.filter((entry) => !entry.sent)) {
 		clearTimeout(p.timer);
-		p.send();
+		void p.send();
 	}
 	undo.pending = [];
 }

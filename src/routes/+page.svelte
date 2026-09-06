@@ -161,7 +161,9 @@
 			body.set('id', String(task.id));
 			body.set('kind', 'instance');
 			body.set('status', status);
-			void fetch('/tasks/board?/setStatus', {
+			// Handed back so the undo entry waits for the write and the reload —
+			// dropping it at the timer made the row blink back to undone.
+			return fetch('/tasks/board?/setStatus', {
 				method: 'POST',
 				headers: { 'x-sveltekit-action': 'true' },
 				body

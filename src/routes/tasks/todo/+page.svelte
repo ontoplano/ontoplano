@@ -117,7 +117,9 @@
 
 			cancel();
 			changeLater(key, `Completed ${todo.title}`, () => {
-				void fetch(action, {
+				// Handed back so the undo entry waits for the write and the reload —
+				// dropping it at the timer made the todo blink back for a moment.
+				return fetch(action, {
 					method: 'POST',
 					body: formData,
 					headers: { 'x-sveltekit-action': 'true' }

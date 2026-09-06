@@ -125,7 +125,8 @@
 			const body = new FormData();
 			body.set('id', String(goal.id));
 			body.set('status', status);
-			void fetch(`${location.pathname}?/close`, {
+			// Handed back so the undo entry waits for the write and the reload.
+			return fetch(`${location.pathname}?/close`, {
 				method: 'POST',
 				headers: { 'x-sveltekit-action': 'true' },
 				body

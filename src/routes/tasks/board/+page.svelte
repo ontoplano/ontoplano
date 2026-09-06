@@ -232,7 +232,7 @@
 		 */
 		if (status === 'done' || status === 'skipped') {
 			const said = status === 'done' ? 'Completed' : 'Skipped';
-			changeLater(card.uid, `${said} ${card.title}`, () => void send());
+			changeLater(card.uid, `${said} ${card.title}`, () => send());
 			return;
 		}
 
