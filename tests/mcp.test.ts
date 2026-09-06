@@ -1338,3 +1338,55 @@ describe('bills over MCP', () => {
 		expect(TOOLS.some((t) => t.name === 'delete_bill')).toBe(false);
 	});
 });
+
+describe('trainings over MCP', () => {
+	const rpc = (id: number, name: string, args: Record<string, unknown>, scopes: string[]) =>
+		call(scopes, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
+
+	it('adds, reads, changes, does, and puts away — and undoes each', () => {
+		const made = rpc(1, 'add_training', { title: 'Push day', kind: 'strength', minutes: 55 }, [
+			'trainings:write'
+		]);
+		expect(made.result.isError, made.result.content?.[0]?.text).toBe(false);
+		const id = made.result.structuredContent.id as number;
+
+		const seen = rpc(2, 'trainings', {}, ['trainings:read']);
+		const row = seen.result.structuredContent.trainings.find((t: { id: number }) => t.id === id);
+		expect(row.title).toBe('Push day');
+		expect(row.kind).toBe('strength');
+
+		// Change only the field given.
+		rpc(3, 'change_training', { id, minutes: 60 }, ['trainings:write']);
+		const after = rpc(4, 'trainings', {}, ['trainings:read']);
+		expect(
+			after.result.structuredContent.trainings.find((t: { id: number }) => t.id === id).minutes
+		).toBe(60);
+
+		// Done stamps it; archive removes it from the working list; restore brings it back.
+		rpc(5, 'training_done', { id }, ['trainings:write']);
+		expect(
+			rpc(6, 'trainings', {}, ['trainings:read']).result.structuredContent.trainings.find(
+				(t: { id: number }) => t.id === id
+			).lastDoneAt
+		).not.toBeNull();
+
+		rpc(7, 'archive_training', { id }, ['trainings:write']);
+		expect(
+			rpc(8, 'trainings', {}, ['trainings:read']).result.structuredContent.trainings.some(
+				(t: { id: number }) => t.id === id
+			)
+		).toBe(false);
+		rpc(9, 'archive_training', { id, archived: false }, ['trainings:write']);
+		expect(
+			rpc(10, 'trainings', {}, ['trainings:read']).result.structuredContent.trainings.some(
+				(t: { id: number }) => t.id === id
+			)
+		).toBe(true);
+	});
+
+	it('a read token cannot write, and there is no delete tool', () => {
+		const denied = rpc(1, 'add_training', { title: 'x' }, ['trainings:read']);
+		expect(denied.result.isError).toBe(true);
+		expect(TOOLS.some((t) => t.name === 'delete_training')).toBe(false);
+	});
+});

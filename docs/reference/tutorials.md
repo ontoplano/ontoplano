@@ -36,6 +36,7 @@ under the pointer.
 Toured as well, though nothing obliges them to be — a screen reached from
 a link rather than from the navigation:
 
+- `/health/trainings` — Trainings
 - `/kitchen/meals` — Meals
 - `/search` — Search
 - `/settings/preferences` — Preferences
@@ -75,6 +76,11 @@ at the button that reopens it, so it is not listed here.
 1. The things you do, and the things you do not
 2. Say which kind it is
 3. The calendar is the point
+
+### `/health/trainings` — Trainings
+
+1. Workouts, planned like meals
+2. Done, and put away
 
 ### `/ideas` — Ideas
 

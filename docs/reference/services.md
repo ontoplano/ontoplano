@@ -72,6 +72,7 @@ shows up here on the next build.
 | [`today`](#today)                               | One day, in one request.                                                                                                                                                                                                                                             |
 | [`todos`](#todos)                               | Todos: tasks that have no date yet.                                                                                                                                                                                                                                  |
 | [`tokens`](#tokens)                             | Scopes an API token can hold.                                                                                                                                                                                                                                        |
+| [`trainings`](#trainings)                       | Trainings: workouts you plan like meals.                                                                                                                                                                                                                             |
 | [`validate`](#validate)                         | Small hand-rolled validators.                                                                                                                                                                                                                                        |
 | [`version`](#version)                           | What is running here, and since when.                                                                                                                                                                                                                                |
 | [`webhooks`](#webhooks)                         | Webhooks: plugins that listen instead of push.                                                                                                                                                                                                                       |
@@ -3663,6 +3664,47 @@ the intent and costs nothing.
 - `CreatedToken`
 - `TokenSummary`
 - `AuthenticatedToken`
+
+## trainings
+
+Trainings: workouts you plan like meals.
+
+A training lives under Health, beside habits and the numbers. It is a named
+session with a plan (Markdown, like a recipe's method) and a kind, and you
+put it on the week the way you put a meal there: by attaching it to a block.
+Scheduling is not modelled here twice — `recurring_tasks.trainingId` and
+`exceptional_tasks.trainingId` carry it, exactly as `recipeId` carries a
+meal — so "what does this week ask of me" is one join over the grid, not a
+separate calendar for exercise.
+
+Archived, not deleted, while it has been done: `lastDoneAt` and the blocks
+that pointed at it are its history. `deleteTraining` is for one made by
+mistake and clears itself off any block (the FK is set-null).
+
+### Functions
+
+#### `listTrainings(ctx, opts)`
+
+#### `getTraining(ctx, id)`
+
+#### `createTraining(ctx, input)`
+
+#### `updateTraining(ctx, id, input)`
+
+#### `setArchived(ctx, id, archived)`
+
+#### `deleteTraining(ctx, id)`
+
+For one made by mistake: gone, and cleared off any block it was on.
+
+#### `done(ctx, id)`
+
+Record that a session happened — the "cooked" of the gym.
+
+### Types
+
+- `Kind`
+- `Training`
 
 ## validate
 

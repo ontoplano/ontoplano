@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.85.0 — 2026-09-06
+
+- **Trainings, under Health.** A workout is a name, a kind and a plan, and it
+  goes on the week the way a meal does — a block with the workout attached —
+  so exercise is part of the plan rather than a calendar of its own. Add,
+  edit, mark one done, archive; delete is confirmed in its own dialog and
+  only reaches a workout already put away. There is a dashboard card for it,
+  off unless you want it, and an assistant can keep them over MCP.
+
 ## 0.84.1 — 2026-09-06
 
 - **The privacy page no longer claims an administrator can sign in as you.**

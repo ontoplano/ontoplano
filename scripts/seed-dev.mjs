@@ -1245,6 +1245,29 @@ ingredient(riceAndBeans, 'rice', 300, 'g');
 ingredient(riceAndBeans, 'black beans', 400, 'g');
 ingredient(riceAndBeans, 'garlic', 3, 'cloves');
 
+// --- Trainings (Health) -----------------------------------------------------
+//
+// A few workouts, planned like meals, so the Health section has something to
+// show and a training can be dropped onto the week.
+
+const training = (title, kind, plan, extra = {}) => {
+	const existing = one('select id from trainings where user_id = ? and title = ?', uid, title);
+	if (existing) return existing.id;
+	return run(
+		'insert into trainings (user_id, title, kind, plan, minutes) values (?, ?, ?, ?, ?)',
+		uid,
+		title,
+		kind,
+		plan,
+		extra.minutes ?? null
+	);
+};
+
+training('Push day', 'strength', 'Bench, overhead press, dips, triceps. 4×8.', { minutes: 55 });
+training('Pull day', 'strength', 'Rows, pulldowns, curls, face pulls. 4×8.', { minutes: 55 });
+training('Easy 5k', 'cardio', 'Conversational pace, flat route.', { minutes: 30 });
+training('Mobility', 'mobility', 'Hips, shoulders, ankles. Follow the video.', { minutes: 20 });
+
 // --- Pictures ---------------------------------------------------------------
 //
 // Two of them, drawn here rather than shipped as files: a seed that carries

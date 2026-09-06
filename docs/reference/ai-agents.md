@@ -620,6 +620,36 @@ Star an idea, or unstar it by calling this again. A star is the person’s to as
 
 _Needs `ideas:write`; writes._
 
+### `trainings` — Your workouts
+
+The workouts you have written down, under Health. Each has a kind and a plan; put one on the week with add_block and its trainingId to have it planned like a meal.
+
+_Needs `trainings:read`; read-only._
+
+### `add_training` — Add a workout
+
+Write a workout down: a title, a kind (strength, cardio, mobility, sport, other), a plan as Markdown, and roughly how long it takes. Scheduling it onto a day is a block with its trainingId, the way a meal is a block with a recipe.
+
+_Needs `trainings:write`; writes._
+
+### `change_training` — Change a workout
+
+Rewrite a workout. Only the fields given change — for a misheard word or a better plan, not to turn it into a different session.
+
+_Needs `trainings:write`; writes._
+
+### `archive_training` — Put a workout away, or bring it back
+
+Take a workout out of the working list, or restore it. Nothing is lost either way — its history stays.
+
+_Needs `trainings:write`; writes._
+
+### `training_done` — Mark a workout done
+
+Record that a workout happened just now — the gym’s version of marking a recipe cooked. It stamps the last-done time.
+
+_Needs `trainings:write`; writes._
+
 ### `bills` — Your bills
 
 The bills you expect to pay, and what you have actually paid. Amounts are in minor units (cents): 12000 is R$120,00. Marking one paid records the real amount, which can differ from the expected one.

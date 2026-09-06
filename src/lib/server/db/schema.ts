@@ -105,6 +105,9 @@ export const recurringTasks = sqliteTable(
 		 * next to deep work and why "what does this week need" is a join.
 		 */
 		recipeId: integer('recipe_id').references(() => recipes.id, { onDelete: 'set null' }),
+		/** The training this block is for, when it is a workout — the same idea
+		 * as recipeId one line up: a planned thing attached to a block. */
+		trainingId: integer('training_id').references(() => trainings.id, { onDelete: 'set null' }),
 
 		createdAt: text('created_at')
 			.notNull()
@@ -519,6 +522,9 @@ export const exceptionalTasks = sqliteTable(
 
 		/** The recipe this block is for, when it is a meal. See `recurring_tasks`. */
 		recipeId: integer('recipe_id').references(() => recipes.id, { onDelete: 'set null' }),
+		/** The training this block is for, when it is a workout — the same idea
+		 * as recipeId one line up: a planned thing attached to a block. */
+		trainingId: integer('training_id').references(() => trainings.id, { onDelete: 'set null' }),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
@@ -1994,5 +2000,47 @@ export const billPayments = sqliteTable(
 		index('bill_payments_user_idx').on(table.userId),
 		index('bill_payments_bill_idx').on(table.billId),
 		uniqueIndex('bill_payments_bill_period_unique').on(table.billId, table.period)
+	]
+);
+
+// --- Health: Trainings ---
+//
+// A fitness training — a workout you do, planned like a meal: a named thing
+// with a method, that you attach to a block on the week. It lives under Health
+// beside habits and the numbers. Scheduling one is not a second kind of
+// planning: a training block is an ordinary block with a `trainingId` on it,
+// exactly as a meal is a block with a `recipeId` — which is why "what does this
+// week ask of me" stays a single join over the grid.
+
+export const trainings = sqliteTable(
+	'trainings',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		title: text('title').notNull(),
+		// What the session is — a loose kind so the list can group and colour
+		// without prescribing a taxonomy nobody's body agrees with.
+		kind: text('kind', { enum: ['strength', 'cardio', 'mobility', 'sport', 'other'] })
+			.notNull()
+			.default('other'),
+		/** The plan, rendered as Markdown like a recipe's method. */
+		plan: text('plan').notNull().default(''),
+		notes: text('notes').default(''),
+		// A typical length, so a block scheduled from it can suggest a duration.
+		minutes: integer('minutes'),
+		lastDoneAt: text('last_done_at'),
+		archivedAt: text('archived_at'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('trainings_user_idx').on(table.userId),
+		check('trainings_minutes_positive', sql`${table.minutes} IS NULL OR ${table.minutes} > 0`)
 	]
 );

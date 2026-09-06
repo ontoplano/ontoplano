@@ -19,7 +19,8 @@ export type DashboardCardId =
 	| 'threeWins'
 	| 'latestTodos'
 	| 'ideas'
-	| 'bills';
+	| 'bills'
+	| 'trainings';
 
 export type DashboardCard = {
 	id: DashboardCardId;
@@ -108,6 +109,14 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 		defaultOn: true,
 		width: 'half',
 		hide: 'finance'
+	},
+	{
+		id: 'trainings',
+		label: 'Trainings',
+		description: 'Your workouts, and how long since each was last done.',
+		defaultOn: false,
+		width: 'half',
+		hide: 'health'
 	},
 	{
 		id: 'shopping',

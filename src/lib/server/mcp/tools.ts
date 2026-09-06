@@ -76,6 +76,14 @@ import {
 	updateRecipe
 } from '../services/recipes.js';
 import {
+	listTrainings,
+	getTraining,
+	createTraining,
+	updateTraining,
+	setArchived as setTrainingArchived,
+	done as trainingDone
+} from '../services/trainings.js';
+import {
 	listBills,
 	getBill,
 	createBill,
@@ -2153,6 +2161,118 @@ export const TOOLS: Tool[] = [
 		input: object({ id: { type: 'integer', description: 'The idea\u2019s id.' } }, ['id']),
 		run: (ctx, args) => {
 			toggleFavorite(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+	{
+		name: 'trainings',
+		title: 'Your workouts',
+		description:
+			'The workouts you have written down, under Health. Each has a kind and a plan; put one on the week with add_block and its trainingId to have it planned like a meal.',
+		scope: 'trainings:read',
+		writes: false,
+		input: object({
+			include_archived: { type: 'boolean', description: 'Include ones put away.' }
+		}),
+		run: (ctx, args) => ({
+			trainings: listTrainings(ctx, { includeArchived: !!args.include_archived })
+		})
+	},
+	{
+		name: 'add_training',
+		title: 'Add a workout',
+		description:
+			'Write a workout down: a title, a kind (strength, cardio, mobility, sport, other), a plan as Markdown, and roughly how long it takes. Scheduling it onto a day is a block with its trainingId, the way a meal is a block with a recipe.',
+		scope: 'trainings:write',
+		writes: true,
+		input: object(
+			{
+				title: text('What the session is called.'),
+				kind: text('strength, cardio, mobility, sport, or other.'),
+				plan: text('What to do, as Markdown.'),
+				minutes: { type: 'integer', description: 'Roughly how long it takes.' },
+				notes: text('Anything else.')
+			},
+			['title']
+		),
+		run: (ctx, args) => ({
+			id: createTraining(ctx, {
+				title: args.title,
+				kind: args.kind,
+				plan: args.plan ?? '',
+				minutes: args.minutes ?? null,
+				notes: args.notes ?? ''
+			})
+		})
+	},
+	{
+		name: 'change_training',
+		title: 'Change a workout',
+		description:
+			'Rewrite a workout. Only the fields given change — for a misheard word or a better plan, not to turn it into a different session.',
+		scope: 'trainings:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The workout\u2019s id, as `trainings` gives it.' },
+				title: text('The title, rewritten.'),
+				kind: text('strength, cardio, mobility, sport, or other.'),
+				plan: text('The plan, rewritten.'),
+				minutes: { type: 'integer', description: 'Roughly how long it takes.' },
+				notes: text('Notes, replacing the old ones.')
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const current = getTraining(ctx, Number(args.id));
+			updateTraining(ctx, current.id, {
+				title: args.title ?? current.title,
+				kind: args.kind ?? current.kind,
+				plan: args.plan ?? current.plan,
+				minutes: args.minutes ?? current.minutes,
+				notes: args.notes ?? current.notes
+			});
+			return { ok: true };
+		}
+	},
+	{
+		/*
+		 * Put away, not deleted: a workout accumulates a history (when it was\n		 * last done, the blocks that pointed at it), so the reversible verb is\n		 * archive, and its inverse is the same tool with archived:false. There is\n		 * deliberately no delete_training — a mistaken one is archived; a real\n		 * removal the person does in the app.\n		 */
+		name: 'archive_training',
+		title: 'Put a workout away, or bring it back',
+		description:
+			'Take a workout out of the working list, or restore it. Nothing is lost either way — its history stays.',
+		scope: 'trainings:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The workout\u2019s id.' },
+				archived: {
+					type: 'boolean',
+					description: 'true to put away, false to bring back. Defaults to true.'
+				}
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			setTrainingArchived(
+				ctx,
+				Number(args.id),
+				args.archived === undefined ? true : !!args.archived
+			);
+			return { ok: true };
+		}
+	},
+	{
+		name: 'training_done',
+		title: 'Mark a workout done',
+		description:
+			'Record that a workout happened just now — the gym\u2019s version of marking a recipe cooked. It stamps the last-done time.',
+		scope: 'trainings:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The workout\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			trainingDone(ctx, Number(args.id));
 			return { ok: true };
 		}
 	},

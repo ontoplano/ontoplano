@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**56 tables.**
+**57 tables.**
 
 | Table                                             | Columns | Belongs to a user |
 | ------------------------------------------------- | ------- | ----------------- |
@@ -28,7 +28,7 @@ exist.
 | [`diary_entries`](#diary_entries)                 | 9       | yes               |
 | [`diary_entry_tags`](#diary_entry_tags)           | 4       | yes               |
 | [`entry_people`](#entry_people)                   | 4       | yes               |
-| [`exceptional_tasks`](#exceptional_tasks)         | 18      | yes               |
+| [`exceptional_tasks`](#exceptional_tasks)         | 19      | yes               |
 | [`goal_areas`](#goal_areas)                       | 6       | yes               |
 | [`goal_links`](#goal_links)                       | 6       | yes               |
 | [`goals`](#goals)                                 | 17      | yes               |
@@ -50,7 +50,7 @@ exist.
 | [`recipe_images`](#recipe_images)                 | 7       | yes               |
 | [`recipe_items`](#recipe_items)                   | 8       | yes               |
 | [`recipes`](#recipes)                             | 12      | yes               |
-| [`recurring_tasks`](#recurring_tasks)             | 19      | yes               |
+| [`recurring_tasks`](#recurring_tasks)             | 20      | yes               |
 | [`reminders`](#reminders)                         | 10      | yes               |
 | [`scheme_slots`](#scheme_slots)                   | 11      | yes               |
 | [`session`](#session)                             | 9       | yes               |
@@ -62,6 +62,7 @@ exist.
 | [`tags`](#tags)                                   | 3       | yes               |
 | [`task_records`](#task_records)                   | 15      | yes               |
 | [`todo_tasks`](#todo_tasks)                       | 15      | yes               |
+| [`trainings`](#trainings)                         | 11      | yes               |
 | [`user`](#user)                                   | 11      | —                 |
 | [`user_settings`](#user_settings)                 | 4       | yes               |
 | [`verification`](#verification)                   | 6       | —                 |
@@ -420,6 +421,7 @@ Indexes:
 | `energy`              | integer | null     | —                     | —                 |
 | `meta`                | text    | not null | `'{}'`                | —                 |
 | `recipe_id`           | integer | null     | —                     | → `recipes.id`    |
+| `training_id`         | integer | null     | —                     | → `trainings.id`  |
 | `created_at`          | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
@@ -859,6 +861,7 @@ Checks — enforced by the database, not only by the service layer:
 | `energy`              | integer | null     | —                     | —                 |
 | `meta`                | text    | not null | `'{}'`                | —                 |
 | `recipe_id`           | integer | null     | —                     | → `recipes.id`    |
+| `training_id`         | integer | null     | —                     | → `trainings.id`  |
 | `created_at`          | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 | `updated_at`          | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
@@ -1116,6 +1119,30 @@ Checks — enforced by the database, not only by the service layer:
 - `todos_urgency_range`: `"todo_tasks"."urgency" IS NULL OR "todo_tasks"."urgency" BETWEEN 1 AND 5`
 - `todos_interest_range`: `"todo_tasks"."interest" IS NULL OR "todo_tasks"."interest" BETWEEN 1 AND 5`
 - `todos_energy_range`: `"todo_tasks"."energy" IS NULL OR "todo_tasks"."energy" BETWEEN 1 AND 5`
+
+## trainings
+
+| Column         | Type    | Null     | Default               | Notes             |
+| -------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`           | integer | not null | —                     | primary key, auto |
+| `user_id`      | text    | not null | —                     | → `user.id`       |
+| `title`        | text    | not null | —                     | —                 |
+| `kind`         | text    | not null | `'other'`             | —                 |
+| `plan`         | text    | not null | `''`                  | —                 |
+| `notes`        | text    | null     | `''`                  | —                 |
+| `minutes`      | integer | null     | —                     | —                 |
+| `last_done_at` | text    | null     | —                     | —                 |
+| `archived_at`  | text    | null     | —                     | —                 |
+| `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| `updated_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `trainings_user_idx` on `user_id`
+
+Checks — enforced by the database, not only by the service layer:
+
+- `trainings_minutes_positive`: `"trainings"."minutes" IS NULL OR "trainings"."minutes" > 0`
 
 ## user
 

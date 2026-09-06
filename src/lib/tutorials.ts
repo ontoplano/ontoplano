@@ -344,6 +344,19 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
+	'/health/trainings': {
+		label: 'Trainings',
+		steps: [
+			{
+				title: 'Workouts, planned like meals',
+				body: 'A workout is a name, a kind and a plan. Write it once here, then drop it onto a day the way you would a meal.'
+			},
+			{
+				title: 'Done, and put away',
+				body: 'Mark a session done to stamp it. Archive one you have stopped doing — its history stays; delete is only for one added by mistake.'
+			}
+		]
+	},
 	'/health/habits': {
 		label: 'Habits',
 		steps: [
