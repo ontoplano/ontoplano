@@ -40,6 +40,20 @@ those have no REST equivalent.
 - Scopes already exist per entity and per direction; nothing new is needed
   there.
 
+### A home inventory
+
+Asked for [on the launch
+thread](https://news.ycombinator.com/item?id=49581932#49582260): where things
+live, not what to buy — "where do we keep the measuring tape?". Shopping is a
+flat list; an inventory is a tree with tags and per-item fields (a tape is 3m
+or 5m, a cable is USB-C or not). The likely shape is `/shopping` reworked into
+an `/inventory` that keeps the list as its consumable half.
+
+- Parent-child places: house → room → drawer.
+- Tags, and free fields per item.
+- "I have it / I need it" stays — the shopping list is the "I need it" view.
+- Reachable over MCP, so an assistant can answer "where is the tape".
+
 ### Another language
 
 Every string is written into its page in English.
