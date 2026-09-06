@@ -79,9 +79,29 @@ const keystorePath = isAbsolute(keystoreSetting)
 	? keystoreSetting
 	: resolve(process.cwd(), keystoreSetting);
 const passwordPath = `${keystorePath}.pass`;
-const versionName = process.env.ANDROID_VERSION_NAME ?? '1.0.0';
-// Play requires this to increase with every upload and never repeat.
-const versionCode = Number(process.env.ANDROID_VERSION_CODE ?? 1);
+/*
+ * What the store calls this build.
+ *
+ * Both come from the app's own version, because Play refuses an upload whose
+ * version code it has seen before — and a constant 1 meant the second upload
+ * ever would be rejected, days after somebody had forgotten this file exists.
+ * Tying it to package.json makes an update no different from a release: bump
+ * the version as usual and the store gets a higher number by construction.
+ *
+ * 0.84.0 becomes 8400, 0.84.1 becomes 8401, 1.0.0 becomes 100000 — ordered
+ * for as long as minor and patch stay under a hundred, which is a bound this
+ * project has never come close to. Both are still overridable for a one-off
+ * upload that has to sit between two releases.
+ */
+const appVersion = JSON.parse(readFileSync('package.json', 'utf8')).version;
+const versionName = process.env.ANDROID_VERSION_NAME ?? appVersion;
+const versionCode = Number(process.env.ANDROID_VERSION_CODE ?? versionCodeFrom(appVersion));
+
+/** "0.84.1" -> 8401. Monotonic while minor and patch stay below 100. */
+function versionCodeFrom(version) {
+	const [major = 0, minor = 0, patch = 0] = String(version).split('.').map(Number);
+	return major * 10000 + minor * 100 + patch;
+}
 const origin = `${scheme}://${domain}`;
 
 /**
