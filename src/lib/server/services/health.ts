@@ -183,9 +183,17 @@ export function warnings(r: Resources = resources()): string[] {
 	try {
 		const chased = chasedCheckouts(new Date(Date.now() - 24 * 3600_000));
 		if (chased > 0) {
+			// Named for what to do about it: the app had to poll the provider
+			// to learn a payment succeeded because no webhook arrived, so a
+			// customer is on the app but the billing webhook is not reaching
+			// this instance. The fix is always at the provider — the
+			// notification destination URL and which events it is subscribed
+			// to. Only counts payments the webhook never reached (a webhook
+			// that merely lost a race to the success page does not).
 			out.push(
-				`${chased} payment${chased === 1 ? '' : 's'} arrived without a webhook in 24h —` +
-					" check the provider's notification destination"
+				`billing webhook silent: ${chased} payment${chased === 1 ? '' : 's'} in the last 24h ` +
+					'the app had to confirm by polling the provider, because no webhook arrived. ' +
+					"Check the provider's webhook destination and its subscribed events."
 			);
 		}
 	} catch {

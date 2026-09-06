@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.82.0 — 2026-09-06
+
+- **The "payment without a webhook" alert stops crying wolf.** It fired
+  whenever the app confirmed a payment by polling — including when a working
+  webhook simply lost the race to a customer landing back on the success
+  page. It now counts only payments no webhook ever reached, after a grace
+  period, and says in plainer words what to check.
+
 ## 0.81.0 — 2026-09-06
 
 - **Nobody signs in as anybody.** The administration page's "Sign in as this
@@ -18,6 +26,7 @@ version.
 - **The account log tells a confirmed address from a hopeful one.** Clicking
   the confirmation link writes "email verified" into the account's history,
   where before everything began and ended with "registered".
+
 ## 0.80.4 — 2026-09-06
 
 - **The roadmap grows a widget ambition and sheds the business section.**
