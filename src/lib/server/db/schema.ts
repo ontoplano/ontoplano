@@ -1,4 +1,5 @@
 import {
+	type AnySQLiteColumn,
 	blob,
 	integer,
 	real,
@@ -657,6 +658,13 @@ export const shoppingItems = sqliteTable(
 		 * Null means nobody has said.
 		 */
 		priceCents: integer('price_cents'),
+		// Inventory. Where this thing lives, when it is something you keep rather
+		// than only something to buy; null for a pure shopping-list line.
+		placeId: integer('place_id').references(() => places.id, { onDelete: 'set null' }),
+		// Its own fields, the KeePass way — a JSON object of string->string, opaque
+		// to ontoplano: { "length": "5m", "kind": "tailor" }. Not every item shares
+		// a shape, so the shape is the item's, not a column.
+		attributes: text('attributes').notNull().default('{}'),
 		snoozed: integer('snoozed', { mode: 'boolean' }).notNull().default(false),
 		createdAt: text('created_at')
 			.notNull()
@@ -2042,5 +2050,44 @@ export const trainings = sqliteTable(
 	(table) => [
 		index('trainings_user_idx').on(table.userId),
 		check('trainings_minutes_positive', sql`${table.minutes} IS NULL OR ${table.minutes} > 0`)
+	]
+);
+
+// --- Inventory: places, and things that live in them ---
+//
+// The shopping list is a flat "to buy". An inventory is the other half — what
+// you already have and *where it lives* — and the difference is classification:
+// a tree of places (house → room → chest → drawer) and free fields per item (a
+// tape is 3m or 5m, a cable is USB-C or not), because not everything a home
+// holds has the same attributes. So `places` is that tree, and `shopping_items`
+// grows a place it sits in and a bag of its own fields. The list stays the "I
+// need it" view of the same rows; a row in a place with no need is "I have it".
+
+export const places = sqliteTable(
+	'places',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull(),
+		// The tree. Null is a top-level place (a room, a building). A place
+		// deleted takes its children's parent with it — they rise to where it
+		// was, rather than vanishing with whatever was filed under them.
+		parentId: integer('parent_id').references((): AnySQLiteColumn => places.id, {
+			onDelete: 'set null'
+		}),
+		notes: text('notes').default(''),
+		sortOrder: integer('sort_order').notNull().default(0),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('places_user_idx').on(table.userId),
+		index('places_parent_idx').on(table.parentId)
 	]
 );

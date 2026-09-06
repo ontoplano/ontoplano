@@ -1031,6 +1031,45 @@ billPaid(cleaner, '2026-W36', 12000, 13000);
 billPaid(billRent, '2026-09', 180000, 180000);
 billPaid(billPower, '2026-09', 15000, 15880);
 
+// --- places (inventory) -----------------------------------------------------------
+//
+// A corner of the house, so the inventory tree has something to show and the
+// "where is the measuring tape" answer exists.
+
+const place = (name, parentId = null) => {
+	const existing = one('select id from places where user_id = ? and name = ?', uid, name);
+	if (existing) return existing.id;
+	return run('insert into places (user_id, name, parent_id) values (?, ?, ?)', uid, name, parentId);
+};
+
+const livingRoom = place('Living room');
+const whiteChest = place('White chest', livingRoom);
+place('First drawer', whiteChest);
+const officePlace = place('Office');
+
+const placedItem = (name, placeId, attributes = null) => {
+	const existing = one('select id from shopping_items where user_id = ? and name = ?', uid, name);
+	const id =
+		existing?.id ??
+		run(
+			"insert into shopping_items (user_id, name, type, bought) values (?, ?, 'someday', 1)",
+			uid,
+			name
+		);
+	run(
+		'update shopping_items set place_id = ?, attributes = ? where id = ?',
+		placeId,
+		JSON.stringify(attributes ?? {}),
+		id
+	);
+};
+
+placedItem('measuring tape', place('First drawer', whiteChest), {
+	length: '5m',
+	kind: 'construction'
+});
+placedItem('USB-C cable', officePlace, { plug: 'USB-C', speed: 'USB3' });
+
 // --- dashboard extras ---------------------------------------------------------------
 
 quote('Plans are worthless, but planning is everything.', 'Eisenhower');

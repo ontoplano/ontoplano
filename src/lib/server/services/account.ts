@@ -126,6 +126,7 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('planningSchemes', schema.planningSchemes as never),
 	owned('shoppingItems', schema.shoppingItems as never),
 	owned('shoppingCategories', schema.shoppingCategories as never),
+	owned('places', schema.places as never),
 	owned('todoTasks', schema.todoTasks as never),
 	owned('diaryEntryTags', schema.diaryEntryTags as never),
 	// Mentions first: they point at both entries and people.

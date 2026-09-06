@@ -10,6 +10,16 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.86.0 — 2026-09-06
+
+- **The shopping list learns where things live.** Places nest the way a house
+  does — a room holding a chest holding a drawer — and a thing can say which
+  one it sits in, with fields of its own, because a tape measure and a cable
+  do not describe themselves the same way. The list is unchanged: it is still
+  what you need to buy. What is new is the other half, what you already have
+  and where it is, and an assistant can now answer "where do we keep the
+  measuring tape". The rest of the inventory — its own screens — comes next.
+
 ## 0.85.0 — 2026-09-06
 
 - **Trainings, under Health.** A workout is a name, a kind and a plan, and it

@@ -620,6 +620,48 @@ Star an idea, or unstar it by calling this again. A star is the person’s to as
 
 _Needs `ideas:write`; writes._
 
+### `where_is` — Where a thing lives
+
+Find a thing by name and say where it lives — "Living room › White chest › First drawer" — with its fields (a tape’s length, a cable’s plug). The inventory half of the shopping list.
+
+_Needs `shopping:read`; read-only._
+
+### `places` — The places tree
+
+Every place, nested the way the house is — rooms holding furniture holding drawers — each with how many things sit directly in it.
+
+_Needs `shopping:read`; read-only._
+
+### `add_place` — Add a place
+
+Add a place things can live in — a room, a chest, a drawer — optionally inside another place.
+
+_Needs `shopping:write`; writes._
+
+### `change_place` — Rename or move a place
+
+Rename a place, or move it under a different parent (no parent_id moves it to the top level). It refuses to be put inside itself.
+
+_Needs `shopping:write`; writes._
+
+### `remove_place` — Remove a place
+
+Remove a place. Places inside it rise to where it was; things in it stay, just without an address.
+
+_Needs `shopping:write`; writes._
+
+### `put_item` — Say where a thing lives
+
+Put a shopping/inventory item in a place, or take its address away by leaving place_id out. The item itself is untouched.
+
+_Needs `shopping:write`; writes._
+
+### `set_item_fields` — Set a thing’s own fields
+
+Replace an item’s free fields wholesale — { "length": "5m", "plug": "USB-C" }. Not every thing shares a shape; these are this thing’s. Send the full set: removing a field is writing the rest.
+
+_Needs `shopping:write`; writes._
+
 ### `trainings` — Your workouts
 
 The workouts you have written down, under Health. Each has a kind and a plan; put one on the week with add_block and its trainingId to have it planned like a meal.

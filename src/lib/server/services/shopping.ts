@@ -2,6 +2,7 @@ import { and, asc, desc, eq, inArray, or, sql } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { pricePoints, shoppingCategories, shoppingItems } from '../db/schema.js';
+import { getPlace } from './places.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';
@@ -76,6 +77,11 @@ function itemWhere(ctx: Ctx, id: number) {
 	return and(eq(shoppingItems.id, id), itemReach(ctx));
 }
 
+/** A place that is the caller's own, or a loud refusal. */
+function ownedPlace(ctx: Ctx, placeId: number): void {
+	getPlace(ctx, placeId);
+}
+
 export function listItems(ctx: Ctx) {
 	return db
 		.select({
@@ -87,6 +93,8 @@ export function listItems(ctx: Ctx) {
 			notes: shoppingItems.notes,
 			bought: shoppingItems.bought,
 			priceCents: shoppingItems.priceCents,
+			placeId: shoppingItems.placeId,
+			attributes: shoppingItems.attributes,
 			boughtAt: shoppingItems.boughtAt,
 			snoozed: shoppingItems.snoozed,
 			createdAt: shoppingItems.createdAt,
@@ -311,6 +319,39 @@ export function setItemCategory(ctx: Ctx, id: number, categoryId: number | null)
 		.where(itemWhere(ctx, id))
 		.run();
 
+	if (res.changes === 0) throw new NotFoundError('item');
+}
+
+/**
+ * Say where a thing lives, or that it lives nowhere in particular — the
+ * inventory half of an item. The place must be the caller's own.
+ */
+export function setItemPlace(ctx: Ctx, id: number, placeId: number | null): void {
+	if (placeId !== null) ownedPlace(ctx, placeId);
+	const res = db
+		.update(shoppingItems)
+		.set({ placeId, updatedAt: stamp(ctx) })
+		.where(itemWhere(ctx, id))
+		.run();
+	if (res.changes === 0) throw new NotFoundError('item');
+}
+
+/**
+ * The item's own fields, replaced wholesale — { length: '5m', kind: 'tailor' }.
+ * A string->string map, because an inventory holds things that do not share a
+ * shape, and a fixed set of columns is exactly the assumption that fails.
+ */
+export function setItemAttributes(ctx: Ctx, id: number, attributes: Record<string, string>): void {
+	const clean: Record<string, string> = {};
+	for (const [k, v] of Object.entries(attributes ?? {})) {
+		const key = String(k).trim().slice(0, 60);
+		if (key) clean[key] = String(v ?? '').slice(0, 500);
+	}
+	const res = db
+		.update(shoppingItems)
+		.set({ attributes: JSON.stringify(clean), updatedAt: stamp(ctx) })
+		.where(itemWhere(ctx, id))
+		.run();
 	if (res.changes === 0) throw new NotFoundError('item');
 }
 

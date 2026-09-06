@@ -47,6 +47,7 @@ shows up here on the next build.
 | [`onboarding-templates`](#onboarding-templates) | The starter weeks, as data.                                                                                                                                                                                                                                          |
 | [`onboarding`](#onboarding)                     | First run.                                                                                                                                                                                                                                                           |
 | [`people`](#people)                             | The people in your life, and where they turn up.                                                                                                                                                                                                                     |
+| [`places`](#places)                             | Places: the tree an inventory hangs on.                                                                                                                                                                                                                              |
 | [`plan-intent`](#plan-intent)                   | Which plan somebody said they wanted, carried from the front page to the card.                                                                                                                                                                                       |
 | [`plugins`](#plugins)                           | Plugin manifests: what a plugin says it understands.                                                                                                                                                                                                                 |
 | [`preferences`](#preferences)                   | The settings a person chooses about themselves.                                                                                                                                                                                                                      |
@@ -2112,6 +2113,52 @@ The people each of these entries mentions, keyed by entry id.
 - `Person`
 - `Mentioned` — What a mention chip needs: who, and how you know them.
 
+## places
+
+Places: the tree an inventory hangs on.
+
+"Where do we keep the measuring tape?" — "Living room, white chest, first
+drawer." A place has a parent, so places nest as deep as a house does, and an
+item points at the one it lives in. This is the half a flat shopping list
+does not have; the list stays the "I need it" view of the same items.
+
+A place deleted lets its children rise to where it was (the FK is set-null)
+rather than taking a wing of the house down with it — the same gentleness the
+rest of the app gives things that took effort to enter.
+
+### Functions
+
+#### `listPlaces(ctx)`
+
+#### `getPlace(ctx, id)`
+
+#### `placeTree(ctx)`
+
+The whole tree, each node carrying how many items sit directly in it.
+
+#### `pathOf(ctx, id)`
+
+The chain of names from the root down to this place, for "Living room › chest › drawer".
+
+#### `createPlace(ctx, input)`
+
+#### `updatePlace(ctx, id, input)`
+
+#### `deletePlace(ctx, id)`
+
+Delete a place. Its children rise to its parent, and any item that lived in
+it becomes place-less — nothing is destroyed for standing in a room that was
+removed.
+
+#### `rootPlaces(ctx)`
+
+The top-level places, for a first "where does this live" choice.
+
+### Types
+
+- `Place`
+- `PlaceNode`
+
 ## plan-intent
 
 Which plan somebody said they wanted, carried from the front page to the card.
@@ -3025,6 +3072,17 @@ File an item into a section, or out of every one, touching nothing else.
 `updateItem` re-parses the whole row, so filing through it means re-sending
 name and type just to move a thing — which is exactly the call an assistant
 gets wrong. One field, one change.
+
+#### `setItemPlace(ctx, id, placeId)`
+
+Say where a thing lives, or that it lives nowhere in particular — the
+inventory half of an item. The place must be the caller's own.
+
+#### `setItemAttributes(ctx, id, attributes)`
+
+The item's own fields, replaced wholesale — { length: '5m', kind: 'tailor' }.
+A string->string map, because an inventory holds things that do not share a
+shape, and a fixed set of columns is exactly the assumption that fails.
 
 #### `deleteItem(ctx, id)`
 

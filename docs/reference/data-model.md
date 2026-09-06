@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**57 tables.**
+**58 tables.**
 
 | Table                                             | Columns | Belongs to a user |
 | ------------------------------------------------- | ------- | ----------------- |
@@ -41,6 +41,7 @@ exist.
 | [`media`](#media)                                 | 9       | yes               |
 | [`notebooks`](#notebooks)                         | 8       | yes               |
 | [`people`](#people)                               | 12      | yes               |
+| [`places`](#places)                               | 8       | yes               |
 | [`plan_members`](#plan_members)                   | 5       | —                 |
 | [`planning_schemes`](#planning_schemes)           | 5       | yes               |
 | [`plugin_manifests`](#plugin_manifests)           | 8       | yes               |
@@ -55,7 +56,7 @@ exist.
 | [`scheme_slots`](#scheme_slots)                   | 11      | yes               |
 | [`session`](#session)                             | 9       | yes               |
 | [`shopping_categories`](#shopping_categories)     | 7       | yes               |
-| [`shopping_items`](#shopping_items)               | 12      | yes               |
+| [`shopping_items`](#shopping_items)               | 14      | yes               |
 | [`subscribers`](#subscribers)                     | 7       | —                 |
 | [`subscriptions`](#subscriptions)                 | 15      | yes               |
 | [`suppressed_slots`](#suppressed_slots)           | 5       | yes               |
@@ -674,6 +675,24 @@ Indexes:
 - `people_user_idx` on `user_id`
 - `people_user_name_unique` on `user_id`, `name` — unique
 
+## places
+
+| Column       | Type    | Null     | Default               | Notes             |
+| ------------ | ------- | -------- | --------------------- | ----------------- |
+| `id`         | integer | not null | —                     | primary key, auto |
+| `user_id`    | text    | not null | —                     | → `user.id`       |
+| `name`       | text    | not null | —                     | —                 |
+| `parent_id`  | integer | null     | —                     | → `places.id`     |
+| `notes`      | text    | null     | `''`                  | —                 |
+| `sort_order` | integer | not null | `0`                   | —                 |
+| `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| `updated_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `places_user_idx` on `user_id`
+- `places_parent_idx` on `parent_id`
+
 ## plan_members
 
 | Column        | Type    | Null     | Default               | Notes             |
@@ -971,6 +990,8 @@ Indexes:
 | `bought`               | integer | not null | `false`               | —                          |
 | `bought_at`            | text    | null     | —                     | —                          |
 | `price_cents`          | integer | null     | —                     | —                          |
+| `place_id`             | integer | null     | —                     | → `places.id`              |
+| `attributes`           | text    | not null | `'{}'`                | —                          |
 | `snoozed`              | integer | not null | `false`               | —                          |
 | `created_at`           | text    | not null | `(CURRENT_TIMESTAMP)` | —                          |
 | `updated_at`           | text    | not null | `(CURRENT_TIMESTAMP)` | —                          |

@@ -130,6 +130,19 @@ import {
 } from '../services/instances.js';
 import { listCategories } from '../services/activities.js';
 import { toggleOccurrence } from '../services/habits.js';
+import {
+	placeTree,
+	createPlace,
+	updatePlace,
+	deletePlace,
+	getPlace,
+	pathOf
+} from '../services/places.js';
+import {
+	setItemPlace,
+	setItemAttributes,
+	listItems as listShoppingItems
+} from '../services/shopping.js';
 import { NotFoundError, ValidationError } from '../services/errors.js';
 
 /** JSON Schema, the subset a tool's arguments actually use. */
@@ -2161,6 +2174,146 @@ export const TOOLS: Tool[] = [
 		input: object({ id: { type: 'integer', description: 'The idea\u2019s id.' } }, ['id']),
 		run: (ctx, args) => {
 			toggleFavorite(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+	{
+		/*
+		 * The question the whole tree exists to answer. Matches by name, and
+		 * answers the way a person would: the chain of places, root down.
+		 */
+		name: 'where_is',
+		title: 'Where a thing lives',
+		description:
+			'Find a thing by name and say where it lives — "Living room \u203a White chest \u203a First drawer" — with its fields (a tape\u2019s length, a cable\u2019s plug). The inventory half of the shopping list.',
+		scope: 'shopping:read',
+		writes: false,
+		input: object({ name: text('The thing, by name or part of it.') }, ['name']),
+		run: (ctx, args) => {
+			const wanted = String(args.name ?? '').toLowerCase();
+			const hits = listShoppingItems(ctx)
+				.filter((i) => i.name.toLowerCase().includes(wanted))
+				.slice(0, 10)
+				.map((i) => ({
+					id: i.id,
+					name: i.name,
+					place: i.placeId ? pathOf(ctx, i.placeId).join(' \u203a ') : null,
+					fields: JSON.parse(i.attributes || '{}')
+				}));
+			return { things: hits };
+		}
+	},
+	{
+		name: 'places',
+		title: 'The places tree',
+		description:
+			'Every place, nested the way the house is — rooms holding furniture holding drawers — each with how many things sit directly in it.',
+		scope: 'shopping:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => ({ places: placeTree(ctx) })
+	},
+	{
+		name: 'add_place',
+		title: 'Add a place',
+		description:
+			'Add a place things can live in — a room, a chest, a drawer — optionally inside another place.',
+		scope: 'shopping:write',
+		writes: true,
+		input: object(
+			{
+				name: text('What the place is called.'),
+				parent_id: { type: 'integer', description: 'The place it is inside, from `places`.' }
+			},
+			['name']
+		),
+		run: (ctx, args) => ({ id: createPlace(ctx, { name: args.name, parentId: args.parent_id }) })
+	},
+	{
+		name: 'change_place',
+		title: 'Rename or move a place',
+		description:
+			'Rename a place, or move it under a different parent (no parent_id moves it to the top level). It refuses to be put inside itself.',
+		scope: 'shopping:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The place\u2019s id.' },
+				name: text('The name, rewritten.'),
+				parent_id: { type: 'integer', description: 'The new parent, or leave out for top level.' }
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const current = getPlace(ctx, Number(args.id));
+			updatePlace(ctx, current.id, {
+				name: args.name ?? current.name,
+				parentId: args.parent_id === undefined ? current.parentId : args.parent_id
+			});
+			return { ok: true };
+		}
+	},
+	{
+		/*
+		 * Removing a place is cheap on purpose: its children rise to where it
+		 * was and the things in it merely lose their address — nothing a person
+		 * typed is destroyed, so this verb may exist beside add_place.
+		 */
+		name: 'remove_place',
+		title: 'Remove a place',
+		description:
+			'Remove a place. Places inside it rise to where it was; things in it stay, just without an address.',
+		scope: 'shopping:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The place\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			deletePlace(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+	{
+		name: 'put_item',
+		title: 'Say where a thing lives',
+		description:
+			'Put a shopping/inventory item in a place, or take its address away by leaving place_id out. The item itself is untouched.',
+		scope: 'shopping:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The item\u2019s id, as `shopping_list` gives it.' },
+				place_id: { type: 'integer', description: 'The place, from `places`. Leave out to unfile.' }
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			setItemPlace(
+				ctx,
+				Number(args.id),
+				args.place_id === undefined ? null : Number(args.place_id)
+			);
+			return { ok: true };
+		}
+	},
+	{
+		name: 'set_item_fields',
+		title: 'Set a thing\u2019s own fields',
+		description:
+			'Replace an item\u2019s free fields wholesale — { "length": "5m", "plug": "USB-C" }. Not every thing shares a shape; these are this thing\u2019s. Send the full set: removing a field is writing the rest.',
+		scope: 'shopping:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The item\u2019s id.' },
+				fields: {
+					type: 'object',
+					description: 'The fields, string values.',
+					additionalProperties: { type: 'string' }
+				}
+			},
+			['id', 'fields']
+		),
+		run: (ctx, args) => {
+			setItemAttributes(ctx, Number(args.id), (args.fields ?? {}) as Record<string, string>);
 			return { ok: true };
 		}
 	},

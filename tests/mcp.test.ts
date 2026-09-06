@@ -1390,3 +1390,59 @@ describe('trainings over MCP', () => {
 		expect(TOOLS.some((t) => t.name === 'delete_training')).toBe(false);
 	});
 });
+
+describe('the inventory over MCP', () => {
+	const rpc = (id: number, name: string, args: Record<string, unknown>, scopes: string[]) =>
+		call(scopes, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
+
+	it('builds the tree, files a thing, and answers "where is it"', () => {
+		const living = rpc(1, 'add_place', { name: 'Living room' }, ['shopping:write']).result
+			.structuredContent.id as number;
+		const chest = rpc(2, 'add_place', { name: 'White chest', parent_id: living }, [
+			'shopping:write'
+		]).result.structuredContent.id as number;
+		const drawer = rpc(3, 'add_place', { name: 'First drawer', parent_id: chest }, [
+			'shopping:write'
+		]).result.structuredContent.id as number;
+
+		rpc(4, 'add_to_shopping_list', { name: 'measuring tape' }, ['shopping:write']);
+		const items = rpc(5, 'shopping_list', {}, ['shopping:read']).result.structuredContent.items as {
+			id: number;
+			name: string;
+		}[];
+		const tape = items.find((i) => i.name === 'measuring tape')!;
+
+		rpc(6, 'put_item', { id: tape.id, place_id: drawer }, ['shopping:write']);
+		rpc(7, 'set_item_fields', { id: tape.id, fields: { length: '5m', kind: 'tailor' } }, [
+			'shopping:write'
+		]);
+
+		const found = rpc(8, 'where_is', { name: 'tape' }, ['shopping:read']).result.structuredContent
+			.things as { name: string; place: string; fields: Record<string, string> }[];
+		expect(found[0].place).toBe('Living room › White chest › First drawer');
+		expect(found[0].fields).toEqual({ length: '5m', kind: 'tailor' });
+
+		// Unfiling is the inverse of filing.
+		rpc(9, 'put_item', { id: tape.id }, ['shopping:write']);
+		const unfiled = rpc(10, 'where_is', { name: 'tape' }, ['shopping:read']).result
+			.structuredContent.things as { place: string | null }[];
+		expect(unfiled[0].place).toBeNull();
+	});
+
+	it('a place refuses to be put inside itself, and removal lifts children', () => {
+		const a = rpc(1, 'add_place', { name: 'Garage' }, ['shopping:write']).result.structuredContent
+			.id as number;
+		const b = rpc(2, 'add_place', { name: 'Shelf', parent_id: a }, ['shopping:write']).result
+			.structuredContent.id as number;
+
+		const refused = rpc(3, 'change_place', { id: a, parent_id: b }, ['shopping:write']);
+		expect(refused.result.isError).toBe(true);
+
+		rpc(4, 'remove_place', { id: a }, ['shopping:write']);
+		const tree = rpc(5, 'places', {}, ['shopping:read']).result.structuredContent.places as {
+			id: number;
+			name: string;
+		}[];
+		expect(tree.some((n) => n.id === b)).toBe(true); // the shelf rose to the top
+	});
+});
