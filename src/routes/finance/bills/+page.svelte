@@ -57,6 +57,16 @@
 	// A cents amount as the decimal the field shows, so editing starts from the
 	// real value rather than blank.
 	const asDecimal = (cents: number) => (cents / 100).toFixed(2);
+
+	/** "R$120,00 · Monthly, due the 5, pay 2 days before" — one line, one string. */
+	function summaryOf(bill: (typeof data.bills)[number]): string {
+		const parts = [money(bill.amountExpected), rhythmLabel(bill.rhythm)];
+		let line = `${parts[0]} · ${parts[1]}`;
+		if (bill.dueDay) line += `, due the ${bill.dueDay}`;
+		if (bill.dueDay && bill.payLeadDays > 0)
+			line += `, pay ${bill.payLeadDays} ${bill.payLeadDays === 1 ? 'day' : 'days'} before`;
+		return line;
+	}
 </script>
 
 <div class="space-y-5">
@@ -100,9 +110,7 @@
 								</span>
 							{/if}
 						</div>
-						<div class="text-xs text-gray-500">
-							{money(bill.amountExpected)} · {rhythmLabel(bill.rhythm)}{#if bill.dueDay}, due the {bill.dueDay}{/if}
-						</div>
+						<div class="text-xs text-gray-500">{summaryOf(bill)}</div>
 					</div>
 
 					{#if bill.paidThisPeriod}
@@ -178,6 +186,11 @@
 								<input type="hidden" name="archived" value="false" />
 								<button class="btn btn-sm" type="submit">Restore</button>
 							</form>
+							<!-- An archived bill is still a bill: correcting its amount or its
+							     name should not need restoring it first. -->
+							<button class="icon-btn" aria-label="Edit {bill.name}" onclick={() => openEdit(bill)}>
+								<Icon name="edit" />
+							</button>
 							<button
 								class="icon-btn"
 								aria-label="Delete {bill.name}"
@@ -251,6 +264,22 @@
 					class="input mt-1 w-full"
 					placeholder="5"
 				/>
+				<span class="mt-1 block text-xs text-gray-500">The last day it can be paid.</span>
+			</label>
+			<label class="block text-sm">
+				<span class="text-gray-600">Pay it this many days before</span>
+				<input
+					name="payLeadDays"
+					type="number"
+					min="0"
+					max="27"
+					value={editing?.payLeadDays ?? 0}
+					class="input mt-1 w-full"
+					placeholder="0"
+				/>
+				<span class="mt-1 block text-xs text-gray-500">
+					When it turns up on your week. 0 is the due day itself.
+				</span>
 			</label>
 		</div>
 	</form>

@@ -84,7 +84,8 @@ import {
 	markPaid,
 	unmarkPaid,
 	listPayments,
-	monthSummary
+	monthSummary,
+	billsDueBetween
 } from '../services/bills.js';
 import { grouped, search } from '../services/search.js';
 import {
@@ -2194,6 +2195,24 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
+		name: 'bills_due',
+		title: 'Bills that want paying',
+		description:
+			'The bills falling due between two dates, each on the day it wants paying (the due day less its lead), with whether that one is already paid. This is what the week shows.',
+		scope: 'bills:read',
+		writes: false,
+		input: object(
+			{
+				from: text('First day, as 2026-03-14.'),
+				to: text('Last day, as 2026-03-21.')
+			},
+			['from', 'to']
+		),
+		run: (ctx, args) => ({
+			due: billsDueBetween(ctx, day(args.from, 'from'), day(args.to, 'to'))
+		})
+	},
+	{
 		name: 'add_bill',
 		title: 'Add a bill',
 		description:
@@ -2208,7 +2227,16 @@ export const TOOLS: Tool[] = [
 					description: 'The expected amount, in minor units (cents).'
 				},
 				rhythm: text('weekly, monthly, yearly, or once.'),
-				due_day: { type: 'integer', description: 'Day of the month it falls due, 1-28 (monthly).' },
+				due_day: {
+					type: 'integer',
+					description:
+						'Day of the month it falls due, 1-28 (monthly) — the last day it can be paid.'
+				},
+				pay_lead_days: {
+					type: 'integer',
+					description:
+						'Pay it this many days before the due day (0 = on the day). It turns up on the week that day.'
+				},
 				currency: text('A currency code like BRL. The account\u2019s default if left out.'),
 				notes: text('Anything else.')
 			},
@@ -2220,6 +2248,7 @@ export const TOOLS: Tool[] = [
 				amountExpected: args.amount_expected ?? 0,
 				rhythm: args.rhythm,
 				dueDay: args.due_day,
+				payLeadDays: args.pay_lead_days,
 				currency: args.currency,
 				notes: args.notes ?? ''
 			}).id
@@ -2242,6 +2271,10 @@ export const TOOLS: Tool[] = [
 				},
 				rhythm: text('weekly, monthly, yearly, or once.'),
 				due_day: { type: 'integer', description: 'Day of the month it falls due, 1-28.' },
+				pay_lead_days: {
+					type: 'integer',
+					description: 'Pay it this many days before the due day (0 = on the day).'
+				},
 				notes: text('Notes, replacing the old ones.')
 			},
 			['id']
@@ -2253,6 +2286,7 @@ export const TOOLS: Tool[] = [
 				amountExpected: args.amount_expected ?? current.amountExpected,
 				rhythm: args.rhythm ?? current.rhythm,
 				dueDay: args.due_day ?? current.dueDay,
+				payLeadDays: args.pay_lead_days ?? current.payLeadDays,
 				currency: current.currency,
 				goalId: current.goalId,
 				categoryId: current.categoryId,

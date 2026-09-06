@@ -987,12 +987,13 @@ const bill = (name, amountExpected, extra = {}) => {
 	const existing = one('select id from bills where user_id = ? and name = ?', uid, name);
 	if (existing) return existing.id;
 	return run(
-		'insert into bills (user_id, name, amount_expected, currency, due_day, rhythm, active) values (?, ?, ?, ?, ?, ?, ?)',
+		'insert into bills (user_id, name, amount_expected, currency, due_day, pay_lead_days, rhythm, active) values (?, ?, ?, ?, ?, ?, ?, ?)',
 		uid,
 		name,
 		amountExpected,
 		extra.currency ?? 'BRL',
 		extra.dueDay ?? null,
+		extra.payLeadDays ?? 0,
 		extra.rhythm ?? 'monthly',
 		extra.active === false ? 0 : 1
 	);
@@ -1011,8 +1012,8 @@ const billPaid = (billId, period, amountExpected, amountPaid) => {
 	);
 };
 
-const billRent = bill('Rent', 180000, { dueDay: 5 });
-const billPower = bill('Power', 15000, { dueDay: 12 });
+const billRent = bill('Rent', 180000, { dueDay: 5, payLeadDays: 2 });
+const billPower = bill('Power', 15000, { dueDay: 12, payLeadDays: 3 });
 const billWater = bill('Water', 8000, { dueDay: 12 });
 const billInternet = bill('Internet', 9990, { dueDay: 20 });
 const cleaner = bill('Cleaner', 12000, { rhythm: 'weekly' });

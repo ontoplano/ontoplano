@@ -34,6 +34,8 @@ export type Bill = {
 	amountExpected: number;
 	currency: string | null;
 	dueDay: number | null;
+	/** Days before the due day it wants paying — 0 means on the day. */
+	payLeadDays: number;
 	rhythm: Rhythm;
 	categoryId: number | null;
 	categoryName: string | null;
@@ -60,6 +62,7 @@ type BillInput = {
 	amountExpected?: unknown;
 	currency?: unknown;
 	dueDay?: unknown;
+	payLeadDays?: unknown;
 	rhythm?: unknown;
 	categoryId?: unknown;
 	goalId?: unknown;
@@ -105,6 +108,7 @@ function row(r: {
 		amountExpected: r.bill.amountExpected,
 		currency: r.bill.currency,
 		dueDay: r.bill.dueDay,
+		payLeadDays: r.bill.payLeadDays,
 		rhythm: r.bill.rhythm as Rhythm,
 		categoryId: r.bill.categoryId,
 		categoryName: r.categoryName,
@@ -184,6 +188,10 @@ function fields(ctx: Ctx, input: BillInput) {
 			input.dueDay === undefined || input.dueDay === null || input.dueDay === ''
 				? null
 				: num(input.dueDay, 'due day', { int: true, min: 1, max: 28 }),
+		payLeadDays:
+			input.payLeadDays === undefined || input.payLeadDays === null || input.payLeadDays === ''
+				? 0
+				: num(input.payLeadDays, 'pay lead', { int: true, min: 0, max: 27 }),
 		rhythm:
 			input.rhythm === undefined ? ('monthly' as Rhythm) : oneOf(input.rhythm, 'rhythm', RHYTHMS),
 		categoryId: ownedCategory(ctx, input.categoryId),
@@ -343,4 +351,76 @@ export function monthSummary(
 		paidCount: paidRows.length,
 		billCount: active.length
 	};
+}
+
+/**
+ * The bills that want paying between two dates.
+ *
+ * A bill is not a task and does not become one — a task somebody has to keep
+ * in step with the bill is two things that drift. This computes when each
+ * bill wants attention instead: the due day, moved earlier by its lead, for
+ * each period the range touches. The planner draws these as all-day events
+ * and ticking one marks the bill paid for that period, which is the whole
+ * point — the money side is a consequence of the gesture, not a second chore.
+ *
+ * Dates in and out are plain YYYY-MM-DD, in the account's own reckoning.
+ */
+export type BillDue = {
+	billId: number;
+	name: string;
+	/** The day it should be paid — due day minus the lead. */
+	date: string;
+	/** The last day it can be paid. */
+	dueDate: string;
+	period: string;
+	amountExpected: number;
+	currency: string | null;
+	paid: boolean;
+};
+
+function iso(d: Date): string {
+	return d.toISOString().slice(0, 10);
+}
+
+export function billsDueBetween(ctx: Ctx, from: string, to: string): BillDue[] {
+	const active = listBills(ctx).filter((b) => b.rhythm === 'monthly' && b.dueDay !== null);
+	if (active.length === 0) return [];
+
+	const paid = new Set(
+		active.flatMap((b) => listPayments(ctx, b.id)).map((p) => `${p.billId}|${p.period}`)
+	);
+
+	const start = new Date(`${from}T00:00:00Z`);
+	const end = new Date(`${to}T00:00:00Z`);
+	const out: BillDue[] = [];
+
+	// Walk month by month, one occurrence per bill per month, a month wider
+	// than the window at both ends. A lead moves an occurrence backwards, so
+	// the month AFTER the window can land inside it — a bill due on the 2nd,
+	// wanted five days early, belongs to the previous month's last week — and
+	// the month before matters for the same reason in reverse.
+	const cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() - 1, 1));
+	const last = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() + 2, 1));
+	while (cursor < last) {
+		const year = cursor.getUTCFullYear();
+		const month = cursor.getUTCMonth();
+		for (const bill of active) {
+			const due = new Date(Date.UTC(year, month, bill.dueDay!));
+			const when = new Date(due.getTime() - bill.payLeadDays * 86400_000);
+			if (when < start || when > end) continue;
+			const period = `${due.getUTCFullYear()}-${String(due.getUTCMonth() + 1).padStart(2, '0')}`;
+			out.push({
+				billId: bill.id,
+				name: bill.name,
+				date: iso(when),
+				dueDate: iso(due),
+				period,
+				amountExpected: bill.amountExpected,
+				currency: bill.currency,
+				paid: paid.has(`${bill.id}|${period}`)
+			});
+		}
+		cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+	}
+	return out.sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
 }

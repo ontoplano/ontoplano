@@ -1,0 +1,1 @@
+ALTER TABLE `bills` ADD `pay_lead_days` integer DEFAULT 0 NOT NULL;

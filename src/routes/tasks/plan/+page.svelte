@@ -10,6 +10,7 @@
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
+	import { SECTION_COLORS } from '$lib/colors';
 	import { page } from '$app/state';
 	import { browser } from '$app/environment';
 	import { tick } from 'svelte';
@@ -31,6 +32,7 @@
 		buildSlotEventsForDates,
 		buildExceptionalEvents,
 		buildSubscribedEvents,
+		buildBillEvents,
 		placementFromDates,
 		decodeEventId,
 		weekdayToDate,
@@ -1441,7 +1443,8 @@
 		...buildExceptionalEvents(data.exceptionals, data.categories),
 		// Somebody else's meetings, drawn where they get in the way and immovable
 		// because they are not ours to move.
-		...buildSubscribedEvents(data.subscribed)
+		...buildSubscribedEvents(data.subscribed),
+		...buildBillEvents(data.billsDue, SECTION_COLORS.finance)
 	]);
 
 	/**
@@ -1524,7 +1527,34 @@
 		eventResizeStart: () => (hovered = null)
 	});
 
-	function handleEventClick(info: { event: { id: string | number; start: Date } }) {
+	/**
+	 * A bill on the grid, ticked.
+	 *
+	 * The gesture is the same one that finishes a block, and the consequence is
+	 * the money side: the bill is marked paid for that period, at the amount it
+	 * expected. Clicking a paid one takes it back. Anything that wants a
+	 * different amount is the Bills page's business, not the week's.
+	 */
+	async function payBillFromGrid(billId: number, period: string, paid: boolean) {
+		const body = new FormData();
+		body.set('id', String(billId));
+		body.set('period', period);
+		await fetch(`/finance/bills?/${paid ? 'unpay' : 'pay'}`, {
+			method: 'POST',
+			headers: { 'x-sveltekit-action': 'true' },
+			body
+		});
+		await invalidateAll();
+	}
+
+	function handleEventClick(info: {
+		event: { id: string | number; start: Date; extendedProps?: Record<string, unknown> };
+	}) {
+		const props = info.event.extendedProps ?? {};
+		if (props.kind === 'bill') {
+			void payBillFromGrid(Number(props.billId), String(props.period), Boolean(props.paid));
+			return;
+		}
 		const decoded = decodeEventId(info.event.id);
 		if (!decoded) return;
 		if (decoded.kind === 'slot') {

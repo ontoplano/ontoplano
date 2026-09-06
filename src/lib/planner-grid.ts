@@ -707,3 +707,46 @@ export function minutesToTime(minutes: number): string {
 	const pad = (n: number) => String(n).padStart(2, '0');
 	return `${pad(Math.floor(clamped / 60))}:${pad(clamped % 60)}`;
 }
+
+/**
+ * Bills that want paying, as all-day events on the grid.
+ *
+ * Drawn from the bills themselves rather than from tasks: a bill that spawned
+ * a task would be two rows somebody has to keep in step, and the day they
+ * disagree the money is wrong. An unpaid one wears the finance accent; a paid
+ * one goes quiet and struck through, so a week reads as "what is left".
+ */
+export function buildBillEvents(
+	dues: {
+		billId: number;
+		name: string;
+		date: string;
+		dueDate: string;
+		period: string;
+		paid: boolean;
+	}[],
+	accent: string
+): Calendar.EventInput[] {
+	return dues.map((due) => ({
+		id: `bill:${due.billId}:${due.period}`,
+		start: parseLocalDate(due.date),
+		// All-day events still need an end; one day wide.
+		end: new Date(parseLocalDate(due.date).getTime() + 86400000),
+		allDay: true,
+		title: due.paid ? `${due.name} — paid` : `Pay ${due.name}`,
+		backgroundColor: 'transparent',
+		textColor: due.paid ? '#6b7280' : accent,
+		borderColor: due.paid ? '#9ca3af' : accent,
+		editable: false,
+		startEditable: false,
+		durationEditable: false,
+		classNames: ['og-event', 'og-event--bill', ...(due.paid ? ['og-event--bill-paid'] : [])],
+		extendedProps: {
+			kind: 'bill',
+			billId: due.billId,
+			period: due.period,
+			dueDate: due.dueDate,
+			paid: due.paid
+		}
+	}));
+}

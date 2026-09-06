@@ -9,6 +9,7 @@ import { ServiceError } from '$lib/server/services/errors';
 import { toActionFailure } from '$lib/server/http-errors';
 import { metaFromFormData, metaPatchFromFormData } from '$lib/server/services/meta';
 import { listManifests } from '$lib/server/services/plugins';
+import { billsDueBetween } from '$lib/server/services/bills';
 import {
 	addFeed,
 	listFeeds,
@@ -340,7 +341,15 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 		 * a background job kept alive to make the planner honest.
 		 */
 		feeds: listFeeds(ctx),
-		subscribed: subscribedEvents(ctx, from, to)
+		subscribed: subscribedEvents(ctx, from, to),
+		/*
+		 * The bills that want paying in this window.
+		 *
+		 * Not tasks — a bill that spawned a task would be two rows to keep in
+		 * step. The planner draws them from the bills themselves, and ticking
+		 * one marks the bill paid for its period.
+		 */
+		billsDue: billsDueBetween(ctx, formatDate(from), formatDate(to))
 	};
 };
 

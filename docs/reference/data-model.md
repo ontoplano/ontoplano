@@ -18,7 +18,7 @@ exist.
 | [`bill_payments`](#bill_payments)                 | 10      | yes               |
 | [`billing_checkouts`](#billing_checkouts)         | 8       | yes               |
 | [`billing_events`](#billing_events)               | 8       | —                 |
-| [`bills`](#bills)                                 | 14      | yes               |
+| [`bills`](#bills)                                 | 15      | yes               |
 | [`calendar_feeds`](#calendar_feeds)               | 9       | yes               |
 | [`categories`](#categories)                       | 5       | yes               |
 | [`client_errors`](#client_errors)                 | 7       | yes               |
@@ -215,6 +215,7 @@ Indexes:
 | `amount_expected` | integer | not null | `0`                   | —                 |
 | `currency`        | text    | null     | —                     | —                 |
 | `due_day`         | integer | null     | —                     | —                 |
+| `pay_lead_days`   | integer | not null | `0`                   | —                 |
 | `rhythm`          | text    | not null | `'monthly'`           | —                 |
 | `category_id`     | integer | null     | —                     | → `categories.id` |
 | `goal_id`         | integer | null     | —                     | → `goals.id`      |

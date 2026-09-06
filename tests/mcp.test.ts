@@ -1316,6 +1316,22 @@ describe('bills over MCP', () => {
 		expect(rows[0].amountPaid).toBe(4800);
 	});
 
+	it('a bill with a lead turns up before its due day', () => {
+		const id = rpc(
+			1,
+			'add_bill',
+			{ name: 'Rent', amount_expected: 100000, due_day: 10, pay_lead_days: 3 },
+			['bills:write']
+		).result.structuredContent.id as number;
+		expect(id).toBeGreaterThan(0);
+
+		const due = rpc(2, 'bills_due', { from: '2026-03-01', to: '2026-03-31' }, ['bills:read']).result
+			.structuredContent.due as { date: string; dueDate: string; paid: boolean }[];
+		const rent = due.find((d) => d.dueDate === '2026-03-10')!;
+		expect(rent.date).toBe('2026-03-07');
+		expect(rent.paid).toBe(false);
+	});
+
 	it('a read token cannot write, and there is no delete tool', () => {
 		const denied = rpc(1, 'add_bill', { name: 'x' }, ['bills:read']);
 		expect(denied.result.isError).toBe(true);

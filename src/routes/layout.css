@@ -1003,6 +1003,25 @@ html[data-style='playful'] .card-accent {
 	opacity: 1;
 }
 
+/* A bill that wants paying, on the day it wants paying — the finance accent,
+   washed like a subscribed event because it is the same kind of thing: a fact
+   about the day rather than a block of time somebody planned. Clicking it
+   pays it, so it keeps the pointer a block has. */
+.og-event--bill {
+	background-color: color-mix(in srgb, currentColor 14%, transparent) !important;
+	border-width: 1.5px !important;
+	font-weight: 600;
+}
+
+/* Paid: quiet and struck through, so a week reads as what is left. */
+.og-event--bill-paid {
+	background-color: transparent !important;
+	border-style: dashed !important;
+	font-weight: 400;
+	text-decoration: line-through;
+	opacity: 0.75;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	/* The hover lift is motion too. The colour changes stay. */
 	.btn,

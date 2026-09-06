@@ -115,3 +115,69 @@ test('an archived bill can be deleted, behind a confirmation', async ({ page }) 
 
 	await expect(page.getByText('Old subscription')).toHaveCount(0);
 });
+
+/**
+ * A bill wants paying before it is due, and the week says so.
+ *
+ * The due day is the last day it can be paid; the lead is when it actually
+ * wants doing. The planner draws that day, and ticking it there is what marks
+ * the bill paid — so the money side is a consequence of the week's own
+ * gesture rather than a second chore somebody has to remember.
+ */
+test('a bill with a lead lands on the week, and ticking it there pays it', async ({ page }) => {
+	await register(page, `bills-week-${Date.now()}@example.test`);
+	await visit(page, '/finance/bills');
+
+	// Due the 15th, wanted three days earlier.
+	await page.getByRole('button', { name: /New bill/ }).click();
+	const add = page.getByRole('dialog');
+	await add.locator('[name="heading"]').fill('Rent');
+	await add.locator('[name="amount"]').fill('1200,00');
+	await add.locator('[name="dueDay"]').fill('15');
+	await add.locator('[name="payLeadDays"]').fill('3');
+	await add.getByRole('button', { name: 'Add', exact: true }).click();
+
+	// The row says both halves.
+	await expect(page.locator('li', { hasText: 'Rent' }).getByText(/due the 15/)).toBeVisible();
+	await expect(page.locator('li', { hasText: 'Rent' }).getByText(/3 days before/)).toBeVisible();
+
+	// It is on the month's plan, on the 12th rather than the 15th.
+	await visit(page, '/tasks/plan?view=month');
+	const onGrid = page.getByText('Pay Rent').first();
+	await expect(onGrid).toBeVisible();
+
+	// Ticking it there marks the bill paid — the gesture is the week's.
+	await onGrid.click();
+	await expect(page.getByText(/Rent — paid/).first()).toBeVisible();
+
+	await visit(page, '/finance/bills');
+	await expect(page.locator('li', { hasText: 'Rent' }).getByText('paid')).toBeVisible();
+});
+
+test('an archived bill can still be corrected', async ({ page }) => {
+	await register(page, `bills-arch-edit-${Date.now()}@example.test`);
+	await visit(page, '/finance/bills');
+
+	await page.getByRole('button', { name: /New bill/ }).click();
+	const add = page.getByRole('dialog');
+	await add.locator('[name="heading"]').fill('Old service');
+	await add.locator('[name="amount"]').fill('50,00');
+	await add.getByRole('button', { name: 'Add', exact: true }).click();
+
+	await page
+		.locator('li', { hasText: 'Old service' })
+		.getByRole('button', { name: 'Archive Old service' })
+		.click();
+	await page.getByRole('button', { name: /Archived/ }).click();
+
+	// The edit button is there in the archived list, and it works.
+	await page
+		.locator('li', { hasText: 'Old service' })
+		.getByRole('button', { name: 'Edit Old service' })
+		.click();
+	const edit = page.getByRole('dialog');
+	await edit.locator('[name="heading"]').fill('Old service (cancelled)');
+	await edit.getByRole('button', { name: 'Save' }).click();
+
+	await expect(page.getByText('Old service (cancelled)')).toBeVisible();
+});

@@ -638,6 +638,12 @@ For a month (YYYY-MM), what the monthly bills expected, what has been paid, and 
 
 _Needs `bills:read`; read-only._
 
+### `bills_due` — Bills that want paying
+
+The bills falling due between two dates, each on the day it wants paying (the due day less its lead), with whether that one is already paid. This is what the week shows.
+
+_Needs `bills:read`; read-only._
+
 ### `add_bill` — Add a bill
 
 Write down a bill you expect to pay: a name, the expected amount in minor units (cents), and a rhythm (weekly, monthly, yearly, once). A monthly bill can name the day of the month it falls due.

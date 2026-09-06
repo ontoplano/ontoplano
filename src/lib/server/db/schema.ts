@@ -1930,6 +1930,12 @@ export const bills = sqliteTable(
 		// The day of the month it falls due, 1-28 to be real on every month.
 		// Null for a rhythm that is not monthly.
 		dueDay: integer('due_day'),
+		// How many days before the due day it should appear on the week.
+		//
+		// The due day is the LAST day it can be paid; most bills want paying
+		// before that. This is that lead, so "rent, due the 5th, pay it on the
+		// 2nd" is one number rather than a second date to keep in step.
+		payLeadDays: integer('pay_lead_days').notNull().default(0),
 		rhythm: text('rhythm', { enum: ['weekly', 'monthly', 'yearly', 'once'] })
 			.notNull()
 			.default('monthly'),

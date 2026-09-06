@@ -102,6 +102,86 @@ describe('paying a bill', () => {
 	});
 });
 
+describe('when a bill wants paying', () => {
+	test('the lead moves it earlier than the due day, and it carries both', () => {
+		const mine = { ...ctx, userId: `bills-due-${Date.now()}` };
+		database.exec(
+			`insert into user (id, name, email, email_verified, created_at, updated_at)
+			 values (?, 'D', ?, 1, 0, 0)`,
+			mine.userId,
+			`${mine.userId}@t.test`
+		);
+		// Due the 10th, wanted three days earlier.
+		bills.createBill(mine, { name: 'Rent', amountExpected: 100000, dueDay: 10, payLeadDays: 3 });
+
+		const due = bills.billsDueBetween(mine, '2026-09-01', '2026-09-30');
+		expect(due).toHaveLength(1);
+		expect(due[0].date).toBe('2026-09-07'); // when it turns up on the week
+		expect(due[0].dueDate).toBe('2026-09-10'); // the last day it can be paid
+		expect(due[0].period).toBe('2026-09');
+		expect(due[0].paid).toBe(false);
+	});
+
+	test('a lead can reach back into the month before', () => {
+		const mine = { ...ctx, userId: `bills-lead-${Date.now()}` };
+		database.exec(
+			`insert into user (id, name, email, email_verified, created_at, updated_at)
+			 values (?, 'L', ?, 1, 0, 0)`,
+			mine.userId,
+			`${mine.userId}@t.test`
+		);
+		// Due the 2nd, wanted five days before — that is the 28th of August, and
+		// a window over August has to find it.
+		bills.createBill(mine, { name: 'Water', amountExpected: 8000, dueDay: 2, payLeadDays: 5 });
+
+		const august = bills.billsDueBetween(mine, '2026-08-01', '2026-08-31');
+		expect(august.map((d) => d.date)).toContain('2026-08-28');
+		expect(august.find((d) => d.date === '2026-08-28')!.period).toBe('2026-09');
+	});
+
+	test('paying it marks that occurrence, and only that one', () => {
+		const mine = { ...ctx, userId: `bills-paid-${Date.now()}` };
+		database.exec(
+			`insert into user (id, name, email, email_verified, created_at, updated_at)
+			 values (?, 'P', ?, 1, 0, 0)`,
+			mine.userId,
+			`${mine.userId}@t.test`
+		);
+		const bill = bills.createBill(mine, { name: 'Power', amountExpected: 5000, dueDay: 12 });
+		bills.markPaid(mine, bill.id, { period: '2026-09' });
+
+		const twoMonths = bills.billsDueBetween(mine, '2026-09-01', '2026-10-31');
+		expect(twoMonths.find((d) => d.period === '2026-09')!.paid).toBe(true);
+		expect(twoMonths.find((d) => d.period === '2026-10')!.paid).toBe(false);
+	});
+
+	test('a bill with no due day never lands on the week', () => {
+		const mine = { ...ctx, userId: `bills-nodue-${Date.now()}` };
+		database.exec(
+			`insert into user (id, name, email, email_verified, created_at, updated_at)
+			 values (?, 'N', ?, 1, 0, 0)`,
+			mine.userId,
+			`${mine.userId}@t.test`
+		);
+		bills.createBill(mine, { name: 'Something', amountExpected: 100 });
+		expect(bills.billsDueBetween(mine, '2026-09-01', '2026-09-30')).toHaveLength(0);
+	});
+
+	test('an archived bill stops asking to be paid', () => {
+		const mine = { ...ctx, userId: `bills-arch-${Date.now()}` };
+		database.exec(
+			`insert into user (id, name, email, email_verified, created_at, updated_at)
+			 values (?, 'A', ?, 1, 0, 0)`,
+			mine.userId,
+			`${mine.userId}@t.test`
+		);
+		const bill = bills.createBill(mine, { name: 'Old gym', amountExpected: 9900, dueDay: 5 });
+		expect(bills.billsDueBetween(mine, '2026-09-01', '2026-09-30')).toHaveLength(1);
+		bills.setArchived(mine, bill.id, true);
+		expect(bills.billsDueBetween(mine, '2026-09-01', '2026-09-30')).toHaveLength(0);
+	});
+});
+
 describe('the month at a glance', () => {
 	test('expected, paid, and the gap between them', () => {
 		const mine = { ...ctx, userId: `bills-month-${Date.now()}` };

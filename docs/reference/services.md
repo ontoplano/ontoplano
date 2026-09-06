@@ -633,11 +633,14 @@ A month, the way the section's first page reads it: what was expected of the
 monthly bills, what has actually been paid this month across all bills, and
 the gap between the two.
 
+#### `billsDueBetween(ctx, from, to)`
+
 ### Types
 
 - `Rhythm`
 - `Bill`
 - `BillPayment`
+- `BillDue` — The bills that want paying between two dates.
 
 ## birthdays
 
