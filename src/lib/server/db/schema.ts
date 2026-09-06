@@ -1091,6 +1091,15 @@ export const billingCheckouts = sqliteTable(
 		 * the webhook is broken, which is why it is recorded rather than inferred.
 		 */
 		settledBy: text('settled_by', { enum: ['webhook', 'claim'] }),
+		/**
+		 * When a webhook for this transaction arrived — set even if the claim
+		 * path had already settled the row, because the alert's real question
+		 * is "did the provider ever reach us", not "who wrote the row first".
+		 * A customer who returns to the success page makes the claim win the
+		 * race; that is not a broken webhook, and this is how the two are told
+		 * apart.
+		 */
+		webhookSeenAt: text('webhook_seen_at'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)

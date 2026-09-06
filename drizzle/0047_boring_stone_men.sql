@@ -1,0 +1,1 @@
+ALTER TABLE `billing_checkouts` ADD `webhook_seen_at` text;

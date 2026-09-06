@@ -15,7 +15,7 @@ exist.
 | [`activities`](#activities)                       | 9       | yes               |
 | [`api_tokens`](#api_tokens)                       | 12      | yes               |
 | [`audit_events`](#audit_events)                   | 7       | yes               |
-| [`billing_checkouts`](#billing_checkouts)         | 7       | yes               |
+| [`billing_checkouts`](#billing_checkouts)         | 8       | yes               |
 | [`billing_events`](#billing_events)               | 8       | —                 |
 | [`calendar_feeds`](#calendar_feeds)               | 9       | yes               |
 | [`categories`](#categories)                       | 5       | yes               |
@@ -157,6 +157,7 @@ Indexes:
 | `provider_transaction_id` | text    | not null | —                     | —                 |
 | `settled_at`              | text    | null     | —                     | —                 |
 | `settled_by`              | text    | null     | —                     | —                 |
+| `webhook_seen_at`         | text    | null     | —                     | —                 |
 | `created_at`              | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:

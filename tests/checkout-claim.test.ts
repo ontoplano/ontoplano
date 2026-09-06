@@ -129,10 +129,24 @@ describe.skipIf(!hasBillingProvider())('a checkout the provider never reported',
 		expect(fetcher).not.toHaveBeenCalled();
 	});
 
-	test('the chase is counted, because it means the webhook is broken', () => {
-		// Self-healing that says nothing would fix one customer and leave the
-		// destination wrong for everybody else.
+	test('a chase with no webhook behind it is the alarm, at once', () => {
+		// No webhook was ever seen for this transaction: the provider is not
+		// reaching us, flagged immediately — no grace, because a real broken
+		// destination must never be missed. False positives are the acceptable
+		// side; false negatives are not.
 		expect(billing.chasedCheckouts(new Date(Date.now() - 60_000))).toBe(1);
+	});
+
+	test('a webhook that merely lost the race to the success page is not the alarm', () => {
+		// The claim settled the row first, but a webhook for this transaction
+		// did arrive and was accepted. The provider is reaching us, so it must
+		// not read as a broken destination.
+		database.exec(
+			'update billing_checkouts set webhook_seen_at = ? where provider_transaction_id = ?',
+			new Date().toISOString(),
+			TXN
+		);
+		expect(billing.chasedCheckouts(new Date(Date.now() - 60_000))).toBe(0);
 	});
 });
 
