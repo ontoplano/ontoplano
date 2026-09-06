@@ -108,6 +108,17 @@ Every string is written into its page in English.
 - **A scheme you can schedule** rather than apply by hand. MCP interface to changing schemes.
 - **A token's own log** on the page that lists them: a token says when it was
   last used and not what it did.
+- **Filter the plan by kind.** On `/tasks/plan`, show only the recurring
+  blocks or only the one-off ones — the repeating week versus what is unique
+  to these days.
+- **A blue "connect an assistant" box on the Integrations tab**, the same
+  shape as the one by New token, shown only when the account has no token yet
+  — so somebody arriving for the first time finds the AI setup without
+  hunting for it. Easy: the preset and the button already exist.
+- **A crash report the person can send.** The 500 page shows a hash to quote;
+  replace it with a form that files a report we can read in admin — the route
+  and what they were doing, never the content of what they wrote. So a bug is
+  reported without us ever seeing their data.
 
 ---
 
