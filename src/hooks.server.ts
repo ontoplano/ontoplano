@@ -1,7 +1,7 @@
 import { redirect, type Handle, type HandleServerError } from '@sveltejs/kit';
 import { provider } from '$lib/server/billing/index';
 import { sequence } from '@sveltejs/kit/hooks';
-import { building } from '$app/environment';
+import { building, dev } from '$app/environment';
 import { auth } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { ensureUserCategories } from '$lib/server/db/ensure-categories';
@@ -244,8 +244,10 @@ const handleTheme: Handle = ({ event, resolve }) => {
 	 * in the manifest alone, because iOS reads none of the manifest and Android
 	 * reads the favicon before it reads anything else.
 	 */
-	const mark = isStaging() ? '-staging' : '';
-	const appname = isStaging() ? 'Ontoplano staging' : 'Ontoplano';
+	// Dev wears its own mark for the same reason staging does: `make dev`
+	// saved to a phone's home screen must never be the tile the real app is.
+	const mark = isStaging() ? '-staging' : dev ? '-dev' : '';
+	const appname = isStaging() ? 'Ontoplano staging' : dev ? 'Ontoplano — Dev' : 'Ontoplano';
 
 	return resolve(event, {
 		transformPageChunk: ({ html }) =>

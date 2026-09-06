@@ -1,5 +1,6 @@
 import type { RequestHandler } from './$types';
 
+import { dev } from '$app/environment';
 import { isStaging } from '$lib/server/settings';
 
 /**
@@ -49,18 +50,20 @@ const SHORTCUTS = [
 
 export const GET: RequestHandler = async () => {
 	const staging = isStaging();
-	// The suffix is the whole difference. `scripts/build-icons.mjs` draws both
-	// sets from the same logo, so the day the mark changes they both change.
-	const mark = staging ? '-staging' : '';
+	// The suffix is the whole difference. `scripts/build-icons.mjs` draws all
+	// three sets from the same logo, so the day the mark changes they all
+	// change. Dev gets a set too: a dev server saved as a PWA must not wear
+	// the real app's tile.
+	const mark = staging ? '-staging' : dev ? '-dev' : '';
 
 	const manifest = {
-		name: staging ? 'Ontoplano staging' : 'Ontoplano',
-		short_name: staging ? 'Staging' : 'Ontoplano',
+		name: staging ? 'Ontoplano staging' : dev ? 'Ontoplano — Dev' : 'Ontoplano',
+		short_name: staging ? 'Staging' : dev ? 'Dev' : 'Ontoplano',
 		description:
 			'Run your life like a business: plans, tasks, goals and the record of what you actually did.',
 		// A distinct id, or a browser treats the two as one installed app and
 		// the second install silently replaces the first.
-		id: staging ? '/?staging' : '/',
+		id: staging ? '/?staging' : dev ? '/?dev' : '/',
 		start_url: '/',
 		scope: '/',
 		display: 'standalone',

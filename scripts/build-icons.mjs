@@ -86,6 +86,8 @@ function icon(scale, ground) {
  * red or green — red means broken and green means fine, and this is neither.
  */
 const STAGING_BAND = '#b45309';
+// Dev wears blue where staging wears amber — same band, different answer.
+const DEV_BAND = '#1d4ed8';
 
 /**
  * `top` is where the band sits, as a fraction of the height.
@@ -95,7 +97,7 @@ const STAGING_BAND = '#b45309';
  * never cropped and wears it at the bottom; the maskable one wears it inside
  * the safe area, where a circle, a squircle and a rounded square all keep it.
  */
-function stagingIcon(scale, ground, top = 0.82) {
+function bandedIcon(colour, scale, ground, top = 0.82) {
 	const side = SIZE * scale;
 	const at = (SIZE - side) / 2;
 	const band = SIZE * 0.15;
@@ -107,7 +109,7 @@ function stagingIcon(scale, ground, top = 0.82) {
   ${ground ? `<rect width="${SIZE}" height="${SIZE}" fill="${ground}"/>` : ''}
   <image x="${at}" y="${at}" width="${side}" height="${side}" preserveAspectRatio="xMidYMid meet"
     filter="url(#drained)" xlink:href="${dataUri}"/>
-  <rect x="0" y="${SIZE * top}" width="${SIZE}" height="${band}" fill="${STAGING_BAND}"/>
+  <rect x="0" y="${SIZE * top}" width="${SIZE}" height="${band}" fill="${colour}"/>
 </svg>
 `;
 }
@@ -116,9 +118,15 @@ const plain = icon(ICON_SCALE, null);
 const maskable = icon(MASKABLE, GROUND);
 const apple = icon(APPLE, GROUND);
 
+const stagingIcon = (scale, ground, top) => bandedIcon(STAGING_BAND, scale, ground, top);
+const devIcon = (scale, ground, top) => bandedIcon(DEV_BAND, scale, ground, top);
+
 const plainStaging = stagingIcon(ICON_SCALE, null);
 const maskableStaging = stagingIcon(MASKABLE, GROUND, 0.62);
 const appleStaging = stagingIcon(APPLE, GROUND, 0.78);
+const plainDev = devIcon(ICON_SCALE, null);
+const maskableDev = devIcon(MASKABLE, GROUND, 0.62);
+const appleDev = devIcon(APPLE, GROUND, 0.78);
 
 const svgs = [
 	['static/favicon.svg', plain],
@@ -126,7 +134,10 @@ const svgs = [
 	['static/icons/icon-maskable.svg', maskable],
 	['static/favicon-staging.svg', plainStaging],
 	['static/icons/icon-staging.svg', plainStaging],
-	['static/icons/icon-maskable-staging.svg', maskableStaging]
+	['static/icons/icon-maskable-staging.svg', maskableStaging],
+	['static/favicon-dev.svg', plainDev],
+	['static/icons/icon-dev.svg', plainDev],
+	['static/icons/icon-maskable-dev.svg', maskableDev]
 ];
 
 const pngs = [
@@ -144,7 +155,14 @@ const pngs = [
 	['static/icons/icon-512-staging.png', plainStaging, 512],
 	['static/icons/icon-maskable-192-staging.png', maskableStaging, 192],
 	['static/icons/icon-maskable-512-staging.png', maskableStaging, 512],
-	['static/icons/apple-touch-icon-staging.png', appleStaging, 180]
+	['static/icons/apple-touch-icon-staging.png', appleStaging, 180],
+	// …and the dev set, worn by `make dev` so the phone-installed dev PWA and
+	// the real app are never the same tile.
+	['static/icons/icon-192-dev.png', plainDev, 192],
+	['static/icons/icon-512-dev.png', plainDev, 512],
+	['static/icons/icon-maskable-192-dev.png', maskableDev, 192],
+	['static/icons/icon-maskable-512-dev.png', maskableDev, 512],
+	['static/icons/apple-touch-icon-dev.png', appleDev, 180]
 ];
 
 // ── Rasterising ──────────────────────────────────────────────────────────────
