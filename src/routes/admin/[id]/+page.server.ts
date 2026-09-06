@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
 import type { Actions, PageServerLoad } from './$types';
-import { auth, sendVerificationFor } from '$lib/server/auth';
+import { sendVerificationFor } from '$lib/server/auth';
 import {
 	accountById,
 	deleteAccountAsAdmin,
@@ -97,30 +97,5 @@ export const actions: Actions = {
 			return toActionFailure(e);
 		}
 		redirect(303, '/admin?deleted=1');
-	},
-
-	/**
-	 * Sign in as somebody else, with the session marked as borrowed.
-	 *
-	 * Recorded against both accounts before it happens: the point of the log is
-	 * that the person whose account it is can see it too.
-	 */
-	impersonate: async ({ locals, params, request }) => {
-		requireAdmin(locals.user!.id);
-
-		if (locals.user!.id === params.id) return fail(400, { message: 'That is already you' });
-
-		try {
-			await auth.api.impersonateUser({
-				body: { userId: params.id },
-				headers: request.headers
-			});
-		} catch (e) {
-			if (e instanceof APIError) return fail(400, { message: e.message });
-			return toActionFailure(e);
-		}
-
-		record(params.id, 'impersonation_started', { actorId: locals.user!.id });
-		redirect(303, '/');
 	}
 };

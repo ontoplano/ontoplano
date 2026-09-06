@@ -131,3 +131,31 @@ test('deleting an account asks for its address, and means it', async ({ page }) 
 	await page.keyboard.press('Enter');
 	await expect(page.getByText(email, { exact: false })).toHaveCount(0);
 });
+
+/**
+ * Nobody signs in as anybody.
+ *
+ * The button is gone from the account page, and the plugin endpoints behind
+ * it are shut in front of better-auth — an administrator with a valid
+ * session gets the same 404 as a stranger. Removed rather than warned
+ * about: an instance that respects privacy does not carry a key to
+ * everybody's diary with a banner on it.
+ */
+test('an administrator cannot become somebody else', async ({ page }) => {
+	await signInAsOwner(page);
+	await page.goto('/admin');
+
+	// Any account's page: the first row the accounts list offers.
+	await page.locator('.account-row a[href^="/admin/"]').first().click();
+	await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+	await expect(page.getByText('Sign in as this account')).toHaveCount(0);
+
+	// The plugin's own doors, with the admin's own session.
+	for (const path of ['/api/auth/admin/impersonate-user', '/api/auth/admin/stop-impersonating']) {
+		const res = await page.request.post(path, {
+			headers: { Origin: ORIGIN },
+			data: { userId: 'anybody' }
+		});
+		expect(res.status(), `${path} is not a door`).toBe(404);
+	}
+});

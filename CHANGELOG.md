@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.81.0 — 2026-09-06
+
+- **Nobody signs in as anybody.** The administration page's "Sign in as this
+  account" is gone, banner and all, and the endpoints behind it are shut for
+  every role — an account's inside is its owner's, full stop.
+- **The account log tells a confirmed address from a hopeful one.** Clicking
+  the confirmation link writes "email verified" into the account's history,
+  where before everything began and ended with "registered".
 ## 0.80.4 — 2026-09-06
 
 - **The roadmap grows a widget ambition and sheds the business section.**

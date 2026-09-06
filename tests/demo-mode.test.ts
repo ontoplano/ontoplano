@@ -157,12 +157,6 @@ describe('the demo refusals', () => {
 		expect(said('POST', '/login')).toBeNull();
 	});
 
-	it('still let somebody stop impersonating', () => {
-		// The way back from being impersonated has to work wherever
-		// impersonation does, or a visitor is stuck as somebody else.
-		expect(said('POST', '/admin/stop')).toBeNull();
-	});
-
 	it('leave the rest of the app alone', () => {
 		// The demo is a playground: everything that is not the box or the
 		// account must still be usable, or there is nothing to look at.

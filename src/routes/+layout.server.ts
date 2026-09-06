@@ -127,11 +127,6 @@ export const load: LayoutServerLoad = async (event) => {
 	return {
 		user: event.locals.user ?? null,
 		familyOffer,
-		// Set while an administrator is borrowing this session. The banner it
-		// draws is the whole point: nobody should be able to look at somebody's
-		// diary without the screen saying so.
-		impersonatedBy:
-			(event.locals.session as { impersonatedBy?: string } | undefined)?.impersonatedBy ?? null,
 		categories: userCategories,
 		theme,
 		// Sections this account has put away: out of every menu the shell

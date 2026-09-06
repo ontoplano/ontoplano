@@ -152,6 +152,20 @@ const handleRegistration: Handle = async ({ event, resolve }) => {
 };
 
 const handleBetterAuth: Handle = async ({ event, resolve }) => {
+	// The admin plugin ships impersonation endpoints whether or not the app
+	// offers them. It does not: signing in as somebody is reading their
+	// diary, so the doors are shut here, in front of the plugin, where no
+	// role or session opens them.
+	if (
+		event.url.pathname.startsWith('/api/auth/admin/impersonate-user') ||
+		event.url.pathname.startsWith('/api/auth/admin/stop-impersonating')
+	) {
+		return new Response(JSON.stringify({ message: 'This instance does not impersonate.' }), {
+			status: 404,
+			headers: { 'content-type': 'application/json' }
+		});
+	}
+
 	const session = await auth.api.getSession({ headers: event.request.headers });
 
 	if (session) {
@@ -352,7 +366,7 @@ const handleAuthRateLimit: Handle = async ({ event, resolve }) => {
  * Which holds exist and when they apply is `services/access.ts`'s business —
  * this hook only walks a held browser to the right page. One exempt list:
  * the hold pages themselves, the auth machinery (the verify link must stay
- * clickable, the impersonation stop must always work), the export (an
+ * clickable), the export (an
  * expired account's data stays its own), and the public plumbing. /api is
  * exempt HERE because the API door runs the same check itself and answers
  * in JSON instead of a redirect.
@@ -370,8 +384,7 @@ const HOLD_EXEMPT = [
 	'/healthz',
 	'/favicon.svg',
 	'/icons',
-	'/manifest.webmanifest',
-	'/admin/stop'
+	'/manifest.webmanifest'
 ];
 
 /**

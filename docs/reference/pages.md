@@ -11,13 +11,13 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**44 pages, 173 actions.**
+**44 pages, 172 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/`                             | `createDiaryEntry`, `saveWins`, `setLayout`, `resetLayout`                                                                                                                                                                                                                                                                                                                          |
 | `/admin`                        | `unban`, `blockForever`, `unblockForever`, `dismissReport`, `setRole`, `retryMail`, `dismissMail`                                                                                                                                                                                                                                                                                   |
-| `/admin/[id]`                   | `setRole`, `setPlanEnd`, `grantTrial`, `resendVerification`, `deleteAccount`, `impersonate`                                                                                                                                                                                                                                                                                         |
+| `/admin/[id]`                   | `setRole`, `setPlanEnd`, `grantTrial`, `resendVerification`, `deleteAccount`                                                                                                                                                                                                                                                                                                        |
 | `/buy`                          | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/data/[slug]`                  | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/demo`                         | `default`                                                                                                                                                                                                                                                                                                                                                                           |
@@ -101,13 +101,6 @@ Erase the account, having been made to type its address.
 A redirect on success rather than a form message: the page this action
 belongs to is about an account that no longer exists, and re-rendering it
 would be a 404 or, worse, a cached shell of somebody who is gone.
-
-**`impersonate`**
-
-Sign in as somebody else, with the session marked as borrowed.
-
-Recorded against both accounts before it happens: the point of the log is
-that the person whose account it is can see it too.
 
 ### `/buy`
 

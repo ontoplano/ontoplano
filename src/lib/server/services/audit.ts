@@ -16,6 +16,7 @@ export const AUDIT_EVENTS = [
 	'signed_in',
 	'signed_out',
 	'registered',
+	'email_verified',
 	'password_changed',
 	'email_change_requested',
 	'sessions_revoked',
@@ -25,8 +26,6 @@ export const AUDIT_EVENTS = [
 	'role_changed',
 	'plan_changed',
 	'plan_end_set',
-	'impersonation_started',
-	'impersonation_ended',
 	'verification_resent',
 	// Somebody being given or taken off a paid seat is somebody's access
 	// changing without them doing anything, which is exactly what a log is for.

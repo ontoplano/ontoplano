@@ -44,7 +44,6 @@ sentence somebody agrees to when they grant it.
 | -------------------------------------------- | ------ | ----------------- |
 | `/.well-known/assetlinks.json`               | GET    | —                 |
 | `/account/export`                            | GET    | —                 |
-| `/admin/stop`                                | POST   | —                 |
 | `/api/billing/paddle`                        | POST   | —                 |
 | `/api/capture-options`                       | GET    | —                 |
 | `/api/client-errors`                         | POST   | —                 |
@@ -128,17 +127,6 @@ who installs from the store while working perfectly on the developer's phone.
 The export moved with the page it hangs off.
 
 **GET**
-
-### `/admin/stop`
-
-Give the account back.
-
-Posted from the banner that sits over every page while an administrator is
-borrowing a session. better-auth swaps the cookie back to the administrator's
-own session; the note in the borrowed account's history is what makes the
-whole thing visible to the person it happened to.
-
-**POST**
 
 ### `/api/billing/paddle`
 

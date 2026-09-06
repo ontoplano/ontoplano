@@ -5,7 +5,6 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -129,17 +128,6 @@
 					/>
 					<button class="btn btn-sm">
 						{data.account.role === 'admin' ? 'Remove admin' : 'Make admin'}
-					</button>
-				</form>
-
-				<!--
-					Deliberately the same weight as a delete: signing in as somebody is
-					reading their diary, and it is written down in their own history
-					where they can see it.
-				-->
-				<form method="post" action="?/impersonate" use:enhance>
-					<button class="btn btn-danger btn-sm" use:armed>
-						<Icon name="user" /> Sign in as this account
 					</button>
 				</form>
 			{/if}

@@ -407,9 +407,8 @@
 	>
 		{#if data.demo}
 			<!--
-				The demo says so at the very top, where the impersonation band
-				says its piece — the two are the same kind of statement: this
-				page is not what it looks like. Above `lg` only; the phone gets
+				The demo says so at the very top: this page is not what it
+				looks like. Above `lg` only; the phone gets
 				the strip above the bottom bar instead, because a band at the
 				top of a phone pushes the whole app down for a sentence.
 			-->
@@ -494,29 +493,6 @@
 						</form>
 					{/if}
 				</span>
-			</div>
-		{/if}
-
-		{#if data.impersonatedBy}
-			<!--
-				Loud on purpose. An administrator looking at somebody's account is a
-				thing that has to be visible while it is happening, not only in a log
-				afterwards.
-			-->
-			<div
-				class="relative z-50 flex flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950"
-			>
-				<span>
-					You are signed in as <strong>{data.user.email}</strong> from an administrator account. Everything
-					you do here is theirs.
-				</span>
-				<form method="post" action="/admin/stop">
-					<button
-						class="border border-amber-900 px-2 py-1 text-xs font-semibold hover:bg-amber-400"
-					>
-						Stop
-					</button>
-				</form>
 			</div>
 		{/if}
 

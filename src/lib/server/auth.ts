@@ -10,6 +10,7 @@ import { db } from '$lib/server/db';
 import { MIN_PASSWORD_LENGTH } from '$lib/passwords';
 import { sendLogged } from '$lib/server/services/mail-log';
 import { renderEmail } from '$lib/server/email-template';
+import { record } from '$lib/server/services/audit';
 
 const verificationMail = (url: string) =>
 	renderEmail({
@@ -137,23 +138,24 @@ export const auth = betterAuth({
 				to: user.email,
 				...verificationMail(url)
 			});
+		},
+		// The log said "registered" for everybody and nothing more, so an
+		// administrator could not tell a confirmed address from a typo that
+		// will never click anything.
+		onEmailVerification: async (user) => {
+			record(user.id, 'email_verified');
 		}
 	},
 	/**
-	 * Roles and impersonation come from better-auth rather than from here.
-	 *
-	 * Borrowing somebody's session safely — a real session row, marked as
-	 * borrowed, with its own short expiry and a way back — is easy to write and
-	 * easy to get subtly wrong. The plugin already does it, and marks the
-	 * session so the app can say so in a banner.
+	 * Roles come from better-auth's admin plugin. Impersonation does not:
+	 * signing in as somebody is reading their diary, and no banner or log
+	 * line makes that fine — the endpoints the plugin ships for it are
+	 * refused in hooks.server.ts before they can answer.
 	 */
 	plugins: [
 		admin({
 			defaultRole: 'member',
-			adminRoles: ['admin'],
-			// An hour is long enough to see what somebody is seeing and short
-			// enough that a forgotten tab is not a standing key to their diary.
-			impersonationSessionDuration: 60 * 60
+			adminRoles: ['admin']
 		}),
 		sveltekitCookies(getRequestEvent) // make sure this is the last plugin in the array
 	]

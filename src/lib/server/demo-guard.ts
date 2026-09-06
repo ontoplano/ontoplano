@@ -58,13 +58,8 @@ export const DEMO_NO_EXIT = ['/api/auth/sign-out', '/logout'];
 /** The form action the menu's Sign out posts to: `/login?/signOut`. */
 export const DEMO_NO_EXIT_ACTION = '/signOut';
 
-/**
- * The exception inside the exception.
- *
- * `/admin/stop` is how somebody being impersonated gets their own session back.
- * It has to work wherever impersonation does, demo included.
- */
-export const DEMO_WRITABLE = ['/admin/stop'];
+/** Writes allowed inside a read-only room. Empty since impersonation left. */
+export const DEMO_WRITABLE: string[] = [];
 
 const under = (path: string, prefixes: string[]) =>
 	prefixes.some((p) => path === p || path.startsWith(`${p}/`));
