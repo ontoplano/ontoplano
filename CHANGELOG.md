@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.80.3 — 2026-09-06
+
+- **The demo's login page shows the form to a minted visitor.** It bounced
+  every signed-in session to the dashboard, and on the demo everybody is
+  signed in from the first page view — so the operator's only way in was
+  unreachable. Signing in there now simply replaces the visitor session; an
+  account with a password of its own still goes straight home.
+
 ## 0.80.2 — 2026-09-06
 
 - **`make-operator.mjs` runs on a production install.** It imported

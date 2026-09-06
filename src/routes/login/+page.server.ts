@@ -15,13 +15,18 @@ import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
 import { ServiceError } from '$lib/server/services/errors';
 import { toActionFailure } from '$lib/server/http-errors';
 import { record } from '$lib/server/services/audit';
-import { resetDemoAccount } from '$lib/server/services/demo';
+import { isDemoAccount, resetDemoAccount } from '$lib/server/services/demo';
 import { claimFirstAccount } from '$lib/server/services/admin';
 import { onboardEntitlement, whyItCannotSell } from '$lib/server/services/billing';
 import { WANTED_PLAN_COOKIE } from '$lib/server/services/plan-intent';
 
 export const load: PageServerLoad = async (event) => {
-	if (event.locals.user) {
+	// On the demo, the session that arrives here is almost always a minted
+	// visitor copy — and this form is the operator's only way in, so it stays
+	// reachable instead of bouncing to the dashboard. Signing in simply
+	// replaces the visitor session. An account with a password of its own is
+	// signed in for real and goes home like anywhere else.
+	if (event.locals.user && !(isDemo() && isDemoAccount(event.locals.user.id))) {
 		return redirect(302, '/');
 	}
 	// The front page's Create account lands straight on the register form

@@ -182,6 +182,42 @@ describe('the sweep, unprompted', () => {
 	});
 });
 
+describe('the operator way in', () => {
+	// /login bounces a signed-in session to the dashboard everywhere else —
+	// on the demo that made the sign-in form unreachable, because every
+	// visitor arrives already wearing a minted session and cannot sign out.
+	const event = (userId: string | null) =>
+		({
+			locals: userId ? { user: { id: userId } } : {},
+			url: new URL('https://demo.example/login'),
+			cookies: { get: () => undefined, set: () => {} }
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		}) as any;
+
+	it('shows the form to a minted visitor instead of bouncing them home', async () => {
+		process.env.ONTOPLANO_DEMO = 'true';
+		try {
+			pretendVisitor('demo-at-login', new Date(Date.now() + 60_000).toISOString());
+			const { load } = await import('../src/routes/login/+page.server');
+			const data = (await load(event('demo-at-login'))) as { canRegister?: boolean };
+			expect(data).toHaveProperty('canRegister');
+		} finally {
+			delete process.env.ONTOPLANO_DEMO;
+		}
+	});
+
+	it('still sends an account with a password of its own home', async () => {
+		process.env.ONTOPLANO_DEMO = 'true';
+		try {
+			const { load } = await import('../src/routes/login/+page.server');
+			const result = await Promise.resolve(load(event(OWNER))).catch((thrown: unknown) => thrown);
+			expect((result as { status?: number }).status).toBe(302);
+		} finally {
+			delete process.env.ONTOPLANO_DEMO;
+		}
+	});
+});
+
 describe('the ceiling', () => {
 	it('is a number the instance can set', () => {
 		process.env.ONTOPLANO_DEMO_MAX_ACCOUNTS = '3';
