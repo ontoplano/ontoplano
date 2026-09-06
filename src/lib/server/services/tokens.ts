@@ -99,6 +99,8 @@ export const SCOPES = {
 	'tasks:write': 'Add, finish and delete todos, move them on and off a day, and close a goal',
 	'kitchen:read': 'Read your recipes',
 	'kitchen:write': 'Add and change recipes',
+	'bills:read': 'See your bills and what you have paid',
+	'bills:write': 'Add and change bills, and mark them paid',
 	/*
 	 * People, apart from everything: names, birthdays and phone numbers are
 	 * other people's facts, held in this account — the one part of the data

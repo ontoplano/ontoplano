@@ -1277,3 +1277,48 @@ describe('shopping sections', () => {
 		).toBe(true);
 	});
 });
+
+describe('bills over MCP', () => {
+	const rpc = (id: number, name: string, args: Record<string, unknown>, scopes: string[]) =>
+		call(scopes, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
+
+	it('adds a bill, pays it for a period, and can undo the payment', () => {
+		const made = rpc(1, 'add_bill', { name: 'Rent', amount_expected: 120000, due_day: 5 }, [
+			'bills:write'
+		]);
+		expect(made.result.isError, made.result.content?.[0]?.text).toBe(false);
+		const id = made.result.structuredContent.id as number;
+
+		// Paid a little over the expected, for a named period.
+		const paid = rpc(2, 'pay_bill', { id, amount_paid: 121500, period: '2026-09' }, [
+			'bills:write'
+		]);
+		expect(paid.result.structuredContent.payment.amountExpected).toBe(120000);
+		expect(paid.result.structuredContent.payment.amountPaid).toBe(121500);
+
+		// The month summary sees the gap.
+		const month = rpc(3, 'month_bills', { month: '2026-09' }, ['bills:read']);
+		expect(month.result.structuredContent.paid).toBe(121500);
+
+		// Undo it — the inverse.
+		rpc(4, 'unpay_bill', { id, period: '2026-09' }, ['bills:write']);
+		const after = rpc(5, 'bill_payments', { id }, ['bills:read']);
+		expect(after.result.structuredContent.payments).toHaveLength(0);
+	});
+
+	it('paying the same period twice corrects rather than doubling', () => {
+		const id = rpc(1, 'add_bill', { name: 'Power', amount_expected: 5000 }, ['bills:write']).result
+			.structuredContent.id as number;
+		rpc(2, 'pay_bill', { id, amount_paid: 5200, period: '2026-09' }, ['bills:write']);
+		rpc(3, 'pay_bill', { id, amount_paid: 4800, period: '2026-09' }, ['bills:write']);
+		const rows = rpc(4, 'bill_payments', { id }, ['bills:read']).result.structuredContent.payments;
+		expect(rows).toHaveLength(1);
+		expect(rows[0].amountPaid).toBe(4800);
+	});
+
+	it('a read token cannot write, and there is no delete tool', () => {
+		const denied = rpc(1, 'add_bill', { name: 'x' }, ['bills:read']);
+		expect(denied.result.isError).toBe(true);
+		expect(TOOLS.some((t) => t.name === 'delete_bill')).toBe(false);
+	});
+});

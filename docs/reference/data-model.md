@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**54 tables.**
+**56 tables.**
 
 | Table                                             | Columns | Belongs to a user |
 | ------------------------------------------------- | ------- | ----------------- |
@@ -15,8 +15,10 @@ exist.
 | [`activities`](#activities)                       | 9       | yes               |
 | [`api_tokens`](#api_tokens)                       | 12      | yes               |
 | [`audit_events`](#audit_events)                   | 7       | yes               |
+| [`bill_payments`](#bill_payments)                 | 10      | yes               |
 | [`billing_checkouts`](#billing_checkouts)         | 8       | yes               |
 | [`billing_events`](#billing_events)               | 8       | —                 |
+| [`bills`](#bills)                                 | 14      | yes               |
 | [`calendar_feeds`](#calendar_feeds)               | 9       | yes               |
 | [`categories`](#categories)                       | 5       | yes               |
 | [`client_errors`](#client_errors)                 | 7       | yes               |
@@ -147,6 +149,27 @@ Indexes:
 - `audit_events_user_idx` on `user_id`
 - `audit_events_created_idx` on `created_at`
 
+## bill_payments
+
+| Column            | Type    | Null     | Default               | Notes             |
+| ----------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`              | integer | not null | —                     | primary key, auto |
+| `user_id`         | text    | not null | —                     | → `user.id`       |
+| `bill_id`         | integer | not null | —                     | → `bills.id`      |
+| `period`          | text    | not null | —                     | —                 |
+| `amount_expected` | integer | not null | `0`                   | —                 |
+| `amount_paid`     | integer | not null | `0`                   | —                 |
+| `currency`        | text    | null     | —                     | —                 |
+| `paid_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| `notes`           | text    | null     | `''`                  | —                 |
+| `created_at`      | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `bill_payments_user_idx` on `user_id`
+- `bill_payments_bill_idx` on `bill_id`
+- `bill_payments_bill_period_unique` on `bill_id`, `period` — unique
+
 ## billing_checkouts
 
 | Column                    | Type    | Null     | Default               | Notes             |
@@ -181,6 +204,34 @@ Indexes:
 Indexes:
 
 - `billing_events_unique` on `provider`, `event_id` — unique
+
+## bills
+
+| Column            | Type    | Null     | Default               | Notes             |
+| ----------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`              | integer | not null | —                     | primary key, auto |
+| `user_id`         | text    | not null | —                     | → `user.id`       |
+| `name`            | text    | not null | —                     | —                 |
+| `amount_expected` | integer | not null | `0`                   | —                 |
+| `currency`        | text    | null     | —                     | —                 |
+| `due_day`         | integer | null     | —                     | —                 |
+| `rhythm`          | text    | not null | `'monthly'`           | —                 |
+| `category_id`     | integer | null     | —                     | → `categories.id` |
+| `goal_id`         | integer | null     | —                     | → `goals.id`      |
+| `notes`           | text    | null     | `''`                  | —                 |
+| `active`          | integer | not null | `true`                | —                 |
+| `sort_order`      | integer | not null | `0`                   | —                 |
+| `created_at`      | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| `updated_at`      | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `bills_user_idx` on `user_id`
+- `bills_active_idx` on `user_id`, `active`
+
+Checks — enforced by the database, not only by the service layer:
+
+- `bills_rhythm_dueday`: `"bills"."due_day" IS NULL OR "bills"."due_day" BETWEEN 1 AND 28`
 
 ## calendar_feeds
 

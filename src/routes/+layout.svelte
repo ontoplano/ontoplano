@@ -109,6 +109,7 @@
 		diary: 'diary',
 		ideas: 'ideas',
 		health: 'health',
+		finance: 'wallet',
 		shopping: 'shopping',
 		kitchen: 'utensils'
 	};

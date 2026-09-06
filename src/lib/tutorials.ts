@@ -364,6 +364,23 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
+	'/finance/bills': {
+		label: 'Bills',
+		steps: [
+			{
+				title: 'The bills you expect to pay',
+				body: 'A bill is a name, an amount you expect, and a rhythm — weekly, monthly, yearly. The line at the top is the month: expected, paid, and the gap between them.'
+			},
+			{
+				title: 'Paid is what you actually paid',
+				body: 'Marking a bill paid records the real amount, which can differ from the expected one. Pay the same period twice and it corrects the first rather than doubling it.'
+			},
+			{
+				title: 'Nothing is a one-way door',
+				body: 'Undo a payment, or put a bill away when it stops — its history stays either way.'
+			}
+		]
+	},
 	'/shopping': {
 		label: 'Shopping',
 		steps: [

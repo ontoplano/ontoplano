@@ -12,11 +12,12 @@ until somebody writes one in `src/lib/tutorials.ts`. The same gap is visible
 in the app: the `?` button goes red on a screen with no tour and says so
 under the pointer.
 
-**15 of 15 screens have one.**
+**16 of 16 screens have one.**
 
 | Screen                   | Tour         | Steps |
 | ------------------------ | ------------ | ----- |
 | `/`                      | Ontoplano    | 8     |
+| `/finance/bills`         | Bills        | 3     |
 | `/goals`                 | Goals        | 4     |
 | `/health/habits`         | Habits       | 3     |
 | `/ideas`                 | Ideas        | 3     |
@@ -55,6 +56,12 @@ at the button that reopens it, so it is not listed here.
 6. Everything you have written
 7. What today looks like
 8. Yours to change
+
+### `/finance/bills` — Bills
+
+1. The bills you expect to pay
+2. Paid is what you actually paid
+3. Nothing is a one-way door
 
 ### `/goals` — Goals
 

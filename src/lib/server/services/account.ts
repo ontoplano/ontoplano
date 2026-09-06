@@ -108,6 +108,10 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('pluginManifests', schema.pluginManifests as never),
 	owned('dailyWins', schema.dailyWins as never),
 	owned('quotes', schema.quotes as never),
+	// Bills and their payments: the payments point at the bills, so they come
+	// first (export any order, but the shared list also drives delete order).
+	owned('billPayments', schema.billPayments as never),
+	owned('bills', schema.bills as never),
 	owned('goalLinks', schema.goalLinks as never),
 	owned('goals', schema.goals as never),
 	owned('goalAreas', schema.goalAreas as never),

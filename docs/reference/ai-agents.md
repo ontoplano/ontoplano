@@ -619,3 +619,51 @@ _Needs `ideas:write`; writes._
 Star an idea, or unstar it by calling this again. A star is the person’s to ask for — never decorate their inbox on your own judgement.
 
 _Needs `ideas:write`; writes._
+
+### `bills` — Your bills
+
+The bills you expect to pay, and what you have actually paid. Amounts are in minor units (cents): 12000 is R$120,00. Marking one paid records the real amount, which can differ from the expected one.
+
+_Needs `bills:read`; read-only._
+
+### `bill_payments` — What a bill has cost
+
+Every period a bill has been paid for, with the expected amount and what was actually paid. Amounts in minor units (cents).
+
+_Needs `bills:read`; read-only._
+
+### `month_bills` — A month of bills at a glance
+
+For a month (YYYY-MM), what the monthly bills expected, what has been paid, and the gap. Amounts in minor units (cents).
+
+_Needs `bills:read`; read-only._
+
+### `add_bill` — Add a bill
+
+Write down a bill you expect to pay: a name, the expected amount in minor units (cents), and a rhythm (weekly, monthly, yearly, once). A monthly bill can name the day of the month it falls due.
+
+_Needs `bills:write`; writes._
+
+### `change_bill` — Change a bill
+
+Rewrite a bill. Only the fields given change. Editing the expected amount does not rewrite what past payments recorded — those are snapshots of the day they were paid.
+
+_Needs `bills:write`; writes._
+
+### `archive_bill` — Put a bill away, or bring it back
+
+Take a bill out of the active list (it stopped being paid), or restore it. Its payment history stays either way.
+
+_Needs `bills:write`; writes._
+
+### `pay_bill` — Mark a bill paid
+
+Record a bill paid for a period. The amount defaults to the expected one; give amount_paid in minor units (cents) when it differed. The period defaults to the current one for the bill’s rhythm. Paying the same period again corrects it, never doubles it.
+
+_Needs `bills:write`; writes._
+
+### `unpay_bill` — Undo a bill payment
+
+Remove the payment recorded for a period — it was not actually paid, or was recorded by mistake. The inverse of pay_bill.
+
+_Needs `bills:write`; writes._

@@ -72,10 +72,10 @@ test('it asks one thing at a time, and the rooms you keep are the rooms you get'
 	await expect(page.getByText('a list of shopping items with amounts')).toBeVisible();
 
 	// Everything is on to begin with; turn two off.
-	await expect(page.getByText('8 of 8 on.')).toBeVisible();
+	await expect(page.getByText('9 of 9 on.')).toBeVisible();
 	await page.getByRole('button', { name: 'People' }).click();
 	await page.getByRole('button', { name: 'Health' }).click();
-	await expect(page.getByText('6 of 8 on.')).toBeVisible();
+	await expect(page.getByText('7 of 9 on.')).toBeVisible();
 
 	await page.getByRole('button', { name: 'Next' }).click();
 	await expect(page.getByRole('heading', { name: 'How should it look?' })).toBeVisible();

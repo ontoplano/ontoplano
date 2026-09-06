@@ -75,6 +75,17 @@ import {
 	setArchived,
 	updateRecipe
 } from '../services/recipes.js';
+import {
+	listBills,
+	getBill,
+	createBill,
+	updateBill,
+	setArchived as setBillArchived,
+	markPaid,
+	unmarkPaid,
+	listPayments,
+	monthSummary
+} from '../services/bills.js';
 import { grouped, search } from '../services/search.js';
 import {
 	createCategory as createShoppingCategory,
@@ -2141,6 +2152,188 @@ export const TOOLS: Tool[] = [
 		input: object({ id: { type: 'integer', description: 'The idea\u2019s id.' } }, ['id']),
 		run: (ctx, args) => {
 			toggleFavorite(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+	{
+		name: 'bills',
+		title: 'Your bills',
+		description:
+			'The bills you expect to pay, and what you have actually paid. Amounts are in minor units (cents): 12000 is R$120,00. Marking one paid records the real amount, which can differ from the expected one.',
+		scope: 'bills:read',
+		writes: false,
+		input: object({
+			include_archived: { type: 'boolean', description: 'Include ones put away.' }
+		}),
+		run: (ctx, args) => ({ bills: listBills(ctx, { includeArchived: !!args.include_archived }) })
+	},
+	{
+		name: 'bill_payments',
+		title: 'What a bill has cost',
+		description:
+			'Every period a bill has been paid for, with the expected amount and what was actually paid. Amounts in minor units (cents).',
+		scope: 'bills:read',
+		writes: false,
+		input: object({ id: { type: 'integer', description: 'The bill\u2019s id.' } }, ['id']),
+		run: (ctx, args) => ({ payments: listPayments(ctx, Number(args.id)) })
+	},
+	{
+		name: 'month_bills',
+		title: 'A month of bills at a glance',
+		description:
+			'For a month (YYYY-MM), what the monthly bills expected, what has been paid, and the gap. Amounts in minor units (cents).',
+		scope: 'bills:read',
+		writes: false,
+		input: object({ month: text('The month as YYYY-MM. This month if left out.') }),
+		run: (ctx, args) => {
+			const month =
+				typeof args.month === 'string' && /^\d{4}-\d{2}$/.test(args.month)
+					? args.month
+					: `${ctx.now.getUTCFullYear()}-${String(ctx.now.getUTCMonth() + 1).padStart(2, '0')}`;
+			return { month, ...monthSummary(ctx, month) };
+		}
+	},
+	{
+		name: 'add_bill',
+		title: 'Add a bill',
+		description:
+			'Write down a bill you expect to pay: a name, the expected amount in minor units (cents), and a rhythm (weekly, monthly, yearly, once). A monthly bill can name the day of the month it falls due.',
+		scope: 'bills:write',
+		writes: true,
+		input: object(
+			{
+				name: text('What the bill is called.'),
+				amount_expected: {
+					type: 'integer',
+					description: 'The expected amount, in minor units (cents).'
+				},
+				rhythm: text('weekly, monthly, yearly, or once.'),
+				due_day: { type: 'integer', description: 'Day of the month it falls due, 1-28 (monthly).' },
+				currency: text('A currency code like BRL. The account\u2019s default if left out.'),
+				notes: text('Anything else.')
+			},
+			['name']
+		),
+		run: (ctx, args) => ({
+			id: createBill(ctx, {
+				name: args.name,
+				amountExpected: args.amount_expected ?? 0,
+				rhythm: args.rhythm,
+				dueDay: args.due_day,
+				currency: args.currency,
+				notes: args.notes ?? ''
+			}).id
+		})
+	},
+	{
+		name: 'change_bill',
+		title: 'Change a bill',
+		description:
+			'Rewrite a bill. Only the fields given change. Editing the expected amount does not rewrite what past payments recorded — those are snapshots of the day they were paid.',
+		scope: 'bills:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The bill\u2019s id, as `bills` gives it.' },
+				name: text('The name, rewritten.'),
+				amount_expected: {
+					type: 'integer',
+					description: 'The expected amount, in minor units (cents).'
+				},
+				rhythm: text('weekly, monthly, yearly, or once.'),
+				due_day: { type: 'integer', description: 'Day of the month it falls due, 1-28.' },
+				notes: text('Notes, replacing the old ones.')
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const current = getBill(ctx, Number(args.id));
+			updateBill(ctx, current.id, {
+				name: args.name ?? current.name,
+				amountExpected: args.amount_expected ?? current.amountExpected,
+				rhythm: args.rhythm ?? current.rhythm,
+				dueDay: args.due_day ?? current.dueDay,
+				currency: current.currency,
+				goalId: current.goalId,
+				categoryId: current.categoryId,
+				notes: args.notes ?? current.notes
+			});
+			return { ok: true };
+		}
+	},
+	{
+		/*
+		 * Put away, not deleted: a bill carries payment history, so the reversible
+		 * verb is archive and its inverse is the same tool with archived:false.
+		 * No delete_bill — a mistaken one is archived; a real removal the person
+		 * does in the app, where the history it takes with it is in front of them.
+		 */
+		name: 'archive_bill',
+		title: 'Put a bill away, or bring it back',
+		description:
+			'Take a bill out of the active list (it stopped being paid), or restore it. Its payment history stays either way.',
+		scope: 'bills:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The bill\u2019s id.' },
+				archived: {
+					type: 'boolean',
+					description: 'true to put away, false to bring back. Defaults to true.'
+				}
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			setBillArchived(ctx, Number(args.id), args.archived === undefined ? true : !!args.archived);
+			return { ok: true };
+		}
+	},
+	{
+		name: 'pay_bill',
+		title: 'Mark a bill paid',
+		description:
+			'Record a bill paid for a period. The amount defaults to the expected one; give amount_paid in minor units (cents) when it differed. The period defaults to the current one for the bill\u2019s rhythm. Paying the same period again corrects it, never doubles it.',
+		scope: 'bills:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The bill\u2019s id.' },
+				amount_paid: {
+					type: 'integer',
+					description: 'What was actually paid, in minor units (cents).'
+				},
+				period: text(
+					'The period: YYYY-Www for weekly, YYYY-MM for monthly, YYYY for yearly. This period if left out.'
+				),
+				notes: text('Anything about this payment.')
+			},
+			['id']
+		),
+		run: (ctx, args) => ({
+			payment: markPaid(ctx, Number(args.id), {
+				amountPaid: args.amount_paid,
+				period: args.period,
+				notes: args.notes
+			})
+		})
+	},
+	{
+		name: 'unpay_bill',
+		title: 'Undo a bill payment',
+		description:
+			'Remove the payment recorded for a period — it was not actually paid, or was recorded by mistake. The inverse of pay_bill.',
+		scope: 'bills:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The bill\u2019s id.' },
+				period: text('The period to undo, e.g. 2026-09.')
+			},
+			['id', 'period']
+		),
+		run: (ctx, args) => {
+			unmarkPaid(ctx, Number(args.id), String(args.period));
 			return { ok: true };
 		}
 	}

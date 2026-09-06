@@ -27,6 +27,8 @@ import { listIdeas } from '$lib/server/services/ideas';
 import { listQuotes } from '$lib/server/services/quotes';
 import { reviewPending } from '$lib/server/services/review';
 import { listToBuy } from '$lib/server/services/shopping';
+import { listBills, listPayments, monthSummary } from '$lib/server/services/bills';
+import { getCurrency } from '$lib/server/settings';
 import { listActiveWeeklySlots } from '$lib/server/services/slots';
 import { listTodos } from '$lib/server/services/todos';
 import { listWins, saveWins } from '$lib/server/services/wins';
@@ -156,6 +158,28 @@ export const load: PageServerLoad = async ({ locals }) => {
 			streak: h.streak
 		})),
 		shoppingToBuy: listToBuy(ctx),
+		billsCard: (() => {
+			const month = `${ctx.now.getUTCFullYear()}-${String(ctx.now.getUTCMonth() + 1).padStart(2, '0')}`;
+			const monthly = listBills(ctx).filter((b) => b.rhythm === 'monthly');
+			const paid = new Set(
+				monthly
+					.flatMap((b) => listPayments(ctx, b.id))
+					.filter((p) => p.period === month)
+					.map((p) => p.billId)
+			);
+			return {
+				currency: getCurrency(ctx.userId),
+				summary: monthSummary(ctx, month),
+				open: monthly
+					.filter((b) => !paid.has(b.id))
+					.map((b) => ({
+						id: b.id,
+						name: b.name,
+						amountExpected: b.amountExpected,
+						dueDay: b.dueDay
+					}))
+			};
+		})(),
 		/*
 		 * The last few things written down, and the last few ideas.
 		 *

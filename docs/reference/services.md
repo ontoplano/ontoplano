@@ -20,6 +20,7 @@ shows up here on the next build.
 | [`audit`](#audit)                               | What happened to an account.                                                                                                                                                                                                                                         |
 | [`backlinks`](#backlinks)                       | Which goal a thing belongs to.                                                                                                                                                                                                                                       |
 | [`billing`](#billing)                           | Billing, as the rest of the app sees it.                                                                                                                                                                                                                             |
+| [`bills`](#bills)                               | Bills: money expected to go out, on a rhythm.                                                                                                                                                                                                                        |
 | [`birthdays`](#birthdays)                       | Being told it is somebody's birthday, on the morning of it.                                                                                                                                                                                                          |
 | [`calendar-feed`](#calendar-feed)               | The plan, published as a calendar anybody's software can read.                                                                                                                                                                                                       |
 | [`calendars`](#calendars)                       | Calendars somebody else controls.                                                                                                                                                                                                                                    |
@@ -569,6 +570,74 @@ have signed up in the minutes before they notice; the alternative costs them
 the money from every account that ever signs up, and they find out months
 later. Existing accounts are untouched, and `/admin` can still grant a trial
 by hand for anybody who needs one.
+
+## bills
+
+Bills: money expected to go out, on a rhythm.
+
+A bill is not a Paddle payment (that is `billing.ts`) and not a to-do — it
+is the rent, the water, the streaming subscription: a name, an expected
+amount, and a rhythm. Marking one paid writes a `bill_payments` row for that
+period recording what was _actually_ paid, which may differ from what was
+expected. That gap — expected versus paid — is the first real number a
+finance section measures, so the payment is a row of its own rather than a
+flag on the bill.
+
+A bill is archived, never deleted while it has history: its payments are the
+point. `deleteBill` exists for one made by mistake and takes its payments
+with it, on purpose.
+
+### Functions
+
+#### `periodFor(rhythm, when)`
+
+The period key a rhythm settles into for a given instant.
+
+#### `listBills(ctx, opts)`
+
+Every bill, active first, newest within each.
+
+#### `getBill(ctx, id)`
+
+#### `createBill(ctx, input)`
+
+#### `updateBill(ctx, id, input)`
+
+#### `setArchived(ctx, id, archived)`
+
+Archive keeps the history; the bill leaves the active list and its funnel.
+
+#### `deleteBill(ctx, id)`
+
+For a bill created by mistake: gone, with its payments.
+
+#### `markPaid(ctx, billId, input)`
+
+Mark a bill paid for a period.
+
+The period defaults to the one the rhythm is in now, and paying the same
+period again corrects it rather than adding a second row (the unique index
+enforces one payment per period, so this upserts). The expected amount is
+snapshotted from the bill as it stands, so a later edit to the bill does not
+rewrite what was actually asked at the time.
+
+#### `unmarkPaid(ctx, billId, period)`
+
+Undo a payment for a period — it was never paid, or paid in error.
+
+#### `listPayments(ctx, billId)`
+
+#### `monthSummary(ctx, month)`
+
+A month, the way the section's first page reads it: what was expected of the
+monthly bills, what has actually been paid this month across all bills, and
+the gap between the two.
+
+### Types
+
+- `Rhythm`
+- `Bill`
+- `BillPayment`
 
 ## birthdays
 

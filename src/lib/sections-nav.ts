@@ -85,6 +85,14 @@ export const NAV_PLACES: NavPlace[] = [
 		hide: 'health'
 	},
 	{
+		key: 'finance',
+		label: 'Finance',
+		section: 'finance',
+		icon: 'wallet',
+		href: '/finance/bills',
+		hide: 'finance'
+	},
+	{
 		key: 'shopping',
 		label: 'Shopping',
 		section: 'shopping',

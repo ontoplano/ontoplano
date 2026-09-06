@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
+	import { formatMoney } from '$lib/money';
 	import Icon from '$lib/components/Icon.svelte';
 	import FrontDoor from '$lib/components/FrontDoor.svelte';
 	import QuickCapture from '$lib/components/QuickCapture.svelte';
@@ -874,6 +875,48 @@
 			</Card>
 		{/snippet}
 
+		{#snippet card_bills()}
+			<Card title="Bills" accent={SECTION_COLORS.finance}>
+				{#snippet actions()}
+					<a href={resolve('/finance/bills')} class="text-xs text-gray-500 hover:text-gray-900"
+						>Open →</a
+					>
+				{/snippet}
+				{#if data.billsCard.summary.billCount === 0}
+					{@render nothingYet(
+						'No bills yet. Write down what you expect to pay and the month keeps score.',
+						'/finance/bills',
+						'Add a bill'
+					)}
+				{:else}
+					<div class="space-y-2">
+						<div class="text-sm text-gray-700">
+							{formatMoney(data.billsCard.summary.paid, data.billsCard.currency)} paid of
+							{formatMoney(data.billsCard.summary.expected, data.billsCard.currency)} expected
+						</div>
+						{#if data.billsCard.open.length === 0}
+							<span class="text-xs text-gray-500">Everything paid this month.</span>
+						{:else}
+							<div class="space-y-1">
+								{#each data.billsCard.open.slice(0, 5) as bill (bill.id)}
+									<div class="flex items-center justify-between gap-2 text-sm">
+										<span class="text-gray-700">{bill.name}</span>
+										<span class="text-xs text-gray-500">
+											{formatMoney(bill.amountExpected, data.billsCard.currency)}{#if bill.dueDay}
+												· due the {bill.dueDay}{/if}
+										</span>
+									</div>
+								{/each}
+								{#if data.billsCard.open.length > 5}
+									<span class="text-xs text-gray-500">+{data.billsCard.open.length - 5} more</span>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				{/if}
+			</Card>
+		{/snippet}
+
 		{#snippet card_shopping()}
 			<Card title="Shopping" accent={SECTION_COLORS.shopping}>
 				{#snippet actions()}
@@ -1031,6 +1074,7 @@
 						{:else if id === 'habits'}{@render card_habits()}
 						{:else if id === 'weekPlan'}{@render card_weekPlan()}
 						{:else if id === 'diary'}{@render card_diary()}
+						{:else if id === 'bills'}{@render card_bills()}
 						{:else if id === 'shopping'}{@render card_shopping()}
 						{:else if id === 'quote'}{@render card_quote()}
 						{:else if id === 'threeWins'}{@render card_threeWins()}

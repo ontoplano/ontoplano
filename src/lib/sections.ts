@@ -54,6 +54,12 @@ export const HIDEABLE_SECTIONS = [
 			'Habits with streaks, and anything with a number — weight, sleep, whatever your gadgets already measure — arriving from the apps you trust.'
 	},
 	{
+		id: 'finance',
+		label: 'Finance',
+		blurb:
+			'The bills you expect to pay, and what you actually paid. Not accounting — the handful of payments that land on a month, and the gap between planned and real.'
+	},
+	{
 		id: 'shopping',
 		label: 'Shopping',
 		blurb:

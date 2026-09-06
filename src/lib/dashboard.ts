@@ -18,7 +18,8 @@ export type DashboardCardId =
 	| 'quote'
 	| 'threeWins'
 	| 'latestTodos'
-	| 'ideas';
+	| 'ideas'
+	| 'bills';
 
 export type DashboardCard = {
 	id: DashboardCardId;
@@ -99,6 +100,14 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 		defaultOn: true,
 		width: 'half',
 		hide: 'ideas'
+	},
+	{
+		id: 'bills',
+		label: 'Bills',
+		description: 'This month: expected, paid, and which bills are still open.',
+		defaultOn: true,
+		width: 'half',
+		hide: 'finance'
 	},
 	{
 		id: 'shopping',

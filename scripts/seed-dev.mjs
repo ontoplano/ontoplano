@@ -977,6 +977,59 @@ shoppingItem('a proper desk chair', 'someday', { notes: 'try one before buying' 
 shoppingItem('noise-cancelling headphones', 'someday');
 shoppingItem('cast iron pan', 'someday', { bought: true });
 
+// --- bills (finance) --------------------------------------------------------------
+//
+// A handful of monthly bills, one of them archived, and a couple of months of
+// payments where the paid amount drifts from the expected — the gap the
+// finance section is built to show.
+
+const bill = (name, amountExpected, extra = {}) => {
+	const existing = one('select id from bills where user_id = ? and name = ?', uid, name);
+	if (existing) return existing.id;
+	return run(
+		'insert into bills (user_id, name, amount_expected, currency, due_day, rhythm, active) values (?, ?, ?, ?, ?, ?, ?)',
+		uid,
+		name,
+		amountExpected,
+		extra.currency ?? 'BRL',
+		extra.dueDay ?? null,
+		extra.rhythm ?? 'monthly',
+		extra.active === false ? 0 : 1
+	);
+};
+
+const billPaid = (billId, period, amountExpected, amountPaid) => {
+	if (one('select id from bill_payments where bill_id = ? and period = ?', billId, period)) return;
+	run(
+		"insert into bill_payments (user_id, bill_id, period, amount_expected, amount_paid, currency, paid_at) values (?, ?, ?, ?, ?, ?, datetime('now'))",
+		uid,
+		billId,
+		period,
+		amountExpected,
+		amountPaid,
+		'BRL'
+	);
+};
+
+const billRent = bill('Rent', 180000, { dueDay: 5 });
+const billPower = bill('Power', 15000, { dueDay: 12 });
+const billWater = bill('Water', 8000, { dueDay: 12 });
+const billInternet = bill('Internet', 9990, { dueDay: 20 });
+const cleaner = bill('Cleaner', 12000, { rhythm: 'weekly' });
+bill('Old gym membership', 12900, { active: false });
+
+// Last month, all paid; power ran a little high.
+billPaid(billRent, '2026-08', 180000, 180000);
+billPaid(billPower, '2026-08', 15000, 16240);
+billPaid(billWater, '2026-08', 8000, 7650);
+billPaid(billInternet, '2026-08', 9990, 9990);
+// A couple of recent weeks of the cleaner.
+billPaid(cleaner, '2026-W35', 12000, 12000);
+billPaid(cleaner, '2026-W36', 12000, 13000);
+// This month, some paid so far.
+billPaid(billRent, '2026-09', 180000, 180000);
+billPaid(billPower, '2026-09', 15000, 15880);
+
 // --- dashboard extras ---------------------------------------------------------------
 
 quote('Plans are worthless, but planning is everything.', 'Eisenhower');

@@ -1904,3 +1904,89 @@ export const subscribers = sqliteTable(
 	},
 	(table) => [index('subscribers_confirmed_idx').on(table.confirmedAt)]
 );
+
+// --- Finance: Bills ---
+//
+// A bill is money expected to go out on a rhythm — rent, a subscription, the
+// water. Distinct from `billing_*`, which is Paddle taking money in; this is
+// the person's own outgoings, and it reuses `categories` and links to `goals`
+// like every other room. Marking one paid writes a `bill_payments` row that
+// records what was actually paid, which may differ from what was expected —
+// and that gap is the seed the rest of a finance section measures from.
+
+export const bills = sqliteTable(
+	'bills',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull(),
+		// Minor units (cents), because money in a float is a bug waiting for a
+		// rounding. The currency is the person's, resolved in the service from a
+		// setting rather than hardcoded — null means "the account's default".
+		amountExpected: integer('amount_expected').notNull().default(0),
+		currency: text('currency'),
+		// The day of the month it falls due, 1-28 to be real on every month.
+		// Null for a rhythm that is not monthly.
+		dueDay: integer('due_day'),
+		rhythm: text('rhythm', { enum: ['weekly', 'monthly', 'yearly', 'once'] })
+			.notNull()
+			.default('monthly'),
+		categoryId: integer('category_id').references(() => categories.id),
+		// Bills link to goals like everything else — "clear the card" is a goal
+		// its payments move toward.
+		goalId: integer('goal_id').references(() => goals.id, { onDelete: 'set null' }),
+		notes: text('notes').default(''),
+		// A bill that is no longer paid is archived, not deleted: its history is
+		// the point, and deleting it would take the payments with it.
+		active: integer('active', { mode: 'boolean' }).notNull().default(true),
+		sortOrder: integer('sort_order').notNull().default(0),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('bills_user_idx').on(table.userId),
+		index('bills_active_idx').on(table.userId, table.active),
+		check('bills_rhythm_dueday', sql`${table.dueDay} IS NULL OR ${table.dueDay} BETWEEN 1 AND 28`)
+	]
+);
+
+export const billPayments = sqliteTable(
+	'bill_payments',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		billId: integer('bill_id')
+			.notNull()
+			.references(() => bills.id, { onDelete: 'cascade' }),
+		// Which occurrence this settles: 'YYYY-MM' for a monthly bill, 'YYYY'
+		// for a yearly one, the pay date for a one-off. One payment per period,
+		// so paying twice corrects the first rather than doubling it.
+		period: text('period').notNull(),
+		// What was expected when it was paid, snapshotted — the bill's expected
+		// amount can change later, and the gap is measured against what was
+		// actually asked at the time.
+		amountExpected: integer('amount_expected').notNull().default(0),
+		amountPaid: integer('amount_paid').notNull().default(0),
+		currency: text('currency'),
+		paidAt: text('paid_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		notes: text('notes').default(''),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('bill_payments_user_idx').on(table.userId),
+		index('bill_payments_bill_idx').on(table.billId),
+		uniqueIndex('bill_payments_bill_period_unique').on(table.billId, table.period)
+	]
+);
