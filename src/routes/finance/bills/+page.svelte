@@ -100,10 +100,13 @@
 	{:else}
 		<ul class="divide-y divide-gray-100 rounded border border-gray-200">
 			{#each active as bill (bill.id)}
-				<li class="flex flex-wrap items-center gap-3 px-4 py-3">
-					<div class="min-w-0 flex-1">
-						<div class="flex items-center gap-2">
-							<span class="font-medium text-gray-900">{bill.name}</span>
+				<li class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
+					<!-- The whole row on a phone: a name squeezed into four characters
+					     beside three buttons is not a name. The buttons wrap under it
+					     and sit beside it again as soon as there is room. -->
+					<div class="min-w-full flex-1 sm:min-w-0">
+						<div class="flex flex-wrap items-center gap-2">
+							<span class="font-medium break-words text-gray-900">{bill.name}</span>
 							{#if bill.paidThisPeriod}
 								<span class="rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">
 									paid
@@ -113,55 +116,57 @@
 						<div class="text-xs text-gray-500">{summaryOf(bill)}</div>
 					</div>
 
-					{#if bill.paidThisPeriod}
-						<form method="post" action="?/unpay" use:enhance>
-							<input type="hidden" name="id" value={bill.id} />
-							<input type="hidden" name="period" value={bill.period} />
-							<button class="btn btn-sm" title="Undo this period's payment">Undo</button>
-						</form>
-					{:else if paying === bill.id}
+					<div class="flex flex-1 flex-wrap items-center justify-end gap-2">
+						{#if bill.paidThisPeriod}
+							<form method="post" action="?/unpay" use:enhance>
+								<input type="hidden" name="id" value={bill.id} />
+								<input type="hidden" name="period" value={bill.period} />
+								<button class="btn btn-sm" title="Undo this period's payment">Undo</button>
+							</form>
+						{:else if paying === bill.id}
+							<form
+								method="post"
+								action="?/pay"
+								class="flex items-center gap-1"
+								use:enhance={() =>
+									({ result, update }) => {
+										if (result.type === 'success') paying = null;
+										return update();
+									}}
+							>
+								<input type="hidden" name="id" value={bill.id} />
+								<input type="hidden" name="period" value={data.periods[bill.id]} />
+								<input
+									name="amount"
+									inputmode="decimal"
+									use:autofocus
+									class="input w-24"
+									placeholder={asDecimal(bill.amountExpected)}
+								/>
+								<button class="btn btn-primary btn-sm" type="submit">Paid</button>
+								<button class="btn btn-sm" type="button" onclick={() => (paying = null)}>×</button>
+							</form>
+						{:else}
+							<button class="btn btn-sm" onclick={() => (paying = bill.id)}>Mark paid</button>
+						{/if}
+
+						<button class="icon-btn" aria-label="Edit {bill.name}" onclick={() => openEdit(bill)}>
+							<Icon name="edit" />
+						</button>
+
 						<form
 							method="post"
-							action="?/pay"
-							class="flex items-center gap-1"
-							use:enhance={() =>
-								({ result, update }) => {
-									if (result.type === 'success') paying = null;
-									return update();
-								}}
+							action="?/archive"
+							use:enhance
+							title="Put this bill away — its history stays"
 						>
 							<input type="hidden" name="id" value={bill.id} />
-							<input type="hidden" name="period" value={data.periods[bill.id]} />
-							<input
-								name="amount"
-								inputmode="decimal"
-								use:autofocus
-								class="input w-24"
-								placeholder={asDecimal(bill.amountExpected)}
-							/>
-							<button class="btn btn-primary btn-sm" type="submit">Paid</button>
-							<button class="btn btn-sm" type="button" onclick={() => (paying = null)}>×</button>
+							<input type="hidden" name="archived" value="true" />
+							<button class="icon-btn" aria-label="Archive {bill.name}">
+								<Icon name="archive" />
+							</button>
 						</form>
-					{:else}
-						<button class="btn btn-sm" onclick={() => (paying = bill.id)}>Mark paid</button>
-					{/if}
-
-					<button class="icon-btn" aria-label="Edit {bill.name}" onclick={() => openEdit(bill)}>
-						<Icon name="edit" />
-					</button>
-
-					<form
-						method="post"
-						action="?/archive"
-						use:enhance
-						title="Put this bill away — its history stays"
-					>
-						<input type="hidden" name="id" value={bill.id} />
-						<input type="hidden" name="archived" value="true" />
-						<button class="icon-btn" aria-label="Archive {bill.name}">
-							<Icon name="archive" />
-						</button>
-					</form>
+					</div>
 				</li>
 			{/each}
 		</ul>

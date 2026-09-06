@@ -17,6 +17,14 @@
 	let editing: (typeof data.trainings)[number] | null = $state(null);
 	let showArchived = $state(false);
 	let confirmingDelete: (typeof data.trainings)[number] | null = $state(null);
+	/**
+	 * The workout whose plan is open.
+	 *
+	 * The plan is what somebody reads while doing it, and it used to be
+	 * reachable only through Edit — a form is the wrong place to read from,
+	 * and one stray keystroke there rewrites the thing you came to consult.
+	 */
+	let expanded: number | null = $state(null);
 
 	const KINDS = [
 		{ value: 'strength', label: 'Strength' },
@@ -57,13 +65,20 @@
 		<ul class="divide-y divide-gray-100 rounded border border-gray-200">
 			{#each active as t (t.id)}
 				<li class="flex flex-wrap items-center gap-3 px-4 py-3">
-					<div class="min-w-0 flex-1">
-						<span class="font-medium text-gray-900">{t.title}</span>
-						<div class="text-xs text-gray-500">
+					<button
+						class="min-w-0 flex-1 text-left"
+						aria-expanded={expanded === t.id}
+						onclick={() => (expanded = expanded === t.id ? null : t.id)}
+					>
+						<span class="font-medium text-gray-900">
+							<Icon name={expanded === t.id ? 'chevron-down' : 'chevron-right'} />
+							{t.title}
+						</span>
+						<span class="block text-xs text-gray-500">
 							{kindLabel(t.kind)}{#if t.minutes}, ~{t.minutes} min{/if}{#if t.lastDoneAt}
 								· last done {t.lastDoneAt.slice(0, 10)}{/if}
-						</div>
-					</div>
+						</span>
+					</button>
 
 					<form method="post" action="?/done" use:enhance>
 						<input type="hidden" name="id" value={t.id} />
@@ -83,9 +98,19 @@
 						<input type="hidden" name="id" value={t.id} />
 						<input type="hidden" name="archived" value="true" />
 						<button class="icon-btn" aria-label="Archive {t.title}">
-							<Icon name="skip" />
+							<Icon name="archive" />
 						</button>
 					</form>
+
+					{#if expanded === t.id}
+						<div
+							class="w-full border-t border-gray-100 pt-3 text-sm whitespace-pre-wrap text-gray-700"
+						>
+							{#if t.plan}{t.plan}{:else}<span class="text-gray-400"
+									>No plan written yet — Edit adds one.</span
+								>{/if}
+						</div>
+					{/if}
 				</li>
 			{/each}
 		</ul>
