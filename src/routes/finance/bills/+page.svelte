@@ -159,7 +159,7 @@
 						<input type="hidden" name="id" value={bill.id} />
 						<input type="hidden" name="archived" value="true" />
 						<button class="icon-btn" aria-label="Archive {bill.name}">
-							<Icon name="skip" />
+							<Icon name="archive" />
 						</button>
 					</form>
 				</li>

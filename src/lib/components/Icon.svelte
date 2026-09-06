@@ -47,6 +47,9 @@
 		target:
 			'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 11.25a0.75 0.75 0 1 0 0 1.5 0.75 0.75 0 0 0 0-1.5z',
 		shopping: 'M4 7h16l-1.5 12h-13zM9 7V5a3 3 0 0 1 6 0v2',
+		// Put away rather than thrown away: the lid, the box, and the arrow down
+		// into it — the gesture a chat app archives a conversation with.
+		archive: 'M3 5h18v4H3zM5 9v10h14V9M10 13h4',
 		wallet:
 			'M3 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 9h13a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H3M16 12h.01',
 		// A gear. What was here was a disc with eight rays coming off it, which is
