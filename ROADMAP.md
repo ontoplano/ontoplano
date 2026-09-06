@@ -9,18 +9,13 @@ each are the parts already decided; the rest is open.
 
 ## In scope
 
-### A business section
+### The widget, ten times better
 
-For someone running something small on their own, in the same place as the rest
-of their life.
-
-- Products or services: name, price, cost, still offered.
-- Revenue: what sold, when, how much, to whom — a customer is a `people` row.
-- Costs: one-off and recurring, categorised.
-- One page answering "how was this month", by month and by product.
-
-Not accounting software: no ledgers, no tax, no invoicing. Reuses `categories`
-and links to `goals` like everything else.
+The Android home-screen widget shows today's habits and tasks, and that is
+the whole of it. It should be worth the screen it sits on. What that means
+is still open — ticking a habit without opening the app, a schedule widget,
+a shopping-list widget are the candidates — but the direction is decided:
+not a small polish, an order of magnitude.
 
 ### Trips
 
@@ -39,6 +34,7 @@ those have no REST equivalent.
   not look like the first.
 - Scopes already exist per entity and per direction; nothing new is needed
   there.
+- We should keep track of how are both doing, and what could one done and the other theoretically not
 
 ### A home inventory
 
@@ -61,26 +57,24 @@ Every string is written into its page in English.
 - Strings into a keyed catalogue; the build fails on a key that is gone.
 - Locale per account in `user_settings`, browser first, instance as fallback.
 - Dates and numbers through `Intl` — several places still hardcode `en-US`.
-- Portuguese first.
 
-Not in scope: right-to-left layout, translating the docs.
+- Portuguese, Russian, Chinese would probably be the priorities
 
 ---
 
 ## Small improvements
 
 - **Sharing beyond shopping and notebooks.** A family plan can share a
-  shopping category and a notebook today, opt-in, owner-controlled. Whether
-  tasks or goals inside a shared notebook should travel with it is an open
-  question — the diary never will be.
+  shopping category and a notebook today, opt-in, owner-controlled. Tasks
+  and goals that belong to it should be shared too, but only editable by the
+  owner (much like the categories and notebooks are).
 
 - **Audio on notes**, by the path images already take.
 - **An `.ics` importer**, beside the Todoist, Google Tasks, Google Keep,
   org-mode and Obsidian ones. Subscribing to a calendar already works;
   importing one does not.
-- **Reorder the capture wheel.** The rooms wheel is arrangeable; the four
   capture kinds are not.
-- **A scheme you can schedule** rather than apply by hand.
+- **A scheme you can schedule** rather than apply by hand. MCP interface to changing schemes.
 - **A token's own log** on the page that lists them: a token says when it was
   last used and not what it did.
 
@@ -88,9 +82,22 @@ Not in scope: right-to-left layout, translating the docs.
 
 ## One day, maybe
 
-- **An Obsidian plugin.** A vault already imports; writing back is the other
-  half and a different thing.
-- **Video on notes.** Probably never: a planner is not a media library.
+**More media**: Support annexing pdfs, larger images, etc. That can be done with size limiting, to make sure small servers (like mine) are not overloaded
+
+### A business section
+
+For someone running something small on their own, in the same place as the rest
+of their life.
+
+- Products or services: name, price, cost, still offered.
+- Revenue: what sold, when, how much, to whom — a customer is a `people` row.
+- Costs: one-off and recurring, categorised.
+- One page answering "how was this month", by month and by product.
+
+Not accounting software: no ledgers, no tax, no invoicing. Reuses `categories`
+and links to `goals` like everything else.
+
+This may be a big task of its own
 
 ---
 
@@ -100,7 +107,7 @@ So they stop coming back:
 
 - **Budget tracking** — huge, crowded, barely touches the week.
 - **Reading lists** — a different app.
-- **An in-process plugin system** — data streams and the API cover it.
+- **An in-process plugin system** — data streams and the API cover it. Too easy to accidentaly create a RCE entry-point.
 - **AI features inside the app.** The interface is MCP: your assistant, your
   token, your machine. Nothing in here calls a model.
 - **Importing a recipe from a URL.** The server would be fetching an address

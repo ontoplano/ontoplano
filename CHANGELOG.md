@@ -10,6 +10,12 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.80.4 — 2026-09-06
+
+- **The roadmap grows a widget ambition and sheds the business section.**
+  "The widget, ten times better" is in scope — direction decided, meaning
+  open — and the business section is out.
+
 ## 0.80.3 — 2026-09-06
 
 - **The demo's login page shows the form to a minted visitor.** It bounced
