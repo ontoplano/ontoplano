@@ -17,6 +17,33 @@ is still open — ticking a habit without opening the app, a schedule widget,
 a shopping-list widget are the candidates — but the direction is decided:
 not a small polish, an order of magnitude.
 
+### Finance
+
+Money, in the same place as the life it pays for. Opinionated and small, not
+accounting — the existing decision against budget-tracking still holds
+(spreadsheets of every coffee, no connection to the week). This is different:
+it starts from the handful of payments that actually land on a calendar.
+
+**Bills, the first tab.** A bill is something expected to be paid — a name, an
+amount expected, a rhythm (monthly, usually). Marking one paid records the
+amount actually paid, which may differ from the expected one, and that
+gap is the seed everything else in this section measures from.
+
+Paying a bill can spawn a recurring task — monthly, typically — that shows up
+in the calendar like any task, but is special: ticking it marks the bill paid
+for that period rather than just completing a to-do. So the week already knows
+about the rent the way it knows about a dentist appointment, and the ticking
+is the same gesture, and the money side is a consequence of it rather than a
+second chore.
+
+- Bills reuse `categories` and can link to `goals`, like everything else.
+- The recurring "pay X" task is a task type that carries a bill and an amount,
+  not a free-text to-do that happens to be named after a bill.
+- Actual-vs-expected per bill, per month, is the first real number; later tabs
+  (income, a month's shape) build on the same rows rather than a new store.
+- Nothing here reaches out to a bank or an account. Amounts are entered, the
+  way a shopping-list price is — no server fetching anybody's finances.
+
 ### Trips
 
 Notebooks already hold a trip's writing. What is missing is the date range
@@ -63,6 +90,10 @@ Every string is written into its page in English.
 ---
 
 ## Small improvements
+
+- **Recipes belong under a Health section.** Recipes sit on their own today;
+  they read as part of eating well, next to habits and the shopping list, not
+  as a standalone room. The move is navigation and framing, not the data.
 
 - **Sharing beyond shopping and notebooks.** A family plan can share a
   shopping category and a notebook today, opt-in, owner-controlled. Tasks
