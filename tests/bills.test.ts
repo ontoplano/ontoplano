@@ -155,6 +155,86 @@ describe('when a bill wants paying', () => {
 		expect(twoMonths.find((d) => d.period === '2026-10')!.paid).toBe(false);
 	});
 
+	test('a weekly bill falls on its weekday, every week', () => {
+		const mine = { ...ctx, userId: `bills-weekly-${Date.now()}` };
+		database.exec(
+			`insert into user (id, name, email, email_verified, created_at, updated_at)
+			 values (?, 'W', ?, 1, 0, 0)`,
+			mine.userId,
+			`${mine.userId}@t.test`
+		);
+		// Fridays — 5 counting Monday as 1, which is how the column reads.
+		bills.createBill(mine, {
+			name: 'Cleaner',
+			amountExpected: 12000,
+			rhythm: 'weekly',
+			dueDay: 5
+		});
+
+		const due = bills.billsDueBetween(mine, '2026-09-01', '2026-09-30');
+		// Every Friday in September 2026: the 4th, 11th, 18th and 25th.
+		expect(due.map((d) => d.dueDate)).toEqual([
+			'2026-09-04',
+			'2026-09-11',
+			'2026-09-18',
+			'2026-09-25'
+		]);
+		expect(due.every((d) => new Date(`${d.dueDate}T00:00:00Z`).getUTCDay() === 5)).toBe(true);
+	});
+
+	test('a weekly bill can be paid one week and not the next', () => {
+		const mine = { ...ctx, userId: `bills-wpaid-${Date.now()}` };
+		database.exec(
+			`insert into user (id, name, email, email_verified, created_at, updated_at)
+			 values (?, 'W2', ?, 1, 0, 0)`,
+			mine.userId,
+			`${mine.userId}@t.test`
+		);
+		const bill = bills.createBill(mine, {
+			name: 'Cleaner',
+			amountExpected: 12000,
+			rhythm: 'weekly',
+			dueDay: 5
+		});
+		// The ISO week of Friday 11 September 2026.
+		const week = bills.periodFor('weekly', new Date('2026-09-11T00:00:00Z'));
+		bills.markPaid(mine, bill.id, { period: week });
+
+		const due = bills.billsDueBetween(mine, '2026-09-01', '2026-09-30');
+		expect(due.find((d) => d.dueDate === '2026-09-11')!.paid).toBe(true);
+		expect(due.find((d) => d.dueDate === '2026-09-18')!.paid).toBe(false);
+	});
+
+	test('a yearly bill falls on its date, once a year', () => {
+		const mine = { ...ctx, userId: `bills-yearly-${Date.now()}` };
+		database.exec(
+			`insert into user (id, name, email, email_verified, created_at, updated_at)
+			 values (?, 'Y', ?, 1, 0, 0)`,
+			mine.userId,
+			`${mine.userId}@t.test`
+		);
+		// The insurance, every 15 March, wanted a week early.
+		bills.createBill(mine, {
+			name: 'Insurance',
+			amountExpected: 90000,
+			rhythm: 'yearly',
+			dueMonth: 3,
+			dueDay: 15,
+			payLeadDays: 7
+		});
+
+		const inMarch = bills.billsDueBetween(mine, '2026-03-01', '2026-03-31');
+		expect(inMarch).toHaveLength(1);
+		expect(inMarch[0].dueDate).toBe('2026-03-15');
+		expect(inMarch[0].date).toBe('2026-03-08');
+		expect(inMarch[0].period).toBe('2026');
+
+		// And not in a month it does not fall in.
+		expect(bills.billsDueBetween(mine, '2026-06-01', '2026-06-30')).toHaveLength(0);
+		// Two years, two occurrences.
+		expect(bills.billsDueBetween(mine, '2026-01-01', '2027-12-31')).toHaveLength(2);
+	});
+
 	test('a bill with no due day never lands on the week', () => {
 		const mine = { ...ctx, userId: `bills-nodue-${Date.now()}` };
 		database.exec(

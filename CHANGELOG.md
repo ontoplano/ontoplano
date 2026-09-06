@@ -10,6 +10,20 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.87.0 — 2026-09-06
+
+- **A workout goes on the week, and the week finishes it.** A block can now
+  be a training the way it can be an activity, and a workout has a "Plan it"
+  that puts it on a day. The two are bound rather than copied: ticking the
+  block off finishes the workout, and marking the workout done ticks today's
+  block. Its plan also opens where you read it, instead of only inside the
+  edit form.
+- **A bill falls due the way its rhythm falls.** A weekly bill is due on a
+  weekday — "the cleaner, Fridays" — and a yearly one on a date in the year,
+  rather than both pretending to be a day of the month.
+- **A bill's name is readable on a phone.** The row squeezed it into a few
+  characters beside its buttons and broke words in half.
+
 ## 0.86.0 — 2026-09-06
 
 - **The shopping list learns where things live.** Places nest the way a house

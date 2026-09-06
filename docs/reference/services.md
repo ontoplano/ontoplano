@@ -3759,6 +3759,23 @@ For one made by mistake: gone, and cleared off any block it was on.
 
 Record that a session happened — the "cooked" of the gym.
 
+#### `scheduleTraining(ctx, id, input)`
+
+Put a workout on a day.
+
+The same gesture a todo has, and the same result: a one-off block on the
+grid whose mode says it IS this workout. Nothing is copied — the block
+points at the training, so the plan and the workout cannot drift, and
+finishing either finishes both.
+
+#### `doneToday(ctx, id)`
+
+The workout was done — and so, if it was on today's plan, was the block.
+
+The inverse of the binding in `setInstanceStatus`: ticking Done in Health
+must not leave the week still asking for it. Only today's occurrence, and
+only one: a workout done on Tuesday says nothing about Thursday's.
+
 ### Types
 
 - `Kind`

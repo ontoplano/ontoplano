@@ -18,7 +18,7 @@ exist.
 | [`bill_payments`](#bill_payments)                 | 10      | yes               |
 | [`billing_checkouts`](#billing_checkouts)         | 8       | yes               |
 | [`billing_events`](#billing_events)               | 8       | —                 |
-| [`bills`](#bills)                                 | 15      | yes               |
+| [`bills`](#bills)                                 | 16      | yes               |
 | [`calendar_feeds`](#calendar_feeds)               | 9       | yes               |
 | [`categories`](#categories)                       | 5       | yes               |
 | [`client_errors`](#client_errors)                 | 7       | yes               |
@@ -217,6 +217,7 @@ Indexes:
 | `amount_expected` | integer | not null | `0`                   | —                 |
 | `currency`        | text    | null     | —                     | —                 |
 | `due_day`         | integer | null     | —                     | —                 |
+| `due_month`       | integer | null     | —                     | —                 |
 | `pay_lead_days`   | integer | not null | `0`                   | —                 |
 | `rhythm`          | text    | not null | `'monthly'`           | —                 |
 | `category_id`     | integer | null     | —                     | → `categories.id` |
@@ -235,6 +236,7 @@ Indexes:
 Checks — enforced by the database, not only by the service layer:
 
 - `bills_rhythm_dueday`: `"bills"."due_day" IS NULL OR "bills"."due_day" BETWEEN 1 AND 28`
+- `bills_rhythm_duemonth`: `"bills"."due_month" IS NULL OR "bills"."due_month" BETWEEN 1 AND 12`
 
 ## calendar_feeds
 
@@ -437,6 +439,7 @@ Checks — enforced by the database, not only by the service layer:
 - `exceptional_energy_range`: `"exceptional_tasks"."energy" IS NULL OR "exceptional_tasks"."energy" BETWEEN 1 AND 5`
 - `exceptional_mode_category`: `"exceptional_tasks"."mode" != 'category' OR "exceptional_tasks"."category_id" IS NOT NULL`
 - `exceptional_mode_activity`: `"exceptional_tasks"."mode" != 'activity' OR "exceptional_tasks"."activity_id" IS NOT NULL`
+- `exceptional_mode_training`: `"exceptional_tasks"."mode" != 'training' OR "exceptional_tasks"."training_id" IS NOT NULL`
 
 ## goal_areas
 
@@ -898,6 +901,7 @@ Checks — enforced by the database, not only by the service layer:
 - `slots_weekday_range`: `"recurring_tasks"."weekday" >= 0 AND "recurring_tasks"."weekday" <= 6`
 - `slots_mode_category`: `"recurring_tasks"."mode" != 'category' OR "recurring_tasks"."category_id" IS NOT NULL`
 - `slots_mode_activity`: `"recurring_tasks"."mode" != 'activity' OR "recurring_tasks"."activity_id" IS NOT NULL`
+- `slots_mode_training`: `"recurring_tasks"."mode" != 'training' OR "recurring_tasks"."training_id" IS NOT NULL`
 
 ## reminders
 

@@ -38,12 +38,41 @@
 		return RHYTHMS.find((x) => x.value === r)?.label ?? r;
 	}
 
+	/** The rhythm the open form is on, so its due-day field asks the right thing. */
+	let formRhythm = $state('monthly');
+
+	const WEEKDAYS = [
+		{ value: 1, label: 'Monday' },
+		{ value: 2, label: 'Tuesday' },
+		{ value: 3, label: 'Wednesday' },
+		{ value: 4, label: 'Thursday' },
+		{ value: 5, label: 'Friday' },
+		{ value: 6, label: 'Saturday' },
+		{ value: 7, label: 'Sunday' }
+	];
+	const MONTHS = [
+		'January',
+		'February',
+		'March',
+		'April',
+		'May',
+		'June',
+		'July',
+		'August',
+		'September',
+		'October',
+		'November',
+		'December'
+	];
+
 	function openNew() {
 		editing = null;
+		formRhythm = 'monthly';
 		showForm = true;
 	}
 	function openEdit(bill: (typeof data.bills)[number]) {
 		editing = bill;
+		formRhythm = bill.rhythm;
 		showForm = true;
 	}
 
@@ -60,11 +89,18 @@
 
 	/** "R$120,00 · Monthly, due the 5, pay 2 days before" — one line, one string. */
 	function summaryOf(bill: (typeof data.bills)[number]): string {
-		const parts = [money(bill.amountExpected), rhythmLabel(bill.rhythm)];
-		let line = `${parts[0]} · ${parts[1]}`;
-		if (bill.dueDay) line += `, due the ${bill.dueDay}`;
-		if (bill.dueDay && bill.payLeadDays > 0)
-			line += `, pay ${bill.payLeadDays} ${bill.payLeadDays === 1 ? 'day' : 'days'} before`;
+		let line = `${money(bill.amountExpected)} · ${rhythmLabel(bill.rhythm)}`;
+		if (bill.dueDay) {
+			if (bill.rhythm === 'weekly') {
+				line += `, due ${WEEKDAYS.find((d) => d.value === bill.dueDay)?.label ?? ''}s`;
+			} else if (bill.rhythm === 'yearly') {
+				line += `, due ${MONTHS[(bill.dueMonth ?? 1) - 1]} ${bill.dueDay}`;
+			} else {
+				line += `, due the ${bill.dueDay}`;
+			}
+			if (bill.payLeadDays > 0)
+				line += `, pay ${bill.payLeadDays} ${bill.payLeadDays === 1 ? 'day' : 'days'} before`;
+		}
 		return line;
 	}
 </script>
@@ -254,23 +290,60 @@
 			</label>
 			<label class="block text-sm">
 				<span class="text-gray-600">Rhythm</span>
-				<select name="rhythm" class="input mt-1 w-full" value={editing?.rhythm ?? 'monthly'}>
+				<select
+					name="rhythm"
+					class="input mt-1 w-full"
+					value={editing?.rhythm ?? 'monthly'}
+					onchange={(e) => (formRhythm = (e.currentTarget as HTMLSelectElement).value)}
+				>
 					{#each RHYTHMS as r (r.value)}<option value={r.value}>{r.label}</option>{/each}
 				</select>
 			</label>
-			<label class="block text-sm">
-				<span class="text-gray-600">Due day (monthly)</span>
-				<input
-					name="dueDay"
-					type="number"
-					min="1"
-					max="28"
-					value={editing?.dueDay ?? ''}
-					class="input mt-1 w-full"
-					placeholder="5"
-				/>
-				<span class="mt-1 block text-xs text-gray-500">The last day it can be paid.</span>
-			</label>
+			<!-- One question, asked in the rhythm's own terms: a weekly bill falls
+			     on a weekday, a yearly one on a date, a monthly one on a day. -->
+			{#if formRhythm === 'weekly'}
+				<label class="block text-sm">
+					<span class="text-gray-600">Due on</span>
+					<select name="dueDay" class="input mt-1 w-full" value={editing?.dueDay ?? 5}>
+						{#each WEEKDAYS as d (d.value)}<option value={d.value}>{d.label}</option>{/each}
+					</select>
+					<span class="mt-1 block text-xs text-gray-500">The last day it can be paid.</span>
+				</label>
+			{:else if formRhythm === 'yearly'}
+				<label class="block text-sm">
+					<span class="text-gray-600">Due month</span>
+					<select name="dueMonth" class="input mt-1 w-full" value={editing?.dueMonth ?? 1}>
+						{#each MONTHS as m, i (m)}<option value={i + 1}>{m}</option>{/each}
+					</select>
+				</label>
+				<label class="block text-sm">
+					<span class="text-gray-600">Due day of that month</span>
+					<input
+						name="dueDay"
+						type="number"
+						min="1"
+						max="28"
+						value={editing?.dueDay ?? ''}
+						class="input mt-1 w-full"
+						placeholder="15"
+					/>
+					<span class="mt-1 block text-xs text-gray-500">The last day it can be paid.</span>
+				</label>
+			{:else}
+				<label class="block text-sm">
+					<span class="text-gray-600">Due day of the month</span>
+					<input
+						name="dueDay"
+						type="number"
+						min="1"
+						max="28"
+						value={editing?.dueDay ?? ''}
+						class="input mt-1 w-full"
+						placeholder="5"
+					/>
+					<span class="mt-1 block text-xs text-gray-500">The last day it can be paid.</span>
+				</label>
+			{/if}
 			<label class="block text-sm">
 				<span class="text-gray-600">Pay it this many days before</span>
 				<input

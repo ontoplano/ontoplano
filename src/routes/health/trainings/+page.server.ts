@@ -1,5 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
+import { listCategories } from '$lib/server/services/activities';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
 	listTrainings,
@@ -7,12 +8,18 @@ import {
 	updateTraining,
 	setArchived,
 	deleteTraining,
-	done
+	doneToday,
+	scheduleTraining
 } from '$lib/server/services/trainings';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
-	return { trainings: listTrainings(ctx, { includeArchived: true }) };
+	return {
+		trainings: listTrainings(ctx, { includeArchived: true }),
+		// For the block a scheduled workout becomes: a category is optional, but
+		// filing it under one is how it takes a colour on the grid.
+		categories: listCategories(ctx)
+	};
 };
 
 export const actions: Actions = {
@@ -51,7 +58,23 @@ export const actions: Actions = {
 	done: async ({ request, locals }) => {
 		const form = await request.formData();
 		try {
-			done(buildCtx(locals.user!.id), Number(form.get('id')));
+			// Ticks today's block too, if the workout is on today's plan.
+			doneToday(buildCtx(locals.user!.id), Number(form.get('id')));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	schedule: async ({ request, locals }) => {
+		const form = await request.formData();
+		try {
+			scheduleTraining(buildCtx(locals.user!.id), Number(form.get('id')), {
+				date: form.get('date'),
+				startTime: form.get('startTime'),
+				durationMinutes: form.get('durationMinutes'),
+				categoryId: form.get('categoryId')
+			});
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

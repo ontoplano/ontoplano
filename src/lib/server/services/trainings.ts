@@ -16,11 +16,13 @@
 import { and, asc, eq, isNull } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { trainings } from '../db/schema.js';
+import { exceptionalTasks, trainings } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError } from './errors.js';
 import { stamp, stamps } from './time.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
+import { createExceptional } from './slots.js';
+import { setOccurrenceStatus } from './instances.js';
 
 export const KINDS = ['strength', 'cardio', 'mobility', 'sport', 'other'] as const;
 export type Kind = (typeof KINDS)[number];
@@ -137,4 +139,55 @@ export function done(ctx: Ctx, id: number): void {
 		.set({ lastDoneAt: stamp(ctx), updatedAt: stamp(ctx) })
 		.where(and(eq(trainings.id, id), eq(trainings.userId, ctx.userId)))
 		.run();
+}
+
+/**
+ * Put a workout on a day.
+ *
+ * The same gesture a todo has, and the same result: a one-off block on the
+ * grid whose mode says it IS this workout. Nothing is copied — the block
+ * points at the training, so the plan and the workout cannot drift, and
+ * finishing either finishes both.
+ */
+export function scheduleTraining(
+	ctx: Ctx,
+	id: number,
+	input: { date: unknown; startTime: unknown; durationMinutes?: unknown; categoryId?: unknown }
+): number {
+	const training = getTraining(ctx, id);
+	return createExceptional(ctx, {
+		date: input.date,
+		startTime: input.startTime,
+		// Its typical length is the sensible default for the block.
+		durationMinutes: input.durationMinutes ?? training.minutes ?? 60,
+		mode: 'training',
+		trainingId: id,
+		categoryId: input.categoryId,
+		label: training.title
+	});
+}
+
+/**
+ * The workout was done — and so, if it was on today's plan, was the block.
+ *
+ * The inverse of the binding in `setInstanceStatus`: ticking Done in Health
+ * must not leave the week still asking for it. Only today's occurrence, and
+ * only one: a workout done on Tuesday says nothing about Thursday's.
+ */
+export function doneToday(ctx: Ctx, id: number): void {
+	done(ctx, id);
+
+	const today = stamp(ctx).slice(0, 10);
+	const block = db
+		.select({ id: exceptionalTasks.id })
+		.from(exceptionalTasks)
+		.where(
+			and(
+				eq(exceptionalTasks.userId, ctx.userId),
+				eq(exceptionalTasks.trainingId, id),
+				eq(exceptionalTasks.date, today)
+			)
+		)
+		.get();
+	if (block) setOccurrenceStatus(ctx, `exceptional:${block.id}`, 'done');
 }

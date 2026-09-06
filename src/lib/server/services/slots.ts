@@ -15,7 +15,8 @@ import {
 	reminders,
 	suppressedSlots,
 	taskRecords,
-	recurringTasks
+	recurringTasks,
+	trainings
 } from '../db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
@@ -31,7 +32,15 @@ import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
  * date.
  */
 
-export const MODES = ['category', 'activity'] as const;
+/**
+ * What a block is about.
+ *
+ * A category is the coarse one — "work", "health". An activity names a thing
+ * you do. A training names a workout written down under Health, and is the
+ * same idea as an activity with a plan attached: the block IS the session, so
+ * finishing it is finishing the workout.
+ */
+export const MODES = ['category', 'activity', 'training'] as const;
 export type Mode = (typeof MODES)[number];
 
 export const MAX_LABEL_LENGTH = 300;
@@ -49,6 +58,7 @@ export type BlockInput = {
 	/** Minutes before the start to be reminded. Absent or 0 is no reminder. */
 	remindLeadMinutes?: unknown;
 	mode: unknown;
+	trainingId?: unknown;
 	categoryId?: unknown;
 	activityId?: unknown;
 	newActivityName?: unknown;
@@ -97,6 +107,7 @@ export function listWeeklySlots(ctx: Ctx) {
 			categoryId: recurringTasks.categoryId,
 			categoryName: categories.name,
 			activityId: recurringTasks.activityId,
+			trainingId: recurringTasks.trainingId,
 			activityName: activities.name,
 			activityCategoryId: activities.categoryId,
 			label: recurringTasks.label,
@@ -141,6 +152,7 @@ export function listExceptionals(ctx: Ctx, from: string, to: string) {
 			categoryId: exceptionalTasks.categoryId,
 			categoryName: categories.name,
 			activityId: exceptionalTasks.activityId,
+			trainingId: exceptionalTasks.trainingId,
 			activityName: activities.name,
 			activityCategoryId: activities.categoryId,
 			label: exceptionalTasks.label,
@@ -881,15 +893,34 @@ function parseBlock(ctx: Ctx, raw: BlockInput) {
 	const activityId = mode === 'activity' ? resolveActivityId(ctx, raw) : null;
 	if (mode === 'activity' && !activityId) throw new ValidationError('Activity required');
 
+	const trainingId = mode === 'training' ? ownedTrainingId(ctx, raw.trainingId) : null;
+	if (mode === 'training' && !trainingId) throw new ValidationError('Training required');
+
 	return {
 		startTime,
 		durationMinutes,
 		mode,
 		categoryId,
 		activityId,
+		trainingId,
 		label,
 		...(remindLeadMinutes === undefined ? {} : { remindLeadMinutes })
 	};
+}
+
+/** A training id from a form is a number until it is checked against the owner. */
+function ownedTrainingId(ctx: Ctx, value: unknown): number | null {
+	if (value === undefined || value === null || value === '') return null;
+
+	const id = num(value, 'training', { int: true, min: 1 });
+	const owned = db
+		.select({ id: trainings.id })
+		.from(trainings)
+		.where(and(eq(trainings.id, id), eq(trainings.userId, ctx.userId)))
+		.get();
+
+	if (!owned) throw new ValidationError('That workout is not yours.');
+	return id;
 }
 
 /** A recipe id from a form is a number until it is checked against the owner. */

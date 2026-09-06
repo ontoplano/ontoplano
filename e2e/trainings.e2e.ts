@@ -63,3 +63,46 @@ test('a workout can be added, done, edited, and deleted behind a confirmation', 
 	await confirm.getByRole('button', { name: 'Delete', exact: true }).click();
 	await expect(page.getByText('Push day')).toHaveCount(0);
 });
+
+/**
+ * A workout put on a day is the same thing seen from two rooms.
+ *
+ * Health says what the session is; the week says when. The block points at
+ * the workout rather than copying it, so finishing it on the plan finishes
+ * the workout — which is the whole reason to bind them rather than leave
+ * somebody keeping a task and a training in step by hand.
+ */
+test('a workout can be planned onto a day, and finishing it there finishes the workout', async ({
+	page
+}) => {
+	await register(page, `training-plan-${Date.now()}@example.test`);
+
+	await visit(page, '/health/trainings');
+	await page.getByRole('button', { name: /New workout/ }).click();
+	const add = page.getByRole('dialog');
+	await add.locator('[name="heading"]').fill('Leg day');
+	await add.locator('[name="kind"]').selectOption('strength');
+	await add.locator('[name="minutes"]').fill('45');
+	await add.getByRole('button', { name: 'Add', exact: true }).click();
+	await expect(page.getByText('Leg day')).toBeVisible();
+
+	// The plan is readable without opening the form.
+	await page.getByRole('button', { name: 'Show the plan for Leg day' }).click();
+	await expect(page.getByText(/No plan written yet/)).toBeVisible();
+
+	// Put it on today.
+	await page.locator('li', { hasText: 'Leg day' }).getByRole('button', { name: 'Plan it' }).click();
+	const plan = page.getByRole('dialog');
+	await expect(plan.getByRole('heading', { name: 'Put it on a day' })).toBeVisible();
+	// Its usual length is the block's default.
+	await expect(plan.locator('[name="durationMinutes"]')).toHaveValue('45');
+	await plan.getByRole('button', { name: 'Put on the day' }).click();
+
+	// It is on the week, and finishing it there stamps the workout.
+	await visit(page, '/tasks/plan');
+	await expect(page.getByText('Leg day').first()).toBeVisible();
+
+	await visit(page, '/health/trainings');
+	await page.locator('li', { hasText: 'Leg day' }).getByRole('button', { name: 'Done' }).click();
+	await expect(page.locator('li', { hasText: 'Leg day' }).getByText(/last done/)).toBeVisible();
+});

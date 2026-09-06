@@ -72,7 +72,7 @@ export const recurringTasks = sqliteTable(
 		recurrence: text('recurrence').notNull().default('weekly'),
 		startTime: text('start_time').notNull(), // HH:MM
 		durationMinutes: integer('duration_minutes').notNull().default(60),
-		mode: text('mode', { enum: ['category', 'activity'] }).notNull(),
+		mode: text('mode', { enum: ['category', 'activity', 'training'] }).notNull(),
 		categoryId: integer('category_id').references(() => categories.id),
 		activityId: integer('activity_id').references(() => activities.id),
 		label: text('label').default(''),
@@ -135,6 +135,10 @@ export const recurringTasks = sqliteTable(
 		check(
 			'slots_mode_activity',
 			sql`${table.mode} != 'activity' OR ${table.activityId} IS NOT NULL`
+		),
+		check(
+			'slots_mode_training',
+			sql`${table.mode} != 'training' OR ${table.trainingId} IS NOT NULL`
 		)
 	]
 );
@@ -494,7 +498,7 @@ export const exceptionalTasks = sqliteTable(
 		date: text('date').notNull(), // YYYY-MM-DD
 		startTime: text('start_time').notNull(), // HH:MM
 		durationMinutes: integer('duration_minutes').notNull().default(60),
-		mode: text('mode', { enum: ['category', 'activity'] }).notNull(),
+		mode: text('mode', { enum: ['category', 'activity', 'training'] }).notNull(),
 		categoryId: integer('category_id').references(() => categories.id),
 		activityId: integer('activity_id').references(() => activities.id),
 		label: text('label').default(''),
@@ -552,6 +556,10 @@ export const exceptionalTasks = sqliteTable(
 		check(
 			'exceptional_mode_activity',
 			sql`${table.mode} != 'activity' OR ${table.activityId} IS NOT NULL`
+		),
+		check(
+			'exceptional_mode_training',
+			sql`${table.mode} != 'training' OR ${table.trainingId} IS NOT NULL`
 		)
 	]
 );
@@ -882,7 +890,7 @@ export const schemeSlots = sqliteTable(
 		weekday: integer('weekday').notNull(),
 		startTime: text('start_time').notNull(),
 		durationMinutes: integer('duration_minutes').notNull().default(60),
-		mode: text('mode', { enum: ['category', 'activity'] }).notNull(),
+		mode: text('mode', { enum: ['category', 'activity', 'training'] }).notNull(),
 		categoryId: integer('category_id').references(() => categories.id),
 		activityId: integer('activity_id').references(() => activities.id),
 		label: text('label').default(''),
@@ -1941,9 +1949,18 @@ export const bills = sqliteTable(
 		// setting rather than hardcoded — null means "the account's default".
 		amountExpected: integer('amount_expected').notNull().default(0),
 		currency: text('currency'),
-		// The day of the month it falls due, 1-28 to be real on every month.
-		// Null for a rhythm that is not monthly.
+		/**
+		 * When it falls due, read against the rhythm.
+		 *
+		 * Monthly: the day of the month, 1-28, so it is real in February too.
+		 * Weekly: the weekday, 1-7 from Monday — "the rent is due Fridays".
+		 * Yearly: the day of the month, with `dueMonth` saying which month.
+		 * One column rather than three, because it answers one question and a
+		 * bill only ever has one rhythm.
+		 */
 		dueDay: integer('due_day'),
+		/** The month a yearly bill falls in, 1-12. Null for any other rhythm. */
+		dueMonth: integer('due_month'),
 		// How many days before the due day it should appear on the week.
 		//
 		// The due day is the LAST day it can be paid; most bills want paying
@@ -1972,7 +1989,11 @@ export const bills = sqliteTable(
 	(table) => [
 		index('bills_user_idx').on(table.userId),
 		index('bills_active_idx').on(table.userId, table.active),
-		check('bills_rhythm_dueday', sql`${table.dueDay} IS NULL OR ${table.dueDay} BETWEEN 1 AND 28`)
+		check('bills_rhythm_dueday', sql`${table.dueDay} IS NULL OR ${table.dueDay} BETWEEN 1 AND 28`),
+		check(
+			'bills_rhythm_duemonth',
+			sql`${table.dueMonth} IS NULL OR ${table.dueMonth} BETWEEN 1 AND 12`
+		)
 	]
 );
 

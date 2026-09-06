@@ -34,6 +34,8 @@ export type Bill = {
 	amountExpected: number;
 	currency: string | null;
 	dueDay: number | null;
+	/** The month a yearly bill falls in, 1-12. */
+	dueMonth: number | null;
 	/** Days before the due day it wants paying — 0 means on the day. */
 	payLeadDays: number;
 	rhythm: Rhythm;
@@ -62,6 +64,7 @@ type BillInput = {
 	amountExpected?: unknown;
 	currency?: unknown;
 	dueDay?: unknown;
+	dueMonth?: unknown;
 	payLeadDays?: unknown;
 	rhythm?: unknown;
 	categoryId?: unknown;
@@ -108,6 +111,7 @@ function row(r: {
 		amountExpected: r.bill.amountExpected,
 		currency: r.bill.currency,
 		dueDay: r.bill.dueDay,
+		dueMonth: r.bill.dueMonth,
 		payLeadDays: r.bill.payLeadDays,
 		rhythm: r.bill.rhythm as Rhythm,
 		categoryId: r.bill.categoryId,
@@ -184,10 +188,20 @@ function fields(ctx: Ctx, input: BillInput) {
 		name: str(input.name, 'name', { max: MAX_NAME_LENGTH }),
 		amountExpected: num(input.amountExpected ?? 0, 'amount', { int: true, min: 0 }),
 		currency: optionalStr(input.currency, 'currency', { max: 8 }) || null,
+		// A weekly bill's "due day" is a weekday, 1-7 from Monday; every other
+		// rhythm counts days of a month.
 		dueDay:
 			input.dueDay === undefined || input.dueDay === null || input.dueDay === ''
 				? null
-				: num(input.dueDay, 'due day', { int: true, min: 1, max: 28 }),
+				: num(input.dueDay, 'due day', {
+						int: true,
+						min: 1,
+						max: input.rhythm === 'weekly' ? 7 : 28
+					}),
+		dueMonth:
+			input.dueMonth === undefined || input.dueMonth === null || input.dueMonth === ''
+				? null
+				: num(input.dueMonth, 'due month', { int: true, min: 1, max: 12 }),
 		payLeadDays:
 			input.payLeadDays === undefined || input.payLeadDays === null || input.payLeadDays === ''
 				? 0
@@ -383,7 +397,14 @@ function iso(d: Date): string {
 }
 
 export function billsDueBetween(ctx: Ctx, from: string, to: string): BillDue[] {
-	const active = listBills(ctx).filter((b) => b.rhythm === 'monthly' && b.dueDay !== null);
+	// Anything with a rhythm and a day it falls on. A bill with no due day
+	// never asks for the week's attention — it is a number to be paid, not an
+	// appointment.
+	const active = listBills(ctx).filter(
+		(b) =>
+			b.dueDay !== null &&
+			(b.rhythm === 'monthly' || b.rhythm === 'weekly' || b.rhythm === 'yearly')
+	);
 	if (active.length === 0) return [];
 
 	const paid = new Set(
@@ -394,33 +415,56 @@ export function billsDueBetween(ctx: Ctx, from: string, to: string): BillDue[] {
 	const end = new Date(`${to}T00:00:00Z`);
 	const out: BillDue[] = [];
 
-	// Walk month by month, one occurrence per bill per month, a month wider
-	// than the window at both ends. A lead moves an occurrence backwards, so
-	// the month AFTER the window can land inside it — a bill due on the 2nd,
-	// wanted five days early, belongs to the previous month's last week — and
-	// the month before matters for the same reason in reverse.
-	const cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() - 1, 1));
-	const last = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() + 2, 1));
-	while (cursor < last) {
-		const year = cursor.getUTCFullYear();
-		const month = cursor.getUTCMonth();
-		for (const bill of active) {
-			const due = new Date(Date.UTC(year, month, bill.dueDay!));
-			const when = new Date(due.getTime() - bill.payLeadDays * 86400_000);
-			if (when < start || when > end) continue;
-			const period = `${due.getUTCFullYear()}-${String(due.getUTCMonth() + 1).padStart(2, '0')}`;
-			out.push({
-				billId: bill.id,
-				name: bill.name,
-				date: iso(when),
-				dueDate: iso(due),
-				period,
-				amountExpected: bill.amountExpected,
-				currency: bill.currency,
-				paid: paid.has(`${bill.id}|${period}`)
-			});
+	const add = (bill: Bill, due: Date) => {
+		// The lead moves it earlier: the due day is the last day it can be
+		// paid, this is the day it wants doing.
+		const when = new Date(due.getTime() - bill.payLeadDays * 86400_000);
+		if (when < start || when > end) return;
+		out.push({
+			billId: bill.id,
+			name: bill.name,
+			date: iso(when),
+			dueDate: iso(due),
+			period: periodFor(bill.rhythm, due),
+			amountExpected: bill.amountExpected,
+			currency: bill.currency,
+			paid: paid.has(`${bill.id}|${periodFor(bill.rhythm, due)}`)
+		});
+	};
+
+	for (const bill of active) {
+		if (bill.rhythm === 'weekly') {
+			// Every occurrence of that weekday in the window, plus a week of
+			// slack at each end so a lead can reach in from outside it.
+			const cursor = new Date(start.getTime() - 7 * 86400_000);
+			const last = new Date(end.getTime() + 7 * 86400_000);
+			// Monday is 1 here and 1 in the column; JS calls Sunday 0.
+			while (cursor <= last) {
+				const weekday = cursor.getUTCDay() === 0 ? 7 : cursor.getUTCDay();
+				if (weekday === bill.dueDay) add(bill, new Date(cursor));
+				cursor.setUTCDate(cursor.getUTCDate() + 1);
+			}
+			continue;
 		}
-		cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+
+		if (bill.rhythm === 'yearly') {
+			// The one date each year, from the year before the window to the
+			// year after it — a lead can pull January's into December.
+			for (let year = start.getUTCFullYear() - 1; year <= end.getUTCFullYear() + 1; year++) {
+				add(bill, new Date(Date.UTC(year, (bill.dueMonth ?? 1) - 1, bill.dueDay!)));
+			}
+			continue;
+		}
+
+		// Monthly: a month wider than the window at both ends, because a lead
+		// moves an occurrence backwards into the month before.
+		const cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() - 1, 1));
+		const last = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() + 2, 1));
+		while (cursor < last) {
+			add(bill, new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth(), bill.dueDay!)));
+			cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+		}
 	}
+
 	return out.sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
 }

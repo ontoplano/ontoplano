@@ -102,7 +102,7 @@ export interface GridSlotInput {
 	weekday: number;
 	startTime: string;
 	durationMinutes: number;
-	mode: 'category' | 'activity';
+	mode: 'category' | 'activity' | 'training';
 	categoryId: number | null;
 	activityId: number | null;
 	categoryName?: string | null;
@@ -117,7 +117,7 @@ export interface GridExceptionalInput {
 	date: string;
 	startTime: string;
 	durationMinutes: number;
-	mode: 'category' | 'activity';
+	mode: 'category' | 'activity' | 'training';
 	categoryId: number | null;
 	activityId: number | null;
 	categoryName?: string | null;

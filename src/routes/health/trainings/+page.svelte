@@ -25,6 +25,14 @@
 	 * and one stray keystroke there rewrites the thing you came to consult.
 	 */
 	let expanded: number | null = $state(null);
+	/** The workout being put on a day. */
+	let scheduling: (typeof data.trainings)[number] | null = $state(null);
+
+	function todayStr(): string {
+		const d = new Date();
+		const pad = (n: number) => String(n).padStart(2, '0');
+		return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+	}
 
 	const KINDS = [
 		{ value: 'strength', label: 'Strength' },
@@ -67,6 +75,7 @@
 				<li class="flex flex-wrap items-center gap-3 px-4 py-3">
 					<button
 						class="min-w-0 flex-1 text-left"
+						aria-label="Show the plan for {t.title}"
 						aria-expanded={expanded === t.id}
 						onclick={() => (expanded = expanded === t.id ? null : t.id)}
 					>
@@ -84,6 +93,14 @@
 						<input type="hidden" name="id" value={t.id} />
 						<button class="btn btn-sm" title="Record a session just now">Done</button>
 					</form>
+
+					<button
+						class="btn btn-sm"
+						title="Put this workout on a day"
+						onclick={() => (scheduling = t)}
+					>
+						<Icon name="calendar" /> Plan it
+					</button>
 
 					<button class="icon-btn" aria-label="Edit {t.title}" onclick={() => openEdit(t)}>
 						<Icon name="edit" />
@@ -216,6 +233,78 @@
 		<button class="btn btn-primary" type="submit" form="training-form">
 			{editing ? 'Save' : 'Add'}
 		</button>
+	{/snippet}
+</Modal>
+
+<!-- Put it on a day: the same gesture a to-do has, and the same result — a
+     block on the grid that IS this workout, so finishing either finishes both. -->
+<Modal
+	open={scheduling !== null}
+	error={form?.message}
+	title="Put it on a day"
+	description="It gains a time on the plan. Finishing it there finishes the workout."
+	onclose={() => (scheduling = null)}
+	size="sm"
+>
+	{#if scheduling}
+		<form
+			id="schedule-form"
+			method="post"
+			action="?/schedule"
+			use:enhance={() =>
+				({ result, update }) => {
+					if (result.type === 'success') scheduling = null;
+					return update();
+				}}
+		>
+			<input type="hidden" name="id" value={scheduling.id} />
+			<p class="mb-3 text-sm font-medium text-gray-900">{scheduling.title}</p>
+			<div class="grid gap-3 sm:grid-cols-2">
+				<label class="block text-sm">
+					<span class="text-gray-600">Date</span>
+					<input
+						name="date"
+						type="date"
+						required
+						value={todayStr()}
+						class="input mt-1 w-full"
+						autocomplete="off"
+					/>
+				</label>
+				<label class="block text-sm">
+					<span class="text-gray-600">Time</span>
+					<input
+						name="startTime"
+						type="time"
+						required
+						value="09:00"
+						class="input tabular mt-1 w-full"
+						autocomplete="off"
+					/>
+				</label>
+				<label class="block text-sm">
+					<span class="text-gray-600">Minutes</span>
+					<input
+						name="durationMinutes"
+						type="number"
+						min="5"
+						value={scheduling.minutes ?? 60}
+						class="input mt-1 w-full"
+					/>
+				</label>
+				<label class="block text-sm">
+					<span class="text-gray-600">Category</span>
+					<select name="categoryId" class="input mt-1 w-full">
+						<option value="">None</option>
+						{#each data.categories as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
+					</select>
+				</label>
+			</div>
+		</form>
+	{/if}
+	{#snippet footer()}
+		<button class="btn" type="button" onclick={() => (scheduling = null)}>Cancel</button>
+		<button class="btn btn-primary" type="submit" form="schedule-form">Put on the day</button>
 	{/snippet}
 </Modal>
 

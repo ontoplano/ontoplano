@@ -311,7 +311,7 @@
 
 	/** How many of the folded-away ratings currently carry a value. */
 	const ratingsSet = $derived(Object.values(formRatings).filter((v) => v !== null).length);
-	let slotMode: 'category' | 'activity' = $state('activity');
+	let slotMode: 'category' | 'activity' | 'training' = $state('activity');
 	let activityChoice = $state(NEW_ACTIVITY);
 	// Offset into the visible window (0 = the day it starts on, i.e. today by
 	// default), not a Monday-indexed weekday. The weekday is derived from it.
@@ -411,7 +411,7 @@
 		editingBlockId = slot.id;
 		repeat = 'weekly';
 		formWeekday = slot.weekday;
-		slotMode = slot.mode as 'category' | 'activity';
+		slotMode = slot.mode as 'category' | 'activity' | 'training';
 		activityChoice = defaultActivityChoice(slot.activityId);
 		remindLead = slot.remindLeadMinutes ?? 0;
 		openForm();
@@ -427,7 +427,7 @@
 		editingBlockId = exc.id;
 		repeat = 'once';
 		formDate = exc.date;
-		slotMode = exc.mode as 'category' | 'activity';
+		slotMode = exc.mode as 'category' | 'activity' | 'training';
 		activityChoice = defaultActivityChoice(exc.activityId);
 		remindLead = exc.remindLeadMinutes ?? 0;
 		openForm();
@@ -2831,6 +2831,11 @@
 						<select name="mode" required bind:value={slotMode} class="select">
 							<option value="activity">Activity</option>
 							<option value="category">Category</option>
+							<!-- Only where there is a workout to pick: a mode that lands on
+							     an empty list is a dead end. -->
+							{#if data.trainings.length > 0}
+								<option value="training">Training</option>
+							{/if}
 						</select>
 					</Field>
 					{#if slotMode === 'category'}
@@ -2839,6 +2844,16 @@
 								{#each data.categories as cat (cat.id)}
 									<option value={cat.id} selected={editingBlock?.categoryId === cat.id}
 										>{cat.name}</option
+									>
+								{/each}
+							</select>
+						</Field>
+					{:else if slotMode === 'training'}
+						<Field label="Training" span={4} required>
+							<select name="trainingId" required class="select">
+								{#each data.trainings as t (t.id)}
+									<option value={t.id} selected={editingBlock?.trainingId === t.id}
+										>{t.title}</option
 									>
 								{/each}
 							</select>

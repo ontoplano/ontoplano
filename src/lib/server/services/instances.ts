@@ -32,7 +32,8 @@ import {
 	reminders,
 	suppressedSlots,
 	taskRecords,
-	recurringTasks
+	recurringTasks,
+	trainings
 } from '../db/schema.js';
 
 import type { Status } from '../../task-status.js';
@@ -56,7 +57,7 @@ export type Occurrence = {
 	status: Status;
 	completedAt: string | null;
 	notes: string;
-	mode: 'category' | 'activity';
+	mode: 'category' | 'activity' | 'training';
 	label: string;
 	/** A name for this occurrence alone, when it differs from the block's. */
 	labelOverride: string | null;
@@ -597,7 +598,9 @@ export function setInstanceStatus(ctx: Ctx, id: number, rawStatus: unknown): voi
 		.select({
 			scheduledAt: taskRecords.scheduledAt,
 			slotMode: recurringTasks.mode,
-			oneOffMode: exceptionalTasks.mode
+			oneOffMode: exceptionalTasks.mode,
+			slotTrainingId: recurringTasks.trainingId,
+			oneOffTrainingId: exceptionalTasks.trainingId
 		})
 		.from(taskRecords)
 		.leftJoin(recurringTasks, eq(taskRecords.slotId, recurringTasks.id))
@@ -618,6 +621,23 @@ export function setInstanceStatus(ctx: Ctx, id: number, rawStatus: unknown): voi
 		.set(values)
 		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
 		.run();
+
+	/*
+	 * A block that IS a workout finishes the workout.
+	 *
+	 * The two are one thing seen from two rooms — the week says when, Health
+	 * says what — so ticking either has to move both, or somebody ticks the
+	 * block on Monday and Health still says the session was never done. The
+	 * stamp is the workout's "last done"; unticking clears nothing, because
+	 * the session did happen and a later block will move the stamp on again.
+	 */
+	const trainingId = instance.slotTrainingId ?? instance.oneOffTrainingId;
+	if (trainingId && status === 'done') {
+		db.update(trainings)
+			.set({ lastDoneAt: completedAt ?? stamp(ctx), updatedAt: stamp(ctx) })
+			.where(and(eq(trainings.id, trainingId), eq(trainings.userId, ctx.userId)))
+			.run();
+	}
 }
 
 /**

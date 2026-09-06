@@ -10,6 +10,7 @@ import { toActionFailure } from '$lib/server/http-errors';
 import { metaFromFormData, metaPatchFromFormData } from '$lib/server/services/meta';
 import { listManifests } from '$lib/server/services/plugins';
 import { billsDueBetween } from '$lib/server/services/bills';
+import { listTrainings } from '$lib/server/services/trainings';
 import {
 	addFeed,
 	listFeeds,
@@ -349,7 +350,10 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 		 * step. The planner draws them from the bills themselves, and ticking
 		 * one marks the bill paid for its period.
 		 */
-		billsDue: billsDueBetween(ctx, formatDate(from), formatDate(to))
+		billsDue: billsDueBetween(ctx, formatDate(from), formatDate(to)),
+		// The workouts a block can be about. Empty for an account that keeps
+		// none, which is what hides the mode entirely.
+		trainings: listTrainings(ctx).map((t) => ({ id: t.id, title: t.title, minutes: t.minutes }))
 	};
 };
 

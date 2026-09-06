@@ -2521,6 +2521,7 @@ export const TOOLS: Tool[] = [
 				amountExpected: args.amount_expected ?? 0,
 				rhythm: args.rhythm,
 				dueDay: args.due_day,
+				dueMonth: args.due_month,
 				payLeadDays: args.pay_lead_days,
 				currency: args.currency,
 				notes: args.notes ?? ''
@@ -2543,7 +2544,12 @@ export const TOOLS: Tool[] = [
 					description: 'The expected amount, in minor units (cents).'
 				},
 				rhythm: text('weekly, monthly, yearly, or once.'),
-				due_day: { type: 'integer', description: 'Day of the month it falls due, 1-28.' },
+				due_day: {
+					type: 'integer',
+					description:
+						'When it falls due. Monthly: day of the month. Weekly: weekday 1-7 from Monday. Yearly: day of due_month.'
+				},
+				due_month: { type: 'integer', description: 'For a yearly bill, the month, 1-12.' },
 				pay_lead_days: {
 					type: 'integer',
 					description: 'Pay it this many days before the due day (0 = on the day).'
@@ -2559,6 +2565,7 @@ export const TOOLS: Tool[] = [
 				amountExpected: args.amount_expected ?? current.amountExpected,
 				rhythm: args.rhythm ?? current.rhythm,
 				dueDay: args.due_day ?? current.dueDay,
+				dueMonth: args.due_month ?? current.dueMonth,
 				payLeadDays: args.pay_lead_days ?? current.payLeadDays,
 				currency: current.currency,
 				goalId: current.goalId,

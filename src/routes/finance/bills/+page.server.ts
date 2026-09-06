@@ -60,6 +60,7 @@ export const actions: Actions = {
 				amountExpected: parseMoney(form.get('amount'), getCurrency(ctx.userId)) ?? 0,
 				rhythm: form.get('rhythm') || 'monthly',
 				dueDay: form.get('dueDay') || null,
+				dueMonth: form.get('dueMonth') || null,
 				payLeadDays: form.get('payLeadDays') || 0,
 				notes: form.get('notes')
 			});
@@ -78,6 +79,7 @@ export const actions: Actions = {
 				amountExpected: parseMoney(form.get('amount'), getCurrency(ctx.userId)) ?? 0,
 				rhythm: form.get('rhythm') || 'monthly',
 				dueDay: form.get('dueDay') || null,
+				dueMonth: form.get('dueMonth') || null,
 				payLeadDays: form.get('payLeadDays') || 0,
 				notes: form.get('notes')
 			});

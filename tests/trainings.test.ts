@@ -66,6 +66,80 @@ describe('a training', () => {
 	});
 });
 
+/**
+ * A workout on the week and the workout in Health are one thing.
+ *
+ * The block points at the training rather than copying it, so the two cannot
+ * drift — and ticking either has to move both, or somebody finishes the
+ * session on Monday's plan and Health still says it was never done.
+ */
+describe('a workout put on a day', () => {
+	let instances: typeof import('../src/lib/server/services/instances');
+	let slots: typeof import('../src/lib/server/services/slots');
+
+	beforeAll(async () => {
+		instances = await import('../src/lib/server/services/instances');
+		slots = await import('../src/lib/server/services/slots');
+	});
+
+	test('becomes a block that IS the workout', () => {
+		const id = trainings.createTraining(ctx, { title: 'Leg day', kind: 'strength', minutes: 45 });
+		const blockId = trainings.scheduleTraining(ctx, id, {
+			date: '2026-09-08',
+			startTime: '07:00'
+		});
+
+		// The range is half-open, so the end is the day after.
+		const block = slots
+			.listExceptionals(ctx, '2026-09-08', '2026-09-09')
+			.find((b) => b.id === blockId)!;
+		expect(block.mode).toBe('training');
+		expect(block.trainingId).toBe(id);
+		expect(block.label).toBe('Leg day');
+		// Its usual length is the block's default rather than a bare hour.
+		expect(block.durationMinutes).toBe(45);
+	});
+
+	test('finishing the block finishes the workout', () => {
+		const id = trainings.createTraining(ctx, { title: 'Row', kind: 'cardio' });
+		const blockId = trainings.scheduleTraining(ctx, id, {
+			date: '2026-09-09',
+			startTime: '07:00'
+		});
+		expect(trainings.getTraining(ctx, id).lastDoneAt).toBeNull();
+
+		instances.setStatusOn(ctx, 'exceptional', blockId, '2026-09-09', 'done');
+
+		expect(trainings.getTraining(ctx, id).lastDoneAt).not.toBeNull();
+	});
+
+	test('and finishing the workout finishes today’s block', () => {
+		const today = new Date().toISOString().slice(0, 10);
+		const now = { ...ctx, now: new Date() };
+		const id = trainings.createTraining(now, { title: 'Mobility today', kind: 'mobility' });
+		const blockId = trainings.scheduleTraining(now, id, { date: today, startTime: '08:00' });
+
+		trainings.doneToday(now, id);
+
+		const tomorrow = new Date(Date.now() + 86400_000).toISOString().slice(0, 10);
+		const block = slots.listExceptionals(now, today, tomorrow).find((b) => b.id === blockId)!;
+		expect(block.status).toBe('done');
+	});
+
+	test('a block for somebody else’s workout is refused', () => {
+		const id = trainings.createTraining(ctx, { title: 'Private session', kind: 'other' });
+		expect(() =>
+			slots.createExceptional(theirs, {
+				date: '2026-09-10',
+				startTime: '07:00',
+				durationMinutes: 60,
+				mode: 'training',
+				trainingId: id
+			})
+		).toThrow();
+	});
+});
+
 describe('one account cannot reach another’s', () => {
 	test('a stranger cannot read, edit, archive, or delete a training', () => {
 		const id = trainings.createTraining(ctx, { title: 'Private session' });
