@@ -139,8 +139,12 @@
 								<span class="block truncate text-xs text-gray-500">{tally(notebook)}</span>
 							</a>
 
-							<button onclick={() => openEdit(notebook)} class="btn btn-sm">
-								<Icon name="edit" label="Edit" />
+							<button
+								onclick={() => openEdit(notebook)}
+								class="icon-btn"
+								aria-label="Edit {notebook.title}"
+							>
+								<Icon name="edit" />
 							</button>
 
 							<form
@@ -153,11 +157,15 @@
 							>
 								<input type="hidden" name="id" value={notebook.id} />
 								<input type="hidden" name="closed" value={notebook.closedAt ? 'false' : 'true'} />
-								<button class="btn btn-sm">
+								<button
+									class="icon-btn"
+									title={notebook.closedAt ? 'Reopen it' : 'Close it'}
+									aria-label="{notebook.closedAt ? 'Reopen' : 'Close'} {notebook.title}"
+								>
 									{#if notebook.closedAt}
-										<Icon name="undo" /> Reopen
+										<Icon name="undo" />
 									{:else}
-										<Icon name="check" /> Close
+										<Icon name="check" />
 									{/if}
 								</button>
 							</form>

@@ -434,9 +434,9 @@
 				onclick={() => (showSnoozed = !showSnoozed)}
 				aria-pressed={showSnoozed}
 				class="btn btn-sm btn-quiet"
-				title="Show what you put off ({keyFor('/shopping', 'toggle-show-snoozed')})"
+				title="Show what you put away ({keyFor('/shopping', 'toggle-show-snoozed')})"
 			>
-				{showSnoozed ? 'Hide' : 'Show'} snoozed
+				{showSnoozed ? 'Hide' : 'Show'} archived
 			</button>
 			<button onclick={() => (showCategories = true)} class="btn btn-sm btn-quiet"
 				>Categories</button
@@ -559,7 +559,7 @@
 									Still to buy is the normal state of a shopping list, and a wash of
 									alarm colour behind every row spends the one signal that should
 									mean something is wrong. The unticked box already says it. Only
-									what you have — blue — and what you put off — dimmed — are marked.
+									what you have — blue — and what you put away — dimmed — are marked.
 								-->
 								<div
 									use:keepInView={globalIdx === selectedIndex}
@@ -619,10 +619,10 @@
 												type="submit"
 												class="icon-btn"
 												aria-pressed={item.snoozed}
-												title={item.snoozed ? 'Put it back on the list' : 'Not now'}
-												aria-label="{item.snoozed ? 'Unshelve' : 'Snooze'}: {item.name}"
+												title={item.snoozed ? 'Put it back on the list' : 'Put it away'}
+												aria-label="{item.snoozed ? 'Unarchive' : 'Archive'}: {item.name}"
 											>
-												<Icon name={item.snoozed ? 'undo' : 'clock'} />
+												<Icon name={item.snoozed ? 'undo' : 'archive'} />
 											</button>
 										</form>
 										<button
@@ -724,10 +724,10 @@
 									type="submit"
 									class="icon-btn"
 									aria-pressed={item.snoozed}
-									title={item.snoozed ? 'Put it back on the list' : 'Not now'}
-									aria-label="{item.snoozed ? 'Unshelve' : 'Snooze'}: {item.name}"
+									title={item.snoozed ? 'Put it back on the list' : 'Put it away'}
+									aria-label="{item.snoozed ? 'Unarchive' : 'Archive'}: {item.name}"
 								>
-									<Icon name={item.snoozed ? 'undo' : 'clock'} />
+									<Icon name={item.snoozed ? 'undo' : 'archive'} />
 								</button>
 							</form>
 							<button

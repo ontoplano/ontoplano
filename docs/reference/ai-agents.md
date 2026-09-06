@@ -356,15 +356,15 @@ Undo a tick: the item comes out of the cupboard and back onto "to buy". Use it w
 
 _Needs `shopping:write`; writes._
 
-### `snooze_item` — Put something aside for now
+### `archive_item` — Put something aside for now
 
-Take an item off the visible list without deleting it — for something not wanted this week. It keeps everything about itself and comes back with `unsnooze_item`. Prefer this to removing when somebody says "not now" rather than "never".
+Put an item away without deleting it — for something not wanted this week. It keeps everything about itself and comes back with `unarchive_item`. Prefer this to removing when somebody says "not now" rather than "never".
 
 _Needs `shopping:write`; writes._
 
-### `unsnooze_item` — Bring something back to the list
+### `unarchive_item` — Bring something back to the list
 
-Wake an item that was put aside, so it shows on the list again. `shopping_list` says which items are snoozed.
+Bring back an item that was put away, so it shows on the list again. `shopping_list` says which items are archived.
 
 _Needs `shopping:write`; writes._
 

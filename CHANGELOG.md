@@ -10,6 +10,17 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.87.1 — 2026-09-06
+
+- **Rows look the same wherever they are.** A list row is one shape now — the
+  thing's name on the left, what you can do to it on the right as bare icons
+  — so a workout, a bill and a notebook stop each having their own idea of
+  it. On a phone the name takes the width and the actions sit under it,
+  instead of a title crushed into six-character lines beside four buttons.
+- **One word for putting something aside: archived.** The shopping list said
+  "snooze" while bills and workouts said "archive". It is archive
+  everywhere, including for an assistant (`archive_item`, `unarchive_item`).
+
 ## 0.87.0 — 2026-09-06
 
 - **A workout goes on the week, and the week finishes it.** A block can now

@@ -146,11 +146,11 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'e', action: 'edit', description: 'Edit item' },
 			{ key: 'd', action: 'delete', description: 'Delete item' },
 			{ key: 'D', action: 'toggle-done', description: 'Toggle done' },
-			{ key: 'z', action: 'snooze', description: 'Snooze/unsnooze' },
+			{ key: 'z', action: 'snooze', description: 'Archive/unarchive' },
 			{ key: '1', action: 'filter-someday', description: 'Toggle someday filter' },
 			{ key: '2', action: 'filter-replenish', description: 'Toggle replenish filter' },
 			{ key: 'b', action: 'toggle-show-bought', description: 'Toggle show bought' },
-			{ key: 's', action: 'toggle-show-snoozed', description: 'Toggle show snoozed' }
+			{ key: 's', action: 'toggle-show-snoozed', description: 'Toggle show archived' }
 		]
 	},
 	'/health/habits': {

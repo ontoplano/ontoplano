@@ -136,11 +136,8 @@
 	{:else}
 		<ul class="divide-y divide-gray-100 rounded border border-gray-200">
 			{#each active as bill (bill.id)}
-				<li class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
-					<!-- The whole row on a phone: a name squeezed into four characters
-					     beside three buttons is not a name. The buttons wrap under it
-					     and sit beside it again as soon as there is room. -->
-					<div class="min-w-full flex-1 sm:min-w-0">
+				<li class="list-row">
+					<div class="list-row-main">
 						<div class="flex flex-wrap items-center gap-2">
 							<span class="font-medium break-words text-gray-900">{bill.name}</span>
 							{#if bill.paidThisPeriod}
@@ -157,7 +154,13 @@
 							<form method="post" action="?/unpay" use:enhance>
 								<input type="hidden" name="id" value={bill.id} />
 								<input type="hidden" name="period" value={bill.period} />
-								<button class="btn btn-sm" title="Undo this period's payment">Undo</button>
+								<button
+									class="icon-btn"
+									title="Undo this period's payment"
+									aria-label="Undo the payment for {bill.name}"
+								>
+									<Icon name="undo" />
+								</button>
 							</form>
 						{:else if paying === bill.id}
 							<form
@@ -183,7 +186,14 @@
 								<button class="btn btn-sm" type="button" onclick={() => (paying = null)}>×</button>
 							</form>
 						{:else}
-							<button class="btn btn-sm" onclick={() => (paying = bill.id)}>Mark paid</button>
+							<button
+								class="icon-btn"
+								title="Mark paid"
+								aria-label="Mark {bill.name} paid"
+								onclick={() => (paying = bill.id)}
+							>
+								<Icon name="check" />
+							</button>
 						{/if}
 
 						<button class="icon-btn" aria-label="Edit {bill.name}" onclick={() => openEdit(bill)}>

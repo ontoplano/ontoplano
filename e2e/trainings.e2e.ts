@@ -28,7 +28,7 @@ test('a workout can be added, done, edited, and deleted behind a confirmation', 
 	await expect(page.getByText('Push day')).toBeVisible();
 
 	// Mark it done — it stamps a last-done date.
-	await page.locator('li', { hasText: 'Push day' }).getByRole('button', { name: 'Done' }).click();
+	await page.locator('li', { hasText: 'Push day' }).getByRole('button', { name: /^Mark .* done$/ }).click();
 	await expect(page.locator('li', { hasText: 'Push day' }).getByText(/last done/)).toBeVisible();
 
 	// Edit the length.
@@ -91,7 +91,7 @@ test('a workout can be planned onto a day, and finishing it there finishes the w
 	await expect(page.getByText(/No plan written yet/)).toBeVisible();
 
 	// Put it on today.
-	await page.locator('li', { hasText: 'Leg day' }).getByRole('button', { name: 'Plan it' }).click();
+	await page.locator('li', { hasText: 'Leg day' }).getByRole('button', { name: /^Plan .* onto a day$/ }).click();
 	const plan = page.getByRole('dialog');
 	await expect(plan.getByRole('heading', { name: 'Put it on a day' })).toBeVisible();
 	// Its usual length is the block's default.
@@ -103,6 +103,6 @@ test('a workout can be planned onto a day, and finishing it there finishes the w
 	await expect(page.getByText('Leg day').first()).toBeVisible();
 
 	await visit(page, '/health/trainings');
-	await page.locator('li', { hasText: 'Leg day' }).getByRole('button', { name: 'Done' }).click();
+	await page.locator('li', { hasText: 'Leg day' }).getByRole('button', { name: /^Mark .* done$/ }).click();
 	await expect(page.locator('li', { hasText: 'Leg day' }).getByText(/last done/)).toBeVisible();
 });

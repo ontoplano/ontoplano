@@ -72,9 +72,9 @@
 	{:else}
 		<ul class="divide-y divide-gray-100 rounded border border-gray-200">
 			{#each active as t (t.id)}
-				<li class="flex flex-wrap items-center gap-3 px-4 py-3">
+				<li class="list-row">
 					<button
-						class="min-w-0 flex-1 text-left"
+						class="list-row-main text-left"
 						aria-label="Show the plan for {t.title}"
 						aria-expanded={expanded === t.id}
 						onclick={() => (expanded = expanded === t.id ? null : t.id)}
@@ -85,39 +85,44 @@
 						</span>
 						<span class="block text-xs text-gray-500">
 							{kindLabel(t.kind)}{#if t.minutes}, ~{t.minutes} min{/if}{#if t.lastDoneAt}
-								· last done {t.lastDoneAt.slice(0, 10)}{/if}
+								&nbsp;· last done {t.lastDoneAt.slice(0, 10)}{/if}
 						</span>
 					</button>
 
-					<form method="post" action="?/done" use:enhance>
-						<input type="hidden" name="id" value={t.id} />
-						<button class="btn btn-sm" title="Record a session just now">Done</button>
-					</form>
+					<div class="list-row-actions">
+						<form method="post" action="?/done" use:enhance>
+							<input type="hidden" name="id" value={t.id} />
+							<button class="icon-btn" title="Done just now" aria-label="Mark {t.title} done">
+								<Icon name="check" />
+							</button>
+						</form>
 
-					<button
-						class="btn btn-sm"
-						title="Put this workout on a day"
-						onclick={() => (scheduling = t)}
-					>
-						<Icon name="calendar" /> Plan it
-					</button>
-
-					<button class="icon-btn" aria-label="Edit {t.title}" onclick={() => openEdit(t)}>
-						<Icon name="edit" />
-					</button>
-
-					<form
-						method="post"
-						action="?/archive"
-						use:enhance
-						title="Put this workout away — its history stays"
-					>
-						<input type="hidden" name="id" value={t.id} />
-						<input type="hidden" name="archived" value="true" />
-						<button class="icon-btn" aria-label="Archive {t.title}">
-							<Icon name="archive" />
+						<button
+							class="icon-btn"
+							title="Put it on a day"
+							aria-label="Plan {t.title} onto a day"
+							onclick={() => (scheduling = t)}
+						>
+							<Icon name="calendar" />
 						</button>
-					</form>
+
+						<button class="icon-btn" aria-label="Edit {t.title}" onclick={() => openEdit(t)}>
+							<Icon name="edit" />
+						</button>
+
+						<form
+							method="post"
+							action="?/archive"
+							use:enhance
+							title="Put this workout away — its history stays"
+						>
+							<input type="hidden" name="id" value={t.id} />
+							<input type="hidden" name="archived" value="true" />
+							<button class="icon-btn" aria-label="Archive {t.title}">
+								<Icon name="archive" />
+							</button>
+						</form>
+					</div>
 
 					{#if expanded === t.id}
 						<div

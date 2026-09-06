@@ -697,6 +697,45 @@ label:has(> input[type='radio']:not(:disabled)) {
 			opacity 120ms ease;
 	}
 
+	/*
+	 * A row in a list: something being named on the left, what you can do to
+	 * it on the right.
+	 *
+	 * Written once because it was written four times and drifted. On a phone
+	 * the name takes the whole width and the actions sit under it — the
+	 * version that squeezed a title into six-character lines beside four
+	 * buttons was shipped twice, which is twice more than a layout this
+	 * common should be reinvented.
+	 */
+	.list-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		column-gap: 0.75rem;
+		row-gap: 0.5rem;
+		padding: 0.75rem 1rem;
+	}
+
+	.list-row-main {
+		min-width: 100%;
+		flex: 1 1 0;
+	}
+
+	.list-row-actions {
+		display: flex;
+		flex: 1 1 auto;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.25rem;
+	}
+
+	@media (min-width: 40rem) {
+		.list-row-main {
+			min-width: 0;
+		}
+	}
+
 	.icon-btn:hover {
 		background-color: var(--color-gray-200);
 		color: var(--color-gray-900);

@@ -222,7 +222,7 @@ describe('a tool that runs', () => {
 
 		const pairs: [string, string[]][] = [
 			['tick_bought', ['untick_bought']],
-			['snooze_item', ['unsnooze_item']],
+			['archive_item', ['unarchive_item']],
 			['add_to_shopping_list', ['remove_from_shopping_list']],
 			['finish_todo', ['reopen_todo']],
 			['drop_todo', ['reopen_todo']],

@@ -107,11 +107,11 @@ works is a key listed here and the reverse.
 | <kbd>e</kbd> | Edit item               |
 | <kbd>d</kbd> | Delete item             |
 | <kbd>D</kbd> | Toggle done             |
-| <kbd>z</kbd> | Snooze/unsnooze         |
+| <kbd>z</kbd> | Archive/unarchive       |
 | <kbd>1</kbd> | Toggle someday filter   |
 | <kbd>2</kbd> | Toggle replenish filter |
 | <kbd>b</kbd> | Toggle show bought      |
-| <kbd>s</kbd> | Toggle show snoozed     |
+| <kbd>s</kbd> | Toggle show archived    |
 
 ## Activities — `/tasks/activities`
 

@@ -1131,20 +1131,20 @@ export const TOOLS: Tool[] = [
 		 * Snoozing is how the list stays short without anybody losing anything,
 		 * so it needs both directions for the same reason ticking does.
 		 */
-		name: 'snooze_item',
+		name: 'archive_item',
 		title: 'Put something aside for now',
 		description:
-			'Take an item off the visible list without deleting it — for something not wanted this week. It keeps everything about itself and comes back with `unsnooze_item`. Prefer this to removing when somebody says "not now" rather than "never".',
+			'Put an item away without deleting it — for something not wanted this week. It keeps everything about itself and comes back with `unarchive_item`. Prefer this to removing when somebody says "not now" rather than "never".',
 		scope: 'shopping:write',
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),
 		run: (ctx, args) => setSnoozed(ctx, Number(args.id), true)
 	},
 	{
-		name: 'unsnooze_item',
+		name: 'unarchive_item',
 		title: 'Bring something back to the list',
 		description:
-			'Wake an item that was put aside, so it shows on the list again. `shopping_list` says which items are snoozed.',
+			'Bring back an item that was put away, so it shows on the list again. `shopping_list` says which items are archived.',
 		scope: 'shopping:write',
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),

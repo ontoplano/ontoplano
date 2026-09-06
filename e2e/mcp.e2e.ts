@@ -286,9 +286,9 @@ test('an assistant can undo everything it can do to a shopping list', async ({ p
 	expect((await find('Cebola'))?.bought, 'it could not be brought back').toBe(false);
 
 	// Aside for now, and back.
-	await call('snooze_item', { id: onion!.id });
+	await call('archive_item', { id: onion!.id });
 	expect((await find('Cebola'))?.snoozed).toBe(true);
-	await call('unsnooze_item', { id: onion!.id });
+	await call('unarchive_item', { id: onion!.id });
 	expect((await find('Cebola'))?.snoozed, 'it could not be woken').toBe(false);
 
 	// And the row is the same row throughout — not a replacement, which is what
