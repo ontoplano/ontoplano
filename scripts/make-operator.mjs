@@ -14,9 +14,33 @@
  * the front door accepts it. Nothing to open, nothing to revert.
  */
 import Database from 'better-sqlite3';
-import { generateRandomString, hashPassword } from 'better-auth/crypto';
+import { randomBytes, scrypt as scryptCallback } from 'node:crypto';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { promisify } from 'node:util';
+
+const scrypt = promisify(scryptCallback);
+
+/**
+ * better-auth's own hash, from node:crypto — the library itself is bundled
+ * into the build and absent from a production install, so importing it here
+ * would fail on exactly the box this script exists for. Same scrypt cost,
+ * same salt-as-hex-text quirk, same `salt:key` shape; the test checks the
+ * result with better-auth's verifyPassword, so drift there breaks loudly.
+ */
+async function hashPassword(password) {
+	const salt = randomBytes(16).toString('hex');
+	const key = await scrypt(password.normalize('NFKC'), salt, 64, {
+		N: 16384,
+		r: 16,
+		p: 1,
+		maxmem: 128 * 16384 * 16 * 2
+	});
+	return `${salt}:${key.toString('hex')}`;
+}
+
+const ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const id = () => Array.from(randomBytes(32), (b) => ALPHABET[b % ALPHABET.length]).join('');
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -30,7 +54,6 @@ const path =
 	process.env.DATABASE_URL || join(homedir(), '.local', 'share', 'ontoplano', 'ontoplano.db');
 const db = new Database(path);
 
-const id = () => generateRandomString(32, 'a-z', 'A-Z', '0-9');
 const audit = (userId, event) =>
 	db
 		.prepare(

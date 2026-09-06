@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.80.2 — 2026-09-06
+
+- **`make-operator.mjs` runs on a production install.** It imported
+  better-auth for the password hash, and a deployed box does not have it —
+  Vite bundles it into the build. The hash is node:crypto's own scrypt now,
+  parameter-for-parameter the same, held equivalent by a test that verifies
+  it with better-auth itself.
+
 ## 0.80.1 — 2026-09-06
 
 - **`make-operator.mjs` creates the account it is asked for.** It used to
