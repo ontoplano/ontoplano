@@ -1,6 +1,5 @@
 import type { Actions, PageServerLoad } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
-import { listCategories } from '$lib/server/services/activities';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
 	listTrainings,
@@ -14,12 +13,9 @@ import {
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
-	return {
-		trainings: listTrainings(ctx, { includeArchived: true }),
-		// For the block a scheduled workout becomes: a category is optional, but
-		// filing it under one is how it takes a colour on the grid.
-		categories: listCategories(ctx)
-	};
+	// A workout needs no category: on the grid it is its own kind of block and
+	// wears Health's colour, the way a meal does.
+	return { trainings: listTrainings(ctx, { includeArchived: true }) };
 };
 
 export const actions: Actions = {
@@ -72,8 +68,7 @@ export const actions: Actions = {
 			scheduleTraining(buildCtx(locals.user!.id), Number(form.get('id')), {
 				date: form.get('date'),
 				startTime: form.get('startTime'),
-				durationMinutes: form.get('durationMinutes'),
-				categoryId: form.get('categoryId')
+				durationMinutes: form.get('durationMinutes')
 			});
 			return { success: true };
 		} catch (e) {

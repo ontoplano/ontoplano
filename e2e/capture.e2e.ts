@@ -154,20 +154,12 @@ test('the section pie lands you in the room', async ({ page }) => {
 	await page.mouse.down();
 	await page.mouse.up();
 
-	// Every place the navigation bar offers. No Notebooks wedge: it is the
-	// second tab of Notes now, not a room of its own. No Home: the bar carries
-	// that as a plain button, so no wedge is spent on it.
+	// Every place the navigation bar offers. No People or Recipes wedge: they
+	// are tabs inside Notebooks and Health now, not rooms of their own. No
+	// Home either — the bar carries that as a plain button, so no wedge is
+	// spent on it.
 	await expect(page.getByText('cancel')).toBeVisible();
-	for (const room of [
-		'Tasks',
-		'Goals',
-		'Notebooks',
-		'People',
-		'Ideas',
-		'Health',
-		'Shopping',
-		'Recipes'
-	]) {
+	for (const room of ['Tasks', 'Goals', 'Notebooks', 'Ideas', 'Health', 'Finance', 'Shopping']) {
 		await expect(page.locator('.pie').getByText(room, { exact: true })).toBeVisible();
 	}
 	await expect(page.locator('.pie').getByText('Home', { exact: true })).toHaveCount(0);

@@ -34,7 +34,7 @@ describe('the order', () => {
 		// The case that matters: somebody arranged their menu, and then the app
 		// grew a room. It has to turn up for them too.
 		const out = applyOrder(NAV_PLACES, ['home', 'planner']);
-		expect(keys(out)).toContain('kitchen');
+		expect(keys(out)).toContain('shopping');
 		expect(out).toHaveLength(NAV_PLACES.length);
 	});
 

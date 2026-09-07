@@ -32,6 +32,7 @@ Generated from the code, on every build.
 - [Data model](data-model.md) — every table and column, from the migration snapshot
 - [HTTP API](api.md) — endpoints and the scope each one demands
 - [Services](services.md) — the service layer, module by module
+- [Interfaces](interfaces.md) — the rooms, and what is inside each
 - [Pages and actions](pages.md) — every address, and the form actions behind it
 - [Configuration](configuration.md) — config.toml, the environment, and per-account settings
 - [Keyboard](keyboard.md) — every shortcut, per page

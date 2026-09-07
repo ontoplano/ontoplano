@@ -150,3 +150,47 @@ describe('one account cannot reach another’s', () => {
 		expect(trainings.listTrainings(theirs).some((t) => t.id === id)).toBe(false);
 	});
 });
+
+/**
+ * The bug this file exists to stop coming back.
+ *
+ * The weekly-block form posted a training and the server refused it with
+ * "Training required" — the action's field list, written before trainings
+ * existed, never carried `trainingId` to the parser. The one-off path worked,
+ * so the failure looked like the form rather than the plumbing.
+ */
+describe('a weekly block that is a workout', () => {
+	let slots: typeof import('../src/lib/server/services/slots');
+
+	beforeAll(async () => {
+		slots = await import('../src/lib/server/services/slots');
+	});
+
+	test('is created from a training, with no category to file it under', () => {
+		const id = trainings.createTraining(ctx, { title: 'Monday legs', kind: 'strength' });
+		const slotId = slots.createSlot(ctx, {
+			weekday: 0,
+			startTime: '16:00',
+			durationMinutes: 90,
+			mode: 'training',
+			trainingId: id
+		});
+
+		const slot = slots.listWeeklySlots(ctx).find((s) => s.id === slotId)!;
+		expect(slot.mode).toBe('training');
+		expect(slot.trainingId).toBe(id);
+		// No category: being a workout is what it is filed under.
+		expect(slot.categoryId).toBeNull();
+	});
+
+	test('and a training-mode block with no training is refused', () => {
+		expect(() =>
+			slots.createSlot(ctx, {
+				weekday: 0,
+				startTime: '16:00',
+				durationMinutes: 60,
+				mode: 'training'
+			})
+		).toThrow(/[Tt]raining/);
+	});
+});

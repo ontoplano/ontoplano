@@ -20,11 +20,12 @@
 		...(data.hiddenSections.includes('notebooks')
 			? []
 			: [{ href: resolve('/notebooks'), label: 'Notebooks' }]),
-		{ href: resolve('/notebooks/diary'), label: 'Diary' }
+		{ href: resolve('/notebooks/diary'), label: 'Diary' },
+		{ href: resolve('/notebooks/people'), label: 'People' }
 	]);
 
-	/** People lives under /notebooks for its colour, not for these tabs. */
-	const showTabs = $derived(!page.url.pathname.startsWith('/notebooks/people'));
+	/** People is one of these tabs now, so the strip shows on every page here. */
+	const showTabs = true;
 
 	function active(href: string): boolean {
 		if (href === '/notebooks') {

@@ -501,6 +501,100 @@ function servicesPage() {
 
 /* -------------------------------------------------------------- shortcuts */
 
+/**
+ * The tree: which rooms the app has, and what is inside each.
+ *
+ * Read from the two places that decide it — `NAV_PLACES` for the rooms and
+ * each section's own `+layout.svelte` for its tabs — because a hand-written
+ * map of the interface is a map that is wrong within a month. A room whose
+ * layout has no tab strip is a single page and says so.
+ */
+function interfacesPage() {
+	const source = parse(join(ROOT, 'src/lib/sections-nav.ts'));
+
+	/** The rooms, in the order the navigation bar shows them. */
+	const rooms = [];
+	const visitNav = (node) => {
+		if (
+			ts.isVariableDeclaration(node) &&
+			node.name.getText(source) === 'NAV_PLACES' &&
+			node.initializer &&
+			ts.isArrayLiteralExpression(node.initializer)
+		) {
+			for (const el of node.initializer.elements) {
+				if (!ts.isObjectLiteralExpression(el)) continue;
+				const read = (key) => {
+					const prop = el.properties.find(
+						(pr) => ts.isPropertyAssignment(pr) && pr.name.getText(source) === key
+					);
+					return prop && ts.isStringLiteral(prop.initializer) ? prop.initializer.text : '';
+				};
+				rooms.push({
+					key: read('key'),
+					label: read('label'),
+					href: read('href'),
+					hide: read('hide')
+				});
+			}
+		}
+		ts.forEachChild(node, visitNav);
+	};
+	visitNav(source);
+
+	/** A section's tabs, in the order its layout lists them. */
+	const tabsOf = (dir) => {
+		const file = join(ROOT, `src/routes/${dir}/+layout.svelte`);
+		if (!existsSync(file)) return [];
+		const text = readFileSync(file, 'utf8');
+		const out = [];
+		// `resolve('/health/recipes'), label: 'Recipes'` — the shape every tab
+		// strip uses. A tab built from data (a data stream's own tab) has no
+		// literal to read and is described in prose below instead.
+		const re = /resolve\((?:'|`)([^'`]+)(?:'|`)[^)]*\)[^}]*?label:\s*'([^']+)'/g;
+		let m;
+		while ((m = re.exec(text)) !== null) out.push({ href: m[1], label: m[2] });
+		return out;
+	};
+
+	const lines = [
+		'Every room the app has, and what is inside it. Generated from the',
+		'navigation and from each section\u2019s own tab strip, so it cannot drift',
+		'from what the app actually shows.',
+		''
+	];
+
+	for (const room of rooms) {
+		const dir = room.href.split('/')[1];
+		const tabs = tabsOf(dir);
+		lines.push(`### ${room.label}`);
+		lines.push('');
+		if (tabs.length > 0) {
+			for (const tab of tabs) lines.push(`- **${tab.label}** — \`${tab.href}\``);
+		} else {
+			lines.push(`- \`${room.href}\` — one page, no tabs`);
+		}
+		if (room.hide) {
+			lines.push('');
+			lines.push(
+				`Can be put away in Preferences (\`${room.hide}\`), which takes it out of the bar, the wheel and the dashboard.`
+			);
+		}
+		lines.push('');
+	}
+
+	lines.push('### Everywhere else');
+	lines.push('');
+	lines.push('- **Home** — `/`, the dashboard; the wordmark is the way back to it');
+	lines.push('- **Search** — `/search`, across every room at once');
+	lines.push('- **Settings** — `/settings`, and the account under it');
+	lines.push(
+		'- Health also grows a tab per data stream an account records, named after the stream.'
+	);
+	lines.push('');
+
+	return lines.join('\n');
+}
+
 function shortcutsPage() {
 	const source = parse(join(ROOT, 'src/lib/shortcuts.ts'));
 	const global = [];
@@ -1178,6 +1272,12 @@ const PAGES = [
 		title: 'Services',
 		blurb: 'the service layer, module by module',
 		build: servicesPage
+	},
+	{
+		file: 'interfaces.md',
+		title: 'Interfaces',
+		blurb: 'the rooms, and what is inside each',
+		build: interfacesPage
 	},
 	{
 		file: 'pages.md',

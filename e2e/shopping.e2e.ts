@@ -40,7 +40,7 @@ test('a category that holds food makes ingredients possible', async ({ page }) =
 	await register(page, `food-${Date.now()}@test.invalid`);
 
 	// Before: the recipes page says so rather than letting every field fail.
-	await visit(page, '/kitchen/recipes');
+	await visit(page, '/health/recipes');
 	await expect(page.getByText(/no food category yet/i)).toBeVisible();
 
 	await visit(page, '/shopping');
@@ -53,7 +53,7 @@ test('a category that holds food makes ingredients possible', async ({ page }) =
 	await expect(dialog.locator('li', { hasText: 'Pantry' })).toBeVisible();
 
 	// After: the warning is gone.
-	await visit(page, '/kitchen/recipes');
+	await visit(page, '/health/recipes');
 	await expect(page.getByText(/no food category yet/i)).toHaveCount(0);
 });
 

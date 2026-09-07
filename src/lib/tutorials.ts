@@ -414,7 +414,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/kitchen/recipes': {
+	'/health/recipes': {
 		label: 'Recipes',
 		steps: [
 			{
@@ -439,7 +439,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/kitchen/meals': {
+	'/health/meals': {
 		label: 'Meals',
 		steps: [
 			{

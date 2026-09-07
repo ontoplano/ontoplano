@@ -67,14 +67,6 @@ export const NAV_PLACES: NavPlace[] = [
 		href: '/notebooks',
 		hide: 'diary'
 	},
-	{
-		key: 'people',
-		label: 'People',
-		section: 'diary',
-		icon: 'user',
-		href: '/notebooks/people',
-		hide: 'people'
-	},
 	{ key: 'ideas', label: 'Ideas', section: 'ideas', icon: 'ideas', href: '/ideas', hide: 'ideas' },
 	{
 		key: 'health',
@@ -99,14 +91,6 @@ export const NAV_PLACES: NavPlace[] = [
 		icon: 'shopping',
 		href: '/shopping',
 		hide: 'shopping'
-	},
-	{
-		key: 'kitchen',
-		label: 'Recipes',
-		section: 'kitchen',
-		icon: 'utensils',
-		href: '/kitchen/recipes',
-		hide: 'recipes'
 	}
 ];
 

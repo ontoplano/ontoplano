@@ -289,7 +289,7 @@
 			<Icon name="utensils" size={12} class="text-gray-500" />
 			{#each data.usedIn[item.id] as recipe, i (recipe.id)}
 				<a
-					href="{resolve('/kitchen/recipes')}/{recipe.id}"
+					href="{resolve('/health/recipes')}/{recipe.id}"
 					class="text-xs text-gray-500 hover:text-gray-900 hover:underline"
 				>
 					{recipe.title}{#if i < data.usedIn[item.id].length - 1}<span aria-hidden="true">,</span

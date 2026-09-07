@@ -297,13 +297,6 @@
 						class="input mt-1 w-full"
 					/>
 				</label>
-				<label class="block text-sm">
-					<span class="text-gray-600">Category</span>
-					<select name="categoryId" class="input mt-1 w-full">
-						<option value="">None</option>
-						{#each data.categories as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
-					</select>
-				</label>
 			</div>
 		</form>
 	{/if}

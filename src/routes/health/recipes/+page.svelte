@@ -32,7 +32,7 @@
 			return;
 
 		if (e.key === 'Escape') showForm = false;
-		if (getAction('/kitchen/recipes', e.key) === 'new') {
+		if (getAction('/health/recipes', e.key) === 'new') {
 			e.preventDefault();
 			showForm = true;
 		}
@@ -45,7 +45,7 @@
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<h1 class="text-lg font-bold text-gray-900">Recipes</h1>
 		<div class="flex flex-wrap items-center gap-2">
-			<a href={resolve('/kitchen/meals')} class="btn btn-sm">This week's meals</a>
+			<a href={resolve('/health/meals')} class="btn btn-sm">This week's meals</a>
 			{#if data.recipes.length > 0}
 				<button onclick={() => (onlyMakeable = !onlyMakeable)} class="btn btn-sm">
 					{onlyMakeable ? 'Show all' : 'What I can make now'}
@@ -58,7 +58,7 @@
 			>
 				<Icon name="plus" /> New recipe
 				<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
-					>{keyFor('/kitchen/recipes', 'new')}</kbd
+					>{keyFor('/health/recipes', 'new')}</kbd
 				>
 			</button>
 		</div>
@@ -97,7 +97,7 @@
 		<div class="gap-4 lg:columns-2 2xl:columns-3" data-tour="recipe-list">
 			{#each visible as recipe (recipe.id)}
 				<a
-					href={resolve('/kitchen/recipes/[id]', { id: String(recipe.id) })}
+					href={resolve('/health/recipes/[id]', { id: String(recipe.id) })}
 					class="lift mb-4 block break-inside-avoid border border-gray-200 bg-white p-4 shadow-card"
 				>
 					<!--

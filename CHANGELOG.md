@@ -10,6 +10,20 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.88.0 — 2026-09-07
+
+- **Seven rooms instead of nine.** People is a tab inside Notebooks, and
+  Recipes and Meals are tabs inside Health — the Kitchen room is gone. The
+  menu was growing a room per feature; these belong beside what they are
+  already about. Old `/kitchen/...` links still work.
+- **A workout planned from the week no longer asks for a category.** Adding a
+  training block from the plan failed with "Training required" and then
+  demanded a category, though being a workout is what it is. It plans in one
+  step now, in Health's colour.
+- **The docs list the app's own menu.** A new Interfaces page shows every
+  room and its tabs, generated from the navigation itself, so it cannot
+  describe a menu the app no longer has.
+
 ## 0.87.1 — 2026-09-06
 
 - **Rows look the same wherever they are.** A list row is one shape now — the

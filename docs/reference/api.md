@@ -87,6 +87,7 @@ sentence somebody agrees to when they grant it.
 | `/api/v1/webhooks/[id]`                      | DELETE | `webhooks:manage` |
 | `/calendar/[token]`                          | GET    | `calendar:read`   |
 | `/healthz`                                   | GET    | —                 |
+| `/kitchen/[...path]`                         | GET    | —                 |
 | `/manifest.webmanifest`                      | GET    | —                 |
 | `/media`                                     | POST   | —                 |
 | `/media/[id]`                                | GET    | —                 |
@@ -569,6 +570,17 @@ The disk and memory numbers are the exception, and they are behind a token.
 attack is cheap today, so it is for the machine that is watching and nobody
 else. Set `ONTOPLANO_HEALTH_TOKEN` and send it as `x-health-token` or
 `?token=`; without one configured, nothing is ever disclosed.
+
+**GET**
+
+### `/kitchen/[...path]`
+
+Where the kitchen used to be.
+
+Recipes and meals are tabs of Health now — eating is part of looking after
+yourself, and a room of its own for two pages was one room too many. The old
+addresses are in people's bookmarks, in the phone app's cached shell and in
+links somebody sent themselves, so they answer with a redirect rather than a 404. Permanent, because this is not coming back.
 
 **GET**
 

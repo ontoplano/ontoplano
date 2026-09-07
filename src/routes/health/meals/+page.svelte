@@ -34,10 +34,10 @@
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<h1 class="text-lg font-bold text-gray-900">Meals</h1>
 		<div class="flex items-center gap-2">
-			<a href="{resolve('/kitchen/meals')}?from={shift(-7)}" class="btn btn-sm">&larr;</a>
-			<a href={resolve('/kitchen/meals')} class="btn btn-sm">This week</a>
-			<a href="{resolve('/kitchen/meals')}?from={shift(7)}" class="btn btn-sm">&rarr;</a>
-			<a href={resolve('/kitchen/recipes')} class="btn btn-primary btn-sm">
+			<a href="{resolve('/health/meals')}?from={shift(-7)}" class="btn btn-sm">&larr;</a>
+			<a href={resolve('/health/meals')} class="btn btn-sm">This week</a>
+			<a href="{resolve('/health/meals')}?from={shift(7)}" class="btn btn-sm">&rarr;</a>
+			<a href={resolve('/health/recipes')} class="btn btn-primary btn-sm">
 				<Icon name="plus" /> From a recipe
 			</a>
 		</div>
@@ -60,7 +60,7 @@
 						{#each onThisDay as meal (meal.id)}
 							<li>
 								<a
-									href={resolve('/kitchen/recipes/[id]', { id: String(meal.recipeId) })}
+									href={resolve('/health/recipes/[id]', { id: String(meal.recipeId) })}
 									class="block text-sm text-gray-900 hover:underline"
 								>
 									{meal.title}
@@ -81,7 +81,7 @@
 			description="Put a recipe on a day and what it needs turns up here, minus what is already in the cupboard."
 		>
 			{#snippet action()}
-				<a href={resolve('/kitchen/recipes')} class="btn btn-primary">Pick a recipe</a>
+				<a href={resolve('/health/recipes')} class="btn btn-primary">Pick a recipe</a>
 			{/snippet}
 		</EmptyState>
 	{:else}

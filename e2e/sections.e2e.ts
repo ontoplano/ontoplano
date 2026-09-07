@@ -36,8 +36,8 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
 	// Gone from the navbar…
 	await visit(page, '/');
 	await expect(nav.getByRole('link', { name: 'Shopping' })).toHaveCount(0);
-	// …and its tab was not the only casualty check — a neighbour survives.
-	await expect(nav.getByRole('link', { name: 'Recipes' })).toBeVisible();
+	// …and hiding one room did not take a neighbour with it.
+	await expect(nav.getByRole('link', { name: 'Health' })).toBeVisible();
 
 	// Still answering at its URL: hidden, not blocked.
 	await visit(page, '/shopping');
@@ -94,6 +94,7 @@ test('saving the menu does not empty the list', async ({ page }) => {
 
 	// Still put away, and every other room still listed.
 	await expect(menu.getByRole('button', { name: 'Show' })).toHaveCount(1);
-	// Eight visible: nine rooms now Finance exists, one put away.
-	await expect(menu.getByRole('button', { name: /^Move .* up$/ })).toHaveCount(8);
+	// Six visible: seven rooms since People and Recipes became tabs of
+	// Notebooks and Health, one of them put away.
+	await expect(menu.getByRole('button', { name: /^Move .* up$/ })).toHaveCount(6);
 });

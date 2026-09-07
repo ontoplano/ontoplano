@@ -257,10 +257,10 @@ test.describe('one account cannot reach another account by id', () => {
 			// rows point at several others — so the ownership check has more than
 			// one place to be forgotten.
 			name: 'recipe',
-			page: '/kitchen/recipes',
+			page: '/health/recipes',
 			payloadKey: 'recipes',
-			create: { path: '/kitchen/recipes?/create', form: { heading: "alice's recipe" } },
-			attack: (id) => ({ path: '/kitchen/recipes?/update', form: { id, heading: 'taken' } })
+			create: { path: '/health/recipes?/create', form: { heading: "alice's recipe" } },
+			attack: (id) => ({ path: '/health/recipes?/update', form: { id, heading: 'taken' } })
 		},
 		{
 			// A category is what half the other entities hang off, so reaching one
@@ -378,11 +378,11 @@ test.describe('one account cannot reach another account by id', () => {
 	test('a picture cannot be attached to another account’s recipe', async ({ playwright }) => {
 		const request = await playwright.request.newContext({ baseURL: ORIGIN });
 
-		const created = await action(request, alice, '/kitchen/recipes?/create', {
+		const created = await action(request, alice, '/health/recipes?/create', {
 			heading: "alice's photographed recipe"
 		});
 		expect(['success', 'redirect']).toContain(created.type);
-		const recipeId = await firstId(request, alice, '/kitchen/recipes', 'recipes');
+		const recipeId = await firstId(request, alice, '/health/recipes', 'recipes');
 
 		const png = Buffer.from(
 			'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAJUlEQVR4nGP8//8/AymAiSTVoxpGNYxq' +
@@ -390,7 +390,7 @@ test.describe('one account cannot reach another account by id', () => {
 			'base64'
 		);
 
-		const attempt = await request.post(`/kitchen/recipes/${recipeId}?/addPicture`, {
+		const attempt = await request.post(`/health/recipes/${recipeId}?/addPicture`, {
 			headers: { Origin: ORIGIN, Cookie: mallory.cookie, 'x-sveltekit-action': 'true' },
 			multipart: {
 				recipeId,

@@ -57,7 +57,12 @@ export default defineConfig({
 			TZ: 'UTC'
 		}
 	},
-	use: { baseURL: 'http://localhost:4173' },
+	// The browser keeps the server's clock, for the same reason the server is
+	// pinned to UTC above. Left on the machine's own timezone, a browser three
+	// hours west computes a "today" the server calls yesterday, and anything
+	// planned for today lands outside the window the plan draws — a suite that
+	// passes all day and fails after 21:00.
+	use: { baseURL: 'http://localhost:4173', timezoneId: 'UTC' },
 	testMatch: '**/*.e2e.{ts,js}',
 
 	/*

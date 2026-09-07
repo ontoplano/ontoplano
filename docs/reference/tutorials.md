@@ -20,8 +20,8 @@ under the pointer.
 | `/finance/bills`         | Bills        | 3     |
 | `/goals`                 | Goals        | 4     |
 | `/health/habits`         | Habits       | 3     |
+| `/health/recipes`        | Recipes      | 4     |
 | `/ideas`                 | Ideas        | 3     |
-| `/kitchen/recipes`       | Recipes      | 4     |
 | `/notebooks`             | Notebooks    | 2     |
 | `/notebooks/diary`       | Diary        | 4     |
 | `/notebooks/people`      | People       | 3     |
@@ -36,8 +36,8 @@ under the pointer.
 Toured as well, though nothing obliges them to be — a screen reached from
 a link rather than from the navigation:
 
+- `/health/meals` — Meals
 - `/health/trainings` — Trainings
-- `/kitchen/meals` — Meals
 - `/search` — Search
 - `/settings/preferences` — Preferences
 - `/tasks/review` — Review
@@ -77,6 +77,19 @@ at the button that reopens it, so it is not listed here.
 2. Say which kind it is
 3. The calendar is the point
 
+### `/health/meals` — Meals
+
+1. The week, as food
+2. A recipe per day
+3. To buy, and already have
+
+### `/health/recipes` — Recipes
+
+1. Recipes, and what they cost you
+2. Paste the page in
+3. And what it looks like
+4. An ingredient is a shopping item
+
 ### `/health/trainings` — Trainings
 
 1. Workouts, planned like meals
@@ -87,19 +100,6 @@ at the button that reopens it, so it is not listed here.
 1. Catch it now, judge it later
 2. A sentence is a complete idea
 3. Star it, or mark it done
-
-### `/kitchen/meals` — Meals
-
-1. The week, as food
-2. A recipe per day
-3. To buy, and already have
-
-### `/kitchen/recipes` — Recipes
-
-1. Recipes, and what they cost you
-2. Paste the page in
-3. And what it looks like
-4. An ingredient is a shopping item
 
 ### `/notebooks` — Notebooks
 

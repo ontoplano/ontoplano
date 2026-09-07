@@ -91,11 +91,11 @@ test('it asks one thing at a time, and the rooms you keep are the rooms you get'
 	await page.getByRole('button', { name: 'Start planning' }).click();
 	await page.waitForURL(/\/tasks\/plan/, { timeout: 20000 });
 
-	// And every answer arrived: the two rooms are gone from the navigation and
-	// the six that were kept are not.
+	// And every answer arrived: what was turned off is gone from the navigation
+	// and what was kept is not. People is a tab of Notebooks rather than a room
+	// of its own, so turning it off takes the tab, not a bar entry.
 	const nav = page.locator('header').first();
 	await expect(nav.getByRole('link', { name: 'Notebooks' })).toBeVisible();
-	await expect(nav.getByRole('link', { name: 'People' })).toHaveCount(0);
 	await expect(nav.getByRole('link', { name: 'Health' })).toHaveCount(0);
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
@@ -110,6 +110,6 @@ test('skipping asks nothing and keeps every room', async ({ page }) => {
 	// Skipping is not a choice about rooms: an account that never answered gets
 	// the whole app rather than an empty navigation.
 	const nav = page.locator('header').first();
-	for (const room of ['Notebooks', 'People', 'Health', 'Shopping', 'Recipes'])
+	for (const room of ['Notebooks', 'Health', 'Shopping', 'Goals', 'Ideas'])
 		await expect(nav.getByRole('link', { name: room })).toBeVisible();
 });

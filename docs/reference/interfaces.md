@@ -1,0 +1,59 @@
+Every room the app has, and what is inside it. Generated from the
+navigation and from each section’s own tab strip, so it cannot drift
+from what the app actually shows.
+
+### Tasks
+
+- **Plan** — `/tasks/plan`
+- **Board** — `/tasks/board`
+- **To-do** — `/tasks/todo`
+- **Activities** — `/tasks/activities`
+- **Review** — `/tasks/review`
+
+### Goals
+
+- `/goals` — one page, no tabs
+
+Can be put away in Preferences (`goals`), which takes it out of the bar, the wheel and the dashboard.
+
+### Notebooks
+
+- **Notebooks** — `/notebooks`
+- **Diary** — `/notebooks/diary`
+- **People** — `/notebooks/people`
+
+Can be put away in Preferences (`diary`), which takes it out of the bar, the wheel and the dashboard.
+
+### Ideas
+
+- `/ideas` — one page, no tabs
+
+Can be put away in Preferences (`ideas`), which takes it out of the bar, the wheel and the dashboard.
+
+### Health
+
+- **Habits** — `/health/habits`
+- **Trainings** — `/health/trainings`
+- **Recipes** — `/health/recipes`
+- **Meals** — `/health/meals`
+
+Can be put away in Preferences (`health`), which takes it out of the bar, the wheel and the dashboard.
+
+### Finance
+
+- **Bills** — `/finance/bills`
+
+Can be put away in Preferences (`finance`), which takes it out of the bar, the wheel and the dashboard.
+
+### Shopping
+
+- `/shopping` — one page, no tabs
+
+Can be put away in Preferences (`shopping`), which takes it out of the bar, the wheel and the dashboard.
+
+### Everywhere else
+
+- **Home** — `/`, the dashboard; the wordmark is the way back to it
+- **Search** — `/search`, across every room at once
+- **Settings** — `/settings`, and the account under it
+- Health also grows a tab per data stream an account records, named after the stream.

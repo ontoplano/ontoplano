@@ -24,7 +24,7 @@ async function makeRecipe(page: import('@playwright/test').Page, title: string):
 	await page.waitForTimeout(500);
 
 	// Navigating away is how the dialog closes; there is nothing to save.
-	await visit(page, '/kitchen/recipes');
+	await visit(page, '/health/recipes');
 	await page
 		.getByRole('button', { name: /new recipe/i })
 		.first()
@@ -33,7 +33,7 @@ async function makeRecipe(page: import('@playwright/test').Page, title: string):
 	const form = page.locator('dialog[open]');
 	await form.locator('[name=heading]').fill(title);
 	await form.locator('[name=heading]').press('Enter');
-	await page.waitForURL(/\/kitchen\/recipes\/\d+/, { timeout: 10_000 });
+	await page.waitForURL(/\/health\/recipes\/\d+/, { timeout: 10_000 });
 }
 
 test('cook mode covers the page and gives it back', async ({ page }) => {
@@ -135,13 +135,13 @@ test.describe('importing a recipe from a pasted page', () => {
 
 	test('reads the recipe, its ingredients and its timing', async ({ page }) => {
 		await register(page, `recipe-paste-${Date.now()}@test.invalid`);
-		await visit(page, '/kitchen/recipes');
+		await visit(page, '/health/recipes');
 
 		await page.getByRole('button', { name: 'New recipe' }).first().click();
 		await page.getByPlaceholder('Paste the page here').fill(PAGE);
 		await page.getByRole('button', { name: 'Read it' }).click();
 
-		await page.waitForURL(/\/kitchen\/recipes\/\d+/);
+		await page.waitForURL(/\/health\/recipes\/\d+/);
 		await expect(page.getByText('Pasted pancakes').first()).toBeVisible();
 		await expect(page.getByText('Whisk it.').first()).toBeVisible();
 
@@ -156,12 +156,12 @@ test.describe('importing a recipe from a pasted page', () => {
 
 	test('says so plainly when there is no recipe in the paste', async ({ page }) => {
 		await register(page, `recipe-none-${Date.now()}@test.invalid`);
-		await visit(page, '/kitchen/recipes');
+		await visit(page, '/health/recipes');
 
 		const result = await page.evaluate(async () => {
 			const body = new FormData();
 			body.append('page', '<html><body>a blog post about a holiday</body></html>');
-			const res = await fetch('/kitchen/recipes?/importFromPage', {
+			const res = await fetch('/health/recipes?/importFromPage', {
 				method: 'POST',
 				headers: { 'x-sveltekit-action': 'true' },
 				body
@@ -226,21 +226,21 @@ test('a recipe put on a day turns into shopping', async ({ page }) => {
 	expect(food.type).toBe('success');
 
 	// A recipe with two ingredients.
-	await visit(page, '/kitchen/recipes');
+	await visit(page, '/health/recipes');
 	await page
 		.getByRole('button', { name: /new recipe/i })
 		.first()
 		.click();
 	await page.locator('#recipe-form [name=heading]').fill('Leek soup');
 	await page.getByRole('button', { name: 'Create', exact: true }).click();
-	await page.waitForURL(/\/kitchen\/recipes\/\d+/);
+	await page.waitForURL(/\/health\/recipes\/\d+/);
 
 	const recipeId = page.url().split('/').pop()!;
 	const imported = await page.evaluate(async (id) => {
 		const body = new FormData();
 		body.append('recipeId', id);
 		body.append('list', 'leeks\npotatoes');
-		const res = await fetch(`/kitchen/recipes/${id}?/importIngredients`, {
+		const res = await fetch(`/health/recipes/${id}?/importIngredients`, {
 			method: 'POST',
 			headers: { 'x-sveltekit-action': 'true' },
 			body
@@ -264,7 +264,7 @@ test('a recipe put on a day turns into shopping', async ({ page }) => {
 			body.append('startTime', '19:00');
 			body.append('durationMinutes', '45');
 			body.append('label', 'Leek soup');
-			const res = await fetch(`/kitchen/recipes/${id}?/schedule`, {
+			const res = await fetch(`/health/recipes/${id}?/schedule`, {
 				method: 'POST',
 				headers: { 'x-sveltekit-action': 'true' },
 				body
@@ -276,7 +276,7 @@ test('a recipe put on a day turns into shopping', async ({ page }) => {
 	expect(scheduled, 'putting the recipe on a day').toBe('success');
 
 	// And the week now knows what it needs.
-	await visit(page, '/kitchen/meals');
+	await visit(page, '/health/meals');
 	await expect(page.getByText('leeks')).toBeVisible();
 	await expect(page.getByText('potatoes')).toBeVisible();
 

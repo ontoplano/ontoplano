@@ -110,8 +110,7 @@
 		ideas: 'ideas',
 		health: 'health',
 		finance: 'wallet',
-		shopping: 'shopping',
-		kitchen: 'utensils'
+		shopping: 'shopping'
 	};
 
 	/**
@@ -125,8 +124,8 @@
 	const ROUTE_GLYPH: [string, IconName][] = [
 		['/notebooks', 'notebook'],
 		['/notebooks/people', 'user'],
-		['/kitchen/recipes', 'utensils'],
-		['/kitchen/meals', 'utensils'],
+		['/health/recipes', 'utensils'],
+		['/health/meals', 'utensils'],
 		// Settings belongs to no room, so it fell through to home — and the
 		// account page was tiled with houses.
 		['/settings', 'user'],

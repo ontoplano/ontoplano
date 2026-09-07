@@ -174,7 +174,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'n', action: 'new', description: 'New person' }
 		]
 	},
-	'/kitchen/recipes': {
+	'/health/recipes': {
 		label: 'Recipes',
 		shortcuts: [{ key: 'n', action: 'new', description: 'New recipe' }]
 	},

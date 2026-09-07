@@ -34,7 +34,10 @@ test('a bill can be added, paid for a real amount, and unpaid', async ({ page })
 	await expect(page.locator('li', { hasText: 'Rent' }).getByText(/1,300/)).toBeVisible();
 
 	// Mark it paid for a little over — the box takes the real amount.
-	await page.locator('li', { hasText: 'Rent' }).getByRole('button', { name: /^Mark .* paid$/ }).click();
+	await page
+		.locator('li', { hasText: 'Rent' })
+		.getByRole('button', { name: /^Mark .* paid$/ })
+		.click();
 	await page.locator('li', { hasText: 'Rent' }).locator('[name="amount"]').fill('1315,00');
 	await page
 		.locator('li', { hasText: 'Rent' })
@@ -52,7 +55,10 @@ test('a bill can be added, paid for a real amount, and unpaid', async ({ page })
 
 	// Undo the payment — back to unpaid.
 	await page.setViewportSize({ width: 1200, height: 900 });
-	await page.locator('li', { hasText: 'Rent' }).getByRole('button', { name: /^Undo the payment/ }).click();
+	await page
+		.locator('li', { hasText: 'Rent' })
+		.getByRole('button', { name: /^Undo the payment/ })
+		.click();
 	await expect(
 		page.locator('li', { hasText: 'Rent' }).getByRole('button', { name: /^Mark .* paid$/ })
 	).toBeVisible();

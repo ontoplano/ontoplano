@@ -58,11 +58,11 @@ export const DESTINATIONS: Destination[] = [
 	{
 		label: 'Recipes',
 		group: 'Kitchen',
-		href: '/kitchen/recipes',
+		href: '/health/recipes',
 		icon: 'shopping',
 		hide: 'recipes'
 	},
-	{ label: 'Meals', group: 'Kitchen', href: '/kitchen/meals', icon: 'calendar', hide: 'recipes' },
+	{ label: 'Meals', group: 'Kitchen', href: '/health/meals', icon: 'calendar', hide: 'recipes' },
 
 	{ label: 'Account', group: 'Settings', href: '/settings/account', icon: 'settings' },
 	{ label: 'Preferences', group: 'Settings', href: '/settings/preferences', icon: 'settings' },

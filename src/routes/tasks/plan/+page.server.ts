@@ -182,6 +182,7 @@ function blockFields(formData: FormData) {
 		mode: formData.get('mode'),
 		categoryId: formData.get('categoryId'),
 		activityId: formData.get('activityId'),
+		trainingId: formData.get('trainingId'),
 		newActivityName: formData.get('newActivityName'),
 		newActivityCategoryId: formData.get('newActivityCategoryId'),
 		label: formData.get('label'),

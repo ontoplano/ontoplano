@@ -73,14 +73,14 @@ const SMALL = { name: 'small.png', mimeType: 'image/png', buffer: png(24, 8) };
 const HUGE = { name: 'huge.png', mimeType: 'image/png', buffer: png(24, 1100) };
 
 async function newRecipe(page: Page, title: string) {
-	await visit(page, '/kitchen/recipes');
+	await visit(page, '/health/recipes');
 	await page
 		.getByRole('button', { name: /new recipe/i })
 		.first()
 		.click();
 	await page.locator('[name="heading"]').first().fill(title);
 	await page.locator('button[type="submit"]').first().click();
-	await page.waitForURL(/\/kitchen\/recipes\/\d+/, { timeout: 20000 });
+	await page.waitForURL(/\/health\/recipes\/\d+/, { timeout: 20000 });
 }
 
 test('a recipe takes a picture the moment one is chosen', async ({ page }) => {
@@ -110,7 +110,7 @@ test('an over-large picture is refused in words, and the page survives', async (
 	// The sentence names both numbers, and it is on the page rather than on a
 	// 500 screen: nothing was sent, so nothing could fail to parse.
 	await expect(page.getByText(/at most \d+KB, and huge\.png is \d+KB/)).toBeVisible();
-	await expect(page).toHaveURL(/\/kitchen\/recipes\/\d+/);
+	await expect(page).toHaveURL(/\/health\/recipes\/\d+/);
 	await expect(gallery.locator('img')).toHaveCount(0);
 
 	// …and the input is empty again, so the next choice is a fresh one.

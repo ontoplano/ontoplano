@@ -210,7 +210,8 @@ describe('which section a page belongs to', () => {
 		expect(sectionFor('/tasks')).toBe('planner');
 		expect(sectionFor('/tasks/todo')).toBe('planner');
 		expect(sectionFor('/shopping/list/3')).toBe('shopping');
-		expect(sectionFor('/kitchen')).toBe('kitchen');
+		// Recipes and meals are Health's now; the old address redirects there.
+		expect(sectionFor('/health/recipes')).toBe('health');
 	});
 
 	test('and anything else is home rather than nothing', () => {

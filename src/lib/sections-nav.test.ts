@@ -19,12 +19,17 @@ describe('the places the app can take you', () => {
 		expect(ROOMS.map((r) => r.key)).toEqual(NAV_PLACES.map((p) => p.key));
 	});
 
-	it('has People among them, and deliberately not Notebooks', () => {
-		// People went missing once because nothing said it had to be here.
-		// Notebooks is the opposite case: it is the second tab of Notes, not a
-		// room — an entry of its own would put the same shelf in the bar twice.
-		expect(roomFor('people'), 'people is not a place the pie can reach').toBeTruthy();
+	it('leaves out what is a tab rather than a room', () => {
+		// A tab of a room must not also be a room: the same shelf would appear
+		// twice in the bar and twice on the wheel. People and Recipes are tabs
+		// — of Notebooks and of Health — and Notebooks is the first tab of its
+		// own section, so none of the three is a place of its own.
+		expect(roomFor('people')).toBeUndefined();
+		expect(roomFor('kitchen')).toBeUndefined();
 		expect(roomFor('notebooks')).toBeUndefined();
+		// The rooms that remain are the sections themselves.
+		expect(roomFor('health'), 'health is a room').toBeTruthy();
+		expect(roomFor('diary'), 'notebooks is a room').toBeTruthy();
 	});
 
 	it('sends every place somewhere, once', () => {

@@ -49,7 +49,7 @@ export const recipeActions = {
 		}
 
 		// Straight into the new recipe: the next thing anybody does is write it.
-		redirect(303, `/kitchen/recipes/${id}`);
+		redirect(303, `/health/recipes/${id}`);
 	},
 
 	/**
@@ -103,7 +103,7 @@ export const recipeActions = {
 			return toActionFailure(e);
 		}
 
-		redirect(303, `/kitchen/recipes/${id}`);
+		redirect(303, `/health/recipes/${id}`);
 	},
 
 	update: async ({ request, locals }) => {
@@ -291,6 +291,6 @@ export const recipeActions = {
 			return toActionFailure(e);
 		}
 
-		redirect(303, '/kitchen/recipes');
+		redirect(303, '/health/recipes');
 	}
 } satisfies Actions;

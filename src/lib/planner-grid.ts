@@ -187,6 +187,11 @@ function combineDateAndClock(base: Date, hhmm: string): Date {
 	return new Date(base.getFullYear(), base.getMonth(), base.getDate(), h, m, 0, 0);
 }
 
+/** The Health accent, worn by a block that is a workout. Kept here beside the
+ *  other colour decisions rather than imported, so this module stays the one
+ *  place that says what a block looks like. */
+const TRAINING_COLOR = '#0f766e';
+
 export function categoryColor(categories: GridCategory[], categoryId: number | null): string {
 	if (!categoryId) return CATEGORY_FALLBACK_COLOR;
 	const cat = categories.find((c) => c.id === categoryId);
@@ -263,7 +268,10 @@ function slotToEvent(
 	const dayDate = weekdayToDate(mondayStr, slot.weekday);
 	const start = combineDateAndClock(dayDate, slot.startTime);
 	const end = new Date(start.getTime() + slot.durationMinutes * 60_000);
-	const bg = categoryColor(categories, effectiveCategoryId(slot));
+	const bg =
+		slot.mode === 'training'
+			? TRAINING_COLOR
+			: categoryColor(categories, effectiveCategoryId(slot));
 	const suppressed = opts.suppressedSlotIds?.has(slot.id) ?? false;
 	const inactive = !slot.active || suppressed;
 	// A slot skipped for this date is a stand-in for something that isn't
@@ -305,7 +313,8 @@ function exceptionalToEvent(
 	const dayDate = parseLocalDate(exc.date);
 	const start = combineDateAndClock(dayDate, exc.startTime);
 	const end = new Date(start.getTime() + exc.durationMinutes * 60_000);
-	const bg = categoryColor(categories, effectiveCategoryId(exc));
+	const bg =
+		exc.mode === 'training' ? TRAINING_COLOR : categoryColor(categories, effectiveCategoryId(exc));
 
 	return {
 		id: encodeEventId('exceptional', exc.id),

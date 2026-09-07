@@ -42,6 +42,12 @@ works is a key listed here and the reverse.
 | <kbd>n</kbd>     | New habit       |
 | <kbd>Enter</kbd> | Expand/collapse |
 
+## Recipes — `/health/recipes`
+
+| Key          | Does       |
+| ------------ | ---------- |
+| <kbd>n</kbd> | New recipe |
+
 ## Ideas — `/ideas`
 
 | Key          | Does            |
@@ -52,12 +58,6 @@ works is a key listed here and the reverse.
 | <kbd>e</kbd> | Edit idea       |
 | <kbd>f</kbd> | Toggle favorite |
 | <kbd>a</kbd> | Toggle applied  |
-
-## Recipes — `/kitchen/recipes`
-
-| Key          | Does       |
-| ------------ | ---------- |
-| <kbd>n</kbd> | New recipe |
 
 ## Notebooks — `/notebooks`
 
