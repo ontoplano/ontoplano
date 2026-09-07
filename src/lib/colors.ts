@@ -46,7 +46,7 @@ export type SectionKey =
 	| 'ideas'
 	| 'health'
 	| 'finance'
-	| 'shopping';
+	| 'inventory';
 
 export const SECTIONS: Record<SectionKey, { accent: string; label: string }> = {
 	home: { accent: '#475569', label: 'Home' },
@@ -56,7 +56,7 @@ export const SECTIONS: Record<SectionKey, { accent: string; label: string }> = {
 	ideas: { accent: '#6d28d9', label: 'Ideas' },
 	health: { accent: '#0f766e', label: 'Health' },
 	finance: { accent: '#155e63', label: 'Finance' },
-	shopping: { accent: '#9d174d', label: 'Shopping' }
+	inventory: { accent: '#9d174d', label: 'Inventory' }
 };
 
 /** Which section a pathname belongs to. */
@@ -69,7 +69,7 @@ export function sectionFor(pathname: string): SectionKey {
 	// did when it lived at /diary.
 	if (pathname.startsWith('/notebooks')) return 'diary';
 	if (pathname.startsWith('/ideas')) return 'ideas';
-	if (pathname.startsWith('/shopping')) return 'shopping';
+	if (pathname.startsWith('/inventory')) return 'inventory';
 	return 'home';
 }
 
@@ -79,7 +79,7 @@ export const SECTION_COLORS = {
 	health: SECTIONS.health.accent,
 	finance: SECTIONS.finance.accent,
 	diary: SECTIONS.diary.accent,
-	shopping: SECTIONS.shopping.accent,
+	inventory: SECTIONS.inventory.accent,
 	ideas: SECTIONS.ideas.accent,
 	home: SECTIONS.home.accent,
 	goals: SECTIONS.goals.accent

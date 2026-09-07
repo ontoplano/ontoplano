@@ -307,7 +307,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			id: row.id,
 			title: row.name,
 			snippet: firstLine(row.notes ?? ''),
-			href: '/shopping'
+			href: '/inventory/list'
 		});
 
 	for (const row of db

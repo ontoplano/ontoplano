@@ -48,11 +48,12 @@ Can be put away in Preferences (`health`), which takes it out of the bar, the wh
 
 Can be put away in Preferences (`finance`), which takes it out of the bar, the wheel and the dashboard.
 
-### Shopping
+### Inventory
 
-- `/shopping` — one page, no tabs
+- **To buy** — `/inventory/list`
+- **What I have** — `/inventory/things`
 
-Can be put away in Preferences (`shopping`), which takes it out of the bar, the wheel and the dashboard.
+Can be put away in Preferences (`inventory`), which takes it out of the bar, the wheel and the dashboard.
 
 ### Everywhere else
 

@@ -60,6 +60,16 @@ export const SCOPES = {
 	'shopping:read': 'See everything on your shopping list',
 	'shopping:write': 'Add to your shopping list, tick things bought, and take things off it',
 	/*
+	 * The other half of the same room, and its own permission.
+	 *
+	 * A shopping list is what you are going to buy; an inventory is a map of
+	 * your home — which room, which drawer, and what is in it. They share a
+	 * table and they are not the same disclosure, so a widget that wanted the
+	 * list does not get told where the spare keys are kept.
+	 */
+	'inventory:read': 'See where your things live, and what is in each room and drawer',
+	'inventory:write': 'Add and change rooms and drawers, and say where a thing lives',
+	/*
 	 * The calendar feed's own scope, and the reason it has one.
 	 *
 	 * A calendar app cannot send a header, so the credential has to live in the

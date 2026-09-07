@@ -13,7 +13,7 @@ import { visit } from './helpers/visit';
  */
 test('a new category is created, and can hold food', async ({ page }) => {
 	await register(page, `categories-${Date.now()}@test.invalid`);
-	await visit(page, '/shopping');
+	await visit(page, '/inventory/list');
 
 	await page.getByRole('button', { name: 'Categories' }).click();
 	const dialog = page.locator('dialog[open]');
@@ -43,7 +43,7 @@ test('a category that holds food makes ingredients possible', async ({ page }) =
 	await visit(page, '/health/recipes');
 	await expect(page.getByText(/no food category yet/i)).toBeVisible();
 
-	await visit(page, '/shopping');
+	await visit(page, '/inventory/list');
 	await page.getByRole('button', { name: 'Categories' }).click();
 	const dialog = page.locator('dialog[open]');
 	await dialog.getByRole('button', { name: /new category/i }).click();
@@ -73,7 +73,7 @@ test('what you paid is recorded after the tick, and the price shows on the row',
 	page
 }) => {
 	await register(page, `prices-${Date.now()}@test.invalid`);
-	await visit(page, '/shopping');
+	await visit(page, '/inventory/list');
 
 	await page.getByRole('button', { name: /add item/i }).click();
 	const dialog = page.locator('dialog[open]');

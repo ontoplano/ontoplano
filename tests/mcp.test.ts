@@ -1392,17 +1392,39 @@ describe('workouts over MCP', () => {
 });
 
 describe('the inventory over MCP', () => {
+	/*
+	 * The split that gives this its own scope.
+	 *
+	 * A shopping list is what you are about to buy. An inventory is a map of
+	 * somebody's home — which room, which drawer, what is in it — and a widget
+	 * given the list should not learn where the spare keys are. So the two
+	 * halves share a table and not a permission.
+	 */
+	it('is not offered to a token that only has the shopping list', () => {
+		const offered = call(['shopping:read', 'shopping:write'], {
+			jsonrpc: '2.0',
+			id: 1,
+			method: 'tools/list'
+		}).result.tools as { name: string }[];
+		const names = offered.map((t) => t.name);
+
+		expect(names).toContain('shopping_list');
+		for (const tool of ['locations', 'where_is', 'add_location', 'put_item', 'set_item_fields']) {
+			expect(names, `${tool} needs inventory:*`).not.toContain(tool);
+		}
+	});
+
 	const rpc = (id: number, name: string, args: Record<string, unknown>, scopes: string[]) =>
 		call(scopes, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
 
 	it('builds the tree, files a thing, and answers "where is it"', () => {
-		const living = rpc(1, 'add_place', { name: 'Living room' }, ['shopping:write']).result
+		const living = rpc(1, 'add_location', { name: 'Living room' }, ['inventory:write']).result
 			.structuredContent.id as number;
-		const chest = rpc(2, 'add_place', { name: 'White chest', parent_id: living }, [
-			'shopping:write'
+		const chest = rpc(2, 'add_location', { name: 'White chest', parent_id: living }, [
+			'inventory:write'
 		]).result.structuredContent.id as number;
-		const drawer = rpc(3, 'add_place', { name: 'First drawer', parent_id: chest }, [
-			'shopping:write'
+		const drawer = rpc(3, 'add_location', { name: 'First drawer', parent_id: chest }, [
+			'inventory:write'
 		]).result.structuredContent.id as number;
 
 		rpc(4, 'add_to_shopping_list', { name: 'measuring tape' }, ['shopping:write']);
@@ -1412,34 +1434,34 @@ describe('the inventory over MCP', () => {
 		}[];
 		const tape = items.find((i) => i.name === 'measuring tape')!;
 
-		rpc(6, 'put_item', { id: tape.id, place_id: drawer }, ['shopping:write']);
+		rpc(6, 'put_item', { id: tape.id, location_id: drawer }, ['inventory:write']);
 		rpc(7, 'set_item_fields', { id: tape.id, fields: { length: '5m', kind: 'tailor' } }, [
-			'shopping:write'
+			'inventory:write'
 		]);
 
-		const found = rpc(8, 'where_is', { name: 'tape' }, ['shopping:read']).result.structuredContent
-			.things as { name: string; place: string; fields: Record<string, string> }[];
-		expect(found[0].place).toBe('Living room › White chest › First drawer');
+		const found = rpc(8, 'where_is', { name: 'tape' }, ['inventory:read']).result.structuredContent
+			.things as { name: string; location: string; fields: Record<string, string> }[];
+		expect(found[0].location).toBe('Living room › White chest › First drawer');
 		expect(found[0].fields).toEqual({ length: '5m', kind: 'tailor' });
 
 		// Unfiling is the inverse of filing.
-		rpc(9, 'put_item', { id: tape.id }, ['shopping:write']);
-		const unfiled = rpc(10, 'where_is', { name: 'tape' }, ['shopping:read']).result
-			.structuredContent.things as { place: string | null }[];
-		expect(unfiled[0].place).toBeNull();
+		rpc(9, 'put_item', { id: tape.id }, ['inventory:write']);
+		const unfiled = rpc(10, 'where_is', { name: 'tape' }, ['inventory:read']).result
+			.structuredContent.things as { location: string | null }[];
+		expect(unfiled[0].location).toBeNull();
 	});
 
-	it('a place refuses to be put inside itself, and removal lifts children', () => {
-		const a = rpc(1, 'add_place', { name: 'Garage' }, ['shopping:write']).result.structuredContent
-			.id as number;
-		const b = rpc(2, 'add_place', { name: 'Shelf', parent_id: a }, ['shopping:write']).result
+	it('a location refuses to be put inside itself, and removal lifts children', () => {
+		const a = rpc(1, 'add_location', { name: 'Garage' }, ['inventory:write']).result
+			.structuredContent.id as number;
+		const b = rpc(2, 'add_location', { name: 'Shelf', parent_id: a }, ['inventory:write']).result
 			.structuredContent.id as number;
 
-		const refused = rpc(3, 'change_place', { id: a, parent_id: b }, ['shopping:write']);
+		const refused = rpc(3, 'change_location', { id: a, parent_id: b }, ['inventory:write']);
 		expect(refused.result.isError).toBe(true);
 
-		rpc(4, 'remove_place', { id: a }, ['shopping:write']);
-		const tree = rpc(5, 'places', {}, ['shopping:read']).result.structuredContent.places as {
+		rpc(4, 'remove_location', { id: a }, ['inventory:write']);
+		const tree = rpc(5, 'locations', {}, ['inventory:read']).result.structuredContent.locations as {
 			id: number;
 			name: string;
 		}[];

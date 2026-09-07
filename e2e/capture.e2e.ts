@@ -159,13 +159,13 @@ test('the section pie lands you in the room', async ({ page }) => {
 	// Home either — the bar carries that as a plain button, so no wedge is
 	// spent on it.
 	await expect(page.getByText('cancel')).toBeVisible();
-	for (const room of ['Tasks', 'Goals', 'Notebooks', 'Ideas', 'Health', 'Finance', 'Shopping']) {
+	for (const room of ['Tasks', 'Goals', 'Notebooks', 'Ideas', 'Health', 'Finance', 'Inventory']) {
 		await expect(page.locator('.pie').getByText(room, { exact: true })).toBeVisible();
 	}
 	await expect(page.locator('.pie').getByText('Home', { exact: true })).toHaveCount(0);
 
-	await page.locator('.pie').getByText('Shopping', { exact: true }).click();
-	await page.waitForURL(/\/shopping/);
+	await page.locator('.pie').getByText('Inventory', { exact: true }).click();
+	await page.waitForURL(/\/inventory/);
 });
 
 test.describe('with a finger', () => {
@@ -237,7 +237,7 @@ test.describe('with a finger', () => {
 			named.push(((await page.locator('.pie-hud').textContent()) ?? '').trim());
 		}
 
-		for (const room of ['Tasks', 'Goals', 'Notebooks', 'Shopping']) {
+		for (const room of ['Tasks', 'Goals', 'Notebooks', 'Inventory']) {
 			expect(named, `${room} was never named while it was aimed at`).toContain(room);
 		}
 
@@ -269,6 +269,6 @@ test('the Buy capture actually puts something on the shopping list', async ({ pa
 		.fill('oat milk');
 	await page.getByRole('button', { name: 'Save' }).click();
 
-	await visit(page, '/shopping');
+	await visit(page, '/inventory/list');
 	await expect(page.getByText('oat milk')).toBeVisible();
 });

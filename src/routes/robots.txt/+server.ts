@@ -48,6 +48,8 @@ export const GET: RequestHandler = () => {
 				'Disallow: /tasks/',
 				'Disallow: /search',
 				'Disallow: /settings/',
+				'Disallow: /inventory',
+				// Retired as a room of its own; the redirect is still served.
 				'Disallow: /shopping',
 				'Disallow: /welcome',
 				''

@@ -22,12 +22,12 @@ under the pointer.
 | `/health/habits`         | Habits       | 3     |
 | `/health/recipes`        | Recipes      | 5     |
 | `/ideas`                 | Ideas        | 3     |
+| `/inventory/list`        | Shopping     | 3     |
 | `/notebooks`             | Notebooks    | 2     |
 | `/notebooks/diary`       | Diary        | 4     |
 | `/notebooks/people`      | People       | 3     |
 | `/settings/account`      | Account      | 3     |
 | `/settings/integrations` | Integrations | 3     |
-| `/shopping`              | Shopping     | 3     |
 | `/tasks/activities`      | Activities   | 3     |
 | `/tasks/board`           | Board        | 4     |
 | `/tasks/plan`            | Plan         | 5     |
@@ -95,6 +95,12 @@ at the button that reopens it, so it is not listed here.
 2. A sentence is a complete idea
 3. Star it, or mark it done
 
+### `/inventory/list` — Shopping
+
+1. Two lists, one page
+2. Which list, and where it lives
+3. Bought, and back again
+
 ### `/notebooks` — Notebooks
 
 1. For the things that are not a day
@@ -135,12 +141,6 @@ at the button that reopens it, so it is not listed here.
 1. The app, arranged your way
 2. Your rooms, your order, your colours
 3. Light, dark, or whatever the device says
-
-### `/shopping` — Shopping
-
-1. Two lists, one page
-2. Which list, and where it lives
-3. Bought, and back again
 
 ### `/tasks/activities` — Activities
 

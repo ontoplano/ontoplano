@@ -60,10 +60,10 @@ export const HIDEABLE_SECTIONS = [
 			'The bills you expect to pay, and what you actually paid. Not accounting — the handful of payments that land on a month, and the gap between planned and real.'
 	},
 	{
-		id: 'shopping',
-		label: 'Shopping',
+		id: 'inventory',
+		label: 'Inventory',
 		blurb:
-			'What to buy and what the cupboard already holds. Ticking things off works with no signal at all, which is what a supermarket basement is.'
+			'What to buy, and where the things you already own live — the same rows seen twice. Ticking things off works with no signal at all, which is what a supermarket basement is.'
 	},
 	{
 		id: 'recipes',

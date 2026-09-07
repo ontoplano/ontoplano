@@ -2,7 +2,7 @@ import { and, asc, desc, eq, inArray, or, sql } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { pricePoints, shoppingCategories, shoppingItems } from '../db/schema.js';
-import { getPlace } from './places.js';
+import { getLocation } from './locations.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';
@@ -77,9 +77,9 @@ function itemWhere(ctx: Ctx, id: number) {
 	return and(eq(shoppingItems.id, id), itemReach(ctx));
 }
 
-/** A place that is the caller's own, or a loud refusal. */
-function ownedPlace(ctx: Ctx, placeId: number): void {
-	getPlace(ctx, placeId);
+/** A location that is the caller's own, or a loud refusal. */
+function ownedLocation(ctx: Ctx, locationId: number): void {
+	getLocation(ctx, locationId);
 }
 
 export function listItems(ctx: Ctx) {
@@ -93,7 +93,7 @@ export function listItems(ctx: Ctx) {
 			notes: shoppingItems.notes,
 			bought: shoppingItems.bought,
 			priceCents: shoppingItems.priceCents,
-			placeId: shoppingItems.placeId,
+			locationId: shoppingItems.locationId,
 			attributes: shoppingItems.attributes,
 			boughtAt: shoppingItems.boughtAt,
 			snoozed: shoppingItems.snoozed,
@@ -289,6 +289,65 @@ export function createItem(ctx: Ctx, raw: ItemInput): { alreadyHad: boolean } {
 	return { alreadyHad: false };
 }
 
+/**
+ * Something you already own, filed where it lives.
+ *
+ * `createItem` is for a thing to buy: it revives a bought row rather than
+ * making a second one, and it fires `shopping.added` so a synced list learns
+ * about it. Neither is right here — a tape that has been in the drawer for ten
+ * years was never wanted, and putting it on somebody's list would be the
+ * opposite of what "I have it" means. So it arrives bought, with an address,
+ * and the to-buy half never shows it.
+ *
+ * Returns the new item's id, or the existing one when a thing by that name is
+ * already known: filing the tape you already listed should move it, not
+ * duplicate it.
+ */
+export function createOwnedThing(
+	ctx: Ctx,
+	raw: { name: unknown; notes?: unknown; locationId?: unknown }
+): number {
+	const name = str(raw.name, 'name', { max: MAX_NAME_LENGTH });
+	const notes = optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH });
+
+	const existing = db
+		.select({ id: shoppingItems.id })
+		.from(shoppingItems)
+		.where(
+			and(eq(shoppingItems.userId, ctx.userId), sql`lower(${shoppingItems.name}) = lower(${name})`)
+		)
+		.get();
+
+	if (existing) {
+		db.update(shoppingItems)
+			.set({ bought: true, boughtAt: stamp(ctx), snoozed: false, updatedAt: stamp(ctx) })
+			.where(and(eq(shoppingItems.id, existing.id), eq(shoppingItems.userId, ctx.userId)))
+			.run();
+		return existing.id;
+	}
+
+	const result = db
+		.insert(shoppingItems)
+		.values({
+			...stamps(ctx),
+			userId: ctx.userId,
+			name,
+			/*
+			 * `someday`, not `replenish`, and the difference is what the list
+			 * does with it once it is bought. A restockable is shown even when
+			 * you have it — that is the point of "we are out of milk". A tape is
+			 * a thing you own once, and it belongs on the list only if somebody
+			 * puts it there, so it takes the type the to-buy view hides.
+			 */
+			type: 'someday',
+			notes,
+			bought: true,
+			boughtAt: stamp(ctx)
+		})
+		.run();
+	return Number(result.lastInsertRowid);
+}
+
 export function updateItem(ctx: Ctx, id: number, raw: ItemInput): void {
 	const values = parseItem(ctx, raw);
 
@@ -324,13 +383,13 @@ export function setItemCategory(ctx: Ctx, id: number, categoryId: number | null)
 
 /**
  * Say where a thing lives, or that it lives nowhere in particular — the
- * inventory half of an item. The place must be the caller's own.
+ * inventory half of an item. The location must be the caller's own.
  */
-export function setItemPlace(ctx: Ctx, id: number, placeId: number | null): void {
-	if (placeId !== null) ownedPlace(ctx, placeId);
+export function setItemLocation(ctx: Ctx, id: number, locationId: number | null): void {
+	if (locationId !== null) ownedLocation(ctx, locationId);
 	const res = db
 		.update(shoppingItems)
-		.set({ placeId, updatedAt: stamp(ctx) })
+		.set({ locationId, updatedAt: stamp(ctx) })
 		.where(itemWhere(ctx, id))
 		.run();
 	if (res.changes === 0) throw new NotFoundError('item');

@@ -857,7 +857,7 @@ diary(
 );
 diary(
 	14,
-	'Ana’s birthday is in March — the place by the water takes bookings a season out.',
+	'Ana’s birthday is in March — the location by the water takes bookings a season out.',
 	['family'],
 	iso(dayOffset(-11))
 );
@@ -1031,23 +1031,28 @@ billPaid(cleaner, '2026-W36', 12000, 13000);
 billPaid(billRent, '2026-09', 180000, 180000);
 billPaid(billPower, '2026-09', 15000, 15880);
 
-// --- places (inventory) -----------------------------------------------------------
+// --- locations (inventory) -----------------------------------------------------------
 //
 // A corner of the house, so the inventory tree has something to show and the
 // "where is the measuring tape" answer exists.
 
-const place = (name, parentId = null) => {
-	const existing = one('select id from places where user_id = ? and name = ?', uid, name);
+const location = (name, parentId = null) => {
+	const existing = one('select id from locations where user_id = ? and name = ?', uid, name);
 	if (existing) return existing.id;
-	return run('insert into places (user_id, name, parent_id) values (?, ?, ?)', uid, name, parentId);
+	return run(
+		'insert into locations (user_id, name, parent_id) values (?, ?, ?)',
+		uid,
+		name,
+		parentId
+	);
 };
 
-const livingRoom = place('Living room');
-const whiteChest = place('White chest', livingRoom);
-place('First drawer', whiteChest);
-const officePlace = place('Office');
+const livingRoom = location('Living room');
+const whiteChest = location('White chest', livingRoom);
+location('First drawer', whiteChest);
+const officeLocation = location('Office');
 
-const placedItem = (name, placeId, attributes = null) => {
+const filedItem = (name, locationId, attributes = null) => {
 	const existing = one('select id from shopping_items where user_id = ? and name = ?', uid, name);
 	const id =
 		existing?.id ??
@@ -1057,18 +1062,18 @@ const placedItem = (name, placeId, attributes = null) => {
 			name
 		);
 	run(
-		'update shopping_items set place_id = ?, attributes = ? where id = ?',
-		placeId,
+		'update shopping_items set location_id = ?, attributes = ? where id = ?',
+		locationId,
 		JSON.stringify(attributes ?? {}),
 		id
 	);
 };
 
-placedItem('measuring tape', place('First drawer', whiteChest), {
+filedItem('measuring tape', location('First drawer', whiteChest), {
 	length: '5m',
 	kind: 'construction'
 });
-placedItem('USB-C cable', officePlace, { plug: 'USB-C', speed: 'USB3' });
+filedItem('USB-C cable', officeLocation, { plug: 'USB-C', speed: 'USB3' });
 
 // --- dashboard extras ---------------------------------------------------------------
 
@@ -1170,7 +1175,7 @@ for (let back = 0; back < 14; back++) {
 }
 
 // A plausible producer, and deliberately a generic one: this seed fills the
-// public demo, which is no place to advertise anybody's particular app.
+// public demo, which is no location to advertise anybody's particular app.
 manifest(
 	'scale',
 	'Smart scale',

@@ -17,10 +17,10 @@ test.describe('the menu order', () => {
 		await visit(page, '/settings/preferences');
 		const menu = page.locator('form[action="?/saveMenu"]');
 
-		// Shopping to the top, which is first along the bar and first under the
+		// Inventory to the top, which is first along the bar and first under the
 		// thumb — the wheel starts at the bottom right and runs anti-clockwise.
 		for (let i = 0; i < 12; i++) {
-			const up = menu.getByRole('button', { name: 'Move Shopping up' });
+			const up = menu.getByRole('button', { name: 'Move Inventory up' });
 			if (await up.isDisabled()) break;
 			await up.click();
 		}
@@ -32,10 +32,10 @@ test.describe('the menu order', () => {
 		// The bar: Shopping now comes before Tasks, which it never did.
 		const tabs = page.locator('header a[href], nav a[href]');
 		const labels = (await tabs.allTextContents()).map((t) => t.trim()).filter(Boolean);
-		const shopping = labels.findIndex((t) => t.includes('Shopping'));
+		const inventory = labels.findIndex((t) => t.includes('Inventory'));
 		const planner = labels.findIndex((t) => t.includes('Tasks'));
-		expect(shopping).toBeGreaterThanOrEqual(0);
-		expect(shopping).toBeLessThan(planner);
+		expect(inventory).toBeGreaterThanOrEqual(0);
+		expect(inventory).toBeLessThan(planner);
 	});
 
 	test('survives a room the stored order has never heard of', async ({ page }) => {

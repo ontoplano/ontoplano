@@ -110,6 +110,6 @@ test('skipping asks nothing and keeps every room', async ({ page }) => {
 	// Skipping is not a choice about rooms: an account that never answered gets
 	// the whole app rather than an empty navigation.
 	const nav = page.locator('header').first();
-	for (const room of ['Notebooks', 'Health', 'Shopping', 'Goals', 'Ideas'])
+	for (const room of ['Notebooks', 'Health', 'Inventory', 'Goals', 'Ideas'])
 		await expect(nav.getByRole('link', { name: room })).toBeVisible();
 });

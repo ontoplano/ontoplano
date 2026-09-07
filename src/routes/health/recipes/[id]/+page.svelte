@@ -143,7 +143,7 @@
 							<!-- Every ingredient is a shopping item; this is the way to it,
 							     for when you want to check the price or tick it off. -->
 							<a
-								href={resolve('/shopping')}
+								href={resolve('/inventory/list')}
 								class="shrink-0 text-gray-500 hover:text-gray-900"
 								title="Find {ingredient.name} on the shopping list"
 								aria-label="Find {ingredient.name} on the shopping list"

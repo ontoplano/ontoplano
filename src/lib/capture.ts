@@ -55,9 +55,9 @@ export const CAPTURES: Capture[] = [
 		shortcut: 'b',
 		label: 'Buy',
 		icon: 'shopping',
-		color: SECTION_COLORS.shopping,
-		action: '/shopping?/create',
-		hide: 'shopping'
+		color: SECTION_COLORS.inventory,
+		action: '/inventory/list?/create',
+		hide: 'inventory'
 	}
 ];
 

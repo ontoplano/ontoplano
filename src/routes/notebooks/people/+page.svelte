@@ -10,7 +10,7 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import { RELATIONSHIPS, RELATIONSHIP_LABELS } from '$lib/people';
+	import { birthdayLabel, RELATIONSHIPS, RELATIONSHIP_LABELS } from '$lib/people';
 	import { SECTION_COLORS } from '$lib/colors';
 	import type { PageServerData, ActionData } from './$types';
 	import { keepInView } from '$lib/actions/keep-in-view';
@@ -127,16 +127,20 @@
 			{:else}
 				<div class="divide-y divide-gray-200" data-tour="people-list">
 					{#each data.people as person, i (person.id)}
-						<!-- Two buttons and a count beside a name is more than a phone has
-						     room for; below `sm` they go under it. -->
+						<!--
+							The shared row shape, so a person looks like a bill and a
+							workout look. It used to stack into three blocks on a phone —
+							face, then name, then buttons — which made a list of six people
+							a page and a half of mostly nothing.
+						-->
 						<div
 							use:keepInView={selectedIndex === i}
-							class="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 {selectedIndex ===
-							i
+							class="list-row {selectedIndex === i
 								? 'bg-gray-100 ring-2 ring-gray-900 ring-inset'
 								: ''}"
 						>
-							<!--
+							<div class="list-row-main flex min-w-0 items-center gap-3">
+								<!--
 								The face, or the initial where there is not one yet.
 
 								A list of names is a list of names; a list of faces is a list
@@ -145,58 +149,74 @@
 								letter rather than a grey silhouette — a silhouette says
 								"missing", an initial says "this one".
 							-->
-							<!--
+								<!--
 								…and it is a button, because the picture control lives in the
 								edit form, and a form nobody opens is a feature nobody finds.
 								The face is where somebody looks when they want to change it.
 							-->
-							<button
-								type="button"
-								onclick={() => openEdit(person)}
-								title={person.pictureId
-									? `Change ${person.name}’s picture`
-									: `Add a picture of ${person.name}`}
-								class="shrink-0 rounded-full transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:outline-none"
-							>
-								{#if person.pictureId}
-									<img
-										src="/media/{person.pictureId}"
-										alt=""
-										loading="lazy"
-										class="size-9 rounded-full border border-gray-200 bg-white object-cover"
-									/>
-								{:else}
-									<span
-										aria-hidden="true"
-										class="flex size-9 items-center justify-center rounded-full border border-dashed border-gray-300 bg-gray-100 text-sm font-medium text-gray-500"
-									>
-										{person.name.trim().charAt(0).toUpperCase()}
+								<button
+									type="button"
+									onclick={() => openEdit(person)}
+									title={person.pictureId
+										? `Change ${person.name}’s picture`
+										: `Add a picture of ${person.name}`}
+									class="shrink-0 rounded-full transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:outline-none"
+								>
+									{#if person.pictureId}
+										<img
+											src="/media/{person.pictureId}"
+											alt=""
+											loading="lazy"
+											class="size-8 rounded-full border border-gray-200 bg-white object-cover"
+										/>
+									{:else}
+										<span
+											aria-hidden="true"
+											class="flex size-8 items-center justify-center rounded-full border border-dashed border-gray-300 bg-gray-100 text-xs font-medium text-gray-500"
+										>
+											{person.name.trim().charAt(0).toUpperCase()}
+										</span>
+									{/if}
+									<span class="sr-only">
+										{person.pictureId ? 'Change' : 'Add'} a picture of {person.name}
 									</span>
-								{/if}
-								<span class="sr-only">
-									{person.pictureId ? 'Change' : 'Add'} a picture of {person.name}
-								</span>
-							</button>
+								</button>
 
-							<a
-								href={resolve(`/notebooks/people?person=${person.id}`)}
-								class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
-							>
-								{person.name}
-								<span class="eyebrow ml-2 text-gray-500">
-									{RELATIONSHIP_LABELS[person.relationship]}
-								</span>
-								{#if person.notes}
-									<span class="block truncate text-xs text-gray-500">{person.notes}</span>
-								{/if}
-							</a>
+								<a
+									href={resolve(`/notebooks/people?person=${person.id}`)}
+									class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
+								>
+									<!--
+										The name gets the line, and everything small about them gets
+										the one under it. Squeezed onto a single line the name was
+										the part that lost — "Bechara …" beside a relationship
+										nobody asked to see first.
+									-->
+									<span class="block break-words">{person.name}</span>
+									<span class="flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
+										<span class="eyebrow">{RELATIONSHIP_LABELS[person.relationship]}</span>
+										{#if birthdayLabel(person.birthday)}
+											<!-- The one date on the card, so it wears the one glyph. -->
+											<span class="inline-flex items-center gap-1">
+												<Icon name="cake" class="size-3.5" />
+												<span class="tabular">{birthdayLabel(person.birthday)}</span>
+											</span>
+										{/if}
+										<span class="tabular">
+											{person.mentions}
+											{person.mentions === 1 ? 'mention' : 'mentions'}
+										</span>
+										{#if person.notes}
+											<span class="min-w-0 truncate">{person.notes}</span>
+										{/if}
+									</span>
+								</a>
+							</div>
 
-							<div class="flex flex-wrap items-center gap-2 sm:shrink-0 sm:gap-4">
-								<span class="tabular text-xs text-gray-500">
-									{person.mentions}
-									{person.mentions === 1 ? 'mention' : 'mentions'}
-								</span>
-
+							<!-- `flex-none`: the shared rule lets the actions grow into the
+							     slack, which on a phone squeezed the line under the name into
+							     three. Two icons need exactly two icons of room. -->
+							<div class="list-row-actions flex-none">
 								<button
 									title="Edit"
 									aria-label="Edit"

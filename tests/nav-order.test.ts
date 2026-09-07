@@ -19,8 +19,8 @@ describe('the order', () => {
 	});
 
 	test('puts the named rooms first, in the order they were named', () => {
-		const out = applyOrder(NAV_PLACES, ['shopping', 'ideas']);
-		expect(keys(out).slice(0, 2)).toEqual(['shopping', 'ideas']);
+		const out = applyOrder(NAV_PLACES, ['inventory', 'ideas']);
+		expect(keys(out).slice(0, 2)).toEqual(['inventory', 'ideas']);
 	});
 
 	test('drops a key for a room that no longer exists', () => {
@@ -34,7 +34,7 @@ describe('the order', () => {
 		// The case that matters: somebody arranged their menu, and then the app
 		// grew a room. It has to turn up for them too.
 		const out = applyOrder(NAV_PLACES, ['home', 'planner']);
-		expect(keys(out)).toContain('shopping');
+		expect(keys(out)).toContain('inventory');
 		expect(out).toHaveLength(NAV_PLACES.length);
 	});
 

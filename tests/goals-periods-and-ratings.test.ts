@@ -209,7 +209,7 @@ describe('which section a page belongs to', () => {
 	test('is read off the path, sub-pages included', () => {
 		expect(sectionFor('/tasks')).toBe('planner');
 		expect(sectionFor('/tasks/todo')).toBe('planner');
-		expect(sectionFor('/shopping/list/3')).toBe('shopping');
+		expect(sectionFor('/inventory/things')).toBe('inventory');
 		// Recipes and meals are Health's now; the old address redirects there.
 		expect(sectionFor('/health/recipes')).toBe('health');
 	});

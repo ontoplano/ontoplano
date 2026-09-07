@@ -61,10 +61,6 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 	const devices = db.select({ id: pushSubscriptions.id }).from(pushSubscriptions).all().length;
 	const summary = { accounts: accounts.length, devices, birthdays };
 
-	// Nothing below can do anything without keys, but the birthdays above still
-	// had to be written: an instance that does not push still shows them.
-	if (!pushConfigured()) return { ...summary, pushed: 0, due: 0, configured: false };
-
 	const zones = new Map<string, string>();
 	const localFor = (userId: string) => {
 		let zone = zones.get(userId);
@@ -75,8 +71,33 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 		return localOfInstant(now, zone);
 	};
 
+	/*
+	 * What is due is worked out before asking whether anything can be sent.
+	 *
+	 * Only so the two silent failures can name themselves: "no keys" and "no
+	 * device signed up" are the reasons a phone stays quiet while the timer
+	 * runs perfectly, and neither wrote a line anywhere. A pass with nothing
+	 * due still says nothing at all — that is 1,439 minutes of most days.
+	 */
 	const due = pushableReminders(localFor);
+
+	// Nothing below can do anything without keys, but the birthdays above still
+	// had to be written: an instance that does not push still shows them.
+	if (!pushConfigured()) {
+		if (due.length > 0)
+			say(
+				`${due.length} due, but this instance has no push keys — nothing can reach a device (they are still on the planner)`
+			);
+		return { ...summary, pushed: 0, due: 0, configured: false };
+	}
+
 	if (due.length === 0) return { ...summary, pushed: 0, due: 0, configured: true };
+
+	if (devices === 0) {
+		say(
+			`${due.length} due, and no browser on any account is signed up for notifications — turn them on in Settings, on the device that should ring`
+		);
+	}
 
 	const byAccount = new Map<string, typeof due>();
 	for (const reminder of due) {
@@ -115,7 +136,28 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 		}
 	}
 
+	if (devices > 0) say(`${due.length} reminder(s) due, ${pushed} delivered to at least one device`);
+
 	return { ...summary, pushed, due: due.length, configured: true };
+}
+
+/**
+ * What this pass did, on the minutes it did anything.
+ *
+ * "My phone is silent" had no trail at all: a pass that found three reminders
+ * due and no device to send them to returned its counts to a caller that threw
+ * them away, and wrote nothing. So the journal showed a job running every
+ * minute and never showed the one fact worth knowing. Structured like every
+ * other line the app writes, so `journalctl` reads the same.
+ */
+function say(message: string): void {
+	console.log(
+		JSON.stringify({
+			at: new Date().toISOString(),
+			level: 'info',
+			message: `reminders: ${message}`
+		})
+	);
 }
 
 /**

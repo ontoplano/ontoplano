@@ -49,7 +49,7 @@ describe('the four things worth writing down', () => {
 	});
 
 	test('a hidden section takes its wedge with it', () => {
-		const hidden = visibleCaptures(['ideas', 'shopping']).map((c) => c.key);
+		const hidden = visibleCaptures(['ideas', 'inventory']).map((c) => c.key);
 		expect(hidden).not.toContain('idea');
 		expect(hidden).not.toContain('buy');
 		// Todo has no section to hide behind: the planner is always there.

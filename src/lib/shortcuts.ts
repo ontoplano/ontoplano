@@ -137,8 +137,8 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'a', action: 'toggle-applied', description: 'Toggle applied' }
 		]
 	},
-	'/shopping': {
-		label: 'Shopping',
+	'/inventory/list': {
+		label: 'To buy',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate items' },
 			{ key: 'k', action: 'navigate-up', description: 'Navigate items' },

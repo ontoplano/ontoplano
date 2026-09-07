@@ -63,6 +63,29 @@ those have no REST equivalent.
   there.
 - We should keep track of how are both doing, and what could one done and the other theoretically not
 
+### OAuth, so a phone can connect to the MCP server
+
+`POST /api/mcp` takes an API token in an `Authorization: Bearer` header, which
+works wherever you control the request — Claude Code, Codex, a script. The
+connector UI on claude.ai and on the phone has no field for a header: it
+speaks OAuth 2.1, discovers an authorization server from the MCP address, and
+registers itself. Finding none here, it falls back to asking for a client id
+and secret by hand, and there is nothing to give it. So the app is
+unreachable from a phone.
+
+- The endpoints are the standard set: `/.well-known/oauth-protected-resource`
+  and `/.well-known/oauth-authorization-server`, dynamic client registration
+  (RFC 7591), authorize, and token with PKCE — plus a 401 from `/api/mcp`
+  carrying `WWW-Authenticate` so a client can find them.
+- better-auth ships `mcp` and `oidc-provider` plugins that cover most of it;
+  only `admin` is loaded today.
+- The consent screen is the existing New token form with an Allow button: a
+  grant mints the same token row with the same scopes, so `tools/list` stays
+  filtered exactly as it is.
+- Open: whether registration is open to any client that finds the address or
+  restricted, and whether a self-hosted instance exposes this at all or waits
+  for the hoster to turn it on.
+
 ### A home inventory
 
 Asked for [on the launch

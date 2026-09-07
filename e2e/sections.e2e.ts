@@ -21,28 +21,28 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
 	// Visible before: the tab, and the room itself.
 	await visit(page, '/');
 	const nav = page.locator('nav');
-	await expect(nav.getByRole('link', { name: 'Shopping' })).toBeVisible();
+	await expect(nav.getByRole('link', { name: 'Inventory' })).toBeVisible();
 
 	// Put it away. Order, colour and this are one list now, so it is one form.
 	await visit(page, '/settings/preferences');
 	const menu = page.locator('form[action="?/saveMenu"]');
-	const shopping = menu.locator('div').filter({
-		has: page.getByRole('button', { name: 'Move Shopping up' })
+	const inventory = menu.locator('div').filter({
+		has: page.getByRole('button', { name: 'Move Inventory up' })
 	});
-	await shopping.getByRole('button', { name: 'Hide' }).click();
+	await inventory.getByRole('button', { name: 'Hide' }).click();
 	await menu.getByRole('button', { name: 'Save menu' }).click();
 	await expect(page.getByText('Menu saved.')).toBeVisible();
 
 	// Gone from the navbar…
 	await visit(page, '/');
-	await expect(nav.getByRole('link', { name: 'Shopping' })).toHaveCount(0);
+	await expect(nav.getByRole('link', { name: 'Inventory' })).toHaveCount(0);
 	// …and hiding one room did not take a neighbour with it.
 	await expect(nav.getByRole('link', { name: 'Health' })).toBeVisible();
 
 	// Still answering at its URL: hidden, not blocked.
-	await visit(page, '/shopping');
-	await expect(page).toHaveURL(/\/shopping/);
-	await expect(page.getByRole('heading', { name: /shopping/i }).first()).toBeVisible();
+	await visit(page, '/inventory/list');
+	await expect(page).toHaveURL(/\/inventory/);
+	await expect(page.getByRole('heading', { name: /inventory/i }).first()).toBeVisible();
 
 	// And it comes back on, bringing the tab with it.
 	await visit(page, '/settings/preferences');
@@ -57,7 +57,7 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
 		.click();
 	await expect(page.getByText('Menu saved.')).toBeVisible();
 	await visit(page, '/');
-	await expect(nav.getByRole('link', { name: 'Shopping' })).toBeVisible();
+	await expect(nav.getByRole('link', { name: 'Inventory' })).toBeVisible();
 });
 
 /**
@@ -80,10 +80,10 @@ test('saving the menu does not empty the list', async ({ page }) => {
 	await visit(page, '/settings/preferences');
 
 	const menu = page.locator('form[action="?/saveMenu"]');
-	const shopping = menu.locator('div').filter({
-		has: page.getByRole('button', { name: 'Move Shopping up' })
+	const inventory = menu.locator('div').filter({
+		has: page.getByRole('button', { name: 'Move Inventory up' })
 	});
-	await shopping.getByRole('button', { name: 'Hide' }).click();
+	await inventory.getByRole('button', { name: 'Hide' }).click();
 
 	// Nothing may repaint the form after the submit — no data reload, so no
 	// re-render to hide a reset behind.

@@ -85,12 +85,12 @@ export const NAV_PLACES: NavPlace[] = [
 		hide: 'finance'
 	},
 	{
-		key: 'shopping',
-		label: 'Shopping',
-		section: 'shopping',
+		key: 'inventory',
+		label: 'Inventory',
+		section: 'inventory',
 		icon: 'shopping',
-		href: '/shopping',
-		hide: 'shopping'
+		href: '/inventory/list',
+		hide: 'inventory'
 	}
 ];
 

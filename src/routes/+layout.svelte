@@ -110,7 +110,7 @@
 		ideas: 'ideas',
 		health: 'health',
 		finance: 'wallet',
-		shopping: 'shopping'
+		inventory: 'shopping'
 	};
 
 	/**

@@ -13,7 +13,7 @@ import { visit } from './helpers/visit';
 async function makeRecipe(page: import('@playwright/test').Page, title: string): Promise<void> {
 	// Recipes need a category that holds food before anything can be an
 	// ingredient, and that lives behind the shopping list's Categories dialog.
-	await visit(page, '/shopping');
+	await visit(page, '/inventory/list');
 	await page.getByRole('button', { name: 'Categories' }).click();
 
 	const dialog = page.locator('dialog[open]');
@@ -102,7 +102,7 @@ test('a pasted list becomes the ingredients', async ({ page }) => {
 	// And the new ones are on the shopping list, which is the point of the loop.
 	// The item's own row and the "used in" backlink both name it now, so this
 	// asks for the row rather than the word.
-	await visit(page, '/shopping');
+	await visit(page, '/inventory/list');
 	await expect(page.getByText('pearl barley').first()).toBeVisible();
 });
 
@@ -195,17 +195,17 @@ test('a recipe put on a day turns into shopping', async ({ page }) => {
 
 	// A food category, because an ingredient is a shopping item and a shopping
 	// item lives in one.
-	await visit(page, '/shopping');
+	await visit(page, '/inventory/list');
 	await page.evaluate(async () => {
 		const body = new FormData();
 		body.append('label', 'Cupboard');
-		await fetch('/shopping?/createCategory', {
+		await fetch('/inventory/list?/createCategory', {
 			method: 'POST',
 			headers: { 'x-sveltekit-action': 'true' },
 			body
 		});
 	});
-	await visit(page, '/shopping');
+	await visit(page, '/inventory/list');
 	// The food ticks live in the Categories dialog, so it has to be open for
 	// them to exist at all.
 	await page.getByRole('button', { name: 'Categories' }).click();
@@ -215,7 +215,7 @@ test('a recipe put on a day turns into shopping', async ({ page }) => {
 		const boxes = [...document.querySelectorAll('input[name=food]')] as HTMLInputElement[];
 		const body = new FormData();
 		for (const box of boxes) body.append('food', box.value);
-		const res = await fetch('/shopping?/saveCategories', {
+		const res = await fetch('/inventory/list?/saveCategories', {
 			method: 'POST',
 			headers: { 'x-sveltekit-action': 'true' },
 			body
@@ -277,7 +277,7 @@ test('a recipe put on a day turns into shopping', async ({ page }) => {
 
 	// And what it needs is on the shopping list — which is the whole claim, and
 	// the reason the meals week that used to restate it is gone.
-	await visit(page, '/shopping');
+	await visit(page, '/inventory/list');
 	await expect(page.getByText('leeks')).toBeVisible();
 	await expect(page.getByText('potatoes')).toBeVisible();
 });

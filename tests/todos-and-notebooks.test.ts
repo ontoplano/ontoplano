@@ -247,3 +247,26 @@ describe('notebooks', () => {
 		expect(() => notebooks.ownedNotebookId(theirs, mine.id)).toThrow();
 	});
 });
+
+/**
+ * A birthday on a card, written the way somebody says it.
+ *
+ * It is stored as it was given — `1990-03-14`, or `--03-14` where the year is
+ * not known — and a card showing "--01-08" is showing a string rather than a
+ * birthday.
+ */
+describe('a birthday, as a card shows it', () => {
+	test('reads as a date, with or without the year behind it', async () => {
+		const { birthdayLabel } = await import('../src/lib/people');
+		expect(birthdayLabel('1990-03-14')).toBe('Mar 14');
+		expect(birthdayLabel('--01-08')).toBe('Jan 8');
+		expect(birthdayLabel('2001-12-01')).toBe('Dec 1');
+	});
+
+	test('and says nothing at all when there is nothing to say', async () => {
+		const { birthdayLabel } = await import('../src/lib/people');
+		expect(birthdayLabel(null)).toBeNull();
+		expect(birthdayLabel('')).toBeNull();
+		expect(birthdayLabel('not a date')).toBeNull();
+	});
+});

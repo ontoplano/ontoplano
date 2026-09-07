@@ -75,7 +75,7 @@
 		     into it, which is a worse first impression than a sentence. -->
 		<Banner kind="warning">
 			No food category yet.
-			<a href={resolve('/shopping')} class="underline">Tick one on the shopping list.</a>
+			<a href={resolve('/inventory/list')} class="underline">Tick one on the shopping list.</a>
 		</Banner>
 	{/if}
 

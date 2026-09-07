@@ -114,7 +114,7 @@ test('text stands off its background, on every theme', async ({ page }) => {
 	for (const route of [
 		'/',
 		'/tasks/board',
-		'/shopping',
+		'/inventory/list',
 		'/goals',
 		'/notebooks/diary',
 		'/notebooks'

@@ -10,6 +10,28 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.90.0 — 2026-09-07
+
+- **Shopping is now Inventory, with two halves.** "To buy" is the list you
+  always had, unchanged. "What I have" is the other half: a tree of rooms,
+  cupboards and drawers, what lives in each, and each thing's own fields — a
+  tape's length, a cable's plug. It answers "where do we keep the measuring
+  tape". Your list is untouched: a thing with no address is exactly a
+  shopping-list line, which is what every row already was.
+- **Places are locations.** The word, everywhere it appeared, including for an
+  assistant (`locations`, `add_location`, `put_item`).
+- **The inventory has its own permission.** A shopping list is what you are
+  about to buy; an inventory is a map of your home. `inventory:read` and
+  `inventory:write` are separate from `shopping:*`, so a widget given the list
+  is not told where the spare keys live. Tokens you already made keep
+  everything they could do.
+- **A person's card shows their birthday.** "Jan 8" with a small cake, rather
+  than the `--01-08` it is stored as — and the card is half the height it was,
+  which on a phone is the difference between six people and two on a screen.
+- **Reminders say why a phone stayed quiet.** A delivery pass that found
+  things due and had no device to send them to, or no push keys at all,
+  wrote nothing anywhere. It says so now, once, on the minutes it matters.
+
 ## 0.89.0 — 2026-09-07
 
 - **Trainings are workouts.** It was never a word anybody says, and the page

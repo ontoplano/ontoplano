@@ -38,7 +38,7 @@ const OFFLINE_URL = '/offline';
  * Pages worth having before they are asked for, because they are read where
  * there is no signal. Kept small: each one is a request on every install.
  */
-const KEEP_FRESH = ['/shopping', '/health/recipes'];
+const KEEP_FRESH = ['/inventory/list', '/health/recipes'];
 
 /** Hashed build output plus static files — safe to keep until the version changes. */
 const PRECACHE = [...build, ...files, OFFLINE_URL];

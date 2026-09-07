@@ -55,12 +55,13 @@ beforeAll(() => {
 	cpSync(join(ROOT, 'scripts/db-snapshot.mjs'), join(work, 'scripts/db-snapshot.mjs'));
 	symlinkSync(join(ROOT, 'node_modules'), join(work, 'node_modules'));
 
-	// Every migration except this one: the database people are upgrading from.
+	// The database people are upgrading FROM: everything before this migration,
+	// and nothing after it. Dropping only 0054 would leave later migrations
+	// applied without it, and drizzle counts what has run rather than reading
+	// the schema — so the pass under test would find nothing left to do.
 	const journal = JSON.parse(readFileSync(JOURNAL, 'utf8'));
-	const without = {
-		...journal,
-		entries: journal.entries.filter((e: { tag: string }) => !e.tag.startsWith('0054_'))
-	};
+	const at = journal.entries.findIndex((e: { tag: string }) => e.tag.startsWith('0054_'));
+	const without = { ...journal, entries: journal.entries.slice(0, at) };
 	writeFileSync(JOURNAL, JSON.stringify(without, null, 2));
 	migrate();
 

@@ -36,3 +36,24 @@ export function parsePeople(raw: string): string[] {
 		)
 	];
 }
+
+/**
+ * A birthday, written the way somebody says it.
+ *
+ * Stored as it was given — `1990-03-14` when the year is known and `--03-14`
+ * when it is not, which is what an address book needs and a date type cannot
+ * hold. On a card that shape is unreadable: "--01-08" is a string, "Jan 8" is
+ * a birthday. The year is not shown even where it is known, because the card
+ * is answering "when", not "how old".
+ */
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+export function birthdayLabel(birthday: string | null | undefined): string | null {
+	if (!birthday) return null;
+	const match = /(\d{2})-(\d{2})$/.exec(birthday);
+	if (!match) return null;
+	const month = MONTHS[Number(match[1]) - 1];
+	const day = Number(match[2]);
+	if (!month || !day) return null;
+	return `${month} ${day}`;
+}

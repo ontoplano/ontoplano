@@ -394,7 +394,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 			}
 		]
 	},
-	'/shopping': {
+	'/inventory/list': {
 		label: 'Shopping',
 		steps: [
 			{

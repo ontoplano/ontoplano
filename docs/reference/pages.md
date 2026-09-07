@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**45 pages, 184 actions.**
+**46 pages, 190 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,6 +28,8 @@ write surface for everything else; both end up calling the same
 | `/health/recipes/[id]`          | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/health/workouts`              | `create`, `update`, `done`, `schedule`, `archive`, `delete`                                                                                                                                                                                                                                                                                                                         |
 | `/ideas`                        | `create`, `update`, `delete`, `toggleApplied`, `updateAppliedNote`, `toggleFavorite`                                                                                                                                                                                                                                                                                                |
+| `/inventory/list`               | `setCategoryFood`, `setCategoryShared`, `renameCategory`, `deleteCategory`, `saveCategories`, `createCategory`, `create`, `update`, `toggleBought`, `paid`, `delete`, `restock`, `toggleSnoozed`                                                                                                                                                                                    |
+| `/inventory/things`             | `createLocation`, `updateLocation`, `deleteLocation`, `putItem`, `setFields`, `createThing`                                                                                                                                                                                                                                                                                         |
 | `/legal/privacy`                | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/legal/refunds`                | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/legal/terms`                  | —                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -51,7 +53,6 @@ write surface for everything else; both end up calling the same
 | `/settings/integrations`        | `createToken`, `calendarLink`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                                                     |
 | `/settings/integrations/widget` | `connect`                                                                                                                                                                                                                                                                                                                                                                           |
 | `/settings/preferences`         | `setErrorReports`, `saveCurrency`, `saveGridHours`, `saveMenu`, `resetMenu`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setTheme`, `saveWeek`                                                                                                                                                                                              |
-| `/shopping`                     | `setCategoryFood`, `setCategoryShared`, `renameCategory`, `deleteCategory`, `saveCategories`, `createCategory`, `create`, `update`, `toggleBought`, `paid`, `delete`, `restock`, `toggleSnoozed`                                                                                                                                                                                    |
 | `/start`                        | `checkout`                                                                                                                                                                                                                                                                                                                                                                          |
 | `/tasks/activities`             | `create`, `update`, `toggleActive`, `delete`, `createCategory`, `updateCategory`, `deleteCategory`                                                                                                                                                                                                                                                                                  |
 | `/tasks/board`                  | `setStatus`, `reorder`, `schedule`, `promote`, `demote`, `createTodo`, `setRatings`, `remind`, `unremind`, `editInstance`, `resolveActivity`, `deleteInstance`, `deleteTodo`                                                                                                                                                                                                        |
@@ -132,6 +133,51 @@ Every recipe, with the picture that stands for it.
 One query for the whole list rather than one per card: a cookbook is a page
 of forty cards, and forty round trips to ask "does this one have a picture"
 is how a list stops being instant.
+
+### `/inventory/list`
+
+Every action here is the same shape: read the form, call the service, map errors.
+
+**`setCategoryFood`**
+
+One tick, saved as it lands — the modal has no save button any more.
+
+**`setCategoryShared`**
+
+The owner's switch: the family sees the section and fills it.
+
+**`createCategory`**
+
+Making a category is its own act, and needs its own action.
+
+It used to be a second pair of fields inside `saveCategories`, so one Save
+meant two things. Splitting the form was right and left this behind: the
+new form posted here and there was nothing here to post to, so the dialog
+simply did nothing and said nothing about it.
+
+**`paid`**
+
+What you actually paid. Never part of the tick, which has to stay one press.
+
+### `/inventory/things`
+
+The half of the room that answers "where is it".
+
+The tree and every item in one load: a house is tens of locations and
+hundreds of things, which is one query each, and paging a drawer would be
+the wrong shape for something people scan rather than read.
+
+**`putItem`**
+
+Put a thing somewhere, or take its address away with an empty value.
+
+**`createThing`**
+
+Something you own that was never on a list.
+
+The list's own form is for things to buy; this one is for the tape that
+has been in the drawer for ten years. Same table, already bought, filed
+where you said — so it never appears as something to get.
 
 ### `/login`
 
@@ -353,31 +399,6 @@ independently of this form.
 **`resetMenu`**
 
 Back to the order, the colours and the sections the app ships with.
-
-### `/shopping`
-
-Every action here is the same shape: read the form, call the service, map errors.
-
-**`setCategoryFood`**
-
-One tick, saved as it lands — the modal has no save button any more.
-
-**`setCategoryShared`**
-
-The owner's switch: the family sees the section and fills it.
-
-**`createCategory`**
-
-Making a category is its own act, and needs its own action.
-
-It used to be a second pair of fields inside `saveCategories`, so one Save
-meant two things. Splitting the form was right and left this behind: the
-new form posted here and there was nothing here to post to, so the dialog
-simply did nothing and said nothing about it.
-
-**`paid`**
-
-What you actually paid. Never part of the tick, which has to stay one press.
 
 ### `/start`
 

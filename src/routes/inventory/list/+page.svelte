@@ -231,7 +231,7 @@
 			return;
 
 		const items = filteredItems;
-		const action = getAction('/shopping', e.key);
+		const action = getAction('/inventory/list', e.key);
 		if (!action) return;
 		e.preventDefault();
 
@@ -395,11 +395,10 @@
 {/snippet}
 
 <div class="space-y-4">
-	<!-- The title does not shrink. A row of buttons that can wrap will squeeze a
-	     heading into one word per line before it wraps itself, which is how
-	     "Shopping List" became three lines on a phone. -->
+	<!-- No heading here: the room's own layout carries "Inventory" and the tab
+	     says which half this is, so a second title would be the third line of
+	     the same sentence. -->
 	<div class="flex flex-wrap items-center justify-between gap-3">
-		<h1 class="shrink-0 text-lg font-bold text-gray-900">Shopping List</h1>
 		<!--
 			Six buttons of identical weight said everything here was equally worth
 			pressing. They are three different kinds of thing, so they now look like
@@ -413,12 +412,12 @@
 				<button
 					onclick={() => (filterType = filterType === 'replenish' ? 'all' : 'replenish')}
 					aria-pressed={filterType === 'replenish'}
-					title="Inventory ({keyFor('/shopping', 'filter-replenish')})">Inventory</button
+					title="Restock ({keyFor('/inventory/list', 'filter-replenish')})">Restock</button
 				>
 				<button
 					onclick={() => (filterType = filterType === 'someday' ? 'all' : 'someday')}
 					aria-pressed={filterType === 'someday'}
-					title="Wishlist ({keyFor('/shopping', 'filter-someday')})">Wishlist</button
+					title="Wishlist ({keyFor('/inventory/list', 'filter-someday')})">Wishlist</button
 				>
 			</div>
 
@@ -426,7 +425,7 @@
 				onclick={() => (showBought = !showBought)}
 				aria-pressed={showBought}
 				class="btn btn-sm btn-quiet"
-				title="Show what you already have ({keyFor('/shopping', 'toggle-show-bought')})"
+				title="Show what you already have ({keyFor('/inventory/list', 'toggle-show-bought')})"
 			>
 				{showBought ? 'Hide' : 'Show'} bought
 			</button>
@@ -434,7 +433,7 @@
 				onclick={() => (showSnoozed = !showSnoozed)}
 				aria-pressed={showSnoozed}
 				class="btn btn-sm btn-quiet"
-				title="Show what you put away ({keyFor('/shopping', 'toggle-show-snoozed')})"
+				title="Show what you put away ({keyFor('/inventory/list', 'toggle-show-snoozed')})"
 			>
 				{showSnoozed ? 'Hide' : 'Show'} archived
 			</button>
@@ -447,7 +446,7 @@
 				data-tour="shopping-new"
 			>
 				{showForm ? 'Cancel' : 'Add item'}
-				<kbd class="border border-white/30 px-1">{keyFor('/shopping', 'new')}</kbd>
+				<kbd class="border border-white/30 px-1">{keyFor('/inventory/list', 'new')}</kbd>
 			</button>
 		</div>
 	</div>
@@ -537,7 +536,9 @@
 
 	{#if replenishItems.length > 0}
 		<div data-tour="shopping-list">
-			<h2 class="mb-2 text-sm font-bold text-gray-500">Inventory</h2>
+			<!-- "Inventory" was this heading's name before the room took it. These
+			     are the things you restock; the room is both halves. -->
+			<h2 class="mb-2 text-sm font-bold text-gray-500">To restock</h2>
 			<!--
 				One category per card, flowing into columns.
 

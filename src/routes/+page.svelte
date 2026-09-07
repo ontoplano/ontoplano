@@ -948,15 +948,16 @@
 		{/snippet}
 
 		{#snippet card_shopping()}
-			<Card title="Shopping" accent={SECTION_COLORS.shopping}>
+			<Card title="Shopping" accent={SECTION_COLORS.inventory}>
 				{#snippet actions()}
-					<a href={resolve('/shopping')} class="text-xs text-gray-500 hover:text-gray-900">Open →</a
+					<a href={resolve('/inventory/list')} class="text-xs text-gray-500 hover:text-gray-900"
+						>Open →</a
 					>
 				{/snippet}
 				{#if data.shoppingToBuy.length === 0}
 					{@render nothingYet(
 						'Nothing to buy. The list keeps what you are out of and what you might want one day.',
-						'/shopping',
+						'/inventory/list',
 						'Add an item'
 					)}
 				{:else}
@@ -1106,7 +1107,7 @@
 						{:else if id === 'diary'}{@render card_diary()}
 						{:else if id === 'bills'}{@render card_bills()}
 						{:else if id === 'workouts'}{@render card_workouts()}
-						{:else if id === 'shopping'}{@render card_shopping()}
+						{:else if id === 'inventory'}{@render card_shopping()}
 						{:else if id === 'quote'}{@render card_quote()}
 						{:else if id === 'threeWins'}{@render card_threeWins()}
 						{:else if id === 'latestTodos'}{@render card_latestTodos()}

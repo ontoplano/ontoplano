@@ -39,6 +39,7 @@ shows up here on the next build.
 | [`imports`](#imports)                           | Bringing a list in from somewhere else.                                                                                                                                                                                                                              |
 | [`instances`](#instances)                       | The one answer to "what is on, between these dates".                                                                                                                                                                                                                 |
 | [`legal`](#legal)                               | The facts the policies are written around.                                                                                                                                                                                                                           |
+| [`locations`](#locations)                       | Locations: the tree an inventory hangs on.                                                                                                                                                                                                                           |
 | [`mail-log`](#mail-log)                         | Mail that must not fail silently.                                                                                                                                                                                                                                    |
 | [`media`](#media)                               | Pictures: what is accepted, where they go, and who may see one.                                                                                                                                                                                                      |
 | [`meta`](#meta)                                 | User-defined key/value metadata attached to planner slots.                                                                                                                                                                                                           |
@@ -47,7 +48,6 @@ shows up here on the next build.
 | [`onboarding-templates`](#onboarding-templates) | The starter weeks, as data.                                                                                                                                                                                                                                          |
 | [`onboarding`](#onboarding)                     | First run.                                                                                                                                                                                                                                                           |
 | [`people`](#people)                             | The people in your life, and where they turn up.                                                                                                                                                                                                                     |
-| [`places`](#places)                             | Places: the tree an inventory hangs on.                                                                                                                                                                                                                              |
 | [`plan-intent`](#plan-intent)                   | Which plan somebody said they wanted, carried from the front page to the card.                                                                                                                                                                                       |
 | [`plugins`](#plugins)                           | Plugin manifests: what a plugin says it understands.                                                                                                                                                                                                                 |
 | [`preferences`](#preferences)                   | The settings a person chooses about themselves.                                                                                                                                                                                                                      |
@@ -1653,6 +1653,52 @@ reached, which is also what the billing page does.
 
 #### `legalFacts()`
 
+## locations
+
+Locations: the tree an inventory hangs on.
+
+"Where do we keep the measuring tape?" — "Living room, white chest, first
+drawer." A location has a parent, so locations nest as deep as a house does, and an
+item points at the one it lives in. This is the half a flat shopping list
+does not have; the list stays the "I need it" view of the same items.
+
+A location deleted lets its children rise to where it was (the FK is set-null)
+rather than taking a wing of the house down with it — the same gentleness the
+rest of the app gives things that took effort to enter.
+
+### Functions
+
+#### `listLocations(ctx)`
+
+#### `getLocation(ctx, id)`
+
+#### `locationTree(ctx)`
+
+The whole tree, each node carrying how many items sit directly in it.
+
+#### `pathOf(ctx, id)`
+
+The chain of names from the root down to this location, for "Living room › chest › drawer".
+
+#### `createLocation(ctx, input)`
+
+#### `updateLocation(ctx, id, input)`
+
+#### `deleteLocation(ctx, id)`
+
+Delete a location. Its children rise to its parent, and any item that lived in
+it becomes location-less — nothing is destroyed for standing in a room that was
+removed.
+
+#### `rootLocations(ctx)`
+
+The top-level locations, for a first "where does this live" choice.
+
+### Types
+
+- `Location`
+- `LocationNode`
+
 ## mail-log
 
 Mail that must not fail silently.
@@ -2123,52 +2169,6 @@ The people each of these entries mentions, keyed by entry id.
 
 - `Person`
 - `Mentioned` — What a mention chip needs: who, and how you know them.
-
-## places
-
-Places: the tree an inventory hangs on.
-
-"Where do we keep the measuring tape?" — "Living room, white chest, first
-drawer." A place has a parent, so places nest as deep as a house does, and an
-item points at the one it lives in. This is the half a flat shopping list
-does not have; the list stays the "I need it" view of the same items.
-
-A place deleted lets its children rise to where it was (the FK is set-null)
-rather than taking a wing of the house down with it — the same gentleness the
-rest of the app gives things that took effort to enter.
-
-### Functions
-
-#### `listPlaces(ctx)`
-
-#### `getPlace(ctx, id)`
-
-#### `placeTree(ctx)`
-
-The whole tree, each node carrying how many items sit directly in it.
-
-#### `pathOf(ctx, id)`
-
-The chain of names from the root down to this place, for "Living room › chest › drawer".
-
-#### `createPlace(ctx, input)`
-
-#### `updatePlace(ctx, id, input)`
-
-#### `deletePlace(ctx, id)`
-
-Delete a place. Its children rise to its parent, and any item that lived in
-it becomes place-less — nothing is destroyed for standing in a room that was
-removed.
-
-#### `rootPlaces(ctx)`
-
-The top-level places, for a first "where does this live" choice.
-
-### Types
-
-- `Place`
-- `PlaceNode`
 
 ## plan-intent
 
@@ -3074,6 +3074,21 @@ marked as needed.
 
 Returns whether it was a name already held, so the page can say so.
 
+#### `createOwnedThing(ctx, raw)`
+
+Something you already own, filed where it lives.
+
+`createItem` is for a thing to buy: it revives a bought row rather than
+making a second one, and it fires `shopping.added` so a synced list learns
+about it. Neither is right here — a tape that has been in the drawer for ten
+years was never wanted, and putting it on somebody's list would be the
+opposite of what "I have it" means. So it arrives bought, with an address,
+and the to-buy half never shows it.
+
+Returns the new item's id, or the existing one when a thing by that name is
+already known: filing the tape you already listed should move it, not
+duplicate it.
+
 #### `updateItem(ctx, id, raw)`
 
 #### `setItemCategory(ctx, id, categoryId)`
@@ -3084,10 +3099,10 @@ File an item into a section, or out of every one, touching nothing else.
 name and type just to move a thing — which is exactly the call an assistant
 gets wrong. One field, one change.
 
-#### `setItemPlace(ctx, id, placeId)`
+#### `setItemLocation(ctx, id, locationId)`
 
 Say where a thing lives, or that it lives nowhere in particular — the
-inventory half of an item. The place must be the caller's own.
+inventory half of an item. The location must be the caller's own.
 
 #### `setItemAttributes(ctx, id, attributes)`
 

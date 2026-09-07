@@ -14,7 +14,7 @@ export type DashboardCardId =
 	| 'habits'
 	| 'weekPlan'
 	| 'diary'
-	| 'shopping'
+	| 'inventory'
 	| 'quote'
 	| 'threeWins'
 	| 'latestTodos'
@@ -119,12 +119,12 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 		hide: 'health'
 	},
 	{
-		id: 'shopping',
-		label: 'Shopping',
+		id: 'inventory',
+		label: 'Shopping list',
 		description: 'What is left to buy.',
 		defaultOn: true,
 		width: 'full',
-		hide: 'shopping'
+		hide: 'inventory'
 	}
 ];
 

@@ -59,6 +59,22 @@ works is a key listed here and the reverse.
 | <kbd>f</kbd> | Toggle favorite |
 | <kbd>a</kbd> | Toggle applied  |
 
+## To buy — `/inventory/list`
+
+| Key          | Does                    |
+| ------------ | ----------------------- |
+| <kbd>j</kbd> | Navigate items          |
+| <kbd>k</kbd> | Navigate items          |
+| <kbd>n</kbd> | New item                |
+| <kbd>e</kbd> | Edit item               |
+| <kbd>d</kbd> | Delete item             |
+| <kbd>D</kbd> | Toggle done             |
+| <kbd>z</kbd> | Archive/unarchive       |
+| <kbd>1</kbd> | Toggle someday filter   |
+| <kbd>2</kbd> | Toggle replenish filter |
+| <kbd>b</kbd> | Toggle show bought      |
+| <kbd>s</kbd> | Toggle show archived    |
+
 ## Notebooks — `/notebooks`
 
 | Key          | Does         |
@@ -96,22 +112,6 @@ works is a key listed here and the reverse.
 | <kbd>j</kbd> | Navigate tokens |
 | <kbd>k</kbd> | Navigate tokens |
 | <kbd>n</kbd> | New token       |
-
-## Shopping — `/shopping`
-
-| Key          | Does                    |
-| ------------ | ----------------------- |
-| <kbd>j</kbd> | Navigate items          |
-| <kbd>k</kbd> | Navigate items          |
-| <kbd>n</kbd> | New item                |
-| <kbd>e</kbd> | Edit item               |
-| <kbd>d</kbd> | Delete item             |
-| <kbd>D</kbd> | Toggle done             |
-| <kbd>z</kbd> | Archive/unarchive       |
-| <kbd>1</kbd> | Toggle someday filter   |
-| <kbd>2</kbd> | Toggle replenish filter |
-| <kbd>b</kbd> | Toggle show bought      |
-| <kbd>s</kbd> | Toggle show archived    |
 
 ## Activities — `/tasks/activities`
 

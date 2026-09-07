@@ -66,6 +66,9 @@
 		key: 'M14 7a4 4 0 1 1-3.5 5.9L4 19v-3h3v-3h3l.5-.6A4 4 0 0 1 14 7z',
 		link: 'M10 14a4 4 0 0 0 6 .5l2-2a4 4 0 0 0-5.7-5.7L11 8M14 10a4 4 0 0 0-6-.5l-2 2a4 4 0 0 0 5.7 5.7L13 16',
 		user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a8 8 0 0 1 16 0',
+		// A cake with one candle: the only place a birthday is marked, and the
+		// one glyph in the set that has to read at 12px beside a date.
+		cake: 'M5 21h14v-6H5zM5 15c0-2 1.5-3 3.5-3h7c2 0 3.5 1 3.5 3M12 12V9M12 6.5a1.2 1.2 0 0 1-1-1.8L12 3l1 1.7a1.2 1.2 0 0 1-1 1.8z',
 		plug: 'M9 3v6M15 3v6M7 9h10v3a5 5 0 0 1-10 0zM12 17v4',
 		// A frame with a hill and a sun in it — the one shape everybody reads as
 		// "a picture" at 18 pixels.
