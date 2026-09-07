@@ -10,6 +10,17 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.94.0 — 2026-09-07
+
+- **The lists say where things are.** Location first, category inside it: on
+  Everything you can see what is in the cabinet and what is in the drawer, and
+  standing in a room the four things under it are told apart instead of being
+  one number.
+- **A thing's own fields are back**, on its edit form and saved by the same
+  button as the rest of it — a tape's length, a cable's plug — and shown on the
+  row. An X beside each takes one off, instead of a sentence explaining that
+  clearing its name is what removes it.
+
 ## 0.93.0 — 2026-09-07
 
 - **A location's count says what it is counting.** It counts everything inside

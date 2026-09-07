@@ -142,3 +142,86 @@ test.describe('on a phone', () => {
 		expect(overflow).toBeLessThanOrEqual(1);
 	});
 });
+
+/**
+ * Where a thing is, before what kind of thing it is.
+ *
+ * "4 things in the kitchen" said nothing about which was on the shelf, which
+ * was in the cabinet and which was in the drawer — and Everything was a wall
+ * of category cards with no idea of place in it at all.
+ */
+test('the lists are grouped by where things are, then by category', async ({ page }) => {
+	await register(page, `inv-places-${Date.now()}@test.invalid`);
+	await visit(page, '/inventory');
+	await foodCategory(page);
+	await visit(page, '/inventory');
+
+	await addLocation(page, 'Kitchen');
+	await addLocation(page, 'Kitchen drawer', 'Kitchen');
+
+	for (const [name, where] of [
+		['Olive oil', 'Kitchen'],
+		['Milk', 'Kitchen › Kitchen drawer'],
+		['Dish soap', '']
+	]) {
+		await page
+			.getByRole('button', { name: /Add item/ })
+			.first()
+			.click();
+		const d = page.getByRole('dialog', { name: 'New item' });
+		await d.locator('[name="label"]').fill(name);
+		if (where) await d.locator('[name="locationId"]').selectOption({ label: where });
+		await d.getByRole('button', { name: 'Add item', exact: true }).click();
+		await expect(d).toBeHidden();
+	}
+
+	// Everything: one heading per place, each naming the whole address.
+	for (const heading of ['Kitchen', 'Kitchen › Kitchen drawer', 'Not filed anywhere']) {
+		await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible();
+	}
+
+	// Standing in the kitchen: the shelf and the drawer are told apart.
+	await page
+		.getByRole('button', { name: /^Kitchen\s/ })
+		.first()
+		.click();
+	await expect(page.getByRole('heading', { name: 'Kitchen', exact: true })).toBeVisible();
+	await expect(
+		page.getByRole('heading', { name: 'Kitchen › Kitchen drawer', exact: true })
+	).toBeVisible();
+	await expect(page.getByText('Dish soap')).toHaveCount(0);
+});
+
+/**
+ * A thing's own fields.
+ *
+ * A tape is 3m or 5m and a cable is USB-C or not; nothing else in the app has
+ * either field, so the shape is the thing's rather than a column. They live on
+ * the edit form and are saved by the same button as everything else.
+ */
+test('a thing carries its own fields, and one can be taken off again', async ({ page }) => {
+	await register(page, `inv-fields-${Date.now()}@test.invalid`);
+	await visit(page, '/inventory');
+	await foodCategory(page);
+	await visit(page, '/inventory');
+	await addItem(page, 'Measuring tape');
+
+	await page.getByRole('button', { name: /^Edit Measuring tape/ }).click();
+	let edit = page.getByRole('dialog', { name: 'Edit item' });
+	await edit.locator('[name="fieldName"]').first().fill('length');
+	await edit.locator('[name="fieldValue"]').first().fill('5m');
+	await edit.getByRole('button', { name: 'Save' }).click();
+	await expect(edit).toBeHidden();
+
+	// On the row, because a fact you must open a form to see is one nobody reads.
+	await expect(page.getByText('length: 5m')).toBeVisible();
+
+	// And off again with the button beside it, rather than by knowing that
+	// clearing the name is what removes it.
+	await page.getByRole('button', { name: /^Edit Measuring tape/ }).click();
+	edit = page.getByRole('dialog', { name: 'Edit item' });
+	await edit.getByRole('button', { name: 'Remove the field length' }).click();
+	await edit.getByRole('button', { name: 'Save' }).click();
+	await expect(edit).toBeHidden();
+	await expect(page.getByText('length: 5m')).toHaveCount(0);
+});

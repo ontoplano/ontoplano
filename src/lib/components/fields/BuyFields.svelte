@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Field from '$lib/components/Field.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 
@@ -16,6 +17,15 @@
 		categories = [],
 		locations = [],
 		locationId = $bindable(null),
+		/**
+		 * The thing's own fields, as pairs.
+		 *
+		 * Not every thing shares a shape — a tape is 3m or 5m, a cable is USB-C
+		 * or not — so the shape is the thing's rather than a column. Only where
+		 * something is being described rather than added to a list.
+		 */
+		fields = $bindable<[string, string][]>([]),
+		showFields = false,
 		/** Only when writing something down: see `createItem` for why. */
 		askLocation = false,
 		compact = false
@@ -28,6 +38,8 @@
 		categories?: { id: number; name: string }[];
 		locations?: { id: number; name: string; path: string }[];
 		locationId?: number | null;
+		fields?: [string, string][];
+		showFields?: boolean;
 		askLocation?: boolean;
 		compact?: boolean;
 	} = $props();
@@ -68,6 +80,54 @@
 					<option value={one.id}>{one.path}</option>
 				{/each}
 			</select>
+		</Field>
+	{/if}
+
+	{#if showFields}
+		<Field label="Its own fields" span={12}>
+			<div class="space-y-2">
+				{#each fields as pair, i (i)}
+					<div class="flex items-center gap-2">
+						<OneLine
+							name="fieldName"
+							bind:value={pair[0]}
+							placeholder="length"
+							class="input min-w-0 flex-1"
+						/>
+						<OneLine
+							name="fieldValue"
+							bind:value={pair[1]}
+							placeholder="5m"
+							class="input min-w-0 flex-1"
+						/>
+						<!--
+							A button, not an instruction.
+
+							"Clearing a name removes that field" is true and is a sentence
+							somebody has to read, remember, and then do by hand. The server
+							still reads it the same way — a pair with no name is not a
+							field — so this empties the row rather than inventing a second
+							way to say the same thing.
+						-->
+						<button
+							type="button"
+							onclick={() => (fields = fields.filter((_, at) => at !== i))}
+							class="icon-btn icon-btn-danger shrink-0 {pair[0] || pair[1] ? '' : 'invisible'}"
+							title="Remove this field"
+							aria-label="Remove the field {pair[0] || 'being written'}"
+						>
+							<Icon name="close" />
+						</button>
+					</div>
+				{/each}
+			</div>
+			<button
+				type="button"
+				onclick={() => (fields = [...fields, ['', '']])}
+				class="btn btn-sm mt-2"
+			>
+				+ Another
+			</button>
 		</Field>
 	{/if}
 

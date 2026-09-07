@@ -33,6 +33,8 @@
 	let editPrice = $state('');
 	/** Only asked when writing something down; an edit leaves it where it is. */
 	let newLocationId = $state<number | null>(null);
+	/** The thing's own fields, while it is being edited. */
+	let editFields = $state<[string, string][]>([]);
 	let filterType = $state<'all' | 'someday' | 'replenish'>('all');
 	let newItemType = $state<'replenish' | 'someday'>('replenish');
 	let showBought = $state(false);
@@ -302,23 +304,77 @@
 
 	let somedayItems = $derived(filteredItems.filter((i) => i.type === 'someday'));
 	let replenishItems = $derived(filteredItems.filter((i) => i.type === 'replenish'));
-	let replenishByCategory = $derived.by(() => {
+	/** Items grouped into category cards, in the order the categories are kept. */
+	function byCategory(list: typeof replenishItems) {
 		const catOrder = new Map(data.shoppingCategories.map((c) => [c.name, c.sortOrder]));
 		const grouped: Record<string, typeof replenishItems> = {};
-
-		for (const item of replenishItems) {
+		for (const item of list) {
 			const catName = item.shoppingCategoryName ?? 'Other';
 			if (!(catName in grouped)) grouped[catName] = [];
 			grouped[catName].push(item);
 		}
-
 		return Object.entries(grouped)
 			.sort((a, b) => (catOrder.get(a[0]) ?? 999) - (catOrder.get(b[0]) ?? 999))
 			.map(([name, items]) => {
 				const cat = data.shoppingCategories.find((c) => c.name === name);
 				return { name, id: cat?.id ?? null, items };
 			});
+	}
+
+	/**
+	 * Where first, then what kind.
+	 *
+	 * Standing in the kitchen and reading "4" told you there were four things
+	 * under it and nothing about which was on the shelf, which was in the
+	 * cabinet and which was in the drawer — and "Everything" was a wall of
+	 * category cards with no idea of place in it at all. The location is the
+	 * outer grouping now and the categories sit inside it, in the same order
+	 * the panel lists them so the two read as one thing.
+	 */
+	const replenishByPlace = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const byLocation = new Map<number, typeof replenishItems>();
+		for (const item of replenishItems) {
+			const key = item.locationId ?? 0;
+			byLocation.set(key, [...(byLocation.get(key) ?? []), item]);
+		}
+
+		// Depth-first through the tree, so the groups arrive in the order the
+		// panel shows them rather than in whatever order the rows came back.
+		const order: number[] = [];
+		const walk = (nodes: PageServerData['locationTree']) => {
+			for (const node of nodes) {
+				order.push(node.id);
+				walk(node.children);
+			}
+		};
+		walk(data.locationTree);
+
+		const groups = order
+			.filter((id) => byLocation.has(id))
+			.map((id) => ({
+				id,
+				label: locationPaths.get(id) ?? 'Somewhere',
+				categories: byCategory(byLocation.get(id) ?? [])
+			}));
+
+		if (byLocation.has(0)) {
+			groups.push({
+				id: 0,
+				label: 'Not filed anywhere',
+				categories: byCategory(byLocation.get(0) ?? [])
+			});
+		}
+		return groups;
 	});
+
+	/**
+	 * Whether the place headings are worth drawing.
+	 *
+	 * Standing inside one drawer, every card is in that drawer and a heading
+	 * saying so above each is a line repeating the panel.
+	 */
+	const showPlaces = $derived(replenishByPlace.length > 1);
 
 	const locationChoices = $derived(
 		data.locations.map((one) => ({ ...one, path: locationPaths.get(one.id) ?? one.name }))
@@ -340,7 +396,19 @@
 		editShoppingCategoryId = item.shoppingCategoryId;
 		editNotes = item.notes ?? '';
 		editPrice = item.priceCents === null ? '' : (item.priceCents / 100).toFixed(2);
+		// One blank pair at the end, so adding a field is typing rather than
+		// finding the button that lets you type.
+		editFields = [...fieldsOf(item.attributes), ['', '']];
 		showForm = true;
+	}
+
+	/** An item's own fields, as pairs, from the JSON they are stored as. */
+	function fieldsOf(raw: string | null | undefined): [string, string][] {
+		try {
+			return Object.entries(JSON.parse(raw || '{}') as Record<string, string>);
+		} catch {
+			return [];
+		}
 	}
 
 	function cancelEdit() {
@@ -635,6 +703,24 @@
 	</li>
 {/snippet}
 
+<!--
+	What this particular thing is, in its own words.
+
+	A tape is 3m or 5m and a cable is USB-C or not; nothing else in the app has
+	either field, so they are the thing's rather than a column. Shown on the row
+	because a fact you have to open a form to see is a fact nobody reads.
+-->
+{#snippet ownFields(item: { attributes?: string | null })}
+	{@const pairs = fieldsOf(item.attributes)}
+	{#if pairs.length > 0}
+		<span class="mt-0.5 flex flex-wrap items-center gap-1">
+			{#each pairs as [key, value] (key)}
+				<span class="chip">{key}: {value}</span>
+			{/each}
+		</span>
+	{/if}
+{/snippet}
+
 <div class="space-y-4">
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<h1 class="shrink-0 text-lg font-bold text-gray-900">Inventory</h1>
@@ -769,9 +855,11 @@
 					bind:type={newItemType}
 					bind:shoppingCategoryId={editShoppingCategoryId}
 					bind:locationId={newLocationId}
+					bind:fields={editFields}
 					categories={data.shoppingCategories}
 					locations={locationChoices}
 					askLocation={editingId === null}
+					showFields={editingId !== null}
 				/>
 			</FormGrid>
 		</form>
@@ -840,42 +928,55 @@
 				than a grid because the categories are of wildly different lengths and
 				a grid would leave a row as tall as its longest cell.
 			-->
-					<div class="gap-4 lg:columns-2 xl:columns-3 2xl:columns-4">
-						{#each replenishByCategory as category (category.name)}
-							<section class="mb-4 break-inside-avoid border border-gray-200 bg-white shadow-card">
-								<h3 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">
-									{category.name}
-								</h3>
-								<div class="divide-y divide-gray-200">
-									{#each category.items as item (item.id)}
-										{@const globalIdx = filteredItems.indexOf(item)}
-										<!--
+					{#each replenishByPlace as place (place.id)}
+						{#if showPlaces}
+							<!-- The address, root down, the same string the panel shows. -->
+							<h3 class="mt-4 mb-2 flex items-center gap-2 text-sm text-gray-700 first:mt-0">
+								<Icon name="shopping" class="size-4 shrink-0 text-gray-400" />
+								<span class="font-medium">{place.label}</span>
+							</h3>
+						{/if}
+						<!-- A grid rather than newspaper columns: each place is its own
+						     block now, so a place with one category was a quarter-width
+						     strip beside three quarters of nothing. -->
+						<div class="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+							{#each place.categories as category (category.name)}
+								<section
+									class="mb-4 break-inside-avoid border border-gray-200 bg-white shadow-card"
+								>
+									<h4 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">
+										{category.name}
+									</h4>
+									<div class="divide-y divide-gray-200">
+										{#each category.items as item (item.id)}
+											{@const globalIdx = filteredItems.indexOf(item)}
+											<!--
 									Still to buy is the normal state of a shopping list, and a wash of
 									alarm colour behind every row spends the one signal that should
 									mean something is wrong. The unticked box already says it. Only
 									what you have — blue — and what you put away — dimmed — are marked.
 								-->
-										<div
-											use:keepInView={globalIdx === selectedIndex}
-											draggable="true"
-											ondragstart={(e) => {
-												dragging = item.id;
-												// Firefox refuses to start a drag with no payload set.
-												e.dataTransfer?.setData('text/plain', String(item.id));
-											}}
-											ondragend={() => {
-												dragging = null;
-												dragOver = null;
-											}}
-											class="flex cursor-grab items-center gap-x-3 px-4 py-2 {item.snoozed
-												? 'bg-gray-50 opacity-50'
-												: item.bought
-													? 'bg-blue-50'
-													: ''} {globalIdx === selectedIndex
-												? 'ring-2 ring-gray-400 ring-inset'
-												: ''}"
-										>
-											<!--
+											<div
+												use:keepInView={globalIdx === selectedIndex}
+												draggable="true"
+												ondragstart={(e) => {
+													dragging = item.id;
+													// Firefox refuses to start a drag with no payload set.
+													e.dataTransfer?.setData('text/plain', String(item.id));
+												}}
+												ondragend={() => {
+													dragging = null;
+													dragOver = null;
+												}}
+												class="flex cursor-grab items-center gap-x-3 px-4 py-2 {item.snoozed
+													? 'bg-gray-50 opacity-50'
+													: item.bought
+														? 'bg-blue-50'
+														: ''} {globalIdx === selectedIndex
+													? 'ring-2 ring-gray-400 ring-inset'
+													: ''}"
+											>
+												<!--
 										Whether you have it is a checkbox.
 
 										It used to be two bordered buttons per row — "Got it" and
@@ -888,99 +989,101 @@
 										one thing you do forty times down the left edge where the
 										thumb already is.
 									-->
-											<form
-												method="POST"
-												action="?/toggleBought"
-												use:enhance={tick('toggleBought')}
-											>
-												<input type="hidden" name="id" value={item.id} />
-												<button
-													type="submit"
-													aria-pressed={item.bought}
-													class="flex size-5 items-center justify-center border transition {item.bought
-														? 'border-blue-600 bg-blue-600 text-white'
-														: 'border-gray-400 bg-white text-transparent hover:border-gray-600'}"
-													title={item.bought ? 'Put it back on the list' : 'Got it'}
-													aria-label="{item.bought
-														? 'Put back on the list'
-														: 'Got it'}: {item.name}"
-												>
-													<Icon name="check" size={14} />
-												</button>
-											</form>
-
-											<div class="min-w-0 flex-1">
-												<span class="text-sm text-gray-900">{item.name}</span>
-												{#if item.notes}
-													<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
-												{/if}
-												{@render expectedPrice(item)}
-												{@render usedIn(item)}
-											</div>
-											{@render paidPrompt(item)}
-
-											<!-- Everything else at the right edge, same order, same x, every row. -->
-											<div class="row-actions">
 												<form
 													method="POST"
-													action="?/toggleSnoozed"
-													use:enhance={tick('toggleSnoozed')}
+													action="?/toggleBought"
+													use:enhance={tick('toggleBought')}
 												>
 													<input type="hidden" name="id" value={item.id} />
 													<button
 														type="submit"
-														class="icon-btn"
-														aria-pressed={item.snoozed}
-														title={item.snoozed ? 'Put it back on the list' : 'Put it away'}
-														aria-label="{item.snoozed ? 'Unarchive' : 'Archive'}: {item.name}"
+														aria-pressed={item.bought}
+														class="flex size-5 items-center justify-center border transition {item.bought
+															? 'border-blue-600 bg-blue-600 text-white'
+															: 'border-gray-400 bg-white text-transparent hover:border-gray-600'}"
+														title={item.bought ? 'Put it back on the list' : 'Got it'}
+														aria-label="{item.bought
+															? 'Put back on the list'
+															: 'Got it'}: {item.name}"
 													>
-														<Icon name={item.snoozed ? 'undo' : 'archive'} />
+														<Icon name="check" size={14} />
 													</button>
 												</form>
-												<button
-													onclick={() => startEdit(item)}
-													class="icon-btn"
-													title="Edit"
-													aria-label="Edit {item.name}"><Icon name="edit" /></button
-												>
-												{#if confirmingDelete === item.id}
+
+												<div class="min-w-0 flex-1">
+													<span class="text-sm text-gray-900">{item.name}</span>
+													{#if item.notes}
+														<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
+													{/if}
+													{@render expectedPrice(item)}
+													{@render usedIn(item)}
+													{@render ownFields(item)}
+												</div>
+												{@render paidPrompt(item)}
+
+												<!-- Everything else at the right edge, same order, same x, every row. -->
+												<div class="row-actions">
 													<form
 														method="POST"
-														action="?/delete"
-														use:enhance={deferDelete(item.id, item.name)}
+														action="?/toggleSnoozed"
+														use:enhance={tick('toggleSnoozed')}
 													>
 														<input type="hidden" name="id" value={item.id} />
-														<button type="submit" class="btn btn-sm btn-danger" use:armed>
-															Confirm?
+														<button
+															type="submit"
+															class="icon-btn"
+															aria-pressed={item.snoozed}
+															title={item.snoozed ? 'Put it back on the list' : 'Put it away'}
+															aria-label="{item.snoozed ? 'Unarchive' : 'Archive'}: {item.name}"
+														>
+															<Icon name={item.snoozed ? 'undo' : 'archive'} />
 														</button>
 													</form>
 													<button
-														type="button"
-														onclick={() => {
-															confirmingDelete = null;
-														}}
-														class="btn btn-sm"
+														onclick={() => startEdit(item)}
+														class="icon-btn"
+														title="Edit"
+														aria-label="Edit {item.name}"><Icon name="edit" /></button
 													>
-														Cancel
-													</button>
-												{:else}
-													<button
-														type="button"
-														onclick={() => {
-															confirmingDelete = item.id;
-														}}
-														class="icon-btn icon-btn-danger"
-														title="Delete"
-														aria-label="Delete {item.name}"><Icon name="trash" /></button
-													>
-												{/if}
+													{#if confirmingDelete === item.id}
+														<form
+															method="POST"
+															action="?/delete"
+															use:enhance={deferDelete(item.id, item.name)}
+														>
+															<input type="hidden" name="id" value={item.id} />
+															<button type="submit" class="btn btn-sm btn-danger" use:armed>
+																Confirm?
+															</button>
+														</form>
+														<button
+															type="button"
+															onclick={() => {
+																confirmingDelete = null;
+															}}
+															class="btn btn-sm"
+														>
+															Cancel
+														</button>
+													{:else}
+														<button
+															type="button"
+															onclick={() => {
+																confirmingDelete = item.id;
+															}}
+															class="icon-btn icon-btn-danger"
+															title="Delete"
+															aria-label="Delete {item.name}"><Icon name="trash" /></button
+														>
+													{/if}
+												</div>
 											</div>
-										</div>
-									{/each}
-								</div>
-							</section>
-						{/each}
-					</div>
+										{/each}
+									</div>
+								</section>
+							{/each}
+						</div>
+					{/each}
 				</div>
 			{/if}
 

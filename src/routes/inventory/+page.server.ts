@@ -47,6 +47,18 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 /** Every action here is the same shape: read the form, call the service, map errors. */
+/** `fieldName`/`fieldValue` pairs, in order, as the object they describe. */
+function fieldsFrom(formData: FormData): Record<string, string> {
+	const names = formData.getAll('fieldName').map(String);
+	const values = formData.getAll('fieldValue').map(String);
+	const out: Record<string, string> = {};
+	names.forEach((name, i) => {
+		const key = name.trim();
+		if (key) out[key] = (values[i] ?? '').trim();
+	});
+	return out;
+}
+
 export const actions: Actions = {
 	/** Which categories hold food, and therefore what can be an ingredient. */
 	/** One tick, saved as it lands — the modal has no save button any more. */
@@ -163,13 +175,24 @@ export const actions: Actions = {
 	update: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
-			updateItem(buildCtx(locals.user!.id), Number(formData.get('id')), {
+			const ctx = buildCtx(locals.user!.id);
+			const id = Number(formData.get('id'));
+			updateItem(ctx, id, {
 				name: formData.get('label'),
 				type: formData.get('type'),
 				notes: formData.get('notes'),
 				price: formData.get('price'),
 				shoppingCategoryId: formData.get('shoppingCategoryId')
 			});
+			/*
+			 * The thing's own fields, saved with the rest of it.
+			 *
+			 * Not every thing shares a shape — a tape has a length, a cable has
+			 * a plug — so these are this thing's, written as pairs. They go
+			 * through the same save because a second button for them would be a
+			 * second thing to remember to press.
+			 */
+			setItemAttributes(ctx, id, fieldsFrom(formData));
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);
@@ -289,15 +312,12 @@ export const actions: Actions = {
 
 	setFields: async ({ request, locals }) => {
 		const formData = await request.formData();
-		const names = formData.getAll('fieldName').map(String);
-		const values = formData.getAll('fieldValue').map(String);
-		const fields: Record<string, string> = {};
-		names.forEach((name, i) => {
-			const key = name.trim();
-			if (key) fields[key] = (values[i] ?? '').trim();
-		});
 		try {
-			setItemAttributes(buildCtx(locals.user!.id), Number(formData.get('id')), fields);
+			setItemAttributes(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				fieldsFrom(formData)
+			);
 			return { success: true, action: 'setFields' };
 		} catch (e) {
 			return toActionFailure(e);
