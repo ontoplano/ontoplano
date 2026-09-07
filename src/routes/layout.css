@@ -2243,6 +2243,30 @@ html .ec .ec-event.og-event--inactive {
 }
 
 /*
+ * What the open form is describing, before it exists.
+ *
+ * A dashed outline in the block's own colour, and no fill: it has to be
+ * legible against whatever is already in that hour without being mistaken for
+ * it, and a solid rectangle of the right colour would be exactly the thing it
+ * is a picture of. Behind everything real, and untouchable — it is a drawing,
+ * and clicking a drawing should do nothing.
+ */
+html .ec .ec-event.og-event--preview {
+	background-color: color-mix(in srgb, var(--block) 12%, transparent);
+	color: color-mix(in srgb, var(--block) 70%, var(--color-gray-600));
+	box-shadow: none;
+	outline: 2px dashed color-mix(in srgb, var(--block) 65%, transparent);
+	outline-offset: -2px;
+	pointer-events: none;
+	z-index: 0;
+}
+
+/* Even at fifteen minutes it stays an outline: solid would read as saved. */
+html .ec .ec-event.og-event--preview.og-event--tiny {
+	background-color: color-mix(in srgb, var(--block) 25%, transparent);
+}
+
+/*
  * A month is a different density.
  *
  * In a time grid a block's height *is* its length, so it can afford padding. In

@@ -10,6 +10,26 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.100.0 — 2026-09-07
+
+- **The grid draws the block the form is describing.** A block form is a page
+  of fields about a rectangle you cannot see, and "every third day from the
+  8th, 45 minutes" is a sentence nobody can picture. While the form is open the
+  grid shows what pressing Save would leave behind — on the dates on screen and
+  no further — as a dashed outline in the block's own colour. Editing one hides
+  the block itself, so the grid shows the would-be state rather than the before
+  and the after at once, and the hours scroll to wherever the preview lands.
+- **The block form sits beside the week rather than on top of it.** On a wide
+  screen it docks against the right edge with the grid readable next to it,
+  because a preview under the dialog previewing it is no use. Below that width
+  it is the sheet it always was.
+- **The other way to be left holding a ghost.** A shift-drag on the grid is the
+  multi-select rectangle, so no form opens — but the calendar made its
+  selection anyway, and with nothing opening to take it off the screen it sat
+  there, a box with a time on it and nothing in it, until the page was
+  reloaded. This is the one that kept happening after the form's own exits were
+  dealt with.
+
 ## 0.99.0 — 2026-09-07
 
 - **What an every-N rhythm counts from is a field you can set.** It said

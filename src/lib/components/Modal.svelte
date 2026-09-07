@@ -58,6 +58,16 @@
 		description = '',
 		/** Widths are deliberately few: a form is one column or two, never five. */
 		size = 'md',
+		/**
+		 * Where it sits on a wide screen.
+		 *
+		 * `side` docks it against the right edge with the page still legible
+		 * beside it, for a form whose whole point is what it is doing to what is
+		 * behind it — the planner's block form draws a preview on the grid, and
+		 * a centred dialog covers the hours it is previewing. Below `lg` there
+		 * is no room for both and it is the ordinary sheet.
+		 */
+		dock = 'centre',
 		/** A failed submission's message. Shown here because the page behind is
 		 *  dimmed and inert — an error rendered out there cannot be read. */
 		error = null,
@@ -69,6 +79,7 @@
 		title: string;
 		description?: string;
 		size?: 'sm' | 'md' | 'lg';
+		dock?: 'centre' | 'side';
 		error?: string | null;
 		onclose?: () => void;
 		children: Snippet;
@@ -164,6 +175,7 @@
 	onclose={handleClose}
 	onclick={handleClick}
 	aria-label={title}
+	class:docked={dock === 'side'}
 	style="--modal-width: {WIDTHS[size]}"
 >
 	{#if open}
@@ -319,6 +331,32 @@
 			max-height: 85dvh;
 			border-width: 1px;
 			padding-top: 0;
+		}
+	}
+
+	/*
+	 * Docked: against the right edge, full height, with the page beside it.
+	 *
+	 * Only where there is room for both. The dimming goes down with it — the
+	 * point of docking is that what is behind can be read, and 45% grey over a
+	 * calendar is not reading.
+	 */
+	@media (min-width: 1024px) {
+		dialog.docked {
+			inset: 0 0 0 auto;
+			margin: 0;
+			height: 100dvh;
+			width: min(100% - 2rem, var(--modal-width));
+		}
+
+		dialog.docked::backdrop {
+			background: rgb(17 24 39 / 0.12);
+		}
+
+		dialog.docked .panel {
+			height: 100dvh;
+			max-height: 100dvh;
+			border-width: 0 0 0 1px;
 		}
 	}
 </style>

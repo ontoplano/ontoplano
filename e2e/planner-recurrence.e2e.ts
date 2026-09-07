@@ -250,13 +250,10 @@ test('a block dragged out on the grid is drawn as a block, not a sliver', async 
 
 	const form = page.getByRole('dialog');
 	await expect(form).toBeVisible({ timeout: 15_000 });
-	// The calendar is holding the selection while the form is open, which is
-	// what makes this worth testing at all.
-	expect(await page.locator('.ec-preview').count()).toBe(1);
 
-	// Abandoning the form used to leave that ghost on the grid for good: a box
-	// with a time on it and nothing in it, and the next block dragged out over
-	// the same hours had to share the column with it.
+	// Abandoning the form used to leave the calendar's selection on the grid
+	// for good: a box with a time on it and nothing in it, and the next block
+	// dragged out over the same hours had to share the column with it.
 	await page.keyboard.press('Escape');
 	await expect(form).toBeHidden({ timeout: 10_000 });
 	await page.waitForTimeout(400);
@@ -288,4 +285,154 @@ test('a block dragged out on the grid is drawn as a block, not a sliver', async 
 		.first()
 		.evaluate((el) => (el as HTMLElement).getBoundingClientRect().width);
 	expect(width).toBeGreaterThan(column * 0.5);
+});
+
+/**
+ * The other way to be left holding one.
+ *
+ * A shift-drag is the multi-select rectangle, so no form opens — but the
+ * calendar makes its selection anyway, and with nothing opening to take it off
+ * the screen it sat there until the page was reloaded. This is the one that
+ * kept happening after the form's own exits were dealt with.
+ */
+test('a shift-drag leaves no ghost behind either', async ({ page }) => {
+	test.setTimeout(180_000);
+	await register(page, `drag-shift-${Date.now()}@test.invalid`);
+
+	await visit(page, '/tasks/plan');
+	await expect(page.locator('.ec-main')).toBeVisible();
+	await page.waitForTimeout(600);
+
+	const body = page.locator('.ec-body').first();
+	const box = (await body.boundingBox())!;
+
+	for (const [label, holdFrom] of [
+		['held throughout', 0],
+		['pressed once the drag is under way', 1]
+	] as const) {
+		const x = box.x + box.width * (holdFrom === 0 ? 0.45 : 0.6);
+		if (holdFrom === 0) await page.keyboard.down('Shift');
+		await page.mouse.move(x, box.y + 100);
+		await page.mouse.down();
+		await page.mouse.move(x, box.y + 160, { steps: 6 });
+		if (holdFrom === 1) await page.keyboard.down('Shift');
+		await page.mouse.move(x, box.y + 220, { steps: 6 });
+		await page.mouse.up();
+		await page.keyboard.up('Shift');
+		await page.waitForTimeout(500);
+
+		expect(
+			await page
+				.getByRole('dialog')
+				.isVisible()
+				.catch(() => false),
+			label
+		).toBe(false);
+		expect(await page.locator('.ec-preview').count(), label).toBe(0);
+	}
+});
+
+/**
+ * The block the form is describing, drawn before it exists.
+ *
+ * A block form is a page of fields about a rectangle you cannot see, and
+ * "every third day from the 8th, 45 minutes" is a sentence nobody can picture.
+ */
+test.describe('the preview on the grid', () => {
+	test('follows the rhythm being chosen, on the dates on screen', async ({ page }) => {
+		test.setTimeout(180_000);
+		await register(page, `preview-${Date.now()}@test.invalid`);
+		await visit(page, '/tasks/plan');
+		await expect(page.locator('.ec-main')).toBeVisible();
+		await page.waitForTimeout(600);
+
+		const previews = page.locator('.og-event--preview');
+		expect(await previews.count()).toBe(0);
+
+		await page.getByRole('button', { name: '+ New' }).click();
+		const form = page.getByRole('dialog');
+		await expect(form).toBeVisible();
+		await form.locator('[name="mode"]').selectOption('category');
+		await form.locator('[name="label"]').fill('preview me');
+		await form.locator('[name="startTime"]').fill('14:00');
+		await form.locator('[name="durationMinutes"]').fill('60');
+
+		// Weekly: once in the week on the chosen day.
+		await expect(previews).toHaveCount(1);
+
+		// Every two days: four of the seven.
+		await form.getByRole('button', { name: 'Every N days', exact: true }).click();
+		await form.locator('[name="recurrenceInterval"]').fill('2');
+		await expect(previews).toHaveCount(4);
+
+		// Every three: three of them.
+		await form.locator('[name="recurrenceInterval"]').fill('3');
+		await expect(previews).toHaveCount(3);
+
+		// Fortnightly, counting from this week: once here.
+		await form.getByRole('button', { name: 'Every N weeks', exact: true }).click();
+		await form.locator('[name="recurrenceInterval"]').fill('2');
+		await expect(previews).toHaveCount(1);
+
+		// A one-off is one day, and only if that day is on screen.
+		await form.getByRole('button', { name: 'Once only', exact: true }).click();
+		await expect(previews).toHaveCount(1);
+
+		// And nothing survives the form closing.
+		await page.keyboard.press('Escape');
+		await expect(form).toBeHidden();
+		await expect(previews).toHaveCount(0);
+	});
+
+	test('stands in for the block being edited, rather than beside it', async ({ page }) => {
+		test.setTimeout(180_000);
+		await register(page, `preview-edit-${Date.now()}@test.invalid`);
+		await visit(page, '/tasks/plan');
+		await expect(page.locator('.ec-main')).toBeVisible();
+
+		// A block of its own, so this test owns what it counts.
+		await page.getByRole('button', { name: '+ New' }).click();
+		const form = page.getByRole('dialog');
+		await form.locator('[name="mode"]').selectOption('category');
+		await form.locator('[name="label"]').fill('the-one');
+		await form.locator('[name="startTime"]').fill('10:00');
+		await form.getByRole('button', { name: /Add repeating block|Save block/ }).click();
+		await expect(form).toBeHidden({ timeout: 20_000 });
+
+		const real = page.locator('.ec-event.og-event:not(.og-event--preview):has-text("the-one")');
+		const preview = page.locator('.og-event--preview:has-text("the-one")');
+		await expect(real).toHaveCount(1);
+
+		await page.getByText('the-one', { exact: true }).first().click();
+		await expect(form).toBeVisible();
+		// Showing the block where it is and where it would be at the same time
+		// says two things about one block, so the block gives way to its preview.
+		await expect(real).toHaveCount(0);
+		await expect(preview).toHaveCount(1);
+
+		await page.keyboard.press('Escape');
+		await expect(form).toBeHidden();
+		await expect(real).toHaveCount(1);
+		await expect(preview).toHaveCount(0);
+	});
+
+	test('is brought into view when it is at an hour the grid is not showing', async ({ page }) => {
+		test.setTimeout(180_000);
+		await register(page, `preview-scroll-${Date.now()}@test.invalid`);
+		await visit(page, '/tasks/plan');
+		await expect(page.locator('.ec-main')).toBeVisible();
+		await page.waitForTimeout(600);
+
+		await page.getByRole('button', { name: '+ New' }).click();
+		const form = page.getByRole('dialog');
+		await form.locator('[name="mode"]').selectOption('category');
+		await form.locator('[name="label"]').fill('late one');
+		await form.locator('[name="startTime"]').fill('21:00');
+		await page.waitForTimeout(600);
+
+		// On screen, not somewhere below the fold — a preview of an evening you
+		// cannot see is no preview at all.
+		const preview = page.locator('.og-event--preview').first();
+		await expect(preview).toBeInViewport();
+	});
 });

@@ -335,6 +335,18 @@
 	const ratingsSet = $derived(Object.values(formRatings).filter((v) => v !== null).length);
 	let slotMode: 'category' | 'activity' | 'workout' = $state('activity');
 	let activityChoice = $state(NEW_ACTIVITY);
+	/*
+	 * The rest of the form, held rather than read off the inputs.
+	 *
+	 * These were uncontrolled — `value=`, not `bind:value=` — which was fine
+	 * while the form was the only thing that read them. The grid draws what the
+	 * form is describing now, and it can only do that from state.
+	 */
+	let formStartTime = $state('09:00');
+	let formDuration = $state(60);
+	let formLabel = $state('');
+	let formCategoryId = $state<number | null>(null);
+	let formWorkoutId = $state<number | null>(null);
 	// Offset into the visible window (0 = the day it starts on, i.e. today by
 	// default), not a Monday-indexed weekday. The weekday is derived from it.
 	let selectedOffset: number = $state(0);
@@ -458,6 +470,11 @@
 		slotMode = slot.mode as 'category' | 'activity' | 'workout';
 		activityChoice = defaultActivityChoice(slot.activityId);
 		remindLead = slot.remindLeadMinutes ?? 0;
+		formStartTime = slot.startTime;
+		formDuration = slot.durationMinutes;
+		formLabel = slot.label ?? '';
+		formCategoryId = slot.categoryId ?? data.categories[0]?.id ?? null;
+		formWorkoutId = slot.workoutId ?? data.workouts[0]?.id ?? null;
 		openForm();
 	}
 
@@ -474,6 +491,11 @@
 		slotMode = exc.mode as 'category' | 'activity' | 'workout';
 		activityChoice = defaultActivityChoice(exc.activityId);
 		remindLead = exc.remindLeadMinutes ?? 0;
+		formStartTime = exc.startTime;
+		formDuration = exc.durationMinutes;
+		formLabel = exc.label ?? '';
+		formCategoryId = exc.categoryId ?? data.categories[0]?.id ?? null;
+		formWorkoutId = exc.workoutId ?? data.workouts[0]?.id ?? null;
 		openForm();
 	}
 
@@ -491,6 +513,11 @@
 		slotMode = 'activity';
 		activityChoice = defaultActivityChoice(null);
 		remindLead = 0;
+		formStartTime = prefillTime;
+		formDuration = prefillDuration;
+		formLabel = '';
+		formCategoryId = data.categories[0]?.id ?? null;
+		formWorkoutId = data.workouts[0]?.id ?? null;
 		openForm();
 	}
 
@@ -1510,18 +1537,161 @@
 	 * can be answered is "does it fall on this day", asked of each day the
 	 * calendar is actually rendering.
 	 */
+	const windowDates = $derived(data.range.days.map((d: { date: string }) => d.date));
+
+	/**
+	 * The block the open form is describing, as the grid would draw it.
+	 *
+	 * A block form is a page of fields about a rectangle you cannot see, and
+	 * "every third day from the 8th, 45 minutes" is a sentence nobody can
+	 * picture. So while the form is open the grid shows what pressing Save
+	 * would leave behind — on the dates on screen and no further, because the
+	 * question is what this week looks like, not what the rule does forever.
+	 *
+	 * Editing an existing block hides the block itself, so the grid shows the
+	 * would-be state rather than the before and the after at once.
+	 */
+	const previewSlot = $derived.by(() => {
+		if (!showForm) return null;
+		const activityId = activityChoice === NEW_ACTIVITY ? null : Number(activityChoice);
+		const activity = data.activities.find((a: { id: number }) => a.id === activityId);
+		const workout = data.workouts.find((w: { id: number }) => w.id === formWorkoutId);
+		return {
+			// A preview is not a block, so it gets an id no block can have and
+			// nothing that reads an id can mistake it for one.
+			id: -1,
+			weekday: formWeekday,
+			startTime: formStartTime,
+			durationMinutes: Number(formDuration) || 0,
+			mode: slotMode,
+			categoryId: slotMode === 'category' ? formCategoryId : null,
+			activityId,
+			activityCategoryId: activity?.categoryId ?? null,
+			activityName: activity?.name ?? null,
+			workoutId: formWorkoutId,
+			workoutName: workout?.title ?? null,
+			label: formLabel,
+			active: true,
+			recurrence: serialiseRecurrence(formRecurrence)
+		};
+	});
+
+	/** The rule the form's controls currently describe. */
+	const formRecurrence = $derived.by((): Recurrence => {
+		if (recurrenceKind === 'weeks' || recurrenceKind === 'days') {
+			return parseRecurrence(`${recurrenceKind}:${recurrenceInterval}:${recurrenceAnchor}`);
+		}
+		if (recurrenceKind === 'monthly') return parseRecurrence(`monthly:${recurrenceMonthDay}`);
+		return WEEKLY;
+	});
+
+	const previewEvents = $derived.by(() => {
+		const slot = previewSlot;
+		if (!slot || slot.durationMinutes <= 0 || !/^\d{2}:\d{2}/.test(slot.startTime)) return [];
+		const events =
+			repeat === 'once'
+				? windowDates.includes(formDate)
+					? buildSlotEventsForDates([slot], [formDate], data.categories)
+					: []
+				: buildSlotEventsForDates([slot], windowDates, data.categories);
+		return events.map((e, i) => ({
+			...e,
+			// Its own ids, so the calendar keeps them apart from each other and
+			// from anything real.
+			id: `preview:${i}`,
+			editable: false,
+			// Drawn behind, and not in anybody's way: the point is to see it
+			// against what is already there.
+			classNames: [...(e.classNames ?? []), 'og-event--preview'],
+			extendedProps: {
+				...(e.extendedProps ?? {}),
+				preview: true,
+				// Standing in for a real block means standing in for everything
+				// about it, its tick in the corner included — the preview is what
+				// that block would look like, and it has already been done today.
+				...(editingBlockId !== null
+					? { kind: editingKind, refId: editingBlockId }
+					: { kind: 'preview' })
+			}
+		}));
+	});
+
+	/**
+	 * Bring the preview into view when the hour it is at changes.
+	 *
+	 * A preview of an evening while the grid is showing the morning is no
+	 * preview at all. The calendar's own `scrollTime` only applies when a view
+	 * is built, so this scrolls the drawn block instead — and only on the time
+	 * changing, so it never fights somebody scrolling the grid themselves while
+	 * the form is open.
+	 */
+	$effect(() => {
+		const at = formStartTime;
+		if (!showForm || !/^\d{2}:\d{2}$/.test(at)) return;
+		// The calendar draws its events on its own schedule, a frame or two
+		// after the state that caused them settles, so this waits for the box
+		// to exist rather than assuming it does.
+		let tries = 0;
+		const look = () => {
+			if (bringPreviewIntoView() || ++tries > 20) return;
+			requestAnimationFrame(look);
+		};
+		void tick().then(() => requestAnimationFrame(look));
+	});
+
+	/**
+	 * The grid's own scrollbar, and nothing else's.
+	 *
+	 * `scrollIntoView` walks up every scrollable ancestor, so it scrolled the
+	 * page as well and opening the form jumped the whole screen. This moves the
+	 * one box that holds the hours, and only when the preview is outside it.
+	 */
+	function bringPreviewIntoView(): boolean {
+		const el = gridEl?.querySelector('.og-event--preview');
+		if (!(el instanceof HTMLElement)) return false;
+
+		let scroller: HTMLElement | null = el.parentElement;
+		while (scroller && scroller.scrollHeight <= scroller.clientHeight + 1) {
+			scroller = scroller === gridEl ? null : scroller.parentElement;
+		}
+		if (!scroller) return true;
+
+		const seen = scroller.getBoundingClientRect();
+		const mine = el.getBoundingClientRect();
+		if (mine.top >= seen.top && mine.bottom <= seen.bottom) return true;
+		scroller.scrollTo({
+			top: scroller.scrollTop + mine.top - seen.top - (seen.height - mine.height) / 2,
+			behavior: 'smooth'
+		});
+		return true;
+	}
+
+	/** The block being edited, hidden while its own preview stands in for it. */
+	const previewedSlotId = $derived(showForm && editingKind === 'slot' ? editingBlockId : null);
+	const previewedExceptionalId = $derived(
+		showForm && editingKind === 'exceptional' ? editingBlockId : null
+	);
+
 	const gridEvents = $derived([
 		...buildSlotEventsForDates(
-			data.slots,
-			data.range.days.map((d: { date: string }) => d.date),
+			previewedSlotId === null
+				? data.slots
+				: data.slots.filter((s: Slot) => s.id !== previewedSlotId),
+			windowDates,
 			data.categories,
 			{ suppressed: suppressedKeys, moved: movedKeys }
 		),
-		...buildExceptionalEvents(data.exceptionals, data.categories),
+		...buildExceptionalEvents(
+			previewedExceptionalId === null
+				? data.exceptionals
+				: data.exceptionals.filter((e: Exceptional) => e.id !== previewedExceptionalId),
+			data.categories
+		),
 		// Somebody else's meetings, drawn where they get in the way and immovable
 		// because they are not ours to move.
 		...buildSubscribedEvents(data.subscribed),
-		...buildBillEvents(data.billsDue, SECTION_COLORS.finance)
+		...buildBillEvents(data.billsDue, SECTION_COLORS.finance),
+		...previewEvents
 	]);
 
 	/**
@@ -1654,7 +1824,13 @@
 		// A shift-drag is a selection rectangle, not "create a block here".
 		// The calendar starts its own drag from a pointer event this code cannot
 		// always intercept first, so the intent is re-checked at the end.
-		if (modifiers(info.jsEvent).shiftKey || marqueeJustFinished) return;
+		if (modifiers(info.jsEvent).shiftKey || marqueeJustFinished) {
+			// It made the selection regardless, and nothing is about to open that
+			// would take it off the screen again — so it would sit there as a box
+			// with a time on it and nothing in it until the page was reloaded.
+			calendar?.unselect?.();
+			return;
+		}
 
 		const placement = placementFromDates(info.start, info.end);
 		selectOffsetForDate(formatLocalDate(info.start));
@@ -2696,7 +2872,8 @@
 		bind:open={showForm}
 		error={form?.message}
 		onclose={closeForm}
-		size="lg"
+		size="md"
+		dock="side"
 		title={editingBlockId !== null ? 'Edit block' : 'New block'}
 		description={repeat === 'once'
 			? 'Happens once, on one day.'
@@ -2894,7 +3071,7 @@
 							name="startTime"
 							type="time"
 							required
-							value={editingBlock?.startTime ?? prefillTime}
+							bind:value={formStartTime}
 							class="input"
 						/>
 					</Field>
@@ -2905,7 +3082,7 @@
 							type="number"
 							min="15"
 							step="15"
-							value={editingBlock?.durationMinutes ?? prefillDuration}
+							bind:value={formDuration}
 							class="input"
 						/>
 					</Field>
@@ -2978,20 +3155,17 @@
 					</Field>
 					{#if slotMode === 'category'}
 						<Field label="Category" span={4} required>
-							<select name="categoryId" required class="select">
+							<select name="categoryId" required bind:value={formCategoryId} class="select">
 								{#each data.categories as cat (cat.id)}
-									<option value={cat.id} selected={editingBlock?.categoryId === cat.id}
-										>{cat.name}</option
-									>
+									<option value={cat.id}>{cat.name}</option>
 								{/each}
 							</select>
 						</Field>
 					{:else if slotMode === 'workout'}
 						<Field label="Workout" span={4} required>
-							<select name="workoutId" required class="select">
+							<select name="workoutId" required bind:value={formWorkoutId} class="select">
 								{#each data.workouts as t (t.id)}
-									<option value={t.id} selected={editingBlock?.workoutId === t.id}>{t.title}</option
-									>
+									<option value={t.id}>{t.title}</option>
 								{/each}
 							</select>
 						</Field>
@@ -3014,7 +3188,7 @@
 						<OneLine
 							name="label"
 							placeholder={slotMode === 'category' ? 'e.g. dentist' : ''}
-							value={editingBlock?.label ?? ''}
+							bind:value={formLabel}
 							class="input"
 						/>
 					</Field>
