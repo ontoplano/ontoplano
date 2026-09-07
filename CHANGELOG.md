@@ -10,6 +10,11 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.92.1 — 2026-09-07
+
+- **The report box names the screen you are on** — "that it happened on
+  /inventory" — instead of describing it as "the address of this screen".
+
 ## 0.92.0 — 2026-09-07
 
 - **A new thing can be given its location as you write it down.** Standing in

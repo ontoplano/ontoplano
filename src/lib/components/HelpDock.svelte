@@ -231,7 +231,7 @@
 	open={reporting}
 	onclose={closeReport}
 	title="Something wrong here?"
-	description="It goes to whoever runs this instance, with the address of this screen."
+	description={`It goes to whoever runs this instance. We send what you write below, and that it happened on ${page.url.pathname} — nothing else.`}
 	size="sm"
 >
 	{#if reportState === 'sent'}
@@ -246,9 +246,7 @@
 				class="textarea mt-1"
 			></textarea>
 		</label>
-		<p class="mt-2 text-xs text-gray-500">
-			This screen's address goes with it. Nothing you have written down is attached.
-		</p>
+
 		{#if reportState === 'failed'}
 			<p class="mt-2 text-xs text-red-700">That did not send. Try again in a moment.</p>
 		{/if}
