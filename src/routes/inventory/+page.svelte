@@ -653,17 +653,31 @@
 					<span class="text-xs text-red-600">{priceError}</span>
 				{/if}
 			</form>
-		{:else}
-			<button
-				type="button"
-				onclick={() => (pricing = item.id)}
-				class="mt-0.5 block text-xs text-gray-500 hover:text-gray-900"
-				title="Record what you paid"
-			>
-				Set price
-			</button>
 		{/if}
 	{/if}
+{/snippet}
+
+<!--
+	Recording what you paid, without the row moving to offer it.
+
+	It used to appear beside the name the moment a count went above none, which
+	made the card taller and pushed everything under it down — a press somewhere
+	else moving the thing you were about to press. It is an icon in the row's
+	own actions now, drawn on every row and only visible where it means
+	something, so the space it needs is space the row always had.
+-->
+{#snippet setPrice(item: { id: number; name: string; bought: boolean })}
+	<button
+		type="button"
+		onclick={() => (pricing = item.id)}
+		class="icon-btn {item.bought && pricing !== item.id ? '' : 'invisible'}"
+		tabindex={item.bought && pricing !== item.id ? 0 : -1}
+		title="Record what you paid"
+		aria-label="Record what you paid for {item.name}"
+		aria-hidden={!item.bought}
+	>
+		<Icon name="wallet" />
+	</button>
 {/snippet}
 
 <!--
@@ -799,7 +813,7 @@
 			Math.max(item.idealQty, 1)
 				? 'text-blue-700'
 				: 'text-gray-900'}"
-			title="{item.qty} here, and you keep {item.idealQty}"
+			title="{item.name}: {item.qty} here, and you keep {item.idealQty}"
 		>
 			{item.qty}{#if item.idealQty > 1}<span class="text-xs text-gray-500">/{item.idealQty}</span
 				>{/if}
@@ -1118,6 +1132,7 @@
 
 												<!-- Everything else at the right edge, same order, same x, every row. -->
 												<div class="row-actions">
+													{@render setPrice(item)}
 													<form
 														method="POST"
 														action="?/toggleSnoozed"
@@ -1247,6 +1262,7 @@
 								{@render paidPrompt(item)}
 
 								<div class="row-actions">
+									{@render setPrice(item)}
 									<form method="POST" action="?/toggleSnoozed" use:enhance={tick('toggleSnoozed')}>
 										<input type="hidden" name="id" value={item.id} />
 										<button

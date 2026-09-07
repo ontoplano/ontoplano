@@ -12,6 +12,12 @@ version.
 
 ## 0.95.1 — 2026-09-07
 
+- **Counting something up moves nothing.** "Record what you paid" used to
+  appear beside the name the moment a count went above none, making that card
+  taller and pushing every row under it down the screen — a press somewhere
+  moving the thing you were about to press. It is an icon in the row's own
+  actions now, on every row and visible only where it means something, so the
+  space it needs is space the row always had.
 - **The count is stacked, and a name stays readable.** Plus above, minus
   below: three controls across the front of a row took the width the name
   needed, and after a press "olive oil" came out as a column of letters. The

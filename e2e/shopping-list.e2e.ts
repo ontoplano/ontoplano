@@ -86,9 +86,12 @@ test('what you paid is recorded after the tick, and the price shows on the row',
 		.getByRole('button', { name: /^One more/ })
 		.first()
 		.click();
-	await expect(page.getByRole('button', { name: 'Set price' }).first()).toBeVisible();
-
-	await page.getByRole('button', { name: 'Set price' }).first().click();
+	// The offer is an icon in the row's own actions, drawn on every row and
+	// visible only where it means something — so a count going up does not
+	// make the card taller and push everything under it down.
+	const setPrice = page.getByRole('button', { name: /^Record what you paid/ }).first();
+	await expect(setPrice).toBeVisible();
+	await setPrice.click();
 	await page.locator('input[name=paid]').fill('1.20');
 	await page.getByRole('button', { name: /save what you paid/i }).click();
 	await page.waitForTimeout(400);

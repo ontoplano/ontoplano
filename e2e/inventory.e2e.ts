@@ -311,12 +311,43 @@ test.describe('a row on a phone', () => {
 		await page.getByRole('button', { name: 'One more Extra virgin olive oil' }).click();
 		await expect(page.locator('[title$="you keep 1"]')).toHaveText('1');
 
-		// Three lines of a wrapped name would be three times this; a letter per
-		// line would be twenty. One line, or two at the very worst.
-		const name = page.getByText('Extra virgin olive oil');
-		const box = await name.boundingBox();
+		/*
+		 * Wider than it is tall: that is what a line of text is, and what a
+		 * column of single letters is not. A long name wrapping to two lines on
+		 * a phone is fine and this still holds; the failure it catches is the
+		 * one that happened, where the name had a few pixels and broke into a
+		 * twenty-line stack.
+		 */
+		const box = await page.getByText('Extra virgin olive oil').boundingBox();
 		expect(box, 'the name is on screen').not.toBeNull();
+		expect(box!.width).toBeGreaterThan(box!.height);
 		expect(box!.height).toBeLessThan(60);
-		expect(box!.width).toBeGreaterThan(120);
+	});
+
+	/**
+	 * A press somewhere does not move what you were about to press.
+	 *
+	 * "Record what you paid" used to appear beside the name the moment a count
+	 * went above none, which made that card taller and pushed every row under
+	 * it down the screen. It is an icon in the row's own actions now, drawn on
+	 * every row and visible only where it means something, so the space is
+	 * space the row always had.
+	 */
+	test('and nothing below it moves when the count goes up', async ({ page }) => {
+		await register(page, `inv-still-${Date.now()}@test.invalid`);
+		await visit(page, '/inventory');
+		await foodCategory(page);
+		await visit(page, '/inventory');
+		await addItem(page, 'Milk');
+		await addItem(page, 'Bread');
+
+		const below = page.getByText('Bread');
+		const before = await below.boundingBox();
+		await page.getByRole('button', { name: 'One more Milk' }).click();
+		await expect(page.locator('[title^="Milk:"]')).toHaveText('1');
+		const after = await below.boundingBox();
+
+		expect(before, 'the row below is on screen').not.toBeNull();
+		expect(after!.y).toBe(before!.y);
 	});
 });
