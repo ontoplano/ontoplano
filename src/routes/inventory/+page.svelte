@@ -618,7 +618,7 @@
 						if (result.type === 'success') pricing = null;
 					};
 				}}
-				class="flex items-center gap-1"
+				class="mt-1 flex items-center gap-1"
 			>
 				<input type="hidden" name="id" value={item.id} />
 				<input
@@ -657,7 +657,7 @@
 			<button
 				type="button"
 				onclick={() => (pricing = item.id)}
-				class="text-xs text-gray-500 hover:text-gray-900"
+				class="mt-0.5 block text-xs text-gray-500 hover:text-gray-900"
 				title="Record what you paid"
 			>
 				Set price
@@ -778,16 +778,15 @@
 	a cupboard, and it works with no JavaScript at all.
 -->
 {#snippet quantity(item: { id: number; name: string; qty: number; idealQty: number })}
-	<div class="flex shrink-0 items-center gap-0.5">
-		<form method="POST" action="?/setQty" use:enhance={requantify}>
+	<div class="flex w-9 shrink-0 flex-col items-center leading-none">
+		<form method="POST" action="?/setQty" use:enhance={requantify} class="contents">
 			<input type="hidden" name="id" value={item.id} />
-			<input type="hidden" name="qty" value={Math.max(0, item.qty - 1)} />
+			<input type="hidden" name="qty" value={item.qty + 1} />
 			<button
 				type="submit"
-				disabled={item.qty <= 0}
-				class="icon-btn size-6 disabled:opacity-25"
-				title="One fewer"
-				aria-label="One fewer {item.name}">−</button
+				class="icon-btn h-5 w-9 text-base"
+				title="One more"
+				aria-label="One more {item.name}">+</button
 			>
 		</form>
 		<!--
@@ -796,7 +795,7 @@
 			it, so "two of four" is a glance rather than an arithmetic.
 		-->
 		<span
-			class="tabular min-w-6 text-center text-sm whitespace-nowrap {item.qty >=
+			class="tabular py-0.5 text-center text-sm whitespace-nowrap {item.qty >=
 			Math.max(item.idealQty, 1)
 				? 'text-blue-700'
 				: 'text-gray-900'}"
@@ -805,14 +804,15 @@
 			{item.qty}{#if item.idealQty > 1}<span class="text-xs text-gray-500">/{item.idealQty}</span
 				>{/if}
 		</span>
-		<form method="POST" action="?/setQty" use:enhance={requantify}>
+		<form method="POST" action="?/setQty" use:enhance={requantify} class="contents">
 			<input type="hidden" name="id" value={item.id} />
-			<input type="hidden" name="qty" value={item.qty + 1} />
+			<input type="hidden" name="qty" value={Math.max(0, item.qty - 1)} />
 			<button
 				type="submit"
-				class="icon-btn size-6"
-				title="One more"
-				aria-label="One more {item.name}">+</button
+				disabled={item.qty <= 0}
+				class="icon-btn h-5 w-9 text-base disabled:opacity-25"
+				title="One fewer"
+				aria-label="One fewer {item.name}">−</button
 			>
 		</form>
 	</div>
@@ -1094,30 +1094,27 @@
 													: ''}"
 											>
 												<!--
-										Whether you have it is a checkbox.
-
-										It used to be two bordered buttons per row — "Got it" and
-										"Not now" — sitting after the name in a wrapping flex, so
-										their position moved with the length of whatever the item
-										was called and a long note pushed them onto a second line.
-										A checkbox is what "do you have this" already looks like
-										everywhere else in this app and every list anybody has
-										used, it is one control instead of two, and it puts the
-										one thing you do forty times down the left edge where the
-										thumb already is.
+										The count down the left edge, where the thumb already is
+										and where the tick used to be. Stacked rather than in a
+										line: three controls across the front of a row is forty
+										pixels of width on a phone that the name then does not
+										have, and a name that has run out of width breaks one
+										letter per line.
 									-->
 												{@render quantity(item)}
 
 												<div class="min-w-0 flex-1">
-													<span class="text-sm text-gray-900">{item.name}</span>
+													<span class="text-sm break-words text-gray-900">{item.name}</span>
 													{#if item.notes}
 														<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
 													{/if}
 													{@render expectedPrice(item)}
 													{@render usedIn(item)}
 													{@render ownFields(item)}
+													<!-- Under the name, not beside it: as a column of its own it
+													     took the width the name needed the moment it appeared. -->
+													{@render paidPrompt(item)}
 												</div>
-												{@render paidPrompt(item)}
 
 												<!-- Everything else at the right edge, same order, same x, every row. -->
 												<div class="row-actions">

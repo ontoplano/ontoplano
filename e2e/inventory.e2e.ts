@@ -288,3 +288,35 @@ test('the count has no ceiling', async ({ page }) => {
 	await page.getByRole('button', { name: /Show bought/ }).click();
 	await expect(page.locator('[title$="you keep 1"]')).toHaveText('3');
 });
+
+test.describe('a row on a phone', () => {
+	test.use({ viewport: { width: 390, height: 844 } });
+
+	/**
+	 * A name that has run out of width breaks one letter per line.
+	 *
+	 * The count, the "set price" prompt and three icons were four columns
+	 * across a 390px row, and the name took whatever was left — which after a
+	 * press was nothing, and "olive oil" came out as a vertical stack of
+	 * letters. The count is stacked, the prompt sits under the name, and the
+	 * name keeps its width.
+	 */
+	test('keeps its name on one line after the count changes', async ({ page }) => {
+		await register(page, `inv-narrow-${Date.now()}@test.invalid`);
+		await visit(page, '/inventory');
+		await foodCategory(page);
+		await visit(page, '/inventory');
+		await addItem(page, 'Extra virgin olive oil');
+
+		await page.getByRole('button', { name: 'One more Extra virgin olive oil' }).click();
+		await expect(page.locator('[title$="you keep 1"]')).toHaveText('1');
+
+		// Three lines of a wrapped name would be three times this; a letter per
+		// line would be twenty. One line, or two at the very worst.
+		const name = page.getByText('Extra virgin olive oil');
+		const box = await name.boundingBox();
+		expect(box, 'the name is on screen').not.toBeNull();
+		expect(box!.height).toBeLessThan(60);
+		expect(box!.width).toBeGreaterThan(120);
+	});
+});

@@ -10,6 +10,13 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.95.1 — 2026-09-07
+
+- **The count is stacked, and a name stays readable.** Plus above, minus
+  below: three controls across the front of a row took the width the name
+  needed, and after a press "olive oil" came out as a column of letters. The
+  "set price" prompt sits under the name now rather than beside it.
+
 ## 0.95.0 — 2026-09-07
 
 - **How many, not whether.** The tick on a restock item is a count with arrows
