@@ -11,7 +11,7 @@
 [![licence AGPL-3.0](.github/badges/licence.svg)](LICENSE)
 [![host it yourself](.github/badges/host-it.svg)](#running-it)
 
-[![Try the demo — no sign up necessary](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)
+[![Try the demo](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)
 
 [ontoplano.com](https://ontoplano.com) · [official instance](https://app.ontoplano.com) · [documentation](https://docs.ontoplano.com)
 

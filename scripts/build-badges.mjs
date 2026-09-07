@@ -59,16 +59,38 @@ function escape(text) {
  * taller, bolder and spaced out so it reads as something to press.
  */
 function badge({ label, value, color = BLUE, big = false }) {
-	const size = big ? 12 : 11;
-	const height = big ? 32 : 22;
-	const pad = big ? 14 : 8;
-	const spacing = big ? 0.8 : 0;
-	const shown = big ? [label.toUpperCase(), value.toUpperCase()] : [label, value];
-	const widths = shown.map((t) => textWidth(t, size) + t.length * spacing + pad * 2);
-	const [lw, vw] = widths.map(Math.ceil);
-	const total = lw + vw;
-	const y = height / 2;
+	const size = big ? 13 : 11;
+	const height = big ? 34 : 22;
+	const pad = big ? 20 : 8;
+	const spacing = big ? 1 : 0;
 	const font = 'Verdana,DejaVu Sans,Geneva,sans-serif';
+	const y = height / 2;
+	const width = (t) => Math.ceil(textWidth(t, size) + t.length * spacing + pad * 2);
+
+	/*
+	 * One block, not two.
+	 *
+	 * A label-and-value badge puts the colour on the value, which is right for
+	 * "licence: AGPL-3.0" and exactly wrong for a button: splitting "try the
+	 * demo — no sign up necessary" highlighted the caveat and left the thing to
+	 * press sitting on the dark half. A call to action is one coloured
+	 * rectangle with the words to press inside it.
+	 */
+	if (!value) {
+		const w = width(big ? label.toUpperCase() : label);
+		return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${height}" role="img" aria-label="${escape(label)}">
+<title>${escape(label)}</title>
+<rect width="${w}" height="${height}" fill="${color}"/>
+<text x="${w / 2}" y="${y}" dominant-baseline="central" text-anchor="middle" fill="#ffffff" font-family="${font}" font-size="${size}"${
+			big ? ' font-weight="bold" letter-spacing="1"' : ''
+		}>${escape(big ? label.toUpperCase() : label)}</text>
+</svg>
+`;
+	}
+
+	const shown = big ? [label.toUpperCase(), value.toUpperCase()] : [label, value];
+	const [lw, vw] = shown.map(width);
+	const total = lw + vw;
 
 	// `text-anchor: middle` at the centre of each half, so an estimate that is
 	// a little out is a little off-centre rather than off the end.
@@ -79,7 +101,7 @@ function badge({ label, value, color = BLUE, big = false }) {
 <rect width="${lw}" height="${height}" fill="${INK}"/>
 <rect x="${lw}" width="${vw}" height="${height}" fill="${color}"/>
 <g fill="#ffffff" font-family="${font}" font-size="${size}"${
-		big ? ' font-weight="bold" letter-spacing="0.8"' : ''
+		big ? ' font-weight="bold" letter-spacing="1"' : ''
 	} text-anchor="middle">
 <text x="${lw / 2}" y="${y}" dominant-baseline="central" fill="#c9d1d9">${escape(shown[0])}</text>
 <text x="${lw + vw / 2}" y="${y}" dominant-baseline="central">${escape(shown[1])}</text>
@@ -92,7 +114,7 @@ const version = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).ver
 
 const BADGES = {
 	// The one thing a stranger should press, and what it costs to press it.
-	'try-the-demo': badge({ label: 'try the demo', value: 'no sign up necessary', big: true }),
+	'try-the-demo': badge({ label: 'try the demo', big: true }),
 	release: badge({ label: 'release', value: `v${version}` }),
 	licence: badge({ label: 'licence', value: 'AGPL-3.0' }),
 	'host-it': badge({ label: 'host it', value: 'yourself', color: SLATE })
