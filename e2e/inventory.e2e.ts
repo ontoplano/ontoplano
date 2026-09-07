@@ -341,7 +341,7 @@ test.describe('a row on a phone', () => {
 	 * every row under it down the screen. They take over a line that is
 	 * reserved whether or not anything is in it.
 	 */
-	test('nor when a price is being written, nor when a field is added', async ({ page }) => {
+	test('nor when a thing is given its first field', async ({ page }) => {
 		await register(page, `inv-fixed-${Date.now()}@test.invalid`);
 		await visit(page, '/inventory');
 		await foodCategory(page);
@@ -357,14 +357,7 @@ test.describe('a row on a phone', () => {
 		await expect(page.locator('[title^="Olive oil:"]')).toHaveText('1');
 		expect((await below.boundingBox())!.y, 'after counting').toBe(start!.y);
 
-		await page.getByRole('button', { name: /^Record what you paid for Olive oil/ }).click();
-		await expect(page.locator('[name="paid"]')).toBeVisible();
-		expect((await below.boundingBox())!.y, 'with the price editor open').toBe(start!.y);
-
-		await page.locator('[name="paid"]').press('Escape');
-		await expect(page.locator('[name="paid"]')).toHaveCount(0);
-
-		// And a field of its own, which is the other thing that appears.
+		// A field of its own, which is the thing that appears on a row.
 		await page.getByRole('button', { name: /^Edit Olive oil/ }).click();
 		const edit = page.getByRole('dialog', { name: 'Edit item' });
 		await edit.locator('[name="fieldName"]').first().fill('size');

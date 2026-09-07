@@ -69,9 +69,7 @@ test('a category that holds food makes ingredients possible', async ({ page }) =
  * the first one ever recorded, which is not a trend, and a mistyped first
  * price poisoned it permanently with nothing in the app able to correct it.
  */
-test('what you paid is recorded after the tick, and the price shows on the row', async ({
-	page
-}) => {
+test('a price is set where the rest of the item is, and shows on the row', async ({ page }) => {
 	await register(page, `prices-${Date.now()}@test.invalid`);
 	await visit(page, '/inventory');
 
@@ -81,26 +79,26 @@ test('what you paid is recorded after the tick, and the price shows on the row',
 	await dialog.locator('[name=label]').press('Enter');
 	await expect(page.getByText('oat milk')).toBeVisible();
 
-	// Counting one of it never asks for a price — that is a press in an aisle.
-	await page
-		.getByRole('button', { name: /^One more/ })
-		.first()
-		.click();
-	// The offer is an icon in the row's own actions, drawn on every row and
-	// visible only where it means something — so a count going up does not
-	// make the card taller and push everything under it down.
-	const setPrice = page.getByRole('button', { name: /^Record what you paid/ }).first();
-	await expect(setPrice).toBeVisible();
-	await setPrice.click();
-	await page.locator('input[name=paid]').fill('1.20');
-	await page.getByRole('button', { name: /save what you paid/i }).click();
-	await page.waitForTimeout(400);
+	/*
+	 * On the item's own form, not a button of its own on the row.
+	 *
+	 * It had one for a while — an icon that opened a small box beside the name
+	 * — and it was the only thing on the row that appeared when something was
+	 * pressed, which is what made a card grow and push everything under it
+	 * down. A price is not special enough to be worth that: it is a field,
+	 * beside the notes and the kind, where somebody already goes to change
+	 * anything else about the thing.
+	 */
+	await page.getByRole('button', { name: /^Edit oat milk/ }).click();
+	const edit = page.getByRole('dialog', { name: 'Edit item' });
+	await edit.locator('[name=price]').fill('1.20');
+	await edit.getByRole('button', { name: 'Save' }).click();
+	await expect(edit).toBeHidden();
 
 	// Nothing claims a trend from one purchase — or from any number of them.
 	await expect(page.getByText('→')).toHaveCount(0);
 
-	// And the expected price is on the row, which is what makes editing it
-	// look like it worked. It did not appear anywhere before.
+	// And it is on the row, which is what makes editing it look like it worked.
 	await page.reload({ waitUntil: 'load' });
 	await page.waitForSelector('html[data-ready]');
 	await expect(page.getByText(/1[.,]20/).first()).toBeVisible();

@@ -389,6 +389,11 @@ export const actions: Actions = {
 			updateSlot(buildCtx(locals.user!.id), Number(formData.get('id')), {
 				...blockFields(formData),
 				weekday: formData.get('weekday'),
+				// Only when the form carried it: a drag posts placement alone and
+				// must not reset a block's rhythm to weekly on the way past.
+				recurrence: formData.has('recurrenceKind')
+					? readRecurrence(formData, buildCtx(locals.user!.id).now)
+					: undefined,
 				metaPatch: metaPatch.meta
 			});
 			return { success: true };

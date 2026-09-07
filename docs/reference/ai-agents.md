@@ -664,13 +664,31 @@ _Needs `inventory:write`; writes._
 
 ### `workouts` — Your workouts
 
-The workouts you have written down, under Health. Each has a kind and a plan; put one on the week with add_block and its workoutId to have it planned like a meal.
+The workouts you have written down, under Health. Each has a category and a plan; put one on the week with add_block and its workoutId to have it planned like a meal.
 
 _Needs `workouts:read`; read-only._
 
+### `workout_categories` — The categories of workout this account keeps
+
+The categories a workout can be filed under — this account’s own list, not a fixed one. `add_workout` and `change_workout` take a category_id from here.
+
+_Needs `workouts:read`; read-only._
+
+### `add_workout_category` — Add a category of workout
+
+Add a category to this account’s list — "Swimming", "Physio". Answering with one that already exists returns it rather than making a second.
+
+_Needs `workouts:write`; writes._
+
+### `remove_workout_category` — Remove a category of workout
+
+Take a category off the list. Workouts filed under it keep existing, without one.
+
+_Needs `workouts:write`; writes._
+
 ### `add_workout` — Add a workout
 
-Write a workout down: a title, a kind (strength, cardio, mobility, sport, other), a plan as Markdown, and roughly how long it takes. Scheduling it onto a day is a block with its workoutId, the way a meal is a block with a recipe.
+Write a workout down: a title, a category (one of the account’s own, from `workout_categories`), a plan as Markdown, and roughly how long it takes. Scheduling it onto a day is a block with its workoutId, the way a meal is a block with a recipe.
 
 _Needs `workouts:write`; writes._
 

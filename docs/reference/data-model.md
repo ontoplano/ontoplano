@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**58 tables.**
+**59 tables.**
 
 | Table                                             | Columns | Belongs to a user |
 | ------------------------------------------------- | ------- | ----------------- |
@@ -68,6 +68,7 @@ exist.
 | [`verification`](#verification)                   | 6       | —                 |
 | [`webhook_subscriptions`](#webhook_subscriptions) | 11      | yes               |
 | [`weekly_reviews`](#weekly_reviews)               | 7       | yes               |
+| [`workout_categories`](#workout_categories)       | 5       | yes               |
 | [`workouts`](#workouts)                           | 11      | yes               |
 
 ## account
@@ -1238,21 +1239,36 @@ Indexes:
 - `weekly_reviews_user_week_idx` on `user_id`, `week_start`
 - `weekly_reviews_slot_unique` on `user_id`, `week_start`, `position` — unique
 
+## workout_categories
+
+| Column       | Type    | Null     | Default               | Notes             |
+| ------------ | ------- | -------- | --------------------- | ----------------- |
+| `id`         | integer | not null | —                     | primary key, auto |
+| `user_id`    | text    | not null | —                     | → `user.id`       |
+| `name`       | text    | not null | —                     | —                 |
+| `sort_order` | integer | not null | `0`                   | —                 |
+| `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `workout_categories_user_idx` on `user_id`
+- `workout_categories_user_name_unique` on `user_id`, `name` — unique
+
 ## workouts
 
-| Column         | Type    | Null     | Default               | Notes             |
-| -------------- | ------- | -------- | --------------------- | ----------------- |
-| `id`           | integer | not null | —                     | primary key, auto |
-| `user_id`      | text    | not null | —                     | → `user.id`       |
-| `title`        | text    | not null | —                     | —                 |
-| `kind`         | text    | not null | `'other'`             | —                 |
-| `plan`         | text    | not null | `''`                  | —                 |
-| `notes`        | text    | null     | `''`                  | —                 |
-| `minutes`      | integer | null     | —                     | —                 |
-| `last_done_at` | text    | null     | —                     | —                 |
-| `archived_at`  | text    | null     | —                     | —                 |
-| `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
-| `updated_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| Column         | Type    | Null     | Default               | Notes                     |
+| -------------- | ------- | -------- | --------------------- | ------------------------- |
+| `id`           | integer | not null | —                     | primary key, auto         |
+| `user_id`      | text    | not null | —                     | → `user.id`               |
+| `title`        | text    | not null | —                     | —                         |
+| `category_id`  | integer | null     | —                     | → `workout_categories.id` |
+| `plan`         | text    | not null | `''`                  | —                         |
+| `notes`        | text    | null     | `''`                  | —                         |
+| `minutes`      | integer | null     | —                     | —                         |
+| `last_done_at` | text    | null     | —                     | —                         |
+| `archived_at`  | text    | null     | —                     | —                         |
+| `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                         |
+| `updated_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                         |
 
 Indexes:
 

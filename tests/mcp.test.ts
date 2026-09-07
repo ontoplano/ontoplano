@@ -1344,16 +1344,28 @@ describe('workouts over MCP', () => {
 		call(scopes, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
 
 	it('adds, reads, changes, does, and puts away — and undoes each', () => {
-		const made = rpc(1, 'add_workout', { title: 'Push day', kind: 'strength', minutes: 55 }, [
-			'workouts:write'
-		]);
+		// The categories are this account's own rows, so an assistant reads the
+		// list before it can file anything under one.
+		const categories = rpc(0, 'workout_categories', {}, ['workouts:read']).result.structuredContent
+			.categories as {
+			id: number;
+			name: string;
+		}[];
+		const strength = categories.find((k) => k.name === 'Strength')!;
+
+		const made = rpc(
+			1,
+			'add_workout',
+			{ title: 'Push day', category_id: strength.id, minutes: 55 },
+			['workouts:write']
+		);
 		expect(made.result.isError, made.result.content?.[0]?.text).toBe(false);
 		const id = made.result.structuredContent.id as number;
 
 		const seen = rpc(2, 'workouts', {}, ['workouts:read']);
 		const row = seen.result.structuredContent.workouts.find((t: { id: number }) => t.id === id);
 		expect(row.title).toBe('Push day');
-		expect(row.kind).toBe('strength');
+		expect(row.categoryName).toBe('Strength');
 
 		// Change only the field given.
 		rpc(3, 'change_workout', { id, minutes: 60 }, ['workouts:write']);

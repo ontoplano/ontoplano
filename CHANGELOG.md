@@ -10,6 +10,30 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.97.0 — 2026-09-07
+
+- **A workout's category is yours to name.** Strength, cardio, mobility, sport
+  and other were five words in the schema — somebody else deciding what your
+  training is made of, and the fifth being called "other" is the proof. They
+  are a list you keep now, with the same name and shape as the shopping
+  categories: rename them, add "Swimming", remove what you never do. Every account starts with the five it
+  had, and every workout keeps the one it was.
+- **A repeating block's rhythm can be changed after it is made.** Every N
+  weeks, every N days and monthly could be chosen when the block was created
+  and never afterwards: the form posted the change, Save said it worked, and
+  the block stayed weekly. Editing one applies it now.
+- **A 500 offers a button, not a hash to copy out.** "Quote ba41f4" is asking
+  somebody to be a courier for a string they cannot read; the id travels
+  inside the report.
+- **The row does not clip what is on it.** The last release gave the line under
+  a name one line of room and a control to un-clip it — which cut recipe names
+  in half, and moved every row below when pressed. The line has a floor and no
+  ceiling: a thing gaining its first field costs nothing, and a thing with a
+  great deal on it is simply taller.
+- **Recording a price is a field on the item, not a button on the row.** It was
+  the one thing that appeared on a press, and a price is not special enough to
+  be worth what that cost.
+
 ## 0.96.0 — 2026-09-07
 
 - **Nothing a row can gain makes it grow.** The price editor and a thing's own

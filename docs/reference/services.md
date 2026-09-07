@@ -3906,6 +3906,24 @@ mistake and clears itself off any block (the FK is set-null).
 
 #### `listWorkouts(ctx, opts)`
 
+#### `listWorkoutCategories(ctx)`
+
+The kinds this account keeps, and the five it starts with.
+
+Made on first sight rather than at registration: an account that predates
+the table, or one whose list somebody emptied and wants back, gets them the
+next time the page is opened. Adding by hand afterwards is the point of the
+table, so this only fills an empty list — it never puts back one that was
+deliberately shortened.
+
+#### `createWorkoutCategory(ctx, name)`
+
+#### `renameWorkoutCategory(ctx, id, name)`
+
+#### `deleteWorkoutCategory(ctx, id)`
+
+Removed; the workouts in it keep existing and simply have no kind.
+
 #### `getWorkout(ctx, id)`
 
 #### `createWorkout(ctx, input)`
@@ -3941,5 +3959,5 @@ only one: a workout done on Tuesday says nothing about Thursday's.
 
 ### Types
 
-- `Kind`
+- `WorkoutCategory`
 - `Workout`

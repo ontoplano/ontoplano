@@ -162,7 +162,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		workoutsCard: listWorkouts(ctx).map((t) => ({
 			id: t.id,
 			title: t.title,
-			kind: t.kind,
+			kind: t.categoryName,
 			lastDoneAt: t.lastDoneAt
 		})),
 		billsCard: (() => {

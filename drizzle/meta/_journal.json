@@ -414,6 +414,13 @@
       "when": 1788799659146,
       "tag": "0058_quantities",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "6",
+      "when": 1788808136525,
+      "tag": "0059_workout_categories",
+      "breakpoints": true
     }
   ]
 }

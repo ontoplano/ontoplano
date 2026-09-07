@@ -110,7 +110,8 @@ export const SCOPES = {
 	'kitchen:read': 'Read your recipes',
 	'kitchen:write': 'Add and change recipes',
 	'workouts:read': 'See your workouts',
-	'workouts:write': 'Add and change workouts, put them away, and mark one done',
+	'workouts:write':
+		'Add and change workouts and their categories, put them away, and mark one done',
 	'bills:read': 'See your bills and what you have paid',
 	'bills:write': 'Add and change bills, and mark them paid',
 	/*

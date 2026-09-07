@@ -20,14 +20,17 @@
 	);
 
 	/**
-	 * Only a failure in the browser is worth offering to send.
+	 * A button, on every kind of failure this page can show.
 	 *
-	 * A server error is already in the log, with the id below beside it — asking
-	 * for it again would collect nothing new. A crash in the page leaves nothing
-	 * anywhere, and the window listener that normally catches one never fires
-	 * for an error the router itself turned into this page.
+	 * A server error is already in the log and the report adds little — but the
+	 * alternative on offer was a hexadecimal id and the instruction to quote it,
+	 * which is asking somebody to be a courier for a string they cannot read.
+	 * The id travels inside the report instead, and the person presses one
+	 * thing. A crash in the page has nothing in any log, and the window listener
+	 * that normally catches one never fires for an error the router turned into
+	 * this page, so there the report is the only record there will ever be.
 	 */
-	const offerReport = $derived(!id && page.status !== 404 && consent !== 'off' && consent !== 'no');
+	const offerReport = $derived(page.status !== 404 && consent !== 'off' && consent !== 'no');
 
 	let sent = $state(false);
 	let failed = $state(false);
@@ -42,7 +45,10 @@
 					// the standing answer in Preferences either way.
 					once: true,
 					error: {
-						message: page.error?.message ?? `Status ${page.status}`,
+						// The id goes with it, so nobody has to carry it by hand.
+						message: id
+							? `${page.error?.message ?? `Status ${page.status}`} [${id}]`
+							: (page.error?.message ?? `Status ${page.status}`),
 						stack: (page.error as { stack?: string } | null)?.stack,
 						url: location.pathname
 					}
@@ -84,12 +90,7 @@
 		</p>
 	{/if}
 
-	{#if id}
-		<p class="mt-5 max-w-sm text-sm text-gray-500">
-			If you report this, quote <code class="rounded bg-gray-100 px-1 text-gray-700">{id}</code>. It
-			points at the exact line in the log.
-		</p>
-	{:else if offerReport}
+	{#if offerReport}
 		<div class="mt-6 max-w-sm">
 			{#if sent}
 				<p class="text-sm text-gray-500">Sent. Only what broke went — never what you wrote.</p>
@@ -98,7 +99,7 @@
 			{:else}
 				<!-- A button, not an underlined phrase inside a sentence: this is the
 				     one thing to do on this page and a thumb has to find it. -->
-				<button type="button" class="btn" onclick={send}>Send the technical details</button>
+				<button type="button" class="btn" onclick={send}>Report this error</button>
 				<p class="mt-2 text-sm text-gray-500">Only what broke is sent, never what you wrote.</p>
 			{/if}
 		</div>

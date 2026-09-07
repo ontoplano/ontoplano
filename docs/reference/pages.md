@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**45 pages, 190 actions.**
+**45 pages, 193 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -26,7 +26,7 @@ write surface for everything else; both end up calling the same
 | `/health/habits`                | `create`, `update`, `delete`, `logOccurrence`, `toggleOccurrence`, `updateOccurrence`, `deleteOccurrence`                                                                                                                                                                                                                                                                           |
 | `/health/recipes`               | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/health/recipes/[id]`          | —                                                                                                                                                                                                                                                                                                                                                                                   |
-| `/health/workouts`              | `create`, `update`, `done`, `schedule`, `archive`, `delete`                                                                                                                                                                                                                                                                                                                         |
+| `/health/workouts`              | `create`, `update`, `done`, `schedule`, `archive`, `delete`, `createCategory`, `renameCategory`, `deleteCategory`                                                                                                                                                                                                                                                                   |
 | `/ideas`                        | `create`, `update`, `delete`, `toggleApplied`, `updateAppliedNote`, `toggleFavorite`                                                                                                                                                                                                                                                                                                |
 | `/inventory`                    | `setCategoryFood`, `setCategoryShared`, `renameCategory`, `deleteCategory`, `saveCategories`, `createCategory`, `create`, `update`, `setQty`, `toggleBought`, `paid`, `delete`, `restock`, `toggleSnoozed`, `createLocation`, `updateLocation`, `deleteLocation`, `putItem`, `setFields`                                                                                            |
 | `/legal/privacy`                | —                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -132,6 +132,12 @@ Every recipe, with the picture that stands for it.
 One query for the whole list rather than one per card: a cookbook is a page
 of forty cards, and forty round trips to ask "does this one have a picture"
 is how a list stops being instant.
+
+### `/health/workouts`
+
+**`deleteCategory`**
+
+The workouts filed under it keep existing, without a kind.
 
 ### `/inventory`
 

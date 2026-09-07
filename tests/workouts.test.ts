@@ -17,30 +17,33 @@ afterAll(() => database.remove());
 let workouts: typeof import('../src/lib/server/services/workouts');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
+/** A kind of this account's own, since the fixed five are rows now. */
+let strength: number;
 
 beforeAll(async () => {
 	workouts = await import('../src/lib/server/services/workouts');
 	ctx = { userId: OWNER, now: new Date('2026-09-06T12:00:00Z'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
+	strength = workouts.listWorkoutCategories(ctx).find((c) => c.name === 'Strength')!.id;
 });
 
 describe('a workout', () => {
-	test('is created with a kind and an optional length', () => {
+	test('is created with a kind of the account\u2019s own, and an optional length', () => {
 		const id = workouts.createWorkout(ctx, {
 			title: 'Push day',
-			kind: 'strength',
+			categoryId: strength,
 			minutes: 50
 		});
 		const t = workouts.getWorkout(ctx, id);
 		expect(t.title).toBe('Push day');
-		expect(t.kind).toBe('strength');
+		expect(t.categoryName).toBe('Strength');
 		expect(t.minutes).toBe(50);
 		expect(t.archived).toBe(false);
 	});
 
-	test('defaults to the "other" kind when none is given', () => {
+	test('and has no kind when none is given', () => {
 		const id = workouts.createWorkout(ctx, { title: 'A walk' });
-		expect(workouts.getWorkout(ctx, id).kind).toBe('other');
+		expect(workouts.getWorkout(ctx, id).categoryId).toBeNull();
 	});
 
 	test('a length of zero or less is refused', () => {
@@ -83,7 +86,7 @@ describe('a workout put on a day', () => {
 	});
 
 	test('becomes a block that IS the workout', () => {
-		const id = workouts.createWorkout(ctx, { title: 'Leg day', kind: 'strength', minutes: 45 });
+		const id = workouts.createWorkout(ctx, { title: 'Leg day', categoryId: strength, minutes: 45 });
 		const blockId = workouts.scheduleWorkout(ctx, id, {
 			date: '2026-09-08',
 			startTime: '07:00'
@@ -101,7 +104,7 @@ describe('a workout put on a day', () => {
 	});
 
 	test('finishing the block finishes the workout', () => {
-		const id = workouts.createWorkout(ctx, { title: 'Row', kind: 'cardio' });
+		const id = workouts.createWorkout(ctx, { title: 'Row', categoryId: strength });
 		const blockId = workouts.scheduleWorkout(ctx, id, {
 			date: '2026-09-09',
 			startTime: '07:00'
@@ -116,7 +119,7 @@ describe('a workout put on a day', () => {
 	test('and finishing the workout finishes today’s block', () => {
 		const today = new Date().toISOString().slice(0, 10);
 		const now = { ...ctx, now: new Date() };
-		const id = workouts.createWorkout(now, { title: 'Mobility today', kind: 'mobility' });
+		const id = workouts.createWorkout(now, { title: 'Mobility today', categoryId: strength });
 		const blockId = workouts.scheduleWorkout(now, id, { date: today, startTime: '08:00' });
 
 		workouts.doneToday(now, id);
@@ -127,7 +130,7 @@ describe('a workout put on a day', () => {
 	});
 
 	test('a block for somebody else’s workout is refused', () => {
-		const id = workouts.createWorkout(ctx, { title: 'Private session', kind: 'other' });
+		const id = workouts.createWorkout(ctx, { title: 'Private session', categoryId: strength });
 		expect(() =>
 			slots.createExceptional(theirs, {
 				date: '2026-09-10',
@@ -167,7 +170,7 @@ describe('a weekly block that is a workout', () => {
 	});
 
 	test('is created from a workout, with no category to file it under', () => {
-		const id = workouts.createWorkout(ctx, { title: 'Monday legs', kind: 'strength' });
+		const id = workouts.createWorkout(ctx, { title: 'Monday legs', categoryId: strength });
 		const slotId = slots.createSlot(ctx, {
 			weekday: 0,
 			startTime: '16:00',
@@ -213,7 +216,7 @@ describe('a workout block is named after its workout', () => {
 	});
 
 	test('on the week, with no label of its own', () => {
-		const id = workouts.createWorkout(ctx, { title: 'Push day', kind: 'strength' });
+		const id = workouts.createWorkout(ctx, { title: 'Push day', categoryId: strength });
 		const slotId = slots.createSlot(ctx, {
 			weekday: 2,
 			startTime: '07:00',
@@ -228,7 +231,7 @@ describe('a workout block is named after its workout', () => {
 	});
 
 	test('and on a single day', () => {
-		const id = workouts.createWorkout(ctx, { title: 'Pull day', kind: 'strength' });
+		const id = workouts.createWorkout(ctx, { title: 'Pull day', categoryId: strength });
 		slots.createExceptional(ctx, {
 			date: '2026-03-04',
 			startTime: '07:00',
@@ -245,7 +248,7 @@ describe('a workout block is named after its workout', () => {
 	});
 
 	test('and renaming the workout renames the block, because nothing was copied', () => {
-		const id = workouts.createWorkout(ctx, { title: 'Leg day', kind: 'strength' });
+		const id = workouts.createWorkout(ctx, { title: 'Leg day', categoryId: strength });
 		const slotId = slots.createSlot(ctx, {
 			weekday: 4,
 			startTime: '18:00',

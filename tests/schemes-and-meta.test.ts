@@ -231,3 +231,72 @@ describe('the metadata a form submits', () => {
 		});
 	});
 });
+
+/**
+ * A repeating block's rhythm can be changed after it is made.
+ *
+ * `createSlot` read the recurrence and `updateSlot` did not, so a block could
+ * be made fortnightly and never changed again: the form posted "every three
+ * days", Save answered success, and the block went on being weekly with
+ * nothing anywhere to say it had refused. A drag posts placement only and must
+ * still leave the rhythm alone, which is the other half of the same rule.
+ */
+describe('changing how often a block comes round', () => {
+	let slots: typeof import('../src/lib/server/services/slots');
+
+	beforeAll(async () => {
+		slots = await import('../src/lib/server/services/slots');
+	});
+
+	function aBlock() {
+		const category = activities.createCategory(ctx, { name: `Rhythm ${Math.random()}` });
+		return slots.createSlot(ctx, {
+			weekday: 1,
+			startTime: '09:00',
+			durationMinutes: 60,
+			mode: 'category',
+			categoryId: category
+		});
+	}
+
+	test('from weekly to every three days, and it stays changed', () => {
+		const id = aBlock();
+		slots.updateSlot(ctx, id, {
+			weekday: 1,
+			startTime: '09:00',
+			durationMinutes: 60,
+			mode: 'category',
+			categoryId: slots.listWeeklySlots(ctx).find((s) => s.id === id)!.categoryId,
+			recurrence: JSON.stringify({ kind: 'days', interval: 3, anchor: '2026-09-07' })
+		});
+
+		const after = slots.listWeeklySlots(ctx).find((s) => s.id === id)!;
+		expect(JSON.parse(after.recurrence)).toMatchObject({ kind: 'days', interval: 3 });
+	});
+
+	test('and a save that carries no rhythm leaves the one it had', () => {
+		const id = aBlock();
+		const categoryId = slots.listWeeklySlots(ctx).find((s) => s.id === id)!.categoryId;
+		slots.updateSlot(ctx, id, {
+			weekday: 1,
+			startTime: '09:00',
+			durationMinutes: 60,
+			mode: 'category',
+			categoryId,
+			recurrence: JSON.stringify({ kind: 'weeks', interval: 2, anchor: '2026-09-07' })
+		});
+
+		// A drag: placement only.
+		slots.updateSlot(ctx, id, {
+			weekday: 3,
+			startTime: '11:00',
+			durationMinutes: 60,
+			mode: 'category',
+			categoryId
+		});
+
+		const after = slots.listWeeklySlots(ctx).find((s) => s.id === id)!;
+		expect(after.weekday).toBe(3);
+		expect(JSON.parse(after.recurrence)).toMatchObject({ kind: 'weeks', interval: 2 });
+	});
+});

@@ -81,7 +81,10 @@ import {
 	createWorkout,
 	updateWorkout,
 	setArchived as setWorkoutArchived,
-	done as workoutDone
+	done as workoutDone,
+	listWorkoutCategories,
+	createWorkoutCategory,
+	deleteWorkoutCategory
 } from '../services/workouts.js';
 import {
 	listBills,
@@ -2324,7 +2327,7 @@ export const TOOLS: Tool[] = [
 		name: 'workouts',
 		title: 'Your workouts',
 		description:
-			'The workouts you have written down, under Health. Each has a kind and a plan; put one on the week with add_block and its workoutId to have it planned like a meal.',
+			'The workouts you have written down, under Health. Each has a category and a plan; put one on the week with add_block and its workoutId to have it planned like a meal.',
 		scope: 'workouts:read',
 		writes: false,
 		input: object({
@@ -2335,16 +2338,54 @@ export const TOOLS: Tool[] = [
 		})
 	},
 	{
+		name: 'workout_categories',
+		title: 'The categories of workout this account keeps',
+		description:
+			'The categories a workout can be filed under — this account\u2019s own list, not a fixed one. `add_workout` and `change_workout` take a category_id from here.',
+		scope: 'workouts:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => ({ categories: listWorkoutCategories(ctx) })
+	},
+	{
+		name: 'add_workout_category',
+		title: 'Add a category of workout',
+		description:
+			'Add a category to this account\u2019s list — "Swimming", "Physio". Answering with one that already exists returns it rather than making a second.',
+		scope: 'workouts:write',
+		writes: true,
+		input: object({ name: text('What the category is called.') }, ['name']),
+		run: (ctx, args) => ({ id: createWorkoutCategory(ctx, args.name) })
+	},
+	{
+		/*
+		 * The way back from add_workout_kind. Cheap on purpose: the workouts
+		 * filed under it keep existing and simply lose their kind, so nothing
+		 * anybody wrote is destroyed by removing a word from a list.
+		 */
+		name: 'remove_workout_category',
+		title: 'Remove a category of workout',
+		description:
+			'Take a category off the list. Workouts filed under it keep existing, without one.',
+		scope: 'workouts:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'From `workout_categories`.' } }, ['id']),
+		run: (ctx, args) => {
+			deleteWorkoutCategory(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+	{
 		name: 'add_workout',
 		title: 'Add a workout',
 		description:
-			'Write a workout down: a title, a kind (strength, cardio, mobility, sport, other), a plan as Markdown, and roughly how long it takes. Scheduling it onto a day is a block with its workoutId, the way a meal is a block with a recipe.',
+			'Write a workout down: a title, a category (one of the account\u2019s own, from `workout_categories`), a plan as Markdown, and roughly how long it takes. Scheduling it onto a day is a block with its workoutId, the way a meal is a block with a recipe.',
 		scope: 'workouts:write',
 		writes: true,
 		input: object(
 			{
 				title: text('What the session is called.'),
-				kind: text('strength, cardio, mobility, sport, or other.'),
+				category_id: { type: 'integer', description: 'Its category, from `workout_categories`.' },
 				plan: text('What to do, as Markdown.'),
 				minutes: { type: 'integer', description: 'Roughly how long it takes.' },
 				notes: text('Anything else.')
@@ -2354,7 +2395,7 @@ export const TOOLS: Tool[] = [
 		run: (ctx, args) => ({
 			id: createWorkout(ctx, {
 				title: args.title,
-				kind: args.kind,
+				categoryId: args.category_id,
 				plan: args.plan ?? '',
 				minutes: args.minutes ?? null,
 				notes: args.notes ?? ''
@@ -2372,7 +2413,7 @@ export const TOOLS: Tool[] = [
 			{
 				id: { type: 'integer', description: 'The workout\u2019s id, as `workouts` gives it.' },
 				title: text('The title, rewritten.'),
-				kind: text('strength, cardio, mobility, sport, or other.'),
+				category_id: { type: 'integer', description: 'Its category, from `workout_categories`.' },
 				plan: text('The plan, rewritten.'),
 				minutes: { type: 'integer', description: 'Roughly how long it takes.' },
 				notes: text('Notes, replacing the old ones.')
@@ -2383,7 +2424,7 @@ export const TOOLS: Tool[] = [
 			const current = getWorkout(ctx, Number(args.id));
 			updateWorkout(ctx, current.id, {
 				title: args.title ?? current.title,
-				kind: args.kind ?? current.kind,
+				categoryId: args.category_id ?? current.categoryId,
 				plan: args.plan ?? current.plan,
 				minutes: args.minutes ?? current.minutes,
 				notes: args.notes ?? current.notes

@@ -228,6 +228,16 @@ export function updateSlot(ctx: Ctx, id: number, raw: BlockInput & { weekday: un
 			// `meta` is only touched when the request actually carried it. Drag and
 			// resize post placement fields only, and must not clear it.
 			...(raw.metaPatch !== undefined ? { meta: raw.metaPatch } : {}),
+			/*
+			 * And the rhythm, on the same rule and for the same reason.
+			 *
+			 * `createSlot` read it and this did not, so a block could be made
+			 * fortnightly and never changed afterwards: the form posted "every
+			 * three days", Save answered success, and the block went on being
+			 * weekly with nothing to say it had refused. A drag still posts no
+			 * recurrence and still leaves it alone.
+			 */
+			...(raw.recurrence !== undefined ? { recurrence: raw.recurrence } : {}),
 			updatedAt: stamp(ctx)
 		})
 		.where(and(eq(recurringTasks.id, id), eq(recurringTasks.userId, ctx.userId)))

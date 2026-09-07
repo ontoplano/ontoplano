@@ -8,7 +8,6 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
-	import { autofocus } from '$lib/actions/autofocus';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -42,29 +41,7 @@
 	/** The thing's own fields, while it is being edited. */
 	let editFields = $state<[string, string][]>([]);
 	let editIdealQty = $state('1');
-	/** The one row showing everything it has, rather than one line of it. */
-	let expanded = $state<number | null>(null);
-	/** Rows whose reserved line is not big enough for what is in it. */
-	let clipped = $state<Record<number, boolean>>({});
 
-	/**
-	 * Whether this line has more in it than one line shows.
-	 *
-	 * Measured rather than guessed: one small chip fits and needs no control,
-	 * three recipes and four fields do not. The control's slot is reserved
-	 * either way — taking it away where it is useless would move the rows where
-	 * it is not, which is the whole thing this is for.
-	 */
-	function clipping(node: HTMLElement, id: number) {
-		const look = () => {
-			const more = node.scrollHeight > node.clientHeight + 1;
-			if (clipped[id] !== more) clipped = { ...clipped, [id]: more };
-		};
-		look();
-		const observer = new ResizeObserver(look);
-		observer.observe(node);
-		return { update: look, destroy: () => observer.disconnect() };
-	}
 	let filterType = $state<'all' | 'someday' | 'replenish'>('all');
 	let newItemType = $state<'replenish' | 'someday'>('replenish');
 	let showBought = $state(false);
@@ -80,15 +57,6 @@
 	let dragging = $state<number | null>(null);
 	let dragOver = $state<number | null>(null);
 	let confirmingDelete: number | null = $state(null);
-	/** The item whose "what did you pay" box is open. */
-	let pricing: number | null = $state(null);
-	/** That box's own failure, so it cannot outlive the box. */
-	let priceError: string | null = $state(null);
-
-	function closePricing() {
-		pricing = null;
-		priceError = null;
-	}
 	let showCategories = $state(false);
 	let addingCategory = $state(false);
 	/** The category being renamed in place, and the one waiting on its delete. */
@@ -611,119 +579,26 @@
 {/snippet}
 
 <!--
-	The line under the name, whose height is the row's and does not change.
+	The line under the name, and why it has a floor and no ceiling.
 	
-	Recipes, the thing's own fields and the price editor all live here, and it
-	is exactly one line tall whether it holds three of them or none. Anything
-	that would not fit is clipped behind a count you can press — which is the
-	one thing allowed to make a row taller, because it is somebody asking.
+	Its height is reserved — `min-h` — so a thing gaining its first field or its
+	first recipe does not make the card taller and push every row under it down
+	the screen. It is not CLIPPED, which is what the first attempt at this did:
+	one line of room for content that needed two cut the letters in half, and
+	the control offered to un-cut them moved everything below when pressed,
+	which is the thing the reservation exists to prevent. A row with a great
+	deal on it is simply taller, once, when the data changes — not when
+	somebody presses something.
 	
-	The alternative is what this replaced: pressing + made the card grow and
-	pushed every row under it down the screen, so the thing you were about to
-	press next was somewhere else by the time you got there.
+	Nothing appears here on a press. The one thing that used to — a box for what
+	you paid — is a field on the item's own form, where the rest of the item is:
+	a price is not special enough to have earned a button of its own.
 -->
-{#snippet meta(item: { id: number; name: string; bought: boolean; attributes?: string | null })}
-	{@const open = expanded === item.id}
-	<div class="mt-0.5 flex items-start gap-1">
-		<div use:clipping={item.id} class="min-w-0 flex-1 {open ? '' : 'h-5 overflow-hidden'}">
-			{#if pricing === item.id}
-				{@render paidPrompt(item)}
-			{:else}
-				<span class="flex flex-wrap items-center gap-x-2 gap-y-1">
-					{@render usedIn(item)}
-					{@render ownFields(item)}
-				</span>
-			{/if}
-		</div>
-
-		<!--
-			Drawn on every row, and only useful on some. Removing it where there
-			is nothing to expand would move the rows that do have one.
-		-->
-		<button
-			type="button"
-			onclick={() => (expanded = open ? null : item.id)}
-			class="icon-btn size-5 shrink-0 {pricing === item.id || !(clipped[item.id] || open)
-				? 'invisible'
-				: ''}"
-			tabindex={pricing === item.id || !(clipped[item.id] || open) ? -1 : 0}
-			title={open ? 'Show less' : 'Show everything on this row'}
-			aria-label="{open ? 'Show less of' : 'Show everything on'} {item.name}"
-			aria-expanded={open}
-		>
-			<Icon name={open ? 'chevron-up' : 'chevron-down'} size={14} />
-		</button>
-	</div>
-{/snippet}
-
-{#snippet paidPrompt(item: { id: number; name: string; bought: boolean })}
-	{#if item.bought}
-		{#if pricing === item.id}
-			<!--
-				Its own error, not the page's.
-
-				`form.message` is whatever the last action said, and it outlives the
-				thing that said it: a rejected price was still on screen when you next
-				opened the edit dialog, attached to an item it had nothing to do with.
-				A small form that can fail keeps its own failure.
-			-->
-			<form
-				method="POST"
-				action="?/paid"
-				use:enhance={() => {
-					return async ({ update, result }) => {
-						// A failure stops here. Calling `update()` would also hand it to the
-						// page's `form` prop, and the banner at the top of the list would
-						// say the same thing a second time, next to a form it is not about.
-						if (result.type === 'failure') {
-							priceError = String(result.data?.message ?? 'Invalid price');
-							return;
-						}
-
-						priceError = null;
-						// It closes on success and is destroyed; resetting only makes the
-						// fields blank for a frame first. On a failure it keeps what was typed.
-						await update({ reset: false });
-						if (result.type === 'success') pricing = null;
-					};
-				}}
-				class="flex items-center gap-1"
-			>
-				<input type="hidden" name="id" value={item.id} />
-				<input
-					autocomplete="off"
-					name="paid"
-					inputmode="decimal"
-					use:autofocus
-					onkeydown={(e) => {
-						// Escape closes it. There was no way out of this box at all.
-						if (e.key === 'Escape') {
-							e.preventDefault();
-							closePricing();
-						}
-					}}
-					placeholder="1.60"
-					aria-label="What you paid for {item.name}"
-					class="input h-5 w-20 px-2 py-0 text-xs"
-				/>
-				<button class="btn btn-sm h-5 px-2 py-0" title="Save" aria-label="Save what you paid">
-					<Icon name="check" size={14} />
-				</button>
-				<button
-					type="button"
-					class="btn btn-sm h-5 px-2 py-0"
-					onclick={closePricing}
-					title="Cancel"
-					aria-label="Cancel"
-				>
-					<Icon name="close" size={14} />
-				</button>
-				{#if priceError}
-					<span class="text-xs text-red-600">{priceError}</span>
-				{/if}
-			</form>
-		{/if}
-	{/if}
+{#snippet meta(item: { id: number; attributes?: string | null })}
+	<span class="mt-0.5 flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1">
+		{@render usedIn(item)}
+		{@render ownFields(item)}
+	</span>
 {/snippet}
 
 <!--
@@ -735,20 +610,6 @@
 	own actions now, drawn on every row and only visible where it means
 	something, so the space it needs is space the row always had.
 -->
-{#snippet setPrice(item: { id: number; name: string; bought: boolean })}
-	<button
-		type="button"
-		onclick={() => (pricing = item.id)}
-		class="icon-btn {item.bought && pricing !== item.id ? '' : 'invisible'}"
-		tabindex={item.bought && pricing !== item.id ? 0 : -1}
-		title="Record what you paid"
-		aria-label="Record what you paid for {item.name}"
-		aria-hidden={!item.bought}
-	>
-		<Icon name="wallet" />
-	</button>
-{/snippet}
-
 <!--
 	One row of the house, and the drop target it doubles as.
 
@@ -1197,7 +1058,6 @@
 
 												<!-- Everything else at the right edge, same order, same x, every row. -->
 												<div class="row-actions">
-													{@render setPrice(item)}
 													<form
 														method="POST"
 														action="?/toggleSnoozed"
@@ -1324,10 +1184,8 @@
 									{@render expectedPrice(item)}
 									{@render usedIn(item)}
 								</div>
-								{@render paidPrompt(item)}
 
 								<div class="row-actions">
-									{@render setPrice(item)}
 									<form method="POST" action="?/toggleSnoozed" use:enhance={tick('toggleSnoozed')}>
 										<input type="hidden" name="id" value={item.id} />
 										<button

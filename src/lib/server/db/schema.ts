@@ -2067,6 +2067,33 @@ export const billPayments = sqliteTable(
 // a `recipeId` — which is why "what does this week ask of me" stays a single
 // join over the grid.
 
+/**
+ * The kinds of workout an account keeps.
+ *
+ * Its own table for the same reason a shopping category is: a fixed enum in
+ * the schema is somebody else deciding what your training is made of, and the
+ * fifth option being called "other" is the proof. Every account gets the five
+ * that used to be hard-coded, and may rename, add to or remove them.
+ */
+export const workoutCategories = sqliteTable(
+	'workout_categories',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull(),
+		sortOrder: integer('sort_order').notNull().default(0),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('workout_categories_user_idx').on(table.userId),
+		uniqueIndex('workout_categories_user_name_unique').on(table.userId, table.name)
+	]
+);
+
 export const workouts = sqliteTable(
 	'workouts',
 	{
@@ -2075,11 +2102,18 @@ export const workouts = sqliteTable(
 			.notNull()
 			.references(() => user.id),
 		title: text('title').notNull(),
-		// What the session is — a loose kind so the list can group and colour
-		// without prescribing a taxonomy nobody's body agrees with.
-		kind: text('kind', { enum: ['strength', 'cardio', 'mobility', 'sport', 'other'] })
-			.notNull()
-			.default('other'),
+		/*
+		 * What the session is, in the account's own words.
+		 *
+		 * It was a fixed list — strength, cardio, mobility, sport, other — which
+		 * is a taxonomy nobody's body agrees with: somebody swims and lifts and
+		 * does physio, and "other" is where three of those ended up. A row in a
+		 * table the person owns, like a shopping category, seeded with the five
+		 * that were hard-coded so nothing changes for anybody who was happy.
+		 */
+		categoryId: integer('category_id').references(() => workoutCategories.id, {
+			onDelete: 'set null'
+		}),
 		/** The plan, rendered as Markdown like a recipe's method. */
 		plan: text('plan').notNull().default(''),
 		notes: text('notes').default(''),

@@ -22,7 +22,9 @@ test('a workout can be added, done, edited, and deleted behind a confirmation', 
 	await page.getByRole('button', { name: /New workout/ }).click();
 	const add = page.getByRole('dialog');
 	await add.locator('[name="heading"]').fill('Push day');
-	await add.locator('[name="kind"]').selectOption('strength');
+	// The kinds are the account's own rows now, chosen by name rather than by
+	// one of five words the schema used to allow.
+	await add.locator('[name="categoryId"]').selectOption({ label: 'Strength' });
 	await add.locator('[name="minutes"]').fill('50');
 	await add.getByRole('button', { name: 'Add', exact: true }).click();
 	await expect(page.getByText('Push day')).toBeVisible();
@@ -84,7 +86,9 @@ test('a workout can be planned onto a day, and finishing it there finishes the w
 	await page.getByRole('button', { name: /New workout/ }).click();
 	const add = page.getByRole('dialog');
 	await add.locator('[name="heading"]').fill('Leg day');
-	await add.locator('[name="kind"]').selectOption('strength');
+	// The kinds are the account's own rows now, chosen by name rather than by
+	// one of five words the schema used to allow.
+	await add.locator('[name="categoryId"]').selectOption({ label: 'Strength' });
 	await add.locator('[name="minutes"]').fill('45');
 	await add.getByRole('button', { name: 'Add', exact: true }).click();
 	await expect(page.getByText('Leg day')).toBeVisible();
@@ -156,4 +160,59 @@ test('the trainings address lands on the workouts', async ({ page }) => {
 	await register(page, `workouts-moved-${Date.now()}@example.test`);
 	await visit(page, '/health/trainings');
 	await expect(page).toHaveURL(/\/health\/workouts/);
+});
+
+/**
+ * The kinds are a list this account keeps, not five words in the schema.
+ *
+ * "Strength, cardio, mobility, sport, other" is somebody else deciding what
+ * your training is made of, and the fifth being called "other" is the proof it
+ * did not fit. Every account starts with the five it had and may say otherwise.
+ */
+test('a category can be added, renamed and removed, and a workout uses it', async ({ page }) => {
+	await register(page, `categories-${Date.now()}@example.test`);
+	await visit(page, '/health/workouts');
+
+	await page.getByRole('button', { name: 'Categories' }).click();
+	const categories = page.getByRole('dialog', { name: 'Categories of workout' });
+	for (const starting of ['Strength', 'Cardio', 'Mobility', 'Sport', 'Other']) {
+		await expect(categories.getByText(starting, { exact: true })).toBeVisible();
+	}
+
+	await categories.getByRole('button', { name: /New category/ }).click();
+	await categories.locator('[name="label"]').fill('Swimming');
+	await categories.getByRole('button', { name: 'Add the category' }).click();
+	await expect(categories.getByText('Swimming', { exact: true })).toBeVisible();
+
+	await categories.getByRole('button', { name: 'Rename Swimming' }).click();
+	await categories.locator('[name="name"]').fill('Pool');
+	await categories.getByRole('button', { name: 'Save the name' }).click();
+	await expect(categories.getByText('Pool', { exact: true })).toBeVisible();
+
+	await categories.getByRole('button', { name: 'Done' }).click();
+	await expect(categories).toBeHidden();
+
+	// And it is a choice on the form, beside the ones it started with.
+	await page.getByRole('button', { name: /New workout/ }).click();
+	const add = page.getByRole('dialog', { name: 'New workout' });
+	await add.locator('[name="heading"]').fill('Front crawl');
+	await add.locator('[name="categoryId"]').selectOption({ label: 'Pool' });
+	await add.getByRole('button', { name: 'Add', exact: true }).click();
+	await expect(page.getByText('Pool')).toBeVisible();
+
+	// Removing the kind leaves the workout, without one.
+	await page.getByRole('button', { name: 'Categories' }).click();
+	await page
+		.getByRole('dialog', { name: 'Categories of workout' })
+		.getByRole('button', { name: 'Remove Pool' })
+		.click();
+	await page
+		.getByRole('dialog', { name: 'Categories of workout' })
+		.getByRole('button', { name: 'Remove', exact: true })
+		.click();
+	await page
+		.getByRole('dialog', { name: 'Categories of workout' })
+		.getByRole('button', { name: 'Done' })
+		.click();
+	await expect(page.getByText('Front crawl')).toBeVisible();
 });

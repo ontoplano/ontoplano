@@ -1322,23 +1322,47 @@ ingredient(riceAndBeans, 'garlic', 3, 'cloves');
 // A few workouts, planned like meals, so the Health section has something to
 // show and a workout can be dropped onto the week.
 
-const workout = (title, kind, plan, extra = {}) => {
-	const existing = one('select id from workouts where user_id = ? and title = ?', uid, title);
+// The kinds are the account's own rows now, not five words in the schema, so
+// the seed makes them the way a first visit to the page would.
+const workoutKind = (name, sortOrder) => {
+	const existing = one(
+		'select id from workout_categories where user_id = ? and name = ?',
+		uid,
+		name
+	);
 	if (existing) return existing.id;
 	return run(
-		'insert into workouts (user_id, title, kind, plan, minutes) values (?, ?, ?, ?, ?)',
+		'insert into workout_categories (user_id, name, sort_order) values (?, ?, ?)',
+		uid,
+		name,
+		sortOrder
+	);
+};
+
+['Strength', 'Cardio', 'Mobility', 'Sport', 'Other'].forEach(workoutKind);
+
+const workout = (title, kindName, plan, extra = {}) => {
+	const existing = one('select id from workouts where user_id = ? and title = ?', uid, title);
+	if (existing) return existing.id;
+	const kind = one(
+		'select id from workout_categories where user_id = ? and name = ?',
+		uid,
+		kindName
+	);
+	return run(
+		'insert into workouts (user_id, title, category_id, plan, minutes) values (?, ?, ?, ?, ?)',
 		uid,
 		title,
-		kind,
+		kind?.id ?? null,
 		plan,
 		extra.minutes ?? null
 	);
 };
 
-workout('Push day', 'strength', 'Bench, overhead press, dips, triceps. 4×8.', { minutes: 55 });
-workout('Pull day', 'strength', 'Rows, pulldowns, curls, face pulls. 4×8.', { minutes: 55 });
-workout('Easy 5k', 'cardio', 'Conversational pace, flat route.', { minutes: 30 });
-workout('Mobility', 'mobility', 'Hips, shoulders, ankles. Follow the video.', { minutes: 20 });
+workout('Push day', 'Strength', 'Bench, overhead press, dips, triceps. 4×8.', { minutes: 55 });
+workout('Pull day', 'Strength', 'Rows, pulldowns, curls, face pulls. 4×8.', { minutes: 55 });
+workout('Easy 5k', 'Cardio', 'Conversational pace, flat route.', { minutes: 30 });
+workout('Mobility', 'Mobility', 'Hips, shoulders, ankles. Follow the video.', { minutes: 20 });
 
 // --- Pictures ---------------------------------------------------------------
 //

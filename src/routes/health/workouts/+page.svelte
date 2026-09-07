@@ -34,17 +34,6 @@
 		return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 	}
 
-	const KINDS = [
-		{ value: 'strength', label: 'Strength' },
-		{ value: 'cardio', label: 'Cardio' },
-		{ value: 'mobility', label: 'Mobility' },
-		{ value: 'sport', label: 'Sport' },
-		{ value: 'other', label: 'Other' }
-	];
-	function kindLabel(k: string): string {
-		return KINDS.find((x) => x.value === k)?.label ?? k;
-	}
-
 	function openNew() {
 		editing = null;
 		showForm = true;
@@ -53,14 +42,24 @@
 		editing = t;
 		showForm = true;
 	}
+
+	let showCategories = $state(false);
+	let addingCategory = $state(false);
+	let editingCategory = $state<number | null>(null);
+	let confirmDeleteCategory = $state<number | null>(null);
 </script>
 
 <div class="space-y-4">
 	<div class="flex items-center justify-between">
 		<p class="text-sm text-gray-500">Workouts you can drop onto the week like a meal.</p>
-		<button class="btn btn-primary btn-sm" onclick={openNew}>
-			<Icon name="plus" /> New workout
-		</button>
+		<div class="flex items-center gap-2">
+			<button class="btn btn-sm btn-quiet" onclick={() => (showCategories = true)}
+				>Categories</button
+			>
+			<button class="btn btn-primary btn-sm" onclick={openNew}>
+				<Icon name="plus" /> New workout
+			</button>
+		</div>
 	</div>
 
 	{#if active.length === 0}
@@ -84,7 +83,7 @@
 							{t.title}
 						</span>
 						<span class="block text-xs text-gray-500">
-							{kindLabel(t.kind)}{#if t.minutes}, ~{t.minutes} min{/if}{#if t.lastDoneAt}
+							{t.categoryName ?? 'No category'}{#if t.minutes}, ~{t.minutes} min{/if}{#if t.lastDoneAt}
 								&nbsp;· last done {t.lastDoneAt.slice(0, 10)}{/if}
 						</span>
 					</button>
@@ -151,7 +150,7 @@
 					{#each archived as t (t.id)}
 						<li class="flex items-center gap-3 px-4 py-2 text-sm">
 							<span class="min-w-0 flex-1 text-gray-600">{t.title}</span>
-							<span class="text-xs text-gray-400">{kindLabel(t.kind)}</span>
+							<span class="text-xs text-gray-400">{t.categoryName ?? 'No category'}</span>
 							<form method="post" action="?/archive" use:enhance>
 								<input type="hidden" name="id" value={t.id} />
 								<input type="hidden" name="archived" value="false" />
@@ -205,9 +204,10 @@
 					/>
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">Kind</span>
-					<select name="kind" class="input mt-1 w-full" value={editing?.kind ?? 'other'}>
-						{#each KINDS as k (k.value)}<option value={k.value}>{k.label}</option>{/each}
+					<span class="text-gray-600">Category</span>
+					<select name="categoryId" class="input mt-1 w-full" value={editing?.categoryId ?? ''}>
+						<option value="">— no category —</option>
+						{#each data.categories as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
 					</select>
 				</label>
 				<label class="block text-sm">
@@ -333,5 +333,118 @@
 			<input type="hidden" name="id" value={confirmingDelete?.id} />
 			<button class="btn btn-danger" type="submit" use:armed>Delete</button>
 		</form>
+	{/snippet}
+</Modal>
+
+<!--
+	The categories this account keeps.
+
+	They were five words in the schema — strength, cardio, mobility, sport,
+	other — which is somebody else deciding what your training is made of, and
+	the fifth being called "other" is the proof it did not fit. The same shape
+	and the same word as the shopping list's categories, because it is the same
+	idea and calling it something else would be two names for one thing.
+-->
+<Modal
+	bind:open={showCategories}
+	error={form?.message}
+	title="Categories of workout"
+	description="Yours to name. A workout keeps existing if you remove the category it was filed under."
+	size="sm"
+>
+	<ul class="divide-y divide-gray-200 border border-gray-200">
+		{#each data.categories as category (category.id)}
+			<li class="flex items-center gap-2 px-3 py-2">
+				{#if editingCategory === category.id}
+					<form
+						method="post"
+						action="?/renameCategory"
+						use:enhance={() =>
+							async ({ update, result }) => {
+								await update({ reset: false });
+								if (result.type === 'success') editingCategory = null;
+							}}
+						class="flex flex-1 items-center gap-2"
+					>
+						<input type="hidden" name="id" value={category.id} />
+						<OneLine name="name" value={category.name} required autofocus class="input flex-1" />
+						<button class="btn btn-sm btn-primary" title="Save" aria-label="Save the name">
+							<Icon name="check" />
+						</button>
+						<button type="button" class="btn btn-sm" onclick={() => (editingCategory = null)}>
+							Cancel
+						</button>
+					</form>
+				{:else}
+					<span class="flex-1 text-sm text-gray-900">{category.name}</span>
+					<button
+						onclick={() => (editingCategory = category.id)}
+						class="icon-btn"
+						title="Rename"
+						aria-label="Rename {category.name}"><Icon name="edit" /></button
+					>
+					{#if confirmDeleteCategory === category.id}
+						<form
+							method="post"
+							action="?/deleteCategory"
+							use:enhance={() =>
+								async ({ update }) => {
+									await update({ reset: false });
+									confirmDeleteCategory = null;
+								}}
+							class="flex items-center gap-1"
+						>
+							<input type="hidden" name="id" value={category.id} />
+							<button
+								type="button"
+								class="btn btn-sm"
+								onclick={() => (confirmDeleteCategory = null)}
+							>
+								Cancel
+							</button>
+							<button class="btn btn-danger btn-sm" use:armed>Remove</button>
+						</form>
+					{:else}
+						<button
+							onclick={() => (confirmDeleteCategory = category.id)}
+							class="icon-btn icon-btn-danger"
+							title="Remove"
+							aria-label="Remove {category.name}"><Icon name="trash" /></button
+						>
+					{/if}
+				{/if}
+			</li>
+		{/each}
+	</ul>
+
+	{#if addingCategory}
+		<form
+			method="post"
+			action="?/createCategory"
+			use:enhance={() =>
+				async ({ update, result }) => {
+					await update({ reset: result.type === 'success' });
+					if (result.type === 'success') addingCategory = false;
+				}}
+			class="mt-3 flex items-center gap-2"
+		>
+			<OneLine name="label" placeholder="Swimming" required autofocus class="input flex-1" />
+			<button class="btn btn-sm btn-primary" title="Add" aria-label="Add the category">
+				<Icon name="plus" />
+			</button>
+			<button type="button" class="btn btn-sm" onclick={() => (addingCategory = false)}
+				>Cancel</button
+			>
+		</form>
+	{:else}
+		<button onclick={() => (addingCategory = true)} class="btn btn-sm mt-3">
+			<Icon name="plus" /> New category
+		</button>
+	{/if}
+
+	{#snippet footer()}
+		<button type="button" class="btn btn-primary" onclick={() => (showCategories = false)}
+			>Done</button
+		>
 	{/snippet}
 </Modal>
