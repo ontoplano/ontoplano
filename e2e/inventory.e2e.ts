@@ -96,8 +96,9 @@ test('the whole list still works, filed or not', async ({ page }) => {
 	await edit.getByRole('button', { name: 'Save' }).click();
 	await expect(edit).toBeHidden();
 
-	await page.getByRole('button', { name: /^Got it: Butter/ }).click();
-	await expect(page.getByRole('button', { name: /^Put back on the list: Butter/ })).toBeVisible();
+	// "Got it" is a count of one now — the arrow where the tick used to be.
+	await page.getByRole('button', { name: 'One more Butter' }).click();
+	await expect(page.locator('[title$="you keep 1"]')).toHaveText('1');
 
 	await page.getByRole('button', { name: /^Archive: Butter/ }).click();
 	await expect(page.getByText('Butter')).toHaveCount(0);
@@ -224,4 +225,66 @@ test('a thing carries its own fields, and one can be taken off again', async ({ 
 	await edit.getByRole('button', { name: 'Save' }).click();
 	await expect(edit).toBeHidden();
 	await expect(page.getByText('length: 5m')).toHaveCount(0);
+});
+
+/**
+ * How many, not whether.
+ *
+ * A tick answered "do I have it", which is right for a shopping list and wrong
+ * for a cupboard: two tins of tomatoes and none are both unticked the moment
+ * you open the last one. The arrows sit where the tick was, and what you keep
+ * is on the item's own form.
+ */
+test('a thing is counted, and the list is what you are short of', async ({ page }) => {
+	await register(page, `inv-qty-${Date.now()}@test.invalid`);
+	await visit(page, '/inventory');
+	await foodCategory(page);
+	await visit(page, '/inventory');
+
+	await page
+		.getByRole('button', { name: /Add item/ })
+		.first()
+		.click();
+	const add = page.getByRole('dialog', { name: 'New item' });
+	await add.locator('[name="label"]').fill('Tinned tomatoes');
+	await add.locator('[name="idealQty"]').fill('4');
+	await add.getByRole('button', { name: 'Add item', exact: true }).click();
+	await expect(add).toBeHidden();
+
+	const count = page.locator('[title$="you keep 4"]');
+	await expect(count).toHaveText('0/4');
+
+	// Down cannot go below none.
+	await expect(page.getByRole('button', { name: 'One fewer Tinned tomatoes' })).toBeDisabled();
+
+	await page.getByRole('button', { name: 'One more Tinned tomatoes' }).click();
+	await expect(count).toHaveText('1/4');
+
+	// Two of four is still something to buy: it stays on the to-buy view, which
+	// hides what you have.
+	await expect(page.getByText('Tinned tomatoes')).toBeVisible();
+
+	// Filling it up takes it off, exactly as ticking used to.
+	for (let i = 0; i < 3; i++) {
+		await page.getByRole('button', { name: 'One more Tinned tomatoes' }).click();
+		await expect(count).toHaveText(new RegExp(`^${i + 2}/4`));
+	}
+	await page.getByRole('button', { name: /Show bought/ }).click();
+	await expect(page.locator('[title$="you keep 4"]')).toHaveText('4/4');
+});
+
+/** Having more than you keep is a fact, not an error. */
+test('the count has no ceiling', async ({ page }) => {
+	await register(page, `inv-over-${Date.now()}@test.invalid`);
+	await visit(page, '/inventory');
+	await foodCategory(page);
+	await visit(page, '/inventory');
+	await addItem(page, 'Batteries');
+
+	for (let i = 0; i < 3; i++) {
+		await page.getByRole('button', { name: 'One more Batteries' }).click();
+		await page.waitForTimeout(300);
+	}
+	await page.getByRole('button', { name: /Show bought/ }).click();
+	await expect(page.locator('[title$="you keep 1"]')).toHaveText('3');
 });

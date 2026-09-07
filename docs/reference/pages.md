@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**45 pages, 189 actions.**
+**45 pages, 190 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,7 +28,7 @@ write surface for everything else; both end up calling the same
 | `/health/recipes/[id]`          | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/health/workouts`              | `create`, `update`, `done`, `schedule`, `archive`, `delete`                                                                                                                                                                                                                                                                                                                         |
 | `/ideas`                        | `create`, `update`, `delete`, `toggleApplied`, `updateAppliedNote`, `toggleFavorite`                                                                                                                                                                                                                                                                                                |
-| `/inventory`                    | `setCategoryFood`, `setCategoryShared`, `renameCategory`, `deleteCategory`, `saveCategories`, `createCategory`, `create`, `update`, `toggleBought`, `paid`, `delete`, `restock`, `toggleSnoozed`, `createLocation`, `updateLocation`, `deleteLocation`, `putItem`, `setFields`                                                                                                      |
+| `/inventory`                    | `setCategoryFood`, `setCategoryShared`, `renameCategory`, `deleteCategory`, `saveCategories`, `createCategory`, `create`, `update`, `setQty`, `toggleBought`, `paid`, `delete`, `restock`, `toggleSnoozed`, `createLocation`, `updateLocation`, `deleteLocation`, `putItem`, `setFields`                                                                                            |
 | `/legal/privacy`                | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/legal/refunds`                | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/legal/terms`                  | —                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -153,6 +153,13 @@ It used to be a second pair of fields inside `saveCategories`, so one Save
 meant two things. Splitting the form was right and left this behind: the
 new form posted here and there was nothing here to post to, so the dialog
 simply did nothing and said nothing about it.
+
+**`setQty`**
+
+How many of it there are, from the arrows beside the name.
+
+Its own action rather than a field on `update`: this is pressed in a
+cupboard with one thumb, and `update` re-parses the whole row.
 
 **`paid`**
 

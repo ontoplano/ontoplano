@@ -653,6 +653,22 @@ export const shoppingItems = sqliteTable(
 		type: text('type', { enum: ['someday', 'replenish'] }).notNull(),
 		shoppingCategoryId: integer('shopping_category_id').references(() => shoppingCategories.id),
 		notes: text('notes').default(''),
+		/*
+		 * How many you have, and how many you want to keep.
+		 *
+		 * "Do I have it" was a checkbox, which is the right question for a
+		 * shopping list and the wrong one for a cupboard: two tins of tomatoes
+		 * and none are both "unchecked" the moment you open the last one. `qty`
+		 * is what is there and `idealQty` is what you keep — the list is what
+		 * the second is bigger than the first.
+		 *
+		 * `bought` stays, stored and derived: `qty >= max(idealQty, 1)`. It is
+		 * what the recipes' "already have", the API, the webhooks and an
+		 * assistant's `tick_bought` all read, and none of them should have to
+		 * learn arithmetic to answer the question they were asking.
+		 */
+		qty: integer('qty').notNull().default(0),
+		idealQty: integer('ideal_qty').notNull().default(1),
 		bought: integer('bought', { mode: 'boolean' }).notNull().default(false),
 		boughtAt: text('bought_at'),
 		/**
@@ -682,6 +698,7 @@ export const shoppingItems = sqliteTable(
 		index('shopping_items_user_idx').on(table.userId),
 		index('shopping_items_type_idx').on(table.type),
 		index('shopping_items_bought_idx').on(table.bought),
+		check('shopping_items_qty_positive', sql`${table.qty} >= 0 AND ${table.idealQty} >= 0`),
 		index('shopping_items_snoozed_idx').on(table.snoozed),
 		index('shopping_items_category_idx').on(table.shoppingCategoryId)
 	]

@@ -56,7 +56,7 @@ exist.
 | [`scheme_slots`](#scheme_slots)                   | 11      | yes               |
 | [`session`](#session)                             | 9       | yes               |
 | [`shopping_categories`](#shopping_categories)     | 7       | yes               |
-| [`shopping_items`](#shopping_items)               | 14      | yes               |
+| [`shopping_items`](#shopping_items)               | 16      | yes               |
 | [`subscribers`](#subscribers)                     | 7       | —                 |
 | [`subscriptions`](#subscriptions)                 | 15      | yes               |
 | [`suppressed_slots`](#suppressed_slots)           | 5       | yes               |
@@ -992,6 +992,8 @@ Indexes:
 | `type`                 | text    | not null | —                     | —                          |
 | `shopping_category_id` | integer | null     | —                     | → `shopping_categories.id` |
 | `notes`                | text    | null     | `''`                  | —                          |
+| `qty`                  | integer | not null | `0`                   | —                          |
+| `ideal_qty`            | integer | not null | `1`                   | —                          |
 | `bought`               | integer | not null | `false`               | —                          |
 | `bought_at`            | text    | null     | —                     | —                          |
 | `price_cents`          | integer | null     | —                     | —                          |
@@ -1008,6 +1010,10 @@ Indexes:
 - `shopping_items_bought_idx` on `bought`
 - `shopping_items_snoozed_idx` on `snoozed`
 - `shopping_items_category_idx` on `shopping_category_id`
+
+Checks — enforced by the database, not only by the service layer:
+
+- `shopping_items_qty_positive`: `"shopping_items"."qty" >= 0 AND "shopping_items"."ideal_qty" >= 0`
 
 ## subscribers
 

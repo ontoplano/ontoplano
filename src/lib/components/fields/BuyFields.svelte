@@ -24,6 +24,7 @@
 		 * or not — so the shape is the thing's rather than a column. Only where
 		 * something is being described rather than added to a list.
 		 */
+		idealQty = $bindable('1'),
 		fields = $bindable<[string, string][]>([]),
 		showFields = false,
 		/** Only when writing something down: see `createItem` for why. */
@@ -38,6 +39,7 @@
 		categories?: { id: number; name: string }[];
 		locations?: { id: number; name: string; path: string }[];
 		locationId?: number | null;
+		idealQty?: string;
 		fields?: [string, string][];
 		showFields?: boolean;
 		askLocation?: boolean;
@@ -61,7 +63,22 @@
 	</Field>
 
 	{#if type === 'replenish'}
-		<Field label="Category" span={12}>
+		<!-- How many you keep, which is what the list is about: still to buy is
+		     what this is bigger than the count on the row. One, for almost
+		     everything, which is why it is filled in already. -->
+		<Field label="How many you keep" span={6} hint="The count the list compares against.">
+			<input
+				name="idealQty"
+				type="number"
+				min="0"
+				step="1"
+				inputmode="numeric"
+				bind:value={idealQty}
+				class="input tabular"
+			/>
+		</Field>
+
+		<Field label="Category" span={6}>
 			<select name="shoppingCategoryId" bind:value={shoppingCategoryId} class="select">
 				{#each categories as category (category.id)}
 					<option value={category.id}>{category.name}</option>

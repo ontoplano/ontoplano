@@ -10,6 +10,21 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.95.0 — 2026-09-07
+
+- **How many, not whether.** The tick on a restock item is a count with arrows
+  where it used to be, and the item's form asks how many you keep. Two tins of
+  tomatoes and none were both "unticked" the moment you opened the last one;
+  now the list is what you are short of, and having four of something you keep
+  two of is a fact rather than an error. Everything you had ticked has one of
+  it and keeps one, so the list you open is the list you left.
+- **The new-location button starts where you are standing.** Pressing + in the
+  kitchen offers a place in the kitchen.
+- **A thing's location is on its edit form**, for when a drag is not how you
+  want to do it — or not possible, on a phone.
+- **A drag near an edge scrolls the page.** Something four screens down could
+  be picked up and had nowhere to go.
+
 ## 0.94.0 — 2026-09-07
 
 - **The lists say where things are.** Location first, category inside it: on

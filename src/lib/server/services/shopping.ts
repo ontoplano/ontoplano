@@ -32,6 +32,8 @@ export type ItemInput = {
 	shoppingCategoryId?: unknown;
 	/** Where it lives, when it is being written down for the first time. */
 	locationId?: unknown;
+	/** How many of it you keep. One unless somebody says otherwise. */
+	idealQty?: unknown;
 };
 
 /*
@@ -94,6 +96,8 @@ export function listItems(ctx: Ctx) {
 			shoppingCategoryName: shoppingCategories.name,
 			notes: shoppingItems.notes,
 			bought: shoppingItems.bought,
+			qty: shoppingItems.qty,
+			idealQty: shoppingItems.idealQty,
 			priceCents: shoppingItems.priceCents,
 			locationId: shoppingItems.locationId,
 			attributes: shoppingItems.attributes,
@@ -271,7 +275,7 @@ export function createItem(ctx: Ctx, raw: ItemInput): { alreadyHad: boolean } {
 
 	if (existing) {
 		db.update(shoppingItems)
-			.set({ bought: false, boughtAt: null, snoozed: false, updatedAt: stamp(ctx) })
+			.set({ qty: 0, bought: false, boughtAt: null, snoozed: false, updatedAt: stamp(ctx) })
 			.where(and(eq(shoppingItems.id, existing.id), eq(shoppingItems.userId, ctx.userId)))
 			.run();
 		// The event fires on the edge: only if this actually put the item back on
@@ -332,7 +336,7 @@ export function createOwnedThing(
 
 	if (existing) {
 		db.update(shoppingItems)
-			.set({ bought: true, boughtAt: stamp(ctx), snoozed: false, updatedAt: stamp(ctx) })
+			.set({ qty: 1, bought: true, boughtAt: stamp(ctx), snoozed: false, updatedAt: stamp(ctx) })
 			.where(and(eq(shoppingItems.id, existing.id), eq(shoppingItems.userId, ctx.userId)))
 			.run();
 		return existing.id;
@@ -353,6 +357,7 @@ export function createOwnedThing(
 			 */
 			type: 'someday',
 			notes,
+			qty: 1,
 			bought: true,
 			boughtAt: stamp(ctx)
 		})
@@ -432,22 +437,55 @@ export function deleteItem(ctx: Ctx, id: number): void {
 	if (res.changes === 0) throw new NotFoundError('item');
 }
 
-export function toggleBought(ctx: Ctx, id: number, raw: { paid?: unknown } = {}): void {
+/**
+ * How many of a thing you have.
+ *
+ * The one place `qty` is written, so `bought` cannot drift from it: having a
+ * thing is having at least as many as you keep, and where you keep none of it
+ * on purpose, having any at all. Every reader of `bought` — the recipes'
+ * "already have", the API, the webhooks, an assistant — goes on asking the
+ * question it was asking.
+ */
+export function setQty(ctx: Ctx, id: number, wanted: number, raw: { paid?: unknown } = {}): void {
 	const item = ownedItem(ctx, id);
+	const qty = Math.max(0, Math.floor(Number.isFinite(wanted) ? wanted : 0));
+	if (qty > 9999) throw new ValidationError('That is more of one thing than a home holds.');
+
+	const enough = Math.max(item.idealQty ?? 1, 1);
+	const bought = qty >= enough;
 	const now = stamp(ctx);
-	const buying = !item.bought;
 
 	db.update(shoppingItems)
-		.set({ bought: buying, boughtAt: buying ? now : null, updatedAt: now })
+		.set({
+			qty,
+			bought,
+			// The date is when it stopped being something to get, and it stays
+			// put while the count changes above that line.
+			boughtAt: bought ? (item.bought ? item.boughtAt : now) : null,
+			updatedAt: now
+		})
 		.where(itemWhere(ctx, id))
 		.run();
 
 	// A price given at the same time is the same act, but the tick never waits
 	// for one: it happens in a supermarket aisle, one press, often offline.
-	if (buying && raw.paid !== undefined && raw.paid !== null && raw.paid !== '')
+	if (bought && !item.bought && raw.paid !== undefined && raw.paid !== null && raw.paid !== '')
 		recordPaid(ctx, id, raw.paid);
 
-	if (buying) emit(ctx, 'shopping.bought', { id, name: item.name });
+	// Only the crossing, not every step up from two to three.
+	if (bought && !item.bought) emit(ctx, 'shopping.bought', { id, name: item.name });
+}
+
+/**
+ * The tick, which is now a shortcut through the count.
+ *
+ * One press in a supermarket aisle still means "that's dealt with" — so it
+ * fills the thing up to what you keep, and unticking empties it. Somebody who
+ * wants two of six says so with the arrows.
+ */
+export function toggleBought(ctx: Ctx, id: number, raw: { paid?: unknown } = {}): void {
+	const item = ownedItem(ctx, id);
+	setQty(ctx, id, item.bought ? 0 : Math.max(item.idealQty ?? 1, 1), raw);
 }
 
 /**
@@ -575,10 +613,9 @@ export function restockItem(ctx: Ctx, id: number): void {
 	const item = ownedItem(ctx, id);
 	if (item.type !== 'replenish') throw new ValidationError('Only replenish items can be restocked');
 
-	db.update(shoppingItems)
-		.set({ bought: false, boughtAt: null, updatedAt: stamp(ctx) })
-		.where(itemWhere(ctx, id))
-		.run();
+	// "We are out of it" is a count of none, not a flag: through setQty so the
+	// two cannot disagree.
+	setQty(ctx, id, 0);
 }
 
 export function toggleSnoozed(ctx: Ctx, id: number): void {
@@ -612,6 +649,9 @@ function ownedItem(ctx: Ctx, id: number) {
 			name: shoppingItems.name,
 			type: shoppingItems.type,
 			bought: shoppingItems.bought,
+			boughtAt: shoppingItems.boughtAt,
+			qty: shoppingItems.qty,
+			idealQty: shoppingItems.idealQty,
 			snoozed: shoppingItems.snoozed
 		})
 		.from(shoppingItems)
@@ -630,8 +670,17 @@ function parseItem(ctx: Ctx, raw: ItemInput) {
 		shoppingCategoryId: parseCategoryId(ctx, raw.shoppingCategoryId),
 		// Typed as money, stored as an integer. A blank field means nobody has
 		// said what it costs, which is different from saying it is free.
-		priceCents: parseMoney(raw.price, getCurrency(ctx.userId))
+		priceCents: parseMoney(raw.price, getCurrency(ctx.userId)),
+		idealQty: parseIdealQty(raw.idealQty)
 	};
+}
+
+/** How many you keep. Blank means one — the answer for almost everything. */
+function parseIdealQty(value: unknown): number {
+	if (value === undefined || value === null || value === '') return 1;
+	const n = num(value, 'ideal quantity', { int: true, min: 0 });
+	if (n > 9999) throw new ValidationError('That is more of one thing than a home holds.');
+	return n;
 }
 
 /** Somebody else's drawer is not a place this account may file things in. */

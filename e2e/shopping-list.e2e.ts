@@ -81,9 +81,9 @@ test('what you paid is recorded after the tick, and the price shows on the row',
 	await dialog.locator('[name=label]').press('Enter');
 	await expect(page.getByText('oat milk')).toBeVisible();
 
-	// Ticking never asks for a price.
+	// Counting one of it never asks for a price — that is a press in an aisle.
 	await page
-		.getByRole('button', { name: /got it/i })
+		.getByRole('button', { name: /^One more/ })
 		.first()
 		.click();
 	await expect(page.getByRole('button', { name: 'Set price' }).first()).toBeVisible();

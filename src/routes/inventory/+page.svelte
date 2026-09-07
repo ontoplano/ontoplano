@@ -33,8 +33,15 @@
 	let editPrice = $state('');
 	/** Only asked when writing something down; an edit leaves it where it is. */
 	let newLocationId = $state<number | null>(null);
+	/** A count that changed, kept on screen until the page catches up. */
+	const requantify =
+		() =>
+		async ({ update }: { update: (o?: object) => Promise<void> }) =>
+			await update({ reset: false });
+
 	/** The thing's own fields, while it is being edited. */
 	let editFields = $state<[string, string][]>([]);
+	let editIdealQty = $state('1');
 	let filterType = $state<'all' | 'someday' | 'replenish'>('all');
 	let newItemType = $state<'replenish' | 'someday'>('replenish');
 	let showBought = $state(false);
@@ -288,6 +295,51 @@
 	});
 
 	/**
+	 * The page follows a drag towards an edge.
+	 *
+	 * The panel is at the top and the lists run past the bottom of the screen,
+	 * so on a phone a thing four screens down could be picked up and had
+	 * nowhere to go: the browser scrolls a drag for you only in a few of them,
+	 * and never far enough. While something is held, being within a band of
+	 * either edge scrolls that way, faster the closer to it — which is the
+	 * behaviour every file manager has and nobody has to be told about.
+	 */
+	const SCROLL_BAND = 90;
+	let scrollTimer: ReturnType<typeof setInterval> | null = null;
+
+	function scroller(): HTMLElement | Window {
+		// The app's main area scrolls on a phone and the window scrolls on a
+		// desktop, so the one that can move is the one that is asked to.
+		const main = document.querySelector('main');
+		if (main && main.scrollHeight > main.clientHeight + 4) return main;
+		return window;
+	}
+
+	function followEdge(y: number) {
+		const top = y;
+		const bottom = window.innerHeight - y;
+		let by = 0;
+		if (top < SCROLL_BAND) by = -Math.ceil(((SCROLL_BAND - top) / SCROLL_BAND) * 24);
+		else if (bottom < SCROLL_BAND) by = Math.ceil(((SCROLL_BAND - bottom) / SCROLL_BAND) * 24);
+
+		if (by === 0) {
+			stopFollowing();
+			return;
+		}
+		if (scrollTimer) return;
+		scrollTimer = setInterval(() => {
+			const target = scroller();
+			if (target instanceof Window) target.scrollBy(0, by);
+			else target.scrollTop += by;
+		}, 16);
+	}
+
+	function stopFollowing() {
+		if (scrollTimer) clearInterval(scrollTimer);
+		scrollTimer = null;
+	}
+
+	/**
 	 * Dropping a thing on a location.
 	 *
 	 * Posted rather than held in state: the page is server-rendered and every
@@ -382,6 +434,7 @@
 
 	function openCreateForm() {
 		cancelEdit();
+		editIdealQty = '1';
 		// Standing in a drawer and adding something puts it in that drawer.
 		newLocationId = location !== null && location !== 0 ? location : null;
 		newItemType = filterType === 'someday' ? 'someday' : 'replenish';
@@ -399,6 +452,10 @@
 		// One blank pair at the end, so adding a field is typing rather than
 		// finding the button that lets you type.
 		editFields = [...fieldsOf(item.attributes), ['', '']];
+		// Where it lives, on the edit form too: a drag is the quick way and not
+		// everybody's way, and on a phone it is not always the possible one.
+		newLocationId = item.locationId;
+		editIdealQty = String(item.idealQty ?? 1);
 		showForm = true;
 	}
 
@@ -478,7 +535,12 @@
 	}
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<svelte:window
+	onkeydown={handleKeydown}
+	ondragover={(e) => dragging !== null && followEdge(e.clientY)}
+	ondrop={stopFollowing}
+	ondragend={stopFollowing}
+/>
 
 <!--
 	What you paid, asked afterwards.
@@ -704,6 +766,59 @@
 {/snippet}
 
 <!--
+	How many there are, where the checkbox was.
+
+	A tick answered "do I have it", which is the right question for a shopping
+	list and the wrong one for a cupboard: two tins of tomatoes and none are
+	both unticked the moment you open the last one. Down cannot go below none;
+	up has no ceiling, because having four of something you keep two of is a
+	fact and not an error.
+
+	Two plain forms rather than a number field: this is pressed with a thumb in
+	a cupboard, and it works with no JavaScript at all.
+-->
+{#snippet quantity(item: { id: number; name: string; qty: number; idealQty: number })}
+	<div class="flex shrink-0 items-center gap-0.5">
+		<form method="POST" action="?/setQty" use:enhance={requantify}>
+			<input type="hidden" name="id" value={item.id} />
+			<input type="hidden" name="qty" value={Math.max(0, item.qty - 1)} />
+			<button
+				type="submit"
+				disabled={item.qty <= 0}
+				class="icon-btn size-6 disabled:opacity-25"
+				title="One fewer"
+				aria-label="One fewer {item.name}">−</button
+			>
+		</form>
+		<!--
+			"2" alone does not answer the question the list is for. Where you keep
+			more than one, the count you are measured against is written beside
+			it, so "two of four" is a glance rather than an arithmetic.
+		-->
+		<span
+			class="tabular min-w-6 text-center text-sm whitespace-nowrap {item.qty >=
+			Math.max(item.idealQty, 1)
+				? 'text-blue-700'
+				: 'text-gray-900'}"
+			title="{item.qty} here, and you keep {item.idealQty}"
+		>
+			{item.qty}{#if item.idealQty > 1}<span class="text-xs text-gray-500">/{item.idealQty}</span
+				>{/if}
+		</span>
+		<form method="POST" action="?/setQty" use:enhance={requantify}>
+			<input type="hidden" name="id" value={item.id} />
+			<input type="hidden" name="qty" value={item.qty + 1} />
+			<button
+				type="submit"
+				class="icon-btn size-6"
+				title="One more"
+				aria-label="One more {item.name}">+</button
+			>
+		</form>
+	</div>
+{/snippet}
+
+<!--
 	What this particular thing is, in its own words.
 
 	A tape is 3m or 5m and a cable is USB-C or not; nothing else in the app has
@@ -856,9 +971,10 @@
 					bind:shoppingCategoryId={editShoppingCategoryId}
 					bind:locationId={newLocationId}
 					bind:fields={editFields}
+					bind:idealQty={editIdealQty}
 					categories={data.shoppingCategories}
 					locations={locationChoices}
-					askLocation={editingId === null}
+					askLocation={true}
 					showFields={editingId !== null}
 				/>
 			</FormGrid>
@@ -967,6 +1083,7 @@
 												ondragend={() => {
 													dragging = null;
 													dragOver = null;
+													stopFollowing();
 												}}
 												class="flex cursor-grab items-center gap-x-3 px-4 py-2 {item.snoozed
 													? 'bg-gray-50 opacity-50'
@@ -989,26 +1106,7 @@
 										one thing you do forty times down the left edge where the
 										thumb already is.
 									-->
-												<form
-													method="POST"
-													action="?/toggleBought"
-													use:enhance={tick('toggleBought')}
-												>
-													<input type="hidden" name="id" value={item.id} />
-													<button
-														type="submit"
-														aria-pressed={item.bought}
-														class="flex size-5 items-center justify-center border transition {item.bought
-															? 'border-blue-600 bg-blue-600 text-white'
-															: 'border-gray-400 bg-white text-transparent hover:border-gray-600'}"
-														title={item.bought ? 'Put it back on the list' : 'Got it'}
-														aria-label="{item.bought
-															? 'Put back on the list'
-															: 'Got it'}: {item.name}"
-													>
-														<Icon name="check" size={14} />
-													</button>
-												</form>
+												{@render quantity(item)}
 
 												<div class="min-w-0 flex-1">
 													<span class="text-sm text-gray-900">{item.name}</span>
@@ -1108,13 +1206,20 @@
 								ondragend={() => {
 									dragging = null;
 									dragOver = null;
+									stopFollowing();
 								}}
 								class="flex cursor-grab items-center gap-x-3 px-4 py-2 {globalIdx === selectedIndex
 									? 'bg-gray-50'
 									: ''} {item.snoozed ? 'opacity-50' : ''}"
 							>
-								<!-- The same checkbox as the inventory rows, so one list does not
-						     have a different idea of what "have it" looks like. -->
+								<!--
+									A tick here and a count over there, deliberately.
+
+									A wishlist item is a chair or a pair of headphones — you own
+									it or you do not, and "how many armchairs" is not a question
+									anybody is asking. The things you restock are the ones a
+									number is about.
+								-->
 								<form method="POST" action="?/toggleBought" use:enhance={tick('toggleBought')}>
 									<input type="hidden" name="id" value={item.id} />
 									<button

@@ -25,6 +25,7 @@ import {
 	restockItem,
 	setItemAttributes,
 	setItemLocation,
+	setQty,
 	toggleBought,
 	toggleSnoozed,
 	updateItem
@@ -157,7 +158,8 @@ export const actions: Actions = {
 				notes: formData.get('notes'),
 				price: formData.get('price'),
 				shoppingCategoryId: formData.get('shoppingCategoryId'),
-				locationId: formData.get('locationId')
+				locationId: formData.get('locationId'),
+				idealQty: formData.get('idealQty')
 			});
 
 			return {
@@ -182,7 +184,8 @@ export const actions: Actions = {
 				type: formData.get('type'),
 				notes: formData.get('notes'),
 				price: formData.get('price'),
-				shoppingCategoryId: formData.get('shoppingCategoryId')
+				shoppingCategoryId: formData.get('shoppingCategoryId'),
+				idealQty: formData.get('idealQty')
 			});
 			/*
 			 * The thing's own fields, saved with the rest of it.
@@ -193,7 +196,30 @@ export const actions: Actions = {
 			 * second thing to remember to press.
 			 */
 			setItemAttributes(ctx, id, fieldsFrom(formData));
+			// Where it lives, when the form carried the field. `updateItem`
+			// re-parses the row and would not have known about it; this is the
+			// same call a drag makes.
+			if (formData.has('locationId')) {
+				const raw = String(formData.get('locationId') ?? '');
+				setItemLocation(ctx, id, raw === '' ? null : Number(raw));
+			}
 			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * How many of it there are, from the arrows beside the name.
+	 *
+	 * Its own action rather than a field on `update`: this is pressed in a
+	 * cupboard with one thumb, and `update` re-parses the whole row.
+	 */
+	setQty: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			setQty(buildCtx(locals.user!.id), Number(formData.get('id')), Number(formData.get('qty')));
+			return { success: true, action: 'setQty' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

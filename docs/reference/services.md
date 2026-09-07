@@ -3121,7 +3121,23 @@ shape, and a fixed set of columns is exactly the assumption that fails.
 
 #### `deleteItem(ctx, id)`
 
+#### `setQty(ctx, id, wanted, raw)`
+
+How many of a thing you have.
+
+The one place `qty` is written, so `bought` cannot drift from it: having a
+thing is having at least as many as you keep, and where you keep none of it
+on purpose, having any at all. Every reader of `bought` — the recipes'
+"already have", the API, the webhooks, an assistant — goes on asking the
+question it was asking.
+
 #### `toggleBought(ctx, id, raw)`
+
+The tick, which is now a shortcut through the count.
+
+One press in a supermarket aisle still means "that's dealt with" — so it
+fills the thing up to what you keep, and unticking empties it. Somebody who
+wants two of six says so with the arrows.
 
 #### `setBought(ctx, id, bought)`
 
