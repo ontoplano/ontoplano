@@ -387,3 +387,118 @@ test.describe('a row on a phone', () => {
 		expect(after!.y).toBe(before!.y);
 	});
 });
+
+/**
+ * The panel's numbers, and what they are counting.
+ *
+ * A drawer that said "2" and then showed one thing when it was opened was
+ * answering a different question from the one the click asked. Every number in
+ * the panel counts what the filters allow, and the page says once, in a fixed
+ * place, how much they are keeping off the screen.
+ */
+test.describe('what the filters are hiding', () => {
+	async function aHouse(page: import('@playwright/test').Page) {
+		await addLocation(page, 'Kitchen');
+		await addLocation(page, 'Drawer', 'Kitchen');
+		for (const [name, where, type] of [
+			['Olive oil', 'Kitchen', 'replenish'],
+			['Pasta maker', 'Kitchen', 'someday'],
+			['Tape', 'Kitchen › Drawer', 'replenish']
+		]) {
+			await page
+				.getByRole('button', { name: /Add item/ })
+				.first()
+				.click();
+			const d = page.getByRole('dialog', { name: 'New item' });
+			await d.locator('[name="label"]').fill(name);
+			await d.locator('[name="locationId"]').selectOption({ label: where });
+			await d.locator('[name="type"]').selectOption(type);
+			await d.getByRole('button', { name: 'Add item', exact: true }).click();
+			await expect(d).toBeHidden();
+		}
+	}
+
+	test('a location counts what you would see if you opened it', async ({ page }) => {
+		await register(page, `inv-counts-${Date.now()}@test.invalid`);
+		await visit(page, '/inventory');
+		await aHouse(page);
+
+		const kitchen = page.getByRole('button', { name: /^Kitchen/ }).first();
+		await expect(kitchen.locator('span').last()).toHaveText('3');
+
+		// Only the wishlist: the kitchen holds one of those, its drawer none.
+		await page.getByRole('button', { name: 'Wishlist', exact: true }).click();
+		await expect(kitchen.locator('span').last()).toHaveText('1');
+		await expect(
+			page
+				.getByRole('button', { name: /^Drawer/ })
+				.first()
+				.locator('span')
+				.last()
+		).toHaveText('0');
+		await expect(
+			page
+				.getByRole('button', { name: /^Everything/ })
+				.locator('span')
+				.last()
+		).toHaveText('1');
+
+		// And opening it shows exactly that one.
+		await kitchen.click();
+		await expect(page.getByText('Pasta maker')).toBeVisible();
+		await expect(page.getByText('Olive oil')).toBeHidden();
+	});
+
+	test('the page says how many it is not showing, and never moves to say it', async ({ page }) => {
+		await register(page, `inv-hidden-${Date.now()}@test.invalid`);
+		await visit(page, '/inventory');
+		await aHouse(page);
+
+		const line = page.getByText(/^Not showing /);
+		const panel = page.getByRole('heading', { name: 'Where things live' });
+		const before = await panel.boundingBox();
+
+		// Nothing hidden: the line is in the layout but has nothing to say.
+		await expect(line).toBeHidden();
+
+		await page.getByRole('button', { name: 'Wishlist', exact: true }).click();
+		await expect(line).toHaveText('Not showing 2 items');
+
+		// The panel under it has not moved a pixel — the space was already
+		// reserved, which is the whole point of keeping the line invisible
+		// rather than removing it.
+		const after = await panel.boundingBox();
+		expect(before, 'the panel is on screen').not.toBeNull();
+		expect(after!.y).toBe(before!.y);
+
+		await page.getByRole('button', { name: 'All', exact: true }).click();
+		await expect(line).toBeHidden();
+		expect((await panel.boundingBox())!.y).toBe(before!.y);
+	});
+
+	test('a location folds away what is inside it, keeping itself and its number', async ({
+		page
+	}) => {
+		await register(page, `inv-fold-${Date.now()}@test.invalid`);
+		await visit(page, '/inventory');
+		await aHouse(page);
+
+		const drawer = page.getByRole('button', { name: /^Drawer/ }).first();
+		await expect(drawer).toBeVisible();
+
+		await page.getByRole('button', { name: 'Fold Kitchen' }).click();
+		await expect(drawer).toBeHidden();
+		// The kitchen is still there, still saying how much is inside it.
+		const kitchen = page.getByRole('button', { name: /^Kitchen/ }).first();
+		await expect(kitchen).toBeVisible();
+		await expect(kitchen.locator('span').last()).toHaveText('3');
+
+		// And it stays folded across a reload, which is what makes it worth doing.
+		await visit(page, '/inventory');
+		await expect(page.getByRole('button', { name: 'Show what is in Kitchen' })).toBeVisible();
+		await expect(drawer).toBeHidden();
+
+		await page.getByRole('button', { name: 'Show what is in Kitchen' }).click();
+		await expect(drawer).toBeVisible();
+	});
+});

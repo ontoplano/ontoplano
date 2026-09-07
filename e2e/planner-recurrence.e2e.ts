@@ -221,3 +221,71 @@ test('editing a block does not quietly shift the rhythm it already had', async (
 	expect(await onDay(page, dayAfter(start, 2), 'the-longer-walk')).toBeGreaterThan(0);
 	expect(await countIn(page, `/tasks/plan?from=${anchor}`, 'the-longer-walk')).toBe(4);
 });
+
+/**
+ * The ghost a drag leaves behind.
+ *
+ * Dragging out a square on the grid leaves the calendar holding a selection it
+ * draws as an event with the time range on it and no title. It counts in the
+ * column's layout, so the block just created has to share the width with it
+ * and comes out as a sliver down the left edge — the time shows, the rectangle
+ * does not. The calendar drops the selection on a click outside, which is why
+ * it only sometimes went wrong.
+ */
+test('a block dragged out on the grid is drawn as a block, not a sliver', async ({ page }) => {
+	test.setTimeout(180_000);
+	await register(page, `drag-create-${Date.now()}@test.invalid`);
+
+	await visit(page, '/tasks/plan');
+	await expect(page.locator('.ec-main')).toBeVisible();
+	await page.waitForTimeout(600);
+
+	const body = page.locator('.ec-body').first();
+	const box = (await body.boundingBox())!;
+	const x = box.x + box.width * 0.45;
+	await page.mouse.move(x, box.y + 120);
+	await page.mouse.down();
+	await page.mouse.move(x, box.y + 200, { steps: 10 });
+	await page.mouse.up();
+
+	const form = page.getByRole('dialog');
+	await expect(form).toBeVisible({ timeout: 15_000 });
+	// The calendar is holding the selection while the form is open, which is
+	// what makes this worth testing at all.
+	expect(await page.locator('.ec-preview').count()).toBe(1);
+
+	// Abandoning the form used to leave that ghost on the grid for good: a box
+	// with a time on it and nothing in it, and the next block dragged out over
+	// the same hours had to share the column with it.
+	await page.keyboard.press('Escape');
+	await expect(form).toBeHidden({ timeout: 10_000 });
+	await page.waitForTimeout(400);
+	expect(await page.locator('.ec-preview').count()).toBe(0);
+
+	// Now do it for real.
+	await page.mouse.move(x, box.y + 120);
+	await page.mouse.down();
+	await page.mouse.move(x, box.y + 200, { steps: 10 });
+	await page.mouse.up();
+	await expect(form).toBeVisible({ timeout: 15_000 });
+
+	await form.locator('[name="label"]').fill('dragged-out');
+	await form.locator('[name="mode"]').selectOption('category');
+	// From the keyboard, so nothing clicks outside the calendar to clear it.
+	await form.locator('[name="label"]').press('Enter');
+	await expect(form).toBeHidden({ timeout: 20_000 });
+	await page.waitForTimeout(600);
+
+	expect(await page.locator('.ec-preview').count()).toBe(0);
+
+	// And the block is a block: as wide as one alone in its column.
+	const width = await page
+		.locator('.ec-event:has-text("dragged-out")')
+		.first()
+		.evaluate((el) => (el as HTMLElement).getBoundingClientRect().width);
+	const column = await page
+		.locator('.ec-day')
+		.first()
+		.evaluate((el) => (el as HTMLElement).getBoundingClientRect().width);
+	expect(width).toBeGreaterThan(column * 0.5);
+});

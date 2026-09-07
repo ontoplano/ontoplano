@@ -19,7 +19,9 @@
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { flush, remember, restore, ticks, type Tick } from '$lib/offline-ticks.svelte';
 	import { deleteLater, isLeaving } from '$lib/undo.svelte';
-	import { untrack } from 'svelte';
+	import { onMount, untrack } from 'svelte';
+	import { browser } from '$app/environment';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -50,6 +52,34 @@
 	let location = $state<number | null>(null);
 	/** A find box, because an inventory gets long in a way a list never did. */
 	let find = $state('');
+	/**
+	 * Locations whose contents are folded away, kept between visits.
+	 *
+	 * A house with a room per drawer makes the panel taller than the things it
+	 * is meant to help you find, and the branch you are not in is the one you
+	 * want out of the way. Folded, not hidden: the row itself stays, with its
+	 * number, so a fold never loses a location.
+	 */
+	const folded = new SvelteSet<number>();
+
+	function toggleFold(id: number) {
+		if (!folded.delete(id)) folded.add(id);
+		if (browser) localStorage.setItem(FOLD_KEY, JSON.stringify([...folded]));
+	}
+
+	const FOLD_KEY = 'ontoplano:inventory-folded';
+
+	onMount(() => {
+		try {
+			const stored = localStorage.getItem(FOLD_KEY);
+			if (stored)
+				for (const id of JSON.parse(stored) as number[]) {
+					if (Number.isInteger(id)) folded.add(id);
+				}
+		} catch {
+			// A browser that will not keep it is not a reason to fail to draw.
+		}
+	});
 	let addingLocation = $state(false);
 	let editingLocation = $state<{ id: number; name: string; parentId: number | null } | null>(null);
 	let confirmDeleteLocation = $state<number | null>(null);
@@ -215,13 +245,19 @@
 		return subtreeOf(location);
 	});
 
-	let filteredItems = $derived(
+	/**
+	 * What the filters allow, wherever it happens to live.
+	 *
+	 * Split out from `filteredItems` because the panel's numbers must answer
+	 * the filters but not the chosen location — counting each location against
+	 * the chosen one would zero every location except it. This is also what the
+	 * "not showing" line is measured against.
+	 */
+	let allowedItems = $derived(
 		items.filter((item) => {
 			if (isLeaving(`item:${item.id}`)) return false;
 			if (!showSnoozed && item.snoozed) return false;
 			if (!showBought && item.bought && item.type === 'someday') return false;
-			if (location === 0 && item.locationId != null) return false;
-			if (inLocation && (item.locationId == null || !inLocation.has(item.locationId))) return false;
 			const wanted = find.trim().toLowerCase();
 			if (wanted && !`${item.name} ${item.notes ?? ''}`.toLowerCase().includes(wanted))
 				return false;
@@ -229,6 +265,15 @@
 			return item.type === filterType;
 		})
 	);
+
+	/** Does this thing belong to the location on screen? */
+	function inChosenLocation(item: { locationId: number | null }): boolean {
+		if (location === 0) return item.locationId == null;
+		if (inLocation) return item.locationId != null && inLocation.has(item.locationId);
+		return true;
+	}
+
+	let filteredItems = $derived(allowedItems.filter(inChosenLocation));
 
 	/** How many things sit in each location's own subtree, for the panel. */
 	/**
@@ -244,7 +289,10 @@
 	const countsByLocation = $derived.by(() => {
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const direct = new Map<number, number>();
-		for (const item of items) {
+		// What the filters allow, not everything there is: a drawer that said
+		// "2" and then showed one thing when you opened it was answering a
+		// different question from the one the click asked.
+		for (const item of allowedItems) {
 			if (item.locationId == null) continue;
 			direct.set(item.locationId, (direct.get(item.locationId) ?? 0) + 1);
 		}
@@ -267,23 +315,18 @@
 			count.total - count.here
 		} in what is inside it`;
 	}
-	const unfiledCount = $derived(items.filter((i) => i.locationId == null).length);
+	const unfiledCount = $derived(allowedItems.filter((i) => i.locationId == null).length);
 
 	/**
-	 * Things here that the filters are hiding.
+	 * How much of what is here the filters are keeping off the screen.
 	 *
-	 * The panel counts what is filed somewhere and the lists show what the
-	 * filters allow, so a drawer could say "1" beside "No items match the
-	 * current filter" and both be true at once. Saying which is the fix.
+	 * Said once, under the filter buttons, rather than only when a list came
+	 * out empty — a page showing three of eleven things is exactly as much of a
+	 * half-truth as one showing none of two. The line is always in the layout
+	 * and goes invisible rather than away, so switching a filter never moves
+	 * what is under it.
 	 */
-	const hiddenHere = $derived.by(() => {
-		if (location === null) return 0;
-		const here =
-			location === 0
-				? items.filter((i) => i.locationId == null)
-				: items.filter((i) => i.locationId != null && (inLocation?.has(i.locationId) ?? false));
-		return here.length - filteredItems.length;
-	});
+	const notShowing = $derived(items.filter(inChosenLocation).length - filteredItems.length);
 
 	/**
 	 * The page follows a drag towards an edge.
@@ -639,22 +682,51 @@
 				: 'text-gray-700 hover:bg-gray-50'} {dragOver === (id ?? -1)
 				? 'ring-2 ring-gray-900 ring-inset'
 				: ''}"
-			style="padding-left: {1 + depth * 0.9}rem"
+			style="padding-left: {0.25 + depth * 0.9}rem"
 		>
+			<!-- Where a foldable row keeps its chevron. Drawn on every row, so a
+			     location gaining children never shifts any name sideways, and the
+			     rows that can never fold still line up with the ones that can. -->
+			<span class="invisible size-4 shrink-0"><Icon name="chevron-down" /></span>
 			<span class="truncate">{label}</span>
 			<span class="tabular ml-auto shrink-0 text-xs text-gray-500">{count}</span>
 		</button>
 	</li>
 {/snippet}
 
-<!-- A location and everything under it. Indented rather than collapsible: a
-     house is three or four deep, and a disclosure per drawer would be more
-     clicking than reading. -->
+<!--
+	A location and everything under it.
+
+	Foldable, because a house with a row per drawer makes the panel taller than
+	the things it is meant to help you find. Folding hides what is inside a
+	location, never the location itself, and its number still counts the whole
+	subtree — so a folded branch says how much is in there without listing it.
+-->
 {#snippet branch(node: PageServerData['locationTree'][number], depth: number)}
 	<li>
 		<div
 			class="group flex items-center {location === node.id ? 'bg-gray-100' : 'hover:bg-gray-50'}"
 		>
+			<!-- Its own control, outside the row button: pressing it must fold the
+			     branch, not open the location. -->
+			{#if node.children.length > 0}
+				<button
+					onclick={() => toggleFold(node.id)}
+					class="shrink-0 py-2 pl-1 text-gray-400 transition hover:text-gray-700"
+					style="margin-left: {depth * 0.9}rem"
+					aria-expanded={!folded.has(node.id)}
+					title={folded.has(node.id) ? `Show what is in ${node.name}` : `Fold ${node.name}`}
+					aria-label={folded.has(node.id) ? `Show what is in ${node.name}` : `Fold ${node.name}`}
+				>
+					<Icon
+						name="chevron-down"
+						class="size-4 transition-transform {folded.has(node.id) ? '-rotate-90' : ''}"
+					/>
+				</button>
+			{:else}
+				<span class="invisible size-4 shrink-0 py-2 pl-1" style="margin-left: {depth * 0.9}rem"
+				></span>
+			{/if}
 			<button
 				onclick={() => (location = node.id)}
 				ondragover={(e) => {
@@ -669,11 +741,10 @@
 					if (dragging !== null) void drop(dragging, node.id);
 					dragging = null;
 				}}
-				class="flex min-w-0 flex-1 items-center gap-2 py-2 pr-2 text-left text-sm transition {location ===
+				class="flex min-w-0 flex-1 items-center gap-2 py-2 pr-2 pl-2 text-left text-sm transition {location ===
 				node.id
 					? 'font-medium text-gray-900'
 					: 'text-gray-700'} {dragOver === node.id ? 'ring-2 ring-gray-900 ring-inset' : ''}"
-				style="padding-left: {1 + depth * 0.9}rem"
 			>
 				<span class="truncate">{node.name}</span>
 				<span
@@ -699,7 +770,7 @@
 				>
 			</div>
 		</div>
-		{#if node.children.length > 0}
+		{#if node.children.length > 0 && !folded.has(node.id)}
 			<ul>
 				{#each node.children as child (child.id)}
 					{@render branch(child, depth + 1)}
@@ -843,6 +914,20 @@
 		</div>
 	</div>
 
+	<!--
+		What the filters are keeping off the screen, in the layout whether or not
+		there is anything to say. Rendered invisible rather than removed: a line
+		that appears and disappears as filters are switched would move every card
+		under it each time.
+	-->
+	<p
+		class="-mt-2 text-xs text-gray-500 {notShowing > 0 ? '' : 'invisible'}"
+		aria-hidden={notShowing > 0 ? undefined : 'true'}
+	>
+		Not showing {notShowing}
+		{notShowing === 1 ? 'item' : 'items'}
+	</p>
+
 	{#if !online || ticks.pending.length > 0}
 		<Banner kind="warning">
 			{#if !online}
@@ -960,7 +1045,7 @@
 			<ul
 				class="max-h-64 divide-y divide-gray-200 overflow-y-auto lg:max-h-none lg:overflow-visible"
 			>
-				{@render locationRow(null, 'Everything', items.length, 0)}
+				{@render locationRow(null, 'Everything', allowedItems.length, 0)}
 				{#each data.locationTree as root (root.id)}
 					{@render branch(root, 0)}
 				{/each}
@@ -1256,9 +1341,8 @@
 								</button>
 							{/snippet}
 						</EmptyState>
-					{:else if hiddenHere > 0}
-						Nothing here matches the current filter — {hiddenHere}
-						{hiddenHere === 1 ? 'thing is' : 'things are'} hidden by it.
+					{:else if notShowing > 0}
+						Nothing here matches the current filter.
 					{:else}
 						No items match the current filter.
 					{/if}

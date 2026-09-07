@@ -168,7 +168,9 @@
 	 * as `unknown` and narrowed once, here, rather than cast at each call.
 	 */
 	let ec: unknown = $state();
-	const calendar = $derived(ec as { addEvent: (e: unknown) => unknown } | undefined);
+	const calendar = $derived(
+		ec as { addEvent: (e: unknown) => unknown; unselect?: () => unknown } | undefined
+	);
 
 	const ZOOM_STORAGE_KEY = 'ontoplano:planner-grid-zoom';
 
@@ -310,14 +312,16 @@
 	let recurrenceInterval = $state(2);
 	let recurrenceMonthDay = $state(1);
 	/**
-	 * What an every-N rhythm counts from, kept as the block already has it.
+	 * What an every-N rhythm counts from — a field, not a fact.
 	 *
-	 * The form used to post the day it was opened on, so opening an
-	 * every-other-day block on a Wednesday to fix a typo moved its phase by a
-	 * day. A block that has an anchor keeps it; a new one, or one whose rhythm
-	 * was just chosen, counts from the day on screen.
+	 * It used to be hidden, posting the day the form was opened on, so opening
+	 * an every-other-day block on a Wednesday to fix a typo moved its phase by
+	 * a day. The form said "set above" about a date nothing above it could set.
+	 * It is a date input now, filled with the day the block was made from: the
+	 * square that was clicked on the grid, today for the New button, and the
+	 * block's own anchor when one is being edited.
 	 */
-	let recurrenceAnchor: string | null = $state(null);
+	let recurrenceAnchor = $state('');
 	/** Arrived here from first run; dismissed with a click and never stored. */
 	let showWelcome = $state(page.url.searchParams.get('welcome') === '1');
 
@@ -421,12 +425,25 @@
 		editingKind = null;
 		editingBlockId = null;
 		confirmingFormDelete = false;
+		/*
+		 * The ghost the drag left behind.
+		 *
+		 * Dragging out a square on the grid leaves the calendar holding a
+		 * selection it draws as `ec-event ec-preview` — a box with the time
+		 * range on it and no title. It is a real event as far as the layout is
+		 * concerned, so while it is there the block just created has to share
+		 * the column with it and comes out as a sliver down the left edge: the
+		 * time shows, the rectangle does not. The calendar drops it by itself
+		 * on a click outside, which is why it only sometimes went wrong —
+		 * submitting from the keyboard never clicked anywhere.
+		 */
+		calendar?.unselect?.();
 	}
 
 	function startEdit(slot: Slot) {
 		const rec = parseRecurrence(slot.recurrence);
 		recurrenceKind = rec.kind;
-		recurrenceAnchor = rec.kind === 'weeks' || rec.kind === 'days' ? rec.anchor : null;
+		recurrenceAnchor = rec.kind === 'weeks' || rec.kind === 'days' ? rec.anchor : data.today;
 		if (rec.kind === 'weeks' || rec.kind === 'days') recurrenceInterval = rec.interval;
 		if (rec.kind === 'monthly') recurrenceMonthDay = rec.day;
 		formRatings = {
@@ -460,9 +477,9 @@
 		openForm();
 	}
 
-	function startNew(mode: 'weekly' | 'once' = 'weekly') {
+	function startNew(mode: 'weekly' | 'once' = 'weekly', anchor: string = data.today) {
 		recurrenceKind = 'weekly';
-		recurrenceAnchor = null;
+		recurrenceAnchor = anchor;
 		recurrenceInterval = 2;
 		recurrenceMonthDay = 1;
 		formRatings = { urgency: null, interest: null, energy: null };
@@ -499,12 +516,6 @@
 		// carry on — which is also how somebody loses what they had typed.
 		await invalidateAll();
 		editingKind = editingKind === 'slot' ? 'exceptional' : 'slot';
-	}
-
-	/** "1st", "2nd", "3rd", "4th" — for saying which day of the month. */
-	function monthDaySuffix(n: number): string {
-		if (n % 100 >= 11 && n % 100 <= 13) return 'th';
-		return ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
 	}
 
 	/**
@@ -1649,7 +1660,7 @@
 		selectOffsetForDate(formatLocalDate(info.start));
 		prefillTime = placement.startTime;
 		prefillDuration = placement.durationMinutes;
-		startNew(repeat);
+		startNew(repeat, formatLocalDate(info.start));
 		tick().then(() => createFormEl?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
 	}
 
@@ -2761,22 +2772,12 @@
 					<div class="flex flex-wrap items-center gap-3 border border-gray-200 bg-gray-50 p-3">
 						<span class="eyebrow shrink-0 text-gray-500">How often</span>
 						<input type="hidden" name="recurrenceKind" value={recurrenceKind} />
-						<input
-							type="hidden"
-							name="recurrenceAnchor"
-							value={recurrenceAnchor ?? selectedDateStr()}
-						/>
 
 						<div class="flex">
 							{#each [{ v: 'weekly', l: 'Every week' }, { v: 'weeks', l: 'Every N weeks' }, { v: 'days', l: 'Every N days' }, { v: 'monthly', l: 'Monthly' }] as opt (opt.v)}
 								<button
 									type="button"
-									onclick={() => {
-										// Choosing a different rhythm starts it here rather than
-										// keeping the old one's phase, which nothing on screen names.
-										if (recurrenceKind !== opt.v) recurrenceAnchor = null;
-										recurrenceKind = opt.v as typeof recurrenceKind;
-									}}
+									onclick={() => (recurrenceKind = opt.v as typeof recurrenceKind)}
 									class="px-3 py-1 text-sm {recurrenceKind === opt.v
 										? 'bg-gray-900 font-medium text-white'
 										: 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50'}"
@@ -2800,7 +2801,17 @@
 								/>
 								{recurrenceKind === 'weeks' ? 'weeks' : 'days'}
 							</label>
-							<span class="text-xs text-gray-500">counting from {selectedDateStr()}</span>
+							<label class="flex items-center gap-2 text-sm text-gray-700">
+								counting from
+								<input
+									autocomplete="off"
+									name="recurrenceAnchor"
+									type="date"
+									required
+									bind:value={recurrenceAnchor}
+									class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+								/>
+							</label>
 						{:else if recurrenceKind === 'monthly'}
 							<label class="flex items-center gap-2 text-sm text-gray-700">
 								Day
@@ -2853,18 +2864,16 @@
 							</select>
 						</Field>
 					{:else if repeat === 'weekly'}
-						<!-- Still posted, so the block keeps a weekday to fall back on. -->
+						<!--
+							Still posted, so the block keeps a weekday to fall back on.
+
+							Nothing is drawn here: which day of the month, and what an
+							every-N rhythm counts from, are both controls in the How often
+							panel. This used to restate them read-only as "set above",
+							which was wrong as well as redundant — the date it named had
+							no control anywhere.
+						-->
 						<input type="hidden" name="weekday" value={formWeekday} />
-						<Field
-							label={recurrenceKind === 'monthly' ? 'Day of the month' : 'Counting from'}
-							span={4}
-						>
-							<p class="text-sm text-gray-500">
-								{recurrenceKind === 'monthly'
-									? `The ${recurrenceMonthDay}${monthDaySuffix(recurrenceMonthDay)}, set above.`
-									: `${selectedDateStr()}, set above.`}
-							</p>
-						</Field>
 					{:else}
 						<Field label="Date" span={4} required>
 							<input

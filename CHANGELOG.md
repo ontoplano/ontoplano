@@ -10,6 +10,32 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.99.0 — 2026-09-07
+
+- **What an every-N rhythm counts from is a field you can set.** It said
+  "2026-09-08, set above" about a date nothing above it could set. It is a date
+  input in the How often panel now, filled with the square that was clicked on
+  the grid, or today for the New button, or the block's own date when one is
+  being edited.
+- **A block dragged out on the grid is drawn as a block.** Dragging out a
+  square leaves the calendar holding a selection it draws as a box with a time
+  on it and nothing in it. Abandoning the form left that ghost there for good,
+  and anything created over the same hours had to share the column with it —
+  which is why a new block sometimes came out as a sliver down the left edge
+  with only its time showing. The selection goes when the form does.
+- **Every number in the inventory panel counts what the filters allow.** A
+  drawer said "2", you opened it, and one thing was in it: the panel counted
+  everything filed there while the list showed what got past the filters. They
+  answer the same question now, "Everything" included.
+- **And the page says how much it is not showing.** "Not showing 4 items" sits
+  under the filter buttons whenever the filters are keeping something back. It
+  is in the layout either way — invisible rather than absent — so switching a
+  filter never moves what is under it.
+- **A location folds away what is inside it.** A house with a row per drawer
+  made the panel taller than the things it was meant to help you find. Folding
+  keeps the location and its number, hides its contents, and is remembered
+  between visits.
+
 ## 0.98.0 — 2026-09-07
 
 - **A block that does not come back weekly is finally drawn where it happens.**
