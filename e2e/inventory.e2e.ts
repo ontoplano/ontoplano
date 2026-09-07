@@ -57,8 +57,19 @@ test('a thing is dragged into a drawer, and the page narrows to it', async ({ pa
 	await row.dragTo(drawer);
 	await expect(drawer).toContainText('1');
 
-	// A parent counts what is under it: the drawer's thing is the kitchen's too.
-	await expect(page.getByRole('button', { name: /^Kitchen/ }).first()).toContainText('1');
+	// A count is what is in that location, not what is in everything under it:
+	// the tape is in the drawer, so the kitchen holding the drawer holds
+	// nothing itself. Counting the subtree meant one object was counted at
+	// every level it hung from, and an empty shelf still showed a number.
+	await expect(page.getByRole('button', { name: /^Kitchen/ }).first()).toContainText('0');
+
+	// Opening a parent still shows what is under it — a different question
+	// from how many things are on this shelf.
+	await page
+		.getByRole('button', { name: /^Kitchen/ })
+		.first()
+		.click();
+	await expect(page.getByText('Measuring tape')).toBeVisible();
 
 	// Opening a location narrows both lists to what is in it.
 	await drawer.click();

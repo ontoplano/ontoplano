@@ -231,16 +231,42 @@
 	);
 
 	/** How many things sit in each location's own subtree, for the panel. */
+	/**
+	 * How many things are in this location itself.
+	 *
+	 * Not the subtree. A room whose drawers hold four things read "4" while
+	 * every drawer under it read its own share of the same four, so one object
+	 * was counted at every level it hung from — and a room with nothing
+	 * actually in it still showed a number, which reads as "there is something
+	 * on this shelf" when there is not. Opening a location still shows
+	 * everything under it; that is a different question from what is here.
+	 */
 	const countsByLocation = $derived.by(() => {
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const out = new Map<number, number>();
-		for (const one of data.locations) {
-			const under = subtreeOf(one.id);
-			out.set(one.id, items.filter((i) => i.locationId != null && under.has(i.locationId)).length);
+		for (const item of items) {
+			if (item.locationId == null) continue;
+			out.set(item.locationId, (out.get(item.locationId) ?? 0) + 1);
 		}
 		return out;
 	});
 	const unfiledCount = $derived(items.filter((i) => i.locationId == null).length);
+
+	/**
+	 * Things here that the filters are hiding.
+	 *
+	 * The panel counts what is filed somewhere and the lists show what the
+	 * filters allow, so a drawer could say "1" beside "No items match the
+	 * current filter" and both be true at once. Saying which is the fix.
+	 */
+	const hiddenHere = $derived.by(() => {
+		if (location === null) return 0;
+		const here =
+			location === 0
+				? items.filter((i) => i.locationId == null)
+				: items.filter((i) => i.locationId != null && (inLocation?.has(i.locationId) ?? false));
+		return here.length - filteredItems.length;
+	});
 
 	/**
 	 * Dropping a thing on a location.
@@ -1066,6 +1092,9 @@
 								</button>
 							{/snippet}
 						</EmptyState>
+					{:else if hiddenHere > 0}
+						Nothing here matches the current filter — {hiddenHere}
+						{hiddenHere === 1 ? 'thing is' : 'things are'} hidden by it.
 					{:else}
 						No items match the current filter.
 					{/if}

@@ -1033,8 +1033,8 @@ billPaid(billPower, '2026-09', 15000, 15880);
 
 // --- locations (inventory) -----------------------------------------------------------
 //
-// A corner of the house, so the inventory tree has something to show and the
-// "where is the measuring tape" answer exists.
+// A small flat, so the tree has depth and the counts beside each location are
+// worth reading — and so "where is the measuring tape" has a real answer.
 
 const location = (name, parentId = null) => {
 	const existing = one('select id from locations where user_id = ? and name = ?', uid, name);
@@ -1047,10 +1047,25 @@ const location = (name, parentId = null) => {
 	);
 };
 
+// A whole small flat rather than a corner of one: the panel is a tree, and a
+// tree with four nodes and two things in it demonstrates nothing. Deep enough
+// to show nesting (room → furniture → drawer), wide enough that the counts
+// beside each location are worth reading.
 const livingRoom = location('Living room');
 const whiteChest = location('White chest', livingRoom);
-location('First drawer', whiteChest);
+const firstDrawer = location('First drawer', whiteChest);
+const secondDrawer = location('Second drawer', whiteChest);
+const bookshelf = location('Bookshelf', livingRoom);
+
+const kitchenRoom = location('Kitchen');
+const pantryLoc = location('Pantry', kitchenRoom);
+const underSink = location('Under the sink', kitchenRoom);
+
 const officeLocation = location('Office');
+const deskDrawer = location('Desk drawer', officeLocation);
+
+const bathroom = location('Bathroom');
+const cabinet = location('Cabinet', bathroom);
 
 const filedItem = (name, locationId, attributes = null) => {
 	const existing = one('select id from shopping_items where user_id = ? and name = ?', uid, name);
@@ -1069,11 +1084,24 @@ const filedItem = (name, locationId, attributes = null) => {
 	);
 };
 
-filedItem('measuring tape', location('First drawer', whiteChest), {
-	length: '5m',
-	kind: 'construction'
-});
-filedItem('USB-C cable', officeLocation, { plug: 'USB-C', speed: 'USB3' });
+// The thing the whole feature exists to answer, and its neighbours.
+filedItem('measuring tape', firstDrawer, { length: '5m', kind: 'construction' });
+filedItem('spare keys', firstDrawer, { for: 'the front door' });
+filedItem('sewing kit', secondDrawer, {});
+filedItem('passport', secondDrawer, { expires: '2031-04' });
+filedItem('board games', bookshelf, {});
+
+filedItem('USB-C cable', deskDrawer, { plug: 'USB-C', speed: 'USB3' });
+filedItem('HDMI cable', deskDrawer, { length: '2m' });
+filedItem('label printer', officeLocation, { model: 'P710' });
+
+filedItem('blender', kitchenRoom, {});
+filedItem('bicarbonate of soda', pantryLoc, {});
+filedItem('dish soap', underSink, {});
+filedItem('spare bulbs', underSink, { fitting: 'E27', watts: '9' });
+
+filedItem('first aid kit', cabinet, {});
+filedItem('hair clippers', cabinet, { guards: '3, 6, 9' });
 
 // --- dashboard extras ---------------------------------------------------------------
 

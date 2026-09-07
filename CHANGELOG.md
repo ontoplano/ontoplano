@@ -10,6 +10,18 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.93.0 — 2026-09-07
+
+- **A location's count is what is in it**, not what is in everything under it.
+  A room whose drawers held four things read "4" while each drawer also read
+  its share of the same four, so one object was counted at every level it hung
+  from and an empty shelf still showed a number.
+- **A location that has things but shows none says why** — "3 things are
+  hidden by it" — instead of a count beside an empty list, both true.
+- **The demo and the dev database get a whole small flat**: rooms, furniture,
+  drawers, and fifteen things filed through them, so the tree has depth and
+  the counts are worth reading.
+
 ## 0.92.1 — 2026-09-07
 
 - **The report box says exactly what it sends**: your account, the screen you
