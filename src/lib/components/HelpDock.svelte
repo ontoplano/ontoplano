@@ -231,7 +231,7 @@
 	open={reporting}
 	onclose={closeReport}
 	title="Something wrong here?"
-	description={`It goes to whoever runs this instance. We send what you write below, and that it happened on ${page.url.pathname} — nothing else.`}
+	description={`Report it to the instance's administrator: it will carry your account, information about the browser you're using, and the fact it happened at ${page.url.pathname}. None of your personal goes data with it.`}
 	size="sm"
 >
 	{#if reportState === 'sent'}

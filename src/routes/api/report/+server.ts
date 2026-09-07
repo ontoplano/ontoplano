@@ -8,9 +8,15 @@ import { UnauthorizedError } from '$lib/server/services/errors';
 /**
  * "Something here is wrong", from wherever somebody noticed it.
  *
- * The address of the page comes with it, because the first question anybody
- * reading these asks is "where", and the person reporting should not have to
- * describe the screen they are looking at.
+ * Four things travel: the account, the sentence, the page, and the browser.
+ * The page because the first question anybody reading these asks is "where",
+ * and the browser because the second is "on what" — Firefox 151 on Linux is
+ * the difference between a bug and a rendering quirk.
+ *
+ * The dialog in `HelpDock.svelte` names all four. It said "nothing else" while
+ * this quietly attached a user agent, which is the kind of promise that is
+ * worse than saying nothing: anything added here has to be added there in the
+ * same edit.
  */
 export const POST: RequestHandler = async ({ request, locals }) => {
 	try {

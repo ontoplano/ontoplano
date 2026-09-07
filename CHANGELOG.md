@@ -12,8 +12,9 @@ version.
 
 ## 0.92.1 — 2026-09-07
 
-- **The report box names the screen you are on** — "that it happened on
-  /inventory" — instead of describing it as "the address of this screen".
+- **The report box says exactly what it sends**: your account, the screen you
+  are on by name, and which browser. It claimed "nothing else" while quietly
+  attaching a user agent, which is a worse promise than none.
 
 ## 0.92.0 — 2026-09-07
 
