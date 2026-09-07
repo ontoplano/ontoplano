@@ -10,6 +10,16 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.96.0 — 2026-09-07
+
+- **Nothing a row can gain makes it grow.** The price editor and a thing's own
+  fields share one line under the name that is there whether or not anything
+  is in it, so writing a price or giving something its first field leaves every
+  other row exactly where it was. More than fits on that line is folded behind
+  a chevron, which appears only where there is something folded — expanding is
+  the one thing allowed to change a card's height, because it is somebody
+  asking for it.
+
 ## 0.95.1 — 2026-09-07
 
 - **Counting something up moves nothing.** "Record what you paid" used to

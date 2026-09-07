@@ -42,6 +42,29 @@
 	/** The thing's own fields, while it is being edited. */
 	let editFields = $state<[string, string][]>([]);
 	let editIdealQty = $state('1');
+	/** The one row showing everything it has, rather than one line of it. */
+	let expanded = $state<number | null>(null);
+	/** Rows whose reserved line is not big enough for what is in it. */
+	let clipped = $state<Record<number, boolean>>({});
+
+	/**
+	 * Whether this line has more in it than one line shows.
+	 *
+	 * Measured rather than guessed: one small chip fits and needs no control,
+	 * three recipes and four fields do not. The control's slot is reserved
+	 * either way — taking it away where it is useless would move the rows where
+	 * it is not, which is the whole thing this is for.
+	 */
+	function clipping(node: HTMLElement, id: number) {
+		const look = () => {
+			const more = node.scrollHeight > node.clientHeight + 1;
+			if (clipped[id] !== more) clipped = { ...clipped, [id]: more };
+		};
+		look();
+		const observer = new ResizeObserver(look);
+		observer.observe(node);
+		return { update: look, destroy: () => observer.disconnect() };
+	}
 	let filterType = $state<'all' | 'someday' | 'replenish'>('all');
 	let newItemType = $state<'replenish' | 'someday'>('replenish');
 	let showBought = $state(false);
@@ -587,6 +610,52 @@
 	{/if}
 {/snippet}
 
+<!--
+	The line under the name, whose height is the row's and does not change.
+	
+	Recipes, the thing's own fields and the price editor all live here, and it
+	is exactly one line tall whether it holds three of them or none. Anything
+	that would not fit is clipped behind a count you can press — which is the
+	one thing allowed to make a row taller, because it is somebody asking.
+	
+	The alternative is what this replaced: pressing + made the card grow and
+	pushed every row under it down the screen, so the thing you were about to
+	press next was somewhere else by the time you got there.
+-->
+{#snippet meta(item: { id: number; name: string; bought: boolean; attributes?: string | null })}
+	{@const open = expanded === item.id}
+	<div class="mt-0.5 flex items-start gap-1">
+		<div use:clipping={item.id} class="min-w-0 flex-1 {open ? '' : 'h-5 overflow-hidden'}">
+			{#if pricing === item.id}
+				{@render paidPrompt(item)}
+			{:else}
+				<span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+					{@render usedIn(item)}
+					{@render ownFields(item)}
+				</span>
+			{/if}
+		</div>
+
+		<!--
+			Drawn on every row, and only useful on some. Removing it where there
+			is nothing to expand would move the rows that do have one.
+		-->
+		<button
+			type="button"
+			onclick={() => (expanded = open ? null : item.id)}
+			class="icon-btn size-5 shrink-0 {pricing === item.id || !(clipped[item.id] || open)
+				? 'invisible'
+				: ''}"
+			tabindex={pricing === item.id || !(clipped[item.id] || open) ? -1 : 0}
+			title={open ? 'Show less' : 'Show everything on this row'}
+			aria-label="{open ? 'Show less of' : 'Show everything on'} {item.name}"
+			aria-expanded={open}
+		>
+			<Icon name={open ? 'chevron-up' : 'chevron-down'} size={14} />
+		</button>
+	</div>
+{/snippet}
+
 {#snippet paidPrompt(item: { id: number; name: string; bought: boolean })}
 	{#if item.bought}
 		{#if pricing === item.id}
@@ -618,7 +687,7 @@
 						if (result.type === 'success') pricing = null;
 					};
 				}}
-				class="mt-1 flex items-center gap-1"
+				class="flex items-center gap-1"
 			>
 				<input type="hidden" name="id" value={item.id} />
 				<input
@@ -635,14 +704,14 @@
 					}}
 					placeholder="1.60"
 					aria-label="What you paid for {item.name}"
-					class="input w-20 px-2 py-1 text-xs"
+					class="input h-5 w-20 px-2 py-0 text-xs"
 				/>
-				<button class="btn btn-sm" title="Save" aria-label="Save what you paid">
+				<button class="btn btn-sm h-5 px-2 py-0" title="Save" aria-label="Save what you paid">
 					<Icon name="check" size={14} />
 				</button>
 				<button
 					type="button"
-					class="btn btn-sm"
+					class="btn btn-sm h-5 px-2 py-0"
 					onclick={closePricing}
 					title="Cancel"
 					aria-label="Cancel"
@@ -1123,11 +1192,7 @@
 														<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
 													{/if}
 													{@render expectedPrice(item)}
-													{@render usedIn(item)}
-													{@render ownFields(item)}
-													<!-- Under the name, not beside it: as a column of its own it
-													     took the width the name needed the moment it appeared. -->
-													{@render paidPrompt(item)}
+													{@render meta(item)}
 												</div>
 
 												<!-- Everything else at the right edge, same order, same x, every row. -->

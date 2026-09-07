@@ -333,6 +333,49 @@ test.describe('a row on a phone', () => {
 	 * every row and visible only where it means something, so the space is
 	 * space the row always had.
 	 */
+	/**
+	 * The same promise, for everything else a row can grow.
+	 *
+	 * Opening the price editor and giving a thing its first field are both
+	 * "something appeared", and both used to make the card taller and push
+	 * every row under it down the screen. They take over a line that is
+	 * reserved whether or not anything is in it.
+	 */
+	test('nor when a price is being written, nor when a field is added', async ({ page }) => {
+		await register(page, `inv-fixed-${Date.now()}@test.invalid`);
+		await visit(page, '/inventory');
+		await foodCategory(page);
+		await visit(page, '/inventory');
+		await addItem(page, 'Olive oil');
+		await addItem(page, 'Bread');
+
+		const below = page.getByText('Bread');
+		const start = await below.boundingBox();
+
+		// Having one of it, so there is a price to record.
+		await page.getByRole('button', { name: 'One more Olive oil' }).click();
+		await expect(page.locator('[title^="Olive oil:"]')).toHaveText('1');
+		expect((await below.boundingBox())!.y, 'after counting').toBe(start!.y);
+
+		await page.getByRole('button', { name: /^Record what you paid for Olive oil/ }).click();
+		await expect(page.locator('[name="paid"]')).toBeVisible();
+		expect((await below.boundingBox())!.y, 'with the price editor open').toBe(start!.y);
+
+		await page.locator('[name="paid"]').press('Escape');
+		await expect(page.locator('[name="paid"]')).toHaveCount(0);
+
+		// And a field of its own, which is the other thing that appears.
+		await page.getByRole('button', { name: /^Edit Olive oil/ }).click();
+		const edit = page.getByRole('dialog', { name: 'Edit item' });
+		await edit.locator('[name="fieldName"]').first().fill('size');
+		await edit.locator('[name="fieldValue"]').first().fill('500ml');
+		await edit.getByRole('button', { name: 'Save' }).click();
+		await expect(edit).toBeHidden();
+		await expect(page.getByText('size: 500ml')).toBeVisible();
+
+		expect((await below.boundingBox())!.y, 'with a field on the row').toBe(start!.y);
+	});
+
 	test('and nothing below it moves when the count goes up', async ({ page }) => {
 		await register(page, `inv-still-${Date.now()}@test.invalid`);
 		await visit(page, '/inventory');
