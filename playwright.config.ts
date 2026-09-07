@@ -23,14 +23,33 @@ export const TEST_CONFIG_DIR =
 
 export default defineConfig({
 	webServer: {
+		/*
+		 * The server production runs, not the one Vite lends you.
+		 *
+		 * This was `vite preview`, which is a different server from the
+		 * adapter-node build the box starts — so `BODY_SIZE_LIMIT`, the header
+		 * handling and the shutdown path were all being exercised in something
+		 * that never ships. It also closed idle keep-alive sockets after Node's
+		 * default five seconds while Playwright's request context pooled them,
+		 * and a call landing in that window read ECONNRESET: three unrelated
+		 * specs failed that way in one afternoon, each passing on its own.
+		 * `KEEP_ALIVE_TIMEOUT` below is longer than any gap in the suite.
+		 */
 		// The preparation is part of the command on purpose: `globalSetup` runs
 		// after the server, which meant the server opened the database that was
 		// about to be deleted. See `e2e/prepare.mjs`.
-		command: 'node e2e/prepare.mjs && npm run build && npm run preview',
+		command: 'node e2e/prepare.mjs && npm run build && node build',
 		port: 4173,
 		reuseExistingServer: !process.env.CI,
 		env: {
 			DATABASE_URL: TEST_DB,
+			// adapter-node listens where it is told; vite preview picked this.
+			PORT: '4173',
+			HOST: '127.0.0.1',
+			// Seconds. Longer than the longest pause between two requests on one
+			// pooled connection, so the server never closes a socket a client is
+			// about to write to.
+			KEEP_ALIVE_TIMEOUT: '120',
 			ORIGIN: 'http://localhost:4173',
 			BETTER_AUTH_SECRET: 'playwright-secret-playwright-secret',
 			// Keep the tests off whatever the developer's own config says.

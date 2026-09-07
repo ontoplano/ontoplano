@@ -232,24 +232,41 @@
 
 	/** How many things sit in each location's own subtree, for the panel. */
 	/**
-	 * How many things are in this location itself.
+	 * How many things are in this location and everything inside it.
 	 *
-	 * Not the subtree. A room whose drawers hold four things read "4" while
-	 * every drawer under it read its own share of the same four, so one object
-	 * was counted at every level it hung from — and a room with nothing
-	 * actually in it still showed a number, which reads as "there is something
-	 * on this shelf" when there is not. Opening a location still shows
-	 * everything under it; that is a different question from what is here.
+	 * A kitchen whose cabinet holds a thing has a thing in it — you would not
+	 * say the kitchen is empty — so the number counts the subtree, which is
+	 * also what opening the location shows. It is briefly confusing on the way
+	 * down a branch, because a parent's number is larger than what is directly
+	 * on its own shelf, so each row says which in its title rather than
+	 * leaving somebody to work it out from the arithmetic.
 	 */
 	const countsByLocation = $derived.by(() => {
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity
-		const out = new Map<number, number>();
+		const direct = new Map<number, number>();
 		for (const item of items) {
 			if (item.locationId == null) continue;
-			out.set(item.locationId, (out.get(item.locationId) ?? 0) + 1);
+			direct.set(item.locationId, (direct.get(item.locationId) ?? 0) + 1);
+		}
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const out = new Map<number, { here: number; total: number }>();
+		for (const one of data.locations) {
+			let total = 0;
+			for (const id of subtreeOf(one.id)) total += direct.get(id) ?? 0;
+			out.set(one.id, { here: direct.get(one.id) ?? 0, total });
 		}
 		return out;
 	});
+
+	/** "4 things, 1 here and 3 in what is inside it" — said, not inferred. */
+	function countTitle(name: string, count: { here: number; total: number }): string {
+		const things = (n: number) => `${n} ${n === 1 ? 'thing' : 'things'}`;
+		if (count.total === 0) return `Nothing in ${name} yet`;
+		if (count.total === count.here) return `${things(count.total)} in ${name}`;
+		return `${things(count.total)} in ${name}: ${count.here} here and ${
+			count.total - count.here
+		} in what is inside it`;
+	}
 	const unfiledCount = $derived(items.filter((i) => i.locationId == null).length);
 
 	/**
@@ -585,8 +602,11 @@
 				style="padding-left: {1 + depth * 0.9}rem"
 			>
 				<span class="truncate">{node.name}</span>
-				<span class="tabular ml-auto shrink-0 text-xs text-gray-500">
-					{countsByLocation.get(node.id) ?? 0}
+				<span
+					class="tabular ml-auto shrink-0 text-xs text-gray-500"
+					title={countTitle(node.name, countsByLocation.get(node.id) ?? { here: 0, total: 0 })}
+				>
+					{countsByLocation.get(node.id)?.total ?? 0}
 				</span>
 			</button>
 			<div class="flex shrink-0 items-center gap-1 pr-2">
