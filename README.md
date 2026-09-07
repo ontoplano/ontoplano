@@ -7,11 +7,11 @@
 **Managing life, one week at a time.**
 
 [![checks](https://github.com/ontoplano/ontoplano/actions/workflows/ci.yml/badge.svg)](https://github.com/ontoplano/ontoplano/actions/workflows/ci.yml)
-[![latest release](https://img.shields.io/github/v/release/ontoplano/ontoplano?label=release&color=1f6feb)](https://github.com/ontoplano/ontoplano/releases/latest)
-[![licence AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-1f6feb)](LICENSE)
-[![self-hosted](https://img.shields.io/badge/host%20it-yourself-1f6feb)](#running-it)
+[![release](.github/badges/release.svg)](https://github.com/ontoplano/ontoplano/releases/latest)
+[![licence AGPL-3.0](.github/badges/licence.svg)](LICENSE)
+[![host it yourself](.github/badges/host-it.svg)](#running-it)
 
-<a href="https://demo.ontoplano.com"><img alt="Try the demo — no sign-up necessary" src="https://img.shields.io/badge/%E2%96%B6%20try%20the%20demo-no%20sign--up%2C%20a%20week%20already%20in%20it-1f6feb?style=for-the-badge&labelColor=0b1220"></a>
+[![Try the demo — no sign up necessary](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)
 
 [ontoplano.com](https://ontoplano.com) · [official instance](https://app.ontoplano.com) · [documentation](https://docs.ontoplano.com)
 

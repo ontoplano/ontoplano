@@ -74,11 +74,54 @@ if (cleartext) {
 const packageId = packageIdFor(domain, process.env.ANDROID_PACKAGE_NAME);
 
 const keyAlias = process.env.ANDROID_KEY_ALIAS ?? 'ontoplano';
-const keystoreSetting = process.env.ANDROID_KEYSTORE ?? join(DIR, 'android.keystore');
+/*
+ * The signing key lives outside the checkout.
+ *
+ * It used to default to `android-twa/android.keystore` — inside the working
+ * tree, safe only for as long as one line of `.gitignore` held, and that line
+ * covers a directory the F-Droid packaging wants to stop ignoring. A key whose
+ * safety depends on a rule is a key that gets committed eventually, so the
+ * default is somewhere the repository cannot reach: losing this key means
+ * never being able to update the Play listing again, and publishing it means
+ * anybody can.
+ *
+ * `ANDROID_KEYSTORE` still overrides, for a key kept in a password manager's
+ * mount or on another disk.
+ */
+const keystoreHome = join(
+	process.env.XDG_DATA_HOME || join(homedir(), '.local', 'share'),
+	'ontoplano',
+	'android'
+);
+const keystoreSetting = process.env.ANDROID_KEYSTORE ?? join(keystoreHome, 'android.keystore');
 const keystorePath = isAbsolute(keystoreSetting)
 	? keystoreSetting
 	: resolve(process.cwd(), keystoreSetting);
 const passwordPath = `${keystorePath}.pass`;
+
+/*
+ * The key that used to live in the checkout.
+ *
+ * Signing with a different key than last time produces an app Play will not
+ * accept as an update and a phone will not install over the old one, so
+ * quietly generating a fresh one at the new location would be the worst
+ * outcome available. If the old one is still there and the new one is not,
+ * this stops and says how to move it — one command, run by the person whose
+ * key it is.
+ */
+const legacyKeystore = resolve(process.cwd(), DIR, 'android.keystore');
+if (!existsSync(keystorePath) && existsSync(legacyKeystore) && !process.env.ANDROID_KEYSTORE) {
+	console.error(
+		`\nThe signing key is kept outside the checkout now, and yours is still in it.\n\n` +
+			`Move it — it is the only thing that can update the Play listing:\n\n` +
+			`  mkdir -p ${dirname(keystorePath)}\n` +
+			`  mv ${legacyKeystore} ${keystorePath}\n` +
+			`  mv ${legacyKeystore}.pass ${passwordPath}\n\n` +
+			`Or point at it where it is, if you keep it somewhere of your own:\n\n` +
+			`  ANDROID_KEYSTORE=/path/to/android.keystore make android\n`
+	);
+	process.exit(1);
+}
 /*
  * What the store calls this build.
  *

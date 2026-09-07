@@ -73,7 +73,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: _billing-in-build vars print-% badges _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -448,6 +448,8 @@ lint:
 	yarn lint
 	@$(MAKE) -s docs-check
 	@yarn -s changelog:check
+	@yarn -s badges:check
+	@node scripts/check-no-secrets.mjs
 	@# The scheduled jobs run under `tsx` in a production install. A service
 	@# that reaches for a development-only package works everywhere except
 	@# there, and the box is where nobody is watching.
@@ -457,6 +459,13 @@ format:
 	yarn format
 
 # ─── Docs ─────────────────────────────────────────────────────────────────────
+
+# The README's badges, drawn from this repo rather than fetched from a badge
+# service — the front page of the project should not need a third party to be
+# up, willing, and not counting who looked. `make lint` fails when they are
+# stale, so a version bump cannot leave the release badge naming last month's.
+badges:
+	yarn badges
 
 # The docs is built from the schema snapshot, the route files, the scope table
 # and the shortcut map. It is committed so it can be read on the forge without

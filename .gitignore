@@ -34,6 +34,16 @@ test-results
 # The generated Gradle project is build output — `node scripts/build-twa.mjs`
 # recreates it. twa-manifest.json is generated too, from the environment.
 android-twa/
+
+# Signing keys, wherever they turn up. The Android key cannot be rotated out of
+# a mistake — publishing it lets anybody ship an update as this app — so it is
+# ignored by shape as well as by location, and `make lint` fails if one is ever
+# tracked anyway. See scripts/check-no-secrets.mjs.
+*.keystore
+*.keystore.pass
+*.jks
+*.p12
+*.pfx
 # Signing keys never go in a repository. Play ties an app to its key forever:
 # a leaked key lets someone else ship an update to your users, and a lost one
 # means republishing under a new listing.

@@ -31,6 +31,8 @@
 		"demo-media": "node scripts/build-demo-media.mjs",
 		"icons": "node scripts/build-icons.mjs",
 		"errorpage": "node scripts/build-error-page.mjs",
+		"badges": "node scripts/build-badges.mjs",
+		"badges:check": "node scripts/build-badges.mjs --check",
 		"docs": "node scripts/build-docs.mjs",
 		"docs:check": "node scripts/build-docs.mjs --check",
 		"changelog:check": "node scripts/check-changelog.mjs",
