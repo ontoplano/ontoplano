@@ -3233,8 +3233,6 @@ Every weekly block, active or not — the grid draws the inactive ones faded.
 
 #### `copySlotsToWeekdays(ctx, ids, days)`
 
-Same block, other days. A day the block already sits on is skipped.
-
 #### `clearWeeklyPlan(ctx)`
 
 Empty the weekly plan, and everything the blocks produced.

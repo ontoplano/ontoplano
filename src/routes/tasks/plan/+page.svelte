@@ -20,7 +20,15 @@
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
 	import { RATINGS } from '$lib/ratings.js';
-	import { MAX_INTERVAL, parseRecurrence } from '$lib/recurrence.js';
+	import {
+		MAX_INTERVAL,
+		occursOn,
+		parseRecurrence,
+		reanchor,
+		serialiseRecurrence,
+		WEEKLY,
+		type Recurrence
+	} from '$lib/recurrence.js';
 	import { parseSlotMeta } from '$lib/meta-keys.js';
 	import { getAction } from '$lib/shortcuts';
 	import { Calendar, DayGrid, TimeGrid, Interaction } from '@event-calendar/core';
@@ -28,8 +36,9 @@
 	import {
 		baseGridOptions,
 		addDaysStr,
-		buildSlotEvents,
 		buildSlotEventsForDates,
+		occurrenceKey,
+		parseLocalDate,
 		buildExceptionalEvents,
 		buildSubscribedEvents,
 		buildBillEvents,
@@ -300,6 +309,15 @@
 	let recurrenceKind: 'weekly' | 'weeks' | 'days' | 'monthly' = $state('weekly');
 	let recurrenceInterval = $state(2);
 	let recurrenceMonthDay = $state(1);
+	/**
+	 * What an every-N rhythm counts from, kept as the block already has it.
+	 *
+	 * The form used to post the day it was opened on, so opening an
+	 * every-other-day block on a Wednesday to fix a typo moved its phase by a
+	 * day. A block that has an anchor keeps it; a new one, or one whose rhythm
+	 * was just chosen, counts from the day on screen.
+	 */
+	let recurrenceAnchor: string | null = $state(null);
 	/** Arrived here from first run; dismissed with a click and never stored. */
 	let showWelcome = $state(page.url.searchParams.get('welcome') === '1');
 
@@ -369,8 +387,16 @@
 		);
 	}
 
-	function slotsForDay(day: number): Slot[] {
-		return data.slots.filter((s: Slot) => s.weekday === day);
+	/**
+	 * The blocks the selected day actually has, for keyboard navigation.
+	 *
+	 * Asked of each block's rule rather than its weekday: a fortnightly block
+	 * is not on the day in its off week, and one that comes back every two days
+	 * is on days its weekday never names.
+	 */
+	function slotsOnSelectedDay(): Slot[] {
+		const date = parseLocalDate(selectedDateStr());
+		return data.slots.filter((s: Slot) => occursOn(parseRecurrence(s.recurrence), date, s.weekday));
 	}
 
 	function formatWeekDate(dateStr: string): string {
@@ -400,6 +426,7 @@
 	function startEdit(slot: Slot) {
 		const rec = parseRecurrence(slot.recurrence);
 		recurrenceKind = rec.kind;
+		recurrenceAnchor = rec.kind === 'weeks' || rec.kind === 'days' ? rec.anchor : null;
 		if (rec.kind === 'weeks' || rec.kind === 'days') recurrenceInterval = rec.interval;
 		if (rec.kind === 'monthly') recurrenceMonthDay = rec.day;
 		formRatings = {
@@ -435,6 +462,7 @@
 
 	function startNew(mode: 'weekly' | 'once' = 'weekly') {
 		recurrenceKind = 'weekly';
+		recurrenceAnchor = null;
 		recurrenceInterval = 2;
 		recurrenceMonthDay = 1;
 		formRatings = { urgency: null, interest: null, energy: null };
@@ -466,8 +494,17 @@
 		);
 		if (!result) return;
 
-		closeForm();
+		// The form stays open. Changing how something repeats is rarely the only
+		// thing being changed, and closing on the way past means reopening it to
+		// carry on — which is also how somebody loses what they had typed.
 		await invalidateAll();
+		editingKind = editingKind === 'slot' ? 'exceptional' : 'slot';
+	}
+
+	/** "1st", "2nd", "3rd", "4th" — for saying which day of the month. */
+	function monthDaySuffix(n: number): string {
+		if (n % 100 >= 11 && n % 100 <= 13) return 'th';
+		return ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
 	}
 
 	/**
@@ -1066,10 +1103,31 @@
 	}
 
 	/** Restore a block to a known placement. */
+	/**
+	 * Write a rule into the fields the block form posts.
+	 *
+	 * The server rebuilds the rule from these four rather than trusting a
+	 * serialised string, so a drag has to speak the same language the form does.
+	 */
+	function setRecurrenceFields(body: FormData, r: Recurrence) {
+		body.set('recurrenceKind', r.kind);
+		if (r.kind === 'weeks' || r.kind === 'days') {
+			body.set('recurrenceInterval', String(r.interval));
+			body.set('recurrenceAnchor', r.anchor);
+		}
+		if (r.kind === 'monthly') body.set('recurrenceMonthDay', String(r.day));
+	}
+
 	function restorePlacement(
 		kind: GridEventKind,
 		source: Slot | Exceptional,
-		placement: { weekday?: number; date?: string; startTime: string; durationMinutes: number }
+		placement: {
+			weekday?: number;
+			date?: string;
+			startTime: string;
+			durationMinutes: number;
+			recurrence?: string | null;
+		}
 	): () => Promise<void> {
 		// The identity fields are captured now, because by the time this runs the
 		// block may no longer be in `data`.
@@ -1090,8 +1148,13 @@
 			if (identity.categoryId != null) body.set('categoryId', String(identity.categoryId));
 			if (identity.activityId != null) body.set('activityId', String(identity.activityId));
 			body.set('label', identity.label);
-			if (kind === 'slot') body.set('weekday', String(placement.weekday ?? 0));
-			else body.set('date', placement.date ?? '');
+			if (kind === 'slot') {
+				body.set('weekday', String(placement.weekday ?? 0));
+				// Undoing a move of a non-weekly block has to put the anchor back
+				// too, or the block returns to the right day on the wrong rhythm.
+				const rule = parseRecurrence(placement.recurrence);
+				if (rule.kind !== 'weekly') setRecurrenceFields(body, rule);
+			} else body.set('date', placement.date ?? '');
 
 			await postGridAction(
 				kind === 'slot' ? 'update' : 'updateExceptional',
@@ -1216,7 +1279,7 @@
 			return;
 		}
 
-		const slots = slotsForDay(selectedWeekday);
+		const slots = slotsOnSelectedDay();
 
 		if (multiselect) {
 			switch (action) {
@@ -1401,44 +1464,47 @@
 	 * move is hidden because its replacement is already on screen and showing
 	 * both makes one block look like two.
 	 */
-	const suppressionsHere = $derived(
-		data.suppressions.filter((sup: { slotId: number; date: string }) => {
-			const slot = data.slots.find((s: Slot) => s.id === sup.slotId);
-			if (!slot) return false;
-			return formatLocalDate(weekdayToDate(data.range.from, slot.weekday)) === sup.date;
-		})
-	);
-
-	const suppressedSlotIds = $derived(
-		new Set<number>(
-			suppressionsHere
+	/**
+	 * Skipped and moved occurrences, each named by its block and its own date.
+	 *
+	 * These used to be sets of block ids, matched against the one date in the
+	 * window that shared the block's weekday. A block that comes back every two
+	 * days has four occurrences in a week, so skipping the Wednesday one either
+	 * did nothing or greyed out all four — and moving one hid the lot.
+	 */
+	const suppressedKeys = $derived(
+		new Set<string>(
+			data.suppressions
 				.filter((sup: { movedToId: number | null }) => sup.movedToId === null)
-				.map((sup: { slotId: number }) => sup.slotId)
+				.map((sup: { slotId: number; date: string }) => occurrenceKey(sup.slotId, sup.date))
 		)
 	);
 
-	/** Moved away from this day — drawn at its new time instead. */
-	const movedSlotIds = $derived(
-		new Set<number>(
-			suppressionsHere
+	/** Moved away from its own date — drawn at its new time instead. */
+	const movedKeys = $derived(
+		new Set<string>(
+			data.suppressions
 				.filter((sup: { movedToId: number | null }) => sup.movedToId !== null)
-				.map((sup: { slotId: number }) => sup.slotId)
+				.map((sup: { slotId: number; date: string }) => occurrenceKey(sup.slotId, sup.date))
 		)
 	);
 
 	/**
-	 * A weekly block means "every week", so a month needs it on each week shown.
-	 * The dates come from the server's own window, which is what the calendar is
-	 * rendering — anything computed separately can drift by a row.
+	 * Every date on screen, offered to every block's own rhythm.
+	 *
+	 * The week and day views used to hand this the window's first date alone
+	 * and let it work out the seven — which was fine while every repeating
+	 * block was weekly, and drew "every two days" once. A rule can land on a
+	 * date more than once a week, or on none of them, so the only question that
+	 * can be answered is "does it fall on this day", asked of each day the
+	 * calendar is actually rendering.
 	 */
 	const gridEvents = $derived([
 		...buildSlotEventsForDates(
-			data.slots.filter((s: Slot) => !movedSlotIds.has(s.id)),
-			effectiveView === 'month'
-				? data.range.days.map((d: { date: string }) => d.date)
-				: [data.range.from],
+			data.slots,
+			data.range.days.map((d: { date: string }) => d.date),
 			data.categories,
-			{ suppressedSlotIds }
+			{ suppressed: suppressedKeys, moved: movedKeys }
 		),
 		...buildExceptionalEvents(data.exceptionals, data.categories),
 		// Somebody else's meetings, drawn where they get in the way and immovable
@@ -1731,7 +1797,8 @@
 					weekday: decoded.kind === 'slot' ? (source as Slot).weekday : undefined,
 					date: decoded.kind === 'slot' ? undefined : (source as Exceptional).date,
 					startTime: source.startTime,
-					durationMinutes: source.durationMinutes
+					durationMinutes: source.durationMinutes,
+					recurrence: decoded.kind === 'slot' ? (source as Slot).recurrence : undefined
 				})
 			);
 
@@ -1740,8 +1807,11 @@
 			body.set('startTime', placement.startTime);
 			body.set('durationMinutes', String(source.durationMinutes));
 			setIdentityFields(body, source);
-			if (decoded.kind === 'slot') body.set('weekday', String(placement.weekday));
-			else body.set('date', formatLocalDate(moved));
+			if (decoded.kind === 'slot') {
+				body.set('weekday', String(placement.weekday));
+				const rule = parseRecurrence((source as Slot).recurrence);
+				if (rule.kind !== 'weekly') setRecurrenceFields(body, reanchor(rule, moved));
+			} else body.set('date', formatLocalDate(moved));
 
 			const result = await postGridAction(
 				decoded.kind === 'slot' ? 'update' : 'updateExceptional',
@@ -1852,8 +1922,15 @@
 		body.set('startTime', placement.startTime);
 		body.set('durationMinutes', String(placement.durationMinutes));
 		setIdentityFields(body, source);
-		if (decoded.kind === 'slot') body.set('weekday', String(placement.weekday));
-		else body.set('date', date);
+		// A copy of a fortnightly block is another fortnightly block. `create`
+		// always reads a rule from the form and defaults to weekly, so saying
+		// nothing here would quietly turn every duplicate into a weekly one.
+		let copiedRule: Recurrence | null = null;
+		if (decoded.kind === 'slot') {
+			body.set('weekday', String(placement.weekday));
+			copiedRule = reanchor(parseRecurrence((source as Slot).recurrence), info.event.start);
+			setRecurrenceFields(body, copiedRule);
+		} else body.set('date', date);
 
 		const data_ = await postGridAction(
 			decoded.kind === 'slot' ? 'create' : 'createExceptional',
@@ -1871,12 +1948,20 @@
 				id: newId,
 				weekday: placement.weekday,
 				startTime: placement.startTime,
-				durationMinutes: placement.durationMinutes
+				durationMinutes: placement.durationMinutes,
+				recurrence: serialiseRecurrence(copiedRule ?? WEEKLY)
 			};
-			const [event] = buildSlotEvents([copy], data.range.from, data.categories, {
-				suppressedSlotIds
-			});
-			calendar?.addEvent(event);
+			// Every date the copy lands on, not just the first: a block that comes
+			// round every two days appears several times in the window, and drawing
+			// one of them would leave the rest missing until the next reload.
+			for (const event of buildSlotEventsForDates(
+				[copy],
+				data.range.days.map((d: { date: string }) => d.date),
+				data.categories,
+				{ suppressed: suppressedKeys, moved: movedKeys }
+			)) {
+				calendar?.addEvent(event);
+			}
 			data.slots.push(copy);
 		} else {
 			const copy: Exceptional = {
@@ -1915,7 +2000,8 @@
 				weekday: decoded.kind === 'slot' ? (source as Slot).weekday : undefined,
 				date: decoded.kind === 'slot' ? undefined : (source as Exceptional).date,
 				startTime: source.startTime,
-				durationMinutes: source.durationMinutes
+				durationMinutes: source.durationMinutes,
+				recurrence: decoded.kind === 'slot' ? (source as Slot).recurrence : undefined
 			})
 		});
 
@@ -1924,8 +2010,19 @@
 		body.set('startTime', placement.startTime);
 		body.set('durationMinutes', String(placement.durationMinutes));
 		setIdentityFields(body, source);
-		if (decoded.kind === 'slot') body.set('weekday', String(placement.weekday));
-		else body.set('date', date);
+
+		// A block that repeats on something other than a weekday keeps its
+		// rhythm somewhere the weekday cannot describe, so a drag has to move
+		// that too — otherwise the block snaps back and the drag does nothing.
+		let moved: Recurrence | null = null;
+		if (decoded.kind === 'slot') {
+			body.set('weekday', String(placement.weekday));
+			const rule = parseRecurrence((source as Slot).recurrence);
+			if (rule.kind !== 'weekly') {
+				moved = reanchor(rule, info.event.start);
+				setRecurrenceFields(body, moved);
+			}
+		} else body.set('date', date);
 
 		// No `meta` fields go out with a move, so the server leaves the block's
 		// options alone -- see metaPatchFromFormData.
@@ -1941,8 +2038,10 @@
 
 		source.startTime = placement.startTime;
 		source.durationMinutes = placement.durationMinutes;
-		if (decoded.kind === 'slot') (source as Slot).weekday = placement.weekday;
-		else (source as Exceptional).date = date;
+		if (decoded.kind === 'slot') {
+			(source as Slot).weekday = placement.weekday;
+			if (moved) (source as Slot).recurrence = serialiseRecurrence(moved);
+		} else (source as Exceptional).date = date;
 	}
 </script>
 
@@ -2588,7 +2687,9 @@
 		onclose={closeForm}
 		size="lg"
 		title={editingBlockId !== null ? 'Edit block' : 'New block'}
-		description={repeat === 'once' ? 'Happens once, on one day.' : 'Repeats every week.'}
+		description={repeat === 'once'
+			? 'Happens once, on one day.'
+			: 'Comes back — as often as you say.'}
 	>
 		<div bind:this={createFormEl} class="space-y-3">
 			<!--
@@ -2620,7 +2721,7 @@
 					<span class="text-sm font-medium text-gray-700">Repeats</span>
 					{#if editingKind}
 						<span class="text-sm text-gray-500">
-							{editingKind === 'slot' ? 'Every week' : 'Once only'}
+							{editingKind === 'slot' ? 'Comes back' : 'Once only'}
 						</span>
 						<!-- The two differ only in which day they name, so changing your
 						     mind should not mean deleting one and retyping the other. -->
@@ -2630,13 +2731,13 @@
 							class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm hover:bg-gray-50"
 							title={editingKind === 'slot'
 								? 'Keep only this occurrence and stop repeating'
-								: 'Repeat this every week from now on'}
+								: 'Have it come back — every week, or on whatever rhythm you choose'}
 						>
-							{editingKind === 'slot' ? 'Make it once only' : 'Make it weekly'}
+							{editingKind === 'slot' ? 'Make it once only' : 'Make it recurrent'}
 						</button>
 					{:else}
 						<div class="flex">
-							{#each [{ value: 'weekly', label: 'Every week' }, { value: 'once', label: 'Once only' }] as choice (choice.value)}
+							{#each [{ value: 'weekly', label: 'Comes back' }, { value: 'once', label: 'Once only' }] as choice (choice.value)}
 								<button
 									type="button"
 									onclick={() => (repeat = choice.value as 'weekly' | 'once')}
@@ -2660,13 +2761,22 @@
 					<div class="flex flex-wrap items-center gap-3 border border-gray-200 bg-gray-50 p-3">
 						<span class="eyebrow shrink-0 text-gray-500">How often</span>
 						<input type="hidden" name="recurrenceKind" value={recurrenceKind} />
-						<input type="hidden" name="recurrenceAnchor" value={selectedDateStr()} />
+						<input
+							type="hidden"
+							name="recurrenceAnchor"
+							value={recurrenceAnchor ?? selectedDateStr()}
+						/>
 
 						<div class="flex">
 							{#each [{ v: 'weekly', l: 'Every week' }, { v: 'weeks', l: 'Every N weeks' }, { v: 'days', l: 'Every N days' }, { v: 'monthly', l: 'Monthly' }] as opt (opt.v)}
 								<button
 									type="button"
-									onclick={() => (recurrenceKind = opt.v as typeof recurrenceKind)}
+									onclick={() => {
+										// Choosing a different rhythm starts it here rather than
+										// keeping the old one's phase, which nothing on screen names.
+										if (recurrenceKind !== opt.v) recurrenceAnchor = null;
+										recurrenceKind = opt.v as typeof recurrenceKind;
+									}}
 									class="px-3 py-1 text-sm {recurrenceKind === opt.v
 										? 'bg-gray-900 font-medium text-white'
 										: 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50'}"
@@ -2723,13 +2833,37 @@
 					them full width below `sm` and lines them up above it.
 				-->
 				<FormGrid>
-					{#if repeat === 'weekly'}
+					<!--
+						The weekday is only a question for a rule that has weekdays.
+
+						"Every 2 days" was asked which weekday it was on, which means
+						nothing — 7 is odd, so a block every other day lands on every
+						weekday in turn — and the field was required, so a rhythm that
+						has no weekday could not be saved without answering it. Monthly
+						is the same: the day of the month is the answer and the weekday
+						is noise. Both keep a weekday in the database, because that is
+						what the rule falls back to if somebody switches to weekly.
+					-->
+					{#if repeat === 'weekly' && (recurrenceKind === 'weekly' || recurrenceKind === 'weeks')}
 						<Field label="Day" span={4} required>
 							<select name="weekday" required bind:value={formWeekday} class="select">
 								{#each data.weekdays as day, i (i)}
 									<option value={i}>{day}</option>
 								{/each}
 							</select>
+						</Field>
+					{:else if repeat === 'weekly'}
+						<!-- Still posted, so the block keeps a weekday to fall back on. -->
+						<input type="hidden" name="weekday" value={formWeekday} />
+						<Field
+							label={recurrenceKind === 'monthly' ? 'Day of the month' : 'Counting from'}
+							span={4}
+						>
+							<p class="text-sm text-gray-500">
+								{recurrenceKind === 'monthly'
+									? `The ${recurrenceMonthDay}${monthDaySuffix(recurrenceMonthDay)}, set above.`
+									: `${selectedDateStr()}, set above.`}
+							</p>
 						</Field>
 					{:else}
 						<Field label="Date" span={4} required>
@@ -3041,7 +3175,7 @@
 		{#snippet footer()}
 			<button type="button" class="btn" onclick={closeForm}>Cancel</button>
 			<button type="submit" form="block-form" class="btn btn-primary">
-				{editingKind ? 'Save block' : repeat === 'once' ? 'Add one-off' : 'Add weekly block'}
+				{editingKind ? 'Save block' : repeat === 'once' ? 'Add one-off' : 'Add repeating block'}
 			</button>
 		{/snippet}
 	</Modal>
@@ -3345,6 +3479,9 @@
 			{/if}
 			{#if hovered.label}
 				<p class="text-xs text-gray-500">Label: {hovered.label}</p>
+			{/if}
+			{#if hovered.repeats}
+				<p class="text-xs text-gray-500">{hovered.repeats}</p>
 			{/if}
 			{#if hovered.state}
 				<p class="mt-0.5 text-xs font-medium text-gray-500">{hovered.state}</p>

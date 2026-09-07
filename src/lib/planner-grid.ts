@@ -1,5 +1,16 @@
 import type { Calendar } from '@event-calendar/core';
 import { CATEGORY_FALLBACK_COLOR } from './colors.js';
+import { describeRecurrence, formatDate, occursOn, parseRecurrence } from './recurrence.js';
+
+const WEEKDAY_LABELS = [
+	'Monday',
+	'Tuesday',
+	'Wednesday',
+	'Thursday',
+	'Friday',
+	'Saturday',
+	'Sunday'
+];
 
 /**
  * The default stretch of the day, when the account has not said otherwise.
@@ -112,6 +123,8 @@ export interface GridSlotInput {
 	workoutName?: string | null;
 	label?: string | null;
 	active: boolean;
+	/** How often it comes round. Absent is weekly, which is what it used to be. */
+	recurrence?: string | null;
 }
 
 export interface GridExceptionalInput {
@@ -138,8 +151,23 @@ export interface SlotPlacement {
 	durationMinutes: number;
 }
 
+/**
+ * One occurrence, named by its block and its date.
+ *
+ * Skipping and moving are things done to a single occurrence, and a block that
+ * comes back every two days has four of them in a week. Naming them by block
+ * alone made "skip this one" either do nothing or grey out all four, depending
+ * on which day it fell on.
+ */
+export function occurrenceKey(slotId: number, date: string): string {
+	return `${slotId}|${date}`;
+}
+
 export interface BuildEventsOptions {
-	suppressedSlotIds?: Set<number>;
+	/** Occurrences the person skipped, as `occurrenceKey` strings. */
+	suppressed?: Set<string>;
+	/** Occurrences moved elsewhere; drawn at their new time, not this one. */
+	moved?: Set<string>;
 }
 
 export type GridEventKind = 'slot' | 'exceptional';
@@ -267,16 +295,15 @@ export function blockName(
 
 function slotToEvent(
 	slot: GridSlotInput,
-	mondayStr: string,
+	dayDate: Date,
 	categories: GridCategory[],
 	opts: BuildEventsOptions
 ): Calendar.EventInput {
-	const dayDate = weekdayToDate(mondayStr, slot.weekday);
 	const start = combineDateAndClock(dayDate, slot.startTime);
 	const end = new Date(start.getTime() + slot.durationMinutes * 60_000);
 	const bg =
 		slot.mode === 'workout' ? WORKOUT_COLOR : categoryColor(categories, effectiveCategoryId(slot));
-	const suppressed = opts.suppressedSlotIds?.has(slot.id) ?? false;
+	const suppressed = opts.suppressed?.has(occurrenceKey(slot.id, formatDate(dayDate))) ?? false;
 	const inactive = !slot.active || suppressed;
 	// A slot skipped for this date is a stand-in for something that isn't
 	// happening, so there is nothing meaningful to drag it to.
@@ -305,7 +332,8 @@ function slotToEvent(
 			activityId: slot.activityId,
 			label: slot.label ?? '',
 			active: slot.active,
-			suppressed
+			suppressed,
+			recurrence: slot.recurrence ?? null
 		}
 	};
 }
@@ -377,22 +405,47 @@ export function buildSubscribedEvents(
 	}));
 }
 
+/**
+ * The dates in a window a block actually falls on.
+ *
+ * The grid used to put every repeating block on its own weekday, once a week,
+ * whatever its rule said — so "every three days" and "the first of the month"
+ * were saved correctly, generated correctly into occurrences, and then drawn
+ * as an ordinary weekly block. The calendar was the one place that never asked
+ * how often, and it is the only place anybody looks.
+ *
+ * A rule can put a block on a date more than once a week (every two days) or
+ * on none of them (a fortnightly block, in the off week), so this returns a
+ * list rather than a date.
+ */
+function datesFor(slot: GridSlotInput, dates: string[], opts: BuildEventsOptions): Date[] {
+	const rule = parseRecurrence(slot.recurrence);
+	return dates
+		.filter((date) => !opts.moved?.has(occurrenceKey(slot.id, date)))
+		.map(parseLocalDate)
+		.filter((date) => occursOn(rule, date, slot.weekday));
+}
+
 export function buildSlotEvents(
 	slots: GridSlotInput[],
 	mondayStr: string,
 	categories: GridCategory[],
 	opts: BuildEventsOptions = {}
 ): Calendar.EventInput[] {
-	return slots.map((s) => slotToEvent(s, mondayStr, categories, opts));
+	const monday = parseLocalDate(mondayStr);
+	const week = Array.from({ length: 7 }, (_, i) =>
+		formatDate(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i))
+	);
+	return buildSlotEventsForDates(slots, week, categories, opts);
 }
 
 /**
- * Weekly blocks across a stretch of dates — a month, say.
+ * Repeating blocks across a stretch of dates — a week, a month.
  *
- * `buildSlotEvents` maps a block onto one week; a month view needs each block
- * on every week it appears in, and the only alignment that cannot be wrong is
- * the dates the calendar is actually showing. Event ids repeat across weeks,
- * which is fine: the id names the block, and the occurrence is its date.
+ * Date-driven rather than week-driven: every date the window shows is offered
+ * to every block's own rule, which is the only way "every three days" can land
+ * where it lands. Event ids repeat across dates, which is fine and always was:
+ * the id names the block and the occurrence is its date.
  */
 export function buildSlotEventsForDates(
 	slots: GridSlotInput[],
@@ -400,9 +453,9 @@ export function buildSlotEventsForDates(
 	categories: GridCategory[],
 	opts: BuildEventsOptions = {}
 ): Calendar.EventInput[] {
-	// One week start per row: a block lands on its own weekday inside it.
-	const weekStarts = dates.filter((_, i) => i % 7 === 0);
-	return weekStarts.flatMap((weekStart) => buildSlotEvents(slots, weekStart, categories, opts));
+	return slots.flatMap((slot) =>
+		datesFor(slot, dates, opts).map((date) => slotToEvent(slot, date, categories, opts))
+	);
 }
 
 export function buildExceptionalEvents(
@@ -474,6 +527,8 @@ export interface GridEventDetail {
 	categoryName: string | null;
 	label: string | null;
 	state: string | null;
+	/** How often it comes back, when that is not simply every week. */
+	repeats: string | null;
 }
 
 // Everything a block knows about itself, for the hover card — the way to read a slot
@@ -487,8 +542,19 @@ export function describeGridEvent(event: GridEventLike): GridEventDetail {
 
 	let state: string | null = null;
 	if (props.kind === 'exceptional') state = 'One-off';
-	else if (props.suppressed) state = 'Skipped this week';
+	// "Skipped", not "skipped this week": a block that comes back every two days
+	// has four occurrences in a week and only one of them was skipped.
+	else if (props.suppressed) state = 'Skipped';
 	else if (props.active === false) state = 'Inactive';
+
+	// A fortnightly block and a weekly one are the same rectangle, so the only
+	// place the difference can be read is here. Weekly says nothing, because
+	// every block being labelled "every Tuesday" is noise on the common case.
+	const rule = parseRecurrence(typeof props.recurrence === 'string' ? props.recurrence : null);
+	const repeats =
+		props.kind === 'slot' && rule.kind !== 'weekly'
+			? describeRecurrence(rule, WEEKDAY_LABELS[(event.start.getDay() + 6) % 7])
+			: null;
 
 	return {
 		title,
@@ -496,7 +562,8 @@ export function describeGridEvent(event: GridEventLike): GridEventDetail {
 		durationText: formatGridDuration(minutes),
 		categoryName: rawCategory || null,
 		label: rawLabel && rawLabel !== title ? rawLabel : null,
-		state
+		state,
+		repeats
 	};
 }
 

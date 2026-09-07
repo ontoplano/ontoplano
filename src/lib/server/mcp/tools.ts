@@ -40,6 +40,13 @@ import {
 import { getStreamBySlug, listStreams, pushPoints, serialiseStream } from '../services/streams.js';
 import { createSlot, deleteSlots, listWeeklySlots, updateSlot } from '../services/slots.js';
 import {
+	describeRecurrence,
+	formatDate as recFormatDate,
+	MAX_INTERVAL,
+	parseRecurrence,
+	serialiseRecurrence
+} from '../../recurrence.js';
+import {
 	createIdea,
 	deleteIdea,
 	listIdeas,
@@ -289,6 +296,83 @@ function habitByName(ctx: Ctx, wanted: unknown): { id: number; name: string } {
 		);
 	return near[0];
 }
+
+/**
+ * How often a repeating block comes back, for the tools that set it.
+ *
+ * The app has offered every-N-weeks, every-N-days and monthly since blocks
+ * could repeat at all; this surface could only ever make a weekly one, which
+ * left "put the bins out every other Tuesday" impossible to ask for.
+ */
+const repeatArgs = {
+	repeats: {
+		type: 'string',
+		enum: ['weekly', 'every_n_weeks', 'every_n_days', 'monthly'],
+		description:
+			'How often it comes back. Weekly if left out. `every_n_weeks` and `every_n_days` need `every`; `monthly` needs `month_day` and ignores the weekday.'
+	},
+	every: {
+		type: 'integer',
+		description: 'The N in every N weeks or every N days — 2 is "every other".'
+	},
+	month_day: {
+		type: 'integer',
+		description:
+			'For `monthly`: which day of the month, 1 to 31. A month too short for it uses its last day.'
+	}
+} as const;
+
+/**
+ * The rule these arguments describe, or `undefined` when they say nothing —
+ * which is how a change that does not mention the rhythm leaves it alone.
+ *
+ * `anchor` is what every-N counts from: the date the block was asked about, so
+ * "every other Tuesday" starts on the Tuesday somebody meant.
+ */
+function recurrenceFromArgs(args: Record<string, unknown>, anchor: string): string | undefined {
+	const repeats = args.repeats;
+	if (repeats === undefined || repeats === null || repeats === '') return undefined;
+
+	const every = Math.trunc(Number(args.every ?? 1));
+	if (repeats === 'every_n_weeks' || repeats === 'every_n_days') {
+		if (!Number.isInteger(every) || every < 1 || every > MAX_INTERVAL) {
+			throw new ValidationError(`\`every\` must be a whole number from 1 to ${MAX_INTERVAL}`);
+		}
+		const kind = repeats === 'every_n_weeks' ? 'weeks' : 'days';
+		return serialiseRecurrence({ kind, interval: every, anchor });
+	}
+	if (repeats === 'monthly') {
+		const day = Math.trunc(Number(args.month_day ?? 1));
+		if (!Number.isInteger(day) || day < 1 || day > 31) {
+			throw new ValidationError('`month_day` must be a whole number from 1 to 31');
+		}
+		return serialiseRecurrence({ kind: 'monthly', day });
+	}
+	return 'weekly';
+}
+
+/** The rhythm in words, so a row does not have to be decoded to be read. */
+function repeatsInWords(recurrence: string | null, weekdayName: string): string {
+	return describeRecurrence(parseRecurrence(recurrence), weekdayName);
+}
+
+/** The next date on or after `from` that falls on this Monday-indexed weekday. */
+function nextWeekdayOnOrAfter(from: Date, weekday: unknown): Date {
+	const d = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+	const ahead = (Math.trunc(Number(weekday)) - ((d.getDay() + 6) % 7) + 7) % 7;
+	d.setDate(d.getDate() + ahead);
+	return d;
+}
+
+const WEEKDAY_NAMES = [
+	'Monday',
+	'Tuesday',
+	'Wednesday',
+	'Thursday',
+	'Friday',
+	'Saturday',
+	'Sunday'
+];
 
 export const TOOLS: Tool[] = [
 	// ── Looking ──────────────────────────────────────────────────────────────
@@ -1684,17 +1768,21 @@ export const TOOLS: Tool[] = [
 		name: 'repeating_week',
 		title: 'The week as it repeats',
 		description:
-			'The blocks that make up every week — each with its weekday, time, length and category. Weekdays are numbered from Monday: 0 is Monday, 6 is Sunday. This is the template the days are generated from; `today` and `upcoming` show what it produced. Read it before changing Tuesdays rather than a Tuesday.',
+			'The blocks that make up every week — each with its weekday, time, length and category. Weekdays are numbered from Monday: 0 is Monday, 6 is Sunday. Not all of them are weekly: `repeats` says in words how often each one comes back, which can be every N weeks, every N days, or a day of the month. This is the template the days are generated from; `today` and `upcoming` show what it produced. Read it before changing Tuesdays rather than a Tuesday.',
 		scope: 'schedule:read',
 		writes: false,
 		input: object({}),
-		run: (ctx) => listWeeklySlots(ctx)
+		run: (ctx) =>
+			listWeeklySlots(ctx).map((slot) => ({
+				...slot,
+				repeats: repeatsInWords(slot.recurrence, WEEKDAY_NAMES[slot.weekday] ?? 'that day')
+			}))
 	},
 	{
 		name: 'add_repeating_block',
 		title: 'Put a block on every week',
 		description:
-			'Add a block that repeats weekly — "gym on Tuesdays at seven". This changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. A block can be a bare category rather than a named thing — leave the title out and it shows as the category itself, which is what "put work in those hours" means.',
+			'Add a block that comes back — "gym on Tuesdays at seven", "the bins every other Tuesday", "rent on the first". Weekly unless `repeats` says otherwise. This changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. A block can be a bare category rather than a named thing — leave the title out and it shows as the category itself, which is what "put work in those hours" means.',
 		scope: 'schedule:write',
 		writes: true,
 		input: object(
@@ -1713,12 +1801,16 @@ export const TOOLS: Tool[] = [
 					type: 'integer',
 					description: 'Minutes before each occurrence to be reminded. No reminder if left out.'
 				},
+				...repeatArgs,
 				...ratingArgs
 			},
 			['weekday', 'start_time']
 		),
 		run: (ctx, args) => {
 			const chosen = categoryByName(ctx, args.category);
+			// Every-N counts from the next of the chosen weekday, so "every other
+			// Tuesday" starts on a Tuesday rather than on whatever today is.
+			const anchor = recFormatDate(nextWeekdayOnOrAfter(ctx.now, args.weekday));
 			const id = createSlot(ctx, {
 				weekday: args.weekday,
 				startTime: args.start_time,
@@ -1727,6 +1819,7 @@ export const TOOLS: Tool[] = [
 				categoryId: chosen.id,
 				label: args.title,
 				remindLeadMinutes: args.remind_minutes,
+				recurrence: recurrenceFromArgs(args, anchor),
 				...(gaveARating(args) ? { ratings: ratingsOf(args) } : {})
 			});
 			return { id, category: chosen.name };
@@ -1736,7 +1829,7 @@ export const TOOLS: Tool[] = [
 		name: 'change_repeating_block',
 		title: 'Change a repeating block',
 		description:
-			'Change every future occurrence of a repeating block: its weekday, time, length, the text on it, its category or its reminder. This is "move gym to Wednesdays"; `change_block` is "move this Wednesday\u2019s gym". Only the fields given change. Takes the id `repeating_week` gives.',
+			'Change every future occurrence of a repeating block: its weekday, time, length, how often it comes back, the text on it, its category or its reminder. This is "move gym to Wednesdays" or "make it every other week"; `change_block` is "move this Wednesday\u2019s gym". Only the fields given change. Takes the id `repeating_week` gives.',
 		scope: 'schedule:write',
 		writes: true,
 		input: object(
@@ -1755,7 +1848,8 @@ export const TOOLS: Tool[] = [
 					'The text shown on the block. A block that names an activity stays that activity — this only changes what the block says, which is how "add stretching to the morning routine\u2019s text" is done.'
 				),
 				category: text('Refile it under this part of life, by name.'),
-				remind_minutes: { type: 'integer', description: 'The new reminder lead. 0 turns it off.' }
+				remind_minutes: { type: 'integer', description: 'The new reminder lead. 0 turns it off.' },
+				...repeatArgs
 			},
 			['id']
 		),
@@ -1779,7 +1873,13 @@ export const TOOLS: Tool[] = [
 				...refiled,
 				label: args.title ?? current.label,
 				remindLeadMinutes: args.remind_minutes ?? current.remindLeadMinutes,
-				recurrence: current.recurrence ?? undefined
+				recurrence:
+					recurrenceFromArgs(
+						args,
+						recFormatDate(nextWeekdayOnOrAfter(ctx.now, args.weekday ?? current.weekday))
+					) ??
+					current.recurrence ??
+					undefined
 			});
 			return { ok: true };
 		}

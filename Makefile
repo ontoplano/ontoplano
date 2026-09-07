@@ -57,7 +57,7 @@ help:
 		echo "  restart [-app|-site|-docs|-demo]  without shipping anything"; \
 		echo "  prune-assets                      drop the old hashed chunks the box keeps"; \
 		echo "  release · docker-publish · github-push   publishing (release.mk)"; \
-		echo "  logs-app · logs-staging · setup   see local.mk for the rest"; \
+		echo "  prod-logs · prod-logs-staging · setup   see local.mk for the rest"; \
 	fi
 
 # What `help` deliberately leaves out: the variables, which are too many to
@@ -67,8 +67,13 @@ help:
 vars:
 	@sh scripts/make-vars.sh $(sort $(MAKEFILE_LIST) defaults.env $(wildcard $(SERVER_SRC)/defaults.env))
 
+# One variable's value, for a script that needs to know where something is
+# rather than keep a second copy of the path:  make print-SSH_HOST
+print-%:
+	@echo '$($*)'
 
-.PHONY: _billing-in-build vars _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+
+.PHONY: _billing-in-build vars print-% _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -249,8 +254,18 @@ dev-all: dev
 	if [ -d "$(SITE_SRC_LOCAL)" ]; then $(MAKE) -s dev-site & fi; \
 	wait
 
+# The development server on this machine.
+#
+#   make dev-logs                    the dev server
+#   make dev-logs-docs               the docs preview, when it is running
+#   make dev-logs UNIT=whatever      any other user unit here
+DEV_LOG_UNIT ?= ontoplano-dev
+
 dev-logs:
-	journalctl --user -u ontoplano-dev -f
+	journalctl --user -u $(if $(UNIT),$(UNIT),$(DEV_LOG_UNIT)) -f -n 100
+
+dev-logs-docs:
+	@$(MAKE) -s dev-logs UNIT=ontoplano-docs
 
 # The dev server in this terminal, the old way. Snapshots first, like the unit.
 dev-fg: _dev-deps _dev-migrated
@@ -602,6 +617,9 @@ package: $(PACKAGE_BUILD_DEP)
 package-check:
 	@bash tests/packaging.sh
 
+# The copy installed on THIS machine by `make install-service`, not the box.
+# `make dev-logs` is the development server; `make prod-logs` (local.mk) is
+# the one over there.
 logs:
 	journalctl --user -u ontoplano -f
 

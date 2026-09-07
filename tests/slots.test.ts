@@ -95,6 +95,44 @@ describe('copying a block to other days', () => {
 		expect(gym.map((s) => s.weekday).sort()).toEqual([0, 1, 2]);
 	});
 
+	test('a fortnightly block stays fortnightly on the days it is copied to', () => {
+		const id = slots.createSlot(
+			ctx,
+			block({
+				weekday: 0,
+				startTime: '08:00',
+				label: 'Bins',
+				recurrence: 'weeks:2:2026-08-17'
+			})
+		);
+		slots.copySlotsToWeekdays(ctx, [id], [2]);
+
+		const copy = slots.listWeeklySlots(ctx).find((s) => s.label === 'Bins' && s.weekday === 2)!;
+		// Same fortnight, slid to the Wednesday of the anchor's own week — the
+		// copy used to carry no rule at all and quietly became weekly.
+		expect(copy.recurrence).toBe('weeks:2:2026-08-19');
+	});
+
+	test('a rule that ignores the weekday cannot be copied onto one', () => {
+		const id = slots.createSlot(
+			ctx,
+			block({
+				weekday: 0,
+				startTime: '08:30',
+				label: 'Stretches',
+				recurrence: 'days:2:2026-08-17'
+			})
+		);
+		slots.copySlotsToWeekdays(ctx, [id], [3]);
+
+		// Copying "every two days" onto Thursday would be the same rule twice,
+		// drawn on top of itself, so the copy is a plain weekly Thursday block.
+		const copy = slots
+			.listWeeklySlots(ctx)
+			.find((s) => s.label === 'Stretches' && s.weekday === 3)!;
+		expect(copy.recurrence).toBe('weekly');
+	});
+
 	test('refuses an empty selection at either end', () => {
 		const id = slots.listWeeklySlots(ctx)[0].id;
 		expect(() => slots.copySlotsToWeekdays(ctx, [], [1])).toThrow();

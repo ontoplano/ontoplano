@@ -502,19 +502,19 @@ _Needs `schedule:write`; writes._
 
 ### `repeating_week` — The week as it repeats
 
-The blocks that make up every week — each with its weekday, time, length and category. Weekdays are numbered from Monday: 0 is Monday, 6 is Sunday. This is the template the days are generated from; `today` and `upcoming` show what it produced. Read it before changing Tuesdays rather than a Tuesday.
+The blocks that make up every week — each with its weekday, time, length and category. Weekdays are numbered from Monday: 0 is Monday, 6 is Sunday. Not all of them are weekly: `repeats` says in words how often each one comes back, which can be every N weeks, every N days, or a day of the month. This is the template the days are generated from; `today` and `upcoming` show what it produced. Read it before changing Tuesdays rather than a Tuesday.
 
 _Needs `schedule:read`; read-only._
 
 ### `add_repeating_block` — Put a block on every week
 
-Add a block that repeats weekly — "gym on Tuesdays at seven". This changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. A block can be a bare category rather than a named thing — leave the title out and it shows as the category itself, which is what "put work in those hours" means.
+Add a block that comes back — "gym on Tuesdays at seven", "the bins every other Tuesday", "rent on the first". Weekly unless `repeats` says otherwise. This changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. A block can be a bare category rather than a named thing — leave the title out and it shows as the category itself, which is what "put work in those hours" means.
 
 _Needs `schedule:write`; writes._
 
 ### `change_repeating_block` — Change a repeating block
 
-Change every future occurrence of a repeating block: its weekday, time, length, the text on it, its category or its reminder. This is "move gym to Wednesdays"; `change_block` is "move this Wednesday’s gym". Only the fields given change. Takes the id `repeating_week` gives.
+Change every future occurrence of a repeating block: its weekday, time, length, how often it comes back, the text on it, its category or its reminder. This is "move gym to Wednesdays" or "make it every other week"; `change_block` is "move this Wednesday’s gym". Only the fields given change. Takes the id `repeating_week` gives.
 
 _Needs `schedule:write`; writes._
 

@@ -401,6 +401,27 @@ export function deleteSlots(ctx: Ctx, ids: number[]): void {
 }
 
 /** Same block, other days. A day the block already sits on is skipped. */
+/**
+ * The rule a copy on another weekday should carry.
+ *
+ * Copying to weekdays is a statement about weekdays, so the shapes that hang
+ * off one — plain weekly, and every N weeks — come along, with the anchor slid
+ * to the same week's target day so the fortnight keeps its phase. The shapes
+ * that ignore the weekday cannot be copied onto one: "every two days" put on
+ * Monday and Wednesday is the same rule twice, drawn on top of itself. Those
+ * copies become weekly, which is what a weekday copy of them can mean.
+ *
+ * Copies used to carry no rule at all, so a fortnightly block quietly became a
+ * weekly one on every day it was copied to.
+ */
+function copiedRecurrence(raw: string | null, from: number, to: number): string {
+	const rule = parseRecurrence(raw);
+	if (rule.kind !== 'weeks') return 'weekly';
+	const anchor = new Date(`${rule.anchor}T00:00:00`);
+	anchor.setDate(anchor.getDate() + (to - from));
+	return serialiseRecurrence({ ...rule, anchor: recFormatDate(anchor) });
+}
+
 export function copySlotsToWeekdays(ctx: Ctx, ids: number[], days: number[]): void {
 	const wanted = ids.filter((n) => Number.isFinite(n) && n > 0);
 	const targetDays = days.filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
@@ -431,7 +452,8 @@ export function copySlotsToWeekdays(ctx: Ctx, ids: number[], days: number[]): vo
 						categoryId: slot.categoryId,
 						activityId: slot.activityId,
 						label: slot.label,
-						active: slot.active
+						active: slot.active,
+						recurrence: copiedRecurrence(slot.recurrence, slot.weekday, day)
 					})
 					.run();
 			}

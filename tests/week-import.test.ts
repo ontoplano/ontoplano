@@ -153,6 +153,37 @@ describe('how a block repeats', () => {
 		expect(recurrence.occursOn(rule, new Date('2026-08-21T00:00:00'), 0)).toBe(false);
 	});
 
+	test('dragging an every-N-days block moves the rhythm with it', () => {
+		const rule = recurrence.parseRecurrence('days:2:2026-08-17');
+		// Dropped on the 18th, which the old rhythm skipped.
+		const moved = recurrence.reanchor(rule, new Date('2026-08-18T09:00:00'));
+		expect(recurrence.serialiseRecurrence(moved)).toBe('days:2:2026-08-18');
+		expect(recurrence.occursOn(moved, new Date('2026-08-18T00:00:00'), 0)).toBe(true);
+		expect(recurrence.occursOn(moved, new Date('2026-08-20T00:00:00'), 0)).toBe(true);
+		expect(recurrence.occursOn(moved, new Date('2026-08-19T00:00:00'), 0)).toBe(false);
+	});
+
+	test('dragging a fortnightly block to another weekday keeps the fortnight', () => {
+		const rule = recurrence.parseRecurrence('weeks:2:2026-08-17');
+		// Monday the 17th to Thursday the 20th: still every other week, on Thursdays.
+		const moved = recurrence.reanchor(rule, new Date('2026-08-20T09:00:00'));
+		expect(recurrence.serialiseRecurrence(moved)).toBe('weeks:2:2026-08-20');
+		expect(recurrence.occursOn(moved, new Date('2026-08-20T00:00:00'), 3)).toBe(true);
+		expect(recurrence.occursOn(moved, new Date('2026-09-03T00:00:00'), 3)).toBe(true);
+		expect(recurrence.occursOn(moved, new Date('2026-08-27T00:00:00'), 3)).toBe(false);
+	});
+
+	test('dragging a monthly block changes which day of the month it is', () => {
+		const rule = recurrence.parseRecurrence('monthly:1');
+		const moved = recurrence.reanchor(rule, new Date('2026-08-14T09:00:00'));
+		expect(recurrence.serialiseRecurrence(moved)).toBe('monthly:14');
+	});
+
+	test('dragging a weekly block leaves its rule alone', () => {
+		const rule = recurrence.parseRecurrence('weekly');
+		expect(recurrence.serialiseRecurrence(recurrence.reanchor(rule, new Date()))).toBe('weekly');
+	});
+
 	test('nothing happens before the anchor', () => {
 		const rule = recurrence.parseRecurrence('days:3:2026-08-17');
 		expect(recurrence.occursOn(rule, new Date('2026-08-14T00:00:00'), 0)).toBe(false);

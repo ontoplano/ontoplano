@@ -10,6 +10,42 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.98.0 — 2026-09-07
+
+- **A block that does not come back weekly is finally drawn where it happens.**
+  Every N days, every N weeks and monthly were saved correctly and generated
+  correctly, and then the calendar drew them once a week on their weekday like
+  everything else — so a stretch every other day appeared on Mondays and the
+  rent appeared every week. The grid asks each block's own rule about each day
+  it is showing now: four occurrences in a week where there are four, none in a
+  fortnightly block's off week, the rent on its date.
+- **Dragging one of them moves its rhythm, not just its weekday.** A weekday is
+  all a weekly block is, so a drag used to send only that — which meant nothing
+  to a rule that counts in days or in months, and the block sprang back as if
+  the drag had never happened. Dropping it somewhere new moves what the rule
+  counts from, so "every other day" dragged onto today comes back from today.
+  Duplicating one keeps its rhythm too; it used to quietly produce a weekly
+  copy.
+- **Skipping one occurrence skips that one.** Skipping and moving named the
+  block rather than the day, so on a block with four occurrences in the week
+  they either did nothing or greyed out all four at once.
+- **Copying a fortnightly block to another day keeps the fortnight.** The
+  copies carried no rhythm at all and arrived weekly.
+- **Editing a block no longer moves it.** Opening an every-other-day block from
+  one of its days to fix a typo re-started the count from that day, so every
+  occurrence after it moved. It keeps what it was counting from; choosing a
+  different rhythm starts the new one from the day on screen.
+- **The hover card says how often a block comes back.** A fortnightly block and
+  a weekly one are the same rectangle; nothing on the grid said which was
+  which, and the difference only showed up as a block that was missing next
+  week. Weekly ones say nothing, because labelling every block "every Tuesday"
+  would bury the ones worth reading.
+- **An assistant can set a rhythm too.** `add_repeating_block` and
+  `change_repeating_block` take `repeats` — weekly, every N weeks, every N days
+  or a day of the month — and `repeating_week` says in words how often each
+  block comes back. Only weekly ones could be asked for before, so "the bins
+  every other Tuesday" was something you could do and it could not.
+
 ## 0.97.0 — 2026-09-07
 
 - **A workout's category is yours to name.** Strength, cardio, mobility, sport

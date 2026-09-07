@@ -123,6 +123,27 @@ export function occursOn(r: Recurrence, date: Date, weekday: number): boolean {
 	}
 }
 
+/**
+ * The same rhythm, moved to land on this date.
+ *
+ * Dragging a block across the grid says "not then, this instead", which for a
+ * weekly block the weekday alone records. Every other shape counts from
+ * something the weekday does not name — an anchor date, a day of the month —
+ * and dropping it somewhere new has to move that too, or the block springs
+ * straight back and the drag looks broken.
+ */
+export function reanchor(r: Recurrence, date: Date): Recurrence {
+	switch (r.kind) {
+		case 'weekly':
+			return r;
+		case 'weeks':
+		case 'days':
+			return { ...r, anchor: formatDate(date) };
+		case 'monthly':
+			return { kind: 'monthly', day: date.getDate() };
+	}
+}
+
 /** A short human description, for a list row that has no space for a form. */
 export function describeRecurrence(r: Recurrence, weekdayName: string): string {
 	switch (r.kind) {

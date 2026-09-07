@@ -267,11 +267,11 @@ describe('changing how often a block comes round', () => {
 			durationMinutes: 60,
 			mode: 'category',
 			categoryId: slots.listWeeklySlots(ctx).find((s) => s.id === id)!.categoryId,
-			recurrence: JSON.stringify({ kind: 'days', interval: 3, anchor: '2026-09-07' })
+			recurrence: 'days:3:2026-09-07'
 		});
 
 		const after = slots.listWeeklySlots(ctx).find((s) => s.id === id)!;
-		expect(JSON.parse(after.recurrence)).toMatchObject({ kind: 'days', interval: 3 });
+		expect(after.recurrence).toBe('days:3:2026-09-07');
 	});
 
 	test('and a save that carries no rhythm leaves the one it had', () => {
@@ -283,7 +283,7 @@ describe('changing how often a block comes round', () => {
 			durationMinutes: 60,
 			mode: 'category',
 			categoryId,
-			recurrence: JSON.stringify({ kind: 'weeks', interval: 2, anchor: '2026-09-07' })
+			recurrence: 'weeks:2:2026-09-07'
 		});
 
 		// A drag: placement only.
@@ -297,6 +297,108 @@ describe('changing how often a block comes round', () => {
 
 		const after = slots.listWeeklySlots(ctx).find((s) => s.id === id)!;
 		expect(after.weekday).toBe(3);
-		expect(JSON.parse(after.recurrence)).toMatchObject({ kind: 'weeks', interval: 2 });
+		expect(after.recurrence).toBe('weeks:2:2026-09-07');
+	});
+});
+
+/**
+ * What the grid draws for a block that is not weekly.
+ *
+ * Every rhythm was saved correctly, generated into occurrences correctly, and
+ * then drawn as an ordinary weekly block — because the calendar put each block
+ * on its own weekday once a week and never asked the rule. It was the one
+ * place that did not, and it is the only place anybody looks.
+ */
+describe('the grid and a block that is not weekly', () => {
+	let grid: typeof import('../src/lib/planner-grid');
+
+	beforeAll(async () => {
+		grid = await import('../src/lib/planner-grid');
+	});
+
+	/** Monday 7 September 2026 through Sunday the 13th. */
+	const week = [
+		'2026-09-07',
+		'2026-09-08',
+		'2026-09-09',
+		'2026-09-10',
+		'2026-09-11',
+		'2026-09-12',
+		'2026-09-13'
+	];
+
+	function block(recurrence: string | null) {
+		return {
+			id: 1,
+			weekday: 0,
+			startTime: '09:00',
+			durationMinutes: 60,
+			mode: 'category' as const,
+			categoryId: 1,
+			activityId: null,
+			categoryName: 'Work',
+			label: 'Bins',
+			active: true,
+			recurrence
+		};
+	}
+
+	const days = (events: { start: Date | string }[]) =>
+		events.map((e) => new Date(e.start).toISOString().slice(0, 10)).sort();
+
+	test('weekly is one day, as it always was', () => {
+		const events = grid.buildSlotEventsForDates([block(null)], week, []);
+		expect(days(events)).toEqual(['2026-09-07']);
+	});
+
+	test('every two days is four days in this week, not one', () => {
+		const rule = 'days:2:2026-09-07';
+		const events = grid.buildSlotEventsForDates([block(rule)], week, []);
+		expect(days(events)).toEqual(['2026-09-07', '2026-09-09', '2026-09-11', '2026-09-13']);
+	});
+
+	test('every three days is three of them', () => {
+		const rule = 'days:3:2026-09-07';
+		const events = grid.buildSlotEventsForDates([block(rule)], week, []);
+		expect(days(events)).toEqual(['2026-09-07', '2026-09-10', '2026-09-13']);
+	});
+
+	/* A fortnightly block is on no day at all in its off week, and the grid has
+	 * to be able to say that rather than drawing it anyway. */
+	test('fortnightly is on its day one week and on nothing the next', () => {
+		const rule = 'weeks:2:2026-09-07';
+		expect(days(grid.buildSlotEventsForDates([block(rule)], week, []))).toEqual(['2026-09-07']);
+
+		const nextWeek = week.map((d) => {
+			const date = new Date(`${d}T12:00:00Z`);
+			date.setUTCDate(date.getUTCDate() + 7);
+			return date.toISOString().slice(0, 10);
+		});
+		expect(grid.buildSlotEventsForDates([block(rule)], nextWeek, [])).toEqual([]);
+	});
+
+	test('monthly lands on its date, whatever weekday that is', () => {
+		const rule = 'monthly:10';
+		const events = grid.buildSlotEventsForDates([block(rule)], week, []);
+		expect(days(events)).toEqual(['2026-09-10']);
+	});
+
+	/* The month view was a separate path that stepped week by week; a rule that
+	 * lands more than once a week would have been drawn once per row. */
+	test('and a month shows every day the rule lands on', () => {
+		const rule = 'days:5:2026-09-01';
+		const september = Array.from(
+			{ length: 30 },
+			(_, i) => `2026-09-${String(i + 1).padStart(2, '0')}`
+		);
+		const events = grid.buildSlotEventsForDates([block(rule)], september, []);
+		expect(days(events)).toEqual([
+			'2026-09-01',
+			'2026-09-06',
+			'2026-09-11',
+			'2026-09-16',
+			'2026-09-21',
+			'2026-09-26'
+		]);
 	});
 });

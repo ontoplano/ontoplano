@@ -931,6 +931,88 @@ describe('the opened rooms', () => {
 	});
 
 	/**
+	 * The app has offered every-N-weeks, every-N-days and monthly blocks since
+	 * blocks could repeat at all. This surface could only make weekly ones, so
+	 * "put the bins out every other Tuesday" was a thing a person could do and
+	 * an assistant could not.
+	 */
+	it('makes a block that comes back on something other than a weekly rhythm', () => {
+		const bins = rpc(
+			2,
+			'add_repeating_block',
+			{
+				weekday: 1,
+				title: 'bins',
+				start_time: '08:00',
+				category: 'work',
+				repeats: 'every_n_weeks',
+				every: 2
+			},
+			['schedule:write']
+		);
+		expect(bins.result.isError, bins.result.content?.[0]?.text).toBe(false);
+		const binsId = bins.result.structuredContent.id as number;
+
+		const week = rpc(3, 'repeating_week', {}, ['schedule:read']);
+		const row = week.result.structuredContent.items.find((w: { id: number }) => w.id === binsId);
+		expect(row.recurrence).toMatch(/^weeks:2:\d{4}-\d{2}-\d{2}$/);
+		// The anchor is a Tuesday, so the fortnight counts from the day meant.
+		expect(new Date(`${row.recurrence.split(':')[2]}T00:00:00`).getDay()).toBe(2);
+		// And the row says so in words rather than in the stored shorthand.
+		expect(row.repeats).toBe('Every other Tuesday');
+
+		const monthly = rpc(
+			4,
+			'add_repeating_block',
+			{
+				weekday: 0,
+				title: 'rent',
+				start_time: '09:00',
+				category: 'work',
+				repeats: 'monthly',
+				month_day: 1
+			},
+			['schedule:write']
+		);
+		expect(monthly.result.isError, monthly.result.content?.[0]?.text).toBe(false);
+		const rentId = monthly.result.structuredContent.id as number;
+
+		// Changing only the length leaves the rhythm alone...
+		rpc(5, 'change_repeating_block', { id: rentId, minutes: 30 }, ['schedule:write']);
+		let after = rpc(6, 'repeating_week', {}, ['schedule:read']);
+		let rent = after.result.structuredContent.items.find((w: { id: number }) => w.id === rentId);
+		expect(rent.recurrence).toBe('monthly:1');
+		expect(rent.repeats).toBe('Day 1 of each month');
+
+		// ...and asking for a new one replaces it.
+		rpc(7, 'change_repeating_block', { id: rentId, repeats: 'every_n_days', every: 3 }, [
+			'schedule:write'
+		]);
+		after = rpc(8, 'repeating_week', {}, ['schedule:read']);
+		rent = after.result.structuredContent.items.find((w: { id: number }) => w.id === rentId);
+		expect(rent.recurrence).toMatch(/^days:3:/);
+		expect(rent.repeats).toBe('Every 3 days');
+	});
+
+	it('refuses an interval that is not a number of times', () => {
+		const bad = rpc(
+			2,
+			'add_repeating_block',
+			{
+				weekday: 1,
+				title: 'nonsense',
+				start_time: '08:00',
+				category: 'work',
+				repeats: 'every_n_days',
+				every: 0
+			},
+			['schedule:write']
+		);
+		expect(bad.result.isError).toBe(true);
+		expect(bad.result.content[0].text).toContain('every');
+	});
+
+	/**
 	 * The weekday a model is told about has to be the weekday the app means.
 	 *
 	 * Both write tools documented "0 (Sunday)" while every weekday in this

@@ -17,6 +17,7 @@ import {
 	baseGridOptions,
 	GRID_ZOOM_LEVELS,
 	GRID_DEFAULT_ZOOM_INDEX,
+	occurrenceKey,
 	blockName,
 	buildExceptionalEvents,
 	buildSlotEvents,
@@ -189,12 +190,39 @@ describe('a block that is not happening', () => {
 		// It is a stand-in for something that is not happening, so there is
 		// nowhere meaningful to drag it to.
 		const [event] = buildSlotEvents([aSlot()], MONDAY, CATEGORIES, {
-			suppressedSlotIds: new Set([10])
+			suppressed: new Set([occurrenceKey(10, MONDAY)])
 		});
 
 		expect(event.editable).toBe(false);
 		expect(event.classNames).toContain('og-event--inactive');
 		expect(event.extendedProps?.suppressed).toBe(true);
+	});
+
+	test('skipping one occurrence leaves the block\u2019s other days alone', () => {
+		// Every two days from the Monday: the 17th, 19th, 21st, 23rd. Skipping
+		// the 19th used to grey out all four, because a skip named the block
+		// rather than the day it was skipped on.
+		const every2 = aSlot({ recurrence: `days:2:${MONDAY}` });
+		const events = buildSlotEvents([every2], MONDAY, CATEGORIES, {
+			suppressed: new Set([occurrenceKey(10, '2026-08-19')])
+		});
+
+		expect(events).toHaveLength(4);
+		const skipped = events.filter((e) => e.extendedProps?.suppressed);
+		expect(skipped).toHaveLength(1);
+		expect(new Date(skipped[0].start as Date).getDate()).toBe(19);
+	});
+
+	test('an occurrence moved elsewhere is not also drawn on its old day', () => {
+		const every2 = aSlot({ recurrence: `days:2:${MONDAY}` });
+		const events = buildSlotEvents([every2], MONDAY, CATEGORIES, {
+			moved: new Set([occurrenceKey(10, '2026-08-19')])
+		});
+
+		// Three left, and the 19th is not among them — but the block itself is
+		// still on the grid, which naming the whole block used to prevent.
+		expect(events).toHaveLength(3);
+		expect(events.map((e) => new Date(e.start as Date).getDate()).sort()).toEqual([17, 21, 23]);
 	});
 });
 
@@ -324,9 +352,30 @@ describe('reading a block that is too short to show its own title', () => {
 		expect(describeGridEvent(event(30, { label: 'in the shed' })).label).toBe('in the shed');
 	});
 
+	test('it says how often a block comes back, when that is not every week', () => {
+		// A fortnightly block and a weekly one are the same rectangle on the
+		// grid, so this is the only place the difference can be read.
+		const weekly = describeGridEvent(event(30, { kind: 'slot', recurrence: 'weekly' }));
+		expect(weekly.repeats).toBeNull();
+
+		// 2026-08-17 is a Monday.
+		const fortnightly = describeGridEvent(
+			event(30, { kind: 'slot', recurrence: 'weeks:2:2026-08-17' })
+		);
+		expect(fortnightly.repeats).toBe('Every other Monday');
+
+		const everyThird = describeGridEvent(
+			event(30, { kind: 'slot', recurrence: 'days:3:2026-08-17' })
+		);
+		expect(everyThird.repeats).toBe('Every 3 days');
+
+		// A one-off has no rhythm to describe.
+		expect(describeGridEvent(event(30, { kind: 'exceptional' })).repeats).toBeNull();
+	});
+
 	test('and it names the state in words rather than by colour alone', () => {
 		expect(describeGridEvent(event(30, { kind: 'exceptional' })).state).toBe('One-off');
-		expect(describeGridEvent(event(30, { suppressed: true })).state).toBe('Skipped this week');
+		expect(describeGridEvent(event(30, { suppressed: true })).state).toBe('Skipped');
 		expect(describeGridEvent(event(30, { active: false })).state).toBe('Inactive');
 	});
 
