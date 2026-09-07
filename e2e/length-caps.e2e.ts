@@ -42,7 +42,7 @@ const CASES: { name: string; path: string; form: Record<string, string> }[] = [
 		form: { heading: TOO_LONG, horizon: 'week' }
 	},
 	{ name: 'idea', path: '/ideas?/create', form: { content: TOO_LONG } },
-	{ name: 'shopping item', path: '/inventory/list?/create', form: { label: TOO_LONG } },
+	{ name: 'shopping item', path: '/inventory?/create', form: { label: TOO_LONG } },
 	{
 		name: 'quote',
 		path: '/settings/preferences?/addQuote',

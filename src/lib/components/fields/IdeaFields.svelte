@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Field from '$lib/components/Field.svelte';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 
 	/**
@@ -27,14 +28,7 @@
 
 {#snippet rest()}
 	<Field label="Tags" span={12} hint="Separate with commas or spaces. A leading # is fine.">
-		<input
-			name="tags"
-			type="text"
-			autocomplete="off"
-			value={tags}
-			placeholder="project, app, music"
-			class="input"
-		/>
+		<OneLine name="tags" placeholder="project, app, music" value={tags} class="input" />
 	</Field>
 {/snippet}
 

@@ -10,6 +10,26 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.91.0 — 2026-09-07
+
+- **The inventory is one page, and it is the shopping list.** The two tabs are
+  gone: they were the same rows read twice, and the half that showed what you
+  own had no price, no tick, no archiving and no category. Now the house is a
+  panel down the left and everything you own or need is beside it, with all of
+  the list's powers on every row.
+- **Everything you already had is in it.** Each account gets a root location
+  called Home and every unfiled thing goes in it, so the panel is useful on the
+  first visit instead of showing an empty tree beside "Not filed anywhere".
+- **Drag a thing onto a location.** Pick a row up and drop it on a room, a
+  cupboard or a drawer. Opening a location narrows the page to what is in it
+  and everything under it; "Everything" gives them all back.
+- **A find box**, because an inventory gets long in a way a list never did.
+- **No form raises the autofill bar any more.** Sixty single-line fields were
+  plain inputs, and Android offers its key, card and pin row over an input and
+  never over a textarea — no attribute reaches that. They are all the same
+  one-line field now, and writing a new plain one fails the build rather than
+  turning up on your keyboard.
+
 ## 0.90.0 — 2026-09-07
 
 - **Shopping is now Inventory, with two halves.** "To buy" is the list you

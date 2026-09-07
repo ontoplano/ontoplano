@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import NoteFields from '$lib/components/fields/NoteFields.svelte';
 	import { resolve } from '$app/paths';
@@ -270,10 +271,8 @@
 				/>
 			</div>
 			{#each { length: winInputCount }, i (i)}
-				<input
-					autocomplete="off"
+				<OneLine
 					name="win_{i}"
-					type="text"
 					placeholder="Win {i + 1}"
 					class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
@@ -289,10 +288,8 @@
 			</div>
 			<label class="block">
 				<span class="text-sm font-medium text-gray-700">Tags</span>
-				<input
-					autocomplete="off"
+				<OneLine
 					name="tags"
-					type="text"
 					placeholder="tags, commas or spaces"
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>

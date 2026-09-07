@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { MIN_QUERY } from '$lib/search';
 	import type { PageServerData } from './$types';
@@ -17,16 +18,14 @@
 	<!-- A plain GET form: the URL is the state, so a search can be linked to and
 	     gone back to, and it works before any JavaScript has run. -->
 	<form method="get" action={resolve('/search')}>
-		<!-- svelte-ignore a11y_autofocus -->
-		<input
+		<OneLine
 			name="q"
-			value={data.q}
-			autofocus
-			autocomplete="off"
-			data-tour="search-box"
 			placeholder="Anything you have written down"
+			value={data.q}
 			class="input"
-			aria-label="Search"
+			autofocus
+			ariaLabel="Search"
+			dataTour="search-box"
 		/>
 		<!--
 			The syntax, where somebody will meet it.

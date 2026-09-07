@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getAction, keyFor } from '$lib/shortcuts';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$app/forms';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -276,14 +277,7 @@ Token: ${token}`;
 			     rows nobody can revoke with any confidence. -->
 			<label class="text-xs text-gray-500">
 				<span class="eyebrow block text-gray-600">Where it is going</span>
-				<input
-					autocomplete="off"
-					name="label"
-					type="text"
-					maxlength="60"
-					placeholder="my phone"
-					class="input mt-1 w-48"
-				/>
+				<OneLine name="label" placeholder="my phone" class="input mt-1 w-48" maxlength={60} />
 			</label>
 			<button
 				class="btn btn-sm btn-primary"
@@ -339,14 +333,12 @@ Token: ${token}`;
 			>
 				<FormGrid>
 					<Field label="Name" span={8} required>
-						<input
-							autocomplete="off"
+						<OneLine
 							name="label"
-							type="text"
-							required
-							maxlength="60"
 							placeholder="the app on my phone"
 							class="input"
+							required
+							maxlength={60}
 						/>
 					</Field>
 

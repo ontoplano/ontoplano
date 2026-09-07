@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import { resolve } from '$app/paths';
 	import Banner from '$lib/components/Banner.svelte';
 	import BuyFields from '$lib/components/fields/BuyFields.svelte';
@@ -8,6 +9,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { autofocus } from '$lib/actions/autofocus';
+	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -33,6 +35,16 @@
 	let newItemType = $state<'replenish' | 'someday'>('replenish');
 	let showBought = $state(false);
 	let showSnoozed = $state(false);
+	/** Which location is open. `null` is everything; `0` is the unfiled pile. */
+	let location = $state<number | null>(null);
+	/** A find box, because an inventory gets long in a way a list never did. */
+	let find = $state('');
+	let addingLocation = $state(false);
+	let editingLocation = $state<{ id: number; name: string; parentId: number | null } | null>(null);
+	let confirmDeleteLocation = $state<number | null>(null);
+	/** The item being dragged, and the location it is over. */
+	let dragging = $state<number | null>(null);
+	let dragOver = $state<number | null>(null);
 	let confirmingDelete: number | null = $state(null);
 	/** The item whose "what did you pay" box is open. */
 	let pricing: number | null = $state(null);
@@ -154,15 +166,94 @@
 		return otherCategory?.id ?? data.shoppingCategories[0]?.id ?? null;
 	});
 
+	/** Every location as "Living room › White chest", root down. */
+	const locationPaths = $derived.by(() => {
+		const byId = new Map(data.locations.map((l) => [l.id, l]));
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const out = new Map<number, string>();
+		for (const one of data.locations) {
+			const chain: string[] = [];
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
+			const seen = new Set<number>();
+			let cur: number | null = one.id;
+			while (cur != null && !seen.has(cur)) {
+				seen.add(cur);
+				const node = byId.get(cur);
+				if (!node) break;
+				chain.unshift(node.name);
+				cur = node.parentId;
+			}
+			out.set(one.id, chain.join(' › '));
+		}
+		return out;
+	});
+
+	/** A location and everything under it: opening a room shows its drawers. */
+	function subtreeOf(id: number): Set<number> {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const kids = new Map<number, number[]>();
+		for (const l of data.locations) {
+			if (l.parentId == null) continue;
+			kids.set(l.parentId, [...(kids.get(l.parentId) ?? []), l.id]);
+		}
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const out = new Set<number>();
+		const walk = (at: number) => {
+			if (out.has(at)) return;
+			out.add(at);
+			for (const kid of kids.get(at) ?? []) walk(kid);
+		};
+		walk(id);
+		return out;
+	}
+
+	const inLocation = $derived.by(() => {
+		if (location === null) return null;
+		if (location === 0) return null;
+		return subtreeOf(location);
+	});
+
 	let filteredItems = $derived(
 		items.filter((item) => {
 			if (isLeaving(`item:${item.id}`)) return false;
 			if (!showSnoozed && item.snoozed) return false;
 			if (!showBought && item.bought && item.type === 'someday') return false;
+			if (location === 0 && item.locationId != null) return false;
+			if (inLocation && (item.locationId == null || !inLocation.has(item.locationId))) return false;
+			const wanted = find.trim().toLowerCase();
+			if (wanted && !`${item.name} ${item.notes ?? ''}`.toLowerCase().includes(wanted))
+				return false;
 			if (filterType === 'all') return true;
 			return item.type === filterType;
 		})
 	);
+
+	/** How many things sit in each location's own subtree, for the panel. */
+	const countsByLocation = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const out = new Map<number, number>();
+		for (const one of data.locations) {
+			const under = subtreeOf(one.id);
+			out.set(one.id, items.filter((i) => i.locationId != null && under.has(i.locationId)).length);
+		}
+		return out;
+	});
+	const unfiledCount = $derived(items.filter((i) => i.locationId == null).length);
+
+	/**
+	 * Dropping a thing on a location.
+	 *
+	 * Posted rather than held in state: the page is server-rendered and every
+	 * other change here goes through a form action, so a drag that only moved
+	 * a row on screen would be the one change that vanished on reload.
+	 */
+	async function drop(itemId: number, locationId: number | null) {
+		const body = new FormData();
+		body.set('id', String(itemId));
+		body.set('locationId', locationId === null ? '' : String(locationId));
+		await fetch('?/putItem', { method: 'POST', body });
+		await invalidateAll();
+	}
 
 	let somedayItems = $derived(filteredItems.filter((i) => i.type === 'someday'));
 	let replenishItems = $derived(filteredItems.filter((i) => i.type === 'replenish'));
@@ -231,7 +322,7 @@
 			return;
 
 		const items = filteredItems;
-		const action = getAction('/inventory/list', e.key);
+		const action = getAction('/inventory', e.key);
 		if (!action) return;
 		e.preventDefault();
 
@@ -394,11 +485,105 @@
 	{/if}
 {/snippet}
 
+<!--
+	One row of the house, and the drop target it doubles as.
+
+	`dragover` has to be cancelled for a drop to be allowed at all, which is the
+	one piece of HTML drag-and-drop nobody remembers. Touch has no equivalent —
+	the row's own "where does it live" is the path there, and it is also the
+	path for anybody not using a mouse.
+-->
+{#snippet locationRow(id: number | null, label: string, count: number, depth: number)}
+	<li>
+		<button
+			onclick={() => (location = id)}
+			ondragover={(e) => {
+				if (dragging === null) return;
+				e.preventDefault();
+				dragOver = id ?? -1;
+			}}
+			ondragleave={() => (dragOver = null)}
+			ondrop={(e) => {
+				e.preventDefault();
+				dragOver = null;
+				if (dragging !== null) void drop(dragging, id === 0 ? null : id);
+				dragging = null;
+			}}
+			class="flex w-full items-center gap-2 py-2 pr-3 text-left text-sm transition {location === id
+				? 'bg-gray-100 font-medium text-gray-900'
+				: 'text-gray-700 hover:bg-gray-50'} {dragOver === (id ?? -1)
+				? 'ring-2 ring-gray-900 ring-inset'
+				: ''}"
+			style="padding-left: {1 + depth * 0.9}rem"
+		>
+			<span class="truncate">{label}</span>
+			<span class="tabular ml-auto shrink-0 text-xs text-gray-500">{count}</span>
+		</button>
+	</li>
+{/snippet}
+
+<!-- A location and everything under it. Indented rather than collapsible: a
+     house is three or four deep, and a disclosure per drawer would be more
+     clicking than reading. -->
+{#snippet branch(node: PageServerData['locationTree'][number], depth: number)}
+	<li>
+		<div
+			class="group flex items-center {location === node.id ? 'bg-gray-100' : 'hover:bg-gray-50'}"
+		>
+			<button
+				onclick={() => (location = node.id)}
+				ondragover={(e) => {
+					if (dragging === null) return;
+					e.preventDefault();
+					dragOver = node.id;
+				}}
+				ondragleave={() => (dragOver = null)}
+				ondrop={(e) => {
+					e.preventDefault();
+					dragOver = null;
+					if (dragging !== null) void drop(dragging, node.id);
+					dragging = null;
+				}}
+				class="flex min-w-0 flex-1 items-center gap-2 py-2 pr-2 text-left text-sm transition {location ===
+				node.id
+					? 'font-medium text-gray-900'
+					: 'text-gray-700'} {dragOver === node.id ? 'ring-2 ring-gray-900 ring-inset' : ''}"
+				style="padding-left: {1 + depth * 0.9}rem"
+			>
+				<span class="truncate">{node.name}</span>
+				<span class="tabular ml-auto shrink-0 text-xs text-gray-500">
+					{countsByLocation.get(node.id) ?? 0}
+				</span>
+			</button>
+			<div class="flex shrink-0 items-center gap-1 pr-2">
+				<button
+					onclick={() =>
+						(editingLocation = { id: node.id, name: node.name, parentId: node.parentId })}
+					class="icon-btn"
+					title="Rename or move"
+					aria-label="Rename or move {node.name}"><Icon name="edit" /></button
+				>
+				<button
+					onclick={() => (confirmDeleteLocation = node.id)}
+					class="icon-btn icon-btn-danger"
+					title="Remove"
+					aria-label="Remove {node.name}"><Icon name="trash" /></button
+				>
+			</div>
+		</div>
+		{#if node.children.length > 0}
+			<ul>
+				{#each node.children as child (child.id)}
+					{@render branch(child, depth + 1)}
+				{/each}
+			</ul>
+		{/if}
+	</li>
+{/snippet}
+
 <div class="space-y-4">
-	<!-- No heading here: the room's own layout carries "Inventory" and the tab
-	     says which half this is, so a second title would be the third line of
-	     the same sentence. -->
 	<div class="flex flex-wrap items-center justify-between gap-3">
+		<h1 class="shrink-0 text-lg font-bold text-gray-900">Inventory</h1>
 		<!--
 			Six buttons of identical weight said everything here was equally worth
 			pressing. They are three different kinds of thing, so they now look like
@@ -412,12 +597,12 @@
 				<button
 					onclick={() => (filterType = filterType === 'replenish' ? 'all' : 'replenish')}
 					aria-pressed={filterType === 'replenish'}
-					title="Restock ({keyFor('/inventory/list', 'filter-replenish')})">Restock</button
+					title="Restock ({keyFor('/inventory', 'filter-replenish')})">Restock</button
 				>
 				<button
 					onclick={() => (filterType = filterType === 'someday' ? 'all' : 'someday')}
 					aria-pressed={filterType === 'someday'}
-					title="Wishlist ({keyFor('/inventory/list', 'filter-someday')})">Wishlist</button
+					title="Wishlist ({keyFor('/inventory', 'filter-someday')})">Wishlist</button
 				>
 			</div>
 
@@ -425,7 +610,7 @@
 				onclick={() => (showBought = !showBought)}
 				aria-pressed={showBought}
 				class="btn btn-sm btn-quiet"
-				title="Show what you already have ({keyFor('/inventory/list', 'toggle-show-bought')})"
+				title="Show what you already have ({keyFor('/inventory', 'toggle-show-bought')})"
 			>
 				{showBought ? 'Hide' : 'Show'} bought
 			</button>
@@ -433,10 +618,18 @@
 				onclick={() => (showSnoozed = !showSnoozed)}
 				aria-pressed={showSnoozed}
 				class="btn btn-sm btn-quiet"
-				title="Show what you put away ({keyFor('/inventory/list', 'toggle-show-snoozed')})"
+				title="Show what you put away ({keyFor('/inventory', 'toggle-show-snoozed')})"
 			>
 				{showSnoozed ? 'Hide' : 'Show'} archived
 			</button>
+			<label class="sr-only" for="inventory-find">Find</label>
+			<OneLine
+				id="inventory-find"
+				name="find"
+				bind:value={find}
+				placeholder="Find…"
+				class="input w-36 py-1 text-sm"
+			/>
 			<button onclick={() => (showCategories = true)} class="btn btn-sm btn-quiet"
 				>Categories</button
 			>
@@ -446,7 +639,7 @@
 				data-tour="shopping-new"
 			>
 				{showForm ? 'Cancel' : 'Add item'}
-				<kbd class="border border-white/30 px-1">{keyFor('/inventory/list', 'new')}</kbd>
+				<kbd class="border border-white/30 px-1">{keyFor('/inventory', 'new')}</kbd>
 			</button>
 		</div>
 	</div>
@@ -534,12 +727,55 @@
 		{/snippet}
 	</Modal>
 
-	{#if replenishItems.length > 0}
-		<div data-tour="shopping-list">
-			<!-- "Inventory" was this heading's name before the room took it. These
+	<!--
+		The house down the left, the things down the right.
+
+		The same rows, read on a second axis. Opening a location narrows the
+		lists beside it to what is in that location and everything under it, so
+		"what is in the kitchen" and "what do I need to buy" are one screen
+		rather than two.
+	-->
+	<div class="grid gap-4 lg:grid-cols-[minmax(13rem,17rem)_1fr]">
+		<section class="self-start border border-gray-200 bg-white shadow-card">
+			<header
+				class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-2"
+			>
+				<h2 class="eyebrow text-gray-600">Where things live</h2>
+				<button
+					onclick={() => (addingLocation = true)}
+					class="icon-btn"
+					title="New location"
+					aria-label="New location"><Icon name="plus" /></button
+				>
+			</header>
+
+			<!-- Capped on a phone, where the panel sits above the list rather than
+			     beside it: a house with twenty drawers would otherwise push the
+			     things themselves off the bottom of the screen. -->
+			<ul
+				class="max-h-64 divide-y divide-gray-200 overflow-y-auto lg:max-h-none lg:overflow-visible"
+			>
+				{@render locationRow(null, 'Everything', items.length, 0)}
+				{#each data.locationTree as root (root.id)}
+					{@render branch(root, 0)}
+				{/each}
+				{#if unfiledCount > 0}
+					{@render locationRow(0, 'Not filed anywhere', unfiledCount, 0)}
+				{/if}
+			</ul>
+
+			<p class="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
+				Drag a thing onto a location to say where it lives.
+			</p>
+		</section>
+
+		<div class="min-w-0 space-y-4">
+			{#if replenishItems.length > 0}
+				<div data-tour="shopping-list">
+					<!-- "Inventory" was this heading's name before the room took it. These
 			     are the things you restock; the room is both halves. -->
-			<h2 class="mb-2 text-sm font-bold text-gray-500">To restock</h2>
-			<!--
+					<h2 class="mb-2 text-sm font-bold text-gray-500">To restock</h2>
+					<!--
 				One category per card, flowing into columns.
 
 				As one tall list this was a metre of scrolling with a name at the left
@@ -547,30 +783,42 @@
 				than a grid because the categories are of wildly different lengths and
 				a grid would leave a row as tall as its longest cell.
 			-->
-			<div class="gap-4 lg:columns-2 xl:columns-3 2xl:columns-4">
-				{#each replenishByCategory as category (category.name)}
-					<section class="mb-4 break-inside-avoid border border-gray-200 bg-white shadow-card">
-						<h3 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">
-							{category.name}
-						</h3>
-						<div class="divide-y divide-gray-200">
-							{#each category.items as item (item.id)}
-								{@const globalIdx = filteredItems.indexOf(item)}
-								<!--
+					<div class="gap-4 lg:columns-2 xl:columns-3 2xl:columns-4">
+						{#each replenishByCategory as category (category.name)}
+							<section class="mb-4 break-inside-avoid border border-gray-200 bg-white shadow-card">
+								<h3 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">
+									{category.name}
+								</h3>
+								<div class="divide-y divide-gray-200">
+									{#each category.items as item (item.id)}
+										{@const globalIdx = filteredItems.indexOf(item)}
+										<!--
 									Still to buy is the normal state of a shopping list, and a wash of
 									alarm colour behind every row spends the one signal that should
 									mean something is wrong. The unticked box already says it. Only
 									what you have — blue — and what you put away — dimmed — are marked.
 								-->
-								<div
-									use:keepInView={globalIdx === selectedIndex}
-									class="flex items-center gap-x-3 px-4 py-2 {item.snoozed
-										? 'bg-gray-50 opacity-50'
-										: item.bought
-											? 'bg-blue-50'
-											: ''} {globalIdx === selectedIndex ? 'ring-2 ring-gray-400 ring-inset' : ''}"
-								>
-									<!--
+										<div
+											use:keepInView={globalIdx === selectedIndex}
+											draggable="true"
+											ondragstart={(e) => {
+												dragging = item.id;
+												// Firefox refuses to start a drag with no payload set.
+												e.dataTransfer?.setData('text/plain', String(item.id));
+											}}
+											ondragend={() => {
+												dragging = null;
+												dragOver = null;
+											}}
+											class="flex cursor-grab items-center gap-x-3 px-4 py-2 {item.snoozed
+												? 'bg-gray-50 opacity-50'
+												: item.bought
+													? 'bg-blue-50'
+													: ''} {globalIdx === selectedIndex
+												? 'ring-2 ring-gray-400 ring-inset'
+												: ''}"
+										>
+											<!--
 										Whether you have it is a checkbox.
 
 										It used to be two bordered buttons per row — "Got it" and
@@ -583,211 +831,237 @@
 										one thing you do forty times down the left edge where the
 										thumb already is.
 									-->
-									<form method="POST" action="?/toggleBought" use:enhance={tick('toggleBought')}>
+											<form
+												method="POST"
+												action="?/toggleBought"
+												use:enhance={tick('toggleBought')}
+											>
+												<input type="hidden" name="id" value={item.id} />
+												<button
+													type="submit"
+													aria-pressed={item.bought}
+													class="flex size-5 items-center justify-center border transition {item.bought
+														? 'border-blue-600 bg-blue-600 text-white'
+														: 'border-gray-400 bg-white text-transparent hover:border-gray-600'}"
+													title={item.bought ? 'Put it back on the list' : 'Got it'}
+													aria-label="{item.bought
+														? 'Put back on the list'
+														: 'Got it'}: {item.name}"
+												>
+													<Icon name="check" size={14} />
+												</button>
+											</form>
+
+											<div class="min-w-0 flex-1">
+												<span class="text-sm text-gray-900">{item.name}</span>
+												{#if item.notes}
+													<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
+												{/if}
+												{@render expectedPrice(item)}
+												{@render usedIn(item)}
+											</div>
+											{@render paidPrompt(item)}
+
+											<!-- Everything else at the right edge, same order, same x, every row. -->
+											<div class="row-actions">
+												<form
+													method="POST"
+													action="?/toggleSnoozed"
+													use:enhance={tick('toggleSnoozed')}
+												>
+													<input type="hidden" name="id" value={item.id} />
+													<button
+														type="submit"
+														class="icon-btn"
+														aria-pressed={item.snoozed}
+														title={item.snoozed ? 'Put it back on the list' : 'Put it away'}
+														aria-label="{item.snoozed ? 'Unarchive' : 'Archive'}: {item.name}"
+													>
+														<Icon name={item.snoozed ? 'undo' : 'archive'} />
+													</button>
+												</form>
+												<button
+													onclick={() => startEdit(item)}
+													class="icon-btn"
+													title="Edit"
+													aria-label="Edit {item.name}"><Icon name="edit" /></button
+												>
+												{#if confirmingDelete === item.id}
+													<form
+														method="POST"
+														action="?/delete"
+														use:enhance={deferDelete(item.id, item.name)}
+													>
+														<input type="hidden" name="id" value={item.id} />
+														<button type="submit" class="btn btn-sm btn-danger" use:armed>
+															Confirm?
+														</button>
+													</form>
+													<button
+														type="button"
+														onclick={() => {
+															confirmingDelete = null;
+														}}
+														class="btn btn-sm"
+													>
+														Cancel
+													</button>
+												{:else}
+													<button
+														type="button"
+														onclick={() => {
+															confirmingDelete = item.id;
+														}}
+														class="icon-btn icon-btn-danger"
+														title="Delete"
+														aria-label="Delete {item.name}"><Icon name="trash" /></button
+													>
+												{/if}
+											</div>
+										</div>
+									{/each}
+								</div>
+							</section>
+						{/each}
+					</div>
+				</div>
+			{/if}
+
+			{#if somedayItems.length > 0}
+				<div data-tour="shopping-list">
+					<h2 class="mb-2 text-sm font-bold text-gray-500">Wishlist</h2>
+					<!-- The same column width as a category, so the two halves of the page
+			     line up instead of one running the full width of the screen. -->
+					<div
+						class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card lg:w-1/2 xl:w-1/3 2xl:w-1/4"
+					>
+						{#each somedayItems as item (item.id)}
+							{@const globalIdx = filteredItems.indexOf(item)}
+							<div
+								use:keepInView={globalIdx === selectedIndex}
+								draggable="true"
+								ondragstart={(e) => {
+									dragging = item.id;
+									// Firefox refuses to start a drag with no payload set.
+									e.dataTransfer?.setData('text/plain', String(item.id));
+								}}
+								ondragend={() => {
+									dragging = null;
+									dragOver = null;
+								}}
+								class="flex cursor-grab items-center gap-x-3 px-4 py-2 {globalIdx === selectedIndex
+									? 'bg-gray-50'
+									: ''} {item.snoozed ? 'opacity-50' : ''}"
+							>
+								<!-- The same checkbox as the inventory rows, so one list does not
+						     have a different idea of what "have it" looks like. -->
+								<form method="POST" action="?/toggleBought" use:enhance={tick('toggleBought')}>
+									<input type="hidden" name="id" value={item.id} />
+									<button
+										type="submit"
+										aria-pressed={item.bought}
+										class="flex size-5 items-center justify-center border transition {item.bought
+											? 'border-blue-600 bg-blue-600 text-white'
+											: 'border-gray-400 bg-white text-transparent hover:border-gray-600'}"
+										title={item.bought ? 'Put it back on the list' : 'Got it'}
+										aria-label="{item.bought ? 'Put back on the list' : 'Got it'}: {item.name}"
+									>
+										<Icon name="check" size={14} />
+									</button>
+								</form>
+
+								<div class="min-w-0 flex-1">
+									<span
+										class="text-sm {item.bought ? 'text-gray-500 line-through' : 'text-gray-900'}"
+									>
+										{item.name}
+									</span>
+									{#if item.notes}
+										<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
+									{/if}
+									{@render expectedPrice(item)}
+									{@render usedIn(item)}
+								</div>
+								{@render paidPrompt(item)}
+
+								<div class="row-actions">
+									<form method="POST" action="?/toggleSnoozed" use:enhance={tick('toggleSnoozed')}>
 										<input type="hidden" name="id" value={item.id} />
 										<button
 											type="submit"
-											aria-pressed={item.bought}
-											class="flex size-5 items-center justify-center border transition {item.bought
-												? 'border-blue-600 bg-blue-600 text-white'
-												: 'border-gray-400 bg-white text-transparent hover:border-gray-600'}"
-											title={item.bought ? 'Put it back on the list' : 'Got it'}
-											aria-label="{item.bought ? 'Put back on the list' : 'Got it'}: {item.name}"
+											class="icon-btn"
+											aria-pressed={item.snoozed}
+											title={item.snoozed ? 'Put it back on the list' : 'Put it away'}
+											aria-label="{item.snoozed ? 'Unarchive' : 'Archive'}: {item.name}"
 										>
-											<Icon name="check" size={14} />
+											<Icon name={item.snoozed ? 'undo' : 'archive'} />
 										</button>
 									</form>
-
-									<div class="min-w-0 flex-1">
-										<span class="text-sm text-gray-900">{item.name}</span>
-										{#if item.notes}
-											<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
-										{/if}
-										{@render expectedPrice(item)}
-										{@render usedIn(item)}
-									</div>
-									{@render paidPrompt(item)}
-
-									<!-- Everything else at the right edge, same order, same x, every row. -->
-									<div class="row-actions">
+									<button
+										onclick={() => startEdit(item)}
+										class="icon-btn"
+										title="Edit"
+										aria-label="Edit {item.name}"><Icon name="edit" /></button
+									>
+									{#if confirmingDelete === item.id}
 										<form
 											method="POST"
-											action="?/toggleSnoozed"
-											use:enhance={tick('toggleSnoozed')}
+											action="?/delete"
+											use:enhance={deferDelete(item.id, item.name)}
 										>
 											<input type="hidden" name="id" value={item.id} />
-											<button
-												type="submit"
-												class="icon-btn"
-												aria-pressed={item.snoozed}
-												title={item.snoozed ? 'Put it back on the list' : 'Put it away'}
-												aria-label="{item.snoozed ? 'Unarchive' : 'Archive'}: {item.name}"
-											>
-												<Icon name={item.snoozed ? 'undo' : 'archive'} />
+											<button type="submit" class="btn btn-sm btn-danger" use:armed>
+												Confirm?
 											</button>
 										</form>
 										<button
-											onclick={() => startEdit(item)}
-											class="icon-btn"
-											title="Edit"
-											aria-label="Edit {item.name}"><Icon name="edit" /></button
+											type="button"
+											onclick={() => {
+												confirmingDelete = null;
+											}}
+											class="btn btn-sm"
 										>
-										{#if confirmingDelete === item.id}
-											<form
-												method="POST"
-												action="?/delete"
-												use:enhance={deferDelete(item.id, item.name)}
-											>
-												<input type="hidden" name="id" value={item.id} />
-												<button type="submit" class="btn btn-sm btn-danger" use:armed>
-													Confirm?
-												</button>
-											</form>
-											<button
-												type="button"
-												onclick={() => {
-													confirmingDelete = null;
-												}}
-												class="btn btn-sm"
-											>
-												Cancel
-											</button>
-										{:else}
-											<button
-												type="button"
-												onclick={() => {
-													confirmingDelete = item.id;
-												}}
-												class="icon-btn icon-btn-danger"
-												title="Delete"
-												aria-label="Delete {item.name}"><Icon name="trash" /></button
-											>
-										{/if}
-									</div>
+											Cancel
+										</button>
+									{:else}
+										<button
+											type="button"
+											onclick={() => {
+												confirmingDelete = item.id;
+											}}
+											class="icon-btn icon-btn-danger"
+											title="Delete"
+											aria-label="Delete {item.name}"><Icon name="trash" /></button
+										>
+									{/if}
 								</div>
-							{/each}
-						</div>
-					</section>
-				{/each}
-			</div>
-		</div>
-	{/if}
-
-	{#if somedayItems.length > 0}
-		<div data-tour="shopping-list">
-			<h2 class="mb-2 text-sm font-bold text-gray-500">Wishlist</h2>
-			<!-- The same column width as a category, so the two halves of the page
-			     line up instead of one running the full width of the screen. -->
-			<div
-				class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card lg:w-1/2 xl:w-1/3 2xl:w-1/4"
-			>
-				{#each somedayItems as item (item.id)}
-					{@const globalIdx = filteredItems.indexOf(item)}
-					<div
-						use:keepInView={globalIdx === selectedIndex}
-						class="flex items-center gap-x-3 px-4 py-2 {globalIdx === selectedIndex
-							? 'bg-gray-50'
-							: ''} {item.snoozed ? 'opacity-50' : ''}"
-					>
-						<!-- The same checkbox as the inventory rows, so one list does not
-						     have a different idea of what "have it" looks like. -->
-						<form method="POST" action="?/toggleBought" use:enhance={tick('toggleBought')}>
-							<input type="hidden" name="id" value={item.id} />
-							<button
-								type="submit"
-								aria-pressed={item.bought}
-								class="flex size-5 items-center justify-center border transition {item.bought
-									? 'border-blue-600 bg-blue-600 text-white'
-									: 'border-gray-400 bg-white text-transparent hover:border-gray-600'}"
-								title={item.bought ? 'Put it back on the list' : 'Got it'}
-								aria-label="{item.bought ? 'Put back on the list' : 'Got it'}: {item.name}"
-							>
-								<Icon name="check" size={14} />
-							</button>
-						</form>
-
-						<div class="min-w-0 flex-1">
-							<span class="text-sm {item.bought ? 'text-gray-500 line-through' : 'text-gray-900'}">
-								{item.name}
-							</span>
-							{#if item.notes}
-								<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
-							{/if}
-							{@render expectedPrice(item)}
-							{@render usedIn(item)}
-						</div>
-						{@render paidPrompt(item)}
-
-						<div class="row-actions">
-							<form method="POST" action="?/toggleSnoozed" use:enhance={tick('toggleSnoozed')}>
-								<input type="hidden" name="id" value={item.id} />
-								<button
-									type="submit"
-									class="icon-btn"
-									aria-pressed={item.snoozed}
-									title={item.snoozed ? 'Put it back on the list' : 'Put it away'}
-									aria-label="{item.snoozed ? 'Unarchive' : 'Archive'}: {item.name}"
-								>
-									<Icon name={item.snoozed ? 'undo' : 'archive'} />
-								</button>
-							</form>
-							<button
-								onclick={() => startEdit(item)}
-								class="icon-btn"
-								title="Edit"
-								aria-label="Edit {item.name}"><Icon name="edit" /></button
-							>
-							{#if confirmingDelete === item.id}
-								<form method="POST" action="?/delete" use:enhance={deferDelete(item.id, item.name)}>
-									<input type="hidden" name="id" value={item.id} />
-									<button type="submit" class="btn btn-sm btn-danger" use:armed> Confirm? </button>
-								</form>
-								<button
-									type="button"
-									onclick={() => {
-										confirmingDelete = null;
-									}}
-									class="btn btn-sm"
-								>
-									Cancel
-								</button>
-							{:else}
-								<button
-									type="button"
-									onclick={() => {
-										confirmingDelete = item.id;
-									}}
-									class="icon-btn icon-btn-danger"
-									title="Delete"
-									aria-label="Delete {item.name}"><Icon name="trash" /></button
-								>
-							{/if}
-						</div>
+							</div>
+						{/each}
 					</div>
-				{/each}
-			</div>
-		</div>
-	{/if}
+				</div>
+			{/if}
 
-	{#if filteredItems.length === 0}
-		<div class="py-12 text-center text-sm text-gray-500">
-			{#if items.length === 0}
-				<EmptyState
-					icon="shopping"
-					title="The list is empty"
-					description="Inventory is what you keep stocked; the wishlist is what you might buy one day."
-				>
-					{#snippet action()}
-						<button onclick={() => (showForm = true)} class="btn btn-primary">
-							<Icon name="plus" /> New item
-						</button>
-					{/snippet}
-				</EmptyState>
-			{:else}
-				No items match the current filter.
+			{#if filteredItems.length === 0}
+				<div class="py-12 text-center text-sm text-gray-500">
+					{#if items.length === 0}
+						<EmptyState
+							icon="shopping"
+							title="The list is empty"
+							description="Inventory is what you keep stocked; the wishlist is what you might buy one day."
+						>
+							{#snippet action()}
+								<button onclick={() => (showForm = true)} class="btn btn-primary">
+									<Icon name="plus" /> New item
+								</button>
+							{/snippet}
+						</EmptyState>
+					{:else}
+						No items match the current filter.
+					{/if}
+				</div>
 			{/if}
 		</div>
-	{/if}
+	</div>
 </div>
 
 <!--
@@ -821,15 +1095,7 @@
 						class="flex flex-1 items-center gap-2"
 					>
 						<input type="hidden" name="id" value={category.id} />
-						<!-- svelte-ignore a11y_autofocus -->
-						<input
-							name="name"
-							value={category.name}
-							required
-							autocomplete="off"
-							autofocus
-							class="input flex-1"
-						/>
+						<OneLine name="name" value={category.name} class="input flex-1" required autofocus />
 						<button class="btn btn-sm" title="Save the name" aria-label="Save the name">
 							<Icon name="check" size={14} />
 						</button>
@@ -974,7 +1240,7 @@
 		>
 			<label class="block">
 				<span class="eyebrow text-gray-600">New category</span>
-				<input name="label" required autocomplete="off" placeholder="Frozen" class="input mt-1" />
+				<OneLine name="label" placeholder="Frozen" class="input mt-1" required />
 			</label>
 			<div class="mt-2 flex flex-wrap items-center justify-between gap-2">
 				<label class="flex items-center gap-2 text-sm text-gray-600">
@@ -995,5 +1261,107 @@
 
 	{#snippet footer()}
 		<button type="button" class="btn" onclick={() => (showCategories = false)}>Close</button>
+	{/snippet}
+</Modal>
+
+<!-- A location, new or being changed. -->
+<Modal
+	open={addingLocation || editingLocation !== null}
+	onclose={() => {
+		addingLocation = false;
+		editingLocation = null;
+	}}
+	error={form?.message}
+	title={editingLocation ? 'Rename or move' : 'New location'}
+	description="A room, a cupboard, a drawer. One can sit inside another."
+	size="sm"
+>
+	<form
+		id="location-form"
+		method="post"
+		action="?/{editingLocation ? 'updateLocation' : 'createLocation'}"
+		use:enhance={() =>
+			async ({ update, result }) => {
+				await update({ reset: false });
+				if (result.type === 'success') {
+					addingLocation = false;
+					editingLocation = null;
+				}
+			}}
+	>
+		{#if editingLocation}
+			<input type="hidden" name="id" value={editingLocation.id} />
+		{/if}
+		<FormGrid>
+			<Field label="Name" span={12} required>
+				<OneLine
+					name="heading"
+					required
+					value={editingLocation?.name ?? ''}
+					placeholder="White chest"
+				/>
+			</Field>
+			<Field label="Inside" span={12} hint="Leave empty for a room or a building.">
+				<select name="parentId" class="select">
+					<option value="">— nothing, it is top level —</option>
+					{#each data.locations as one (one.id)}
+						{#if one.id !== editingLocation?.id}
+							<option value={one.id} selected={editingLocation?.parentId === one.id}>
+								{locationPaths.get(one.id)}
+							</option>
+						{/if}
+					{/each}
+				</select>
+			</Field>
+		</FormGrid>
+	</form>
+
+	{#snippet footer()}
+		<button
+			type="button"
+			class="btn"
+			onclick={() => {
+				addingLocation = false;
+				editingLocation = null;
+			}}>Cancel</button
+		>
+		<button type="submit" form="location-form" class="btn btn-primary">
+			{editingLocation ? 'Save' : 'Add'}
+		</button>
+	{/snippet}
+</Modal>
+
+<!--
+	Removing one, in its own dialog.
+
+	Nothing is destroyed: what was inside rises to where it was and the things
+	keep existing without an address. The sentence says so, because a delete
+	that reads as destructive gets avoided even when it is not.
+-->
+<Modal
+	open={confirmDeleteLocation !== null}
+	onclose={() => (confirmDeleteLocation = null)}
+	title="Remove this location?"
+	description="Whatever is inside it moves up a level, and the things filed here keep existing — they just lose their address."
+	size="sm"
+>
+	<p class="text-sm text-gray-500">
+		Nothing is thrown away. This only takes the shelf out of the tree.
+	</p>
+
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={() => (confirmDeleteLocation = null)}>Cancel</button>
+		<form
+			method="post"
+			action="?/deleteLocation"
+			use:enhance={() =>
+				async ({ update }) => {
+					await update({ reset: false });
+					confirmDeleteLocation = null;
+				}}
+		>
+			<input type="hidden" name="id" value={confirmDeleteLocation} />
+			<button class="btn btn-danger" use:armed>Yes, remove it</button>
+		</form>
 	{/snippet}
 </Modal>

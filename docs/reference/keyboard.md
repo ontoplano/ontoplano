@@ -59,7 +59,7 @@ works is a key listed here and the reverse.
 | <kbd>f</kbd> | Toggle favorite |
 | <kbd>a</kbd> | Toggle applied  |
 
-## To buy — `/inventory/list`
+## To buy — `/inventory`
 
 | Key          | Does                    |
 | ------------ | ----------------------- |

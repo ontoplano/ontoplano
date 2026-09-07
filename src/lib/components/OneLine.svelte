@@ -28,13 +28,46 @@
 		value = $bindable(''),
 		required = false,
 		placeholder = '',
-		id
+		id,
+		/*
+		 * The rest exists so this is a drop-in for `<input type="text">`.
+		 *
+		 * It was not, so every form that needed a width, an accessible name or
+		 * the focus on open kept a plain input and kept raising the autofill
+		 * bar. A component that fits four forms is a rule people have to
+		 * remember; one that fits every form is the default.
+		 *
+		 * `list` is the one thing it cannot take: a textarea has no datalist, so
+		 * a field that completes from one stays an input and is named in
+		 * `tests/autofill-field-names.test.ts` as the exception it is.
+		 */
+		class: className = 'input',
+		ariaLabel = undefined,
+		autofocus = false,
+		maxlength = undefined,
+		autocapitalize = undefined,
+		/** For the tour anchors, which point at a field by `data-tour`. */
+		dataTour = undefined,
+		disabled = false,
+		readonly = false,
+		oninput = undefined,
+		onblur = undefined
 	}: {
 		name: string;
 		value?: string;
 		required?: boolean;
 		placeholder?: string;
 		id?: string;
+		class?: string;
+		ariaLabel?: string;
+		autofocus?: boolean;
+		maxlength?: number;
+		autocapitalize?: 'none' | 'off' | 'sentences' | 'words' | 'characters';
+		dataTour?: string;
+		disabled?: boolean;
+		readonly?: boolean;
+		oninput?: (event: Event) => void;
+		onblur?: (event: FocusEvent) => void;
 	} = $props();
 
 	function onkeydown(event: KeyboardEvent) {
@@ -45,8 +78,21 @@
 		(event.currentTarget as HTMLTextAreaElement).form?.requestSubmit();
 	}
 
-	function flatten() {
+	/*
+	 * Focused on mount, not by the native attribute.
+	 *
+	 * `autofocus` is honoured once per document in most browsers and not at all
+	 * for a field that appears later, which is every field in a dialog. The
+	 * app's own action does it on mount instead, and callers that asked for
+	 * `use:autofocus` on an input were asking for exactly that.
+	 */
+	function focusOnMount(node: HTMLTextAreaElement) {
+		if (autofocus) node.focus();
+	}
+
+	function handleInput(event: Event) {
 		if (/[\n\r]/.test(value)) value = value.replace(/\s*[\n\r]+\s*/g, ' ').trim();
+		oninput?.(event);
 	}
 </script>
 
@@ -55,11 +101,19 @@
 	{id}
 	{required}
 	{placeholder}
+	{maxlength}
+	{autocapitalize}
+	data-tour={dataTour}
+	{disabled}
+	{readonly}
+	{onblur}
+	aria-label={ariaLabel}
 	rows="1"
 	autocomplete="off"
 	spellcheck="false"
 	bind:value
+	use:focusOnMount
 	{onkeydown}
-	oninput={flatten}
-	class="input one-line"
+	oninput={handleInput}
+	class="{className} one-line"
 ></textarea>

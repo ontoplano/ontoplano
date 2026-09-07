@@ -269,6 +269,6 @@ test('the Buy capture actually puts something on the shopping list', async ({ pa
 		.fill('oat milk');
 	await page.getByRole('button', { name: 'Save' }).click();
 
-	await visit(page, '/inventory/list');
+	await visit(page, '/inventory');
 	await expect(page.getByText('oat milk')).toBeVisible();
 });

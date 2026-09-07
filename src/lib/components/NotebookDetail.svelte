@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
 	import { autogrow } from '$lib/actions/autogrow';
@@ -223,14 +224,7 @@
 -->
 {#snippet tagsAndPeople(tags: string, people: string)}
 	<Field label="Tags" span={6} hint="Separate with commas or spaces. A leading # is fine.">
-		<input
-			name="tags"
-			type="text"
-			autocomplete="off"
-			value={tags}
-			placeholder="work, health"
-			class="input"
-		/>
+		<OneLine name="tags" placeholder="work, health" value={tags} class="input" />
 	</Field>
 	<Field label="People" span={6} hint="Anyone this note is about.">
 		<input

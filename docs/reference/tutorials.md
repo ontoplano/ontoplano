@@ -22,7 +22,7 @@ under the pointer.
 | `/health/habits`         | Habits       | 3     |
 | `/health/recipes`        | Recipes      | 5     |
 | `/ideas`                 | Ideas        | 3     |
-| `/inventory/list`        | Shopping     | 3     |
+| `/inventory`             | Shopping     | 3     |
 | `/notebooks`             | Notebooks    | 2     |
 | `/notebooks/diary`       | Diary        | 4     |
 | `/notebooks/people`      | People       | 3     |
@@ -95,7 +95,7 @@ at the button that reopens it, so it is not listed here.
 2. A sentence is a complete idea
 3. Star it, or mark it done
 
-### `/inventory/list` — Shopping
+### `/inventory` — Shopping
 
 1. Two lists, one page
 2. Which list, and where it lives

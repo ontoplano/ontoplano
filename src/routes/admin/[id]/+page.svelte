@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import Banner from '$lib/components/Banner.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -163,15 +164,13 @@
 							address here would be filling in the confirmation for you, which
 							is the whole of what this box is for.
 						-->
-						<input
+						<OneLine
 							name="confirmEmail"
-							bind:value={typed}
-							autocomplete="off"
-							autocapitalize="none"
-							spellcheck="false"
 							placeholder={data.account.email}
-							aria-label="The address of the account being deleted"
+							bind:value={typed}
 							class="input min-w-0 flex-1 sm:max-w-sm"
+							ariaLabel="The address of the account being deleted"
+							autocapitalize="none"
 						/>
 						<button class="btn btn-danger btn-sm" disabled={!matches}>Delete for good</button>
 						<button type="button" class="btn btn-sm" onclick={() => (deleting = false)}>

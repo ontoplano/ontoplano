@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { ActionData, PageData } from './$types';
@@ -398,18 +399,16 @@
 				<input type="hidden" name="weekStart" value={data.reading.weekStart} />
 
 				{#each { length: data.linesPerReview }, i (i)}
-					<input
-						autocomplete="off"
-						type="text"
+					<OneLine
 						name="line"
-						value={lineAt(i + 1)}
-						maxlength="500"
 						placeholder={i === 0
 							? 'What went well'
 							: i === 1
 								? 'What did not'
 								: 'What you will do differently'}
+						value={lineAt(i + 1)}
 						class="input w-full"
+						maxlength={500}
 					/>
 				{/each}
 

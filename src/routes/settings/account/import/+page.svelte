@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { settingsForm } from '$lib/actions/settings-form';
@@ -158,14 +159,7 @@
 
 			<label class="block text-sm text-gray-700">
 				Name for the notebook they land in
-				<input
-					name="notebook"
-					type="text"
-					maxlength="80"
-					placeholder="Todoist"
-					class="input mt-1"
-					autocomplete="off"
-				/>
+				<OneLine name="notebook" placeholder="Todoist" class="input mt-1" maxlength={80} />
 			</label>
 
 			<!-- The undo, said before the button rather than after the regret. -->
@@ -227,14 +221,7 @@
 
 			<label class="block text-sm text-gray-700">
 				Name for the notebook they land in
-				<input
-					name="notebook"
-					type="text"
-					maxlength="80"
-					placeholder="Obsidian"
-					class="input mt-1"
-					autocomplete="off"
-				/>
+				<OneLine name="notebook" placeholder="Obsidian" class="input mt-1" maxlength={80} />
 			</label>
 
 			<p class="text-xs text-gray-500">
@@ -293,7 +280,7 @@
 				</p>
 				<label class="mt-2 block text-sm text-amber-900">
 					Type <code class="text-xs">REPLACE</code> to confirm
-					<input name="confirm" autocomplete="off" class="input mt-1 max-w-[12rem]" />
+					<OneLine name="confirm" class="input mt-1 max-w-[12rem]" />
 				</label>
 			</div>
 

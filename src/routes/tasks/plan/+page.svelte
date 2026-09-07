@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import Banner from '$lib/components/Banner.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -15,7 +16,6 @@
 	import { browser } from '$app/environment';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types.js';
-	import { autofocus } from '$lib/actions/autofocus.js';
 	import MetaEditor from '$lib/components/MetaEditor.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
@@ -2140,15 +2140,13 @@
 						on one day only is not part of it, and loading a scheme leaves those where they are.
 					</p>
 					<div class="flex gap-2">
-						<input
+						<OneLine
 							name="label"
-							type="text"
-							autocomplete="off"
-							bind:value={newSchemeName}
 							placeholder="Scheme name"
-							required
-							use:autofocus
+							bind:value={newSchemeName}
 							class="flex-1 border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							required
+							autofocus
 						/>
 						<button type="submit" class="btn btn-primary"> Save </button>
 					</div>
@@ -2179,14 +2177,12 @@
 									<form method="post" action="?/renameScheme" use:enhance class="min-w-0 sm:flex-1">
 										<input type="hidden" name="schemeId" value={scheme.id} />
 										<div class="flex gap-2">
-											<input
+											<OneLine
 												name="label"
-												type="text"
-												autocomplete="off"
 												value={scheme.name}
-												required
-												aria-label="Name of this scheme"
 												class="w-full min-w-0 border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+												required
+												ariaLabel="Name of this scheme"
 											/>
 											<button type="submit" class="btn shrink-0"> Rename </button>
 										</div>
@@ -2388,13 +2384,12 @@
 									class="input w-full min-w-0 sm:order-2 sm:w-auto sm:flex-1"
 									aria-label="The calendar's iCal address"
 								/>
-								<input
+								<OneLine
 									name="label"
 									placeholder="Work"
-									autocomplete="off"
-									required
 									class="input w-32 sm:order-1"
-									aria-label="What to call it"
+									required
+									ariaLabel="What to call it"
 								/>
 								<input
 									name="color"
@@ -2873,10 +2868,8 @@
 						hint={slotMode === 'category' ? '' : 'optional'}
 						required={slotMode === 'category'}
 					>
-						<input
+						<OneLine
 							name="label"
-							type="text"
-							autocomplete="off"
 							placeholder={slotMode === 'category' ? 'e.g. dentist' : ''}
 							value={editingBlock?.label ?? ''}
 							class="input"
@@ -2888,14 +2881,12 @@
 					<div class="border border-gray-200 bg-gray-50 p-3">
 						<FormGrid>
 							<Field label="New activity" span={8} required>
-								<input
+								<OneLine
 									name="newActivityName"
-									type="text"
-									required
-									autocomplete="off"
-									use:autofocus
 									placeholder="e.g. learn russian"
 									class="input"
+									required
+									autofocus
 								/>
 							</Field>
 							<Field label="Its category" span={4} required>

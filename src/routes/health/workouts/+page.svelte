@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { armed } from '$lib/actions/armed';
-	import { autofocus } from '$lib/actions/autofocus';
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -195,13 +195,13 @@
 			<div class="grid gap-3 sm:grid-cols-2">
 				<label class="block text-sm">
 					<span class="text-gray-600">Name</span>
-					<input
+					<OneLine
 						name="heading"
-						required
-						use:autofocus
+						placeholder="Push day"
 						value={editing?.title ?? ''}
 						class="input mt-1 w-full"
-						placeholder="Push day"
+						required
+						autofocus
 					/>
 				</label>
 				<label class="block text-sm">

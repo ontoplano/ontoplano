@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Backlinks from '$lib/components/Backlinks.svelte';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -155,13 +156,11 @@
 									value={cat.color}
 									class="h-8 w-10 cursor-pointer border border-gray-300"
 								/>
-								<input
+								<OneLine
 									name="label"
-									type="text"
-									autocomplete="off"
 									value={cat.name}
-									required
 									class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+									required
 								/>
 								<button
 									type="submit"
@@ -250,13 +249,11 @@
 					bind:value={newCatColor}
 					class="h-8 w-10 cursor-pointer border border-gray-300"
 				/>
-				<input
+				<OneLine
 					name="label"
-					type="text"
-					autocomplete="off"
 					placeholder="New category name"
-					required
 					class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					required
 				/>
 				<button type="submit" class="btn btn-primary btn-sm">Add</button>
 			</form>
@@ -322,14 +319,7 @@
 
 			<FormGrid>
 				<Field label="Name" span={12} required>
-					<input
-						name="label"
-						type="text"
-						autocomplete="off"
-						required
-						value={editing?.name ?? ''}
-						class="input"
-					/>
+					<OneLine name="label" value={editing?.name ?? ''} class="input" required />
 				</Field>
 
 				<Field label="Category" span={12} required>
@@ -341,13 +331,7 @@
 				</Field>
 
 				<Field label="Description" span={12}>
-					<input
-						name="description"
-						type="text"
-						autocomplete="off"
-						value={editing?.description ?? ''}
-						class="input"
-					/>
+					<OneLine name="description" value={editing?.description ?? ''} class="input" />
 				</Field>
 			</FormGrid>
 		</form>

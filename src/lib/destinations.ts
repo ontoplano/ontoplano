@@ -55,16 +55,9 @@ export const DESTINATIONS: Destination[] = [
 	{ label: 'Habits', group: 'Health', href: '/health/habits', icon: 'health', hide: 'health' },
 
 	{
-		label: 'To buy',
+		label: 'Inventory',
 		group: 'Inventory',
-		href: '/inventory/list',
-		icon: 'shopping',
-		hide: 'inventory'
-	},
-	{
-		label: 'What I have',
-		group: 'Inventory',
-		href: '/inventory/things',
+		href: '/inventory',
 		icon: 'shopping',
 		hide: 'inventory'
 	},

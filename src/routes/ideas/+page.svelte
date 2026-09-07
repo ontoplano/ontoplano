@@ -1,12 +1,12 @@
 <script lang="ts">
 	/* biome-ignore-all assist/source/organizeImports lint/correctness/noUnusedImports lint/correctness/noUnusedVariables lint/style/useConst: Svelte template and rune usage in this file triggers false positives in current Biome diagnostics. */
 	import { enhance } from '$app/forms';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
-	import { autofocus } from '$lib/actions/autofocus';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -463,14 +463,12 @@
 													class="mt-2 flex items-center gap-2"
 												>
 													<input type="hidden" name="id" value={idea.id} />
-													<input
+													<OneLine
 														name="appliedNote"
-														type="text"
-														autocomplete="off"
-														bind:value={appliedNoteDraft}
 														placeholder="What did you apply?"
-														use:autofocus
+														bind:value={appliedNoteDraft}
 														class="min-w-0 flex-1 border border-blue-300 bg-white px-2 py-1 text-sm shadow-sm focus:border-blue-700 focus:ring-1 focus:ring-blue-700 focus:outline-none"
+														autofocus
 													/>
 													<button
 														type="submit"

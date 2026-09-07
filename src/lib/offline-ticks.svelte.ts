@@ -68,7 +68,7 @@ export async function flush(): Promise<number> {
 			const body = new FormData();
 			body.set('id', String(tick.id));
 
-			const res = await fetch(`/inventory/list?/${tick.action}`, { method: 'POST', body });
+			const res = await fetch(`/inventory?/${tick.action}`, { method: 'POST', body });
 			if (res.ok) sent++;
 			else kept.push(tick);
 		} catch {

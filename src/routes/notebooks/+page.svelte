@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getAction, keyFor } from '$lib/shortcuts';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
@@ -258,13 +259,12 @@
 
 		<FormGrid>
 			<Field label="Title" span={12} required>
-				<input
+				<OneLine
 					name="heading"
-					required
-					autocomplete="off"
+					placeholder="Kitchen renovation"
 					value={editing?.title ?? ''}
 					class="input"
-					placeholder="Kitchen renovation"
+					required
 				/>
 			</Field>
 

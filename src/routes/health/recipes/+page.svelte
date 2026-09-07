@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getAction, keyFor } from '$lib/shortcuts';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { autogrow } from '$lib/actions/autogrow';
@@ -75,7 +76,7 @@
 		     into it, which is a worse first impression than a sentence. -->
 		<Banner kind="warning">
 			No food category yet.
-			<a href={resolve('/inventory/list')} class="underline">Tick one on the shopping list.</a>
+			<a href={resolve('/inventory')} class="underline">Tick one on the shopping list.</a>
 		</Banner>
 	{/if}
 
@@ -211,9 +212,8 @@
 			></textarea>
 		</Field>
 		<div class="mt-2 flex flex-wrap items-center gap-2">
-			<input
+			<OneLine
 				name="source"
-				autocomplete="off"
 				placeholder="Where it came from (optional)"
 				class="input min-w-0 flex-1"
 			/>
@@ -228,7 +228,7 @@
 	<form id="recipe-form" method="post" action="?/create" use:enhance>
 		<FormGrid>
 			<Field label="What it is" span={12} required>
-				<input name="heading" required autocomplete="off" class="input" />
+				<OneLine name="heading" class="input" required />
 			</Field>
 			<Field label="Serves" span={4}>
 				<input autocomplete="off" name="servings" type="number" min="1" class="input" />
@@ -237,7 +237,7 @@
 				<input autocomplete="off" name="minutes" type="number" min="1" class="input" />
 			</Field>
 			<Field label="Where it came from" span={4}>
-				<input name="source" autocomplete="off" class="input" />
+				<OneLine name="source" class="input" />
 			</Field>
 			<Field
 				label="Method"

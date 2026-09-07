@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -279,13 +280,13 @@
 		<div class="grid gap-3 sm:grid-cols-2">
 			<label class="block text-sm">
 				<span class="text-gray-600">Name</span>
-				<input
+				<OneLine
 					name="heading"
-					required
-					use:autofocus
+					placeholder="Rent"
 					value={editing?.name ?? ''}
 					class="input mt-1 w-full"
-					placeholder="Rent"
+					required
+					autofocus
 				/>
 			</label>
 			<label class="block text-sm">

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
@@ -323,7 +324,7 @@
 				line below the name box beside it.
 			-->
 			<Field label="Name" span={6} required>
-				<input name="label" required autocomplete="off" value={editing?.name ?? ''} class="input" />
+				<OneLine name="label" value={editing?.name ?? ''} class="input" required />
 			</Field>
 
 			<Field label="How you know them" span={6}>

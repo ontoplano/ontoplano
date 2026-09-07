@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$app/forms';
 	import { armed } from '$lib/actions/armed';
 	import { focusHere } from '$lib/actions/autofocus';
@@ -593,7 +594,7 @@
 
 			<FormGrid>
 				<Field label="Title" span={12} required>
-					<input name="heading" required autocomplete="off" class="input" />
+					<OneLine name="heading" class="input" required />
 				</Field>
 
 				<Field label="Category" span={12}>
@@ -735,11 +736,10 @@
 							span={12}
 							hint="This occurrence only. Empty keeps the block's own name."
 						>
-							<input
+							<OneLine
 								name="label"
-								autocomplete="off"
-								value={card.labelOverride ?? ''}
 								placeholder={card.title}
+								value={card.labelOverride ?? ''}
 								class="input"
 							/>
 						</Field>

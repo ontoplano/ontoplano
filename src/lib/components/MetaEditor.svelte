@@ -13,6 +13,7 @@
 	 * names like `hard_alarm` gives no clue what sets it off or what reads it.
 	 */
 	import { mergeSuggestions, type MetaKeySuggestion } from '$lib/meta-keys';
+	import OneLine from '$lib/components/OneLine.svelte';
 
 	let {
 		initial = {},
@@ -86,12 +87,10 @@
 						autocomplete="off"
 						class="w-44 border border-gray-300 px-2 py-1.5 font-mono text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
-					<input
+					<OneLine
 						name="metaValue"
-						type="text"
-						bind:value={pair.value}
 						placeholder="value"
-						autocomplete="off"
+						bind:value={pair.value}
 						class="flex-1 border border-gray-300 px-2 py-1.5 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
 					<button

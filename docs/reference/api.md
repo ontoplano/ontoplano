@@ -91,6 +91,8 @@ sentence somebody agrees to when they grant it.
 | `/health/meals`                              | GET    | —                 |
 | `/health/trainings`                          | GET    | —                 |
 | `/healthz`                                   | GET    | —                 |
+| `/inventory/list`                            | GET    | —                 |
+| `/inventory/things`                          | GET    | —                 |
 | `/kitchen/[...path]`                         | GET    | —                 |
 | `/manifest.webmanifest`                      | GET    | —                 |
 | `/media`                                     | POST   | —                 |
@@ -597,6 +599,28 @@ The disk and memory numbers are the exception, and they are behind a token.
 attack is cheap today, so it is for the machine that is watching and nobody
 else. Set `ONTOPLANO_HEALTH_TOKEN` and send it as `x-health-token` or
 `?token=`; without one configured, nothing is ever disclosed.
+
+**GET**
+
+### `/inventory/list`
+
+The inventory was two tabs for a day.
+
+"To buy" and "What I have" were the same rows read twice, and splitting them
+meant a thing you owned and a thing you needed lived on different screens
+with different powers — the second had no price, no tick, no archiving and
+no category. One page, with the locations beside it.
+
+**GET**
+
+### `/inventory/things`
+
+The inventory was two tabs for a day.
+
+"To buy" and "What I have" were the same rows read twice, and splitting them
+meant a thing you owned and a thing you needed lived on different screens
+with different powers — the second had no price, no tick, no archiving and
+no category. One page, with the locations beside it.
 
 **GET**
 

@@ -132,3 +132,74 @@ describe('form field names', () => {
 		).toEqual([]);
 	});
 });
+
+/**
+ * And nothing new gets to be a plain `<input type="text">`.
+ *
+ * This is the rule that kept being re-broken. `$lib/autofill` stamps every
+ * ignore flag a password manager reads, a test above forbids every field name
+ * a classifier reads as an address, and Android's own service still put its
+ * key/card/pin bar over the keyboard — because it decides on the ELEMENT, and
+ * no attribute reaches that. `OneLine.svelte` is a textarea that behaves like
+ * an input, and it was used by four forms while sixty other fields stayed
+ * inputs and stayed broken.
+ *
+ * So the default is mechanical now: a single-line free-text field is a
+ * `OneLine`, and writing an `<input type="text">` fails here rather than
+ * turning up in a screenshot. The exceptions are listed, and each is a field
+ * that is not free text or genuinely wants the browser's help.
+ */
+describe('single-line free text', () => {
+	/** Files whose text inputs are deliberate, and why. */
+	const EXEMPT_FILES: Record<string, string> = {
+		// A sign-in form wants the password manager, and says so with real
+		// `autocomplete` tokens.
+		'src/routes/login/+page.svelte': 'auth',
+		'src/routes/settings/account/+page.svelte': 'auth',
+		'src/routes/welcome/password/+page.svelte': 'auth',
+		// The component this rule is about.
+		'src/lib/components/OneLine.svelte': 'the replacement itself',
+		// A combobox with its own listbox and keyboard handling.
+		'src/lib/components/TimezonePicker.svelte': 'combobox'
+	};
+
+	/** Field names that are not free text, wherever they appear. */
+	const EXEMPT_NAMES = new Set([
+		// Money, typed and parsed as money rather than as words.
+		'amount',
+		'price',
+		'paid',
+		// A date in two shapes, with its own hint and pattern.
+		'bornOn',
+		// These complete from a `<datalist>`, which a textarea cannot have.
+		'people',
+		'unit'
+	]);
+
+	it('is a OneLine, not an input', () => {
+		const offenders: string[] = [];
+
+		for (const file of [...svelteFiles('src/routes'), ...svelteFiles('src/lib')]) {
+			const path = file.replace(/\\/g, '/');
+			if (path in EXEMPT_FILES) continue;
+			const source = readFileSync(file, 'utf8');
+
+			for (const tag of source.match(/<input\b[^>]*?\/?>/gs) ?? []) {
+				const type = /type="([^"]+)"/.exec(tag);
+				// A date, a number, a checkbox, a file: the browser draws the
+				// control, and none of them raise the bar.
+				if (type && type[1] !== 'text') continue;
+				// A datalist is the one thing a textarea cannot carry.
+				if (tag.includes('list="')) continue;
+				const name = /name="([^"]+)"/.exec(tag);
+				if (!name || EXEMPT_NAMES.has(name[1])) continue;
+				offenders.push(`${path}: name="${name[1]}"`);
+			}
+		}
+
+		expect(
+			offenders,
+			`These raise the autofill bar over the keyboard on Android. Use <OneLine>,\nor add the field to EXEMPT_NAMES here with the reason it is not free text:\n  ${offenders.join('\n  ')}`
+		).toEqual([]);
+	});
+});

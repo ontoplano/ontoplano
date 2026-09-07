@@ -56,7 +56,7 @@ export const CAPTURES: Capture[] = [
 		label: 'Buy',
 		icon: 'shopping',
 		color: SECTION_COLORS.inventory,
-		action: '/inventory/list?/create',
+		action: '/inventory?/create',
 		hide: 'inventory'
 	}
 ];

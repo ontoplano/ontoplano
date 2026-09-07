@@ -61,7 +61,17 @@ describe('the guided tours', () => {
 				anchor,
 				`"${step.title}" points at ${step.target}, which is not a data-tour anchor`
 			).not.toBeNull();
-			if (anchor && !markup.includes(`data-tour="${anchor}"`)) dangling.push(anchor);
+			/*
+			 * Written on the element, or handed to a component that writes it.
+			 *
+			 * A single-line field is a `OneLine` rather than an `<input>` — see
+			 * `tests/autofill-field-names.test.ts` for why — and it takes its
+			 * anchor as a prop, so the attribute is not in this file's markup
+			 * even though it is in the rendered page.
+			 */
+			const written =
+				markup.includes(`data-tour="${anchor}"`) || markup.includes(`dataTour="${anchor}"`);
+			if (anchor && !written) dangling.push(anchor);
 		}
 
 		expect(

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
 	import Field from '$lib/components/Field.svelte';
@@ -141,13 +142,7 @@
 		<input type="hidden" name="id" value={data.notebook.id} />
 		<FormGrid>
 			<Field label="Title" span={12} required>
-				<input
-					name="heading"
-					required
-					autocomplete="off"
-					value={data.notebook.title}
-					class="input"
-				/>
+				<OneLine name="heading" value={data.notebook.title} class="input" required />
 			</Field>
 			<Field label="What it is for" span={12}>
 				<textarea name="description" rows="2" class="textarea">{data.notebook.description}</textarea

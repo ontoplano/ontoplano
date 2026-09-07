@@ -98,7 +98,7 @@ describe('finding a signal again', () => {
 		expect(await flush()).toBe(2);
 		expect(ticks.pending).toEqual([]);
 		expect(JSON.parse(localStorage.getItem(KEY)!)).toEqual([]);
-		expect(sent).toEqual(['/inventory/list?/toggleBought', '/inventory/list?/restock']);
+		expect(sent).toEqual(['/inventory?/toggleBought', '/inventory?/restock']);
 	});
 
 	test('sends nothing when nothing is waiting', async () => {

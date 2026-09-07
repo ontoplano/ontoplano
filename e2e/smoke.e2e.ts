@@ -31,7 +31,7 @@ const ROUTES = [
 	'/notebooks/people',
 	'/ideas',
 	'/health/habits',
-	'/inventory/list',
+	'/inventory',
 	'/health/recipes',
 	'/search?q=a+thing',
 	'/settings/account',

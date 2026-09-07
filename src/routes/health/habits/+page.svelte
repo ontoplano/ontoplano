@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -373,18 +374,16 @@
 
 			<FormGrid>
 				<Field label="Name" span={12} required>
-					<input
+					<OneLine
 						name="label"
-						type="text"
-						autocomplete="off"
-						required
-						value={editHabit?.name ?? ''}
 						placeholder={newHabitType === 'bad'
 							? 'e.g. smoking, biting nails'
 							: newHabitType === 'neutral'
 								? 'e.g. coffee, naps'
 								: 'e.g. gym, reading'}
+						value={editHabit?.name ?? ''}
 						class="input"
+						required
 					/>
 				</Field>
 
@@ -412,13 +411,7 @@
 				</Field>
 
 				<Field label="Description" span={12}>
-					<input
-						name="description"
-						type="text"
-						autocomplete="off"
-						value={editHabit?.description ?? ''}
-						class="input"
-					/>
+					<OneLine name="description" value={editHabit?.description ?? ''} class="input" />
 				</Field>
 
 				{#if newHabitType === 'good' || newHabitType === 'neutral'}
@@ -532,10 +525,8 @@
 									<input type="hidden" name="habitId" value={habit.id} />
 									<input type="hidden" name="date" value={data.today} />
 									<div class="flex items-center gap-1">
-										<input
+										<OneLine
 											name="notes"
-											type="text"
-											autocomplete="off"
 											placeholder="note"
 											class="w-20 border border-gray-200 px-1.5 py-1 text-xs focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 										/>
@@ -691,10 +682,8 @@
 									<input type="hidden" name="habitId" value={habit.id} />
 									<input type="hidden" name="date" value={backdateInput} />
 									<div class="flex items-center gap-1">
-										<input
+										<OneLine
 											name="notes"
-											type="text"
-											autocomplete="off"
 											placeholder="note"
 											class="w-20 border border-gray-200 px-1.5 py-1 text-xs focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 										/>
@@ -722,12 +711,10 @@
 													class="flex items-center gap-1"
 												>
 													<input type="hidden" name="id" value={occurrence.id} />
-													<input
+													<OneLine
 														name="notes"
-														type="text"
-														autocomplete="off"
-														value={occurrence.notes ?? ''}
 														placeholder="add note…"
+														value={occurrence.notes ?? ''}
 														class="w-32 border border-transparent px-1 py-0.5 text-xs text-gray-500 hover:border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 													/>
 													<button

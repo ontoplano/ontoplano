@@ -52,7 +52,7 @@
 	{/if}
 
 	<Field label="Notes" span={8}>
-		<input name="notes" type="text" autocomplete="off" bind:value={notes} class="input" />
+		<OneLine name="notes" bind:value={notes} class="input" />
 	</Field>
 
 	<!-- What it costs, roughly. Prices move and shops disagree, which is why

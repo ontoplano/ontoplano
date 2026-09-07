@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
@@ -89,13 +90,7 @@
 <div class="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
 	<Card title="Accounts" description="Search by name or address. Newest first when empty." flush>
 		<form method="get" class="flex gap-2 border-b border-gray-200 p-3">
-			<input
-				name="q"
-				value={data.query}
-				placeholder="somebody@example.com"
-				autocomplete="off"
-				class="input"
-			/>
+			<OneLine name="q" placeholder="somebody@example.com" value={data.query} class="input" />
 			<button class="btn btn-sm"><Icon name="search" /> Search</button>
 		</form>
 

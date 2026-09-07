@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
@@ -9,7 +10,6 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
-	import { autofocus } from '$lib/actions/autofocus.js';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -231,13 +231,7 @@
 		>
 			<FormGrid>
 				<Field label="New area" span={8}>
-					<input
-						name="label"
-						required
-						autocomplete="off"
-						placeholder="e.g. fitness"
-						class="input"
-					/>
+					<OneLine name="label" placeholder="e.g. fitness" class="input" required />
 				</Field>
 				<Field label="Colour" span={4}>
 					<input name="color" type="color" value="#6b7280" class="input h-9 p-1" />
@@ -298,14 +292,13 @@
 
 			<FormGrid>
 				<Field label="Goal" span={12} required>
-					<input
+					<OneLine
 						name="heading"
-						required
-						use:autofocus
-						autocomplete="off"
-						value={editing?.title ?? ''}
 						placeholder="e.g. train three times a week"
+						value={editing?.title ?? ''}
 						class="input"
+						required
+						autofocus
 					/>
 				</Field>
 

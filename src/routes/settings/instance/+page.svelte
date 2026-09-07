@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import { settingsForm } from '$lib/actions/settings-form';
 	import { armed } from '$lib/actions/armed';
 	import Banner from '$lib/components/Banner.svelte';
@@ -445,7 +446,7 @@
 		<form method="post" action="?/createInvite" use:enhance>
 			<FormGrid>
 				<Field label="Who is it for" span={12} hint="For your own memory; they never see it.">
-					<input name="note" autocomplete="off" placeholder="my brother" class="input" />
+					<OneLine name="note" placeholder="my brother" class="input" />
 				</Field>
 
 				<Field label="Code expires in" span={6} hint="Days. Leave empty for no expiry.">

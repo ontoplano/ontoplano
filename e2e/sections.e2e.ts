@@ -40,7 +40,7 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
 	await expect(nav.getByRole('link', { name: 'Health' })).toBeVisible();
 
 	// Still answering at its URL: hidden, not blocked.
-	await visit(page, '/inventory/list');
+	await visit(page, '/inventory');
 	await expect(page).toHaveURL(/\/inventory/);
 	await expect(page.getByRole('heading', { name: /inventory/i }).first()).toBeVisible();
 

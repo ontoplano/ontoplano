@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import { formatMoney } from '$lib/money';
 	import Icon from '$lib/components/Icon.svelte';
@@ -705,10 +706,8 @@
 							placeholder="What's on your mind?"
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						></textarea>
-						<input
-							autocomplete="off"
+						<OneLine
 							name="tags"
-							type="text"
 							placeholder="Tags (comma-separated)"
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
@@ -743,24 +742,18 @@
 								class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 							/>
 						</div>
-						<input
-							autocomplete="off"
+						<OneLine
 							name="win_0"
-							type="text"
 							placeholder="Win 1"
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
-						<input
-							autocomplete="off"
+						<OneLine
 							name="win_1"
-							type="text"
 							placeholder="Win 2"
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
-						<input
-							autocomplete="off"
+						<OneLine
 							name="win_2"
-							type="text"
 							placeholder="Win 3"
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
@@ -950,14 +943,14 @@
 		{#snippet card_shopping()}
 			<Card title="Shopping" accent={SECTION_COLORS.inventory}>
 				{#snippet actions()}
-					<a href={resolve('/inventory/list')} class="text-xs text-gray-500 hover:text-gray-900"
+					<a href={resolve('/inventory')} class="text-xs text-gray-500 hover:text-gray-900"
 						>Open →</a
 					>
 				{/snippet}
 				{#if data.shoppingToBuy.length === 0}
 					{@render nothingYet(
 						'Nothing to buy. The list keeps what you are out of and what you might want one day.',
-						'/inventory/list',
+						'/inventory',
 						'Add an item'
 					)}
 				{:else}
@@ -1013,12 +1006,9 @@
 					{#each [1, 2, 3] as position (position)}
 						<div class="flex items-center gap-2">
 							<span class="tabular w-4 shrink-0 text-xs text-gray-500">{position}</span>
-							<input
-								name="win_{position}"
-								autocomplete="off"
-								value={data.wins.find((w) => w.position === position)?.content ?? ''}
-								class="block w-full border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-							/>
+							<OneLine name="win_{position}" /> w.position === position)?.content ?? ''} class="block
+							w-full border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1
+							focus:ring-gray-900 focus:outline-none" />
 						</div>
 					{/each}
 					<button class="btn btn-primary btn-sm"> Save </button>

@@ -9,5 +9,5 @@ import type { RequestHandler } from './$types';
  * is in bookmarks and in the installed app's shell, so it answers.
  */
 export const GET: RequestHandler = ({ url }) => {
-	redirect(308, `/inventory/list${url.search}`);
+	redirect(308, `/inventory${url.search}`);
 };

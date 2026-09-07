@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import { page } from '$app/state';
 	import { disablePush, enablePush, pushEnabled, pushSupported } from '$lib/push';
 	import { settingsForm } from '$lib/actions/settings-form';
@@ -651,19 +652,17 @@
 		>
 			<label class="min-w-64 flex-1">
 				<span class="eyebrow text-gray-600">Quote</span>
-				<input
+				<OneLine
 					name="text"
-					required
-					autocomplete="off"
 					placeholder={'\u201cPlans are worthless, but planning is everything.\u201d'}
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					required
 				/>
 			</label>
 			<label class="w-44">
 				<span class="eyebrow text-gray-600">Author</span>
-				<input
+				<OneLine
 					name="author"
-					autocomplete="off"
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>

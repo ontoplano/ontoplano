@@ -136,14 +136,14 @@ test.describe('one account cannot reach another account by id', () => {
 		},
 		{
 			name: 'shopping item',
-			page: '/inventory/list',
+			page: '/inventory',
 			payloadKey: 'items',
 			create: {
-				path: '/inventory/list?/create',
+				path: '/inventory?/create',
 				form: { label: "alice's milk", type: 'replenish' }
 			},
 			attack: (id) => ({
-				path: '/inventory/list?/update',
+				path: '/inventory?/update',
 				form: { id, label: 'taken', type: 'someday' }
 			})
 		},
@@ -282,10 +282,10 @@ test.describe('one account cannot reach another account by id', () => {
 			// old comment praised — no id-taking action at all — is gone, and
 			// the ownership WHERE is what stands between accounts.
 			name: 'shopping category',
-			page: '/inventory/list',
+			page: '/inventory',
 			payloadKey: 'shoppingCategories',
-			create: { path: '/inventory/list?/createCategory', form: { label: "alice's shelf" } },
-			attack: (id) => ({ path: '/inventory/list?/renameCategory', form: { id, name: 'taken' } })
+			create: { path: '/inventory?/createCategory', form: { label: "alice's shelf" } },
+			attack: (id) => ({ path: '/inventory?/renameCategory', form: { id, name: 'taken' } })
 		}
 	];
 

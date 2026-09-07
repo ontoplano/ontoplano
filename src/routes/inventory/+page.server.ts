@@ -3,6 +3,13 @@ import { buildCtx } from '$lib/server/services/ctx';
 import { familyUserIds } from '$lib/server/services/subscriptions';
 import { toActionFailure } from '$lib/server/http-errors';
 import { recipesByItem } from '$lib/server/services/recipes';
+import {
+	createLocation,
+	deleteLocation,
+	listLocations,
+	locationTree,
+	updateLocation
+} from '$lib/server/services/locations';
 import { getCurrency } from '$lib/server/settings';
 import {
 	createCategory,
@@ -16,6 +23,8 @@ import {
 	listItems,
 	recordPaid,
 	restockItem,
+	setItemAttributes,
+	setItemLocation,
 	toggleBought,
 	toggleSnoozed,
 	updateItem
@@ -25,6 +34,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
 	return {
 		items: listItems(ctx),
+		// The other axis the same rows are read on: where each thing lives.
+		locationTree: locationTree(ctx),
+		locations: listLocations(ctx),
 		/** Which recipes use each item — the other half of the ingredient link. */
 		usedIn: recipesByItem(ctx),
 		shoppingCategories: listCategories(ctx),
@@ -209,6 +221,83 @@ export const actions: Actions = {
 		try {
 			toggleSnoozed(buildCtx(locals.user!.id), Number(formData.get('id')));
 			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+	createLocation: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			createLocation(buildCtx(locals.user!.id), {
+				name: formData.get('heading'),
+				parentId: formData.get('parentId'),
+				notes: formData.get('notes')
+			});
+			return { success: true, action: 'createLocation' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	updateLocation: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			updateLocation(buildCtx(locals.user!.id), Number(formData.get('id')), {
+				name: formData.get('heading'),
+				parentId: formData.get('parentId'),
+				notes: formData.get('notes')
+			});
+			return { success: true, action: 'updateLocation' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	deleteLocation: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			deleteLocation(buildCtx(locals.user!.id), Number(formData.get('id')));
+			return { success: true, action: 'deleteLocation' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * Where a thing lives. An empty value takes its address away.
+	 *
+	 * Its own action rather than a field on `update`, because this is what a
+	 * drag posts: one item, one location, nothing else touched — and `update`
+	 * re-parses the whole row, which would mean a drag re-sending a name and a
+	 * price to move something into a drawer.
+	 */
+	putItem: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const raw = String(formData.get('locationId') ?? '');
+		try {
+			setItemLocation(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				raw === '' ? null : Number(raw)
+			);
+			return { success: true, action: 'putItem' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	setFields: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const names = formData.getAll('fieldName').map(String);
+		const values = formData.getAll('fieldValue').map(String);
+		const fields: Record<string, string> = {};
+		names.forEach((name, i) => {
+			const key = name.trim();
+			if (key) fields[key] = (values[i] ?? '').trim();
+		});
+		try {
+			setItemAttributes(buildCtx(locals.user!.id), Number(formData.get('id')), fields);
+			return { success: true, action: 'setFields' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

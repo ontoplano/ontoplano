@@ -106,7 +106,7 @@ test('deleting an account asks for its address, and means it', async ({ page }) 
 	await signInAsOwner(page);
 
 	await page.goto('/admin');
-	await page.fill('input[name="q"]', email);
+	await page.fill('[name="q"]', email);
 	await page.keyboard.press('Enter');
 	await page
 		.getByRole('link', { name: new RegExp(email, 'i') })
@@ -115,7 +115,7 @@ test('deleting an account asks for its address, and means it', async ({ page }) 
 	await expect(page.getByRole('heading', { name: 'Delete this account' })).toBeVisible();
 
 	await page.getByRole('button', { name: 'Delete this account' }).click();
-	const confirm = page.locator('input[name="confirmEmail"]');
+	const confirm = page.locator('[name="confirmEmail"]');
 	await expect(confirm).toBeVisible();
 
 	// The wrong address: the button stays out of reach.
@@ -127,7 +127,7 @@ test('deleting an account asks for its address, and means it', async ({ page }) 
 	await page.getByRole('button', { name: 'Delete for good' }).click();
 	await page.waitForURL(/\/admin/);
 
-	await page.fill('input[name="q"]', email);
+	await page.fill('[name="q"]', email);
 	await page.keyboard.press('Enter');
 	await expect(page.getByText(email, { exact: false })).toHaveCount(0);
 });

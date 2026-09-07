@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**46 pages, 190 actions.**
+**45 pages, 189 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,8 +28,7 @@ write surface for everything else; both end up calling the same
 | `/health/recipes/[id]`          | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/health/workouts`              | `create`, `update`, `done`, `schedule`, `archive`, `delete`                                                                                                                                                                                                                                                                                                                         |
 | `/ideas`                        | `create`, `update`, `delete`, `toggleApplied`, `updateAppliedNote`, `toggleFavorite`                                                                                                                                                                                                                                                                                                |
-| `/inventory/list`               | `setCategoryFood`, `setCategoryShared`, `renameCategory`, `deleteCategory`, `saveCategories`, `createCategory`, `create`, `update`, `toggleBought`, `paid`, `delete`, `restock`, `toggleSnoozed`                                                                                                                                                                                    |
-| `/inventory/things`             | `createLocation`, `updateLocation`, `deleteLocation`, `putItem`, `setFields`, `createThing`                                                                                                                                                                                                                                                                                         |
+| `/inventory`                    | `setCategoryFood`, `setCategoryShared`, `renameCategory`, `deleteCategory`, `saveCategories`, `createCategory`, `create`, `update`, `toggleBought`, `paid`, `delete`, `restock`, `toggleSnoozed`, `createLocation`, `updateLocation`, `deleteLocation`, `putItem`, `setFields`                                                                                                      |
 | `/legal/privacy`                | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/legal/refunds`                | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/legal/terms`                  | —                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -134,7 +133,7 @@ One query for the whole list rather than one per card: a cookbook is a page
 of forty cards, and forty round trips to ask "does this one have a picture"
 is how a list stops being instant.
 
-### `/inventory/list`
+### `/inventory`
 
 Every action here is the same shape: read the form, call the service, map errors.
 
@@ -159,25 +158,14 @@ simply did nothing and said nothing about it.
 
 What you actually paid. Never part of the tick, which has to stay one press.
 
-### `/inventory/things`
-
-The half of the room that answers "where is it".
-
-The tree and every item in one load: a house is tens of locations and
-hundreds of things, which is one query each, and paging a drawer would be
-the wrong shape for something people scan rather than read.
-
 **`putItem`**
 
-Put a thing somewhere, or take its address away with an empty value.
+Where a thing lives. An empty value takes its address away.
 
-**`createThing`**
-
-Something you own that was never on a list.
-
-The list's own form is for things to buy; this one is for the tape that
-has been in the drawer for ten years. Same table, already bought, filed
-where you said — so it never appears as something to get.
+Its own action rather than a field on `update`, because this is what a
+drag posts: one item, one location, nothing else touched — and `update`
+re-parses the whole row, which would mean a drag re-sending a name and a
+price to move something into a drawer.
 
 ### `/login`
 

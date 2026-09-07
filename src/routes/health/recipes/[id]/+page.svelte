@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
@@ -143,7 +144,7 @@
 							<!-- Every ingredient is a shopping item; this is the way to it,
 							     for when you want to check the price or tick it off. -->
 							<a
-								href={resolve('/inventory/list')}
+								href={resolve('/inventory')}
 								class="shrink-0 text-gray-500 hover:text-gray-900"
 								title="Find {ingredient.name} on the shopping list"
 								aria-label="Find {ingredient.name} on the shopping list"
@@ -494,7 +495,7 @@
 		<input type="hidden" name="id" value={data.recipe.id} />
 		<FormGrid>
 			<Field label="What it is" span={12} required>
-				<input name="heading" required value={data.recipe.title} autocomplete="off" class="input" />
+				<OneLine name="heading" value={data.recipe.title} class="input" required />
 			</Field>
 			<Field label="Serves" span={4}>
 				<input
@@ -517,7 +518,7 @@
 				/>
 			</Field>
 			<Field label="Where it came from" span={4}>
-				<input name="source" value={data.recipe.source} autocomplete="off" class="input" />
+				<OneLine name="source" value={data.recipe.source} class="input" />
 			</Field>
 			<Field label="Method" span={12} hint="Markdown: headings, lists, numbers.">
 				<textarea name="method" rows="10" use:autogrow class="textarea"

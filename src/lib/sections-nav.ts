@@ -89,7 +89,7 @@ export const NAV_PLACES: NavPlace[] = [
 		label: 'Inventory',
 		section: 'inventory',
 		icon: 'shopping',
-		href: '/inventory/list',
+		href: '/inventory',
 		hide: 'inventory'
 	}
 ];
