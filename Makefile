@@ -73,7 +73,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% badges _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: _billing-in-build vars print-% badges android-project _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -459,6 +459,23 @@ format:
 	yarn format
 
 # ─── Docs ─────────────────────────────────────────────────────────────────────
+
+# The Android project the stores build, regenerated against the origin the
+# published app opens.
+#
+# It is committed, unlike the scratch project `make android` writes: F-Droid
+# builds from a git tag on a machine with no network, so it cannot run the
+# generator — a project that only exists after `npx bubblewrap` has phoned home
+# is a project F-Droid cannot build at all. Committed, a tag is `gradle
+# assembleRelease` and nothing else, which is the whole of their recipe.
+#
+# `make android` still writes android-twa/ and is still ignored: that one is
+# built against whatever origin you are testing, and a build must never change
+# the tree it builds from.
+android-project:
+	ONTOPLANO_ORIGIN=https://app.ontoplano.com TWA_DIR=android \
+		node scripts/build-twa.mjs --project-only
+	@node scripts/sanitise-twa-manifest.mjs android/twa-manifest.json
 
 # The README's badges, drawn from this repo rather than fetched from a badge
 # service — the front page of the project should not need a third party to be

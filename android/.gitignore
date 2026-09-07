@@ -1,0 +1,10 @@
+# Everything Gradle makes, and anything that signs.
+build/
+.gradle/
+local.properties
+*.keystore
+*.keystore.pass
+*.jks
+*.apk
+*.aab
+*.idsig

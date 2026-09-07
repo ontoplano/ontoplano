@@ -1,0 +1,59 @@
+{
+  "packageId": "app.ontoplano.twa",
+  "host": "app.ontoplano.com",
+  "name": "Ontoplano",
+  "launcherName": "Ontoplano",
+  "display": "standalone",
+  "themeColor": "#111827",
+  "themeColorDark": "#111827",
+  "navigationColor": "#111827",
+  "navigationColorDark": "#111827",
+  "navigationDividerColor": "#111827",
+  "navigationDividerColorDark": "#111827",
+  "backgroundColor": "#111827",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://app.ontoplano.com/icons/icon-512.png",
+  "maskableIconUrl": "https://app.ontoplano.com/icons/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "ontoplano"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shellVersion": "1.0.0",
+  "webManifestUrl": "https://app.ontoplano.com/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://app.ontoplano.com/",
+  "minSdkVersion": 23,
+  "orientation": "default",
+  "shortcuts": [
+    {
+      "name": "Board",
+      "shortName": "Board",
+      "url": "https://app.ontoplano.com/tasks/board",
+      "chosenIconUrl": "https://app.ontoplano.com/icons/shortcut-board.png"
+    },
+    {
+      "name": "Diary",
+      "shortName": "Diary",
+      "url": "https://app.ontoplano.com/diary",
+      "chosenIconUrl": "https://app.ontoplano.com/icons/shortcut-diary.png"
+    },
+    {
+      "name": "Goals",
+      "shortName": "Goals",
+      "url": "https://app.ontoplano.com/goals",
+      "chosenIconUrl": "https://app.ontoplano.com/icons/shortcut-goals.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli"
+}

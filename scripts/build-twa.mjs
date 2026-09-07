@@ -25,7 +25,27 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { androidEnv } from './lib/android-env.mjs';
 import { defaultIdentity, identityFrom, packageIdFor } from './twa-identity.mjs';
 
-const DIR = 'android-twa';
+/*
+ * Where the Android project is written.
+ *
+ * Two of them, for two jobs. `android-twa/` is the scratch build: whatever
+ * origin you are testing against, ignored by git, rebuilt whenever. `android/`
+ * is the one the stores get, committed, and regenerated deliberately by
+ * `make android-project` — F-Droid builds from a git tag on a machine with no
+ * network, so a project that only exists after this script has phoned home is
+ * a project F-Droid cannot build at all.
+ */
+const DIR = process.env.TWA_DIR || 'android-twa';
+
+/*
+ * Generate, and stop.
+ *
+ * `--project-only` skips the Gradle build and the signing, which is what
+ * refreshing the committed project wants: no key is involved, nothing is
+ * produced but source, and the tree is left as something a plain
+ * `gradle assembleRelease` can build.
+ */
+const PROJECT_ONLY = process.argv.includes('--project-only');
 
 /**
  * The origin the app opens.
@@ -109,8 +129,13 @@ const passwordPath = `${keystorePath}.pass`;
  * this stops and says how to move it — one command, run by the person whose
  * key it is.
  */
-const legacyKeystore = resolve(process.cwd(), DIR, 'android.keystore');
-if (!existsSync(keystorePath) && existsSync(legacyKeystore) && !process.env.ANDROID_KEYSTORE) {
+const legacyKeystore = resolve(process.cwd(), 'android-twa', 'android.keystore');
+if (
+	!PROJECT_ONLY &&
+	!existsSync(keystorePath) &&
+	existsSync(legacyKeystore) &&
+	!process.env.ANDROID_KEYSTORE
+) {
 	console.error(
 		`\nThe signing key is kept outside the checkout now, and yours is still in it.\n\n` +
 			`Move it — it is the only thing that can update the Play listing:\n\n` +
@@ -654,6 +679,11 @@ function installWidget() {
 }
 
 installWidget();
+
+if (PROJECT_ONLY) {
+	console.log(`\nGenerated the project in ${DIR}/ and stopped — nothing was signed.`);
+	process.exit(0);
+}
 
 console.log('\nBuilding…');
 run(['build', '--skipPwaValidation']);

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_label">Ontoplano — today</string>
+    <string name="widget_description">Today\'s blocks, habits and tasks.</string>
+    <string name="widget_date_format">EEEE d MMM</string>
+    <string name="widget_refresh">\u21bb</string>
+    <string name="widget_refresh_description">Read today again</string>
+    <string name="widget_empty">Nothing today.</string>
+    <string name="widget_blocks">Blocks</string>
+    <string name="widget_habits">Habits</string>
+    <string name="widget_tasks">Tasks</string>
+    <string name="widget_done_mark">✓</string>
+    <string name="widget_overdue">overdue</string>
+    <string name="widget_streak">%1$d day streak</string>
+    <string name="widget_not_configured">Tap to connect the widget.</string>
+    <string name="widget_bad_token">The instance refused this widget. Tap to reconnect.</string>
+    <string name="widget_unreachable">Could not reach the instance.</string>
+
+    <string name="configure_title">Ontoplano widget</string>
+    <string name="configure_help">Connect opens your instance in the browser; one tap there and the widget is connected. If it comes back here without connecting, the page also shows a key you can paste below. Either way it can read today\'s plan and nothing else.</string>
+    <string name="configure_connect">Connect</string>
+    <string name="configure_waiting">Finish in the browser — this screen completes by itself.</string>
+    <string name="configure_checking">Checking…</string>
+    <string name="configure_origin_label">Instance address</string>
+    <string name="configure_origin_hint">https://plan.example.com</string>
+    <string name="configure_default_origin">https://app.ontoplano.com</string>
+    <string name="configure_needs_address">Say which instance to connect to.</string>
+    <string name="configure_no_browser">No browser on this phone can open the instance.</string>
+    <string name="configure_bad_link">That link was missing its key. Try Connect again.</string>
+    <string name="configure_paste_label">Or paste the key</string>
+    <string name="configure_paste_hint">The key the browser page shows</string>
+    <string name="configure_use_key">Use this key</string>
+    <string name="configure_needs_key">Paste the key the browser page shows.</string>
+</resources>
