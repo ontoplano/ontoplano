@@ -231,7 +231,7 @@
 	open={reporting}
 	onclose={closeReport}
 	title="Something wrong here?"
-	description={`Report it to the instance's administrator: it will carry your account, information about the browser you're using, and the fact it happened at ${page.url.pathname}. None of your personal goes data with it.`}
+	description={`Report it to the instance's administrator: it will carry your account, information about the browser you're using, and the fact it happened at ${page.url.pathname}. None of your personal data goes with it.`}
 	size="sm"
 >
 	{#if reportState === 'sent'}

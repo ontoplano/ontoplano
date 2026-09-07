@@ -15,7 +15,7 @@
  *
  *   node scripts/check-job-deps.mjs
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
@@ -28,6 +28,20 @@ const JOBS = [
 	'scripts/weekly-reviews.ts',
 	'scripts/reconcile-billing.ts'
 ];
+
+/**
+ * The file an import means, or null.
+ *
+ * `existsSync` is true for a directory, so `$lib/server/db` — a folder with an
+ * `index.ts` in it — resolved to the folder, and reading it threw EISDIR and
+ * took the whole check down with a stack trace. A directory is not a module;
+ * the module is the index inside it.
+ */
+const moduleAt = (target) => {
+	if (existsSync(target) && statSync(target).isFile()) return target;
+	if (existsSync(`${target}/index.ts`)) return `${target}/index.ts`;
+	return null;
+};
 
 /** `@scope/name/deep` → `@scope/name`; `pkg/deep` → `pkg`. */
 const packageOf = (spec) =>
@@ -95,9 +109,8 @@ function walk(file, from) {
 		const fatal = statics.includes(spec);
 		if (spec.startsWith('.')) {
 			// `./x.js` in TypeScript source is `./x.ts` on disk.
-			const target = join(dirname(path), spec.replace(/\.js$/, '.ts'));
-			if (existsSync(target)) walk(target, path);
-			else if (existsSync(`${target}/index.ts`)) walk(`${target}/index.ts`, path);
+			const target = moduleAt(join(dirname(path), spec.replace(/\.js$/, '.ts')));
+			if (target) walk(target, path);
 			continue;
 		}
 		if (spec.startsWith('node:')) continue;
@@ -105,9 +118,8 @@ function walk(file, from) {
 		// `$lib/x` is this repository's own alias for `src/lib/x`, and tsx
 		// follows it through tsconfig. Walked like a relative import.
 		if (spec.startsWith('$lib/')) {
-			const target = resolve('src/lib', spec.slice(5).replace(/\.js$/, '.ts'));
-			if (existsSync(target)) walk(target, path);
-			else if (existsSync(`${target}/index.ts`)) walk(`${target}/index.ts`, path);
+			const target = moduleAt(resolve('src/lib', spec.slice(5).replace(/\.js$/, '.ts')));
+			if (target) walk(target, path);
 			continue;
 		}
 

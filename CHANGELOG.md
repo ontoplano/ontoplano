@@ -15,6 +15,8 @@ version.
 - **The report box says exactly what it sends**: your account, the screen you
   are on by name, and which browser. It claimed "nothing else" while quietly
   attaching a user agent, which is a worse promise than none.
+- **`make lint` runs again** — the job-dependency check crashed on an import
+  of a directory rather than a file, taking the whole gate down with it.
 
 ## 0.92.0 — 2026-09-07
 
