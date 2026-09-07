@@ -2243,6 +2243,33 @@ html .ec .ec-event.og-event--inactive {
 }
 
 /*
+ * The calendar's own drag-out box: never, except while dragging.
+ *
+ * It draws a solid block in the selection colour with a time on it, which is a
+ * picture of a block that does not exist and looks exactly like one that does.
+ * Worse, it is an event as far as the column's layout goes, so a real block
+ * created over the same hours had to share the width with it — and anything
+ * that stopped it being cleared left it sitting there until a reload.
+ *
+ * So it is not drawn at all, and the grid puts `og-dragging-out` on itself
+ * while a pointer is down to bring it back as an outline for the one moment it
+ * is telling you something. A shift-drag never adds the class: that gesture
+ * has its own rectangle.
+ */
+html .ec .ec-event.ec-preview {
+	display: none;
+}
+
+html .og-dragging-out .ec .ec-event.ec-preview {
+	display: block;
+	background-color: color-mix(in srgb, var(--color-gray-500) 10%, transparent);
+	color: var(--color-gray-600);
+	box-shadow: none;
+	outline: 2px dashed color-mix(in srgb, var(--color-gray-500) 55%, transparent);
+	outline-offset: -2px;
+}
+
+/*
  * What the open form is describing, before it exists.
  *
  * A dashed outline in the block's own colour, and no fill: it has to be

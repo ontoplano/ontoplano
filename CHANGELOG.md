@@ -10,6 +10,23 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.101.0 — 2026-09-07
+
+- **The blue box that was not a block is gone.** Dragging out an hour drew a
+  solid block in the selection colour with a time on it — a picture of
+  something that did not exist, looking exactly like something that did, and
+  counting in the column's layout so a real block over the same hours was
+  squeezed beside it. It is drawn only while the pointer is down now, as an
+  outline, so nothing can be left holding one. A shift-drag never gets it at
+  all: that gesture has its own rectangle, and two answers to "what am I
+  dragging" is one too many.
+- **On the phone, how far you pull is how long it is.** A touch had to be held
+  a full second before it counted as dragging out a block, by which time the
+  pull was over — so every block came out the default half hour and the form
+  opened before you could say otherwise. A fifth of a second: longer than a
+  tap, short enough that the block follows your finger from the start. A tap
+  still makes nothing.
+
 ## 0.100.0 — 2026-09-07
 
 - **The grid draws the block the form is describing.** A block form is a page

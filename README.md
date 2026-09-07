@@ -11,7 +11,9 @@
 [![licence AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-1f6feb)](LICENSE)
 [![self-hosted](https://img.shields.io/badge/host%20it-yourself-1f6feb)](#running-it)
 
-**[ontoplano.com](https://ontoplano.com) · [official instance](https://app.ontoplano.com) · [try the demo](https://demo.ontoplano.com) · [documentation](https://docs.ontoplano.com)**
+<a href="https://demo.ontoplano.com"><img alt="Try the demo — no sign-up necessary" src="https://img.shields.io/badge/%E2%96%B6%20try%20the%20demo-no%20sign--up%2C%20a%20week%20already%20in%20it-1f6feb?style=for-the-badge&labelColor=0b1220"></a>
+
+[ontoplano.com](https://ontoplano.com) · [official instance](https://app.ontoplano.com) · [documentation](https://docs.ontoplano.com)
 
 `.deb` · `.rpm` · AUR · Docker · Android
 

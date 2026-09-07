@@ -678,6 +678,18 @@ export function baseGridOptions(
 		snapDuration: GRID_SNAP_DURATION,
 		slotHeight,
 		scrollTime: minTime,
+		/*
+		 * The phone: press and drag out an hour.
+		 *
+		 * A touch has to be held before it counts as dragging out a block
+		 * rather than scrolling the week, and the library waits a full second
+		 * for it. By then the drag is over — so pressing and pulling down gave
+		 * a fixed half hour and a form, every time, and there was no way to say
+		 * how long the thing was with the gesture. A fifth of a second is
+		 * longer than a tap and short enough that the block follows the finger
+		 * from the start.
+		 */
+		selectLongPressDelay: 200,
 		nowIndicator: !month,
 		// 24-hour, matching every other time in the app — the board and the
 		// tracker both read 07:00. It is also narrower, which is what lets the

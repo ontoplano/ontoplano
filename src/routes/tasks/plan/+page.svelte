@@ -990,6 +990,30 @@
 	function selectionSurface(node: HTMLElement) {
 		gridEl = node;
 
+		/*
+		 * The calendar's own drag-out box, alive only while a finger or a
+		 * pointer is down.
+		 *
+		 * It draws a solid blue block with a time on it while you drag out an
+		 * hour, which is a picture of a block that does not exist and looks
+		 * exactly like one that does — and if anything went wrong before it was
+		 * cleared, it stayed there. The stylesheet hides it outright; this
+		 * class brings it back, dashed, for the one moment it is useful, and
+		 * takes it away again on release whatever else happens. A shift-drag
+		 * never gets it at all: that gesture is the selection rectangle, and
+		 * two overlapping answers to "what am I dragging" is one too many.
+		 */
+		const DRAGGING = 'og-dragging-out';
+		const down = (e: PointerEvent) => {
+			if (e.button !== 0 && e.pointerType === 'mouse') return;
+			node.classList.toggle(DRAGGING, !e.shiftKey);
+		};
+		const up = () => node.classList.remove(DRAGGING);
+
+		node.addEventListener('pointerdown', down);
+		window.addEventListener('pointerup', up);
+		window.addEventListener('pointercancel', up);
+
 		const onMouseDown = (e: MouseEvent) => {
 			if (!e.shiftKey || e.button !== 0) return;
 			// Keep the calendar from starting its own drag-to-create.
@@ -1026,6 +1050,9 @@
 		return {
 			destroy() {
 				node.removeEventListener('mousedown', onMouseDown, { capture: true });
+				node.removeEventListener('pointerdown', down);
+				window.removeEventListener('pointerup', up);
+				window.removeEventListener('pointercancel', up);
 			}
 		};
 	}

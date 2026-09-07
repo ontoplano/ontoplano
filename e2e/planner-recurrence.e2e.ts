@@ -431,8 +431,117 @@ test.describe('the preview on the grid', () => {
 		await page.waitForTimeout(600);
 
 		// On screen, not somewhere below the fold — a preview of an evening you
-		// cannot see is no preview at all.
+		// cannot see is no preview at all. Generous, because the scroll waits
+		// for the calendar to draw the box and then animates to it.
 		const preview = page.locator('.og-event--preview').first();
-		await expect(preview).toBeInViewport();
+		await expect(preview).toBeInViewport({ timeout: 15_000 });
+	});
+});
+
+/**
+ * The calendar's own drag-out box.
+ *
+ * It drew a solid block in the selection colour with a time on it — a picture
+ * of a block that does not exist, looking exactly like one that does. It also
+ * counted in the column's layout, so a real block over the same hours had to
+ * share the width with it, and anything that stopped it being cleared left it
+ * sitting there until a reload. It is drawn only while a pointer is down now,
+ * as an outline, and never for a shift-drag.
+ */
+test.describe('dragging out an hour', () => {
+	const dragOut = async (page: import('@playwright/test').Page, shift: boolean) => {
+		const box = (await page.locator('.ec-body').first().boundingBox())!;
+		const x = box.x + box.width * (shift ? 0.6 : 0.45);
+		if (shift) await page.keyboard.down('Shift');
+		await page.mouse.move(x, box.y + 100);
+		await page.mouse.down();
+		await page.mouse.move(x, box.y + 160, { steps: 6 });
+		const midDrag = await page.locator('.ec-preview:visible').count();
+		await page.mouse.move(x, box.y + 200, { steps: 4 });
+		await page.mouse.up();
+		if (shift) await page.keyboard.up('Shift');
+		return midDrag;
+	};
+
+	test('shows an outline while the pointer is down, and nothing after', async ({ page }) => {
+		test.setTimeout(180_000);
+		await register(page, `dragout-${Date.now()}@test.invalid`);
+		await visit(page, '/tasks/plan');
+		await expect(page.locator('.ec-main')).toBeVisible();
+		await page.waitForTimeout(600);
+
+		expect(await dragOut(page, false), 'drawn while dragging').toBe(1);
+		await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+		// Gone the moment the pointer came up, whatever happens next — which is
+		// what makes it impossible to leave one behind.
+		expect(await page.locator('.ec-preview:visible').count()).toBe(0);
+
+		await page.keyboard.press('Escape');
+		await expect(page.getByRole('dialog')).toBeHidden();
+		expect(await page.locator('.ec-preview:visible').count()).toBe(0);
+	});
+
+	test('a shift-drag gets the rectangle and no block at all', async ({ page }) => {
+		test.setTimeout(180_000);
+		await register(page, `dragout-shift-${Date.now()}@test.invalid`);
+		await visit(page, '/tasks/plan');
+		await expect(page.locator('.ec-main')).toBeVisible();
+		await page.waitForTimeout(600);
+
+		// Two answers to "what am I dragging" is one too many.
+		expect(await dragOut(page, true), 'never drawn under shift').toBe(0);
+		await page.waitForTimeout(400);
+		expect(await page.locator('.ec-preview:visible').count()).toBe(0);
+		expect(
+			await page
+				.getByRole('dialog')
+				.isVisible()
+				.catch(() => false)
+		).toBe(false);
+	});
+
+	test.describe('on a phone', () => {
+		test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+		test('a press and a pull down is how long the thing is', async ({ page }) => {
+			test.setTimeout(180_000);
+			await register(page, `dragout-touch-${Date.now()}@test.invalid`);
+			await visit(page, '/tasks/plan?view=day');
+			await expect(page.locator('.ec-main')).toBeVisible();
+			await page.waitForTimeout(900);
+
+			const box = (await page.locator('.ec-body').first().boundingBox())!;
+			const x = box.x + box.width * 0.6;
+			const form = page.getByRole('dialog');
+
+			// A tap is not a block. Creating one by brushing the screen would be
+			// worse than not being able to create one at all.
+			await page.touchscreen.tap(x, box.y + 120);
+			await page.waitForTimeout(700);
+			expect(await form.isVisible().catch(() => false)).toBe(false);
+
+			// Held, then pulled down: the block is as long as the pull. The
+			// library waits a full second before a touch counts as a drag, so
+			// this used to be over before it started and every block came out
+			// the default half hour.
+			const cdp = await page.context().newCDPSession(page);
+			await cdp.send('Input.dispatchTouchEvent', {
+				type: 'touchStart',
+				touchPoints: [{ x, y: box.y + 120 }]
+			});
+			await page.waitForTimeout(260);
+			for (let i = 1; i <= 6; i++) {
+				await cdp.send('Input.dispatchTouchEvent', {
+					type: 'touchMove',
+					touchPoints: [{ x, y: box.y + 120 + i * 25 }]
+				});
+				await page.waitForTimeout(60);
+			}
+			await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+
+			await expect(form).toBeVisible({ timeout: 15_000 });
+			const minutes = Number(await form.locator('[name="durationMinutes"]').inputValue());
+			expect(minutes).toBeGreaterThan(60);
+		});
 	});
 });
