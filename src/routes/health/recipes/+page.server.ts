@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import { listCategories } from '$lib/server/services/activities';
 import { buildCtx } from '$lib/server/services/ctx';
 import { mainPictures } from '$lib/server/services/media';
 import { foodCategories, withMissingCounts } from '$lib/server/services/recipes';
@@ -27,7 +28,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 		recipes: withPictures(ctx),
 		// With no food category nothing can be an ingredient, and the page has to
 		// say so rather than offering an editor that refuses everything.
-		hasFoodCategory: foodCategories(ctx).length > 0
+		hasFoodCategory: foodCategories(ctx).length > 0,
+		// For putting a recipe on a day without opening it first.
+		categories: listCategories(ctx),
+		today: new Date(ctx.now).toISOString().slice(0, 10)
 	};
 };
 

@@ -919,22 +919,22 @@
 			</Card>
 		{/snippet}
 
-		{#snippet card_trainings()}
-			<Card title="Trainings" accent={SECTION_COLORS.health}>
+		{#snippet card_workouts()}
+			<Card title="Workouts" accent={SECTION_COLORS.health}>
 				{#snippet actions()}
-					<a href={resolve('/health/trainings')} class="text-xs text-gray-500 hover:text-gray-900"
+					<a href={resolve('/health/workouts')} class="text-xs text-gray-500 hover:text-gray-900"
 						>Open →</a
 					>
 				{/snippet}
-				{#if data.trainingsCard.length === 0}
+				{#if data.workoutsCard.length === 0}
 					{@render nothingYet(
 						'No workouts yet. Write one down and drop it onto the week like a meal.',
-						'/health/trainings',
+						'/health/workouts',
 						'Add a workout'
 					)}
 				{:else}
 					<div class="space-y-1">
-						{#each data.trainingsCard.slice(0, 5) as t (t.id)}
+						{#each data.workoutsCard.slice(0, 5) as t (t.id)}
 							<div class="flex items-center justify-between gap-2 text-sm">
 								<span class="text-gray-700">{t.title}</span>
 								<span class="text-xs text-gray-500">
@@ -1105,7 +1105,7 @@
 						{:else if id === 'weekPlan'}{@render card_weekPlan()}
 						{:else if id === 'diary'}{@render card_diary()}
 						{:else if id === 'bills'}{@render card_bills()}
-						{:else if id === 'trainings'}{@render card_trainings()}
+						{:else if id === 'workouts'}{@render card_workouts()}
 						{:else if id === 'shopping'}{@render card_shopping()}
 						{:else if id === 'quote'}{@render card_quote()}
 						{:else if id === 'threeWins'}{@render card_threeWins()}

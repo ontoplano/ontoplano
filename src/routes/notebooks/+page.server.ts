@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
 import { contentsOf, listNotebooks, listOrphanedNotes } from '$lib/server/services/notebooks';
+import { listPeople } from '$lib/server/services/people';
 import { notebookActions } from './actions';
 
 /** The query value that stands for the orphaned notes rather than a notebook. */
@@ -29,7 +30,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		selected,
 		orphaned,
 		orphanedSelected: wantsOrphaned || (selected === null && orphaned.length > 0),
-		contents: selected ? contentsOf(ctx, selected) : null
+		contents: selected ? contentsOf(ctx, selected) : null,
+		// For the People field on a note, which completes rather than duplicates.
+		allPeople: listPeople(ctx)
 	};
 };
 

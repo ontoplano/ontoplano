@@ -16,7 +16,8 @@ import {
 	exceptionalTasks,
 	notebooks,
 	todoTasks,
-	taskRecords
+	taskRecords,
+	workouts
 } from '../db/schema.js';
 import { CLOSED_STATUSES, isStatus, type Status } from '../../task-status.js';
 import type { RatingValues } from '../../ratings.js';
@@ -295,10 +296,14 @@ export function demoteToTodo(ctx: Ctx, slotId: number): { ok: true; todoId: numb
 	const category = slot.categoryId
 		? db.select().from(categories).where(eq(categories.id, slot.categoryId)).get()
 		: undefined;
+	const workout = slot.workoutId
+		? db.select().from(workouts).where(eq(workouts.id, slot.workoutId)).get()
+		: undefined;
 
 	// A block need not be named — it can be "the health one at seven" — but a
 	// todo on a list with no title is a blank row nobody can act on.
-	const title = slot.label?.trim() || activity?.name || category?.name || 'Untitled';
+	const title =
+		slot.label?.trim() || activity?.name || workout?.title || category?.name || 'Untitled';
 
 	const todoId = db.transaction((tx) => {
 		const row = tx

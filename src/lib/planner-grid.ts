@@ -102,12 +102,14 @@ export interface GridSlotInput {
 	weekday: number;
 	startTime: string;
 	durationMinutes: number;
-	mode: 'category' | 'activity' | 'training';
+	mode: 'category' | 'activity' | 'workout';
 	categoryId: number | null;
 	activityId: number | null;
 	categoryName?: string | null;
 	activityName?: string | null;
 	activityCategoryId?: number | null;
+	workoutId?: number | null;
+	workoutName?: string | null;
 	label?: string | null;
 	active: boolean;
 }
@@ -117,12 +119,14 @@ export interface GridExceptionalInput {
 	date: string;
 	startTime: string;
 	durationMinutes: number;
-	mode: 'category' | 'activity' | 'training';
+	mode: 'category' | 'activity' | 'workout';
 	categoryId: number | null;
 	activityId: number | null;
 	categoryName?: string | null;
 	activityName?: string | null;
 	activityCategoryId?: number | null;
+	workoutId?: number | null;
+	workoutName?: string | null;
 	label?: string | null;
 	active: boolean;
 	status?: string;
@@ -190,7 +194,7 @@ function combineDateAndClock(base: Date, hhmm: string): Date {
 /** The Health accent, worn by a block that is a workout. Kept here beside the
  *  other colour decisions rather than imported, so this module stays the one
  *  place that says what a block looks like. */
-const TRAINING_COLOR = '#0f766e';
+const WORKOUT_COLOR = '#0f766e';
 
 export function categoryColor(categories: GridCategory[], categoryId: number | null): string {
 	if (!categoryId) return CATEGORY_FALLBACK_COLOR;
@@ -246,14 +250,16 @@ export function blockHue(color: string): string {
  * What a block is called, in one place.
  *
  * A block is named by what it *is* before what somebody typed on it: an
- * activity has a name, and a block that only names a category is that category.
- * The label is the exception, not the rule, which is why a list that showed
- * only labels ended up printing "block 47".
+ * activity has a name, a workout has a title, and a block that only names a
+ * category is that category. The label is the exception, not the rule, which
+ * is why a list that showed only labels ended up printing "block 47" — and why
+ * a workout dropped on the week from the plan drew itself as "Untitled".
  */
 export function blockName(
-	item: Pick<GridSlotInput, 'mode' | 'activityName' | 'label' | 'categoryName'>
+	item: Pick<GridSlotInput, 'mode' | 'activityName' | 'workoutName' | 'label' | 'categoryName'>
 ): string {
 	if (item.mode === 'activity' && item.activityName) return item.activityName;
+	if (item.mode === 'workout' && item.workoutName) return item.workoutName;
 	if (item.label) return item.label;
 	if (item.categoryName) return item.categoryName;
 	return 'Untitled';
@@ -269,9 +275,7 @@ function slotToEvent(
 	const start = combineDateAndClock(dayDate, slot.startTime);
 	const end = new Date(start.getTime() + slot.durationMinutes * 60_000);
 	const bg =
-		slot.mode === 'training'
-			? TRAINING_COLOR
-			: categoryColor(categories, effectiveCategoryId(slot));
+		slot.mode === 'workout' ? WORKOUT_COLOR : categoryColor(categories, effectiveCategoryId(slot));
 	const suppressed = opts.suppressedSlotIds?.has(slot.id) ?? false;
 	const inactive = !slot.active || suppressed;
 	// A slot skipped for this date is a stand-in for something that isn't
@@ -314,7 +318,7 @@ function exceptionalToEvent(
 	const start = combineDateAndClock(dayDate, exc.startTime);
 	const end = new Date(start.getTime() + exc.durationMinutes * 60_000);
 	const bg =
-		exc.mode === 'training' ? TRAINING_COLOR : categoryColor(categories, effectiveCategoryId(exc));
+		exc.mode === 'workout' ? WORKOUT_COLOR : categoryColor(categories, effectiveCategoryId(exc));
 
 	return {
 		id: encodeEventId('exceptional', exc.id),

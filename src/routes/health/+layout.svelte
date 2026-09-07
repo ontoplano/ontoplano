@@ -20,9 +20,8 @@
 	// interesting in it is escaped rather than pasted.
 	const tabs = $derived([
 		{ href: resolve('/health/habits'), label: 'Habits' },
-		{ href: resolve('/health/trainings'), label: 'Trainings' },
+		{ href: resolve('/health/workouts'), label: 'Workouts' },
 		{ href: resolve('/health/recipes'), label: 'Recipes' },
-		{ href: resolve('/health/meals'), label: 'Meals' },
 		...data.streams.map((s) => ({ href: resolve('/data/[slug]', { slug: s.slug }), label: s.name }))
 	]);
 

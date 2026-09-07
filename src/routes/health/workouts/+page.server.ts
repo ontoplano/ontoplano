@@ -2,27 +2,27 @@ import type { Actions, PageServerLoad } from './$types';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
-	listTrainings,
-	createTraining,
-	updateTraining,
+	listWorkouts,
+	createWorkout,
+	updateWorkout,
 	setArchived,
-	deleteTraining,
+	deleteWorkout,
 	doneToday,
-	scheduleTraining
-} from '$lib/server/services/trainings';
+	scheduleWorkout
+} from '$lib/server/services/workouts';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
 	// A workout needs no category: on the grid it is its own kind of block and
 	// wears Health's colour, the way a meal does.
-	return { trainings: listTrainings(ctx, { includeArchived: true }) };
+	return { workouts: listWorkouts(ctx, { includeArchived: true }) };
 };
 
 export const actions: Actions = {
 	create: async ({ request, locals }) => {
 		const form = await request.formData();
 		try {
-			createTraining(buildCtx(locals.user!.id), {
+			createWorkout(buildCtx(locals.user!.id), {
 				title: form.get('heading'),
 				kind: form.get('kind') || 'other',
 				plan: form.get('plan'),
@@ -38,7 +38,7 @@ export const actions: Actions = {
 	update: async ({ request, locals }) => {
 		const form = await request.formData();
 		try {
-			updateTraining(buildCtx(locals.user!.id), Number(form.get('id')), {
+			updateWorkout(buildCtx(locals.user!.id), Number(form.get('id')), {
 				title: form.get('heading'),
 				kind: form.get('kind') || 'other',
 				plan: form.get('plan'),
@@ -65,7 +65,7 @@ export const actions: Actions = {
 	schedule: async ({ request, locals }) => {
 		const form = await request.formData();
 		try {
-			scheduleTraining(buildCtx(locals.user!.id), Number(form.get('id')), {
+			scheduleWorkout(buildCtx(locals.user!.id), Number(form.get('id')), {
 				date: form.get('date'),
 				startTime: form.get('startTime'),
 				durationMinutes: form.get('durationMinutes')
@@ -93,7 +93,7 @@ export const actions: Actions = {
 	delete: async ({ request, locals }) => {
 		const form = await request.formData();
 		try {
-			deleteTraining(buildCtx(locals.user!.id), Number(form.get('id')));
+			deleteWorkout(buildCtx(locals.user!.id), Number(form.get('id')));
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

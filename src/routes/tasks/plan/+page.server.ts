@@ -10,7 +10,7 @@ import { toActionFailure } from '$lib/server/http-errors';
 import { metaFromFormData, metaPatchFromFormData } from '$lib/server/services/meta';
 import { listManifests } from '$lib/server/services/plugins';
 import { billsDueBetween } from '$lib/server/services/bills';
-import { listTrainings } from '$lib/server/services/trainings';
+import { listWorkouts } from '$lib/server/services/workouts';
 import {
 	addFeed,
 	listFeeds,
@@ -182,7 +182,7 @@ function blockFields(formData: FormData) {
 		mode: formData.get('mode'),
 		categoryId: formData.get('categoryId'),
 		activityId: formData.get('activityId'),
-		trainingId: formData.get('trainingId'),
+		workoutId: formData.get('workoutId'),
 		newActivityName: formData.get('newActivityName'),
 		newActivityCategoryId: formData.get('newActivityCategoryId'),
 		label: formData.get('label'),
@@ -354,7 +354,7 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 		billsDue: billsDueBetween(ctx, formatDate(from), formatDate(to)),
 		// The workouts a block can be about. Empty for an account that keeps
 		// none, which is what hides the mode entirely.
-		trainings: listTrainings(ctx).map((t) => ({ id: t.id, title: t.title, minutes: t.minutes }))
+		workouts: listWorkouts(ctx).map((t) => ({ id: t.id, title: t.title, minutes: t.minutes }))
 	};
 };
 

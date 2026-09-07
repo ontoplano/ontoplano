@@ -92,7 +92,7 @@ export type Card = {
 	/** Set when this occurrence belongs to a recurring block. */
 	slotId: number | null;
 	/** What actually happened, when the block only named a category. */
-	mode: 'category' | 'activity' | 'training' | null;
+	mode: 'category' | 'activity' | 'workout' | null;
 	activityId: number | null;
 	activityName: string | null;
 	/**

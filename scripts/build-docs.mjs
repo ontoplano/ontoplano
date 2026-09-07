@@ -557,6 +557,10 @@ function interfacesPage() {
 	};
 
 	const lines = [
+		STAMP.trimEnd(),
+		'',
+		'# Interfaces',
+		'',
 		'Every room the app has, and what is inside it. Generated from the',
 		'navigation and from each section\u2019s own tab strip, so it cannot drift',
 		'from what the app actually shows.',

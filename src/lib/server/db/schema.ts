@@ -72,7 +72,7 @@ export const recurringTasks = sqliteTable(
 		recurrence: text('recurrence').notNull().default('weekly'),
 		startTime: text('start_time').notNull(), // HH:MM
 		durationMinutes: integer('duration_minutes').notNull().default(60),
-		mode: text('mode', { enum: ['category', 'activity', 'training'] }).notNull(),
+		mode: text('mode', { enum: ['category', 'activity', 'workout'] }).notNull(),
 		categoryId: integer('category_id').references(() => categories.id),
 		activityId: integer('activity_id').references(() => activities.id),
 		label: text('label').default(''),
@@ -106,9 +106,9 @@ export const recurringTasks = sqliteTable(
 		 * next to deep work and why "what does this week need" is a join.
 		 */
 		recipeId: integer('recipe_id').references(() => recipes.id, { onDelete: 'set null' }),
-		/** The training this block is for, when it is a workout — the same idea
-		 * as recipeId one line up: a planned thing attached to a block. */
-		trainingId: integer('training_id').references(() => trainings.id, { onDelete: 'set null' }),
+		/** The workout this block is for — the same idea as recipeId one line up:
+		 * a planned thing attached to a block. */
+		workoutId: integer('workout_id').references(() => workouts.id, { onDelete: 'set null' }),
 
 		createdAt: text('created_at')
 			.notNull()
@@ -136,10 +136,7 @@ export const recurringTasks = sqliteTable(
 			'slots_mode_activity',
 			sql`${table.mode} != 'activity' OR ${table.activityId} IS NOT NULL`
 		),
-		check(
-			'slots_mode_training',
-			sql`${table.mode} != 'training' OR ${table.trainingId} IS NOT NULL`
-		)
+		check('slots_mode_workout', sql`${table.mode} != 'workout' OR ${table.workoutId} IS NOT NULL`)
 	]
 );
 
@@ -498,7 +495,7 @@ export const exceptionalTasks = sqliteTable(
 		date: text('date').notNull(), // YYYY-MM-DD
 		startTime: text('start_time').notNull(), // HH:MM
 		durationMinutes: integer('duration_minutes').notNull().default(60),
-		mode: text('mode', { enum: ['category', 'activity', 'training'] }).notNull(),
+		mode: text('mode', { enum: ['category', 'activity', 'workout'] }).notNull(),
 		categoryId: integer('category_id').references(() => categories.id),
 		activityId: integer('activity_id').references(() => activities.id),
 		label: text('label').default(''),
@@ -527,9 +524,9 @@ export const exceptionalTasks = sqliteTable(
 
 		/** The recipe this block is for, when it is a meal. See `recurring_tasks`. */
 		recipeId: integer('recipe_id').references(() => recipes.id, { onDelete: 'set null' }),
-		/** The training this block is for, when it is a workout — the same idea
-		 * as recipeId one line up: a planned thing attached to a block. */
-		trainingId: integer('training_id').references(() => trainings.id, { onDelete: 'set null' }),
+		/** The workout this block is for — the same idea as recipeId one line up:
+		 * a planned thing attached to a block. */
+		workoutId: integer('workout_id').references(() => workouts.id, { onDelete: 'set null' }),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
@@ -558,8 +555,8 @@ export const exceptionalTasks = sqliteTable(
 			sql`${table.mode} != 'activity' OR ${table.activityId} IS NOT NULL`
 		),
 		check(
-			'exceptional_mode_training',
-			sql`${table.mode} != 'training' OR ${table.trainingId} IS NOT NULL`
+			'exceptional_mode_workout',
+			sql`${table.mode} != 'workout' OR ${table.workoutId} IS NOT NULL`
 		)
 	]
 );
@@ -890,7 +887,7 @@ export const schemeSlots = sqliteTable(
 		weekday: integer('weekday').notNull(),
 		startTime: text('start_time').notNull(),
 		durationMinutes: integer('duration_minutes').notNull().default(60),
-		mode: text('mode', { enum: ['category', 'activity', 'training'] }).notNull(),
+		mode: text('mode', { enum: ['category', 'activity', 'workout'] }).notNull(),
 		categoryId: integer('category_id').references(() => categories.id),
 		activityId: integer('activity_id').references(() => activities.id),
 		label: text('label').default(''),
@@ -2032,17 +2029,17 @@ export const billPayments = sqliteTable(
 	]
 );
 
-// --- Health: Trainings ---
+// --- Health: Workouts ---
 //
-// A fitness training — a workout you do, planned like a meal: a named thing
-// with a method, that you attach to a block on the week. It lives under Health
-// beside habits and the numbers. Scheduling one is not a second kind of
-// planning: a training block is an ordinary block with a `trainingId` on it,
-// exactly as a meal is a block with a `recipeId` — which is why "what does this
-// week ask of me" stays a single join over the grid.
+// A workout you do, planned like a meal: a named thing with a method, that you
+// attach to a block on the week. It lives under Health beside habits and the
+// numbers. Scheduling one is not a second kind of planning: a workout block is
+// an ordinary block with a `workoutId` on it, exactly as a meal is a block with
+// a `recipeId` — which is why "what does this week ask of me" stays a single
+// join over the grid.
 
-export const trainings = sqliteTable(
-	'trainings',
+export const workouts = sqliteTable(
+	'workouts',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
 		userId: text('user_id')
@@ -2069,8 +2066,8 @@ export const trainings = sqliteTable(
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
 	(table) => [
-		index('trainings_user_idx').on(table.userId),
-		check('trainings_minutes_positive', sql`${table.minutes} IS NULL OR ${table.minutes} > 0`)
+		index('workouts_user_idx').on(table.userId),
+		check('workouts_minutes_positive', sql`${table.minutes} IS NULL OR ${table.minutes} > 0`)
 	]
 );
 

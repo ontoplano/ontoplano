@@ -73,11 +73,11 @@ shows up here on the next build.
 | [`today`](#today)                               | One day, in one request.                                                                                                                                                                                                                                             |
 | [`todos`](#todos)                               | Todos: tasks that have no date yet.                                                                                                                                                                                                                                  |
 | [`tokens`](#tokens)                             | Scopes an API token can hold.                                                                                                                                                                                                                                        |
-| [`trainings`](#trainings)                       | Trainings: workouts you plan like meals.                                                                                                                                                                                                                             |
 | [`validate`](#validate)                         | Small hand-rolled validators.                                                                                                                                                                                                                                        |
 | [`version`](#version)                           | What is running here, and since when.                                                                                                                                                                                                                                |
 | [`webhooks`](#webhooks)                         | Webhooks: plugins that listen instead of push.                                                                                                                                                                                                                       |
 | [`wins`](#wins)                                 | Three things that went well today.                                                                                                                                                                                                                                   |
+| [`workouts`](#workouts)                         | Workouts: workouts you plan like meals.                                                                                                                                                                                                                              |
 
 ## access
 
@@ -1005,6 +1005,13 @@ A note whose notebook was deleted keeps its notebook number, so it is
 excluded too: it goes to the orphaned notes on the Notebooks page rather
 than turning into a journal entry the day the renovation ends.
 
+#### `tagsForEntries(ctx, entryIds)`
+
+The tags on each of these entries, keyed by entry id.
+
+One query for a page of notes rather than one per note: a notebook is a list
+of forty, and the diary is longer than that.
+
 #### `listTags(ctx)`
 
 #### `createEntry(ctx, raw)`
@@ -1023,6 +1030,10 @@ the count is whatever was sent rather than a fixed three.
 #### `latestEntry(ctx)`
 
 The most recent entry, for the dashboard card.
+
+### Types
+
+- `Tag`
 
 ## errors
 
@@ -3723,64 +3734,6 @@ the intent and costs nothing.
 - `TokenSummary`
 - `AuthenticatedToken`
 
-## trainings
-
-Trainings: workouts you plan like meals.
-
-A training lives under Health, beside habits and the numbers. It is a named
-session with a plan (Markdown, like a recipe's method) and a kind, and you
-put it on the week the way you put a meal there: by attaching it to a block.
-Scheduling is not modelled here twice — `recurring_tasks.trainingId` and
-`exceptional_tasks.trainingId` carry it, exactly as `recipeId` carries a
-meal — so "what does this week ask of me" is one join over the grid, not a
-separate calendar for exercise.
-
-Archived, not deleted, while it has been done: `lastDoneAt` and the blocks
-that pointed at it are its history. `deleteTraining` is for one made by
-mistake and clears itself off any block (the FK is set-null).
-
-### Functions
-
-#### `listTrainings(ctx, opts)`
-
-#### `getTraining(ctx, id)`
-
-#### `createTraining(ctx, input)`
-
-#### `updateTraining(ctx, id, input)`
-
-#### `setArchived(ctx, id, archived)`
-
-#### `deleteTraining(ctx, id)`
-
-For one made by mistake: gone, and cleared off any block it was on.
-
-#### `done(ctx, id)`
-
-Record that a session happened — the "cooked" of the gym.
-
-#### `scheduleTraining(ctx, id, input)`
-
-Put a workout on a day.
-
-The same gesture a todo has, and the same result: a one-off block on the
-grid whose mode says it IS this workout. Nothing is copied — the block
-points at the training, so the plan and the workout cannot drift, and
-finishing either finishes both.
-
-#### `doneToday(ctx, id)`
-
-The workout was done — and so, if it was on today's plan, was the block.
-
-The inverse of the binding in `setInstanceStatus`: ticking Done in Health
-must not leave the week still asking for it. Only today's occurrence, and
-only one: a workout done on Tuesday says nothing about Thursday's.
-
-### Types
-
-- `Kind`
-- `Training`
-
 ## validate
 
 Small hand-rolled validators.
@@ -3892,3 +3845,61 @@ Replace a day's wins.
 Keyed by (date, position) so re-saving edits the same three rows instead of
 accumulating duplicates, and an emptied box removes its win rather than
 storing a blank.
+
+## workouts
+
+Workouts: workouts you plan like meals.
+
+A workout lives under Health, beside habits and the numbers. It is a named
+session with a plan (Markdown, like a recipe's method) and a kind, and you
+put it on the week the way you put a meal there: by attaching it to a block.
+Scheduling is not modelled here twice — `recurring_tasks.workoutId` and
+`exceptional_tasks.workoutId` carry it, exactly as `recipeId` carries a
+meal — so "what does this week ask of me" is one join over the grid, not a
+separate calendar for exercise.
+
+Archived, not deleted, while it has been done: `lastDoneAt` and the blocks
+that pointed at it are its history. `deleteWorkout` is for one made by
+mistake and clears itself off any block (the FK is set-null).
+
+### Functions
+
+#### `listWorkouts(ctx, opts)`
+
+#### `getWorkout(ctx, id)`
+
+#### `createWorkout(ctx, input)`
+
+#### `updateWorkout(ctx, id, input)`
+
+#### `setArchived(ctx, id, archived)`
+
+#### `deleteWorkout(ctx, id)`
+
+For one made by mistake: gone, and cleared off any block it was on.
+
+#### `done(ctx, id)`
+
+Record that a session happened — the "cooked" of the gym.
+
+#### `scheduleWorkout(ctx, id, input)`
+
+Put a workout on a day.
+
+The same gesture a todo has, and the same result: a one-off block on the
+grid whose mode says it IS this workout. Nothing is copied — the block
+points at the workout, so the plan and the workout cannot drift, and
+finishing either finishes both.
+
+#### `doneToday(ctx, id)`
+
+The workout was done — and so, if it was on today's plan, was the block.
+
+The inverse of the binding in `setInstanceStatus`: ticking Done in Health
+must not leave the week still asking for it. Only today's occurrence, and
+only one: a workout done on Tuesday says nothing about Thursday's.
+
+### Types
+
+- `Kind`
+- `Workout`

@@ -5,6 +5,8 @@ import { user } from '../db/auth.schema.js';
 import { familyUserIds } from './subscriptions.js';
 import { diaryEntries, exceptionalTasks, goals, notebooks, todoTasks } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
+import { tagsForEntries } from './diary.js';
+import { peopleForEntries } from './people.js';
 import { ConflictError, NotFoundError } from './errors.js';
 import { stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
@@ -141,7 +143,7 @@ export function listNotebooks(ctx: Ctx): Notebook[] {
  * notebook of their own, and only when there are any.
  */
 export function listOrphanedNotes(ctx: Ctx) {
-	return db
+	const rows = db
 		.select({
 			id: diaryEntries.id,
 			seq: diaryEntries.seq,
@@ -159,6 +161,32 @@ export function listOrphanedNotes(ctx: Ctx) {
 		)
 		.orderBy(desc(diaryEntries.createdAt))
 		.all();
+
+	return withTagsAndPeople(ctx, rows);
+}
+
+/**
+ * A note is a note wherever it was written.
+ *
+ * One written in a notebook used to be content and nothing else, while the
+ * same note written in the diary carried tags and the people it was about —
+ * so the same act produced two different things depending on which screen it
+ * was typed into. Both lists go through here.
+ */
+function withTagsAndPeople<T extends { id: number }>(ctx: Ctx, entries: T[]) {
+	const tags = tagsForEntries(
+		ctx,
+		entries.map((e) => e.id)
+	);
+	const people = peopleForEntries(
+		ctx,
+		entries.map((e) => e.id)
+	);
+	return entries.map((entry) => ({
+		...entry,
+		tags: tags.get(entry.id) ?? [],
+		people: people.get(entry.id) ?? []
+	}));
 }
 
 export function getNotebook(ctx: Ctx, id: number): Notebook {
@@ -200,28 +228,31 @@ export function contentsOf(ctx: Ctx, id: number) {
 		// plan reads everybody's, each carrying its writer's name. Tasks, blocks
 		// and goals below stay each person's own — a notebook shares its writing,
 		// not each other's planners.
-		entries: db
-			.select({
-				id: diaryEntries.id,
-				// The notebook's own numbering; `seq` counts the whole account and
-				// means nothing to somebody reading one notebook.
-				seq: diaryEntries.notebookSeq,
-				content: diaryEntries.content,
-				forDate: diaryEntries.forDate,
-				createdAt: diaryEntries.createdAt,
-				ownerId: diaryEntries.userId,
-				authorName: user.name
-			})
-			.from(diaryEntries)
-			.innerJoin(user, eq(diaryEntries.userId, user.id))
-			.where(and(eq(diaryEntries.notebookId, id), inArray(diaryEntries.userId, circle)))
-			.orderBy(desc(diaryEntries.createdAt))
-			.all()
-			.map(({ ownerId, authorName, ...entry }) => ({
-				...entry,
-				mine: ownerId === ctx.userId,
-				author: ownerId === ctx.userId ? null : authorName
-			})),
+		entries: withTagsAndPeople(
+			ctx,
+			db
+				.select({
+					id: diaryEntries.id,
+					// The notebook's own numbering; `seq` counts the whole account and
+					// means nothing to somebody reading one notebook.
+					seq: diaryEntries.notebookSeq,
+					content: diaryEntries.content,
+					forDate: diaryEntries.forDate,
+					createdAt: diaryEntries.createdAt,
+					ownerId: diaryEntries.userId,
+					authorName: user.name
+				})
+				.from(diaryEntries)
+				.innerJoin(user, eq(diaryEntries.userId, user.id))
+				.where(and(eq(diaryEntries.notebookId, id), inArray(diaryEntries.userId, circle)))
+				.orderBy(desc(diaryEntries.createdAt))
+				.all()
+				.map(({ ownerId, authorName, ...entry }) => ({
+					...entry,
+					mine: ownerId === ctx.userId,
+					author: ownerId === ctx.userId ? null : authorName
+				}))
+		),
 
 		todos: db
 			.select({

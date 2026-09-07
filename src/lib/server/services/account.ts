@@ -100,7 +100,7 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('recipeImages', schema.recipeImages as never),
 	owned('recipeItems', schema.recipeItems as never),
 	owned('recipes', schema.recipes as never),
-	owned('trainings', schema.trainings as never),
+	owned('workouts', schema.workouts as never),
 	owned('pricePoints', schema.pricePoints as never),
 	owned('weeklyReviews', schema.weeklyReviews as never),
 	owned('reminders', schema.reminders as never),

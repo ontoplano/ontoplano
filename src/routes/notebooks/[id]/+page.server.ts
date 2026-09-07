@@ -4,6 +4,7 @@ import { buildCtx } from '$lib/server/services/ctx';
 import { familyUserIds } from '$lib/server/services/subscriptions';
 import { NotFoundError } from '$lib/server/services/errors';
 import { contentsOf, getNotebook } from '$lib/server/services/notebooks';
+import { listPeople } from '$lib/server/services/people';
 import { notebookActions } from '../actions';
 
 /**
@@ -22,6 +23,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		return {
 			notebook: getNotebook(ctx, id),
 			contents: contentsOf(ctx, id),
+			allPeople: listPeople(ctx),
 			onFamilyPlan: familyUserIds(ctx.userId).length > 1
 		};
 	} catch (e) {

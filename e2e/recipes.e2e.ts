@@ -275,13 +275,49 @@ test('a recipe put on a day turns into shopping', async ({ page }) => {
 	);
 	expect(scheduled, 'putting the recipe on a day').toBe('success');
 
-	// And the week now knows what it needs.
-	await visit(page, '/health/meals');
-	await expect(page.getByText('leeks')).toBeVisible();
-	await expect(page.getByText('potatoes')).toBeVisible();
-
-	// Which is the shopping list, not a second copy of one: the same rows.
+	// And what it needs is on the shopping list — which is the whole claim, and
+	// the reason the meals week that used to restate it is gone.
 	await visit(page, '/shopping');
 	await expect(page.getByText('leeks')).toBeVisible();
 	await expect(page.getByText('potatoes')).toBeVisible();
+});
+
+/**
+ * Putting a recipe on a day, from the list.
+ *
+ * There used to be a Meals tab: a read-only week and a copy of the shopping
+ * list, with no way to put anything on a day from it. The act it existed for
+ * is a button on the recipe now — the same one a workout has — and the week
+ * that tab drew is the plan, which draws meals beside everything else.
+ */
+test('the calendar button on a recipe puts it on a day', async ({ page }) => {
+	await register(page, `plan-recipe-${Date.now()}@test.invalid`);
+
+	await visit(page, '/health/recipes');
+	await page
+		.getByRole('button', { name: /New recipe/ })
+		.first()
+		.click();
+	const create = page.getByRole('dialog');
+	await create.locator('[name="heading"]').fill('Leek soup');
+	await create.getByRole('button', { name: 'Create' }).click();
+
+	await visit(page, '/health/recipes');
+	await page.getByRole('button', { name: 'Put Leek soup on a day' }).click();
+
+	const plan = page.getByRole('dialog');
+	await plan.locator('[name="startTime"]').fill('19:30');
+	await plan.getByRole('button', { name: 'Put it on the plan' }).click();
+	await expect(plan).toBeHidden();
+
+	// It is a block on the plan like anything else, which is the whole claim.
+	await visit(page, '/tasks/plan');
+	await expect(page.getByText('Leek soup').first()).toBeVisible();
+});
+
+/** The tab is gone, and its address goes where the act lives. */
+test('the old meals address lands on the recipes', async ({ page }) => {
+	await register(page, `meals-gone-${Date.now()}@test.invalid`);
+	await visit(page, '/health/meals');
+	await expect(page).toHaveURL(/\/health\/recipes/);
 });

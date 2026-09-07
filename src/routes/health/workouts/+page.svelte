@@ -9,14 +9,14 @@
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
-	const active = $derived(data.trainings.filter((t) => !t.archived));
-	const archived = $derived(data.trainings.filter((t) => t.archived));
+	const active = $derived(data.workouts.filter((t) => !t.archived));
+	const archived = $derived(data.workouts.filter((t) => t.archived));
 
 	// One form for new and edit, so the two cannot drift.
 	let showForm = $state(false);
-	let editing: (typeof data.trainings)[number] | null = $state(null);
+	let editing: (typeof data.workouts)[number] | null = $state(null);
 	let showArchived = $state(false);
-	let confirmingDelete: (typeof data.trainings)[number] | null = $state(null);
+	let confirmingDelete: (typeof data.workouts)[number] | null = $state(null);
 	/**
 	 * The workout whose plan is open.
 	 *
@@ -26,7 +26,7 @@
 	 */
 	let expanded: number | null = $state(null);
 	/** The workout being put on a day. */
-	let scheduling: (typeof data.trainings)[number] | null = $state(null);
+	let scheduling: (typeof data.workouts)[number] | null = $state(null);
 
 	function todayStr(): string {
 		const d = new Date();
@@ -49,7 +49,7 @@
 		editing = null;
 		showForm = true;
 	}
-	function openEdit(t: (typeof data.trainings)[number]) {
+	function openEdit(t: (typeof data.workouts)[number]) {
 		editing = t;
 		showForm = true;
 	}
@@ -181,7 +181,7 @@
 	size="md"
 >
 	<form
-		id="training-form"
+		id="workout-form"
 		method="post"
 		action={editing ? '?/update' : '?/create'}
 		use:enhance={() =>
@@ -235,7 +235,7 @@
 	</form>
 	{#snippet footer()}
 		<button class="btn" type="button" onclick={() => (showForm = false)}>Cancel</button>
-		<button class="btn btn-primary" type="submit" form="training-form">
+		<button class="btn btn-primary" type="submit" form="workout-form">
 			{editing ? 'Save' : 'Add'}
 		</button>
 	{/snippet}

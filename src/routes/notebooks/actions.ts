@@ -2,6 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from '@sveltejs/kit';
 import { buildCtx } from '$lib/server/services/ctx';
 import { createEntry, deleteEntry, updateEntry } from '$lib/server/services/diary';
+import { setEntryPeople } from '$lib/server/services/people';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
 	createNotebook,
@@ -89,11 +90,13 @@ export const notebookActions = {
 		if (!notebookId) return fail(400, { message: 'No notebook chosen' });
 
 		try {
-			createEntry(buildCtx(locals.user!.id), {
+			const ctx = buildCtx(locals.user!.id);
+			const id = createEntry(ctx, {
 				content: formData.get('content'),
 				tags: formData.get('tags'),
 				notebookId
 			});
+			setEntryPeople(ctx, id, formData.get('people'));
 			return { success: true, action: 'addEntry' };
 		} catch (e) {
 			return toActionFailure(e);
@@ -115,10 +118,14 @@ export const notebookActions = {
 			// adopt it into whatever notebook happens to be on screen.
 			const notebookId = Number(formData.get('notebookId')) || null;
 
-			updateEntry(buildCtx(locals.user!.id), Number(formData.get('id')), {
+			const ctx = buildCtx(locals.user!.id);
+			const id = Number(formData.get('id'));
+			updateEntry(ctx, id, {
 				content: formData.get('content'),
+				tags: formData.get('tags'),
 				notebookId
 			});
+			setEntryPeople(ctx, id, formData.get('people'));
 			return { success: true, action: 'updateEntry' };
 		} catch (e) {
 			return toActionFailure(e);

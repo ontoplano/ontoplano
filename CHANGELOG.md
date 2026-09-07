@@ -10,6 +10,30 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.89.0 — 2026-09-07
+
+- **Trainings are workouts.** It was never a word anybody says, and the page
+  itself already said "workout" everywhere but on its own tab. Health →
+  Workouts; `/health/trainings` still answers, and an API token that asked for
+  `trainings:read` now asks for `workouts:read` without you doing anything.
+- **A workout dropped on the week is called by its name.** Planned from the
+  plan rather than from the workout, it drew itself as a grey box labelled
+  "Untitled". It wears the workout's title now — and renaming the workout
+  renames the block, because nothing was copied.
+- **A recipe goes on a day from the list.** The calendar button beside it
+  opens the same "put it on a day" the recipe's own page has, so putting
+  dinner on Thursday is one click instead of three.
+- **The Meals tab is gone.** It was a read-only week beside a copy of the
+  shopping list — the plan already draws meals, and the ingredients were
+  already on the list. `/health/meals` goes to the recipes.
+- **A note written in a notebook takes tags and people.** The same note typed
+  into the diary carried both; typed into a notebook it carried neither. Both
+  forms are the same two fields now, folded away until you want them.
+- **Nothing hides under the help buttons.** On a page short enough not to
+  scroll, the floating help dock sat on top of whatever was at the bottom
+  right — a form's own save button, in one case — and it could not be clicked
+  at all.
+
 ## 0.88.0 — 2026-09-07
 
 - **Seven rooms instead of nine.** People is a tab inside Notebooks, and

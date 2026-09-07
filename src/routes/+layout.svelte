@@ -125,7 +125,6 @@
 		['/notebooks', 'notebook'],
 		['/notebooks/people', 'user'],
 		['/health/recipes', 'utensils'],
-		['/health/meals', 'utensils'],
 		// Settings belongs to no room, so it fell through to home — and the
 		// account page was tiled with houses.
 		['/settings', 'user'],
@@ -768,7 +767,7 @@
 
 		<main
 			bind:this={scroller}
-			class="relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto overscroll-y-contain px-4 pt-[calc(var(--safe-top)+1rem)] pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+0.75rem)] sm:px-6 lg:overflow-visible lg:pt-6 lg:pb-6"
+			class="relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto overscroll-y-contain px-4 pt-[calc(var(--safe-top)+1rem)] pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+var(--help-dock-height)+0.75rem)] sm:px-6 lg:overflow-visible lg:pt-6 lg:pb-[calc(var(--help-dock-height)+1.5rem)]"
 		>
 			{@render children()}
 		</main>

@@ -33,7 +33,7 @@ import {
 	suppressedSlots,
 	taskRecords,
 	recurringTasks,
-	trainings
+	workouts
 } from '../db/schema.js';
 
 import type { Status } from '../../task-status.js';
@@ -57,7 +57,7 @@ export type Occurrence = {
 	status: Status;
 	completedAt: string | null;
 	notes: string;
-	mode: 'category' | 'activity' | 'training';
+	mode: 'category' | 'activity' | 'workout';
 	label: string;
 	/** A name for this occurrence alone, when it differs from the block's. */
 	labelOverride: string | null;
@@ -341,6 +341,8 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 	const slotActivities = alias(activities, 'i_slot_activities');
 	const oneOffActivities = alias(activities, 'i_oneoff_activities');
 	const resolvedActivities = alias(activities, 'i_resolved_activities');
+	const slotWorkouts = alias(workouts, 'i_slot_workouts');
+	const oneOffWorkouts = alias(workouts, 'i_oneoff_workouts');
 	const slotCategories = alias(categories, 'i_slot_categories');
 	const oneOffCategories = alias(categories, 'i_oneoff_categories');
 	const slotActivityCategories = alias(categories, 'i_slot_activity_categories');
@@ -381,6 +383,7 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 			slotActivityCategoryId: slotActivities.categoryId,
 			slotActivityCategoryName: slotActivityCategories.name,
 			slotActivityCategoryColor: slotActivityCategories.color,
+			slotWorkoutName: slotWorkouts.title,
 
 			oneOffMode: exceptionalTasks.mode,
 			oneOffStartTime: exceptionalTasks.startTime,
@@ -398,7 +401,8 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 			oneOffActivityColor: oneOffActivities.color,
 			oneOffActivityCategoryId: oneOffActivities.categoryId,
 			oneOffActivityCategoryName: oneOffActivityCategories.name,
-			oneOffActivityCategoryColor: oneOffActivityCategories.color
+			oneOffActivityCategoryColor: oneOffActivityCategories.color,
+			oneOffWorkoutName: oneOffWorkouts.title
 		})
 		.from(taskRecords)
 		.leftJoin(recurringTasks, eq(taskRecords.slotId, recurringTasks.id))
@@ -413,6 +417,8 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 			eq(oneOffActivities.categoryId, oneOffActivityCategories.id)
 		)
 		.leftJoin(resolvedActivities, eq(taskRecords.resolvedActivityId, resolvedActivities.id))
+		.leftJoin(slotWorkouts, eq(recurringTasks.workoutId, slotWorkouts.id))
+		.leftJoin(oneOffWorkouts, eq(exceptionalTasks.workoutId, oneOffWorkouts.id))
 		.where(
 			and(
 				eq(taskRecords.userId, ctx.userId),
@@ -450,6 +456,7 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 		const activityName = r.resolvedActivityName ?? blockActivityName;
 		const activityColor =
 			r.resolvedActivityColor ?? (weekly ? r.slotActivityColor : r.oneOffActivityColor);
+		const workoutName = weekly ? r.slotWorkoutName : r.oneOffWorkoutName;
 
 		return {
 			id: r.id,
@@ -467,7 +474,16 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 			mode,
 			label,
 			labelOverride: r.labelOverride,
-			title: r.labelOverride?.trim() || label.trim() || activityName || categoryName || 'Untitled',
+			// A per-occurrence rename wins, then the block's own label; after that
+			// the block is named by what it is — an activity, a workout, or the
+			// category it spends time on.
+			title:
+				r.labelOverride?.trim() ||
+				label.trim() ||
+				activityName ||
+				workoutName ||
+				categoryName ||
+				'Untitled',
 			categoryId: categoryId ?? null,
 			categoryName: categoryName ?? null,
 			categoryColor: categoryColor ?? null,
@@ -599,8 +615,8 @@ export function setInstanceStatus(ctx: Ctx, id: number, rawStatus: unknown): voi
 			scheduledAt: taskRecords.scheduledAt,
 			slotMode: recurringTasks.mode,
 			oneOffMode: exceptionalTasks.mode,
-			slotTrainingId: recurringTasks.trainingId,
-			oneOffTrainingId: exceptionalTasks.trainingId
+			slotWorkoutId: recurringTasks.workoutId,
+			oneOffWorkoutId: exceptionalTasks.workoutId
 		})
 		.from(taskRecords)
 		.leftJoin(recurringTasks, eq(taskRecords.slotId, recurringTasks.id))
@@ -631,11 +647,11 @@ export function setInstanceStatus(ctx: Ctx, id: number, rawStatus: unknown): voi
 	 * stamp is the workout's "last done"; unticking clears nothing, because
 	 * the session did happen and a later block will move the stamp on again.
 	 */
-	const trainingId = instance.slotTrainingId ?? instance.oneOffTrainingId;
-	if (trainingId && status === 'done') {
-		db.update(trainings)
+	const workoutId = instance.slotWorkoutId ?? instance.oneOffWorkoutId;
+	if (workoutId && status === 'done') {
+		db.update(workouts)
 			.set({ lastDoneAt: completedAt ?? stamp(ctx), updatedAt: stamp(ctx) })
-			.where(and(eq(trainings.id, trainingId), eq(trainings.userId, ctx.userId)))
+			.where(and(eq(workouts.id, workoutId), eq(workouts.userId, ctx.userId)))
 			.run();
 	}
 }

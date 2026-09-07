@@ -210,7 +210,6 @@ DOCS_PORT ?= 1494
 SITE_PORT ?= 1495
 # Where the marketing site's checkout is, if it is here at all.
 SITE_SRC_LOCAL ?= ontoplano-site
-PYTHON ?= python3
 
 # `dev` is the app; this is the name to type when you mean it by contrast.
 dev-app: dev
@@ -221,8 +220,7 @@ dev-app: dev
 dev-docs:
 	@yarn -s docs
 	@yarn -s docs:site
-	@echo "documentation at http://localhost:$(DOCS_PORT) — Ctrl-C to stop"
-	@cd build-docs && $(PYTHON) -m http.server $(DOCS_PORT) --bind 127.0.0.1
+	@node scripts/serve-docs.mjs build-docs $(DOCS_PORT)
 
 # The marketing site, which is a separate repository. Absent from most
 # checkouts, and that is not an error — it is a different audience and a

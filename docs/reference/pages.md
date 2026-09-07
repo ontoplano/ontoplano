@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**46 pages, 184 actions.**
+**45 pages, 184 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -24,10 +24,9 @@ write surface for everything else; both end up calling the same
 | `/finance/bills`                | `create`, `update`, `pay`, `unpay`, `archive`, `delete`                                                                                                                                                                                                                                                                                                                             |
 | `/goals`                        | `setTodoStatus`, `createArea`, `deleteArea`, `create`, `update`, `setProgress`, `close`, `setLinks`, `remove`                                                                                                                                                                                                                                                                       |
 | `/health/habits`                | `create`, `update`, `delete`, `logOccurrence`, `toggleOccurrence`, `updateOccurrence`, `deleteOccurrence`                                                                                                                                                                                                                                                                           |
-| `/health/meals`                 | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/health/recipes`               | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/health/recipes/[id]`          | —                                                                                                                                                                                                                                                                                                                                                                                   |
-| `/health/trainings`             | `create`, `update`, `done`, `schedule`, `archive`, `delete`                                                                                                                                                                                                                                                                                                                         |
+| `/health/workouts`              | `create`, `update`, `done`, `schedule`, `archive`, `delete`                                                                                                                                                                                                                                                                                                                         |
 | `/ideas`                        | `create`, `update`, `delete`, `toggleApplied`, `updateAppliedNote`, `toggleFavorite`                                                                                                                                                                                                                                                                                                |
 | `/legal/privacy`                | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/legal/refunds`                | —                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -125,10 +124,6 @@ slow site rather than as something being built for you.
 So the wait has a screen. It also has somewhere to go: with the work behind
 a page the visitor is already looking at, the seed can be made slower under
 load without anybody experiencing a hang.
-
-### `/health/meals`
-
-The seven days from a date, as `YYYY-MM-DD`.
 
 ### `/health/recipes`
 

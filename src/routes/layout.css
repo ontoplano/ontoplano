@@ -1691,6 +1691,17 @@ html .ec {
 	--mobile-nav-height: 3.5rem;
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 	--safe-top: env(safe-area-inset-top, 0px);
+	/*
+	 * And room for the help dock, which floats at the bottom right over
+	 * whatever is there.
+	 *
+	 * Nothing reserved it, so on any page short enough not to scroll, the last
+	 * control on the right-hand side sat underneath it and could not be
+	 * clicked at all — a notebook's own Add note button, with its tags open,
+	 * was the one that showed it. The dock is a row of icon buttons; this is
+	 * its height plus the gap it holds off the edge.
+	 */
+	--help-dock-height: 3.5rem;
 }
 
 /*

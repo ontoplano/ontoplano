@@ -3,7 +3,7 @@ import { register } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
- * Trainings, the Health tab, driven the way a person uses it.
+ * Workouts, the Health tab, driven the way a person uses it.
  *
  * A workout is written down, marked done, edited, archived and deleted — the
  * whole life of one — and the delete is confirmed in its own dialog, never
@@ -13,10 +13,10 @@ import { visit } from './helpers/visit';
 test('a workout can be added, done, edited, and deleted behind a confirmation', async ({
 	page
 }) => {
-	await register(page, `trainings-${Date.now()}@example.test`);
+	await register(page, `workouts-${Date.now()}@example.test`);
 
-	await visit(page, '/health/trainings');
-	await expect(page.getByRole('link', { name: 'Trainings' })).toBeVisible();
+	await visit(page, '/health/workouts');
+	await expect(page.getByRole('link', { name: 'Workouts' })).toBeVisible();
 
 	// Add one.
 	await page.getByRole('button', { name: /New workout/ }).click();
@@ -47,7 +47,7 @@ test('a workout can be added, done, edited, and deleted behind a confirmation', 
 	// Phone width — it still reads.
 	await page.setViewportSize({ width: 390, height: 844 });
 	await expect(page.getByText('Push day')).toBeVisible();
-	await page.screenshot({ path: 'test-results/trainings-phone.png' });
+	await page.screenshot({ path: 'test-results/workouts-phone.png' });
 	await page.setViewportSize({ width: 1200, height: 900 });
 
 	// Archive, then delete behind the confirmation dialog.
@@ -73,14 +73,14 @@ test('a workout can be added, done, edited, and deleted behind a confirmation', 
  * Health says what the session is; the week says when. The block points at
  * the workout rather than copying it, so finishing it on the plan finishes
  * the workout — which is the whole reason to bind them rather than leave
- * somebody keeping a task and a training in step by hand.
+ * somebody keeping a task and a workout in step by hand.
  */
 test('a workout can be planned onto a day, and finishing it there finishes the workout', async ({
 	page
 }) => {
-	await register(page, `training-plan-${Date.now()}@example.test`);
+	await register(page, `workout-plan-${Date.now()}@example.test`);
 
-	await visit(page, '/health/trainings');
+	await visit(page, '/health/workouts');
 	await page.getByRole('button', { name: /New workout/ }).click();
 	const add = page.getByRole('dialog');
 	await add.locator('[name="heading"]').fill('Leg day');
@@ -108,10 +108,52 @@ test('a workout can be planned onto a day, and finishing it there finishes the w
 	await visit(page, '/tasks/plan');
 	await expect(page.getByText('Leg day').first()).toBeVisible();
 
-	await visit(page, '/health/trainings');
+	await visit(page, '/health/workouts');
 	await page
 		.locator('li', { hasText: 'Leg day' })
 		.getByRole('button', { name: /^Mark .* done$/ })
 		.click();
 	await expect(page.locator('li', { hasText: 'Leg day' }).getByText(/last done/)).toBeVisible();
+});
+
+/**
+ * The other direction: planned from the week rather than from the workout.
+ *
+ * From the plan the block carries no label — it is not a name somebody typed,
+ * it is a workout — and it drew itself as a grey box called "Untitled" because
+ * nothing joined the workout's title in. Planning it from the workout hid this,
+ * since that path writes a label too.
+ */
+test('a workout planned from the week is named after the workout', async ({ page }) => {
+	await register(page, `workout-from-plan-${Date.now()}@example.test`);
+
+	await visit(page, '/health/workouts');
+	await page.getByRole('button', { name: /New workout/ }).click();
+	const add = page.getByRole('dialog');
+	await add.locator('[name="heading"]').fill('Pull day');
+	await add.getByRole('button', { name: 'Add', exact: true }).click();
+	await expect(page.getByText('Pull day')).toBeVisible();
+
+	await visit(page, '/tasks/plan');
+	await page.getByRole('button', { name: '+ New' }).click();
+	const block = page.getByRole('dialog');
+	await block.locator('[name="mode"]').selectOption('workout');
+	// No category is asked for: being a workout is what it is filed under.
+	await block.locator('[name="workoutId"]').selectOption({ label: 'Pull day' });
+	await block.locator('[name="startTime"]').fill('07:00');
+	await block
+		.getByRole('button', { name: /^(Add|Create|Save)/ })
+		.last()
+		.click();
+	await expect(block).toBeHidden();
+
+	await expect(page.getByText('Pull day').first()).toBeVisible();
+	await expect(page.getByText('Untitled')).toHaveCount(0);
+});
+
+/** The old address, which is in bookmarks and in installed app shells. */
+test('the trainings address lands on the workouts', async ({ page }) => {
+	await register(page, `workouts-moved-${Date.now()}@example.test`);
+	await visit(page, '/health/trainings');
+	await expect(page).toHaveURL(/\/health\/workouts/);
 });

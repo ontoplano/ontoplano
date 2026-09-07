@@ -16,7 +16,7 @@ import {
 	suppressedSlots,
 	taskRecords,
 	recurringTasks,
-	trainings
+	workouts
 } from '../db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
@@ -36,11 +36,11 @@ import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
  * What a block is about.
  *
  * A category is the coarse one — "work", "health". An activity names a thing
- * you do. A training names a workout written down under Health, and is the
+ * you do. A workout names a workout written down under Health, and is the
  * same idea as an activity with a plan attached: the block IS the session, so
  * finishing it is finishing the workout.
  */
-export const MODES = ['category', 'activity', 'training'] as const;
+export const MODES = ['category', 'activity', 'workout'] as const;
 export type Mode = (typeof MODES)[number];
 
 export const MAX_LABEL_LENGTH = 300;
@@ -58,7 +58,7 @@ export type BlockInput = {
 	/** Minutes before the start to be reminded. Absent or 0 is no reminder. */
 	remindLeadMinutes?: unknown;
 	mode: unknown;
-	trainingId?: unknown;
+	workoutId?: unknown;
 	categoryId?: unknown;
 	activityId?: unknown;
 	newActivityName?: unknown;
@@ -83,11 +83,13 @@ export function listActiveWeeklySlots(ctx: Ctx) {
 			mode: recurringTasks.mode,
 			label: recurringTasks.label,
 			activityName: activities.name,
+			workoutName: workouts.title,
 			categoryName: categories.name,
 			categoryColor: categories.color
 		})
 		.from(recurringTasks)
 		.leftJoin(activities, eq(recurringTasks.activityId, activities.id))
+		.leftJoin(workouts, eq(recurringTasks.workoutId, workouts.id))
 		.leftJoin(categories, eq(recurringTasks.categoryId, categories.id))
 		.where(and(eq(recurringTasks.userId, ctx.userId), eq(recurringTasks.active, true)))
 		.orderBy(recurringTasks.startTime)
@@ -107,7 +109,8 @@ export function listWeeklySlots(ctx: Ctx) {
 			categoryId: recurringTasks.categoryId,
 			categoryName: categories.name,
 			activityId: recurringTasks.activityId,
-			trainingId: recurringTasks.trainingId,
+			workoutId: recurringTasks.workoutId,
+			workoutName: workouts.title,
 			activityName: activities.name,
 			activityCategoryId: activities.categoryId,
 			label: recurringTasks.label,
@@ -121,6 +124,7 @@ export function listWeeklySlots(ctx: Ctx) {
 		.from(recurringTasks)
 		.leftJoin(categories, eq(recurringTasks.categoryId, categories.id))
 		.leftJoin(activities, eq(recurringTasks.activityId, activities.id))
+		.leftJoin(workouts, eq(recurringTasks.workoutId, workouts.id))
 		.where(eq(recurringTasks.userId, ctx.userId))
 		.orderBy(recurringTasks.weekday, recurringTasks.startTime)
 		.all();
@@ -152,7 +156,8 @@ export function listExceptionals(ctx: Ctx, from: string, to: string) {
 			categoryId: exceptionalTasks.categoryId,
 			categoryName: categories.name,
 			activityId: exceptionalTasks.activityId,
-			trainingId: exceptionalTasks.trainingId,
+			workoutId: exceptionalTasks.workoutId,
+			workoutName: workouts.title,
 			activityName: activities.name,
 			activityCategoryId: activities.categoryId,
 			label: exceptionalTasks.label,
@@ -167,6 +172,7 @@ export function listExceptionals(ctx: Ctx, from: string, to: string) {
 		.from(exceptionalTasks)
 		.leftJoin(categories, eq(exceptionalTasks.categoryId, categories.id))
 		.leftJoin(activities, eq(exceptionalTasks.activityId, activities.id))
+		.leftJoin(workouts, eq(exceptionalTasks.workoutId, workouts.id))
 		.leftJoin(taskRecords, eq(taskRecords.exceptionalSlotId, exceptionalTasks.id))
 		.where(
 			and(
@@ -893,8 +899,8 @@ function parseBlock(ctx: Ctx, raw: BlockInput) {
 	const activityId = mode === 'activity' ? resolveActivityId(ctx, raw) : null;
 	if (mode === 'activity' && !activityId) throw new ValidationError('Activity required');
 
-	const trainingId = mode === 'training' ? ownedTrainingId(ctx, raw.trainingId) : null;
-	if (mode === 'training' && !trainingId) throw new ValidationError('Training required');
+	const workoutId = mode === 'workout' ? ownedWorkoutId(ctx, raw.workoutId) : null;
+	if (mode === 'workout' && !workoutId) throw new ValidationError('Workout required');
 
 	return {
 		startTime,
@@ -902,21 +908,21 @@ function parseBlock(ctx: Ctx, raw: BlockInput) {
 		mode,
 		categoryId,
 		activityId,
-		trainingId,
+		workoutId,
 		label,
 		...(remindLeadMinutes === undefined ? {} : { remindLeadMinutes })
 	};
 }
 
-/** A training id from a form is a number until it is checked against the owner. */
-function ownedTrainingId(ctx: Ctx, value: unknown): number | null {
+/** A workout id from a form is a number until it is checked against the owner. */
+function ownedWorkoutId(ctx: Ctx, value: unknown): number | null {
 	if (value === undefined || value === null || value === '') return null;
 
-	const id = num(value, 'training', { int: true, min: 1 });
+	const id = num(value, 'workout', { int: true, min: 1 });
 	const owned = db
-		.select({ id: trainings.id })
-		.from(trainings)
-		.where(and(eq(trainings.id, id), eq(trainings.userId, ctx.userId)))
+		.select({ id: workouts.id })
+		.from(workouts)
+		.where(and(eq(workouts.id, id), eq(workouts.userId, ctx.userId)))
 		.get();
 
 	if (!owned) throw new ValidationError('That workout is not yours.');

@@ -344,8 +344,8 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/health/trainings': {
-		label: 'Trainings',
+	'/health/workouts': {
+		label: 'Workouts',
 		steps: [
 			{
 				title: 'Workouts, planned like meals',
@@ -435,26 +435,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				target: '[data-tour="recipe-list"]',
 				title: 'An ingredient is a shopping item',
 				body: 'Put a recipe on the week and everything it needs turns up on the shopping list, minus what you already have.'
-			}
-		]
-	},
-
-	'/health/meals': {
-		label: 'Meals',
-		steps: [
-			{
-				title: 'The week, as food',
-				body: 'What you are cooking on which day, and the one shopping list that comes out of all of it.'
 			},
 			{
-				target: '[data-tour="meals-week"]',
-				title: 'A recipe per day',
-				body: 'Or several. A day with nothing on it is a day you have not decided about, not a mistake.'
-			},
-			{
-				target: '[data-tour="meals-shopping"]',
-				title: 'To buy, and already have',
-				body: 'Split against your inventory, so the list is the walk to the shop rather than the whole cupboard.'
+				target: '[data-tour="recipe-list"]',
+				title: 'The calendar button puts it on a day',
+				body: 'It becomes a block on the plan, beside everything else you are doing that day.'
 			}
 		]
 	},

@@ -662,35 +662,35 @@ Replace an item’s free fields wholesale — { "length": "5m", "plug": "USB-C" 
 
 _Needs `shopping:write`; writes._
 
-### `trainings` — Your workouts
+### `workouts` — Your workouts
 
-The workouts you have written down, under Health. Each has a kind and a plan; put one on the week with add_block and its trainingId to have it planned like a meal.
+The workouts you have written down, under Health. Each has a kind and a plan; put one on the week with add_block and its workoutId to have it planned like a meal.
 
-_Needs `trainings:read`; read-only._
+_Needs `workouts:read`; read-only._
 
-### `add_training` — Add a workout
+### `add_workout` — Add a workout
 
-Write a workout down: a title, a kind (strength, cardio, mobility, sport, other), a plan as Markdown, and roughly how long it takes. Scheduling it onto a day is a block with its trainingId, the way a meal is a block with a recipe.
+Write a workout down: a title, a kind (strength, cardio, mobility, sport, other), a plan as Markdown, and roughly how long it takes. Scheduling it onto a day is a block with its workoutId, the way a meal is a block with a recipe.
 
-_Needs `trainings:write`; writes._
+_Needs `workouts:write`; writes._
 
-### `change_training` — Change a workout
+### `change_workout` — Change a workout
 
 Rewrite a workout. Only the fields given change — for a misheard word or a better plan, not to turn it into a different session.
 
-_Needs `trainings:write`; writes._
+_Needs `workouts:write`; writes._
 
-### `archive_training` — Put a workout away, or bring it back
+### `archive_workout` — Put a workout away, or bring it back
 
 Take a workout out of the working list, or restore it. Nothing is lost either way — its history stays.
 
-_Needs `trainings:write`; writes._
+_Needs `workouts:write`; writes._
 
-### `training_done` — Mark a workout done
+### `workout_done` — Mark a workout done
 
 Record that a workout happened just now — the gym’s version of marking a recipe cooked. It stamps the last-done time.
 
-_Needs `trainings:write`; writes._
+_Needs `workouts:write`; writes._
 
 ### `bills` — Your bills
 

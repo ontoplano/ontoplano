@@ -33,7 +33,6 @@ const ROUTES = [
 	'/health/habits',
 	'/shopping',
 	'/health/recipes',
-	'/health/meals',
 	'/search?q=a+thing',
 	'/settings/account',
 	'/settings/account/import',

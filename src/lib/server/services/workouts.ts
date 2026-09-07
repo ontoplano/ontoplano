@@ -1,22 +1,22 @@
 /**
- * Trainings: workouts you plan like meals.
+ * Workouts: workouts you plan like meals.
  *
- * A training lives under Health, beside habits and the numbers. It is a named
+ * A workout lives under Health, beside habits and the numbers. It is a named
  * session with a plan (Markdown, like a recipe's method) and a kind, and you
  * put it on the week the way you put a meal there: by attaching it to a block.
- * Scheduling is not modelled here twice — `recurring_tasks.trainingId` and
- * `exceptional_tasks.trainingId` carry it, exactly as `recipeId` carries a
+ * Scheduling is not modelled here twice — `recurring_tasks.workoutId` and
+ * `exceptional_tasks.workoutId` carry it, exactly as `recipeId` carries a
  * meal — so "what does this week ask of me" is one join over the grid, not a
  * separate calendar for exercise.
  *
  * Archived, not deleted, while it has been done: `lastDoneAt` and the blocks
- * that pointed at it are its history. `deleteTraining` is for one made by
+ * that pointed at it are its history. `deleteWorkout` is for one made by
  * mistake and clears itself off any block (the FK is set-null).
  */
 import { and, asc, eq, isNull } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { exceptionalTasks, trainings } from '../db/schema.js';
+import { exceptionalTasks, workouts } from '../db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError } from './errors.js';
 import { stamp, stamps } from './time.js';
@@ -31,7 +31,7 @@ export const MAX_TITLE_LENGTH = 200;
 export const MAX_PLAN_LENGTH = 8000;
 export const MAX_NOTE_LENGTH = 2000;
 
-export type Training = {
+export type Workout = {
 	id: number;
 	title: string;
 	kind: Kind;
@@ -42,7 +42,7 @@ export type Training = {
 	archived: boolean;
 };
 
-type TrainingInput = {
+type WorkoutInput = {
 	title: unknown;
 	kind?: unknown;
 	plan?: unknown;
@@ -50,7 +50,7 @@ type TrainingInput = {
 	minutes?: unknown;
 };
 
-function toTraining(t: typeof trainings.$inferSelect): Training {
+function toWorkout(t: typeof workouts.$inferSelect): Workout {
 	return {
 		id: t.id,
 		title: t.title,
@@ -63,30 +63,30 @@ function toTraining(t: typeof trainings.$inferSelect): Training {
 	};
 }
 
-export function listTrainings(ctx: Ctx, opts: { includeArchived?: boolean } = {}): Training[] {
+export function listWorkouts(ctx: Ctx, opts: { includeArchived?: boolean } = {}): Workout[] {
 	const where = opts.includeArchived
-		? eq(trainings.userId, ctx.userId)
-		: and(eq(trainings.userId, ctx.userId), isNull(trainings.archivedAt));
+		? eq(workouts.userId, ctx.userId)
+		: and(eq(workouts.userId, ctx.userId), isNull(workouts.archivedAt));
 	return db
 		.select()
-		.from(trainings)
+		.from(workouts)
 		.where(where)
-		.orderBy(asc(trainings.archivedAt), asc(trainings.title))
+		.orderBy(asc(workouts.archivedAt), asc(workouts.title))
 		.all()
-		.map(toTraining);
+		.map(toWorkout);
 }
 
-export function getTraining(ctx: Ctx, id: number): Training {
+export function getWorkout(ctx: Ctx, id: number): Workout {
 	const found = db
 		.select()
-		.from(trainings)
-		.where(and(eq(trainings.id, id), eq(trainings.userId, ctx.userId)))
+		.from(workouts)
+		.where(and(eq(workouts.id, id), eq(workouts.userId, ctx.userId)))
 		.get();
-	if (!found) throw new NotFoundError('training');
-	return toTraining(found);
+	if (!found) throw new NotFoundError('workout');
+	return toWorkout(found);
 }
 
-function fields(input: TrainingInput) {
+function fields(input: WorkoutInput) {
 	return {
 		title: str(input.title, 'title', { max: MAX_TITLE_LENGTH }),
 		kind: input.kind === undefined ? ('other' as Kind) : oneOf(input.kind, 'kind', KINDS),
@@ -99,45 +99,45 @@ function fields(input: TrainingInput) {
 	};
 }
 
-export function createTraining(ctx: Ctx, input: TrainingInput): number {
+export function createWorkout(ctx: Ctx, input: WorkoutInput): number {
 	const inserted = db
-		.insert(trainings)
+		.insert(workouts)
 		.values({ userId: ctx.userId, ...fields(input), ...stamps(ctx) })
-		.returning({ id: trainings.id })
+		.returning({ id: workouts.id })
 		.get();
 	return inserted.id;
 }
 
-export function updateTraining(ctx: Ctx, id: number, input: TrainingInput): void {
-	getTraining(ctx, id); // ownership
-	db.update(trainings)
+export function updateWorkout(ctx: Ctx, id: number, input: WorkoutInput): void {
+	getWorkout(ctx, id); // ownership
+	db.update(workouts)
 		.set({ ...fields(input), updatedAt: stamp(ctx) })
-		.where(and(eq(trainings.id, id), eq(trainings.userId, ctx.userId)))
+		.where(and(eq(workouts.id, id), eq(workouts.userId, ctx.userId)))
 		.run();
 }
 
 export function setArchived(ctx: Ctx, id: number, archived: boolean): void {
-	getTraining(ctx, id);
-	db.update(trainings)
+	getWorkout(ctx, id);
+	db.update(workouts)
 		.set({ archivedAt: archived ? stamp(ctx) : null, updatedAt: stamp(ctx) })
-		.where(and(eq(trainings.id, id), eq(trainings.userId, ctx.userId)))
+		.where(and(eq(workouts.id, id), eq(workouts.userId, ctx.userId)))
 		.run();
 }
 
 /** For one made by mistake: gone, and cleared off any block it was on. */
-export function deleteTraining(ctx: Ctx, id: number): void {
-	getTraining(ctx, id);
-	db.delete(trainings)
-		.where(and(eq(trainings.id, id), eq(trainings.userId, ctx.userId)))
+export function deleteWorkout(ctx: Ctx, id: number): void {
+	getWorkout(ctx, id);
+	db.delete(workouts)
+		.where(and(eq(workouts.id, id), eq(workouts.userId, ctx.userId)))
 		.run();
 }
 
 /** Record that a session happened — the "cooked" of the gym. */
 export function done(ctx: Ctx, id: number): void {
-	getTraining(ctx, id);
-	db.update(trainings)
+	getWorkout(ctx, id);
+	db.update(workouts)
 		.set({ lastDoneAt: stamp(ctx), updatedAt: stamp(ctx) })
-		.where(and(eq(trainings.id, id), eq(trainings.userId, ctx.userId)))
+		.where(and(eq(workouts.id, id), eq(workouts.userId, ctx.userId)))
 		.run();
 }
 
@@ -146,24 +146,24 @@ export function done(ctx: Ctx, id: number): void {
  *
  * The same gesture a todo has, and the same result: a one-off block on the
  * grid whose mode says it IS this workout. Nothing is copied — the block
- * points at the training, so the plan and the workout cannot drift, and
+ * points at the workout, so the plan and the workout cannot drift, and
  * finishing either finishes both.
  */
-export function scheduleTraining(
+export function scheduleWorkout(
 	ctx: Ctx,
 	id: number,
 	input: { date: unknown; startTime: unknown; durationMinutes?: unknown; categoryId?: unknown }
 ): number {
-	const training = getTraining(ctx, id);
+	const workout = getWorkout(ctx, id);
 	return createExceptional(ctx, {
 		date: input.date,
 		startTime: input.startTime,
 		// Its typical length is the sensible default for the block.
-		durationMinutes: input.durationMinutes ?? training.minutes ?? 60,
-		mode: 'training',
-		trainingId: id,
+		durationMinutes: input.durationMinutes ?? workout.minutes ?? 60,
+		mode: 'workout',
+		workoutId: id,
 		categoryId: input.categoryId,
-		label: training.title
+		label: workout.title
 	});
 }
 
@@ -184,7 +184,7 @@ export function doneToday(ctx: Ctx, id: number): void {
 		.where(
 			and(
 				eq(exceptionalTasks.userId, ctx.userId),
-				eq(exceptionalTasks.trainingId, id),
+				eq(exceptionalTasks.workoutId, id),
 				eq(exceptionalTasks.date, today)
 			)
 		)

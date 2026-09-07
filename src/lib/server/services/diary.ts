@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, max } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, max } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { diaryEntries, diaryEntryTags, tags } from '../db/schema.js';
@@ -59,16 +59,40 @@ export function listEntries(ctx: Ctx) {
 		.orderBy(desc(diaryEntries.createdAt))
 		.all();
 
-	return entries.map((entry) => ({
-		...entry,
-		tags: db
-			.select({ id: tags.id, name: tags.name })
-			.from(diaryEntryTags)
-			.innerJoin(tags, eq(diaryEntryTags.tagId, tags.id))
-			.where(and(eq(diaryEntryTags.entryId, entry.id), eq(tags.userId, ctx.userId)))
-			.all()
-	}));
+	const byEntry = tagsForEntries(
+		ctx,
+		entries.map((e) => e.id)
+	);
+	return entries.map((entry) => ({ ...entry, tags: byEntry.get(entry.id) ?? [] }));
 }
+
+/**
+ * The tags on each of these entries, keyed by entry id.
+ *
+ * One query for a page of notes rather than one per note: a notebook is a list
+ * of forty, and the diary is longer than that.
+ */
+export function tagsForEntries(ctx: Ctx, entryIds: number[]): Map<number, Tag[]> {
+	const byEntry = new Map<number, Tag[]>();
+	if (entryIds.length === 0) return byEntry;
+
+	const rows = db
+		.select({ entryId: diaryEntryTags.entryId, id: tags.id, name: tags.name })
+		.from(diaryEntryTags)
+		.innerJoin(tags, eq(diaryEntryTags.tagId, tags.id))
+		.where(and(inArray(diaryEntryTags.entryId, entryIds), eq(tags.userId, ctx.userId)))
+		.orderBy(tags.name)
+		.all();
+
+	for (const row of rows) {
+		const list = byEntry.get(row.entryId) ?? [];
+		list.push({ id: row.id, name: row.name });
+		byEntry.set(row.entryId, list);
+	}
+	return byEntry;
+}
+
+export type Tag = { id: number; name: string };
 
 export function listTags(ctx: Ctx) {
 	return db.select().from(tags).where(eq(tags.userId, ctx.userId)).orderBy(tags.name).all();

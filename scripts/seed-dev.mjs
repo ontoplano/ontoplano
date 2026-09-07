@@ -1284,16 +1284,16 @@ ingredient(riceAndBeans, 'rice', 300, 'g');
 ingredient(riceAndBeans, 'black beans', 400, 'g');
 ingredient(riceAndBeans, 'garlic', 3, 'cloves');
 
-// --- Trainings (Health) -----------------------------------------------------
+// --- Workouts (Health) -----------------------------------------------------
 //
 // A few workouts, planned like meals, so the Health section has something to
-// show and a training can be dropped onto the week.
+// show and a workout can be dropped onto the week.
 
-const training = (title, kind, plan, extra = {}) => {
-	const existing = one('select id from trainings where user_id = ? and title = ?', uid, title);
+const workout = (title, kind, plan, extra = {}) => {
+	const existing = one('select id from workouts where user_id = ? and title = ?', uid, title);
 	if (existing) return existing.id;
 	return run(
-		'insert into trainings (user_id, title, kind, plan, minutes) values (?, ?, ?, ?, ?)',
+		'insert into workouts (user_id, title, kind, plan, minutes) values (?, ?, ?, ?, ?)',
 		uid,
 		title,
 		kind,
@@ -1302,10 +1302,10 @@ const training = (title, kind, plan, extra = {}) => {
 	);
 };
 
-training('Push day', 'strength', 'Bench, overhead press, dips, triceps. 4×8.', { minutes: 55 });
-training('Pull day', 'strength', 'Rows, pulldowns, curls, face pulls. 4×8.', { minutes: 55 });
-training('Easy 5k', 'cardio', 'Conversational pace, flat route.', { minutes: 30 });
-training('Mobility', 'mobility', 'Hips, shoulders, ankles. Follow the video.', { minutes: 20 });
+workout('Push day', 'strength', 'Bench, overhead press, dips, triceps. 4×8.', { minutes: 55 });
+workout('Pull day', 'strength', 'Rows, pulldowns, curls, face pulls. 4×8.', { minutes: 55 });
+workout('Easy 5k', 'cardio', 'Conversational pace, flat route.', { minutes: 30 });
+workout('Mobility', 'mobility', 'Hips, shoulders, ankles. Follow the video.', { minutes: 20 });
 
 // --- Pictures ---------------------------------------------------------------
 //

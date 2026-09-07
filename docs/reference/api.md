@@ -34,8 +34,8 @@ sentence somebody agrees to when they grant it.
 | `tasks:write`     | Add, finish and delete todos, move them on and off a day, and close a goal                                                                        |
 | `kitchen:read`    | Read your recipes                                                                                                                                 |
 | `kitchen:write`   | Add and change recipes                                                                                                                            |
-| `trainings:read`  | See your workouts                                                                                                                                 |
-| `trainings:write` | Add and change workouts, put them away, and mark one done                                                                                         |
+| `workouts:read`   | See your workouts                                                                                                                                 |
+| `workouts:write`  | Add and change workouts, put them away, and mark one done                                                                                         |
 | `bills:read`      | See your bills and what you have paid                                                                                                             |
 | `bills:write`     | Add and change bills, and mark them paid                                                                                                          |
 | `people:read`     | See the people in your life, and whose birthday is coming                                                                                         |
@@ -86,6 +86,8 @@ sentence somebody agrees to when they grant it.
 | `/api/v1/webhooks`                           | POST   | `webhooks:manage` |
 | `/api/v1/webhooks/[id]`                      | DELETE | `webhooks:manage` |
 | `/calendar/[token]`                          | GET    | `calendar:read`   |
+| `/health/meals`                              | GET    | —                 |
+| `/health/trainings`                          | GET    | —                 |
 | `/healthz`                                   | GET    | —                 |
 | `/kitchen/[...path]`                         | GET    | —                 |
 | `/manifest.webmanifest`                      | GET    | —                 |
@@ -551,6 +553,28 @@ powerful token pasted here is refused rather than honoured, so nobody can
 arrive at a working feed with a key that also writes.
 
 **GET** — requires `calendar:read`
+
+### `/health/meals`
+
+Where this week's meals used to be.
+
+The tab was a read-only week and a list of what to buy — the first is the
+plan, which draws meals beside everything else, and the second is the
+shopping list, which those ingredients were already on. Putting a recipe on
+a day is a button on the recipe now, so this address has nothing left to
+show and sends people where the act lives.
+
+**GET**
+
+### `/health/trainings`
+
+"Trainings" was never a word anybody says.
+
+The thing is a workout, which is what the page itself already called them —
+only the tab and the address said otherwise. The old one is in bookmarks and
+in the app shell people have installed, so it answers rather than 404s.
+
+**GET**
 
 ### `/healthz`
 

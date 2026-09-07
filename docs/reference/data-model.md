@@ -63,12 +63,12 @@ exist.
 | [`tags`](#tags)                                   | 3       | yes               |
 | [`task_records`](#task_records)                   | 15      | yes               |
 | [`todo_tasks`](#todo_tasks)                       | 15      | yes               |
-| [`trainings`](#trainings)                         | 11      | yes               |
 | [`user`](#user)                                   | 11      | —                 |
 | [`user_settings`](#user_settings)                 | 4       | yes               |
 | [`verification`](#verification)                   | 6       | —                 |
 | [`webhook_subscriptions`](#webhook_subscriptions) | 11      | yes               |
 | [`weekly_reviews`](#weekly_reviews)               | 7       | yes               |
+| [`workouts`](#workouts)                           | 11      | yes               |
 
 ## account
 
@@ -424,7 +424,7 @@ Indexes:
 | `energy`              | integer | null     | —                     | —                 |
 | `meta`                | text    | not null | `'{}'`                | —                 |
 | `recipe_id`           | integer | null     | —                     | → `recipes.id`    |
-| `training_id`         | integer | null     | —                     | → `trainings.id`  |
+| `workout_id`          | integer | null     | —                     | → `workouts.id`   |
 | `created_at`          | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
@@ -439,7 +439,7 @@ Checks — enforced by the database, not only by the service layer:
 - `exceptional_energy_range`: `"exceptional_tasks"."energy" IS NULL OR "exceptional_tasks"."energy" BETWEEN 1 AND 5`
 - `exceptional_mode_category`: `"exceptional_tasks"."mode" != 'category' OR "exceptional_tasks"."category_id" IS NOT NULL`
 - `exceptional_mode_activity`: `"exceptional_tasks"."mode" != 'activity' OR "exceptional_tasks"."activity_id" IS NOT NULL`
-- `exceptional_mode_training`: `"exceptional_tasks"."mode" != 'training' OR "exceptional_tasks"."training_id" IS NOT NULL`
+- `exceptional_mode_workout`: `"exceptional_tasks"."mode" != 'workout' OR "exceptional_tasks"."workout_id" IS NOT NULL`
 
 ## goal_areas
 
@@ -883,7 +883,7 @@ Checks — enforced by the database, not only by the service layer:
 | `energy`              | integer | null     | —                     | —                 |
 | `meta`                | text    | not null | `'{}'`                | —                 |
 | `recipe_id`           | integer | null     | —                     | → `recipes.id`    |
-| `training_id`         | integer | null     | —                     | → `trainings.id`  |
+| `workout_id`          | integer | null     | —                     | → `workouts.id`   |
 | `created_at`          | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 | `updated_at`          | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
@@ -901,7 +901,7 @@ Checks — enforced by the database, not only by the service layer:
 - `slots_weekday_range`: `"recurring_tasks"."weekday" >= 0 AND "recurring_tasks"."weekday" <= 6`
 - `slots_mode_category`: `"recurring_tasks"."mode" != 'category' OR "recurring_tasks"."category_id" IS NOT NULL`
 - `slots_mode_activity`: `"recurring_tasks"."mode" != 'activity' OR "recurring_tasks"."activity_id" IS NOT NULL`
-- `slots_mode_training`: `"recurring_tasks"."mode" != 'training' OR "recurring_tasks"."training_id" IS NOT NULL`
+- `slots_mode_workout`: `"recurring_tasks"."mode" != 'workout' OR "recurring_tasks"."workout_id" IS NOT NULL`
 
 ## reminders
 
@@ -1145,30 +1145,6 @@ Checks — enforced by the database, not only by the service layer:
 - `todos_interest_range`: `"todo_tasks"."interest" IS NULL OR "todo_tasks"."interest" BETWEEN 1 AND 5`
 - `todos_energy_range`: `"todo_tasks"."energy" IS NULL OR "todo_tasks"."energy" BETWEEN 1 AND 5`
 
-## trainings
-
-| Column         | Type    | Null     | Default               | Notes             |
-| -------------- | ------- | -------- | --------------------- | ----------------- |
-| `id`           | integer | not null | —                     | primary key, auto |
-| `user_id`      | text    | not null | —                     | → `user.id`       |
-| `title`        | text    | not null | —                     | —                 |
-| `kind`         | text    | not null | `'other'`             | —                 |
-| `plan`         | text    | not null | `''`                  | —                 |
-| `notes`        | text    | null     | `''`                  | —                 |
-| `minutes`      | integer | null     | —                     | —                 |
-| `last_done_at` | text    | null     | —                     | —                 |
-| `archived_at`  | text    | null     | —                     | —                 |
-| `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
-| `updated_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
-
-Indexes:
-
-- `trainings_user_idx` on `user_id`
-
-Checks — enforced by the database, not only by the service layer:
-
-- `trainings_minutes_positive`: `"trainings"."minutes" IS NULL OR "trainings"."minutes" > 0`
-
 ## user
 
 | Column           | Type    | Null     | Default                                            | Notes       |
@@ -1254,3 +1230,27 @@ Indexes:
 
 - `weekly_reviews_user_week_idx` on `user_id`, `week_start`
 - `weekly_reviews_slot_unique` on `user_id`, `week_start`, `position` — unique
+
+## workouts
+
+| Column         | Type    | Null     | Default               | Notes             |
+| -------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`           | integer | not null | —                     | primary key, auto |
+| `user_id`      | text    | not null | —                     | → `user.id`       |
+| `title`        | text    | not null | —                     | —                 |
+| `kind`         | text    | not null | `'other'`             | —                 |
+| `plan`         | text    | not null | `''`                  | —                 |
+| `notes`        | text    | null     | `''`                  | —                 |
+| `minutes`      | integer | null     | —                     | —                 |
+| `last_done_at` | text    | null     | —                     | —                 |
+| `archived_at`  | text    | null     | —                     | —                 |
+| `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| `updated_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `workouts_user_idx` on `user_id`
+
+Checks — enforced by the database, not only by the service layer:
+
+- `workouts_minutes_positive`: `"workouts"."minutes" IS NULL OR "workouts"."minutes" > 0`

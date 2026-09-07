@@ -36,8 +36,8 @@ than a permission bit: a grant given to a string of jargon is not informed.
 | `tasks:write`     | Add, finish and delete todos, move them on and off a day, and close a goal                                                                        |
 | `kitchen:read`    | Read your recipes                                                                                                                                 |
 | `kitchen:write`   | Add and change recipes                                                                                                                            |
-| `trainings:read`  | See your workouts                                                                                                                                 |
-| `trainings:write` | Add and change workouts, put them away, and mark one done                                                                                         |
+| `workouts:read`   | See your workouts                                                                                                                                 |
+| `workouts:write`  | Add and change workouts, put them away, and mark one done                                                                                         |
 | `bills:read`      | See your bills and what you have paid                                                                                                             |
 | `bills:write`     | Add and change bills, and mark them paid                                                                                                          |
 | `people:read`     | See the people in your life, and whose birthday is coming                                                                                         |

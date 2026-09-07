@@ -28,7 +28,7 @@ import { listQuotes } from '$lib/server/services/quotes';
 import { reviewPending } from '$lib/server/services/review';
 import { listToBuy } from '$lib/server/services/shopping';
 import { listBills, listPayments, monthSummary } from '$lib/server/services/bills';
-import { listTrainings } from '$lib/server/services/trainings';
+import { listWorkouts } from '$lib/server/services/workouts';
 import { getCurrency } from '$lib/server/settings';
 import { listActiveWeeklySlots } from '$lib/server/services/slots';
 import { listTodos } from '$lib/server/services/todos';
@@ -159,7 +159,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			streak: h.streak
 		})),
 		shoppingToBuy: listToBuy(ctx),
-		trainingsCard: listTrainings(ctx).map((t) => ({
+		workoutsCard: listWorkouts(ctx).map((t) => ({
 			id: t.id,
 			title: t.title,
 			kind: t.kind,

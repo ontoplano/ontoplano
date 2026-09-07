@@ -221,7 +221,13 @@
 				{/if}
 			{/snippet}
 
-			<NotebookDetail notebook={selected} contents={data.contents} {orphaned} {showingOrphans} />
+			<NotebookDetail
+				notebook={selected}
+				contents={data.contents}
+				{orphaned}
+				{showingOrphans}
+				allPeople={data.allPeople}
+			/>
 		</Card>
 	</div>
 </div>

@@ -76,13 +76,13 @@ import {
 	updateRecipe
 } from '../services/recipes.js';
 import {
-	listTrainings,
-	getTraining,
-	createTraining,
-	updateTraining,
-	setArchived as setTrainingArchived,
-	done as trainingDone
-} from '../services/trainings.js';
+	listWorkouts,
+	getWorkout,
+	createWorkout,
+	updateWorkout,
+	setArchived as setWorkoutArchived,
+	done as workoutDone
+} from '../services/workouts.js';
 import {
 	listBills,
 	getBill,
@@ -2318,25 +2318,25 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
-		name: 'trainings',
+		name: 'workouts',
 		title: 'Your workouts',
 		description:
-			'The workouts you have written down, under Health. Each has a kind and a plan; put one on the week with add_block and its trainingId to have it planned like a meal.',
-		scope: 'trainings:read',
+			'The workouts you have written down, under Health. Each has a kind and a plan; put one on the week with add_block and its workoutId to have it planned like a meal.',
+		scope: 'workouts:read',
 		writes: false,
 		input: object({
 			include_archived: { type: 'boolean', description: 'Include ones put away.' }
 		}),
 		run: (ctx, args) => ({
-			trainings: listTrainings(ctx, { includeArchived: !!args.include_archived })
+			workouts: listWorkouts(ctx, { includeArchived: !!args.include_archived })
 		})
 	},
 	{
-		name: 'add_training',
+		name: 'add_workout',
 		title: 'Add a workout',
 		description:
-			'Write a workout down: a title, a kind (strength, cardio, mobility, sport, other), a plan as Markdown, and roughly how long it takes. Scheduling it onto a day is a block with its trainingId, the way a meal is a block with a recipe.',
-		scope: 'trainings:write',
+			'Write a workout down: a title, a kind (strength, cardio, mobility, sport, other), a plan as Markdown, and roughly how long it takes. Scheduling it onto a day is a block with its workoutId, the way a meal is a block with a recipe.',
+		scope: 'workouts:write',
 		writes: true,
 		input: object(
 			{
@@ -2349,7 +2349,7 @@ export const TOOLS: Tool[] = [
 			['title']
 		),
 		run: (ctx, args) => ({
-			id: createTraining(ctx, {
+			id: createWorkout(ctx, {
 				title: args.title,
 				kind: args.kind,
 				plan: args.plan ?? '',
@@ -2359,15 +2359,15 @@ export const TOOLS: Tool[] = [
 		})
 	},
 	{
-		name: 'change_training',
+		name: 'change_workout',
 		title: 'Change a workout',
 		description:
 			'Rewrite a workout. Only the fields given change — for a misheard word or a better plan, not to turn it into a different session.',
-		scope: 'trainings:write',
+		scope: 'workouts:write',
 		writes: true,
 		input: object(
 			{
-				id: { type: 'integer', description: 'The workout\u2019s id, as `trainings` gives it.' },
+				id: { type: 'integer', description: 'The workout\u2019s id, as `workouts` gives it.' },
 				title: text('The title, rewritten.'),
 				kind: text('strength, cardio, mobility, sport, or other.'),
 				plan: text('The plan, rewritten.'),
@@ -2377,8 +2377,8 @@ export const TOOLS: Tool[] = [
 			['id']
 		),
 		run: (ctx, args) => {
-			const current = getTraining(ctx, Number(args.id));
-			updateTraining(ctx, current.id, {
+			const current = getWorkout(ctx, Number(args.id));
+			updateWorkout(ctx, current.id, {
 				title: args.title ?? current.title,
 				kind: args.kind ?? current.kind,
 				plan: args.plan ?? current.plan,
@@ -2390,12 +2390,12 @@ export const TOOLS: Tool[] = [
 	},
 	{
 		/*
-		 * Put away, not deleted: a workout accumulates a history (when it was\n		 * last done, the blocks that pointed at it), so the reversible verb is\n		 * archive, and its inverse is the same tool with archived:false. There is\n		 * deliberately no delete_training — a mistaken one is archived; a real\n		 * removal the person does in the app.\n		 */
-		name: 'archive_training',
+		 * Put away, not deleted: a workout accumulates a history (when it was\n		 * last done, the blocks that pointed at it), so the reversible verb is\n		 * archive, and its inverse is the same tool with archived:false. There is\n		 * deliberately no delete_workout — a mistaken one is archived; a real\n		 * removal the person does in the app.\n		 */
+		name: 'archive_workout',
 		title: 'Put a workout away, or bring it back',
 		description:
 			'Take a workout out of the working list, or restore it. Nothing is lost either way — its history stays.',
-		scope: 'trainings:write',
+		scope: 'workouts:write',
 		writes: true,
 		input: object(
 			{
@@ -2408,7 +2408,7 @@ export const TOOLS: Tool[] = [
 			['id']
 		),
 		run: (ctx, args) => {
-			setTrainingArchived(
+			setWorkoutArchived(
 				ctx,
 				Number(args.id),
 				args.archived === undefined ? true : !!args.archived
@@ -2417,15 +2417,15 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
-		name: 'training_done',
+		name: 'workout_done',
 		title: 'Mark a workout done',
 		description:
 			'Record that a workout happened just now — the gym\u2019s version of marking a recipe cooked. It stamps the last-done time.',
-		scope: 'trainings:write',
+		scope: 'workouts:write',
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The workout\u2019s id.' } }, ['id']),
 		run: (ctx, args) => {
-			trainingDone(ctx, Number(args.id));
+			workoutDone(ctx, Number(args.id));
 			return { ok: true };
 		}
 	},

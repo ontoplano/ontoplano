@@ -4,7 +4,10 @@
 	import { armed } from '$lib/actions/armed';
 	import { autogrow } from '$lib/actions/autogrow';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import { HORIZON_LABELS, type Horizon } from '$lib/goals';
@@ -19,13 +22,21 @@
 	 * its own page — so it is a component rather than markup written twice. The
 	 * forms post to actions the two routes share.
 	 */
-	type Entry = { id: number; seq: number | null; content: string; createdAt: string };
+	type Entry = {
+		id: number;
+		seq: number | null;
+		content: string;
+		createdAt: string;
+		tags: { id: number; name: string }[];
+		people: { id: number; name: string }[];
+	};
 
 	let {
 		notebook = null,
 		contents = null,
 		orphaned = [],
-		showingOrphans = false
+		showingOrphans = false,
+		allPeople = []
 	}: {
 		notebook?: { id: number; title: string; description: string } | null;
 		contents?: {
@@ -36,6 +47,8 @@
 		} | null;
 		orphaned?: Entry[];
 		showingOrphans?: boolean;
+		/** Everybody already known, so the field completes rather than duplicates. */
+		allPeople?: { id: number; name: string }[];
 	} = $props();
 
 	let editingNoteId = $state<number | null>(null);
@@ -129,6 +142,17 @@
 			     the diary does. It was missing here, which made pictures look like
 			     a feature of one screen rather than of notes. -->
 			<PictureAttach target={addBox} />
+			<!--
+				Tags and people, the same as a note written in the diary.
+
+				Folded away because the common act here is typing a line and
+				pressing add, and two more boxes in front of that is a form where
+				there was a composer. Open, they are the same two fields, posting
+				the same two names.
+			-->
+			<MoreOptions label="Tags, people" count={0}>
+				{@render tagsAndPeople('', '')}
+			</MoreOptions>
 			<div class="mt-2 flex justify-end">
 				<button class="btn btn-primary btn-sm"><Icon name="plus" /> Add note</button>
 			</div>
@@ -193,10 +217,40 @@
 	`notebookId` is null for a note whose notebook was deleted: editing one must
 	not quietly adopt it into whatever notebook is on screen.
 -->
-{#snippet noteList(
-	entries: { id: number; seq: number | null; content: string; createdAt: string }[],
-	notebookId: number | null
-)}
+<!--
+	What a note carries besides its words, written the way the diary writes it:
+	names typed inline, not a picker opened.
+-->
+{#snippet tagsAndPeople(tags: string, people: string)}
+	<Field label="Tags" span={6} hint="Separate with commas or spaces. A leading # is fine.">
+		<input
+			name="tags"
+			type="text"
+			autocomplete="off"
+			value={tags}
+			placeholder="work, health"
+			class="input"
+		/>
+	</Field>
+	<Field label="People" span={6} hint="Anyone this note is about.">
+		<input
+			name="people"
+			type="text"
+			autocomplete="off"
+			list="notebook-known-people"
+			value={people}
+			placeholder="Ana, João"
+			class="input"
+		/>
+		<datalist id="notebook-known-people">
+			{#each allPeople as person (person.id)}
+				<option value={person.name}></option>
+			{/each}
+		</datalist>
+	</Field>
+{/snippet}
+
+{#snippet noteList(entries: Entry[], notebookId: number | null)}
 	{#if entries.length === 0}
 		<p class="px-4 py-3 text-sm text-gray-500">Nothing written here yet.</p>
 	{:else}
@@ -229,6 +283,14 @@
 								class="textarea">{entry.content}</textarea
 							>
 							<PictureAttach target={editBox} />
+							<div class="mt-3">
+								<FormGrid>
+									{@render tagsAndPeople(
+										entry.tags.map((t) => t.name).join(', '),
+										entry.people.map((p) => p.name).join(', ')
+									)}
+								</FormGrid>
+							</div>
 							<div class="mt-2 flex justify-end gap-2">
 								<button type="button" class="btn btn-sm" onclick={() => (editingNoteId = null)}
 									>Cancel</button
@@ -250,6 +312,15 @@
 									· {entry.author}
 								{/if}
 							</span>
+
+							<!-- `@` for a person and `#` for a tag, the same one character
+							     that makes the diary's rows legible. -->
+							{#each entry.people as person (person.id)}
+								<a href={resolve('/notebooks/people')} class="chip">@{person.name}</a>
+							{/each}
+							{#each entry.tags as tag (tag.id)}
+								<span class="chip">#{tag.name}</span>
+							{/each}
 
 							<!-- In a shared notebook everybody reads everything, but a note
 							     is edited and deleted only by whoever wrote it. -->
