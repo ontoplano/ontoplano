@@ -31,6 +31,8 @@
 	let editShoppingCategoryId: number | null = $state(null);
 	let editNotes = $state('');
 	let editPrice = $state('');
+	/** Only asked when writing something down; an edit leaves it where it is. */
+	let newLocationId = $state<number | null>(null);
 	let filterType = $state<'all' | 'someday' | 'replenish'>('all');
 	let newItemType = $state<'replenish' | 'someday'>('replenish');
 	let showBought = $state(false);
@@ -275,8 +277,14 @@
 			});
 	});
 
+	const locationChoices = $derived(
+		data.locations.map((one) => ({ ...one, path: locationPaths.get(one.id) ?? one.name }))
+	);
+
 	function openCreateForm() {
 		cancelEdit();
+		// Standing in a drawer and adding something puts it in that drawer.
+		newLocationId = location !== null && location !== 0 ? location : null;
 		newItemType = filterType === 'someday' ? 'someday' : 'replenish';
 		editShoppingCategoryId = defaultShoppingCategoryId;
 		showForm = true;
@@ -714,7 +722,10 @@
 					bind:price={editPrice}
 					bind:type={newItemType}
 					bind:shoppingCategoryId={editShoppingCategoryId}
+					bind:locationId={newLocationId}
 					categories={data.shoppingCategories}
+					locations={locationChoices}
+					askLocation={editingId === null}
 				/>
 			</FormGrid>
 		</form>

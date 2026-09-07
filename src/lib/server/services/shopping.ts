@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray, or, sql } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { pricePoints, shoppingCategories, shoppingItems } from '../db/schema.js';
+import { locations, pricePoints, shoppingCategories, shoppingItems } from '../db/schema.js';
 import { getLocation } from './locations.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
@@ -30,6 +30,8 @@ export type ItemInput = {
 	notes?: unknown;
 	price?: unknown;
 	shoppingCategoryId?: unknown;
+	/** Where it lives, when it is being written down for the first time. */
+	locationId?: unknown;
 };
 
 /*
@@ -280,9 +282,19 @@ export function createItem(ctx: Ctx, raw: ItemInput): { alreadyHad: boolean } {
 		return { alreadyHad: true };
 	}
 
+	/*
+	 * Where it lives, said once, while it is being written down.
+	 *
+	 * Only on the way in. `updateItem` re-parses the whole row, and an edit
+	 * form that does not ask about the location would post none and quietly
+	 * unfile the thing — so filing after the fact is `setItemLocation`, which
+	 * is also what a drag posts.
+	 */
+	const locationId = parseLocationId(ctx, raw.locationId);
+
 	const result = db
 		.insert(shoppingItems)
-		.values({ ...stamps(ctx), userId: ctx.userId, ...values })
+		.values({ ...stamps(ctx), userId: ctx.userId, ...values, locationId })
 		.run();
 
 	emit(ctx, 'shopping.added', { id: Number(result.lastInsertRowid), name: values.name });
@@ -620,6 +632,19 @@ function parseItem(ctx: Ctx, raw: ItemInput) {
 		// said what it costs, which is different from saying it is free.
 		priceCents: parseMoney(raw.price, getCurrency(ctx.userId))
 	};
+}
+
+/** Somebody else's drawer is not a place this account may file things in. */
+function parseLocationId(ctx: Ctx, value: unknown): number | null {
+	if (value === undefined || value === null || value === '') return null;
+	const id = num(value, 'location', { int: true, min: 1 });
+	const owned = db
+		.select({ id: locations.id })
+		.from(locations)
+		.where(and(eq(locations.id, id), eq(locations.userId, ctx.userId)))
+		.get();
+	if (!owned) throw new ValidationError('That is not one of your locations.');
+	return id;
 }
 
 /**

@@ -75,8 +75,9 @@ const before = appliedCount();
  * the situation named: nothing is touched, and the fix is a decision rather
  * than an autopsy.
  */
+const journal = JSON.parse(readFileSync('./drizzle/meta/_journal.json', 'utf8'));
+
 if (before > 0) {
-	const journal = JSON.parse(readFileSync('./drizzle/meta/_journal.json', 'utf8'));
 	const known = new Set(
 		journal.entries.map((entry) =>
 			createHash('sha256')
@@ -116,14 +117,22 @@ try {
 		console.error('\nRestore the snapshot printed above.');
 		process.exitCode = 1;
 	} else {
-		// Said in numbers, because "Migrations applied." reads the same whether
-		// it applied eleven or none — and `make dev` runs this every time.
+		/*
+		 * Named, not counted.
+		 *
+		 * "3 migrations applied" is true and tells you nothing: on a dev machine
+		 * the question is always *which* — whether the one you just wrote ran,
+		 * or three you had never heard of came in with a pull. The tags are the
+		 * answer and they are already in the journal.
+		 */
 		const applied = appliedCount() - before;
-		console.log(
-			applied === 0
-				? 'Database already up to date.'
-				: `${applied} migration${applied === 1 ? '' : 's'} applied.`
-		);
+		if (applied === 0) {
+			console.log('Database already up to date.');
+		} else {
+			const names = journal.entries.slice(-applied).map((entry) => entry.tag);
+			console.log(`${applied} migration${applied === 1 ? '' : 's'} applied:`);
+			for (const name of names) console.log(`  ${name}`);
+		}
 	}
 } catch (e) {
 	console.error('\nMigration failed:\n');

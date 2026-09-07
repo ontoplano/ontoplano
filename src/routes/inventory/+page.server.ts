@@ -144,7 +144,8 @@ export const actions: Actions = {
 				type: formData.get('type'),
 				notes: formData.get('notes'),
 				price: formData.get('price'),
-				shoppingCategoryId: formData.get('shoppingCategoryId')
+				shoppingCategoryId: formData.get('shoppingCategoryId'),
+				locationId: formData.get('locationId')
 			});
 
 			return {

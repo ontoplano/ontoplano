@@ -14,6 +14,10 @@
 		type = $bindable('replenish'),
 		shoppingCategoryId = $bindable<number | null | undefined>(undefined),
 		categories = [],
+		locations = [],
+		locationId = $bindable(null),
+		/** Only when writing something down: see `createItem` for why. */
+		askLocation = false,
 		compact = false
 	}: {
 		label?: string;
@@ -22,6 +26,9 @@
 		type?: string;
 		shoppingCategoryId?: number | null | undefined;
 		categories?: { id: number; name: string }[];
+		locations?: { id: number; name: string; path: string }[];
+		locationId?: number | null;
+		askLocation?: boolean;
 		compact?: boolean;
 	} = $props();
 
@@ -36,7 +43,7 @@
 {#snippet rest()}
 	<Field label="List" span={compact ? 12 : 4}>
 		<select name="type" required bind:value={type} class="select">
-			<option value="replenish">Inventory</option>
+			<option value="replenish">Restock</option>
 			<option value="someday">Wishlist</option>
 		</select>
 	</Field>
@@ -46,6 +53,19 @@
 			<select name="shoppingCategoryId" bind:value={shoppingCategoryId} class="select">
 				{#each categories as category (category.id)}
 					<option value={category.id}>{category.name}</option>
+				{/each}
+			</select>
+		</Field>
+	{/if}
+
+	{#if askLocation && locations.length > 0}
+		<!-- Where it lives, asked once, while it is being written down. Changing
+		     it afterwards is a drag onto the panel, or the row's own control. -->
+		<Field label="Location" span={12}>
+			<select name="locationId" bind:value={locationId} class="select">
+				<option value={null}>— nowhere in particular —</option>
+				{#each locations as one (one.id)}
+					<option value={one.id}>{one.path}</option>
 				{/each}
 			</select>
 		</Field>
@@ -71,7 +91,10 @@
 {/snippet}
 
 {#if compact}
-	<MoreOptions label="List, category, notes, price" count={filled}>{@render rest()}</MoreOptions>
+	<MoreOptions
+		label={askLocation ? 'List, category, location, notes, price' : 'List, category, notes, price'}
+		count={filled}>{@render rest()}</MoreOptions
+	>
 {:else}
 	{@render rest()}
 {/if}

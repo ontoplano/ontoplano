@@ -95,7 +95,24 @@ export function recordVisitorError(input: Record<string, unknown>, now: Date): v
 	write(null, input, now);
 }
 
-function write(userId: string | null, input: Record<string, unknown>, now: Date): void {
+/**
+ * A bug somebody sat down and reported.
+ *
+ * Deliberately not behind the crash-report consent: that switch answers "may
+ * the app send me things it noticed", and this is a person typing a sentence
+ * and pressing send. Refusing it because automatic reporting is off would mean
+ * an instance where nobody can tell the operator anything.
+ */
+export function recordBugReport(ctx: Ctx, input: Record<string, unknown>): void {
+	write(ctx.userId, input, ctx.now, 'report');
+}
+
+function write(
+	userId: string | null,
+	input: Record<string, unknown>,
+	now: Date,
+	kind: 'crash' | 'report' = 'crash'
+): void {
 	const message = str(input.message, 'message', { max: 500 });
 	const url = optionalStr(input.url, 'url', { max: 300 });
 	const stack = optionalStr(input.stack, 'stack', { max: 8000 });
@@ -104,7 +121,7 @@ function write(userId: string | null, input: Record<string, unknown>, now: Date)
 	console.error(
 		JSON.stringify({
 			at: now.toISOString(),
-			level: 'client-error',
+			level: kind === 'report' ? 'bug-report' : 'client-error',
 			user: userId,
 			message,
 			url,
@@ -119,6 +136,7 @@ function write(userId: string | null, input: Record<string, unknown>, now: Date)
 			url,
 			stack,
 			userAgent,
+			kind,
 			createdAt: now.toISOString()
 		})
 		.run();
@@ -140,6 +158,7 @@ export type ReportedError = {
 	url: string | null;
 	stack: string | null;
 	userAgent: string | null;
+	kind: 'crash' | 'report';
 	createdAt: string;
 };
 
@@ -159,6 +178,7 @@ export function recentClientErrors(limit = 40): ReportedError[] {
 			url: clientErrors.url,
 			stack: clientErrors.stack,
 			userAgent: clientErrors.userAgent,
+			kind: clientErrors.kind,
 			createdAt: clientErrors.createdAt
 		})
 		.from(clientErrors)

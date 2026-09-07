@@ -1,3 +1,4 @@
+import { isSelfHosted } from '$lib/server/settings';
 import { error, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import {
@@ -45,7 +46,15 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
 		trialDaysAhead,
 		yearly: hasYearlyPrice(),
 		exportsLeft: hold === 'expired' ? exportAllowance(locals.user.id).remaining : 0,
-		firstChargeOn: new Date(Date.now() + trialDaysAhead * 86400_000).toISOString().slice(0, 10)
+		firstChargeOn: new Date(Date.now() + trialDaysAhead * 86400_000).toISOString().slice(0, 10),
+		/*
+		 * Somewhere to go that is not a card.
+		 *
+		 * Only on the instance that sells: a self-hosted copy has no business
+		 * pointing its own people at somebody else's demo, and by the time
+		 * anybody reaches this page on one, they are not being sold anything.
+		 */
+		demo: isSelfHosted() ? null : 'https://demo.ontoplano.com'
 	};
 };
 

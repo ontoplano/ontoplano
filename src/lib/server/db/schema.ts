@@ -1191,6 +1191,18 @@ export const clientErrors = sqliteTable(
 		stack: text('stack'),
 		/** Which browser, as it described itself. Nothing is inferred from it. */
 		userAgent: text('user_agent'),
+		/*
+		 * A crash the app noticed, or a bug somebody sat down and reported.
+		 *
+		 * The same table because they are the same thing to whoever reads them
+		 * — something is wrong, here is where and for whom — and the same
+		 * dismiss deals with both. Not the same consent: a crash report is
+		 * collected only where it was allowed, and a report is somebody typing
+		 * it and pressing send, which is consent by construction.
+		 */
+		kind: text('kind', { enum: ['crash', 'report'] })
+			.notNull()
+			.default('crash'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)

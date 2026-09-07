@@ -10,6 +10,24 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.92.0 — 2026-09-07
+
+- **A new thing can be given its location as you write it down.** Standing in
+  a drawer and adding something puts it in that drawer. Editing a thing does
+  not ask again — moving it is a drag, or the row's own control.
+- **The subscribe page is not a wall of buttons.** Choosing between one seat
+  and the family plan is a tab now, so the only things shaped like buttons are
+  the ones that take money. There is a way out that is not "sign out": a link
+  to the demo, in its own tab.
+- **The help buttons fold up on a phone.** They were a bar across the corner
+  of every screen; now they are one square wearing a question mark, and a tap
+  opens the row. Tapping it again closes it.
+- **Something wrong on this screen?** A new button beside them opens a box to
+  say what happened. It goes to whoever runs the instance, with the address of
+  the screen and nothing you have written down.
+- **`make dev` names the migrations it ran** instead of counting them, because
+  which one ran is always the question.
+
 ## 0.91.0 — 2026-09-07
 
 - **The inventory is one page, and it is the shopping list.** The two tabs are

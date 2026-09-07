@@ -95,6 +95,9 @@
 		// A circle with a question in it: the guided tour of whatever is on
 		// screen. Distinct from `info`, which is an aside rather than an offer.
 		help: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM9.6 9.8A2.5 2.5 0 0 1 14.5 11c0 1.7-2.2 2-2.2 3.3M12 17h.01',
+		// The same circle as `help`, with a bang in it: "something here is
+		// wrong" sits beside "how does this work" and has to read as its sibling.
+		bug: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 8v5M12 16h.01',
 		// An open book: the documentation, which is a different thing from the
 		// tour — the tour is this screen, the book is everything.
 		book: 'M12 6c-2-1.5-4.5-2-8-2v13c3.5 0 6 .5 8 2 2-1.5 4.5-2 8-2V4c-3.5 0-6 .5-8 2zM12 6v13'

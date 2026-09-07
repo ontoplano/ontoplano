@@ -106,29 +106,35 @@
 
 		{#if familyOffered}
 			<!--
-				The plan first, the interval second. Both are on the page whatever
-				the front page said: the cookie carrying that choice is a
-				convenience, and a household that loses it must not end up on one
-				seat without being shown the other price.
+				Two questions, two shapes.
+
+				Which plan and which interval were both rows of filled buttons, so
+				the page offered four things that all looked like "buy this" and
+				pressing the wrong one felt like it would charge you. Choosing a
+				plan is a tab — the same tab strip the rest of the app uses — and
+				the only buttons that look like buttons are the ones that take
+				money.
 			-->
-			<div class="mt-6 flex gap-2" role="group" aria-label="Plan">
+			<div class="mt-6 flex gap-1 border-b border-gray-200" role="tablist" aria-label="Plan">
 				<button
 					type="button"
+					role="tab"
 					onclick={() => (tier = 'solo')}
-					aria-pressed={tier === 'solo'}
-					class="flex-1 border px-3 py-2 text-sm transition {tier === 'solo'
-						? 'border-gray-900 bg-gray-900 text-white'
-						: 'border-gray-300 text-gray-700 hover:bg-gray-50'}"
+					aria-selected={tier === 'solo'}
+					class="px-4 py-2 text-sm font-medium transition {tier === 'solo'
+						? 'border-b-2 border-gray-900 text-gray-900'
+						: 'text-gray-500 hover:text-gray-700'}"
 				>
 					Just me
 				</button>
 				<button
 					type="button"
+					role="tab"
 					onclick={() => (tier = 'family')}
-					aria-pressed={tier === 'family'}
-					class="flex-1 border px-3 py-2 text-sm transition {tier === 'family'
-						? 'border-gray-900 bg-gray-900 text-white'
-						: 'border-gray-300 text-gray-700 hover:bg-gray-50'}"
+					aria-selected={tier === 'family'}
+					class="px-4 py-2 text-sm font-medium transition {tier === 'family'
+						? 'border-b-2 border-gray-900 text-gray-900'
+						: 'text-gray-500 hover:text-gray-700'}"
 				>
 					Family — {data.pricing.familySeats} accounts
 				</button>
@@ -196,7 +202,30 @@
 			{/if}
 		{/if}
 
-		<div class="mt-5 text-xs text-gray-500">
+		<div class="mt-6 space-y-3 border-t border-gray-200 pt-4 text-xs text-gray-500">
+			{#if data.demo}
+				<!--
+					The way out that is not "sign out".
+					
+					Somebody who reached a card without having seen the thing has two
+					options here otherwise: pay, or leave. A demo is the third, and
+					it opens in a tab of its own so this page is still behind it.
+				-->
+				<!-- An address on another host, so `resolve` has nothing to do with
+				     it — the rule is about this app's own routes. -->
+				<!-- eslint-disable svelte/no-navigation-without-resolve -->
+				<p>
+					<a
+						href={data.demo}
+						target="_blank"
+						rel="noopener"
+						class="text-gray-600 underline hover:text-gray-900"
+					>
+						Let me see the demo first
+					</a>
+				</p>
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
+			{/if}
 			<form method="post" action="/login?/signOut" use:enhance>
 				<button type="submit" class="underline">Sign out</button>
 			</form>

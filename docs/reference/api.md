@@ -67,6 +67,7 @@ sentence somebody agrees to when they grant it.
 | `/api/push/test`                             | POST   | —                 |
 | `/api/reminders`                             | GET    | —                 |
 | `/api/reminders`                             | POST   | —                 |
+| `/api/report`                                | POST   | —                 |
 | `/api/search`                                | GET    | —                 |
 | `/api/subscribe`                             | POST   | —                 |
 | `/api/tutorial`                              | POST   | —                 |
@@ -372,6 +373,16 @@ delivered once something has actually put it in front of somebody, so a
 failed request loses nothing.
 
 **GET**
+
+**POST**
+
+### `/api/report`
+
+"Something here is wrong", from wherever somebody noticed it.
+
+The address of the page comes with it, because the first question anybody
+reading these asks is "where", and the person reporting should not have to
+describe the screen they are looking at.
 
 **POST**
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import Icon from '$lib/components/Icon.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 	import { GLOBAL_SHORTCUTS, PAGE_SHORTCUTS, getDisplayShortcuts } from '$lib/shortcuts';
 	import { hasTutorial } from '$lib/tutorials';
 
@@ -27,6 +28,41 @@
 	} = $props();
 
 	let show = $state(false);
+	/**
+	 * Open on a wide screen, folded on a narrow one.
+	 *
+	 * Four buttons in the corner of a phone is a bar across the bottom right of
+	 * every screen, over whatever is under it. Folded it is one square wearing
+	 * the question mark — the glyph that already means "help is here" — and a
+	 * tap opens the row. Tapping the question mark again closes it, so it is
+	 * the same control both ways rather than an expand with no collapse.
+	 */
+	let open = $state(false);
+	/** The bug report being written, or null. */
+	let reporting = $state(false);
+	let reportText = $state('');
+	let reportState = $state<'idle' | 'sending' | 'sent' | 'failed'>('idle');
+
+	async function sendReport() {
+		if (!reportText.trim()) return;
+		reportState = 'sending';
+		try {
+			const res = await fetch('/api/report', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ message: reportText.trim(), url: page.url.pathname })
+			});
+			reportState = res.ok ? 'sent' : 'failed';
+			if (res.ok) reportText = '';
+		} catch {
+			reportState = 'failed';
+		}
+	}
+
+	function closeReport() {
+		reporting = false;
+		reportState = 'idle';
+	}
 
 	let currentPath = $derived(page.url.pathname);
 	let pageDisplay = $derived(getDisplayShortcuts(currentPath));
@@ -121,11 +157,29 @@
 		features.
 	-->
 	<div class="dock flex border border-gray-300 bg-white shadow-sm">
+		<!--
+			The fold, and the only button on a narrow screen until it is opened.
+			
+			It carries the question mark because that is the glyph anybody looks
+			for, and pressing it again closes the row — one control, both ways.
+		-->
+		<button
+			onclick={() => (open = !open)}
+			class="dock-btn dock-toggle"
+			aria-expanded={open}
+			title={open ? 'Hide help' : 'Help'}
+			aria-label={open ? 'Hide help' : 'Help'}
+		>
+			<!-- A question mark folded, a close mark open. Two question marks in a
+			     row — this one and the tour's — is a row that cannot be read. -->
+			<Icon name={open ? 'close' : 'help'} size={15} />
+		</button>
+
 		<a
 			href="https://docs.ontoplano.com"
 			target="_blank"
 			rel="noreferrer"
-			class="dock-btn"
+			class="dock-btn dock-more {open ? 'is-open' : ''}"
 			title="The documentation"
 			aria-label="The documentation"
 		>
@@ -140,7 +194,7 @@
 		<button
 			onclick={() => toured && onstart?.()}
 			aria-disabled={!toured}
-			class="dock-btn {toured ? '' : 'missing'}"
+			class="dock-btn dock-more {open ? 'is-open' : ''} {toured ? '' : 'missing'}"
 			title={toured ? 'Show me around this screen' : 'No tutorial for this screen yet'}
 			aria-label={toured ? 'Show me around this screen' : 'No tutorial for this screen yet'}
 			data-tour="tutorial"
@@ -150,14 +204,72 @@
 
 		<button
 			onclick={() => (show = !show)}
-			class="dock-btn kbd-hint"
+			class="dock-btn dock-more kbd-hint {open ? 'is-open' : ''}"
 			title="Keyboard shortcuts (?)"
 			aria-label="Keyboard shortcuts"
 		>
 			<Icon name="keyboard" size={15} />
 		</button>
+
+		<!-- Something here is wrong. Beside the answers, because it is what you
+		     reach for when none of them helped. -->
+		<button
+			onclick={() => {
+				reporting = true;
+				reportState = 'idle';
+			}}
+			class="dock-btn dock-more {open ? 'is-open' : ''}"
+			title="Report a problem with this screen"
+			aria-label="Report a problem with this screen"
+		>
+			<Icon name="bug" size={15} />
+		</button>
 	</div>
 </div>
+
+<Modal
+	open={reporting}
+	onclose={closeReport}
+	title="Something wrong here?"
+	description="It goes to whoever runs this instance, with the address of this screen."
+	size="sm"
+>
+	{#if reportState === 'sent'}
+		<p class="text-sm text-gray-700">Sent. Thank you — it is on the operator's list.</p>
+	{:else}
+		<label class="block">
+			<span class="eyebrow text-gray-600">What happened</span>
+			<textarea
+				bind:value={reportText}
+				rows="4"
+				placeholder="What you did, and what happened instead."
+				class="textarea mt-1"
+			></textarea>
+		</label>
+		<p class="mt-2 text-xs text-gray-500">
+			This screen's address goes with it. Nothing you have written down is attached.
+		</p>
+		{#if reportState === 'failed'}
+			<p class="mt-2 text-xs text-red-700">That did not send. Try again in a moment.</p>
+		{/if}
+	{/if}
+
+	{#snippet footer()}
+		{#if reportState === 'sent'}
+			<button type="button" class="btn btn-primary" onclick={closeReport}>Close</button>
+		{:else}
+			<button type="button" class="btn" onclick={closeReport}>Cancel</button>
+			<button
+				type="button"
+				class="btn btn-primary"
+				disabled={reportState === 'sending' || !reportText.trim()}
+				onclick={sendReport}
+			>
+				{reportState === 'sending' ? 'Sending…' : 'Send'}
+			</button>
+		{/if}
+	{/snippet}
+</Modal>
 
 <style>
 	.dock {
@@ -214,6 +326,30 @@
 		.dock-btn {
 			height: 2.75rem;
 			width: 2.75rem;
+		}
+	}
+	/*
+	 * Folded on a narrow screen, open on a wide one.
+	 *
+	 * The toggle is the only button a phone shows until it is pressed; at `lg`
+	 * the row is always open and the toggle would be a button that does
+	 * nothing, so it is not drawn at all.
+	 */
+	.dock-more:not(.is-open) {
+		display: none;
+	}
+
+	@media (min-width: 64rem) {
+		.dock-toggle {
+			display: none;
+		}
+
+		/* `:not(.is-open)` as well, and not for tidiness: the folded rule above
+		   is the more specific selector, so a plain `.dock-more` here loses to
+		   it and the row stayed hidden on a desktop too. */
+		.dock-more,
+		.dock-more:not(.is-open) {
+			display: flex;
 		}
 	}
 </style>

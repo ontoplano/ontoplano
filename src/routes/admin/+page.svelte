@@ -276,8 +276,8 @@
 			was to be told in person.
 		-->
 		<Card
-			title="Reported by somebody's browser"
-			description="Crashes people chose to send. Dismiss one once it is dealt with."
+			title="Problems people hit"
+			description="Bugs somebody reported, and crashes they chose to send. Dismiss one once it is dealt with."
 			flush
 		>
 			{#if data.clientErrors.length === 0}
@@ -287,6 +287,11 @@
 					{#each data.clientErrors as report (report.id)}
 						<details class="px-4 py-2 text-sm">
 							<summary class="cursor-pointer list-none">
+								<!-- Somebody sat down and wrote this one, so it reads differently
+								     from a stack trace the app noticed on its own. -->
+								{#if report.kind === 'report'}
+									<span class="chip mr-2 align-middle">reported</span>
+								{/if}
 								<span class="text-gray-900">{report.message}</span>
 								<span class="block truncate text-xs text-gray-500">
 									<!-- Three different absences, and they mean different things: nobody

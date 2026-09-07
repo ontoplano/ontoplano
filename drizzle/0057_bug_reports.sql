@@ -1,0 +1,1 @@
+ALTER TABLE `client_errors` ADD `kind` text DEFAULT 'crash' NOT NULL;

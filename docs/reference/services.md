@@ -822,6 +822,15 @@ There is no stored consent for somebody with no account, so the only way in
 is an explicit press of the button on the error page. The instance switch
 still decides whether the feature exists at all.
 
+#### `recordBugReport(ctx, input)`
+
+A bug somebody sat down and reported.
+
+Deliberately not behind the crash-report consent: that switch answers "may
+the app send me things it noticed", and this is a person typing a sentence
+and pressing send. Refusing it because automatic reporting is off would mean
+an instance where nobody can tell the operator anything.
+
 #### `recentClientErrors(limit)`
 
 The most recent reports, for `/admin`.
