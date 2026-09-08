@@ -10,6 +10,26 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.110.0 — 2026-09-08
+
+- **The time is a clock you touch.** `showPicker()` opened the platform's own
+  picker, and which mode that opens in — the dial, or a numeric keypad — is
+  Android's choice, remembered from whatever was used last; Firefox does not
+  implement it at all, so on Firefox it opened nothing. There is no web API
+  that asks for the dial, so the field is one: hours on two rings, 00–11
+  outside and 12–23 in, picking one moves to the minutes, and dragging works
+  throughout. The native input is still underneath it, hidden but focusable, so
+  a keyboard and a screen reader still have the control they had.
+- **A disabled button no longer turns black when you press it.** The rule that
+  stopped a disabled button changing colour under the pointer set its
+  background to `inherit` — which is the _parent's_ background, near-black on a
+  dark card — and on a touch screen the hover state sticks after a tap. So
+  pressing a button that could not be pressed made it vanish. Hover now belongs
+  to buttons that can be pressed, rather than being undone afterwards.
+- **"Coming up" only holds what is coming.** A reminder whose time has passed
+  left the list; it still arrives as the notification it fires as, which is a
+  thing you dismiss rather than a thing that is ahead of you.
+
 ## 0.109.0 — 2026-09-08
 
 - **The time field opens the clock.** On a phone it was a box you typed into

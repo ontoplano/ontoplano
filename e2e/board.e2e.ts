@@ -18,7 +18,12 @@ import { visit } from './helpers/visit';
 async function newCard(page: import('@playwright/test').Page, title: string) {
 	await visit(page, '/tasks/board');
 	await page.keyboard.press('n');
-	await page.fill('#card-form [name=heading]', title);
+	// Wait for the form the keystroke opens rather than typing into where it is
+	// about to be: under a loaded parallel run it has not mounted yet, and
+	// `fill` on a locator that does not exist waits out the whole test.
+	const heading = page.locator('#card-form [name=heading]');
+	await expect(heading).toBeVisible({ timeout: 15_000 });
+	await heading.fill(title);
 	await page.getByRole('button', { name: 'Add card' }).click();
 	await expect(page.getByText(title, { exact: true })).toBeVisible();
 }

@@ -167,3 +167,75 @@ test('an alarm that will make a noise says so before it does', async ({ page }) 
 	await expect(loud.locator('[title="This one makes a sound"]')).toHaveCount(1);
 	await expect(quiet.locator('[title="This one makes a sound"]')).toHaveCount(0);
 });
+
+/**
+ * The time is a clock you touch.
+ *
+ * `showPicker()` opens the platform's own picker, and which mode it opens in —
+ * the dial, or a numeric keypad — is Android's choice, remembered from
+ * whatever was used last. There is no web API that asks for the dial, so a
+ * field that is always the dial has to be one.
+ */
+test.describe('the time dial', () => {
+	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+	test('picking an hour and then a minute, without typing anything', async ({ page }) => {
+		await register(page, `rem-dial-${Date.now()}@test.invalid`);
+		await visit(page, '/reminders');
+		await expect(page.locator('main')).toBeVisible();
+		await page.waitForTimeout(500);
+
+		const face = page.locator('svg[viewBox="0 0 260 260"]');
+		await expect(face).toBeVisible();
+		const box = (await face.boundingBox())!;
+		/** A point on the face, given where it sits in the 260-unit drawing. */
+		const on = (x: number, y: number) => ({
+			x: box.x + (x / 260) * box.width,
+			y: box.y + (y / 260) * box.height
+		});
+
+		// Three o'clock: the outer ring, a quarter of the way round from the top.
+		const three = on(234, 130);
+		await page.mouse.click(three.x, three.y);
+
+		// Picking the hour moves on to the minutes by itself — which is what
+		// makes this two taps rather than four fields.
+		await expect(page.getByText('minutes')).toBeVisible();
+
+		// Half past: the bottom of the ring.
+		const half = on(130, 234);
+		await page.mouse.click(half.x, half.y);
+
+		await expect(page.locator('input[name="time"]')).toHaveValue('03:30');
+
+		// And the inner ring is the afternoon: fifteen hundred is where three was.
+		await page.locator('button[title="Set the hour"]').click();
+		const fifteen = on(196, 130);
+		await page.mouse.click(fifteen.x, fifteen.y);
+		await expect(page.locator('input[name="time"]')).toHaveValue('15:30');
+	});
+});
+
+test('a reminder that has already been is not "coming up"', async ({ page }) => {
+	await register(page, `rem-past-${Date.now()}@test.invalid`);
+
+	// Written straight in, because the form will not take a time that has been.
+	await page.request.post('/reminders?/create', {
+		headers: { origin: new URL(page.url()).origin },
+		form: {
+			day: '2020-01-01',
+			time: '09:00',
+			label: 'long gone'
+		}
+	});
+
+	await visit(page, '/reminders');
+	await expect(page.locator('main')).toBeVisible();
+
+	// A list called "coming up" holding this morning's alarm is a list you have
+	// to read past. Scoped to that card: a reminder whose time has been is also
+	// *due*, so it correctly appears in the notification it fires as — which is
+	// a thing you dismiss, not a thing that is coming.
+	const comingUp = page.locator('section', { hasText: 'Coming up' }).first();
+	await expect(comingUp.getByText('long gone')).toHaveCount(0);
+});

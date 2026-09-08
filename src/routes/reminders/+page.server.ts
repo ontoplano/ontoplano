@@ -9,6 +9,7 @@ import {
 import { toActionFailure } from '$lib/server/http-errors';
 import {
 	createFreeReminder,
+	localNow,
 	deleteReminder,
 	dismissReminder,
 	listReminders
@@ -37,6 +38,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	// it is a question you ask once — "and what about November?" — not a
 	// setting you keep, and this way the answer is a link you can send.
 	const days = upcomingWindow(url.searchParams.get('days'));
+	// Wall-clock in the account's own zone, which is the shape `remind_at` is
+	// stored in, so the two compare as strings.
+	const now = localNow(ctx);
 
 	/*
 	 * Today's birthdays are written here as well as by the delivery pass.
@@ -58,7 +62,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		 * things that are going to happen. The dashboard already carries the
 		 * standing version of it.
 		 */
-		reminders: listReminders(ctx).filter((r) => r.subjectKind !== 'review'),
+		reminders: listReminders(ctx).filter(
+			(r) =>
+				r.subjectKind !== 'review' &&
+				// And nothing that has already been: a list called "coming up" that
+				// holds this morning's alarm is a list you have to read past.
+				r.remindAt >= now
+		),
 		/** Birthdays and bills that are coming but are not rows yet. */
 		upcoming: upcomingDerived(ctx, ctx.now, ctx.tz, days),
 		days,

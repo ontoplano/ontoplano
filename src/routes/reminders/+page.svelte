@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import Banner from '$lib/components/Banner.svelte';
 	import Card from '$lib/components/Card.svelte';
+	import TimeDial from '$lib/components/TimeDial.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -265,7 +266,7 @@
 				class="space-y-3"
 			>
 				<FormGrid>
-					<Field label="Day" span={3} required>
+					<Field label="Day" span={6} required>
 						<input
 							name="day"
 							type="date"
@@ -278,29 +279,18 @@
 							class="input"
 						/>
 					</Field>
-					<Field label="Time" span={3} required>
+					<Field label="Time" span={6} required>
 						<!--
-							The picker, not a text field.
+							A clock, not four digits.
 
-							A time input on a phone is a box you type into with a small
-							clock beside it, and typing into six segments is not what
-							anybody wants from a phone. `showPicker` opens the real one on
-							the first tap; where a browser refuses, the field works exactly
-							as it did.
+							`showPicker()` opens the platform's own, and which mode that
+							opens in — the dial or a numeric keypad — is Android's choice,
+							remembered from whatever was used last. No web API asks for the
+							dial, so a field that is always the dial has to be one.
 						-->
-						<input
-							name="time"
-							type="time"
-							required
-							autocomplete="off"
-							bind:value={time}
-							onfocus={pick}
-							onclick={pick}
-							title="What time it should go off"
-							class="input"
-						/>
+						<TimeDial name="time" required bind:value={time} />
 					</Field>
-					<Field label="What to say" span={6} required>
+					<Field label="What to say" span={12} required>
 						<OneLine
 							name="label"
 							required

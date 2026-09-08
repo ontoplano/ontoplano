@@ -574,7 +574,17 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * deepens, then pressing sets it back down. `translate` rather than
 	 * `transform` so it composes with anything a component transforms itself.
 	 */
-	.btn:hover {
+	/*
+	 * Hover belongs to a button that can be pressed.
+	 *
+	 * Scoped rather than undone afterwards. It used to be undone, by a rule
+	 * setting `background-color: inherit` on a disabled button — and `inherit`
+	 * is the *parent's* background, which on a dark card is near-black. So a
+	 * disabled primary button turned into a black rectangle with black text on
+	 * it, and on a touch screen the hover state sticks after a tap, so pressing
+	 * a button that could not be pressed made it disappear.
+	 */
+	.btn:hover:not(:disabled) {
 		background-color: var(--color-gray-200);
 		color: var(--btn-ink-hover);
 		translate: 0 -1px;
@@ -594,7 +604,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 		box-shadow: var(--shadow-card);
 	}
 
-	.btn-primary:hover {
+	.btn-primary:hover:not(:disabled) {
 		background-color: var(--color-gray-800);
 		border-color: var(--color-gray-800);
 		box-shadow: var(--shadow-raised);
@@ -660,11 +670,6 @@ label:has(> input[type='radio']:not(:disabled)) {
 		cursor: not-allowed;
 		opacity: 0.4;
 		box-shadow: none;
-	}
-
-	button:disabled:hover,
-	.btn:disabled:hover {
-		background-color: inherit;
 	}
 
 	/* A confirm that has not been on screen long enough to be a decision. */

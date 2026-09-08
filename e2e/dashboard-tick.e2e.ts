@@ -25,7 +25,9 @@ import { visit } from './helpers/visit';
  */
 async function firstTask(page: import('@playwright/test').Page): Promise<string> {
 	const tick = page.getByRole('button', { name: /^Mark .* done$/ }).first();
-	await expect(tick).toBeVisible();
+	// The dashboard fetches its day and then draws it, so on a loaded run five
+	// seconds is not always enough to have a task to read the name off.
+	await expect(tick).toBeVisible({ timeout: 15_000 });
 	const label = (await tick.getAttribute('aria-label'))!;
 	return label.replace(/^Mark /, '').replace(/ done$/, '');
 }
