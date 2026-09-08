@@ -47,6 +47,16 @@ const DIR = process.env.TWA_DIR || 'android-twa';
  */
 const PROJECT_ONLY = process.argv.includes('--project-only');
 
+/*
+ * Whether this build can sell through Play.
+ *
+ * On for the Play bundle, off for the project F-Droid builds — see the
+ * `features` block below for why that is a requirement rather than a taste.
+ * `--no-billing` rather than a positive flag, so the ordinary build somebody
+ * runs by hand is the complete one.
+ */
+const PLAY_BILLING = !process.argv.includes('--no-billing');
+
 /**
  * The origin the app opens.
  *
@@ -261,16 +271,27 @@ const twaManifest = {
 	// least keeps the app usable rather than showing an error.
 	fallbackType: 'customtabs',
 	/*
-	 * Play Billing, inside the trusted web activity.
+	 * Play Billing, inside the trusted web activity — and only for Play.
 	 *
-	 * The store copy must sell through Play, and the bridge is this feature:
-	 * it adds the android-browser-helper billing extension so the web app's
+	 * The store copy must sell through Play, and the bridge is this feature: it
+	 * adds the android-browser-helper billing extension so the web app's
 	 * Digital Goods API calls reach Play's purchase sheet. The extension is
-	 * published under alpha dependencies, which is why those are on — it is
-	 * Google's own naming, not an instability we chose.
+	 * published under alpha dependencies, which is why those are on — Google's
+	 * own naming, not an instability we chose.
+	 *
+	 * It is off for F-Droid, and that is not a preference. The extension pulls
+	 * in `com.android.billingclient`, which is Google's and is not open source,
+	 * and F-Droid builds from source with free dependencies only — a project
+	 * carrying it is rejected or has to declare a non-free-dependency
+	 * anti-feature on its listing. It also declares `com.android.vending.BILLING`
+	 * in the manifest, which is a permission that means nothing off Play.
+	 *
+	 * Nothing is lost by leaving it out. The F-Droid build is the app pointed at
+	 * an instance; anybody paying for the hosted one does it on the web, where
+	 * the same checkout has always been.
 	 */
-	features: { playBilling: { enabled: true } },
-	alphaDependencies: { enabled: true },
+	features: PLAY_BILLING ? { playBilling: { enabled: true } } : {},
+	alphaDependencies: { enabled: PLAY_BILLING },
 	enableSiteSettingsShortcut: true,
 	isChromeOSOnly: false,
 	isMetaQuest: false,

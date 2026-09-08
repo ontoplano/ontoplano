@@ -1,5 +1,5 @@
 /**
- * The committed Android project says the version the app says.
+ * The committed Android project is the one F-Droid can build.
  *
  * `android/` is generated and checked in so F-Droid can build a tag on a
  * machine with no network. Generated and checked in is exactly the arrangement
@@ -11,6 +11,14 @@
  * versionCode it has seen, and F-Droid decides what is new by comparing the
  * one in the built APK against the one in its recipe — so a wrong number here
  * is a release that cannot be uploaded or one that nobody is offered.
+ *
+ * It also checks that Play Billing is not in it. `androidbrowserhelper:billing`
+ * pulls `com.android.billingclient`, which is proprietary, and F-Droid builds
+ * from source with free dependencies only — so its presence here is not a
+ * stale file but a submission that gets rejected. `make android` writes the
+ * Play build, with billing, into an ignored directory; regenerating this one
+ * with the wrong command is the easy mistake, and this is the thing that
+ * catches it.
  *
  * `make android-project` regenerates it. This only checks, so it runs
  * anywhere, including a CI machine with no Android SDK.
@@ -47,11 +55,20 @@ const wrong = [];
 if (name !== version) wrong.push(`versionName is "${name}", package.json says "${version}"`);
 if (code !== expected) wrong.push(`versionCode is ${code}, ${version} is ${expected}`);
 
+if (/androidbrowserhelper:billing/.test(gradle)) {
+	wrong.push('Play Billing is linked — F-Droid cannot build a proprietary dependency');
+}
+
+const MANIFEST = join(ROOT, 'android', 'app', 'src', 'main', 'AndroidManifest.xml');
+if (existsSync(MANIFEST) && /com\.android\.vending\.BILLING/.test(readFileSync(MANIFEST, 'utf8'))) {
+	wrong.push('the manifest declares com.android.vending.BILLING');
+}
+
 if (wrong.length > 0) {
-	console.error('\nThe committed Android project is behind the app:\n');
+	console.error('\nThe committed Android project is not the one to ship:\n');
 	for (const line of wrong) console.error(`  ${line}`);
 	console.error('\n  make android-project\n');
 	process.exit(1);
 }
 
-console.log(`android: the committed project is ${version} (${code})`);
+console.log(`android: the committed project is ${version} (${code}), no billing`);

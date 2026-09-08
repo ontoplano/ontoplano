@@ -49,6 +49,7 @@ help:
 	@printf '\033[1mphone\033[0m\n'
 	@echo "  android                     build the APK (android-install / android-share to get it on)"
 	@echo "  android-lan                 an APK pointed at this machine, over wifi"
+	@echo "  fdroid                      write F-Droid's recipe and listing for this version"
 	@if [ -f local.mk ]; then echo; \
 		printf '\033[1mthis instance (local.mk)\033[0m\n'; \
 		echo "  dev-site · dev-all                the site checkout served here, and all three"; \
@@ -73,7 +74,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% badges android-project _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -475,8 +476,25 @@ format:
 # the tree it builds from.
 android-project:
 	ONTOPLANO_ORIGIN=https://app.ontoplano.com TWA_DIR=android \
-		node scripts/build-twa.mjs --project-only
+		node scripts/build-twa.mjs --project-only --no-billing
 	@node scripts/sanitise-twa-manifest.mjs android/twa-manifest.json
+
+# Everything F-Droid needs for this version, written into fdroid-out/.
+#
+# Their metadata lives in their repository, not in ours: one YAML file that
+# grows a build entry per release, plus the store listing. Keeping a copy here
+# would be a duplicate that is wrong three releases later, so nothing is
+# committed — the generator is, and this writes the current answer.
+#
+#   make fdroid                              a fresh recipe, first submission
+#   make fdroid FROM=path/to/existing.yml    the same recipe plus this release
+#
+# FROM is the file as it stands in your fdroiddata fork; it is edited as text,
+# so reviewers' comments and hand edits survive. It also writes the RFP issue
+# and the merge request description, and fails loudly if the tag this version
+# would build has not been pushed.
+fdroid:
+	@node scripts/fdroid-metadata.mjs $(if $(FROM),--from $(FROM),)
 
 # The README's badges, drawn from this repo rather than fetched from a badge
 # service — the front page of the project should not need a third party to be

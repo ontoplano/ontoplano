@@ -92,3 +92,8 @@ dist/
 # claude-docker local state (may contain credentials)
 .claude-docker/
 .claude-docker-EMERGENCY-BACKUP-*.tar.gz
+
+# What `make fdroid` writes: the recipe and listing to paste into a fork of
+# fdroiddata, and the two things a person has to post. Regenerated per release,
+# never committed — the copy that matters lives in F-Droid's repository.
+fdroid-out/
