@@ -871,7 +871,10 @@
 		-->
 		<div class="flex flex-wrap items-center gap-2">
 			<div class="seg" role="group" aria-label="Which list">
-				<button onclick={() => (filterType = 'all')} aria-pressed={filterType === 'all'}>All</button
+				<button
+					onclick={() => (filterType = 'all')}
+					aria-pressed={filterType === 'all'}
+					title="Everything, both lists">All</button
 				>
 				<button
 					onclick={() => (filterType = filterType === 'replenish' ? 'all' : 'replenish')}
@@ -886,6 +889,7 @@
 				<button
 					onclick={() => (filterType = filterType === 'short' ? 'all' : 'short')}
 					aria-pressed={filterType === 'short'}
+					class="seg-alarm"
 					title="Only what you have fewer of than you keep">Short</button
 				>
 			</div>

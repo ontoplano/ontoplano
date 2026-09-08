@@ -23,6 +23,43 @@
 	 */
 
 	/**
+	 * What you have decided, before any of it is done.
+	 *
+	 * Answering a row used to apply immediately: twenty blocks was twenty round
+	 * trips, and a misclick was a thing that had already happened. Answers land
+	 * on the right instead — a pile of decisions you can read back, change your
+	 * mind about, and then commit in one press. Nothing is written until you do.
+	 */
+	type Verb = 'done' | 'skipped' | 'todo';
+	// `on` rather than `date`: the block already has a `date` — the day it was
+	// planned for — and spreading a verdict over it made "no day chosen" read as
+	// the day it did not happen on.
+	let verdicts = $state<Record<number, { verb: Verb; on?: string }>>({});
+
+	const VERB_LABELS: Record<Verb, string> = {
+		done: 'It happened',
+		skipped: 'Skipped',
+		todo: 'On the todo list'
+	};
+
+	function decide(id: number, verb: Verb, on?: string) {
+		verdicts = { ...verdicts, [id]: on ? { verb, on } : { verb } };
+	}
+
+	function undecide(id: number) {
+		const rest = { ...verdicts };
+		delete rest[id];
+		verdicts = rest;
+	}
+
+	const decided = $derived(
+		data.loose
+			.filter((item) => verdicts[item.id])
+			.map((item) => ({ ...item, ...verdicts[item.id] }))
+	);
+	const undecided = $derived(data.loose.filter((item) => !verdicts[item.id]));
+
+	/**
 	 * The block being given a day, if any.
 	 *
 	 * A date field on every row would be twenty date fields; asking for the date
@@ -66,7 +103,7 @@
 	 */
 	const looseByDay = $derived(
 		Object.values(
-			data.loose.reduce<Record<string, { date: string; label: string; items: typeof data.loose }>>(
+			undecided.reduce<Record<string, { date: string; label: string; items: typeof data.loose }>>(
 				(acc, item) => {
 					(acc[item.date] ??= {
 						date: item.date,
@@ -217,39 +254,40 @@
 				<EmptyState icon="check" title="Everything you planned, you did" />
 			{:else}
 				<!--
-					The answer is on the row, not at the bottom of the page.
+					Two columns: what is left, and what you have decided about.
 
-					This was a list of checkboxes and three buttons under it, so
-					settling a week meant reading a thing, ticking it, reading the next,
-					ticking it, and then scrolling past everything to say what the ticks
-					meant — and every item you ticked had to mean the same thing. They
-					rarely do: one happened and was never marked, the next is not going
-					to, the one after needs a day. Each row answers for itself.
+					The answer used to be applied the moment you pressed it — twenty
+					blocks was twenty round trips, and a misclick was already done. A
+					row you answer now moves across into a pile you can read back and
+					change your mind about, and nothing is written until you commit
+					the lot.
 				-->
-				<div data-tour="review-loose">
-					{#each looseByDay as day (day.date)}
-						<div class="eyebrow border-y border-gray-200 bg-gray-50 px-4 py-1.5 text-gray-600">
-							{day.label}
-						</div>
-						<ul class="divide-y divide-gray-200">
-							{#each day.items as item (item.id)}
-								<li class="flex items-center gap-3 px-4 py-2 hover:bg-gray-50">
-									<span
-										class="h-3 w-1 shrink-0 rounded-full"
-										style="background-color: {item.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
-									></span>
-									<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{item.title}</span>
-									<span class="tabular shrink-0 text-xs text-gray-500">{pretty(item.date)}</span>
+				<div class="grid gap-4 lg:grid-cols-2">
+					<div class="min-w-0" data-tour="review-loose">
+						{#if undecided.length === 0}
+							<p class="px-4 py-6 text-center text-sm text-gray-500">
+								Every one of them has an answer. Save it below.
+							</p>
+						{/if}
+						{#each looseByDay as day (day.date)}
+							<div class="eyebrow border-y border-gray-200 bg-gray-50 px-4 py-1.5 text-gray-600">
+								{day.label}
+							</div>
+							<ul class="divide-y divide-gray-200">
+								{#each day.items as item (item.id)}
+									<li class="flex items-center gap-3 px-4 py-2 hover:bg-gray-50">
+										<span
+											class="h-3 w-1 shrink-0 rounded-full"
+											style="background-color: {item.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
+										></span>
+										<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{item.title}</span>
+										<span class="tabular shrink-0 text-xs text-gray-500">{pretty(item.date)}</span>
 
-									<!-- Icons alone: four words on every row of twenty is a wall. -->
-									<div class="flex shrink-0 items-center gap-1">
-										<form method="post" action="?/resolve" use:enhance class="contents">
-											<input type="hidden" name="weekStart" value={data.reading.weekStart} />
-											<input type="hidden" name="instanceId" value={item.id} />
+										<!-- Icons alone: four words on every row of twenty is a wall. -->
+										<div class="flex shrink-0 items-center gap-1">
 											<button
-												type="submit"
-												name="status"
-												value="done"
+												type="button"
+												onclick={() => decide(item.id, 'done')}
 												class="icon-btn"
 												title="It happened after all"
 												aria-label="{item.title}: it happened after all"
@@ -257,55 +295,111 @@
 												<Icon name="check" />
 											</button>
 											<button
-												type="submit"
-												name="status"
-												value="skipped"
+												type="button"
+												onclick={() => decide(item.id, 'skipped')}
 												class="icon-btn"
 												title="It did not happen, and that is fine"
 												aria-label="{item.title}: skipped"
 											>
 												<Icon name="skip" />
 											</button>
-										</form>
-										<form method="post" action="?/carry" use:enhance class="contents">
-											<input type="hidden" name="weekStart" value={data.reading.weekStart} />
-											<input type="hidden" name="instanceId" value={item.id} />
 											<button
-												type="submit"
+												type="button"
+												onclick={() => decide(item.id, 'todo')}
 												class="icon-btn"
 												title="It still needs doing — put it on the todo list"
 												aria-label="{item.title}: onto the todo list"
 											>
 												<Icon name="archive" />
 											</button>
-										</form>
+											<button
+												type="button"
+												onclick={() => (givingADay = { id: item.id, title: item.title })}
+												class="icon-btn"
+												title="It still needs doing — give it a day"
+												aria-label="{item.title}: give it a day"
+											>
+												<Icon name="calendar" />
+											</button>
+										</div>
+									</li>
+								{/each}
+							</ul>
+						{/each}
+					</div>
+
+					<!-- The pile of decisions, and the one press that applies them. -->
+					<form
+						method="post"
+						action="?/settle"
+						use:enhance={() => {
+							return async ({ update }) => {
+								await update({ reset: false });
+								verdicts = {};
+							};
+						}}
+						class="min-w-0 border-t border-gray-200 lg:border-t-0 lg:border-l"
+					>
+						<input type="hidden" name="weekStart" value={data.reading.weekStart} />
+
+						<div class="eyebrow border-b border-gray-200 bg-gray-50 px-4 py-1.5 text-gray-600">
+							What you have decided
+						</div>
+
+						{#if decided.length === 0}
+							<p class="px-4 py-6 text-center text-sm text-gray-500">
+								Answer one on the left and it moves over here. Nothing is written until you save.
+							</p>
+						{:else}
+							<ul class="divide-y divide-gray-200">
+								{#each decided as item (item.id)}
+									<li class="flex items-center gap-3 px-4 py-2">
+										<input
+											type="hidden"
+											name="verdict"
+											value="{item.id}:{item.verb}{item.on ? `:${item.on}` : ''}"
+										/>
+										<span
+											class="h-3 w-1 shrink-0 rounded-full"
+											style="background-color: {item.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
+										></span>
+										<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{item.title}</span>
+										<span class="shrink-0 text-xs font-medium text-gray-600">
+											{VERB_LABELS[item.verb]}{item.on ? ` · ${pretty(item.on)}` : ''}
+										</span>
 										<button
 											type="button"
-											onclick={() => (givingADay = { id: item.id, title: item.title })}
-											class="icon-btn"
-											title="It still needs doing — give it a day"
-											aria-label="{item.title}: give it a day"
+											onclick={() => undecide(item.id)}
+											class="icon-btn shrink-0"
+											title="Put it back — nothing has happened yet"
+											aria-label="Undo the answer for {item.title}"
 										>
-											<Icon name="calendar" />
+											<Icon name="undo" />
 										</button>
-									</div>
-								</li>
-							{/each}
-						</ul>
-					{/each}
+									</li>
+								{/each}
+							</ul>
 
-					{#if form?.carried || form?.resolved}
-						<p class="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
-							{#if form?.carried}
-								{form.scheduled
-									? `Given a day: ${form.carried}.`
-									: `Carried ${form.carried} into the todo list.`}
-							{:else}
-								{form.resolved} settled.
-							{/if}
-						</p>
-					{/if}
+							<div
+								class="flex items-center justify-between gap-3 border-t border-gray-200 px-4 py-3"
+							>
+								<span class="text-xs text-gray-500">
+									{decided.length}
+									{decided.length === 1 ? 'answer' : 'answers'}, none of them written yet.
+								</span>
+								<button type="submit" class="btn btn-primary btn-sm" title="Apply every answer">
+									Save
+								</button>
+							</div>
+						{/if}
+					</form>
 				</div>
+
+				{#if form?.settled}
+					<p class="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
+						{form.settled} settled.
+					</p>
+				{/if}
 			{/if}
 		</Card>
 
@@ -476,7 +570,8 @@
 
 		The block did not happen and still needs to, on a date you can name — so
 		it becomes a todo with that date on it, which is the difference between
-		putting a thing off and deciding when to do it.
+		putting a thing off and deciding when to do it. Like every other answer
+		here it is only a decision until the week is saved.
 	-->
 	<Modal
 		open={givingADay !== null}
@@ -489,31 +584,28 @@
 		}}
 	>
 		<form
-			method="post"
-			action="?/carry"
-			use:enhance={() => {
-				return async ({ update }) => {
-					await update({ reset: false });
-					givingADay = null;
-					chosenDay = '';
-				};
+			onsubmit={(e) => {
+				e.preventDefault();
+				if (givingADay && chosenDay) decide(givingADay.id, 'todo', chosenDay);
+				givingADay = null;
+				chosenDay = '';
 			}}
 			class="space-y-3"
 		>
-			<input type="hidden" name="weekStart" value={data.reading.weekStart} />
-			<input type="hidden" name="instanceId" value={givingADay?.id ?? ''} />
 			<label class="block text-sm text-gray-700" for="give-a-day">On which day?</label>
 			<input
 				id="give-a-day"
-				name="scheduledDate"
 				type="date"
 				required
 				autocomplete="off"
 				bind:value={chosenDay}
+				title="The day it should be done"
 				class="input w-full"
 			/>
 			<div class="flex justify-end">
-				<button type="submit" class="btn btn-primary btn-sm">Put it on that day</button>
+				<button type="submit" class="btn btn-primary btn-sm" title="Put it on that day">
+					Put it on that day
+				</button>
 			</div>
 		</form>
 	</Modal>

@@ -172,8 +172,16 @@ async function tick(): Promise<void> {
 	}
 }
 
-/** Start it. Idempotent, because SvelteKit imports its hooks more than once. */
+/**
+ * Start it. Idempotent, because SvelteKit imports its hooks more than once.
+ *
+ * The first look happens on the next turn of the loop rather than here, so
+ * importing the hooks never touches the database. It did, and that made every
+ * test that loads them pay for a query against whatever database that test had
+ * — which under a parallel run was enough to time two of them out.
+ */
 export function startReminderClock(): void {
 	if (state.timer) return;
-	schedule();
+	const first = setTimeout(schedule, 0);
+	first.unref?.();
 }

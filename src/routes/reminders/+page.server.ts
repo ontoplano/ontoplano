@@ -1,5 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx, localDateOf } from '$lib/server/services/ctx';
+import { ensureBirthdayReminders } from '$lib/server/services/birthdays';
+import { upcomingDerived } from '$lib/server/services/reminder-sources';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
 	createFreeReminder,
@@ -27,8 +29,30 @@ import {
  */
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
+
+	/*
+	 * Today's birthdays are written here as well as by the delivery pass.
+	 *
+	 * Same reason `/api/reminders` does it: an instance with no push keys runs
+	 * no delivery, so a birthday would exist only for accounts that had set
+	 * push up. Idempotent by date, so the writers cannot make two.
+	 */
+	ensureBirthdayReminders(ctx.userId, ctx.now, ctx.tz);
+
 	return {
-		reminders: listReminders(ctx),
+		/** Today in the account's own zone, so the day field opens on it. */
+		today: localDateOf(ctx.now, ctx.tz),
+		/*
+		 * The rows that exist, minus the ones that are only ever a notification.
+		 *
+		 * The weekly-review nag is a sentence about now, not an appointment —
+		 * it belongs on the phone at seven in the morning and not in a list of
+		 * things that are going to happen. The dashboard already carries the
+		 * standing version of it.
+		 */
+		reminders: listReminders(ctx).filter((r) => r.subjectKind !== 'review'),
+		/** Birthdays and bills that are coming but are not rows yet. */
+		upcoming: upcomingDerived(ctx, ctx.now, ctx.tz),
 		ringtones: listRingtones(ctx),
 		sounds: soundChoices(ctx),
 		limits: { ringtones: MAX_RINGTONES, kilobytes: MAX_RINGTONE_BYTES / 1024 }
@@ -39,8 +63,13 @@ export const actions: Actions = {
 	create: async ({ request, locals }) => {
 		const form = await request.formData();
 		try {
+			// Two fields, one instant: the form asks the day and the time
+			// separately because a single datetime control is one box carrying
+			// two questions and looks it.
+			const day = String(form.get('day') ?? '').trim();
+			const time = String(form.get('time') ?? '').trim();
 			createFreeReminder(buildCtx(locals.user!.id), {
-				at: form.get('at'),
+				at: day && time ? `${day}T${time}` : '',
 				message: form.get('label'),
 				audible: form.get('audible') === 'on',
 				ringtoneId: form.get('ringtoneId')

@@ -5,6 +5,9 @@ import { reminders } from '../db/schema.js';
 import { billsDueBetween } from './bills.js';
 import type { Ctx } from './ctx.js';
 import { reviewPending } from './review.js';
+import { birthdayMessage } from './birthdays.js';
+import { listPeople } from './people.js';
+import type { ReminderKind } from './reminders.js';
 import { getGridHours } from '../settings.js';
 import { localOfInstant } from './time.js';
 
@@ -176,4 +179,74 @@ export function ensureBillReminders(ctx: Ctx, now: Date, tz: string): number {
 	}
 
 	return written;
+}
+
+/**
+ * What is coming, that is not a row yet.
+ *
+ * A reminder exists in the table only once it is nearly due — a birthday is
+ * written on the morning, a bill on the day it wants paying. That is right for
+ * delivering them and wrong for showing somebody what is ahead, which is what
+ * a page called Reminders is for. So the page asks for both: the rows that
+ * exist, and these, worked out on the spot and never stored.
+ *
+ * Derived rather than materialised on purpose. Writing sixty days of birthdays
+ * into the table would make the list right and the delivery wrong — every one
+ * of them would fire the moment it was written, because "due" is only a
+ * comparison against the clock.
+ */
+export type Upcoming = {
+	kind: ReminderKind;
+	/** Local wall-clock, the same shape a stored reminder carries. */
+	at: string;
+	message: string;
+};
+
+/** How far ahead the page looks. Two months covers a birthday you can act on. */
+export const UPCOMING_DAYS = 60;
+
+export function upcomingDerived(ctx: Ctx, now: Date, tz: string): Upcoming[] {
+	const today = dayOf(localOfInstant(now, tz));
+	const hour = String(getGridHours(ctx.userId).start).padStart(2, '0');
+	const out: Upcoming[] = [];
+
+	// Birthdays, from the address book rather than from anything stored.
+	for (const person of listPeople(ctx)) {
+		if (!person.birthday || !person.remindOnBirthday) continue;
+		const day = nextOccurrenceOf(person.birthday, today);
+		if (day === null || daysBetween(today, day) > UPCOMING_DAYS) continue;
+		out.push({
+			kind: 'person',
+			at: `${day}T${hour}:00:00`,
+			message: birthdayMessage(person.name, person.birthday, day)
+		});
+	}
+
+	// Bills that want paying, up to the same horizon.
+	for (const bill of billsDueBetween(ctx, today, addDays(today, UPCOMING_DAYS))) {
+		if (bill.paid) continue;
+		const money = bill.currency
+			? `${bill.currency} ${bill.amountExpected}`
+			: `${bill.amountExpected}`;
+		out.push({
+			kind: 'bill',
+			at: `${bill.date}T${hour}:00:00`,
+			message: `${bill.name} — ${money}, due ${bill.dueDate}`
+		});
+	}
+
+	return out.sort((a, b) => a.at.localeCompare(b.at));
+}
+
+/** The next time a `MM-DD` or `YYYY-MM-DD` birthday comes round, on or after a day. */
+function nextOccurrenceOf(birthday: string, onOrAfter: string): string | null {
+	const monthDay = birthday.slice(-5);
+	if (!/^\d{2}-\d{2}$/.test(monthDay)) return null;
+	const thisYear = `${onOrAfter.slice(0, 4)}-${monthDay}`;
+	if (thisYear >= onOrAfter) return thisYear;
+	return `${Number(onOrAfter.slice(0, 4)) + 1}-${monthDay}`;
+}
+
+function daysBetween(from: string, to: string): number {
+	return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
 }

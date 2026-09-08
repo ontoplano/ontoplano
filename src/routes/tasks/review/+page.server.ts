@@ -10,6 +10,8 @@ import {
 	resolveLoose,
 	readNote,
 	saveNote,
+	settleWeek,
+	type Verdict,
 	weekStartOf
 } from '$lib/server/services/review';
 import {
@@ -141,6 +143,36 @@ export const actions: Actions = {
 				raw
 			);
 			return { success: true, resolved };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * Everything marked up on the page, applied at once.
+	 *
+	 * The verdicts arrive as one field per answered block —
+	 * `verdict=<id>:<verb>[:<date>]` — because a form posts repeated names as a
+	 * list and this is one list rather than four parallel ones that could get
+	 * out of step with each other.
+	 */
+	settle: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			const verdicts: Verdict[] = [];
+			for (const raw of formData.getAll('verdict')) {
+				const [id, verb, date] = String(raw).split(':');
+				if (!Number.isInteger(Number(id))) continue;
+				if (verb !== 'done' && verb !== 'skipped' && verb !== 'todo') continue;
+				verdicts.push({ id: Number(id), verb, ...(date ? { date } : {}) });
+			}
+
+			const settled = settleWeek(
+				buildCtx(locals.user!.id),
+				weekStartOf(formData.get('weekStart'), new Date()),
+				verdicts
+			);
+			return { success: true, settled };
 		} catch (e) {
 			return toActionFailure(e);
 		}

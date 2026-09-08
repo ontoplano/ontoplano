@@ -588,3 +588,58 @@ test.describe('dragging out an hour', () => {
 		});
 	});
 });
+
+/**
+ * Settling a week is a decision, then a commit.
+ *
+ * Answering a row used to apply immediately — twenty blocks was twenty round
+ * trips, and a misclick was a thing that had already happened. Answers land in
+ * a second column you can read back and change your mind about, and nothing is
+ * written until you press save.
+ */
+test.describe('closing a week', () => {
+	test('answers stack up on the right and nothing happens until you save', async ({ page }) => {
+		test.setTimeout(180_000);
+		await register(page, `settle-${Date.now()}@test.invalid`);
+		await visit(page, '/tasks/review');
+		await expect(page.locator('main')).toBeVisible();
+		await page.waitForTimeout(600);
+
+		const left = page.locator('li:has(button[title="It happened after all"])');
+		const before = await left.count();
+		expect(before, 'the seeded week has blocks that did not happen').toBeGreaterThan(2);
+
+		// Three answers, three different verbs.
+		await left
+			.nth(0)
+			.getByRole('button', { name: /it happened after all$/ })
+			.click();
+		await left
+			.nth(0)
+			.getByRole('button', { name: /skipped$/ })
+			.click();
+		await left
+			.nth(0)
+			.getByRole('button', { name: /onto the todo list$/ })
+			.click();
+
+		const decided = page.locator('form[action="?/settle"] li');
+		await expect(decided).toHaveCount(3);
+		await expect(left).toHaveCount(before - 3);
+		await expect(page.getByText(/none of them written yet/)).toBeVisible();
+
+		// Changing your mind puts one back, which is the point of not writing yet.
+		await decided
+			.first()
+			.getByRole('button', { name: /^Undo the answer/ })
+			.click();
+		await expect(decided).toHaveCount(2);
+		await expect(left).toHaveCount(before - 2);
+
+		// Only now is anything written.
+		await page.locator('form[action="?/settle"]').getByRole('button', { name: 'Save' }).click();
+		await expect(page.getByText('2 settled.')).toBeVisible({ timeout: 20_000 });
+		await expect(decided).toHaveCount(0);
+		await expect(left).toHaveCount(before - 2);
+	});
+});

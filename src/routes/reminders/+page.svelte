@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import Card from '$lib/components/Card.svelte';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -26,7 +28,45 @@
 		person: 'Birthdays'
 	};
 
-	const upcoming = $derived(data.reminders.filter((r) => !r.dismissedAt));
+	/**
+	 * What is coming: the rows that exist and the ones that do not yet.
+	 *
+	 * A birthday becomes a row on the morning of it and a bill on the day it
+	 * wants paying, which is right for firing them and useless for showing
+	 * somebody what is ahead. The derived ones have no id, so they carry no
+	 * buttons — there is nothing to dismiss about a birthday in November.
+	 */
+	type Listed = {
+		key: string;
+		id: number | null;
+		message: string;
+		remindAt: string;
+		subjectKind: string;
+		shown: boolean;
+	};
+
+	const upcoming = $derived<Listed[]>(
+		[
+			...data.reminders
+				.filter((r) => !r.dismissedAt)
+				.map((r) => ({
+					key: `set:${r.id}`,
+					id: r.id,
+					message: r.message,
+					remindAt: r.remindAt,
+					subjectKind: r.subjectKind,
+					shown: Boolean(r.deliveredAt)
+				})),
+			...data.upcoming.map((u, i) => ({
+				key: `soon:${i}`,
+				id: null,
+				message: u.message,
+				remindAt: u.at,
+				subjectKind: u.kind,
+				shown: false
+			}))
+		].sort((a, b) => a.remindAt.localeCompare(b.remindAt))
+	);
 
 	function when(at: string): string {
 		const d = new Date(at.length === 16 ? at + ':00' : at);
@@ -71,33 +111,66 @@
 	-->
 	<div data-tour="set-alarm">
 		<Card title="Set one" description="A time and what to say. It is about nothing else.">
+			<!--
+				A day and a time, not one field with six segments in it.
+
+				`datetime-local` renders as `dd/mm/yyyy, --:--` — one control
+				carrying two different questions, which is why it was both ugly and
+				the widest thing on the row. Two fields say the same thing, fit a
+				phone, and let somebody set a time for today without touching the
+				date at all.
+			-->
 			<form method="post" action="?/create" use:enhance class="space-y-3">
-				<div class="flex flex-wrap items-end gap-3">
-					<label class="flex flex-col gap-1 text-sm text-gray-700">
-						When
-						<input name="at" type="datetime-local" required autocomplete="off" class="input" />
-					</label>
-					<label class="flex min-w-48 flex-1 flex-col gap-1 text-sm text-gray-700">
-						What to say
+				<FormGrid>
+					<Field label="Day" span={3} required>
+						<input
+							name="day"
+							type="date"
+							required
+							autocomplete="off"
+							value={data.today}
+							title="Which day it should go off"
+							class="input"
+						/>
+					</Field>
+					<Field label="Time" span={3} required>
+						<input
+							name="time"
+							type="time"
+							required
+							autocomplete="off"
+							title="What time it should go off"
+							class="input"
+						/>
+					</Field>
+					<Field label="What to say" span={6} required>
 						<OneLine name="label" required placeholder="e.g. take the bread out" class="input" />
-					</label>
-				</div>
+					</Field>
+				</FormGrid>
 
 				<div class="flex flex-wrap items-center gap-4">
-					<label class="flex items-center gap-2 text-sm text-gray-700">
+					<label
+						class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
+						title="Play a sound as well as showing it. Off means it only shows."
+					>
 						<input type="checkbox" name="audible" class="size-4" />
 						Make a sound
 					</label>
-					<label class="flex items-center gap-2 text-sm text-gray-700">
-						Which
-						<select name="ringtoneId" class="select">
-							<option value="">The one the app comes with</option>
+					<label
+						class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
+						title="Which sound this one plays"
+					>
+						Sound
+						<select name="ringtoneId" class="select w-44">
+							<option value="">Default</option>
 							{#each data.ringtones as tone (tone.id)}
 								<option value={tone.id}>{tone.name}</option>
 							{/each}
 						</select>
 					</label>
-					<button type="submit" class="btn btn-primary btn-sm ml-auto">Set it</button>
+					<button type="submit" class="btn btn-primary btn-sm ml-auto" title="Set this reminder">
+						Set it
+					</button>
 				</div>
 			</form>
 		</Card>
@@ -113,19 +186,23 @@
 			/>
 		{:else}
 			<ul class="divide-y divide-gray-200">
-				{#each upcoming as reminder (reminder.id)}
+				{#each upcoming as reminder (reminder.key)}
 					<li class="flex items-center gap-3 px-4 py-2">
 						<span class="shrink-0 text-gray-400"><Icon name="clock" size={14} /></span>
 						<span class="min-w-0 flex-1">
 							<span class="block truncate text-sm text-gray-900">{reminder.message}</span>
 							<span class="text-xs text-gray-500">
 								{KIND_LABELS[reminder.subjectKind] ?? reminder.subjectKind}
-								{#if reminder.deliveredAt}· already shown{/if}
+								{#if reminder.shown}· already shown{/if}
 							</span>
 						</span>
 						<span class="tabular shrink-0 text-xs text-gray-500">{when(reminder.remindAt)}</span>
 
-						{#if confirmingDelete === reminder.id}
+						{#if reminder.id === null}
+							<!-- Nothing to remove: it is not a row, it is a date in the
+							     address book or on a bill. -->
+							<span class="w-7 shrink-0"></span>
+						{:else if confirmingDelete === reminder.id}
 							<form method="post" action="?/remove" use:enhance class="flex shrink-0 gap-1">
 								<input type="hidden" name="id" value={reminder.id} />
 								<button type="submit" class="btn btn-sm btn-danger" use:armed>Confirm?</button>
@@ -177,16 +254,16 @@
 								Sound
 							</label>
 							<select name="ringtoneId" class="select w-56 shrink-0">
-								<option value="" selected={choice.ringtoneId === null}>
-									The one the app comes with
-								</option>
+								<option value="" selected={choice.ringtoneId === null}> Default </option>
 								{#each data.ringtones as tone (tone.id)}
 									<option value={tone.id} selected={choice.ringtoneId === tone.id}
 										>{tone.name}</option
 									>
 								{/each}
 							</select>
-							<button type="submit" class="btn btn-sm">Save</button>
+							<button type="submit" class="btn btn-sm" title="Save what this kind sounds like">
+								Save
+							</button>
 						</form>
 					</li>
 				{/each}

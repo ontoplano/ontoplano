@@ -10,6 +10,28 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.103.0 — 2026-09-08
+
+- **Closing a week is a decision, then a commit.** Answering a row applied it
+  immediately, so twenty blocks was twenty round trips and a misclick was
+  already done. The card has two columns now: what is left on the left, and
+  what you have decided on the right, each saying what will happen to it. You
+  can put any of them back. Nothing is written until you press save.
+- **A reminder asks for a day and a time separately.** One `dd/mm/yyyy, --:--`
+  control is two questions in one box, and it looked it — on the phone most of
+  all.
+- **What is coming shows before it is due.** A birthday becomes a reminder on
+  the morning of it, which is right for firing it and useless for seeing what
+  is ahead — so the page works out the next two months of birthdays and bills
+  itself. Nothing to run: it is right on dev, staging and production the first
+  time the page is opened.
+- **The weekly-review nag is a notification, not an appointment.** It is sent
+  and it no longer sits in a list of things that are going to happen; the
+  dashboard already carries the standing version.
+- **"The one the app comes with" is just "Default".**
+- **Short is red.** It is the one filter on the inventory that is about
+  something being wrong rather than about which list you are reading.
+
 ## 0.102.0 — 2026-09-08
 
 - **Reminders are a room of their own.** Everything with a time on it in one

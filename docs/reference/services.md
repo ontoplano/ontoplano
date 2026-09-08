@@ -2715,6 +2715,11 @@ Throw away the current sleep and ask again. Cheap; call it freely.
 
 Start it. Idempotent, because SvelteKit imports its hooks more than once.
 
+The first look happens on the next turn of the loop rather than here, so
+importing the hooks never touches the database. It did, and that made every
+test that loads them pay for a query against whatever database that test had
+— which under a parallel run was enough to time two of them out.
+
 ## reminder-delivery
 
 The pass that makes a reminder arrive with the app shut.
@@ -2781,6 +2786,12 @@ situations, and one of them is an emergency:
 
 Only for bills that are actually unpaid, and only inside a fortnight, so a
 year's worth of yearly bills is not written into the table in advance.
+
+#### `upcomingDerived(ctx, now, tz)`
+
+### Types
+
+- `Upcoming` — What is coming, that is not a row yet.
 
 ## reminders
 
@@ -3049,10 +3060,13 @@ Ids are checked against the week's own loose list rather than trusted, which
 makes this ownership-safe by construction: an id from another account is not
 in that list, so nothing happens and nothing says so (I3).
 
+#### `settleWeek(ctx, weekStart, verdicts)`
+
 ### Types
 
 - `WeekReading`
 - `Loose` — An unfinished block, in the shape the review offers to carry it.
+- `Verdict` — Settle a week in one go.
 
 ## ringtones
 

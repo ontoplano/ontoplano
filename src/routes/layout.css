@@ -949,6 +949,32 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
+	 * One position in a segmented control that means "something is wrong".
+	 *
+	 * Being short of things is the only filter on the inventory that is about a
+	 * problem rather than about which list you are reading, and it should not
+	 * look like the other two. Red rather than the app's blue, which everywhere
+	 * else in here means good — the person who wrote this is colourblind, so the
+	 * pair is blue and red and never green and red.
+	 */
+	.seg > .seg-alarm[aria-pressed='true'] {
+		background-color: var(--color-red-600);
+		color: var(--color-white);
+	}
+
+	.seg > .seg-alarm {
+		color: var(--color-red-700);
+	}
+
+	.seg > .seg-alarm:hover {
+		color: var(--color-red-800);
+	}
+
+	.seg > .seg-alarm[aria-pressed='true']:hover {
+		color: var(--color-white);
+	}
+
+	/*
 	 * A toggle that is on says so through the same vocabulary everywhere.
 	 * Pages that tint their active filters (wishlist orange, inventory cyan)
 	 * override with utilities, which win over this layer.

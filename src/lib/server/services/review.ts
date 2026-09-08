@@ -396,3 +396,48 @@ export function resolveLoose(
 
 	return mine.length;
 }
+
+/**
+ * Settle a week in one go.
+ *
+ * The review used to ask for one answer at a time, so closing a week of twenty
+ * blocks was twenty round trips and twenty chances to lose your place. You
+ * mark them up on the page — done, skipped, onto the todo list, on this day —
+ * and this applies the lot when you press save.
+ *
+ * Every id is checked against the week's own loose list rather than trusted,
+ * which makes it ownership-safe by construction: an id from another account is
+ * not in that list, so nothing happens to it and nothing says so.
+ */
+export type Verdict = { id: number; verb: 'done' | 'skipped' | 'todo'; date?: string };
+
+export function settleWeek(ctx: Ctx, weekStart: string, verdicts: Verdict[]): number {
+	if (verdicts.length === 0) return 0;
+
+	const { loose } = readWeek(ctx, weekStart);
+	const byId = new Map(loose.map((l) => [l.id, l]));
+	let settled = 0;
+
+	for (const verdict of verdicts) {
+		const item = byId.get(verdict.id);
+		if (!item) continue;
+
+		if (verdict.verb === 'todo') {
+			createTodo(ctx, {
+				title: item.title,
+				notes: `Planned for ${item.date} and not done.`,
+				categoryId: item.categoryId,
+				...(verdict.date ? { scheduledDate: verdict.date } : {})
+			});
+			// Skipped is the honest status for what is left behind: the block did
+			// not happen, and what still needs doing is now a todo.
+			setInstanceStatus(ctx, item.id, 'skipped');
+		} else {
+			setInstanceStatus(ctx, item.id, verdict.verb);
+		}
+
+		settled++;
+	}
+
+	return settled;
+}
