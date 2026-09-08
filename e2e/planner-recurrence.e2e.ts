@@ -54,6 +54,11 @@ test('a block that comes back every two days lands on every second day', async (
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every N days', exact: true }).click();
 	await form.locator('[name="recurrenceInterval"]').fill('2');
+	// Said, not assumed. The form counts from today unless told otherwise, so a
+	// test that wanted the rhythm to start on the window's first day passed only
+	// when it happened to be run on that day — which is how this went green on a
+	// Monday and red on the Tuesday.
+	await form.locator('[name="recurrenceAnchor"]').fill(anchor);
 	await form.locator('[name="startTime"]').fill('09:00');
 	await form.locator('[name="label"]').fill('every-other-day');
 	await form.locator('[name="mode"]').selectOption('category');
@@ -87,6 +92,7 @@ test('a fortnightly block skips the week between', async ({ page }) => {
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every N weeks', exact: true }).click();
 	await form.locator('[name="recurrenceInterval"]').fill('2');
+	await form.locator('[name="recurrenceAnchor"]').fill(dayAfter(start, 3));
 	await form.locator('[name="startTime"]').fill('10:00');
 	await form.locator('[name="label"]').fill('the-bins');
 	await form.locator('[name="mode"]').selectOption('category');
@@ -148,6 +154,7 @@ test('skipping one occurrence leaves the block’s other days alone', async ({ p
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every N days', exact: true }).click();
 	await form.locator('[name="recurrenceInterval"]').fill('2');
+	await form.locator('[name="recurrenceAnchor"]').fill(anchor);
 	await form.locator('[name="startTime"]').fill('09:00');
 	await form.locator('[name="label"]').fill('the-stretches');
 	await form.locator('[name="mode"]').selectOption('category');
@@ -198,6 +205,7 @@ test('editing a block does not quietly shift the rhythm it already had', async (
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every N days', exact: true }).click();
 	await form.locator('[name="recurrenceInterval"]').fill('2');
+	await form.locator('[name="recurrenceAnchor"]').fill(anchor);
 	await form.locator('[name="startTime"]').fill('09:00');
 	await form.locator('[name="label"]').fill('the-walk');
 	await form.locator('[name="mode"]').selectOption('category');
@@ -414,6 +422,39 @@ test.describe('the preview on the grid', () => {
 		await expect(form).toBeHidden();
 		await expect(real).toHaveCount(1);
 		await expect(preview).toHaveCount(0);
+	});
+
+	test('a one-off is previewed on its own date, whatever weekday that is', async ({ page }) => {
+		test.setTimeout(180_000);
+		await register(page, `preview-once-${Date.now()}@test.invalid`);
+
+		// A Thursday, chosen because it is not the weekday a block defaults to.
+		// The one-off preview used to be built through the repeating path, which
+		// asks a recurrence rule whether the date qualifies — and a one-off has a
+		// weekday nobody sets, so it drew only on Mondays. Every other day it
+		// drew nothing and, since the block being edited gives way to its
+		// preview, editing a one-off made it vanish off the grid.
+		const thursday = dayAfter(monday(), 3);
+		await visit(page, `/tasks/plan?view=day&from=${thursday}`);
+		await expect(page.locator('.ec-main')).toBeVisible();
+		await page.waitForTimeout(600);
+
+		await page.getByRole('button', { name: '+ New' }).click();
+		const form = page.getByRole('dialog');
+		await form.getByRole('button', { name: 'Once only', exact: true }).click();
+		await form.locator('[name="mode"]').selectOption('category');
+		await form.locator('[name="label"]').fill('just-this-once');
+		await form.locator('[name="startTime"]').fill('11:00');
+		await expect(page.locator('.og-event--preview')).toHaveCount(1);
+
+		await form.getByRole('button', { name: /Save block|Add one-off|Add repeating block/ }).click();
+		await expect(form).toBeHidden({ timeout: 20_000 });
+		await expect(page.getByText('just-this-once', { exact: true })).toBeVisible();
+
+		// And reopening it leaves it on the grid rather than taking it away.
+		await page.getByText('just-this-once', { exact: true }).first().click();
+		await expect(form).toBeVisible();
+		await expect(page.locator('.og-event--preview:has-text("just-this-once")')).toHaveCount(1);
 	});
 
 	test('is brought into view when it is at an hour the grid is not showing', async ({ page }) => {

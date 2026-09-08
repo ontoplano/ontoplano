@@ -14,6 +14,7 @@
  *   node scripts/build-badges.mjs           write them
  *   node scripts/build-badges.mjs --check   fail if what is on disk is stale
  */
+import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -110,12 +111,36 @@ function badge({ label, value, color = BLUE, big = false }) {
 `;
 }
 
-const version = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
+/*
+ * The released version, which is not the version in package.json.
+ *
+ * package.json is what is being written; the badge sits next to a link to
+ * /releases/latest and is read as what you can download. It said v0.101.0
+ * while the newest release was v0.94.0 — seven versions of unreleased work
+ * announced as available. The newest tag is what was released, and this
+ * project tags every release, so that is what it names.
+ *
+ * A clone with no tags — CI usually fetches one commit — gets nothing to
+ * check against, and the check skips rather than failing on an absence.
+ */
+function releasedVersion() {
+	try {
+		return execFileSync('git', ['describe', '--tags', '--abbrev=0'], {
+			cwd: ROOT,
+			encoding: 'utf8',
+			stdio: ['ignore', 'pipe', 'ignore']
+		}).trim();
+	} catch {
+		return null;
+	}
+}
+
+const released = releasedVersion();
 
 const BADGES = {
 	// The one thing a stranger should press, and what it costs to press it.
 	'try-the-demo': badge({ label: 'try the demo', big: true }),
-	release: badge({ label: 'release', value: `v${version}` }),
+	...(released ? { release: badge({ label: 'release', value: released }) } : {}),
 	licence: badge({ label: 'licence', value: 'AGPL-3.0' }),
 	'host-it': badge({ label: 'host it', value: 'yourself', color: SLATE })
 };
@@ -137,7 +162,11 @@ for (const [name, svg] of Object.entries(BADGES)) {
 
 if (CHECK) {
 	if (stale > 0) process.exit(1);
-	console.log('badges: up to date');
+	if (!released) {
+		console.log('badges: up to date (no tags here, so the release badge was not checked)');
+	} else {
+		console.log(`badges: up to date, release ${released}`);
+	}
 } else {
 	console.log(`badges: wrote ${Object.keys(BADGES).length} to .github/badges/`);
 }

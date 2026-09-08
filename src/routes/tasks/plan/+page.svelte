@@ -1615,10 +1615,19 @@
 	const previewEvents = $derived.by(() => {
 		const slot = previewSlot;
 		if (!slot || slot.durationMinutes <= 0 || !/^\d{2}:\d{2}/.test(slot.startTime)) return [];
+		/*
+		 * A one-off is a date, not a rhythm.
+		 *
+		 * This used to build it through the repeating path, which asks a
+		 * recurrence rule whether the date qualifies — and a one-off carries a
+		 * weekday nobody sets, so the answer was "only on Mondays". Every other
+		 * day of the week it drew nothing, and because the block being edited
+		 * gives way to its preview, editing a one-off made it disappear.
+		 */
 		const events =
 			repeat === 'once'
 				? windowDates.includes(formDate)
-					? buildSlotEventsForDates([slot], [formDate], data.categories)
+					? buildExceptionalEvents([{ ...slot, date: formDate, id: slot.id }], data.categories)
 					: []
 				: buildSlotEventsForDates([slot], windowDates, data.categories);
 		return events.map((e, i) => ({
