@@ -88,3 +88,7 @@ coverage/
 # Built packages, and the tree they are staged in.
 dist/
 .package-work/
+
+# claude-docker local state (may contain credentials)
+.claude-docker/
+.claude-docker-EMERGENCY-BACKUP-*.tar.gz

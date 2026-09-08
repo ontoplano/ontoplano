@@ -86,8 +86,8 @@ if (cleartext) {
 			'    so the app cannot prove it owns the origin and Chrome keeps the bar.\n' +
 			'  - No offline. Service workers only run in a secure context, so the one\n' +
 			'    this app ships never registers over http.\n' +
-			'Put the site behind HTTPS — Tailscale Serve and Caddy both do this for a\n' +
-			'LAN address — and both go away with no change to the app.\n'
+			'Put the site behind HTTPS — a domain you own, or a tunnel from a machine\n' +
+			'that has one — and both go away with no change to the app.\n'
 	);
 }
 

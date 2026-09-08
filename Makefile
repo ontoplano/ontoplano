@@ -73,7 +73,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% badges android-project _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: _billing-in-build vars print-% badges android-project _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -928,39 +928,49 @@ $(APK):
 # HTTPS. On plain http there is no way to hide the bar, and no service worker
 # either, since browsers only run those in a secure context.
 #
-# Two ways to get one, and they trade different things.
+# HTTPS however you already have it.
 #
-# `https-local` uses Caddy's own certificate authority. Nothing leaves the
-# network and no third party is involved at any point — but a certificate
-# signed by a CA nobody has heard of is not trusted, so the phone has to be
-# told about that CA once. That is the whole cost, and it is paid once per
-# device.
+# The one requirement is a certificate a browser trusts, on a name the phone can
+# reach. There is no way to fake that and no shortcut worth documenting: a
+# domain you own with Caddy or nginx in front of the app, or a tunnel from a
+# machine that has one, are the two shapes this takes.
 #
-# `https-tailscale` gets a real, publicly-trusted certificate for a name on
-# your tailnet, so nothing has to be installed on the phone. The client is
-# open source (BSD-3); the coordination server it talks to is not, and the
-# certificate is issued through it. That is the trade: no setup on the device,
-# one company in the path.
+# `https-local` is for when you have neither. It serves the app through Caddy's
+# own certificate authority — nothing leaves the network and no third party is
+# involved at any point — and the price is that a certificate signed by a CA
+# nobody has heard of is not trusted until the phone is told about it. Once per
+# device, and then the browser treats it as a secure context: notifications,
+# installing it as an app, and offline all start working.
+#
+# It is not enough for the Android app's URL bar. That is Digital Asset Links,
+# verified by the browser's own network stack rather than by the page, and a
+# privately-issued certificate does not satisfy it. For that you need a real
+# one.
 
 # A certificate this machine signs itself, and a phone that has been told to
 # trust it. No account, no third party, nothing leaving the network.
 #
 #   make https-local
 #
-# Then, once, on the phone: open http://<this machine>:2019/ontoplano-ca.crt
-# and install it. Android calls it "CA certificate" under Encryption &
-# credentials; iOS wants it enabled in About → Certificate Trust Settings.
+# Then, once, on the phone: copy the CA it names onto the device and install it.
+# Android calls it "CA certificate" under Encryption & credentials; iOS wants it
+# enabled in About -> Certificate Trust Settings.
 https-local:
-	@command -v caddy >/dev/null || { 		echo "caddy is not installed."; 		echo "  arch:   sudo pacman -S caddy"; 		echo "  debian: sudo apt install caddy"; 		exit 1; 	}
+	@command -v caddy >/dev/null || { \
+		echo "caddy is not installed."; \
+		echo "  arch:   sudo pacman -S caddy"; \
+		echo "  debian: sudo apt install caddy"; \
+		exit 1; \
+	}
 	@test -n "$(LAN_IP)" || { echo "Could not work out this machine's LAN address."; exit 1; }
 	@printf '%s\n' \
 		"{" \
-		"  admin :2019" \
+		"  admin off" \
 		"}" \
 		"https://$(LAN_IP) {" \
 		"  tls internal" \
 		"  reverse_proxy 127.0.0.1:$(APP_PORT)" \
-		"}" > /tmp/ontoplano-caddy.json.caddyfile
+		"}" > /tmp/ontoplano-caddy.caddyfile
 	@echo "Serving http://127.0.0.1:$(APP_PORT) as https://$(LAN_IP)"
 	@echo
 	@echo "On the phone, once: install this machine's CA, then open"
@@ -970,33 +980,7 @@ https-local:
 	@echo "  ~/.local/share/caddy/pki/authorities/local/root.crt"
 	@echo
 	@echo "Ctrl-C stops it."
-	@caddy run --config /tmp/ontoplano-caddy.json.caddyfile --adapter caddyfile
-
-https-tailscale:
-	@command -v tailscale >/dev/null || { \
-		echo "tailscale is not installed. https://tailscale.com/download"; \
-		exit 1; \
-	}
-	@tailscale status >/dev/null 2>&1 || { echo "Not logged in: tailscale up"; exit 1; }
-	@host=$$(tailscale status --json | python3 -c \
-		'import json,sys; print(json.load(sys.stdin)["Self"]["DNSName"].rstrip("."))'); \
-	if [ -z "$$host" ]; then echo "Could not read this machine's tailnet name."; exit 1; fi; \
-	echo "Serving http://127.0.0.1:$(APP_PORT) as https://$$host"; \
-	tailscale serve --bg --https=443 http://127.0.0.1:$(APP_PORT) || exit 1; \
-	echo; \
-	echo "Now point the app at it. In the service environment:"; \
-	echo "  ORIGIN=https://$$host"; \
-	echo "  ONTOPLANO_TRUST_PROXY=true    # so rate limiting sees the real client"; \
-	echo "  ONTOPLANO_HTTPS=true          # enables HSTS"; \
-	echo "  ANDROID_CERT_FINGERPRINTS=$$(make -s android-fingerprint 2>/dev/null | head -1)"; \
-	echo; \
-	echo "Then rebuild the app against it:"; \
-	echo "  make android ONTOPLANO_ORIGIN=https://$$host"; \
-	echo "  make android-uninstall && make android-install"
-
-https-tailscale-off:
-	@tailscale serve --https=443 off || true
-	@echo "Stopped. Remember to put ORIGIN back to the http address."
+	@caddy run --config /tmp/ontoplano-caddy.caddyfile --adapter caddyfile
 
 # ─── Clean ────────────────────────────────────────────────────────────────────
 

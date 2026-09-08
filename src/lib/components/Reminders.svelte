@@ -189,7 +189,8 @@
 	 *
 	 * `make https-local` is the way out: it serves the dev app over HTTPS with a
 	 * certificate this machine signs, which is a secure context once the phone
-	 * has been told to trust it. `make https-tailscale` is the other way.
+	 * has been told to trust it. A real certificate on a domain you own does the
+	 * same with nothing to install on the device.
 	 */
 	const insecure = $derived(
 		browser && !window.isSecureContext && typeof Notification === 'undefined'
@@ -242,7 +243,7 @@
 							<span class="tabular">{location.protocol}//{location.host}</span>. On your own machine
 							<span class="tabular">localhost</span>
 							counts; from another device it does not.
-							<span class="tabular">make https-tailscale</span> serves the dev app over HTTPS.
+							<span class="tabular">make https-local</span> serves the dev app over HTTPS.
 						</p>
 					{/if}
 				</div>

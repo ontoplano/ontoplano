@@ -10,6 +10,17 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.106.0 — 2026-09-08
+
+- **The Tailscale route is gone.** It was one company in the path for something
+  that does not need one. What is left is the truth: HTTPS needs a certificate
+  a browser trusts on a name the phone can reach, which means a domain you own
+  or a tunnel from a machine that has one — and `make https-local` for when you
+  have neither, which signs its own and asks the phone to trust it once. The
+  Android documentation says plainly which of those hides the URL bar, since a
+  private authority satisfies a service worker and does not satisfy Digital
+  Asset Links.
+
 ## 0.105.0 — 2026-09-08
 
 - **One and three days join the window buttons.** "What is today" and "what is

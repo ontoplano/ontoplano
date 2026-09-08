@@ -182,11 +182,10 @@
 			Nothing can reach this browser: notifications need HTTPS and this page is on
 			<span class="tabular">{origin}</span>. On the machine running it,
 			<span class="tabular">localhost</span> counts as secure; from another device it does not.
-			<span class="tabular">make https-local</span> serves it over HTTPS with a certificate this
-			machine signs — nothing leaves the network, and the phone is told once to trust it.
-			<span class="tabular">make https-tailscale</span> is the other way: nothing to install on the phone,
-			one company in the path. Either turns on reminders, installing it as an app, and offline, all at
-			once.
+			<span class="tabular">make https-local</span> serves it over HTTPS with a certificate this machine
+			signs — nothing leaves the network, and the phone is told once to trust it. A real certificate on
+			a domain you own does the same with nothing to install. Either turns on reminders, installing it
+			as an app, and offline, all at once.
 		</Banner>
 	{/if}
 

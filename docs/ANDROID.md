@@ -133,9 +133,7 @@ Two things cannot be patched, and the build warns about both:
   app ships never registers over `http://`. The APK is then a launcher icon
   around the live site.
 
-Both go away with HTTPS and no change to the app. For a LAN address the two
-cheap routes are Tailscale Serve, which issues a real certificate for a
-`*.ts.net` name, and Caddy with a DNS challenge against a domain you own.
+Both go away with HTTPS and no change to the app. What that takes is below.
 
 ## Getting rid of the URL bar
 
@@ -147,36 +145,35 @@ Verification is **only checked over HTTPS**. On `http://192.168.x.x:1493` there
 is no way to hide the bar, no matter what fingerprints are configured — and no
 service worker either, so no offline. One change fixes both.
 
-For a machine with no public address, Tailscale is the least painful route: it
-issues a real certificate for a name it controls, and nothing is exposed or
-port-forwarded.
+It needs a certificate a browser already trusts, on a name the phone can reach.
+There is no way around that and no shortcut worth writing down. Two shapes it
+takes:
+
+- **A domain you own**, with Caddy or nginx in front of the app and a
+  DNS-01 challenge. Point it at `127.0.0.1:1493`.
+- **A tunnel from a machine that has one** — a small VPS with a real address,
+  reverse-proxying to your machine. This is also the answer for a home
+  connection behind CGNAT, where nothing can be port-forwarded at all.
+
+Either way, once the app answers on `https://something.you.own`:
 
 ```sh
-make https-tailscale
-```
-
-That prints the origin and the environment to set. Then:
-
-```sh
-make android ONTOPLANO_ORIGIN=https://<your-machine>.ts.net
+make android ONTOPLANO_ORIGIN=https://something.you.own
 make android-uninstall && make android-install
 ```
 
 The uninstall is needed whenever the signing key changed; if it has not, the
 install goes over the top.
 
-`make https-tailscale` points at the app directly rather than through a reverse
-proxy in front of it. If you run one, note that it will not see this traffic —
-and that a proxy bound to `127.0.0.1` is unreachable from a phone anyway, which
-is why the app is usually reached on the LAN address instead.
+Note that a proxy bound to `127.0.0.1` is unreachable from a phone, which is
+why a LAN address gets used instead — and why the LAN address is exactly the
+case that has no certificate.
 
-If you already own a domain, Caddy with a DNS-01 challenge gets the same result
-without Tailscale — point it at `127.0.0.1:1493` and set the same three
-variables.
-
-`mkcert` and other private CAs are not a shortcut here: the certificate has to
-be trusted by the browser doing the verification, and a locally-issued one
-generally is not. Untested, so treat it as unlikely rather than merely fiddly.
+`mkcert`, `make https-local` and other private authorities are **not** a
+shortcut for this. Digital Asset Links is checked by the browser's own network
+stack rather than by the page, and a privately-issued certificate does not
+satisfy it — installing the CA on the phone is enough to make pages load and
+service workers run, and is not enough to hide the URL bar.
 
 ## Removing the URL bar
 
