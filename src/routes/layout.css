@@ -2442,12 +2442,12 @@ html .ec .ec-event.og-selected {
 /*
  * What floats gets out of the way of a menu being used.
  *
- * A reminder card and the radial menu are both fixed above the page, and both
- * are right to be: one so it is noticed, the other because a finger is on it.
- * The result was a toast lying across the middle of the pie, hiding the wedges
+ * An undo toast and the radial menu are both fixed above the page, and both are
+ * right to be: one so it is noticed, the other because a finger is on it. The
+ * result was a toast lying across the middle of the pie, hiding the wedges
  * somebody was aiming at. Raising one above the other only decides which of two
  * problems you get, so the floating layers hide for the length of the gesture —
- * a pie is open for a second or two, and the card is still there afterwards.
+ * a pie is open for a second or two, and the toast is still there afterwards.
  *
  * `RadialMenu.svelte` sets the attribute; anything fixed and interruptive wears
  * the class.

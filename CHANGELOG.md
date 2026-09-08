@@ -10,6 +10,20 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.111.0 — 2026-09-08
+
+- **Reminders no longer appear twice.** A reminder falling due used to raise a
+  notification _and_ float a card over the app with its own × to close — two
+  things to dismiss for one thing that happened, and the notification is the
+  better of the two since it arrives whether or not the app is in front. The
+  card is gone. Nothing else changed: the same reminders arrive at the same
+  time and make the same sound, and dismissing one is the Reminders page's job,
+  where it always was.
+- **The Reminders page asks for notification permission.** That question used
+  to live on the floating card, which is where it went with it. It is a button
+  on the page now, shown only while the answer is still no — which is also the
+  page you are on when you have decided you want to be reminded.
+
 ## 0.110.0 — 2026-09-08
 
 - **The time is a clock you touch.** `showPicker()` opened the platform's own

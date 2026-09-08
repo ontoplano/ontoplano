@@ -12,6 +12,8 @@
 	import { goto } from '$app/navigation';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { armed } from '$lib/actions/armed';
+	import { enablePush, pushSupported } from '$lib/push';
+	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import type { ActionData, PageServerData } from './$types';
 
@@ -62,6 +64,34 @@
 	 */
 	let insecure = $state(false);
 	let origin = $state('');
+
+	/**
+	 * Whether this browser has been told it may interrupt.
+	 *
+	 * The ask lives here rather than floating over the app, because this is the
+	 * page somebody is on when they have decided they want to be reminded — and
+	 * a browser will only take the question from a click, so it has to be a
+	 * button somewhere. Read once on mount: `Notification` does not exist at all
+	 * in an insecure context, and asking during render would run on the server.
+	 */
+	let allowed = $state(true);
+	let asking = $state(false);
+
+	/**
+	 * Permission and a push subscription are two different things, and both are
+	 * asked for at once. Granting permission alone raises notifications while the
+	 * app is open and nothing whatsoever once it is closed, which is the state
+	 * this whole feature exists to leave.
+	 */
+	async function allow() {
+		asking = true;
+		try {
+			await enablePush(page.data.pushKey ?? null);
+		} finally {
+			asking = false;
+			allowed = typeof Notification !== 'undefined' && Notification.permission === 'granted';
+		}
+	}
 
 	/** The alarm being written, so the button can know whether it is ready. */
 	let day = $state('');
@@ -124,6 +154,7 @@
 	onMount(() => {
 		insecure = !window.isSecureContext;
 		origin = `${location.protocol}//${location.host}`;
+		allowed = typeof Notification !== 'undefined' && Notification.permission === 'granted';
 	});
 
 	/**
@@ -224,6 +255,34 @@
 			signs — nothing leaves the network, and the phone is told once to trust it. A real certificate on
 			a domain you own does the same with nothing to install. Either turns on reminders, installing it
 			as an app, and offline, all at once.
+		</Banner>
+	{/if}
+
+	<!--
+		The one button that makes any of this arrive.
+
+		Only where it can work: an insecure context has no `Notification` to ask,
+		and a browser with no push support gets the banner rather than a button
+		that would do half the job. It disappears once granted, since permission
+		is permanent and a settled question does not need a row.
+	-->
+	{#if !insecure && !allowed}
+		<Banner kind="warning">
+			<div class="flex flex-wrap items-center gap-3">
+				<span>
+					This browser has not been allowed to notify you, so reminders arrive only while this page
+					is open.
+				</span>
+				<button type="button" class="btn btn-primary" onclick={allow} disabled={asking}>
+					{asking ? 'Asking…' : 'Allow notifications'}
+				</button>
+			</div>
+			{#if !pushSupported()}
+				<p class="mt-2 text-sm">
+					This browser has no push support, so reminders will only arrive while ontoplano is open.
+					Installing it as an app usually fixes that.
+				</p>
+			{/if}
 		</Banner>
 	{/if}
 

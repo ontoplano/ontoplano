@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import Icon from '$lib/components/Icon.svelte';
-	import { reminderHref } from '$lib/reminders';
 	import { enablePush, pushSupported } from '$lib/push';
 	import { page } from '$app/state';
 
@@ -9,38 +7,42 @@
 	 * The one thing in this app that reaches out.
 	 *
 	 * Everything else waits to be visited, which is why a planner stops helping
-	 * in week two. This asks the server once a minute — only while the tab is
-	 * actually being looked at, because a background tab polling forever is a
-	 * battery complaint — and puts whatever is due on the screen.
+	 * in week two. This asks the server for what has fallen due, raises the
+	 * system's own notification for each one, and plays a sound if that reminder
+	 * asked for one.
 	 *
-	 * If the browser has been given permission it also raises a system
-	 * notification from the page itself. That only reaches somebody who has the
-	 * app open; what reaches a phone with everything closed is web push, which
-	 * this component signs the browser up for — see `$lib/push.ts` and the
-	 * delivery job — and which is a separate channel with its own stamp, so the
-	 * two cannot swallow each other.
+	 * ## It draws nothing
 	 *
-	 * A reminder is marked delivered only once it is actually on screen, so a
-	 * failed poll loses nothing and one that fell due overnight still arrives.
+	 * There used to be a card: a panel floating above the navigation bar with the
+	 * reminder in it and an × to close. It is gone. A reminder that has already
+	 * arrived as a notification does not also need a second copy of itself on the
+	 * screen with its own separate dismissal — that is two things to close for
+	 * one thing that happened, and the phone's notification is the better of the
+	 * two, since it arrives whether or not the app is in front.
 	 *
-	 * The card leads to the day the block is on. A notification you cannot follow
-	 * is one you have to remember twice — once because it told you, and again
-	 * because looking at the thing it is about means going and finding it.
+	 * So what is left is machinery: the poll, the notification, the sound, and
+	 * the stamp that stops a thing being announced twice. Asking the browser for
+	 * permission moved to the Reminders page, which is where somebody already is
+	 * when they want this to work. Dismissing lives there too.
+	 *
+	 * A reminder is marked delivered only once it has actually been announced, so
+	 * a failed poll loses nothing and one that fell due overnight still arrives.
+	 * Web push is a separate channel with its own stamp — see `$lib/push.ts` and
+	 * the delivery job — so the two cannot swallow each other.
 	 */
-	type Due = {
-		id: number;
-		message: string;
-		remindAt: string;
-		subjectKind?: string | null;
-		subjectId?: number | null;
-		/** A URL to play, or null for the ones that only show. */
-		sound?: string | null;
-	};
+	type Due = { id: number; message: string; sound: string | null };
 
 	const EVERY = 60_000;
 
-	let due = $state<Due[]>([]);
-	let asked = $state(false);
+	/**
+	 * What has already been said, so a poll that overlaps the request marking
+	 * them delivered cannot say it again.
+	 */
+	// A plain Set on purpose: nothing renders from it, so reactivity would be a
+	// proxy around a thing only this function ever reads.
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	const announced = new Set<number>();
+
 	/** Consecutive polls with the page out of sight, which slows them down. */
 	let outOfSight = 0;
 
@@ -69,10 +71,10 @@
 			if (!res.ok) return;
 
 			const body = (await res.json()) as { due?: Due[] };
-			const fresh = (body.due ?? []).filter((r) => !due.some((d) => d.id === r.id));
+			const fresh = (body.due ?? []).filter((r) => !announced.has(r.id));
 			if (fresh.length === 0) return;
 
-			due = [...due, ...fresh];
+			for (const item of fresh) announced.add(item.id);
 			announce(fresh);
 
 			await fetch('/api/reminders', {
@@ -101,11 +103,10 @@
 		audio.src = sound;
 		void audio.play().catch(() => {
 			// A browser that will not play without a gesture is not an error —
-			// the notification itself has already been shown.
+			// the notification has been raised either way.
 		});
 	}
 
-	/** A system notification, if this browser has been told it may. */
 	function announce(items: Due[]) {
 		ring(items);
 		if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
@@ -113,22 +114,10 @@
 			try {
 				new Notification(item.message, { tag: `ontoplano-reminder-${item.id}`, body: 'ontoplano' });
 			} catch {
-				// Some browsers refuse outside a service worker. The card below stands.
+				// Some browsers refuse one outside a service worker, where push
+				// already raises it. Nothing else to fall back to, and nothing lost.
 			}
 		}
-	}
-
-	/**
-	 * Yes, from a click — which is the only place a browser will take it.
-	 *
-	 * Permission and a push subscription are two different things and both are
-	 * asked for here: granting permission alone would raise notifications while
-	 * the app is open and nothing at all once it is closed, which is the state
-	 * this whole feature exists to leave.
-	 */
-	async function allow() {
-		asked = true;
-		await enablePush(page.data.pushKey ?? null);
 	}
 
 	/**
@@ -139,6 +128,9 @@
 	 * worker is replaced. Re-registering costs one request against an upsert and
 	 * is the difference between reminders that keep working for months and
 	 * reminders that stop without anybody noticing.
+	 *
+	 * Asking in the first place is the Reminders page's job: a browser only takes
+	 * that from a click, and this component has nothing to click.
 	 */
 	$effect(() => {
 		if (!browser || !pushSupported() || Notification.permission !== 'granted') return;
@@ -146,15 +138,6 @@
 		if (!key) return;
 		void enablePush(key);
 	});
-
-	async function dismiss(id: number) {
-		due = due.filter((r) => r.id !== id);
-		await fetch('/api/reminders', {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ action: 'dismiss', ids: [id] })
-		}).catch(() => {});
-	}
 
 	$effect(() => {
 		if (!browser) return;
@@ -169,93 +152,10 @@
 			document.removeEventListener('visibilitychange', poll);
 		};
 	});
-
-	const canAsk = $derived(
-		browser &&
-			typeof Notification !== 'undefined' &&
-			Notification.permission === 'default' &&
-			!asked
-	);
-
-	/**
-	 * Why the browser will not do this here, when it will not.
-	 *
-	 * Notifications, service workers and installing as an app all require a
-	 * secure context, and `http://192.168.1.50:1493` is not one — `localhost`
-	 * counts only on the machine it is running on, which is exactly the case a
-	 * phone on the same network is not. The browser's answer to all of this is
-	 * to make `Notification` simply not exist, so the app did nothing and said
-	 * nothing, and looked broken rather than unsupported.
-	 *
-	 * `make https-local` is the way out: it serves the dev app over HTTPS with a
-	 * certificate this machine signs, which is a secure context once the phone
-	 * has been told to trust it. A real certificate on a domain you own does the
-	 * same with nothing to install on the device.
-	 */
-	const insecure = $derived(
-		browser && !window.isSecureContext && typeof Notification === 'undefined'
-	);
 </script>
 
-<!-- One element for every reminder that rings: two overlapping copies of the
-     same ringtone is not a sound anybody wants. -->
+<!--
+	All that is drawn: one element for every reminder that rings, because two
+	overlapping copies of the same ringtone is not a sound anybody wants.
+-->
 <audio bind:this={audio} class="hidden" preload="none"></audio>
-
-{#if due.length > 0}
-	<!--
-		Above the navigation bar on a phone and out of the corner on a desktop.
-		Deliberately not a dialog: a reminder is news, not a question, and it must
-		never stop you doing the thing it is reminding you about.
-	-->
-	<div
-		class="float-layer fixed inset-x-3 z-[70] flex flex-col gap-2 sm:inset-x-auto sm:right-4 sm:w-80"
-		style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom) + 5.5rem)"
-	>
-		{#each due as reminder (reminder.id)}
-			<div
-				class="rise flex items-start gap-3 border border-gray-300 bg-white p-3 shadow-overlay"
-				role="status"
-			>
-				<span class="mt-0.5 shrink-0 text-gray-500"><Icon name="clock" size={16} /></span>
-				<div class="min-w-0 flex-1">
-					<!-- Where the thing it is about actually is. Resolved in
-					     `$lib/reminders.ts`, which the list uses too. -->
-					<!-- eslint-disable svelte/no-navigation-without-resolve -->
-					<a
-						href={reminderHref(reminder)}
-						onclick={() => dismiss(reminder.id)}
-						class="block text-sm font-medium text-gray-900 hover:underline"
-					>
-						{reminder.message}
-					</a>
-					<!-- eslint-enable svelte/no-navigation-without-resolve -->
-					<p class="tabular mt-0.5 text-xs text-gray-500">{reminder.remindAt.slice(11, 16)}</p>
-					{#if canAsk}
-						<button
-							onclick={allow}
-							class="mt-1.5 text-xs text-gray-500 underline hover:text-gray-900"
-						>
-							Let ontoplano notify you outside the tab
-						</button>
-					{:else if insecure}
-						<p class="mt-1.5 text-xs text-gray-500">
-							Notifications need HTTPS, and this page is on
-							<span class="tabular">{location.protocol}//{location.host}</span>. On your own machine
-							<span class="tabular">localhost</span>
-							counts; from another device it does not.
-							<span class="tabular">make https-local</span> serves the dev app over HTTPS.
-						</p>
-					{/if}
-				</div>
-				<button
-					onclick={() => dismiss(reminder.id)}
-					class="shrink-0 text-gray-500 hover:text-gray-900"
-					title="Dismiss"
-					aria-label="Dismiss {reminder.message}"
-				>
-					<Icon name="close" size={16} />
-				</button>
-			</div>
-		{/each}
-	</div>
-{/if}

@@ -450,6 +450,7 @@ lint:
 	@yarn -s changelog:check
 	@yarn -s badges:check
 	@node scripts/check-no-secrets.mjs
+	@node scripts/check-android-version.mjs
 	@# The scheduled jobs run under `tsx` in a production install. A service
 	@# that reaches for a development-only package works everywhere except
 	@# there, and the box is where nobody is watching.
