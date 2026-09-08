@@ -10,6 +10,29 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.109.0 — 2026-09-08
+
+- **The time field opens the clock.** On a phone it was a box you typed into
+  with a small clock beside it, and typing into six segments is not what
+  anybody wants from a phone. Tapping either the day or the time opens the
+  browser's own picker.
+- **"Set it" is off until there is something to set.** It looked pressable with
+  the fields empty, so pressing it appeared to do nothing — the browser's own
+  validation message is easy to miss on a phone.
+- **And setting one leaves the day on today** rather than blanking it to
+  `--/--/----`. A form that forgets what day it is asks for the date every
+  single time.
+- **A reminder that will make a noise says so in the list**, with a small
+  speaker beside its kind. That is the one thing about a reminder worth knowing
+  before it happens rather than after.
+- **A reminder pushed to a locked phone can make a sound again.** A notification
+  carrying a tag replaces the previous one _silently_ unless it says otherwise,
+  which is exactly what every reminder here does — so they were arriving
+  correctly and mutely. They now ring, or stay silent, according to what you
+  chose in Reminders. Your own uploaded sound is still only for a page that is
+  open: nothing may play arbitrary audio from a service worker, so a locked
+  phone gets its own notification sound and no other.
+
 ## 0.108.0 — 2026-09-08
 
 - **A birthday next week no longer says it is today.** The sentence came from

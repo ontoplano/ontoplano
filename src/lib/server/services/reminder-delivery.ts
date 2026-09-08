@@ -5,6 +5,7 @@ import { ensureBirthdayReminders } from './birthdays.js';
 import { ensureBillReminders, ensureReviewReminder } from './reminder-sources.js';
 import { markPushed, pushableReminders } from './reminders.js';
 import { pushConfigured, pushToUser } from './push.js';
+import { soundFor } from './ringtones.js';
 import { localOfInstant } from './time.js';
 
 /**
@@ -123,7 +124,13 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 				title: reminder.message,
 				body: reminder.remindAt.slice(11, 16),
 				url: hrefFor(reminder),
-				tag: `reminder-${reminder.id}`
+				tag: `reminder-${reminder.id}`,
+				// Whether this one is worth a noise, decided the same way the open
+				// page decides it. A push cannot carry somebody's own ringtone —
+				// nothing may play arbitrary audio from a service worker — so what
+				// this buys is the device's own notification sound rather than a
+				// silent arrival.
+				audible: soundFor(buildCtx(userId), reminder) !== null
 			});
 
 			/*

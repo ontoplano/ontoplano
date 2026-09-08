@@ -92,7 +92,10 @@ function minutesBefore(scheduledAt: string, lead: number): string {
 	return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}T${pad(at.getHours())}:${pad(at.getMinutes())}:00`;
 }
 
-export function listReminders(ctx: Ctx, options: { includePast?: boolean } = {}): Reminder[] {
+export function listReminders(
+	ctx: Ctx,
+	options: { includePast?: boolean } = {}
+): (Reminder & { audible: boolean })[] {
 	const rows = db
 		.select({
 			id: reminders.id,
@@ -101,14 +104,24 @@ export function listReminders(ctx: Ctx, options: { includePast?: boolean } = {})
 			remindAt: reminders.remindAt,
 			message: reminders.message,
 			deliveredAt: reminders.deliveredAt,
-			dismissedAt: reminders.dismissedAt
+			dismissedAt: reminders.dismissedAt,
+			audible: reminders.audible,
+			ringtoneId: reminders.ringtoneId
 		})
 		.from(reminders)
 		.where(eq(reminders.userId, ctx.userId))
 		.orderBy(asc(reminders.remindAt))
 		.all();
 
-	return options.includePast ? rows : rows.filter((r) => r.dismissedAt === null);
+	const wanted = options.includePast ? rows : rows.filter((r) => r.dismissedAt === null);
+
+	// Whether each one will make a noise, resolved here rather than by the page:
+	// it is a question about the reminder, its kind's setting and a ringtone
+	// that may have been deleted, which is three tables the page cannot see.
+	return wanted.map((row) => {
+		const { audible, ringtoneId, ...rest } = row;
+		return { ...rest, audible: soundFor(ctx, { ...rest, audible, ringtoneId }) !== null };
+	});
 }
 
 /**
@@ -366,7 +379,7 @@ function ownedInstance(ctx: Ctx, id: number): { scheduledAt: string; title: stri
 export function pushableReminders(
 	nowByUser: (userId: string) => string,
 	limit = 500
-): (Reminder & { userId: string })[] {
+): (Reminder & { userId: string; audible: boolean | null; ringtoneId: number | null })[] {
 	const rows = db
 		.select({
 			id: reminders.id,
@@ -376,7 +389,11 @@ export function pushableReminders(
 			remindAt: reminders.remindAt,
 			message: reminders.message,
 			deliveredAt: reminders.deliveredAt,
-			dismissedAt: reminders.dismissedAt
+			dismissedAt: reminders.dismissedAt,
+			// Carried so the pass can decide whether the device should make a
+			// noise without a second query per reminder.
+			audible: reminders.audible,
+			ringtoneId: reminders.ringtoneId
 		})
 		.from(reminders)
 		.where(

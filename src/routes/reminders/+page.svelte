@@ -61,11 +61,42 @@
 	 */
 	let insecure = $state(false);
 	let origin = $state('');
+
+	/** The alarm being written, so the button can know whether it is ready. */
+	let day = $state('');
+	let time = $state('');
+	let say = $state('');
+	let audible = $state(false);
+	const ready = $derived(Boolean(day && time && say.trim()));
+
+	/**
+	 * Open the browser's own picker rather than the text field behind it.
+	 *
+	 * A date or time input is a row of typeable segments with a small icon
+	 * beside it, and on a phone the icon is the only part anybody wants. This
+	 * throws where the browser refuses — it insists on a real user gesture, and
+	 * some do not implement it at all — in which case the field behaves as it
+	 * always did.
+	 */
+	function pick(event: Event & { currentTarget: HTMLInputElement }) {
+		try {
+			event.currentTarget.showPicker?.();
+		} catch {
+			// Not allowed here; the field still works.
+		}
+	}
+
 	// Seeded from the window in the address and re-seeded when it changes, so
 	// pressing 30 leaves the box saying 30 rather than whatever was typed last.
 	let howFar = $state<number>(0);
 	$effect(() => {
 		howFar = data.days;
+	});
+
+	// Today, once the page has it, so the day field opens on a real date rather
+	// than on nothing.
+	$effect(() => {
+		if (!day) day = data.today;
 	});
 
 	/**
@@ -109,6 +140,8 @@
 		remindAt: string;
 		subjectKind: string;
 		shown: boolean;
+		/** Whether it will make a noise, which is worth seeing before it does. */
+		audible: boolean;
 	};
 
 	const upcoming = $derived<Listed[]>(
@@ -121,7 +154,8 @@
 					message: r.message,
 					remindAt: r.remindAt,
 					subjectKind: r.subjectKind,
-					shown: Boolean(r.deliveredAt)
+					shown: Boolean(r.deliveredAt),
+					audible: r.audible
 				})),
 			...data.upcoming.map((u, i) => ({
 				key: `soon:${i}`,
@@ -129,7 +163,10 @@
 				message: u.message,
 				remindAt: u.at,
 				subjectKind: u.kind,
-				shown: false
+				shown: false,
+				// Not a row yet, so it carries nothing of its own — what it will
+				// sound like is whatever its kind is set to on the day.
+				audible: data.sounds.find((c) => c.kind === u.kind)?.audible ?? false
 			}))
 		].sort((a, b) => a.remindAt.localeCompare(b.remindAt))
 	);
@@ -208,7 +245,25 @@
 				phone, and let somebody set a time for today without touching the
 				date at all.
 			-->
-			<form method="post" action="?/create" use:enhance class="space-y-3">
+			<form
+				method="post"
+				action="?/create"
+				use:enhance={() => {
+					return async ({ result, update }) => {
+						await update({ reset: false });
+						// Cleared by hand rather than by `reset`, which blanks a date
+						// back to nothing — the default is today, and a form that
+						// forgets what day it is asks for it again every time.
+						if (result.type === 'success') {
+							day = data.today;
+							time = '';
+							say = '';
+							audible = false;
+						}
+					};
+				}}
+				class="space-y-3"
+			>
 				<FormGrid>
 					<Field label="Day" span={3} required>
 						<input
@@ -216,23 +271,43 @@
 							type="date"
 							required
 							autocomplete="off"
-							value={data.today}
+							bind:value={day}
+							onfocus={pick}
+							onclick={pick}
 							title="Which day it should go off"
 							class="input"
 						/>
 					</Field>
 					<Field label="Time" span={3} required>
+						<!--
+							The picker, not a text field.
+
+							A time input on a phone is a box you type into with a small
+							clock beside it, and typing into six segments is not what
+							anybody wants from a phone. `showPicker` opens the real one on
+							the first tap; where a browser refuses, the field works exactly
+							as it did.
+						-->
 						<input
 							name="time"
 							type="time"
 							required
 							autocomplete="off"
+							bind:value={time}
+							onfocus={pick}
+							onclick={pick}
 							title="What time it should go off"
 							class="input"
 						/>
 					</Field>
 					<Field label="What to say" span={6} required>
-						<OneLine name="label" required placeholder="e.g. take the bread out" class="input" />
+						<OneLine
+							name="label"
+							required
+							bind:value={say}
+							placeholder="e.g. take the bread out"
+							class="input"
+						/>
 					</Field>
 				</FormGrid>
 
@@ -241,7 +316,7 @@
 						class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
 						title="Play a sound as well as showing it. Off means it only shows."
 					>
-						<input type="checkbox" name="audible" class="size-4" />
+						<input type="checkbox" name="audible" bind:checked={audible} class="size-4" />
 						Make a sound
 					</label>
 					<label
@@ -256,7 +331,20 @@
 							{/each}
 						</select>
 					</label>
-					<button type="submit" class="btn btn-primary btn-sm ml-auto" title="Set this reminder">
+					<!--
+						Off until there is something to set.
+
+						It looked pressable with the fields empty, so pressing it did
+						nothing visible and read as a broken button — the browser's own
+						validation message is easy to miss on a phone, and a control
+						that cannot work should not look like one that can.
+					-->
+					<button
+						type="submit"
+						disabled={!ready}
+						class="btn btn-primary btn-sm ml-auto"
+						title={ready ? 'Set this reminder' : 'A day, a time and something to say first'}
+					>
 						Set it
 					</button>
 				</div>
@@ -332,9 +420,16 @@
 						</span>
 						<span class="min-w-0 flex-1">
 							<span class="block truncate text-sm text-gray-900">{reminder.message}</span>
-							<span class="text-xs text-gray-500">
+							<span class="flex items-center gap-1.5 text-xs text-gray-500">
 								{kindOf(reminder.subjectKind).label}
 								{#if reminder.shown}· already shown{/if}
+								<!-- The one thing about a reminder you want to know before it
+								     happens rather than after. -->
+								{#if reminder.audible}
+									<span class="text-blue-600" title="This one makes a sound">
+										<Icon name="sound" size={12} />
+									</span>
+								{/if}
 							</span>
 						</span>
 						<span class="tabular shrink-0 text-xs text-gray-500">{when(reminder.remindAt)}</span>

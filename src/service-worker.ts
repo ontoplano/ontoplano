@@ -188,8 +188,20 @@ sw.addEventListener('fetch', (event) => {
  * the permission.
  */
 sw.addEventListener('push', (event) => {
-	const fallback = { title: 'Ontoplano', body: 'Something is due', url: '/', tag: undefined };
-	let payload: { title: string; body?: string; url?: string; tag?: string } = fallback;
+	const fallback = {
+		title: 'Ontoplano',
+		body: 'Something is due',
+		url: '/',
+		tag: undefined,
+		audible: false
+	};
+	let payload: {
+		title: string;
+		body?: string;
+		url?: string;
+		tag?: string;
+		audible?: boolean;
+	} = fallback;
 	try {
 		if (event.data) payload = { ...fallback, ...(event.data.json() as object) };
 	} catch {
@@ -201,10 +213,28 @@ sw.addEventListener('push', (event) => {
 			body: payload.body,
 			// The same reminder pushed twice replaces itself rather than stacking.
 			tag: payload.tag,
+			/*
+			 * A tagged notification replaces the previous one **silently** unless
+			 * this says otherwise — that is what the specification asks for, and
+			 * it is why a reminder could arrive with no sound at all while the
+			 * phone was working perfectly. Every reminder here is its own tag, so
+			 * there is nothing being usefully collapsed; renotify only restores
+			 * the behaviour of a notification that has not been seen before.
+			 */
+			renotify: Boolean(payload.tag),
+			/*
+			 * And whether it makes a noise at all, which is what was asked for in
+			 * Reminders. What it cannot be is somebody's own ringtone: nothing may
+			 * play arbitrary audio from a service worker, so an uploaded sound is
+			 * for a page that is open. This is the device's own notification
+			 * sound, or nothing.
+			 */
+			silent: !payload.audible,
+			vibrate: payload.audible ? [120, 60, 120] : undefined,
 			icon: '/icons/icon-192.png',
 			// Where tapping it goes, read back in the click handler below.
 			data: { url: payload.url ?? '/' }
-		})
+		} as NotificationOptions)
 	);
 });
 

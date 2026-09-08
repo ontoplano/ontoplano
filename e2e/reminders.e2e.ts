@@ -51,12 +51,22 @@ test('an alarm is a day and a time, not one box with six segments', async ({ pag
 	tomorrow.setDate(tomorrow.getDate() + 1);
 	const day = tomorrow.toISOString().slice(0, 10);
 
+	// Nothing to set yet, so the button says so rather than looking pressable.
+	await expect(page.getByRole('button', { name: 'Set it' })).toBeDisabled();
+
 	await page.locator('[name="day"]').fill(day);
 	await page.locator('[name="time"]').fill('07:30');
+	await expect(page.getByRole('button', { name: 'Set it' })).toBeDisabled();
 	await page.locator('[name="label"]').first().fill('take the bread out');
+	await expect(page.getByRole('button', { name: 'Set it' })).toBeEnabled();
 	await page.getByRole('button', { name: 'Set it' }).click();
 
 	await expect(page.getByText('take the bread out')).toBeVisible({ timeout: 15_000 });
+
+	// The day goes back to today rather than to nothing: a form that forgets
+	// what day it is asks for the date again every single time.
+	await expect(page.locator('[name="day"]')).not.toHaveValue('');
+	await expect(page.locator('[name="time"]')).toHaveValue('');
 
 	// And the way back out, because setting one is half of it.
 	await page.getByRole('button', { name: /^Remove take the bread out$/ }).click();
@@ -126,4 +136,34 @@ test.describe('on a phone', () => {
 		const after = (await seven.boundingBox())!;
 		expect(Math.round(after.y)).toBe(Math.round(before.y));
 	});
+});
+
+test('an alarm that will make a noise says so before it does', async ({ page }) => {
+	await register(page, `rem-sound-${Date.now()}@test.invalid`);
+	await visit(page, '/reminders');
+
+	const tomorrow = new Date();
+	tomorrow.setDate(tomorrow.getDate() + 1);
+	const day = tomorrow.toISOString().slice(0, 10);
+
+	// One silent, one not.
+	await page.locator('[name="day"]').fill(day);
+	await page.locator('[name="time"]').fill('08:00');
+	await page.locator('[name="label"]').first().fill('quietly');
+	await page.getByRole('button', { name: 'Set it' }).click();
+	await expect(page.getByText('quietly')).toBeVisible({ timeout: 15_000 });
+
+	await page.locator('[name="day"]').fill(day);
+	await page.locator('[name="time"]').fill('09:00');
+	await page.locator('[name="label"]').first().fill('loudly');
+	await page.locator('input[name="audible"]').first().check();
+	await page.getByRole('button', { name: 'Set it' }).click();
+	await expect(page.getByText('loudly')).toBeVisible({ timeout: 15_000 });
+
+	// Whether it rings is the one thing worth knowing before it happens rather
+	// than after, so it is on the row.
+	const loud = page.locator('li', { hasText: 'loudly' });
+	const quiet = page.locator('li', { hasText: 'quietly' });
+	await expect(loud.locator('[title="This one makes a sound"]')).toHaveCount(1);
+	await expect(quiet.locator('[title="This one makes a sound"]')).toHaveCount(0);
 });

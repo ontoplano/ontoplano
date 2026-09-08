@@ -70,6 +70,9 @@
 		// one glyph in the set that has to read at 12px beside a date.
 		cake: 'M5 21h14v-6H5zM5 15c0-2 1.5-3 3.5-3h7c2 0 3.5 1 3.5 3M12 12V9M12 6.5a1.2 1.2 0 0 1-1-1.8L12 3l1 1.7a1.2 1.2 0 0 1-1 1.8z',
 		plug: 'M9 3v6M15 3v6M7 9h10v3a5 5 0 0 1-10 0zM12 17v4',
+		// A speaker with two waves coming off it: the one shape everybody reads
+		// as "this makes a noise".
+		sound: 'M11 5 6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13',
 		// A frame with a hill and a sun in it — the one shape everybody reads as
 		// "a picture" at 18 pixels.
 		image: 'M4 5h16v14H4zM4 16l4-4 3 3 4-5 5 6M9 9.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0',

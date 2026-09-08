@@ -216,6 +216,14 @@ export type Payload = {
 	url?: string;
 	/** Collapses repeats: two pushes with one tag leave one notification. */
 	tag?: string;
+	/**
+	 * Whether the device should make a noise about it.
+	 *
+	 * The kinds somebody switched on in Reminders, and nothing else. A phone
+	 * that pings for every birthday is a phone whose notifications get turned
+	 * off, so the default here — as everywhere else — is silence.
+	 */
+	audible?: boolean;
 };
 
 /**
