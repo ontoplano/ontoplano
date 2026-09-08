@@ -193,10 +193,16 @@ plus todos, goals, habits, a diary and notebooks, bills, a shopping list,
 recipes and a home inventory. It is one app instead of eight, and it is meant
 to be self-hosted — the server is the same AGPL repository linked above.
 
-The Android app is a Trusted Web Activity: a shell around the site, pointed at
-whichever instance you use. The Play build carries Play Billing; the build in
-\`android/\` in the repository does not, and has no proprietary dependencies —
-it links only \`androidx\` and \`com.google.androidbrowserhelper\`, both Apache-2.0.
+The Android app is a Trusted Web Activity over that site, with home-screen
+widgets, push notifications and app shortcuts as native code. Digital Asset
+Links binds a TWA to one origin, so this build points at the instance I host —
+which runs the linked source unmodified. The Play build carries Play Billing;
+the build in \`android/\` in the repository does not, and has no proprietary
+dependencies — it links only \`androidx\` and \`com.google.androidbrowserhelper\`,
+both Apache-2.0.
+
+There is a paid plan on the instance I host. Payment happens on the web, not in
+the app: there is no in-app purchase code in this build at all.
 
 The Gradle project is committed at \`android/\`, so a build needs no network
 beyond Gradle's own dependency fetch:
@@ -221,12 +227,20 @@ Adds \`${PACKAGE}\` — ontoplano, an AGPL life management tool, and its listing
 The Gradle project is committed at \`android/\` in the app repository, so the
 build is \`subdir: android/app\` with no prebuilt anything and no init step.
 
+**Native features.** The policy asks for them when an app wraps a website, so:
+three home-screen widgets drawing to bitmaps (\`TodayWidgetProvider\` and
+friends, plain Java against the app's API), push notifications through the
+service worker, and app shortcuts. It is not a browser bookmark.
+
 **On the shape of it.** This is a Trusted Web Activity, so two questions come
 up and both have answers:
 
 - *Is the service free software?* Yes. The server is the same repository, AGPL,
-  and anyone can run their own — the app asks which instance to use. The
-  default points at the one I host, which runs that source unmodified.
+  and anyone can run their own. But a TWA is bound to one origin by Digital
+  Asset Links, so this build does point at the instance I host rather than
+  asking — flag \`NonFreeNet\` if you read that as tethered; I won't argue it.
+  The service it is tethered to is free software either way, and the widgets
+  take an origin of their own, so they already work against a self-hosted one.
 - *Does it need a proprietary browser?* It needs a browser that supports TWAs,
   which is any Chromium-based one — Bromite, Cromite, Vanadium, Chrome. Not
   Play Services, and not Chrome specifically.
@@ -238,8 +252,14 @@ android-project\` generates it with billing off precisely so this build is
 free. \`aapt2 dump badging\` on the result declares only \`INTERNET\` and
 \`POST_NOTIFICATIONS\`.
 
-Signed by F-Droid, not reproducibly for now — happy to work on reproducible
-builds once this is in.
+**Signing, and the URL bar.** A TWA drops its address bar only when the site's
+\`/.well-known/assetlinks.json\` names the signing certificate. F-Droid signs
+with its own key, so I need that fingerprint to add alongside the Play one —
+the site already serves a list, so it is a configuration change and not a code
+one. Tell me the fingerprint and I will add it; without it the app works and
+shows an address bar, which I would rather it did not.
+
+Not reproducible for now — happy to work on reproducible builds once this is in.
 `
 );
 
