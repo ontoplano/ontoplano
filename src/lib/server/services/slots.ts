@@ -22,6 +22,7 @@ import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { created, stamp, stamps } from './time.js';
 import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
+import { MAX_BLOCK_NOTES } from '../../planner-grid.js';
 
 /**
  * The plan itself: blocks that repeat (`recurring_tasks`) and blocks that happen
@@ -43,7 +44,11 @@ import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
 export const MODES = ['category', 'activity', 'workout'] as const;
 export type Mode = (typeof MODES)[number];
 
-export const MAX_LABEL_LENGTH = 300;
+/**
+ * Kept as an alias so the many callers of this name keep working; the number
+ * itself lives with the grid, which is the other half that has to agree.
+ */
+export const MAX_LABEL_LENGTH = MAX_BLOCK_NOTES;
 export const MAX_ACTIVITY_NAME_LENGTH = 100;
 export const MAX_CSV_LENGTH = 100_000;
 

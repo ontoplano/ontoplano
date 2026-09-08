@@ -1655,7 +1655,9 @@ export const reminders = sqliteTable(
 			.notNull()
 			.references(() => user.id),
 		/** What it is about. `free` is a reminder that is only itself. */
-		subjectKind: text('subject_kind', { enum: ['instance', 'todo', 'free', 'person'] })
+		subjectKind: text('subject_kind', {
+			enum: ['instance', 'todo', 'free', 'person', 'review', 'bill']
+		})
 			.notNull()
 			.default('free'),
 		subjectId: integer('subject_id'),
@@ -1683,6 +1685,16 @@ export const reminders = sqliteTable(
 		pushedAt: text('pushed_at'),
 		/** Set when the person acknowledged it. */
 		dismissedAt: text('dismissed_at'),
+		/**
+		 * Whether this one makes a noise, overriding what its kind does.
+		 *
+		 * Null means "whatever this kind of reminder does" — the ordinary case.
+		 * An alarm set for one morning says so on its own row, because it is not
+		 * a statement about every free reminder ever.
+		 */
+		audible: integer('audible', { mode: 'boolean' }),
+		/** Which sound. Null with `audible` is the one the app ships with. */
+		ringtoneId: integer('ringtone_id').references(() => ringtones.id, { onDelete: 'set null' }),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
@@ -1691,8 +1703,68 @@ export const reminders = sqliteTable(
 		index('reminders_user_idx').on(table.userId),
 		// The delivery query is "mine, due, undelivered", and it runs every minute.
 		index('reminders_due_idx').on(table.userId, table.deliveredAt, table.remindAt),
-		index('reminders_subject_idx').on(table.subjectKind, table.subjectId)
+		index('reminders_subject_idx').on(table.subjectKind, table.subjectId),
+		// What the clock asks: the earliest thing not yet sent, per account.
+		index('reminders_pending_idx').on(table.userId, table.pushedAt, table.remindAt)
 	]
+);
+
+/**
+ * A sound somebody uploaded, kept in the database.
+ *
+ * Rows rather than files on disk because this app is one process and one
+ * sqlite file: a backup that restores the database and not somebody's uploads
+ * is a backup that lies. Ten each at 300 KB is three megabytes an account at
+ * the very worst, which is less than one of the pictures already in here.
+ */
+export const ringtones = sqliteTable(
+	'ringtones',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull(),
+		mime: text('mime').notNull(),
+		bytes: integer('bytes').notNull(),
+		data: blob('data').notNull(),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('ringtones_user_idx').on(table.userId),
+		uniqueIndex('ringtones_user_name_unique').on(table.userId, table.name)
+	]
+);
+
+/**
+ * What each kind of reminder sounds like.
+ *
+ * No row means silent, which is what every account starts as: a notification
+ * you did not ask to hear is an interruption, and an app that makes a noise
+ * the first time you use it is an app you turn the sound off in and never turn
+ * back on.
+ */
+export const reminderSounds = sqliteTable(
+	'reminder_sounds',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		/** `instance`, `todo`, `free`, `person`, `review`, `bill`. */
+		kind: text('kind').notNull(),
+		ringtoneId: integer('ringtone_id').references(() => ringtones.id, { onDelete: 'set null' }),
+		audible: integer('audible', { mode: 'boolean' }).notNull().default(false),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [uniqueIndex('reminder_sounds_user_kind_unique').on(table.userId, table.kind)]
 );
 
 /**

@@ -127,10 +127,7 @@ describe('who gets one', () => {
 
 	test('nobody who already wrote the review', async () => {
 		planLastWeek(OWNER, 1);
-		review.saveLines(ctxFor(OWNER), {
-			weekStart: LAST_WEEK,
-			contents: ['It was a week.', '', '']
-		});
+		review.saveNote(ctxFor(OWNER), { weekStart: LAST_WEEK, content: 'It was a week.' });
 
 		expect((await mail.sendWeeklyReviews(MONDAY)).sent).toBe(0);
 	});

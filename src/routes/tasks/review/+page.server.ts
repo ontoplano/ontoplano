@@ -5,12 +5,11 @@ import { toActionFailure } from '$lib/server/http-errors';
 import {
 	carryIntoTodos,
 	goalsTouched,
-	LINES_PER_REVIEW,
-	listLines,
-	pastLines,
+	pastNotes,
 	readWeek,
 	resolveLoose,
-	saveLines,
+	readNote,
+	saveNote,
 	weekStartOf
 } from '$lib/server/services/review';
 import {
@@ -27,17 +26,19 @@ function dateString(d: Date): string {
 }
 
 /**
- * Last week by default.
+ * This week, by default.
  *
- * You review a week once it is over; landing on the current one would invite
- * writing three lines about a Wednesday.
+ * It used to open on last week, on the reasoning that a week is reviewed once
+ * it is over. But the page you land on is the page you think you are looking
+ * at, and landing a week behind means reading Monday's numbers as though they
+ * were today's — every arrival started with working out which week this is.
+ * Last week is one press of the arrow, and the dashboard links straight to it
+ * when it is still open.
  */
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
 	const param = url.searchParams.get('week');
-	const weekStart = param
-		? weekStartOf(param, ctx.now)
-		: weekStartOf(dateString(addDays(ctx.now, -7)), ctx.now);
+	const weekStart = param ? weekStartOf(param, ctx.now) : weekStartOf(dateString(ctx.now), ctx.now);
 
 	const monday = new Date(weekStart + 'T00:00:00');
 	const { reading, loose } = readWeek(ctx, weekStart);
@@ -47,13 +48,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		reading,
 		loose,
 		goals: goalsTouched(ctx, weekStart),
-		lines: listLines(ctx, weekStart),
+		note: readNote(ctx, weekStart),
 		/** What you wrote in the weeks before this one, so it is not written into a void. */
-		past: pastLines(ctx, { limit: 8, before: weekStart }),
+		past: pastNotes(ctx, { limit: 8, before: weekStart }),
 		/** Things nothing has ever asked about. Only offered on a finished week. */
 		stale: isCurrent ? [] : listStale(ctx),
 		staleMonths: STALE_MONTHS,
-		linesPerReview: LINES_PER_REVIEW,
 		week: {
 			number: getISOWeekNumber(monday),
 			year: getISOWeekYear(monday),
@@ -72,14 +72,14 @@ function sortOf(raw: FormDataEntryValue | null): 'todo' | 'idea' | 'shopping' {
 }
 
 export const actions: Actions = {
-	saveLines: async ({ request, locals }) => {
+	saveNote: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
-			saveLines(buildCtx(locals.user!.id), {
+			saveNote(buildCtx(locals.user!.id), {
 				weekStart: formData.get('weekStart'),
-				contents: formData.getAll('line')
+				content: formData.get('note')
 			});
-			return { success: true };
+			return { success: true, saved: true };
 		} catch (e) {
 			return toActionFailure(e);
 		}
@@ -149,12 +149,16 @@ export const actions: Actions = {
 	carry: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
+			// A date, when the answer was "not then, but on this day". Without one
+			// it lands on the undated pile, which is what carrying always meant.
+			const day = String(formData.get('scheduledDate') ?? '').trim();
 			const carried = carryIntoTodos(
 				buildCtx(locals.user!.id),
 				weekStartOf(formData.get('weekStart'), new Date()),
-				formData.getAll('instanceId')
+				formData.getAll('instanceId'),
+				day || undefined
 			);
-			return { success: true, carried };
+			return { success: true, carried, scheduled: Boolean(day) };
 		} catch (e) {
 			return toActionFailure(e);
 		}

@@ -24,6 +24,7 @@ Can be put away in Preferences (`goals`), which takes it out of the bar, the whe
 
 - **Notebooks** — `/notebooks`
 - **Diary** — `/notebooks/diary`
+- **Weekly notes** — `/notebooks/weekly`
 - **People** — `/notebooks/people`
 
 Can be put away in Preferences (`diary`), which takes it out of the bar, the wheel and the dashboard.
@@ -53,6 +54,10 @@ Can be put away in Preferences (`finance`), which takes it out of the bar, the w
 - `/inventory` — one page, no tabs
 
 Can be put away in Preferences (`inventory`), which takes it out of the bar, the wheel and the dashboard.
+
+### Reminders
+
+- `/reminders` — one page, no tabs
 
 ### Everywhere else
 

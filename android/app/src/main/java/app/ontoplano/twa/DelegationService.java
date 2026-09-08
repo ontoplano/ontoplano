@@ -1,6 +1,8 @@
 package app.ontoplano.twa;
 
 
+import com.google.androidbrowserhelper.playbilling.digitalgoods.DigitalGoodsRequestHandler;
+
 
 public class DelegationService extends
         com.google.androidbrowserhelper.trusted.DelegationService {
@@ -8,6 +10,8 @@ public class DelegationService extends
     public void onCreate() {
         super.onCreate();
 
+        
+            registerExtraCommandHandler(new DigitalGoodsRequestHandler(getApplicationContext()));
         
     }
 }

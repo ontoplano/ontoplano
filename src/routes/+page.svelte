@@ -23,6 +23,14 @@
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
+	/** "17 Aug" — a Monday said the way somebody would say it. */
+	function weekName(weekStart: string): string {
+		return new Date(weekStart + 'T00:00:00').toLocaleDateString('en-GB', {
+			day: 'numeric',
+			month: 'short'
+		});
+	}
+
 	// Rearranging is a mode rather than something you can trigger by accident:
 	// the cards hold forms and links, and making them permanently draggable
 	// would fight every click you actually meant.
@@ -319,7 +327,15 @@
 			>
 				<span class="text-gray-500"><Icon name="clock" size={16} /></span>
 				<span class="min-w-0 flex-1 text-sm text-gray-900">
-					Last week is still open — {data.pendingReview.planned} blocks, no write-up.
+					<!-- More than one week open is a different sentence, and saying
+					     "last week" to somebody three weeks behind is both wrong and
+					     comforting. -->
+					{#if data.pendingReview.weeks > 1}
+						{data.pendingReview.weeks} weeks are still open — the oldest is
+						{weekName(data.pendingReview.weekStart)}, {data.pendingReview.planned} blocks.
+					{:else}
+						Last week is still open — {data.pendingReview.planned} blocks, no write-up.
+					{/if}
 				</span>
 				<span class="shrink-0 text-xs text-gray-500">Review it</span>
 				<Icon name="chevron-right" size={14} />

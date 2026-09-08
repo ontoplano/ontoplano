@@ -26,17 +26,17 @@ import type { Scope } from '../services/tokens.js';
 import { createEntry, listEntries } from '../services/diary.js';
 import { createActivity, listActivities, updateActivity } from '../services/activities.js';
 import { createHabit, listHabits, updateHabit, HABIT_TYPES } from '../services/habits.js';
-import { createReminder, dismissReminder, listReminders } from '../services/reminders.js';
+import {
+	createFreeReminder,
+	createReminder,
+	deleteReminder,
+	dismissReminder,
+	listReminders
+} from '../services/reminders.js';
 import { createPerson, listPeople, updatePerson } from '../services/people.js';
 import { RELATIONSHIPS } from '../../people.js';
 import { listWins, saveWins, WINS_PER_DAY } from '../services/wins.js';
-import {
-	listLines,
-	readWeek,
-	saveLines,
-	weekStartOf,
-	LINES_PER_REVIEW
-} from '../services/review.js';
+import { readWeek, saveNote, weekStartOf, readNote } from '../services/review.js';
 import { getStreamBySlug, listStreams, pushPoints, serialiseStream } from '../services/streams.js';
 import { createSlot, deleteSlots, listWeeklySlots, updateSlot } from '../services/slots.js';
 import {
@@ -1132,11 +1132,22 @@ export const TOOLS: Tool[] = [
 		name: 'shopping_list',
 		title: 'The shopping list',
 		description:
-			'What is to buy and what is already in the cupboard. An item is a thing, not a line: ticking it bought puts it back in the cupboard rather than deleting it.',
+			'What is to buy and what is already in the cupboard. An item is a thing, not a line: ticking it bought puts it back in the cupboard rather than deleting it. Each carries how many there are and how many are kept, so "what am I short of" is `qty` below `idealQty` — `short: true` asks for exactly those.',
 		scope: 'shopping:read',
 		writes: false,
-		input: object({}),
-		run: (ctx) => listItems(ctx)
+		input: object({
+			short: {
+				type: 'boolean',
+				description:
+					'Only the things there are fewer of than are kept — what an actual shopping trip is for.'
+			}
+		}),
+		run: (ctx, args) => {
+			const items = listItems(ctx);
+			return args.short === true
+				? items.filter((item) => item.type === 'replenish' && item.qty < item.idealQty)
+				: items;
+		}
 	},
 	{
 		name: 'add_to_shopping_list',
@@ -1711,7 +1722,7 @@ export const TOOLS: Tool[] = [
 		name: 'reminders',
 		title: 'What will reach out, and when',
 		description:
-			'The reminders set to fire — each hangs off a block, because a reminder here is "tell me before this starts". Include the past to see what already fired.',
+			'Everything set to go off, soonest first: reminders on blocks, alarms about nothing in particular, birthdays, bills that want paying, and a weekly review left open. `subjectKind` says which. Include the past to see what already fired.',
 		scope: 'schedule:read',
 		writes: false,
 		input: object({ includePast: { type: 'boolean', default: false } }),
@@ -1719,11 +1730,54 @@ export const TOOLS: Tool[] = [
 	},
 	{
 		/*
-		 * There is deliberately no free-floating reminder. "Remind me at three
-		 * to call the dentist" is a thing happening at three — put it on the day
-		 * with `add_block`, then hang the reminder on it. The description says
-		 * so, because the model will be asked exactly that sentence.
+		 * The alarm clock, which this surface did not have.
+		 *
+		 * The old rule was that a reminder must hang off a block: "remind me at
+		 * three to call the dentist" is a thing happening at three, so put it on
+		 * the day and hang the nudge on it. That is good advice and it was a bad
+		 * rule — "take the bread out in forty minutes" is not an appointment, and
+		 * making somebody schedule a block to get a timer is the app telling
+		 * them how to think. The app has these now; so does this.
 		 */
+		name: 'set_alarm',
+		title: 'Set a reminder about nothing else',
+		description:
+			'A time and a sentence, reaching the phone even with the app closed — "take the bread out at ten past", "ring mum at six". Use this when there is nothing to schedule; when the reminder is *about* something already on the day, `remind_before_block` hangs it on that block instead, which keeps the two together. `cancel_alarm` takes it back.',
+		scope: 'schedule:write',
+		writes: true,
+		input: object(
+			{
+				at: text(
+					'When, as YYYY-MM-DDTHH:MM in the person\u2019s own timezone. Seconds allowed and honoured.'
+				),
+				message: text('What it should say, in their words.'),
+				sound: {
+					type: 'boolean',
+					description:
+						'Whether it should make a noise as well as showing. Silent unless asked; do not turn this on unless they said so.'
+				}
+			},
+			['at', 'message']
+		),
+		run: (ctx, args) => ({
+			id: createFreeReminder(ctx, {
+				at: args.at,
+				message: args.message,
+				audible: args.sound === true
+			})
+		})
+	},
+	{
+		name: 'cancel_alarm',
+		title: 'Take a reminder back',
+		description:
+			'Remove a reminder outright — the one `set_alarm` made, or any other. `dismiss_reminder` waves one off and leaves the row; this deletes it. Takes the id `reminders` gives.',
+		scope: 'schedule:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The reminder\u2019s id.' } }, ['id']),
+		run: (ctx, args) => ({ ok: deleteReminder(ctx, Number(args.id)) })
+	},
+	{
 		name: 'remind_before_block',
 		title: 'Set a reminder on a block',
 		description:
@@ -2168,33 +2222,26 @@ export const TOOLS: Tool[] = [
 		run: (ctx, args) => {
 			const weekStart = weekStartOf(args.weekStart, ctx.now);
 			const { reading, loose } = readWeek(ctx, weekStart);
-			return { weekStart, reading, loose, lines: listLines(ctx, weekStart) };
+			return { weekStart, reading, loose, note: readNote(ctx, weekStart) };
 		}
 	},
 	{
-		name: 'write_review_lines',
-		title: 'Write the week\u2019s three lines',
+		name: 'write_review_note',
+		title: 'Write the week\u2019s note',
 		description:
-			'Replace the three lines of a week\u2019s review — in the person\u2019s own words, and only when they said them. These are what they will reread in a year; never compose them unasked.',
+			'Replace the note on a week\u2019s review — in the person\u2019s own words, and only when they said them. This is what they will reread in a year; never compose it unasked. It used to be three separate lines and is one piece of writing now, so a note somebody dictates in three sentences is stored as they said it.',
 		scope: 'tasks:write',
 		writes: true,
 		input: object(
 			{
-				lines: {
-					type: 'array',
-					items: { type: 'string' },
-					description: 'Up to three lines, replacing what was there.'
-				},
+				note: text('The whole note, replacing what was there. Empty removes it.'),
 				weekStart: text('The Monday the week starts on. This week if left out.')
 			},
-			['lines']
+			['note']
 		),
 		run: (ctx, args) => {
-			const lines = (args.lines as unknown[]) ?? [];
-			if (!Array.isArray(lines) || lines.length === 0 || lines.length > LINES_PER_REVIEW)
-				throw new ValidationError(`A review holds up to ${LINES_PER_REVIEW} lines.`);
 			const weekStart = weekStartOf(args.weekStart, ctx.now);
-			saveLines(ctx, { weekStart, contents: lines });
+			saveNote(ctx, { weekStart, content: args.note });
 			return { ok: true, weekStart };
 		}
 	},

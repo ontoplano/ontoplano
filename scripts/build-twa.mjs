@@ -643,6 +643,48 @@ function installWidget() {
             android:permission="android.permission.BIND_REMOTEVIEWS"
             android:exported="false" />
 
+        <!-- The three drawn ones. No list service: each is a single bitmap
+             painted at the size the launcher reports, so there is nothing for
+             the launcher to bind to and scroll. -->
+        <receiver
+            android:name=".NowWidgetProvider"
+            android:label="@string/widget_now_label"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="app.ontoplano.widget.NOW_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/now_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".RingsWidgetProvider"
+            android:label="@string/widget_rings_label"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="app.ontoplano.widget.RINGS_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/rings_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".DayWidgetProvider"
+            android:label="@string/widget_day_label"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="app.ontoplano.widget.DAY_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/day_widget_info" />
+        </receiver>
+
         <activity
             android:name=".WidgetConfigureActivity"
             android:label="@string/configure_title"

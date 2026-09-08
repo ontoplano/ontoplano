@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Three rings: blocks, habits, todos. Square-ish, because three circles side
+    by side want to be as tall as they are round.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="180dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="3"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_canvas"
+    android:previewLayout="@layout/widget_canvas"
+    android:configure="app.ontoplano.twa.WidgetConfigureActivity"
+    android:description="@string/widget_rings_description"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen" />

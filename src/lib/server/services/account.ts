@@ -104,7 +104,12 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('workouts', schema.workouts as never),
 	owned('pricePoints', schema.pricePoints as never),
 	owned('weeklyReviews', schema.weeklyReviews as never),
+	// Reminders, then what they point at: a `reminder_sounds` row names a
+	// ringtone, and the shared list also drives the delete order, so the
+	// pointers go before the thing pointed at.
 	owned('reminders', schema.reminders as never),
+	owned('reminderSounds', schema.reminderSounds as never),
+	owned('ringtones', schema.ringtones as never),
 	owned('pushSubscriptions', schema.pushSubscriptions as never),
 	owned('calendarFeeds', schema.calendarFeeds as never),
 	owned('pluginManifests', schema.pluginManifests as never),

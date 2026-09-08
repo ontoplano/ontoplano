@@ -334,7 +334,7 @@ _Needs `ideas:write`; writes._
 
 ### `shopping_list` — The shopping list
 
-What is to buy and what is already in the cupboard. An item is a thing, not a line: ticking it bought puts it back in the cupboard rather than deleting it.
+What is to buy and what is already in the cupboard. An item is a thing, not a line: ticking it bought puts it back in the cupboard rather than deleting it. Each carries how many there are and how many are kept, so "what am I short of" is `qty` below `idealQty` — `short: true` asks for exactly those.
 
 _Needs `shopping:read`; read-only._
 
@@ -484,9 +484,21 @@ _Needs `habits:write`; writes._
 
 ### `reminders` — What will reach out, and when
 
-The reminders set to fire — each hangs off a block, because a reminder here is "tell me before this starts". Include the past to see what already fired.
+Everything set to go off, soonest first: reminders on blocks, alarms about nothing in particular, birthdays, bills that want paying, and a weekly review left open. `subjectKind` says which. Include the past to see what already fired.
 
 _Needs `schedule:read`; read-only._
+
+### `set_alarm` — Set a reminder about nothing else
+
+A time and a sentence, reaching the phone even with the app closed — "take the bread out at ten past", "ring mum at six". Use this when there is nothing to schedule; when the reminder is _about_ something already on the day, `remind_before_block` hangs it on that block instead, which keeps the two together. `cancel_alarm` takes it back.
+
+_Needs `schedule:write`; writes._
+
+### `cancel_alarm` — Take a reminder back
+
+Remove a reminder outright — the one `set_alarm` made, or any other. `dismiss_reminder` waves one off and leaves the row; this deletes it. Takes the id `reminders` gives.
+
+_Needs `schedule:write`; writes._
 
 ### `remind_before_block` — Set a reminder on a block
 
@@ -590,9 +602,9 @@ A week read whole: planned against done, by category, with the three lines writt
 
 _Needs `tasks:read`; read-only._
 
-### `write_review_lines` — Write the week’s three lines
+### `write_review_note` — Write the week’s note
 
-Replace the three lines of a week’s review — in the person’s own words, and only when they said them. These are what they will reread in a year; never compose them unasked.
+Replace the note on a week’s review — in the person’s own words, and only when they said them. This is what they will reread in a year; never compose it unasked. It used to be three separate lines and is one piece of writing now, so a note somebody dictates in three sentences is stored as they said it.
 
 _Needs `tasks:write`; writes._
 

@@ -15,6 +15,10 @@ import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { localOfInstant, stamp } from './time.js';
 import { num, str } from './validate.js';
+// The clock recomputes its sleep whenever the set of pending reminders changes;
+// without this a new alarm would wait for the next ceiling tick to be noticed.
+import { wake } from './reminder-clock.js';
+import { soundFor } from './ringtones.js';
 
 /**
  * Something that reaches out.
@@ -47,6 +51,10 @@ import { num, str } from './validate.js';
 
 export const MAX_MESSAGE_LENGTH = 300;
 
+/** Everything a reminder can be about, and the order the page groups them in. */
+export const REMINDER_KINDS = ['instance', 'todo', 'free', 'review', 'bill', 'person'] as const;
+export type ReminderKind = (typeof REMINDER_KINDS)[number];
+
 export type Reminder = {
 	id: number;
 	/**
@@ -54,7 +62,14 @@ export type Reminder = {
 	 * `free` are rows from before there was one kind — they still fire, and they
 	 * drain as they are dismissed, but nothing creates another.
 	 */
-	subjectKind: 'instance' | 'todo' | 'free' | 'person';
+	/**
+	 * What it is about.
+	 *
+	 * `free` is a reminder that is only itself — an alarm. `review` and `bill`
+	 * are written by the app rather than by anybody: the week you have not
+	 * closed, and money with a date on it.
+	 */
+	subjectKind: ReminderKind;
 	subjectId: number | null;
 	remindAt: string;
 	message: string;
@@ -103,8 +118,8 @@ export function listReminders(ctx: Ctx, options: { includePast?: boolean } = {})
  * announce the same thing — and one that fell due while the app was shut still
  * arrives the next time it opens, rather than being silently skipped.
  */
-export function dueReminders(ctx: Ctx): Reminder[] {
-	return db
+export function dueReminders(ctx: Ctx): (Reminder & { sound: string | null })[] {
+	const rows = db
 		.select({
 			id: reminders.id,
 			subjectKind: reminders.subjectKind,
@@ -112,7 +127,9 @@ export function dueReminders(ctx: Ctx): Reminder[] {
 			remindAt: reminders.remindAt,
 			message: reminders.message,
 			deliveredAt: reminders.deliveredAt,
-			dismissedAt: reminders.dismissedAt
+			dismissedAt: reminders.dismissedAt,
+			audible: reminders.audible,
+			ringtoneId: reminders.ringtoneId
 		})
 		.from(reminders)
 		.where(
@@ -125,6 +142,17 @@ export function dueReminders(ctx: Ctx): Reminder[] {
 		)
 		.orderBy(asc(reminders.remindAt))
 		.all();
+
+	/*
+	 * The sound comes down with the reminder, resolved here rather than looked
+	 * up by the page. The page's job is to play a URL; deciding whether this
+	 * one is audible at all is three tables' worth of question and belongs on
+	 * the side that can see them.
+	 */
+	return rows.map((row) => {
+		const { audible, ringtoneId, ...rest } = row;
+		return { ...rest, sound: soundFor(ctx, { ...rest, audible, ringtoneId })?.url ?? null };
+	});
 }
 
 /**
@@ -135,6 +163,49 @@ export function dueReminders(ctx: Ctx): Reminder[] {
  * the only thing this takes. There is no way to make a reminder about nothing,
  * on purpose: see the note at the top of this file.
  */
+/**
+ * A reminder that is only itself — an alarm.
+ *
+ * No block, no todo, no birthday: a time and a sentence. `remind_at` carries
+ * seconds here where a block's reminder carries minutes, because "seven in the
+ * morning" is a moment and the clock can hit it exactly.
+ */
+export function createFreeReminder(
+	ctx: Ctx,
+	raw: { at?: unknown; message?: unknown; audible?: unknown; ringtoneId?: unknown }
+): number {
+	const at = String(raw.at ?? '').trim();
+	if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(at)) {
+		throw new ValidationError('That is not a date and a time.');
+	}
+	const remindAt = at.length === 16 ? `${at}:00` : at;
+
+	const message = str(raw.message, 'message', { max: MAX_MESSAGE_LENGTH });
+	const ringtoneId =
+		raw.ringtoneId === undefined || raw.ringtoneId === null || raw.ringtoneId === ''
+			? null
+			: num(raw.ringtoneId, 'sound', { int: true, min: 1 });
+
+	const inserted = db
+		.insert(reminders)
+		.values({
+			userId: ctx.userId,
+			subjectKind: 'free',
+			subjectId: null,
+			remindAt,
+			message,
+			// Explicitly true or false, never null: setting an alarm is saying
+			// something about this one, whatever free reminders do in general.
+			audible: Boolean(raw.audible),
+			ringtoneId
+		})
+		.returning({ id: reminders.id })
+		.get();
+
+	wake();
+	return inserted.id;
+}
+
 export function createReminder(
 	ctx: Ctx,
 	raw: { at?: unknown; message?: unknown; subjectId?: unknown }
@@ -176,6 +247,7 @@ export function createReminder(
 		.returning({ id: reminders.id })
 		.get();
 
+	wake();
 	return inserted.id;
 }
 
@@ -207,12 +279,15 @@ export function dismissReminder(ctx: Ctx, id: number): boolean {
 }
 
 export function deleteReminder(ctx: Ctx, id: number): boolean {
-	return (
+	const gone =
 		db
 			.delete(reminders)
 			.where(and(eq(reminders.id, id), eq(reminders.userId, ctx.userId)))
-			.run().changes > 0
-	);
+			.run().changes > 0;
+	// Removing the earliest one is as much a change to the clock's next
+	// wake-up as adding one.
+	if (gone) wake();
+	return gone;
 }
 
 /** The reminders already set on one block, so its editor can show them. */

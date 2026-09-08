@@ -21,6 +21,9 @@
 			? []
 			: [{ href: resolve('/notebooks'), label: 'Notebooks' }]),
 		{ href: resolve('/notebooks/diary'), label: 'Diary' },
+		// What the weekly review writes. It is writing, and it was reachable only
+		// from the week it belonged to — which is a thing nobody navigates to.
+		{ href: resolve('/notebooks/weekly'), label: 'Weekly notes' },
 		{ href: resolve('/notebooks/people'), label: 'People' }
 	]);
 
@@ -32,7 +35,8 @@
 			return (
 				page.url.pathname === '/notebooks' ||
 				(page.url.pathname.startsWith('/notebooks/') &&
-					!page.url.pathname.startsWith('/notebooks/diary'))
+					!page.url.pathname.startsWith('/notebooks/diary') &&
+					!page.url.pathname.startsWith('/notebooks/weekly'))
 			);
 		}
 		return page.url.pathname.startsWith(href);

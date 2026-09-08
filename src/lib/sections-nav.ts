@@ -91,6 +91,16 @@ export const NAV_PLACES: NavPlace[] = [
 		icon: 'shopping',
 		href: '/inventory',
 		hide: 'inventory'
+	},
+	// Everything with a time on it, in one place. It has no colour of its own:
+	// a reminder belongs to whatever it is about, so the room borrows the
+	// planner's, which is where most of them come from.
+	{
+		key: 'reminders',
+		label: 'Reminders',
+		section: 'planner',
+		icon: 'clock',
+		href: '/reminders'
 	}
 ];
 

@@ -699,8 +699,17 @@
 							</div>
 
 							{#if occ.length > 0}
-								<div class="mt-3 divide-y divide-gray-100">
-									{#each occ.slice(0, 10) as occurrence (occurrence.id)}
+								<!--
+									Five deep, and the rest scrolls.
+
+									It showed ten and then said "and 45 more" — which was both a
+									screenful of dates nobody was reading and a promise it did
+									not keep, since the line saying there were more was itself
+									below the fold. Five is enough to see what a note looks like,
+									and the rest are a scroll away rather than a page away.
+								-->
+								<div class="mt-3 max-h-56 divide-y divide-gray-100 overflow-y-auto pr-1">
+									{#each occ as occurrence (occurrence.id)}
 										<div class="flex items-center justify-between py-1.5">
 											<div class="flex items-center gap-2">
 												<span class="text-xs font-medium text-gray-600">{occurrence.date}</span>
@@ -767,12 +776,12 @@
 											{/if}
 										</div>
 									{/each}
-									{#if occ.length > 10}
-										<div class="py-1.5 text-xs text-gray-500">
-											and {occ.length - 10} more...
-										</div>
-									{/if}
 								</div>
+								{#if occ.length > 5}
+									<p class="pt-1 text-xs text-gray-500">
+										{occ.length} in all — scroll the list.
+									</p>
+								{/if}
 							{/if}
 						</div>
 					{/if}

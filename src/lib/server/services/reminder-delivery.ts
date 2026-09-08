@@ -2,6 +2,7 @@ import { db } from '../db/index.js';
 import { pushSubscriptions, user } from '../db/schema.js';
 import { buildCtx } from './ctx.js';
 import { ensureBirthdayReminders } from './birthdays.js';
+import { ensureBillReminders, ensureReviewReminder } from './reminder-sources.js';
 import { markPushed, pushableReminders } from './reminders.js';
 import { pushConfigured, pushToUser } from './push.js';
 import { localOfInstant } from './time.js';
@@ -35,6 +36,8 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 	due: number;
 	/** Birthday rows written by this pass. */
 	birthdays: number;
+	/** Review and bill rows written by this pass. */
+	written: number;
 	/** False when the instance has no keys, so nothing can be pushed at all. */
 	configured: boolean;
 }> {
@@ -52,14 +55,21 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 	// Today's birthdays first: a row written now can be due now, and doing this
 	// after the query below would delay every one of them by a minute.
 	let birthdays = 0;
+	let written = 0;
 	for (const account of accounts) {
 		if (account.banned) continue;
 		const ctx = buildCtx(account.id, { now });
 		birthdays += ensureBirthdayReminders(account.id, now, ctx.tz);
+		// The reminders nobody types: a week left open, and money with a date on
+		// it. Written here for the same reason birthdays are — the row has to
+		// exist before the minute it is due, and nobody is looking at six in the
+		// morning, which is the whole point.
+		written += ensureReviewReminder(ctx, now, ctx.tz);
+		written += ensureBillReminders(ctx, now, ctx.tz);
 	}
 
 	const devices = db.select({ id: pushSubscriptions.id }).from(pushSubscriptions).all().length;
-	const summary = { accounts: accounts.length, devices, birthdays };
+	const summary = { accounts: accounts.length, devices, birthdays, written };
 
 	const zones = new Map<string, string>();
 	const localFor = (userId: string) => {

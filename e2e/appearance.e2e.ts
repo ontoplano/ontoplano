@@ -171,13 +171,26 @@ test('text stands off its background, on every theme', async ({ page }) => {
 test('a button you cannot press does not look like one you can', async ({ page }) => {
 	await register(page, `disabled-${Date.now()}@test.invalid`);
 
-	// The review's carry button is disabled until something is ticked, which is
-	// the general case: a form whose action needs a selection. Onboarding filled
-	// *this* week, and the page defaults to the last one, so ask for this one.
-	const today = new Date().toISOString().slice(0, 10);
-	await visit(page, `/tasks/review?week=${today}`);
+	/*
+	 * The inventory's "one fewer", which is disabled at nothing.
+	 *
+	 * It used to be the review's carry button — disabled until something was
+	 * ticked — but the review answers a row at a time now and has no button
+	 * waiting on a selection. This is the same shape: a real control, disabled
+	 * by a real condition, rendered by the app's own classes.
+	 */
+	await visit(page, '/inventory');
+	const dialog = page.getByRole('dialog', { name: 'New item' });
+	await page
+		.getByRole('button', { name: /Add item/ })
+		.first()
+		.click();
+	await dialog.locator('[name="label"]').fill('a thing with none of it');
+	await dialog.locator('[name="idealQty"]').fill('0');
+	await dialog.getByRole('button', { name: 'Add item', exact: true }).click();
+	await expect(dialog).toBeHidden();
 
-	const carry = page.getByRole('button', { name: /carry into the todo list/i });
+	const carry = page.getByRole('button', { name: /^One fewer/ }).first();
 	await expect(carry).toBeVisible();
 
 	for (const { theme, style } of COMBINATIONS) {

@@ -12,7 +12,7 @@ until somebody writes one in `src/lib/tutorials.ts`. The same gap is visible
 in the app: the `?` button goes red on a screen with no tour and says so
 under the pointer.
 
-**16 of 16 screens have one.**
+**17 of 17 screens have one.**
 
 | Screen                   | Tour         | Steps |
 | ------------------------ | ------------ | ----- |
@@ -26,6 +26,7 @@ under the pointer.
 | `/notebooks`             | Notebooks    | 2     |
 | `/notebooks/diary`       | Diary        | 4     |
 | `/notebooks/people`      | People       | 3     |
+| `/reminders`             | Reminders    | 3     |
 | `/settings/account`      | Account      | 3     |
 | `/settings/integrations` | Integrations | 3     |
 | `/tasks/activities`      | Activities   | 3     |
@@ -118,6 +119,12 @@ at the button that reopens it, so it is not listed here.
 1. A person is not a tag
 2. A name is enough to start
 3. Every mention, in one place
+
+### `/reminders` — Reminders
+
+1. Everything with a time on it
+2. And one about nothing
+3. What is worth hearing
 
 ### `/search` — Search
 

@@ -403,38 +403,42 @@
 			{#each visibleTodos as todo, i (todo.id)}
 				<div
 					use:keepInView={selectedIndex === i}
-					class="flex items-start gap-4 px-4 py-3 {selectedIndex === i ? 'kb-cursor' : ''} {isDone(
-						todo
-					)
-						? 'opacity-50'
-						: ''}"
+					class="flex items-stretch gap-4 px-4 py-3 {selectedIndex === i
+						? 'kb-cursor'
+						: ''} {isDone(todo) ? 'opacity-50' : ''}"
 				>
 					<form
 						id="toggle-form-{todo.id}"
 						method="post"
 						action="?/setStatus"
 						use:enhance={deferComplete(todo)}
+						class="flex"
 					>
 						<input type="hidden" name="id" value={todo.id} />
 						<input type="hidden" name="status" value={todo.status === 'done' ? 'todo' : 'done'} />
 						<!--
-							The box is 20px; the thing you tap is 44. A touch screen gives
-							every button a 44px minimum height, which stretched a 20px-wide
-							square into a tall rectangle — so the target is the button and
-							the square is drawn inside it.
+							As tall as the row it belongs to.
+
+							The box was 20px pinned to the top-left of a row that is often
+							three lines tall — notes, a notebook, a column of icons — so it
+							sat in a corner of a lot of nothing and was a small thing to hit
+							besides. The target now runs the height of the row and the
+							square is bigger and centred in it, which fills the space the
+							rest of the row makes and gives the one action every row has the
+							size it deserves.
 						-->
 						<button
 							type="submit"
-							class="-m-1 flex shrink-0 items-center justify-center p-1 pointer-coarse:w-11"
+							class="-m-1 flex shrink-0 items-center justify-center self-stretch p-1 pointer-coarse:w-11"
 							aria-label={isDone(todo) ? 'Mark incomplete' : 'Mark complete'}
 						>
 							<span
-								class="flex h-5 w-5 items-center justify-center border {isDone(todo)
+								class="flex size-7 items-center justify-center border {isDone(todo)
 									? 'border-gray-400 bg-gray-400'
 									: 'border-gray-400 bg-white'}"
 							>
 								{#if isDone(todo)}
-									<svg class="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor">
+									<svg class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
 										<path
 											fill-rule="evenodd"
 											d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"

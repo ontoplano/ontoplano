@@ -37,6 +37,7 @@
 		baseGridOptions,
 		addDaysStr,
 		buildSlotEventsForDates,
+		MAX_BLOCK_NOTES,
 		occurrenceKey,
 		parseLocalDate,
 		buildExceptionalEvents,
@@ -3216,17 +3217,31 @@
 						</Field>
 					{/if}
 					<Field
-						label="Label"
+						label="Notes"
 						span={4}
-						hint={slotMode === 'category' ? '' : 'optional'}
+						hint={slotMode === 'category' ? 'the first line is what the block says' : 'optional'}
 						required={slotMode === 'category'}
 					>
-						<OneLine
+						<!--
+							Notes, not a label.
+
+							It was one line called "Label", which is what it looked like from
+							the database's side and not what anybody uses it for: what goes
+							here is what the thing actually is, and often what you need to
+							remember about it. It takes as much as you want to write; the
+							grid shows the first line, because a block is a rectangle an
+							hour tall and a paragraph does not fit in one.
+						-->
+						<textarea
 							name="label"
+							rows={slotMode === 'category' ? 2 : 1}
+							autocomplete="off"
+							required={slotMode === 'category'}
 							placeholder={slotMode === 'category' ? 'e.g. dentist' : ''}
 							bind:value={formLabel}
-							class="input"
-						/>
+							class="input resize-y"
+							maxlength={MAX_BLOCK_NOTES}
+						></textarea>
 					</Field>
 				</FormGrid>
 

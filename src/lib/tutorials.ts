@@ -414,6 +414,26 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
+	'/reminders': {
+		label: 'Reminders',
+		steps: [
+			{
+				title: 'Everything with a time on it',
+				body: 'Blocks you asked to be nudged about, birthdays, bills that want paying, a week left unreviewed — all of it in one list, soonest first.'
+			},
+			{
+				target: '[data-tour="set-alarm"]',
+				title: 'And one about nothing',
+				body: 'A time and a sentence. It reaches your phone with the app shut, the same as the rest.'
+			},
+			{
+				target: '[data-tour="reminder-sounds"]',
+				title: 'What is worth hearing',
+				body: 'Everything shows; nothing makes a noise unless you say so here. Upload your own sounds and give each kind its own.'
+			}
+		]
+	},
+
 	'/health/recipes': {
 		label: 'Recipes',
 		steps: [

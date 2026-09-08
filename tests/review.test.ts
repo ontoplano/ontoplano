@@ -123,30 +123,32 @@ describe('the week is always a Monday', () => {
 	});
 });
 
-describe('three lines about the week', () => {
+describe('the note about the week', () => {
 	test('saving, reading back, and editing in place', () => {
-		s.review.saveLines(ctx, { weekStart: MONDAY, contents: ['Slow start', 'Good Thursday', ''] });
-		expect(s.review.listLines(ctx, MONDAY)).toEqual([
-			{ position: 1, content: 'Slow start' },
-			{ position: 2, content: 'Good Thursday' }
-		]);
+		s.review.saveNote(ctx, { weekStart: MONDAY, content: 'Slow start, good Thursday.' });
+		expect(s.review.readNote(ctx, MONDAY)).toBe('Slow start, good Thursday.');
 
-		s.review.saveLines(ctx, {
-			weekStart: MONDAY,
-			contents: ['Slow start', 'Great Thursday', 'Ship it']
-		});
-		const lines = s.review.listLines(ctx, MONDAY);
-		expect(lines).toHaveLength(3);
-		expect(lines[1].content).toBe('Great Thursday');
+		s.review.saveNote(ctx, { weekStart: MONDAY, content: 'Slow start.\n\nGreat Thursday.' });
+		expect(s.review.readNote(ctx, MONDAY)).toBe('Slow start.\n\nGreat Thursday.');
 	});
 
-	test('emptying a box removes the line rather than storing a blank', () => {
-		s.review.saveLines(ctx, { weekStart: MONDAY, contents: ['Only this', '', ''] });
-		expect(s.review.listLines(ctx, MONDAY)).toEqual([{ position: 1, content: 'Only this' }]);
+	test('a paragraph is a paragraph, not three boxes', () => {
+		// The whole reason it stopped being three lines: somebody with more than
+		// three sentences had nowhere to put the fourth.
+		const long = ['One.', 'Two.', 'Three.', 'Four.', 'Five.'].join('\n');
+		s.review.saveNote(ctx, { weekStart: MONDAY, content: long });
+		expect(s.review.readNote(ctx, MONDAY)).toBe(long);
 	});
 
-	test("one account's lines are invisible to another", () => {
-		expect(s.review.listLines(theirs, MONDAY)).toEqual([]);
+	test('emptying the box removes it rather than storing a blank', () => {
+		s.review.saveNote(ctx, { weekStart: MONDAY, content: 'Only this' });
+		s.review.saveNote(ctx, { weekStart: MONDAY, content: '   ' });
+		expect(s.review.readNote(ctx, MONDAY)).toBe('');
+	});
+
+	test("one account's note is invisible to another", () => {
+		s.review.saveNote(ctx, { weekStart: MONDAY, content: 'mine' });
+		expect(s.review.readNote(theirs, MONDAY)).toBe('');
 	});
 });
 

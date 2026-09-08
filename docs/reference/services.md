@@ -56,10 +56,13 @@ shows up here on the next build.
 | [`quotes`](#quotes)                             | The quotes shown one-per-day on the dashboard.                                                                                                                                                                                                                       |
 | [`recipes`](#recipes)                           | Recipes, and the loop they close.                                                                                                                                                                                                                                    |
 | [`registration`](#registration)                 | Who is allowed to create an account here.                                                                                                                                                                                                                            |
+| [`reminder-clock`](#reminder-clock)             | The thing that makes a reminder arrive when it says it will.                                                                                                                                                                                                         |
 | [`reminder-delivery`](#reminder-delivery)       | The pass that makes a reminder arrive with the app shut.                                                                                                                                                                                                             |
+| [`reminder-sources`](#reminder-sources)         | The reminders nobody types.                                                                                                                                                                                                                                          |
 | [`reminders`](#reminders)                       | Something that reaches out.                                                                                                                                                                                                                                          |
 | [`review-mail`](#review-mail)                   | Monday morning: what last week actually was, in the inbox.                                                                                                                                                                                                           |
 | [`review`](#review)                             | Closing a week.                                                                                                                                                                                                                                                      |
+| [`ringtones`](#ringtones)                       | The sounds a reminder can make.                                                                                                                                                                                                                                      |
 | [`schedule`](#schedule)                         | Read-only view of what's coming up.                                                                                                                                                                                                                                  |
 | [`schemes`](#schemes)                           | Saved weeks.                                                                                                                                                                                                                                                         |
 | [`search`](#search)                             | One box over everything the account owns.                                                                                                                                                                                                                            |
@@ -2649,6 +2652,69 @@ How many invites are outstanding, for the settings page.
 
 - `Invite`
 
+## reminder-clock
+
+The thing that makes a reminder arrive when it says it will.
+
+## Why not a timer every minute
+
+There was one: a systemd unit that asked the app, once a minute, whether
+anything was due. It works, and it is late by up to fifty-nine seconds every
+single time. A reminder is a time — being told at 09:00:47 that something
+starts at 09:00 is being told late, and an alarm for seven in the morning
+that goes off at some point during the seventh minute is not an alarm.
+
+## Why not "work out the next one and sleep until then"
+
+Because the database changes underneath you. Sleep until 15:00 because that
+is the next thing, have somebody set an alarm for 14:10, and you wake at
+three to a reminder that was fifty minutes late. That is the failure mode
+that makes the obvious design wrong, and it is the reason for both halves of
+what is here:
+
+1. **Every write wakes it.** `wake()` throws the current sleep away and
+   asks the question again. Anything that creates, moves or removes a
+   reminder calls it, so a new earliest reminder reschedules the clock the
+   moment it exists rather than the next time the clock happens to look.
+
+2. **It never sleeps longer than a minute anyway.** A write path that
+   forgets to call `wake()` costs at most sixty seconds, not the hours
+   until whatever it was sleeping for — and the same ceiling covers the
+   things no write can notify us about: the machine suspending, the clock
+   being stepped, a daylight-saving change moving every wall-clock
+   reminder in a zone at once.
+
+So the fast path is exact and the slow path is the behaviour it replaced.
+There is no arrangement of events that makes this later than the timer it
+replaces, and in the ordinary case it is exact to the second.
+
+## One process
+
+This is a single node process with a single sqlite file, so this is a timer
+in it — no queue, no second daemon, nothing to keep alive. The systemd unit
+stays as a belt: it costs one request a minute and covers the case where the
+app was restarted between a reminder falling due and anybody noticing.
+
+### Functions
+
+#### `nextDueAt(now)`
+
+The instant the next unsent reminder falls due, or null if there is none.
+
+`remind_at` is wall-clock in the account's own zone — "remind me at ten to
+nine" means ten to nine wherever that person is — so each account's earliest
+has to be converted with that account's offset before they can be compared.
+The SQL ceiling keeps the scan small: nothing anywhere can be due more than
+a day and change from now in any zone.
+
+#### `wake()`
+
+Throw away the current sleep and ask again. Cheap; call it freely.
+
+#### `startReminderClock()`
+
+Start it. Idempotent, because SvelteKit imports its hooks more than once.
+
 ## reminder-delivery
 
 The pass that makes a reminder arrive with the app shut.
@@ -2673,6 +2739,48 @@ point. Idempotent per person per day, so this and the poll cannot make two.
 ### Functions
 
 #### `deliverDueReminders(now)`
+
+## reminder-sources
+
+The reminders nobody types.
+
+A reminder somebody set is easy: they said a time and it fires. These are
+the other kind — the things the app knows and the person does not, which is
+the only reason to have an app that keeps them. Each one is written into the
+ordinary reminders table well before it is due, because the row has to exist
+for the clock to find it and nobody is looking at six in the morning.
+
+Every one of these is idempotent per account per day, keyed on the exact
+row it would write, so running the pass twice cannot say a thing twice.
+That matters more here than anywhere: the pass runs on a timer that is
+allowed to be woken, so "twice" is the normal case and not the accident.
+
+### Functions
+
+#### `ensureReviewReminder(ctx, now, tz)`
+
+"Your weekly review is pending."
+
+Once, on the morning of the day the week turns over, and only while there is
+actually something to review — `reviewPending` already refuses to ask about
+a week nobody planned. Said again the following week if it is still open,
+because the number in it will have changed and so will the sentence.
+
+#### `ensureBillReminders(ctx, now, tz)`
+
+The three things worth saying about a bill.
+
+They are three different sentences because they are three different
+situations, and one of them is an emergency:
+
+- the day it should be paid, which is the due day minus whatever lead the
+  bill carries — "today is the day for paying this";
+- any day after that while it is still unpaid — "you still have to pay
+  this", which is the one that stops a bill being forgotten quietly;
+- the due day itself, which is the last day it can be paid at all.
+
+Only for bills that are actually unpaid, and only inside a fortnight, so a
+year's worth of yearly bills is not written into the table in advance.
 
 ## reminders
 
@@ -2719,14 +2827,15 @@ Everything that should have gone off by now and has not.
 announce the same thing — and one that fell due while the app was shut still
 arrives the next time it opens, rather than being silently skipped.
 
+#### `createFreeReminder(ctx, raw)`
+
+A reminder that is only itself — an alarm.
+
+No block, no todo, no birthday: a time and a sentence. `remind_at` carries
+seconds here where a block's reminder carries minutes, because "seven in the
+morning" is a moment and the clock can hit it exactly.
+
 #### `createReminder(ctx, raw)`
-
-A nudge before one occurrence starts.
-
-`at` is a lead in minutes, not a clock reading — "ten minutes before" is how
-anybody describes a reminder about something already on a calendar, and it is
-the only thing this takes. There is no way to make a reminder about nothing,
-on purpose: see the note at the top of this file.
 
 #### `markDelivered(ctx, ids)`
 
@@ -2766,6 +2875,7 @@ signed-in user and the ids come from its own query.
 
 ### Types
 
+- `ReminderKind`
 - `Reminder`
 
 ## review-mail
@@ -2863,8 +2973,8 @@ and a habit: the app records what happened and never once says "that was
 your week, what do you want to do about it".
 
 A review is three questions. What did you plan against what you did. What
-did not happen, and does it still need to. And three lines about the week,
-which is the part that is actually worth reading in a year.
+did not happen, and does it still need to. And what you would say about the
+week, which is the part that is actually worth reading in a year.
 
 ### Functions
 
@@ -2885,17 +2995,21 @@ A goal's value is a single number with no history behind it, so this cannot
 say _how much_ it moved — only that it was touched inside the week, which is
 the honest version and still answers "did any of this go anywhere".
 
-#### `listLines(ctx, weekStart)`
+#### `saveNote(ctx, raw)`
 
-#### `saveLines(ctx, raw)`
-
-Replace a week's three lines.
+Replace a week's note.
 
 Keyed by (week, position) like the daily wins, so re-saving edits the same
-rows instead of accumulating a new review every time somebody fixes a typo,
-and an emptied box removes its line rather than storing a blank.
+row instead of accumulating a new review every time somebody fixes a typo,
+and an emptied box removes it rather than storing a blank. Position 1 is
+where the first of the old three lines lived, and the migration folded the
+other two into it, so nothing anybody wrote was lost.
 
-#### `pastLines(ctx, options)`
+#### `readNote(ctx, weekStart)`
+
+The week's note, or an empty string where there is not one yet.
+
+#### `pastNotes(ctx, options)`
 
 Everything ever written, newest week first.
 
@@ -2905,7 +3019,7 @@ week's by looking at last week, and everything before that by clicking back
 fifty times. A thing you write and never see again is a thing you stop
 writing.
 
-#### `carryIntoTodos(ctx, weekStart, rawIds)`
+#### `carryIntoTodos(ctx, weekStart, rawIds, scheduledDate)`
 
 Carry what did not happen into the todo list.
 
@@ -2920,13 +3034,6 @@ which makes this ownership-safe by construction: an id from another account
 is not in that list, so it is not carried and nothing says so (I3).
 
 #### `reviewPending(ctx)`
-
-Is last week still waiting to be looked at?
-
-The whole reason the review exists is that nothing ever asked. This is what
-the dashboard asks with — and it only asks once the week is actually over
-and there was something in it, because prompting somebody to review a week
-they did not plan is how a prompt becomes noise you learn to ignore.
 
 #### `resolveLoose(ctx, weekStart, rawIds, status)`
 
@@ -2946,6 +3053,51 @@ in that list, so nothing happens and nothing says so (I3).
 
 - `WeekReading`
 - `Loose` — An unfinished block, in the shape the review offers to carry it.
+
+## ringtones
+
+The sounds a reminder can make.
+
+Every reminder shows. Only the ones somebody asked to hear make a noise —
+an app that beeps the first time you use it is an app whose sound you turn
+off and never turn back on. So silence is the default for every kind, and
+audible is a thing you switch on for the kinds that are worth interrupting
+you: an alarm, probably; a birthday, probably not.
+
+### Functions
+
+#### `listRingtones(ctx)`
+
+#### `readRingtone(ctx, id)`
+
+The bytes themselves, for the route that plays one. Owned or nothing.
+
+#### `addRingtone(ctx, input)`
+
+#### `removeRingtone(ctx, id)`
+
+#### `soundChoices(ctx)`
+
+What every kind sounds like, including the ones never chosen.
+
+A kind with no row is silent, and returning the full set rather than what
+happens to be stored means the page renders the same shape whether somebody
+has touched this or not.
+
+#### `setSoundChoice(ctx, kind, choice)`
+
+#### `soundFor(ctx, reminder)`
+
+What this particular reminder should sound like, if anything.
+
+The reminder's own answer wins where it has one — an alarm set for one
+morning is audible whatever free reminders do in general — and otherwise it
+is whatever its kind says. `null` means show it and say nothing.
+
+### Types
+
+- `Ringtone`
+- `SoundChoice`
 
 ## schedule
 

@@ -274,10 +274,12 @@ test('a block dragged out on the grid is drawn as a block, not a sliver', async 
 	await page.mouse.up();
 	await expect(form).toBeVisible({ timeout: 15_000 });
 
-	await form.locator('[name="label"]').fill('dragged-out');
 	await form.locator('[name="mode"]').selectOption('category');
-	// From the keyboard, so nothing clicks outside the calendar to clear it.
-	await form.locator('[name="label"]').press('Enter');
+	await form.locator('[name="label"]').fill('dragged-out');
+	// From the keyboard, so nothing clicks outside the calendar to clear the
+	// selection for us. Not from the notes field — that is a textarea now, and
+	// Enter in a textarea is a new line, which is what it should be.
+	await form.locator('[name="startTime"]').press('Enter');
 	await expect(form).toBeHidden({ timeout: 20_000 });
 	await page.waitForTimeout(600);
 

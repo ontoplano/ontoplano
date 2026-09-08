@@ -31,4 +31,10 @@
     <string name="configure_paste_hint">The key the browser page shows</string>
     <string name="configure_use_key">Use this key</string>
     <string name="configure_needs_key">Paste the key the browser page shows.</string>
+    <string name="widget_now_label">Ontoplano · Now</string>
+    <string name="widget_rings_label">Ontoplano · Today\'s rings</string>
+    <string name="widget_day_label">Ontoplano · The day</string>
+    <string name="widget_now_description">What you are meant to be doing, and how much of it is left.</string>
+    <string name="widget_rings_description">Today as three rings: blocks, habits and todos.</string>
+    <string name="widget_day_description">The whole day as one strip, with a mark where you are.</string>
 </resources>

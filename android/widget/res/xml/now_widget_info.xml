@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    What is happening, and how much of it is left. Wide and short: it is one
+    line of type and a bar, and a tall box would be mostly empty card.
+
+    Fifteen minutes rather than the list's thirty. This one draws a countdown,
+    and a countdown that is half an hour out is worse than no countdown — the
+    launcher will not go below fifteen for a widget it wakes itself.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="70dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="1"
+    android:updatePeriodMillis="900000"
+    android:initialLayout="@layout/widget_canvas"
+    android:previewLayout="@layout/widget_canvas"
+    android:configure="__PACKAGE__.WidgetConfigureActivity"
+    android:description="@string/widget_now_description"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen" />

@@ -1257,14 +1257,11 @@ describe('the opened rooms', () => {
 		expect(read.result.structuredContent.items.length).toBe(3);
 	});
 
-	it('reads a week whole and writes its three lines', () => {
+	it('reads a week whole and writes its note', () => {
 		const wrote = rpc(
 			23,
-			'write_review_lines',
-			{
-				weekStart: '2026-03-09',
-				lines: ['a good week', 'too many meetings']
-			},
+			'write_review_note',
+			{ weekStart: '2026-03-09', note: 'a good week\n\ntoo many meetings' },
 			['tasks:write']
 		);
 		expect(wrote.result.isError, wrote.result.content?.[0]?.text).toBe(false);
@@ -1272,8 +1269,7 @@ describe('the opened rooms', () => {
 		const read = rpc(24, 'weekly_review', { weekStart: '2026-03-09' }, ['tasks:read']);
 		expect(read.result.isError).toBe(false);
 		expect(read.result.structuredContent.weekStart).toBe('2026-03-09');
-		const lines = read.result.structuredContent.lines as { content: string }[];
-		expect(lines.some((l) => l.content === 'a good week')).toBe(true);
+		expect(read.result.structuredContent.note).toBe('a good week\n\ntoo many meetings');
 	});
 
 	it('refuses to log into a stream that does not exist, naming what does', () => {

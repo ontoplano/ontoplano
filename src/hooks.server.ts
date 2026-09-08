@@ -729,6 +729,22 @@ if (!building && !globalThis.__ontoplanoSweep) {
 	void sweep();
 }
 
+/**
+ * The reminder clock, in the one process there is.
+ *
+ * A reminder is a time, and the systemd timer that asked once a minute was
+ * late by up to fifty-nine seconds every time it worked. This sleeps until the
+ * exact moment the next one falls due, is woken by anything that writes a
+ * reminder, and never sleeps longer than a minute regardless — see
+ * `services/reminder-clock.ts` for why all three are needed. The unit stays as
+ * a belt for the case where the app was restarted at the wrong moment.
+ */
+if (!building) {
+	void import('$lib/server/services/reminder-clock').then(({ startReminderClock }) =>
+		startReminderClock()
+	);
+}
+
 if (!building && !globalThis.__ontoplanoDeathWatch) {
 	globalThis.__ontoplanoDeathWatch = true;
 

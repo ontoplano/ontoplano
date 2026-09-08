@@ -68,6 +68,7 @@ sentence somebody agrees to when they grant it.
 | `/api/reminders`                             | GET    | —                 |
 | `/api/reminders`                             | POST   | —                 |
 | `/api/report`                                | POST   | —                 |
+| `/api/ringtones/[id]`                        | GET    | —                 |
 | `/api/search`                                | GET    | —                 |
 | `/api/subscribe`                             | POST   | —                 |
 | `/api/tutorial`                              | POST   | —                 |
@@ -391,6 +392,17 @@ worse than saying nothing: anything added here has to be added there in the
 same edit.
 
 **POST**
+
+### `/api/ringtones/[id]`
+
+One uploaded sound, played by the page that raises a notification.
+
+Yours or nothing: the lookup is scoped to the account, so an id belonging to
+somebody else is a 404 and not a quiet leak of three hundred kilobytes.
+Cached hard because the bytes never change — a ringtone is replaced by
+uploading another one under another name, not by editing this one.
+
+**GET**
 
 ### `/api/search`
 

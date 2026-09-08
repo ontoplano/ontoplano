@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, lt } from 'drizzle-orm';
+import { and, desc, eq, gte, lt } from 'drizzle-orm';
 
 import { blockName } from '../../planner-grid.js';
 import { db } from '../db/index.js';
@@ -19,12 +19,22 @@ import { str } from './validate.js';
  * your week, what do you want to do about it".
  *
  * A review is three questions. What did you plan against what you did. What
- * did not happen, and does it still need to. And three lines about the week,
- * which is the part that is actually worth reading in a year.
+ * did not happen, and does it still need to. And what you would say about the
+ * week, which is the part that is actually worth reading in a year.
  */
 
-export const LINES_PER_REVIEW = 3;
-export const MAX_LINE_LENGTH = 500;
+/*
+ * One note, not three lines.
+ *
+ * It used to be three boxes labelled "what went well", "what did not" and
+ * "what you will do differently" — a form, in the place meant for the one part
+ * of this that is writing. Somebody with two things to say had to invent a
+ * third, and somebody with a paragraph had nowhere to put it. It is one field
+ * with those three as a hint, stored where line one was, so every review ever
+ * written is still there.
+ */
+export const NOTE_POSITION = 1;
+export const MAX_NOTE_LENGTH = 8000;
 
 function dateString(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -169,55 +179,69 @@ export function goalsTouched(ctx: Ctx, weekStart: string) {
 		.all();
 }
 
-export function listLines(ctx: Ctx, weekStart: string) {
-	return db
-		.select({ position: weeklyReviews.position, content: weeklyReviews.content })
-		.from(weeklyReviews)
-		.where(and(eq(weeklyReviews.userId, ctx.userId), eq(weeklyReviews.weekStart, weekStart)))
-		.all();
-}
-
 /**
- * Replace a week's three lines.
+ * Replace a week's note.
  *
  * Keyed by (week, position) like the daily wins, so re-saving edits the same
- * rows instead of accumulating a new review every time somebody fixes a typo,
- * and an emptied box removes its line rather than storing a blank.
+ * row instead of accumulating a new review every time somebody fixes a typo,
+ * and an emptied box removes it rather than storing a blank. Position 1 is
+ * where the first of the old three lines lived, and the migration folded the
+ * other two into it, so nothing anybody wrote was lost.
  */
-export function saveLines(ctx: Ctx, raw: { weekStart: unknown; contents: unknown[] }): void {
+export function saveNote(ctx: Ctx, raw: { weekStart: unknown; content: unknown }): void {
 	const weekStart = weekStartOf(raw.weekStart, ctx.now);
+	const content =
+		raw.content === undefined || raw.content === null ? '' : String(raw.content).trim();
+
+	const where = and(
+		eq(weeklyReviews.userId, ctx.userId),
+		eq(weeklyReviews.weekStart, weekStart),
+		eq(weeklyReviews.position, NOTE_POSITION)
+	);
 
 	db.transaction((tx) => {
-		for (let position = 1; position <= LINES_PER_REVIEW; position++) {
-			const value = raw.contents[position - 1];
-			const content = value === undefined || value === null ? '' : String(value).trim();
+		if (!content) {
+			tx.delete(weeklyReviews).where(where).run();
+			return;
+		}
 
-			const where = and(
-				eq(weeklyReviews.userId, ctx.userId),
-				eq(weeklyReviews.weekStart, weekStart),
-				eq(weeklyReviews.position, position)
-			);
+		const text = str(content, 'the note', { max: MAX_NOTE_LENGTH });
+		const existing = tx.select({ id: weeklyReviews.id }).from(weeklyReviews).where(where).get();
 
-			if (!content) {
-				tx.delete(weeklyReviews).where(where).run();
-				continue;
-			}
-
-			const text = str(content, `line ${position}`, { max: MAX_LINE_LENGTH });
-			const existing = tx.select({ id: weeklyReviews.id }).from(weeklyReviews).where(where).get();
-
-			if (existing) {
-				tx.update(weeklyReviews)
-					.set({ content: text, updatedAt: stamp(ctx) })
-					.where(where)
-					.run();
-			} else {
-				tx.insert(weeklyReviews)
-					.values({ ...stamps(ctx), userId: ctx.userId, weekStart, position, content: text })
-					.run();
-			}
+		if (existing) {
+			tx.update(weeklyReviews)
+				.set({ content: text, updatedAt: stamp(ctx) })
+				.where(where)
+				.run();
+		} else {
+			tx.insert(weeklyReviews)
+				.values({
+					...stamps(ctx),
+					userId: ctx.userId,
+					weekStart,
+					position: NOTE_POSITION,
+					content: text
+				})
+				.run();
 		}
 	});
+}
+
+/** The week's note, or an empty string where there is not one yet. */
+export function readNote(ctx: Ctx, weekStart: string): string {
+	return (
+		db
+			.select({ content: weeklyReviews.content })
+			.from(weeklyReviews)
+			.where(
+				and(
+					eq(weeklyReviews.userId, ctx.userId),
+					eq(weeklyReviews.weekStart, weekStart),
+					eq(weeklyReviews.position, NOTE_POSITION)
+				)
+			)
+			.get()?.content ?? ''
+	);
 }
 
 /**
@@ -229,33 +253,24 @@ export function saveLines(ctx: Ctx, raw: { weekStart: unknown; contents: unknown
  * fifty times. A thing you write and never see again is a thing you stop
  * writing.
  */
-export function pastLines(
+export function pastNotes(
 	ctx: Ctx,
 	options: { limit?: number; before?: string } = {}
-): { weekStart: string; lines: string[] }[] {
+): { weekStart: string; note: string }[] {
 	const rows = db
-		.select({
-			weekStart: weeklyReviews.weekStart,
-			position: weeklyReviews.position,
-			content: weeklyReviews.content
-		})
+		.select({ weekStart: weeklyReviews.weekStart, content: weeklyReviews.content })
 		.from(weeklyReviews)
 		.where(
 			and(
 				eq(weeklyReviews.userId, ctx.userId),
+				eq(weeklyReviews.position, NOTE_POSITION),
 				options.before ? lt(weeklyReviews.weekStart, options.before) : undefined
 			)
 		)
-		.orderBy(desc(weeklyReviews.weekStart), asc(weeklyReviews.position))
+		.orderBy(desc(weeklyReviews.weekStart))
 		.all();
 
-	const weeks: { weekStart: string; lines: string[] }[] = [];
-	for (const row of rows) {
-		const last = weeks[weeks.length - 1];
-		if (last && last.weekStart === row.weekStart) last.lines.push(row.content);
-		else weeks.push({ weekStart: row.weekStart, lines: [row.content] });
-	}
-
+	const weeks = rows.map((row) => ({ weekStart: row.weekStart, note: row.content }));
 	return options.limit ? weeks.slice(0, options.limit) : weeks;
 }
 
@@ -272,7 +287,12 @@ export function pastLines(
  * which makes this ownership-safe by construction: an id from another account
  * is not in that list, so it is not carried and nothing says so (I3).
  */
-export function carryIntoTodos(ctx: Ctx, weekStart: string, rawIds: unknown[]): number {
+export function carryIntoTodos(
+	ctx: Ctx,
+	weekStart: string,
+	rawIds: unknown[],
+	scheduledDate?: unknown
+): number {
 	const wanted = new Set(rawIds.map((v) => Number(v)).filter((n) => Number.isInteger(n) && n > 0));
 	if (wanted.size === 0) return 0;
 
@@ -295,7 +315,11 @@ export function carryIntoTodos(ctx: Ctx, weekStart: string, rawIds: unknown[]): 
 		createTodo(ctx, {
 			title: item.title,
 			notes: `Planned for ${item.date} and not done.`,
-			categoryId: item.categoryId
+			categoryId: item.categoryId,
+			// Given a day, it is a todo with a date on it rather than one more
+			// thing on an undated pile — which is the difference between putting
+			// something off and deciding when to do it.
+			...(scheduledDate ? { scheduledDate } : {})
 		});
 		setInstanceStatus(ctx, item.id, 'skipped');
 	}
@@ -304,22 +328,43 @@ export function carryIntoTodos(ctx: Ctx, weekStart: string, rawIds: unknown[]): 
 }
 
 /**
- * Is last week still waiting to be looked at?
+ * How far back the unwritten weeks go.
  *
  * The whole reason the review exists is that nothing ever asked. This is what
- * the dashboard asks with — and it only asks once the week is actually over
- * and there was something in it, because prompting somebody to review a week
+ * the dashboard asks with — and it only asks about a week that is actually
+ * over and had something in it, because prompting somebody to review a week
  * they did not plan is how a prompt becomes noise you learn to ignore.
+ *
+ * It used to look at last week and stop, so somebody who let three go by was
+ * told the same thing as somebody who let one — "last week is still open" —
+ * which is both wrong and comforting. It walks back now and reports the oldest
+ * one and how many there are, because the oldest is where you would start and
+ * the number is the thing worth knowing.
  */
-export function reviewPending(ctx: Ctx): { weekStart: string; planned: number } | null {
-	const lastMonday = dateString(addDays(getMonday(ctx.now), -7));
+export const REVIEW_LOOKBACK_WEEKS = 12;
 
-	if (listLines(ctx, lastMonday).length > 0) return null;
+export function reviewPending(
+	ctx: Ctx
+): { weekStart: string; planned: number; weeks: number } | null {
+	const lastMonday = getMonday(ctx.now);
+	let oldest: { weekStart: string; planned: number } | null = null;
+	let weeks = 0;
 
-	const { reading } = readWeek(ctx, lastMonday);
-	if (reading.planned === 0) return null;
+	for (let back = 1; back <= REVIEW_LOOKBACK_WEEKS; back++) {
+		const monday = dateString(addDays(lastMonday, -7 * back));
+		if (readNote(ctx, monday)) continue;
 
-	return { weekStart: lastMonday, planned: reading.planned };
+		const { reading } = readWeek(ctx, monday);
+		// A week nobody planned is not a week anybody owes a write-up for, and it
+		// must not stop the walk either: a fortnight away leaves a gap in the
+		// middle that says nothing about the weeks either side of it.
+		if (reading.planned === 0) continue;
+
+		weeks++;
+		oldest = { weekStart: monday, planned: reading.planned };
+	}
+
+	return oldest ? { ...oldest, weeks } : null;
 }
 
 /**

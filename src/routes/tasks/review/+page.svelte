@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import OneLine from '$lib/components/OneLine.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { ActionData, PageData } from './$types';
 	import Card from '$lib/components/Card.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
@@ -22,11 +22,14 @@
 	 * point.
 	 */
 
-	let carrying = $state<number[]>([]);
-
-	function toggle(id: number) {
-		carrying = carrying.includes(id) ? carrying.filter((c) => c !== id) : [...carrying, id];
-	}
+	/**
+	 * The block being given a day, if any.
+	 *
+	 * A date field on every row would be twenty date fields; asking for the date
+	 * in a dialog keeps the list a list, and opening one moves nothing.
+	 */
+	let givingADay = $state<{ id: number; title: string } | null>(null);
+	let chosenDay = $state('');
 
 	const rate = $derived(data.reading.planned === 0 ? 0 : data.reading.done / data.reading.planned);
 
@@ -78,10 +81,6 @@
 			)
 		).sort((a, b) => a.date.localeCompare(b.date))
 	);
-
-	function lineAt(position: number): string {
-		return data.lines.find((l) => l.position === position)?.content ?? '';
-	}
 </script>
 
 <div class="space-y-4">
@@ -210,92 +209,103 @@
 		<!-- What did not happen, and whether it still needs to. -->
 		<Card
 			title="What did not happen"
-			description="Tick them and say what happened. Whichever answer you give, they leave this list — next week generates its own blocks."
+			description="Say what happened to each. Whichever answer you give, it leaves this list — next week generates its own blocks."
 			accent="var(--section-accent)"
 			flush
 		>
 			{#if data.loose.length === 0}
 				<EmptyState icon="check" title="Everything you planned, you did" />
 			{:else}
-				<form method="post" action="?/carry" use:enhance data-tour="review-loose">
-					<input type="hidden" name="weekStart" value={data.reading.weekStart} />
+				<!--
+					The answer is on the row, not at the bottom of the page.
 
+					This was a list of checkboxes and three buttons under it, so
+					settling a week meant reading a thing, ticking it, reading the next,
+					ticking it, and then scrolling past everything to say what the ticks
+					meant — and every item you ticked had to mean the same thing. They
+					rarely do: one happened and was never marked, the next is not going
+					to, the one after needs a day. Each row answers for itself.
+				-->
+				<div data-tour="review-loose">
 					{#each looseByDay as day (day.date)}
 						<div class="eyebrow border-y border-gray-200 bg-gray-50 px-4 py-1.5 text-gray-600">
 							{day.label}
 						</div>
 						<ul class="divide-y divide-gray-200">
 							{#each day.items as item (item.id)}
-								<li>
-									<label class="flex cursor-pointer items-center gap-3 px-4 py-2 hover:bg-gray-50">
-										<input
-											type="checkbox"
-											name="instanceId"
-											value={item.id}
-											checked={carrying.includes(item.id)}
-											onchange={() => toggle(item.id)}
-										/>
-										<span
-											class="h-3 w-1 shrink-0 rounded-full"
-											style="background-color: {item.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
-										></span>
-										<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{item.title}</span>
-										<span class="tabular shrink-0 text-xs text-gray-500">{pretty(item.date)}</span>
-									</label>
+								<li class="flex items-center gap-3 px-4 py-2 hover:bg-gray-50">
+									<span
+										class="h-3 w-1 shrink-0 rounded-full"
+										style="background-color: {item.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
+									></span>
+									<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{item.title}</span>
+									<span class="tabular shrink-0 text-xs text-gray-500">{pretty(item.date)}</span>
+
+									<!-- Icons alone: four words on every row of twenty is a wall. -->
+									<div class="flex shrink-0 items-center gap-1">
+										<form method="post" action="?/resolve" use:enhance class="contents">
+											<input type="hidden" name="weekStart" value={data.reading.weekStart} />
+											<input type="hidden" name="instanceId" value={item.id} />
+											<button
+												type="submit"
+												name="status"
+												value="done"
+												class="icon-btn"
+												title="It happened after all"
+												aria-label="{item.title}: it happened after all"
+											>
+												<Icon name="check" />
+											</button>
+											<button
+												type="submit"
+												name="status"
+												value="skipped"
+												class="icon-btn"
+												title="It did not happen, and that is fine"
+												aria-label="{item.title}: skipped"
+											>
+												<Icon name="skip" />
+											</button>
+										</form>
+										<form method="post" action="?/carry" use:enhance class="contents">
+											<input type="hidden" name="weekStart" value={data.reading.weekStart} />
+											<input type="hidden" name="instanceId" value={item.id} />
+											<button
+												type="submit"
+												class="icon-btn"
+												title="It still needs doing — put it on the todo list"
+												aria-label="{item.title}: onto the todo list"
+											>
+												<Icon name="archive" />
+											</button>
+										</form>
+										<button
+											type="button"
+											onclick={() => (givingADay = { id: item.id, title: item.title })}
+											class="icon-btn"
+											title="It still needs doing — give it a day"
+											aria-label="{item.title}: give it a day"
+										>
+											<Icon name="calendar" />
+										</button>
+									</div>
 								</li>
 							{/each}
 						</ul>
 					{/each}
 
-					<!--
-						Three answers, because there are three.
-
-						Carrying into the todo list was the only one on offer and it is the
-						least common: most of what is in this list on a Sunday either
-						happened and was never ticked, or was never going to happen and you
-						have made your peace with it. One answer made the review a chore
-						with one wrong option.
-					-->
-					<div
-						class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-4 py-3"
-					>
-						<span class="text-xs text-gray-500">
+					{#if form?.carried || form?.resolved}
+						<p class="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
 							{#if form?.carried}
-								Carried {form.carried} into the todo list.
-							{:else if form?.resolved}
-								{form.resolved} settled.
+								{form.scheduled
+									? `Given a day: ${form.carried}.`
+									: `Carried ${form.carried} into the todo list.`}
 							{:else}
-								{carrying.length} selected
+								{form.resolved} settled.
 							{/if}
-						</span>
-
-						<div class="flex flex-wrap items-center gap-2">
-							<button
-								type="submit"
-								formaction="?/resolve"
-								name="status"
-								value="done"
-								class="btn btn-sm"
-								disabled={carrying.length === 0}
-							>
-								<Icon name="check" size={14} /> Done after all
-							</button>
-							<button
-								type="submit"
-								formaction="?/resolve"
-								name="status"
-								value="skipped"
-								class="btn btn-sm"
-								disabled={carrying.length === 0}
-							>
-								<Icon name="skip" size={14} /> Skipped
-							</button>
-							<button type="submit" class="btn btn-primary btn-sm" disabled={carrying.length === 0}>
-								Carry into the todo list
-							</button>
-						</div>
-					</div>
-				</form>
+						</p>
+					{/if}
+				</div>
 			{/if}
 		</Card>
 
@@ -385,34 +395,44 @@
 
 		<!-- The part worth reading in a year. -->
 		<Card
-			title="Three lines about the week"
-			description="Not a report. The thing you would tell somebody who asked how your week was."
+			title="Notes about the week"
+			description="Write something about how this week went."
 			accent="var(--section-accent)"
 		>
+			<!--
+				One box, not three.
+
+				It was three inputs labelled "what went well", "what did not" and
+				"what you will do differently" — a form, in the place meant for the
+				one part of a review that is writing. Somebody with two things to say
+				had to invent a third and somebody with a paragraph had nowhere to put
+				it. The three are the placeholder now, which is what they always were:
+				a suggestion of what to write about.
+			-->
 			<form
 				method="post"
-				action="?/saveLines"
+				action="?/saveNote"
 				use:enhance
 				class="space-y-2"
 				data-tour="review-lines"
 			>
 				<input type="hidden" name="weekStart" value={data.reading.weekStart} />
 
-				{#each { length: data.linesPerReview }, i (i)}
-					<OneLine
-						name="line"
-						placeholder={i === 0
-							? 'What went well'
-							: i === 1
-								? 'What did not'
-								: 'What you will do differently'}
-						value={lineAt(i + 1)}
-						class="input w-full"
-						maxlength={500}
-					/>
-				{/each}
+				<label class="sr-only" for="week-note">Notes about the week</label>
+				<textarea
+					id="week-note"
+					name="note"
+					rows="6"
+					autocomplete="off"
+					placeholder="What went well, what did not, what you will do different…"
+					class="input w-full resize-y"
+					maxlength={8000}>{data.note}</textarea
+				>
 
-				<div class="flex justify-end">
+				<div class="flex items-center justify-end gap-3">
+					{#if form?.saved}
+						<span class="text-xs text-gray-500">Saved.</span>
+					{/if}
 					<button type="submit" class="btn btn-primary btn-sm" title="Save" aria-label="Save">
 						<Icon name="check" size={16} />
 					</button>
@@ -443,15 +463,58 @@
 							>
 								{pretty(week.weekStart)}
 							</a>
-							<ul class="mt-1 space-y-0.5">
-								{#each week.lines as line, i (i)}
-									<li class="text-sm text-gray-900">{line}</li>
-								{/each}
-							</ul>
+							<p class="mt-1 text-sm whitespace-pre-wrap text-gray-900">{week.note}</p>
 						</li>
 					{/each}
 				</ul>
 			</Card>
 		{/if}
 	{/if}
+
+	<!--
+		Giving something a day.
+
+		The block did not happen and still needs to, on a date you can name — so
+		it becomes a todo with that date on it, which is the difference between
+		putting a thing off and deciding when to do it.
+	-->
+	<Modal
+		open={givingADay !== null}
+		title="Give it a day"
+		description={givingADay?.title ?? ''}
+		size="sm"
+		onclose={() => {
+			givingADay = null;
+			chosenDay = '';
+		}}
+	>
+		<form
+			method="post"
+			action="?/carry"
+			use:enhance={() => {
+				return async ({ update }) => {
+					await update({ reset: false });
+					givingADay = null;
+					chosenDay = '';
+				};
+			}}
+			class="space-y-3"
+		>
+			<input type="hidden" name="weekStart" value={data.reading.weekStart} />
+			<input type="hidden" name="instanceId" value={givingADay?.id ?? ''} />
+			<label class="block text-sm text-gray-700" for="give-a-day">On which day?</label>
+			<input
+				id="give-a-day"
+				name="scheduledDate"
+				type="date"
+				required
+				autocomplete="off"
+				bind:value={chosenDay}
+				class="input w-full"
+			/>
+			<div class="flex justify-end">
+				<button type="submit" class="btn btn-primary btn-sm">Put it on that day</button>
+			</div>
+		</form>
+	</Modal>
 </div>

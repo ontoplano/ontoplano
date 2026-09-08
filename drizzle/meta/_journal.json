@@ -421,6 +421,20 @@
       "when": 1788808136525,
       "tag": "0059_workout_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "6",
+      "when": 1788850000000,
+      "tag": "0060_one_note_per_week",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "6",
+      "when": 1788850100000,
+      "tag": "0061_reminder_sounds",
+      "breakpoints": true
     }
   ]
 }

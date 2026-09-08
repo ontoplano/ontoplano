@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**45 pages, 193 actions.**
+**47 pages, 199 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -42,7 +42,9 @@ write surface for everything else; both end up calling the same
 | `/notebooks/[id]`               | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/notebooks/diary`              | `create`, `createWins`, `update`, `delete`                                                                                                                                                                                                                                                                                                                                          |
 | `/notebooks/people`             | `create`, `update`, `setPicture`, `removePicture`, `delete`                                                                                                                                                                                                                                                                                                                         |
+| `/notebooks/weekly`             | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/offline`                      | —                                                                                                                                                                                                                                                                                                                                                                                   |
+| `/reminders`                    | `create`, `dismiss`, `remove`, `addSound`, `removeSound`, `setSound`                                                                                                                                                                                                                                                                                                                |
 | `/search`                       | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/settings/account`             | `setWeeklyReviewMail`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `delete`                                                                                                                                                                                                                                                                              |
 | `/settings/account/import`      | `importTasks`, `importVault`, `importAccount`                                                                                                                                                                                                                                                                                                                                       |
@@ -56,7 +58,7 @@ write surface for everything else; both end up calling the same
 | `/tasks/activities`             | `create`, `update`, `toggleActive`, `delete`, `createCategory`, `updateCategory`, `deleteCategory`                                                                                                                                                                                                                                                                                  |
 | `/tasks/board`                  | `setStatus`, `reorder`, `schedule`, `promote`, `demote`, `createTodo`, `setRatings`, `remind`, `unremind`, `editInstance`, `resolveActivity`, `deleteInstance`, `deleteTodo`                                                                                                                                                                                                        |
 | `/tasks/plan`                   | `create`, `update`, `toggleActive`, `delete`, `bulkDelete`, `copyToWeekdays`, `addCalendar`, `removeCalendar`, `applyTemplate`, `saveScheme`, `loadScheme`, `deleteScheme`, `renameScheme`, `scheduleTodo`, `unscheduleBlock`, `convertRepeat`, `moveOccurrence`, `setStatus`, `suppress`, `unsuppress`, `createExceptional`, `updateExceptional`, `deleteExceptional`, `importCsv` |
-| `/tasks/review`                 | `saveLines`, `keepStale`, `completeStale`, `dropStale`, `resolve`, `carry`                                                                                                                                                                                                                                                                                                          |
+| `/tasks/review`                 | `saveNote`, `keepStale`, `completeStale`, `dropStale`, `resolve`, `carry`                                                                                                                                                                                                                                                                                                           |
 | `/tasks/todo`                   | `create`, `update`, `setStatus`, `schedule`, `delete`, `delegate`                                                                                                                                                                                                                                                                                                                   |
 | `/welcome`                      | `assistantToken`, `finish`                                                                                                                                                                                                                                                                                                                                                          |
 | `/welcome/password`             | `default`                                                                                                                                                                                                                                                                                                                                                                           |
@@ -248,6 +250,14 @@ The index shows a notebook beside the list of them, which is the right shape
 for moving between subjects and the wrong one for sitting inside a single
 one. This is the same notebook with the whole width.
 
+### `/notebooks/weekly`
+
+Every week you have written about, in one place.
+
+The weekly note was reachable only by navigating to the week it belonged to,
+which is a thing nobody does — so the one running account of a year this app
+keeps was write-only. It is writing, so it belongs where the writing is.
+
 ### `/offline`
 
 Public on purpose.
@@ -255,6 +265,15 @@ Public on purpose.
 The layout guard sends signed-out visitors to /login, but this page is what a
 failed navigation falls back to — including one where the session could not be
 checked because there is no network.
+
+### `/reminders`
+
+Everything with a time on it.
+
+Reminders were scattered: a block carried one, a birthday made one, and the
+only way to see what was coming was to wait for it. This is the list — and
+the place to set one that is about nothing at all, which is what an alarm
+clock is.
 
 ### `/settings/account`
 
@@ -471,10 +490,14 @@ block and typing it in again.
 
 ### `/tasks/review`
 
-Last week by default.
+This week, by default.
 
-You review a week once it is over; landing on the current one would invite
-writing three lines about a Wednesday.
+It used to open on last week, on the reasoning that a week is reviewed once
+it is over. But the page you land on is the page you think you are looking
+at, and landing a week behind means reading Monday's numbers as though they
+were today's — every arrival started with working out which week this is.
+Last week is one press of the arrow, and the dashboard links straight to it
+when it is still open.
 
 **`resolve`**
 

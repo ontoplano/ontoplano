@@ -33,6 +33,8 @@
 		remindAt: string;
 		subjectKind?: string | null;
 		subjectId?: number | null;
+		/** A URL to play, or null for the ones that only show. */
+		sound?: string | null;
 	};
 
 	const EVERY = 60_000;
@@ -83,8 +85,29 @@
 		}
 	}
 
+	/**
+	 * The sound, for the reminders that asked for one.
+	 *
+	 * One element reused rather than one per reminder: two alarms in the same
+	 * minute is a thing that happens, and two overlapping copies of the same
+	 * ringtone is not a sound anybody wants. The server decides whether this
+	 * one is audible at all — the page only plays what it is handed.
+	 */
+	let audio: HTMLAudioElement | undefined = $state();
+
+	function ring(items: Due[]) {
+		const sound = items.find((item) => item.sound)?.sound;
+		if (!sound || !audio) return;
+		audio.src = sound;
+		void audio.play().catch(() => {
+			// A browser that will not play without a gesture is not an error —
+			// the notification itself has already been shown.
+		});
+	}
+
 	/** A system notification, if this browser has been told it may. */
 	function announce(items: Due[]) {
+		ring(items);
 		if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
 		for (const item of items) {
 			try {
@@ -154,6 +177,10 @@
 			!asked
 	);
 </script>
+
+<!-- One element for every reminder that rings: two overlapping copies of the
+     same ringtone is not a sound anybody wants. -->
+<audio bind:this={audio} class="hidden" preload="none"></audio>
 
 {#if due.length > 0}
 	<!--

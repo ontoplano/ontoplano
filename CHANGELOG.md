@@ -10,6 +10,55 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.102.0 — 2026-09-08
+
+- **Reminders are a room of their own.** Everything with a time on it in one
+  list — blocks, birthdays, bills, the review — and a place to set one that is
+  about nothing at all, which is what an alarm clock is. Every reminder shows;
+  only the kinds you say so about make a sound. You can upload ten sounds of
+  your own, 300 KB each, and choose which one each kind uses.
+- **A reminder now arrives at the second it says.** It used to be a timer that
+  asked once a minute whether anything was due, which was correct and up to
+  fifty-nine seconds late every single time. It sleeps until the exact moment
+  the next one falls due, is woken by anything that writes a reminder — set an
+  alarm for ten minutes' time and it reschedules immediately — and never sleeps
+  longer than a minute regardless, so a clock change or a suspended machine
+  cannot strand one.
+- **Bills and the weekly review remind you now.** The day a bill wants paying,
+  every day after that while it is still unpaid, and a sharper sentence on the
+  day it can no longer be paid late. And the review, once the week is over.
+- **The review opens on this week.** It opened on last week, so every arrival
+  started with working out which week you were looking at.
+- **What did not happen is answered a row at a time.** It was a column of
+  checkboxes and three buttons at the bottom, so settling a week meant ticking
+  things that had to all mean the same thing — and they rarely do. Each row now
+  has its own four answers: it happened, it did not, it goes on the todo list,
+  or it gets a day.
+- **One note about the week instead of three lines.** Three boxes labelled
+  "what went well", "what did not" and "what you will do differently" made a
+  form of the one part of a review that is writing. Everything ever written is
+  kept: the three lines of each week are now its first three paragraphs.
+- **And the notes live in Notebooks.** A new Weekly notes tab, because a thing
+  you write and can only find by navigating back to the week it was about is a
+  thing you stop writing.
+- **The dashboard counts the weeks you are behind.** It said "last week is
+  still open" whether you were one week behind or five.
+- **Inventory has a Short button.** Only the things there are fewer of than you
+  keep — which is what a shopping trip is actually for. `shopping_list` takes
+  `short: true` for the same question.
+- **A block's Label is its Notes.** Same field, honest name, and it takes two
+  thousand characters instead of three hundred so what a thing actually is fits
+  in it. The grid still shows the first line, because a block is a rectangle an
+  hour tall.
+- **Three more home-screen widgets.** _Now_ — what you are meant to be doing
+  and how much of it is left, with a bar that empties as it runs out. _Rings_ —
+  today as three arcs: blocks, habits, todos. _The day_ — the whole day as one
+  strip in your categories' colours, with a line where you are now.
+- **Smaller things.** The urgency/interest/energy pickers stopped breaking
+  their own labels in half. A todo's tick is as tall as its row instead of a
+  small square in the corner of it. A habit's notes are five deep and scroll,
+  rather than ten deep followed by "and 45 more" below the fold.
+
 ## 0.101.0 — 2026-09-07
 
 - **The blue box that was not a block is gone.** Dragging out an hour drew a

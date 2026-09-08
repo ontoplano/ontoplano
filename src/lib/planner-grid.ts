@@ -283,14 +283,37 @@ export function blockHue(color: string): string {
  * is why a list that showed only labels ended up printing "block 47" — and why
  * a workout dropped on the week from the plan drew itself as "Untitled".
  */
+/**
+ * How long a block's notes may be.
+ *
+ * It was 300 and called a label, which is what it looked like from the
+ * database's side and not what anybody used it for. Somebody writing what a
+ * block actually is — the address, what to bring, what it is really about —
+ * runs out of room at 300 characters. Shared rather than server-side because
+ * the form has to know it too, and two numbers that must agree are one number.
+ */
+export const MAX_BLOCK_NOTES = 2000;
+
+/**
+ * What a block says on the grid.
+ *
+ * The first line of the notes, never all of them: a block is a rectangle an
+ * hour tall and a paragraph does not go in one. Somebody who writes three
+ * lines about a meeting still sees the meeting's name on the week.
+ */
 export function blockName(
 	item: Pick<GridSlotInput, 'mode' | 'activityName' | 'workoutName' | 'label' | 'categoryName'>
 ): string {
 	if (item.mode === 'activity' && item.activityName) return item.activityName;
 	if (item.mode === 'workout' && item.workoutName) return item.workoutName;
-	if (item.label) return item.label;
+	if (item.label) return firstLine(item.label);
 	if (item.categoryName) return item.categoryName;
 	return 'Untitled';
+}
+
+function firstLine(text: string): string {
+	const line = text.split('\n', 1)[0].trim();
+	return line || text.trim();
 }
 
 function slotToEvent(

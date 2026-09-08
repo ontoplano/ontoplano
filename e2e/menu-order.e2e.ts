@@ -61,9 +61,9 @@ test.describe('the menu order', () => {
 		await expect(menu.getByRole('button', { name: 'Move Ideas up' })).toBeDisabled();
 		// Every room but Home, which is never listed: it is always on and is not
 		// on the wheel, so a row for it would be one with nothing to change.
-		// Seven rooms, since People became a tab of Notebooks and Recipes one of
-		// Health, which retired the Kitchen room with it.
-		await expect(menu.getByRole('button', { name: /^Move .* up$/ })).toHaveCount(7);
+		// Eight rooms: seven, since People became a tab of Notebooks and Recipes
+		// one of Health, plus Reminders.
+		await expect(menu.getByRole('button', { name: /^Move .* up$/ })).toHaveCount(8);
 	});
 });
 

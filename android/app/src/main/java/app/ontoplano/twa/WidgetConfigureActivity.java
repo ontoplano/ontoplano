@@ -263,7 +263,13 @@ public class WidgetConfigureActivity extends Activity {
     }
 
     private void finishWithSuccess() {
+        // Every kind of widget, not only the list: they all read the same
+        // instance, and connecting it should not leave three of them still
+        // saying "tap to connect".
         TodayWidgetProvider.refreshAll(this);
+        NowWidgetProvider.refreshAll(this);
+        RingsWidgetProvider.refreshAll(this);
+        DayWidgetProvider.refreshAll(this);
 
         if (widgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
             Intent result = new Intent();

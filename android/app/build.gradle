@@ -57,8 +57,8 @@ android {
         applicationId "app.ontoplano.twa"
         minSdkVersion 23
         targetSdkVersion 36
-        versionCode 1
-        versionName "1.0.0"
+        versionCode 10100
+        versionName "0.101.0"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name
@@ -209,6 +209,8 @@ dependencies {
     implementation 'androidx.browser:browser:1.8.0'
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     
-        implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.6.2'
+        implementation 'com.google.androidbrowserhelper:billing:1.2.0'
+    
+        implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.7.0-alpha02'
     
 }

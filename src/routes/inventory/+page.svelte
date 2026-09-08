@@ -44,7 +44,14 @@
 	let editFields = $state<[string, string][]>([]);
 	let editIdealQty = $state('1');
 
-	let filterType = $state<'all' | 'someday' | 'replenish'>('all');
+	/**
+	 * Which list, plus the one question this page exists to answer.
+	 *
+	 * "Short" is not a third list — it is a question asked of the things you
+	 * restock: which of them do I have fewer of than I keep. That question had
+	 * no button, so answering it meant reading every row's numbers.
+	 */
+	let filterType = $state<'all' | 'someday' | 'replenish' | 'short'>('all');
 	let newItemType = $state<'replenish' | 'someday'>('replenish');
 	let showBought = $state(false);
 	let showSnoozed = $state(false);
@@ -262,6 +269,8 @@
 			if (wanted && !`${item.name} ${item.notes ?? ''}`.toLowerCase().includes(wanted))
 				return false;
 			if (filterType === 'all') return true;
+			// Short of it: fewer than you keep, and something you restock at all.
+			if (filterType === 'short') return item.type === 'replenish' && item.qty < item.idealQty;
 			return item.type === filterType;
 		})
 	);
@@ -873,6 +882,11 @@
 					onclick={() => (filterType = filterType === 'someday' ? 'all' : 'someday')}
 					aria-pressed={filterType === 'someday'}
 					title="Wishlist ({keyFor('/inventory', 'filter-someday')})">Wishlist</button
+				>
+				<button
+					onclick={() => (filterType = filterType === 'short' ? 'all' : 'short')}
+					aria-pressed={filterType === 'short'}
+					title="Only what you have fewer of than you keep">Short</button
 				>
 			</div>
 

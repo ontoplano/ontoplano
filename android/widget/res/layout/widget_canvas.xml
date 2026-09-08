@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The whole of a drawn widget.
+
+    One ImageView, because RemoteViews cannot draw a gradient, a rounded
+    progress bar or a ring, and an app is allowed to hand it a bitmap. The
+    design is in `WidgetPaint` and the providers; this is only the surface it
+    is painted onto.
+
+    `adjustViewBounds` off and `scaleType="fitXY"` deliberate: the bitmap is
+    made at exactly the size the launcher reported, so any scaling here would
+    be resampling something already the right size.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_canvas"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:contentDescription="@string/widget_description" />
+</FrameLayout>
