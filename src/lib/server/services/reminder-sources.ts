@@ -202,10 +202,24 @@ export type Upcoming = {
 	message: string;
 };
 
-/** How far ahead the page looks. Two months covers a birthday you can act on. */
+/**
+ * How far ahead the page looks, and how far it is allowed to.
+ *
+ * Two months by default, which covers a birthday you can still do something
+ * about. A year is the ceiling: past that every yearly bill appears twice and
+ * the list stops being about what is coming.
+ */
 export const UPCOMING_DAYS = 60;
+export const MAX_UPCOMING_DAYS = 365;
 
-export function upcomingDerived(ctx: Ctx, now: Date, tz: string): Upcoming[] {
+/** A window somebody asked for, clamped to something the list can be. */
+export function upcomingWindow(raw: unknown): number {
+	const days = Math.trunc(Number(raw));
+	if (!Number.isFinite(days) || days < 1) return UPCOMING_DAYS;
+	return Math.min(days, MAX_UPCOMING_DAYS);
+}
+
+export function upcomingDerived(ctx: Ctx, now: Date, tz: string, days = UPCOMING_DAYS): Upcoming[] {
 	const today = dayOf(localOfInstant(now, tz));
 	const hour = String(getGridHours(ctx.userId).start).padStart(2, '0');
 	const out: Upcoming[] = [];
@@ -214,7 +228,7 @@ export function upcomingDerived(ctx: Ctx, now: Date, tz: string): Upcoming[] {
 	for (const person of listPeople(ctx)) {
 		if (!person.birthday || !person.remindOnBirthday) continue;
 		const day = nextOccurrenceOf(person.birthday, today);
-		if (day === null || daysBetween(today, day) > UPCOMING_DAYS) continue;
+		if (day === null || daysBetween(today, day) > days) continue;
 		out.push({
 			kind: 'person',
 			at: `${day}T${hour}:00:00`,
@@ -223,7 +237,7 @@ export function upcomingDerived(ctx: Ctx, now: Date, tz: string): Upcoming[] {
 	}
 
 	// Bills that want paying, up to the same horizon.
-	for (const bill of billsDueBetween(ctx, today, addDays(today, UPCOMING_DAYS))) {
+	for (const bill of billsDueBetween(ctx, today, addDays(today, days))) {
 		if (bill.paid) continue;
 		const money = bill.currency
 			? `${bill.currency} ${bill.amountExpected}`

@@ -281,12 +281,16 @@ test('the count has no ceiling', async ({ page }) => {
 	await visit(page, '/inventory');
 	await addItem(page, 'Batteries');
 
-	for (let i = 0; i < 3; i++) {
+	// One at a time, waiting for each to land rather than for 300ms and hoping.
+	// Three clicks against a loaded server is three writes in flight, and the
+	// last one arriving after the assertion is how this failed under a full run.
+	const count = page.locator('[title$="you keep 1"]');
+	for (let want = 1; want <= 3; want++) {
 		await page.getByRole('button', { name: 'One more Batteries' }).click();
-		await page.waitForTimeout(300);
+		await expect(count).toHaveText(String(want), { timeout: 15_000 });
 	}
 	await page.getByRole('button', { name: /Show bought/ }).click();
-	await expect(page.locator('[title$="you keep 1"]')).toHaveText('3');
+	await expect(count).toHaveText('3');
 });
 
 test.describe('a row on a phone', () => {

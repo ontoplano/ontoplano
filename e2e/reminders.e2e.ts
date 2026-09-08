@@ -63,3 +63,67 @@ test('an alarm is a day and a time, not one box with six segments', async ({ pag
 	await page.getByRole('button', { name: 'Confirm?' }).click();
 	await expect(page.getByText('take the bread out')).toHaveCount(0);
 });
+
+test('the window can be widened, and stops at a year', async ({ page }) => {
+	await register(page, `rem-window-${Date.now()}@test.invalid`);
+
+	// A birthday four months out: outside the default two months, inside a year.
+	const far = new Date();
+	far.setDate(far.getDate() + 120);
+	const birthday = `1985-${String(far.getMonth() + 1).padStart(2, '0')}-${String(far.getDate()).padStart(2, '0')}`;
+
+	await visit(page, '/notebooks/people');
+	await page
+		.getByRole('button', { name: /New person/ })
+		.first()
+		.click();
+	const form = page.getByRole('dialog');
+	await form.locator('[name="label"]').fill('Rui');
+	await form.locator('[name="bornOn"]').fill(birthday);
+	await form.getByRole('button', { name: /Add person/ }).click();
+	await expect(form).toBeHidden({ timeout: 15_000 });
+
+	await visit(page, '/reminders');
+	await expect(page.getByText('Rui', { exact: false })).toHaveCount(0);
+
+	// Ask further ahead and there it is.
+	await visit(page, '/reminders?days=200');
+	await expect(page.getByText('Rui', { exact: false }).first()).toBeVisible({ timeout: 15_000 });
+
+	// Past a year the list stops being about what is coming, so it clamps.
+	await visit(page, '/reminders?days=9999');
+	await expect(page.locator('[name="days"]')).toHaveValue('365');
+});
+
+test.describe('on a phone', () => {
+	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+	test('changing how far ahead does not throw you back to the top', async ({ page }) => {
+		await register(page, `rem-scroll-${Date.now()}@test.invalid`);
+		await visit(page, '/reminders');
+		await expect(page.locator('main')).toBeVisible();
+		await page.waitForTimeout(500);
+
+		/*
+		 * Where the control is on screen, before and after.
+		 *
+		 * Measured on the element rather than on `window.scrollY`, because which
+		 * box actually scrolls is a layout detail and this is not a test about
+		 * layout — it is a test about the thing you pressed still being under
+		 * your thumb.
+		 */
+		const seven = page.getByRole('button', { name: '7', exact: true });
+		await page.mouse.wheel(0, 260);
+		await page.waitForTimeout(400);
+		const before = (await seven.boundingBox())!;
+
+		await seven.click();
+		await expect(page.getByText(/The next 7 days/)).toBeVisible({ timeout: 15_000 });
+		await page.waitForTimeout(400);
+
+		// These were links, and a link is a navigation, which puts you back at
+		// the top — so pressing "30" threw you away from the row you pressed.
+		const after = (await seven.boundingBox())!;
+		expect(Math.round(after.y)).toBe(Math.round(before.y));
+	});
+});

@@ -10,6 +10,30 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.104.0 — 2026-09-08
+
+- **"Coming up" says how far ahead it is looking, and you can change it.** Seven,
+  fifteen, thirty or sixty days, or any number up to a year in the box beside
+  them. It is in the address bar rather than in a preference, because it is a
+  question you ask once and not a setting you keep.
+- **Each kind of reminder has its own glyph.** A cake for a birthday, a wallet
+  for a bill, the planner's own mark for a block. Six identical clocks made the
+  icon column worth nothing.
+- **Pressing a window does not throw you back to the top.** They were links,
+  and a link is a navigation — on a phone, pressing "30" scrolled the page away
+  from the control you had just pressed.
+- **Uploading a ringtone no longer asks for your microphone.** Naming audio
+  MIME types on a file field tells a phone browser you want audio, and its
+  answer is to offer the recorder — Firefox on Android asked permission to
+  record before it would show a file picker. It asks for a file now.
+- **The app says why notifications cannot work, when they cannot.** They need a
+  secure context, and `http://192.168.1.50:1493` is not one — `localhost`
+  counts only on the machine running it, which is exactly what a phone on the
+  same network is not. The browser's way of saying so is to make the API not
+  exist, so the app did nothing, said nothing, and looked broken rather than
+  unsupported. It now names the address it is on and points at
+  `make https-tailscale`.
+
 ## 0.103.0 — 2026-09-08
 
 - **Closing a week is a decision, then a commit.** Answering a row applied it

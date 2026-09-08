@@ -1,7 +1,11 @@
 import type { Actions, PageServerLoad } from './$types';
 import { buildCtx, localDateOf } from '$lib/server/services/ctx';
 import { ensureBirthdayReminders } from '$lib/server/services/birthdays';
-import { upcomingDerived } from '$lib/server/services/reminder-sources';
+import {
+	MAX_UPCOMING_DAYS,
+	upcomingDerived,
+	upcomingWindow
+} from '$lib/server/services/reminder-sources';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
 	createFreeReminder,
@@ -27,8 +31,12 @@ import {
  * the place to set one that is about nothing at all, which is what an alarm
  * clock is.
  */
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
+	// How far ahead to look. In the address bar rather than in a preference:
+	// it is a question you ask once — "and what about November?" — not a
+	// setting you keep, and this way the answer is a link you can send.
+	const days = upcomingWindow(url.searchParams.get('days'));
 
 	/*
 	 * Today's birthdays are written here as well as by the delivery pass.
@@ -52,7 +60,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		 */
 		reminders: listReminders(ctx).filter((r) => r.subjectKind !== 'review'),
 		/** Birthdays and bills that are coming but are not rows yet. */
-		upcoming: upcomingDerived(ctx, ctx.now, ctx.tz),
+		upcoming: upcomingDerived(ctx, ctx.now, ctx.tz, days),
+		days,
+		maxDays: MAX_UPCOMING_DAYS,
 		ringtones: listRingtones(ctx),
 		sounds: soundChoices(ctx),
 		limits: { ringtones: MAX_RINGTONES, kilobytes: MAX_RINGTONE_BYTES / 1024 }

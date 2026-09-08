@@ -176,6 +176,23 @@
 			Notification.permission === 'default' &&
 			!asked
 	);
+
+	/**
+	 * Why the browser will not do this here, when it will not.
+	 *
+	 * Notifications, service workers and installing as an app all require a
+	 * secure context, and `http://192.168.1.50:1493` is not one — `localhost`
+	 * counts only on the machine it is running on, which is exactly the case a
+	 * phone on the same network is not. The browser's answer to all of this is
+	 * to make `Notification` simply not exist, so the app did nothing and said
+	 * nothing, and looked broken rather than unsupported.
+	 *
+	 * `make https-tailscale` is the way out: it serves the dev app over HTTPS on
+	 * a name the phone can reach, which is a secure context.
+	 */
+	const insecure = $derived(
+		browser && !window.isSecureContext && typeof Notification === 'undefined'
+	);
 </script>
 
 <!-- One element for every reminder that rings: two overlapping copies of the
@@ -218,6 +235,14 @@
 						>
 							Let ontoplano notify you outside the tab
 						</button>
+					{:else if insecure}
+						<p class="mt-1.5 text-xs text-gray-500">
+							Notifications need HTTPS, and this page is on
+							<span class="tabular">{location.protocol}//{location.host}</span>. On your own machine
+							<span class="tabular">localhost</span>
+							counts; from another device it does not.
+							<span class="tabular">make https-tailscale</span> serves the dev app over HTTPS.
+						</p>
 					{/if}
 				</div>
 				<button

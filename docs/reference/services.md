@@ -2787,7 +2787,11 @@ situations, and one of them is an emergency:
 Only for bills that are actually unpaid, and only inside a fortnight, so a
 year's worth of yearly bills is not written into the table in advance.
 
-#### `upcomingDerived(ctx, now, tz)`
+#### `upcomingWindow(raw)`
+
+A window somebody asked for, clamped to something the list can be.
+
+#### `upcomingDerived(ctx, now, tz, days)`
 
 ### Types
 

@@ -1,13 +1,17 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Banner from '$lib/components/Banner.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
-	import Icon from '$lib/components/Icon.svelte';
+	import Icon, { type IconName } from '$lib/components/Icon.svelte';
+	import { resolve } from '$app/paths';
+	import { goto } from '$app/navigation';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { armed } from '$lib/actions/armed';
+	import { onMount } from 'svelte';
 	import type { ActionData, PageServerData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -19,14 +23,70 @@
 	 * the only way to see what was coming was to wait for it. This is the list,
 	 * and the place to set one that is about nothing at all.
 	 */
-	const KIND_LABELS: Record<string, string> = {
-		instance: 'Blocks',
-		todo: 'Todos',
-		free: 'Alarms',
-		review: 'The weekly review',
-		bill: 'Bills',
-		person: 'Birthdays'
+	/**
+	 * What each kind is called, and what it looks like.
+	 *
+	 * A glyph per kind rather than the same clock six times: a list where every
+	 * row carries the identical icon is a list where the icon column is wasted,
+	 * and "which of these is a bill" is the question somebody scanning it is
+	 * actually asking. A cake is a birthday everywhere; a wallet is money.
+	 */
+	const KINDS: Record<string, { label: string; icon: IconName }> = {
+		instance: { label: 'Blocks', icon: 'planner' },
+		todo: { label: 'Todos', icon: 'check' },
+		free: { label: 'Alarms', icon: 'clock' },
+		review: { label: 'The weekly review', icon: 'book' },
+		bill: { label: 'Bills', icon: 'wallet' },
+		person: { label: 'Birthdays', icon: 'cake' }
 	};
+
+	const kindOf = (key: string) => KINDS[key] ?? { label: key, icon: 'clock' as IconName };
+
+	/** The windows worth a button. Anything else goes in the box beside them. */
+	const WINDOWS = [7, 15, 30, 60];
+
+	/**
+	 * Whether this browser can be reached at all.
+	 *
+	 * Everything about a notification — the permission, the service worker,
+	 * installing the app — needs a secure context, and the browser signals that
+	 * by making the APIs not exist rather than by refusing. So the page has to
+	 * check the context itself, or it silently offers something that cannot work.
+	 */
+	let insecure = $state(false);
+	let origin = $state('');
+	// Seeded from the window in the address and re-seeded when it changes, so
+	// pressing 30 leaves the box saying 30 rather than whatever was typed last.
+	let howFar = $state<number>(0);
+	$effect(() => {
+		howFar = data.days;
+	});
+
+	/**
+	 * Look further ahead without moving the page.
+	 *
+	 * These were links, and a link is a navigation: SvelteKit puts you back at
+	 * the top of the document, which on a phone means pressing "30" throws you
+	 * away from the control you just pressed. `noScroll` and `keepFocus` say
+	 * that the address changed and nothing else did — which is the truth, since
+	 * only one card's contents depend on it.
+	 */
+	function look(days: number) {
+		const wanted = Math.max(1, Math.min(data.maxDays, Math.trunc(days) || data.days));
+		howFar = wanted;
+		// The path is resolved; the rule cannot see through the appended query.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		void goto(`${resolve('/reminders')}?days=${wanted}`, {
+			noScroll: true,
+			keepFocus: true,
+			replaceState: true
+		});
+	}
+
+	onMount(() => {
+		insecure = !window.isSecureContext;
+		origin = `${location.protocol}//${location.host}`;
+	});
 
 	/**
 	 * What is coming: the rows that exist and the ones that do not yet.
@@ -100,6 +160,26 @@
 	<h1 class="text-lg font-bold text-gray-900">Reminders</h1>
 
 	<FormError message={form?.message} />
+
+	<!--
+		Why nothing arrives, when nothing can.
+		
+		Notifications, service workers and installing as an app all need a secure
+		context. `http://192.168.1.50:1493` is not one — `localhost` counts only
+		on the machine it runs on, which is exactly what a phone on the same
+		network is not. The browser's answer is to make `Notification` not exist,
+		so without this the app does nothing, says nothing, and looks broken
+		rather than unsupported.
+	-->
+	{#if insecure}
+		<Banner kind="warning">
+			Nothing can reach this browser: notifications need HTTPS and this page is on
+			<span class="tabular">{origin}</span>. On the machine running it,
+			<span class="tabular">localhost</span> counts as secure; from another device it does not.
+			<span class="tabular">make https-tailscale</span> serves the development app over HTTPS on a name
+			your phone can reach — reminders, installing it as an app and offline all start working together.
+		</Banner>
+	{/if}
 
 	<!--
 		The alarm clock.
@@ -176,8 +256,59 @@
 		</Card>
 	</div>
 
-	<!-- What is coming, soonest first. -->
-	<Card title="Coming up" description="Everything set, whatever set it." flush>
+	<!--
+		What is coming, and how far ahead you are asking.
+
+		The window is in the address bar rather than in a preference: it is a
+		question you ask once — "and what about November?" — not a setting you
+		keep, and this way the answer is a link you can send yourself.
+	-->
+	<Card
+		title="Coming up"
+		description="The next {data.days} {data.days === 1
+			? 'day'
+			: 'days'} — everything set, whatever set it."
+		flush
+	>
+		<div
+			class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 py-2"
+			data-tour="reminder-window"
+		>
+			<div class="seg" role="group" aria-label="How far ahead">
+				{#each WINDOWS as window (window)}
+					<button
+						type="button"
+						onclick={() => look(window)}
+						aria-pressed={data.days === window}
+						title="The next {window} days"
+					>
+						{window}
+					</button>
+				{/each}
+			</div>
+			<form
+				onsubmit={(e) => {
+					e.preventDefault();
+					look(Number(howFar));
+				}}
+				class="flex items-center gap-2"
+			>
+				<label class="text-xs whitespace-nowrap text-gray-500" for="how-far">or</label>
+				<input
+					id="how-far"
+					name="days"
+					type="number"
+					min="1"
+					max={data.maxDays}
+					bind:value={howFar}
+					autocomplete="off"
+					title="How many days ahead to look, up to {data.maxDays}"
+					class="input tabular w-20 py-1 text-sm"
+				/>
+				<span class="text-xs whitespace-nowrap text-gray-500">days</span>
+				<button type="submit" class="btn btn-sm" title="Look that far ahead">Go</button>
+			</form>
+		</div>
 		{#if upcoming.length === 0}
 			<EmptyState
 				icon="clock"
@@ -188,11 +319,13 @@
 			<ul class="divide-y divide-gray-200">
 				{#each upcoming as reminder (reminder.key)}
 					<li class="flex items-center gap-3 px-4 py-2">
-						<span class="shrink-0 text-gray-400"><Icon name="clock" size={14} /></span>
+						<span class="shrink-0 text-gray-400" title={kindOf(reminder.subjectKind).label}>
+							<Icon name={kindOf(reminder.subjectKind).icon} size={14} />
+						</span>
 						<span class="min-w-0 flex-1">
 							<span class="block truncate text-sm text-gray-900">{reminder.message}</span>
 							<span class="text-xs text-gray-500">
-								{KIND_LABELS[reminder.subjectKind] ?? reminder.subjectKind}
+								{kindOf(reminder.subjectKind).label}
 								{#if reminder.shown}· already shown{/if}
 							</span>
 						</span>
@@ -246,8 +379,11 @@
 							class="flex flex-wrap items-center gap-3"
 						>
 							<input type="hidden" name="kind" value={choice.kind} />
-							<span class="min-w-32 flex-1 text-sm text-gray-900">
-								{KIND_LABELS[choice.kind] ?? choice.kind}
+							<span class="flex min-w-32 flex-1 items-center gap-2 text-sm text-gray-900">
+								<span class="shrink-0 text-gray-400">
+									<Icon name={kindOf(choice.kind).icon} size={14} />
+								</span>
+								{kindOf(choice.kind).label}
 							</span>
 							<label class="flex items-center gap-2 text-sm text-gray-700">
 								<input type="checkbox" name="audible" checked={choice.audible} class="size-4" />
@@ -323,10 +459,21 @@
 					A sound file
 					<!-- Choosing the file is the submit: a second button to press after
 					     picking one is a step nobody needs. -->
+					<!--
+						Extensions, not MIME types.
+
+						`accept="audio/mpeg"` tells a phone browser that this field wants
+						audio, and a phone browser's answer to that is to offer the
+						microphone — Firefox on Android asks for permission to record
+						before it will show you a file picker, which is a baffling thing
+						to be asked when you are uploading a ringtone. Naming extensions
+						asks for a file and nothing else. The server checks the type
+						properly either way, so this only decides what the picker offers.
+					-->
 					<input
 						name="sound"
 						type="file"
-						accept="audio/mpeg,audio/ogg,audio/wav"
+						accept=".mp3,.ogg,.wav"
 						required
 						class="text-sm"
 						onchange={(e) => (e.currentTarget as HTMLInputElement).form?.requestSubmit()}

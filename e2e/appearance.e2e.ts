@@ -19,15 +19,35 @@ const COMBINATIONS = [
 	{ theme: 'dark', style: 'playful' }
 ] as const;
 
+/**
+ * Switch the look, and wait for the browser to have actually applied it.
+ *
+ * This waited 150ms and hoped. A theme is a set of custom properties on the
+ * root, and reading a computed colour before the style recalculation has run
+ * gives the *old* palette against the new ground — which is a contrast failure
+ * that is entirely the test's own doing, and which duly appeared under a
+ * loaded parallel run and nowhere else. Two animation frames is the real
+ * signal that the change has landed; the wait after it is for the 140ms colour
+ * transition, whose midpoint is an interpolated colour nobody designed.
+ */
 async function paint(page: Page, theme: string, style: string): Promise<void> {
 	await page.evaluate(
 		([t, s]) => {
 			document.documentElement.dataset.theme = t;
 			document.documentElement.dataset.style = s;
+			return new Promise<void>((resolve) =>
+				requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+			);
 		},
 		[theme, style]
 	);
-	await page.waitForTimeout(150);
+	// And then the transition. The app animates colour over 140ms, so a value
+	// read the moment the style lands is an interpolation between the old
+	// palette and the new one — a colour that is on screen for a tenth of a
+	// second and is nobody's design. The frames above are what makes this wait
+	// start when the change does rather than when the instruction was sent,
+	// which is what made it too short under load.
+	await page.waitForTimeout(250);
 }
 
 test('the tick on a ticked box can be seen', async ({ page }) => {

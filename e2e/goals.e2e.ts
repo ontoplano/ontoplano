@@ -61,14 +61,31 @@ test('re-saving the choosing modal keeps the done todo linked', async ({ page })
 	await page.getByRole('button', { name: 'Save links' }).click();
 	await page.waitForTimeout(600);
 
-	// Finish one from the card's own fold — which is still open behind the
-	// modal that just closed, so it is only clicked open when it is shut.
-	const foldOpen = () => page.locator('form[action="?/setTodoStatus"]').first().isVisible();
-	if (!(await foldOpen()))
-		await page
-			.locator('button', { hasText: /^Tasks \(/ })
-			.first()
-			.click();
+	/*
+	 * Make sure the card's own fold is open, and wait for it.
+	 *
+	 * It is often already open behind the modal that just closed, so this used
+	 * to sample its visibility once after a fixed delay and click if the answer
+	 * was no. Under a loaded parallel run the sample lands before the page has
+	 * settled, the click *closes* a fold that was open, and the test waits
+	 * thirty seconds for a checkbox that will never come. Asking with a timeout
+	 * and re-checking after the click is the same intent without the race.
+	 */
+	const fold = page.locator('form[action="?/setTodoStatus"]').first();
+	const openFold = async () => {
+		for (let attempt = 0; attempt < 3; attempt++) {
+			// Wait for it rather than sampling: under load the page has often not
+			// finished rendering when the question is asked, and a "no" there
+			// makes the click below close a fold that was already open.
+			if (await fold.isVisible({ timeout: 2000 }).catch(() => false)) return;
+			await page
+				.locator('button', { hasText: /^Tasks \(/ })
+				.first()
+				.click();
+		}
+		await expect(fold).toBeVisible({ timeout: 15_000 });
+	};
+	await openFold();
 	await page
 		.locator('form[action="?/setTodoStatus"]', { hasText: 'first chore' })
 		.locator('input[type="checkbox"]')
@@ -77,11 +94,7 @@ test('re-saving the choosing modal keeps the done todo linked', async ({ page })
 	await expect(page.getByText('1 of 2 done')).toBeVisible();
 
 	// Open the modal again and save it untouched — the regression was here.
-	if (!(await foldOpen()))
-		await page
-			.locator('button', { hasText: /^Tasks \(/ })
-			.first()
-			.click();
+	await openFold();
 	await page.getByRole('button', { name: 'Choose tasks' }).click();
 	// The done todo is still offered, ticked, struck through.
 	const done = dialog
@@ -119,11 +132,7 @@ test('re-saving the choosing modal keeps the done todo linked', async ({ page })
 	await page.waitForTimeout(600);
 
 	await visit(page, '/goals');
-	if (!(await foldOpen()))
-		await page
-			.locator('button', { hasText: /^Tasks \(/ })
-			.first()
-			.click();
+	await openFold();
 	await page.getByRole('button', { name: 'Choose tasks' }).click();
 	// Done and never linked: not offered until the completed list unfolds.
 	await expect(dialog.locator('label', { hasText: 'third chore' })).toHaveCount(0);
