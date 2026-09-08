@@ -10,6 +10,17 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.107.0 — 2026-09-08
+
+- **`make https-local` says what it is doing.** It asked for a password in the
+  middle of Caddy's own output with no explanation — that is the CA being added
+  to _this_ machine's trust stores, it is the only thing here that needs root,
+  and `TRUST_LOCAL=0` skips it. It also serves the certificate the phone needs
+  on its own port, so getting the file onto the device is opening a link rather
+  than a puzzle, and prints the Android and iOS steps. Including the one that
+  costs an evening: Chrome trusts a certificate you install this way and
+  Firefox for Android does not.
+
 ## 0.106.0 — 2026-09-08
 
 - **The Tailscale route is gone.** It was one company in the path for something

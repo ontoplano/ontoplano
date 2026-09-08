@@ -947,14 +947,24 @@ $(APK):
 # privately-issued certificate does not satisfy it. For that you need a real
 # one.
 
-# A certificate this machine signs itself, and a phone that has been told to
-# trust it. No account, no third party, nothing leaving the network.
+# A certificate this machine signs itself, and a phone told to trust it.
 #
-#   make https-local
+#   make https-local                 # serve, and trust the CA on this machine
+#   make https-local TRUST_LOCAL=0   # serve only — nothing asks for a password
 #
-# Then, once, on the phone: copy the CA it names onto the device and install it.
-# Android calls it "CA certificate" under Encryption & credentials; iOS wants it
-# enabled in About -> Certificate Trust Settings.
+# The only thing here that wants root is putting Caddy's own certificate
+# authority into *this* machine's trust stores, which is what makes your own
+# browser accept the address without a warning. Caddy asks for it directly, in
+# the middle of its own output, which is a surprising place to be asked for a
+# password — so it is announced before it happens and it can be skipped.
+#
+# Nothing about the phone needs root. The phone needs the CA file, which is
+# served on the port below so it can simply be opened.
+CADDY_DATA := $(if $(XDG_DATA_HOME),$(XDG_DATA_HOME),$(HOME)/.local/share)/caddy
+CA_FILE := $(CADDY_DATA)/pki/authorities/local/root.crt
+CA_PORT ?= 1494
+TRUST_LOCAL ?= 1
+
 https-local:
 	@command -v caddy >/dev/null || { \
 		echo "caddy is not installed."; \
@@ -965,21 +975,56 @@ https-local:
 	@test -n "$(LAN_IP)" || { echo "Could not work out this machine's LAN address."; exit 1; }
 	@printf '%s\n' \
 		"{" \
-		"  admin off" \
+		"$(if $(filter 0,$(TRUST_LOCAL)),	skip_install_trust,	# this machine trusts the CA: the one sudo prompt)" \
+		"	admin off" \
 		"}" \
+		"" \
 		"https://$(LAN_IP) {" \
-		"  tls internal" \
-		"  reverse_proxy 127.0.0.1:$(APP_PORT)" \
+		"	tls internal" \
+		"	reverse_proxy 127.0.0.1:$(APP_PORT)" \
+		"}" \
+		"" \
+		"# Plain HTTP on purpose: this is how the phone fetches the certificate" \
+		"# it does not trust yet, and there is nothing secret in a public key." \
+		"http://$(LAN_IP):$(CA_PORT) {" \
+		"	root * $(dir $(CA_FILE))" \
+		"	file_server" \
 		"}" > /tmp/ontoplano-caddy.caddyfile
-	@echo "Serving http://127.0.0.1:$(APP_PORT) as https://$(LAN_IP)"
+	@caddy fmt --overwrite /tmp/ontoplano-caddy.caddyfile >/dev/null 2>&1 || true
 	@echo
-	@echo "On the phone, once: install this machine's CA, then open"
-	@echo "  https://$(LAN_IP)"
+	@echo "  ontoplano over HTTPS, on this network"
+	@echo "  ────────────────────────────────────────────────────────────────"
+	@echo "  The app:        https://$(LAN_IP)"
+	@echo "  Its authority:  http://$(LAN_IP):$(CA_PORT)/root.crt"
 	@echo
-	@echo "The CA is at:"
-	@echo "  ~/.local/share/caddy/pki/authorities/local/root.crt"
+ifeq ($(TRUST_LOCAL),0)
+	@echo "  Nothing here will ask for a password (TRUST_LOCAL=0). Your own"
+	@echo "  browser will warn about the certificate; the phone is unaffected."
+else
+	@echo "  Caddy will ask for your password once, in its own output below."
+	@echo "  It is adding its certificate authority to THIS machine's trust"
+	@echo "  stores, so your own browser accepts the address. Nothing else"
+	@echo "  here needs root. Skip it with: make https-local TRUST_LOCAL=0"
+endif
 	@echo
-	@echo "Ctrl-C stops it."
+	@echo "  On an Android phone, once:"
+	@echo "    1. Open http://$(LAN_IP):$(CA_PORT)/root.crt and let it download."
+	@echo "    2. Settings → Security → More security settings →"
+	@echo "       Encryption & credentials → Install a certificate →"
+	@echo "       CA certificate → Install anyway → pick root.crt."
+	@echo "       (Some phones: Settings → Security → Install from storage.)"
+	@echo "    3. Open https://$(LAN_IP) in Chrome."
+	@echo
+	@echo "  Chrome trusts what you install there. Firefox for Android does"
+	@echo "  not — it carries its own list and ignores the system one, so use"
+	@echo "  Chrome for this, or put the app behind a real certificate."
+	@echo
+	@echo "  On iOS: open the same link, Settings → Profile Downloaded →"
+	@echo "  Install, then General → About → Certificate Trust Settings and"
+	@echo "  switch it on. That second step is the one everybody misses."
+	@echo
+	@echo "  Ctrl-C stops it."
+	@echo
 	@caddy run --config /tmp/ontoplano-caddy.caddyfile --adapter caddyfile
 
 # ─── Clean ────────────────────────────────────────────────────────────────────

@@ -175,6 +175,43 @@ stack rather than by the page, and a privately-issued certificate does not
 satisfy it — installing the CA on the phone is enough to make pages load and
 service workers run, and is not enough to hide the URL bar.
 
+## The other question: reminders and offline on a phone, in development
+
+Different problem, easier answer. Notifications, service workers and installing
+the app from the browser all need a **secure context**, which is HTTPS or
+`localhost` — and `localhost` counts only on the machine it is running on, so a
+phone on the same network reaching `http://192.168.1.4:1493` has none of them.
+The browser's way of saying so is to make the APIs not exist, which reads as
+the app being broken.
+
+Unlike the URL bar, a certificate you issue yourself _is_ enough here:
+
+```sh
+make https-local
+```
+
+It serves the app over HTTPS with Caddy's own certificate authority and serves
+that authority's public certificate on port 1494 so the phone can fetch it.
+
+- **The one thing that wants root** is putting the CA into _this_ machine's
+  trust stores, so your own browser stops warning. Caddy asks for it in the
+  middle of its own output. `make https-local TRUST_LOCAL=0` skips it and
+  nothing prompts.
+- **On Android**: open `http://<lan-ip>:1494/root.crt`, then Settings →
+  Security → Encryption & credentials → Install a certificate → CA certificate.
+- **Chrome trusts what you install there; Firefox for Android does not.** It
+  keeps its own list and ignores the system one, so a locally-issued
+  certificate will not work in it at all. Use Chrome, or put the app behind a
+  real certificate.
+- **On iOS** the profile has to be installed _and then_ switched on under
+  General → About → Certificate Trust Settings, which is the step everybody
+  misses.
+
+If you already have a domain and something in front of it — a proxy on a VPS,
+a tunnel out of a home connection — that is strictly better than all of this:
+a real certificate needs nothing installed on any device, and it satisfies the
+URL-bar case too.
+
 ## Removing the URL bar
 
 A TWA shows an address bar until it can prove the app and the site belong
