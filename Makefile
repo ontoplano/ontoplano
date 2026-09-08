@@ -73,7 +73,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% badges android-project _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: _billing-in-build vars print-% badges android-project _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local https-tailscale https-tailscale-off android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -928,9 +928,49 @@ $(APK):
 # HTTPS. On plain http there is no way to hide the bar, and no service worker
 # either, since browsers only run those in a secure context.
 #
-# Tailscale is the least painful way to get a real certificate for a machine
-# with no public address: it issues one for a name it controls, and nothing has
-# to be port-forwarded or exposed.
+# Two ways to get one, and they trade different things.
+#
+# `https-local` uses Caddy's own certificate authority. Nothing leaves the
+# network and no third party is involved at any point — but a certificate
+# signed by a CA nobody has heard of is not trusted, so the phone has to be
+# told about that CA once. That is the whole cost, and it is paid once per
+# device.
+#
+# `https-tailscale` gets a real, publicly-trusted certificate for a name on
+# your tailnet, so nothing has to be installed on the phone. The client is
+# open source (BSD-3); the coordination server it talks to is not, and the
+# certificate is issued through it. That is the trade: no setup on the device,
+# one company in the path.
+
+# A certificate this machine signs itself, and a phone that has been told to
+# trust it. No account, no third party, nothing leaving the network.
+#
+#   make https-local
+#
+# Then, once, on the phone: open http://<this machine>:2019/ontoplano-ca.crt
+# and install it. Android calls it "CA certificate" under Encryption &
+# credentials; iOS wants it enabled in About → Certificate Trust Settings.
+https-local:
+	@command -v caddy >/dev/null || { 		echo "caddy is not installed."; 		echo "  arch:   sudo pacman -S caddy"; 		echo "  debian: sudo apt install caddy"; 		exit 1; 	}
+	@test -n "$(LAN_IP)" || { echo "Could not work out this machine's LAN address."; exit 1; }
+	@printf '%s\n' \
+		"{" \
+		"  admin :2019" \
+		"}" \
+		"https://$(LAN_IP) {" \
+		"  tls internal" \
+		"  reverse_proxy 127.0.0.1:$(APP_PORT)" \
+		"}" > /tmp/ontoplano-caddy.json.caddyfile
+	@echo "Serving http://127.0.0.1:$(APP_PORT) as https://$(LAN_IP)"
+	@echo
+	@echo "On the phone, once: install this machine's CA, then open"
+	@echo "  https://$(LAN_IP)"
+	@echo
+	@echo "The CA is at:"
+	@echo "  ~/.local/share/caddy/pki/authorities/local/root.crt"
+	@echo
+	@echo "Ctrl-C stops it."
+	@caddy run --config /tmp/ontoplano-caddy.json.caddyfile --adapter caddyfile
 
 https-tailscale:
 	@command -v tailscale >/dev/null || { \

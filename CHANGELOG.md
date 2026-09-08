@@ -10,6 +10,18 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.105.0 — 2026-09-08
+
+- **One and three days join the window buttons.** "What is today" and "what is
+  this weekend" are the two questions somebody opens the page with, and a week
+  was the shortest answer it offered.
+- **`make https-local` serves the development app over HTTPS with no third
+  party at all.** A certificate this machine signs, through Caddy's own
+  authority; the phone is told once to trust it and then reminders, installing
+  it as an app, and offline all work over the LAN. `make https-tailscale` is
+  still there and is the other trade: nothing to install on the phone, one
+  company in the path.
+
 ## 0.104.0 — 2026-09-08
 
 - **"Coming up" says how far ahead it is looking, and you can change it.** Seven,

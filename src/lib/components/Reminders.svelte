@@ -187,8 +187,9 @@
 	 * to make `Notification` simply not exist, so the app did nothing and said
 	 * nothing, and looked broken rather than unsupported.
 	 *
-	 * `make https-tailscale` is the way out: it serves the dev app over HTTPS on
-	 * a name the phone can reach, which is a secure context.
+	 * `make https-local` is the way out: it serves the dev app over HTTPS with a
+	 * certificate this machine signs, which is a secure context once the phone
+	 * has been told to trust it. `make https-tailscale` is the other way.
 	 */
 	const insecure = $derived(
 		browser && !window.isSecureContext && typeof Notification === 'undefined'

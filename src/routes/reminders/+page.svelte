@@ -42,8 +42,14 @@
 
 	const kindOf = (key: string) => KINDS[key] ?? { label: key, icon: 'clock' as IconName };
 
-	/** The windows worth a button. Anything else goes in the box beside them. */
-	const WINDOWS = [7, 15, 30, 60];
+	/**
+	 * The windows worth a button. Anything else goes in the box beside them.
+	 *
+	 * One and three are here because "what is today" and "what is this weekend"
+	 * are the two questions somebody actually opens this page with; a week was
+	 * the shortest answer on offer and it is longer than either of them.
+	 */
+	const WINDOWS = [1, 3, 7, 15, 30, 60];
 
 	/**
 	 * Whether this browser can be reached at all.
@@ -176,8 +182,11 @@
 			Nothing can reach this browser: notifications need HTTPS and this page is on
 			<span class="tabular">{origin}</span>. On the machine running it,
 			<span class="tabular">localhost</span> counts as secure; from another device it does not.
-			<span class="tabular">make https-tailscale</span> serves the development app over HTTPS on a name
-			your phone can reach — reminders, installing it as an app and offline all start working together.
+			<span class="tabular">make https-local</span> serves it over HTTPS with a certificate this
+			machine signs — nothing leaves the network, and the phone is told once to trust it.
+			<span class="tabular">make https-tailscale</span> is the other way: nothing to install on the phone,
+			one company in the path. Either turns on reminders, installing it as an app, and offline, all at
+			once.
 		</Banner>
 	{/if}
 
