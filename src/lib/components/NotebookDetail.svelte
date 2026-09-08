@@ -118,8 +118,14 @@
 	</div>
 
 	{#if tab === 'notes'}
-		<!-- Writing about the kitchen renovation used to mean going to the
-					     Diary and remembering to pick the notebook from a dropdown. -->
+		<!--
+			Writing about the kitchen renovation used to mean going to the Diary and
+			remembering to pick the notebook from a dropdown.
+
+			No rule under it: the notes below are separated by exactly that line, so
+			one here made the form read as the first note in the list rather than as
+			the thing that writes them. The gap does the separating.
+		-->
 		<form
 			method="post"
 			action="?/addEntry"
@@ -127,7 +133,7 @@
 				async ({ update, result }) => {
 					await update({ reset: result.type === 'success' });
 				}}
-			class="border-b border-gray-200 px-4 py-3"
+			class="px-4 pt-3 pb-5"
 		>
 			<input type="hidden" name="notebookId" value={notebook.id} />
 			<textarea

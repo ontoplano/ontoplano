@@ -152,14 +152,53 @@ export function parseVaultNote(file: VaultFile): VaultNote | null {
  * half is missing without comparing against the app they just left, and
  * pressing the button again would duplicate whatever did land.
  */
+/**
+ * Is this text, or is it something wearing a `.md` name?
+ *
+ * Markdown has no signature — every text file is valid markdown, which is why
+ * "check it is really markdown" can only mean "check it is really text". A
+ * renamed binary is not a security problem here (everything is escaped before
+ * it is rendered, and the renderer emits only tags it writes itself — see
+ * `$lib/markdown.ts` and its tests), but it is a hundred notes of mojibake
+ * somebody then has to delete one at a time.
+ *
+ * Two things say "not text" reliably:
+ *
+ *   - a NUL byte, which no text encoding produces and almost every binary
+ *     format contains in its first few hundred bytes;
+ *   - the replacement character, which is what the browser leaves behind where
+ *     it could not decode a byte as UTF-8. A few can be legitimate — somebody
+ *     pasted one — so this is a proportion rather than a sighting.
+ *
+ * Deliberately not a magic-number allowlist. That is a list to maintain
+ * forever against every format anybody might rename, and the question here is
+ * not "which binary is this" but "is this text at all".
+ */
+const BINARY_REPLACEMENT_SHARE = 0.01;
+
+export function looksLikeText(text: string): boolean {
+	if (text.includes('\u0000')) return false;
+	if (text.length === 0) return true;
+
+	let bad = 0;
+	for (const ch of text) if (ch === '\uFFFD') bad++;
+	return bad / text.length < BINARY_REPLACEMENT_SHARE;
+}
+
 export function importVault(
 	ctx: Ctx,
 	input: { files: VaultFile[]; notebook?: unknown }
 ): VaultImportResult {
-	const files = input.files.filter((f) => /\.md$/i.test(f.path));
+	const named = input.files.filter((f) => /\.md$/i.test(f.path));
+	const files = named.filter((f) => looksLikeText(f.text));
 
-	if (files.length === 0)
+	if (named.length === 0)
 		throw new ValidationError('No markdown files in that — choose the .md files from the vault.');
+	if (files.length === 0) {
+		throw new ValidationError(
+			'None of those are text files. A `.md` name does not make something markdown.'
+		);
+	}
 	if (files.length > MAX_FILES) {
 		throw new ValidationError(`That is ${files.length} notes; ${MAX_FILES} is the most at once.`);
 	}
@@ -168,6 +207,10 @@ export function importVault(
 	if (total > MAX_TOTAL) throw new ValidationError('That vault is too big to bring in at once.');
 
 	const skipped: string[] = [];
+	// Named and dropped, so the count somebody gets back adds up.
+	for (const file of named) {
+		if (!files.includes(file)) skipped.push(`${file.path} — not text`);
+	}
 	const notes: VaultNote[] = [];
 
 	for (const file of files) {

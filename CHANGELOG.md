@@ -10,6 +10,24 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.108.0 — 2026-09-08
+
+- **A birthday next week no longer says it is today.** The sentence came from
+  the reminder that fires on the morning, where "today" is true; in a list of
+  what is coming it made every future birthday claim to be this one. It says
+  "Ana turns 34", and the date is on the row where it always was.
+- **Importing markdown checks the files are text, not just the names.**
+  Markdown has no signature — every text file is valid markdown — so the honest
+  version of the check is "is this text at all". A renamed binary was never
+  dangerous (everything is escaped before it is rendered, and the renderer
+  emits only tags it writes itself) but it was a hundred notes of mojibake to
+  delete by hand. Those files are now skipped by name and counted back to you.
+- **And the importer is reachable from Notebooks.** It was a settings page,
+  which is not where anybody stands when they think of it.
+- **The note form is not separated from the notes by a line.** It was the same
+  line the notes are divided by, so the form read as the first entry in the
+  list rather than as the thing that writes them.
+
 ## 0.107.0 — 2026-09-08
 
 - **`make https-local` says what it is doing.** It asked for a password in the

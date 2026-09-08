@@ -168,3 +168,57 @@ describe('bringing a vault in', () => {
 		expect(database.get('select count(*) as n from notebooks')).toEqual({ n: 0 });
 	});
 });
+
+/**
+ * A `.md` name does not make something markdown.
+ *
+ * Markdown has no signature — every text file is valid markdown — so the only
+ * meaningful version of "check it really is one" is "check it really is text".
+ * A renamed binary was never a security problem here (everything is escaped
+ * before it is rendered, and `$lib/markdown.ts` emits only tags it writes
+ * itself), but it is a hundred notes of mojibake somebody deletes by hand.
+ */
+describe('a file that is not text', () => {
+	const nul = String.fromCharCode(0);
+	const replacement = String.fromCharCode(0xfffd);
+
+	test('a NUL byte is enough to know', () => {
+		expect(vault.looksLikeText('# Fine\n\ntext')).toBe(true);
+		expect(vault.looksLikeText(`PK${nul}${nul}stuff`)).toBe(false);
+	});
+
+	test('so is a page of replacement characters', () => {
+		// What the browser leaves where it could not decode a byte as UTF-8.
+		expect(vault.looksLikeText(replacement.repeat(200))).toBe(false);
+	});
+
+	test('but one of them is somebody pasting one', () => {
+		expect(vault.looksLikeText(`a note about ${replacement}${'x'.repeat(500)}`)).toBe(true);
+	});
+
+	test('an empty file is text, and is dropped later for being empty', () => {
+		expect(vault.looksLikeText('')).toBe(true);
+	});
+
+	test('it is skipped by name rather than imported as rubbish', () => {
+		const result = vault.importVault(ctx, {
+			files: [
+				{ path: 'Notes/real.md', text: '# Real\n\nsomething' },
+				{ path: 'Notes/photo.md', text: `${nul}binary` }
+			],
+			notebook: 'Mixed'
+		});
+
+		expect(result.imported).toBe(1);
+		expect(result.skipped.some((s) => s.includes('photo.md') && s.includes('not text'))).toBe(true);
+	});
+
+	test('and a vault of nothing but binaries is refused, saying why', () => {
+		expect(() =>
+			vault.importVault(ctx, {
+				files: [{ path: 'a.md', text: `${nul}${nul}` }],
+				notebook: 'None'
+			})
+		).toThrow(/does not make something markdown/);
+	});
+});

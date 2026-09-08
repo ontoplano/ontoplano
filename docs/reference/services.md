@@ -1361,13 +1361,9 @@ Answers null for a file with nothing in it but its frontmatter — an empty
 note is Obsidian's scratch, and importing a hundred of them is the fastest
 way to make somebody regret pressing the button.
 
+#### `looksLikeText(text)`
+
 #### `importVault(ctx, input)`
-
-Bring a vault in. All of it or none of it, like every other import.
-
-Half a vault arriving is the worst outcome available: nobody can tell which
-half is missing without comparing against the app they just left, and
-pressing the button again would duplicate whatever did land.
 
 ### Types
 

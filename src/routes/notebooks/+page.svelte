@@ -84,12 +84,26 @@
 			A subject you write against with no deadline — a book you are reading, a trip, a renovation.
 			Notes, tasks and goals can belong to one, and everything about it collects here.
 		</p>
-		<button onclick={openCreate} class="btn btn-primary btn-sm" data-tour="notebook-new">
-			<Icon name="plus" /> New notebook
-			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
-				>{keyFor('/notebooks', 'new')}</kbd
+		<div class="flex flex-wrap items-center gap-2">
+			<!--
+				The importer is a settings page and nobody goes looking for one.
+				Somebody with a folder of markdown is standing here when they think
+				of it, so the door is here.
+			-->
+			<a
+				href={resolve('/settings/account/import')}
+				class="btn btn-sm"
+				title="Bring in a folder of markdown files as notes"
 			>
-		</button>
+				Import markdown
+			</a>
+			<button onclick={openCreate} class="btn btn-primary btn-sm" data-tour="notebook-new">
+				<Icon name="plus" /> New notebook
+				<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
+					>{keyFor('/notebooks', 'new')}</kbd
+				>
+			</button>
+		</div>
 	</div>
 
 	<FormError message={form?.message} />

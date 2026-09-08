@@ -5,7 +5,6 @@ import { reminders } from '../db/schema.js';
 import { billsDueBetween } from './bills.js';
 import type { Ctx } from './ctx.js';
 import { reviewPending } from './review.js';
-import { birthdayMessage } from './birthdays.js';
 import { listPeople } from './people.js';
 import type { ReminderKind } from './reminders.js';
 import { getGridHours } from '../settings.js';
@@ -232,7 +231,10 @@ export function upcomingDerived(ctx: Ctx, now: Date, tz: string, days = UPCOMING
 		out.push({
 			kind: 'person',
 			at: `${day}T${hour}:00:00`,
-			message: birthdayMessage(person.name, person.birthday, day)
+			// Not `birthdayMessage`, which ends in "today" — true of the reminder
+			// that fires on the morning, and a lie in a list of what is coming.
+			// The row carries the date already, so the sentence does not need one.
+			message: comingBirthday(person.name, person.birthday, day)
 		});
 	}
 
@@ -250,6 +252,21 @@ export function upcomingDerived(ctx: Ctx, now: Date, tz: string, days = UPCOMING
 	}
 
 	return out.sort((a, b) => a.at.localeCompare(b.at));
+}
+
+/**
+ * "Ana turns 34", for a birthday that has not happened yet.
+ *
+ * `birthdayMessage` says "today", which is what the reminder firing on the
+ * morning should say and exactly wrong in a list of things that are coming —
+ * every future birthday claimed to be today's. The age is still worth saying,
+ * because it is the part somebody cannot work out at a glance.
+ */
+function comingBirthday(name: string, birthday: string, on: string): string {
+	const born = Number(birthday.slice(0, 4));
+	const year = Number(on.slice(0, 4));
+	const age = /^\d{4}-/.test(birthday) ? year - born : null;
+	return age !== null && age > 0 && age < 130 ? `${name} turns ${age}` : `${name}'s birthday`;
 }
 
 /** The next time a `MM-DD` or `YYYY-MM-DD` birthday comes round, on or after a day. */

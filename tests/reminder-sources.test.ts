@@ -19,6 +19,7 @@ type Services = {
 	sources: typeof import('../src/lib/server/services/reminder-sources');
 	reminders: typeof import('../src/lib/server/services/reminders');
 	bills: typeof import('../src/lib/server/services/bills');
+	people: typeof import('../src/lib/server/services/people');
 };
 
 let s: Services;
@@ -36,7 +37,8 @@ beforeAll(async () => {
 	s = {
 		sources: await import('../src/lib/server/services/reminder-sources'),
 		reminders: await import('../src/lib/server/services/reminders'),
-		bills: await import('../src/lib/server/services/bills')
+		bills: await import('../src/lib/server/services/bills'),
+		people: await import('../src/lib/server/services/people')
 	};
 
 	// Due on the 10th, wanted paid three days earlier.
@@ -95,5 +97,32 @@ describe('the weekly review', () => {
 	test('says nothing about a week nobody planned', () => {
 		const ctx = ctxAt('2026-09-07T06:00:00Z');
 		expect(s.sources.ensureReviewReminder(ctx, ctx.now, 'UTC')).toBe(0);
+	});
+});
+
+describe('a birthday that has not happened yet', () => {
+	test('does not claim to be today, because the list is about what is coming', () => {
+		const ctx = ctxAt('2026-09-08T06:00:00Z');
+		s.people.createPerson(ctx, {
+			name: 'Ana',
+			birthday: '1992-09-14',
+			remindOnBirthday: true
+		});
+
+		const coming = s.sources.upcomingDerived(ctx, ctx.now, 'UTC');
+		const ana = coming.find((u) => u.message.includes('Ana'));
+
+		expect(ana?.message).toBe('Ana turns 34');
+		expect(ana?.message).not.toContain('today');
+		// The date is on the row, which is why the sentence does not need one.
+		expect(ana?.at.slice(0, 10)).toBe('2026-09-14');
+	});
+
+	test('and says only the name when no year was written down', () => {
+		const ctx = ctxAt('2026-09-08T06:00:00Z');
+		s.people.createPerson(ctx, { name: 'Rui', birthday: '--09-16', remindOnBirthday: true });
+
+		const coming = s.sources.upcomingDerived(ctx, ctx.now, 'UTC');
+		expect(coming.find((u) => u.message.includes('Rui'))?.message).toBe("Rui's birthday");
 	});
 });
