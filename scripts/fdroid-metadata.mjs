@@ -275,6 +275,8 @@ console.log('  MERGE-REQUEST.md                   the fdroiddata merge request\n
 if (!tagged) {
 	console.error(`  ⚠  ${tag} is not a tag in this repository.`);
 	console.error('     F-Droid builds tags. Cut the release before submitting:\n');
-	console.error(`       git tag ${tag} && git push origin ${tag}\n`);
+	// `github`, not `origin`: F-Droid's builder clones the public GitHub
+	// repository, and in this checkout `origin` is the forge.
+	console.error(`       git tag ${tag} && git push github ${tag}\n`);
 	process.exitCode = 1;
 }
