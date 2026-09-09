@@ -2,7 +2,6 @@
 	import { enhance } from '$app/forms';
 	import Banner from '$lib/components/Banner.svelte';
 	import Card from '$lib/components/Card.svelte';
-	import TimeDial from '$lib/components/TimeDial.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -345,14 +344,28 @@
 					</Field>
 					<Field label="Time" span={6} required>
 						<!--
-							A clock, not four digits.
+							The browser's own time field, whatever it draws.
 
-							`showPicker()` opens the platform's own, and which mode that
-							opens in — the dial or a numeric keypad — is Android's choice,
-							remembered from whatever was used last. No web API asks for the
-							dial, so a field that is always the dial has to be one.
+							There was a hand-built clock face here for a while, because
+							Android opens this as typeable digits unless it feels like
+							opening a dial and Firefox's `showPicker()` does nothing. It
+							looked like nobody's control on every platform where the native
+							one is fine, which is most of them. A standard control is the
+							browser's to draw; where one browser draws it badly, that is a
+							rough edge to carry rather than a widget to own — and the app's
+							real destination is an installed Android app, where this is the
+							good one.
 						-->
-						<TimeDial name="time" required bind:value={time} />
+						<input
+							id="reminder-time"
+							name="time"
+							type="time"
+							required
+							autocomplete="off"
+							bind:value={time}
+							title="What time it should go off"
+							class="input"
+						/>
 					</Field>
 					<Field label="What to say" span={12} required>
 						<OneLine

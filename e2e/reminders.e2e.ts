@@ -169,51 +169,26 @@ test('an alarm that will make a noise says so before it does', async ({ page }) 
 });
 
 /**
- * The time is a clock you touch.
+ * The time field is the browser's own.
  *
- * `showPicker()` opens the platform's own picker, and which mode it opens in —
- * the dial, or a numeric keypad — is Android's choice, remembered from
- * whatever was used last. There is no web API that asks for the dial, so a
- * field that is always the dial has to be one.
+ * There was a hand-drawn clock face here, because Android opens this as
+ * typeable digits unless it feels like opening a dial. It looked like nobody's
+ * control everywhere the native one is fine, so it is gone: a standard control
+ * is the browser's to draw. What still has to hold is that the form posts a
+ * time, which is the only part of it this app owns.
  */
-test.describe('the time dial', () => {
-	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+test('the time is a plain time field, and the form takes what it gives', async ({ page }) => {
+	await register(page, `rem-time-${Date.now()}@test.invalid`);
+	await visit(page, '/reminders');
+	await expect(page.locator('main')).toBeVisible();
 
-	test('picking an hour and then a minute, without typing anything', async ({ page }) => {
-		await register(page, `rem-dial-${Date.now()}@test.invalid`);
-		await visit(page, '/reminders');
-		await expect(page.locator('main')).toBeVisible();
-		await page.waitForTimeout(500);
+	const time = page.locator('input[name="time"]');
+	await expect(time).toHaveAttribute('type', 'time');
+	// Not hidden behind anything: the browser's control is the control.
+	await expect(time).toBeVisible();
 
-		const face = page.locator('svg[viewBox="0 0 260 260"]');
-		await expect(face).toBeVisible();
-		const box = (await face.boundingBox())!;
-		/** A point on the face, given where it sits in the 260-unit drawing. */
-		const on = (x: number, y: number) => ({
-			x: box.x + (x / 260) * box.width,
-			y: box.y + (y / 260) * box.height
-		});
-
-		// Three o'clock: the outer ring, a quarter of the way round from the top.
-		const three = on(234, 130);
-		await page.mouse.click(three.x, three.y);
-
-		// Picking the hour moves on to the minutes by itself — which is what
-		// makes this two taps rather than four fields.
-		await expect(page.getByText('minutes')).toBeVisible();
-
-		// Half past: the bottom of the ring.
-		const half = on(130, 234);
-		await page.mouse.click(half.x, half.y);
-
-		await expect(page.locator('input[name="time"]')).toHaveValue('03:30');
-
-		// And the inner ring is the afternoon: fifteen hundred is where three was.
-		await page.locator('button[title="Set the hour"]').click();
-		const fifteen = on(196, 130);
-		await page.mouse.click(fifteen.x, fifteen.y);
-		await expect(page.locator('input[name="time"]')).toHaveValue('15:30');
-	});
+	await time.fill('15:30');
+	await expect(time).toHaveValue('15:30');
 });
 
 test('a reminder that has already been is not "coming up"', async ({ page }) => {
