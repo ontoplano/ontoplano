@@ -10,6 +10,7 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import MarkdownImport from '$lib/components/MarkdownImport.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
@@ -18,6 +19,9 @@
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	type Notebook = PageServerData['notebooks'][number];
+
+	/** Whether the markdown importer is open. Closed until asked for. */
+	let importing = $state(false);
 
 	let showForm = $state(false);
 	let editingId = $state<number | null>(null);
@@ -86,17 +90,21 @@
 		</p>
 		<div class="flex flex-wrap items-center gap-2">
 			<!--
-				The importer is a settings page and nobody goes looking for one.
-				Somebody with a folder of markdown is standing here when they think
-				of it, so the door is here.
+				The importer used to be a link to a settings page, which is a page
+				nobody goes looking for and which is headed "An Obsidian vault" —
+				the right form under a name nobody was looking for. It opens here
+				instead, because somebody with a folder of markdown is standing on
+				this page when they think of it.
 			-->
-			<a
-				href={resolve('/settings/account/import')}
+			<button
+				type="button"
+				onclick={() => (importing = !importing)}
 				class="btn btn-sm"
+				aria-expanded={importing}
 				title="Bring in a folder of markdown files as notes"
 			>
 				Import markdown
-			</a>
+			</button>
 			<button onclick={openCreate} class="btn btn-primary btn-sm" data-tour="notebook-new">
 				<Icon name="plus" /> New notebook
 				<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
@@ -107,6 +115,37 @@
 	</div>
 
 	<FormError message={form?.message} />
+
+	<!--
+		The importer, opened by the button above rather than on another page.
+
+		Its own card so it takes the width and does not squeeze the list beside
+		it, and it closes itself once the import lands — the notebook it made is
+		in the list behind it, which is the answer to "did that work".
+	-->
+	{#if importing}
+		<Card title="Import markdown">
+			<p class="text-sm text-gray-500">
+				Choose a folder of <code class="text-xs">.md</code> files. Each becomes a note in one
+				notebook, keeping its text and its tags — from
+				<code class="text-xs">#tags</code> and from the frontmatter — with the folder it was in as a tag
+				too. Nothing is uploaded as a file; the notes are read here. Deleting the notebook undoes it.
+			</p>
+			<div class="mt-3">
+				<MarkdownImport
+					compact
+					enhancer={(node) =>
+						enhance(node, () => async ({ update, result }) => {
+							// Not reset: the card is about to close, and blanking a form
+							// on its way out is a flash of empty fields nobody asked to
+							// see. `forms-do-not-blank.test.ts` is what noticed.
+							await update({ reset: false });
+							if (result.type === 'success') importing = false;
+						})}
+				/>
+			</div>
+		</Card>
+	{/if}
 
 	<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)]">
 		<Card title="Notebooks" accent={SECTION_COLORS.diary} flush>

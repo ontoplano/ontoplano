@@ -4,6 +4,7 @@ import { buildCtx } from '$lib/server/services/ctx';
 import { createEntry, deleteEntry, updateEntry } from '$lib/server/services/diary';
 import { setEntryPeople } from '$lib/server/services/people';
 import { toActionFailure } from '$lib/server/http-errors';
+import { importVaultAction } from '$lib/server/import-vault-action';
 import {
 	createNotebook,
 	deleteNotebook,
@@ -154,5 +155,16 @@ export const notebookActions = {
 		// it would answer 404 — correctly, and unhelpfully, to the person who
 		// deleted it.
 		redirect(303, '/notebooks');
-	}
+	},
+
+	/**
+	 * A folder of markdown, brought in from this page.
+	 *
+	 * The same action the account's import screen runs — see
+	 * `$lib/server/import-vault-action`. It is here because the form is here:
+	 * somebody with a vault is standing on Notebooks when they think of it, and
+	 * sending them to a settings page headed "An Obsidian vault" was a door
+	 * nobody found.
+	 */
+	importVault: importVaultAction
 } satisfies Actions;

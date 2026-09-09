@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Card from '$lib/components/Card.svelte';
+	import MarkdownImport from '$lib/components/MarkdownImport.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { settingsForm } from '$lib/actions/settings-form';
 	import type { ActionData } from './$types';
@@ -53,51 +54,6 @@
 	async function readRestore(event: Event) {
 		const text = await readChosen(event, false);
 		if (text !== null) restoreText = text;
-	}
-
-	/**
-	 * A vault, chosen as a folder.
-	 *
-	 * `webkitdirectory` is what hands a browser a whole tree, and it is
-	 * non-standard in name only — every engine has had it for a decade. The
-	 * fallback is choosing the `.md` files by hand, which the same input takes.
-	 *
-	 * The path travels with the text because a vault's folders are structure,
-	 * and `webkitRelativePath` is the only place it survives: `File.name` is the
-	 * bare filename, so `Books/Republic.md` and `Trips/Republic.md` would arrive
-	 * as the same thing.
-	 */
-	let vaultFiles = $state<{ path: string; text: string }[]>([]);
-	let vaultError = $state<string | null>(null);
-
-	/** A vault beyond this is not going through a form field. */
-	const MAX_VAULT_BYTES = 8_000_000;
-
-	async function readVault(event: Event) {
-		vaultError = null;
-		vaultFiles = [];
-
-		const chosen = [...((event.currentTarget as HTMLInputElement).files ?? [])].filter((f) =>
-			f.name.toLowerCase().endsWith('.md')
-		);
-
-		if (chosen.length === 0) {
-			vaultError = 'No markdown files in there. Choose the vault folder, or its .md files.';
-			return;
-		}
-
-		const total = chosen.reduce((sum, f) => sum + f.size, 0);
-		if (total > MAX_VAULT_BYTES) {
-			vaultError = `That is ${Math.round(total / 1_000_000)}MB of notes. Eight megabytes is the most this reads at once.`;
-			return;
-		}
-
-		vaultFiles = await Promise.all(
-			chosen.map(async (f) => ({
-				path: (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name,
-				text: await f.text()
-			}))
-		);
 	}
 </script>
 
@@ -189,48 +145,9 @@
 			was in as a tag too.
 		</p>
 
-		<form
-			method="post"
-			action="?/importVault"
-			use:settingsForm={{ notice: 'Imported.' }}
-			class="mt-3 space-y-3"
-		>
-			<input type="hidden" name="files" value={JSON.stringify(vaultFiles)} />
-
-			<!--
-				One input, both ways in: a folder on anything with
-				`webkitdirectory`, and the files by hand everywhere else.
-			-->
-			<input
-				type="file"
-				multiple
-				webkitdirectory
-				accept=".md,text/markdown"
-				class="input"
-				onchange={readVault}
-			/>
-
-			{#if vaultError}
-				<p class="text-sm text-red-700">{vaultError}</p>
-			{:else if vaultFiles.length > 0}
-				<p class="text-sm text-gray-700">
-					{vaultFiles.length}
-					{vaultFiles.length === 1 ? 'note' : 'notes'} ready.
-				</p>
-			{/if}
-
-			<label class="block text-sm text-gray-700">
-				Name for the notebook they land in
-				<OneLine name="notebook" placeholder="Obsidian" class="input mt-1" maxlength={80} />
-			</label>
-
-			<p class="text-xs text-gray-500">
-				Nothing is uploaded as a file — the notes are read here. Attachments, canvases and plugin
-				data stay in the vault. Deleting the notebook undoes the import.
-			</p>
-
-			<button type="submit" class="btn btn-sm" disabled={vaultFiles.length === 0}>Import</button>
-		</form>
+		<div class="mt-3">
+			<MarkdownImport enhancer={(node) => settingsForm(node, { notice: 'Imported.' })} />
+		</div>
 
 		{#if form?.success && form.action === 'importVault'}
 			<p class="mt-3 text-sm text-gray-700">{form.message}</p>
