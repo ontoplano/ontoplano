@@ -65,8 +65,8 @@ public class NowWidgetProvider extends AppWidgetProvider {
     }
 
     private static PendingIntent openApp(Context context) {
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(WidgetSettings.origin(context).isEmpty()
-                ? "https://app.ontoplano.com" : WidgetSettings.origin(context)));
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(Instance.origin(context).isEmpty()
+                ? "https://app.ontoplano.com" : Instance.origin(context)));
         int flags = PendingIntent.FLAG_UPDATE_CURRENT
                 | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
         return PendingIntent.getActivity(context, 0, intent, flags);

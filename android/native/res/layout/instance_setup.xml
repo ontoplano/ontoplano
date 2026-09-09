@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- fitsSystemWindows: the app targets edge-to-edge, and without it the
+     title draws under the status bar and is cropped. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:background="@color/widget_page">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/instance_title"
+            android:textColor="@color/widget_text"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:paddingBottom="20dp"
+            android:text="@string/instance_help"
+            android:textColor="@color/widget_dim"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/instance_use_default"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="24dp"
+            android:text="@string/instance_own_label"
+            android:textColor="@color/widget_dim"
+            android:textSize="12sp" />
+
+        <EditText
+            android:id="@+id/instance_address"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/instance_address_hint"
+            android:inputType="textUri"
+            android:importantForAutofill="no"
+            android:textColor="@color/widget_text"
+            android:textColorHint="@color/widget_dim" />
+
+        <Button
+            android:id="@+id/instance_use_mine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/instance_use_mine" />
+
+        <TextView
+            android:id="@+id/instance_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="12dp"
+            android:textColor="@color/widget_dim"
+            android:textSize="13sp" />
+
+        <!-- The way out, and only once there is something to leave. -->
+        <Button
+            android:id="@+id/instance_forget"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="@string/instance_forget" />
+    </LinearLayout>
+</ScrollView>

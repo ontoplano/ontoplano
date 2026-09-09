@@ -40,19 +40,38 @@ make android-clean       # throw away the generated project
 ```sh
 make android          # defaults to http://<LAN_IP>:1493 — this machine
 make android ONTOPLANO_ORIGIN=https://plan.example.com
+make android-gapp     # the same app for Google Play
 ```
 
 `LAN_IP` is read from the network interface, so the default builds an app that
 opens the instance running on this machine. That is the right answer for a
 self-hosted setup and the wrong one for anything published, hence the override.
 
-Outputs land in `android-twa/`:
+### Two builds, and the plain one is the free one
 
-- `app-release-signed.apk` — sideload, or hand to someone directly
-- `app-release-bundle.aab` — what Play wants
+`make android` produces an APK with no proprietary dependencies — the build
+F-Droid compiles, and the one you can hand to anybody. `make android-gapp`
+produces the Play build, which is the same app with `androidbrowserhelper:billing`
+linked so it can take a payment through the store. That library pulls
+`com.android.billingclient`, which is not free software, so it is the marked
+case: you ask for it by name.
 
-Everything in `android-twa/` is generated and gitignored, including
-`twa-manifest.json`. The script is the source of truth.
+|                 | `make android` | `make android-gapp`                     |
+| --------------- | -------------- | --------------------------------------- |
+| Output          | `android-twa/` | `android-twa-gapp/`                     |
+| Artefacts       | signed APK     | signed APK and `app-release-bundle.aab` |
+| Play Billing    | no             | yes                                     |
+| Redistributable | yes            | no                                      |
+
+Both are signed with the same key, which lives outside the repository — see
+**Signing keys**. Everything in `android-twa/` and `android-twa-gapp/` is
+generated and gitignored, including `twa-manifest.json`. The script is the
+source of truth.
+
+`android/` is a third thing and not a build directory: it is the Gradle project
+committed to the repository so F-Droid can build a tag on a machine with no
+network. `make android-project` regenerates it, and `make lint` fails if it
+falls behind the app's version or grows a proprietary dependency.
 
 ### Environment
 
@@ -242,6 +261,42 @@ key permanently: a leaked key lets someone else ship an update to your users,
 and a lost one means republishing under a new listing and asking everyone to
 reinstall.
 
+## Which instance the app talks to
+
+A TWA names one site at build time, and for a long time that was the end of it:
+the app opened `ONTOPLANO_ORIGIN` and nothing could change it. That makes the
+app a client for one server rather than for ontoplano, which is the wrong thing
+for software whose whole point is that you can run your own.
+
+So the launcher icon starts `InstanceActivity`, which is a fork in the road
+rather than a screen: if an instance has been chosen it opens the app there,
+and if none has it asks. Every launch after the first passes straight through
+and draws nothing.
+
+The question offers two answers — the origin this build was made for, as a
+button, and a field for your own address. Whichever is chosen is checked
+against `/healthz` before it is kept, so a typo fails here rather than as a
+blank page later. It is stored in the same place the widgets read, so choosing
+an instance points them at it too.
+
+**The way back** is the launcher icon's long-press menu: **Switch instance**.
+The app itself is a web view with no native chrome to hang a settings item on,
+and a page cannot start an activity, so a shortcut is the affordance Android
+gives an app of this shape. `ontoplano://instance` opens the same screen.
+"Use a different one" forgets the origin _and_ the widget key — a key minted by
+one instance means nothing to another.
+
+### The address bar, on your own instance
+
+Digital Asset Links verification is per-origin. The app is verified against the
+origin it was built for; point it somewhere else and Chrome has no statement
+tying the two together, so it opens in a Custom Tab **with an address bar**.
+
+It works, it just does not look like an app. To fix it on your own instance,
+serve this app's fingerprint from it — the same `ANDROID_CERT_FINGERPRINTS`
+setting described under **Removing the URL bar**, using the fingerprint from
+`make android-fingerprint`.
+
 ## The home-screen widget
 
 The app carries one native component: a home-screen widget showing today's
@@ -278,7 +333,8 @@ again.
 
 ### How it is built
 
-The widget lives in `android/widget/`, outside the generated project, because
+The widget and the instance chooser live in `android/native/`, outside the
+generated project, because
 Bubblewrap regenerates `android-twa/app/` from `twa-manifest.json` on every run.
 `scripts/build-twa.mjs` copies it in afterwards and adds the three components to
 the manifest — the provider, the list service and the configuration activity.

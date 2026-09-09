@@ -35,6 +35,10 @@ test-results
 # recreates it. twa-manifest.json is generated too, from the environment.
 android-twa/
 
+# The Play build, which is the same app with Play Billing linked. Its own
+# directory because the two differ in their dependencies — see `android-gapp`.
+android-twa-gapp/
+
 # Signing keys, wherever they turn up. The Android key cannot be rotated out of
 # a mistake — publishing it lets anybody ship an update as this app — so it is
 # ignored by shape as well as by location, and `make lint` fails if one is ever

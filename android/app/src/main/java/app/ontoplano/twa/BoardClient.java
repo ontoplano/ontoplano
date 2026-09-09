@@ -71,16 +71,16 @@ final class BoardClient {
     static Board load(Context context) {
         Board board = new Board();
 
-        if (!WidgetSettings.configured(context)) {
+        if (!Instance.configured(context)) {
             board.error = context.getString(R.string.widget_not_configured);
             return board;
         }
 
         HttpURLConnection connection = null;
         try {
-            URL url = new URL(WidgetSettings.origin(context) + "/api/v1/today");
+            URL url = new URL(Instance.origin(context) + "/api/v1/today");
             connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestProperty("Authorization", "Bearer " + WidgetSettings.token(context));
+            connection.setRequestProperty("Authorization", "Bearer " + Instance.token(context));
             connection.setRequestProperty("Accept", "application/json");
             connection.setConnectTimeout(TIMEOUT_MS);
             connection.setReadTimeout(TIMEOUT_MS);

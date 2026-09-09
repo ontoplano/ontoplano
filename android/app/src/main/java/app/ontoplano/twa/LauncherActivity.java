@@ -47,6 +47,11 @@ public class LauncherActivity
         // Get the original launch Url.
         Uri uri = super.getLaunchingUrl();
 
+        // The instance chosen on first run wins over the one this
+        // build was generated against. Same path and query, different
+        // host, so a deep link into a day still lands on that day.
+        uri = Instance.rebase(this, uri);
+
         
 
         return uri;

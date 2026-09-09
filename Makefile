@@ -49,6 +49,7 @@ help:
 	@printf '\033[1mphone\033[0m\n'
 	@echo "  android                     build the APK (android-install / android-share to get it on)"
 	@echo "  android-lan                 an APK pointed at this machine, over wifi"
+	@echo "  android-gapp                the Play build, with Play Billing in it"
 	@echo "  fdroid                      write F-Droid's recipe and listing for this version"
 	@if [ -f local.mk ]; then echo; \
 		printf '\033[1mthis instance (local.mk)\033[0m\n'; \
@@ -74,7 +75,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-gapp android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -755,8 +756,22 @@ uninstall-service:
 # and `android-share` need nothing but the file — no JDK, no Android SDK. Only
 # `android` (the build) needs the toolchain; see docs/ANDROID.md.
 
-APK := android-twa/app-release-signed.apk
-AAB := android-twa/app-release-bundle.aab
+# Two builds, and the plain one is the free one.
+#
+# The Play build links androidbrowserhelper:billing, which pulls the
+# proprietary com.android.billingclient and declares com.android.vending.BILLING
+# — a dependency that exists only because of Google, and one that would get the
+# app rejected from F-Droid. So it is the marked case: `android-gapp` asks for
+# it by name, and plain `android` builds the one anybody can redistribute.
+#
+# Separate directories, because the two differ in their dependencies and a
+# Gradle tree half-built as one and half as the other is a confusing afternoon.
+TWA_DIR := android-twa
+GAPP_DIR := android-twa-gapp
+
+APK := $(TWA_DIR)/app-release-signed.apk
+GAPP_APK := $(GAPP_DIR)/app-release-signed.apk
+AAB := $(GAPP_DIR)/app-release-bundle.aab
 
 # Where the phone downloads from. The first address on this machine, which is
 # the one a phone on the same wifi can reach — not 127.0.0.1.
@@ -765,12 +780,19 @@ AAB := android-twa/app-release-bundle.aab
 # than naming an interface, which would be one machine’s network card.
 LAN_IP := $(shell ip route get 1.1.1.1 2>/dev/null | awk '{print $$7; exit}')
 
-# The address the app opens.
+# The address the app opens, out of the box.
 #
-# A TWA is bound to one origin at build time and there is no switching it
-# afterwards, so there is no sensible default and none in defaults.env: set
-# ONTOPLANO_ORIGIN in local.mk for the instance you deploy, or use
-# `make android-lan` to build against this machine over wifi.
+# A TWA is bound to one origin at build time — Digital Asset Links names one
+# site — so this is what the app offers on first run and what its widgets are
+# prefilled with. It is not a cage: the app asks which instance to use and can
+# be pointed elsewhere afterwards, which is what makes it a client for
+# ontoplano rather than for one company's copy of it. An origin the build was
+# not made for is unverified, so it opens with an address bar unless that
+# server serves this app's fingerprint too.
+#
+# There is no sensible default and none in defaults.env: set ONTOPLANO_ORIGIN
+# in local.mk for the instance you deploy, or use `make android-lan` to build
+# against this machine over wifi.
 
 android:
 	@# Catches an empty or host-less ONTOPLANO_ORIGIN, which would otherwise
@@ -784,8 +806,28 @@ android:
 			exit 1;; \
 	esac
 	@echo "Building against $(ONTOPLANO_ORIGIN)"
-	ONTOPLANO_ORIGIN="$(ONTOPLANO_ORIGIN)" node scripts/build-twa.mjs
+	ONTOPLANO_ORIGIN="$(ONTOPLANO_ORIGIN)" TWA_DIR=$(TWA_DIR) \
+		node scripts/build-twa.mjs --no-billing
 	@$(MAKE) -s android-check
+
+# The same app for Google Play, which is the one that can take a payment.
+#
+# Play Billing is the only difference and it is not a small one: it is a
+# proprietary library, so this artefact cannot be redistributed anywhere that
+# cares. It writes to its own directory and produces the bundle Play wants.
+android-gapp:
+	@case "$(ONTOPLANO_ORIGIN)" in \
+		""|*://:*|*://) \
+			echo "ONTOPLANO_ORIGIN has no host: $(ONTOPLANO_ORIGIN)"; \
+			echo "  make android-gapp ONTOPLANO_ORIGIN=https://plan.example.com"; \
+			exit 1;; \
+	esac
+	@echo "Building the Play app against $(ONTOPLANO_ORIGIN)"
+	ONTOPLANO_ORIGIN="$(ONTOPLANO_ORIGIN)" TWA_DIR=$(GAPP_DIR) \
+		node scripts/build-twa.mjs
+	@echo
+	@echo "  $(AAB)"
+	@echo "  Upload that one to Play."
 
 # Against this machine over wifi, for working on the phone without deploying.
 #: LAN_IP=192.168.0.10  this machine's address, for android-lan and android-share
@@ -859,7 +901,7 @@ android-install: $(APK)
 # server at that directory would publish the key to the local network. The
 # directory is stable rather than temporary, so there is nothing to clean up
 # when this is ended with Ctrl-C — which is how it is meant to be ended.
-SHARE_DIR := android-twa/dist
+SHARE_DIR := $(TWA_DIR)/dist
 
 android-share: $(APK)
 	@if [ -z "$(LAN_IP)" ]; then echo "Could not determine this machine's IP address."; exit 1; fi

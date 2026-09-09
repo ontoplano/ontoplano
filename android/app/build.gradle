@@ -57,8 +57,8 @@ android {
         applicationId "app.ontoplano.twa"
         minSdkVersion 23
         targetSdkVersion 36
-        versionCode 11100
-        versionName "0.111.0"
+        versionCode 11200
+        versionName "0.112.0"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name

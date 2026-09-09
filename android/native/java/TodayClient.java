@@ -66,16 +66,16 @@ final class TodayClient {
     }
 
     static Result fetch(Context context) {
-        if (!WidgetSettings.configured(context)) {
+        if (!Instance.configured(context)) {
             return new Result(new ArrayList<Row>(), context.getString(R.string.widget_not_configured));
         }
 
         HttpURLConnection connection = null;
         try {
-            URL url = new URL(WidgetSettings.origin(context) + "/api/v1/today");
+            URL url = new URL(Instance.origin(context) + "/api/v1/today");
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
-            connection.setRequestProperty("Authorization", "Bearer " + WidgetSettings.token(context));
+            connection.setRequestProperty("Authorization", "Bearer " + Instance.token(context));
             connection.setRequestProperty("Accept", "application/json");
             connection.setConnectTimeout(TIMEOUT_MS);
             connection.setReadTimeout(TIMEOUT_MS);

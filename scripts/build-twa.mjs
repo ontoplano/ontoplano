@@ -585,11 +585,11 @@ if (cleartext) {
 }
 
 /**
- * Graft the home-screen widget onto the generated project.
+ * Graft our own native code onto the generated project.
  *
  * Bubblewrap regenerates `app/` from the manifest on every run, so anything
  * native has to be re-applied afterwards rather than edited in place. The
- * sources live in `android/widget/` and are copied in with `__PACKAGE__`
+ * sources live in `android/native/` and are copied in with `__PACKAGE__`
  * replaced: they sit in the app's own package so `R` resolves, and the package
  * is configurable.
  *
@@ -597,10 +597,10 @@ if (cleartext) {
  * plugin, and adding one to a file that is rewritten every build is a worse
  * trade than writing a few hundred lines of Java.
  */
-function installWidget() {
-	const source = 'android/widget';
+function installNative() {
+	const source = 'android/native';
 	if (!existsSync(source)) {
-		console.warn(`No ${source}; the app will build without the home-screen widget.`);
+		console.warn(`No ${source}; the app will build without its native code.`);
 		return;
 	}
 
@@ -728,6 +728,46 @@ function installWidget() {
                 <data android:scheme="ontoplano" android:host="widget" />
             </intent-filter>
         </activity>
+
+        <!--
+            The launcher icon, which is a fork in the road rather than the app.
+
+            A TWA is bound to one origin at build time, so something has to run
+            before it to decide which instance this install talks to. No layout
+            and a translucent theme: every launch after the first passes
+            straight through and nothing is drawn.
+        -->
+        <activity
+            android:name=".InstanceActivity"
+            android:label="@string/launcherName"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            The question itself, and the way back to it.
+
+            Reachable from the launcher icon's long-press menu and on an
+            ontoplano://instance link, because the app proper is a web view and
+            a native screen needs a native way in.
+        -->
+        <activity
+            android:name=".InstanceSetupActivity"
+            android:label="@string/instance_title"
+            android:theme="@style/WidgetConfigureTheme"
+            android:launchMode="singleTask"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="ontoplano" android:host="instance" />
+            </intent-filter>
+        </activity>
 `;
 
 	// Bubblewrap rewrites the manifest on every run, so this is normally a fresh
@@ -736,12 +776,125 @@ function installWidget() {
 		xml = xml.replace('    </application>', `${components}\n    </application>`);
 	}
 
+	/*
+	 * The launcher icon starts InstanceActivity, not the web view.
+	 *
+	 * Bubblewrap puts MAIN/LAUNCHER on its own LauncherActivity, which opens
+	 * the TWA the moment it is created — there is no point inside it at which
+	 * a first-run question could be asked, since a subclass cannot decline to
+	 * call `onCreate`. So the category is taken off it here and given to the
+	 * activity that decides. LauncherActivity keeps everything else, including
+	 * its verified https intent filter: a link to a day still opens the app.
+	 */
+	const launcherFilter =
+		'            <intent-filter>\n' +
+		'                <action android:name="android.intent.action.MAIN" />\n' +
+		'                <category android:name="android.intent.category.LAUNCHER" />\n' +
+		'            </intent-filter>';
+	xml = xml.replace(
+		launcherFilter,
+		'            <!-- The launcher icon is InstanceActivity, below. -->'
+	);
+
+	/*
+	 * Checked by the outcome rather than by whether the edit matched.
+	 *
+	 * Two activities answering MAIN/LAUNCHER means two icons in the launcher,
+	 * one of which opens the app without ever asking which instance it is for.
+	 * If Bubblewrap changes the whitespace of that filter the replace above
+	 * silently does nothing, so the thing to assert is the count, not the hit.
+	 */
+	const launchers = (xml.match(/android\.intent\.category\.LAUNCHER/g) ?? []).length;
+	if (launchers !== 1) {
+		throw new Error(
+			`${launchers} activities claim the launcher icon; exactly one should.\n` +
+				'Bubblewrap has changed its manifest template — the MAIN/LAUNCHER filter\n' +
+				'must come off LauncherActivity so InstanceActivity can ask which instance\n' +
+				'this install talks to before the web view opens.'
+		);
+	}
+
 	writeFileSync(manifestXmlPath, xml);
 
-	console.log('Added the home-screen widget');
+	/*
+	 * And the web view opens at the chosen instance rather than the built one.
+	 *
+	 * Bubblewrap leaves an empty line in `getLaunchingUrl` for exactly this,
+	 * but it is a generated file, so the edit is re-applied here on every run
+	 * rather than kept as a patch.
+	 */
+	const launcherJava = join(javaDir, 'LauncherActivity.java');
+	if (existsSync(launcherJava)) {
+		const before = readFileSync(launcherJava, 'utf8');
+		const anchor = 'Uri uri = super.getLaunchingUrl();';
+		if (!before.includes(anchor)) {
+			throw new Error(`No getLaunchingUrl to redirect in ${launcherJava}`);
+		}
+		if (!before.includes('Instance.rebase')) {
+			writeFileSync(
+				launcherJava,
+				before.replace(
+					anchor,
+					anchor +
+						'\n\n        // The instance chosen on first run wins over the one this\n' +
+						'        // build was generated against. Same path and query, different\n' +
+						'        // host, so a deep link into a day still lands on that day.\n' +
+						'        uri = Instance.rebase(this, uri);'
+				)
+			);
+		}
+	}
+
+	/*
+	 * A way back to the question, from the launcher icon's long-press menu.
+	 *
+	 * The app is a web view: there is no native chrome to hang a settings item
+	 * on, and a page cannot start an activity. A shortcut is the one affordance
+	 * Android gives an app like this that costs the user nothing to find.
+	 */
+	const shortcutsPath = join(mainDir, 'res', 'xml', 'shortcuts.xml');
+	if (existsSync(shortcutsPath)) {
+		const shortcut =
+			`<shortcuts xmlns:android='http://schemas.android.com/apk/res/android'>\n` +
+			`    <shortcut\n` +
+			`        android:shortcutId="instance"\n` +
+			`        android:enabled="true"\n` +
+			`        android:shortcutShortLabel="@string/instance_shortcut">\n` +
+			`        <intent\n` +
+			`            android:action="android.intent.action.VIEW"\n` +
+			`            android:targetPackage="${packageId}"\n` +
+			`            android:targetClass="${packageId}.InstanceSetupActivity" />\n` +
+			`    </shortcut>\n` +
+			`</shortcuts>\n`;
+		/*
+		 * Two shapes, because the file has both.
+		 *
+		 * Bubblewrap writes an empty self-closing element when the web manifest
+		 * declares no shortcuts, and an open/close pair with one entry per
+		 * shortcut when it does — and which one you get depends on whether the
+		 * manifest could be fetched. Matching only the empty form meant the
+		 * instance shortcut silently vanished on every build that reached the
+		 * network, which is every real one.
+		 */
+		const current = readFileSync(shortcutsPath, 'utf8');
+		const entry = shortcut
+			.replace(`<shortcuts xmlns:android='http://schemas.android.com/apk/res/android'>\n`, '')
+			.replace('</shortcuts>\n', '');
+
+		if (!current.includes('shortcutId="instance"')) {
+			writeFileSync(
+				shortcutsPath,
+				current.includes('</shortcuts>')
+					? current.replace('</shortcuts>', `${entry}</shortcuts>`)
+					: current.replace(/<shortcuts[^>]*\/>/, shortcut.trim())
+			);
+		}
+	}
+
+	console.log('Added the widgets and the instance chooser');
 }
 
-installWidget();
+installNative();
 
 if (PROJECT_ONLY) {
 	console.log(`\nGenerated the project in ${DIR}/ and stopped — nothing was signed.`);

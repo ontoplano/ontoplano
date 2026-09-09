@@ -77,7 +77,7 @@ public class WidgetConfigureActivity extends Activity {
         status = findViewById(R.id.configure_status);
         Button connect = findViewById(R.id.configure_connect);
 
-        String saved = WidgetSettings.origin(this);
+        String saved = Instance.origin(this);
         origin.setText(saved.isEmpty() ? getString(R.string.configure_default_origin) : saved);
 
         connect.setOnClickListener(new View.OnClickListener() {
@@ -90,7 +90,7 @@ public class WidgetConfigureActivity extends Activity {
                 }
 
                 try {
-                    tokenBefore = WidgetSettings.token(WidgetConfigureActivity.this);
+                    tokenBefore = Instance.token(WidgetConfigureActivity.this);
                     waiting = true;
                     openConnectPage(address);
                     status.setText(R.string.configure_waiting);
@@ -130,7 +130,7 @@ public class WidgetConfigureActivity extends Activity {
 
                 waiting = false;
                 status.setText(R.string.configure_checking);
-                WidgetSettings.save(WidgetConfigureActivity.this, address, typed);
+                Instance.save(WidgetConfigureActivity.this, address, typed);
                 verifyAndFinish();
             }
         });
@@ -152,7 +152,7 @@ public class WidgetConfigureActivity extends Activity {
         // closing — a key that was not there when Connect was tapped means
         // the connection happened, and this instance can answer the launcher.
         if (waiting) {
-            String token = WidgetSettings.token(this);
+            String token = Instance.token(this);
             if (!token.isEmpty() && !token.equals(tokenBefore)) {
                 waiting = false;
                 status.setText(R.string.configure_checking);
@@ -216,7 +216,7 @@ public class WidgetConfigureActivity extends Activity {
 
         waiting = false;
         status.setText(R.string.configure_checking);
-        WidgetSettings.save(this, linkOrigin, token);
+        Instance.save(this, linkOrigin, token);
         verifyAndFinish();
     }
 

@@ -87,7 +87,7 @@ public class TodayWidgetProvider extends AppWidgetProvider {
         // taps there put a "connect me" form in front of somebody who already
         // had, with nothing to do but press back.
         Intent open =
-                WidgetSettings.configured(context)
+                Instance.configured(context)
                         ? boardIntent(context)
                         : new Intent(context, WidgetConfigureActivity.class)
                                 .putExtra(WidgetConfigureActivity.EXTRA_FROM_WIDGET, true);
@@ -106,7 +106,7 @@ public class TodayWidgetProvider extends AppWidgetProvider {
                 PendingIntent.getActivity(
                         context,
                         widgetId,
-                        WidgetSettings.configured(context)
+                        Instance.configured(context)
                                 ? boardIntent(context)
                                 : new Intent(context, WidgetConfigureActivity.class)
                                         .putExtra(WidgetConfigureActivity.EXTRA_FROM_WIDGET, true),
@@ -121,7 +121,7 @@ public class TodayWidgetProvider extends AppWidgetProvider {
      */
     private static Intent boardIntent(Context context) {
         Intent view =
-                new Intent(Intent.ACTION_VIEW, Uri.parse(WidgetSettings.origin(context) + "/planner/board"));
+                new Intent(Intent.ACTION_VIEW, Uri.parse(Instance.origin(context) + "/planner/board"));
         view.setPackage(context.getPackageName());
         return view;
     }

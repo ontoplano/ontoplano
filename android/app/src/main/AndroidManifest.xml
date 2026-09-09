@@ -141,10 +141,7 @@
 
             
 
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            <!-- The launcher icon is InstanceActivity, below. -->
 
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
@@ -279,6 +276,46 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="ontoplano" android:host="widget" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            The launcher icon, which is a fork in the road rather than the app.
+
+            A TWA is bound to one origin at build time, so something has to run
+            before it to decide which instance this install talks to. No layout
+            and a translucent theme: every launch after the first passes
+            straight through and nothing is drawn.
+        -->
+        <activity
+            android:name=".InstanceActivity"
+            android:label="@string/launcherName"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            The question itself, and the way back to it.
+
+            Reachable from the launcher icon's long-press menu and on an
+            ontoplano://instance link, because the app proper is a web view and
+            a native screen needs a native way in.
+        -->
+        <activity
+            android:name=".InstanceSetupActivity"
+            android:label="@string/instance_title"
+            android:theme="@style/WidgetConfigureTheme"
+            android:launchMode="singleTask"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="ontoplano" android:host="instance" />
             </intent-filter>
         </activity>
 

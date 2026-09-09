@@ -194,12 +194,12 @@ recipes and a home inventory. It is one app instead of eight, and it is meant
 to be self-hosted — the server is the same AGPL repository linked above.
 
 The Android app is a Trusted Web Activity over that site, with home-screen
-widgets, push notifications and app shortcuts as native code. Digital Asset
-Links binds a TWA to one origin, so this build points at the instance I host —
-which runs the linked source unmodified. The Play build carries Play Billing;
-the build in \`android/\` in the repository does not, and has no proprietary
-dependencies — it links only \`androidx\` and \`com.google.androidbrowserhelper\`,
-both Apache-2.0.
+widgets, push notifications and app shortcuts as native code. On first run it
+asks which instance to use — the one I host, or an address you type — so it is
+a client for ontoplano and not for my copy of it. The Play build carries Play
+Billing; the build in \`android/\` in the repository does not, and has no
+proprietary dependencies: it links only \`androidx\` and
+\`com.google.androidbrowserhelper\`, both Apache-2.0.
 
 There is a paid plan on the instance I host. Payment happens on the web, not in
 the app: there is no in-app purchase code in this build at all.
@@ -235,12 +235,12 @@ service worker, and app shortcuts. It is not a browser bookmark.
 **On the shape of it.** This is a Trusted Web Activity, so two questions come
 up and both have answers:
 
-- *Is the service free software?* Yes. The server is the same repository, AGPL,
-  and anyone can run their own. But a TWA is bound to one origin by Digital
-  Asset Links, so this build does point at the instance I host rather than
-  asking — flag \`NonFreeNet\` if you read that as tethered; I won't argue it.
-  The service it is tethered to is free software either way, and the widgets
-  take an origin of their own, so they already work against a self-hosted one.
+- *Is the service free software?* Yes, and the app is not tethered to mine. The
+  server is this repository, AGPL, and the app asks on first launch which
+  instance to talk to — the launcher icon starts a chooser, not the web view,
+  and "Switch instance" on its long-press menu changes it later. The origin the
+  build names is the default offered, not a fixed target, so I don't believe
+  \`NonFreeNet\` applies; say so if you read it differently.
 - *Does it need a proprietary browser?* It needs a browser that supports TWAs,
   which is any Chromium-based one — Bromite, Cromite, Vanadium, Chrome. Not
   Play Services, and not Chrome specifically.
@@ -254,7 +254,8 @@ free. \`aapt2 dump badging\` on the result declares only \`INTERNET\` and
 
 **Signing, and the URL bar.** A TWA drops its address bar only when the site's
 \`/.well-known/assetlinks.json\` names the signing certificate. F-Droid signs
-with its own key, so I need that fingerprint to add alongside the Play one —
+with its own key, so I need that fingerprint to add alongside the Play one
+(and to document, so self-hosters can serve it from their own instances) —
 the site already serves a list, so it is a configuration change and not a code
 one. Tell me the fingerprint and I will add it; without it the app works and
 shows an address bar, which I would rather it did not.

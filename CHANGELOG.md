@@ -10,6 +10,21 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.112.0 — 2026-09-09
+
+- **The app asks which ontoplano it is for.** It used to open whatever server
+  it was built against and there was no changing it, which made it a client for
+  one company's copy rather than for ontoplano. Now the first launch asks: the
+  instance the build was made for is a button, and your own address is a field
+  beside it. Whatever you pick is checked before it is kept, so a typo fails
+  there rather than as a blank page later, and the home-screen widgets follow
+  it.
+- **And a way back out.** Long-press the launcher icon and pick "Switch
+  instance". Leaving one forgets its widget key too, since a key minted by one
+  server means nothing to another. An instance the app was not built for opens
+  with an address bar unless that server serves the app's fingerprint —
+  `docs/ANDROID.md` says how.
+
 ## 0.111.0 — 2026-09-08
 
 - **Reminders no longer appear twice.** A reminder falling due used to raise a

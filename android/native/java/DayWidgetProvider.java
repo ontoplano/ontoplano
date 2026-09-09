@@ -62,7 +62,7 @@ public class DayWidgetProvider extends AppWidgetProvider {
         views.setImageViewBitmap(R.id.widget_canvas, draw(context, manager, widgetId, board));
 
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(
-                WidgetSettings.origin(context).isEmpty() ? "__ORIGIN__" : WidgetSettings.origin(context)));
+                Instance.origin(context).isEmpty() ? "__ORIGIN__" : Instance.origin(context)));
         int flags = PendingIntent.FLAG_UPDATE_CURRENT
                 | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
         views.setOnClickPendingIntent(R.id.widget_canvas,
