@@ -10,6 +10,24 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.115.0 — 2026-09-09
+
+- **Ticking something off writes it immediately.** It used to hold the request
+  for the length of the undo toast, which made the tick a lie for five seconds:
+  the row said done while everything counted from it — the next-up card, the
+  totals — was still drawn from a server that had not been told. Undo now
+  writes the opposite, which is an ordinary change. Deleting still waits, since
+  a deletion has no opposite to write.
+- **The docs open by saying what ontoplano is**, instead of explaining the
+  script that generates the pages. How they stay correct is still written down,
+  at the bottom, where somebody who wants to know can find it.
+- **The quick note form calls its box "Diary note".** From the capture wheel,
+  which offers four things to write, a box labelled "Note" did not say which of
+  them it lands in.
+- **A flag for recording.** `ONTOPLANO_RECORDING=true` hides the bands that say
+  "Demo version" and "Staging" — the thing that ruins a video — and changes
+  nothing else about how the instance behaves.
+
 ## 0.114.0 — 2026-09-09
 
 - **The time field is the browser's own again.** There was a hand-drawn clock
