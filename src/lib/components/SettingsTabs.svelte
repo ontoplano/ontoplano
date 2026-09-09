@@ -51,7 +51,9 @@
 		{ path: '/settings/preferences', label: 'Preferences' } as const,
 		...(billable ? [{ path: '/settings/billing', label: 'Billing' } as const] : []),
 		...(family ? [{ path: '/settings/family', label: 'Family' } as const] : []),
-		{ path: '/settings/integrations', label: 'Integrations' } as const,
+		// Named for the half people come here for. The tab strip inside splits
+		// assistants from the calendar link, the webhooks and the data streams.
+		{ path: '/settings/integrations', label: 'AI & Integrations' } as const,
 		...(canEditInstance ? [{ path: '/settings/instance', label: 'Instance' } as const] : []),
 		...(canAdminister ? [{ path: '/admin', label: 'Administration' } as const] : [])
 	]);

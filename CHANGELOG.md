@@ -10,6 +10,16 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.127.0 — 2026-09-09
+
+- **Connecting an AI assistant has its own page.** Settings › AI & Integrations
+  now has an AI tab: the MCP endpoint, the one-line command for Claude Code, the
+  same thing said in words for any other assistant, and the record of every
+  write an assistant has made with a way to put back anything it deleted. The
+  command and the prompt used to appear only in the instant after a token was
+  created, on a page about calendar addresses and webhooks, so nobody who did
+  not already know this existed could find out that it did.
+
 ## 0.126.0 — 2026-09-09
 
 - **A room's tabs scroll instead of wrapping.** Health, Finance and Notebooks
