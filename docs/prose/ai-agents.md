@@ -78,12 +78,12 @@ export ONTOPLANO_KEY=onto_YOUR_KEY_HERE
 
 ```json
 {
-  "mcpServers": {
-    "ontoplano": {
-      "url": "https://app.ontoplano.com/api/mcp",
-      "headers": { "Authorization": "Bearer onto_YOUR_KEY_HERE" }
-    }
-  }
+	"mcpServers": {
+		"ontoplano": {
+			"url": "https://app.ontoplano.com/api/mcp",
+			"headers": { "Authorization": "Bearer onto_YOUR_KEY_HERE" }
+		}
+	}
 }
 ```
 
@@ -93,18 +93,18 @@ OAuth client id and secret and has nowhere to put a key, so a bearer key needs
 
 ```json
 {
-  "mcpServers": {
-    "ontoplano": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote",
-        "https://app.ontoplano.com/api/mcp",
-        "--header",
-        "Authorization:Bearer onto_YOUR_KEY_HERE"
-      ]
-    }
-  }
+	"mcpServers": {
+		"ontoplano": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"mcp-remote",
+				"https://app.ontoplano.com/api/mcp",
+				"--header",
+				"Authorization:Bearer onto_YOUR_KEY_HERE"
+			]
+		}
+	}
 }
 ```
 

@@ -63,8 +63,16 @@
 		<div class="min-w-0 flex-1">
 			<h2 class="eyebrow text-gray-600">{title}</h2>
 			{#if description}
-				<!-- pre-line: a description may break itself onto a second line with \n. -->
-				<p class="mt-1.5 text-sm whitespace-pre-line text-gray-500">{description}</p>
+				<!--
+					pre-line: a description may break itself onto a second line with \n.
+
+					`max-w-2xl` because a card is as wide as the screen and a sentence
+					should not be: on a large monitor these ran past a hundred and fifty
+					characters, which is a line an eye loses its place tracking back
+					from. The cap is on the paragraph, not the card — the layout still
+					uses the width, only the sentence stops.
+				-->
+				<p class="mt-1.5 max-w-2xl text-sm whitespace-pre-line text-gray-500">{description}</p>
 			{/if}
 		</div>
 		{#if actions}

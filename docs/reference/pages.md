@@ -378,6 +378,10 @@ writable on a self-hosted instance by its owner. Anyone else gets a 404 —
 "not yours" and "not there" are the same answer. This page moves to /admin
 once roles land.
 
+### `/settings/integrations`
+
+What each family of permissions is called, in the words the app uses.
+
 ### `/settings/integrations/connections`
 
 **`calendarLink`**

@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
+	import CopyBlock from '$lib/components/CopyBlock.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import type { ActionData, PageData } from './$types';
@@ -21,18 +22,6 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	let naming = $state(false);
-	let copied = $state('');
-
-	async function copy(what: string, text: string) {
-		try {
-			await navigator.clipboard.writeText(text);
-			copied = what;
-			setTimeout(() => (copied = ''), 1600);
-		} catch {
-			/* a browser that will not: the text is on screen to select */
-		}
-	}
-
 	/*
 	 * The key, if one was just made, and a placeholder otherwise.
 	 *
@@ -43,8 +32,28 @@
 	const key = $derived(form?.token?.plaintext ?? null);
 	const shown = $derived(key ?? 'YOUR_KEY');
 
-	const words = $derived(
-		`I use ontoplano — a life management app my assistant can connect to.
+	/*
+	 * One snippet per assistant, and a picker over them.
+	 *
+	 * There used to be one block and a sentence claiming a `claude mcp add`
+	 * command covered "Claude Code, Codex, or anything else with a shell". It
+	 * does not: that command is Claude Code's own, and Codex, Cursor and Claude
+	 * Desktop each keep their configuration somewhere else, in a different
+	 * shape, with a different way of carrying the key. Naming the thing you use
+	 * and being handed the right text is the only version of this that is not a
+	 * small lie.
+	 *
+	 * "Just tell it" is first and is the default, because it is the one that
+	 * needs nothing explained: an assistant with a terminal reads this and sets
+	 * itself up.
+	 */
+	const clients = $derived([
+		{
+			id: 'words',
+			name: 'Just tell it',
+			wrap: true,
+			note: 'Works with any assistant that can set itself up — one with a terminal.',
+			text: `I use ontoplano — a life management app my assistant can connect to.
 Please connect to it and use it whenever I ask you about my week, my to-do
 list, my diary, my notebooks, my shopping list or my recipes.
 
@@ -56,7 +65,61 @@ Once you are connected, tell me what is on my plan today. Do not change
 anything in my account until I ask you to.
 
 Key: ${shown}`
-	);
+		},
+		{
+			id: 'claude-code',
+			name: 'Claude Code',
+			wrap: false,
+			note: 'Run this in a terminal. It writes the setting for you.',
+			text: `claude mcp add --transport http ontoplano ${data.origin}/api/mcp \\\n  --header "Authorization: Bearer ${shown}"`
+		},
+		{
+			id: 'codex',
+			name: 'Codex',
+			wrap: false,
+			note: 'Add this to ~/.codex/config.toml, and export the key in the shell you start Codex from.',
+			text: `[mcp_servers.ontoplano]
+url = "${data.origin}/api/mcp"
+bearer_token_env_var = "ONTOPLANO_KEY"
+
+# then, in your shell:
+# export ONTOPLANO_KEY=${shown}`
+		},
+		{
+			id: 'cursor',
+			name: 'Cursor',
+			wrap: false,
+			note: 'Add this to ~/.cursor/mcp.json.',
+			text: `{
+  "mcpServers": {
+    "ontoplano": {
+      "url": "${data.origin}/api/mcp",
+      "headers": { "Authorization": "Bearer ${shown}" }
+    }
+  }
+}`
+		},
+		{
+			id: 'claude-desktop',
+			name: 'Claude Desktop',
+			wrap: false,
+			note: 'Its connector screen has nowhere to put a key, so this goes through mcp-remote. No space after the colon — Desktop cuts the header in half if you leave one.',
+			text: `{
+  "mcpServers": {
+    "ontoplano": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote", "${data.origin}/api/mcp",
+        "--header", "Authorization:Bearer ${shown}"
+      ]
+    }
+  }
+}`
+		}
+	]);
+
+	let using = $state('words');
+	const chosen = $derived(clients.find((c) => c.id === using) ?? clients[0]);
 
 	/** One legible line per call: whatever names the thing, never the raw JSON. */
 	function callLine(one: {
@@ -85,15 +148,29 @@ Key: ${shown}`
 	-->
 	<Card
 		title="Let an AI assistant use this app"
-		description="Your week, your to-do list, your diary, your notebooks, your shopping list and your recipes, reachable by an assistant you already talk to. It connects to this instance directly — nothing is sent anywhere else — and you can take the key back at any time."
+		description="Your week, to-do list, diary, shopping list or whatever you want, reachable by an assistant you already talk to."
 	>
-		<div class="space-y-5">
+		<!--
+			Room to read.
+
+			Everything here was text-sm at a tight leading, stacked, and stretched
+			across the whole of a wide screen — a line of prose nineteen hundred
+			pixels long, under a heading four pixels above it. It said "this is
+			going to be difficult" before anybody had read a word of it. The steps
+			are far enough apart to be two things, the type is the size the rest of
+			the app reads at, and a paragraph stops at a length an eye can track
+			back from. The card still uses the width; only the sentences stop.
+		-->
+		<div class="space-y-8">
 			<!-- Step one. -->
 			<div>
-				<span class="eyebrow block text-gray-600">1 · Make a key</span>
-				<p class="mt-1 text-sm text-gray-500">
+				<h3 class="text-base font-semibold text-gray-900">1 · Make a key</h3>
+				<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
 					A key is the password you hand to the assistant. It is shown once, when you make it.
-					<strong class="font-semibold text-gray-900">Do not share it with anyone.</strong>
+					<!-- Its own line, not the tail of the one above: a warning broken across
+					     a wrap reads as an afterthought, and this one is the point. -->
+					<br />
+					<strong class="font-semibold text-red-600">Do not share it with anyone.</strong>
 				</p>
 
 				<!--
@@ -143,29 +220,105 @@ Key: ${shown}`
 						-->
 						<fieldset class="w-full">
 							<legend class="eyebrow text-gray-600">What it may do</legend>
-							<p class="mt-1 mb-2 text-xs text-gray-500">
+							<p class="mt-1 mb-3 max-w-2xl text-xs leading-relaxed text-gray-500">
 								All of it, unless you say otherwise. Anything unticked stays out of reach.
 							</p>
-							<div class="space-y-1">
-								{#each data.grants as grant (grant.key)}
-									<label class="flex items-start gap-2 text-sm text-gray-700">
-										<input type="checkbox" name="scopes" value={grant.key} checked class="mt-1" />
-										<span>{grant.description}</span>
-									</label>
-								{/each}
+
+							<!--
+								A grid, not a column of sentences.
+
+								Every grant is a thing and a verb, and written out as twenty-six
+								full sentences it was a wall nobody would read — which is the same
+								as not showing it at all. One row per thing, one column each for
+								reading and writing, and a disabled box where the pair does not
+								exist: the shape of what is being handed over is legible in a
+								glance down two columns. The sentence is still on the row, as its
+								title, for anybody who wants the detail.
+							-->
+							<div class="max-w-md overflow-x-auto">
+								<table class="w-full text-sm">
+									<thead>
+										<tr class="border-b border-gray-200">
+											<th class="py-1 text-left font-normal text-gray-500"></th>
+											<th class="eyebrow w-16 py-1 text-center text-gray-600">Read</th>
+											<th class="eyebrow w-16 py-1 text-center text-gray-600">Write</th>
+										</tr>
+									</thead>
+									<tbody class="divide-y divide-gray-200">
+										{#each data.permissions as row (row.subject)}
+											<tr>
+												<td class="py-1.5 text-gray-700" title={row.says.join('\n')}>{row.label}</td
+												>
+												{#each [row.read, row.write] as scope, i (i)}
+													<td class="py-1.5 text-center">
+														<!--
+															A box that is not offered is drawn anyway, disabled: an
+															empty cell reads as a column that ran out, and the
+															question "can it write to this?" deserves the answer
+															"no, never" rather than no answer.
+														-->
+														{#if scope}
+															<input
+																type="checkbox"
+																name="scopes"
+																value={scope}
+																checked
+																aria-label="{row.label}: {i === 0 ? 'read' : 'write'}"
+															/>
+														{:else}
+															<input
+																type="checkbox"
+																disabled
+																aria-label="{row.label}: {i === 0
+																	? 'read'
+																	: 'write'} — not something this can do"
+															/>
+														{/if}
+													</td>
+												{/each}
+											</tr>
+										{/each}
+									</tbody>
+								</table>
 							</div>
-							<p class="mt-2 text-xs text-gray-500">
-								It cannot delete anything. Everything it writes is listed below, and anything it
-								changed can be put back.
-							</p>
+
+							<!--
+								Deleting, apart from the rest and unticked.
+
+								It is not another column: removing a person or a habit's whole
+								history is a different kind of thing from writing to it, and the
+								one answer somebody should have to reach for rather than opt out
+								of. Red on its own ground, which is the app's colour for a thing
+								that goes wrong.
+							-->
+							<label
+								class="mt-3 flex max-w-md items-start gap-2 border border-red-200 bg-red-50 px-3 py-2 text-sm text-gray-700"
+							>
+								<input type="checkbox" name="scopes" value="destructive" class="mt-0.5" />
+								<span>
+									<strong class="font-semibold text-red-600">…and let it delete things</strong>
+									<span class="mt-0.5 block text-xs leading-relaxed text-gray-500">
+										Removing is permanent. Without this, an assistant can add and change things but
+										never take them away.
+									</span>
+								</span>
+							</label>
 						</fieldset>
 					</form>
 				{:else}
 					<button type="button" class="btn btn-primary btn-sm mt-2" onclick={() => (naming = true)}>
 						Make a key
 					</button>
+					<!--
+						The count and the way to them, and nothing else.
+
+						It used to carry the warning about a secret being shown once, which
+						put a caution about something that has already happened in front of
+						somebody who has not done anything yet. That warning belongs to the
+						moment a key exists, and it is there.
+					-->
 					{#if data.assistants.length > 0}
-						<p class="mt-2 text-sm text-gray-500">
+						<p class="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500">
 							You already have {data.assistants.length === 1
 								? `one, “${data.assistants[0].name}”`
 								: data.assistants.length}.
@@ -175,12 +328,6 @@ Key: ${shown}`
 								>See {data.assistants.length === 1 ? 'it' : 'them'}
 								here</a
 							>.
-							<!-- Red, because it is the sentence somebody is sorry to have
-							     missed. On the card's own ground rather than a red wash: red
-							     ink on a red fill is unreadable in the dark theme. -->
-							<span class="font-semibold text-red-600"
-								>Their secrets are only ever shown when they are made</span
-							>, so make another if you no longer have it.
 						</p>
 					{/if}
 				{/if}
@@ -192,17 +339,14 @@ Key: ${shown}`
 						needs nothing copied from here at all.
 					-->
 					<div class="mt-3 border border-gray-300 bg-gray-50 p-3">
-						<span class="eyebrow block text-gray-600">Your new key — copy it now</span>
-						<div class="mt-1 flex items-start gap-2">
-							<code class="flex-1 overflow-x-auto font-mono text-xs break-all text-gray-900"
-								>{key}</code
-							>
-							<button type="button" class="btn btn-sm" onclick={() => copy('key', key)}>
-								{copied === 'key' ? 'Copied' : 'Copy'}
-							</button>
+						<span class="eyebrow block text-gray-600">Your new key</span>
+						<div class="mt-1">
+							<CopyBlock text={key} label="Copy the key" />
 						</div>
-						<p class="mt-2 text-xs text-gray-500">
-							This is the only time it is shown. It is already in the words below.
+						<p class="mt-2 text-xs leading-relaxed text-gray-500">
+							<strong class="font-semibold text-gray-900"
+								>This secret will only be shown once.</strong
+							> It is already in the text below.
 						</p>
 					</div>
 				{/if}
@@ -220,68 +364,46 @@ Key: ${shown}`
 				docs.
 			-->
 			<div>
-				<span class="eyebrow block text-gray-600">2 · Hand it to your assistant</span>
-				<p class="mt-1 text-sm text-gray-500">
-					Paste this into the assistant. It says where this app is, what the key is, and what to use
-					it for.
-				</p>
-				<div class="mt-2 flex items-start gap-2">
-					<code
-						class="flex-1 overflow-x-auto border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-[11px] whitespace-pre-wrap text-gray-900"
-						>{words}</code
-					>
-					<button type="button" class="btn btn-sm" onclick={() => copy('words', words)}>
-						{copied === 'words' ? 'Copied' : 'Copy'}
-					</button>
+				<h3 class="text-base font-semibold text-gray-900">2 · Hand it to your assistant</h3>
+				<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">Which one are you using?</p>
+
+				<!--
+					The picker, and the text under it changing with it.
+
+					A row of names rather than a select: there are five, they are short,
+					and what is being chosen changes what is on screen — which is a set
+					of tabs, not a form field.
+				-->
+				<div class="mt-2 flex flex-wrap gap-1">
+					{#each clients as client (client.id)}
+						<!-- Buttons that press in, not tabs: a tab role promises a tabpanel
+						     and arrow-key navigation between them, and half an ARIA pattern
+						     is worse to a screen reader than none. `aria-pressed` says what
+						     this actually is. -->
+						<button
+							type="button"
+							aria-pressed={using === client.id}
+							onclick={() => (using = client.id)}
+							class="btn btn-sm {using === client.id ? 'btn-primary' : 'btn-quiet'}"
+						>
+							{client.name}
+						</button>
+					{/each}
+				</div>
+
+				<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">{chosen.note}</p>
+
+				<div class="mt-2 max-w-3xl">
+					<CopyBlock text={chosen.text} wrap={chosen.wrap} label="Copy this" />
 				</div>
 
 				{#if !key}
-					<p class="mt-2 text-sm text-gray-500">
+					<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
 						It says <code class="font-mono">YOUR_KEY</code> until you make one above — then it comes with
 						the key already in it.
 					</p>
 				{/if}
-
-				<!--
-					The other half, which is a page of its own.
-
-					Pasting works when the assistant can set itself up: it has a terminal,
-					so it writes its own configuration. A chat window cannot, and neither
-					can an editor — those want a line in a file, and the file is in a
-					different place with a different shape for each of them. Doing it that
-					way is also the better answer for anybody who means to keep it: it
-					lasts past this conversation and the key sits in a config file rather
-					than in a transcript.
-				-->
-				<p class="mt-3 border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
-					Assistant cannot set itself up, or you want it there in every conversation?
-					<a
-						href="{data.docsUrl}/ai-agents"
-						class="font-medium underline underline-offset-2"
-						target="_blank"
-						rel="noreferrer">Claude Code, Codex, Cursor and Claude Desktop, step by step</a
-					>.
-				</p>
 			</div>
-
-			<!-- Step three, which is really "what did I just agree to". -->
-			<details class="group">
-				<summary
-					class="flex cursor-pointer list-none items-center text-sm text-gray-600 hover:text-gray-900"
-				>
-					What an assistant is allowed to do
-					<span class="ml-1 inline-block transition group-open:rotate-90">›</span>
-				</summary>
-				<ul class="mt-2 space-y-1 text-sm text-gray-500">
-					{#each data.grants as grant (grant.key)}
-						<li>{grant.description}</li>
-					{/each}
-				</ul>
-				<p class="mt-2 text-sm text-gray-500">
-					It cannot delete anything. Everything it writes is listed below, and anything it changed
-					can be put back.
-				</p>
-			</details>
 		</div>
 	</Card>
 
@@ -340,7 +462,7 @@ Key: ${shown}`
 		{/if}
 	</Card>
 
-	<p class="text-sm text-gray-500">
+	<p class="max-w-2xl text-sm leading-relaxed text-gray-500">
 		Wiring up a script, a widget or a calendar instead?
 		<a href={resolve('/settings/integrations/connections')} class="underline underline-offset-2"
 			>Integrations</a

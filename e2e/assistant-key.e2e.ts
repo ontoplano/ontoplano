@@ -26,18 +26,31 @@ test('a key made on the AI tab arrives inside the words you paste', async ({ pag
 	 * they are drawn — and every one of them starts ticked, because the set an
 	 * assistant uses is the set an assistant uses.
 	 */
-	const boxes = page.locator('input[name="scopes"]');
+	const boxes = page.locator('input[name="scopes"]:not([value="destructive"])');
 	const count = await boxes.count();
 	expect(count).toBeGreaterThan(1);
 	for (let i = 0; i < count; i++) await expect(boxes.nth(i)).toBeChecked();
 
-	// And deleting is not among them: this form does not offer it at all.
-	await expect(page.locator('input[name="scopes"][value="destructive"]')).toHaveCount(0);
+	/*
+	 * Deleting is offered and is not ticked. It is the one grant somebody has
+	 * to reach for, so a default that ever flips to ticked is the failure this
+	 * guards — and a pair that cannot exist is drawn as a box that cannot be
+	 * pressed rather than as an empty cell.
+	 */
+	const destructive = page.locator('input[name="scopes"][value="destructive"]');
+	await expect(destructive).toHaveCount(1);
+	await expect(destructive).not.toBeChecked();
+	expect(await page.locator('input[type="checkbox"][disabled]').count()).toBeGreaterThan(0);
 
 	await page.getByRole('button', { name: 'Make it' }).click();
 	await page.waitForTimeout(1200);
 
-	const shown = await page.locator('code').first().innerText();
+	const shown = (
+		await page
+			.locator('pre', { hasText: /^onto_/ })
+			.first()
+			.innerText()
+	).trim();
 	expect(shown).toMatch(/^onto_/);
 
 	/*
@@ -46,7 +59,19 @@ test('a key made on the AI tab arrives inside the words you paste', async ({ pag
 	 * headless browser will not always grant, and what is on screen is what
 	 * gets pasted either way.
 	 */
-	const words = await page.locator('code', { hasText: 'Address:' }).first().innerText();
+	const words = await page.locator('pre', { hasText: 'Address:' }).first().innerText();
 	expect(words).toContain(shown);
 	expect(words).not.toContain('YOUR_KEY');
+
+	/*
+	 * And every client's snippet carries it, not just the one on screen when
+	 * the key was made. The picker was added because "one command" covered
+	 * Claude Code and nothing else; a snippet that still says YOUR_KEY after a
+	 * key exists is the same failure wearing a different name.
+	 */
+	for (const client of ['Claude Code', 'Codex', 'Cursor', 'Claude Desktop']) {
+		await page.getByRole('button', { name: client, exact: true }).click();
+		const snippet = await page.locator('pre', { hasText: '/api/mcp' }).first().innerText();
+		expect(snippet, `${client} snippet`).toContain(shown);
+	}
 });

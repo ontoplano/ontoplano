@@ -15,9 +15,10 @@ version.
 - **Letting an AI assistant use the app has its own page.** Settings is now
   AI & Integrations, and it opens on AI: make a key, hand it to your assistant,
   and see everything the assistant has changed with a way to put back anything
-  it removed. Two steps and no jargon: what the key may do is a list in plain
-  words, every line ticked and every line yours to untick, with none of the
-  grants an assistant has no use for and no way to let one delete anything. The
+  it removed. Two steps and no jargon: what the key may do is a grid — one row
+  per thing, a column each for reading and writing, ticked to begin with and
+  every box yours — without the grants an assistant has no use for, and with
+  letting it delete things as its own unticked line at the bottom. The
   command and the prompt used to appear only in the instant after a token was
   created, three cards down a page about calendar addresses and webhooks, so
   nobody who did not already know this existed could find out that it did.

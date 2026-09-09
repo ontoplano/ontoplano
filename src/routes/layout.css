@@ -1682,6 +1682,22 @@ input[type='radio']:checked {
 }
 
 /*
+ * A box that cannot be pressed has to look like one.
+ *
+ * The permission grid draws a disabled box where a thing has no such
+ * permission at all — "can it write to today's plan?" answered "no, never"
+ * rather than left blank. Drawn at full strength it was indistinguishable from
+ * a box somebody had merely unticked, which turns a statement of fact into an
+ * invitation to click something that does nothing.
+ */
+input[type='checkbox']:disabled,
+input[type='radio']:disabled {
+	opacity: 0.3;
+	border-style: dashed;
+	cursor: not-allowed;
+}
+
+/*
  * A checkbox stays a rounded square, even where everything else is a pill.
  *
  * At 16px the playful radius turns it into a circle, and a circle means

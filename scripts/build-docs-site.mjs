@@ -164,6 +164,27 @@ code { font-family: var(--mono); font-size: 0.86em; background: var(--soft);
 pre { overflow-x: auto; background: var(--soft); border: 1px solid var(--line);
       padding: 0.75rem 1rem; }
 pre code { background: none; border: 0; padding: 0; }
+
+/*
+ * Every block is copyable, and the button lives in it.
+ *
+ * A control floating in the margin beside a snippet reads as belonging to the
+ * page rather than to the thing under it, and leaves a column of nothing next
+ * to every example. Same arrangement as the app: a glyph in the corner of the
+ * box, and the word only after it worked.
+ */
+.snip { position: relative; }
+.snip pre { padding-right: 3rem; }
+.snip button { position: absolute; top: 0.4rem; right: 0.4rem; display: inline-flex;
+  align-items: center; justify-content: center; width: 2rem; height: 2rem; padding: 0;
+  border: 1px solid var(--line); background: var(--soft); color: var(--muted);
+  cursor: pointer; }
+.snip button:hover { color: var(--ink); }
+.snip button svg { width: 1rem; height: 1rem; }
+.snip .said { position: absolute; top: 0.4rem; right: 0.4rem; display: flex;
+  align-items: center; height: 2rem; padding: 0 0.5rem; border: 1px solid var(--line);
+  background: var(--soft); color: var(--ink); font-size: 0.75rem; font-weight: 500;
+  pointer-events: none; }
 /* Wide tables scroll inside themselves; the page never does. */
 .table { overflow-x: auto; margin: 1rem 0; border: 1px solid var(--line); }
 table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
@@ -530,10 +551,42 @@ ${body}
     </main>
   </div>
 <script>${SEARCH_SCRIPT.replace('__INDEX__', JSON.stringify(searchIndex()))}</script>
+<script>${COPY_SCRIPT}</script>
 </body>
 </html>
 `;
 }
+
+/*
+ * The copy button on every snippet, added here rather than written into the
+ * markdown — the markdown is the source the app's docs generator reads too,
+ * and it should stay prose and fenced code rather than becoming HTML.
+ */
+const COPY_SCRIPT = `
+for (const pre of document.querySelectorAll('main pre')) {
+  const wrap = document.createElement('div');
+  wrap.className = 'snip';
+  pre.parentNode.insertBefore(wrap, pre);
+  wrap.appendChild(pre);
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.title = 'Copy';
+  button.setAttribute('aria-label', 'Copy');
+  button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M9 4h9v13M5 8h9v12H5z"/></svg>';
+  wrap.appendChild(button);
+
+  button.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(pre.innerText); } catch (e) { return; }
+    const said = document.createElement('span');
+    said.className = 'said';
+    said.textContent = 'Copied!';
+    said.setAttribute('aria-live', 'polite');
+    wrap.appendChild(said);
+    setTimeout(() => said.remove(), 1600);
+  });
+}
+`;
 
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
