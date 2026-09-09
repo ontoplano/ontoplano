@@ -10,6 +10,26 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.113.0 — 2026-09-09
+
+- **Bills in reminders say what they cost.** A bill for two hundred reais
+  announced itself as "Hedi — 20000, due 2026-09-15". Amounts are stored as
+  whole cents, and these were the one place in the app printing the integer
+  instead of the price.
+- **Reminders look backwards too.** "Coming up" hid everything that had already
+  fired, which left "did that actually go off?" with nowhere to be answered.
+  The same window now points either way — Ahead or Past — and the past view
+  includes the ones you dismissed.
+- **Import markdown opens on the Notebooks page.** It used to be a link to a
+  settings screen headed "An Obsidian vault": the right form under a name
+  nobody was looking for, one navigation away from the notebooks it fills. Same
+  form, opened where you are. The settings screen still has it.
+- **The note composer reads as one column.** The rule between the picture
+  button and "Tags, people" is gone, the two line up, and the rule that
+  separates the composer from the notes below sits under the Add note button
+  where it belongs. The composer is tinted, so it looks like where you write
+  rather than like the first note in the list.
+
 ## 0.112.0 — 2026-09-09
 
 - **The app asks which ontoplano it is for.** It used to open whatever server
