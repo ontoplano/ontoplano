@@ -35,7 +35,7 @@
 		<h1 class="shrink-0 text-lg font-bold text-gray-900">Health</h1>
 	</div>
 
-	<div class="flex gap-1 border-b border-gray-200">
+	<nav class="flex gap-1 border-b border-gray-200" aria-label="Health sections">
 		<!--
 			Resolved where the tabs are built, above — a stream's tab has to be,
 			because its slug is a route parameter. The rule reads the href
@@ -53,7 +53,7 @@
 			</a>
 		{/each}
 		<!-- eslint-enable svelte/no-navigation-without-resolve -->
-	</div>
+	</nav>
 
 	{@render children()}
 </div>

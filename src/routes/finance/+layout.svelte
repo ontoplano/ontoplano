@@ -18,7 +18,7 @@
 		<h1 class="shrink-0 text-lg font-bold text-gray-900">Finance</h1>
 	</div>
 
-	<div class="flex gap-1 border-b border-gray-200">
+	<nav class="flex gap-1 border-b border-gray-200" aria-label="Finance sections">
 		<!-- eslint-disable svelte/no-navigation-without-resolve -->
 		{#each tabs as tab (tab.href)}
 			<a
@@ -31,7 +31,7 @@
 			</a>
 		{/each}
 		<!-- eslint-enable svelte/no-navigation-without-resolve -->
-	</div>
+	</nav>
 
 	{@render children()}
 </div>

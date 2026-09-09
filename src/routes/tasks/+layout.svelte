@@ -48,10 +48,11 @@
 		became hard to read. The tabs stay legible, the row scrolls, and the
 		chevron at the edge says so — which is what makes a hidden tab findable.
 	-->
-	<div
+	<nav
 		use:scrollHints
 		class="scroll-hints flex gap-0 border-b border-gray-200 md:gap-1"
 		data-tour="planner-tabs"
+		aria-label="Tasks sections"
 	>
 		<!--
 			These are resolved where the tabs are written, above. The rule looks at
@@ -80,7 +81,7 @@
 			</a>
 		{/each}
 		<!-- eslint-enable svelte/no-navigation-without-resolve -->
-	</div>
+	</nav>
 
 	{@render children()}
 </div>
