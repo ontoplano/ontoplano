@@ -134,9 +134,10 @@ test.describe('the todo rail', () => {
 /**
  * Ticking a card off, and the few seconds to have meant something else.
  *
- * The write is held rather than sent, so Undo cancels a timer instead of
- * reversing anything — which is why the reload at the end is the real
- * assertion: it proves nothing was written, not merely that nothing redrew.
+ * The write happens at once and Undo writes the opposite — holding it made the
+ * card say done while everything counted from it still said otherwise. So the
+ * reload at the end is the real assertion in both directions: it proves what
+ * the server ended up believing, not merely what the page last drew.
  */
 test.describe('undo on a card ticked off', () => {
 	test('offers Undo, and Undo means the write never happens', async ({ page }) => {

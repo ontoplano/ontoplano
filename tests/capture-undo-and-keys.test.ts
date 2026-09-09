@@ -14,7 +14,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import { CAPTURES, captureByShortcut, visibleCaptures } from '../src/lib/capture';
 import {
 	cancelFor,
-	changeLater,
+	changeNow,
 	deleteLater,
 	flushNow,
 	isLeaving,
@@ -132,34 +132,97 @@ describe('a delete that is still on its way', () => {
 		expect(isLeaving('item:8')).toBe(false);
 	});
 
-	test('a todo ticked off is held the same way, but its row stays put', () => {
-		// A delete hides the row while it waits; a tick does not — the list has
-		// to draw the outcome, which is what `isPending` answers and `isLeaving`
-		// deliberately does not.
+	test('a todo ticked off is written at once, and its row stays put', () => {
+		// A delete hides the row and holds the request; a tick does neither. It
+		// used to be held too, which made the tick a lie for the length of the
+		// toast: the row said done and every count drawn from the server still
+		// said otherwise. The list still asks `isPending` to hold the outcome
+		// across the round trip, and `isLeaving` is still false.
 		vi.useFakeTimers();
 		const send = vi.fn();
-		changeLater('todo:9', 'Completed call the landlord', send);
+		const revert = vi.fn();
+		changeNow('todo:9', 'Completed call the landlord', send, revert);
 
+		expect(send).toHaveBeenCalledTimes(1);
 		expect(undo.pending[0].message).toBe('Completed call the landlord');
 		expect(isPending('todo:9')).toBe(true);
 		expect(isLeaving('todo:9')).toBe(false);
 
+		// The window closing writes nothing more — it only takes the offer away.
 		vi.advanceTimersByTime(5_000);
 		expect(send).toHaveBeenCalledTimes(1);
+		expect(revert).not.toHaveBeenCalled();
+		expect(undo.pending).toHaveLength(0);
 	});
 
-	test('ticking the same row twice takes it back rather than queueing both', () => {
-		// Clicking the box a second time inside the window is the same gesture as
-		// pressing Undo. Queueing the opposite write behind the first would leave
-		// the outcome decided by whichever timer landed last.
+	test('undoing a tick writes it back, because the tick already happened', () => {
 		vi.useFakeTimers();
 		const send = vi.fn();
-		changeLater('todo:10', 'Completed a', send);
+		const revert = vi.fn();
+		changeNow('todo:11', 'Completed a', send, revert);
+
+		takeBack(undo.pending[0].id);
+
+		expect(revert).toHaveBeenCalledTimes(1);
+		expect(undo.pending).toHaveLength(0);
+	});
+
+	test('ticking the same row twice puts it back, rather than queueing both', () => {
+		// Clicking the box a second time inside the window is the same gesture as
+		// pressing Undo — and now it has to reverse a write rather than cancel
+		// one that never went.
+		vi.useFakeTimers();
+		const send = vi.fn();
+		const revert = vi.fn();
+		changeNow('todo:10', 'Completed a', send, revert);
 		cancelFor('todo:10');
 
+		expect(send).toHaveBeenCalledTimes(1);
+		expect(revert).toHaveBeenCalledTimes(1);
 		expect(undo.pending).toHaveLength(0);
-		vi.advanceTimersByTime(60_000);
-		expect(send).not.toHaveBeenCalled();
+	});
+
+	test('navigating away leaves a tick alone, offer and all', () => {
+		// `flushNow` exists so a held DELETION is not forgotten when somebody
+		// clicks a link. A tick has already been written and its offer still
+		// stands — and the board reloads itself with `goto`, so clearing here
+		// took the Undo button away a fifth of a second after it appeared.
+		vi.useFakeTimers();
+		const send = vi.fn();
+		const revert = vi.fn();
+		changeNow('todo:12', 'Completed a', send, revert);
+
+		flushNow();
+
+		expect(send).toHaveBeenCalledTimes(1);
+		expect(revert).not.toHaveBeenCalled();
+		expect(undoable()).toHaveLength(1);
+
+		// And it still expires on its own.
+		vi.advanceTimersByTime(5_000);
+		expect(undo.pending).toHaveLength(0);
+	});
+
+	test('…while a held deletion is sent, which is what flushing is for', () => {
+		vi.useFakeTimers();
+		const send = vi.fn();
+		deleteLater('item:12', 'a thing', send);
+
+		flushNow();
+
+		expect(send).toHaveBeenCalledTimes(1);
+		expect(undo.pending).toHaveLength(0);
+	});
+
+	test('with the window off, a tick is a plain write with no offer to undo', () => {
+		undo.seconds = 0;
+		const send = vi.fn();
+		const revert = vi.fn();
+		changeNow('todo:13', 'Completed a', send, revert);
+
+		expect(send).toHaveBeenCalledTimes(1);
+		expect(revert).not.toHaveBeenCalled();
+		expect(undo.pending).toHaveLength(0);
 	});
 });
 
@@ -177,55 +240,75 @@ describe('a delete that is still on its way', () => {
  * is nothing left to take back.
  */
 describe('an action whose window has closed but whose write is still in flight', () => {
-	test('keeps holding the new state until the write lands', async () => {
+	test('a deletion keeps holding its row until the write lands', async () => {
 		vi.useFakeTimers();
 		let land: () => void = () => {};
 		const send = vi.fn(() => new Promise<void>((resolve) => (land = resolve)));
 
-		changeLater('todo:9', 'Completed the thing', send);
-		expect(isPending('todo:9')).toBe(true);
+		deleteLater('item:9', 'the thing', send as unknown as () => void);
+		expect(isLeaving('item:9')).toBe(true);
 
 		vi.advanceTimersByTime(5000);
 		expect(send).toHaveBeenCalledTimes(1);
-		// The window is over, but the row must not blink back to undone.
-		expect(isPending('todo:9')).toBe(true);
+		// The window is over, but the row must not reappear before the reload.
+		expect(isLeaving('item:9')).toBe(true);
 		// …and there is nothing left to offer an Undo for.
 		expect(undoable()).toHaveLength(0);
 
 		land();
-		await vi.waitFor(() => expect(isPending('todo:9')).toBe(false));
+		await vi.waitFor(() => expect(isLeaving('item:9')).toBe(false));
 	});
 
 	test('lets go when the write fails, rather than lying about it', async () => {
 		vi.useFakeTimers();
 		let fail: (e: unknown) => void = () => {};
-		changeLater(
-			'todo:10',
-			'Completed the thing',
-			() => new Promise((_, reject) => (fail = reject))
+		deleteLater(
+			'item:10',
+			'the thing',
+			(() => new Promise((_, reject) => (fail = reject))) as unknown as () => void
 		);
 
 		vi.advanceTimersByTime(5000);
-		expect(isPending('todo:10')).toBe(true);
+		expect(isLeaving('item:10')).toBe(true);
 
 		fail(new Error('the server said no'));
-		await vi.waitFor(() => expect(isPending('todo:10')).toBe(false));
+		await vi.waitFor(() => expect(isLeaving('item:10')).toBe(false));
 	});
 
 	test('cannot be taken back once it has gone', () => {
 		vi.useFakeTimers();
 		const send = vi.fn(() => new Promise<void>(() => {}));
-		changeLater('todo:11', 'Completed the thing', send);
+		deleteLater('item:11', 'the thing', send as unknown as () => void);
 		const { id } = undo.pending[0];
 
 		vi.advanceTimersByTime(5000);
 		takeBack(id);
-		cancelFor('todo:11');
+		cancelFor('item:11');
 
 		// Still held: the request is on its way, and pretending otherwise would
 		// leave the screen disagreeing with the server.
-		expect(isPending('todo:11')).toBe(true);
+		expect(isPending('item:11')).toBe(true);
 		expect(send).toHaveBeenCalledTimes(1);
+	});
+
+	/*
+	 * A tick is written the moment it is pressed, so it has no in-flight
+	 * window of its own — but the reload behind it can still be slower than
+	 * the toast, and that is the same blink.
+	 */
+	test('a tick outlives its toast when the reload is slow', async () => {
+		vi.useFakeTimers();
+		let land: () => void = () => {};
+		const send = vi.fn(() => new Promise<void>((resolve) => (land = resolve)));
+
+		changeNow('todo:14', 'Completed the thing', send, vi.fn());
+		vi.advanceTimersByTime(5000);
+
+		expect(undoable()).toHaveLength(0);
+		expect(isPending('todo:14')).toBe(true);
+
+		land();
+		await vi.waitFor(() => expect(isPending('todo:14')).toBe(false));
 	});
 });
 

@@ -14,7 +14,7 @@
 	import { cardById, type DashboardCardId } from '$lib/dashboard.js';
 	import { deserialize } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
-	import { cancelFor, changeLater, isPending } from '$lib/undo.svelte';
+	import { cancelFor, changeNow, isPending } from '$lib/undo.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 
 	/** Keep the card a card: the tracker is one click away for the full list. */
@@ -151,11 +151,13 @@
 	}
 
 	/**
-	 * Answer for the block on the dashboard, in a few seconds.
+	 * Answer for the block on the dashboard, and offer to take it back.
 	 *
-	 * The same held-request shape the board uses: nothing is written until the
-	 * window closes, so Undo cancels a request rather than unwinding a write.
-	 * A second press inside the window means the same as pressing Undo.
+	 * Written at once, not when the toast expires. Holding the request made the
+	 * tick a lie for five seconds: this card said done while the rest of the
+	 * page — the next-up card, the counts — was still drawn from a server that
+	 * had not been told. Undo sends the opposite status, which is an ordinary
+	 * write. A second press inside the window is the same gesture.
 	 */
 	function answerLater(task: { id: number | string; name: string }, status: 'done' | 'skipped') {
 		const key = `instance:${task.id}`;
@@ -164,20 +166,25 @@
 			return;
 		}
 
-		const said = status === 'done' ? 'Completed' : 'Skipped';
-		changeLater(key, `${said} ${task.name}`, () => {
+		const write = (to: string) => {
 			const body = new FormData();
 			body.set('id', String(task.id));
 			body.set('kind', 'instance');
-			body.set('status', status);
-			// Handed back so the undo entry waits for the write and the reload —
-			// dropping it at the timer made the row blink back to undone.
+			body.set('status', to);
 			return fetch('/tasks/board?/setStatus', {
 				method: 'POST',
 				headers: { 'x-sveltekit-action': 'true' },
 				body
 			}).then(() => invalidateAll());
-		});
+		};
+
+		const said = status === 'done' ? 'Completed' : 'Skipped';
+		changeNow(
+			key,
+			`${said} ${task.name}`,
+			() => write(status),
+			() => write('todo')
+		);
 	}
 
 	function handleKeydown(e: KeyboardEvent) {

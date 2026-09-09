@@ -15,7 +15,7 @@
 	import { CLOSED_STATUSES } from '$lib/task-status.js';
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import { invalidateAll } from '$app/navigation';
-	import { cancelFor, changeLater, isPending } from '$lib/undo.svelte';
+	import { cancelFor, changeNow, isPending } from '$lib/undo.svelte';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -116,15 +116,27 @@
 			if (todo.status === 'done') return;
 
 			cancel();
-			changeLater(key, `Completed ${todo.title}`, () => {
-				// Handed back so the undo entry waits for the write and the reload —
-				// dropping it at the timer made the todo blink back for a moment.
+
+			const write = (status: string) => {
+				const body = new FormData();
+				body.set('id', String(todo.id));
+				body.set('status', status);
 				return fetch(action, {
 					method: 'POST',
-					body: formData,
+					body,
 					headers: { 'x-sveltekit-action': 'true' }
 				}).then(() => invalidateAll());
-			});
+			};
+
+			// Written now, not when the toast expires: a todo that says done here
+			// and is still open everywhere it is counted is one screen telling two
+			// stories. Undo puts it back to todo.
+			changeNow(
+				key,
+				`Completed ${todo.title}`,
+				() => write(String(formData.get('status') ?? 'done')),
+				() => write('todo')
+			);
 		};
 
 	/** Today, as the value the scheduling form wants. */

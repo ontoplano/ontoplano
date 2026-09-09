@@ -20,7 +20,7 @@
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { CLOSED_STATUSES, STATUSES, STATUS_LABELS, type Status } from '$lib/task-status.js';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
-	import { cancelFor, changeLater, isPending } from '$lib/undo.svelte';
+	import { cancelFor, changeNow, isPending } from '$lib/undo.svelte';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -233,7 +233,17 @@
 		 */
 		if (status === 'done' || status === 'skipped') {
 			const said = status === 'done' ? 'Completed' : 'Skipped';
-			changeLater(card.uid, `${said} ${card.title}`, () => send());
+			// Written now; Undo writes it back to todo. Held requests made the
+			// card and the rest of the board disagree for the length of a toast.
+			changeNow(
+				card.uid,
+				`${said} ${card.title}`,
+				() => send(),
+				async () => {
+					await post('setStatus', { kind: card.kind, id: String(card.id), status: 'todo' });
+					await refresh();
+				}
+			);
 			return;
 		}
 

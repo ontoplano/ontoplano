@@ -4,7 +4,7 @@
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
-	import { cancelFor, changeLater, isPending } from '$lib/undo.svelte';
+	import { cancelFor, changeNow, isPending } from '$lib/undo.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -109,8 +109,9 @@
 	 * Close a goal, in a few seconds, unless it was a slip.
 	 *
 	 * The same shape the board uses for ticking a task off: the screen shows the
-	 * outcome at once and the request is held, so Undo cancels a request that was
-	 * never sent rather than unwinding one that was. A second press inside the
+	 * outcome at once and so does the server: holding the request made the card
+	 * and everything counted from it disagree for the length of a toast. Undo
+	 * reopens the goal, which is an ordinary write. A second press inside the
 	 * window is the same gesture as pressing Undo.
 	 */
 	function closeLater(goal: { id: number; title: string }, status: 'achieved' | 'missed') {
@@ -120,18 +121,26 @@
 			return;
 		}
 
-		const said = status === 'achieved' ? 'Achieved' : 'Missed';
-		changeLater(key, `${said} — ${goal.title}`, () => {
+		const write = (to: string) => {
 			const body = new FormData();
 			body.set('id', String(goal.id));
-			body.set('status', status);
-			// Handed back so the undo entry waits for the write and the reload.
+			body.set('status', to);
 			return fetch(`${location.pathname}?/close`, {
 				method: 'POST',
 				headers: { 'x-sveltekit-action': 'true' },
 				body
 			}).then(() => invalidateAll());
-		});
+		};
+
+		const said = status === 'achieved' ? 'Achieved' : 'Missed';
+		// `close` reopens too — it clears the closing date for `open` — so Undo
+		// is the same action in the other direction.
+		changeNow(
+			key,
+			`${said} — ${goal.title}`,
+			() => write(status),
+			() => write('open')
+		);
 	}
 
 	function handleKeydown(e: KeyboardEvent) {

@@ -1,17 +1,28 @@
 /**
- * An action that waits, and can be taken back.
+ * An action you can take back, in one of two ways.
  *
- * Nothing is soft-deleted, marked provisional or reconciled afterwards. The
- * request simply has not been sent yet: the screen shows the outcome at once,
- * the submission is held for a few seconds, and Undo cancels it. So there is no
- * state to unwind and no way for a change to survive somewhere a query forgot
- * to filter — the only cost is that closing the tab inside the window means the
- * action never happens, which loses nothing.
+ * ## A change happens now
  *
- * Two shapes use this. A **deletion** hides its row while it waits, so the list
- * reads as though it were already gone; `isLeaving` is what a list asks. A
- * **change** — ticking a todo off — leaves the row where it is and shows the new
- * state, so the list asks `isPending` and renders it done.
+ * Ticking something off writes it immediately and Undo writes the opposite —
+ * done, then back to todo. It used to hold the request for the length of the
+ * toast, which made the tick a lie for five seconds: the row it was on showed
+ * done while the rest of the page, drawn from data the server had not been
+ * told about, still said otherwise. Two parts of one screen disagreeing is
+ * worse than the write it was avoiding.
+ *
+ * Every change that offers this has an inverse — the app requires one for
+ * anything that changes state — so Undo is an ordinary write and not an
+ * unwinding of something half-applied.
+ *
+ * ## A deletion waits
+ *
+ * A deletion has no inverse, so the only honest undo is not to have done it
+ * yet. The row is hidden at once and the request is held for the window: there
+ * is nothing soft-deleted, nothing provisional, and no way for a deleted thing
+ * to survive somewhere a query forgot to filter. The cost is that closing the
+ * tab inside the window means the deletion never happens, which loses nothing.
+ *
+ * A list asks `isLeaving` for the first shape and `isPending` for the second.
  *
  * For deletion the confirmation stays. That is the deliberate half — a dialog or
  * an armed second click, so nothing is destroyed by a reflex. This is the other
@@ -43,6 +54,13 @@ export type Pending = {
 	 */
 	sent: boolean;
 	send: () => void | Promise<unknown>;
+	/**
+	 * How to put it back, for a change that has already been written.
+	 *
+	 * Absent on a deletion, which is taken back by never sending it. Present on
+	 * a change, where Undo is a second write in the opposite direction.
+	 */
+	revert?: () => void | Promise<unknown>;
 	timer: ReturnType<typeof setTimeout>;
 	until: number;
 };
@@ -139,9 +157,69 @@ export function deleteLater(key: string, label: string, send: () => void): void 
 	hold(key, `Deleted ${label}`, true, send);
 }
 
-/** A row that shows its new state now and is written in a few seconds. */
-export function changeLater(key: string, message: string, send: () => void): void {
-	hold(key, message, false, send);
+/**
+ * A row that is written now, and can be written back for a few seconds.
+ *
+ * `send` goes at once; `revert` is what Undo — or a second press on the same
+ * row — sends instead. With the window turned off there is nothing to take
+ * back, so it is a plain write.
+ */
+export function changeNow(
+	key: string,
+	message: string,
+	send: () => void | Promise<unknown>,
+	revert: () => void | Promise<unknown>
+): void {
+	if (undo.seconds <= 0) {
+		void send();
+		return;
+	}
+
+	for (const p of undo.pending.filter((p) => p.key === key)) clearTimeout(p.timer);
+	undo.pending = undo.pending.filter((p) => p.key !== key);
+
+	const id = nextId++;
+
+	/*
+	 * The window closing does not write anything — that already happened. It
+	 * only takes the offer away, and then the entry lingers until the write
+	 * and its reload have landed.
+	 *
+	 * That last part is the same protection a held send has: until the page has
+	 * the server's new answer it is still drawing the old one, and an entry
+	 * dropped before then makes the row flick back to undone and then done
+	 * again. Almost always the reload beats the window; this is for when it
+	 * does not.
+	 */
+	const drop = () => {
+		undo.pending = undo.pending.filter((p) => p.id !== id);
+	};
+
+	/** Whatever `send` handed back, so the entry can wait on it. */
+	const settling = send();
+
+	const timer = setTimeout(() => {
+		const found = undo.pending.find((p) => p.id === id);
+		if (!found) return;
+		undo.pending = undo.pending.map((p) => (p.id === id ? { ...p, sent: true } : p));
+		if (settling && typeof settling.then === 'function') void settling.then(drop, drop);
+		else drop();
+	}, undo.seconds * 1000);
+
+	undo.pending = [
+		...undo.pending,
+		{
+			id,
+			message,
+			key,
+			hides: false,
+			sent: false,
+			send: () => {},
+			revert,
+			timer,
+			until: Date.now() + undo.seconds * 1000
+		}
+	];
 }
 
 /**
@@ -152,7 +230,12 @@ export function changeLater(key: string, message: string, send: () => void): voi
  * the server.
  */
 export function cancelFor(key: string): void {
-	for (const p of undo.pending.filter((p) => p.key === key && !p.sent)) clearTimeout(p.timer);
+	for (const p of undo.pending.filter((p) => p.key === key && !p.sent)) {
+		clearTimeout(p.timer);
+		// A change is already written, so taking it back is a write of its own.
+		// A deletion is taken back by the timer never firing.
+		if (p.revert) void p.revert();
+	}
 	undo.pending = undo.pending.filter((p) => p.key !== key || p.sent);
 }
 
@@ -162,18 +245,27 @@ export function takeBack(id: number): void {
 
 	clearTimeout(found.timer);
 	undo.pending = undo.pending.filter((p) => p.id !== id);
+	if (found.revert) void found.revert();
 }
 
 /**
- * Send everything still waiting, now.
+ * Send every held action now, because the page is being left.
  *
- * Called when the page is being left: something somebody confirmed should not be
- * quietly forgotten because they clicked a link four seconds later.
+ * Something somebody confirmed should not be quietly forgotten because they
+ * clicked a link four seconds later. That is about deletions, which are the
+ * only thing still waiting to be sent.
+ *
+ * A change is left exactly where it is. It has already been written, its offer
+ * to reverse it still stands, and dropping it here retracted that offer the
+ * instant the write landed — the board reloads itself with `goto`, which is a
+ * navigation, so the Undo button vanished under the cursor about a fifth of a
+ * second after appearing. An offer that disappears while you are reaching for
+ * it is worse than no offer.
  */
 export function flushNow(): void {
-	for (const p of undo.pending.filter((entry) => !entry.sent)) {
+	for (const p of undo.pending.filter((entry) => !entry.sent && !entry.revert)) {
 		clearTimeout(p.timer);
 		void p.send();
 	}
-	undo.pending = [];
+	undo.pending = undo.pending.filter((p) => Boolean(p.revert));
 }
