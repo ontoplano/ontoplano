@@ -239,3 +239,41 @@ test('a reminder that has already been is not "coming up"', async ({ page }) => 
 	const comingUp = page.locator('section', { hasText: 'Coming up' }).first();
 	await expect(comingUp.getByText('long gone')).toHaveCount(0);
 });
+
+/**
+ * And the same one, when you go looking for it.
+ *
+ * Hiding what has already fired is right for a list called "Coming up" and
+ * wrong as the only view there is — "did that actually go off?" had nowhere to
+ * be answered. The window looks either way now.
+ */
+test('a reminder that has been is still there to look at', async ({ page }) => {
+	await register(page, `rem-past-${Date.now()}@test.invalid`);
+
+	// Yesterday, not a decade ago: "the last seven days" means seven days, and
+	// a fixture outside the window would be testing the window rather than the
+	// direction. The past view is deliberately bounded the same way the
+	// forward one is.
+	const yesterday = new Date();
+	yesterday.setDate(yesterday.getDate() - 1);
+
+	await page.request.post('/reminders?/create', {
+		headers: { origin: new URL(page.url()).origin },
+		form: {
+			day: yesterday.toISOString().slice(0, 10),
+			time: '09:00',
+			label: 'long gone'
+		}
+	});
+
+	await visit(page, '/reminders?days=7&past=1');
+	await expect(page.locator('main')).toBeVisible();
+
+	const past = page.locator('section', { hasText: 'Already been' }).first();
+	await expect(past.getByText('long gone')).toBeVisible();
+
+	// And going back the other way still hides it.
+	await visit(page, '/reminders?days=7');
+	const comingUp = page.locator('section', { hasText: 'Coming up' }).first();
+	await expect(comingUp.getByText('long gone')).toHaveCount(0);
+});

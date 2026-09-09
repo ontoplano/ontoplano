@@ -139,12 +139,12 @@
 	 * that the address changed and nothing else did — which is the truth, since
 	 * only one card's contents depend on it.
 	 */
-	function look(days: number) {
+	function look(days: number, past = data.past) {
 		const wanted = Math.max(1, Math.min(data.maxDays, Math.trunc(days) || data.days));
 		howFar = wanted;
 		// The path is resolved; the rule cannot see through the appended query.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		void goto(`${resolve('/reminders')}?days=${wanted}`, {
+		void goto(`${resolve('/reminders')}?days=${wanted}${past ? '&past=1' : ''}`, {
 			noScroll: true,
 			keepFocus: true,
 			replaceState: true
@@ -179,7 +179,9 @@
 	const upcoming = $derived<Listed[]>(
 		[
 			...data.reminders
-				.filter((r) => !r.dismissedAt)
+				// A dismissed reminder is hidden from what is coming and is the
+				// whole point of looking back — "did I actually deal with that?"
+				.filter((r) => data.past || !r.dismissedAt)
 				.map((r) => ({
 					key: `set:${r.id}`,
 					id: r.id,
@@ -200,7 +202,10 @@
 				// sound like is whatever its kind is set to on the day.
 				audible: data.sounds.find((c) => c.kind === u.kind)?.audible ?? false
 			}))
-		].sort((a, b) => a.remindAt.localeCompare(b.remindAt))
+		].sort((a, b) =>
+			// Looking back, the one you want is the last one that fired.
+			data.past ? b.remindAt.localeCompare(a.remindAt) : a.remindAt.localeCompare(b.remindAt)
+		)
 	);
 
 	function when(at: string): string {
@@ -409,23 +414,47 @@
 		keep, and this way the answer is a link you can send yourself.
 	-->
 	<Card
-		title="Coming up"
-		description="The next {data.days} {data.days === 1
-			? 'day'
-			: 'days'} — everything set, whatever set it."
+		title={data.past ? 'Already been' : 'Coming up'}
+		description={data.past
+			? `The last ${data.days} ${data.days === 1 ? 'day' : 'days'} — what has already gone off.`
+			: `The next ${data.days} ${data.days === 1 ? 'day' : 'days'} — everything set, whatever set it.`}
 		flush
 	>
 		<div
 			class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 py-2"
 			data-tour="reminder-window"
 		>
-			<div class="seg" role="group" aria-label="How far ahead">
+			<!--
+				Which way the window points.
+
+				The same number of days, forwards or backwards. It sits first
+				because it changes what every other control in this row means.
+			-->
+			<div class="seg" role="group" aria-label="Which way to look">
+				<button
+					type="button"
+					onclick={() => look(data.days, false)}
+					aria-pressed={!data.past}
+					title="What is still to come"
+				>
+					Ahead
+				</button>
+				<button
+					type="button"
+					onclick={() => look(data.days, true)}
+					aria-pressed={data.past}
+					title="What has already gone off"
+				>
+					Past
+				</button>
+			</div>
+			<div class="seg" role="group" aria-label="How far">
 				{#each WINDOWS as window (window)}
 					<button
 						type="button"
 						onclick={() => look(window)}
 						aria-pressed={data.days === window}
-						title="The next {window} days"
+						title={data.past ? `The last ${window} days` : `The next ${window} days`}
 					>
 						{window}
 					</button>
@@ -447,18 +476,20 @@
 					max={data.maxDays}
 					bind:value={howFar}
 					autocomplete="off"
-					title="How many days ahead to look, up to {data.maxDays}"
+					title="How many days to cover, up to {data.maxDays}"
 					class="input tabular w-20 py-1 text-sm"
 				/>
 				<span class="text-xs whitespace-nowrap text-gray-500">days</span>
-				<button type="submit" class="btn btn-sm" title="Look that far ahead">Go</button>
+				<button type="submit" class="btn btn-sm" title="Look that far">Go</button>
 			</form>
 		</div>
 		{#if upcoming.length === 0}
 			<EmptyState
 				icon="clock"
-				title="Nothing waiting"
-				description="Blocks with a reminder, birthdays, bills and anything you set here all show up in this list."
+				title={data.past ? 'Nothing went off' : 'Nothing waiting'}
+				description={data.past
+					? 'Reminders that have already fired show up here, dismissed ones included.'
+					: 'Blocks with a reminder, birthdays, bills and anything you set here all show up in this list.'}
 			/>
 		{:else}
 			<ul class="divide-y divide-gray-200">

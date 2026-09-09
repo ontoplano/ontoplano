@@ -1,5 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
 import { buildCtx, localDateOf } from '$lib/server/services/ctx';
+import { localOfInstant } from '$lib/server/services/time';
 import { ensureBirthdayReminders } from '$lib/server/services/birthdays';
 import {
 	MAX_UPCOMING_DAYS,
@@ -38,9 +39,22 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	// it is a question you ask once — "and what about November?" — not a
 	// setting you keep, and this way the answer is a link you can send.
 	const days = upcomingWindow(url.searchParams.get('days'));
+	/*
+	 * Forwards or backwards over the same window.
+	 *
+	 * "Coming up" hid everything that had already fired, which is right for a
+	 * list of what is ahead and wrong as the only view there is: the question
+	 * "did that alarm actually go off?" has nowhere to be answered. So the same
+	 * control looks either way, and the past view shows the rows that exist —
+	 * including the dismissed ones, which are precisely the ones being asked
+	 * about.
+	 */
+	const past = url.searchParams.get('past') === '1';
 	// Wall-clock in the account's own zone, which is the shape `remind_at` is
 	// stored in, so the two compare as strings.
 	const now = localNow(ctx);
+	/** How far back the past view reaches: the same window, the other way. */
+	const floor = localOfInstant(new Date(ctx.now.getTime() - days * 86_400_000), ctx.tz);
 
 	/*
 	 * Today's birthdays are written here as well as by the delivery pass.
@@ -62,15 +76,28 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		 * things that are going to happen. The dashboard already carries the
 		 * standing version of it.
 		 */
-		reminders: listReminders(ctx).filter(
-			(r) =>
-				r.subjectKind !== 'review' &&
-				// And nothing that has already been: a list called "coming up" that
-				// holds this morning's alarm is a list you have to read past.
-				r.remindAt >= now
-		),
-		/** Birthdays and bills that are coming but are not rows yet. */
-		upcoming: upcomingDerived(ctx, ctx.now, ctx.tz, days),
+		reminders: past
+			? listReminders(ctx, { includePast: true })
+					.filter((r) => r.subjectKind !== 'review' && r.remindAt < now && r.remindAt >= floor)
+					// Newest first: looking back, the thing you want is the last one.
+					.reverse()
+			: listReminders(ctx).filter(
+					(r) =>
+						r.subjectKind !== 'review' &&
+						// And nothing that has already been: a list called "coming up"
+						// that holds this morning's alarm is a list you read past.
+						r.remindAt >= now
+				),
+		/*
+		 * Birthdays and bills that are coming but are not rows yet.
+		 *
+		 * Only ahead. These are worked out on the spot precisely because they
+		 * have not happened, so a backwards version of them would be a list of
+		 * reminders that were never given — which is not what "previous
+		 * reminders" means.
+		 */
+		upcoming: past ? [] : upcomingDerived(ctx, ctx.now, ctx.tz, days),
+		past,
 		days,
 		maxDays: MAX_UPCOMING_DAYS,
 		ringtones: listRingtones(ctx),
