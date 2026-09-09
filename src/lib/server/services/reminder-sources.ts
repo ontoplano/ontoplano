@@ -7,7 +7,8 @@ import type { Ctx } from './ctx.js';
 import { reviewPending } from './review.js';
 import { listPeople } from './people.js';
 import type { ReminderKind } from './reminders.js';
-import { getGridHours } from '../settings.js';
+import { getCurrency, getGridHours } from '../settings.js';
+import { formatMoney } from '../../money.js';
 import { localOfInstant } from './time.js';
 
 /**
@@ -24,6 +25,22 @@ import { localOfInstant } from './time.js';
  * That matters more here than anywhere: the pass runs on a timer that is
  * allowed to be woken, so "twice" is the normal case and not the accident.
  */
+
+/**
+ * What a bill costs, written the way money is written.
+ *
+ * Amounts are integers in the currency's smallest unit — two hundred reais is
+ * 20000 — because a price added up in floating point is eventually wrong in
+ * front of somebody. Every screen in the app runs them through `formatMoney`;
+ * these reminders did not, and said "Hedi — 20000, due 2026-09-15".
+ *
+ * The bill's own currency wins where it has one, and the account's is the
+ * fallback: a bill recorded before the account had a currency still has an
+ * amount, and "20000" is not an improvement on guessing.
+ */
+function priceOf(ctx: Ctx, bill: { amountExpected: number; currency: string | null }): string {
+	return formatMoney(bill.amountExpected, bill.currency ?? getCurrency(ctx.userId));
+}
 
 function dayOf(local: string): string {
 	return local.slice(0, 10);
@@ -128,9 +145,7 @@ export function ensureBillReminders(ctx: Ctx, now: Date, tz: string): number {
 	for (const bill of due) {
 		if (bill.paid) continue;
 
-		const money = bill.currency
-			? `${bill.currency} ${bill.amountExpected}`
-			: `${bill.amountExpected}`;
+		const money = priceOf(ctx, bill);
 
 		if (bill.date === today) {
 			// The day it wants paying. If that is also the due day, the sharper
@@ -241,9 +256,7 @@ export function upcomingDerived(ctx: Ctx, now: Date, tz: string, days = UPCOMING
 	// Bills that want paying, up to the same horizon.
 	for (const bill of billsDueBetween(ctx, today, addDays(today, days))) {
 		if (bill.paid) continue;
-		const money = bill.currency
-			? `${bill.currency} ${bill.amountExpected}`
-			: `${bill.amountExpected}`;
+		const money = priceOf(ctx, bill);
 		out.push({
 			kind: 'bill',
 			at: `${bill.date}T${hour}:00:00`,

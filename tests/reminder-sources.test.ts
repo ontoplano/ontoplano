@@ -126,3 +126,34 @@ describe('a birthday that has not happened yet', () => {
 		expect(coming.find((u) => u.message.includes('Rui'))?.message).toBe("Rui's birthday");
 	});
 });
+
+/**
+ * Money, written the way money is written.
+ *
+ * Amounts are integers in the currency's smallest unit — two hundred reais is
+ * 20000 — because a price added up in floating point is eventually wrong in
+ * front of somebody. Every screen runs them through `formatMoney`; these
+ * reminders interpolated the integer straight into the sentence, so a bill for
+ * two hundred reais announced itself as "Hedi — 20000, due 2026-09-15".
+ */
+describe('what a bill costs', () => {
+	test('is formatted, not printed raw', () => {
+		const ctx = ctxAt('2026-09-07T06:00:00Z');
+		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC');
+
+		const said = billSaid(ctx).find((m) => /Rent/.test(m)) ?? '';
+		// 1200 is twelve reais, not one thousand two hundred of anything.
+		expect(said).toMatch(/12[.,]00/);
+		expect(said).not.toMatch(/\b1200\b/);
+	});
+
+	test('and in the list of what is coming, which is where it was seen', () => {
+		const ctx = ctxAt('2026-09-07T06:00:00Z');
+		const coming = s.sources.upcomingDerived(ctx, ctx.now, 'UTC', 30);
+
+		const bill = coming.find((u) => u.kind === 'bill');
+		expect(bill).toBeDefined();
+		expect(bill!.message).toMatch(/12[.,]00/);
+		expect(bill!.message).not.toMatch(/\b1200\b/);
+	});
+});
