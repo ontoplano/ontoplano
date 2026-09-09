@@ -419,20 +419,37 @@ const shoppingCategory = (name, sortOrder) => {
 	);
 };
 
+/*
+ * How many you have, and how many you keep.
+ *
+ * `qty` and `ideal` were never seeded, so every replenish item sat at the
+ * column defaults — nought of a wanted one — and the cupboard the feature
+ * exists for was a list of zeroes. The row draws "2/3" when you keep more than
+ * one, so a demo without them is a demo of a checkbox.
+ *
+ * `bought` is stored and derived (`qty >= max(ideal, 1)`), so it is computed
+ * here rather than taken. Callers that only say `bought: true` still get a
+ * count that agrees with it, which is what they meant: one, and one is enough.
+ */
 const shoppingItem = (name, type, extra = {}) => {
 	const existing = one('select id from shopping_items where user_id = ? and name = ?', uid, name);
 	if (existing) return existing.id;
+	const ideal = extra.ideal ?? 1;
+	const qty = extra.qty ?? (extra.bought ? Math.max(ideal, 1) : 0);
+	const bought = qty >= Math.max(ideal, 1);
 	return run(
 		`insert into shopping_items
-		 (user_id, name, type, shopping_category_id, notes, bought, bought_at, snoozed)
-		 values (?, ?, ?, ?, ?, ?, ?, ?)`,
+		 (user_id, name, type, shopping_category_id, notes, qty, ideal_qty, bought, bought_at, snoozed)
+		 values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		uid,
 		name,
 		type,
 		extra.categoryId ?? null,
 		extra.notes ?? '',
-		extra.bought ? 1 : 0,
-		extra.bought ? stamp(dayOffset(-2)) : null,
+		qty,
+		ideal,
+		bought ? 1 : 0,
+		bought ? stamp(dayOffset(-2)) : null,
 		extra.snoozed ? 1 : 0
 	);
 };
@@ -1021,14 +1038,33 @@ const pantry = shoppingCategory('pantry', 0);
 const fresh = shoppingCategory('fresh', 1);
 const household = shoppingCategory('household', 2);
 
-shoppingItem('coffee beans', 'replenish', { categoryId: pantry, notes: 'the dark roast' });
-shoppingItem('olive oil', 'replenish', { categoryId: pantry });
-shoppingItem('rice', 'replenish', { categoryId: pantry, bought: true });
-shoppingItem('milk', 'replenish', { categoryId: fresh });
-shoppingItem('eggs', 'replenish', { categoryId: fresh, bought: true });
-shoppingItem('tomatoes', 'replenish', { categoryId: fresh });
-shoppingItem('dish soap', 'replenish', { categoryId: household });
-shoppingItem('lightbulbs', 'replenish', { categoryId: household, snoozed: true });
+/*
+ * A cupboard, not a tick list.
+ *
+ * Each of these says what is there and what is kept, because that pair is the
+ * whole difference between this and a shopping list: two tins of tomatoes and
+ * none are both "unticked" the moment you open the last one. Dish soap is two
+ * of a kept three — enough to be fine today and on the list anyway — which is
+ * the case the "Short" filter exists for and the one worth a picture.
+ */
+shoppingItem('coffee beans', 'replenish', {
+	categoryId: pantry,
+	notes: 'the dark roast',
+	qty: 1,
+	ideal: 2
+});
+shoppingItem('olive oil', 'replenish', { categoryId: pantry, qty: 0, ideal: 1 });
+shoppingItem('rice', 'replenish', { categoryId: pantry, qty: 2, ideal: 2 });
+shoppingItem('milk', 'replenish', { categoryId: fresh, qty: 0, ideal: 2 });
+shoppingItem('eggs', 'replenish', { categoryId: fresh, qty: 6, ideal: 6 });
+shoppingItem('tomatoes', 'replenish', { categoryId: fresh, qty: 1, ideal: 4 });
+shoppingItem('dish soap', 'replenish', { categoryId: household, qty: 2, ideal: 3 });
+shoppingItem('lightbulbs', 'replenish', {
+	categoryId: household,
+	snoozed: true,
+	qty: 0,
+	ideal: 2
+});
 shoppingItem('a proper desk chair', 'someday', { notes: 'try one before buying' });
 shoppingItem('noise-cancelling headphones', 'someday');
 shoppingItem('cast iron pan', 'someday', { bought: true });
