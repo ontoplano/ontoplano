@@ -10,6 +10,19 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.125.0 — 2026-09-09
+
+- **Fields and buttons line up on a phone.** A button has always been given the
+  44px a finger needs and a text field had not, so any row pairing the two — the
+  number you type your goal's progress into and the Update button beside it, the
+  inventory's Find box and Add item — sat visibly crooked. Every field gets the
+  same height now.
+- **A goal card's buttons fit across a phone.** "Tasks (n)" moved under the goal
+  it belongs to, where it reads as what it is: a way to see what counts towards
+  the goal, rather than something you do to it. That leaves Achieved, Missed,
+  edit and delete on one row instead of five controls squeezing until the
+  labels broke over two lines.
+
 ## 0.124.0 — 2026-09-09
 
 - **A reminder only needs a day.** Leave the time empty and it goes off when

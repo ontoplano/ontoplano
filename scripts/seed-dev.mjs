@@ -663,17 +663,30 @@ setting(
 
 // --- the week -------------------------------------------------------------------
 
+/*
+ * Five areas, not three.
+ *
+ * Work, health and personal are the categories every new account starts with,
+ * and a demo built out of only those draws a week in two colours. Learning and
+ * home are the two most people add first — the language, the instrument, the
+ * cooking and the errands were all sitting under "personal" pretending to be
+ * the same thing — so the dev account has them, and the week has five colours
+ * in it rather than two.
+ */
 const work = category('work', '#1d4ed8', '#dbeafe');
 const health = category('health', '#0f766e', '#ccfbf1');
 const personal = category('personal', '#b45309', '#fef3c7');
+const learning = category('learning', '#7c3aed', '#ede9fe');
+const home = category('home', '#be185d', '#fce7f3');
 
 const deepWork = activity('deep work', work);
 const meetings = activity('meetings', work);
 const gym = activity('gym', health);
 const stretching = activity('stretching', health);
-const russian = activity('learn russian', personal);
+const russian = activity('learn russian', learning);
+const reading = activity('reading', learning);
 const piano = activity('piano practice', personal);
-const cooking = activity('cooking', personal);
+const cooking = activity('cooking', home);
 
 for (let weekday = 0; weekday < 5; weekday++) slot(weekday, '09:00', 180, deepWork);
 slot(0, '14:00', 60, meetings);
@@ -681,7 +694,9 @@ slot(2, '14:00', 60, meetings);
 slot(1, '18:00', 60, gym);
 slot(3, '18:00', 60, gym);
 slot(5, '10:00', 45, gym);
-for (let weekday = 0; weekday < 7; weekday++) slot(weekday, '07:00', 15, stretching);
+// Half an hour rather than a quarter: below about twenty minutes a block is
+// too short to draw its own name, and the day opened on an anonymous stripe.
+for (let weekday = 0; weekday < 7; weekday++) slot(weekday, '07:00', 30, stretching);
 slot(2, '20:00', 45, russian);
 slot(4, '20:00', 45, piano);
 slot(6, '11:00', 90, cooking);
@@ -690,7 +705,48 @@ slot(4, '16:00', 60, meetings, 'weeks:2:' + monday);
 // A block that names an area rather than a specific thing.
 categorySlot(5, '15:00', 120, personal, 'errands');
 
-oneOff(today, '13:00', 90, meetings, 'quarterly review');
+/*
+ * The parts of a day that are not the job.
+ *
+ * Three hours of deep work and a meeting was an honest weekday and a terrible
+ * picture: the day view is the first screenshot in the store listing and it
+ * opened on a column of identical blue rectangles. It is also the wrong
+ * argument. An app that holds a whole life should not draw a calendar that
+ * holds only somebody's employer.
+ *
+ * So every weekday now has a morning that starts with something read, a lunch
+ * somebody actually cooks, and an afternoon that belongs to the person — and
+ * the two weekend days have no work on them at all, which is the other half of
+ * the same argument.
+ */
+for (let weekday = 0; weekday < 5; weekday++) {
+	slot(weekday, '08:00', 45, reading);
+	categorySlot(weekday, '12:15', 45, home, 'lunch');
+}
+slot(0, '16:30', 60, piano);
+categorySlot(1, '16:00', 60, personal, 'errands');
+slot(2, '15:30', 60, gym);
+slot(2, '16:30', 45, piano);
+categorySlot(3, '16:30', 90, personal, 'errands');
+slot(4, '18:00', 60, gym);
+slot(5, '17:00', 60, reading);
+slot(6, '16:00', 60, reading);
+slot(6, '18:30', 60, piano);
+
+/*
+ * Today's one thing that is not on every Wednesday.
+ *
+ * It used to be an activity block on `meetings` with "quarterly review" in the
+ * label, which is not what a label is: a block is named by what it *is*, so the
+ * grid drew a second rectangle saying "meetings" an hour after the first one
+ * and the listing's opening screenshot was two identical blue blocks
+ * overlapping. A one-off that names an area and says what it is draws its own
+ * name.
+ */
+oneOffInCategory(today, '13:00', 60, work, 'quarterly review');
+// And one the other way round: a one-off that *is* an activity, with notes on
+// it. Both shapes exist in the app, so both shapes are in the dev database.
+oneOff(iso(dayOffset(1)), '07:30', 45, gym, 'pool is shut — run instead');
 // These two name an area rather than an activity. They used to be passed to
 // oneOff, which writes the number into activity_id — and it only ever worked
 // because a long-lived dev database happened to have an activity with the
@@ -947,14 +1003,14 @@ idea('Cycle to work through the park instead of the main road', ['health'], { fa
 // --- habits -----------------------------------------------------------------------
 
 const water = habit('drink water', 'good', '0,1,2,3,4,5,6', 'two litres');
-const reading = habit('read before bed', 'good', '0,1,2,3,4', '20 minutes, paper only');
+const readBeforeBed = habit('read before bed', 'good', '0,1,2,3,4', '20 minutes, paper only');
 const doomscroll = habit('doomscrolling', 'bad', '', 'phone in the other room after 22:00');
 const coffee = habit('coffee', 'neutral', '');
 
 for (let back = 0; back < 40; back++) {
 	const d = iso(dayOffset(-back));
 	if (back % 7 !== 3) logHabit(water, d);
-	if (back % 3 !== 0) logHabit(reading, d, back === 1 ? 'finished the Le Guin' : '');
+	if (back % 3 !== 0) logHabit(readBeforeBed, d, back === 1 ? 'finished the Le Guin' : '');
 	if (back % 2 === 0) logHabit(coffee, d);
 }
 logHabit(doomscroll, iso(dayOffset(-9)), 'an hour before bed, again');
@@ -1965,13 +2021,24 @@ for (let daysAgo = 1; daysAgo <= HISTORY_WEEKS * 7; daysAgo++) {
 	}
 }
 
-// Habits over the same window. A run with holes in it, because a heatmap that
-// is solid says nothing and a habit nobody ever breaks is not a habit.
-for (let daysAgo = 1; daysAgo <= HISTORY_WEEKS * 7; daysAgo++) {
+/*
+ * Habits over a year, not over the nine weeks.
+ *
+ * A habit's history is drawn as a 365-day heatmap, so nine weeks of it fills a
+ * sixth of the square and leaves five sixths of empty cells — which reads as a
+ * habit nobody has ever kept rather than as a demo that starts nine weeks ago.
+ * Blocks have no year-long view to fill, which is why they keep the shorter
+ * window and the cheaper seed.
+ *
+ * With holes in it, because a heatmap that is solid says nothing and a habit
+ * nobody ever breaks is not a habit.
+ */
+const HABIT_HISTORY_DAYS = 365;
+for (let daysAgo = 1; daysAgo <= HABIT_HISTORY_DAYS; daysAgo++) {
 	const date = iso(dayAt(daysAgo));
 	const dow = (dayAt(daysAgo).getDay() + 6) % 7;
 	if (rand() < 0.82) logHabit(water, date);
-	if (dow < 5 && rand() < 0.66) logHabit(reading, date);
+	if (dow < 5 && rand() < 0.66) logHabit(readBeforeBed, date);
 	if (rand() < 0.24) logHabit(doomscroll, date);
 	if (rand() < 0.7) logHabit(coffee, date);
 }

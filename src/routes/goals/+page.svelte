@@ -503,31 +503,42 @@
 												<button class="btn btn-sm">Update</button>
 											</form>
 										{/if}
+
+										<!--
+											What counts towards this goal, under the goal rather than
+											among the buttons that close it. It reveals a part of this
+											card, so it belongs to the card's own column.
+										-->
+										<button
+											onclick={() => (openTasksId = openTasksId === goal.id ? null : goal.id)}
+											class="btn btn-sm btn-quiet mt-2"
+											title="What counts towards this goal"
+										>
+											Tasks ({goal.linkedSlotIds.length +
+												goal.linkedTodoIds.length +
+												goal.linkedActivityIds.length})
+											<Icon
+												name={openTasksId === goal.id ? 'chevron-up' : 'chevron-down'}
+												size={12}
+											/>
+										</button>
 									</div>
 								</div>
 
 								<!--
-									Five controls per row, in three different treatments, starting
-									wherever the goal's text happened to end. The rail puts them at
-									the same place on every row, and the two that matter — how it
-									ended — keep their words, because "achieved" and "missed" are a
-									judgement you make once and not a routine action you would
-									recognise from a glyph.
+									The controls, in three treatments, starting wherever the goal's
+									text happened to end. The rail puts them at the same place on
+									every row, and the two that matter — how it ended — keep their
+									words, because "achieved" and "missed" are a judgement you make
+									once and not a routine action you would recognise from a glyph.
+
+									Four of them, not five: "Tasks (n)" went back to the goal's own
+									column below. It is a disclosure for what is already on the card
+									and not something done to the goal, and as the rail's fifth
+									member it was what pushed the row past the width of a phone —
+									which put delete on a line of its own, alone, in the corner.
 								-->
 								<div class="row-actions gap-1">
-									<button
-										onclick={() => (openTasksId = openTasksId === goal.id ? null : goal.id)}
-										class="btn btn-sm btn-quiet"
-										title="What counts towards this goal"
-									>
-										Tasks ({goal.linkedSlotIds.length +
-											goal.linkedTodoIds.length +
-											goal.linkedActivityIds.length})
-										<Icon
-											name={openTasksId === goal.id ? 'chevron-up' : 'chevron-down'}
-											size={12}
-										/>
-									</button>
 									{#if goal.status === 'open'}
 										<!--
 											Closing a goal is a verdict on months of work, and it was

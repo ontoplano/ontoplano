@@ -560,6 +560,10 @@ label:has(> input[type='radio']:not(:disabled)) {
 		padding: 0.5rem 1rem;
 		font-size: 0.875rem;
 		font-weight: 500;
+		/* A label is one line. Left to itself a button in a row too narrow for it
+		   breaks its own words instead of the row breaking, and "Tasks (1)" came
+		   out as two lines with the chevron floating beside the middle of them. */
+		white-space: nowrap;
 		color: var(--btn-ink);
 		transition:
 			background-color 120ms ease,
@@ -774,6 +778,17 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 */
 	.row-actions {
 		display: flex;
+		/*
+		 * It wraps, and it wraps to the right.
+		 *
+		 * Five controls do not fit across a 360px card, and a rail that cannot
+		 * wrap makes its buttons squeeze instead — which is how the same row came
+		 * out neat on a desktop and ragged on a phone. Wrapping keeps every
+		 * control its own size and lands the overflow under the right-hand end,
+		 * where the rail already sits.
+		 */
+		flex-wrap: wrap;
+		justify-content: flex-end;
 		flex: none;
 		align-items: center;
 		gap: 0.125rem;
@@ -1801,6 +1816,24 @@ html .ec {
 	select,
 	summary,
 	nav a {
+		min-height: 2.75rem;
+	}
+
+	/*
+	 * The fields too, and for the same reason.
+	 *
+	 * A button got 44px here and an input did not, so any row that pairs the two
+	 * — a number and the button that saves it, a note and the button that logs
+	 * it — drew a short box beside a tall one and sat crooked on every phone.
+	 * The alternative was remembering to set a height at each of those call
+	 * sites, which is the kind of rule that holds until the next form.
+	 *
+	 * Tick boxes are the exception below: they are square, and a 44px one is a
+	 * bathroom tile.
+	 */
+	input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='hidden']),
+	.input,
+	.select {
 		min-height: 2.75rem;
 	}
 
