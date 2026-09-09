@@ -15,57 +15,15 @@ include defaults.env
 .DEFAULT_GOAL := help
 
 help:
-	@printf '\033[1montoplano\033[0m — bare `make` only prints this.\n'
-	@echo
-	@printf '\033[1mdevelop\033[0m\n'
-	@echo "  dev / dev-stop / dev-logs   the app, as a user service (dev-fg holds the terminal)"
-	@echo "  dev-docs                    the documentation, built and served here"
-	@echo "  vars                        every variable a make command line can carry"
-	@echo "  lint · format               prettier+eslint, prettier --write"
-	@echo "  test                        the Playwright e2e suite (yarn test:unit for units)"
-	@echo "  icons                       redraw every icon from src/lib/logo/mark.png"
-	@echo "  docs                        rebuild docs/reference from the code (lint checks it is current)"
-	@echo "  docs-site                   …and render it to build-docs/ as a static site"
-	@echo
-	@printf '\033[1mdatabase\033[0m\n'
-	@echo "  db-generate                 write a migration from the schema diff"
-	@echo "  db-migrate                  apply migrations (snapshots first)"
-	@echo "  db-snapshot                 a consistent copy, before something regrettable"
-	@echo "  db-seed                     synthetic data for the dev account"
-	@echo "  reset-dev                   a fresh dev database (old one kept beside itself)"
-	@echo "  db-import FILE= EMAIL=      restore an exported account over that address"
-	@echo
-	@printf '\033[1mrun it for real\033[0m\n'
-	@echo "  build · preview             production build, and serve it locally"
-	@echo "  install-service             the app + reminders as a systemd user service"
-	@echo "  install-mail-service        …and the weekly review mail, if you run SMTP"
-	@echo "  deploy-local                rebuild, redeploy and restart the installed service"
-	@echo "  docker-up / docker-down     an instance in a container (docs/DOCKER.md)"
-	@echo "  docker-image                build the published image here, and audit it"
-	@echo "  package [deb|rpm|arch]      the .deb, the .rpm and the AUR PKGBUILD, into dist/"
-	@echo "  package-check               …then unpack them and run what is inside"
-	@echo "  backup-install              Litestream replication (backup-status, backup-drill)"
-	@echo
-	@printf '\033[1mphone\033[0m\n'
-	@echo "  android                     build the APK (android-install / android-share to get it on)"
-	@echo "  android-lan                 an APK pointed at this machine, over wifi"
-	@echo "  android-gapp                the Play build, with Play Billing in it"
-	@echo "  fdroid                      write F-Droid's recipe and listing for this version"
-	@if [ -f local.mk ]; then echo; \
-		printf '\033[1mthis instance (local.mk)\033[0m\n'; \
-		echo "  dev-site · dev-all                the site checkout served here, and all three"; \
-		echo "  deploy [-app|-site|-docs|-demo]   ship it; bare deploy is all four"; \
-		echo "  deploy-staging [-app|-site|-docs]  the staging instance on the box"; \
-		echo "  restart [-app|-site|-docs|-demo]  without shipping anything"; \
-		echo "  prune-assets                      drop the old hashed chunks the box keeps"; \
-		echo "  release · docker-publish · github-push   publishing (release.mk)"; \
-		echo "  prod-logs · prod-logs-staging · setup   see local.mk for the rest"; \
-	fi
+	@sh scripts/make-help.sh $(MAKEFILE_LIST)
 
 # What `help` deliberately leaves out: the variables, which are too many to
 # put in front of somebody who only wanted to know the target's name. Reading
 # them out of the makefiles means the list cannot describe a switch that was
 # renamed — the failure mode of writing this table by hand.
+### develop
+
+## every variable a make command line can carry
 vars:
 	@sh scripts/make-vars.sh $(sort $(MAKEFILE_LIST) defaults.env $(wildcard $(SERVER_SRC)/defaults.env))
 
@@ -90,6 +48,7 @@ YARN_BIN ?= $(shell command -v yarn)
 # prompt: a backup needs no ceremony, only doing — `deploy` is the one that
 # stops to ask. `dev-fg` is the old foreground behaviour, for when you want
 # vite's output in the terminal you are sitting at.
+## the app as a background service — survives closing the terminal
 dev: _dev-port _dev-deps _dev-migrated
 	@[ -n "$(NODE_BIN)" ] || { echo "no node on PATH"; exit 1; }
 	@[ -n "$(YARN_BIN)" ] || { echo "no yarn on PATH"; exit 1; }
@@ -184,6 +143,7 @@ _dev-migrated:
 # The way out of a wedged dev database — a migration mismatch, an experiment
 # gone sideways. The old file is kept beside itself, never deleted; then a
 # clean migrate, a dev account, and the seed. One command, no questions.
+## a fresh dev database, the old one kept beside it
 reset-dev:
 	@db="$${DATABASE_URL:-$$HOME/.local/share/ontoplano/ontoplano.db}"; \
 	if [ -f "$$db" ]; then \
@@ -196,6 +156,7 @@ reset-dev:
 	node scripts/seed-dev.mjs "$$db" dev@ontoplano.test && \
 	echo "fresh — sign in as dev@ontoplano.test / ontoplano-dev"
 
+## stop that service
 dev-stop:
 	@systemctl --user stop ontoplano-dev
 	@echo "stopped."
@@ -219,11 +180,13 @@ SITE_PORT ?= 1495
 SITE_SRC_LOCAL ?= ontoplano-site
 
 # `dev` is the app; this is the name to type when you mean it by contrast.
+## the app alone (what `dev` runs)
 dev-app: dev
 
 # The docs, generated from the code and served as the static site it becomes.
 # Regenerated first, every time: the whole point of the docs is that it cannot
 # drift from the code, and previewing a stale copy would be exactly that drift.
+## the documentation, generated and served here
 dev-docs:
 	@yarn -s docs
 	@yarn -s docs:site
@@ -232,6 +195,7 @@ dev-docs:
 # The marketing site, which is a separate repository. Absent from most
 # checkouts, and that is not an error — it is a different audience and a
 # different repo, so this says so and stops.
+## the marketing site, from its own checkout
 dev-site:
 	@if [ ! -d "$(SITE_SRC_LOCAL)" ]; then \
 		echo "No site checkout at $(SITE_SRC_LOCAL)."; \
@@ -244,6 +208,7 @@ dev-site:
 # All of them, for a change that shows up in more than one. The app is a user
 # service and returns; the other two each hold a terminal, so they run in the
 # background here and Ctrl-C stops both.
+## app, docs and site together
 dev-all: dev
 	@echo
 	@echo "  app     http://localhost:1493"
@@ -263,13 +228,16 @@ dev-all: dev
 #   make dev-logs UNIT=whatever      any other user unit here
 DEV_LOG_UNIT ?= ontoplano-dev
 
+## follow the dev service log (UNIT= for another)
 dev-logs:
 	journalctl --user -u $(if $(UNIT),$(UNIT),$(DEV_LOG_UNIT)) -f -n 100
 
+## …the docs service log
 dev-logs-docs:
 	@$(MAKE) -s dev-logs UNIT=ontoplano-docs
 
 # The dev server in this terminal, the old way. Snapshots first, like the unit.
+## the dev server in this terminal instead, holding it
 dev-fg: _dev-deps _dev-migrated
 	@yarn -s db:snapshot dev
 	yarn dev --port 1493
@@ -346,6 +314,9 @@ _billing-in-build:
 		fi; \
 	fi
 
+### build and run it here
+
+## the production build
 build: _billing-provider
 	@heap=$$(free -m 2>/dev/null | awk '/^Mem:/ {print $$2}'); \
 	if [ -n "$(NODE_OPTIONS)" ]; then \
@@ -361,12 +332,15 @@ build: _billing-provider
 # The logo lives in exactly one file, src/lib/logo/mark.png. This is what turns
 # it into the favicon, the four PWA icons and the one iOS reads — so changing
 # the logo is changing a file, not finding eight copies of it.
+## redraw every icon and favicon from the one source PNG
 icons:
 	@yarn -s icons
 
+## serve that build locally
 preview:
 	yarn preview
 
+## run the built server
 start: build
 	node build/index.js
 
@@ -375,17 +349,23 @@ start: build
 # Local development only. `push` rebuilds tables to change them and has
 # produced a wrong migration three times; production goes through
 # generate → review → db-migrate. The guard refuses the production database.
+### database
+
+## apply the schema straight to the dev database
 db-push:
 	yarn db:push
 
+## synthetic data for the dev account
 db-seed:
 	npx tsx src/lib/server/db/seed.ts
 
+## write a migration from the schema diff
 db-generate:
 	yarn db:generate
 
 # Snapshots the database, then applies pending migrations. Part of `deploy`,
 # so a schema change can never ship without the migration that backs it.
+## snapshot, then apply pending migrations
 db-migrate:
 	yarn db:migrate
 
@@ -399,23 +379,40 @@ db-migrate:
 # It snapshots first, because it replaces and there is no undo.
 #: FILE=export.json  the export db-import restores
 #: EMAIL=you@example.com  the account it is restored over
+## restore an exported account over one address
 db-import:
 	@[ -n "$(FILE)" ] || { echo "make db-import FILE=export.json EMAIL=you@example.com"; exit 1; }
 	@[ -n "$(EMAIL)" ] || { echo "make db-import FILE=export.json EMAIL=you@example.com"; exit 1; }
 	@$(MAKE) -s db-snapshot
 	npx tsx scripts/import-account.ts "$(FILE)" "$(EMAIL)"
 
+## a consistent copy, before something regrettable
 db-snapshot:
 	yarn db:snapshot manual
 
+## drizzle's browser, on the dev database
 db-studio:
 	yarn db:studio
+
+## a sqlite3 shell on the local database
+db:
+	sqlite3 ~/.local/share/ontoplano/ontoplano.db
+
+## …the same database in sqlitebrowser
+bdb:
+	sqlitebrowser ~/.local/share/ontoplano/ontoplano.db &
+
+## push the schema and seed it, for a new checkout
+db-setup: db-push db-seed
 
 # ─── Backups ──────────────────────────────────────────────────────────────────
 #
 # Snapshots live beside the database and cover a bad migration; replication
 # ships the WAL offsite and covers a dead disk. See docs/BACKUP.md.
 
+### backups
+
+## Litestream replication, as a user service
 backup-install:
 	@command -v litestream >/dev/null || { echo "litestream is not installed — see docs/BACKUP.md"; exit 1; }
 	@set -a; . $$HOME/.config/ontoplano/env; set +a; \
@@ -428,24 +425,21 @@ backup-install:
 	@systemctl --user restart ontoplano-litestream
 	@echo "Replication running. Check: make backup-status"
 
+## whether replication is running and current
 backup-status:
 	@systemctl --user --no-pager status ontoplano-litestream | head -5 || true
 	@litestream generations -config $$HOME/.config/litestream.yml
 
 # A backup nobody has restored is a hypothesis.
+## restore the backup somewhere safe and check it
 backup-drill:
 	@scripts/restore-drill.sh
 
-db:
-	sqlite3 ~/.local/share/ontoplano/ontoplano.db
-
-bdb:
-	sqlitebrowser ~/.local/share/ontoplano/ontoplano.db &
-
-db-setup: db-push db-seed
-
 # ─── Code Quality ────────────────────────────────────────────────────────────
 
+### checks, docs and generated files
+
+## prettier, eslint, and every generated file checked current
 lint:
 	yarn lint
 	@$(MAKE) -s docs-check
@@ -453,54 +447,23 @@ lint:
 	@yarn -s badges:check
 	@node scripts/check-no-secrets.mjs
 	@node scripts/check-android-version.mjs
+	@node scripts/check-make-help.mjs
 	@# The scheduled jobs run under `tsx` in a production install. A service
 	@# that reaches for a development-only package works everywhere except
 	@# there, and the box is where nobody is watching.
 	@node scripts/check-job-deps.mjs
 
+## rewrite the tree with prettier
 format:
 	yarn format
 
 # ─── Docs ─────────────────────────────────────────────────────────────────────
 
-# The Android project the stores build, regenerated against the origin the
-# published app opens.
-#
-# It is committed, unlike the scratch project `make android` writes: F-Droid
-# builds from a git tag on a machine with no network, so it cannot run the
-# generator — a project that only exists after `npx bubblewrap` has phoned home
-# is a project F-Droid cannot build at all. Committed, a tag is `gradle
-# assembleRelease` and nothing else, which is the whole of their recipe.
-#
-# `make android` still writes android-twa/ and is still ignored: that one is
-# built against whatever origin you are testing, and a build must never change
-# the tree it builds from.
-android-project:
-	ONTOPLANO_ORIGIN=https://app.ontoplano.com TWA_DIR=android \
-		node scripts/build-twa.mjs --project-only --no-billing
-	@node scripts/sanitise-twa-manifest.mjs android/twa-manifest.json
-
-# Everything F-Droid needs for this version, written into fdroid-out/.
-#
-# Their metadata lives in their repository, not in ours: one YAML file that
-# grows a build entry per release, plus the store listing. Keeping a copy here
-# would be a duplicate that is wrong three releases later, so nothing is
-# committed — the generator is, and this writes the current answer.
-#
-#   make fdroid                              a fresh recipe, first submission
-#   make fdroid FROM=path/to/existing.yml    the same recipe plus this release
-#
-# FROM is the file as it stands in your fdroiddata fork; it is edited as text,
-# so reviewers' comments and hand edits survive. It also writes the RFP issue
-# and the merge request description, and fails loudly if the tag this version
-# would build has not been pushed.
-fdroid:
-	@node scripts/fdroid-metadata.mjs $(if $(FROM),--from $(FROM),)
-
 # The README's badges, drawn from this repo rather than fetched from a badge
 # service — the front page of the project should not need a third party to be
 # up, willing, and not counting who looked. `make lint` fails when they are
 # stale, so a version bump cannot leave the release badge naming last month's.
+## redraw the README's badges from this repo
 badges:
 	yarn badges
 
@@ -508,17 +471,21 @@ badges:
 # and the shortcut map. It is committed so it can be read on the forge without
 # a checkout, which is exactly the arrangement that lets a generated file go
 # stale — so `make lint` fails when it has.
+## rebuild docs/reference from the code
 docs:
 	yarn docs
 
 # The same docs as a static site, for docs.ontoplano.com. Regenerates the
 # markdown first, so what is published is never staler than the code.
+## …and render it to build-docs/ as a static site
 docs-site: docs
 	@yarn -s docs:site
 
+## fail if the generated docs are behind the code
 docs-check:
 	@yarn -s docs:check
 
+## the Playwright end-to-end suite
 test:
 	yarn test:e2e
 
@@ -545,12 +512,17 @@ IMAGE ?= ontoplano/ontoplano
 # The tags a push writes: the version in package.json, and `latest`.
 IMAGE_VERSION = $(shell node -p "require('./package.json').version")
 
+### docker
+
+## build the image from this checkout
 docker-build:
 	docker compose build
 
+## an instance in a container
 docker-up:
 	docker compose up -d
 
+## stop it
 docker-down:
 	docker compose down
 
@@ -637,6 +609,7 @@ _docker-audit:
 
 # The image, built here and sent nowhere. What to run before publishing, and
 # what to run to try the thing a self-hoster will actually get.
+## build the published image, and audit it
 docker-image: _docker-safe
 	@command -v docker >/dev/null || { echo "docker is not on PATH"; exit 1; }
 	@echo "Building $(IMAGE):$(IMAGE_VERSION) for this machine's architecture"
@@ -654,18 +627,25 @@ docker-image: _docker-safe
 #: PACKAGE=deb  build one format instead of all three (deb, rpm, arch)
 #: PACKAGE_BUILD=false  package build/ as it stands, do not build again
 PACKAGE_BUILD_DEP := $(if $(filter false 0 no,$(PACKAGE_BUILD)),,build)
+### packages
+
+## the .deb, .rpm and AUR PKGBUILD, into dist/
 package: $(PACKAGE_BUILD_DEP)
 	@[ -f build/index.js ] || { echo "no build/ to package — run make build, or drop PACKAGE_BUILD=false"; exit 1; }
 	@node scripts/package.mjs $(PACKAGE)
 
 # The half that matters: unpack what was built, run it, and check the unit says
 # what the package does. Nothing is installed on this machine.
+## …then unpack each and run what is inside
 package-check:
 	@bash tests/packaging.sh
 
 # The copy installed on THIS machine by `make install-service`, not the box.
 # `make dev-logs` is the development server; `make prod-logs` (local.mk) is
 # the one over there.
+### the installed service
+
+## follow the installed service's log
 logs:
 	journalctl --user -u ontoplano -f
 
@@ -676,6 +656,7 @@ PROD_DIR = $(HOME)/.local/share/ontoplano/app
 # Installing on the machine you are already sitting at. `deploy` below is the
 # one for the server; this is what `install-service` builds on, and what you
 # want when the box and the checkout are the same box.
+## rebuild, reinstall and restart the local service
 deploy-local: build db-migrate
 	@echo "Deploying to $(PROD_DIR)..."
 	@mkdir -p $(PROD_DIR)
@@ -692,9 +673,11 @@ deploy-local: build db-migrate
 		echo "Deploy complete."; \
 	fi
 
+## rebuild and reinstall the phone app
 up-phone: android android-install
 	@echo "Phone updated against $(ONTOPLANO_ORIGIN)."
 
+## the app and its jobs as a systemd user service
 install-service: deploy-local
 	@echo "Installing ontoplano systemd service..."
 	@[ -n "$(NODE_BIN)" ] || { echo "No node on PATH — nothing to put in the unit."; exit 1; }
@@ -732,6 +715,7 @@ install-service: deploy-local
 # The Monday mail, as its own deliberate step: it needs SMTP configured in
 # ~/.config/ontoplano/env, and an install that cannot send should not carry a
 # timer that pretends it might.
+## …and the weekly review mail, if you run SMTP
 install-mail-service:
 	@mkdir -p ~/.config/systemd/user
 	@NODE_BIN="$(NODE_BIN)" envsubst < systemd/ontoplano-weekly-review.service > ~/.config/systemd/user/ontoplano-weekly-review.service
@@ -740,6 +724,7 @@ install-mail-service:
 	@systemctl --user enable --now ontoplano-weekly-review.timer
 	@echo "Weekly review mail timer installed. It sends nothing until SMTP_HOST is set in ~/.config/ontoplano/env."
 
+## remove those services
 uninstall-service:
 	@systemctl --user stop ontoplano || true
 	@systemctl --user disable ontoplano || true
@@ -794,6 +779,45 @@ LAN_IP := $(shell ip route get 1.1.1.1 2>/dev/null | awk '{print $$7; exit}')
 # in local.mk for the instance you deploy, or use `make android-lan` to build
 # against this machine over wifi.
 
+### phone
+
+# The Android project the stores build, regenerated against the origin the
+# published app opens.
+#
+# It is committed, unlike the scratch project `make android` writes: F-Droid
+# builds from a git tag on a machine with no network, so it cannot run the
+# generator — a project that only exists after `npx bubblewrap` has phoned home
+# is a project F-Droid cannot build at all. Committed, a tag is `gradle
+# assembleRelease` and nothing else, which is the whole of their recipe.
+#
+# `make android` still writes android-twa/ and is still ignored: that one is
+# built against whatever origin you are testing, and a build must never change
+# the tree it builds from.
+## regenerate the committed Gradle project F-Droid builds
+android-project:
+	ONTOPLANO_ORIGIN=https://app.ontoplano.com TWA_DIR=android \
+		node scripts/build-twa.mjs --project-only --no-billing
+	@node scripts/sanitise-twa-manifest.mjs android/twa-manifest.json
+
+# Everything F-Droid needs for this version, written into fdroid-out/.
+#
+# Their metadata lives in their repository, not in ours: one YAML file that
+# grows a build entry per release, plus the store listing. Keeping a copy here
+# would be a duplicate that is wrong three releases later, so nothing is
+# committed — the generator is, and this writes the current answer.
+#
+#   make fdroid                              a fresh recipe, first submission
+#   make fdroid FROM=path/to/existing.yml    the same recipe plus this release
+#
+# FROM is the file as it stands in your fdroiddata fork; it is edited as text,
+# so reviewers' comments and hand edits survive. It also writes the RFP issue
+# and the merge request description, and fails loudly if the tag this version
+# would build has not been pushed.
+## F-Droid's recipe and listing for this version
+fdroid:
+	@node scripts/fdroid-metadata.mjs $(if $(FROM),--from $(FROM),)
+
+## the APK anybody can redistribute — no Play Billing
 android:
 	@# Catches an empty or host-less ONTOPLANO_ORIGIN, which would otherwise
 	@# build an app pointed at nothing and fail confusingly on the phone
@@ -815,6 +839,7 @@ android:
 # Play Billing is the only difference and it is not a small one: it is a
 # proprietary library, so this artefact cannot be redistributed anywhere that
 # cares. It writes to its own directory and produces the bundle Play wants.
+## the Play build, with Play Billing and the .aab
 android-gapp:
 	@case "$(ONTOPLANO_ORIGIN)" in \
 		""|*://:*|*://) \
@@ -831,6 +856,7 @@ android-gapp:
 
 # Against this machine over wifi, for working on the phone without deploying.
 #: LAN_IP=192.168.0.10  this machine's address, for android-lan and android-share
+## an APK pointed at this machine over wifi
 android-lan:
 	@$(MAKE) android ONTOPLANO_ORIGIN=http://$(LAN_IP):$(APP_PORT)
 
@@ -840,6 +866,7 @@ android-lan:
 # browser", and the cause is always the same: the site is not serving this
 # keystore's fingerprint at /.well-known/assetlinks.json. That is invisible
 # until the app is installed, so it is worth asking the server now.
+## ask the server whether it will hide the URL bar
 android-check:
 	@case "$(ONTOPLANO_ORIGIN)" in https://*) ;; *) exit 0;; esac; \
 	fp=$$($(MAKE) -s android-fingerprint 2>/dev/null | head -1); \
@@ -859,6 +886,7 @@ android-check:
 	fi
 
 # Straight onto a phone over USB or wireless debugging.
+## install the APK over adb
 android-install: $(APK)
 	@command -v adb >/dev/null || { \
 		echo "adb not found. Install android-tools-adb, or use 'make android-share'"; \
@@ -903,6 +931,7 @@ android-install: $(APK)
 # when this is ended with Ctrl-C — which is how it is meant to be ended.
 SHARE_DIR := $(TWA_DIR)/dist
 
+## serve the APK on this network, with a QR code
 android-share: $(APK)
 	@if [ -z "$(LAN_IP)" ]; then echo "Could not determine this machine's IP address."; exit 1; fi
 	@mkdir -p $(SHARE_DIR)
@@ -922,6 +951,7 @@ android-share: $(APK)
 
 # The fingerprint that goes in ANDROID_CERT_FINGERPRINTS on the server, without
 # which the app shows a URL bar.
+## the signing fingerprint the server has to serve
 android-fingerprint:
 	@command -v keytool >/dev/null || { echo "keytool not found — install a JDK."; exit 1; }
 	@keystore="$(ANDROID_KEYSTORE)"; \
@@ -950,6 +980,7 @@ android-fingerprint:
 	echo "uploads, so trusting only this key shows a URL bar for store installs."
 
 # Removing the app is the only way past a signing-key change.
+## remove it from the phone
 android-uninstall:
 	@command -v adb >/dev/null || { echo "adb not found."; exit 1; }
 	adb uninstall "$(ANDROID_PACKAGE_NAME)"
@@ -959,6 +990,7 @@ android-uninstall:
 # Only safe while the app is self-distributed: a published app is tied to its
 # key forever, and a new key means a new Play listing that existing users will
 # not receive updates from.
+## start a new signing key, when the old one is lost
 android-keystore-reset:
 	@keystore="$(ANDROID_KEYSTORE)"; \
 	if [ ! -f "$$keystore" ]; then echo "No keystore at $$keystore — nothing to reset."; exit 0; fi; \
@@ -973,6 +1005,7 @@ android-keystore-reset:
 	echo "Old key kept alongside as .bak."; \
 	echo "Now run: make android — it will make a new key and its own password."
 
+## delete the generated Android projects
 android-clean:
 	rm -rf android-twa
 
@@ -1026,6 +1059,9 @@ CA_FILE := $(CADDY_DATA)/pki/authorities/local/root.crt
 CA_PORT ?= 1494
 TRUST_LOCAL ?= 1
 
+### odds and ends
+
+## serve the dev app over HTTPS, for phone testing
 https-local:
 	@command -v caddy >/dev/null || { \
 		echo "caddy is not installed."; \
@@ -1090,5 +1126,6 @@ endif
 
 # ─── Clean ────────────────────────────────────────────────────────────────────
 
+## delete build output and node_modules
 clean:
 	rm -rf build dist .svelte-kit node_modules
