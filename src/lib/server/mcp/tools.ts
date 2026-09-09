@@ -326,8 +326,10 @@ const repeatArgs = {
  * The rule these arguments describe, or `undefined` when they say nothing —
  * which is how a change that does not mention the rhythm leaves it alone.
  *
- * `anchor` is what every-N counts from: the date the block was asked about, so
- * "every other Tuesday" starts on the Tuesday somebody meant.
+ * `anchor` is the day the rhythm starts, and every shape gets one: it is what
+ * every-N counts from — "every other Tuesday" starting on the Tuesday somebody
+ * meant — and it is also what stops a plain weekly block being a claim about
+ * every Saturday there has ever been, filling a past it was never part of.
  */
 function recurrenceFromArgs(args: Record<string, unknown>, anchor: string): string | undefined {
 	const repeats = args.repeats;
@@ -346,9 +348,9 @@ function recurrenceFromArgs(args: Record<string, unknown>, anchor: string): stri
 		if (!Number.isInteger(day) || day < 1 || day > 31) {
 			throw new ValidationError('`month_day` must be a whole number from 1 to 31');
 		}
-		return serialiseRecurrence({ kind: 'monthly', day });
+		return serialiseRecurrence({ kind: 'monthly', day, anchor });
 	}
-	return 'weekly';
+	return serialiseRecurrence({ kind: 'weekly', anchor });
 }
 
 /** The rhythm in words, so a row does not have to be decoded to be read. */

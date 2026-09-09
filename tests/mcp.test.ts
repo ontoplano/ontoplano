@@ -981,7 +981,10 @@ describe('the opened rooms', () => {
 		rpc(5, 'change_repeating_block', { id: rentId, minutes: 30 }, ['schedule:write']);
 		let after = rpc(6, 'repeating_week', {}, ['schedule:read']);
 		let rent = after.result.structuredContent.items.find((w: { id: number }) => w.id === rentId);
-		expect(rent.recurrence).toBe('monthly:1');
+		// `monthly:1:<start>` — the day of the month, and the day the rhythm
+		// starts, because a rule with no start is a rule about every 1st there
+		// has ever been.
+		expect(rent.recurrence).toMatch(/^monthly:1:\d{4}-\d{2}-\d{2}$/);
 		expect(rent.repeats).toBe('Day 1 of each month');
 
 		// ...and asking for a new one replaces it.

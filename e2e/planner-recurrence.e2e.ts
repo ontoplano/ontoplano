@@ -124,8 +124,11 @@ test('a monthly block lands on its date and nowhere else', async ({ page }) => {
 	await page.getByRole('button', { name: '+ New' }).click();
 	const form = page.getByRole('dialog');
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
-	await form.getByRole('button', { name: 'Monthly', exact: true }).click();
+	await form.getByRole('button', { name: 'Every month', exact: true }).click();
 	await form.locator('[name="recurrenceMonthDay"]').fill(monthDay);
+	// The Monday, so the rhythm has started by the Thursday being checked
+	// whatever weekday the suite happens to run on.
+	await form.locator('[name="recurrenceAnchor"]').fill(dayAfter(start, 0));
 	await form.locator('[name="startTime"]').fill('11:00');
 	await form.locator('[name="label"]').fill('the-rent');
 	await form.locator('[name="mode"]').selectOption('category');
@@ -642,4 +645,43 @@ test.describe('closing a week', () => {
 		await expect(decided).toHaveCount(0);
 		await expect(left).toHaveCount(before - 2);
 	});
+});
+
+/**
+ * A routine invented today did not happen last month.
+ *
+ * `weekly` carried no start date, so it was a rule about every Saturday there
+ * has ever been: walking the plan back generated the block onto days it was
+ * invented long after, filling a past it was never part of. This is the whole
+ * bug, end to end — created here, then looked for behind here.
+ */
+test('a weekly block does not fill in the weeks before it existed', async ({ page }) => {
+	test.setTimeout(180_000);
+	await register(page, `rec-past-${Date.now()}@test.invalid`);
+
+	const start = monday();
+	const thisThursday = dayAfter(start, 3);
+	await visit(page, `/tasks/plan?from=${dayAfter(start, 0)}`);
+
+	await page.getByRole('button', { name: '+ New' }).click();
+	const form = page.getByRole('dialog');
+	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
+	await form.getByRole('button', { name: 'Every week', exact: true }).click();
+	await form.locator('[name="recurrenceAnchor"]').fill(thisThursday);
+	await form.locator('[name="weekday"]').selectOption('3');
+	await form.locator('[name="startTime"]').fill('12:15');
+	await form.locator('[name="label"]').fill('the-lunch');
+	await form.locator('[name="mode"]').selectOption('category');
+	await form.getByRole('button', { name: /Add repeating block|Save block/ }).click();
+	await expect(form).toBeHidden({ timeout: 20_000 });
+
+	// It is on this Thursday, and on the next one.
+	expect(await onDay(page, thisThursday, 'the-lunch')).toBeGreaterThan(0);
+	expect(await onDay(page, dayAfter(start, 10), 'the-lunch')).toBeGreaterThan(0);
+
+	// And on none of the Thursdays before it was written down — not the week
+	// before, and not the month before, which is where the generation runs.
+	expect(await onDay(page, dayAfter(start, -4), 'the-lunch')).toBe(0);
+	expect(await countIn(page, `/tasks/plan?from=${dayAfter(start, -7)}`, 'the-lunch')).toBe(0);
+	expect(await countIn(page, `/tasks/plan?from=${dayAfter(start, -28)}`, 'the-lunch')).toBe(0);
 });

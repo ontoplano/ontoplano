@@ -456,7 +456,10 @@
 	function startEdit(slot: Slot) {
 		const rec = parseRecurrence(slot.recurrence);
 		recurrenceKind = rec.kind;
-		recurrenceAnchor = rec.kind === 'weeks' || rec.kind === 'days' ? rec.anchor : data.today;
+		// A rule written before rhythms had a start date carries none, and editing
+		// one must not quietly give it today's — that would cut off a routine that
+		// has been running for a year.
+		recurrenceAnchor = rec.anchor ?? '';
 		if (rec.kind === 'weeks' || rec.kind === 'days') recurrenceInterval = rec.interval;
 		if (rec.kind === 'monthly') recurrenceMonthDay = rec.day;
 		formRatings = {
@@ -500,7 +503,13 @@
 		openForm();
 	}
 
-	function startNew(mode: 'weekly' | 'once' = 'weekly', anchor: string = data.today) {
+	/**
+	 * `anchor` is the day the rhythm starts, and it defaults to the day being
+	 * looked at rather than to today: somebody planning next week means the
+	 * block to start next week, and a block that starts after the day it is
+	 * drawn on is a block that does not appear where it was just drawn.
+	 */
+	function startNew(mode: 'weekly' | 'once' = 'weekly', anchor: string = selectedDateStr()) {
 		recurrenceKind = 'weekly';
 		recurrenceAnchor = anchor;
 		recurrenceInterval = 2;
@@ -811,7 +820,7 @@
 			selectOffsetForDate(target.date);
 			prefillTime = target.startTime;
 			prefillDuration = timeToMinutes(GRID_SNAP_DURATION) * 2;
-			startNew(repeat);
+			startNew(repeat, target.date);
 			tick().then(() => createFormEl?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
 		}, HOLD_MS);
 	}
@@ -1177,11 +1186,12 @@
 	 */
 	function setRecurrenceFields(body: FormData, r: Recurrence) {
 		body.set('recurrenceKind', r.kind);
-		if (r.kind === 'weeks' || r.kind === 'days') {
-			body.set('recurrenceInterval', String(r.interval));
-			body.set('recurrenceAnchor', r.anchor);
-		}
+		if (r.kind === 'weeks' || r.kind === 'days') body.set('recurrenceInterval', String(r.interval));
 		if (r.kind === 'monthly') body.set('recurrenceMonthDay', String(r.day));
+		// Every shape has a start date now, and a drag must not drop the one the
+		// block already had — an anchorless rule posts an empty field and stays
+		// anchorless rather than being given today.
+		body.set('recurrenceAnchor', r.anchor ?? '');
 	}
 
 	function restorePlacement(
@@ -1609,8 +1619,10 @@
 		if (recurrenceKind === 'weeks' || recurrenceKind === 'days') {
 			return parseRecurrence(`${recurrenceKind}:${recurrenceInterval}:${recurrenceAnchor}`);
 		}
-		if (recurrenceKind === 'monthly') return parseRecurrence(`monthly:${recurrenceMonthDay}`);
-		return WEEKLY;
+		if (recurrenceKind === 'monthly') {
+			return parseRecurrence(`monthly:${recurrenceMonthDay}:${recurrenceAnchor}`);
+		}
+		return parseRecurrence(`weekly:${recurrenceAnchor}`);
 	});
 
 	const previewEvents = $derived.by(() => {
@@ -2988,7 +3000,7 @@
 						<input type="hidden" name="recurrenceKind" value={recurrenceKind} />
 
 						<div class="flex">
-							{#each [{ v: 'weekly', l: 'Every week' }, { v: 'weeks', l: 'Every N weeks' }, { v: 'days', l: 'Every N days' }, { v: 'monthly', l: 'Monthly' }] as opt (opt.v)}
+							{#each [{ v: 'weekly', l: 'Every week' }, { v: 'weeks', l: 'Every N weeks' }, { v: 'days', l: 'Every N days' }, { v: 'monthly', l: 'Every month' }] as opt (opt.v)}
 								<button
 									type="button"
 									onclick={() => (recurrenceKind = opt.v as typeof recurrenceKind)}
@@ -3015,17 +3027,6 @@
 								/>
 								{recurrenceKind === 'weeks' ? 'weeks' : 'days'}
 							</label>
-							<label class="flex items-center gap-2 text-sm text-gray-700">
-								counting from
-								<input
-									autocomplete="off"
-									name="recurrenceAnchor"
-									type="date"
-									required
-									bind:value={recurrenceAnchor}
-									class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-								/>
-							</label>
 						{:else if recurrenceKind === 'monthly'}
 							<label class="flex items-center gap-2 text-sm text-gray-700">
 								Day
@@ -3046,6 +3047,25 @@
 								</span>
 							{/if}
 						{/if}
+
+						<!--
+							Every rhythm starts somewhere, not only the every-N ones.
+
+							Without this, "every week on Saturday" was a claim about every
+							Saturday there has ever been: walking the plan back a month
+							generated a routine invented in September onto days in August.
+						-->
+						<label class="flex items-center gap-2 text-sm text-gray-700">
+							counting from
+							<input
+								autocomplete="off"
+								name="recurrenceAnchor"
+								type="date"
+								required={recurrenceKind === 'weeks' || recurrenceKind === 'days'}
+								bind:value={recurrenceAnchor}
+								class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							/>
+						</label>
 					</div>
 				{/if}
 

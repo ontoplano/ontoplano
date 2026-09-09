@@ -10,6 +10,18 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.118.0 — 2026-09-09
+
+- **A repeating block starts on a day, and does not fill the past.** "Every
+  week on Saturday" was a rule about every Saturday there has ever been, so
+  walking the plan back a month generated a routine invented in September onto
+  days in August. Every rhythm now has a "counting from" date — weekly and
+  monthly as well as the every-N ones — and nothing before it is an occurrence.
+  Blocks that already exist start from the day they were written down;
+  occurrences already generated are left exactly as they are.
+- **"Monthly" is called "Every month"**, beside Every week, Every N weeks and
+  Every N days.
+
 ## 0.117.0 — 2026-09-09
 
 - **The weeks you have already written about are a link, not a wall.** The

@@ -7,21 +7,35 @@
  * iCalendar's RRULE: three shapes, stored as one compact string. Full RRULE is
  * a parser and a pile of edge cases in exchange for rules nobody writes.
  *
- * Serialised forms, all anchored so "every 2 weeks" has something to count from:
+ * Serialised forms, all anchored so a rhythm has something to count from:
  *
- *   weekly            — every week on the slot's weekday (the default)
+ *   weekly:ANCHOR     — every week on the slot's weekday, from ANCHOR
  *   weeks:N:ANCHOR    — every N weeks on the slot's weekday, from ANCHOR
  *   days:N:ANCHOR     — every N days from ANCHOR, ignoring weekday
- *   monthly:D         — day D of every month; D of 29-31 clamps to month end
+ *   monthly:D:ANCHOR  — day D of every month from ANCHOR; D of 29-31 clamps to
+ *                       month end
  *
  * ANCHOR is YYYY-MM-DD. Anything unrecognised reads as plain weekly, so a bad
  * value degrades to the old behaviour rather than making a slot disappear.
+ *
+ * ## Why every shape has one
+ *
+ * `weekly` and `monthly` used to have no anchor at all, which made them rules
+ * about *every* Saturday there has ever been. Walking the plan back a month
+ * generated the block onto days it was invented long after, so a routine
+ * started in September filled up August — a past that never happened, sitting
+ * in the record beside one that did.
+ *
+ * The anchor is the day the rhythm starts, and nothing before it is an
+ * occurrence. It stays optional in the parsed shape because rows written before
+ * this existed carry none, and a rule with no anchor still means what it always
+ * meant rather than vanishing.
  */
 export type Recurrence =
-	| { kind: 'weekly' }
+	| { kind: 'weekly'; anchor?: string }
 	| { kind: 'weeks'; interval: number; anchor: string }
 	| { kind: 'days'; interval: number; anchor: string }
-	| { kind: 'monthly'; day: number };
+	| { kind: 'monthly'; day: number; anchor?: string };
 
 export const WEEKLY: Recurrence = { kind: 'weekly' };
 
@@ -51,12 +65,19 @@ export function parseRecurrence(raw: string | null | undefined): Recurrence {
 	if (!raw) return WEEKLY;
 	const parts = raw.split(':');
 
-	if (parts[0] === 'weekly') return WEEKLY;
+	// A missing or malformed anchor is dropped rather than refused: the rule is
+	// still the rule, it simply has no day it starts from.
+	const anchorOf = (raw: string | undefined): { anchor?: string } =>
+		raw && DATE_RE.test(raw) ? { anchor: raw } : {};
+
+	if (parts[0] === 'weekly') return { kind: 'weekly', ...anchorOf(parts[1]) };
 
 	if (parts[0] === 'weeks' || parts[0] === 'days') {
 		const interval = Number(parts[1]);
 		const anchor = parts[2] ?? '';
 		if (!Number.isInteger(interval) || interval < 1 || interval > MAX_INTERVAL) return WEEKLY;
+		// These two are counted *from* the anchor, so without one they are not a
+		// rule at all — hence refused rather than anchorless.
 		if (!DATE_RE.test(anchor)) return WEEKLY;
 		return { kind: parts[0], interval, anchor };
 	}
@@ -64,7 +85,7 @@ export function parseRecurrence(raw: string | null | undefined): Recurrence {
 	if (parts[0] === 'monthly') {
 		const day = Number(parts[1]);
 		if (!Number.isInteger(day) || day < 1 || day > 31) return WEEKLY;
-		return { kind: 'monthly', day };
+		return { kind: 'monthly', day, ...anchorOf(parts[2]) };
 	}
 
 	return WEEKLY;
@@ -77,9 +98,9 @@ export function serialiseRecurrence(r: Recurrence): string {
 		case 'days':
 			return `days:${r.interval}:${r.anchor}`;
 		case 'monthly':
-			return `monthly:${r.day}`;
+			return r.anchor ? `monthly:${r.day}:${r.anchor}` : `monthly:${r.day}`;
 		default:
-			return 'weekly';
+			return r.anchor ? `weekly:${r.anchor}` : 'weekly';
 	}
 }
 
@@ -96,6 +117,10 @@ function lastDayOfMonth(date: Date): number {
  */
 export function occursOn(r: Recurrence, date: Date, weekday: number): boolean {
 	const dateWeekday = (date.getDay() + 6) % 7;
+
+	// Nothing happens before a rhythm starts. Checked once, here, so every shape
+	// obeys it and a shape added later cannot forget to.
+	if (r.anchor && daysBetween(r.anchor, formatDate(date)) < 0) return false;
 
 	switch (r.kind) {
 		case 'weekly':
@@ -135,12 +160,14 @@ export function occursOn(r: Recurrence, date: Date, weekday: number): boolean {
 export function reanchor(r: Recurrence, date: Date): Recurrence {
 	switch (r.kind) {
 		case 'weekly':
+			// The weekday carries the move; the start date is when the rhythm began
+			// and dragging one occurrence does not rewrite that.
 			return r;
 		case 'weeks':
 		case 'days':
 			return { ...r, anchor: formatDate(date) };
 		case 'monthly':
-			return { kind: 'monthly', day: date.getDate() };
+			return { ...r, day: date.getDate() };
 	}
 }
 

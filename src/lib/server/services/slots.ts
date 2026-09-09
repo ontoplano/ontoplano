@@ -882,23 +882,33 @@ export function importWeekCsv(
 /**
  * The recurrence rule from a block form.
  *
- * Every-N shapes need an anchor to count from; the form supplies the block's
- * own date when it has one, and today otherwise, so "every 2 weeks" starts
- * counting from the occurrence you were looking at.
+ * Every shape has a day it starts from, which the form supplies as the block's
+ * own date — so "every 2 weeks" counts from the occurrence you were looking at,
+ * and "every week on Saturday" is a rule about the Saturdays from here on
+ * rather than about every Saturday there has ever been.
+ *
+ * The every-N shapes are counted *from* the anchor and cannot do without one,
+ * so they fall back to today. Weekly and monthly can: a rule written before
+ * this existed has no anchor, and an edit that leaves the field empty must not
+ * quietly give it one — that would cut a year-old routine off at today.
  */
 export function readRecurrence(formData: FormData, now: Date): string {
 	const kind = formData.get('recurrenceKind')?.toString() ?? 'weekly';
 	const interval = Number(formData.get('recurrenceInterval') || 1);
-	const anchor = formData.get('recurrenceAnchor')?.toString()?.trim() || recFormatDate(now);
+	const given = formData.get('recurrenceAnchor')?.toString()?.trim() ?? '';
 	const monthDay = Number(formData.get('recurrenceMonthDay') || 1);
 
 	if (kind === 'weeks' || kind === 'days') {
 		// Round-tripping through the parser is the validation: anything out of
 		// range comes back as plain weekly rather than reaching the database.
-		return serialiseRecurrence(parseRecurrence(`${kind}:${interval}:${anchor}`));
+		return serialiseRecurrence(
+			parseRecurrence(`${kind}:${interval}:${given || recFormatDate(now)}`)
+		);
 	}
-	if (kind === 'monthly') return serialiseRecurrence(parseRecurrence(`monthly:${monthDay}`));
-	return 'weekly';
+	if (kind === 'monthly') {
+		return serialiseRecurrence(parseRecurrence(`monthly:${monthDay}:${given}`));
+	}
+	return serialiseRecurrence(parseRecurrence(`weekly:${given}`));
 }
 
 export { ratingsFromForm };

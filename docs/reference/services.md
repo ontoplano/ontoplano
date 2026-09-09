@@ -2901,12 +2901,23 @@ report over data already collected is the cheapest thing there is that
 brings somebody back, and unlike a notification it is not asking for
 anything: it says what happened and leaves the door open.
 
+## Two mails, because there are two situations
+
+A week with blocks nobody has answered for and a week already settled are
+not the same message. The first is **"Review your week"**: what you did, and
+what you have not said happened yet, with the page that closes it one press
+away. The second is **"Your week"**: what you did, and nothing to do about
+it — a report, not a chore.
+
+It used to send only the first, and only while the week was open, so
+somebody who keeps their week tidy got no Monday mail at all. That is
+backwards: they are the ones the report is worth reading for.
+
 ## What it will not do
 
-**Send about a week that had nothing in it.** The rule is `reviewPending()`,
-the same one the dashboard's own prompt uses, so the mail and the app never
-disagree about whether there is a week worth looking at. Somebody who did
-not plan gets no mail at all rather than a mail full of zeroes.
+**Send about a week that had nothing in it.** A mail full of zeroes about a
+week somebody never planned is how a lifecycle mail teaches people to filter
+it.
 
 **Send twice.** The week it last wrote about is stored, so a timer that
 fires hourly, a box that reboots, and a run somebody starts by hand all
@@ -3479,9 +3490,15 @@ user knows what was not recognised rather than silently losing it.
 
 The recurrence rule from a block form.
 
-Every-N shapes need an anchor to count from; the form supplies the block's
-own date when it has one, and today otherwise, so "every 2 weeks" starts
-counting from the occurrence you were looking at.
+Every shape has a day it starts from, which the form supplies as the block's
+own date — so "every 2 weeks" counts from the occurrence you were looking at,
+and "every week on Saturday" is a rule about the Saturdays from here on
+rather than about every Saturday there has ever been.
+
+The every-N shapes are counted _from_ the anchor and cannot do without one,
+so they fall back to today. Weekly and monthly can: a rule written before
+this existed has no anchor, and an edit that leaves the field empty must not
+quietly give it one — that would cut a year-old routine off at today.
 
 ### Types
 
