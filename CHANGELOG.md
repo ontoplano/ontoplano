@@ -10,6 +10,21 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.114.0 — 2026-09-09
+
+- **The time field is the browser's own again.** There was a hand-drawn clock
+  face here, added because Android opens `<input type="time">` as typeable
+  digits unless it feels like opening a dial. It looked like nobody's control
+  everywhere the native one is fine, which is most places. A standard control
+  is the browser's to draw.
+- **`make help` lists every target.** It described about forty of the
+  ninety-odd, so tab-completion offered the rest with no way to tell what they
+  were. Help is generated from the makefiles now, grouped, and `make lint`
+  fails if a target says nothing about itself.
+- **Each room's tab strip is a `<nav>`** with a label, the same in all of them.
+  It was a bare `<div>` in three of the four, which is worse for a screen
+  reader and meant nothing could enumerate a room's pages.
+
 ## 0.113.0 — 2026-09-09
 
 - **Bills in reminders say what they cost.** A bill for two hundred reais
