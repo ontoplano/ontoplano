@@ -10,6 +10,13 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.117.0 — 2026-09-09
+
+- **The weeks you have already written about are a link, not a wall.** The
+  review used to print the last two months of writing under the box you write
+  in. There is a room for that — Notebooks → Weekly notes — so the card's header
+  points at it: "See what I wrote before".
+
 ## 0.116.0 — 2026-09-09
 
 - **Answering for the blocks is what closes a week, not writing about it.** The

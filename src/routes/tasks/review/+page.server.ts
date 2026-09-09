@@ -5,7 +5,6 @@ import { toActionFailure } from '$lib/server/http-errors';
 import {
 	carryIntoTodos,
 	goalsTouched,
-	pastNotes,
 	readWeek,
 	resolveLoose,
 	readNote,
@@ -51,8 +50,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		loose,
 		goals: goalsTouched(ctx, weekStart),
 		note: readNote(ctx, weekStart),
-		/** What you wrote in the weeks before this one, so it is not written into a void. */
-		past: pastNotes(ctx, { limit: 8, before: weekStart }),
 		/** Things nothing has ever asked about. Only offered on a finished week. */
 		stale: isCurrent ? [] : listStale(ctx),
 		staleMonths: STALE_MONTHS,

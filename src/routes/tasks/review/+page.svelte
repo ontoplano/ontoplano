@@ -494,6 +494,17 @@
 			accent="var(--section-accent)"
 		>
 			<!--
+				Where the rest of them live.
+
+				Every week ever written used to be printed under this card, which put
+				two months of writing between the box and the bottom of the page for
+				no reason: they already have a room of their own in the notebooks,
+				and one line pointing at it is the whole job.
+			-->
+			{#snippet actions()}
+				<a href={resolve('/notebooks/weekly')} class="btn btn-sm">See what I wrote before</a>
+			{/snippet}
+			<!--
 				One box, not three.
 
 				It was three inputs labelled "what went well", "what did not" and
@@ -533,36 +544,6 @@
 				</div>
 			</form>
 		</Card>
-		<!--
-			Where the three lines go.
-
-			They were written into a row and never read again unless you happened to
-			navigate back to that exact week — and a thing you write and never see is
-			a thing you stop writing. This is the running account: the last couple of
-			months of weeks, in one place, each linked to its own review.
-		-->
-		{#if data.past.length > 0}
-			<Card
-				title="What you wrote before"
-				description="The weeks behind this one."
-				accent="var(--section-accent)"
-				flush
-			>
-				<ul class="divide-y divide-gray-200">
-					{#each data.past as week (week.weekStart)}
-						<li class="px-4 py-3">
-							<a
-								href="{resolve('/tasks/review')}?week={week.weekStart}"
-								class="tabular text-xs text-gray-500 hover:text-gray-900 hover:underline"
-							>
-								{pretty(week.weekStart)}
-							</a>
-							<p class="mt-1 text-sm whitespace-pre-wrap text-gray-900">{week.note}</p>
-						</li>
-					{/each}
-				</ul>
-			</Card>
-		{/if}
 	{/if}
 
 	<!--
