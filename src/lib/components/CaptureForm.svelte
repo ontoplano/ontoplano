@@ -65,7 +65,7 @@
 	{#if capture.key === 'idea'}
 		<IdeaFields compact />
 	{:else if capture.key === 'note'}
-		<NoteFields compact notebooks={options.notebooks} />
+		<NoteFields compact label="Diary note" notebooks={options.notebooks} />
 	{:else if capture.key === 'todo'}
 		<TodoFields
 			compact

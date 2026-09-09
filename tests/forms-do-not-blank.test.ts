@@ -81,5 +81,5 @@ it('a note form offers a notebook, and its actions read it', () => {
 
 	// And the capture wheel hands the list over, or the field renders empty.
 	const capture = readFileSync('src/lib/components/CaptureForm.svelte', 'utf8');
-	expect(capture).toMatch(/NoteFields compact notebooks=\{options\.notebooks\}/);
+	expect(capture).toMatch(/NoteFields compact label="Diary note" notebooks=\{options\.notebooks\}/);
 });

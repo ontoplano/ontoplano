@@ -20,7 +20,16 @@
 		notebooks = [],
 		compact = false,
 		/** Off where there is no room for it, like the capture sheet's four rows. */
-		pictures = true
+		pictures = true,
+		/**
+		 * What the box is called.
+		 *
+		 * "Note" on the diary page, where the page is the diary and the word is
+		 * unambiguous. "Diary note" from the capture wheel, which offers four
+		 * things to write and where a bare "Note" does not say which of them
+		 * this one lands in.
+		 */
+		label = 'Note'
 	}: {
 		content?: string;
 		tags?: string;
@@ -28,12 +37,13 @@
 		notebooks?: { id: number; title: string }[];
 		compact?: boolean;
 		pictures?: boolean;
+		label?: string;
 	} = $props();
 
 	let box = $state<HTMLTextAreaElement>();
 </script>
 
-<Field label="Note" span={12} required>
+<Field {label} span={12} required>
 	<textarea
 		bind:this={box}
 		name="content"
