@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.122.0 — 2026-09-09
+
+- **The card page leads with the promise.** "Nothing is charged today" is the
+  heading now, the two plans are two big cards instead of a tab strip, a short
+  paragraph says what the money is for — the app is free to self-host, paying
+  is for the hosted instance — and the demo got a real button. A quiet link
+  points anyone who would rather run their own instance at the docs.
+
 ## 0.121.0 — 2026-09-09
 
 - **The record of a deletion outlives the account.** Deleting your own account
