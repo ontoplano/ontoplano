@@ -16,7 +16,7 @@ readings, and reads upcoming planner slots to decide when to ring.
 
 ## 1. Get a token
 
-The user creates one at **Settings → Integrations**, choosing scopes. The full
+The user creates one at **Settings → AI & Integrations → Integrations**, choosing scopes. The full
 list of scopes and what each grants is generated from the code in
 [`docs/reference/ways-in.md`](reference/ways-in.md) — a table here would only
 drift from it. Ask for the narrowest set that works. A token with only `streams:write` cannot read

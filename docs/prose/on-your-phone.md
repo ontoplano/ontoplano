@@ -300,7 +300,7 @@ back to the widget's setup screen, paste it into **Or paste the key**, and tap
 **Use this key**. That path needs no link and cannot be intercepted.
 
 The key can read today's plan and nothing else. Revoke it any time under
-**Settings → Integrations**; the widget goes blank rather than showing anything
+**Settings → AI & Integrations → Integrations**; the widget goes blank rather than showing anything
 stale.
 
 <script>

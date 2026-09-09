@@ -10,7 +10,7 @@ somebody's own machine cannot take the instance down with it.
 
 ## API tokens
 
-A token is created in Settings → Integrations, shown once, and stored as a
+A token is created in Settings → AI & Integrations → Integrations, shown once, and stored as a
 hash. It carries scopes, and a scope is a sentence somebody agreed to rather
 than a permission bit: a grant given to a string of jargon is not informed.
 

@@ -1,83 +1,64 @@
 <script lang="ts">
-	import { getAction, keyFor } from '$lib/shortcuts';
-	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
+	import Card from '$lib/components/Card.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
-	import { armed } from '$lib/actions/armed';
-	import Card from '$lib/components/Card.svelte';
-	import { resolve } from '$app/paths';
-	import Field from '$lib/components/Field.svelte';
-	import FormGrid from '$lib/components/FormGrid.svelte';
-	import Modal from '$lib/components/Modal.svelte';
-	import type { PageServerData, ActionData } from './$types';
-	import { keepInView } from '$lib/actions/keep-in-view';
+	import type { ActionData, PageData } from './$types';
 
-	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+	/**
+	 * Letting an assistant use this account, for somebody who has never heard
+	 * of an API.
+	 *
+	 * The old page put the two things you paste in the instant after a token
+	 * was minted, under a heading about tokens and scopes, on a page that was
+	 * mostly webhooks. Everything here is the same mechanism said in the words
+	 * somebody would use themselves: a key, what it lets the assistant do, and
+	 * the two lines to hand over. The full form — every scope, an expiry, the
+	 * grants an assistant has no use for — is still on the Integrations tab for
+	 * anybody wiring up a script.
+	 */
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	let showTokenForm = $state(false);
-	let showWebhookForm = $state(false);
-	let confirmRevoke = $state<number | null>(null);
-	let confirmDeleteStream = $state<number | null>(null);
-	let confirmDeleteWebhook = $state<number | null>(null);
-	let revealedSecret = $state<number | null>(null);
-	let selectedIndex = $state(-1);
-	let copied = $state(false);
+	let naming = $state(false);
+	let copied = $state('');
 
-	const newToken = $derived(form?.success && form.action === 'createToken' ? form.token : null);
-	const newFeedUrl = $derived(
-		form?.success && form.action === 'calendarLink' ? form.feedUrl : null
+	async function copy(what: string, text: string) {
+		try {
+			await navigator.clipboard.writeText(text);
+			copied = what;
+			setTimeout(() => (copied = ''), 1600);
+		} catch {
+			/* a browser that will not: the text is on screen to select */
+		}
+	}
+
+	/*
+	 * The key, if one was just made, and a placeholder otherwise.
+	 *
+	 * A key's secret exists in this page for one render and is not recoverable
+	 * afterwards — so somebody arriving with a key already made sees the shape
+	 * of what to paste and is told plainly where the missing part comes from.
+	 */
+	const key = $derived(form?.token?.plaintext ?? null);
+	const shown = $derived(key ?? 'YOUR_KEY');
+
+	const words = $derived(
+		`I use ontoplano — a life management app my assistant can connect to.
+Please connect to it and use it whenever I ask you about my week, my to-do
+list, my diary, my notebooks, my shopping list or my recipes.
+
+  Address:    ${data.origin}/api/mcp
+  Protocol:   MCP, over streamable HTTP (stateless — no session, no GET)
+  Key:        send it as an "Authorization: Bearer" header
+
+Once you are connected, tell me what is on my plan today. Do not change
+anything in my account until I ask you to.
+
+Key: ${shown}`
 	);
 
-	// The sentence a scope was granted as, everywhere a scope is shown — the
-	// key is for the developer, the sentence is for the owner of the data.
-	const scopeSentence = (key: string) => data.scopes.find((s) => s.key === key)?.description ?? key;
-
-	/**
-	 * Tick exactly these and untick the rest.
-	 *
-	 * Set rather than add, so pressing a preset twice is the same as pressing it
-	 * once and the button always leaves the form in the state its label claims.
-	 */
-	let scopeBox = $state<HTMLElement>();
-
-	/**
-	 * Which cautioned scopes are currently ticked, read from the DOM.
-	 *
-	 * From the DOM rather than bound state, because the preset and Clear
-	 * buttons set `.checked` directly — a binding would go stale the moment
-	 * either was pressed.
-	 */
-	let cautionsArmed = $state<Record<string, boolean>>({});
-	function syncCautions() {
-		const armed: Record<string, boolean> = {};
-		for (const box of scopeBox?.querySelectorAll<HTMLInputElement>(
-			'input[name="scopes"]:checked'
-		) ?? [])
-			armed[box.value] = true;
-		cautionsArmed = armed;
-	}
-
-	function tick(keys: string[]) {
-		for (const box of scopeBox?.querySelectorAll<HTMLInputElement>('input[name="scopes"]') ?? [])
-			box.checked = keys.includes(box.value);
-		syncCautions();
-	}
-
-	function closeForms() {
-		showTokenForm = false;
-		showWebhookForm = false;
-		confirmRevoke = null;
-		confirmDeleteStream = null;
-		confirmDeleteWebhook = null;
-	}
-
-	const eventLabel = (key: string) => data.webhookEvents.find((e) => e.key === key)?.label ?? key;
-
-	/**
-	 * One legible line per assistant call: whatever names the thing best, from
-	 * the state it replaced or the arguments — never the raw JSON.
-	 */
+	/** One legible line per call: whatever names the thing, never the raw JSON. */
 	function callLine(one: {
 		args: Record<string, unknown>;
 		before: unknown;
@@ -89,481 +70,247 @@
 		);
 		return typeof said === 'string' ? said.slice(0, 80) : '';
 	}
-
-	/**
-	 * The two things somebody pastes, with the token already in them.
-	 *
-	 * The same words as `docs/prose/ai-agents.md`, at the moment the token
-	 * exists — a token that is shown once, so sending somebody to the docs to
-	 * fetch a prompt and back again is three steps at the one moment they
-	 * cannot afford to lose this tab. The endpoint is this instance's own,
-	 * because a self-hosted copy is not app.ontoplano.com.
-	 */
-	function mcpCommand(token: string): string {
-		return `claude mcp add --transport http ontoplano ${data.origin}/api/mcp \\\n  --header "Authorization: Bearer ${token}"`;
-	}
-
-	function mcpPrompt(token: string): string {
-		return `I use ontoplano — a life management app with an MCP server. Please connect to it
-and use it whenever I ask you about my week, my todos, my diary, my notebooks,
-my shopping list or my recipes.
-
-  MCP endpoint:  ${data.origin}/api/mcp
-  Transport:     streamable HTTP (stateless — no session, GET is not supported)
-  Auth:          an Authorization: Bearer header
-
-Once connected, list the tools you were offered and tell me what I asked you to
-do today. Do not write anything into my account until I ask you to.
-
-Token: ${token}`;
-	}
-
-	async function copyToken(value: string) {
-		try {
-			await navigator.clipboard.writeText(value);
-			copied = true;
-			setTimeout(() => (copied = false), 2000);
-		} catch {
-			copied = false;
-		}
-	}
-
-	function handleKeydown(e: KeyboardEvent) {
-		if (
-			e.target instanceof HTMLInputElement ||
-			e.target instanceof HTMLTextAreaElement ||
-			e.target instanceof HTMLSelectElement
-		)
-			return;
-
-		if (e.key === 'Escape') {
-			closeForms();
-			return;
-		}
-		const action = getAction('/settings/integrations', e.key);
-		if (action === 'new' && !showTokenForm) {
-			e.preventDefault();
-			showTokenForm = true;
-			return;
-		}
-		if (action === 'navigate-down') {
-			e.preventDefault();
-			selectedIndex = Math.min(selectedIndex + 1, data.tokens.length - 1);
-		}
-		if (action === 'navigate-up') {
-			e.preventDefault();
-			selectedIndex = Math.max(selectedIndex - 1, 0);
-		}
-	}
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
-
-<div class="space-y-6">
-	<p class="page-intro">
-		Connect external apps. They push data in as <em>streams</em> and can read your upcoming schedule —
-		without shipping any code into ontoplano.
-	</p>
-
+<div class="space-y-4">
 	<FormError message={form?.message} />
 
-	{#if newToken}
-		<div class="border border-blue-200 bg-blue-50 p-4">
-			<p class="text-sm font-semibold text-blue-900">
-				Token created — copy it now, it won't be shown again.
-			</p>
-			<div class="mt-2 flex items-center gap-2">
-				<code
-					class="flex-1 overflow-x-auto border border-blue-200 bg-white px-3 py-2 font-mono text-xs text-gray-900"
-					>{newToken.plaintext}</code
-				>
-				<button type="button" onclick={() => copyToken(newToken.plaintext)} class="btn">
-					{copied ? 'Copied' : 'Copy'}
-				</button>
-			</div>
-			<p class="mt-2 text-xs text-blue-800">
-				It may: {newToken.scopes.map(scopeSentence).join(' · ')}
-			</p>
-			<!--
-				The one thing somebody is about to go looking for.
-				
-				A token is a means, not an end: whoever just made one is about to
-				paste it into something, and for most of them that something is an
-				assistant. The page that says how — with a prompt to copy — is one
-				link away, and this is the moment to offer it rather than the
-				documentation index.
-			-->
-			<!--
-				And the prompt itself, here, with the token already in it.
-				
-				Sending somebody to the documentation to copy a prompt and then
-				back here to copy a token — a token they are told will never be
-				shown again — is three steps at the one moment they cannot afford
-				to lose the tab. Folded, because it is only for the people who
-				came to connect an assistant.
-			-->
-			<details class="mt-3 border-t border-blue-200 pt-2">
-				<summary class="cursor-pointer text-xs font-medium text-blue-900">
-					Connect an AI assistant with it
-				</summary>
-
-				<p class="mt-2 text-xs text-blue-900">One command, if it has a shell:</p>
-				<div class="mt-1 flex items-start gap-2">
-					<code
-						class="flex-1 overflow-x-auto border border-blue-200 bg-white px-3 py-2 font-mono text-[11px] whitespace-pre text-gray-900"
-						>{mcpCommand(newToken.plaintext)}</code
-					>
-					<button
-						type="button"
-						onclick={() => copyToken(mcpCommand(newToken.plaintext))}
-						class="btn shrink-0">Copy</button
-					>
-				</div>
-
-				<p class="mt-3 text-xs text-blue-900">
-					Or paste this to it in words — it says what the app is for, so the assistant reaches for
-					it instead of asking you to repeat yourself:
-				</p>
-				<div class="mt-1 flex items-start gap-2">
-					<pre
-						class="flex-1 overflow-x-auto border border-blue-200 bg-white px-3 py-2 font-mono text-[11px] whitespace-pre-wrap text-gray-900">{mcpPrompt(
-							newToken.plaintext
-						)}</pre>
-					<button
-						type="button"
-						onclick={() => copyToken(mcpPrompt(newToken.plaintext))}
-						class="btn shrink-0">Copy</button
-					>
-				</div>
-			</details>
-
-			<p class="mt-3 text-xs">
-				<a
-					href="https://docs.ontoplano.com/ai-agents"
-					target="_blank"
-					rel="noreferrer"
-					class="text-blue-800 underline decoration-blue-300 underline-offset-2 hover:text-blue-900"
-				>
-					How Ontoplano’s MCP server works, tool by tool →
-				</a>
-			</p>
-		</div>
-	{/if}
-
 	<!--
-		The calendar link.
+		What this is, before how to do it.
 
-		Above the tokens because it is the one on this page an ordinary person
-		wants: paste a URL into the calendar they already use and their plan turns
-		up there, with no app to install and nothing of ours in the way.
+		Nobody arrives here knowing what MCP is, and they do not need to: the
+		thing being offered is that an assistant they already talk to can read
+		and change what is in this app. The protocol's name appears once, where
+		somebody who does know it will look for it.
 	-->
 	<Card
-		title="Calendar link"
-		description="Paste the address into Google Calendar, Apple Calendar or Thunderbird and your plan appears there, keeping itself current. Those apps only read it — nothing they do can change your plan."
+		title="Let an AI assistant use this app"
+		description="Your week, your to-do list, your diary, your notebooks, your shopping list and your recipes, reachable by an assistant you already talk to. It connects to this instance directly — nothing is sent anywhere else — and you can take the key back at any time."
 	>
-		{#if newFeedUrl}
-			<div class="border border-blue-200 bg-blue-50 p-4">
-				<p class="text-sm font-semibold text-blue-900">Your new calendar address</p>
-				<div class="mt-2 flex items-center gap-2">
-					<code
-						class="flex-1 overflow-x-auto border border-blue-200 bg-white px-3 py-2 font-mono text-xs break-all text-gray-900"
-						>{newFeedUrl}</code
+		<div class="space-y-5">
+			<!-- Step one. -->
+			<div>
+				<span class="eyebrow block text-gray-600">1 · Make a key</span>
+				<p class="mt-1 text-sm text-gray-500">
+					A key is the password you hand to the assistant. It is shown once, when you make it.
+					<strong class="font-semibold text-gray-900">Do not share it with anyone.</strong>
+				</p>
+
+				<!--
+					The button and the form occupy the same place: naming a key is one
+					field, and a form that appears below the button it replaced pushes
+					everything under it down the page.
+				-->
+				{#if naming}
+					<form
+						method="post"
+						action="?/createKey"
+						use:enhance={() => {
+							return async ({ update }) => {
+								naming = false;
+								await update();
+							};
+						}}
+						class="mt-2 flex flex-wrap items-center gap-2"
 					>
-					<button type="button" onclick={() => copyToken(newFeedUrl)} class="btn">
-						{copied ? 'Copied' : 'Copy'}
+						<div class="flex w-full flex-wrap items-center gap-2">
+							<input
+								name="label"
+								autocomplete="off"
+								placeholder="AI assistant"
+								class="input w-auto flex-1 sm:max-w-64"
+								aria-label="What to call this key"
+							/>
+							<button class="btn btn-primary btn-sm" type="submit">Make it</button>
+							<button type="button" class="btn btn-sm btn-quiet" onclick={() => (naming = false)}>
+								Cancel
+							</button>
+						</div>
+
+						<!--
+							What it may do, ticked and changeable.
+
+							Every box is on to begin with, because the whole set is what an
+							assistant uses and choosing between eleven of them is not a
+							decision most people arrive here able to make. It is still their
+							decision: somebody who would rather an assistant never saw their
+							diary unticks that one and everything else still works.
+
+							The three grants an assistant has no use for — declaring a plugin,
+							managing webhooks, handing out a calendar address — are not on
+							this list, and nor is deleting. The Integrations tab has the form
+							with all of them.
+						-->
+						<fieldset class="w-full">
+							<legend class="eyebrow text-gray-600">What it may do</legend>
+							<p class="mt-1 mb-2 text-xs text-gray-500">
+								All of it, unless you say otherwise. Anything unticked stays out of reach.
+							</p>
+							<div class="space-y-1">
+								{#each data.grants as grant (grant.key)}
+									<label class="flex items-start gap-2 text-sm text-gray-700">
+										<input type="checkbox" name="scopes" value={grant.key} checked class="mt-1" />
+										<span>{grant.description}</span>
+									</label>
+								{/each}
+							</div>
+							<p class="mt-2 text-xs text-gray-500">
+								It cannot delete anything. Everything it writes is listed below, and anything it
+								changed can be put back.
+							</p>
+						</fieldset>
+					</form>
+				{:else}
+					<button type="button" class="btn btn-primary btn-sm mt-2" onclick={() => (naming = true)}>
+						Make a key
+					</button>
+					{#if data.assistants.length > 0}
+						<p class="mt-2 text-sm text-gray-500">
+							You already have {data.assistants.length === 1
+								? `one, “${data.assistants[0].name}”`
+								: data.assistants.length}.
+							<a
+								href={resolve('/settings/integrations/connections')}
+								class="underline underline-offset-2"
+								>See {data.assistants.length === 1 ? 'it' : 'them'}
+								here</a
+							>.
+							<!-- Red, because it is the sentence somebody is sorry to have
+							     missed. On the card's own ground rather than a red wash: red
+							     ink on a red fill is unreadable in the dark theme. -->
+							<span class="font-semibold text-red-600"
+								>Their secrets are only ever shown when they are made</span
+							>, so make another if you no longer have it.
+						</p>
+					{/if}
+				{/if}
+
+				{#if key}
+					<!--
+						Shown once, and said so twice: it is not recoverable, and the
+						pasteable things below already have it in them, so the common case
+						needs nothing copied from here at all.
+					-->
+					<div class="mt-3 border border-gray-300 bg-gray-50 p-3">
+						<span class="eyebrow block text-gray-600">Your new key — copy it now</span>
+						<div class="mt-1 flex items-start gap-2">
+							<code class="flex-1 overflow-x-auto font-mono text-xs break-all text-gray-900"
+								>{key}</code
+							>
+							<button type="button" class="btn btn-sm" onclick={() => copy('key', key)}>
+								{copied === 'key' ? 'Copied' : 'Copy'}
+							</button>
+						</div>
+						<p class="mt-2 text-xs text-gray-500">
+							This is the only time it is shown. It is already in the words below.
+						</p>
+					</div>
+				{/if}
+			</div>
+
+			<!--
+				Step two: the paste, and only the paste.
+
+				The command used to be first, under "Using Claude Code?", which asked
+				somebody to know what they were using before they knew what they were
+				doing. Pasting these words is the path that needs nothing explained: an
+				assistant with a terminal reads the address and the key and sets itself
+				up. Everything that cannot do that — a chat window, an editor — needs a
+				configuration file edited, which is a page of its own and lives in the
+				docs.
+			-->
+			<div>
+				<span class="eyebrow block text-gray-600">2 · Hand it to your assistant</span>
+				<p class="mt-1 text-sm text-gray-500">
+					Paste this into the assistant. It says where this app is, what the key is, and what to use
+					it for.
+				</p>
+				<div class="mt-2 flex items-start gap-2">
+					<code
+						class="flex-1 overflow-x-auto border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-[11px] whitespace-pre-wrap text-gray-900"
+						>{words}</code
+					>
+					<button type="button" class="btn btn-sm" onclick={() => copy('words', words)}>
+						{copied === 'words' ? 'Copied' : 'Copy'}
 					</button>
 				</div>
+
+				{#if !key}
+					<p class="mt-2 text-sm text-gray-500">
+						It says <code class="font-mono">YOUR_KEY</code> until you make one above — then it comes with
+						the key already in it.
+					</p>
+				{/if}
+
+				<!--
+					The other half, which is a page of its own.
+
+					Pasting works when the assistant can set itself up: it has a terminal,
+					so it writes its own configuration. A chat window cannot, and neither
+					can an editor — those want a line in a file, and the file is in a
+					different place with a different shape for each of them. Doing it that
+					way is also the better answer for anybody who means to keep it: it
+					lasts past this conversation and the key sits in a config file rather
+					than in a transcript.
+				-->
+				<p class="mt-3 border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
+					Assistant cannot set itself up, or you want it there in every conversation?
+					<a
+						href="{data.docsUrl}/ai-agents"
+						class="font-medium underline underline-offset-2"
+						target="_blank"
+						rel="noreferrer">Claude Code, Codex, Cursor and Claude Desktop, step by step</a
+					>.
+				</p>
 			</div>
-		{/if}
 
-		<!--
-			Anyone holding the address can read the plan — that is how every calendar
-			subscription works, Google's included, because the calendar fetches it
-			with no way to be asked anything. Said plainly rather than buried: it is
-			the one thing somebody needs to know before pasting it into a shared
-			machine.
-		-->
-		<p class="mt-3 text-sm text-gray-500">
-			Anyone with the address can read your plan, so treat it like a password. Each one is listed
-			below and can be revoked on its own.
-		</p>
-
-		<form method="post" action="?/calendarLink" use:enhance class="mt-3 flex items-end gap-2">
-			<!-- Named, because five identical rows called "Calendar link" are five
-			     rows nobody can revoke with any confidence. -->
-			<label class="text-xs text-gray-500">
-				<span class="eyebrow block text-gray-600">Where it is going</span>
-				<OneLine name="label" placeholder="my phone" class="input mt-1 w-48" maxlength={60} />
-			</label>
-			<button
-				class="btn btn-sm btn-primary"
-				disabled={data.calendarLinks.length >= data.calendarLinkLimit}
-			>
-				Create a calendar link
-			</button>
-			{#if data.calendarLinks.length >= data.calendarLinkLimit}
-				<span class="text-xs text-gray-500">
-					{data.calendarLinkLimit} is the most. Revoke one to make another.
-				</span>
-			{/if}
-		</form>
-	</Card>
-
-	<!-- API tokens -->
-	<Card title="API tokens" flush>
-		{#snippet actions()}
-			{#if data.tokens.length === 0}
-				<!-- Beside the button it points at, small, and gone with the first
-				     token: connecting an assistant is what a first visit is for. -->
-				<span class="mr-2 border border-blue-200 bg-blue-50 px-2 py-1 text-xs text-blue-900">
-					Create a token to connect an AI assistant →
-				</span>
-			{/if}
-			<button
-				type="button"
-				onclick={() => (showTokenForm = true)}
-				class="btn btn-sm"
-				data-tour="integrations-tokens"
-			>
-				New token <kbd class="ml-1 border border-gray-300 bg-gray-50 px-1 text-gray-700"
-					>{keyFor('/settings/integrations', 'new')}</kbd
+			<!-- Step three, which is really "what did I just agree to". -->
+			<details class="group">
+				<summary
+					class="flex cursor-pointer list-none items-center text-sm text-gray-600 hover:text-gray-900"
 				>
-			</button>
-		{/snippet}
-
-		<Modal
-			bind:open={showTokenForm}
-			error={form?.message}
-			title="New API token"
-			description="Shown once, at creation. It cannot be recovered afterwards."
-		>
-			<form
-				id="token-form"
-				method="post"
-				action="?/createToken"
-				use:enhance={() =>
-					async ({ update, result }) => {
-						await update({ reset: false });
-						if (result.type === 'success') showTokenForm = false;
-					}}
-			>
-				<FormGrid>
-					<Field label="Name" span={8} required>
-						<OneLine
-							name="label"
-							placeholder="the app on my phone"
-							class="input"
-							required
-							maxlength={60}
-						/>
-					</Field>
-
-					<Field label="Expires in" span={4} hint="Days. Empty means never.">
-						<input
-							autocomplete="off"
-							name="expiresInDays"
-							type="number"
-							min="1"
-							max="3650"
-							placeholder="never"
-							class="input tabular"
-						/>
-					</Field>
-
-					<fieldset class="col-span-12">
-						<legend class="eyebrow text-gray-600">What this token may do</legend>
-						<p class="mt-1 mb-2 text-xs text-gray-500">
-							Grant only what the app needs. Anything unticked stays out of reach.
-						</p>
-						<!--
-							Eighteen checkboxes is a form somebody ticks wrong, and both wrong
-							answers are bad: a token that cannot do its job, or one that can do
-							more than it was made for. The one set anybody grants wholesale is
-							an AI assistant's, so that set is a button — read from the tools
-							themselves, so a tool added later is in it without anybody
-							remembering.
-						-->
-						<p class="mb-2 flex flex-wrap items-center gap-2">
-							<!-- Blue like the nudge that pointed here: the preset is the
-							     press a first visitor came to make. It reads and writes and
-							     does not delete — removing things for good is the quieter
-							     button beside it, pressed on purpose. -->
-							<button
-								type="button"
-								class="btn btn-sm border-blue-200 bg-blue-50 text-blue-900 hover:bg-blue-100"
-								onclick={() => tick(data.assistantScopes)}
-							>
-								An AI assistant (MCP)
-							</button>
-							<button
-								type="button"
-								class="btn btn-sm btn-quiet"
-								onclick={() => tick(data.assistantScopesDestructive)}
-							>
-								…and let it delete things
-							</button>
-							<button type="button" class="btn btn-sm btn-quiet" onclick={() => tick([])}>
-								Clear
-							</button>
-						</p>
-						<div class="space-y-1" bind:this={scopeBox} onchange={syncCautions}>
-							{#each data.scopes as scope (scope.key)}
-								<label class="flex items-start gap-2 text-sm text-gray-700">
-									<input type="checkbox" name="scopes" value={scope.key} class="mt-1" />
-									<span>
-										<code class="font-mono text-xs text-gray-900">{scope.key}</code>
-										<span class="text-gray-500">— {scope.description}</span>
-										{#if scope.key.endsWith(':write') && cautionsArmed[scope.key] && !cautionsArmed[scope.key.replace(':write', ':read')]}
-											<!--
-												Write without read.
-
-												Most write tools take an id, and ids come from the read
-												tool next to them: `habits:write` alone can tick a habit
-												by name and nothing else, and `tasks:write` alone cannot
-												find the todo it is meant to finish. The pair is not
-												forced — a token that may add to the shopping list
-												without reading the list is a real thing to want — but a
-												grant that will not work is worth one sentence before it
-												is made.
-											-->
-											<span
-												class="mt-1 mb-0.5 block border-l-2 border-blue-600 pl-2 text-xs font-medium text-blue-700"
-											>
-												Without <code class="font-mono">{scope.key.replace(':write', ':read')}</code
-												>
-												it can write but not look: most changes name a thing by the id the matching read
-												gives.
-											</span>
-										{/if}
-										{#if scope.caution && cautionsArmed[scope.key]}
-											<!-- Only once the tick is in: a warning about a grant nobody
-											     is granting is noise, and named for its permission. -->
-											<span
-												class="mt-1 mb-0.5 block border-l-2 border-amber-600 pl-2 text-xs font-medium text-amber-700"
-											>
-												<code class="font-mono">{scope.key}</code> — {scope.caution}
-											</span>
-										{/if}
-									</span>
-								</label>
-							{/each}
-						</div>
-					</fieldset>
-				</FormGrid>
-			</form>
-
-			{#snippet footer()}
-				<button type="button" class="btn" onclick={() => (showTokenForm = false)}>Cancel</button>
-				<button type="submit" form="token-form" class="btn btn-primary">Create token</button>
-			{/snippet}
-		</Modal>
-
-		{#if data.tokens.length === 0}
-			<div class="px-3">
-				<EmptyState icon="key" title="No tokens yet — create one to let another app in" compact />
-			</div>
-		{:else}
-			<ul class="divide-y divide-gray-200">
-				{#each data.tokens as token, i (token.id)}
-					<li
-						use:keepInView={selectedIndex === i}
-						class="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 {selectedIndex ===
-						i
-							? 'ring-2 ring-gray-900 ring-inset'
-							: ''}"
-					>
-						<div class="min-w-0 flex-1">
-							<p class="truncate text-sm font-medium text-gray-900">{token.name}</p>
-							<!--
-								A calendar link shows its whole address; every other token
-								shows the six characters that identify it and nothing more.
-								That difference is the difference between the two kinds of
-								credential, and it is the one thing this row has to make
-								obvious.
-							-->
-							{#if token.feedUrl}
-								<div class="mt-1 flex items-center gap-2">
-									<code
-										class="min-w-0 flex-1 overflow-x-auto border border-gray-200 bg-gray-50 px-2 py-1 font-mono text-xs break-all text-gray-700"
-										>{token.feedUrl}</code
-									>
-									<button
-										type="button"
-										onclick={() => copyToken(token.feedUrl!)}
-										class="btn btn-sm shrink-0"
-									>
-										{copied ? 'Copied' : 'Copy'}
-									</button>
-								</div>
-							{:else if token.scopes.includes('calendar:read')}
-								<!-- Made before addresses were kept, so this one genuinely
-								     cannot be shown again. Said, rather than left as a row
-								     that looks broken next to the ones above it. -->
-								<p class="mt-0.5 font-mono text-xs text-gray-500">{token.prefix}…</p>
-								<p class="mt-0.5 text-xs text-gray-500">
-									This address was not kept and cannot be shown again. Make a new link to have one
-									you can copy.
-								</p>
-							{:else}
-								<p class="mt-0.5 font-mono text-xs text-gray-500">{token.prefix}…</p>
-							{/if}
-							<p class="mt-1 text-xs text-gray-500">
-								{token.scopes.map(scopeSentence).join(' · ') || 'no scopes'}
-								{#if token.lastUsedAt}
-									· last used {token.lastUsedAt.slice(0, 16).replace('T', ' ')}
-								{:else}
-									· never used
-								{/if}
-								{#if token.expiresAt}
-									· expires {token.expiresAt.slice(0, 10)}
-								{/if}
-							</p>
-						</div>
-						<div class="flex justify-end sm:shrink-0">
-							{#if confirmRevoke === token.id}
-								<form method="post" action="?/revokeToken" use:enhance>
-									<input type="hidden" name="id" value={token.id} />
-									<button
-										type="submit"
-										class="border border-red-200 px-3 py-1.5 text-sm text-red-600 shadow-sm hover:bg-red-50"
-										use:armed
-									>
-										Confirm?
-									</button>
-								</form>
-							{:else}
-								<button
-									type="button"
-									onclick={() => (confirmRevoke = token.id)}
-									class="border border-red-200 px-3 py-1.5 text-sm text-red-600 shadow-sm hover:bg-red-50"
-								>
-									Revoke
-								</button>
-							{/if}
-						</div>
-					</li>
-				{/each}
-			</ul>
-		{/if}
+					What an assistant is allowed to do
+					<span class="ml-1 inline-block transition group-open:rotate-90">›</span>
+				</summary>
+				<ul class="mt-2 space-y-1 text-sm text-gray-500">
+					{#each data.grants as grant (grant.key)}
+						<li>{grant.description}</li>
+					{/each}
+				</ul>
+				<p class="mt-2 text-sm text-gray-500">
+					It cannot delete anything. Everything it writes is listed below, and anything it changed
+					can be put back.
+				</p>
+			</details>
+		</div>
 	</Card>
 
 	<!--
 		What the assistants did.
 
-		Every MCP write answers the caller with the state it replaced, but that
-		answer goes to whoever holds the transcript — and the owner of the data
-		holds none. This is their copy: the last writes, each with what stood
-		there before, and a way back for the calls that deleted something.
+		Every write answers the caller with the state it replaced, but that answer
+		goes to whoever holds the transcript — and the owner of the data holds
+		none. This is their copy: the last writes, each with what stood there
+		before, and a way back for the ones that removed something.
+
+		Drawn even when it is empty, because this is the page that promises
+		somebody an assistant can write here. The promise and the receipt belong
+		together.
 	-->
-	{#if data.assistantCalls.length > 0}
-		<Card
-			title="What your assistants did"
-			description="The last writes made over the API, newest first. A deleted thing can be put back."
-			flush
-		>
+	<Card
+		title="What your assistants did"
+		description="Everything an assistant has changed, newest first. Anything it removed can be put back."
+		flush={data.assistantCalls.length > 0}
+	>
+		{#if data.assistantCalls.length === 0}
+			<EmptyState
+				icon="plug"
+				title="Nothing yet — everything an assistant changes is listed here"
+				compact
+			/>
+		{:else}
 			<!-- The pressed row itself turns into "Put back" — that is the
-			     confirmation, in place, moving nothing. Failures land in the
-			     page's own FormError like every other action's. -->
+			     confirmation, in place, moving nothing. -->
 			<ul class="divide-y divide-gray-200">
 				{#each data.assistantCalls as one (one.id)}
 					<li class="flex items-center gap-3 px-4 py-2">
@@ -590,269 +337,13 @@ Token: ${token}`;
 					</li>
 				{/each}
 			</ul>
-		</Card>
-	{/if}
-
-	<!-- Data streams -->
-	<Card
-		title="Data streams"
-		description="Created automatically when an external app declares one. You choose how each is displayed."
-		flush
-	>
-		{#if data.streams.length === 0}
-			<div class="space-y-2 px-4 py-6 text-sm text-gray-500" data-tour="integrations-streams">
-				<EmptyState icon="plug" title="No streams yet" compact />
-				<p class="text-xs">
-					An app declares a stream by POSTing to
-					<code class="border border-gray-200 bg-gray-50 px-1 font-mono text-xs"
-						>{data.origin}/api/v1/streams</code
-					>
-					with a token that has the <code class="font-mono">streams:write</code> scope.
-				</p>
-			</div>
-		{:else}
-			<ul class="divide-y divide-gray-200" data-tour="integrations-streams">
-				{#each data.streams as stream (stream.id)}
-					<li class="px-4 py-3">
-						<form
-							method="post"
-							action="?/updateStream"
-							use:enhance
-							class="flex flex-wrap items-center gap-x-4 gap-y-2"
-						>
-							<input type="hidden" name="id" value={stream.id} />
-							<!-- `basis-full` below `sm`: three controls that will not shrink
-							     had left the name one character per line. -->
-							<div class="min-w-0 flex-1 basis-full sm:basis-0">
-								<a
-									href={resolve('/data/[slug]', { slug: stream.slug })}
-									class="text-sm font-medium text-gray-900 underline underline-offset-2"
-								>
-									{stream.name}
-								</a>
-								<p class="mt-0.5 font-mono text-xs text-gray-500">{stream.slug}</p>
-								<p class="mt-1 text-xs text-gray-500">
-									{stream.kind}{stream.unit ? ` · ${stream.unit}` : ''} · {stream.stats.count} points
-									{#if stream.stats.latest}
-										· latest {stream.stats.latest.at.slice(0, 10)}
-									{/if}
-								</p>
-							</div>
-							<input type="hidden" name="label" value={stream.name} />
-							<select
-								name="display"
-								class="border border-gray-300 px-2 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-							>
-								{#each data.displays as display (display)}
-									<option value={display} selected={stream.display === display}>{display}</option>
-								{/each}
-							</select>
-							<label class="flex items-center gap-1.5 text-sm text-gray-700">
-								<input type="checkbox" name="showOnDashboard" checked={stream.showOnDashboard} />
-								Dashboard
-							</label>
-							<label
-								class="flex items-center gap-1.5 text-sm text-gray-700"
-								title="Points older than this are deleted, nightly. Leave empty to keep everything."
-							>
-								Keep
-								<input
-									type="number"
-									name="retentionDays"
-									min="1"
-									max="3650"
-									value={stream.retentionDays ?? ''}
-									class="w-16 border border-gray-300 px-2 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-								/>
-								days
-							</label>
-							<button type="submit" class="btn btn-sm"> Save </button>
-						</form>
-						<div class="mt-2">
-							{#if confirmDeleteStream === stream.id}
-								<form method="post" action="?/deleteStream" use:enhance>
-									<input type="hidden" name="id" value={stream.id} />
-									<button
-										type="submit"
-										class="border border-red-200 px-3 py-1 text-xs text-red-600 shadow-sm hover:bg-red-50"
-										use:armed
-									>
-										Confirm? This deletes {stream.stats.count} points.
-									</button>
-								</form>
-							{:else}
-								<button
-									type="button"
-									onclick={() => (confirmDeleteStream = stream.id)}
-									class="border border-red-200 px-3 py-1 text-xs text-red-600 shadow-sm hover:bg-red-50"
-								>
-									Delete stream
-								</button>
-							{/if}
-						</div>
-					</li>
-				{/each}
-			</ul>
 		{/if}
 	</Card>
 
-	<!-- Webhooks -->
-	<Card
-		title="Webhooks"
-		description="A URL of yours that is told when things happen here — new todos, ticks, ideas.
-Streams push data in, webhooks let your programs listen."
-		flush
-	>
-		{#snippet actions()}
-			<button type="button" onclick={() => (showWebhookForm = true)} class="btn btn-sm">
-				New webhook
-			</button>
-		{/snippet}
-
-		<Modal
-			bind:open={showWebhookForm}
-			error={form?.message}
-			title="New webhook"
-			description="Each delivery is signed with a secret, shown on the row, so your receiver can check it is really this server."
-		>
-			<form
-				id="webhook-form"
-				method="post"
-				action="?/createWebhook"
-				use:enhance={() =>
-					async ({ update, result }) => {
-						await update({ reset: false });
-						if (result.type === 'success') showWebhookForm = false;
-					}}
-			>
-				<FormGrid>
-					<Field label="Address" span={12} required>
-						<input
-							autocomplete="off"
-							name="url"
-							type="url"
-							required
-							maxlength="300"
-							placeholder="https://example.com/ontoplano-hook"
-							class="input"
-						/>
-					</Field>
-
-					<fieldset class="col-span-12">
-						<legend class="eyebrow text-gray-600">Tell it when</legend>
-						<div class="mt-1 space-y-1">
-							{#each data.webhookEvents as event (event.key)}
-								<label class="flex items-start gap-2 text-sm text-gray-700">
-									<input type="checkbox" name="events" value={event.key} class="mt-1" />
-									<span>
-										{event.label}
-										<code class="ml-1 font-mono text-xs text-gray-500">{event.key}</code>
-									</span>
-								</label>
-							{/each}
-						</div>
-					</fieldset>
-				</FormGrid>
-			</form>
-
-			{#snippet footer()}
-				<button type="button" class="btn" onclick={() => (showWebhookForm = false)}>Cancel</button>
-				<button type="submit" form="webhook-form" class="btn btn-primary">Create webhook</button>
-			{/snippet}
-		</Modal>
-
-		{#if data.webhooks.length === 0}
-			<div class="px-3">
-				<EmptyState
-					icon="plug"
-					title="No webhooks yet — add an address to be told when things happen"
-					compact
-				/>
-			</div>
-		{:else}
-			<ul class="divide-y divide-gray-200">
-				{#each data.webhooks as hook (hook.id)}
-					<li class="px-4 py-3">
-						<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-							<div class="min-w-0 flex-1 basis-full sm:basis-0">
-								<p class="text-sm font-medium break-all text-gray-900">{hook.url}</p>
-								<p class="mt-1 text-xs text-gray-500">
-									When {hook.events.map(eventLabel).join(', or ')}
-									{#if hook.disabled}
-										· <span class="font-medium">gave up after repeated failures</span>
-									{:else if hook.lastDeliveryAt}
-										· last delivery {hook.lastDeliveryAt.slice(0, 16).replace('T', ' ')}
-										{hook.lastStatus ? `(${hook.lastStatus})` : '(unreachable)'}
-									{:else}
-										· nothing delivered yet
-									{/if}
-								</p>
-								<p class="mt-1 text-xs text-gray-500">
-									Secret:
-									{#if revealedSecret === hook.id}
-										<code class="font-mono break-all">{hook.secret}</code>
-									{:else}
-										<button
-											type="button"
-											class="underline underline-offset-2"
-											onclick={() => (revealedSecret = hook.id)}
-										>
-											show
-										</button>
-									{/if}
-								</p>
-							</div>
-							<div class="flex shrink-0 items-center gap-2">
-								{#if hook.disabled}
-									<form method="post" action="?/reviveWebhook" use:enhance>
-										<input type="hidden" name="id" value={hook.id} />
-										<button type="submit" class="btn btn-sm">Try again</button>
-									</form>
-								{/if}
-								{#if confirmDeleteWebhook === hook.id}
-									<form method="post" action="?/deleteWebhook" use:enhance>
-										<input type="hidden" name="id" value={hook.id} />
-										<button
-											type="submit"
-											class="border border-red-200 px-3 py-1.5 text-sm text-red-600 shadow-sm hover:bg-red-50"
-											use:armed
-										>
-											Confirm?
-										</button>
-									</form>
-								{:else}
-									<button
-										type="button"
-										onclick={() => (confirmDeleteWebhook = hook.id)}
-										class="border border-red-200 px-3 py-1.5 text-sm text-red-600 shadow-sm hover:bg-red-50"
-									>
-										Delete
-									</button>
-								{/if}
-							</div>
-						</div>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	</Card>
-
-	<div class="space-y-1 text-xs text-gray-500">
-		<p>
-			The limits: a token may make 240 reads and 60 writes a minute, and all your tokens together
-			share 600 and 150 — more tokens is not more budget. Stored data points count against your
-			plan, and a stream with retention set keeps only those days.
-		</p>
-		<p>
-			Writing a plugin? See
-			<a
-				href="https://github.com/ontoplano/ontoplano/blob/master/docs/PLUGINS.md"
-				rel="external"
-				class="underline underline-offset-2 hover:text-gray-900"
-			>
-				docs/PLUGINS.md
-			</a>
-			on GitHub.
-		</p>
-	</div>
+	<p class="text-sm text-gray-500">
+		Wiring up a script, a widget or a calendar instead?
+		<a href={resolve('/settings/integrations/connections')} class="underline underline-offset-2"
+			>Integrations</a
+		> has the full form, with every permission and an expiry.
+	</p>
 </div>

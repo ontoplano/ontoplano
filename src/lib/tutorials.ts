@@ -519,7 +519,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/settings/integrations': {
+	'/settings/integrations/connections': {
 		label: 'Integrations',
 		steps: [
 			{

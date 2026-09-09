@@ -37,7 +37,8 @@
 
 	<p class="text-xs text-gray-500">
 		Change how this is displayed in
-		<a href={resolve('/settings/integrations')} class="underline underline-offset-2">Integrations</a
+		<a href={resolve('/settings/integrations/connections')} class="underline underline-offset-2"
+			>Integrations</a
 		>.
 	</p>
 </div>

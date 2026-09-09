@@ -13,11 +13,12 @@
 	 * your week, your todos and your notes are reachable by an assistant you
 	 * run, without any of it leaving your machine — three cards below a
 	 * calendar address. It is the only part of the page somebody would come
-	 * here for on purpose, so it gets its own tab and its own name.
+	 * here for on purpose, so it is the tab this section opens on, and the
+	 * calendar address, the webhooks and the data streams are the other one.
 	 */
 	const tabs = [
-		{ href: resolve('/settings/integrations'), label: 'Integrations' },
-		{ href: resolve('/settings/integrations/ai'), label: 'AI' }
+		{ href: resolve('/settings/integrations'), label: 'AI' },
+		{ href: resolve('/settings/integrations/connections'), label: 'Integrations' }
 	];
 
 	const isActive = (href: string) => page.url.pathname === href;

@@ -14,25 +14,25 @@ under the pointer.
 
 **17 of 17 screens have one.**
 
-| Screen                   | Tour         | Steps |
-| ------------------------ | ------------ | ----- |
-| `/`                      | Ontoplano    | 8     |
-| `/finance/bills`         | Bills        | 3     |
-| `/goals`                 | Goals        | 4     |
-| `/health/habits`         | Habits       | 3     |
-| `/health/recipes`        | Recipes      | 5     |
-| `/ideas`                 | Ideas        | 3     |
-| `/inventory`             | Shopping     | 3     |
-| `/notebooks`             | Notebooks    | 2     |
-| `/notebooks/diary`       | Diary        | 4     |
-| `/notebooks/people`      | People       | 3     |
-| `/reminders`             | Reminders    | 3     |
-| `/settings/account`      | Account      | 3     |
-| `/settings/integrations` | Integrations | 3     |
-| `/tasks/activities`      | Activities   | 3     |
-| `/tasks/board`           | Board        | 4     |
-| `/tasks/plan`            | Plan         | 5     |
-| `/tasks/todo`            | To-do        | 3     |
+| Screen                               | Tour         | Steps |
+| ------------------------------------ | ------------ | ----- |
+| `/`                                  | Ontoplano    | 8     |
+| `/finance/bills`                     | Bills        | 3     |
+| `/goals`                             | Goals        | 4     |
+| `/health/habits`                     | Habits       | 3     |
+| `/health/recipes`                    | Recipes      | 5     |
+| `/ideas`                             | Ideas        | 3     |
+| `/inventory`                         | Shopping     | 3     |
+| `/notebooks`                         | Notebooks    | 2     |
+| `/notebooks/diary`                   | Diary        | 4     |
+| `/notebooks/people`                  | People       | 3     |
+| `/reminders`                         | Reminders    | 3     |
+| `/settings/account`                  | Account      | 3     |
+| `/settings/integrations/connections` | Integrations | 3     |
+| `/tasks/activities`                  | Activities   | 3     |
+| `/tasks/board`                       | Board        | 4     |
+| `/tasks/plan`                        | Plan         | 5     |
+| `/tasks/todo`                        | To-do        | 3     |
 
 Toured as well, though nothing obliges them to be — a screen reached from
 a link rather than from the navigation:
@@ -137,7 +137,7 @@ at the button that reopens it, so it is not listed here.
 2. Every device that is signed in
 3. Take it with you
 
-### `/settings/integrations` — Integrations
+### `/settings/integrations/connections` — Integrations
 
 1. Letting other things in
 2. A token is shown once

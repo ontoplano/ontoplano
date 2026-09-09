@@ -1,239 +1,111 @@
+import { fail } from '@sveltejs/kit';
+
 import type { Actions, PageServerLoad } from './$types';
 
-import { ASSISTANT_SCOPES, ASSISTANT_SCOPES_DESTRUCTIVE } from '$lib/server/mcp/tools';
+import { ASSISTANT_SCOPES } from '$lib/server/mcp/tools';
 import { buildCtx } from '$lib/server/services/ctx';
+import { docsUrl } from '$lib/server/settings';
 import { toActionFailure } from '$lib/server/http-errors';
-import {
-	deleteStream,
-	listStreams,
-	streamStats,
-	updateStreamDisplay,
-	STREAM_DISPLAYS
-} from '$lib/server/services/streams';
-import {
-	ALL_SCOPES,
-	CALENDAR_LINK_LIMIT,
-	SCOPES,
-	SCOPE_CAUTIONS,
-	createToken,
-	isCalendarLink,
-	listTokens,
-	revokeToken
-} from '$lib/server/services/tokens';
 import { listAssistantCalls, putBack } from '$lib/server/services/assistant-log';
-import {
-	WEBHOOK_EVENTS,
-	WEBHOOK_EVENT_LABELS,
-	createSubscription,
-	deleteSubscription,
-	listSubscriptions,
-	reviveSubscription
-} from '$lib/server/services/webhooks';
+import { SCOPES, createToken, isCalendarLink, listTokens } from '$lib/server/services/tokens';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
 
-	const tokens = listTokens(ctx);
-	const calendarLinks = tokens.filter((t) => isCalendarLink(t.scopes));
+	/*
+	 * The keys that would already work, so the page can say whether making one
+	 * is the next thing to do.
+	 *
+	 * Not which key: a key's secret is shown once and never again. A calendar
+	 * link is a key too and is not one of these — it carries the single scope
+	 * that reads the plan, which is not an assistant.
+	 */
+	const assistants = listTokens(ctx).filter(
+		(t) => !isCalendarLink(t.scopes) && t.scopes.some((s) => ASSISTANT_SCOPES.includes(s))
+	);
 
 	return {
+		origin: url.origin,
+		// The hoster's own docs, not ontoplano.com's — a self-hosted copy that
+		// publishes its own should send its own people there.
+		docsUrl: docsUrl(),
+		assistants: assistants.map((t) => ({ id: t.id, name: t.name, createdAt: t.createdAt })),
 		/*
-		 * One list, calendar links included.
+		 * What an assistant is given, in the app's own words.
 		 *
-		 * They were filtered out of here and given a card of their own, on the
-		 * grounds that two views of one row invite "which am I looking at". The
-		 * simpler truth won: a calendar link *is* a token, it is revoked like
-		 * one, and somebody who wants to see the addresses they have handed out
-		 * should find them in the list of things they have handed out. The card
-		 * above still makes them, and explains what they are for.
+		 * Read from the tools rather than listed here, so a tool added later is
+		 * described without anybody remembering — and only the ones an assistant
+		 * actually uses. Declaring a plugin, managing webhooks and handing out a
+		 * calendar address are not things an assistant does, and offering them on
+		 * this page is asking somebody to decide something they have no way to
+		 * decide.
 		 */
-		tokens: tokens.map((t) => ({
-			...t,
-			// Assembled here rather than in the page: only the server knows the
-			// origin this instance answers on.
-			feedUrl: t.plaintext ? `${url.origin}/calendar/${t.plaintext}` : null
-		})),
-		calendarLinks,
-		calendarLinkLimit: CALENDAR_LINK_LIMIT,
-		streams: listStreams(ctx, { includeArchived: true }).map((s) => ({
-			...s,
-			stats: streamStats(ctx, s.id)
-		})),
-		/*
-		 * What an AI assistant asks for, as one button.
-		 *
-		 * Eighteen checkboxes is a form somebody ticks wrong, and the wrong tick
-		 * here is either a token that cannot do its job or one that can do more
-		 * than it needs. The set is read from the tools themselves, so a tool
-		 * added later is in the preset without anybody remembering.
-		 */
-		assistantScopes: ASSISTANT_SCOPES,
-		/*
-		 * …and the wider set, behind its own quieter button. Deleting is not the
-		 * same grant as writing, so the preset everybody presses does not carry
-		 * it — see `destructive` in tokens.ts.
-		 */
-		assistantScopesDestructive: ASSISTANT_SCOPES_DESTRUCTIVE,
-		scopes: ALL_SCOPES.map((key) => ({
-			key,
-			description: SCOPES[key],
-			// The louder line under the wide grants, said before the tick.
-			caution: SCOPE_CAUTIONS[key] ?? null
-		})),
-		displays: STREAM_DISPLAYS,
-		webhooks: listSubscriptions(ctx).map((s) => ({
-			id: s.id,
-			url: s.url,
-			events: s.events.split(',').filter(Boolean),
-			secret: s.secret,
-			lastDeliveryAt: s.lastDeliveryAt,
-			lastStatus: s.lastStatus,
-			disabled: Boolean(s.disabledAt)
-		})),
-		webhookEvents: WEBHOOK_EVENTS.map((key) => ({ key, label: WEBHOOK_EVENT_LABELS[key] })),
-		/** What the tokens did lately, newest first, with the way back. */
-		assistantCalls: listAssistantCalls(ctx, { limit: 30 }),
-		origin: url.origin
+		grants: ASSISTANT_SCOPES.map((key) => ({ key, description: SCOPES[key] })),
+		assistantCalls: listAssistantCalls(ctx, { limit: 20 })
 	};
 };
 
 export const actions: Actions = {
-	createToken: async ({ request, locals }) => {
-		const ctx = buildCtx(locals.user!.id);
-		const formData = await request.formData();
-
-		try {
-			const token = createToken(ctx, {
-				name: formData.get('label'),
-				scopes: formData.getAll('scopes'),
-				expiresInDays: formData.get('expiresInDays')
-			});
-			// The plaintext is returned exactly once, here. It is not stored and
-			// cannot be shown again.
-			return { success: true, action: 'createToken', token };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	/**
-	 * Mint another calendar link.
+	/*
+	 * A key for an assistant, and nothing else.
 	 *
-	 * Several are allowed — a phone, a laptop, a partner's calendar — because
-	 * one per account meant that wanting it in a second place cost you the
-	 * first. Each is revoked on its own, in the list below, which is what makes
-	 * "I pasted that one somewhere I should not have" recoverable without
-	 * breaking the calendars that are fine.
+	 * The full form — every scope, an expiry, the wider grants — is on the
+	 * Integrations tab, for somebody wiring up a script. Here the list is the
+	 * one an assistant actually uses — declaring a plugin, managing webhooks
+	 * and handing out a calendar address are not things an assistant does, and
+	 * offering them is asking somebody to decide something they have no way to
+	 * decide. Deleting is not offered either: an assistant that can remove a
+	 * person, a habit's history or a goal is a bad trade for the one time it
+	 * would have been convenient, and the Integrations tab still grants it to
+	 * anybody who disagrees.
 	 */
-	calendarLink: async ({ request, locals, url }) => {
+	createKey: async ({ request, locals }) => {
 		const ctx = buildCtx(locals.user!.id);
-		const formData = await request.formData();
+		const form = await request.formData();
+
+		/*
+		 * What was ticked, clamped to what this form is for.
+		 *
+		 * The boxes are the caller's to untick — somebody who does not want an
+		 * assistant reading their diary should be able to say so, and that is
+		 * the whole point of showing them. The clamp is not about the boxes: a
+		 * form post is anybody's to compose, and this route must not become a
+		 * way to mint a key that deletes things when the page it belongs to
+		 * never offers that.
+		 */
+		const asked = form.getAll('scopes').map(String);
+		const scopes = ASSISTANT_SCOPES.filter((scope) => asked.includes(scope));
+		if (scopes.length === 0) {
+			return fail(400, { message: 'Tick at least one thing the assistant may do.' });
+		}
 
 		try {
 			const token = createToken(ctx, {
-				name: formData.get('label')?.toString()?.trim() || 'Calendar link',
-				scopes: ['calendar:read']
+				name: String(form.get('label') ?? '').trim() || 'AI assistant',
+				scopes
 			});
-			return {
-				success: true,
-				action: 'calendarLink',
-				feedUrl: `${url.origin}/calendar/${token.plaintext}`
-			};
-		} catch (e) {
-			return toActionFailure(e);
+			// The secret is returned exactly once, here. It is not stored and
+			// cannot be shown again.
+			return { success: true, token };
+		} catch (error) {
+			return toActionFailure(error);
 		}
 	},
 
-	/** Recreate what a deleting call removed, from the before it recorded. */
+	/*
+	 * The way back from a call that deleted something.
+	 *
+	 * The same action the Integrations tab has, because the record is drawn on
+	 * both and a form posts to the route it is rendered in.
+	 */
 	putBack: async ({ request, locals }) => {
 		const ctx = buildCtx(locals.user!.id);
-		const formData = await request.formData();
-
+		const form = await request.formData();
 		try {
-			const { made } = putBack(ctx, Number(formData.get('id')));
-			return { success: true, action: 'putBack', made };
-		} catch (e) {
-			return toActionFailure(e);
+			putBack(ctx, Number(form.get('id')));
+		} catch (error) {
+			return toActionFailure(error);
 		}
-	},
-
-	revokeToken: async ({ request, locals }) => {
-		const ctx = buildCtx(locals.user!.id);
-		const formData = await request.formData();
-
-		try {
-			revokeToken(ctx, Number(formData.get('id')));
-			return { success: true, action: 'revokeToken' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	updateStream: async ({ request, locals }) => {
-		const ctx = buildCtx(locals.user!.id);
-		const formData = await request.formData();
-
-		try {
-			updateStreamDisplay(ctx, Number(formData.get('id')), {
-				display: formData.get('display'),
-				name: formData.get('label'),
-				showOnDashboard: formData.get('showOnDashboard') === 'on',
-				retentionDays: formData.get('retentionDays')
-			});
-			return { success: true, action: 'updateStream' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	deleteStream: async ({ request, locals }) => {
-		const ctx = buildCtx(locals.user!.id);
-		const formData = await request.formData();
-
-		try {
-			deleteStream(ctx, Number(formData.get('id')));
-			return { success: true, action: 'deleteStream' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	createWebhook: async ({ request, locals }) => {
-		const ctx = buildCtx(locals.user!.id);
-		const formData = await request.formData();
-
-		try {
-			createSubscription(ctx, {
-				url: formData.get('url'),
-				events: formData.getAll('events')
-			});
-			return { success: true, action: 'createWebhook' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	deleteWebhook: async ({ request, locals }) => {
-		const ctx = buildCtx(locals.user!.id);
-		const formData = await request.formData();
-
-		try {
-			deleteSubscription(ctx, Number(formData.get('id')));
-			return { success: true, action: 'deleteWebhook' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	reviveWebhook: async ({ request, locals }) => {
-		const ctx = buildCtx(locals.user!.id);
-		const formData = await request.formData();
-
-		try {
-			reviveSubscription(ctx, Number(formData.get('id')));
-			return { success: true, action: 'reviveWebhook' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
+		return { success: true };
 	}
 };

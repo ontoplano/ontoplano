@@ -12,13 +12,18 @@ version.
 
 ## 0.127.0 — 2026-09-09
 
-- **Connecting an AI assistant has its own page.** Settings › AI & Integrations
-  now has an AI tab: the MCP endpoint, the one-line command for Claude Code, the
-  same thing said in words for any other assistant, and the record of every
-  write an assistant has made with a way to put back anything it deleted. The
+- **Letting an AI assistant use the app has its own page.** Settings is now
+  AI & Integrations, and it opens on AI: make a key, hand it to your assistant,
+  and see everything the assistant has changed with a way to put back anything
+  it removed. Two steps and no jargon: what the key may do is a list in plain
+  words, every line ticked and every line yours to untick, with none of the
+  grants an assistant has no use for and no way to let one delete anything. The
   command and the prompt used to appear only in the instant after a token was
-  created, on a page about calendar addresses and webhooks, so nobody who did
-  not already know this existed could find out that it did.
+  created, three cards down a page about calendar addresses and webhooks, so
+  nobody who did not already know this existed could find out that it did.
+- **The calendar link, webhooks and data streams moved one click.** They are
+  the Integrations tab of that same section, with the full permission form for
+  anybody wiring up a script.
 
 ## 0.126.0 — 2026-09-09
 

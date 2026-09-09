@@ -105,7 +105,7 @@ works is a key listed here and the reverse.
 | <kbd>j</kbd> | Navigate sessions |
 | <kbd>k</kbd> | Navigate sessions |
 
-## Integrations — `/settings/integrations`
+## Integrations — `/settings/integrations/connections`
 
 | Key          | Does            |
 | ------------ | --------------- |

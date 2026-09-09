@@ -50,7 +50,7 @@ async function mintToken(request: APIRequestContext, cookie: string, scopes: str
 	body.set('label', `mcp ${scopes.join(' ')}`);
 	for (const scope of scopes) body.append('scopes', scope);
 
-	const res = await request.post('/settings/integrations?/createToken', {
+	const res = await request.post('/settings/integrations/connections?/createToken', {
 		headers: {
 			Origin: ORIGIN,
 			Cookie: cookie,
@@ -201,7 +201,7 @@ test('the address says nothing to somebody without a token', async ({ playwright
  */
 test('the preset ticks exactly the scopes an AI assistant needs', async ({ page }) => {
 	await register(page, `preset-${Date.now()}@test.invalid`);
-	await visit(page, '/settings/integrations');
+	await visit(page, '/settings/integrations/connections');
 
 	await page
 		.getByRole('button', { name: /new token/i })

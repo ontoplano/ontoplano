@@ -185,7 +185,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'k', action: 'navigate-up', description: 'Navigate sessions' }
 		]
 	},
-	'/settings/integrations': {
+	'/settings/integrations/connections': {
 		label: 'Integrations',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate tokens' },

@@ -318,7 +318,7 @@ be half-drawn.
 
 The key is scoped to **`today:read`** and nothing else: a widget sits on a
 lock screen; it should not carry a key to the diary. It appears under
-**Settings → Integrations** as "Phone widget", where revoking it disconnects
+**Settings → AI & Integrations → Integrations** as "Phone widget", where revoking it disconnects
 the widget. The address field on the setup screen is prefilled with the
 instance the app was built for; somebody self-hosting can point it elsewhere
 before tapping Connect.

@@ -50,7 +50,7 @@ const CASES: { name: string; path: string; form: Record<string, string> }[] = [
 	},
 	{
 		name: 'api token name',
-		path: '/settings/integrations?/createToken',
+		path: '/settings/integrations/connections?/createToken',
 		form: { label: TOO_LONG, scopes: 'schedule:read' }
 	},
 	{

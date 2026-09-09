@@ -54,7 +54,7 @@ async function mintToken(
 	form.set('label', `token ${wanted.join(' ')}`);
 	for (const scope of wanted) form.append('scopes', scope);
 
-	const res = await request.post('/settings/integrations?/createToken', {
+	const res = await request.post('/settings/integrations/connections?/createToken', {
 		headers: {
 			Origin: ORIGIN,
 			Cookie: cookie,

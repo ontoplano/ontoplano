@@ -38,7 +38,7 @@ const ROUTES = [
 	'/settings/account/import',
 	'/settings/preferences',
 	'/settings/integrations',
-	'/settings/integrations/ai'
+	'/settings/integrations/connections'
 ];
 
 /** Messages the app does not control and that say nothing about it. */

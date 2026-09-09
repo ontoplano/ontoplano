@@ -234,23 +234,23 @@ test.describe('one account cannot reach another account by id', () => {
 		},
 		{
 			name: 'api token',
-			page: '/settings/integrations',
+			page: '/settings/integrations/connections',
 			payloadKey: 'tokens',
 			create: {
-				path: '/settings/integrations?/createToken',
+				path: '/settings/integrations/connections?/createToken',
 				form: { label: "alice's token", scopes: 'schedule:read' }
 			},
-			attack: (id) => ({ path: '/settings/integrations?/revokeToken', form: { id } })
+			attack: (id) => ({ path: '/settings/integrations/connections?/revokeToken', form: { id } })
 		},
 		{
 			name: 'webhook',
-			page: '/settings/integrations',
+			page: '/settings/integrations/connections',
 			payloadKey: 'webhooks',
 			create: {
-				path: '/settings/integrations?/createWebhook',
+				path: '/settings/integrations/connections?/createWebhook',
 				form: { url: 'https://example.com/alices-hook', events: 'todo.created' }
 			},
-			attack: (id) => ({ path: '/settings/integrations?/deleteWebhook', form: { id } })
+			attack: (id) => ({ path: '/settings/integrations/connections?/deleteWebhook', form: { id } })
 		},
 		{
 			// The headline feature of the kitchen half, and the one entity whose

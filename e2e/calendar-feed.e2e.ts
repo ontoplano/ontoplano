@@ -49,7 +49,7 @@ async function account(playwright: PlaywrightWorkerArgs['playwright']) {
 
 /** Press the button on the settings page, and read the URL it shows once. */
 async function makeLink(request: APIRequestContext, cookie: string): Promise<string> {
-	const res = await request.post('/settings/integrations?/calendarLink', {
+	const res = await request.post('/settings/integrations/connections?/calendarLink', {
 		headers: { Origin: ORIGIN, Cookie: cookie, 'x-sveltekit-action': 'true' },
 		form: {}
 	});
@@ -64,7 +64,7 @@ async function mintToken(
 	cookie: string,
 	scopes: string
 ): Promise<string> {
-	const res = await request.post('/settings/integrations?/createToken', {
+	const res = await request.post('/settings/integrations/connections?/createToken', {
 		headers: { Origin: ORIGIN, Cookie: cookie, 'x-sveltekit-action': 'true' },
 		form: { label: `token ${scopes}`, scopes }
 	});
@@ -135,7 +135,7 @@ test('the addresses are shown back on the settings page', async ({ playwright })
 
 	const link = await makeLink(request, cookie);
 	const page = await (
-		await request.get('/settings/integrations', { headers: { Cookie: cookie } })
+		await request.get('/settings/integrations/connections', { headers: { Cookie: cookie } })
 	).text();
 
 	// The reason the plaintext is kept for this one kind of token: set it up on
@@ -150,7 +150,7 @@ test('a sixth calendar link is refused, in words', async ({ playwright }) => {
 
 	for (let i = 0; i < 5; i++) await makeLink(request, cookie);
 
-	const res = await request.post('/settings/integrations?/calendarLink', {
+	const res = await request.post('/settings/integrations/connections?/calendarLink', {
 		headers: { Origin: ORIGIN, Cookie: cookie, 'x-sveltekit-action': 'true' },
 		form: {}
 	});

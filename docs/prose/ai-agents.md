@@ -10,41 +10,109 @@ an AI agent rather than the app.
 
 ## The short version
 
-Make a token (Settings → Integrations → **New token**, then the **An AI
-assistant (MCP)** button), then hand it to whatever you are using.
+Make a key: **Settings → AI & Integrations → AI → Make a key**. It is shown
+once, so keep the tab open while you do the rest.
 
-**Claude Code, Codex, or anything else with a shell** — one command:
+Then paste this to the assistant, with your key in place of the last line:
+
+```text
+I use ontoplano — a life management app my assistant can connect to.
+Please connect to it and use it whenever I ask you about my week, my to-do
+list, my diary, my notebooks, my shopping list or my recipes.
+
+  Address:    https://app.ontoplano.com/api/mcp
+  Protocol:   MCP, over streamable HTTP (stateless — no session, no GET)
+  Key:        send it as an "Authorization: Bearer" header
+
+Once you are connected, tell me what is on my plan today. Do not change
+anything in my account until I ask you to.
+
+Key: onto_YOUR_KEY_HERE
+```
+
+Your own instance answers at `https://your-host/api/mcp` — the address you type
+into the browser, with `/api/mcp` after it.
+
+Two things the prompt does on purpose. It names what the app is _for_, so the
+assistant reaches for it instead of asking you to repeat yourself; and it says
+not to write anything yet, so the first thing it does is show you what it can
+see rather than what it has done.
+
+## Setting it up properly
+
+Pasting the prompt works when the assistant can set itself up — it has a
+terminal, so it writes its own configuration. A chat window cannot, and neither
+can most editors: those want a line in a configuration file.
+
+It is also the better answer when you mean to keep it. A server named in a
+config file is there in every conversation without pasting anything, and the
+key sits in that file rather than in a transcript you might later share.
+
+Each client keeps its configuration somewhere different, and in a different
+shape.
+
+**Claude Code** — one command, and it writes the config for you:
 
 ```sh
 claude mcp add --transport http ontoplano https://app.ontoplano.com/api/mcp \
-  --header "Authorization: Bearer onto_YOUR_TOKEN_HERE"
+  --header "Authorization: Bearer onto_YOUR_KEY_HERE"
 ```
 
-**Or just ask, in words.** Paste this to the assistant, with your token in
-place of the last line, and let it do the setting up:
+**Codex CLI** — `~/.codex/config.toml`. It reads the key out of the
+environment rather than out of the file, so export it in the shell that starts
+Codex:
 
-```text
-I use ontoplano — a life management app with an MCP server. Please connect to it
-and use it whenever I ask you about my week, my todos, my diary, my notebooks,
-my shopping list or my recipes.
-
-  MCP endpoint:  https://app.ontoplano.com/api/mcp
-  Transport:     streamable HTTP (stateless — no session, GET is not supported)
-  Auth:          an Authorization: Bearer header
-
-Once connected, list the tools you were offered and tell me what I asked you to
-do today. Do not write anything into my account until I ask you to.
-
-Token: onto_YOUR_TOKEN_HERE
+```toml
+[mcp_servers.ontoplano]
+url = "https://app.ontoplano.com/api/mcp"
+bearer_token_env_var = "ONTOPLANO_KEY"
 ```
 
-Your own instance answers at `https://your-host/api/mcp` — the address is the
-one you type into the browser, with `/api/mcp` after it.
+```sh
+export ONTOPLANO_KEY=onto_YOUR_KEY_HERE
+```
 
-Two things the prompt is doing on purpose. It names what the app is _for_, so
-the assistant reaches for it instead of asking you to repeat yourself; and it
-says not to write anything yet, so the first thing it does is show you what it
-can see rather than what it has done.
+`codex mcp list` says whether it connected.
+
+**Cursor** — `~/.cursor/mcp.json`, where the header is written out in full:
+
+```json
+{
+  "mcpServers": {
+    "ontoplano": {
+      "url": "https://app.ontoplano.com/api/mcp",
+      "headers": { "Authorization": "Bearer onto_YOUR_KEY_HERE" }
+    }
+  }
+}
+```
+
+**Claude Desktop** — the awkward one. Its custom-connector screen asks for an
+OAuth client id and secret and has nowhere to put a key, so a bearer key needs
+`mcp-remote` in between, which speaks to the app for it:
+
+```json
+{
+  "mcpServers": {
+    "ontoplano": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://app.ontoplano.com/api/mcp",
+        "--header",
+        "Authorization:Bearer onto_YOUR_KEY_HERE"
+      ]
+    }
+  }
+}
+```
+
+No space after the colon in that last line — Claude Desktop does not escape
+spaces inside an argument, and the header arrives cut in half if you leave one.
+
+Restart the client after editing its file. If it lists ontoplano's tools, it
+worked.
 
 ## Blocks and to-dos are different things
 
@@ -119,19 +187,21 @@ carries the sentence a model reads to decide whether it is the thing it wants.
 [The tools](#the-tools) below lists every one, generated from that file, with
 the scope each needs.
 
-## Making the token
+## Making the key
 
-Settings → Integrations → **New token**. There is a button on that form called
-**An AI assistant (MCP)** which ticks exactly the scopes the tools need — for
-reading and writing, not deleting. A quieter button beside it, **…and let it
-delete things**, adds the `destructive` grant for the tools that remove rows
-for good. Grant fewer if you want it to read and not write: the tools it was
-not granted are not offered to it at all, so an assistant with a read-only
-token does not know that `add_todo` exists.
+Settings → AI & Integrations → AI → **Make a key**. Every permission the tools
+use is ticked to begin with — reading and writing, never deleting. Untick what
+you would rather it did not see: a tool whose permission was not granted is not
+offered to the assistant at all, so one holding a read-only key does not know
+that `add_todo` exists.
 
-The token is shown once, on the screen where you made it, with a link back to
-this page. It is revoked from the same place, and revoking it takes effect on
-the next request — there is no session to expire.
+Deleting is not on that form. The **Integrations** tab beside it has the full
+one, with every permission including `destructive`, for a key meant to run a
+script rather than an assistant.
+
+A key is shown once, on the screen where you made it. It is revoked from the
+Integrations tab, and revoking takes effect on the next request — there is no
+session to expire.
 
 ## What an upgrade will not break
 

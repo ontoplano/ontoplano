@@ -22,7 +22,7 @@ async function mint(request: APIRequestContext, cookie: string, scopes: string[]
 	form.set('label', 'live test');
 	for (const scope of scopes) form.append('scopes', scope);
 
-	const res = await request.post('/settings/integrations?/createToken', {
+	const res = await request.post('/settings/integrations/connections?/createToken', {
 		headers: {
 			Origin: ORIGIN,
 			Cookie: cookie,
