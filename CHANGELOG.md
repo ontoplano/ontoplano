@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.121.0 — 2026-09-09
+
+- **The record of a deletion outlives the account.** Deleting your own account
+  leaves one disowned line in the instance's audit log — the event and the
+  address, nothing else — where before the deletion erased its own record. And
+  everywhere that log is read back, a deletion now names the account that was
+  deleted rather than the administrator who did it.
+
 ## 0.120.0 — 2026-09-09
 
 - **Deleting is its own grant for API tokens.** A write scope used to be both:

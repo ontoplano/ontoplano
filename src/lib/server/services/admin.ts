@@ -328,20 +328,38 @@ export function deleteAccountAsAdmin(actorId: string, subjectId: string, typed: 
 
 /** How many events the instance has recorded lately, for the admin landing. */
 export function recentEvents(limit = 25) {
-	return db
+	const rows = db
 		.select({
 			id: auditEvents.id,
 			userId: auditEvents.userId,
 			actorId: auditEvents.actorId,
 			event: auditEvents.event,
+			detail: auditEvents.detail,
 			createdAt: auditEvents.createdAt,
 			email: user.email
 		})
 		.from(auditEvents)
-		.innerJoin(user, eq(auditEvents.userId, user.id))
+		// Left, not inner: a self-deletion's row has no account left to join.
+		.leftJoin(user, eq(auditEvents.userId, user.id))
 		.orderBy(desc(auditEvents.createdAt), desc(auditEvents.id))
 		.limit(limit)
 		.all();
+
+	/*
+	 * A deletion is filed against whoever survives it — the administrator, or
+	 * nobody — with the deleted address in the detail. The joined email would
+	 * answer "who pressed the button"; the question this column answers is
+	 * "whose account", so for that one event the detail wins.
+	 */
+	return rows.map(({ detail, ...row }) => {
+		if (row.event !== 'account_deleted') return row;
+		try {
+			const email = JSON.parse(detail).email;
+			return typeof email === 'string' ? { ...row, email } : row;
+		} catch {
+			return row;
+		}
+	});
 }
 
 /** Words, not plan ids: "trial" and "lapsed" answer the operator's question. */

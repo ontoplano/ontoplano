@@ -163,4 +163,19 @@ describe('deleteAccountAsAdmin', () => {
 		expect(row?.user_id).toBe(STRANGER);
 		expect(row?.detail).toContain('e@test.invalid');
 	});
+
+	/**
+	 * Filed against the administrator, but *about* the deleted account — and
+	 * every reader (the admin page here, the ops digest on the server) must say
+	 * the deleted address. The digest once announced the admin's own account
+	 * deleted, twice, on a day two other accounts were.
+	 */
+	test('and every reader names the deleted account, not the administrator', () => {
+		const id = makeVictim('f@test.invalid');
+		admin.deleteAccountAsAdmin(STRANGER, id, 'f@test.invalid');
+
+		const shown = admin.recentEvents(5).find((e) => e.event === 'account_deleted');
+		expect(shown?.email).toBe('f@test.invalid');
+		expect(shown?.email).not.toBe('stranger@test.invalid');
+	});
 });

@@ -1231,9 +1231,12 @@ export const auditEvents = sqliteTable(
 	'audit_events',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
-		userId: text('user_id')
-			.notNull()
-			.references(() => user.id),
+		/**
+		 * Null for a deletion the account did to itself: the row is disowned
+		 * rather than deleted when the account goes (see `deleteAccount`), and
+		 * the address it was about lives on in `detail`.
+		 */
+		userId: text('user_id').references(() => user.id),
 		/** Null when the account acted for itself. */
 		actorId: text('actor_id'),
 		event: text('event').notNull(),

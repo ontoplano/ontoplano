@@ -129,7 +129,10 @@ test('deleting an account asks for its address, and means it', async ({ page }) 
 
 	await page.fill('[name="q"]', email);
 	await page.keyboard.press('Enter');
-	await expect(page.getByText(email, { exact: false })).toHaveCount(0);
+	// No account link any more — the address itself is still on the page,
+	// where the recent-events card correctly names who was deleted.
+	await expect(page.getByRole('link', { name: new RegExp(email, 'i') })).toHaveCount(0);
+	await expect(page.getByText('account deleted')).toBeVisible();
 });
 
 /**

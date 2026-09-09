@@ -196,9 +196,11 @@ export const actions: Actions = {
 		if (confirmation.toLowerCase() !== user.email.toLowerCase())
 			return fail(400, { message: 'Type your email address exactly to confirm' });
 
-		// Recorded before the rows go, because the log goes with them — this is
-		// the instance's last note that the account was closed by its owner.
-		record(user.id, 'account_deleted');
+		// The instance's last note that the account was closed by its owner.
+		// `deleteAccount` disowns this row rather than deleting it with the
+		// rest of the log, so the address has to travel in the detail — after
+		// the next line there is nothing left to join it to.
+		record(user.id, 'account_deleted', { detail: { email: user.email } });
 		deleteAccount(user.id);
 
 		// The session row is gone with the account; clear the cookie so the

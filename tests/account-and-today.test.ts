@@ -103,6 +103,40 @@ describe('deleting an account', () => {
 		expect(todos.listTodos(ctx).some((t) => t.id === mine)).toBe(false);
 		expect(todos.listTodos(theirs).some((t) => t.id === theirTodo)).toBe(true);
 	});
+
+	/**
+	 * The one row that must outlive the account. The settings action writes an
+	 * `account_deleted` note before deleting, and the note used to be filed
+	 * under the account — so the very deletion it announced erased it, and an
+	 * instance never learned that somebody left on their own.
+	 */
+	test('leaves its own note behind, disowned, with the address in the detail', async () => {
+		const audit = await import('../src/lib/server/services/audit');
+		const leaver = 'leaving-on-their-own';
+		database.exec(
+			`insert into user (id, name, email, email_verified, created_at, updated_at)
+			 values (?, 'Leaver', 'leaver@test.invalid', 0, '2026-01-01T00:00:00', '2026-01-01T00:00:00')`,
+			leaver
+		);
+
+		// What the settings delete action does, in order.
+		audit.record(leaver, 'account_deleted', { detail: { email: 'leaver@test.invalid' } });
+		account.deleteAccount(leaver);
+
+		const note = database.get(
+			"select user_id, detail from audit_events where event = 'account_deleted' and detail like '%leaver%'"
+		) as { user_id: string | null; detail: string } | undefined;
+		expect(note, 'the deletion erased its own record').toBeTruthy();
+		expect(note?.user_id).toBeNull();
+		expect(note?.detail).toContain('leaver@test.invalid');
+
+		// Only the note survives — the rest of the account's history goes.
+		const rest = database.get(
+			'select count(*) as n from audit_events where user_id = ?',
+			leaver
+		) as { n: number } | undefined;
+		expect(rest?.n).toBe(0);
+	});
 });
 
 describe("the phone widget's one screen", () => {

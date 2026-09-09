@@ -8,7 +8,7 @@
  * adding a table and forgetting it here is then a compile error, not a silent
  * leak.
  */
-import { eq, type SQL } from 'drizzle-orm';
+import { and, eq, type SQL } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { getUserSetting, setUserSetting } from '../settings.js';
@@ -358,6 +358,22 @@ export function exportAccount(userId: string, now: Date = new Date()): AccountEx
  */
 export function deleteAccount(userId: string): void {
 	db.transaction((tx) => {
+		/*
+		 * The note about this deletion is disowned, not deleted — the same
+		 * arrangement `clientErrors` gets below. Filed under the account, it
+		 * would go down with the audit rows in the walk; with no subject it
+		 * survives, and the address it is about is in its `detail`.
+		 */
+		tx.update(schema.auditEvents)
+			.set({ userId: null })
+			.where(
+				and(
+					eq(schema.auditEvents.userId, userId),
+					eq(schema.auditEvents.event, 'account_deleted')
+				) as SQL
+			)
+			.run();
+
 		for (const table of USER_TABLES) table.remove(tx, userId);
 
 		/*

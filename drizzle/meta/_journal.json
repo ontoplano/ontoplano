@@ -449,6 +449,13 @@
       "when": 1788850300000,
       "tag": "0063_assistant_calls",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "6",
+      "when": 1788850400000,
+      "tag": "0064_deletion_survives_the_account",
+      "breakpoints": true
     }
   ]
 }
