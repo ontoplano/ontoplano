@@ -14,11 +14,21 @@
 		/** How many of the fields inside currently carry a value. */
 		count = 0,
 		open = $bindable(false),
+		/**
+		 * Whether a rule sits above it.
+		 *
+		 * In a form of many fields it is the line that separates the ones you
+		 * must fill from the ones you may. In a composer — a box, a picture
+		 * button, this — there is nothing on either side of that line worth
+		 * separating, and it reads as the form having ended and started again.
+		 */
+		divided = true,
 		children
 	}: {
 		label?: string;
 		count?: number;
 		open?: boolean;
+		divided?: boolean;
 		children: Snippet;
 	} = $props();
 </script>
@@ -27,7 +37,7 @@
 	Square: a border on one side of a rounded box draws a hairline that curves
 	away at both ends, which reads as the top of a box that is not there.
 -->
-<details bind:open class="no-round col-span-12 border-t border-gray-200 pt-3">
+<details bind:open class="no-round col-span-12 {divided ? 'border-t border-gray-200 pt-3' : ''}">
 	<summary
 		class="flex cursor-pointer list-none items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
 	>

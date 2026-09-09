@@ -122,9 +122,10 @@
 			Writing about the kitchen renovation used to mean going to the Diary and
 			remembering to pick the notebook from a dropdown.
 
-			No rule under it: the notes below are separated by exactly that line, so
-			one here made the form read as the first note in the list rather than as
-			the thing that writes them. The gap does the separating.
+			It is tinted and it ends in a rule: the notes below are separated from
+			each other by exactly that line, so a composer with no edge of its own
+			read as the first note in the list. A different surface says "this is
+			where you write" without another heading to say it.
 		-->
 		<form
 			method="post"
@@ -133,7 +134,7 @@
 				async ({ update, result }) => {
 					await update({ reset: result.type === 'success' });
 				}}
-			class="px-4 pt-3 pb-5"
+			class="border-b border-gray-200 bg-gray-50 px-4 pt-3 pb-4"
 		>
 			<input type="hidden" name="notebookId" value={notebook.id} />
 			<textarea
@@ -156,10 +157,16 @@
 				pressing add, and two more boxes in front of that is a form where
 				there was a composer. Open, they are the same two fields, posting
 				the same two names.
+
+				Indented to `btn-sm`'s own left padding so its marker starts where
+				the picture button's icon starts: two controls stacked under a text
+				box, reading as one column rather than as two half-aligned rows.
 			-->
-			<MoreOptions label="Tags, people" count={0}>
-				{@render tagsAndPeople('', '')}
-			</MoreOptions>
+			<div class="mt-1 pl-2.5">
+				<MoreOptions label="Tags, people" count={0} divided={false}>
+					{@render tagsAndPeople('', '')}
+				</MoreOptions>
+			</div>
 			<div class="mt-2 flex justify-end">
 				<button class="btn btn-primary btn-sm"><Icon name="plus" /> Add note</button>
 			</div>
