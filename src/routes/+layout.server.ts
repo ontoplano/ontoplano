@@ -10,6 +10,7 @@ import {
 	getWeekSettings,
 	hasSeenTutorial,
 	isDemo as isDemoInstance,
+	isRecording,
 	isStaging
 } from '$lib/server/settings';
 import type { HideableSection } from '$lib/sections';
@@ -141,6 +142,8 @@ export const load: LayoutServerLoad = async (event) => {
 		// The public demo says so on every page: a copy of your own, deleted
 		// hourly, so nobody mistakes it for their own instance.
 		demo: isDemoInstance(),
+		/** Whether to draw the bands that name the instance — off while recording. */
+		bands: !isRecording(),
 		/*
 		 * And so does staging, on every page rather than only on the way in.
 		 *

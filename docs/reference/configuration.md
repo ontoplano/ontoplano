@@ -173,6 +173,7 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_PRICE_FAMILY_YEARLY_CENTS`  | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_PRICE_MONTHLY_CENTS`        | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_PRICE_YEARLY_CENTS`         | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_RECORDING`                  | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_REGISTRATION`               | `src/lib/server/services/registration.ts`                                                                                                                  |
 | `ONTOPLANO_REQUIRE_VERIFIED_EMAIL`     | `src/lib/server/services/access.ts`                                                                                                                        |
 | `ONTOPLANO_REVIEW_MAIL_OFFSET_HOURS`   | `src/lib/server/services/review-mail.ts`                                                                                                                   |

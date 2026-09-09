@@ -450,6 +450,24 @@ export function isDemo(): boolean {
 }
 
 /**
+ * Hide the bands that say what kind of instance this is.
+ *
+ * For recording. The demo's amber strip and staging's band exist so nobody
+ * mistakes either for their own account, and they are exactly what you do not
+ * want across the bottom of a video — a thirty-second clip of the app with
+ * "Demo version" stamped under it looks like a screenshot of somebody else's
+ * trial.
+ *
+ * It hides the bands and nothing else: a demo instance still expires accounts,
+ * still limits how many there are, still behaves in every way like the demo.
+ * Turning this on does not turn the instance into a real one, and it must not
+ * be set on a box the public can reach.
+ */
+export function isRecording(): boolean {
+	return process.env.ONTOPLANO_RECORDING === 'true';
+}
+
+/**
  * How long a demo account outlives its last page view.
  *
  * Since last seen rather than since created: somebody reading carefully for two
