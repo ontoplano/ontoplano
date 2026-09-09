@@ -1136,6 +1136,44 @@ apiToken('Phone widget', 'today:read');
 apiToken('Calendar link — phone', 'calendar:read');
 apiToken('Calendar link — laptop', 'calendar:read');
 
+// A few assistant calls, so "What your assistants did" shows its card in use —
+// one plain write, one edit with its before, and one delete that can actually
+// be put back from the seed data alone.
+const assistantTokenId = apiToken(
+	'AI assistant',
+	'tasks:read,tasks:write,notes:read,notes:write,destructive'
+);
+const assistantCall = (tool, args, before, destroyed, hoursAgo) => {
+	if (one('select id from assistant_calls where user_id = ? and tool = ?', uid, tool)) return;
+	const at = new Date(now.getTime() - hoursAgo * 3600_000);
+	run(
+		`insert into assistant_calls (user_id, token_id, tool, args, before, destroyed, created_at)
+		 values (?, ?, ?, ?, ?, ?, ?)`,
+		uid,
+		assistantTokenId,
+		tool,
+		JSON.stringify(args),
+		before === null ? null : JSON.stringify(before),
+		destroyed ? 1 : 0,
+		stamp(at)
+	);
+};
+assistantCall('add_todo', { title: 'book the dentist' }, null, false, 30);
+assistantCall(
+	'change_todo',
+	{ id: 9001, title: 'book the dentist for Tuesday' },
+	{ id: 9001, title: 'book the dentist', notes: '', status: 'todo' },
+	false,
+	29
+);
+assistantCall(
+	'drop_todo',
+	{ id: 9002 },
+	{ id: 9002, title: 'return the drill', notes: 'to M.', status: 'todo', scheduledDate: null },
+	true,
+	5
+);
+
 // Instance data rather than the user's, but the settings page is a screen too:
 // one invitation outstanding, one already spent.
 const invite = (code, note, usedBy = null) => {

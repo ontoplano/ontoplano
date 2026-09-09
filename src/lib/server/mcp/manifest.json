@@ -1,0 +1,1790 @@
+{
+	"activities": {
+		"scope": "schedule:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
+	"add_activity": {
+		"scope": "schedule:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"category": {
+				"type": "string",
+				"required": false
+			},
+			"description": {
+				"type": "string",
+				"required": false
+			},
+			"name": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"add_bill": {
+		"scope": "bills:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"amount_expected": {
+				"type": "integer",
+				"required": false
+			},
+			"currency": {
+				"type": "string",
+				"required": false
+			},
+			"due_day": {
+				"type": "integer",
+				"required": false
+			},
+			"name": {
+				"type": "string",
+				"required": true
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"pay_lead_days": {
+				"type": "integer",
+				"required": false
+			},
+			"rhythm": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"add_block": {
+		"scope": "schedule:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"category": {
+				"type": "string",
+				"required": false
+			},
+			"date": {
+				"type": "string",
+				"required": true
+			},
+			"energy": {
+				"type": "integer",
+				"required": false
+			},
+			"interest": {
+				"type": "integer",
+				"required": false
+			},
+			"minutes": {
+				"type": "integer",
+				"required": false
+			},
+			"start_time": {
+				"type": "string",
+				"required": true
+			},
+			"title": {
+				"type": "string",
+				"required": true
+			},
+			"urgency": {
+				"type": "integer",
+				"required": false
+			}
+		}
+	},
+	"add_goal": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"area": {
+				"type": "string",
+				"required": false
+			},
+			"horizon": {
+				"type": "string",
+				"required": true
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"startDate": {
+				"type": "string",
+				"required": false
+			},
+			"targetValue": {
+				"type": "number",
+				"required": false
+			},
+			"title": {
+				"type": "string",
+				"required": true
+			},
+			"unit": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"add_goal_area": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"color": {
+				"type": "string",
+				"required": false
+			},
+			"name": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"add_habit": {
+		"scope": "habits:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"description": {
+				"type": "string",
+				"required": false
+			},
+			"name": {
+				"type": "string",
+				"required": true
+			},
+			"scheduledDays": {
+				"type": "string",
+				"required": false
+			},
+			"type": {
+				"type": "string",
+				"required": false,
+				"enum": ["bad", "good", "neutral"]
+			}
+		}
+	},
+	"add_idea": {
+		"scope": "ideas:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"content": {
+				"type": "string",
+				"required": true
+			},
+			"tags": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"add_location": {
+		"scope": "inventory:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"name": {
+				"type": "string",
+				"required": true
+			},
+			"parent_id": {
+				"type": "integer",
+				"required": false
+			}
+		}
+	},
+	"add_notebook": {
+		"scope": "notes:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"description": {
+				"type": "string",
+				"required": false
+			},
+			"title": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"add_person": {
+		"scope": "people:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"birthday": {
+				"type": "string",
+				"required": false
+			},
+			"email": {
+				"type": "string",
+				"required": false
+			},
+			"name": {
+				"type": "string",
+				"required": true
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"phone": {
+				"type": "string",
+				"required": false
+			},
+			"relationship": {
+				"type": "string",
+				"required": false,
+				"enum": ["family", "friend", "other", "partner", "professional"]
+			},
+			"remindOnBirthday": {
+				"type": "boolean",
+				"required": false
+			}
+		}
+	},
+	"add_recipe": {
+		"scope": "kitchen:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"ingredients": {
+				"type": "string",
+				"required": false
+			},
+			"method": {
+				"type": "string",
+				"required": false
+			},
+			"minutes": {
+				"type": "integer",
+				"required": false
+			},
+			"servings": {
+				"type": "integer",
+				"required": false
+			},
+			"source": {
+				"type": "string",
+				"required": false
+			},
+			"title": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"add_repeating_block": {
+		"scope": "schedule:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"category": {
+				"type": "string",
+				"required": false
+			},
+			"energy": {
+				"type": "integer",
+				"required": false
+			},
+			"every": {
+				"type": "integer",
+				"required": false
+			},
+			"interest": {
+				"type": "integer",
+				"required": false
+			},
+			"minutes": {
+				"type": "integer",
+				"required": false
+			},
+			"month_day": {
+				"type": "integer",
+				"required": false
+			},
+			"remind_minutes": {
+				"type": "integer",
+				"required": false
+			},
+			"repeats": {
+				"type": "string",
+				"required": false,
+				"enum": ["every_n_days", "every_n_weeks", "monthly", "weekly"]
+			},
+			"start_time": {
+				"type": "string",
+				"required": true
+			},
+			"title": {
+				"type": "string",
+				"required": false
+			},
+			"urgency": {
+				"type": "integer",
+				"required": false
+			},
+			"weekday": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"add_shopping_category": {
+		"scope": "shopping:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"holdsFood": {
+				"type": "boolean",
+				"required": false
+			},
+			"name": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"add_to_shopping_list": {
+		"scope": "shopping:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"name": {
+				"type": "string",
+				"required": true
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"section": {
+				"type": "string",
+				"required": false
+			},
+			"type": {
+				"type": "string",
+				"required": false,
+				"enum": ["replenish", "someday"]
+			}
+		}
+	},
+	"add_todo": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"goalId": {
+				"type": "integer",
+				"required": false
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"scheduledDate": {
+				"type": "string",
+				"required": false
+			},
+			"title": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"add_workout": {
+		"scope": "workouts:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"category_id": {
+				"type": "integer",
+				"required": false
+			},
+			"minutes": {
+				"type": "integer",
+				"required": false
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"plan": {
+				"type": "string",
+				"required": false
+			},
+			"title": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"add_workout_category": {
+		"scope": "workouts:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"name": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"all_habits": {
+		"scope": "habits:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
+	"apply_idea": {
+		"scope": "ideas:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"note": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"archive_bill": {
+		"scope": "bills:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"archived": {
+				"type": "boolean",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"archive_item": {
+		"scope": "shopping:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"archive_recipe": {
+		"scope": "kitchen:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"archived": {
+				"type": "boolean",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"archive_workout": {
+		"scope": "workouts:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"archived": {
+				"type": "boolean",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"bill_payments": {
+		"scope": "bills:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"bills": {
+		"scope": "bills:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"include_archived": {
+				"type": "boolean",
+				"required": false
+			}
+		}
+	},
+	"bills_due": {
+		"scope": "bills:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"from": {
+				"type": "string",
+				"required": true
+			},
+			"to": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"cancel_alarm": {
+		"scope": "schedule:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"cancel_block": {
+		"scope": "schedule:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"categories": {
+		"scope": "schedule:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
+	"change_activity": {
+		"scope": "schedule:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"category": {
+				"type": "string",
+				"required": false
+			},
+			"description": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"change_bill": {
+		"scope": "bills:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"amount_expected": {
+				"type": "integer",
+				"required": false
+			},
+			"due_day": {
+				"type": "integer",
+				"required": false
+			},
+			"due_month": {
+				"type": "integer",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"pay_lead_days": {
+				"type": "integer",
+				"required": false
+			},
+			"rhythm": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"change_block": {
+		"scope": "schedule:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"category": {
+				"type": "string",
+				"required": false
+			},
+			"date": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "string",
+				"required": true
+			},
+			"minutes": {
+				"type": "integer",
+				"required": false
+			},
+			"start_time": {
+				"type": "string",
+				"required": false
+			},
+			"title": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"change_goal": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"horizon": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"startDate": {
+				"type": "string",
+				"required": false
+			},
+			"targetValue": {
+				"type": "number",
+				"required": false
+			},
+			"title": {
+				"type": "string",
+				"required": false
+			},
+			"unit": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"change_habit": {
+		"scope": "habits:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"description": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			},
+			"scheduledDays": {
+				"type": "string",
+				"required": false
+			},
+			"type": {
+				"type": "string",
+				"required": false,
+				"enum": ["bad", "good", "neutral"]
+			}
+		}
+	},
+	"change_idea": {
+		"scope": "ideas:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"content": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"tags": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"change_location": {
+		"scope": "inventory:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			},
+			"parent_id": {
+				"type": "integer",
+				"required": false
+			}
+		}
+	},
+	"change_person": {
+		"scope": "people:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"birthday": {
+				"type": "string",
+				"required": false
+			},
+			"email": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"phone": {
+				"type": "string",
+				"required": false
+			},
+			"relationship": {
+				"type": "string",
+				"required": false,
+				"enum": ["family", "friend", "other", "partner", "professional"]
+			},
+			"remindOnBirthday": {
+				"type": "boolean",
+				"required": false
+			}
+		}
+	},
+	"change_recipe": {
+		"scope": "kitchen:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"ingredients": {
+				"type": "string",
+				"required": false
+			},
+			"method": {
+				"type": "string",
+				"required": false
+			},
+			"minutes": {
+				"type": "integer",
+				"required": false
+			},
+			"servings": {
+				"type": "integer",
+				"required": false
+			},
+			"source": {
+				"type": "string",
+				"required": false
+			},
+			"title": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"change_repeating_block": {
+		"scope": "schedule:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"category": {
+				"type": "string",
+				"required": false
+			},
+			"every": {
+				"type": "integer",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"minutes": {
+				"type": "integer",
+				"required": false
+			},
+			"month_day": {
+				"type": "integer",
+				"required": false
+			},
+			"remind_minutes": {
+				"type": "integer",
+				"required": false
+			},
+			"repeats": {
+				"type": "string",
+				"required": false,
+				"enum": ["every_n_days", "every_n_weeks", "monthly", "weekly"]
+			},
+			"start_time": {
+				"type": "string",
+				"required": false
+			},
+			"title": {
+				"type": "string",
+				"required": false
+			},
+			"weekday": {
+				"type": "integer",
+				"required": false
+			}
+		}
+	},
+	"change_shopping_category": {
+		"scope": "shopping:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"holdsFood": {
+				"type": "boolean",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			},
+			"shareWithFamily": {
+				"type": "boolean",
+				"required": false
+			}
+		}
+	},
+	"change_todo": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"energy": {
+				"type": "integer",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"interest": {
+				"type": "integer",
+				"required": false
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"title": {
+				"type": "string",
+				"required": false
+			},
+			"urgency": {
+				"type": "integer",
+				"required": false
+			}
+		}
+	},
+	"change_workout": {
+		"scope": "workouts:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"category_id": {
+				"type": "integer",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"minutes": {
+				"type": "integer",
+				"required": false
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"plan": {
+				"type": "string",
+				"required": false
+			},
+			"title": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"close_goal": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"note": {
+				"type": "string",
+				"required": false
+			},
+			"status": {
+				"type": "string",
+				"required": true,
+				"enum": ["abandoned", "achieved", "missed"]
+			}
+		}
+	},
+	"cooked_recipe": {
+		"scope": "kitchen:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"ranOutOf": {
+				"type": "array",
+				"required": false
+			}
+		}
+	},
+	"daily_wins": {
+		"scope": "notes:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"date": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"data_streams": {
+		"scope": "streams:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
+	"diary": {
+		"scope": "notes:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"limit": {
+				"type": "integer",
+				"required": false
+			}
+		}
+	},
+	"dismiss_reminder": {
+		"scope": "schedule:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"drop_todo": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"favorite_idea": {
+		"scope": "ideas:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"file_shopping_item": {
+		"scope": "shopping:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"section": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"finish_block": {
+		"scope": "schedule:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "string",
+				"required": true
+			},
+			"status": {
+				"type": "string",
+				"required": true,
+				"enum": ["done", "skipped", "todo"]
+			}
+		}
+	},
+	"finish_todo": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"goal_areas": {
+		"scope": "tasks:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
+	"goals": {
+		"scope": "tasks:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"includeClosed": {
+				"type": "boolean",
+				"required": false
+			}
+		}
+	},
+	"habits": {
+		"scope": "habits:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
+	"ideas": {
+		"scope": "ideas:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"limit": {
+				"type": "integer",
+				"required": false
+			}
+		}
+	},
+	"link_to_goal": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"goalId": {
+				"type": "integer",
+				"required": true
+			},
+			"slotIds": {
+				"type": "array",
+				"required": false
+			},
+			"todoIds": {
+				"type": "array",
+				"required": false
+			}
+		}
+	},
+	"locations": {
+		"scope": "inventory:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
+	"log_data_point": {
+		"scope": "streams:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"at": {
+				"type": "string",
+				"required": false
+			},
+			"stream": {
+				"type": "string",
+				"required": true
+			},
+			"text": {
+				"type": "string",
+				"required": false
+			},
+			"value": {
+				"type": "number",
+				"required": true
+			}
+		}
+	},
+	"log_goal_progress": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"delta": {
+				"type": "number",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"value": {
+				"type": "number",
+				"required": false
+			}
+		}
+	},
+	"month_bills": {
+		"scope": "bills:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"month": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"notebooks": {
+		"scope": "notes:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
+	"past": {
+		"scope": "schedule:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"days": {
+				"type": "integer",
+				"required": false
+			},
+			"startingOn": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"pay_bill": {
+		"scope": "bills:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"amount_paid": {
+				"type": "integer",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"period": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"people": {
+		"scope": "people:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
+	"put_item": {
+		"scope": "inventory:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"location_id": {
+				"type": "integer",
+				"required": false
+			}
+		}
+	},
+	"recipes": {
+		"scope": "kitchen:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": false
+			}
+		}
+	},
+	"record_price": {
+		"scope": "shopping:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"price": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"record_win": {
+		"scope": "notes:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"content": {
+				"type": "string",
+				"required": true
+			},
+			"date": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"remind_before_block": {
+		"scope": "schedule:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "string",
+				"required": true
+			},
+			"message": {
+				"type": "string",
+				"required": false
+			},
+			"minutes": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"reminders": {
+		"scope": "schedule:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"includePast": {
+				"type": "boolean",
+				"required": false
+			}
+		}
+	},
+	"remove_from_shopping_list": {
+		"scope": "shopping:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"remove_idea": {
+		"scope": "ideas:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"remove_location": {
+		"scope": "inventory:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"remove_notebook": {
+		"scope": "notes:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"remove_repeating_block": {
+		"scope": "schedule:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"remove_shopping_category": {
+		"scope": "shopping:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"remove_workout_category": {
+		"scope": "workouts:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"reopen_goal": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"reopen_todo": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"repeating_week": {
+		"scope": "schedule:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
+	"schedule_todo": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"date": {
+				"type": "string",
+				"required": true
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"search": {
+		"scope": "search:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"query": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"set_alarm": {
+		"scope": "schedule:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"at": {
+				"type": "string",
+				"required": true
+			},
+			"message": {
+				"type": "string",
+				"required": true
+			},
+			"sound": {
+				"type": "boolean",
+				"required": false
+			}
+		}
+	},
+	"set_item_fields": {
+		"scope": "inventory:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"fields": {
+				"type": "object",
+				"required": true
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"share_notebook": {
+		"scope": "notes:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"shared": {
+				"type": "boolean",
+				"required": false
+			}
+		}
+	},
+	"shopping_categories": {
+		"scope": "shopping:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
+	"shopping_list": {
+		"scope": "shopping:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"short": {
+				"type": "boolean",
+				"required": false
+			}
+		}
+	},
+	"tick_bought": {
+		"scope": "shopping:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"tick_habit": {
+		"scope": "habits:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"date": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": false
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"today": {
+		"scope": "today:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
+	"todos": {
+		"scope": "tasks:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"limit": {
+				"type": "integer",
+				"required": false
+			}
+		}
+	},
+	"unarchive_item": {
+		"scope": "shopping:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"unlink_from_goal": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"goalId": {
+				"type": "integer",
+				"required": true
+			},
+			"slotIds": {
+				"type": "array",
+				"required": false
+			},
+			"todoIds": {
+				"type": "array",
+				"required": false
+			}
+		}
+	},
+	"unpay_bill": {
+		"scope": "bills:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"period": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"unschedule_todo": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"untick_bought": {
+		"scope": "shopping:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"upcoming": {
+		"scope": "schedule:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"days": {
+				"type": "integer",
+				"required": false
+			}
+		}
+	},
+	"upcoming_birthdays": {
+		"scope": "people:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"days": {
+				"type": "integer",
+				"required": false
+			}
+		}
+	},
+	"weekly_review": {
+		"scope": "tasks:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"weekStart": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"where_is": {
+		"scope": "inventory:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"name": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"workout_categories": {
+		"scope": "workouts:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
+	"workout_done": {
+		"scope": "workouts:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"workouts": {
+		"scope": "workouts:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"include_archived": {
+				"type": "boolean",
+				"required": false
+			}
+		}
+	},
+	"write_entry": {
+		"scope": "notes:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"content": {
+				"type": "string",
+				"required": true
+			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
+			},
+			"tags": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"write_review_note": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"note": {
+				"type": "string",
+				"required": true
+			},
+			"weekStart": {
+				"type": "string",
+				"required": false
+			}
+		}
+	}
+}

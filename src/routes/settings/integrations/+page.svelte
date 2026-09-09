@@ -75,6 +75,22 @@
 	const eventLabel = (key: string) => data.webhookEvents.find((e) => e.key === key)?.label ?? key;
 
 	/**
+	 * One legible line per assistant call: whatever names the thing best, from
+	 * the state it replaced or the arguments — never the raw JSON.
+	 */
+	function callLine(one: {
+		args: Record<string, unknown>;
+		before: unknown;
+		destroyed: boolean;
+	}): string {
+		const from = { ...(one.args ?? {}), ...((one.before as Record<string, unknown>) ?? {}) };
+		const said = [from.title, from.name, from.label, from.content, from.message].find(
+			(v) => typeof v === 'string' && v.trim()
+		);
+		return typeof said === 'string' ? said.slice(0, 80) : '';
+	}
+
+	/**
 	 * The two things somebody pastes, with the token already in them.
 	 *
 	 * The same words as `docs/prose/ai-agents.md`, at the moment the token
@@ -369,13 +385,22 @@ Token: ${token}`;
 						-->
 						<p class="mb-2 flex flex-wrap items-center gap-2">
 							<!-- Blue like the nudge that pointed here: the preset is the
-							     press a first visitor came to make. -->
+							     press a first visitor came to make. It reads and writes and
+							     does not delete — removing things for good is the quieter
+							     button beside it, pressed on purpose. -->
 							<button
 								type="button"
 								class="btn btn-sm border-blue-200 bg-blue-50 text-blue-900 hover:bg-blue-100"
 								onclick={() => tick(data.assistantScopes)}
 							>
 								An AI assistant (MCP)
+							</button>
+							<button
+								type="button"
+								class="btn btn-sm btn-quiet"
+								onclick={() => tick(data.assistantScopesDestructive)}
+							>
+								…and let it delete things
 							</button>
 							<button type="button" class="btn btn-sm btn-quiet" onclick={() => tick([])}>
 								Clear
@@ -521,6 +546,52 @@ Token: ${token}`;
 			</ul>
 		{/if}
 	</Card>
+
+	<!--
+		What the assistants did.
+
+		Every MCP write answers the caller with the state it replaced, but that
+		answer goes to whoever holds the transcript — and the owner of the data
+		holds none. This is their copy: the last writes, each with what stood
+		there before, and a way back for the calls that deleted something.
+	-->
+	{#if data.assistantCalls.length > 0}
+		<Card
+			title="What your assistants did"
+			description="The last writes made over the API, newest first. A deleted thing can be put back."
+			flush
+		>
+			<!-- The pressed row itself turns into "Put back" — that is the
+			     confirmation, in place, moving nothing. Failures land in the
+			     page's own FormError like every other action's. -->
+			<ul class="divide-y divide-gray-200">
+				{#each data.assistantCalls as one (one.id)}
+					<li class="flex items-center gap-3 px-4 py-2">
+						<span class="tabular shrink-0 text-xs text-gray-500">
+							{one.createdAt.slice(0, 16).replace('T', ' ')}
+						</span>
+						<code class="shrink-0 font-mono text-xs text-gray-900">{one.tool}</code>
+						<span class="min-w-0 flex-1 truncate text-sm text-gray-700">
+							{callLine(one)}
+							{#if one.tokenName}
+								<span class="text-xs text-gray-500">· {one.tokenName}</span>
+							{/if}
+						</span>
+						{#if one.destroyed}
+							{#if one.restoredAt}
+								<span class="shrink-0 text-xs text-gray-500">Put back</span>
+							{:else}
+								<form method="post" action="?/putBack" use:enhance class="shrink-0">
+									<input type="hidden" name="id" value={one.id} />
+									<button type="submit" class="btn btn-sm">Put it back</button>
+								</form>
+							{/if}
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		</Card>
+	{/if}
 
 	<!-- Data streams -->
 	<Card

@@ -10,6 +10,29 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.120.0 — 2026-09-09
+
+- **Deleting is its own grant for API tokens.** A write scope used to be both:
+  the token that let an assistant add a todo could also remove one for good.
+  The nine MCP tools that delete now also need the `destructive` grant — one
+  extra tick on the token form. The "An AI assistant (MCP)" preset no longer
+  hands it over; a quieter button beside it does, pressed on purpose. Tokens
+  made before this keep their write scopes and lose deletion until you grant
+  it.
+- **Every assistant write answers with what it replaced.** The result carries
+  `before` and `after` — and for a delete, the whole removed row — so a bad
+  call is reversible from the conversation itself.
+- **What your assistants did, on the integrations page.** The last writes made
+  over the API, each with the state it replaced, and a **Put it back** on any
+  call that deleted something — it recreates the thing through the same code
+  the app uses. The log leaves with your export like everything else.
+- **The tool surface can no longer change shape by accident.** It is
+  snapshotted in the repo and diffed by the test suite: removing a tool or a
+  parameter, making one required, or dropping an enum value fails the build
+  unless a release announced it first. The MCP server also reports the app's
+  real version in its handshake, so "it broke when I upgraded" can say from
+  what to what.
+
 ## 0.119.1 — 2026-09-09
 
 - **The skip button no longer says what is fine.** Its tooltip read "It did not

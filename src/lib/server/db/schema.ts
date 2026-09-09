@@ -1250,6 +1250,43 @@ export const auditEvents = sqliteTable(
 	]
 );
 
+/**
+ * What an assistant did, kept where the person can read it.
+ *
+ * Every MCP write answers with the state it replaced, but that answer goes to
+ * whoever holds the transcript — and the person whose data it is has no
+ * transcript. This is their copy: one row per write, with the `before` the
+ * protocol layer read, so a bad call can be seen and, when it deleted
+ * something, put back.
+ *
+ * `tokenId` names the api_tokens row without a foreign key on purpose: tokens
+ * are revoked rather than deleted today, and the log must outlive whatever
+ * happens to the credential that wrote it.
+ */
+export const assistantCalls = sqliteTable(
+	'assistant_calls',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		tokenId: integer('token_id'),
+		tool: text('tool').notNull(),
+		/** The call's arguments, as JSON — enough to read the row back later. */
+		args: text('args').notNull().default('{}'),
+		/** The subject as it was, as JSON. Null for a create: nothing was there. */
+		before: text('before'),
+		/** Whether the call removed a row for good — the ones Put it back offers. */
+		destroyed: integer('destroyed', { mode: 'boolean' }).notNull().default(false),
+		/** When Put it back recreated what this deleted, so it is offered once. */
+		restoredAt: text('restored_at'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [index('assistant_calls_user_idx').on(table.userId, table.id)]
+);
+
 // --- Instance: invitations ---
 
 /**

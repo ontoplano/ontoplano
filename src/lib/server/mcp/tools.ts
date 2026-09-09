@@ -135,11 +135,12 @@ import { createExceptional } from '../services/slots.js';
 import {
 	cancelOccurrence,
 	changeOccurrence,
+	occurrenceRow,
 	recordIdOf,
 	setOccurrenceStatus
 } from '../services/instances.js';
 import { listCategories } from '../services/activities.js';
-import { toggleOccurrence } from '../services/habits.js';
+import { listOccurrences, toggleOccurrence } from '../services/habits.js';
 import {
 	locationTree,
 	createLocation,
@@ -170,7 +171,30 @@ export type Tool = {
 	scope: Scope;
 	/** Whether calling it changes anything, which is what a client warns about. */
 	writes: boolean;
+	/**
+	 * Whether calling it removes a row for good. A wrong write is data that is
+	 * wrong; a wrong delete is data that is gone — so these need the
+	 * `destructive` grant on top of the room's own write scope.
+	 */
+	destroys?: boolean;
+	/**
+	 * The version that announced this tool is going away — set one release
+	 * before a removal, never in the same one. The manifest check refuses a
+	 * removal that was not announced; see `manifest.ts` for the whole rule.
+	 * A parameter is deprecated the same way, with `deprecated: true` in its
+	 * schema entry and the replacement named in its description.
+	 */
+	deprecated?: string;
 	input: Shape;
+	/**
+	 * The row this call is about, as it stands — read before and after every
+	 * write, so the answer carries `before` and `after` and a bad call is
+	 * reversible from the transcript. On a tool that changes an existing thing
+	 * this is that thing; on a delete it is the whole row, so it can be put
+	 * back from the answer alone. A create has no subject: there was nothing
+	 * there, and the protocol layer answers `before: null` for it.
+	 */
+	subject?: (ctx: Ctx, args: Record<string, unknown>) => unknown;
 	run: (ctx: Ctx, args: Record<string, unknown>) => unknown;
 };
 
@@ -297,6 +321,73 @@ function habitByName(ctx: Ctx, wanted: unknown): { id: number; name: string } {
 	return near[0];
 }
 
+// --- The before and the after -------------------------------------------------
+
+/**
+ * Finders for the mutation answers.
+ *
+ * Every writing tool's result carries `before` and `after` — the subject as it
+ * was and as it is — assembled by the protocol layer from the tool's `subject`
+ * reader. These are those readers: each fetches one row through the same
+ * service the reading tools use, so ownership and shape are the service's and
+ * a subject can never see a row its token could not list. Null when the id
+ * names nothing, which is itself the honest answer.
+ */
+const idOf = (args: Record<string, unknown>) => Number(args.id);
+const oneOf = <T extends { id: number }>(rows: T[], id: number): T | null =>
+	rows.find((row) => row.id === id) ?? null;
+
+const todoById = (ctx: Ctx, args: Record<string, unknown>) => oneOf(listTodos(ctx), idOf(args));
+const goalById = (ctx: Ctx, args: Record<string, unknown>) =>
+	oneOf(listGoals(ctx, { includeClosed: true }), Number(args.goalId ?? args.id));
+const ideaById = (ctx: Ctx, args: Record<string, unknown>) => oneOf(listIdeas(ctx), idOf(args));
+const notebookById = (ctx: Ctx, args: Record<string, unknown>) =>
+	oneOf(listNotebooks(ctx), idOf(args));
+const shoppingItemById = (ctx: Ctx, args: Record<string, unknown>) =>
+	oneOf(listShoppingItems(ctx) as { id: number }[], idOf(args));
+const shoppingCategoryById = (ctx: Ctx, args: Record<string, unknown>) =>
+	oneOf(listShoppingCategories(ctx) as { id: number }[], idOf(args));
+const slotById = (ctx: Ctx, args: Record<string, unknown>) =>
+	oneOf(listWeeklySlots(ctx) as { id: number }[], idOf(args));
+const habitById = (ctx: Ctx, args: Record<string, unknown>) =>
+	oneOf(listHabits(ctx) as { id: number }[], idOf(args));
+const reminderById = (ctx: Ctx, args: Record<string, unknown>) =>
+	oneOf(listReminders(ctx, { includePast: true }), idOf(args));
+const personById = (ctx: Ctx, args: Record<string, unknown>) => oneOf(listPeople(ctx), idOf(args));
+const activityById = (ctx: Ctx, args: Record<string, unknown>) =>
+	oneOf(listActivities(ctx) as { id: number }[], idOf(args));
+const workoutCategoryById = (ctx: Ctx, args: Record<string, unknown>) =>
+	oneOf(listWorkoutCategories(ctx) as { id: number }[], idOf(args));
+// These four getters throw on a bad id; the protocol layer reads that as null.
+const locationById = (ctx: Ctx, args: Record<string, unknown>) => getLocation(ctx, idOf(args));
+const recipeById = (ctx: Ctx, args: Record<string, unknown>) => getRecipe(ctx, idOf(args));
+const workoutById = (ctx: Ctx, args: Record<string, unknown>) => getWorkout(ctx, idOf(args));
+const billById = (ctx: Ctx, args: Record<string, unknown>) => getBill(ctx, idOf(args));
+const billWithPayments = (ctx: Ctx, args: Record<string, unknown>) => ({
+	bill: getBill(ctx, idOf(args)),
+	payments: listPayments(ctx, idOf(args))
+});
+const blockOccurrence = (ctx: Ctx, args: Record<string, unknown>) => occurrenceRow(ctx, args.id);
+/** The tick itself: null before an occurrence exists is what "unticked" is. */
+const habitTick = (ctx: Ctx, args: Record<string, unknown>) => {
+	const habitId = args.id ? Number(args.id) : habitByName(ctx, args.name).id;
+	const date =
+		typeof args.date === 'string' && args.date ? args.date : localDateOf(ctx.now, ctx.tz);
+	return {
+		habitId,
+		date,
+		ticked: listOccurrences(ctx).some((o) => o.habitId === habitId && o.date === date)
+	};
+};
+const winsOfDay = (ctx: Ctx, args: Record<string, unknown>) => {
+	const date = args.date ? day(args.date, 'date') : localDateOf(ctx.now, ctx.tz);
+	return { date, wins: listWins(ctx, date) };
+};
+const weekNote = (ctx: Ctx, args: Record<string, unknown>) => {
+	const weekStart = weekStartOf(args.weekStart, ctx.now);
+	return { weekStart, note: readNote(ctx, weekStart) };
+};
+
 /**
  * How often a repeating block comes back, for the tools that set it.
  *
@@ -415,6 +506,7 @@ export const TOOLS: Tool[] = [
 			name: text('The habit by name, when the id is not to hand — "stretching".'),
 			date: text('The day, as YYYY-MM-DD. Today if left out.')
 		}),
+		subject: habitTick,
 		run: (ctx, args) => {
 			const habit = args.id ? { id: args.id, name: '' } : habitByName(ctx, args.name);
 			toggleOccurrence(ctx, {
@@ -449,6 +541,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id', 'status']
 		),
+		subject: blockOccurrence,
 		run: (ctx, args) => {
 			setOccurrenceStatus(ctx, args.id, args.status);
 			return { ok: true };
@@ -535,6 +628,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: blockOccurrence,
 		run: (ctx, args) =>
 			changeOccurrence(ctx, args.id, {
 				date: args.date,
@@ -557,6 +651,7 @@ export const TOOLS: Tool[] = [
 			{ id: text('The block\u2019s id, exactly as the day gave it — like `slot:42`.') },
 			['id']
 		),
+		subject: blockOccurrence,
 		run: (ctx, args) => cancelOccurrence(ctx, args.id)
 	},
 	{
@@ -675,6 +770,7 @@ export const TOOLS: Tool[] = [
 		scope: 'tasks:write',
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The todo’s id.' } }, ['id']),
+		subject: todoById,
 		run: (ctx, args) => {
 			setTodoStatus(ctx, Number(args.id), 'done');
 			return { ok: true };
@@ -687,7 +783,9 @@ export const TOOLS: Tool[] = [
 			'Remove a todo entirely, because it is not going to happen and is not worth a record — "bin that one", "forget it". Different from `finish_todo`, which keeps it as something that was done. Gone for good; prefer finishing it when it actually happened.',
 		scope: 'tasks:write',
 		writes: true,
+		destroys: true,
 		input: object({ id: { type: 'integer', description: 'The todo\u2019s id.' } }, ['id']),
+		subject: todoById,
 		run: (ctx, args) => {
 			deleteTodo(ctx, Number(args.id));
 			return { ok: true };
@@ -708,6 +806,7 @@ export const TOOLS: Tool[] = [
 		scope: 'tasks:write',
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The todo\u2019s id.' } }, ['id']),
+		subject: todoById,
 		run: (ctx, args) => {
 			setTodoStatus(ctx, Number(args.id), 'todo');
 			return { ok: true };
@@ -729,6 +828,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: todoById,
 		run: (ctx, args) => {
 			const current = listTodos(ctx).find((t) => t.id === Number(args.id));
 			if (!current) throw new NotFoundError('todo');
@@ -764,6 +864,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id', 'date']
 		),
+		subject: todoById,
 		run: (ctx, args) => {
 			scheduleTodo(ctx, Number(args.id), day(args.date, 'date'));
 			return { ok: true };
@@ -777,6 +878,7 @@ export const TOOLS: Tool[] = [
 		scope: 'tasks:write',
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The todo\u2019s id.' } }, ['id']),
+		subject: todoById,
 		run: (ctx, args) => {
 			scheduleTodo(ctx, Number(args.id), null);
 			return { ok: true };
@@ -817,6 +919,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id', 'status']
 		),
+		subject: goalById,
 		run: (ctx, args) => {
 			closeGoal(ctx, Number(args.id), { status: args.status, outcome: args.note });
 			return { ok: true };
@@ -863,6 +966,7 @@ export const TOOLS: Tool[] = [
 			},
 			['goalId']
 		),
+		subject: goalById,
 		run: (ctx, args) =>
 			addGoalLinks(ctx, Number(args.goalId), {
 				todoIds: (args.todoIds as unknown[]) ?? [],
@@ -888,6 +992,7 @@ export const TOOLS: Tool[] = [
 			},
 			['goalId']
 		),
+		subject: goalById,
 		run: (ctx, args) =>
 			removeGoalLinks(ctx, Number(args.goalId), {
 				todoIds: (args.todoIds as unknown[]) ?? [],
@@ -902,6 +1007,7 @@ export const TOOLS: Tool[] = [
 		scope: 'tasks:write',
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The goal\u2019s id.' } }, ['id']),
+		subject: goalById,
 		run: (ctx, args) => {
 			closeGoal(ctx, Number(args.id), { status: 'open' });
 			return { ok: true };
@@ -931,6 +1037,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: goalById,
 		run: (ctx, args) => {
 			const current = listGoals(ctx, { includeClosed: true }).find((g) => g.id === Number(args.id));
 			if (!current) throw new NotFoundError('goal');
@@ -1025,10 +1132,12 @@ export const TOOLS: Tool[] = [
 			'Delete a notebook that holds nothing — no notes, no tasks, no goals. One with anything in it is refused with what it holds: somebody\u2019s writing is deleted by them in the app, never through a tool. For a notebook made by mistake.',
 		scope: 'notes:write',
 		writes: true,
+		destroys: true,
 		input: object(
 			{ id: { type: 'integer', description: 'The notebook\u2019s id, as `notebooks` gives it.' } },
 			['id']
 		),
+		subject: notebookById,
 		run: (ctx, args) => {
 			const held = contentsOf(ctx, Number(args.id));
 			const entries = held.entries.length;
@@ -1056,6 +1165,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: notebookById,
 		run: (ctx, args) => {
 			setNotebookShared(
 				ctx,
@@ -1099,7 +1209,9 @@ export const TOOLS: Tool[] = [
 			'Delete an idea — for one added by mistake, or one that has been dealt with. It is gone, not archived, so prefer leaving it alone unless the person asked.',
 		scope: 'ideas:write',
 		writes: true,
+		destroys: true,
 		input: object({ id: { type: 'integer', description: 'The idea\u2019s id.' } }, ['id']),
+		subject: ideaById,
 		run: (ctx, args) => {
 			deleteIdea(ctx, Number(args.id));
 			return { ok: true };
@@ -1120,6 +1232,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: ideaById,
 		run: (ctx, args) => {
 			const current = listIdeas(ctx).find((i) => i.id === Number(args.id));
 			if (!current) throw new NotFoundError('idea');
@@ -1203,6 +1316,7 @@ export const TOOLS: Tool[] = [
 		scope: 'shopping:write',
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The item’s id.' } }, ['id']),
+		subject: shoppingItemById,
 		run: (ctx, args) => setBought(ctx, Number(args.id), true)
 	},
 	{
@@ -1224,6 +1338,7 @@ export const TOOLS: Tool[] = [
 		scope: 'shopping:write',
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),
+		subject: shoppingItemById,
 		run: (ctx, args) => setBought(ctx, Number(args.id), false)
 	},
 	{
@@ -1238,6 +1353,7 @@ export const TOOLS: Tool[] = [
 		scope: 'shopping:write',
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),
+		subject: shoppingItemById,
 		run: (ctx, args) => setSnoozed(ctx, Number(args.id), true)
 	},
 	{
@@ -1248,6 +1364,7 @@ export const TOOLS: Tool[] = [
 		scope: 'shopping:write',
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),
+		subject: shoppingItemById,
 		run: (ctx, args) => setSnoozed(ctx, Number(args.id), false)
 	},
 	{
@@ -1257,7 +1374,9 @@ export const TOOLS: Tool[] = [
 			'Remove an item because it is not wanted — "take milk off", "we already have that". Not the same as `tick_bought`, which records that it *was* bought and keeps it in the history and the price record. Takes the id `shopping_list` gives.',
 		scope: 'shopping:write',
 		writes: true,
+		destroys: true,
 		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),
+		subject: shoppingItemById,
 		run: (ctx, args) => {
 			deleteItem(ctx, Number(args.id));
 			return { ok: true };
@@ -1336,6 +1455,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: recipeById,
 		run: (ctx, args) => {
 			const id = Number(args.id);
 			const current = getRecipe(ctx, id);
@@ -1370,6 +1490,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: recipeById,
 		run: (ctx, args) => {
 			cooked(ctx, Number(args.id), ((args.ranOutOf as unknown[]) ?? []).map(Number));
 			return { ok: true };
@@ -1393,6 +1514,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: recipeById,
 		run: (ctx, args) => {
 			setArchived(
 				ctx,
@@ -1416,6 +1538,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: shoppingItemById,
 		run: (ctx, args) => {
 			const said = typeof args.section === 'string' ? args.section.trim().toLowerCase() : '';
 			let categoryId: number | null = null;
@@ -1488,6 +1611,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: shoppingCategoryById,
 		run: (ctx, args) => {
 			if (args.name !== undefined && args.name !== null && args.name !== '')
 				renameCategory(ctx, Number(args.id), args.name);
@@ -1505,7 +1629,9 @@ export const TOOLS: Tool[] = [
 			'Delete a section. Its items are not touched — they stay on the list, just unfiled. A section is a shelf label, and removing the label must not empty the shelf.',
 		scope: 'shopping:write',
 		writes: true,
+		destroys: true,
 		input: object({ id: { type: 'integer', description: 'The section\u2019s id.' } }, ['id']),
+		subject: shoppingCategoryById,
 		run: (ctx, args) => {
 			deleteShoppingCategory(ctx, Number(args.id));
 			return { ok: true };
@@ -1525,6 +1651,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id', 'price']
 		),
+		subject: shoppingItemById,
 		run: (ctx, args) => {
 			recordPaid(ctx, Number(args.id), args.price);
 			return { ok: true };
@@ -1604,6 +1731,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: goalById,
 		run: (ctx, args) => {
 			const gaveValue = args.value !== undefined && args.value !== null;
 			const gaveDelta = args.delta !== undefined && args.delta !== null;
@@ -1706,6 +1834,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: habitById,
 		run: (ctx, args) => {
 			const current = listHabits(ctx).find((h) => h.id === Number(args.id));
 			if (!current) throw new NotFoundError('habit');
@@ -1776,7 +1905,9 @@ export const TOOLS: Tool[] = [
 			'Remove a reminder outright — the one `set_alarm` made, or any other. `dismiss_reminder` waves one off and leaves the row; this deletes it. Takes the id `reminders` gives.',
 		scope: 'schedule:write',
 		writes: true,
+		destroys: true,
 		input: object({ id: { type: 'integer', description: 'The reminder\u2019s id.' } }, ['id']),
+		subject: reminderById,
 		run: (ctx, args) => ({ ok: deleteReminder(ctx, Number(args.id)) })
 	},
 	{
@@ -1813,6 +1944,7 @@ export const TOOLS: Tool[] = [
 		scope: 'schedule:write',
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The reminder\u2019s id.' } }, ['id']),
+		subject: reminderById,
 		run: (ctx, args) => {
 			dismissReminder(ctx, Number(args.id));
 			return { ok: true };
@@ -1909,6 +2041,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: slotById,
 		run: (ctx, args) => {
 			const current = listWeeklySlots(ctx).find((w) => w.id === Number(args.id));
 			if (!current) throw new NotFoundError('block');
@@ -1947,9 +2080,11 @@ export const TOOLS: Tool[] = [
 			'Remove a repeating block from every week to come. Its past occurrences and their record stay. For one day only, use `cancel_block` instead — this is the whole pattern.',
 		scope: 'schedule:write',
 		writes: true,
+		destroys: true,
 		input: object({ id: { type: 'integer', description: 'The repeating block\u2019s id.' } }, [
 			'id'
 		]),
+		subject: slotById,
 		run: (ctx, args) => {
 			deleteSlots(ctx, [Number(args.id)]);
 			return { ok: true };
@@ -2021,6 +2156,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: activityById,
 		run: (ctx, args) => {
 			const current = (
 				listActivities(ctx) as {
@@ -2154,6 +2290,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: personById,
 		run: (ctx, args) => {
 			const current = listPeople(ctx).find((one) => one.id === Number(args.id));
 			if (!current) throw new NotFoundError('person');
@@ -2196,6 +2333,7 @@ export const TOOLS: Tool[] = [
 			},
 			['content']
 		),
+		subject: winsOfDay,
 		run: (ctx, args) => {
 			const forDate = args.date ? day(args.date, 'date') : localDateOf(ctx.now, ctx.tz);
 			const existing = listWins(ctx, forDate);
@@ -2241,6 +2379,7 @@ export const TOOLS: Tool[] = [
 			},
 			['note']
 		),
+		subject: weekNote,
 		run: (ctx, args) => {
 			const weekStart = weekStartOf(args.weekStart, ctx.now);
 			saveNote(ctx, { weekStart, content: args.note });
@@ -2311,6 +2450,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: ideaById,
 		run: (ctx, args) => {
 			toggleApplied(ctx, Number(args.id), args.note);
 			return { ok: true };
@@ -2324,6 +2464,7 @@ export const TOOLS: Tool[] = [
 		scope: 'ideas:write',
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The idea\u2019s id.' } }, ['id']),
+		subject: ideaById,
 		run: (ctx, args) => {
 			toggleFavorite(ctx, Number(args.id));
 			return { ok: true };
@@ -2396,6 +2537,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: locationById,
 		run: (ctx, args) => {
 			const current = getLocation(ctx, Number(args.id));
 			updateLocation(ctx, current.id, {
@@ -2417,7 +2559,9 @@ export const TOOLS: Tool[] = [
 			'Remove a location. Locations inside it rise to where it was; things in it stay, just without an address.',
 		scope: 'inventory:write',
 		writes: true,
+		destroys: true,
 		input: object({ id: { type: 'integer', description: 'The location\u2019s id.' } }, ['id']),
+		subject: locationById,
 		run: (ctx, args) => {
 			deleteLocation(ctx, Number(args.id));
 			return { ok: true };
@@ -2440,6 +2584,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: shoppingItemById,
 		run: (ctx, args) => {
 			setItemLocation(
 				ctx,
@@ -2467,6 +2612,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id', 'fields']
 		),
+		subject: shoppingItemById,
 		run: (ctx, args) => {
 			setItemAttributes(ctx, Number(args.id), (args.fields ?? {}) as Record<string, string>);
 			return { ok: true };
@@ -2518,7 +2664,9 @@ export const TOOLS: Tool[] = [
 			'Take a category off the list. Workouts filed under it keep existing, without one.',
 		scope: 'workouts:write',
 		writes: true,
+		destroys: true,
 		input: object({ id: { type: 'integer', description: 'From `workout_categories`.' } }, ['id']),
+		subject: workoutCategoryById,
 		run: (ctx, args) => {
 			deleteWorkoutCategory(ctx, Number(args.id));
 			return { ok: true };
@@ -2569,6 +2717,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: workoutById,
 		run: (ctx, args) => {
 			const current = getWorkout(ctx, Number(args.id));
 			updateWorkout(ctx, current.id, {
@@ -2600,6 +2749,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: workoutById,
 		run: (ctx, args) => {
 			setWorkoutArchived(
 				ctx,
@@ -2617,6 +2767,7 @@ export const TOOLS: Tool[] = [
 		scope: 'workouts:write',
 		writes: true,
 		input: object({ id: { type: 'integer', description: 'The workout\u2019s id.' } }, ['id']),
+		subject: workoutById,
 		run: (ctx, args) => {
 			workoutDone(ctx, Number(args.id));
 			return { ok: true };
@@ -2751,6 +2902,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: billById,
 		run: (ctx, args) => {
 			const current = getBill(ctx, Number(args.id));
 			updateBill(ctx, current.id, {
@@ -2791,6 +2943,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: billById,
 		run: (ctx, args) => {
 			setBillArchived(ctx, Number(args.id), args.archived === undefined ? true : !!args.archived);
 			return { ok: true };
@@ -2817,6 +2970,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
+		subject: billWithPayments,
 		run: (ctx, args) => ({
 			payment: markPaid(ctx, Number(args.id), {
 				amountPaid: args.amount_paid,
@@ -2839,6 +2993,7 @@ export const TOOLS: Tool[] = [
 			},
 			['id', 'period']
 		),
+		subject: billWithPayments,
 		run: (ctx, args) => {
 			unmarkPaid(ctx, Number(args.id), String(args.period));
 			return { ok: true };
@@ -2848,5 +3003,14 @@ export const TOOLS: Tool[] = [
 
 export const TOOLS_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 
-/** Every scope any tool needs — what a token for an assistant is asked to hold. */
+/**
+ * Every room scope any tool needs — what a token for an assistant is asked to
+ * hold. Deliberately without `destructive`: the preset everybody presses hands
+ * over reading and writing, and the power to remove things for good is a
+ * separate, quieter tick. Derived from the tools themselves, so a tool added
+ * later is covered without anybody remembering.
+ */
 export const ASSISTANT_SCOPES = [...new Set(TOOLS.map((t) => t.scope))].sort();
+
+/** The same set, for somebody who does want the assistant deleting things. */
+export const ASSISTANT_SCOPES_DESTRUCTIVE: Scope[] = [...ASSISTANT_SCOPES, 'destructive'];

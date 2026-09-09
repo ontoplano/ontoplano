@@ -230,6 +230,9 @@ test('the preset ticks exactly the scopes an AI assistant needs', async ({ page 
 	expect(ticked).toContain('people:read');
 	expect(ticked).toContain('streams:write');
 	expect(ticked).not.toContain('calendar:read');
+	// And not the power to delete: removing things for good is the quieter
+	// button beside this one, pressed on purpose.
+	expect(ticked).not.toContain('destructive');
 
 	// Pressing it twice leaves the form in the state the label claims, rather
 	// than accumulating.
@@ -238,6 +241,14 @@ test('the preset ticks exactly the scopes an AI assistant needs', async ({ page 
 		.locator('input[name="scopes"]:checked')
 		.evaluateAll((boxes) => boxes.map((b) => (b as HTMLInputElement).value).sort());
 	expect(again).toEqual(ticked);
+
+	// The wider preset is the same set plus the one extra grant.
+	await dialog.getByRole('button', { name: /let it delete things/i }).click();
+	const wider = await dialog
+		.locator('input[name="scopes"]:checked')
+		.evaluateAll((boxes) => boxes.map((b) => (b as HTMLInputElement).value).sort());
+	expect(wider).toContain('destructive');
+	expect(wider.filter((scope) => scope !== 'destructive')).toEqual(ticked);
 
 	// And Clear means clear.
 	await dialog.getByRole('button', { name: /^clear$/i }).click();

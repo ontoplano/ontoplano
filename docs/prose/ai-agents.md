@@ -84,7 +84,7 @@ thing alt-dragging it in the app does.
 
 ## How it behaves
 
-Four things are worth knowing before you grant a token:
+Six things are worth knowing before you grant a token:
 
 **It offers only what the token holds.** `tools/list` is filtered by scope, so a
 token with `today:read` and nothing else is offered one tool. The scope is
@@ -103,6 +103,17 @@ because there is no server-initiated stream to open.
 tool content the model can read and act on, not as a protocol error it can only
 give up on.
 
+**Deleting is its own grant.** A write scope lets a token add and change; the
+tools that remove a row for good also demand the `destructive` grant, one tick
+on the token form. A wrong write is data that is wrong, a wrong delete is data
+that is gone, and they are not the same thing to hand an assistant. Without the
+grant those tools are not offered at all.
+
+**Every mutation answers with what it replaced.** The result of a write carries
+`before` and `after` — the thing as it was and as it is, and for a delete the
+whole removed row. A bad call is reversible from the conversation itself: the
+model, or you reading over its shoulder, can see exactly what to put back.
+
 The tools are declared in one file — `src/lib/server/mcp/tools.ts` — and each
 carries the sentence a model reads to decide whether it is the thing it wants.
 [The tools](#the-tools) below lists every one, generated from that file, with
@@ -111,14 +122,31 @@ the scope each needs.
 ## Making the token
 
 Settings → Integrations → **New token**. There is a button on that form called
-**An AI assistant (MCP)** which ticks exactly the scopes the tools need.
-Grant fewer if you want it to read and not write: the tools it was not granted
-are not offered to it at all, so an assistant with a read-only token does not
-know that `add_todo` exists.
+**An AI assistant (MCP)** which ticks exactly the scopes the tools need — for
+reading and writing, not deleting. A quieter button beside it, **…and let it
+delete things**, adds the `destructive` grant for the tools that remove rows
+for good. Grant fewer if you want it to read and not write: the tools it was
+not granted are not offered to it at all, so an assistant with a read-only
+token does not know that `add_todo` exists.
 
 The token is shown once, on the screen where you made it, with a link back to
 this page. It is revoked from the same place, and revoking it takes effect on
 the next request — there is no session to expire.
+
+## What an upgrade will not break
+
+The tool surface is **additive within a major version**: a tool or a parameter
+is never removed, a parameter never becomes required, and an enum never loses
+a value without a release in between that marked it deprecated — the
+deprecated shape keeps working for that release, and its description names the
+replacement. So a saved prompt or a wrapper script written against one version
+survives the next; what worked keeps working, and new things appear beside it.
+
+This is enforced, not promised: the surface is snapshotted in
+`src/lib/server/mcp/manifest.json` and the test suite refuses any change that
+would break an existing caller. The server names its own app version in the
+`initialize` handshake, so "it broke when I upgraded" can always say from what
+to what.
 
 ## The tools
 

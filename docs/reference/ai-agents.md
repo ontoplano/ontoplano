@@ -84,7 +84,7 @@ thing alt-dragging it in the app does.
 
 ## How it behaves
 
-Four things are worth knowing before you grant a token:
+Six things are worth knowing before you grant a token:
 
 **It offers only what the token holds.** `tools/list` is filtered by scope, so a
 token with `today:read` and nothing else is offered one tool. The scope is
@@ -103,6 +103,17 @@ because there is no server-initiated stream to open.
 tool content the model can read and act on, not as a protocol error it can only
 give up on.
 
+**Deleting is its own grant.** A write scope lets a token add and change; the
+tools that remove a row for good also demand the `destructive` grant, one tick
+on the token form. A wrong write is data that is wrong, a wrong delete is data
+that is gone, and they are not the same thing to hand an assistant. Without the
+grant those tools are not offered at all.
+
+**Every mutation answers with what it replaced.** The result of a write carries
+`before` and `after` — the thing as it was and as it is, and for a delete the
+whole removed row. A bad call is reversible from the conversation itself: the
+model, or you reading over its shoulder, can see exactly what to put back.
+
 The tools are declared in one file — `src/lib/server/mcp/tools.ts` — and each
 carries the sentence a model reads to decide whether it is the thing it wants.
 [The tools](#the-tools) below lists every one, generated from that file, with
@@ -111,14 +122,31 @@ the scope each needs.
 ## Making the token
 
 Settings → Integrations → **New token**. There is a button on that form called
-**An AI assistant (MCP)** which ticks exactly the scopes the tools need.
-Grant fewer if you want it to read and not write: the tools it was not granted
-are not offered to it at all, so an assistant with a read-only token does not
-know that `add_todo` exists.
+**An AI assistant (MCP)** which ticks exactly the scopes the tools need — for
+reading and writing, not deleting. A quieter button beside it, **…and let it
+delete things**, adds the `destructive` grant for the tools that remove rows
+for good. Grant fewer if you want it to read and not write: the tools it was
+not granted are not offered to it at all, so an assistant with a read-only
+token does not know that `add_todo` exists.
 
 The token is shown once, on the screen where you made it, with a link back to
 this page. It is revoked from the same place, and revoking it takes effect on
 the next request — there is no session to expire.
+
+## What an upgrade will not break
+
+The tool surface is **additive within a major version**: a tool or a parameter
+is never removed, a parameter never becomes required, and an enum never loses
+a value without a release in between that marked it deprecated — the
+deprecated shape keeps working for that release, and its description names the
+replacement. So a saved prompt or a wrapper script written against one version
+survives the next; what worked keeps working, and new things appear beside it.
+
+This is enforced, not promised: the surface is snapshotted in
+`src/lib/server/mcp/manifest.json` and the test suite refuses any change that
+would break an existing caller. The server names its own app version in the
+`initialize` handshake, so "it broke when I upgraded" can always say from what
+to what.
 
 ## The tools
 
@@ -210,7 +238,7 @@ _Needs `tasks:write`; writes._
 
 Remove a todo entirely, because it is not going to happen and is not worth a record — "bin that one", "forget it". Different from `finish_todo`, which keeps it as something that was done. Gone for good; prefer finishing it when it actually happened.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write` and `destructive`; deletes._
 
 ### `reopen_todo` — Put a todo back on the list
 
@@ -300,7 +328,7 @@ _Needs `notes:write`; writes._
 
 Delete a notebook that holds nothing — no notes, no tasks, no goals. One with anything in it is refused with what it holds: somebody’s writing is deleted by them in the app, never through a tool. For a notebook made by mistake.
 
-_Needs `notes:write`; writes._
+_Needs `notes:write` and `destructive`; deletes._
 
 ### `share_notebook` — Share a notebook with the family
 
@@ -324,7 +352,7 @@ _Needs `ideas:write`; writes._
 
 Delete an idea — for one added by mistake, or one that has been dealt with. It is gone, not archived, so prefer leaving it alone unless the person asked.
 
-_Needs `ideas:write`; writes._
+_Needs `ideas:write` and `destructive`; deletes._
 
 ### `change_idea` — Change an idea
 
@@ -372,7 +400,7 @@ _Needs `shopping:write`; writes._
 
 Remove an item because it is not wanted — "take milk off", "we already have that". Not the same as `tick_bought`, which records that it _was_ bought and keeps it in the history and the price record. Takes the id `shopping_list` gives.
 
-_Needs `shopping:write`; writes._
+_Needs `shopping:write` and `destructive`; deletes._
 
 ### `recipes` — Recipes
 
@@ -432,7 +460,7 @@ _Needs `shopping:write`; writes._
 
 Delete a section. Its items are not touched — they stay on the list, just unfiled. A section is a shelf label, and removing the label must not empty the shelf.
 
-_Needs `shopping:write`; writes._
+_Needs `shopping:write` and `destructive`; deletes._
 
 ### `record_price` — Record what an item cost
 
@@ -498,7 +526,7 @@ _Needs `schedule:write`; writes._
 
 Remove a reminder outright — the one `set_alarm` made, or any other. `dismiss_reminder` waves one off and leaves the row; this deletes it. Takes the id `reminders` gives.
 
-_Needs `schedule:write`; writes._
+_Needs `schedule:write` and `destructive`; deletes._
 
 ### `remind_before_block` — Set a reminder on a block
 
@@ -534,7 +562,7 @@ _Needs `schedule:write`; writes._
 
 Remove a repeating block from every week to come. Its past occurrences and their record stay. For one day only, use `cancel_block` instead — this is the whole pattern.
 
-_Needs `schedule:write`; writes._
+_Needs `schedule:write` and `destructive`; deletes._
 
 ### `categories` — The parts of a life
 
@@ -660,7 +688,7 @@ _Needs `inventory:write`; writes._
 
 Remove a location. Locations inside it rise to where it was; things in it stay, just without an address.
 
-_Needs `inventory:write`; writes._
+_Needs `inventory:write` and `destructive`; deletes._
 
 ### `put_item` — Say where a thing lives
 
@@ -696,7 +724,7 @@ _Needs `workouts:write`; writes._
 
 Take a category off the list. Workouts filed under it keep existing, without one.
 
-_Needs `workouts:write`; writes._
+_Needs `workouts:write` and `destructive`; deletes._
 
 ### `add_workout` — Add a workout
 

@@ -43,6 +43,7 @@ sentence somebody agrees to when they grant it.
 | `people:read`     | See the people in your life, and whose birthday is coming                                                                                         |
 | `people:write`    | Add people, and change what is recorded about them                                                                                                |
 | `search:read`     | Search everything you have written, in one go                                                                                                     |
+| `destructive`     | Delete things outright — with only the write grants, it can add and change but never remove                                                       |
 
 ## Endpoints
 

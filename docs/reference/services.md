@@ -17,6 +17,7 @@ shows up here on the next build.
 | [`account`](#account)                           | Taking your data out, and closing your account.                                                                                                                                                                                                                      |
 | [`activities`](#activities)                     | Categories are the areas of a life; activities are the named recurring things inside them. Both are referenced by planner slots and by history, so neither can be deleted while something still points at it — history that loses its category stops being readable. |
 | [`admin`](#admin)                               | Administration: looking at somebody else's account.                                                                                                                                                                                                                  |
+| [`assistant-log`](#assistant-log)               | What an assistant did to an account, and the way back.                                                                                                                                                                                                               |
 | [`audit`](#audit)                               | What happened to an account.                                                                                                                                                                                                                                         |
 | [`backlinks`](#backlinks)                       | Which goal a thing belongs to.                                                                                                                                                                                                                                       |
 | [`billing`](#billing)                           | Billing, as the rest of the app sees it.                                                                                                                                                                                                                             |
@@ -377,6 +378,45 @@ How many events the instance has recorded lately, for the admin landing.
 ### Types
 
 - `Account`
+
+## assistant-log
+
+What an assistant did to an account, and the way back.
+
+The MCP layer answers every write with the state it replaced — but that
+answer goes to whoever holds the transcript, and the person whose data it is
+has no transcript. This log is their copy: one row per write, with the same
+`before`, shown under Settings → Integrations. A row whose call deleted
+something carries a **Put it back** that recreates it through the same
+service the app uses.
+
+Deliberately append-only and deliberately unable to fail a call: a log that
+breaks a write is worse than a gap in the log, the same rule `audit.ts`
+follows. Capped per account, oldest rows pruned, because a log nobody prunes
+is a disk that fills.
+
+### Functions
+
+#### `recordAssistantCall(ctx, entry)`
+
+#### `listAssistantCalls(ctx, options)`
+
+#### `putBack(ctx, id)`
+
+Recreate what a deleting call removed, from the `before` it recorded.
+
+Through the same create the app uses, so ceilings, validation and ownership
+are the service's — this cannot make a row the person could not have made by
+hand. The new row gets a new id; what comes back is the thing, not the
+exact database row it was.
+
+Only the deleting tools are offered a way back here. A _changed_ row's
+before is in the log to be read; putting a change back is editing, and
+editing belongs in the app where the current state is on screen.
+
+### Types
+
+- `AssistantCall`
 
 ## audit
 
@@ -1552,6 +1592,15 @@ one-off, whose record may not exist until its day is first looked at — so
 the day is generated the way opening the board does it, then the one record
 is read. Reminders hang off records, which is why this exists apart from
 `setOccurrenceStatus`.
+
+#### `occurrenceRow(ctx, occurrenceId)`
+
+One occurrence's own row, in the shape worth reading back.
+
+This exists for the MCP layer's before/after answers: a mutation reports the
+state it replaced, so an assistant's bad call is reversible from the
+transcript rather than from a backup. Null rather than a throw when there is
+no such row, because "there was nothing there" is itself the honest before.
 
 #### `setOccurrenceStatus(ctx, occurrenceId, rawStatus)`
 

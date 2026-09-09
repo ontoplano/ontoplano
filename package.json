@@ -1,6 +1,6 @@
 {
 	"name": "ontoplano",
-	"version": "0.119.1",
+	"version": "0.120.0",
 	"homepage": "https://ontoplano.com",
 	"repository": {
 		"type": "git",
@@ -34,6 +34,7 @@
 		"badges": "node scripts/build-badges.mjs",
 		"badges:check": "node scripts/build-badges.mjs --check",
 		"docs": "node scripts/build-docs.mjs",
+		"mcp:manifest": "UPDATE_MCP_MANIFEST=1 vitest run tests/mcp-manifest.test.ts",
 		"docs:check": "node scripts/build-docs.mjs --check",
 		"changelog:check": "node scripts/check-changelog.mjs",
 		"docs:site": "node scripts/build-docs-site.mjs",

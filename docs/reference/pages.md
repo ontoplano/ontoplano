@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**47 pages, 200 actions.**
+**47 pages, 201 actions.**
 
 | Page                            | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -51,7 +51,7 @@ write surface for everything else; both end up calling the same
 | `/settings/billing`             | `acceptFamilyOffer`, `declineFamilyOffer`, `checkout`, `switchInterval`                                                                                                                                                                                                                                                                                                             |
 | `/settings/family`              | `addSeat`, `withdrawInvite`, `removeSeat`                                                                                                                                                                                                                                                                                                                                           |
 | `/settings/instance`            | `exportSubscribers`, `setRegistration`, `setEmailChange`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                                         |
-| `/settings/integrations`        | `createToken`, `calendarLink`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                                                     |
+| `/settings/integrations`        | `createToken`, `calendarLink`, `putBack`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                                          |
 | `/settings/integrations/widget` | `connect`                                                                                                                                                                                                                                                                                                                                                                           |
 | `/settings/preferences`         | `setErrorReports`, `saveCurrency`, `saveGridHours`, `saveMenu`, `resetMenu`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setTheme`, `saveWeek`                                                                                                                                                                                              |
 | `/start`                        | `checkout`                                                                                                                                                                                                                                                                                                                                                                          |
@@ -388,6 +388,10 @@ one per account meant that wanting it in a second place cost you the
 first. Each is revoked on its own, in the list below, which is what makes
 "I pasted that one somewhere I should not have" recoverable without
 breaking the calendars that are fine.
+
+**`putBack`**
+
+Recreate what a deleting call removed, from the before it recorded.
 
 ### `/settings/integrations/widget`
 

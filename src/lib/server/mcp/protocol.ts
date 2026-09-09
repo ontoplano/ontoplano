@@ -17,17 +17,26 @@
 import type { Ctx } from '../services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 import { ForbiddenError, ServiceError } from '../services/errors.js';
-import { TOOLS, TOOLS_BY_NAME } from './tools.js';
+import { TOOLS, TOOLS_BY_NAME, type Tool } from './tools.js';
 import { changed, type Room } from '../live.js';
 import { spendCallBudget } from '../api/auth.js';
+import { recordAssistantCall } from '../services/assistant-log.js';
 
 /** The revision this server speaks. Echoed back at whatever asks. */
 export const PROTOCOL_VERSION = '2025-06-18';
 
+import { build } from '../services/version.js';
+
+/**
+ * The app's own version, not a literal: a client that logs what it connected
+ * to logs something true, and a self-hoster reporting "my saved prompts broke
+ * after upgrading" can say from which version to which. The tool surface's
+ * compatibility rules live in `manifest.json` beside the tools.
+ */
 export const SERVER_INFO = {
 	name: 'ontoplano',
 	title: 'Ontoplano',
-	version: '1'
+	version: build().version
 };
 
 /** JSON-RPC's own codes, plus the one for a method that does not exist. */
@@ -83,9 +92,27 @@ function assertScope(caller: Caller, scope: Scope): void {
 		throw new ForbiddenError(`This token does not have the \`${scope}\` scope.`);
 }
 
+/**
+ * Everything a tool demands of the token, not only its room.
+ *
+ * A deleting tool needs the room's write scope *and* the `destructive` grant:
+ * a wrong write is data that is wrong, a wrong delete is data that is gone,
+ * and they are not the same thing to hand an assistant.
+ */
+function assertAllowed(caller: Caller, tool: Tool): void {
+	assertScope(caller, tool.scope);
+	if (tool.destroys) assertScope(caller, 'destructive');
+}
+
+function offered(caller: Caller, tool: Tool): boolean {
+	if (!caller.scopes.includes(tool.scope)) return false;
+	if (tool.destroys && !caller.scopes.includes('destructive')) return false;
+	return true;
+}
+
 /** The tools this caller can see. A tool it cannot use is not offered to it. */
 export function visibleTools(caller: Caller) {
-	return TOOLS.filter((t) => caller.scopes.includes(t.scope)).map((t) => ({
+	return TOOLS.filter((t) => offered(caller, t)).map((t) => ({
 		name: t.name,
 		title: t.title,
 		description: t.description,
@@ -93,9 +120,10 @@ export function visibleTools(caller: Caller) {
 		annotations: {
 			title: t.title,
 			readOnlyHint: !t.writes,
-			// Nothing here deletes. Said explicitly so a client does not have to
-			// assume the worst about a tool whose name begins with "add".
-			destructiveHint: false,
+			// True exactly where a call removes a row for good — the same tools the
+			// `destructive` grant gates — so a client that warns before a
+			// destructive call warns about the right ones.
+			destructiveHint: Boolean(t.destroys),
 			idempotentHint: !t.writes,
 			openWorldHint: false
 		}
@@ -133,8 +161,8 @@ function structuredFrom(value: unknown): Record<string, unknown> {
 	return { result: value ?? null };
 }
 
-function toolResult(value: unknown) {
-	const structured = structuredFrom(value);
+function toolResult(value: unknown, mutation?: { before: unknown; after: unknown }) {
+	const structured = mutation ? { ...structuredFrom(value), ...mutation } : structuredFrom(value);
 	return {
 		// The same object, not the raw value: two encodings of one answer that
 		// disagreed about its shape would be worse than either alone.
@@ -142,6 +170,23 @@ function toolResult(value: unknown) {
 		structuredContent: structured,
 		isError: false
 	};
+}
+
+/**
+ * The state of the thing a write is about, read through the tool's own
+ * `subject` — or null when the tool has none (a create: there was nothing
+ * there) or the read itself refuses (a bad id: also nothing there).
+ *
+ * Nothing a peek does may fail the call: this is bookkeeping around the write,
+ * and bookkeeping that breaks a write is worse than a gap in the books.
+ */
+function peek(tool: Tool, ctx: Ctx, args: Record<string, unknown>): unknown {
+	if (!tool.subject) return null;
+	try {
+		return tool.subject(ctx, args) ?? null;
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -220,7 +265,7 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 
 			const args = (params.arguments ?? {}) as Record<string, unknown>;
 			try {
-				assertScope(caller, tool.scope);
+				assertAllowed(caller, tool);
 				/*
 				 * The same budget a plugin spends on the REST API: reads are cheap
 				 * and writes grow the database, so "make a thousand goals" is told
@@ -228,7 +273,42 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				 */
 				if (caller.tokenId !== undefined)
 					spendCallBudget(caller.tokenId, caller.ctx.userId, tool.writes);
-				const answer = toolResult(tool.run(caller.ctx, args));
+
+				/*
+				 * Every mutation answers with what it replaced.
+				 *
+				 * `before` is the subject as it was, `after` as it is now — so a
+				 * wrong call is reversible from the transcript rather than from a
+				 * backup, which life data does not get a CI to stand in for. Done
+				 * here rather than inside each tool, because a rule that has to be
+				 * remembered per tool is one a tool added next year will not have.
+				 * A create has no before and a delete no after; both read as null,
+				 * which is the honest answer.
+				 */
+				const before = tool.writes ? peek(tool, caller.ctx, args) : undefined;
+				const value = tool.run(caller.ctx, args);
+				const answer = toolResult(
+					value,
+					tool.writes ? { before, after: peek(tool, caller.ctx, args) } : undefined
+				);
+
+				/*
+				 * The person's own copy of what just happened.
+				 *
+				 * `before` in the answer serves whoever holds the transcript; the
+				 * account's owner holds none, so the same fact goes into a log they
+				 * can read under Settings → Integrations — and put back, when the
+				 * call deleted something. The service swallows its own failures: a
+				 * log that breaks a write is worse than a gap in the log.
+				 */
+				if (tool.writes)
+					recordAssistantCall(caller.ctx, {
+						tokenId: caller.tokenId,
+						tool: tool.name,
+						args,
+						before,
+						destroyed: Boolean(tool.destroys)
+					});
 
 				/*
 				 * And the tabs, if that changed anything.

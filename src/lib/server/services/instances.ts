@@ -561,6 +561,48 @@ export function recordIdOf(ctx: Ctx, occurrenceId: unknown): number {
 	return record.id;
 }
 
+/**
+ * One occurrence's own row, in the shape worth reading back.
+ *
+ * This exists for the MCP layer's before/after answers: a mutation reports the
+ * state it replaced, so an assistant's bad call is reversible from the
+ * transcript rather than from a backup. Null rather than a throw when there is
+ * no such row, because "there was nothing there" is itself the honest before.
+ */
+export function occurrenceRow(
+	ctx: Ctx,
+	occurrenceId: unknown
+): {
+	id: number;
+	status: string;
+	scheduledAt: string;
+	label: string | null;
+	durationMinutes: number | null;
+	notes: string | null;
+} | null {
+	let recordId: number;
+	try {
+		recordId = recordIdOf(ctx, occurrenceId);
+	} catch {
+		return null;
+	}
+
+	const row = db
+		.select({
+			id: taskRecords.id,
+			status: taskRecords.status,
+			scheduledAt: taskRecords.scheduledAt,
+			label: taskRecords.labelOverride,
+			durationMinutes: taskRecords.durationOverride,
+			notes: taskRecords.notes
+		})
+		.from(taskRecords)
+		.where(and(eq(taskRecords.id, recordId), eq(taskRecords.userId, ctx.userId)))
+		.get();
+
+	return row ?? null;
+}
+
 export function setOccurrenceStatus(ctx: Ctx, occurrenceId: unknown, rawStatus: unknown): void {
 	setInstanceStatus(ctx, recordIdOf(ctx, occurrenceId), rawStatus);
 }

@@ -313,6 +313,8 @@ function mcpTools() {
 						if (ts.isStringLiteral(prop.initializer)) tool[key] = prop.initializer.text;
 					}
 					if (key === 'writes') tool.writes = prop.initializer.kind === ts.SyntaxKind.TrueKeyword;
+					if (key === 'destroys')
+						tool.destroys = prop.initializer.kind === ts.SyntaxKind.TrueKeyword;
 				}
 				if (tool.name) tools.push(tool);
 			}
@@ -1160,7 +1162,13 @@ const FRAGMENTS = {
 		return tools
 			.map(
 				(t) =>
-					`### \`${t.name}\` — ${t.title}\n\n${t.description}\n\n_Needs \`${t.scope}\`; ${t.writes ? 'writes' : 'read-only'}._`
+					`### \`${t.name}\` — ${t.title}\n\n${t.description}\n\n_Needs ${
+						// Deleting is its own grant on top of the room's write scope —
+						// see `destructive` in the scope table.
+						t.destroys
+							? `\`${t.scope}\` and \`destructive\`; deletes`
+							: `\`${t.scope}\`; ${t.writes ? 'writes' : 'read-only'}`
+					}._`
 			)
 			.join('\n\n');
 	},
@@ -1169,6 +1177,11 @@ const FRAGMENTS = {
 		for (const t of mcpTools()) {
 			if (!uses.has(t.scope)) uses.set(t.scope, []);
 			uses.get(t.scope).push(t.name);
+			// A deleting tool sits behind the destructive grant as well as its room.
+			if (t.destroys) {
+				if (!uses.has('destructive')) uses.set('destructive', []);
+				uses.get('destructive').push(t.name);
+			}
 		}
 		const cautions = new Map(cautionTable().map((r) => [r.key, r.value]));
 		return [

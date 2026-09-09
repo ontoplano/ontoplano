@@ -1,6 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
 
-import { ASSISTANT_SCOPES } from '$lib/server/mcp/tools';
+import { ASSISTANT_SCOPES, ASSISTANT_SCOPES_DESTRUCTIVE } from '$lib/server/mcp/tools';
 import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
@@ -20,6 +20,7 @@ import {
 	listTokens,
 	revokeToken
 } from '$lib/server/services/tokens';
+import { listAssistantCalls, putBack } from '$lib/server/services/assistant-log';
 import {
 	WEBHOOK_EVENTS,
 	WEBHOOK_EVENT_LABELS,
@@ -67,6 +68,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		 * added later is in the preset without anybody remembering.
 		 */
 		assistantScopes: ASSISTANT_SCOPES,
+		/*
+		 * …and the wider set, behind its own quieter button. Deleting is not the
+		 * same grant as writing, so the preset everybody presses does not carry
+		 * it — see `destructive` in tokens.ts.
+		 */
+		assistantScopesDestructive: ASSISTANT_SCOPES_DESTRUCTIVE,
 		scopes: ALL_SCOPES.map((key) => ({
 			key,
 			description: SCOPES[key],
@@ -84,6 +91,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			disabled: Boolean(s.disabledAt)
 		})),
 		webhookEvents: WEBHOOK_EVENTS.map((key) => ({ key, label: WEBHOOK_EVENT_LABELS[key] })),
+		/** What the tokens did lately, newest first, with the way back. */
+		assistantCalls: listAssistantCalls(ctx, { limit: 30 }),
 		origin: url.origin
 	};
 };
@@ -130,6 +139,19 @@ export const actions: Actions = {
 				action: 'calendarLink',
 				feedUrl: `${url.origin}/calendar/${token.plaintext}`
 			};
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** Recreate what a deleting call removed, from the before it recorded. */
+	putBack: async ({ request, locals }) => {
+		const ctx = buildCtx(locals.user!.id);
+		const formData = await request.formData();
+
+		try {
+			const { made } = putBack(ctx, Number(formData.get('id')));
+			return { success: true, action: 'putBack', made };
 		} catch (e) {
 			return toActionFailure(e);
 		}

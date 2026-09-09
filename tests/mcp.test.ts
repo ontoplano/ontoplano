@@ -926,7 +926,7 @@ describe('the opened rooms', () => {
 		expect(changed.durationMinutes).toBe(90);
 		expect(changed.label).toBe('gym');
 
-		const gone = rpc(6, 'remove_repeating_block', { id }, ['schedule:write']);
+		const gone = rpc(6, 'remove_repeating_block', { id }, ['schedule:write', 'destructive']);
 		expect(gone.result.isError).toBe(false);
 	});
 
@@ -1068,13 +1068,13 @@ describe('the opened rooms', () => {
 		const emptyId = empty.result.structuredContent?.id as number;
 		expect(empty.result.isError, empty.result.content?.[0]?.text).toBe(false);
 
-		const gone = rpc(66, 'remove_notebook', { id: emptyId }, ['notes:write']);
+		const gone = rpc(66, 'remove_notebook', { id: emptyId }, ['notes:write', 'destructive']);
 		expect(gone.result.isError, gone.result.content?.[0]?.text).toBe(false);
 
 		const kept = rpc(67, 'add_notebook', { title: 'the trip' }, ['notes:write']);
 		const keptId = kept.result.structuredContent?.id as number;
 		rpc(68, 'write_entry', { content: 'Vans booked.', notebookId: keptId }, ['notes:write']);
-		const refused = rpc(69, 'remove_notebook', { id: keptId }, ['notes:write']);
+		const refused = rpc(69, 'remove_notebook', { id: keptId }, ['notes:write', 'destructive']);
 		expect(refused.result.isError).toBe(true);
 		expect(refused.result.content?.[0]?.text).toContain('deleted by the person');
 	});
@@ -1137,7 +1137,7 @@ describe('the opened rooms', () => {
 		const week = rpc(41, 'repeating_week', {}, ['schedule:read']);
 		const row = week.result.structuredContent.items.find((w: { id: number }) => w.id === id);
 		expect(row.weekday).toBe(0);
-		rpc(42, 'remove_repeating_block', { id }, ['schedule:write']);
+		rpc(42, 'remove_repeating_block', { id }, ['schedule:write', 'destructive']);
 	});
 
 	it('takes a block with no title at all — the bare category', () => {
@@ -1148,7 +1148,10 @@ describe('the opened rooms', () => {
 			['schedule:write']
 		);
 		expect(made.result.isError, made.result.content?.[0]?.text).toBe(false);
-		rpc(44, 'remove_repeating_block', { id: made.result.structuredContent.id }, ['schedule:write']);
+		rpc(44, 'remove_repeating_block', { id: made.result.structuredContent.id }, [
+			'schedule:write',
+			'destructive'
+		]);
 	});
 
 	it('hangs a reminder on a block, lists it, and dismisses it', () => {
@@ -1350,7 +1353,7 @@ describe('shopping sections', () => {
 		const item = rpc(4, 'add_to_shopping_list', { name: 'peas' }, ['shopping:write']);
 		expect(item.result.isError, item.result.content?.[0]?.text).toBe(false);
 
-		const gone = rpc(5, 'remove_shopping_category', { id }, ['shopping:write']);
+		const gone = rpc(5, 'remove_shopping_category', { id }, ['shopping:write', 'destructive']);
 		expect(gone.result.isError).toBe(false);
 		const after = rpc(6, 'shopping_list', {}, ['shopping:read']);
 		expect(
@@ -1553,11 +1556,147 @@ describe('the inventory over MCP', () => {
 		const refused = rpc(3, 'change_location', { id: a, parent_id: b }, ['inventory:write']);
 		expect(refused.result.isError).toBe(true);
 
-		rpc(4, 'remove_location', { id: a }, ['inventory:write']);
+		rpc(4, 'remove_location', { id: a }, ['inventory:write', 'destructive']);
 		const tree = rpc(5, 'locations', {}, ['inventory:read']).result.structuredContent.locations as {
 			id: number;
 			name: string;
 		}[];
 		expect(tree.some((n) => n.id === b)).toBe(true); // the shelf rose to the top
+	});
+});
+
+/**
+ * Deleting is not the same grant as writing.
+ *
+ * A write scope used to be both: `tasks:write` let a token append a todo and
+ * let it remove one for good. Different damage — a wrong write is data that is
+ * wrong, a wrong delete is data that is gone — so the deleting tools demand
+ * the `destructive` grant on top of the room's own write scope, and the preset
+ * everybody presses does not carry it.
+ */
+describe('the destructive grant', () => {
+	const rpc = (id: number, name: string, args: Record<string, unknown>, scopes: string[]) =>
+		call(scopes, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
+
+	it('every deleting tool is refused on the write scope alone, naming the grant', () => {
+		for (const t of TOOLS.filter((t) => t.destroys)) {
+			// The refusal comes before the tool runs, so a made-up id is fine.
+			const answer = rpc(1, t.name, { id: 999_999 }, [t.scope]);
+			expect(answer.result.isError, t.name).toBe(true);
+			expect(answer.result.content[0].text, t.name).toContain('destructive');
+		}
+	});
+
+	it('and is not offered to a token that cannot call it', () => {
+		const offered = (scopes: string[]) =>
+			call(scopes, { jsonrpc: '2.0', id: 1, method: 'tools/list' }).result.tools.map(
+				(t: { name: string }) => t.name
+			);
+
+		expect(offered(['tasks:write'])).not.toContain('drop_todo');
+		expect(offered(['tasks:write', 'destructive'])).toContain('drop_todo');
+	});
+
+	it('with the grant, a delete still goes through', () => {
+		const made = rpc(1, 'add_todo', { title: 'a passing thought' }, ['tasks:write']);
+		const id = made.result.structuredContent.id as number;
+
+		const dropped = rpc(2, 'drop_todo', { id }, ['tasks:write', 'destructive']);
+		expect(dropped.result.isError, dropped.result.content?.[0]?.text).toBe(false);
+
+		const list = rpc(3, 'todos', {}, ['tasks:read']);
+		expect(list.result.structuredContent.items.some((t: { id: number }) => t.id === id)).toBe(
+			false
+		);
+	});
+
+	it('destructiveHint marks exactly the gated tools', () => {
+		const everything = [...new Set(TOOLS.map((t) => t.scope)), 'destructive'];
+		const listed = call(everything, { jsonrpc: '2.0', id: 1, method: 'tools/list' }).result.tools;
+
+		const hinted = listed
+			.filter((t: { annotations: { destructiveHint: boolean } }) => t.annotations.destructiveHint)
+			.map((t: { name: string }) => t.name)
+			.sort();
+		const gated = TOOLS.filter((t) => t.destroys)
+			.map((t) => t.name)
+			.sort();
+
+		expect(hinted).toEqual(gated);
+		expect(gated.length).toBeGreaterThan(0);
+	});
+
+	it('every deleting tool is also a writing tool', () => {
+		for (const t of TOOLS.filter((t) => t.destroys)) {
+			expect(t.writes, t.name).toBe(true);
+		}
+	});
+
+	it('the assistant preset does not hand it over; the wider one does', async () => {
+		const { ASSISTANT_SCOPES, ASSISTANT_SCOPES_DESTRUCTIVE } =
+			await import('../src/lib/server/mcp/tools');
+
+		expect(ASSISTANT_SCOPES).not.toContain('destructive');
+		expect(ASSISTANT_SCOPES_DESTRUCTIVE).toContain('destructive');
+		expect(ASSISTANT_SCOPES_DESTRUCTIVE.slice(0, -1)).toEqual(ASSISTANT_SCOPES);
+	});
+});
+
+/**
+ * Every mutation answers with what it replaced.
+ *
+ * `{ ok: true }` tells a model nothing it can undo from. The answer to a write
+ * carries `before` and `after` — the subject as it was and as it is — so a bad
+ * call is reversible from the transcript rather than from a backup, which life
+ * data does not get a CI to stand in for. Assembled by the protocol layer, not
+ * per tool, so a tool added next year cannot forget it.
+ */
+describe('the before and the after', () => {
+	const rpc = (id: number, name: string, args: Record<string, unknown>, scopes: string[]) =>
+		call(scopes, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
+
+	it('a change reports the state it replaced, and the one it made', () => {
+		const made = rpc(1, 'add_todo', { title: 'water the plants' }, ['tasks:write']);
+		const id = made.result.structuredContent.id as number;
+
+		const changed = rpc(2, 'change_todo', { id, title: 'water every plant' }, ['tasks:write']);
+		const answer = changed.result.structuredContent;
+		expect(answer.before.title).toBe('water the plants');
+		expect(answer.after.title).toBe('water every plant');
+	});
+
+	it('a delete answers with the whole row, so it can be put back from the answer', () => {
+		const made = rpc(1, 'add_todo', { title: 'a passing errand', notes: 'by the station' }, [
+			'tasks:write'
+		]);
+		const id = made.result.structuredContent.id as number;
+
+		const dropped = rpc(2, 'drop_todo', { id }, ['tasks:write', 'destructive']);
+		const answer = dropped.result.structuredContent;
+		expect(answer.before.title).toBe('a passing errand');
+		expect(answer.before.notes).toBe('by the station');
+		// Gone means gone: the after is the honest null.
+		expect(answer.after).toBe(null);
+	});
+
+	it('a create has nothing before it, and says so', () => {
+		const made = rpc(1, 'add_todo', { title: 'a fresh thought' }, ['tasks:write']);
+		const answer = made.result.structuredContent;
+		expect(answer).toHaveProperty('before');
+		expect(answer.before).toBe(null);
+	});
+
+	it('a read carries no before — it replaced nothing', () => {
+		const list = rpc(1, 'todos', {}, ['tasks:read']);
+		expect(list.result.structuredContent).not.toHaveProperty('before');
+	});
+
+	it('every deleting tool can answer with the row it removes', () => {
+		for (const t of TOOLS.filter((t) => t.destroys)) {
+			expect(
+				t.subject,
+				`${t.name} has no subject, so its delete answers with nothing`
+			).toBeDefined();
+		}
 	});
 });

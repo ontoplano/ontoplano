@@ -146,6 +146,9 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('suppressedSlots', schema.suppressedSlots as never),
 	owned('exceptionalTasks', schema.exceptionalTasks as never),
 	owned('auditEvents', schema.auditEvents as never),
+	// What the assistants did, before/after included — as much the account's
+	// record as the audit log above it, and it names things the diary names.
+	owned('assistantCalls', schema.assistantCalls as never),
 	// The provider keeps its own copy of the commercial record; this one is the
 	// account's and goes with it.
 	owned('subscriptions', schema.subscriptions as never),

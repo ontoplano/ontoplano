@@ -122,7 +122,20 @@ export const SCOPES = {
 	 */
 	'people:read': 'See the people in your life, and whose birthday is coming',
 	'people:write': 'Add people, and change what is recorded about them',
-	'search:read': 'Search everything you have written, in one go'
+	'search:read': 'Search everything you have written, in one go',
+	/*
+	 * Deleting, apart from writing.
+	 *
+	 * A write scope used to be both: `tasks:write` was "add a todo" and it was
+	 * "delete a todo", so the token that let an assistant append a line was the
+	 * token that could remove things for good. They are different damage — a
+	 * wrong write is data that is wrong, a wrong delete is data that is gone —
+	 * so removing needs this grant on top of the room's own write scope. One
+	 * extra tick rather than nine new scopes: the room already says where, this
+	 * says how far.
+	 */
+	destructive:
+		'Delete things outright — with only the write grants, it can add and change but never remove'
 } as const;
 
 export type Scope = keyof typeof SCOPES;
@@ -136,7 +149,9 @@ export type Scope = keyof typeof SCOPES;
  */
 export const SCOPE_CAUTIONS: Partial<Record<Scope, string>> = {
 	'search:read':
-		'One grant that reads across everything — diary, notebooks, ideas, goals, people, recipes and todos. Only for something you would show all of that.'
+		'One grant that reads across everything — diary, notebooks, ideas, goals, people, recipes and todos. Only for something you would show all of that.',
+	destructive:
+		'What this deletes is gone. Leave it off unless you want the token removing things, not just adding and changing them.'
 };
 
 export const ALL_SCOPES = Object.keys(SCOPES) as Scope[];
