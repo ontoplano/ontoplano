@@ -97,6 +97,28 @@ describe('an alarm', () => {
 		expect(mine?.message).toBe('wake up');
 	});
 
+	/*
+	 * A day on its own is a whole answer.
+	 *
+	 * Demanding a clock reading for "remind me on the third" makes somebody
+	 * invent a number, so a bare day fires at the hour their day opens on — the
+	 * same hour a birthday and a bill already use.
+	 */
+	test('given only a day, goes off when the day starts', async () => {
+		const settings = await import('../src/lib/server/settings');
+		settings.setGridHours(ctx.userId, { start: 9, end: 22 });
+
+		const id = s.reminders.createFreeReminder(ctx, {
+			at: '2026-08-25',
+			message: 'the third, whenever that starts'
+		});
+		expect(s.reminders.listReminders(ctx).find((r) => r.id === id)?.remindAt).toBe(
+			'2026-08-25T09:00:00'
+		);
+
+		settings.setGridHours(ctx.userId, { start: 6, end: 24 });
+	});
+
 	test('refuses something that is not a time', () => {
 		expect(() =>
 			s.reminders.createFreeReminder(ctx, { at: 'tomorrow-ish', message: 'no' })

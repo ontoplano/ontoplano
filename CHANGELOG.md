@@ -10,6 +10,16 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.124.0 — 2026-09-09
+
+- **A reminder only needs a day.** Leave the time empty and it goes off when
+  your day starts — the field says which hour that is. `set_alarm` takes a bare
+  day too.
+- **"Coming up" ends where the window says it does.** Reminders you had set
+  ignored the window entirely, so asking for the next day answered with
+  something in December. Birthdays and bills already stopped at the horizon;
+  now both halves of the list do.
+
 ## 0.123.0 — 2026-09-09
 
 - **The card page's plan choice looks like a payment page.** Two big square

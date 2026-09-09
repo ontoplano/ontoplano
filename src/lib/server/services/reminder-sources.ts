@@ -236,6 +236,17 @@ export function upcomingWindow(raw: unknown): number {
 	return Math.min(days, MAX_UPCOMING_DAYS);
 }
 
+/**
+ * The last day a window covers.
+ *
+ * The page shows two kinds of row in one list — the ones stored and the ones
+ * worked out here — and they have to agree about where the list ends, or
+ * "the next day" answers with something in December.
+ */
+export function windowEnd(now: Date, tz: string, days: number): string {
+	return addDays(dayOf(localOfInstant(now, tz)), days);
+}
+
 export function upcomingDerived(ctx: Ctx, now: Date, tz: string, days = UPCOMING_DAYS): Upcoming[] {
 	const today = dayOf(localOfInstant(now, tz));
 	const hour = String(getGridHours(ctx.userId).start).padStart(2, '0');

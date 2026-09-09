@@ -97,7 +97,9 @@
 	let time = $state('');
 	let say = $state('');
 	let audible = $state(false);
-	const ready = $derived(Boolean(day && time && say.trim()));
+	// The time is not part of it: an empty one means the hour the day starts,
+	// which is a real answer rather than a missing one.
+	const ready = $derived(Boolean(day && say.trim()));
 
 	/**
 	 * Open the browser's own picker rather than the text field behind it.
@@ -299,7 +301,7 @@
 		off for good.
 	-->
 	<div data-tour="set-alarm">
-		<Card title="Set one" description="A time and what to say. It is about nothing else.">
+		<Card title="Set one" description="A day and what to say. It is about nothing else.">
 			<!--
 				A day and a time, not one field with six segments in it.
 
@@ -342,7 +344,7 @@
 							class="input"
 						/>
 					</Field>
-					<Field label="Time" span={6} required>
+					<Field label="Time" span={6} hint="Empty means {data.dayStart}, when your day starts.">
 						<!--
 							The browser's own time field, whatever it draws.
 
@@ -360,10 +362,9 @@
 							id="reminder-time"
 							name="time"
 							type="time"
-							required
 							autocomplete="off"
 							bind:value={time}
-							title="What time it should go off"
+							title="What time it should go off. Empty means {data.dayStart}."
 							class="input"
 						/>
 					</Field>
@@ -410,7 +411,7 @@
 						type="submit"
 						disabled={!ready}
 						class="btn btn-primary btn-sm ml-auto"
-						title={ready ? 'Set this reminder' : 'A day, a time and something to say first'}
+						title={ready ? 'Set this reminder' : 'A day and something to say first'}
 					>
 						Set it
 					</button>

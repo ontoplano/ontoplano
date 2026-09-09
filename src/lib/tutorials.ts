@@ -424,7 +424,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 			{
 				target: '[data-tour="set-alarm"]',
 				title: 'And one about nothing',
-				body: 'A time and a sentence. It reaches your phone with the app shut, the same as the rest.'
+				body: 'A day and a sentence, and a time if you want one. It reaches your phone with the app shut, the same as the rest.'
 			},
 			{
 				target: '[data-tour="reminder-sounds"]',

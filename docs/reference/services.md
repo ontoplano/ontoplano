@@ -2837,6 +2837,14 @@ year's worth of yearly bills is not written into the table in advance.
 
 A window somebody asked for, clamped to something the list can be.
 
+#### `windowEnd(now, tz, days)`
+
+The last day a window covers.
+
+The page shows two kinds of row in one list — the ones stored and the ones
+worked out here — and they have to agree about where the list ends, or
+"the next day" answers with something in December.
+
 #### `upcomingDerived(ctx, now, tz, days)`
 
 ### Types
@@ -2877,6 +2885,13 @@ page you have open, or the push delivery job while the app is closed.
 #### `localNow(ctx)`
 
 Now, as the wall-clock string reminders are stored in.
+
+#### `startOfDay(userId)`
+
+The hour the account's day opens on, as `HH:MM`.
+
+Exported because the form has to say it: a field somebody may leave empty
+has to name what leaving it empty means.
 
 #### `listReminders(ctx, options)`
 

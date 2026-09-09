@@ -5,7 +5,8 @@ import { ensureBirthdayReminders } from '$lib/server/services/birthdays';
 import {
 	MAX_UPCOMING_DAYS,
 	upcomingDerived,
-	upcomingWindow
+	upcomingWindow,
+	windowEnd
 } from '$lib/server/services/reminder-sources';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
@@ -13,7 +14,8 @@ import {
 	localNow,
 	deleteReminder,
 	dismissReminder,
-	listReminders
+	listReminders,
+	startOfDay
 } from '$lib/server/services/reminders';
 import {
 	addRingtone,
@@ -55,6 +57,15 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const now = localNow(ctx);
 	/** How far back the past view reaches: the same window, the other way. */
 	const floor = localOfInstant(new Date(ctx.now.getTime() - days * 86_400_000), ctx.tz);
+	/*
+	 * And how far ahead it reaches, which nothing was enforcing.
+	 *
+	 * The derived rows have always stopped at the horizon; the stored ones were
+	 * only filtered for being in the future, so asking for the next day
+	 * answered with December's alarm as well. Both halves are one list and have
+	 * to end in the same place — the last day the window covers, all of it.
+	 */
+	const ceiling = `${windowEnd(ctx.now, ctx.tz, days)}T23:59:59`;
 
 	/*
 	 * Today's birthdays are written here as well as by the delivery pass.
@@ -68,6 +79,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	return {
 		/** Today in the account's own zone, so the day field opens on it. */
 		today: localDateOf(ctx.now, ctx.tz),
+		/** What an empty time means, so the field can say so. */
+		dayStart: startOfDay(ctx.userId),
 		/*
 		 * The rows that exist, minus the ones that are only ever a notification.
 		 *
@@ -86,7 +99,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 						r.subjectKind !== 'review' &&
 						// And nothing that has already been: a list called "coming up"
 						// that holds this morning's alarm is a list you read past.
-						r.remindAt >= now
+						r.remindAt >= now &&
+						r.remindAt <= ceiling
 				),
 		/*
 		 * Birthdays and bills that are coming but are not rows yet.
@@ -112,11 +126,12 @@ export const actions: Actions = {
 		try {
 			// Two fields, one instant: the form asks the day and the time
 			// separately because a single datetime control is one box carrying
-			// two questions and looks it.
+			// two questions and looks it. Only the day is required — a day on its
+			// own means the hour the account's day starts, filled in downstairs.
 			const day = String(form.get('day') ?? '').trim();
 			const time = String(form.get('time') ?? '').trim();
 			createFreeReminder(buildCtx(locals.user!.id), {
-				at: day && time ? `${day}T${time}` : '',
+				at: day && time ? `${day}T${time}` : day,
 				message: form.get('label'),
 				audible: form.get('audible') === 'on',
 				ringtoneId: form.get('ringtoneId')

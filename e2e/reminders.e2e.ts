@@ -74,6 +74,63 @@ test('an alarm is a day and a time, not one box with six segments', async ({ pag
 	await expect(page.getByText('take the bread out')).toHaveCount(0);
 });
 
+/*
+ * A time is a nicety, not a question.
+ *
+ * "Remind me on the third" is a whole sentence; making somebody name an hour
+ * for it means picking a number that means nothing. Empty is the hour their
+ * day starts, and the field says which hour that is.
+ */
+test('an alarm with no time goes off when the day starts', async ({ page }) => {
+	await register(page, `rem-noclock-${Date.now()}@test.invalid`);
+	await visit(page, '/reminders');
+
+	const tomorrow = new Date();
+	tomorrow.setDate(tomorrow.getDate() + 1);
+
+	await page.locator('[name="day"]').fill(tomorrow.toISOString().slice(0, 10));
+	await page.locator('[name="label"]').first().fill('call the vet');
+	// A day and something to say is the whole of it.
+	await expect(page.getByRole('button', { name: 'Set it' })).toBeEnabled();
+
+	// The field names the hour rather than describing it, so the row can be
+	// checked against what the form promised.
+	const hint = await page.getByText(/Empty means \d{2}:\d{2}/).innerText();
+	const at = hint.match(/\d{2}:\d{2}/)![0];
+
+	await page.getByRole('button', { name: 'Set it' }).click();
+	const row = page.locator('li', { hasText: 'call the vet' }).first();
+	await expect(row).toBeVisible({ timeout: 15_000 });
+	await expect(row).toContainText(at);
+});
+
+/*
+ * Both halves of the list end in the same place.
+ *
+ * Birthdays and bills have always stopped at the horizon; reminders that were
+ * already rows were only checked for being in the future, so "the next 1 day"
+ * answered with an alarm four months out.
+ */
+test('what is coming stops where the window does', async ({ page }) => {
+	await register(page, `rem-ceiling-${Date.now()}@test.invalid`);
+	await visit(page, '/reminders');
+
+	const far = new Date();
+	far.setDate(far.getDate() + 45);
+
+	await page.locator('[name="day"]').fill(far.toISOString().slice(0, 10));
+	await page.locator('[name="time"]').fill('07:00');
+	await page.locator('[name="label"]').first().fill('the far away thing');
+	await page.getByRole('button', { name: 'Set it' }).click();
+	await expect(page.getByText('the far away thing')).toBeVisible({ timeout: 15_000 });
+
+	await visit(page, '/reminders?days=1');
+	await expect(page.getByText('the far away thing')).toHaveCount(0);
+
+	await visit(page, '/reminders?days=60');
+	await expect(page.getByText('the far away thing').first()).toBeVisible({ timeout: 15_000 });
+});
+
 test('the window can be widened, and stops at a year', async ({ page }) => {
 	await register(page, `rem-window-${Date.now()}@test.invalid`);
 

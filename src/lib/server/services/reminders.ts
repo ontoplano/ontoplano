@@ -19,6 +19,7 @@ import { num, str } from './validate.js';
 // without this a new alarm would wait for the next ceiling tick to be noticed.
 import { wake } from './reminder-clock.js';
 import { soundFor } from './ringtones.js';
+import { getGridHours } from '../settings.js';
 
 /**
  * Something that reaches out.
@@ -90,6 +91,16 @@ function minutesBefore(scheduledAt: string, lead: number): string {
 
 	const pad = (n: number) => String(n).padStart(2, '0');
 	return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}T${pad(at.getHours())}:${pad(at.getMinutes())}:00`;
+}
+
+/**
+ * The hour the account's day opens on, as `HH:MM`.
+ *
+ * Exported because the form has to say it: a field somebody may leave empty
+ * has to name what leaving it empty means.
+ */
+export function startOfDay(userId: string): string {
+	return `${String(getGridHours(userId).start).padStart(2, '0')}:00`;
 }
 
 export function listReminders(
@@ -188,10 +199,23 @@ export function createFreeReminder(
 	raw: { at?: unknown; message?: unknown; audible?: unknown; ringtoneId?: unknown }
 ): number {
 	const at = String(raw.at ?? '').trim();
-	if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(at)) {
-		throw new ValidationError('That is not a date and a time.');
+	/*
+	 * A day on its own is a day, and it starts when the account says it does.
+	 *
+	 * "Remind me on the third" is a whole sentence, and demanding a clock
+	 * reading for it means picking a number that means nothing — so a bare
+	 * `YYYY-MM-DD` fires at the hour the planner grid opens on, which is the
+	 * same hour a birthday and a bill already use for exactly this reason.
+	 */
+	const dayOnly = /^\d{4}-\d{2}-\d{2}$/.test(at);
+	if (!dayOnly && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(at)) {
+		throw new ValidationError('That is not a day, or a day and a time.');
 	}
-	const remindAt = at.length === 16 ? `${at}:00` : at;
+	const remindAt = dayOnly
+		? `${at}T${startOfDay(ctx.userId)}:00`
+		: at.length === 16
+			? `${at}:00`
+			: at;
 
 	const message = str(raw.message, 'message', { max: MAX_MESSAGE_LENGTH });
 	const ringtoneId =

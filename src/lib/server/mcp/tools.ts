@@ -1879,7 +1879,7 @@ export const TOOLS: Tool[] = [
 		input: object(
 			{
 				at: text(
-					'When, as YYYY-MM-DDTHH:MM in the person\u2019s own timezone. Seconds allowed and honoured.'
+					'When, as YYYY-MM-DDTHH:MM in the person\u2019s own timezone. Seconds allowed and honoured. A bare YYYY-MM-DD means the hour their day starts.'
 				),
 				message: text('What it should say, in their words.'),
 				sound: {
