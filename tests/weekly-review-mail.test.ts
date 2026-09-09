@@ -125,11 +125,34 @@ describe('who gets one', () => {
 		expect(sendEmail).not.toHaveBeenCalled();
 	});
 
-	test('nobody who already wrote the review', async () => {
+	/**
+	 * Closed means answered for, not written about.
+	 *
+	 * It used to mean the note, so somebody who tidied every block away was
+	 * mailed about a week they had already finished with, and somebody who
+	 * wrote a sentence over an unanswered Tuesday was not. The mail follows the
+	 * dashboard here, because two prompts disagreeing about whether a week is
+	 * open is worse than either being wrong on its own.
+	 */
+	test('nobody who already answered for every block', async () => {
+		planLastWeek(OWNER, 1);
+		const ctx = ctxFor(OWNER);
+		const { loose } = review.readWeek(ctx, LAST_WEEK);
+		review.resolveLoose(
+			ctx,
+			LAST_WEEK,
+			loose.map((block) => block.id),
+			'skipped'
+		);
+
+		expect((await mail.sendWeeklyReviews(MONDAY)).sent).toBe(0);
+	});
+
+	test('and writing about a week is not answering for it', async () => {
 		planLastWeek(OWNER, 1);
 		review.saveNote(ctxFor(OWNER), { weekStart: LAST_WEEK, content: 'It was a week.' });
 
-		expect((await mail.sendWeeklyReviews(MONDAY)).sent).toBe(0);
+		expect((await mail.sendWeeklyReviews(MONDAY)).sent).toBe(1);
 	});
 
 	test('nobody who turned it off', async () => {

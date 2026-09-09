@@ -23,6 +23,11 @@
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
+	/** "1 block", "3 blocks" — because "1 blocks" is how a sentence loses trust. */
+	function blocks(n: number): string {
+		return `${n} ${n === 1 ? 'block' : 'blocks'}`;
+	}
+
 	/** "17 Aug" — a Monday said the way somebody would say it. */
 	function weekName(weekStart: string): string {
 		return new Date(weekStart + 'T00:00:00').toLocaleDateString('en-GB', {
@@ -336,12 +341,14 @@
 				<span class="min-w-0 flex-1 text-sm text-gray-900">
 					<!-- More than one week open is a different sentence, and saying
 					     "last week" to somebody three weeks behind is both wrong and
-					     comforting. -->
+					     comforting. The number is the blocks still waiting for an
+					     answer, because those are what closing a week actually is. -->
 					{#if data.pendingReview.weeks > 1}
 						{data.pendingReview.weeks} weeks are still open — the oldest is
-						{weekName(data.pendingReview.weekStart)}, {data.pendingReview.planned} blocks.
+						{weekName(data.pendingReview.weekStart)}, with {blocks(data.pendingReview.unanswered)}
+						unanswered.
 					{:else}
-						Last week is still open — {data.pendingReview.planned} blocks, no write-up.
+						Last week is still open — {blocks(data.pendingReview.unanswered)} with no answer.
 					{/if}
 				</span>
 				<span class="shrink-0 text-xs text-gray-500">Review it</span>

@@ -244,9 +244,10 @@ export async function sendWeeklyReviews(now = new Date()): Promise<{
 
 		const local = buildCtx(account.id, { tz: ctx.tz, now: localNoon(now, ctx.tz) });
 
-		// The same rule the dashboard prompts with: the week is over, and there
-		// was something in it. It also answers null once a review is written, so
-		// somebody who already closed the week is not chased about it.
+		// The same rule the dashboard prompts with: the week is over, there was
+		// something in it, and something in it is still unanswered. Somebody who
+		// has already answered for every block has closed that week and is not
+		// chased about it.
 		const pending = reviewPending(local);
 		if (!pending) continue;
 

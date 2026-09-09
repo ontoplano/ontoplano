@@ -10,6 +10,16 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.116.0 — 2026-09-09
+
+- **Answering for the blocks is what closes a week, not writing about it.** The
+  dashboard's "still open" line, the reminder and Monday's mail all read the
+  note: a week where every block had been answered kept asking forever because
+  nobody felt like writing, and a week with an unanswered Tuesday went quiet the
+  moment you typed a sentence. A week is open now while a block on it is still
+  waiting, and the line counts those blocks rather than everything that was
+  planned — so "1 blocks" is gone too.
+
 ## 0.115.0 — 2026-09-09
 
 - **Ticking something off writes it immediately.** It used to hold the request

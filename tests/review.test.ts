@@ -283,3 +283,89 @@ describe('every answer takes the block out of the list', () => {
 		expect(s.review.readWeek(ctx, EARLIER).loose).toEqual([]);
 	});
 });
+
+/*
+ * What closes a week.
+ *
+ * It used to be the note, which was wrong in both directions: a week with an
+ * unanswered Tuesday in it went quiet the moment somebody typed a sentence,
+ * and a week where every block had been answered kept asking forever because
+ * nobody felt like writing. The second is the one that gets a prompt ignored —
+ * being told to fix a thing already fixed.
+ */
+describe('which weeks are still open', () => {
+	/** Its own week again, so answering every block here settles nothing else. */
+	const QUIET = '2026-07-27';
+
+	beforeAll(() => {
+		s.instances.generateInstances(
+			ctx,
+			new Date(QUIET + 'T00:00:00'),
+			new Date('2026-08-03T00:00:00')
+		);
+	});
+
+	test('the oldest week with a block still waiting for an answer', () => {
+		const pending = s.review.reviewPending(ctx)!;
+		expect(pending.weekStart).toBe(QUIET);
+		expect(pending.unanswered).toBe(s.review.readWeek(ctx, QUIET).reading.unfinished);
+	});
+
+	test('writing about it does not close it', () => {
+		s.review.saveNote(ctx, { weekStart: QUIET, content: 'Wrote it up, answered nothing.' });
+		expect(s.review.reviewPending(ctx)?.weekStart).toBe(QUIET);
+	});
+
+	test('answering every block does, with nothing written', () => {
+		const { loose } = s.review.readWeek(ctx, QUIET);
+		s.review.resolveLoose(
+			ctx,
+			QUIET,
+			loose.map((l) => l.id),
+			'skipped'
+		);
+
+		const pending = s.review.reviewPending(ctx)!;
+		expect(pending.weekStart).not.toBe(QUIET);
+		// The week before it had every block answered and no note at all, and it
+		// is not on the list either.
+		expect(pending.weekStart).not.toBe('2026-08-10');
+	});
+
+	test('a week nobody planned is never open', () => {
+		// Nothing was generated for these, so there is nothing to answer for.
+		expect(s.review.reviewPending(ctx)?.weekStart).not.toBe('2026-07-20');
+	});
+
+	test('the count is the weeks with something left to answer, and no others', () => {
+		// Walked here rather than hard-coded, because the point is the rule: a
+		// week is counted when a block on it is still waiting, whatever anybody
+		// did or did not write about it.
+		let open = 0;
+		let oldest = '';
+		for (let back = 1; back <= s.review.REVIEW_LOOKBACK_WEEKS; back++) {
+			const monday = new Date('2026-08-24T00:00:00');
+			monday.setDate(monday.getDate() - 7 * back);
+			const week = monday.toISOString().slice(0, 10);
+			const { reading } = s.review.readWeek(ctx, week);
+			if (reading.planned > 0 && reading.unfinished > 0) {
+				open++;
+				oldest = week;
+			}
+		}
+
+		const pending = s.review.reviewPending(ctx);
+		expect(pending?.weeks ?? 0).toBe(open);
+		expect(pending?.weekStart ?? '').toBe(oldest);
+	});
+
+	test('a week with every block answered counts for nothing, written up or not', () => {
+		// 2026-08-10 had every block answered above and nothing written about it.
+		// Under the old rule it was open until somebody wrote a sentence, so
+		// writing one here changed the count; now it changes nothing.
+		const before = s.review.reviewPending(ctx)?.weeks ?? 0;
+		s.review.saveNote(ctx, { weekStart: '2026-08-10', content: 'A quiet one.' });
+
+		expect(s.review.reviewPending(ctx)?.weeks ?? 0).toBe(before);
+	});
+});

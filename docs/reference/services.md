@@ -2764,8 +2764,9 @@ allowed to be woken, so "twice" is the normal case and not the accident.
 
 Once, on the morning of the day the week turns over, and only while there is
 actually something to review — `reviewPending` already refuses to ask about
-a week nobody planned. Said again the following week if it is still open,
-because the number in it will have changed and so will the sentence.
+a week nobody planned, and about a week whose blocks have all been answered
+for. Said again the following week if it is still open, because the number
+in it will have changed and so will the sentence.
 
 #### `ensureBillReminders(ctx, now, tz)`
 
@@ -3045,6 +3046,32 @@ which makes this ownership-safe by construction: an id from another account
 is not in that list, so it is not carried and nothing says so (I3).
 
 #### `reviewPending(ctx)`
+
+How far back the open weeks go.
+
+The whole reason the review exists is that nothing ever asked. This is what
+the dashboard asks with — and it only asks about a week that is actually
+over and had something in it, because prompting somebody to review a week
+they did not plan is how a prompt becomes noise you learn to ignore.
+
+It used to look at last week and stop, so somebody who let three go by was
+told the same thing as somebody who let one — "last week is still open" —
+which is both wrong and comforting. It walks back now and reports the oldest
+one and how many there are, because the oldest is where you would start and
+the number is the thing worth knowing.
+
+## What closes a week
+
+The blocks, not the note. It used to be the note: a week with an unanswered
+Tuesday in it went quiet the moment you typed a sentence about it, and a week
+where every block had been answered kept asking forever because nobody felt
+like writing. Both halves of that were wrong, and the second is the one that
+gets a prompt ignored — being told to fix something already fixed.
+
+So a week is open while a block on it is still waiting for an answer, and
+every one of the four answers — it happened, skipped, onto the todo list, on
+this day — takes a block out of that count. The note is writing, and writing
+is not a chore anything here nags about.
 
 #### `resolveLoose(ctx, weekStart, rawIds, status)`
 

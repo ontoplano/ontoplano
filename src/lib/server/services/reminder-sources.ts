@@ -100,8 +100,9 @@ function writeOnce(
  *
  * Once, on the morning of the day the week turns over, and only while there is
  * actually something to review — `reviewPending` already refuses to ask about
- * a week nobody planned. Said again the following week if it is still open,
- * because the number in it will have changed and so will the sentence.
+ * a week nobody planned, and about a week whose blocks have all been answered
+ * for. Said again the following week if it is still open, because the number
+ * in it will have changed and so will the sentence.
  */
 export function ensureReviewReminder(ctx: Ctx, now: Date, tz: string): number {
 	const pending = reviewPending(ctx);
@@ -110,10 +111,12 @@ export function ensureReviewReminder(ctx: Ctx, now: Date, tz: string): number {
 	const today = dayOf(localOfInstant(now, tz));
 	const at = `${today}T${String(getGridHours(ctx.userId).start).padStart(2, '0')}:00:00`;
 
+	const n = pending.unanswered;
+	const blocks = `${n} ${n === 1 ? 'block' : 'blocks'}`;
 	const message =
 		pending.weeks > 1
-			? `${pending.weeks} weeks are still waiting to be reviewed — the oldest has ${pending.planned} blocks in it.`
-			: `Your weekly review is pending — ${pending.planned} blocks last week.`;
+			? `${pending.weeks} weeks are still open — the oldest has ${blocks} with no answer.`
+			: `Your weekly review is pending — ${blocks} from last week with no answer.`;
 
 	return writeOnce(ctx.userId, 'review', null, at, message) ? 1 : 0;
 }

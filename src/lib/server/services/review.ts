@@ -327,8 +327,11 @@ export function carryIntoTodos(
 	return carrying.length;
 }
 
+/** How far back the walk goes when it looks for a week still open. */
+export const REVIEW_LOOKBACK_WEEKS = 12;
+
 /**
- * How far back the unwritten weeks go.
+ * How far back the open weeks go.
  *
  * The whole reason the review exists is that nothing ever asked. This is what
  * the dashboard asks with — and it only asks about a week that is actually
@@ -340,28 +343,41 @@ export function carryIntoTodos(
  * which is both wrong and comforting. It walks back now and reports the oldest
  * one and how many there are, because the oldest is where you would start and
  * the number is the thing worth knowing.
+ *
+ * ## What closes a week
+ *
+ * The blocks, not the note. It used to be the note: a week with an unanswered
+ * Tuesday in it went quiet the moment you typed a sentence about it, and a week
+ * where every block had been answered kept asking forever because nobody felt
+ * like writing. Both halves of that were wrong, and the second is the one that
+ * gets a prompt ignored — being told to fix something already fixed.
+ *
+ * So a week is open while a block on it is still waiting for an answer, and
+ * every one of the four answers — it happened, skipped, onto the todo list, on
+ * this day — takes a block out of that count. The note is writing, and writing
+ * is not a chore anything here nags about.
  */
-export const REVIEW_LOOKBACK_WEEKS = 12;
-
 export function reviewPending(
 	ctx: Ctx
-): { weekStart: string; planned: number; weeks: number } | null {
+): { weekStart: string; unanswered: number; weeks: number } | null {
 	const lastMonday = getMonday(ctx.now);
-	let oldest: { weekStart: string; planned: number } | null = null;
+	let oldest: { weekStart: string; unanswered: number } | null = null;
 	let weeks = 0;
 
 	for (let back = 1; back <= REVIEW_LOOKBACK_WEEKS; back++) {
 		const monday = dateString(addDays(lastMonday, -7 * back));
-		if (readNote(ctx, monday)) continue;
 
 		const { reading } = readWeek(ctx, monday);
-		// A week nobody planned is not a week anybody owes a write-up for, and it
+		// A week nobody planned is not a week anybody owes an answer for, and it
 		// must not stop the walk either: a fortnight away leaves a gap in the
 		// middle that says nothing about the weeks either side of it.
 		if (reading.planned === 0) continue;
+		// Every block answered is a week that is done with you, whether or not
+		// anybody wrote about it.
+		if (reading.unfinished === 0) continue;
 
 		weeks++;
-		oldest = { weekStart: monday, planned: reading.planned };
+		oldest = { weekStart: monday, unanswered: reading.unfinished };
 	}
 
 	return oldest ? { ...oldest, weeks } : null;
