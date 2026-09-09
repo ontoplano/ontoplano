@@ -8,7 +8,7 @@ import { getGridHours, getUserSetting, setUserSetting } from '../settings.js';
 import { addDays } from '../week-generator.js';
 import { buildCtx, localDateOf, type Ctx } from './ctx.js';
 import { sendLogged } from './mail-log.js';
-import { readWeek, reviewPending } from './review.js';
+import { readWeek, weekStartOf } from './review.js';
 
 /**
  * Monday morning: what last week actually was, in the inbox.
@@ -20,12 +20,23 @@ import { readWeek, reviewPending } from './review.js';
  * brings somebody back, and unlike a notification it is not asking for
  * anything: it says what happened and leaves the door open.
  *
+ * ## Two mails, because there are two situations
+ *
+ * A week with blocks nobody has answered for and a week already settled are
+ * not the same message. The first is **"Review your week"**: what you did, and
+ * what you have not said happened yet, with the page that closes it one press
+ * away. The second is **"Your week"**: what you did, and nothing to do about
+ * it — a report, not a chore.
+ *
+ * It used to send only the first, and only while the week was open, so
+ * somebody who keeps their week tidy got no Monday mail at all. That is
+ * backwards: they are the ones the report is worth reading for.
+ *
  * ## What it will not do
  *
- * **Send about a week that had nothing in it.** The rule is `reviewPending()`,
- * the same one the dashboard's own prompt uses, so the mail and the app never
- * disagree about whether there is a week worth looking at. Somebody who did
- * not plan gets no mail at all rather than a mail full of zeroes.
+ * **Send about a week that had nothing in it.** A mail full of zeroes about a
+ * week somebody never planned is how a lifecycle mail teaches people to filter
+ * it.
  *
  * **Send twice.** The week it last wrote about is stored, so a timer that
  * fires hourly, a box that reboots, and a run somebody starts by hand all
@@ -145,6 +156,15 @@ export function weeklyReviewMail(
 	const span = `${weekStart} to ${localDateOf(end, ctx.tz)}`;
 	const rate = reading.planned === 0 ? 0 : Math.round((reading.done / reading.planned) * 100);
 
+	/*
+	 * Whether there is anything to do about this week.
+	 *
+	 * It is the same question the dashboard asks — a block still waiting for an
+	 * answer — and it decides which of the two mails this is, from the subject
+	 * line down.
+	 */
+	const open = loose.length > 0;
+
 	const lines = [
 		`Your week of ${span}: you did ${reading.done} of the ${reading.planned} blocks you ` +
 			`planned — ${rate}% — and ${hours(reading.minutesDone)} of the ` +
@@ -159,17 +179,20 @@ export function weeklyReviewMail(
 		lines.push(`Most of it was ${busiest.name}: ${busiest.done} of ${busiest.planned}.`);
 	}
 
-	if (loose.length > 0) {
+	if (open) {
 		const titles = loose.slice(0, 3).map((l) => l.title);
 		const rest = loose.length - titles.length;
 		lines.push(
-			`${loose.length} thing${loose.length === 1 ? '' : 's'} did not happen — ` +
+			`${loose.length} ${loose.length === 1 ? 'block has' : 'blocks have'} no answer yet — ` +
 				titles.join(', ') +
 				(rest > 0 ? ` and ${rest} more` : '') +
 				`. Say what became of them, or carry them into this week.`
 		);
-	} else if (reading.planned > 0) {
-		lines.push('Nothing was left over.');
+	} else {
+		// Said plainly rather than left out: "you have already answered for all of
+		// it" is the difference between this mail and the other one, and it is the
+		// reason there is nothing to press.
+		lines.push('Every block has an answer — nothing is waiting on you.');
 	}
 
 	lines.push('Three lines about the week is the part worth reading in a year.');
@@ -181,9 +204,11 @@ export function weeklyReviewMail(
 		: '';
 
 	return renderEmail({
-		subject: `Your week: ${reading.done} of ${reading.planned}`,
+		subject: open
+			? `Review your week: ${reading.done} of ${reading.planned}`
+			: `Your week: ${reading.done} of ${reading.planned}`,
 		lines,
-		action: link ? { label: 'Close the week', url: link } : undefined,
+		action: link ? { label: open ? 'Close the week' : 'See the week', url: link } : undefined,
 		small: off ? [`Stop these: ${off}`] : []
 	});
 }
@@ -201,6 +226,19 @@ function isSendTime(now: Date, tz: string, hour: number): boolean {
 	const local = Number(parts.find((p) => p.type === 'hour')?.value);
 
 	return weekday === 'Mon' && Number.isFinite(local) && local >= hour;
+}
+
+/**
+ * The Monday of the week before the one `ctx.now` is in.
+ *
+ * A report on Monday morning is about the seven days that just ended, so the
+ * week is found from the account's own "now" rather than being handed in.
+ */
+function lastWeekOf(ctx: Ctx): string {
+	// `weekStartOf` snaps to the Monday and formats with the same calendar the
+	// rest of the review uses, so the mail and the page cannot name two
+	// different weeks for one seven days.
+	return weekStartOf(undefined, addDays(ctx.now, -7));
 }
 
 /**
@@ -244,19 +282,26 @@ export async function sendWeeklyReviews(now = new Date()): Promise<{
 
 		const local = buildCtx(account.id, { tz: ctx.tz, now: localNoon(now, ctx.tz) });
 
-		// The same rule the dashboard prompts with: the week is over, there was
-		// something in it, and something in it is still unanswered. Somebody who
-		// has already answered for every block has closed that week and is not
-		// chased about it.
-		const pending = reviewPending(local);
-		if (!pending) continue;
+		/*
+		 * The week that just ended, whatever state it is in.
+		 *
+		 * This used to be `reviewPending()`, which answers with the *oldest* week
+		 * still open — so a Monday mail could be about a fortnight ago, and
+		 * somebody who had answered for everything got nothing at all. It is a
+		 * report about last week; whether there is anything left to do about it
+		 * changes what the mail says, not whether it goes.
+		 */
+		const weekStart = lastWeekOf(local);
+		const { reading } = readWeek(local, weekStart);
+		// A week nobody planned has nothing to report.
+		if (reading.planned === 0) continue;
 
 		considered += 1;
-		if (getUserSetting(account.id, LAST_SENT_KEY) === pending.weekStart) continue;
+		if (getUserSetting(account.id, LAST_SENT_KEY) === weekStart) continue;
 
 		const result = await sendLogged(
 			'weekly-review',
-			{ to: account.email, ...weeklyReviewMail(local, pending.weekStart) },
+			{ to: account.email, ...weeklyReviewMail(local, weekStart) },
 			// Worth retrying by hand from /admin, but a box with no SMTP is a
 			// self-hosted install doing exactly what it means to.
 			{ retryable: true }
@@ -265,7 +310,7 @@ export async function sendWeeklyReviews(now = new Date()): Promise<{
 		// Stamped only when it went, so a bad hour is retried on the next one
 		// rather than skipping somebody's week entirely.
 		if (result.delivered) {
-			setUserSetting(account.id, LAST_SENT_KEY, pending.weekStart);
+			setUserSetting(account.id, LAST_SENT_KEY, weekStart);
 			sent += 1;
 		}
 	}

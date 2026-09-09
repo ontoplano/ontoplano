@@ -202,9 +202,12 @@ else will use.
 ## The weekly review, by mail
 
 On Monday morning ontoplano can send one message saying what last week was:
-how much of what you planned you did, where most of it went, and what is still
-sitting there unanswered. It links to `/tasks/review`, which is where you do
-something about a week.
+how much of what you planned you did and where most of it went. It links to
+`/tasks/review`, which is where you do something about a week.
+
+There are two versions of it. A week with blocks nobody has answered for is
+**"Review your week"**, which names what is still waiting. A week already
+answered for is **"Your week"**: the same numbers, and nothing to press.
 
 It is on for an account whose address has been confirmed, and every message
 carries a link that turns it off in one click with nothing to sign in to.

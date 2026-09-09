@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.119.0 — 2026-09-09
+
+- **Monday's mail goes out every week, and it is two mails rather than one.** A
+  week with blocks still waiting for an answer gets "Review your week" — what
+  you did, and what you have not said happened yet. A week you have already
+  answered for gets "Your week": what you did, and nothing to press. It used to
+  send only the first, and only while the week was open, so somebody who keeps
+  their week tidy got no mail at all.
+
 ## 0.118.0 — 2026-09-09
 
 - **A repeating block starts on a day, and does not fill the past.** "Every

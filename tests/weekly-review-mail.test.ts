@@ -126,15 +126,13 @@ describe('who gets one', () => {
 	});
 
 	/**
-	 * Closed means answered for, not written about.
+	 * Somebody who keeps their week tidy still gets Monday's mail.
 	 *
-	 * It used to mean the note, so somebody who tidied every block away was
-	 * mailed about a week they had already finished with, and somebody who
-	 * wrote a sentence over an unanswered Tuesday was not. The mail follows the
-	 * dashboard here, because two prompts disagreeing about whether a week is
-	 * open is worse than either being wrong on its own.
+	 * It used to go only while the week was open, so the people the report is
+	 * most worth reading for — the ones who answer for everything as they go —
+	 * got nothing at all. A settled week is a different mail, not no mail.
 	 */
-	test('nobody who already answered for every block', async () => {
+	test('somebody who already answered for every block, in the other shape', async () => {
 		planLastWeek(OWNER, 1);
 		const ctx = ctxFor(OWNER);
 		const { loose } = review.readWeek(ctx, LAST_WEEK);
@@ -145,14 +143,11 @@ describe('who gets one', () => {
 			'skipped'
 		);
 
-		expect((await mail.sendWeeklyReviews(MONDAY)).sent).toBe(0);
-	});
-
-	test('and writing about a week is not answering for it', async () => {
-		planLastWeek(OWNER, 1);
-		review.saveNote(ctxFor(OWNER), { weekStart: LAST_WEEK, content: 'It was a week.' });
-
 		expect((await mail.sendWeeklyReviews(MONDAY)).sent).toBe(1);
+
+		const sent = sendEmail.mock.calls[0][0];
+		expect(sent.subject).toBe('Your week: 1 of 2');
+		expect(sent.text).toContain('nothing is waiting on you');
 	});
 
 	test('nobody who turned it off', async () => {
@@ -251,8 +246,11 @@ describe('what it says', () => {
 		await mail.sendWeeklyReviews(MONDAY);
 
 		const sent = sendEmail.mock.calls[0][0];
-		expect(sent.subject).toBe('Your week: 1 of 2');
+		// A block is still waiting for an answer, so this is the one with
+		// something to do in it.
+		expect(sent.subject).toBe('Review your week: 1 of 2');
 		expect(sent.text).toContain('1 of the 2 blocks');
+		expect(sent.text).toContain('no answer yet');
 		expect(sent.text).toContain(`/tasks/review?week=${LAST_WEEK}`);
 	});
 
