@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.126.0 — 2026-09-09
+
+- **A room's tabs scroll instead of wrapping.** Health, Finance and Notebooks
+  had a plain row of tabs, so on a narrow phone the labels broke mid-word —
+  "Hab / its", "Work / outs". They now scroll sideways with a chevron on the
+  side that has more, the way Tasks and Settings already did, and the underline
+  no longer nudges the row when you change tab.
+
 ## 0.125.0 — 2026-09-09
 
 - **Fields and buttons line up on a phone.** A button has always been given the

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import { scrollHints } from '$lib/actions/scroll-hints';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types';
 
@@ -46,7 +47,11 @@
 {#if showTabs}
 	<div class="mb-4 space-y-3">
 		<h1 class="text-lg font-bold text-gray-900">Notebooks</h1>
-		<nav class="flex gap-1 border-b border-gray-200" aria-label="Notebooks sections">
+		<nav
+			use:scrollHints
+			class="scroll-hints flex gap-0 border-b border-gray-200 md:gap-1"
+			aria-label="Notebooks sections"
+		>
 			{#each tabs as tab (tab.href)}
 				<!-- Already a resolve() result; the rule cannot see through the array,
 				     and -next-line cannot reach an attribute two lines down. -->
@@ -54,7 +59,7 @@
 				<a
 					href={tab.href}
 					aria-current={active(tab.href) ? 'page' : undefined}
-					class="tab-link border-b-2 px-3 py-2 text-sm whitespace-nowrap transition-colors {active(
+					class="tab-link border-b-2 px-2 py-2 text-sm whitespace-nowrap transition-colors sm:px-3 {active(
 						tab.href
 					)
 						? 'border-gray-900 font-semibold text-gray-900'

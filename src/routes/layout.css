@@ -347,10 +347,15 @@ html[data-style='playful'] .bg-chrome {
  */
 .page-surface {
 	background-color: color-mix(in srgb, var(--section-accent) 4%, var(--color-gray-100));
+	/* What a fade painted over this page has to fade into. `.scroll-hints` reads
+	   it; declared here because this is where the ground is decided, and a fade
+	   that names its own grey is a fade that matches one room. */
+	--fade-ground: color-mix(in srgb, var(--section-accent) 4%, var(--color-gray-100));
 }
 
 html[data-style='playful'] .page-surface {
 	background-color: color-mix(in srgb, var(--section-accent) 9%, var(--color-gray-100));
+	--fade-ground: color-mix(in srgb, var(--section-accent) 9%, var(--color-gray-100));
 }
 
 /*
@@ -1909,6 +1914,12 @@ html a.tab-link {
 	 * included, so the arrow floated over readable text with nothing behind it.
 	 * The arrow's grey is fixed rather than a token because it is inside a data
 	 * URI; #94a3b8 is the one step of the ramp that reads on both grounds.
+	 *
+	 * The fade takes `--fade-ground`, which the page sets to whatever it is
+	 * actually painted in. It used to name `--color-gray-100` outright, which is
+	 * the Settings page's ground and nobody else's — under the room tabs, where
+	 * each room washes the page with its own hue, the fade drew a grey rectangle
+	 * over the tint instead of disappearing into it.
 	 */
 	background-size:
 		0.5rem 0.8rem,
@@ -1920,7 +1931,7 @@ html a.tab-link {
 	margin-right: -2rem;
 	background-image:
 		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 12'%3E%3Cpath d='M6.5 1 1.5 6l5 5' fill='none' stroke='%2394a3b8' stroke-width='2'/%3E%3C/svg%3E"),
-		linear-gradient(to right, var(--color-gray-100) 55%, transparent);
+		linear-gradient(to right, var(--fade-ground, var(--color-gray-100)) 55%, transparent);
 	background-position:
 		left 0.35rem center,
 		center;
@@ -1931,7 +1942,7 @@ html a.tab-link {
 	margin-left: -2rem;
 	background-image:
 		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 12'%3E%3Cpath d='M1.5 1l5 5-5 5' fill='none' stroke='%2394a3b8' stroke-width='2'/%3E%3C/svg%3E"),
-		linear-gradient(to left, var(--color-gray-100) 55%, transparent);
+		linear-gradient(to left, var(--fade-ground, var(--color-gray-100)) 55%, transparent);
 	background-position:
 		right 0.35rem center,
 		center;
