@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.123.0 — 2026-09-09
+
+- **The card page's plan choice looks like a payment page.** Two big square
+  tiles side by side — Just me and Family, each with its cheapest rate — and
+  the selected one drives the yearly/monthly buttons below, which are the only
+  things shaped like buttons that charge. The no-charge promise is bold, and
+  the demo is a plain link again so nothing free dresses like a purchase.
+
 ## 0.122.0 — 2026-09-09
 
 - **The card page leads with the promise.** "Nothing is charged today" is the

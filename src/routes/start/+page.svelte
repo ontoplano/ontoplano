@@ -13,7 +13,8 @@
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Banner from '$lib/components/Banner.svelte';
-	import { describeYearly, formatPrice, tierPricing } from '$lib/plans';
+	import Icon from '$lib/components/Icon.svelte';
+	import { describeYearly, formatPrice, tierPricing, type Pricing } from '$lib/plans';
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -30,6 +31,14 @@
 	const familyOffered = $derived(data.pricing.familyMonthlyCents > 0);
 	const prices = $derived(tierPricing(data.pricing, familyOffered ? tier : 'solo'));
 	const yearlyLine = $derived(describeYearly(prices));
+
+	/** The cheapest way to have a plan, for its tile: the yearly rate if there is one. */
+	function fromMonthly(p: Pricing): string {
+		const cents = p.yearlyCents > 0 ? Math.round(p.yearlyCents / 12) : p.monthlyCents;
+		return `from ${formatPrice(cents, p.currency)} a month`;
+	}
+	const soloFrom = $derived(fromMonthly(tierPricing(data.pricing, 'solo')));
+	const familyFrom = $derived(fromMonthly(tierPricing(data.pricing, 'family')));
 
 	function when(iso: string): string {
 		return new Date(iso).toLocaleDateString(undefined, {
@@ -92,8 +101,10 @@
 			     a button here costs nothing. -->
 			<h1 class="mb-4 text-2xl font-bold tracking-tight text-gray-900">Nothing is charged today</h1>
 			<p class="text-sm text-gray-700">
-				Your {data.trialDaysAhead} free days are yours even if you cancel right away. The first charge
-				is on {when(data.firstChargeOn)}, and a mail warns you two days before.
+				<strong class="text-gray-900">
+					Your {data.trialDaysAhead} free days are yours even if you cancel right away.
+				</strong>
+				The first charge is on {when(data.firstChargeOn)}, and a mail warns you two days before.
 			</p>
 		{:else}
 			<h1 class="mb-4 text-xl font-bold tracking-tight text-gray-900">Subscribe</h1>
@@ -113,40 +124,49 @@
 
 		{#if familyOffered}
 			<!--
-				Two questions, two shapes.
+				Two questions, two shapes — the shapes every payment page uses.
 
-				Which plan is answered first, with two cards big enough to be the
-				choice they are; which interval is answered below, and only those
-				buttons take money. The cards keep a constant border width so
-				choosing one moves nothing (a selection must not reflow the page),
-				and picking a plan only rewrites the prices under it.
+				Which plan comes first: two big square tiles side by side, the
+				selected one unmistakable, each carrying its cheapest rate. Which
+				interval comes below, and those are the only elements shaped like
+				"press this and money moves". The tiles keep a constant border
+				width so choosing one moves nothing (a selection must not reflow
+				the page) — it only rewrites the prices under it.
 			-->
-			<div class="mt-6 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Plan">
+			<div class="mt-6 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Plan">
 				<button
 					type="button"
 					role="radio"
 					onclick={() => (tier = 'solo')}
 					aria-checked={tier === 'solo'}
-					class="border-2 px-4 py-4 text-left transition {tier === 'solo'
+					class="flex aspect-square flex-col items-center justify-center gap-1.5 border-2 text-center transition {tier ===
+					'solo'
 						? 'border-gray-900 bg-gray-50'
 						: 'border-gray-200 hover:border-gray-400'}"
 				>
-					<span class="block text-base font-semibold text-gray-900">Just me</span>
-					<span class="mt-1 block text-xs text-gray-500">One account</span>
+					<span class={tier === 'solo' ? 'text-gray-900' : 'text-gray-400'}>
+						<Icon name="user" size={36} />
+					</span>
+					<span class="text-lg font-bold text-gray-900">Just me</span>
+					<span class="text-xs text-gray-500">1 account</span>
+					<span class="text-sm font-medium text-gray-700">{soloFrom}</span>
 				</button>
 				<button
 					type="button"
 					role="radio"
 					onclick={() => (tier = 'family')}
 					aria-checked={tier === 'family'}
-					class="border-2 px-4 py-4 text-left transition {tier === 'family'
+					class="flex aspect-square flex-col items-center justify-center gap-1.5 border-2 text-center transition {tier ===
+					'family'
 						? 'border-gray-900 bg-gray-50'
 						: 'border-gray-200 hover:border-gray-400'}"
 				>
-					<span class="block text-base font-semibold text-gray-900">Family</span>
-					<span class="mt-1 block text-xs text-gray-500">
-						{data.pricing.familySeats} accounts
+					<span class={tier === 'family' ? 'text-gray-900' : 'text-gray-400'}>
+						<Icon name="home" size={36} />
 					</span>
+					<span class="text-lg font-bold text-gray-900">Family</span>
+					<span class="text-xs text-gray-500">{data.pricing.familySeats} accounts</span>
+					<span class="text-sm font-medium text-gray-700">{familyFrom}</span>
 				</button>
 			</div>
 		{/if}
@@ -230,11 +250,13 @@
 			<!-- An address on another host, so `resolve` has nothing to do with
 			     it — the rule is about this app's own routes. -->
 			<!-- eslint-disable svelte/no-navigation-without-resolve -->
+			<!-- Deliberately not button-shaped: the buttons above take money, and
+			     nothing that does not may dress like them. -->
 			<a
 				href={data.demo}
 				target="_blank"
 				rel="noopener"
-				class="mt-4 block w-full border border-gray-300 px-4 py-2.5 text-center text-sm text-gray-700 transition hover:bg-gray-50"
+				class="mt-5 block text-center text-sm font-medium text-gray-700 underline underline-offset-4 transition hover:text-gray-900"
 			>
 				Let me see the demo first
 			</a>
