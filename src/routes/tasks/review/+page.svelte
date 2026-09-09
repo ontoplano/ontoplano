@@ -298,7 +298,7 @@
 												type="button"
 												onclick={() => decide(item.id, 'skipped')}
 												class="icon-btn"
-												title="It did not happen, and that is fine"
+												title="It did not happen"
 												aria-label="{item.title}: skipped"
 											>
 												<Icon name="skip" />

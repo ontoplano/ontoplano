@@ -10,6 +10,11 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.119.1 — 2026-09-09
+
+- **The skip button no longer says what is fine.** Its tooltip read "It did not
+  happen, and that is fine".
+
 ## 0.119.0 — 2026-09-09
 
 - **Monday's mail goes out every week, and it is two mails rather than one.** A
