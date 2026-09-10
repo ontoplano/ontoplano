@@ -51,15 +51,19 @@ make test           # the Playwright e2e suite
 ### A feature carries all of this
 
 - **MCP tools** in `src/lib/server/mcp/tools.ts`, with a scope in
-  `services/tokens.ts`. Anything a person can do, an assistant can do — except
-  security and deleting something precious. Every verb ships its inverse.
-- **Create, edit and delete in the UI.** Anything with history archives
-  instead.
-- **Unit tests, and an e2e at 390px as well as wide.** Look at the screenshot.
-- **Seed data** in `scripts/seed-dev.mjs`.
-- **The data export**, if it owns an account-scoped table.
-- **A bug fix ships the test that would have caught it**, failing on the old
-  code.
+  `services/tokens.ts`. If a person can do it in the app, an assistant can do
+  it too — apart from anything to do with security, and deleting things that
+  would hurt to lose. Every action needs its opposite: `pay` and `unpay`,
+  `archive` and `unarchive`.
+- **Create, edit and delete in the UI**, not just create. Anything that carries
+  history is archived rather than deleted.
+- **Unit tests, and an end-to-end test that drives the feature in a browser at
+  390px wide as well as full width.** Open it at both and look at it before you
+  call it done.
+- **Seed data** in `scripts/seed-dev.mjs`, so a fresh dev account has some.
+- **The data export**, if the feature owns a table of its own.
+- **A bug fix ships the test that would have caught it.** Check that the test
+  fails against the old code.
 
 A security problem is the one thing that does not go in an issue: use a
 [private advisory](https://github.com/ontoplano/ontoplano/security/advisories/new).
