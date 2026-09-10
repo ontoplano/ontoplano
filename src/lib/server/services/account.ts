@@ -100,8 +100,10 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('recipeImages', schema.recipeImages as never),
 	owned('recipeItems', schema.recipeItems as never),
 	owned('recipes', schema.recipes as never),
-	owned('workoutCategories', schema.workoutCategories as never),
+	// Workouts point at their categories, so they go first — the foreign key
+	// is SET NULL, but the deletion order should not need it to be.
 	owned('workouts', schema.workouts as never),
+	owned('workoutCategories', schema.workoutCategories as never),
 	owned('pricePoints', schema.pricePoints as never),
 	owned('weeklyReviews', schema.weeklyReviews as never),
 	// Reminders, then what they point at: a `reminder_sounds` row names a

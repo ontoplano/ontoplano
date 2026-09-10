@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.127.3 — 2026-09-10
+
+- **Deleting a workout category no longer fails on a real instance.** The
+  schema always said the workouts in it survive with no kind, but no
+  migration ever carried that rule to a deployed database, which refused the
+  delete instead — and refused the demo's cleanup of expired accounts the
+  same way, so the demo slowly filled with ghosts.
+
 ## 0.127.2 — 2026-09-10
 
 - **The block editor reads top to bottom again.** Notes has a row of its

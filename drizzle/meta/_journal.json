@@ -456,6 +456,13 @@
       "when": 1788850400000,
       "tag": "0064_deletion_survives_the_account",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "6",
+      "when": 1788850500000,
+      "tag": "0065_a_deleted_parent_lets_go",
+      "breakpoints": true
     }
   ]
 }

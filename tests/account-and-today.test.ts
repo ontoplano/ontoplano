@@ -9,6 +9,7 @@
  * somebody else's does.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { getTableConfig } from 'drizzle-orm/sqlite-core';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
 
 const database = makeDatabase();
@@ -94,6 +95,34 @@ describe('the export', () => {
 });
 
 describe('deleting an account', () => {
+	test('walks every pointer before the table it points at', () => {
+		// The demo's sweep found this the hard way: `workout_categories` was
+		// listed before `workouts`, whose foreign key refuses the delete unless
+		// the pointer goes first or its SET NULL action steps in. Read off the
+		// schema, so a new foreign key cannot quietly break the walk: a pointer
+		// with no delete action of its own must come before its target.
+		const position = new Map(account.USER_TABLES.map((t, i) => [getTableConfig(t.table).name, i]));
+		for (const t of account.USER_TABLES) {
+			const config = getTableConfig(t.table);
+			for (const fk of config.foreignKeys) {
+				// SET NULL and CASCADE resolve the pointer themselves — and the
+				// schema-parity test is what guarantees a shipped database
+				// actually carries those actions.
+				if (fk.onDelete === 'set null' || fk.onDelete === 'cascade') continue;
+				const target = getTableConfig(fk.reference().foreignTable).name;
+				const to = position.get(target);
+				if (to === undefined) continue; // `user` and friends go after the walk
+				// A table pointing at itself empties in one statement, and SQLite
+				// only checks immediate foreign keys once the statement is done.
+				if (target === config.name) continue;
+				expect(
+					position.get(config.name)!,
+					`${config.name} points at ${target} but is deleted after it`
+				).toBeLessThan(to);
+			}
+		}
+	});
+
 	test('takes everything of that account and nothing of the other', () => {
 		const mine = todos.createTodo(ctx, { title: 'goes with me' });
 		const theirTodo = todos.createTodo(theirs, { title: 'stays' });
