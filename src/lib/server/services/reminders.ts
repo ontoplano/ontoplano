@@ -6,6 +6,7 @@ import {
 	categories,
 	exceptionalTasks,
 	reminders,
+	ringtones,
 	taskRecords,
 	recurringTasks
 } from '../db/schema.js';
@@ -218,10 +219,20 @@ export function createFreeReminder(
 			: at;
 
 	const message = str(raw.message, 'message', { max: MAX_MESSAGE_LENGTH });
-	const ringtoneId =
+	// Yours or none, same as `setSoundChoice`: the id arrives from a form,
+	// and a sound belonging to somebody else is not a sound (I1).
+	const wantedRingtone =
 		raw.ringtoneId === undefined || raw.ringtoneId === null || raw.ringtoneId === ''
 			? null
 			: num(raw.ringtoneId, 'sound', { int: true, min: 1 });
+	const ringtoneId =
+		wantedRingtone === null
+			? null
+			: (db
+					.select({ id: ringtones.id })
+					.from(ringtones)
+					.where(and(eq(ringtones.id, wantedRingtone), eq(ringtones.userId, ctx.userId)))
+					.get()?.id ?? null);
 
 	const inserted = db
 		.insert(reminders)

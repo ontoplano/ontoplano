@@ -152,3 +152,37 @@ describe('what makes a sound', () => {
 		expect(sound?.url).toBe(s.ringtones.DEFAULT_RINGTONE_URL);
 	});
 });
+
+/**
+ * A free reminder names its sound by id, and the id arrives from a form.
+ * `setSoundChoice` always checked whose sound that is; the free-reminder
+ * path took the number on faith (an I1 letter-violation — the read side is
+ * scoped, so it never played, but the foreign id sat in the row).
+ */
+describe('a reminder naming a sound', () => {
+	test("somebody else's ringtone id is dropped, not stored", async () => {
+		const reminders = await import('../src/lib/server/services/reminders');
+		const { db } = await import('../src/lib/server/db');
+		const schema = await import('../src/lib/server/db/schema');
+		const { eq } = await import('drizzle-orm');
+
+		const mine = s.ringtones.addRingtone(ctx, {
+			name: 'Coveted',
+			mime: 'audio/mpeg',
+			data: bytes(512)
+		});
+
+		const id = reminders.createFreeReminder(theirs, {
+			at: '2026-08-24T18:00:00',
+			message: 'ring with a borrowed bell',
+			ringtoneId: mine
+		});
+
+		const row = db
+			.select({ ringtoneId: schema.reminders.ringtoneId })
+			.from(schema.reminders)
+			.where(eq(schema.reminders.id, id))
+			.get();
+		expect(row?.ringtoneId).toBeNull();
+	});
+});
