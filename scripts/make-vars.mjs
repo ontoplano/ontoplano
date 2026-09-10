@@ -35,7 +35,11 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Make's own, which a recipe may expand and nobody passes on a command line. */
+/**
+ * Make's own and the shell's, which a recipe may expand and nobody passes on a
+ * make command line. `XDG_*` is the whole family: where a desktop keeps its
+ * data is the environment's business, not a switch.
+ */
 const AUTOMATIC = new Set([
 	'MAKE',
 	'MAKEFLAGS',
@@ -45,8 +49,15 @@ const AUTOMATIC = new Set([
 	'SHELL',
 	'PWD',
 	'HOME',
-	'PATH'
+	'PATH',
+	'USER',
+	'TMPDIR',
+	'EDITOR',
+	'TERM',
+	'LANG'
 ]);
+
+const environmental = (name) => AUTOMATIC.has(name) || name.startsWith('XDG_');
 
 const argv = process.argv.slice(2);
 const check = argv.includes('--check');
@@ -82,6 +93,7 @@ const computed = new Set();
 const overridable = new Set();
 const reads = new Map(); // target -> Set(VAR)
 const calls = new Map(); // target -> Set(target)
+const behind = new Map(); // computed VAR -> Set(VAR it is worked out from)
 
 for (const file of makefiles) {
 	const text = readFileSync(file, 'utf8');
@@ -91,11 +103,21 @@ for (const file of makefiles) {
 
 	let target = null;
 	for (const line of text.split('\n')) {
-		const assign = line.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*(\?=|:=|\+=|=)/);
+		const assign = line.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*(\?=|:=|\+=|=)(.*)$/);
 		if (assign) {
 			// `?=` is a default somebody may override, so it stays a switch;
 			// `:=` and `=` are the makefile working something out for itself.
 			(assign[2] === '?=' ? overridable : computed).add(assign[1]);
+			/*
+			 * …and what it works it out from, because that is where a switch
+			 * hides. `PACKAGE_BUILD_DEP := $(if $(filter false,$(PACKAGE_BUILD)),,build)`
+			 * means `package` takes PACKAGE_BUILD, and nothing in the recipe says
+			 * so — the recipe only ever sees the prerequisite.
+			 */
+			if (!behind.has(assign[1])) behind.set(assign[1], new Set());
+			for (const m of assign[3].matchAll(/\$[({]([A-Z][A-Z0-9_]*)[)}]/g)) {
+				behind.get(assign[1]).add(m[1]);
+			}
 			continue;
 		}
 
@@ -104,6 +126,11 @@ for (const file of makefiles) {
 			target = rule[1];
 			if (!reads.has(target)) reads.set(target, new Set());
 			if (!calls.has(target)) calls.set(target, new Set());
+			// The prerequisites count too: a target whose dependency is computed
+			// from a switch takes that switch.
+			for (const m of line.slice(rule[1].length).matchAll(/\$[({]([A-Z][A-Z0-9_]*)[)}]/g)) {
+				reads.get(target).add(m[1]);
+			}
 			continue;
 		}
 
@@ -128,13 +155,24 @@ for (const file of makefiles) {
 }
 
 const isSwitch = (name) =>
-	!AUTOMATIC.has(name) && !configured.has(name) && (!computed.has(name) || overridable.has(name));
+	!environmental(name) && !configured.has(name) && (!computed.has(name) || overridable.has(name));
+
+/**
+ * A name, resolved to the switches it stands for: itself if it is one, and
+ * whatever it is computed from if it is not.
+ */
+function resolve(name, seen = new Set()) {
+	if (seen.has(name)) return [];
+	seen.add(name);
+	if (isSwitch(name)) return [name];
+	return [...(behind.get(name) ?? [])].flatMap((from) => resolve(from, seen));
+}
 
 /** What a target takes, including whatever the targets it runs take. */
 function switchesFor(target, seen = new Set()) {
 	if (seen.has(target)) return new Set();
 	seen.add(target);
-	const out = new Set([...(reads.get(target) ?? [])].filter(isSwitch));
+	const out = new Set([...(reads.get(target) ?? [])].flatMap((name) => resolve(name)));
 	for (const sub of calls.get(target) ?? []) {
 		for (const name of switchesFor(sub, seen)) out.add(name);
 	}

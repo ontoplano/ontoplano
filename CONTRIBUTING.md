@@ -30,6 +30,10 @@ SQLite at `~/.local/share/ontoplano/ontoplano.db`, config at
 `~/.config/ontoplano/config.toml` — both created on first run. Never develop
 against real data.
 
+There are a lot of make targets. Bare `make` prints them with a line each, and
+`make vars` says which switches each one takes — both are read out of the
+makefiles, so neither can be out of date. `make vars ONLY=package` asks about one.
+
 ### Tests and lint
 
 ```sh
@@ -41,16 +45,33 @@ make test           # the Playwright e2e suite
 ## Submitting changes
 
 1. Fork, branch, make the change.
-2. A feature arrives whole: tests (a bug fix includes the test that would
-   have caught it, failing on the old code), docs (`yarn docs` regenerates),
-   seed data in `scripts/seed-dev.mjs`, and a look at the UI in a real
-   browser at 390px and wide.
+2. Make it arrive whole — the list below.
 3. Run the lint and the tests.
 4. Conventional commits: `feat: …`, `fix: …`, `docs: …` — short and literal.
-5. Open the PR against `master`. Templates are in `.github/`.
+5. Open the PR against `master`.
 
 A security problem is the one thing that does not go in an issue: use a
 [private advisory](https://github.com/ontoplano/ontoplano/security/advisories/new).
+
+### What "whole" means
+
+Each of these was once left for later and had to be asked for:
+
+- **MCP tools**, in `src/lib/server/mcp/tools.ts`, with a scope in
+  `services/tokens.ts`. What the app lets a person do, an assistant can do too
+  — unless it is security, or deleting something precious. Every verb ships
+  with its way back.
+- **Create, edit and delete in the UI.** Not create alone. Anything carrying
+  history archives rather than deletes.
+- **Unit tests, and an e2e that drives it at 390px as well as wide.** Look at
+  the screenshot: a row whose buttons crowd its name into six-character lines
+  is not shipped.
+- **Seed data** in `scripts/seed-dev.mjs`, so the dev account has a little of
+  everything.
+- **The data export**, if it owns an account-scoped table — a test fails when
+  one is missing.
+- **A bug fix ships the test that would have caught it**, failing on the old
+  code.
 
 ## Code style
 
