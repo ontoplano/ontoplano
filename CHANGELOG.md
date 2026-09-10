@@ -10,6 +10,12 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.127.2 — 2026-09-10
+
+- **The block editor reads top to bottom again.** Notes has a row of its
+  own, a little taller, with the reminder alone on the row below it — the
+  last thing before the collapsed urgency, interest and energy ratings.
+
 ## 0.127.1 — 2026-09-10
 
 - **An imported file can no longer lie about what its pictures and sounds

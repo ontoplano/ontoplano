@@ -3146,6 +3146,99 @@
 				</FormGrid>
 
 				<FormGrid>
+					<Field label="Mode" span={6} required>
+						<select name="mode" required bind:value={slotMode} class="select">
+							<option value="activity">Activity</option>
+							<option value="category">Category</option>
+							<!-- Only where there is a workout to pick: a mode that lands on
+							     an empty list is a dead end. -->
+							{#if data.workouts.length > 0}
+								<option value="workout">Workout</option>
+							{/if}
+						</select>
+					</Field>
+					{#if slotMode === 'category'}
+						<Field label="Category" span={6} required>
+							<select name="categoryId" required bind:value={formCategoryId} class="select">
+								{#each data.categories as cat (cat.id)}
+									<option value={cat.id}>{cat.name}</option>
+								{/each}
+							</select>
+						</Field>
+					{:else if slotMode === 'workout'}
+						<Field label="Workout" span={6} required>
+							<select name="workoutId" required bind:value={formWorkoutId} class="select">
+								{#each data.workouts as t (t.id)}
+									<option value={t.id}>{t.title}</option>
+								{/each}
+							</select>
+						</Field>
+					{:else}
+						<Field label="Activity" span={6} required>
+							<select name="activityId" required bind:value={activityChoice} class="select">
+								{#each data.activities as act (act.id)}
+									<option value={String(act.id)}>{act.name}</option>
+								{/each}
+								<option value={NEW_ACTIVITY}>+ New activity...</option>
+							</select>
+						</Field>
+					{/if}
+				</FormGrid>
+
+				{#if slotMode === 'activity' && activityChoice === NEW_ACTIVITY}
+					<div class="border border-gray-200 bg-gray-50 p-3">
+						<FormGrid>
+							<Field label="New activity" span={8} required>
+								<OneLine
+									name="newActivityName"
+									placeholder="e.g. learn russian"
+									class="input"
+									required
+									autofocus
+								/>
+							</Field>
+							<Field label="Its category" span={4} required>
+								<select name="newActivityCategoryId" required class="select">
+									{#each data.categories as cat (cat.id)}
+										<option value={cat.id}>{cat.name}</option>
+									{/each}
+								</select>
+							</Field>
+						</FormGrid>
+					</div>
+				{/if}
+
+				<FormGrid>
+					<Field
+						label="Notes"
+						span={12}
+						hint={slotMode === 'category' ? 'the first line is what the block says' : 'optional'}
+						required={slotMode === 'category'}
+					>
+						<!--
+							Notes, not a label.
+
+							It was one line called "Label", which is what it looked like from
+							the database's side and not what anybody uses it for: what goes
+							here is what the thing actually is, and often what you need to
+							remember about it. It takes as much as you want to write; the
+							grid shows the first line, because a block is a rectangle an
+							hour tall and a paragraph does not fit in one.
+						-->
+						<textarea
+							name="label"
+							rows={slotMode === 'category' ? 3 : 2}
+							autocomplete="off"
+							required={slotMode === 'category'}
+							placeholder={slotMode === 'category' ? 'e.g. dentist' : ''}
+							bind:value={formLabel}
+							class="input resize-y"
+							maxlength={MAX_BLOCK_NOTES}
+						></textarea>
+					</Field>
+				</FormGrid>
+
+				<FormGrid>
 					<!--
 						The reminder, where the block is.
 
@@ -3197,96 +3290,6 @@
 						</div>
 					</Field>
 				</FormGrid>
-
-				<FormGrid>
-					<Field label="Mode" span={4} required>
-						<select name="mode" required bind:value={slotMode} class="select">
-							<option value="activity">Activity</option>
-							<option value="category">Category</option>
-							<!-- Only where there is a workout to pick: a mode that lands on
-							     an empty list is a dead end. -->
-							{#if data.workouts.length > 0}
-								<option value="workout">Workout</option>
-							{/if}
-						</select>
-					</Field>
-					{#if slotMode === 'category'}
-						<Field label="Category" span={4} required>
-							<select name="categoryId" required bind:value={formCategoryId} class="select">
-								{#each data.categories as cat (cat.id)}
-									<option value={cat.id}>{cat.name}</option>
-								{/each}
-							</select>
-						</Field>
-					{:else if slotMode === 'workout'}
-						<Field label="Workout" span={4} required>
-							<select name="workoutId" required bind:value={formWorkoutId} class="select">
-								{#each data.workouts as t (t.id)}
-									<option value={t.id}>{t.title}</option>
-								{/each}
-							</select>
-						</Field>
-					{:else}
-						<Field label="Activity" span={4} required>
-							<select name="activityId" required bind:value={activityChoice} class="select">
-								{#each data.activities as act (act.id)}
-									<option value={String(act.id)}>{act.name}</option>
-								{/each}
-								<option value={NEW_ACTIVITY}>+ New activity...</option>
-							</select>
-						</Field>
-					{/if}
-					<Field
-						label="Notes"
-						span={4}
-						hint={slotMode === 'category' ? 'the first line is what the block says' : 'optional'}
-						required={slotMode === 'category'}
-					>
-						<!--
-							Notes, not a label.
-
-							It was one line called "Label", which is what it looked like from
-							the database's side and not what anybody uses it for: what goes
-							here is what the thing actually is, and often what you need to
-							remember about it. It takes as much as you want to write; the
-							grid shows the first line, because a block is a rectangle an
-							hour tall and a paragraph does not fit in one.
-						-->
-						<textarea
-							name="label"
-							rows={slotMode === 'category' ? 2 : 1}
-							autocomplete="off"
-							required={slotMode === 'category'}
-							placeholder={slotMode === 'category' ? 'e.g. dentist' : ''}
-							bind:value={formLabel}
-							class="input resize-y"
-							maxlength={MAX_BLOCK_NOTES}
-						></textarea>
-					</Field>
-				</FormGrid>
-
-				{#if slotMode === 'activity' && activityChoice === NEW_ACTIVITY}
-					<div class="border border-gray-200 bg-gray-50 p-3">
-						<FormGrid>
-							<Field label="New activity" span={8} required>
-								<OneLine
-									name="newActivityName"
-									placeholder="e.g. learn russian"
-									class="input"
-									required
-									autofocus
-								/>
-							</Field>
-							<Field label="Its category" span={4} required>
-								<select name="newActivityCategoryId" required class="select">
-									{#each data.categories as cat (cat.id)}
-										<option value={cat.id}>{cat.name}</option>
-									{/each}
-								</select>
-							</Field>
-						</FormGrid>
-					</div>
-				{/if}
 
 				<MoreOptions label="Urgency, interest, energy" count={ratingsSet}>
 					{#each RATINGS as r (r)}
