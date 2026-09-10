@@ -11,13 +11,13 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**48 pages, 203 actions.**
+**48 pages, 191 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/`                                  | `createDiaryEntry`, `saveWins`, `setLayout`, `resetLayout`                                                                                                                                                                                                                                                                                                                          |
-| `/admin`                             | `unban`, `blockForever`, `unblockForever`, `dismissReport`, `setRole`, `retryMail`, `dismissMail`                                                                                                                                                                                                                                                                                   |
-| `/admin/[id]`                        | `setRole`, `setPlanEnd`, `grantTrial`, `resendVerification`, `deleteAccount`                                                                                                                                                                                                                                                                                                        |
+| `/admin`                             | —                                                                                                                                                                                                                                                                                                                                                                                   |
+| `/admin/[id]`                        | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/buy`                               | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/data/[slug]`                       | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/demo`                              | `default`                                                                                                                                                                                                                                                                                                                                                                           |
@@ -83,28 +83,6 @@ carries a real address, and a client error carries a stack from the server.
 
 Writes are refused in `hooks.server.ts`, in one place, for the same reason
 this list is here rather than spread through the page.
-
-### `/admin/[id]`
-
-**`setPlanEnd`**
-
-The operator's clock: end the plan on a chosen date.
-
-**`grantTrial`**
-
-A trial for an account that predates billing — see grantTrial.
-
-**`resendVerification`**
-
-Send the confirmation link again, for somebody who never got the first.
-
-**`deleteAccount`**
-
-Erase the account, having been made to type its address.
-
-A redirect on success rather than a form message: the page this action
-belongs to is about an account that no longer exists, and re-rendering it
-would be a 404 or, worse, a cached shell of somebody who is gone.
 
 ### `/buy`
 

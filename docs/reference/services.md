@@ -1837,6 +1837,19 @@ adapter and rejects a larger body before this app runs, with an answer no
 page can read. One effective number, honestly reported: the pages quote it,
 the browser refuses against it, and the service enforces it.
 
+#### `tidyFilename(raw)`
+
+The filename, reduced to something safe to show and store.
+
+It is never a path here — the bytes are a column, not a file — but it is
+echoed back into a `Content-Disposition` header and into markup, so anything
+that could steer either is removed rather than escaped: no separators, no
+control characters, no quotes.
+
+#### `sniff(bytes)`
+
+What these bytes actually are, or nothing.
+
 #### `bytesStored(ctx)`
 
 What this account's pictures already add up to.
@@ -2680,6 +2693,11 @@ worthless".
 #### `consumeInvite(id, userId, now)`
 
 Called once the account exists, so a failed sign-up does not burn a code.
+
+Returns whether this call is the one that spent it: two sign-ups can arrive
+holding the same code, and the `usedAt IS NULL` in the update is what
+decides between them — the caller hands the code's grant only to the
+account this returns true for.
 
 #### `listInvites()`
 
