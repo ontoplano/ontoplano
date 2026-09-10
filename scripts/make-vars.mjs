@@ -26,8 +26,24 @@
  * an undescribed one can do is appear without a sentence, and `--check` makes
  * even that fail the build.
  *
- * Sub-makes are followed: `publish` runs `$(MAKE) release`, so it takes what
- * release takes.
+ * Sub-makes and prerequisites are both followed: `publish` runs
+ * `$(MAKE) release`, and `deploy` has `_confirm` and `build` in front of it, so
+ * all three take what those take. Following only sub-makes was how `deploy`
+ * came to list two switches out of eight — everything it reads, it reads
+ * through a prerequisite.
+ *
+ * Two things a defaults.env sets are switches after all. One is a value a
+ * recipe *tests* rather than uses: `DEPLOY_DOCS=true` is there so a hoster can
+ * say once that deploys leave the docs alone, and `[ "$(DEPLOY_DOCS)" = false ]`
+ * is a command line saying it for one run. The other is a value somebody wrote
+ * a `#:` line for, which is somebody saying it is meant to be typed —
+ * ONTOPLANO_ORIGIN has a default and is still the whole point of
+ * `make android ONTOPLANO_ORIGIN=…`. A marker rescues a `:=` name the same
+ * way: a command line beats `:=` too, so `make android-lan LAN_IP=…` works and
+ * only the marker says it is meant to. All of that only ever *adds* a name, so
+ * none of it can hide one; a name that is only interpolated into a command and
+ * has nothing written about it — a host, a port, a path — is configuration and
+ * stays out.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -91,15 +107,24 @@ for (const file of envfiles) {
 const described = new Map(); // NAME -> "NAME=example  what it does"
 const computed = new Set();
 const overridable = new Set();
+const tested = new Set(); // VAR compared against a literal, i.e. flipped not filled
+const internal = new Set(); // VAR the makefile sets for one target, so it decides it
 const reads = new Map(); // target -> Set(VAR)
 const calls = new Map(); // target -> Set(target)
+const needs = new Map(); // target -> Set(target it is built after)
 const behind = new Map(); // computed VAR -> Set(VAR it is worked out from)
+const from = new Map(); // computed VAR -> the text it is worked out from
 
 for (const file of makefiles) {
 	const text = readFileSync(file, 'utf8');
 	for (const m of text.matchAll(/^[ \t]*#:[ \t]+([A-Za-z_][A-Za-z0-9_]*)=(.*)$/gm)) {
 		if (!described.has(m[1])) described.set(m[1], m[2]);
 	}
+
+	// Tested against a literal, in the shell and in make's own conditionals.
+	for (const m of text.matchAll(/\[\s+"?\$[({]([A-Z][A-Z0-9_]*)[)}]"?\s+!?=/g)) tested.add(m[1]);
+	for (const m of text.matchAll(/\$\(filter[^,]*,\s*\$[({]([A-Z][A-Z0-9_]*)[)}]/g))
+		tested.add(m[1]);
 
 	let target = null;
 	for (const line of text.split('\n')) {
@@ -114,6 +139,7 @@ for (const file of makefiles) {
 			 * means `package` takes PACKAGE_BUILD, and nothing in the recipe says
 			 * so — the recipe only ever sees the prerequisite.
 			 */
+			from.set(assign[1], assign[3]);
 			if (!behind.has(assign[1])) behind.set(assign[1], new Set());
 			for (const m of assign[3].matchAll(/\$[({]([A-Z][A-Z0-9_]*)[)}]/g)) {
 				behind.get(assign[1]).add(m[1]);
@@ -121,15 +147,32 @@ for (const file of makefiles) {
 			continue;
 		}
 
-		const rule = line.match(/^([a-zA-Z][a-zA-Z0-9_-]*)\s*:([^=]|$)/);
+		// `deploy-app: CONFIRM_SCOPE = app` — the makefile telling one target
+		// something. It wins over the `?=` that gives the same name its default,
+		// because a name the makefile sets per target is one the makefile
+		// decides: CONFIRM_SCOPE says which command is asking to confirm, and
+		// nobody types it.
+		const local = line.match(/^[a-zA-Z_][a-zA-Z0-9_ -]*:\s*([A-Z_][A-Z0-9_]*)\s*[:?+]?=/);
+		if (local) {
+			internal.add(local[1]);
+			continue;
+		}
+
+		// Underscore names too. `_confirm` is where `deploy` reads DEPLOY_YES,
+		// and a rule regex that would not match its own name read none of it.
+		const rule = line.match(/^([a-zA-Z_][a-zA-Z0-9_./-]*)\s*:([^=]|$)/);
 		if (rule) {
 			target = rule[1];
 			if (!reads.has(target)) reads.set(target, new Set());
 			if (!calls.has(target)) calls.set(target, new Set());
+			if (!needs.has(target)) needs.set(target, new Set());
 			// The prerequisites count too: a target whose dependency is computed
-			// from a switch takes that switch.
-			for (const m of line.slice(rule[1].length).matchAll(/\$[({]([A-Z][A-Z0-9_]*)[)}]/g)) {
-				reads.get(target).add(m[1]);
+			// from a switch takes that switch, and one that is built after
+			// another takes what that one takes.
+			const prereqs = line.slice(rule[1].length).replace(/^\s*:/, '');
+			for (const m of prereqs.matchAll(/\$[({]([A-Z][A-Z0-9_]*)[)}]/g)) reads.get(target).add(m[1]);
+			for (const m of prereqs.matchAll(/(?:^|\s)([a-zA-Z_][a-zA-Z0-9_-]*)/g)) {
+				needs.get(target).add(m[1]);
 			}
 			continue;
 		}
@@ -155,7 +198,10 @@ for (const file of makefiles) {
 }
 
 const isSwitch = (name) =>
-	!environmental(name) && !configured.has(name) && (!computed.has(name) || overridable.has(name));
+	!environmental(name) &&
+	!internal.has(name) &&
+	(!configured.has(name) || tested.has(name) || described.has(name)) &&
+	(!computed.has(name) || overridable.has(name) || described.has(name));
 
 /**
  * A name, resolved to the switches it stands for: itself if it is one, and
@@ -168,12 +214,38 @@ function resolve(name, seen = new Set()) {
 	return [...(behind.get(name) ?? [])].flatMap((from) => resolve(from, seen));
 }
 
-/** What a target takes, including whatever the targets it runs take. */
+/**
+ * The targets a prerequisite stands for: itself when it is one, and when it is
+ * a variable — `deploy: _confirm $(BUILD_DEP)` — whatever targets its value
+ * names.
+ */
+function prerequisites(target) {
+	const out = new Set();
+	for (const name of needs.get(target) ?? []) {
+		if (reads.has(name)) out.add(name);
+		for (const m of (from.get(name) ?? '').matchAll(/(?:^|[\s,)])([a-z_][a-z0-9_-]*)/g)) {
+			if (reads.has(m[1])) out.add(m[1]);
+		}
+	}
+	for (const name of reads.get(target) ?? []) {
+		for (const m of (from.get(name) ?? '').matchAll(/(?:^|[\s,)])([a-z_][a-z0-9_-]*)/g)) {
+			if (reads.has(m[1])) out.add(m[1]);
+		}
+	}
+	return out;
+}
+
+/**
+ * What a target takes: what its own recipe reads, plus whatever the targets it
+ * runs and the targets it is built after take. `make deploy` builds and
+ * confirms before it ships, so NODE_OPTIONS and DEPLOY_YES are as much its
+ * switches as anything its own recipe expands.
+ */
 function switchesFor(target, seen = new Set()) {
 	if (seen.has(target)) return new Set();
 	seen.add(target);
 	const out = new Set([...(reads.get(target) ?? [])].flatMap((name) => resolve(name)));
-	for (const sub of calls.get(target) ?? []) {
+	for (const sub of [...(calls.get(target) ?? []), ...prerequisites(target)]) {
 		for (const name of switchesFor(sub, seen)) out.add(name);
 	}
 	return out;
