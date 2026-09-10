@@ -255,3 +255,21 @@ describe('turning a one-off into a repeating block', () => {
 		expect(() => slots.convertRepeat(ctx, one, { to: 'sometimes', date: '2026-08-20' })).toThrow();
 	});
 });
+
+describe('a duration no week can hold', () => {
+	test('the row is skipped rather than stored', () => {
+		// `Number(cell) || 60` accepted -50 and 100000 — the same bounds every
+		// other way of making a slot enforces (I6) apply here too. A blank
+		// still means an hour.
+		const result = slots.importWeekCsv(ctx, {
+			csv: `${HEADER}\n900,-50,Deep work,,,,,,\n1000,100000,Deep work,,,,,,\n1100,,Deep work,,,,,,`,
+			clearExisting: true
+		});
+
+		expect(result.imported).toBe(1);
+		const kept = slots.listWeeklySlots(ctx);
+		expect(kept).toHaveLength(1);
+		expect(kept[0].startTime).toBe('11:00');
+		expect(kept[0].durationMinutes).toBe(60);
+	});
+});

@@ -840,7 +840,14 @@ export function importWeekCsv(
 		const startTime = `${padded.slice(0, -2).padStart(2, '0')}:${padded.slice(-2)}`;
 		if (!TIME_PATTERN.test(startTime)) continue;
 
-		const durationMinutes = Number(cells[1]) || 60;
+		// The same bounds every other way of making a slot enforces (I6): a
+		// negative or week-long duration in a CSV cell is a typo, not a slot.
+		let durationMinutes: number;
+		try {
+			durationMinutes = parseDuration(cells[1], 60);
+		} catch {
+			continue;
+		}
 
 		for (let day = 0; day < 7 && day + 2 < cells.length; day++) {
 			const cell = cells[day + 2].trim();
