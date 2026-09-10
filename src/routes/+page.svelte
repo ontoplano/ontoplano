@@ -76,6 +76,25 @@
 		return todosNewestFirst ? todos : [...todos].reverse();
 	});
 
+	/**
+	 * Today's blocks that are still to do, and any that are mid-undo.
+	 *
+	 * The server's list is what is *left*, so a ticked block drops out of it the
+	 * moment the reload lands — taking the row, and the Undo the row was
+	 * offering, out from under the cursor a couple of hundred milliseconds after
+	 * the tick. Everything below it moved up at the same time.
+	 *
+	 * So the list is rebuilt from the day's blocks instead, and one inside its
+	 * undo window keeps the place it had, struck through, until the window
+	 * closes. The counts beside it are the server's and move straight away:
+	 * the block really is done, and this is only the offer to say otherwise.
+	 */
+	const todoRows = $derived(
+		(data.todayTasks ?? []).filter(
+			(t) => t.status === 'todo' || t.status === 'doing' || isPending(`instance:${t.id}`)
+		)
+	);
+
 	function startArranging() {
 		order = [...layout];
 		arranging = true;
@@ -440,9 +459,9 @@
 						</span>
 					</div>
 
-					{#if data.tasksTodo.length > 0}
+					{#if todoRows.length > 0}
 						<ul class="mt-3 divide-y divide-gray-100 border-t border-gray-100">
-							{#each data.tasksTodo.slice(0, TODO_PREVIEW) as task (`${task.kind}-${task.id}`)}
+							{#each todoRows.slice(0, TODO_PREVIEW) as task (`${task.kind}-${task.id}`)}
 								{@const pending = isPending(`instance:${task.id}`)}
 								<li class="flex items-center gap-3 py-1.5">
 									<!--
@@ -496,14 +515,20 @@
 								</li>
 							{/each}
 						</ul>
-						{#if data.tasksTodo.length > TODO_PREVIEW}
+						{#if todoRows.length > TODO_PREVIEW}
 							<p class="mt-1 text-xs text-gray-500">
-								+{data.tasksTodo.length - TODO_PREVIEW} more
+								+{todoRows.length - TODO_PREVIEW} more
 							</p>
 						{/if}
 					{/if}
 
-					<div class="mt-3 flex flex-wrap gap-3 text-xs text-gray-500">
+					<!--
+						A line's worth of room, whether or not there is anything to say
+						in it. Ticking the first block off the day makes "1 done" exist,
+						and a card that grows by a line the moment you press something
+						inside it moves everything under it.
+					-->
+					<div class="mt-3 flex min-h-4 flex-wrap gap-3 text-xs text-gray-500">
 						{#if data.taskSummary.done > 0}
 							<span>{data.taskSummary.done} done</span>
 						{/if}

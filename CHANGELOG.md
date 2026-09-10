@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.127.4 — 2026-09-10
+
+- **Ticking something off Today's Tasks no longer takes the row away.** A
+  block inside its undo window keeps its place on the list, struck through,
+  with the Undo still on it. It used to leave the moment the write landed —
+  a couple of hundred milliseconds — taking the offer to take it back with
+  it and moving everything below up a line. The card no longer grows by a
+  line either when the first block of the day is done.
+
 ## 0.127.3 — 2026-09-10
 
 - **Deleting a workout category no longer fails on a real instance.** The

@@ -56,13 +56,58 @@ test('pressing it twice is the same as pressing Undo', async ({ page }) => {
 	await register(page, `dash-twice-${Date.now()}@test.invalid`);
 	await visit(page, '/');
 
+	const card = page
+		.locator('section')
+		.filter({ has: page.getByRole('heading', { name: "Today's Tasks" }) });
+
 	const title = await firstTask(page);
 	await page.getByRole('button', { name: `Mark ${title} done`, exact: true }).click();
+
+	/*
+	 * Wait for the reload before reaching for Undo, because that is where this
+	 * went wrong. The tick writes immediately and the page fetches its data
+	 * again behind it; the card's list is what is still to do, so the answer
+	 * coming back used to take the row — and the Undo on it — off the screen a
+	 * couple of hundred milliseconds after it appeared. Fast enough to pass most
+	 * of the time and to fail on a loaded machine, which is how CI found it.
+	 *
+	 * "1 done" is the server's own count, so it is proof the answer landed.
+	 */
+	await expect(card.getByText('1 done', { exact: true })).toBeVisible();
+
+	// Still there, and still first: the row holds its place for the window.
+	await expect(
+		card.getByRole('button', { name: /^(Mark|Undo marking) .* done$/ }).first()
+	).toHaveAttribute('aria-label', `Undo marking ${title} done`);
+
 	await page.getByRole('button', { name: `Undo marking ${title} done`, exact: true }).click();
 
 	await page.reload({ waitUntil: 'load' });
 	await page.waitForSelector('html[data-ready]');
 	await expect(page.getByRole('button', { name: `Mark ${title} done`, exact: true })).toBeVisible();
+});
+
+test('ticking one off moves nothing on the card', async ({ page }) => {
+	await register(page, `dash-still-${Date.now()}@test.invalid`);
+	await visit(page, '/');
+
+	const card = page
+		.locator('section')
+		.filter({ has: page.getByRole('heading', { name: "Today's Tasks" }) });
+
+	const title = await firstTask(page);
+	const rows = card.locator('li');
+	const below = await rows.nth(1).boundingBox();
+	const box = await card.boundingBox();
+
+	await page.getByRole('button', { name: `Mark ${title} done`, exact: true }).click();
+	await expect(card.getByText('1 done', { exact: true })).toBeVisible();
+
+	// To the pixel: the row under the one that was pressed has not moved, and
+	// the card has not grown under it either — "1 done" appearing at the foot
+	// of it is a line the card was already paying for.
+	expect(await rows.nth(1).boundingBox()).toMatchObject({ y: below!.y });
+	expect(await card.boundingBox()).toMatchObject({ y: box!.y, height: box!.height });
 });
 
 test('letting the window run out really does finish it', async ({ page }) => {
