@@ -467,6 +467,23 @@ describe('inviting somebody with no account', () => {
 		);
 		setRegistration('open');
 	});
+
+	test('a box closed by the env override is closed here too', async () => {
+		// `ONTOPLANO_REGISTRATION` is how a box is closed in a hurry, and it
+		// must win over a config.toml still saying open — this gate read the
+		// TOML directly and kept minting accounts.
+		payerHas(5);
+		const { inviteToPlan } = await import('../src/lib/server/services/family-invite');
+		setRegistration('open');
+		process.env.ONTOPLANO_REGISTRATION = 'closed';
+		try {
+			await expect(inviteToPlan(OWNER, 'nobody-else@example.test')).rejects.toThrow(
+				/No account here uses that address/
+			);
+		} finally {
+			delete process.env.ONTOPLANO_REGISTRATION;
+		}
+	});
 });
 
 /**
