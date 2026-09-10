@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import CopyBlock from '$lib/components/CopyBlock.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -191,12 +192,11 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 						class="mt-2 flex flex-wrap items-center gap-2"
 					>
 						<div class="flex w-full flex-wrap items-center gap-2">
-							<input
+							<OneLine
 								name="label"
-								autocomplete="off"
 								placeholder="AI assistant"
 								class="input w-auto flex-1 sm:max-w-64"
-								aria-label="What to call this key"
+								ariaLabel="What to call this key"
 							/>
 							<button class="btn btn-primary btn-sm" type="submit">Make it</button>
 							<button type="button" class="btn btn-sm btn-quiet" onclick={() => (naming = false)}>
