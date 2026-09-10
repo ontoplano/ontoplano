@@ -78,6 +78,15 @@ describe('a demo account', () => {
 	});
 });
 
+describe('resetting', () => {
+	it('refuses an account that does not carry the demo stamp', async () => {
+		// This is the one function that empties a whole account. It is only
+		// ever handed demo accounts today, but "the callers are careful" is
+		// not a guard — the stamp is.
+		await expect(demo.resetDemoAccount(OWNER)).rejects.toThrow(/not found/);
+	});
+});
+
 describe('the sweep', () => {
 	it('deletes the ones whose time has passed and leaves the rest', () => {
 		pretendVisitor('visitor-expired', new Date(Date.now() - 60_000).toISOString());

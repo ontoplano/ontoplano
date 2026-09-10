@@ -160,6 +160,11 @@ async function seed(email: string): Promise<void> {
  * is somebody who intends to keep looking.
  */
 export async function resetDemoAccount(userId: string): Promise<void> {
+	// The one function that wipes a whole account, so it checks its own
+	// premise rather than trusting every caller forever: only an account
+	// carrying the demo stamp may be emptied here.
+	if (!isDemoAccount(userId)) throw new NotFoundError('account');
+
 	const account = db.select({ email: user.email }).from(user).where(eq(user.id, userId)).get();
 	if (!account) throw new NotFoundError('account');
 
