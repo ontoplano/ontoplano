@@ -12,6 +12,12 @@ version.
 
 ## 0.127.1 — 2026-09-10
 
+- **An imported file can no longer lie about what its pictures and sounds
+  are.** Restoring an account re-derives every picture's type from its bytes
+  and holds sounds to the same short list the upload does — a crafted backup
+  could previously store an HTML "picture" that the app then served as a page,
+  running its script as you. The picture and ringtone endpoints also now carry
+  headers that keep any such row inert.
 - **Administration actions now refuse anyone who is not an administrator.**
   They were reachable by a direct POST without opening the page, which let any
   signed-in account drive the ban controls and clear the mail-failure and

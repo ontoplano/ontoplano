@@ -35,6 +35,11 @@ export const GET: RequestHandler = async (event) => {
 				'content-length': String(picture.bytes.length),
 				'content-disposition': `inline; filename="${picture.filename}"`,
 				'x-content-type-options': 'nosniff',
+				// If a row ever holds a document anyway — an old import, a bug
+				// upstream — this keeps it inert when opened as a page. The
+				// app's CSP is injected into rendered pages only, not into a
+				// hand-built Response like this one.
+				'content-security-policy': "default-src 'none'; sandbox",
 				'cache-control': 'private, max-age=31536000, immutable'
 			}
 		});

@@ -274,3 +274,83 @@ describe('a file that is not an export', () => {
 		expect(after.some((t) => t.title === 'Fine')).toBe(true);
 	});
 });
+
+/**
+ * The rows that are later served back as raw bytes under their stored type.
+ *
+ * The upload paths derive the type on the server — a picture from its first
+ * bytes, a sound from a short allowlist — so the import has to do the same,
+ * or a crafted file stores a `text/html` "picture" that `/media/[id]` then
+ * serves as a same-origin document: stored XSS with the victim's own session.
+ */
+describe('a file cannot lie about the type of its bytes', () => {
+	const PNG = Buffer.concat([
+		Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+		Buffer.from('not really a picture body, but the signature is what decides')
+	]);
+
+	const withMedia = (row: Record<string, unknown>) => ({
+		exportedAt: now.toISOString(),
+		account: { id: 'x', name: 'x', email: 'someone@example.test' },
+		data: { media: [{ id: 1, userId: 'x', byteSize: 1, sha256: 'lied', ...row }] }
+	});
+
+	test('an HTML "picture" is refused, whole import and all', () => {
+		const doc = Buffer.from('<script>fetch("/api/v1/export")</script>');
+		expect(() =>
+			accountImport.importAccount(STRANGER, {
+				exportedAt: now.toISOString(),
+				account: { id: 'x', name: 'x', email: 'someone@example.test' },
+				data: {
+					media: [
+						{
+							id: 1,
+							userId: 'x',
+							mime: 'text/html',
+							filename: 'photo.html',
+							byteSize: doc.length,
+							sha256: 'x',
+							bytes: doc.toString('base64')
+						}
+					]
+				}
+			})
+		).toThrow(/not a format this app accepts/);
+	});
+
+	test('a real picture claiming a document type is stored under what its bytes say', () => {
+		accountImport.importAccount(
+			STRANGER,
+			withMedia({ mime: 'text/html', filename: 'photo.html', bytes: PNG.toString('base64') })
+		);
+
+		const back = account.exportAccount(STRANGER, new Date(now.getTime() + 5000));
+		const rows = back.data.media as { mime: string; sha256: string; byteSize: number }[];
+		expect(rows).toHaveLength(1);
+		expect(rows[0].mime).toBe('image/png');
+		// And the columns derived from the bytes are recomputed, not copied.
+		expect(rows[0].byteSize).toBe(PNG.length);
+		expect(rows[0].sha256).not.toBe('lied');
+	});
+
+	test('a "sound" with a document type is refused the same way', () => {
+		expect(() =>
+			accountImport.importAccount(STRANGER, {
+				exportedAt: now.toISOString(),
+				account: { id: 'x', name: 'x', email: 'someone@example.test' },
+				data: {
+					ringtones: [
+						{
+							id: 1,
+							userId: 'x',
+							name: 'chime',
+							mime: 'text/html',
+							bytes: 4,
+							data: Buffer.from('<h1>hi</h1>').toString('base64')
+						}
+					]
+				}
+			})
+		).toThrow(/not a format this app accepts/);
+	});
+});

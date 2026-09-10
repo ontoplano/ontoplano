@@ -111,7 +111,7 @@ export function mediaLimits() {
  * that could steer either is removed rather than escaped: no separators, no
  * control characters, no quotes.
  */
-function tidyFilename(raw: string): string {
+export function tidyFilename(raw: string): string {
 	return (
 		raw
 			// Nothing path-shaped survives. It is never used as a path — the bytes
@@ -128,7 +128,7 @@ function tidyFilename(raw: string): string {
 }
 
 /** What these bytes actually are, or nothing. */
-function sniff(bytes: Buffer): { mime: string; extension: string } | null {
+export function sniff(bytes: Buffer): { mime: string; extension: string } | null {
 	if (bytes.length < 12) return null;
 	const hit = SIGNATURES.find((s) => s.matches(bytes));
 	return hit ? { mime: hit.mime, extension: hit.extension } : null;

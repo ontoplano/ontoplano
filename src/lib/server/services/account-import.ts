@@ -41,6 +41,7 @@
  * inside a single transaction: it either all lands or none of it does, and
  * there is no state where half a week exists.
  */
+import { createHash } from 'node:crypto';
 import { mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -50,6 +51,8 @@ import { db } from '../db/index.js';
 import { record as audit } from './audit.js';
 import { ValidationError } from './errors.js';
 import { collectAccount, USER_TABLES, type AccountExport } from './account.js';
+import { sniff, tidyFilename } from './media.js';
+import { RINGTONE_TYPES } from './ringtones.js';
 import { DATA_DIR } from '../config.js';
 
 /**
@@ -310,6 +313,33 @@ export function importAccount(userId: string, payload: unknown): ImportResult {
 				// file can make the import decode a column that is really text.
 				for (const key of blobKeys(table.table))
 					if (typeof row[key] === 'string') row[key] = Buffer.from(row[key], 'base64');
+
+				/*
+				 * The two tables whose rows are served back as raw bytes under
+				 * their stored type. The upload paths derive that type on the
+				 * server — a picture from its first bytes, a sound from a short
+				 * allowlist — and a row arriving in a file gets exactly the same
+				 * treatment, because a stored `text/html` "picture" served from
+				 * this origin is script running as the person who imported it.
+				 */
+				if (table.name === 'media') {
+					const kind = row.bytes instanceof Buffer ? sniff(row.bytes) : null;
+					if (!kind)
+						throw new ValidationError(
+							'The file carries a picture that is not a format this app accepts'
+						);
+					row.mime = kind.mime;
+					row.filename = tidyFilename(String(row.filename ?? '')) || `picture.${kind.extension}`;
+					row.byteSize = (row.bytes as Buffer).length;
+					row.sha256 = createHash('sha256').update(row.bytes as Buffer).digest('hex');
+				}
+				if (table.name === 'ringtones') {
+					if (!(RINGTONE_TYPES as readonly string[]).includes(String(row.mime)))
+						throw new ValidationError(
+							'The file carries a sound that is not a format this app accepts'
+						);
+					if (row.data instanceof Buffer) row.bytes = row.data.length;
+				}
 
 				const wasId = row.id;
 				delete row.id;

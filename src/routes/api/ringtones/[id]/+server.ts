@@ -19,6 +19,11 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 			headers: {
 				'content-type': mime,
 				'content-length': String(data.byteLength),
+				// Same armour as /media: the type is a stored claim, so a browser
+				// must not second-guess it, and a document that slips through is
+				// inert as a page.
+				'x-content-type-options': 'nosniff',
+				'content-security-policy': "default-src 'none'; sandbox",
 				'cache-control': 'private, max-age=31536000, immutable'
 			}
 		});
