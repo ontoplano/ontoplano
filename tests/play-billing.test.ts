@@ -13,7 +13,7 @@
 // src/lib/server/billing/contract.ts. They run in the build that sells.
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 import { generateKeyPairSync } from 'node:crypto';
-import { makeDatabase, OWNER, seedAccounts } from './helpers/db';
+import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
 import { hasPlayChannel } from './helpers/billing';
 
 const database = makeDatabase();
@@ -100,6 +100,20 @@ describe.skipIf(!hasPlayChannel())('a purchase made in the store copy', () => {
 		await expect(
 			billing.playClaim(OWNER, { sku: 'ontoplano.family.yearly', purchaseToken: 'tok-good-1' })
 		).rejects.toThrow(/different plan/);
+	});
+
+	test('a token already bound to another account cannot be claimed again', async () => {
+		// The buyer can always extract the purchase token from their own device;
+		// handing it around must not turn one payment into many accounts.
+		const fetcher = googleAnswers(activePurchase('ontoplano.solo.monthly'));
+		vi.stubGlobal('fetch', fetcher);
+		await expect(
+			billing.playClaim(STRANGER, { sku: 'ontoplano.solo.monthly', purchaseToken: 'tok-good-1' })
+		).rejects.toThrow(/another account/);
+		// Refused before Google is even asked, and the buyer keeps what they paid for.
+		expect(fetcher).not.toHaveBeenCalled();
+		expect(subscriptions.resolvePlan(OWNER).plan).toBe('pro');
+		expect(subscriptions.resolvePlan(STRANGER).plan).not.toBe('pro');
 	});
 
 	test('a token Google does not recognise is refused, loudly', async () => {

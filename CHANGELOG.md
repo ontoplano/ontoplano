@@ -18,6 +18,10 @@ version.
   could previously store an HTML "picture" that the app then served as a page,
   running its script as you. The picture and ringtone endpoints also now carry
   headers that keep any such row inert.
+- **A Google Play purchase can no longer be claimed by more than one
+  account.** The purchase token stays attached to the account that first
+  claimed it; presenting it from a second account is refused. (The Play
+  channel ships only in the Play build — today's instances are unaffected.)
 - **Calendar feeds, webhooks and push endpoints can no longer be steered at
   the server's own network.** The old check matched the typed hostname once;
   a redirect, a DNS record, or an unusual spelling of an address could walk
