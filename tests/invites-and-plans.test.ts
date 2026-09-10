@@ -56,6 +56,22 @@ describe('an invitation', () => {
 		expect(() => registration.checkSignUpAllowed(invite.code, now)).toThrow();
 	});
 
+	test('and only one of two racing sign-ups spends it', () => {
+		// Both passed `checkSignUpAllowed` before either consumed — the race
+		// two parallel registrations actually run. The row decides: the second
+		// consume answers false, and the caller withholds the code's grant.
+		registration.setRegistrationMode('invite');
+		const invite = registration.createInvite(OWNER, {}, now);
+		registration.checkSignUpAllowed(invite.code, now);
+		registration.checkSignUpAllowed(invite.code, now);
+
+		expect(registration.consumeInvite(invite.id, STRANGER, now)).toBe(true);
+		expect(registration.consumeInvite(invite.id, OWNER, now)).toBe(false);
+
+		// And the record still names the account that got in.
+		expect(registration.listInvites().find((i) => i.id === invite.id)?.usedBy).toBe(STRANGER);
+	});
+
 	test('does not work after it has expired', () => {
 		registration.setRegistrationMode('invite');
 		const invite = registration.createInvite(OWNER, { expiresInDays: 1 }, now);

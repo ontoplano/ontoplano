@@ -27,6 +27,13 @@ version.
   creating accounts around the app's own audited paths — now answers 404,
   as does its raw change-email endpoint, which skipped the settings form's
   password check.
+- **A handful of smaller fences.** Family seat invitations honour the
+  registration override a box was closed with; an invitation code spent by
+  two simultaneous sign-ups grants its entitlement once; searching for a
+  literal `%` or `_` works and neither acts as a wildcard; a reminder cannot
+  name another account's ringtone; the published calendar neutralises bare
+  carriage returns in titles; the week CSV import bounds durations; and the
+  demo reset refuses accounts that are not demo accounts.
 - **A Google Play purchase can no longer be claimed by more than one
   account.** The purchase token stays attached to the account that first
   claimed it; presenting it from a second account is refused. (The Play

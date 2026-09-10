@@ -180,10 +180,11 @@ export const actions: Actions = {
 
 			// Only once the account exists, so a taken address does not burn a code.
 			if (created?.user?.id) {
-				if (invite) consumeInvite(invite.id, created.user.id, now);
+				// The row decides who spent a code two sign-ups both held.
+				const spent = invite ? consumeInvite(invite.id, created.user.id, now) : false;
 				// An instance with nobody in it hands the first account the keys.
 				claimFirstAccount(created.user.id);
-				const onboarding = onboardEntitlement(created.user.id, invite, now);
+				const onboarding = onboardEntitlement(created.user.id, spent ? invite : null, now);
 				record(created.user.id, 'registered', { ip: event.getClientAddress() });
 				if (onboarding === 'checkout') landing = '/start';
 				// Confirm the address FIRST, then ask for the card. It ran the

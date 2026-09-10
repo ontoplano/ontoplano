@@ -131,12 +131,22 @@ export function checkSignUpAllowed(code: unknown, now: Date): { invite: Invite |
 	return { invite };
 }
 
-/** Called once the account exists, so a failed sign-up does not burn a code. */
-export function consumeInvite(id: number, userId: string, now: Date): void {
-	db.update(invites)
-		.set({ usedAt: now.toISOString(), usedBy: userId })
-		.where(and(eq(invites.id, id), isNull(invites.usedAt)))
-		.run();
+/**
+ * Called once the account exists, so a failed sign-up does not burn a code.
+ *
+ * Returns whether this call is the one that spent it: two sign-ups can arrive
+ * holding the same code, and the `usedAt IS NULL` in the update is what
+ * decides between them — the caller hands the code's grant only to the
+ * account this returns true for.
+ */
+export function consumeInvite(id: number, userId: string, now: Date): boolean {
+	return (
+		db
+			.update(invites)
+			.set({ usedAt: now.toISOString(), usedBy: userId })
+			.where(and(eq(invites.id, id), isNull(invites.usedAt)))
+			.run().changes > 0
+	);
 }
 
 export function listInvites(): Invite[] {

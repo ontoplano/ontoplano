@@ -138,12 +138,13 @@ const handleRegistration: Handle = async ({ event, resolve }) => {
 		const userId = created?.user?.id;
 
 		if (typeof userId === 'string') {
-			if (invite) consumeInvite(invite.id, userId, now);
+			const spent = invite ? consumeInvite(invite.id, userId, now) : false;
 			// The same things the form path does, because this is the other
 			// door into the same act. A card-first account starts on nothing
-			// and meets the billing page on its first navigation.
+			// and meets the billing page on its first navigation. The code's
+			// grant goes only to the account that actually spent it.
 			claimFirstAccount(userId);
-			onboardEntitlement(userId, invite, now);
+			onboardEntitlement(userId, spent ? invite : null, now);
 			record(userId, 'registered', { ip: safeAddress(event) });
 		}
 	}
