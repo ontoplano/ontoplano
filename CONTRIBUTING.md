@@ -45,17 +45,11 @@ make test           # the Playwright e2e suite
 ## Submitting changes
 
 1. Fork, branch, make the change.
-2. Make it arrive whole — the list below.
-3. Run the lint and the tests.
-4. Conventional commits: `feat: …`, `fix: …`, `docs: …` — short and literal.
-5. Open the PR against `master`.
+2. Run the lint and the tests.
+3. Conventional commits: `feat: …`, `fix: …`, `docs: …` — short and literal.
+4. Open the PR against `master`.
 
-A security problem is the one thing that does not go in an issue: use a
-[private advisory](https://github.com/ontoplano/ontoplano/security/advisories/new).
-
-### What "whole" means
-
-Each of these was once left for later and had to be asked for:
+### A feature carries all of this
 
 - **MCP tools**, in `src/lib/server/mcp/tools.ts`, with a scope in
   `services/tokens.ts`. What the app lets a person do, an assistant can do too
@@ -72,6 +66,9 @@ Each of these was once left for later and had to be asked for:
   one is missing.
 - **A bug fix ships the test that would have caught it**, failing on the old
   code.
+
+A security problem is the one thing that does not go in an issue: use a
+[private advisory](https://github.com/ontoplano/ontoplano/security/advisories/new).
 
 ## Code style
 
