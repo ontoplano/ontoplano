@@ -30,9 +30,8 @@ SQLite at `~/.local/share/ontoplano/ontoplano.db`, config at
 `~/.config/ontoplano/config.toml` — both created on first run. Never develop
 against real data.
 
-There are a lot of make targets. Bare `make` prints them with a line each, and
-`make vars` says which switches each one takes — both are read out of the
-makefiles, so neither can be out of date. `make vars ONLY=package` asks about one.
+There are a lot of make targets. Bare `make` lists them; `make vars` says which
+switches each one takes, `make vars ONLY=package` for one.
 
 ### Tests and lint
 
@@ -51,19 +50,14 @@ make test           # the Playwright e2e suite
 
 ### A feature carries all of this
 
-- **MCP tools**, in `src/lib/server/mcp/tools.ts`, with a scope in
-  `services/tokens.ts`. What the app lets a person do, an assistant can do too
-  — unless it is security, or deleting something precious. Every verb ships
-  with its way back.
-- **Create, edit and delete in the UI.** Not create alone. Anything carrying
-  history archives rather than deletes.
-- **Unit tests, and an e2e that drives it at 390px as well as wide.** Look at
-  the screenshot: a row whose buttons crowd its name into six-character lines
-  is not shipped.
-- **Seed data** in `scripts/seed-dev.mjs`, so the dev account has a little of
-  everything.
-- **The data export**, if it owns an account-scoped table — a test fails when
-  one is missing.
+- **MCP tools** in `src/lib/server/mcp/tools.ts`, with a scope in
+  `services/tokens.ts`. Anything a person can do, an assistant can do — except
+  security and deleting something precious. Every verb ships its inverse.
+- **Create, edit and delete in the UI.** Anything with history archives
+  instead.
+- **Unit tests, and an e2e at 390px as well as wide.** Look at the screenshot.
+- **Seed data** in `scripts/seed-dev.mjs`.
+- **The data export**, if it owns an account-scoped table.
 - **A bug fix ships the test that would have caught it**, failing on the old
   code.
 
