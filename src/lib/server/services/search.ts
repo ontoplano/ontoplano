@@ -88,7 +88,8 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 	 */
 	const escape = (v: string) => v.replace(/[\\%_]/g, (c) => `\\${c}`);
 	const pattern = `%${escape(query)}%`;
-	const matches = (column: Parameters<typeof like>[0]) => sql`${column} like ${pattern} escape '\\'`;
+	const matches = (column: Parameters<typeof like>[0]) =>
+		sql`${column} like ${pattern} escape '\\'`;
 
 	/**
 	 * `in:kitchen` scopes to one notebook, matched by prefix so three letters of

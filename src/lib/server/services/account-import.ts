@@ -331,7 +331,9 @@ export function importAccount(userId: string, payload: unknown): ImportResult {
 					row.mime = kind.mime;
 					row.filename = tidyFilename(String(row.filename ?? '')) || `picture.${kind.extension}`;
 					row.byteSize = (row.bytes as Buffer).length;
-					row.sha256 = createHash('sha256').update(row.bytes as Buffer).digest('hex');
+					row.sha256 = createHash('sha256')
+						.update(row.bytes as Buffer)
+						.digest('hex');
 				}
 				if (table.name === 'ringtones') {
 					if (!(RINGTONE_TYPES as readonly string[]).includes(String(row.mime)))

@@ -7,7 +7,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
 
-
 /**
  * The refresh no longer goes through the global fetch — it dials through the
  * guarded transport in `$lib/server/outbound` — so that is where the stub

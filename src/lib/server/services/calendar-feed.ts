@@ -69,14 +69,16 @@ function addMinutes(local: string, minutes: number): string {
  * note into a malformed line the calendar drops the whole event over.
  */
 function escapeText(value: string): string {
-	return value
-		.replace(/\\/g, '\\\\')
-		// \r too, not only \n: a bare carriage return in a stored title would
-		// end the line for a lenient parser, and the rest of the value would
-		// arrive as an ICS property somebody else chose.
-		.replace(/\r\n|\r|\n/g, '\\n')
-		.replace(/,/g, '\\,')
-		.replace(/;/g, '\\;');
+	return (
+		value
+			.replace(/\\/g, '\\\\')
+			// \r too, not only \n: a bare carriage return in a stored title would
+			// end the line for a lenient parser, and the rest of the value would
+			// arrive as an ICS property somebody else chose.
+			.replace(/\r\n|\r|\n/g, '\\n')
+			.replace(/,/g, '\\,')
+			.replace(/;/g, '\\;')
+	);
 }
 
 /**

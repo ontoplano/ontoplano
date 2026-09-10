@@ -29,7 +29,10 @@ import { ValidationError } from './services/errors.js';
 
 /** `[::1]` → `::1`, `localhost.` → `localhost`, case folded. */
 function canonicalHost(raw: string): string {
-	return raw.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '');
+	return raw
+		.toLowerCase()
+		.replace(/^\[|\]$/g, '')
+		.replace(/\.$/, '');
 }
 
 /**
@@ -127,15 +130,19 @@ export function guardedLookup(
 		callback(new Error(`refusing to resolve ${hostname}: it names this machine`), '', 0);
 		return;
 	}
-	dnsLookup(hostname, options as never, ((err: NodeJS.ErrnoException | null, address: unknown, family: number) => {
-		if (err) return callback(err, '', 0);
-		const all = Array.isArray(address)
-			? (address as { address: string }[]).map((a) => a.address)
-			: [String(address)];
-		if (all.some((a) => isPrivateAddress(a)))
-			return callback(new Error(`refusing ${hostname}: it resolves to a private address`), '', 0);
-		callback(null, address as string, family);
-	}) as never);
+	dnsLookup(
+		hostname,
+		options as never,
+		((err: NodeJS.ErrnoException | null, address: unknown, family: number) => {
+			if (err) return callback(err, '', 0);
+			const all = Array.isArray(address)
+				? (address as { address: string }[]).map((a) => a.address)
+				: [String(address)];
+			if (all.some((a) => isPrivateAddress(a)))
+				return callback(new Error(`refusing ${hostname}: it resolves to a private address`), '', 0);
+			callback(null, address as string, family);
+		}) as never
+	);
 }
 
 const inner = buildConnector({ lookup: guardedLookup as never });
