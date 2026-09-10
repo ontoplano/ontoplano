@@ -21,6 +21,11 @@ test('the timezone is chosen, not typed', async ({ page }) => {
 	await picker.selectOption('Europe/Lisbon');
 	await page.locator('form', { has: picker }).getByRole('button', { name: 'Save' }).click();
 
+	// Wait for the form to say it saved before leaving the page. Navigating on
+	// the click alone raced the request that the click started, and lost often
+	// enough to fail a full run and pass on its own.
+	await expect(page.getByText('Week saved.')).toBeVisible();
+
 	await visit(page, '/settings/preferences');
 	// The IANA name is what is stored; the label is only how it reads.
 	await expect(page.locator('select[name="timezone"]')).toHaveValue('Europe/Lisbon');
@@ -73,6 +78,7 @@ test('a currency outside the shortlist is accepted, and a made-up one is not', a
 	await code.fill('pln');
 	await expect(page.getByText(/Polish Zloty/i)).toBeVisible();
 	await form.getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByText('Currency saved.')).toBeVisible();
 
 	await visit(page, '/settings/preferences');
 	await expect(page.locator('input[aria-label="Currency code"]')).toHaveValue('PLN');
