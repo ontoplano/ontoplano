@@ -50,20 +50,26 @@ make test           # the Playwright e2e suite
 
 ### A feature carries all of this
 
-- **MCP tools** in `src/lib/server/mcp/tools.ts`, with a scope in
-  `services/tokens.ts`. If a person can do it in the app, an assistant can do
-  it too — apart from anything to do with security, and deleting things that
-  would hurt to lose. Every action needs its opposite: `pay` and `unpay`,
-  `archive` and `unarchive`.
-- **Create, edit and delete in the UI**, not just create. Anything that carries
-  history is archived rather than deleted.
-- **Unit tests, and an end-to-end test that drives the feature in a browser at
-  390px wide as well as full width.** Open it at both and look at it before you
-  call it done.
-- **Seed data** in `scripts/seed-dev.mjs`, so a fresh dev account has some.
-- **The data export**, if the feature owns a table of its own.
-- **A bug fix ships the test that would have caught it.** Check that the test
-  fails against the old code.
+- **MCP tools** for it, in `src/lib/server/mcp/tools.ts`, with a scope in
+  `services/tokens.ts` — whatever the app lets a person do, an assistant can
+  do too, unless it is security or the deletion of something precious. Every
+  verb ships with its way back (`archive` is its own inverse; `pay`/`unpay`).
+  The assistant preset picks new scopes up on its own; it reads the tools.
+- **Create, edit AND delete in the UI.** Not create alone. Delete is
+  confirmed in its own dialog — don't allow accidental double clicks to
+  go throught the confirmation. Anything carrying history archives instead,
+  with the hard delete reachable only from the archived list.
+- **A dashboard card**, off by default when the feature is an opinionated one.
+- **Unit tests, and an e2e that drives the whole thing in a browser at phone
+  width as well as desktop.** Look at it in the mobile and desktop. Text
+  wrapping into six-character lines is not good for production.
+- **Dev seed data**, so the dev account has a little of everything.
+- **The data export**, if the feature owns an account-scoped table — there is
+  a test that fails when a table is missing from it.
+
+### Bug fixes
+ Try and also write **the test that would have caught it**, failing on the old
+ code.
 
 A security problem is the one thing that does not go in an issue: use a
 [private advisory](https://github.com/ontoplano/ontoplano/security/advisories/new).
