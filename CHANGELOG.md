@@ -18,6 +18,11 @@ version.
   could previously store an HTML "picture" that the app then served as a page,
   running its script as you. The picture and ringtone endpoints also now carry
   headers that keep any such row inert.
+- **Calendar feeds, webhooks and push endpoints can no longer be steered at
+  the server's own network.** The old check matched the typed hostname once;
+  a redirect, a DNS record, or an unusual spelling of an address could walk
+  past it. The check now sits inside the connection itself — every address is
+  resolved and judged at the moment of dialing, on every hop.
 - **Administration actions now refuse anyone who is not an administrator.**
   They were reachable by a direct POST without opening the page, which let any
   signed-in account drive the ban controls and clear the mail-failure and

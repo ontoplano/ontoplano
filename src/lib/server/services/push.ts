@@ -5,8 +5,10 @@ import { and, eq, sql } from 'drizzle-orm';
 import webpush from 'web-push';
 
 import { db } from '../db/index.js';
+import { assertPublicUrl } from '../outbound.js';
 import { pushSubscriptions } from '../db/schema.js';
 import { CONFIG_DIR } from '../config.js';
+import { isSelfHosted } from '../settings.js';
 import { str } from './validate.js';
 import { ValidationError } from './errors.js';
 import type { Ctx } from './ctx.js';
@@ -173,6 +175,10 @@ export function saveSubscription(
 	if (!/^https:\/\//.test(endpoint)) {
 		throw new ValidationError('A push endpoint has to be https');
 	}
+	// A push endpoint is a URL this server will POST to on the account's say-so,
+	// so a hosted instance holds it to the same rule as a webhook. A self-hosted
+	// box is its owner's network.
+	if (!isSelfHosted()) assertPublicUrl(endpoint, 'push endpoint');
 
 	db.insert(pushSubscriptions)
 		.values({

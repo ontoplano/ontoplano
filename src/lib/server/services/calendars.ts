@@ -3,8 +3,9 @@ import { and, asc, eq } from 'drizzle-orm';
 import { eventsBetween, type IcsEvent } from '../../ics.js';
 import { db } from '../db/index.js';
 import { calendarFeeds } from '../db/schema.js';
+import { assertPublicUrl, fetchPublic } from '../outbound.js';
 import type { Ctx } from './ctx.js';
-import { NotFoundError, ValidationError } from './errors.js';
+import { NotFoundError } from './errors.js';
 import { stamp } from './time.js';
 import { str } from './validate.js';
 
@@ -57,10 +58,11 @@ export function listFeeds(ctx: Ctx): Feed[] {
 /**
  * What an address has to look like before we will fetch it.
  *
- * `http(s)` only, and nothing that resolves to this machine: a feed URL is
- * user-supplied and the server fetches it, which is exactly the shape of a
- * request-forgery hole. Google's iCal addresses are `https` and public, so
- * this costs nothing anybody actually wants.
+ * `http(s)` only, and nothing that points at this machine or its network —
+ * the shared guard in `$lib/server/outbound` decides that, here at add time
+ * for the person's benefit and again inside every connection the refresh
+ * makes, which is the check that actually holds. Google's iCal addresses are
+ * `https` and public, so this costs nothing anybody actually wants.
  */
 function parseUrl(raw: unknown): string {
 	const value = str(raw, 'address', { max: MAX_URL_LENGTH });
@@ -68,34 +70,7 @@ function parseUrl(raw: unknown): string {
 	// `webcal://` is what a calendar app registers; it is https underneath.
 	const normalised = value.replace(/^webcal:\/\//i, 'https://');
 
-	let url: URL;
-	try {
-		url = new URL(normalised);
-	} catch {
-		throw new ValidationError('Invalid address');
-	}
-
-	if (url.protocol !== 'https:' && url.protocol !== 'http:')
-		throw new ValidationError('A calendar address has to be http or https');
-
-	const host = url.hostname.toLowerCase();
-	const privateHost =
-		host === 'localhost' ||
-		host === '::1' ||
-		host.endsWith('.localhost') ||
-		host.endsWith('.internal') ||
-		/^127\./.test(host) ||
-		/^10\./.test(host) ||
-		/^192\.168\./.test(host) ||
-		/^169\.254\./.test(host) ||
-		/^172\.(1[6-9]|2\d|3[01])\./.test(host);
-
-	if (privateHost)
-		throw new ValidationError(
-			'That address points back at this machine, so it will not be fetched'
-		);
-
-	return url.toString();
+	return assertPublicUrl(normalised, 'calendar address').toString();
 }
 
 export function addFeed(ctx: Ctx, raw: { name?: unknown; url?: unknown; color?: unknown }): number {
@@ -146,7 +121,7 @@ export async function refreshFeed(ctx: Ctx, id: number): Promise<void> {
 	if (!feed) throw new NotFoundError('calendar');
 
 	try {
-		const res = await fetch(feed.url, {
+		const res = await fetchPublic(feed.url, {
 			redirect: 'follow',
 			headers: { accept: 'text/calendar, text/plain' },
 			signal: AbortSignal.timeout(15_000)

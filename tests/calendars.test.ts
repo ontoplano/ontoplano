@@ -7,6 +7,23 @@
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
 
+
+/**
+ * The refresh no longer goes through the global fetch — it dials through the
+ * guarded transport in `$lib/server/outbound` — so that is where the stub
+ * sits. `stubbedFetch` set means "answer with this instead of the network";
+ * null means the real guarded fetch, which the poisoned-row test relies on.
+ */
+let stubbedFetch: ((...args: unknown[]) => unknown) | null = null;
+vi.mock('undici', async (importActual) => {
+	const actual = (await importActual()) as Record<string, unknown>;
+	return {
+		...actual,
+		fetch: (...args: unknown[]) =>
+			(stubbedFetch ?? (actual.fetch as (...a: unknown[]) => unknown))(...args)
+	};
+});
+
 const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
@@ -137,14 +154,11 @@ describe('fetching one', () => {
 	].join('\r\n');
 
 	function respondWith(body: string, init: { ok?: boolean; status?: number } = {}) {
-		vi.stubGlobal(
-			'fetch',
-			vi.fn(async () => ({
-				ok: init.ok ?? true,
-				status: init.status ?? 200,
-				text: async () => body
-			}))
-		);
+		stubbedFetch = vi.fn(async () => ({
+			ok: init.ok ?? true,
+			status: init.status ?? 200,
+			text: async () => body
+		}));
 	}
 
 	/** What the page would show for this feed. */
@@ -159,7 +173,9 @@ describe('fetching one', () => {
 			.some((e) => e.feedId === id);
 	}
 
-	afterEach(() => vi.unstubAllGlobals());
+	afterEach(() => {
+		stubbedFetch = null;
+	});
 
 	test('keeps what it was given and clears the last complaint', async () => {
 		const id = s.calendars.addFeed(ctx, { name: 'Good', url: 'https://example.com/good.ics' });
@@ -211,12 +227,9 @@ describe('fetching one', () => {
 
 	test('a network that simply fails is still only a note on the row', async () => {
 		const id = s.calendars.addFeed(ctx, { name: 'Down', url: 'https://example.com/down.ics' });
-		vi.stubGlobal(
-			'fetch',
-			vi.fn(async () => {
-				throw new Error('getaddrinfo ENOTFOUND');
-			})
-		);
+		stubbedFetch = vi.fn(async () => {
+			throw new Error('getaddrinfo ENOTFOUND');
+		});
 
 		await s.calendars.refreshFeed(ctx, id);
 		expect(feedRow(id).lastError).toContain('ENOTFOUND');
@@ -225,7 +238,7 @@ describe('fetching one', () => {
 	test("is refused for a calendar that is not this account's", async () => {
 		const mine = s.calendars.listFeeds(ctx)[0];
 		const fetched = vi.fn();
-		vi.stubGlobal('fetch', fetched);
+		stubbedFetch = fetched;
 
 		await expect(s.calendars.refreshFeed(theirs, mine.id)).rejects.toThrow();
 		// And nothing was fetched on their behalf, which is the point: the URL
@@ -239,7 +252,7 @@ describe('fetching one', () => {
 		await s.calendars.refreshFeed(ctx, id);
 
 		const fetched = vi.fn(async () => ({ ok: true, status: 200, text: async () => ICS }));
-		vi.stubGlobal('fetch', fetched);
+		stubbedFetch = fetched;
 
 		// A minute later everything is still fresh…
 		await s.calendars.refreshStale({ ...ctx, now: new Date('2026-08-17T09:01:00') });
@@ -248,5 +261,52 @@ describe('fetching one', () => {
 		// …and a day later it is not.
 		await s.calendars.refreshStale({ ...ctx, now: new Date('2026-08-18T09:00:00') });
 		expect(fetched.mock.calls.length).toBeGreaterThan(afterFresh);
+	});
+});
+
+/**
+ * The half of the guard that holds: the connection itself.
+ *
+ * The form-time check can be beaten after the fact — a redirect, a DNS record
+ * that changed, a row written before the rule existed. So a private address
+ * must fail at the socket, however it got into the database. This plants one
+ * directly and proves the refresh cannot reach a server that is demonstrably
+ * up and answering.
+ */
+describe('an address that got into the database anyway', () => {
+	test('still cannot be fetched', async () => {
+		const { createServer } = await import('node:http');
+		const server = createServer((_, res) => res.end('BEGIN:VCALENDAR\nEND:VCALENDAR'));
+		await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+		const port = (server.address() as { port: number }).port;
+
+		try {
+			const { db } = await import('../src/lib/server/db');
+			const { calendarFeeds } = await import('../src/lib/server/db/schema');
+			const { eq } = await import('drizzle-orm');
+
+			const id = s.calendars.addFeed(ctx, {
+				name: 'Sneaky',
+				url: 'https://example.com/cal.ics'
+			});
+			db.update(calendarFeeds)
+				.set({ url: `http://127.0.0.1:${port}/cal.ics` })
+				.where(eq(calendarFeeds.id, id))
+				.run();
+
+			await s.calendars.refreshFeed(ctx, id);
+
+			const feed = s.calendars.listFeeds(ctx).find((f) => f.id === id);
+			expect(feed?.lastError, 'the fetch must fail, not land').toBeTruthy();
+			// And nothing the server answered was kept.
+			const row = db
+				.select({ body: calendarFeeds.body })
+				.from(calendarFeeds)
+				.where(eq(calendarFeeds.id, id))
+				.get();
+			expect(row?.body ?? null).toBeNull();
+		} finally {
+			server.close();
+		}
 	});
 });

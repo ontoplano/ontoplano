@@ -3,6 +3,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
 import { webhookSubscriptions } from '../db/schema.js';
+import { assertPublicUrl, fetchPublic } from '../outbound.js';
 import { isSelfHosted } from '../settings.js';
 import type { Ctx } from './ctx.js';
 import { stamps } from './time.js';
@@ -62,6 +63,9 @@ export const EVENT_HEADER = 'x-ontoplano-event';
  * The URL is user-supplied and the request leaves *our* network position, so
  * on a hosted instance "call 169.254.169.254" is a probe, not a webhook. A
  * self-hosted box may point wherever its owner likes — it is their network.
+ * The hosted check is the shared guard in `$lib/server/outbound`, which also
+ * sits inside every delivery's connection — the half that holds against a
+ * name whose records change after this form was saved.
  */
 function assertDeliverable(raw: unknown): string {
 	if (typeof raw !== 'string' || raw.length === 0 || raw.length > 300)
@@ -77,23 +81,7 @@ function assertDeliverable(raw: unknown): string {
 	if (url.protocol !== 'https:' && url.protocol !== 'http:')
 		throw new ValidationError('Webhook address has to be http or https');
 
-	if (!isSelfHosted()) {
-		const host = url.hostname.toLowerCase();
-		const privateHost =
-			host === 'localhost' ||
-			host === '::1' ||
-			host.endsWith('.local') ||
-			host.endsWith('.internal') ||
-			/^127\./.test(host) ||
-			/^10\./.test(host) ||
-			/^192\.168\./.test(host) ||
-			/^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
-			/^169\.254\./.test(host) ||
-			/^0\./.test(host) ||
-			/^\[?f[cd]/.test(host);
-		if (privateHost)
-			throw new ValidationError('Webhook address has to be reachable from the internet');
-	}
+	if (!isSelfHosted()) assertPublicUrl(raw, 'webhook address');
 
 	return raw;
 }
@@ -222,7 +210,10 @@ export function emit(ctx: Ctx, event: WebhookEvent, data: Record<string, unknown
 async function deliver(sub: Subscription, event: WebhookEvent, body: string): Promise<void> {
 	let status: number;
 	try {
-		const response = await fetch(sub.url, {
+		// On a hosted instance the guarded dialer refuses private addresses at
+		// the socket; a self-hosted box calls its own network as it pleases.
+		const send = isSelfHosted() ? fetch : fetchPublic;
+		const response = await send(sub.url, {
 			method: 'POST',
 			headers: {
 				'content-type': 'application/json',
