@@ -256,3 +256,28 @@ describe('what the feed carries besides the time', () => {
 		expect(theirs).not.toContain('Dentist');
 	});
 });
+
+describe('a title carrying a carriage return', () => {
+	test('cannot smuggle a property line into the feed', () => {
+		// Crafted the way an attacker would: for a lenient parser, everything
+		// after a bare \r arrives as its own ICS line — an ATTENDEE, an
+		// ORGANIZER — chosen by whoever named the activity.
+		const sneaky = activities.createActivity(ctx, {
+			name: 'Standup\rATTENDEE:mailto:attacker@evil.test',
+			categoryId: work
+		});
+		slots.createSlot(ctx, {
+			weekday: 1,
+			startTime: '11:00',
+			durationMinutes: 30,
+			mode: 'activity',
+			activityId: sneaky
+		});
+
+		const text = build();
+		expect(text).not.toMatch(/^ATTENDEE/m);
+		// And the name survives, escaped — proving the \r reached the writer
+		// and was neutralised there, not stripped somewhere earlier.
+		expect(text).toContain('Standup\\nATTENDEE');
+	});
+});
