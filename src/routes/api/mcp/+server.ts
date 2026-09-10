@@ -1,5 +1,6 @@
 import type { RequestHandler } from './$types';
 
+import { assertNoPaymentHold } from '$lib/server/api/auth';
 import { buildCtx } from '$lib/server/services/ctx';
 import { UnauthorizedError } from '$lib/server/services/errors';
 import { toJsonError } from '$lib/server/http-errors';
@@ -30,6 +31,10 @@ export const POST: RequestHandler = async (event) => {
 			throw new UnauthorizedError('Send an API token as `Authorization: Bearer …`');
 
 		const token = authenticateToken(header.slice(7).trim(), new Date());
+		// The same hold the REST API and the calendar feed enforce: a token is
+		// the account, and an expired account does not keep a side door open
+		// through the assistant.
+		assertNoPaymentHold(token.userId);
 		const caller = {
 			ctx: buildCtx(token.userId),
 			scopes: token.scopes,

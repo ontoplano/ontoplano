@@ -18,6 +18,10 @@ version.
   could previously store an HTML "picture" that the app then served as a page,
   running its script as you. The picture and ringtone endpoints also now carry
   headers that keep any such row inert.
+- **An expired account's assistant token stops working, like its other
+  tokens.** The assistant endpoint now enforces the same payment hold the
+  REST API and the calendar link already did, answering 402 instead of
+  staying open as a side door.
 - **A Google Play purchase can no longer be claimed by more than one
   account.** The purchase token stays attached to the account that first
   claimed it; presenting it from a second account is refused. (The Play

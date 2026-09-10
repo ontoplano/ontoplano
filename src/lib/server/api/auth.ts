@@ -120,7 +120,7 @@ export function authenticateApi(
  * account, and an expired account does not keep producing through a side
  * door. 402, so a producer can tell "renew" apart from "bad token".
  */
-function assertNoPaymentHold(userId: string): void {
+export function assertNoPaymentHold(userId: string): void {
 	const hold = paymentHoldFor(userId);
 	if (hold === 'expired')
 		throw new ServiceError(
