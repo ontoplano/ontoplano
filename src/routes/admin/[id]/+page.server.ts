@@ -6,16 +6,16 @@ import {
 	accountById,
 	deleteAccountAsAdmin,
 	grantTrial,
-	requireAdmin,
 	setPlanEnd,
 	setRole
 } from '$lib/server/services/admin';
 import { listForSubject, record } from '$lib/server/services/audit';
 import { toActionFailure } from '$lib/server/http-errors';
+import { adminActions, requireAdminOr404 } from '../guard';
 import { isEmailConfigured } from '$lib/server/email';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
-	requireAdmin(locals.user!.id);
+	requireAdminOr404(locals.user?.id);
 
 	return {
 		account: accountById(params.id),
@@ -25,7 +25,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	};
 };
 
-export const actions: Actions = {
+export const actions: Actions = adminActions({
 	setRole: async ({ request, locals, params }) => {
 		const formData = await request.formData();
 		try {
@@ -58,8 +58,6 @@ export const actions: Actions = {
 
 	/** Send the confirmation link again, for somebody who never got the first. */
 	resendVerification: async ({ locals, params }) => {
-		requireAdmin(locals.user!.id);
-
 		try {
 			const account = accountById(params.id);
 			const { delivered, url } = await sendVerificationFor(account.email);
@@ -98,4 +96,4 @@ export const actions: Actions = {
 		}
 		redirect(303, '/admin?deleted=1');
 	}
-};
+});

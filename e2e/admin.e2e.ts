@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { clientAddress } from './helpers/account';
 import Database from 'better-sqlite3';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -161,4 +162,64 @@ test('an administrator cannot become somebody else', async ({ page }) => {
 		});
 		expect(res.status(), `${path} is not a door`).toBe(404);
 	}
+});
+
+/**
+ * The actions are gated on their own, not only the page.
+ *
+ * SvelteKit does not run the layout's `load` for a POSTed form action, so
+ * "the page is behind a check" says nothing about the actions on it — they
+ * are each reachable by a bare same-origin POST. Found as a live privilege
+ * escalation: any signed-in account could drive the ban controls and empty
+ * the mail-failure queue. This posts as a fresh non-admin and expects the
+ * same 404 a missing page answers.
+ */
+test('admin actions refuse a non-admin, page load or no page load', async ({ page }) => {
+	const address = clientAddress();
+	const email = `not-an-admin-${Date.now()}@ontoplano.test`;
+	const res = await page.request.post('/api/auth/sign-up/email', {
+		headers: { Origin: ORIGIN, 'x-forwarded-for': address },
+		data: { email, password: 'hunter2hunter2', name: 'Nobody' }
+	});
+	expect(res.ok(), `registering ${email}: ${res.status()}`).toBeTruthy();
+	const cookie = (
+		res.headersArray().find((h) => h.name.toLowerCase() === 'set-cookie')?.value ?? ''
+	)
+		.split(';')[0]
+		.trim();
+
+	for (const [action, form] of [
+		['unban', { jail: 'sshd', address: '203.0.113.9' }],
+		['blockForever', { address: '203.0.113.9' }],
+		['unblockForever', { address: '203.0.113.9' }],
+		['dismissReport', { id: '1' }],
+		['retryMail', { id: '1' }],
+		['dismissMail', { id: '1' }],
+		['setRole', { id: 'someone', role: 'admin' }]
+	] as const) {
+		const posted = await page.request.post(`/admin?/${action}`, {
+			headers: {
+				Origin: ORIGIN,
+				Cookie: cookie,
+				'x-sveltekit-action': 'true',
+				'x-forwarded-for': address
+			},
+			form: form as Record<string, string>,
+			maxRedirects: 0
+		});
+		expect(posted.status(), `?/${action} as a non-admin`).toBe(404);
+	}
+
+	// And the account page's actions, which take the same wrapper.
+	const posted = await page.request.post('/admin/someone?/grantTrial', {
+		headers: {
+			Origin: ORIGIN,
+			Cookie: cookie,
+			'x-sveltekit-action': 'true',
+			'x-forwarded-for': address
+		},
+		form: {},
+		maxRedirects: 0
+	});
+	expect(posted.status(), 'grantTrial as a non-admin').toBe(404);
 });

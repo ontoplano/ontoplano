@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { recentEvents, searchAccounts, setRole } from '$lib/server/services/admin';
+import { adminActions, requireAdminOr404 } from './guard';
 import { dismissFailure, openFailures, retryFailure } from '$lib/server/services/mail-log';
 import {
 	banControlEnabled,
@@ -30,6 +31,7 @@ import { isDemo } from '$lib/server/settings';
  * this list is here rather than spread through the page.
  */
 export const load: PageServerLoad = async ({ url, locals }) => {
+	requireAdminOr404(locals.user?.id);
 	const demo = isDemo();
 	const query = url.searchParams.get('q') ?? '';
 	// How far back the history goes. Bounded: this is a page, and "all of it"
@@ -77,7 +79,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	};
 };
 
-export const actions: Actions = {
+export const actions: Actions = adminActions({
 	/*
 	 * Acting on a ban. Every argument is validated again by the root-side
 	 * helper, which is where the trust boundary actually is — these are the
@@ -151,4 +153,4 @@ export const actions: Actions = {
 			return toActionFailure(e);
 		}
 	}
-};
+});

@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.127.1 — 2026-09-10
+
+- **Administration actions now refuse anyone who is not an administrator.**
+  They were reachable by a direct POST without opening the page, which let any
+  signed-in account drive the ban controls and clear the mail-failure and
+  error-report queues. Every action under Administration now answers the same
+  404 the page itself gives a non-administrator.
+
 ## 0.127.0 — 2026-09-09
 
 - **Letting an AI assistant use the app has its own page.** Settings is now
