@@ -68,8 +68,9 @@ make test           # the Playwright e2e suite
   a test that fails when a table is missing from it.
 
 ### Bug fixes
- Try and also write **the test that would have caught it**, failing on the old
- code.
+
+Try and also write **the test that would have caught it**, failing on the old
+code.
 
 A security problem is the one thing that does not go in an issue: use a
 [private advisory](https://github.com/ontoplano/ontoplano/security/advisories/new).
