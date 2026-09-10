@@ -79,9 +79,16 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 
 	// Bounded before it reaches a query, like every other string (I8).
 	const query = str(q, 'search', { max: 200 });
-	const escape = (v: string) => v.replace(/[%_]/g, (c) => `\\${c}`);
+	/*
+	 * `%` and `_` are wildcards to LIKE, so a search for a literal one has to
+	 * escape it — and the escaping only exists if the query carries an ESCAPE
+	 * clause, which drizzle's `like()` never emits. Without it the backslashes
+	 * were matched literally: searching "100%" found nothing, and "%" matched
+	 * every row.
+	 */
+	const escape = (v: string) => v.replace(/[\\%_]/g, (c) => `\\${c}`);
 	const pattern = `%${escape(query)}%`;
-	const matches = (column: Parameters<typeof like>[0]) => like(column, pattern);
+	const matches = (column: Parameters<typeof like>[0]) => sql`${column} like ${pattern} escape '\\'`;
 
 	/**
 	 * `in:kitchen` scopes to one notebook, matched by prefix so three letters of
@@ -97,7 +104,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 					.where(
 						and(
 							eq(notebooks.userId, ctx.userId),
-							like(notebooks.title, `${escape(parsed.notebook)}%`)
+							sql`${notebooks.title} like ${`${escape(parsed.notebook)}%`} escape '\\'`
 						)
 					)
 					.limit(1)

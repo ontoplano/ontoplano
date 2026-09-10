@@ -68,3 +68,35 @@ describe('grouping', () => {
 		expect(groups.every((g) => g.hits.length > 0)).toBe(true);
 	});
 });
+
+/**
+ * LIKE's wildcards, as literal characters.
+ *
+ * The escaping existed but the query carried no ESCAPE clause, so it did
+ * nothing: a search for "100%" matched nothing (the backslash was taken
+ * literally) and a bare "%" — three of them, to clear the minimum length —
+ * matched every row in the account.
+ */
+describe('wildcard characters in the query', () => {
+	beforeAll(() => {
+		diary.createEntry(ctx, { content: 'the sale sign says 100% off' });
+		diary.createEntry(ctx, { content: 'renamed the file to under_score' });
+	});
+
+	test('a literal % is searchable', () => {
+		const hits = search.search(ctx, '100%');
+		expect(hits.some((h) => h.snippet?.includes('100%') || h.title?.includes('100%'))).toBe(true);
+	});
+
+	test('a literal _ is searchable', () => {
+		const hits = search.search(ctx, 'under_score');
+		expect(hits.length).toBeGreaterThan(0);
+	});
+
+	test('wildcards do not match everything', () => {
+		// Three %s pass the minimum length; they must match only rows that
+		// contain three literal per-cent signs, of which there are none.
+		expect(search.search(ctx, '%%%')).toHaveLength(0);
+		expect(search.search(ctx, '___')).toHaveLength(0);
+	});
+});
