@@ -123,7 +123,7 @@ export function assertPublicUrl(raw: string, what: string): URL {
  */
 export function guardedLookup(
 	hostname: string,
-	options: Parameters<typeof dnsLookup>[1],
+	options: Record<string, unknown>,
 	callback: (err: NodeJS.ErrnoException | null, address: string, family: number) => void
 ): void {
 	if (isPrivateName(canonicalHost(hostname))) {
