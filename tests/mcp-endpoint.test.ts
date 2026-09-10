@@ -9,6 +9,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts } from './helpers/db';
+import { hasBillingProvider } from './helpers/billing';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -64,7 +65,9 @@ function post(body: unknown) {
 
 const LIST = { jsonrpc: '2.0', id: 1, method: 'tools/list' };
 
-describe('the payment hold at the assistant door', () => {
+// Skipped where no provider is compiled in (the public checkout): with
+// nothing to sell there is no hold, and the door rightly answers 200.
+describe.skipIf(!hasBillingProvider())('the payment hold at the assistant door', () => {
 	test('a subscribed account is answered', async () => {
 		const res = await post(LIST);
 		expect(res.status).toBe(200);
