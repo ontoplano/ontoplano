@@ -22,6 +22,11 @@ version.
   tokens.** The assistant endpoint now enforces the same payment hold the
   REST API and the calendar link already did, answering 402 instead of
   staying open as a side door.
+- **The authentication plugin's spare doors are shut.** Its whole admin
+  surface — impersonation, setting another account's password, deleting and
+  creating accounts around the app's own audited paths — now answers 404,
+  as does its raw change-email endpoint, which skipped the settings form's
+  password check.
 - **A Google Play purchase can no longer be claimed by more than one
   account.** The purchase token stays attached to the account that first
   claimed it; presenting it from a second account is refused. (The Play

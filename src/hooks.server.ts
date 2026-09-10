@@ -152,15 +152,35 @@ const handleRegistration: Handle = async ({ event, resolve }) => {
 };
 
 const handleBetterAuth: Handle = async ({ event, resolve }) => {
-	// The admin plugin ships impersonation endpoints whether or not the app
-	// offers them. It does not: signing in as somebody is reading their
-	// diary, so the doors are shut here, in front of the plugin, where no
-	// role or session opens them.
-	if (
-		event.url.pathname.startsWith('/api/auth/admin/impersonate-user') ||
-		event.url.pathname.startsWith('/api/auth/admin/stop-impersonating')
-	) {
-		return new Response(JSON.stringify({ message: 'This instance does not impersonate.' }), {
+	/*
+	 * The admin plugin ships a whole management surface whether or not the app
+	 * offers it, and the app offers none of it — the plugin is here for its
+	 * role column. Each endpoint sidesteps a rule this app makes on purpose:
+	 * impersonation is reading somebody's diary; `set-user-password` is
+	 * impersonation with one extra step; `remove-user` deletes an account
+	 * around the typed-email confirmation, the owner protection and the audit
+	 * line; `create-user` mints accounts around registration mode. So the
+	 * whole prefix is one closed door, in front of the plugin, where no role
+	 * or session opens it — the app's own /admin pages go through the audited
+	 * services instead.
+	 */
+	if (event.url.pathname.startsWith('/api/auth/admin/')) {
+		return new Response(JSON.stringify({ message: 'Not found' }), {
+			status: 404,
+			headers: { 'content-type': 'application/json' }
+		});
+	}
+
+	/*
+	 * Email changes go through the settings form, which asks for the current
+	 * password and honours the instance's `allowEmailChange` switch. The
+	 * plugin's raw endpoint asks for neither — on an unverified account it
+	 * would move the address, and then the password, on a borrowed session
+	 * alone. The form action calls the auth API in-process, so shutting the
+	 * HTTP door costs it nothing.
+	 */
+	if (event.url.pathname.startsWith('/api/auth/change-email')) {
+		return new Response(JSON.stringify({ message: 'Not found' }), {
 			status: 404,
 			headers: { 'content-type': 'application/json' }
 		});

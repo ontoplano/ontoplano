@@ -154,14 +154,33 @@ test('an administrator cannot become somebody else', async ({ page }) => {
 	await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 	await expect(page.getByText('Sign in as this account')).toHaveCount(0);
 
-	// The plugin's own doors, with the admin's own session.
-	for (const path of ['/api/auth/admin/impersonate-user', '/api/auth/admin/stop-impersonating']) {
+	// The plugin's own doors, with the admin's own session. Not only
+	// impersonation: set-user-password is impersonation with one extra step,
+	// remove-user skips the typed-email confirmation and the audit line, and
+	// create-user mints accounts around registration mode. The whole prefix
+	// is shut.
+	for (const path of [
+		'/api/auth/admin/impersonate-user',
+		'/api/auth/admin/stop-impersonating',
+		'/api/auth/admin/set-user-password',
+		'/api/auth/admin/remove-user',
+		'/api/auth/admin/create-user',
+		'/api/auth/admin/list-users'
+	]) {
 		const res = await page.request.post(path, {
 			headers: { Origin: ORIGIN },
-			data: { userId: 'anybody' }
+			data: { userId: 'anybody', newPassword: 'hunter2hunter2' }
 		});
 		expect(res.status(), `${path} is not a door`).toBe(404);
 	}
+
+	// And the raw change-email endpoint, which would skip the settings form's
+	// password check and the instance's allowEmailChange switch.
+	const changed = await page.request.post('/api/auth/change-email', {
+		headers: { Origin: ORIGIN },
+		data: { newEmail: 'moved@ontoplano.test' }
+	});
+	expect(changed.status(), 'change-email is the form, not an endpoint').toBe(404);
 });
 
 /**
