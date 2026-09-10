@@ -17,15 +17,20 @@ include defaults.env
 help:
 	@sh scripts/make-help.sh $(MAKEFILE_LIST)
 
-# What `help` deliberately leaves out: the variables, which are too many to
-# put in front of somebody who only wanted to know the target's name. Reading
-# them out of the makefiles means the list cannot describe a switch that was
-# renamed — the failure mode of writing this table by hand.
+# What `help` deliberately leaves out: the switches, which are too many to put
+# in front of somebody who only wanted to know the target's name.
+#
+# Grouped by the command that takes them, and worked out from the recipes —
+# a recipe that expands `$(FOO)` reads FOO, whoever wrote it and whatever they
+# remembered to write down. `make lint` fails when one has no description, so
+# a switch cannot be added and left undiscoverable.
 ### develop
 
-## every variable a make command line can carry
+## which switches each make command takes
+#: ONLY=shots  just that one command, rather than every command that takes a switch
 vars:
-	@sh scripts/make-vars.sh $(sort $(MAKEFILE_LIST) defaults.env $(wildcard $(SERVER_SRC)/defaults.env))
+	@node scripts/make-vars.mjs $(if $(ONLY),--only=$(ONLY),) \
+		$(sort $(MAKEFILE_LIST)) defaults.env $(wildcard $(SERVER_SRC)/defaults.env)
 
 # One variable's value, for a script that needs to know where something is
 # rather than keep a second copy of the path:  make print-SSH_HOST
@@ -38,6 +43,8 @@ print-%:
 # ─── Development ──────────────────────────────────────────────────────────────
 
 # Resolved here too, so the public Makefile works without a local.mk.
+#: NODE_BIN=/usr/bin/node  the node the dev service runs, if not the one on PATH
+#: YARN_BIN=/usr/bin/yarn  the yarn it runs, if not the one on PATH
 NODE_BIN ?= $(shell command -v node)
 YARN_BIN ?= $(shell command -v yarn)
 
@@ -177,6 +184,7 @@ dev-stop:
 DOCS_PORT ?= 1494
 SITE_PORT ?= 1495
 # Where the marketing site's checkout is, if it is here at all.
+#: SITE_SRC_LOCAL=ontoplano-site  where the marketing site is checked out
 SITE_SRC_LOCAL ?= ontoplano-site
 
 # `dev` is the app; this is the name to type when you mean it by contrast.
@@ -226,6 +234,8 @@ dev-all: dev
 #   make dev-logs                    the dev server
 #   make dev-logs-docs               the docs preview, when it is running
 #   make dev-logs UNIT=whatever      any other user unit here
+#: UNIT=some-unit  follow another user unit instead of the dev service
+#: DEV_LOG_UNIT=ontoplano-dev  the unit dev-logs follows when UNIT is not given
 DEV_LOG_UNIT ?= ontoplano-dev
 
 ## follow the dev service log (UNIT= for another)
@@ -317,6 +327,7 @@ _billing-in-build:
 ### build and run it here
 
 ## the production build
+#: NODE_OPTIONS=--max-old-space-size=4096  what to give node, when the default 2048 is not enough
 build: _billing-provider
 	@heap=$$(free -m 2>/dev/null | awk '/^Mem:/ {print $$2}'); \
 	if [ -n "$(NODE_OPTIONS)" ]; then \
@@ -448,6 +459,10 @@ lint:
 	@node scripts/check-no-secrets.mjs
 	@node scripts/check-android-version.mjs
 	@node scripts/check-make-help.mjs
+	@# Every switch a recipe expands is one somebody has to be able to find.
+	@# Over the makefiles actually loaded, the way `vars` reads them: a fresh
+	@# clone checks its own Makefile, and this checkout checks local.mk too.
+	@node scripts/make-vars.mjs --check $(sort $(MAKEFILE_LIST)) defaults.env $(wildcard $(SERVER_SRC)/defaults.env)
 	@# The scheduled jobs run under `tsx` in a production install. A service
 	@# that reaches for a development-only package works everywhere except
 	@# there, and the box is where nobody is watching.
@@ -794,6 +809,7 @@ LAN_IP := $(shell ip route get 1.1.1.1 2>/dev/null | awk '{print $$7; exit}')
 # built against whatever origin you are testing, and a build must never change
 # the tree it builds from.
 ## regenerate the committed Gradle project F-Droid builds
+#: ONTOPLANO_ORIGIN=https://app.example.com  the instance the phone app is bound to
 android-project:
 	ONTOPLANO_ORIGIN=https://app.ontoplano.com TWA_DIR=android \
 		node scripts/build-twa.mjs --project-only --no-billing
@@ -814,6 +830,7 @@ android-project:
 # and the merge request description, and fails loudly if the tag this version
 # would build has not been pushed.
 ## F-Droid's recipe and listing for this version
+#: FROM=metadata/app.ontoplano.twa.yml  an existing recipe to add this release to
 fdroid:
 	@node scripts/fdroid-metadata.mjs $(if $(FROM),--from $(FROM),)
 
@@ -1056,7 +1073,9 @@ $(APK):
 # served on the port below so it can simply be opened.
 CADDY_DATA := $(if $(XDG_DATA_HOME),$(XDG_DATA_HOME),$(HOME)/.local/share)/caddy
 CA_FILE := $(CADDY_DATA)/pki/authorities/local/root.crt
+#: CA_PORT=1494  where https-local serves its certificate authority
 CA_PORT ?= 1494
+#: TRUST_LOCAL=0  serve https-local without asking this machine to trust the CA
 TRUST_LOCAL ?= 1
 
 ### odds and ends
