@@ -466,13 +466,20 @@ const goalArea = (name, color, sortOrder) => {
 	);
 };
 
+/**
+ * A goal, and the measures under it.
+ *
+ * `measures` is a list, because a goal can want several things at once — the
+ * dev account needs one of those or the row that draws three bars is a row
+ * nobody ever sees.
+ */
 const goal = (title, horizon, periodStart, extra = {}) => {
 	const existing = one('select id from goals where user_id = ? and title = ?', uid, title);
 	if (existing) return existing.id;
-	return run(
+	const id = run(
 		`insert into goals
-		 (user_id, area_id, parent_id, title, notes, horizon, period_start, target_value, current_value, unit, status, outcome, closed_at)
-		 values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		 (user_id, area_id, parent_id, title, notes, horizon, period_start, status, outcome, closed_at)
+		 values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		uid,
 		extra.areaId ?? null,
 		extra.parentId ?? null,
@@ -480,13 +487,23 @@ const goal = (title, horizon, periodStart, extra = {}) => {
 		extra.notes ?? '',
 		horizon,
 		periodStart,
-		extra.target ?? null,
-		extra.current ?? 0,
-		extra.unit ?? '',
 		extra.status ?? 'open',
 		extra.outcome ?? '',
 		extra.status && extra.status !== 'open' ? stamp(dayOffset(-3)) : null
 	);
+
+	(extra.measures ?? []).forEach((m, at) => {
+		run(
+			'insert into goal_targets (user_id, goal_id, target_value, current_value, unit, sort_order) values (?, ?, ?, ?, ?, ?)',
+			uid,
+			id,
+			m.target,
+			m.current ?? 0,
+			m.unit ?? '',
+			at
+		);
+	});
+	return id;
 };
 
 const linkGoal = (goalId, { slotId = null, todoId = null, activityId = null }) => {
@@ -851,17 +868,23 @@ const areaCraft = goalArea('craft', '#1d4ed8', 1);
 
 const yearGoal = goal('read twelve books', 'year', yearStart, {
 	areaId: areaCraft,
-	target: 12,
-	current: 7,
-	unit: 'books'
+	measures: [{ target: 12, current: 7, unit: 'books' }]
 });
 goal('run a half marathon', 'quarter', quarterStart, {
 	areaId: areaHealth,
 	parentId: null,
 	notes: 'build up to 21km without walking',
-	target: 21,
-	current: 14,
-	unit: 'km'
+	measures: [{ target: 21, current: 14, unit: 'km' }]
+});
+// The multi-measure case: one commitment, three numbers under it.
+goal('get the band playing again', 'year', yearStart, {
+	areaId: areaCraft,
+	notes: 'rehearsals are cheap; the gigs are the hard part',
+	measures: [
+		{ target: 3, current: 1, unit: 'gigs' },
+		{ target: 5, current: 4, unit: 'songs recorded' },
+		{ target: 40, current: 12, unit: 'rehearsal hours' }
+	]
 });
 const monthGoal = goal('gym twice a week', 'month', monthStart, { areaId: areaHealth });
 goal('ship the plugin API', 'quarter', quarterStart, {

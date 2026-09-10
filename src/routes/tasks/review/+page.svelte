@@ -230,12 +230,12 @@
 								>
 									{goal.title}
 								</a>
-								{#if goal.targetValue}
+								{#each goal.targets as target (target.unit + target.targetValue)}
 									<span class="tabular shrink-0 text-xs text-gray-500">
-										{goal.currentValue}/{goal.targetValue}
-										{goal.unit}
+										{target.currentValue}/{target.targetValue}
+										{target.unit}
 									</span>
-								{/if}
+								{/each}
 							</li>
 						{/each}
 					</ul>

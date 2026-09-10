@@ -254,7 +254,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 			{
 				target: '[data-tour="goal-new"]',
 				title: 'Give it a number if it has one',
-				body: 'Books, kilos, euros — anything countable. A goal with a unit fills its own bar as you link the tasks that count towards it.'
+				body: 'Books, kilos, euros — anything countable. A goal can want several at once: three gigs played and five songs recorded is one goal with two numbers, and it is as far along as they are on average.'
 			},
 			{
 				target: '[data-tour="goal-list"]',

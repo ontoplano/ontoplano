@@ -119,6 +119,10 @@
 				"type": "string",
 				"required": false
 			},
+			"targets": {
+				"type": "array",
+				"required": false
+			},
 			"targetValue": {
 				"type": "number",
 				"required": false
@@ -144,6 +148,25 @@
 			},
 			"name": {
 				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"add_goal_target": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"goalId": {
+				"type": "integer",
+				"required": true
+			},
+			"unit": {
+				"type": "string",
+				"required": false
+			},
+			"value": {
+				"type": "number",
 				"required": true
 			}
 		}
@@ -696,6 +719,10 @@
 				"type": "string",
 				"required": false
 			},
+			"targets": {
+				"type": "array",
+				"required": false
+			},
 			"targetValue": {
 				"type": "number",
 				"required": false
@@ -1217,6 +1244,10 @@
 				"type": "integer",
 				"required": true
 			},
+			"unit": {
+				"type": "string",
+				"required": false
+			},
 			"value": {
 				"type": "number",
 				"required": false
@@ -1378,6 +1409,21 @@
 			"id": {
 				"type": "integer",
 				"required": true
+			}
+		}
+	},
+	"remove_goal_target": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"goalId": {
+				"type": "integer",
+				"required": true
+			},
+			"unit": {
+				"type": "string",
+				"required": false
 			}
 		}
 	},

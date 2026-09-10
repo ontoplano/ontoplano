@@ -8,8 +8,8 @@ import { visit } from './helpers/visit';
  * Touch targets are set in one place — `button` gets 44px under
  * `pointer: coarse` — and text fields were not in that list. So every row that
  * pairs the two drew a short box against a tall one: on the goals card the
- * number you type your progress into stood two thirds the height of the Update
- * button next to it, and the pair sat visibly crooked on a real phone while
+ * number you type your progress into stood two thirds the height of the button
+ * that saves it, and the pair sat visibly crooked on a real phone while
  * looking fine on a desktop, which is why it survived so long.
  *
  * The fix is in the rule rather than at the call site, so this asks the
@@ -25,7 +25,7 @@ import { visit } from './helpers/visit';
  */
 test.use({ viewport: { width: 360, height: 800 }, hasTouch: true, isMobile: true });
 
-test('a goal’s progress field and its Update button are the same height', async ({ page }) => {
+test('a goal’s progress field and the button beside it are the same height', async ({ page }) => {
 	await register(page, `touch-${Date.now()}@test.invalid`);
 
 	// A goal with a target, which is what puts the self-reported progress form
@@ -41,13 +41,16 @@ test('a goal’s progress field and its Update button are the same height', asyn
 		await expect(heading).toBeVisible({ timeout: 2000 });
 	}).toPass({ timeout: 15000 });
 	await heading.fill('walk a thousand kilometres');
-	await page.locator('[name="targetValue"]').fill('1000');
-	await page.locator('[name="unit"]').fill('km');
+	await page.locator('[name="targetValue"]').first().fill('1000');
+	await page.locator('[name="targetUnit"]').first().fill('km');
 	await page.getByRole('button', { name: 'Create goal' }).click();
 	await page.waitForTimeout(800);
 
 	const field = page.locator('form[action="?/setProgress"] input[name="currentValue"]').first();
-	const update = page.locator('form[action="?/setProgress"]').first().getByRole('button');
+	const update = page
+		.locator('form[action="?/setProgress"]')
+		.first()
+		.getByRole('button', { name: 'Save progress' });
 	await expect(field).toBeVisible();
 
 	const box = await field.boundingBox();

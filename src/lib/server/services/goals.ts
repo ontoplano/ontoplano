@@ -5,6 +5,11 @@
  * occurrences it covers actually got done inside its period. That is the whole
  * point of linking — a self-reported number tells you what you believe, and the
  * execution log tells you what happened.
+ *
+ * What it is measured by lives in `goal_targets`, one row per thing, because a
+ * goal worth making usually wants more than one: three gigs played and five
+ * songs recorded is a single commitment with two numbers under it. The goal is
+ * as far along as everything measuring it is on average.
  */
 import { and, asc, eq, gte, inArray, lt, type SQL } from 'drizzle-orm';
 
@@ -14,6 +19,7 @@ import {
 	categories,
 	goalAreas,
 	goalLinks,
+	goalTargets,
 	goals,
 	notebooks,
 	todoTasks,
@@ -34,8 +40,18 @@ export type GoalProgress = {
 	/** Occurrences of linked tasks inside the period. Null when nothing is linked. */
 	total: number | null;
 	done: number | null;
-	/** 0-1, from counted tasks when linked, else from target/current. */
+	/** 0-1, averaged over everything the goal is measured by. */
 	fraction: number | null;
+};
+
+/** One thing a goal is measured by. A goal can want several at once. */
+export type GoalTarget = {
+	id: number;
+	targetValue: number;
+	currentValue: number;
+	unit: string;
+	/** 0-1, how far this one measure has got. */
+	fraction: number;
 };
 
 export type Goal = {
@@ -50,9 +66,7 @@ export type Goal = {
 	notes: string;
 	horizon: Horizon;
 	periodStart: string;
-	targetValue: number | null;
-	currentValue: number;
-	unit: string;
+	targets: GoalTarget[];
 	status: 'open' | 'achieved' | 'missed' | 'abandoned';
 	outcome: string;
 	closedAt: string | null;
@@ -77,12 +91,18 @@ export function listAreas(ctx: Ctx): GoalArea[] {
 }
 
 /**
- * Counted progress for one goal.
+ * How far along one goal is.
  *
- * Linked weekly slots contribute every occurrence they produced inside the
- * period; linked activities contribute any occurrence resolved to them, which
- * is how "do more of X" works without naming a particular slot. Todos count
- * once each.
+ * Two things can move it and a goal may have both. Linked weekly slots
+ * contribute every occurrence they produced inside the period; linked
+ * activities contribute any occurrence resolved to them, which is how "do more
+ * of X" works without naming a particular slot; todos count once each. The
+ * measures under the goal contribute what has been typed into them.
+ *
+ * Everything the goal is measured by counts once, and the goal is as far along
+ * as those are on average — so half the gigs and none of the songs is a third
+ * of the way, and a goal with an activity linked to it does not read as "0 of 0
+ * done" while its own number says seven of twelve.
  */
 function progressFor(
 	ctx: Ctx,
@@ -90,14 +110,14 @@ function progressFor(
 	slotIds: number[],
 	todoIds: number[],
 	activityIds: number[],
-	target: number | null,
-	current: number
+	targets: GoalTarget[]
 ): GoalProgress {
+	const measured = targets.map((t) => t.fraction);
+	const average = (parts: number[]) =>
+		parts.length === 0 ? null : parts.reduce((sum, p) => sum + p, 0) / parts.length;
+
 	const linked = slotIds.length + todoIds.length + activityIds.length;
-	if (linked === 0) {
-		const fraction = target && target > 0 ? Math.min(current / target, 1) : null;
-		return { total: null, done: null, fraction };
-	}
+	if (linked === 0) return { total: null, done: null, fraction: average(measured) };
 
 	const from = goal.periodStart;
 	const to = periodEnd(goal.horizon, goal.periodStart);
@@ -144,7 +164,13 @@ function progressFor(
 		done += rows.filter((r) => r.status === 'done').length;
 	}
 
-	return { total, done, fraction: total > 0 ? done / total : null };
+	// Nothing scheduled inside the period yet is not the same as nothing done,
+	// so an empty count sits out of the average rather than dragging it to zero.
+	return {
+		total,
+		done,
+		fraction: average(total > 0 ? [done / total, ...measured] : measured)
+	};
 }
 
 export function listGoals(ctx: Ctx, opts: { includeClosed?: boolean } = {}): Goal[] {
@@ -161,9 +187,6 @@ export function listGoals(ctx: Ctx, opts: { includeClosed?: boolean } = {}): Goa
 			notes: goals.notes,
 			horizon: goals.horizon,
 			periodStart: goals.periodStart,
-			targetValue: goals.targetValue,
-			currentValue: goals.currentValue,
-			unit: goals.unit,
 			status: goals.status,
 			outcome: goals.outcome,
 			closedAt: goals.closedAt
@@ -178,6 +201,15 @@ export function listGoals(ctx: Ctx, opts: { includeClosed?: boolean } = {}): Goa
 	const ids = rows.map((r) => r.id);
 	const links =
 		ids.length > 0 ? db.select().from(goalLinks).where(inArray(goalLinks.goalId, ids)).all() : [];
+	const measures =
+		ids.length > 0
+			? db
+					.select()
+					.from(goalTargets)
+					.where(inArray(goalTargets.goalId, ids))
+					.orderBy(asc(goalTargets.sortOrder), asc(goalTargets.id))
+					.all()
+			: [];
 
 	return rows
 		.filter((r) => opts.includeClosed || r.status === 'open')
@@ -188,6 +220,18 @@ export function listGoals(ctx: Ctx, opts: { includeClosed?: boolean } = {}): Goa
 			const linkedActivityIds = mine
 				.map((l) => l.activityId)
 				.filter((v): v is number => v !== null);
+
+			const targets = measures
+				.filter((t) => t.goalId === r.id)
+				.map(
+					(t): GoalTarget => ({
+						id: t.id,
+						targetValue: t.targetValue,
+						currentValue: t.currentValue,
+						unit: t.unit,
+						fraction: Math.min(t.currentValue / t.targetValue, 1)
+					})
+				);
 
 			return {
 				id: r.id,
@@ -201,24 +245,14 @@ export function listGoals(ctx: Ctx, opts: { includeClosed?: boolean } = {}): Goa
 				notes: r.notes ?? '',
 				horizon: r.horizon,
 				periodStart: r.periodStart,
-				targetValue: r.targetValue,
-				currentValue: r.currentValue,
-				unit: r.unit ?? '',
+				targets,
 				status: r.status,
 				outcome: r.outcome ?? '',
 				closedAt: r.closedAt,
 				linkedSlotIds,
 				linkedTodoIds,
 				linkedActivityIds,
-				progress: progressFor(
-					ctx,
-					r,
-					linkedSlotIds,
-					linkedTodoIds,
-					linkedActivityIds,
-					r.targetValue,
-					r.currentValue
-				)
+				progress: progressFor(ctx, r, linkedSlotIds, linkedTodoIds, linkedActivityIds, targets)
 			};
 		});
 }
@@ -264,6 +298,8 @@ export const MAX_TITLE_LENGTH = 300;
 export const MAX_NOTES_LENGTH = 4000;
 export const MAX_UNIT_LENGTH = 40;
 export const MAX_OUTCOME_LENGTH = 2000;
+/** Measures on one goal. A goal that wants a dozen things is several goals. */
+export const MAX_TARGETS = 12;
 export const MAX_AREA_NAME_LENGTH = 100;
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
@@ -313,34 +349,49 @@ export function createGoal(
 		areaId?: unknown;
 		notebookId?: unknown;
 		parentId?: unknown;
-		targetValue?: unknown;
-		unit?: unknown;
+		targets?: unknown;
 	}
 ): number {
 	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
 	const horizon = parseHorizon(raw.horizon);
 	const anchor = parseAnchor(raw.startDate) ?? ctx.now;
+	const targets = parseTargets(raw.targets) ?? [];
+	const areaId = ownedAreaId(ctx, raw.areaId);
+	const notebookId = ownedNotebookId(ctx, raw.notebookId);
+	const parentId = ownedGoalId(ctx, raw.parentId);
 
-	const result = db
-		.insert(goals)
-		.values({
-			...stamps(ctx),
-			userId: ctx.userId,
-			title,
-			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
-			horizon,
-			// Anchored to the period containing the chosen date, so two goals in
-			// the same quarter always agree on where that quarter starts.
-			periodStart: periodStart(horizon, anchor),
-			areaId: ownedAreaId(ctx, raw.areaId),
-			notebookId: ownedNotebookId(ctx, raw.notebookId),
-			parentId: ownedGoalId(ctx, raw.parentId),
-			targetValue: parseTarget(raw.targetValue),
-			unit: optionalStr(raw.unit, 'unit', { max: MAX_UNIT_LENGTH })
-		})
-		.run();
+	return db.transaction((tx) => {
+		const result = tx
+			.insert(goals)
+			.values({
+				...stamps(ctx),
+				userId: ctx.userId,
+				title,
+				notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
+				horizon,
+				// Anchored to the period containing the chosen date, so two goals in
+				// the same quarter always agree on where that quarter starts.
+				periodStart: periodStart(horizon, anchor),
+				areaId,
+				notebookId,
+				parentId
+			})
+			.run();
 
-	return Number(result.lastInsertRowid);
+		const id = Number(result.lastInsertRowid);
+		targets.forEach((t, i) => {
+			tx.insert(goalTargets)
+				.values({
+					userId: ctx.userId,
+					goalId: id,
+					targetValue: t.value,
+					unit: t.unit,
+					sortOrder: i
+				})
+				.run();
+		});
+		return id;
+	});
 }
 
 export function updateGoal(
@@ -351,8 +402,7 @@ export function updateGoal(
 		notes?: unknown;
 		areaId?: unknown;
 		notebookId?: unknown;
-		targetValue?: unknown;
-		unit?: unknown;
+		targets?: unknown;
 		horizon?: unknown;
 		startDate?: unknown;
 	}
@@ -372,37 +422,134 @@ export function updateGoal(
 	const horizon =
 		raw.horizon === undefined || raw.horizon === null ? current.horizon : parseHorizon(raw.horizon);
 	const anchor = parseAnchor(raw.startDate) ?? new Date(`${current.periodStart}T00:00:00`);
+	// Left out means left alone: a caller that only renames a goal must not
+	// wipe what it is measured by. The form posts every row it shows, so an
+	// emptied list there does mean "no measures".
+	const targets = parseTargets(raw.targets);
+	const areaId = ownedAreaId(ctx, raw.areaId);
+	const notebookId = ownedNotebookId(ctx, raw.notebookId);
+	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
+	const notes = optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH });
 
-	const res = db
-		.update(goals)
-		.set({
-			title: str(raw.title, 'title', { max: MAX_TITLE_LENGTH }),
-			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
-			areaId: ownedAreaId(ctx, raw.areaId),
-			notebookId: ownedNotebookId(ctx, raw.notebookId),
-			targetValue: parseTarget(raw.targetValue),
-			unit: optionalStr(raw.unit, 'unit', { max: MAX_UNIT_LENGTH }),
-			horizon,
-			periodStart: periodStart(horizon, anchor),
-			updatedAt: stamp(ctx)
-		})
-		.where(and(eq(goals.id, id), eq(goals.userId, ctx.userId)))
-		.run();
+	db.transaction((tx) => {
+		const res = tx
+			.update(goals)
+			.set({
+				title,
+				notes,
+				areaId,
+				notebookId,
+				horizon,
+				periodStart: periodStart(horizon, anchor),
+				updatedAt: stamp(ctx)
+			})
+			.where(and(eq(goals.id, id), eq(goals.userId, ctx.userId)))
+			.run();
 
-	if (res.changes === 0) throw new NotFoundError('goal');
+		if (res.changes === 0) throw new NotFoundError('goal');
+		if (!targets) return;
+
+		const existing = tx
+			.select({ id: goalTargets.id })
+			.from(goalTargets)
+			.where(and(eq(goalTargets.goalId, id), eq(goalTargets.userId, ctx.userId)))
+			.all()
+			.map((t) => t.id);
+
+		// A measure that is edited keeps the number already on it — retyping the
+		// unit of "5 / 12 books" must not send it back to zero.
+		const kept = new Set<number>();
+		targets.forEach((t, i) => {
+			if (t.id !== null && existing.includes(t.id)) {
+				kept.add(t.id);
+				tx.update(goalTargets)
+					.set({ targetValue: t.value, unit: t.unit, sortOrder: i })
+					.where(and(eq(goalTargets.id, t.id), eq(goalTargets.userId, ctx.userId)))
+					.run();
+				return;
+			}
+			tx.insert(goalTargets)
+				.values({
+					userId: ctx.userId,
+					goalId: id,
+					targetValue: t.value,
+					unit: t.unit,
+					sortOrder: i
+				})
+				.run();
+		});
+
+		for (const gone of existing) {
+			if (kept.has(gone)) continue;
+			tx.delete(goalTargets)
+				.where(and(eq(goalTargets.id, gone), eq(goalTargets.userId, ctx.userId)))
+				.run();
+		}
+	});
 }
 
-/** Self-reported progress, for goals with a target and no linked tasks. */
-export function setGoalProgress(ctx: Ctx, id: number, value: unknown): void {
-	const currentValue = num(value, 'progress', { min: 0 });
+/** Add one measure to a goal, leaving the ones already on it alone. */
+export function addGoalTarget(
+	ctx: Ctx,
+	goalId: number,
+	raw: { value: unknown; unit?: unknown }
+): number {
+	assertOwnedGoal(ctx, goalId);
 
-	const res = db
-		.update(goals)
-		.set({ currentValue, updatedAt: stamp(ctx) })
-		.where(and(eq(goals.id, id), eq(goals.userId, ctx.userId)))
+	const value = num(raw.value, 'target', { min: 0.000001 });
+	const unit = optionalStr(raw.unit, 'unit', { max: MAX_UNIT_LENGTH });
+	const existing = db
+		.select({ id: goalTargets.id })
+		.from(goalTargets)
+		.where(and(eq(goalTargets.goalId, goalId), eq(goalTargets.userId, ctx.userId)))
+		.all();
+
+	if (existing.length >= MAX_TARGETS)
+		throw new ValidationError(`A goal can be measured by at most ${MAX_TARGETS} things`);
+
+	const result = db
+		.insert(goalTargets)
+		.values({
+			userId: ctx.userId,
+			goalId,
+			targetValue: value,
+			unit,
+			sortOrder: existing.length
+		})
 		.run();
 
-	if (res.changes === 0) throw new NotFoundError('goal');
+	touchGoal(ctx, goalId);
+	return Number(result.lastInsertRowid);
+}
+
+/** And the way back off it. The goal and its other measures stay. */
+export function removeGoalTarget(ctx: Ctx, targetId: number): void {
+	const goalId = ownedTargetGoal(ctx, targetId);
+
+	const res = db
+		.delete(goalTargets)
+		.where(and(eq(goalTargets.id, targetId), eq(goalTargets.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('target');
+	touchGoal(ctx, goalId);
+}
+
+/** Self-reported progress on one measure — the number somebody types in. */
+export function setTargetProgress(ctx: Ctx, targetId: number, value: unknown): void {
+	const currentValue = num(value, 'progress', { min: 0 });
+	const goalId = ownedTargetGoal(ctx, targetId);
+
+	const res = db
+		.update(goalTargets)
+		.set({ currentValue })
+		.where(and(eq(goalTargets.id, targetId), eq(goalTargets.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('target');
+	// The weekly review asks which goals moved, and it asks the goal — so a
+	// number typed into one of its measures has to reach the goal's own row.
+	touchGoal(ctx, goalId);
 }
 
 export function closeGoal(ctx: Ctx, id: number, raw: { status: unknown; outcome?: unknown }): void {
@@ -638,9 +785,56 @@ function parseAnchor(value: unknown): Date | null {
 	return new Date(`${raw}T00:00:00`);
 }
 
-function parseTarget(value: unknown): number | null {
-	if (value === undefined || value === null || String(value).trim() === '') return null;
-	return num(value, 'target', { min: 0.000001 });
+/**
+ * The measures posted with a goal, or nothing if none were posted at all.
+ *
+ * The form sends one row per measure and an empty row for the one somebody
+ * started typing into and abandoned, so a row with neither a number nor a unit
+ * is dropped rather than refused. A row with a unit and no number is a mistake
+ * worth saying out loud: "5 books" and "books" are not the same claim.
+ */
+function parseTargets(value: unknown): { id: number | null; value: number; unit: string }[] | null {
+	if (value === undefined || value === null) return null;
+	if (!Array.isArray(value)) throw new ValidationError('Invalid measures');
+
+	const out: { id: number | null; value: number; unit: string }[] = [];
+	for (const entry of value) {
+		const row = (entry ?? {}) as { id?: unknown; value?: unknown; unit?: unknown };
+		const rawValue = row.value === undefined || row.value === null ? '' : String(row.value).trim();
+		const unit = optionalStr(row.unit, 'unit', { max: MAX_UNIT_LENGTH });
+		if (rawValue === '' && unit === '') continue;
+		out.push({
+			id:
+				row.id === undefined || row.id === null || String(row.id).trim() === ''
+					? null
+					: num(row.id, 'measure', { int: true, min: 1 }),
+			value: num(rawValue, 'target', { min: 0.000001 }),
+			unit
+		});
+	}
+
+	if (out.length > MAX_TARGETS)
+		throw new ValidationError(`A goal can be measured by at most ${MAX_TARGETS} things`);
+	return out;
+}
+
+/** The goal a measure belongs to, refusing anybody else's. */
+function ownedTargetGoal(ctx: Ctx, targetId: number): number {
+	const owned = db
+		.select({ goalId: goalTargets.goalId })
+		.from(goalTargets)
+		.where(and(eq(goalTargets.id, targetId), eq(goalTargets.userId, ctx.userId)))
+		.get();
+
+	if (!owned) throw new NotFoundError('target');
+	return owned.goalId;
+}
+
+function touchGoal(ctx: Ctx, goalId: number): void {
+	db.update(goals)
+		.set({ updatedAt: stamp(ctx) })
+		.where(and(eq(goals.id, goalId), eq(goals.userId, ctx.userId)))
+		.run();
 }
 
 function parseColor(value: unknown): string | null {

@@ -1509,8 +1509,10 @@ export const goalAreas = sqliteTable(
  * goal to a specific week or quarter, so "read 12 books" in 2026 and the same
  * goal in 2027 are different rows with their own progress.
  *
- * `targetValue` is optional: plenty of goals are "do the thing", not "do the
- * thing N times". When it is set, progress can be counted rather than felt.
+ * What a goal is measured by lives in `goal_targets` beside it, not in a column
+ * here: one goal often requires several things at once — three talks given and
+ * five books read — and a single number cannot hold that. A goal with no
+ * measures is "do the thing", which is plenty of them.
  */
 export const goals = sqliteTable(
 	'goals',
@@ -1528,9 +1530,6 @@ export const goals = sqliteTable(
 			enum: ['day', 'week', 'month', 'quarter', 'semester', 'year']
 		}).notNull(),
 		periodStart: text('period_start').notNull(), // YYYY-MM-DD, first day of the period
-		targetValue: real('target_value'),
-		currentValue: real('current_value').notNull().default(0),
-		unit: text('unit').default(''),
 		status: text('status', { enum: ['open', 'achieved', 'missed', 'abandoned'] })
 			.notNull()
 			.default('open'),
@@ -1548,8 +1547,37 @@ export const goals = sqliteTable(
 		index('goals_period_idx').on(table.userId, table.horizon, table.periodStart),
 		index('goals_parent_idx').on(table.parentId),
 		index('goals_area_idx').on(table.areaId),
-		index('goals_notebook_idx').on(table.notebookId),
-		check('goals_target_positive', sql`${table.targetValue} IS NULL OR ${table.targetValue} > 0`)
+		index('goals_notebook_idx').on(table.notebookId)
+	]
+);
+
+/**
+ * One thing a goal is measured by: how much of it, and how much so far.
+ *
+ * A goal can require several at once — "get the band going" is three songs
+ * recorded and five gigs played — so each measure is its own row and the goal
+ * is as far along as its measures are on average. `unit` names what is being
+ * counted, which is what makes two measures on one goal tell each other apart.
+ */
+export const goalTargets = sqliteTable(
+	'goal_targets',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		goalId: integer('goal_id')
+			.notNull()
+			.references(() => goals.id, { onDelete: 'cascade' }),
+		targetValue: real('target_value').notNull(),
+		currentValue: real('current_value').notNull().default(0),
+		unit: text('unit').notNull().default(''),
+		sortOrder: integer('sort_order').notNull().default(0)
+	},
+	(table) => [
+		index('goal_targets_user_idx').on(table.userId),
+		index('goal_targets_goal_idx').on(table.goalId),
+		check('goal_targets_positive', sql`${table.targetValue} > 0`)
 	]
 );
 

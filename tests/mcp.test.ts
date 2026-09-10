@@ -334,8 +334,8 @@ describe('a tool that runs', () => {
 		if (!goalId) {
 			// No goal in the fixture: make one the same way the page does.
 			database.exec(
-				`insert into goals (user_id, title, notes, horizon, period_start, unit, status, created_at, updated_at)
-				 values (?, 'Learn to swim', 'Lessons, then a lake.', 'quarter', '2026-01-01', '', 'open',
+				`insert into goals (user_id, title, notes, horizon, period_start, status, created_at, updated_at)
+				 values (?, 'Learn to swim', 'Lessons, then a lake.', 'quarter', '2026-01-01', 'open',
 				         '2026-01-01T00:00:00', '2026-01-01T00:00:00')`,
 				USER
 			);
@@ -790,8 +790,8 @@ describe('editing what was created', () => {
 
 	it('changes a goal the person already committed to', () => {
 		database.exec(
-			`insert into goals (user_id, title, notes, horizon, period_start, unit, status, created_at, updated_at)
-			 values (?, 'Swim across', 'The far pier.', 'quarter', '2026-01-01', '', 'open',
+			`insert into goals (user_id, title, notes, horizon, period_start, status, created_at, updated_at)
+			 values (?, 'Swim across', 'The far pier.', 'quarter', '2026-01-01', 'open',
 			         '2026-01-01T00:00:00', '2026-01-01T00:00:00')`,
 			USER
 		);
@@ -812,7 +812,19 @@ describe('editing what was created', () => {
 		const goals = rpc(5, 'goals', {}, ['tasks:read']);
 		const row = goals.result.structuredContent.items.find((g: { id: number }) => g.id === target);
 		expect(row.title).toBe('Swim across the bay');
-		expect(row.unit).toBe('sessions');
+		expect(row.targets).toEqual([
+			expect.objectContaining({ targetValue: 12, unit: 'sessions', currentValue: 0 })
+		]);
+
+		// Raising the number keeps the unit and the progress already against it.
+		rpc(6, 'log_goal_progress', { id: target, value: 4 }, ['tasks:write']);
+		rpc(7, 'change_goal', { id: target, targetValue: 20 }, ['tasks:write']);
+		const raised = rpc(8, 'goals', {}, ['tasks:read']).result.structuredContent.items.find(
+			(g: { id: number }) => g.id === target
+		);
+		expect(raised.targets).toEqual([
+			expect.objectContaining({ targetValue: 20, unit: 'sessions', currentValue: 4 })
+		]);
 		// What was not said stayed.
 		expect(row.notes).toBe('The far pier.');
 	});
@@ -1213,6 +1225,59 @@ describe('the opened rooms', () => {
 
 		const both = rpc(14, 'log_goal_progress', { id, delta: 1, value: 9 }, ['tasks:write']);
 		expect(both.result.isError).toBe(true);
+	});
+
+	/*
+	 * A goal that wants several things at once. The number has to be told which
+	 * measure it belongs to, and guessing writes the right number onto the wrong
+	 * thing — so a goal with more than one refuses an unnamed report.
+	 */
+	it('counts several things on one goal, and asks which one moved', () => {
+		const made = rpc(
+			15,
+			'add_goal',
+			{
+				title: 'get the band going',
+				horizon: 'year',
+				targets: [
+					{ value: 3, unit: 'gigs' },
+					{ value: 5, unit: 'songs' }
+				]
+			},
+			['tasks:write']
+		);
+		expect(made.result.isError, made.result.content?.[0]?.text).toBe(false);
+		const id = made.result.structuredContent.id as number;
+
+		const unsaid = rpc(16, 'log_goal_progress', { id, delta: 1 }, ['tasks:write']);
+		expect(unsaid.result.isError).toBe(true);
+		expect(unsaid.result.content[0].text).toContain('gigs');
+
+		const gig = rpc(17, 'log_goal_progress', { id, delta: 1, unit: 'gigs' }, ['tasks:write']);
+		expect(gig.result.structuredContent).toMatchObject({ unit: 'gigs', currentValue: 1 });
+
+		// A fourth thing to count, without disturbing the two already there.
+		const added = rpc(18, 'add_goal_target', { goalId: id, value: 50, unit: 'km' }, [
+			'tasks:write'
+		]);
+		expect(added.result.isError, added.result.content?.[0]?.text).toBe(false);
+
+		let row = rpc(19, 'goals', {}, ['tasks:read']).result.structuredContent.items.find(
+			(g: { id: number }) => g.id === id
+		);
+		expect(row.targets.map((t: { unit: string }) => t.unit)).toEqual(['gigs', 'songs', 'km']);
+		expect(row.targets[0].currentValue).toBe(1);
+
+		const gone = rpc(20, 'remove_goal_target', { goalId: id, unit: 'km' }, [
+			'tasks:write',
+			'destructive'
+		]);
+		expect(gone.result.isError, gone.result.content?.[0]?.text).toBe(false);
+
+		row = rpc(21, 'goals', {}, ['tasks:read']).result.structuredContent.items.find(
+			(g: { id: number }) => g.id === id
+		);
+		expect(row.targets.map((t: { unit: string }) => t.unit)).toEqual(['gigs', 'songs']);
 	});
 
 	it('offers no delete for the precious things — the person does those in the app', () => {

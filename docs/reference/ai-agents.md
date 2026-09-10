@@ -366,7 +366,7 @@ _Needs `tasks:write`; writes._
 
 ### `change_goal` — Change a goal
 
-Rename a goal, or change its notes, horizon, start date, target or unit. Only the fields given change. Saying how it ended is `close_goal`, not this.
+Rename a goal, or change its notes, horizon, start date, or what it is measured by. Only the fields given change; `targets` replaces every measure at once, so read `goals` first. Adding one without disturbing the rest is `add_goal_target`. Saying how it ended is `close_goal`, not this.
 
 _Needs `tasks:write`; writes._
 
@@ -546,9 +546,21 @@ _Needs `tasks:write`; writes._
 
 ### `log_goal_progress` — Move a goal’s number
 
-Record progress on a goal that counts something: pass `value` to set where it stands, or `delta` to add what just happened — "I sent three more CVs" is `delta: 3`. Exactly one of the two. `goals` shows the current number.
+Record progress on a goal that counts something: pass `value` to set where it stands, or `delta` to add what just happened — "I sent three more CVs" is `delta: 3`. Exactly one of the two. A goal measured by several things also needs `unit`, to say which of them moved; `goals` shows them and where each stands.
 
 _Needs `tasks:write`; writes._
+
+### `add_goal_target` — Add something a goal is measured by
+
+Give a goal another measure — "and fifty kilometres run". Leaves the measures already on it alone, and starts at zero. `goals` shows what it is measured by.
+
+_Needs `tasks:write`; writes._
+
+### `remove_goal_target` — Take a measure off a goal
+
+Drop one of the things a goal is measured by, by its unit. The goal and its other measures stay. For a measure that was a mistake — one that simply did not happen is what `close_goal` is for.
+
+_Needs `tasks:write` and `destructive`; deletes._
 
 ### `goal_areas` — The areas goals are filed under
 

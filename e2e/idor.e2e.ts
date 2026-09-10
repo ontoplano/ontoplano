@@ -175,6 +175,26 @@ test.describe('one account cannot reach another account by id', () => {
 			attack: (id) => ({ path: '/goals?/update', form: { id, heading: 'taken' } })
 		},
 		{
+			// A measure is a row of its own now, and the number typed into it is
+			// posted by id — so it is its own thing to reach for.
+			name: 'goal measure',
+			page: '/goals',
+			payloadKey: 'targets',
+			create: {
+				path: '/goals?/create',
+				form: {
+					heading: "alice's counted goal",
+					horizon: 'week',
+					targetValue: '12',
+					targetUnit: 'books'
+				}
+			},
+			attack: (id) => ({
+				path: '/goals?/setProgress',
+				form: { targetId: id, currentValue: '3' }
+			})
+		},
+		{
 			name: 'goal area',
 			page: '/goals',
 			payloadKey: 'areas',

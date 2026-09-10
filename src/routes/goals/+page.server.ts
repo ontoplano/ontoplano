@@ -12,7 +12,7 @@ import {
 	listAreas,
 	listGoals,
 	setGoalLinks,
-	setGoalProgress,
+	setTargetProgress,
 	updateGoal
 } from '$lib/server/services/goals';
 import { pickableNotebooks } from '$lib/server/services/notebooks';
@@ -40,6 +40,20 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		activities: listActivities(ctx, { activeOnly: true }).map((a) => ({ id: a.id, name: a.name }))
 	};
 };
+
+/*
+ * The measures posted by the goal form, one row at a time.
+ *
+ * Each row sends its id (empty for a new one), its number and its unit, so the
+ * three lists line up by position and an edited measure keeps the progress
+ * already on it.
+ */
+function targetsFrom(formData: FormData) {
+	const ids = formData.getAll('targetId');
+	const values = formData.getAll('targetValue');
+	const units = formData.getAll('targetUnit');
+	return values.map((value, i) => ({ id: ids[i], value, unit: units[i] }));
+}
 
 export const actions: Actions = {
 	/*
@@ -95,8 +109,7 @@ export const actions: Actions = {
 				areaId: formData.get('areaId'),
 				notebookId: formData.get('notebookId'),
 				parentId: formData.get('parentId'),
-				targetValue: formData.get('targetValue'),
-				unit: formData.get('unit')
+				targets: targetsFrom(formData)
 			});
 			return { success: true };
 		} catch (e) {
@@ -112,8 +125,7 @@ export const actions: Actions = {
 				notes: formData.get('notes'),
 				areaId: formData.get('areaId'),
 				notebookId: formData.get('notebookId'),
-				targetValue: formData.get('targetValue'),
-				unit: formData.get('unit'),
+				targets: targetsFrom(formData),
 				horizon: formData.get('horizon'),
 				startDate: formData.get('startDate')
 			});
@@ -126,9 +138,9 @@ export const actions: Actions = {
 	setProgress: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
-			setGoalProgress(
+			setTargetProgress(
 				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
+				Number(formData.get('targetId')),
 				formData.get('currentValue')
 			);
 			return { success: true };

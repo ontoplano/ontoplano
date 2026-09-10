@@ -18,6 +18,7 @@ let goals: typeof import('../src/lib/server/services/goals');
 let ideas: typeof import('../src/lib/server/services/ideas');
 let activities: typeof import('../src/lib/server/services/activities');
 let slots: typeof import('../src/lib/server/services/slots');
+let todos: typeof import('../src/lib/server/services/todos');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 
@@ -26,6 +27,7 @@ beforeAll(async () => {
 	ideas = await import('../src/lib/server/services/ideas');
 	activities = await import('../src/lib/server/services/activities');
 	slots = await import('../src/lib/server/services/slots');
+	todos = await import('../src/lib/server/services/todos');
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 });
@@ -103,11 +105,137 @@ describe('goals', () => {
 		const id = goals.createGoal(ctx, {
 			title: 'Read twelve books',
 			horizon: 'year',
-			targetValue: 12,
-			unit: 'books'
+			targets: [{ value: 12, unit: 'books' }]
 		});
-		goals.setGoalProgress(ctx, id, 5);
-		expect(goals.listGoals(ctx).find((g) => g.id === id)!.currentValue).toBe(5);
+		const target = goals.listGoals(ctx).find((g) => g.id === id)!.targets[0];
+		goals.setTargetProgress(ctx, target.id, 5);
+
+		const after = goals.listGoals(ctx).find((g) => g.id === id)!;
+		expect(after.targets[0].currentValue).toBe(5);
+		expect(after.progress.fraction).toBeCloseTo(5 / 12);
+	});
+
+	/*
+	 * One goal, several things it wants. The point of the whole shape: a goal
+	 * that needs three of one thing and five of another is one commitment, and
+	 * how far along it is has to account for both.
+	 */
+	test('a goal can want several things at once', () => {
+		const id = goals.createGoal(ctx, {
+			title: 'Get the band going',
+			horizon: 'year',
+			targets: [
+				{ value: 3, unit: 'gigs' },
+				{ value: 5, unit: 'songs' }
+			]
+		});
+
+		let goal = goals.listGoals(ctx).find((g) => g.id === id)!;
+		expect(goal.targets.map((t) => t.unit)).toEqual(['gigs', 'songs']);
+		expect(goal.progress.fraction).toBe(0);
+
+		// Every gig played, no songs recorded: half way, not finished.
+		goals.setTargetProgress(ctx, goal.targets[0].id, 3);
+		goal = goals.listGoals(ctx).find((g) => g.id === id)!;
+		expect(goal.targets[0].fraction).toBe(1);
+		expect(goal.progress.fraction).toBe(0.5);
+
+		// Overshooting one measure does not pay for another.
+		goals.setTargetProgress(ctx, goal.targets[0].id, 30);
+		goal = goals.listGoals(ctx).find((g) => g.id === id)!;
+		expect(goal.progress.fraction).toBe(0.5);
+	});
+
+	/*
+	 * Linked work and typed-in numbers are both ways of being measured, and a
+	 * goal can have both. It used to be one or the other: a goal with an
+	 * activity linked to it read "0 of 0 done" and no bar while its own number
+	 * stood at seven of twelve.
+	 */
+	test('linked tasks and measures both count towards one goal', () => {
+		const id = goals.createGoal(ctx, {
+			title: 'Finish the course',
+			horizon: 'month',
+			targets: [{ value: 10, unit: 'chapters' }]
+		});
+		const first = todos.createTodo(ctx, { title: 'enrol' });
+		const second = todos.createTodo(ctx, { title: 'pay the fee' });
+		goals.setGoalLinks(ctx, id, { slotIds: [], todoIds: [first, second], activityIds: [] });
+		todos.setTodoStatus(ctx, first, 'done');
+
+		const target = goals.listGoals(ctx).find((g) => g.id === id)!.targets[0];
+		goals.setTargetProgress(ctx, target.id, 5);
+
+		// One todo of two, and half the chapters: the two average out.
+		const goal = goals.listGoals(ctx).find((g) => g.id === id)!;
+		expect(goal.progress.done).toBe(1);
+		expect(goal.progress.total).toBe(2);
+		expect(goal.progress.fraction).toBeCloseTo(0.5);
+	});
+
+	test('editing keeps the progress on a measure that stays', () => {
+		const id = goals.createGoal(ctx, {
+			title: 'Ship the release',
+			horizon: 'quarter',
+			targets: [
+				{ value: 10, unit: 'bugs' },
+				{ value: 2, unit: 'talks' }
+			]
+		});
+		const before = goals.listGoals(ctx).find((g) => g.id === id)!.targets;
+		goals.setTargetProgress(ctx, before[0].id, 4);
+
+		// The unit is retyped and the second measure dropped; the four bugs stay.
+		goals.updateGoal(ctx, id, {
+			title: 'Ship the release',
+			targets: [{ id: before[0].id, value: 10, unit: 'bugs fixed' }]
+		});
+
+		const after = goals.listGoals(ctx).find((g) => g.id === id)!;
+		expect(after.targets).toHaveLength(1);
+		expect(after.targets[0].unit).toBe('bugs fixed');
+		expect(after.targets[0].currentValue).toBe(4);
+	});
+
+	test('a measure can be added and taken off without touching the rest', () => {
+		const id = goals.createGoal(ctx, {
+			title: 'Move house',
+			horizon: 'month',
+			targets: [{ value: 20, unit: 'boxes' }]
+		});
+
+		const added = goals.addGoalTarget(ctx, id, { value: 3, unit: 'viewings' });
+		expect(goals.listGoals(ctx).find((g) => g.id === id)!.targets).toHaveLength(2);
+
+		goals.removeGoalTarget(ctx, added);
+		const after = goals.listGoals(ctx).find((g) => g.id === id)!;
+		expect(after.targets.map((t) => t.unit)).toEqual(['boxes']);
+	});
+
+	// Leaving the measures out of an update must not wipe them: a caller that
+	// only renames a goal knows nothing about what it counts.
+	test('an update that says nothing about measures leaves them', () => {
+		const id = goals.createGoal(ctx, {
+			title: 'Learn Russian',
+			horizon: 'year',
+			targets: [{ value: 500, unit: 'words' }]
+		});
+
+		goals.updateGoal(ctx, id, { title: 'Learn Russian properly' });
+		expect(goals.listGoals(ctx).find((g) => g.id === id)!.targets).toHaveLength(1);
+	});
+
+	test('a goal cannot be measured by more than the cap', () => {
+		expect(() =>
+			goals.createGoal(ctx, {
+				title: 'Too much',
+				horizon: 'year',
+				targets: Array.from({ length: goals.MAX_TARGETS + 1 }, (_, i) => ({
+					value: 1,
+					unit: `thing ${i}`
+				}))
+			})
+		).toThrow();
 	});
 
 	test('closing one stamps when, and reopening clears it', () => {
@@ -142,8 +270,10 @@ describe('goals', () => {
 	});
 
 	test('belong to one account', () => {
-		const mine = goals.listGoals(ctx)[0];
-		expect(() => goals.setGoalProgress(theirs, mine.id, 1)).toThrow();
+		const mine = goals.listGoals(ctx).find((g) => g.targets.length > 0)!;
+		expect(() => goals.setTargetProgress(theirs, mine.targets[0].id, 1)).toThrow();
+		expect(() => goals.removeGoalTarget(theirs, mine.targets[0].id)).toThrow();
+		expect(() => goals.addGoalTarget(theirs, mine.id, { value: 1, unit: 'x' })).toThrow();
 		expect(() => goals.deleteGoal(theirs, mine.id)).toThrow();
 	});
 });

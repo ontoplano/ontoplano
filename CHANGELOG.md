@@ -10,6 +10,21 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.128.0 — 2026-09-10
+
+- **A goal can be measured by several things at once.** "Get the band going"
+  is three gigs played and five songs recorded — one goal, one line per
+  number, each with its own bar and its own box to type into. The goal is as
+  far along as its measures are on average, so playing every gig without
+  recording anything reads as half done. Goals that counted one thing keep
+  counting it; nothing has to be retyped. Measures can be added and dropped
+  while a goal is running, the unit box offers the units you already use, and
+  an assistant can read and move any of them (`add_goal_target`,
+  `remove_goal_target`, and `log_goal_progress` now takes the unit that moved).
+- **A goal with tasks linked to it also counts what you type in.** It used to
+  ignore its own number entirely — a goal with an activity attached read
+  "0 of 0 done" while its own count stood at seven of twelve.
+
 ## 0.127.4 — 2026-09-10
 
 - **Ticking something off Today's Tasks no longer takes the row away.** A

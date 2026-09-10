@@ -47,6 +47,13 @@
 	let areaFilter: number | null = $state(null);
 	let formHorizon: Horizon = $state('week');
 	let formStart: string = $state('');
+	/**
+	 * The measures on the goal being written, one row each.
+	 *
+	 * A row carries the id of the measure it edits so the number already on it
+	 * survives a rename of its unit; a row with no id is a new one.
+	 */
+	let formTargets: { id: number | null; value: string; unit: string }[] = $state([]);
 	let selectedIndex = $state(0);
 
 	const accent = SECTION_COLORS.home;
@@ -77,20 +84,44 @@
 	);
 	const linking = $derived(linkingId ? (data.goals.find((g) => g.id === linkingId) ?? null) : null);
 
+	/**
+	 * Units this account already counts things in.
+	 *
+	 * Somebody who reads in books and runs in kilometres types those words
+	 * again for every goal, and two spellings of one unit are two units. The
+	 * list is what they have used, offered rather than imposed.
+	 */
+	const knownUnits = $derived(
+		[...new Set(data.goals.flatMap((g) => g.targets.map((t) => t.unit)).filter(Boolean))].sort()
+	);
+
 	function percent(goal: Goal): number | null {
 		return goal.progress.fraction === null ? null : Math.round(goal.progress.fraction * 100);
 	}
 
 	function progressLabel(goal: Goal): string {
-		if (goal.progress.total !== null) return `${goal.progress.done} of ${goal.progress.total} done`;
-		if (goal.targetValue) return `${goal.currentValue} / ${goal.targetValue} ${goal.unit}`.trim();
+		// The tasks, when there are any: the measures under them say the rest.
+		if (goal.progress.total) return `${goal.progress.done} of ${goal.progress.total} done`;
+		if (goal.progress.total === 0 && goal.targets.length === 0) return 'Nothing counted yet';
+		// One measure reads as itself; several are listed under the bar, so the
+		// line above them says how many rather than repeating the first.
+		if (goal.targets.length === 1) {
+			const t = goal.targets[0];
+			return `${t.currentValue} / ${t.targetValue} ${t.unit}`.trim();
+		}
+		if (goal.targets.length > 1) return `${goal.targets.length} measures`;
 		return 'No measure set';
+	}
+
+	function blankTarget() {
+		return { id: null, value: '', unit: '' };
 	}
 
 	function openCreate() {
 		editingId = null;
 		formHorizon = 'week';
 		formStart = today();
+		formTargets = [blankTarget()];
 		showForm = true;
 	}
 
@@ -98,6 +129,10 @@
 		editingId = goal.id;
 		formHorizon = goal.horizon;
 		formStart = goal.periodStart;
+		formTargets =
+			goal.targets.length > 0
+				? goal.targets.map((t) => ({ id: t.id, value: String(t.targetValue), unit: t.unit }))
+				: [blankTarget()];
 		showForm = true;
 	}
 
@@ -340,27 +375,63 @@
 
 				<NotebookField notebooks={data.notebooks} value={editing?.notebookId ?? null} span={4} />
 
-				<Field label="Target" span={4} hint="Optional — leave empty for a yes/no goal">
-					<input
-						autocomplete="off"
-						name="targetValue"
-						type="number"
-						min="0"
-						step="any"
-						value={editing?.targetValue ?? ''}
-						class="input tabular"
-					/>
-				</Field>
-
-				<Field label="Unit" span={4}>
-					<input
-						name="unit"
-						autocomplete="off"
-						placeholder="books, kg, €"
-						value={editing?.unit ?? ''}
-						class="input"
-					/>
-				</Field>
+				<!--
+					What the goal is measured by, one row per thing. Several of them is
+					the ordinary case for a big goal — three gigs played and five songs
+					recorded — and each keeps its own number.
+				-->
+				<div class="col-span-12">
+					<span class="eyebrow text-gray-600">Measured by</span>
+					<div class="mt-1 space-y-2">
+						{#each formTargets as target, i (i)}
+							<div class="flex items-center gap-2">
+								<input type="hidden" name="targetId" value={target.id ?? ''} />
+								<input
+									autocomplete="off"
+									name="targetValue"
+									type="number"
+									min="0"
+									step="any"
+									placeholder="3"
+									bind:value={target.value}
+									class="input tabular w-24 shrink-0"
+								/>
+								<input
+									autocomplete="off"
+									name="targetUnit"
+									list="goal-units"
+									placeholder="books, km, gigs"
+									bind:value={target.unit}
+									class="input min-w-0 flex-1"
+								/>
+								<button
+									type="button"
+									class="icon-btn icon-btn-danger"
+									title="Remove measure"
+									aria-label="Remove measure"
+									onclick={() => (formTargets = formTargets.filter((_, at) => at !== i))}
+								>
+									<Icon name="trash" />
+								</button>
+							</div>
+						{/each}
+					</div>
+					<datalist id="goal-units">
+						{#each knownUnits as unit (unit)}
+							<option value={unit}></option>
+						{/each}
+					</datalist>
+					<button
+						type="button"
+						class="btn btn-sm mt-2"
+						onclick={() => (formTargets = [...formTargets, blankTarget()])}
+					>
+						<Icon name="plus" /> Add measure
+					</button>
+					<span class="mt-1 block text-xs text-gray-500">
+						Optional. Leave it empty for a goal that is simply done or not.
+					</span>
+				</div>
 
 				{#if !editingId}
 					<Field label="Part of" span={4}>
@@ -482,26 +553,53 @@
 											</span>
 										</div>
 
-										{#if goal.progress.total === null && goal.targetValue}
-											<!-- Nothing linked, so progress is self-reported. -->
-											<form
-												method="post"
-												action="?/setProgress"
-												use:enhance
-												class="mt-2 flex items-center gap-2"
-											>
-												<input type="hidden" name="id" value={goal.id} />
-												<input
-													autocomplete="off"
-													name="currentValue"
-													type="number"
-													min="0"
-													step="any"
-													value={goal.currentValue}
-													class="tabular w-20 border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-												/>
-												<button class="btn btn-sm">Update</button>
-											</form>
+										<!--
+											Every measure the goal was given, each with the number it
+											stands at. A goal counted from linked tasks keeps them
+											visible and editable: they are what somebody typed in, and
+											hiding them because a todo got attached loses the record.
+										-->
+										{#if goal.targets.length > 0}
+											<div class="mt-2 space-y-1">
+												{#each goal.targets as target (target.id)}
+													<form
+														method="post"
+														action="?/setProgress"
+														use:enhance
+														class="flex flex-wrap items-center gap-2"
+													>
+														<input type="hidden" name="targetId" value={target.id} />
+														<input
+															autocomplete="off"
+															name="currentValue"
+															type="number"
+															min="0"
+															step="any"
+															value={target.currentValue}
+															aria-label={`Progress towards ${target.targetValue} ${target.unit}`.trim()}
+															class="tabular w-20 border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+														/>
+														<span class="tabular text-xs text-gray-500">
+															/ {target.targetValue}
+															{target.unit}
+														</span>
+														<div class="h-1 w-16 shrink-0 bg-gray-200">
+															<div
+																class="h-full"
+																style="width: {Math.round(target.fraction * 100)}%;
+																	background-color: {goal.areaColor ?? accent}"
+															></div>
+														</div>
+														<button
+															class="icon-btn"
+															title="Save progress"
+															aria-label="Save progress"
+														>
+															<Icon name="check" />
+														</button>
+													</form>
+												{/each}
+											</div>
 										{/if}
 
 										<!--

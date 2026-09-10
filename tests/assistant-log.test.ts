@@ -233,6 +233,34 @@ describe('put it back', () => {
 		expect(listed(), 'the put back did not put back').toBe(true);
 	});
 
+	it('a removed measure, standing where it stood', () => {
+		const goal = rpc('add_goal', {
+			title: 'get the band going',
+			horizon: 'year',
+			targets: [
+				{ value: 3, unit: 'gigs' },
+				{ value: 5, unit: 'songs' }
+			]
+		});
+		rpc('log_goal_progress', { id: goal.id, value: 2, unit: 'songs' });
+		rpc('remove_goal_target', { goalId: goal.id, unit: 'songs' });
+
+		const measures = () =>
+			rpc('goals', {}).items.find((g: { id: number }) => g.id === goal.id).targets;
+		expect(
+			measures().some((t: { unit: string }) => t.unit === 'songs'),
+			'the delete did not delete'
+		).toBe(false);
+
+		log.putBack(ctx(), newestCall().id);
+
+		const back = measures().find((t: { unit: string }) => t.unit === 'songs');
+		expect(back, 'the put back did not put back').toBeDefined();
+		expect(back.targetValue).toBe(5);
+		// The two songs already recorded come back with it.
+		expect(back.currentValue).toBe(2);
+	});
+
 	it('refuses a call that deleted nothing', () => {
 		rpc('add_todo', { title: 'just an add' });
 		expect(() => log.putBack(ctx(), newestCall().id)).toThrow(/deleted nothing/i);

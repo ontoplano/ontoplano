@@ -122,6 +122,7 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('billPayments', schema.billPayments as never),
 	owned('bills', schema.bills as never),
 	owned('goalLinks', schema.goalLinks as never),
+	owned('goalTargets', schema.goalTargets as never),
 	owned('goals', schema.goals as never),
 	owned('goalAreas', schema.goalAreas as never),
 	owned('dataPoints', schema.dataPoints as never),

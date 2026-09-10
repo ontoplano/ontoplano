@@ -1167,6 +1167,11 @@ occurrences it covers actually got done inside its period. That is the whole
 point of linking — a self-reported number tells you what you believe, and the
 execution log tells you what happened.
 
+What it is measured by lives in `goal_targets`, one row per thing, because a
+goal worth making usually wants more than one: three gigs played and five
+songs recorded is a single commitment with two numbers under it. The goal is
+as far along as everything measuring it is on average.
+
 ### Functions
 
 #### `listAreas(ctx)`
@@ -1195,9 +1200,17 @@ Goals keep existing without an area rather than disappearing with it.
 
 #### `updateGoal(ctx, id, raw)`
 
-#### `setGoalProgress(ctx, id, value)`
+#### `addGoalTarget(ctx, goalId, raw)`
 
-Self-reported progress, for goals with a target and no linked tasks.
+Add one measure to a goal, leaving the ones already on it alone.
+
+#### `removeGoalTarget(ctx, targetId)`
+
+And the way back off it. The goal and its other measures stay.
+
+#### `setTargetProgress(ctx, targetId, value)`
+
+Self-reported progress on one measure — the number somebody types in.
 
 #### `closeGoal(ctx, id, raw)`
 
@@ -1228,6 +1241,7 @@ And the way back off it, one link at a time.
 
 - `GoalArea`
 - `GoalProgress`
+- `GoalTarget` — One thing a goal is measured by. A goal can want several at once.
 - `Goal`
 
 ## habits
@@ -3096,9 +3110,10 @@ Always snapped to its Monday, so "the week of the 14th" and "the week of the
 
 Goals you moved this week.
 
-A goal's value is a single number with no history behind it, so this cannot
-say _how much_ it moved — only that it was touched inside the week, which is
-the honest version and still answers "did any of this go anywhere".
+A goal's measures are single numbers with no history behind them, so this
+cannot say _how much_ one moved — only that the goal was touched inside the
+week, which is the honest version and still answers "did any of this go
+anywhere". Where it stands comes along, one line per measure.
 
 #### `saveNote(ctx, raw)`
 

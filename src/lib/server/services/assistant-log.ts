@@ -13,6 +13,7 @@ import { createFreeReminder } from './reminders.js';
 import { createSlot } from './slots.js';
 import { createLocation } from './locations.js';
 import { createWorkoutCategory } from './workouts.js';
+import { addGoalTarget, listGoals, setTargetProgress } from './goals.js';
 
 /**
  * What an assistant did to an account, and the way back.
@@ -274,6 +275,27 @@ function recreate(ctx: Ctx, tool: string, before: Record<string, unknown>): stri
 			// whole cupboard's arrangement.
 			createLocation(ctx, { name: before.name, parentId: before.parentId, notes: before.notes });
 			return `the location "${String(before.name)}"`;
+		}
+
+		case 'remove_goal_target': {
+			// The goal is still there; one of the things it was measured by is not.
+			// Which one is whatever the recorded goal had and the live one lacks,
+			// and it comes back standing where it stood.
+			const goal = listGoals(ctx, { includeClosed: true }).find((g) => g.id === Number(before.id));
+			if (!goal) throw new ValidationError('That goal is gone, so its measure has nowhere to go.');
+
+			const had = Array.isArray(before.targets)
+				? (before.targets as { unit?: unknown; targetValue?: unknown; currentValue?: unknown }[])
+				: [];
+			const missing = had.find(
+				(t) => !goal.targets.some((live) => live.unit === String(t.unit ?? ''))
+			);
+			if (!missing) throw new ValidationError('That measure is already back on the goal.');
+
+			const id = addGoalTarget(ctx, goal.id, { value: missing.targetValue, unit: missing.unit });
+			if (Number(missing.currentValue) > 0) setTargetProgress(ctx, id, missing.currentValue);
+			const measure = `${String(missing.targetValue)} ${String(missing.unit ?? '')}`.trim();
+			return `"${measure}" on "${goal.title}"`;
 		}
 
 		case 'remove_workout_category': {

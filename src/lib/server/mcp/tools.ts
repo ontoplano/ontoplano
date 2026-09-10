@@ -56,14 +56,17 @@ import {
 } from '../services/ideas.js';
 import {
 	addGoalLinks,
+	addGoalTarget,
 	closeGoal,
 	createArea,
 	createGoal,
 	listAreas,
 	listGoals,
 	removeGoalLinks,
-	setGoalProgress,
-	updateGoal
+	removeGoalTarget,
+	setTargetProgress,
+	updateGoal,
+	type GoalTarget
 } from '../services/goals.js';
 import {
 	contentsOf,
@@ -340,6 +343,77 @@ const oneOf = <T extends { id: number }>(rows: T[], id: number): T | null =>
 const todoById = (ctx: Ctx, args: Record<string, unknown>) => oneOf(listTodos(ctx), idOf(args));
 const goalById = (ctx: Ctx, args: Record<string, unknown>) =>
 	oneOf(listGoals(ctx, { includeClosed: true }), Number(args.goalId ?? args.id));
+
+/**
+ * The measures a caller wrote out, in the shape the service takes.
+ *
+ * `targetValue` and `unit` came first and still work — they are the goal that
+ * counts one thing — so a caller that knows nothing about measures keeps
+ * working, and one with several passes `targets`.
+ */
+function targetsFrom(args: Record<string, unknown>, existing?: GoalTarget) {
+	if (Array.isArray(args.targets))
+		return args.targets.map((raw) => {
+			const t = (raw ?? {}) as { id?: unknown; value?: unknown; unit?: unknown };
+			return { id: t.id, value: t.value, unit: t.unit };
+		});
+	if (args.targetValue !== undefined && args.targetValue !== null)
+		return [
+			{
+				// The measure it already had, so raising a target from ten to twelve
+				// keeps both its unit and the progress against it.
+				id: existing?.id,
+				value: args.targetValue,
+				unit: args.unit ?? existing?.unit
+			}
+		];
+	return undefined;
+}
+
+/**
+ * Which of a goal's measures a call is about.
+ *
+ * Named by its unit, because that is what the person said — "I read two more
+ * books" — and the ids are ours rather than theirs. A goal with one measure
+ * needs no naming; one with several is asked rather than guessed at, since
+ * guessing writes the right number onto the wrong thing.
+ */
+function pickTarget(goal: { targets: GoalTarget[] }, unit: unknown): GoalTarget {
+	if (goal.targets.length === 0)
+		throw new ValidationError(
+			'That goal counts nothing yet. `add_goal_target` gives it something to count.'
+		);
+
+	const said = unit === undefined || unit === null ? '' : String(unit).trim().toLowerCase();
+	if (said === '') {
+		if (goal.targets.length === 1) return goal.targets[0];
+		throw new ValidationError(
+			`That goal is measured by several things (${goal.targets.map((t) => t.unit || 'unnamed').join(', ')}). Say which with \`unit\`.`
+		);
+	}
+
+	const hit = goal.targets.find((t) => t.unit.toLowerCase() === said);
+	if (!hit)
+		throw new ValidationError(
+			`That goal has no measure in ${String(unit)}. It counts: ${goal.targets.map((t) => t.unit || 'unnamed').join(', ')}.`
+		);
+	return hit;
+}
+
+/** The parameter both goal tools take for "what it is measured by". */
+const targetsParam = {
+	type: 'array',
+	items: {
+		type: 'object',
+		properties: {
+			value: { type: 'number', description: 'How much of it.' },
+			unit: { type: 'string', description: 'What is being counted — gigs, songs, km.' }
+		},
+		required: ['value']
+	},
+	description:
+		'Everything the goal is measured by, replacing what it has: `[{ "value": 3, "unit": "gigs" }, { "value": 5, "unit": "songs" }]`. A goal met by doing one thing can say `targetValue` and `unit` instead.'
+} as const;
 const ideaById = (ctx: Ctx, args: Record<string, unknown>) => oneOf(listIdeas(ctx), idOf(args));
 const notebookById = (ctx: Ctx, args: Record<string, unknown>) =>
 	oneOf(listNotebooks(ctx), idOf(args));
@@ -1022,7 +1096,7 @@ export const TOOLS: Tool[] = [
 		name: 'change_goal',
 		title: 'Change a goal',
 		description:
-			'Rename a goal, or change its notes, horizon, start date, target or unit. Only the fields given change. Saying how it ended is `close_goal`, not this.',
+			'Rename a goal, or change its notes, horizon, start date, or what it is measured by. Only the fields given change; `targets` replaces every measure at once, so read `goals` first. Adding one without disturbing the rest is `add_goal_target`. Saying how it ended is `close_goal`, not this.',
 		scope: 'tasks:write',
 		writes: true,
 		input: object(
@@ -1032,8 +1106,12 @@ export const TOOLS: Tool[] = [
 				notes: text('The new notes.'),
 				horizon: text('week, month, quarter, semester or year.'),
 				startDate: text('The day its period starts from, as YYYY-MM-DD.'),
-				targetValue: { type: 'number', description: 'The number it is aiming at.' },
-				unit: text('What the target counts — pages, km, sessions.')
+				targets: targetsParam,
+				targetValue: {
+					type: 'number',
+					description: 'The number it is aiming at, for a goal that counts one thing.'
+				},
+				unit: text('What that number counts — pages, km, sessions.')
 			},
 			['id']
 		),
@@ -1041,13 +1119,26 @@ export const TOOLS: Tool[] = [
 		run: (ctx, args) => {
 			const current = listGoals(ctx, { includeClosed: true }).find((g) => g.id === Number(args.id));
 			if (!current) throw new NotFoundError('goal');
+
+			// `targetValue` says "the number this goal counts", which only means
+			// something while there is one of them. On a goal measured by several,
+			// it is ambiguous rather than wrong, so it is refused with the way to
+			// say what was meant.
+			if (
+				args.targets === undefined &&
+				args.targetValue !== undefined &&
+				current.targets.length > 1
+			)
+				throw new ValidationError(
+					`That goal is measured by ${current.targets.length} things (${current.targets.map((t) => t.unit || 'unnamed').join(', ')}). Pass \`targets\` to replace them all, or \`add_goal_target\` to add one.`
+				);
+
 			updateGoal(ctx, current.id, {
 				title: args.title ?? current.title,
 				notes: args.notes ?? current.notes ?? '',
 				areaId: current.areaId,
 				notebookId: current.notebookId,
-				targetValue: args.targetValue ?? current.targetValue,
-				unit: args.unit ?? current.unit,
+				targets: targetsFrom(args, current.targets[0]),
 				horizon: args.horizon ?? current.horizon,
 				startDate: args.startDate ? day(args.startDate, 'startDate') : undefined
 			});
@@ -1678,11 +1769,12 @@ export const TOOLS: Tool[] = [
 				notes: text('Anything else they said about it.'),
 				startDate: text('The day its period starts from, as YYYY-MM-DD. Today if left out.'),
 				area: text('The area to file it under, by name — `goal_areas` lists them.'),
+				targets: targetsParam,
 				targetValue: {
 					type: 'number',
-					description: 'The number it aims at, when it counts something.'
+					description: 'The number it aims at, when it counts one thing.'
 				},
-				unit: text('What the target counts — applications, km, pages.')
+				unit: text('What that number counts — applications, km, pages.')
 			},
 			['title', 'horizon']
 		),
@@ -1704,30 +1796,30 @@ export const TOOLS: Tool[] = [
 				notes: args.notes,
 				startDate: args.startDate,
 				areaId,
-				targetValue: args.targetValue,
-				unit: args.unit
+				targets: targetsFrom(args)
 			});
 			return { id };
 		}
 	},
 	{
 		/*
-		 * `goals.current_value` used to move only when a linked todo finished,
-		 * so a goal counted by hand — CVs sent, pages read — sat at zero
-		 * however much was done. Saying "I sent three today" is a report, and
-		 * reports get recorded.
+		 * A goal's number used to move only when a linked todo finished, so a
+		 * goal counted by hand — CVs sent, pages read — sat at zero however
+		 * much was done. Saying "I sent three today" is a report, and reports
+		 * get recorded. A goal measured by several things says which one.
 		 */
 		name: 'log_goal_progress',
 		title: 'Move a goal\u2019s number',
 		description:
-			'Record progress on a goal that counts something: pass `value` to set where it stands, or `delta` to add what just happened — "I sent three more CVs" is `delta: 3`. Exactly one of the two. `goals` shows the current number.',
+			'Record progress on a goal that counts something: pass `value` to set where it stands, or `delta` to add what just happened — "I sent three more CVs" is `delta: 3`. Exactly one of the two. A goal measured by several things also needs `unit`, to say which of them moved; `goals` shows them and where each stands.',
 		scope: 'tasks:write',
 		writes: true,
 		input: object(
 			{
 				id: { type: 'integer', description: 'The goal\u2019s id.' },
 				value: { type: 'number', description: 'Where it stands now, absolute.' },
-				delta: { type: 'number', description: 'How much just happened, added to where it stands.' }
+				delta: { type: 'number', description: 'How much just happened, added to where it stands.' },
+				unit: text('Which measure moved, by its unit — only needed when the goal has several.')
 			},
 			['id']
 		),
@@ -1741,11 +1833,64 @@ export const TOOLS: Tool[] = [
 			const current = listGoals(ctx, { includeClosed: true }).find((g) => g.id === Number(args.id));
 			if (!current) throw new NotFoundError('goal');
 
-			const next = gaveValue
-				? Number(args.value)
-				: Number(current.currentValue ?? 0) + Number(args.delta);
-			setGoalProgress(ctx, current.id, next);
-			return { ok: true, currentValue: next };
+			const target = pickTarget(current, args.unit);
+			const next = gaveValue ? Number(args.value) : target.currentValue + Number(args.delta);
+			setTargetProgress(ctx, target.id, next);
+			return { ok: true, unit: target.unit, currentValue: next, targetValue: target.targetValue };
+		}
+	},
+	{
+		/*
+		 * A goal can want several things at once, and finding out midway that it
+		 * wants a fourth is ordinary. Additive, for the same reason
+		 * `link_to_goal` is: `change_goal`'s `targets` replaces the set, and a
+		 * caller that knows about one measure would drop the others.
+		 */
+		name: 'add_goal_target',
+		title: 'Add something a goal is measured by',
+		description:
+			'Give a goal another measure — "and fifty kilometres run". Leaves the measures already on it alone, and starts at zero. `goals` shows what it is measured by.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object(
+			{
+				goalId: { type: 'integer', description: 'The goal\u2019s id, as `goals` gives it.' },
+				value: { type: 'number', description: 'How much of it.' },
+				unit: text('What is being counted — gigs, songs, km.')
+			},
+			['goalId', 'value']
+		),
+		subject: goalById,
+		run: (ctx, args) => ({
+			id: addGoalTarget(ctx, Number(args.goalId), { value: args.value, unit: args.unit })
+		})
+	},
+	{
+		name: 'remove_goal_target',
+		title: 'Take a measure off a goal',
+		description:
+			'Drop one of the things a goal is measured by, by its unit. The goal and its other measures stay. For a measure that was a mistake — one that simply did not happen is what `close_goal` is for.',
+		scope: 'tasks:write',
+		writes: true,
+		destroys: true,
+		input: object(
+			{
+				goalId: { type: 'integer', description: 'The goal\u2019s id.' },
+				unit: text(
+					'The measure\u2019s unit, as `goals` gives it. Only needed when there are several.'
+				)
+			},
+			['goalId']
+		),
+		subject: goalById,
+		run: (ctx, args) => {
+			const goal = listGoals(ctx, { includeClosed: true }).find(
+				(g) => g.id === Number(args.goalId)
+			);
+			if (!goal) throw new NotFoundError('goal');
+			const target = pickTarget(goal, args.unit);
+			removeGoalTarget(ctx, target.id);
+			return { ok: true, unit: target.unit };
 		}
 	},
 	{

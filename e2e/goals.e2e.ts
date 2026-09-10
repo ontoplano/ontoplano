@@ -145,3 +145,70 @@ test('re-saving the choosing modal keeps the done todo linked', async ({ page })
 	await page.waitForTimeout(600);
 	await expect(page.getByText('2 of 3 done')).toBeVisible();
 });
+
+/**
+ * One goal, several things it wants.
+ *
+ * The whole point of measures being rows: "get the band going" is three gigs
+ * and five songs, and neither number is the goal on its own. This drives the
+ * form at phone width — where three measure rows have the least room to fit —
+ * adds one, records progress against one of them, and checks the goal reads as
+ * half done rather than as done.
+ */
+test('a goal can be measured by several things, and each keeps its own number', async ({
+	page
+}) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await register(page, `measures-${Date.now()}@example.test`);
+
+	await visit(page, '/goals');
+	const heading = page.locator('[name="heading"]');
+	await expect(async () => {
+		await page
+			.getByRole('button', { name: /New goal/ })
+			.first()
+			.click();
+		await expect(heading).toBeVisible({ timeout: 2000 });
+	}).toPass({ timeout: 15000 });
+
+	await heading.fill('get the band going');
+	await page.locator('[name="targetValue"]').first().fill('3');
+	await page.locator('[name="targetUnit"]').first().fill('gigs');
+
+	// A second measure, on the row the button makes.
+	await page.getByRole('button', { name: 'Add measure' }).click();
+	await page.locator('[name="targetValue"]').nth(1).fill('5');
+	await page.locator('[name="targetUnit"]').nth(1).fill('songs');
+
+	await page.getByRole('button', { name: 'Create goal' }).click();
+	await page.waitForTimeout(800);
+
+	// Both measures on the card, each with its own number.
+	const rows = page.locator('form[action="?/setProgress"]');
+	await expect(rows).toHaveCount(2);
+	await expect(page.getByText('/ 3 gigs')).toBeVisible();
+	await expect(page.getByText('/ 5 songs')).toBeVisible();
+	await expect(page.getByText('2 measures')).toBeVisible();
+
+	// Every gig played. Half the goal, not all of it.
+	await rows.first().locator('input[name="currentValue"]').fill('3');
+	await rows.first().getByRole('button', { name: 'Save progress' }).click();
+	await page.waitForTimeout(800);
+	await expect(page.getByText('50%')).toBeVisible();
+
+	// Nothing overflows the phone.
+	const scrolls = await page.evaluate(
+		() => document.documentElement.scrollWidth > document.documentElement.clientWidth
+	);
+	expect(scrolls).toBe(false);
+
+	// Editing keeps the three gigs already played.
+	await page.getByRole('button', { name: 'Edit' }).first().click();
+	await expect(heading).toBeVisible();
+	await page.locator('[name="targetUnit"]').first().fill('gigs played');
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
+	await page.waitForTimeout(800);
+
+	await expect(page.getByText('/ 3 gigs played')).toBeVisible();
+	await expect(rows.first().locator('input[name="currentValue"]')).toHaveValue('3');
+});

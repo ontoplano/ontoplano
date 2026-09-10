@@ -1,8 +1,8 @@
-import { and, desc, eq, gte, lt } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lt } from 'drizzle-orm';
 
 import { blockName } from '../../planner-grid.js';
 import { db } from '../db/index.js';
-import { goals, weeklyReviews } from '../db/schema.js';
+import { goals, goalTargets, weeklyReviews } from '../db/schema.js';
 import { addDays, getMonday } from '../week-generator.js';
 import type { Ctx } from './ctx.js';
 import { listInstances, setInstanceStatus } from './instances.js';
@@ -150,22 +150,20 @@ export function readWeek(ctx: Ctx, weekStart: string): { reading: WeekReading; l
 /**
  * Goals you moved this week.
  *
- * A goal's value is a single number with no history behind it, so this cannot
- * say *how much* it moved — only that it was touched inside the week, which is
- * the honest version and still answers "did any of this go anywhere".
+ * A goal's measures are single numbers with no history behind them, so this
+ * cannot say *how much* one moved — only that the goal was touched inside the
+ * week, which is the honest version and still answers "did any of this go
+ * anywhere". Where it stands comes along, one line per measure.
  */
 export function goalsTouched(ctx: Ctx, weekStart: string) {
 	const monday = new Date(weekStart + 'T00:00:00');
 	const nextMonday = addDays(monday, 7);
 
-	return db
+	const touched = db
 		.select({
 			id: goals.id,
 			title: goals.title,
-			status: goals.status,
-			currentValue: goals.currentValue,
-			targetValue: goals.targetValue,
-			unit: goals.unit
+			status: goals.status
 		})
 		.from(goals)
 		.where(
@@ -177,6 +175,30 @@ export function goalsTouched(ctx: Ctx, weekStart: string) {
 		)
 		.orderBy(goals.title)
 		.all();
+
+	if (touched.length === 0) return [];
+
+	const measures = db
+		.select()
+		.from(goalTargets)
+		.where(
+			and(
+				eq(goalTargets.userId, ctx.userId),
+				inArray(
+					goalTargets.goalId,
+					touched.map((g) => g.id)
+				)
+			)
+		)
+		.orderBy(goalTargets.sortOrder, goalTargets.id)
+		.all();
+
+	return touched.map((g) => ({
+		...g,
+		targets: measures
+			.filter((t) => t.goalId === g.id)
+			.map((t) => ({ currentValue: t.currentValue, targetValue: t.targetValue, unit: t.unit }))
+	}));
 }
 
 /**
