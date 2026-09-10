@@ -122,8 +122,16 @@ function badge({ label, value, color = BLUE, big = false }) {
  *
  * A clone with no tags — CI usually fetches one commit — gets nothing to
  * check against, and the check skips rather than failing on an absence.
+ *
+ * `RELEASE_TAG` is how the release cut gets ahead of that. The badge has to be
+ * inside the commit the tag lands on, and at the moment it is written the tag
+ * does not exist yet, so `git describe` answers with the previous release and
+ * the badge ships one behind — which it did, sitting on v0.112.0 while
+ * v0.127.3 was the download it linked to.
  */
 function releasedVersion() {
+	if (process.env.RELEASE_TAG) return process.env.RELEASE_TAG;
+
 	try {
 		return execFileSync('git', ['describe', '--tags', '--abbrev=0'], {
 			cwd: ROOT,
