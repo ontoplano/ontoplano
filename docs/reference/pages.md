@@ -71,6 +71,13 @@ Only the ones whose code says — the comment at the top of the route file,
 and the comment above each action. Write it there and it turns up here;
 the rest are named for what they do.
 
+### `/`
+
+The dashboard, for whoever is signed in — which on a local instance is
+whoever is holding the device. The signed-out front door stays in
++page.server.ts: whether anyone may register is a question about a
+deployment, and a local instance has no door.
+
 ### `/admin`
 
 What the demo may see here, and what it may not.
