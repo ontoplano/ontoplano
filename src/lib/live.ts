@@ -1,3 +1,4 @@
+import { isLocalApp } from '$lib/local/mode';
 import { invalidateAll } from '$app/navigation';
 
 /**
@@ -57,6 +58,9 @@ function busyTyping(): boolean {
  */
 export function live(options: LiveOptions = {}): () => void {
 	if (typeof window === 'undefined' || typeof EventSource === 'undefined') return () => {};
+	// A local instance has exactly one client — this one — so there is nobody
+	// whose changes could arrive, and no server to hold the stream open.
+	if (isLocalApp()) return () => {};
 
 	const wanted = options.rooms ?? [];
 	let pending: LiveChange | null = null;

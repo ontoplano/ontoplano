@@ -351,6 +351,20 @@ icons:
 preview:
 	yarn preview
 
+# The instance that runs on the device itself: static files, no server, the
+# database in the browser's own storage. This is what the phone app wraps.
+## the local-instance build (static, serverless)
+local:
+	ONTOPLANO_LOCAL_BUILD=1 PUBLIC_ONTOPLANO_LOCAL=true yarn build
+
+## serve the local-instance build, the way its shell would
+local-preview:
+	node scripts/serve-local.mjs
+
+## the local-instance e2e, against the static build
+test-local:
+	yarn playwright test -c playwright.local.config.ts
+
 ## run the built server
 start: build
 	node build/index.js

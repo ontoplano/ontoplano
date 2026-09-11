@@ -8,8 +8,6 @@
 	import { live } from '$lib/live';
 	import { afterNavigate, goto, onNavigate } from '$app/navigation';
 	import { PAGE_TURN, runDissolve } from '$lib/page-turn';
-	import { isLocalApp } from '$lib/local/mode';
-	import { installLocalBridge } from '$lib/local/bridge';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { NAV_PLACES } from '$lib/sections-nav';
@@ -37,11 +35,6 @@
 	import type { Snippet } from 'svelte';
 
 	let { children, data }: { children: Snippet; data: LayoutServerData } = $props();
-
-	// On a local instance the bridge must stand before the first data fetch or
-	// form post, which is why it is installed at component init rather than in
-	// an effect. Anywhere else this is a no-op.
-	if (isLocalApp()) installLocalBridge();
 
 	/**
 	 * Changing screen looks like an e-reader changing page.

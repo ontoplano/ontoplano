@@ -1,5 +1,6 @@
 import { mdsvex } from 'mdsvex';
-import adapter from '@sveltejs/adapter-node';
+import adapterNode from '@sveltejs/adapter-node';
+import adapterStatic from '@sveltejs/adapter-static';
 import { relative, sep } from 'node:path';
 
 /** @type {import('@sveltejs/kit').Config} */
@@ -20,7 +21,18 @@ const config = {
 		// and a bare link, then the real page. An app this size is one person's
 		// tool; a bigger HTML beats a flash of wreckage.
 		inlineStyleThreshold: 1024 * 1024,
-		adapter: adapter(),
+		/*
+		 * Two builds from one tree. The server build is adapter-node, as ever.
+		 * ONTOPLANO_LOCAL_BUILD=1 produces the local instance instead: static
+		 * files, no server anywhere — every page is the SPA fallback, the
+		 * fetch bridge answers the app's own requests from the worker, and
+		 * whatever serves the files (Capacitor, a static host) needs to know
+		 * nothing. `make local` is the front door.
+		 */
+		adapter:
+			process.env.ONTOPLANO_LOCAL_BUILD === '1'
+				? adapterStatic({ pages: 'build-local', assets: 'build-local', fallback: 'index.html' })
+				: adapterNode(),
 
 		/*
 		 * No service worker while developing.

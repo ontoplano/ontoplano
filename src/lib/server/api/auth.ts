@@ -2,12 +2,7 @@ import type { RequestEvent } from '@sveltejs/kit';
 
 import { paymentHoldFor } from '../services/access.js';
 import { buildCtx, type Ctx } from '$lib/services/ctx.js';
-import {
-	RateLimitedError,
-	ServiceError,
-	UnauthorizedError,
-	ValidationError
-} from '$lib/services/errors.js';
+import { RateLimitedError, ServiceError, UnauthorizedError } from '$lib/services/errors.js';
 import { rateLimit } from '../rate-limit.js';
 import { authenticateToken, requireScope, type Scope } from '../services/tokens.js';
 
@@ -144,24 +139,4 @@ export function assertNoPaymentHold(userId: string): void {
  * order. Checked against the declared length before anything is read, so a
  * lying header is caught by the parse and an honest one costs nothing.
  */
-const MAX_BODY_BYTES = 256 * 1024;
-
-/** Parse a JSON request body, with a clear error rather than a 500 on bad input. */
-export async function readJson(event: RequestEvent): Promise<Record<string, unknown>> {
-	const declared = Number(event.request.headers.get('content-length'));
-	if (Number.isFinite(declared) && declared > MAX_BODY_BYTES)
-		throw new ValidationError('Request body is too large');
-
-	let body: unknown;
-	try {
-		const text = await event.request.text();
-		if (text.length > MAX_BODY_BYTES) throw new ValidationError('Request body is too large');
-		body = JSON.parse(text);
-	} catch (e) {
-		if (e instanceof ValidationError) throw e;
-		throw new ValidationError('Request body must be valid JSON');
-	}
-	if (typeof body !== 'object' || body === null || Array.isArray(body))
-		throw new ValidationError('Request body must be a JSON object');
-	return body as Record<string, unknown>;
-}
+export { readJson } from '$lib/json-body.js';
