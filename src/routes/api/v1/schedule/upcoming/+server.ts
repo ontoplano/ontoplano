@@ -2,7 +2,7 @@ import type { RequestHandler } from './$types';
 
 import { authenticateApi } from '$lib/server/api/auth';
 import { toJsonError } from '$lib/server/http-errors';
-import { getUpcomingSchedule } from '$lib/server/services/schedule';
+import { getUpcomingSchedule } from '$lib/services/schedule';
 
 /**
  * Upcoming scheduled occurrences, so an external app can act on the plan.

@@ -6,11 +6,11 @@ import { and, eq, like, lt } from 'drizzle-orm';
 
 import { auth } from '../auth.js';
 import { loadConfig } from '../config.js';
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { user, userSettings } from '$lib/db/schema.js';
 import { demoLifetimeMinutes, demoMaxAccounts } from '../settings.js';
 import { USER_TABLES } from './account.js';
-import { NotFoundError } from './errors.js';
+import { NotFoundError } from '$lib/services/errors.js';
 import { deleteAccount } from './account.js';
 
 const run = promisify(execFile);

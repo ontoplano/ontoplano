@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import * as schema from '$lib/db/schema.js';
 import { bindDb } from '$lib/db/index.js';
+import { bindServerHost } from '../host.js';
 import { loadConfig, ensureDirectories } from '../config.js';
 import { assertMigrated } from './assert-migrated.js';
 import { reconcileBodyLimit } from './assert-body-limit.js';
@@ -52,3 +53,4 @@ export const db = drizzle(client, { schema });
 // The portable binding the services read. Bound here so that having a server
 // database and having the services see it are the same event, never two.
 bindDb(db);
+bindServerHost();

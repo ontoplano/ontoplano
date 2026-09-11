@@ -10,7 +10,7 @@ import { db } from '$lib/server/db';
 import { MIN_PASSWORD_LENGTH } from '$lib/passwords';
 import { sendLogged } from '$lib/server/services/mail-log';
 import { renderEmail } from '$lib/server/email-template';
-import { record } from '$lib/server/services/audit';
+import { record } from '$lib/services/audit';
 
 const verificationMail = (url: string) =>
 	renderEmail({

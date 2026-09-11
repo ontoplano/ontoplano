@@ -17,23 +17,23 @@ import {
 } from '$lib/server/settings';
 import { loadConfig } from '$lib/server/config';
 import { instanceIsEmpty, registrationMode } from '$lib/server/services/registration';
-import { buildCtx } from '$lib/server/services/ctx';
-import { createEntry, latestEntry, listTags } from '$lib/server/services/diary';
+import { buildCtx } from '$lib/services/ctx';
+import { createEntry, latestEntry, listTags } from '$lib/services/diary';
 import { toActionFailure } from '$lib/server/http-errors';
-import { listActiveOn } from '$lib/server/services/goals';
-import { listHabits, today as todayOf } from '$lib/server/services/habits';
-import { generateForDate, listForDate } from '$lib/server/services/instances';
-import { listIdeas } from '$lib/server/services/ideas';
-import { listQuotes } from '$lib/server/services/quotes';
-import { reviewPending } from '$lib/server/services/review';
-import { listToBuy } from '$lib/server/services/shopping';
-import { listBills, listPayments, monthSummary } from '$lib/server/services/bills';
-import { listWorkouts } from '$lib/server/services/workouts';
+import { listActiveOn } from '$lib/services/goals';
+import { listHabits, today as todayOf } from '$lib/services/habits';
+import { generateForDate, listForDate } from '$lib/services/instances';
+import { listIdeas } from '$lib/services/ideas';
+import { listQuotes } from '$lib/services/quotes';
+import { reviewPending } from '$lib/services/review';
+import { listToBuy } from '$lib/services/shopping';
+import { listBills, listPayments, monthSummary } from '$lib/services/bills';
+import { listWorkouts } from '$lib/services/workouts';
 import { getCurrency } from '$lib/server/settings';
-import { listActiveWeeklySlots } from '$lib/server/services/slots';
-import { listTodos } from '$lib/server/services/todos';
-import { listWins, saveWins } from '$lib/server/services/wins';
-import { generateCurrentWeek } from '$lib/server/week-generator';
+import { listActiveWeeklySlots } from '$lib/services/slots';
+import { listTodos } from '$lib/services/todos';
+import { listWins, saveWins } from '$lib/services/wins';
+import { generateCurrentWeek } from '$lib/services/week-generator';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	/*

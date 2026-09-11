@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
-import { search } from '$lib/server/services/search';
+import { buildCtx } from '$lib/services/ctx';
+import { search } from '$lib/services/search';
 
 /**
  * Search, for the command palette.

@@ -14,10 +14,10 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 type Services = {
-	stale: typeof import('../src/lib/server/services/stale');
-	todos: typeof import('../src/lib/server/services/todos');
-	ideas: typeof import('../src/lib/server/services/ideas');
-	shopping: typeof import('../src/lib/server/services/shopping');
+	stale: typeof import('../src/lib/services/stale');
+	todos: typeof import('../src/lib/services/todos');
+	ideas: typeof import('../src/lib/services/ideas');
+	shopping: typeof import('../src/lib/services/shopping');
 };
 
 let s: Services;
@@ -31,10 +31,10 @@ let ancientIdea: number;
 
 beforeAll(async () => {
 	s = {
-		stale: await import('../src/lib/server/services/stale'),
-		todos: await import('../src/lib/server/services/todos'),
-		ideas: await import('../src/lib/server/services/ideas'),
-		shopping: await import('../src/lib/server/services/shopping')
+		stale: await import('../src/lib/services/stale'),
+		todos: await import('../src/lib/services/todos'),
+		ideas: await import('../src/lib/services/ideas'),
+		shopping: await import('../src/lib/services/shopping')
 	};
 	ctx = { userId: OWNER, now: new Date('2026-08-26T12:00:00'), tz: 'UTC' };
 	old = { ...ctx, now: new Date('2026-01-10T09:00:00') };

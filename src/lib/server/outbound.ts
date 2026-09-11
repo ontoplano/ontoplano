@@ -25,7 +25,7 @@ import { lookup as dnsLookup } from 'node:dns';
 import { isIP } from 'node:net';
 import { Agent, buildConnector, fetch as guardedFetch, type Dispatcher } from 'undici';
 
-import { ValidationError } from './services/errors.js';
+import { ValidationError } from '$lib/services/errors.js';
 
 /** `[::1]` → `::1`, `localhost.` → `localhost`, case folded. */
 function canonicalHost(raw: string): string {

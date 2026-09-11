@@ -14,12 +14,12 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let habits: typeof import('../src/lib/server/services/habits');
+let habits: typeof import('../src/lib/services/habits');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
-	habits = await import('../src/lib/server/services/habits');
+	habits = await import('../src/lib/services/habits');
 	// A Monday, so weekday arithmetic in the schedule is easy to read.
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };

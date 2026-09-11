@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 
-import { buildCtx } from '$lib/server/services/ctx';
-import { NotFoundError } from '$lib/server/services/errors';
+import { buildCtx } from '$lib/services/ctx';
+import { NotFoundError } from '$lib/services/errors';
 import { read } from '$lib/server/services/media';
 
 /**

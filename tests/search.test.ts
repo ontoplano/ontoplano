@@ -9,16 +9,16 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let search: typeof import('../src/lib/server/services/search');
-let diary: typeof import('../src/lib/server/services/diary');
-let shopping: typeof import('../src/lib/server/services/shopping');
+let search: typeof import('../src/lib/services/search');
+let diary: typeof import('../src/lib/services/diary');
+let shopping: typeof import('../src/lib/services/shopping');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
-	search = await import('../src/lib/server/services/search');
-	diary = await import('../src/lib/server/services/diary');
-	shopping = await import('../src/lib/server/services/shopping');
+	search = await import('../src/lib/services/search');
+	diary = await import('../src/lib/services/diary');
+	shopping = await import('../src/lib/services/shopping');
 	ctx = { userId: OWNER, now: new Date('2026-08-26T12:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 

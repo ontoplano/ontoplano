@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
-import { dismissReminder, dueReminders, markDelivered } from '$lib/server/services/reminders';
-import { ensureBirthdayReminders } from '$lib/server/services/birthdays';
+import { buildCtx } from '$lib/services/ctx';
+import { dismissReminder, dueReminders, markDelivered } from '$lib/services/reminders';
+import { ensureBirthdayReminders } from '$lib/services/birthdays';
 
 /**
  * What should have gone off by now.

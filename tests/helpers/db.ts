@@ -17,6 +17,7 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from '../../src/lib/db/schema.js';
 import { bindDb } from '../../src/lib/db/index.js';
+import { bindServerHost } from '../../src/lib/server/host.js';
 
 export const OWNER = 'user-under-test';
 export const STRANGER = 'somebody-else';
@@ -59,8 +60,10 @@ export function makeDatabase(): TestDatabase {
 	// worker makes. Tests that also import $lib/server/db rebind to the same
 	// path, which is a no-op.
 	const client = new Database(path);
+	client.pragma('journal_mode = WAL');
 	client.pragma('foreign_keys = ON');
 	bindDb(drizzle(client, { schema }));
+	bindServerHost();
 
 	return {
 		path,

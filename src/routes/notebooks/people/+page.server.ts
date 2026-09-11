@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
 	createPerson,
@@ -8,7 +8,7 @@ import {
 	entriesAbout,
 	listPeople,
 	updatePerson
-} from '$lib/server/services/people';
+} from '$lib/services/people';
 import { mediaLimits, removePersonPicture, setPersonPicture } from '$lib/server/services/media';
 
 export const load: PageServerLoad = async ({ locals, url }) => {

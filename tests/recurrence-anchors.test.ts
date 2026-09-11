@@ -96,9 +96,9 @@ describe('and so the past stops filling up', () => {
 	afterAll(() => database.remove());
 
 	type Services = {
-		slots: typeof import('../src/lib/server/services/slots');
-		instances: typeof import('../src/lib/server/services/instances');
-		activities: typeof import('../src/lib/server/services/activities');
+		slots: typeof import('../src/lib/services/slots');
+		instances: typeof import('../src/lib/services/instances');
+		activities: typeof import('../src/lib/services/activities');
 	};
 
 	let s: Services;
@@ -106,9 +106,9 @@ describe('and so the past stops filling up', () => {
 
 	beforeAll(async () => {
 		s = {
-			slots: await import('../src/lib/server/services/slots'),
-			instances: await import('../src/lib/server/services/instances'),
-			activities: await import('../src/lib/server/services/activities')
+			slots: await import('../src/lib/services/slots'),
+			instances: await import('../src/lib/services/instances'),
+			activities: await import('../src/lib/services/activities')
 		};
 
 		const category = s.activities.createCategory(ctx, { name: 'Work', color: '#1d4ed8' });

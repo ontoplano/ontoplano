@@ -16,12 +16,12 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let bills: typeof import('../src/lib/server/services/bills');
+let bills: typeof import('../src/lib/services/bills');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
-	bills = await import('../src/lib/server/services/bills');
+	bills = await import('../src/lib/services/bills');
 	ctx = { userId: OWNER, now: new Date('2026-09-06T12:00:00Z'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 });

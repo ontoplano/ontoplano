@@ -1,15 +1,15 @@
 import type { Actions, PageServerLoad } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx } from '$lib/services/ctx';
 import { familyUserIds } from '$lib/server/services/subscriptions';
 import { toActionFailure } from '$lib/server/http-errors';
-import { recipesByItem } from '$lib/server/services/recipes';
+import { recipesByItem } from '$lib/services/recipes';
 import {
 	createLocation,
 	deleteLocation,
 	listLocations,
 	locationTree,
 	updateLocation
-} from '$lib/server/services/locations';
+} from '$lib/services/locations';
 import { getCurrency } from '$lib/server/settings';
 import {
 	createCategory,
@@ -29,7 +29,7 @@ import {
 	toggleBought,
 	toggleSnoozed,
 	updateItem
-} from '$lib/server/services/shopping';
+} from '$lib/services/shopping';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);

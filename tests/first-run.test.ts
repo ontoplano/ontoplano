@@ -14,14 +14,14 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let onboarding: typeof import('../src/lib/server/services/onboarding');
+let onboarding: typeof import('../src/lib/services/onboarding');
 let settings: typeof import('../src/lib/server/settings');
-let ctx: typeof import('../src/lib/server/services/ctx');
+let ctx: typeof import('../src/lib/services/ctx');
 
 beforeAll(async () => {
-	onboarding = await import('../src/lib/server/services/onboarding');
+	onboarding = await import('../src/lib/services/onboarding');
 	settings = await import('../src/lib/server/settings');
-	ctx = await import('../src/lib/server/services/ctx');
+	ctx = await import('../src/lib/services/ctx');
 });
 
 describe('the look, chosen at first run', () => {

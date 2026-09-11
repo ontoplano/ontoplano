@@ -22,8 +22,8 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 let feed: typeof import('../src/lib/server/services/calendar-feed');
-let slots: typeof import('../src/lib/server/services/slots');
-let activities: typeof import('../src/lib/server/services/activities');
+let slots: typeof import('../src/lib/services/slots');
+let activities: typeof import('../src/lib/services/activities');
 let ctx: { userId: string; now: Date; tz: string };
 let work: number;
 
@@ -32,8 +32,8 @@ const MONDAY = new Date('2026-08-17T08:00:00');
 
 beforeAll(async () => {
 	feed = await import('../src/lib/server/services/calendar-feed');
-	slots = await import('../src/lib/server/services/slots');
-	activities = await import('../src/lib/server/services/activities');
+	slots = await import('../src/lib/services/slots');
+	activities = await import('../src/lib/services/activities');
 	ctx = { userId: OWNER, now: MONDAY, tz: 'UTC' };
 
 	work = activities.createCategory(ctx, { name: 'Work', color: '#1d4ed8' });
@@ -266,8 +266,8 @@ describe('a block that was skipped', () => {
 		// The status branch used to test for 'cancelled', which is not one of the
 		// four this app has — so it never fired, and a block somebody had
 		// explicitly dropped still sat in their calendar looking like a plan.
-		const instances = await import('../src/lib/server/services/instances');
-		const schedule = await import('../src/lib/server/services/schedule');
+		const instances = await import('../src/lib/services/instances');
+		const schedule = await import('../src/lib/services/schedule');
 
 		const upcoming = schedule.getUpcomingSchedule(ctx, { days: 7, includeCompleted: true });
 		const first = upcoming.occurrences.find((o) => o.source === 'slot');

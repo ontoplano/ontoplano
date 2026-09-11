@@ -2,7 +2,7 @@ import type { RequestHandler } from './$types';
 
 import { authenticateApi } from '$lib/server/api/auth';
 import { toJsonError } from '$lib/server/http-errors';
-import { listItems } from '$lib/server/services/shopping';
+import { listItems } from '$lib/services/shopping';
 
 /** The whole list, bought and waiting alike — the reader decides what matters. */
 export const GET: RequestHandler = async (event) => {

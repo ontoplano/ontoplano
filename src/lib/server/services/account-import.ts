@@ -47,13 +47,13 @@ import { join } from 'node:path';
 
 import { getTableConfig } from 'drizzle-orm/sqlite-core';
 
-import { db } from '../db/index.js';
-import { record as audit } from './audit.js';
-import { ValidationError } from './errors.js';
+import { db } from '$lib/db/index.js';
+import { record as audit } from '$lib/services/audit.js';
+import { ValidationError } from '$lib/services/errors.js';
 import { collectAccount, USER_TABLES, type AccountExport } from './account.js';
 import { sniff, tidyFilename } from './media.js';
-import { RINGTONE_TYPES } from './ringtones.js';
-import { DATA_DIR } from '../config.js';
+import { RINGTONE_TYPES } from '$lib/services/ringtones.js';
+import { dataDir } from '../config.js';
 
 /**
  * A copy of the account, on disk, before an import replaces it.
@@ -74,7 +74,7 @@ import { DATA_DIR } from '../config.js';
  */
 export function keepBeforeImport(userId: string, now = new Date()): string | null {
 	try {
-		const dir = join(DATA_DIR, 'before-import');
+		const dir = join(dataDir(), 'before-import');
 		mkdirSync(dir, { recursive: true });
 
 		const stamp = now.toISOString().replace(/[:.]/g, '-');

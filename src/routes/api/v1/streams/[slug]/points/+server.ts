@@ -2,7 +2,7 @@ import type { RequestHandler } from './$types';
 
 import { authenticateApi, readJson } from '$lib/server/api/auth';
 import { toJsonError } from '$lib/server/http-errors';
-import { listPoints, pushPoints, serialisePoint } from '$lib/server/services/streams';
+import { listPoints, pushPoints, serialisePoint } from '$lib/services/streams';
 
 /**
  * Push points. Batch, idempotent, partial success.

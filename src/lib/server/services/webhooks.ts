@@ -1,14 +1,17 @@
 import { createHmac, randomBytes } from 'node:crypto';
 import { and, eq, isNull } from 'drizzle-orm';
 
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { webhookSubscriptions } from '$lib/db/schema.js';
 import { assertPublicUrl, fetchPublic } from '../outbound.js';
 import { isSelfHosted } from '../settings.js';
-import type { Ctx } from './ctx.js';
-import { stamps } from './time.js';
-import { ForbiddenError, NotFoundError, ValidationError } from './errors.js';
+import type { Ctx } from '$lib/services/ctx.js';
+import { stamps } from '$lib/services/time.js';
+import { ForbiddenError, NotFoundError, ValidationError } from '$lib/services/errors.js';
 import { changed, roomsForEvent } from '../live.js';
+import { WEBHOOK_EVENTS, type WebhookEvent } from '$lib/webhook-events.js';
+
+export { WEBHOOK_EVENTS, WEBHOOK_EVENT_LABELS, type WebhookEvent } from '$lib/webhook-events.js';
 
 /**
  * Webhooks: plugins that listen instead of push.
@@ -25,27 +28,6 @@ import { changed, roomsForEvent } from '../live.js';
  * label. Never a body: a diary entry announces its id and nothing else. A
  * webhook address is the least-trusted place the server ever writes to.
  */
-export const WEBHOOK_EVENTS = [
-	'todo.created',
-	'todo.completed',
-	'idea.created',
-	'diary.created',
-	'shopping.added',
-	'shopping.bought'
-] as const;
-
-export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
-
-/** What each event means, for the page and the docs. */
-export const WEBHOOK_EVENT_LABELS: Record<WebhookEvent, string> = {
-	'todo.created': 'a todo is added',
-	'todo.completed': 'a todo is finished',
-	'idea.created': 'an idea is captured',
-	'diary.created': 'a diary entry is written',
-	'shopping.added': 'something goes on the shopping list',
-	'shopping.bought': 'something on the list is bought'
-};
-
 /** Enough addresses for real use; few enough that a runaway script is contained. */
 const MAX_SUBSCRIPTIONS = 10;
 

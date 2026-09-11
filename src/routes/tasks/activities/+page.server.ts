@@ -9,9 +9,9 @@ import {
 	toggleActivityActive,
 	updateActivity,
 	updateCategory
-} from '$lib/server/services/activities';
-import { goalBacklinks } from '$lib/server/services/backlinks';
-import { buildCtx } from '$lib/server/services/ctx';
+} from '$lib/services/activities';
+import { goalBacklinks } from '$lib/services/backlinks';
+import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
 
 export const load: PageServerLoad = async ({ locals }) => {

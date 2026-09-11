@@ -16,7 +16,7 @@ afterAll(() => database.remove());
 
 type Services = {
 	clock: typeof import('../src/lib/server/services/reminder-clock');
-	reminders: typeof import('../src/lib/server/services/reminders');
+	reminders: typeof import('../src/lib/services/reminders');
 };
 
 let s: Services;
@@ -26,7 +26,7 @@ let theirs: { userId: string; now: Date; tz: string };
 beforeAll(async () => {
 	s = {
 		clock: await import('../src/lib/server/services/reminder-clock'),
-		reminders: await import('../src/lib/server/services/reminders')
+		reminders: await import('../src/lib/services/reminders')
 	};
 	ctx = { userId: OWNER, now: new Date('2026-08-24T09:00:00Z'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };

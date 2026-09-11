@@ -17,21 +17,21 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 let account: typeof import('../src/lib/server/services/account');
-let today: typeof import('../src/lib/server/services/today');
-let todos: typeof import('../src/lib/server/services/todos');
-let habits: typeof import('../src/lib/server/services/habits');
-let diary: typeof import('../src/lib/server/services/diary');
-let tags: typeof import('../src/lib/server/tags');
+let today: typeof import('../src/lib/services/today');
+let todos: typeof import('../src/lib/services/todos');
+let habits: typeof import('../src/lib/services/habits');
+let diary: typeof import('../src/lib/services/diary');
+let tags: typeof import('../src/lib/services/tags');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
 	account = await import('../src/lib/server/services/account');
-	today = await import('../src/lib/server/services/today');
-	todos = await import('../src/lib/server/services/todos');
-	habits = await import('../src/lib/server/services/habits');
-	diary = await import('../src/lib/server/services/diary');
-	tags = await import('../src/lib/server/tags');
+	today = await import('../src/lib/services/today');
+	todos = await import('../src/lib/services/todos');
+	habits = await import('../src/lib/services/habits');
+	diary = await import('../src/lib/services/diary');
+	tags = await import('../src/lib/services/tags');
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 });
@@ -140,7 +140,7 @@ describe('deleting an account', () => {
 	 * instance never learned that somebody left on their own.
 	 */
 	test('leaves its own note behind, disowned, with the address in the detail', async () => {
-		const audit = await import('../src/lib/server/services/audit');
+		const audit = await import('../src/lib/services/audit');
 		const leaver = 'leaving-on-their-own';
 		database.exec(
 			`insert into user (id, name, email, email_verified, created_at, updated_at)

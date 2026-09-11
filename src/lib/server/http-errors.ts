@@ -1,6 +1,6 @@
 import { fail, type ActionFailure } from '@sveltejs/kit';
 
-import { toServiceError, type ErrorCode } from './services/errors.js';
+import { toServiceError, type ErrorCode } from '$lib/services/errors.js';
 
 /**
  * A service's refusal, in the shape a route answers with.

@@ -2,12 +2,12 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { ratingsFromForm } from '$lib/ratings';
 import { isStatus, type Status } from '$lib/task-status';
-import { listActivities, listCategories } from '$lib/server/services/activities';
-import { goalBacklinks, type GoalBacklink } from '$lib/server/services/backlinks';
-import { buildCtx, type Ctx } from '$lib/server/services/ctx';
+import { listActivities, listCategories } from '$lib/services/activities';
+import { goalBacklinks, type GoalBacklink } from '$lib/services/backlinks';
+import { buildCtx, type Ctx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
-import { createReminder, deleteReminder, listReminders } from '$lib/server/services/reminders';
-import { moveOccurrence } from '$lib/server/services/slots';
+import { createReminder, deleteReminder, listReminders } from '$lib/services/reminders';
+import { moveOccurrence } from '$lib/services/slots';
 import {
 	deleteInstance,
 	generateForDate,
@@ -18,7 +18,7 @@ import {
 	setInstanceRatings,
 	setInstanceStatus,
 	setInstanceTime
-} from '$lib/server/services/instances';
+} from '$lib/services/instances';
 import {
 	createTodo,
 	demoteInstance,
@@ -30,7 +30,7 @@ import {
 	scheduleTodo,
 	setTodoRatings,
 	setTodoStatus
-} from '$lib/server/services/todos';
+} from '$lib/services/todos';
 
 function pad(n: number): string {
 	return String(n).padStart(2, '0');

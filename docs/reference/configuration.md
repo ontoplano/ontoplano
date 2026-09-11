@@ -195,18 +195,5 @@ kind of thing that stays in a deployment script for years.
 Rows in `user_settings`, one per account per key. These are choices a
 person makes about their own copy of the app, not the operator.
 
-| Key                       | Constant                |
-| ------------------------- | ----------------------- |
-| `onboarding.done`         | `ONBOARDED_KEY`         |
-| `planner.grid_end_hour`   | `GRID_END_KEY`          |
-| `planner.grid_start_hour` | `GRID_START_KEY`        |
-| `shopping.currency`       | `CURRENCY_KEY`          |
-| `ui.hiddenSections`       | `HIDDEN_SECTIONS_KEY`   |
-| `ui.navOrder`             | `NAV_ORDER_KEY`         |
-| `ui.sectionColors`        | `SECTION_COLORS_KEY`    |
-| `ui.style`                | `STYLE_KEY`             |
-| `ui.theme`                | `THEME_KEY`             |
-| `ui.tutorialSeen`         | `TUTORIAL_KEY`          |
-| `user.timezone`           | `TIMEZONE_KEY`          |
-| `week.firstDay`           | `WEEK_FIRST_DAY_KEY`    |
-| `week.generateDay`        | `WEEK_GENERATE_DAY_KEY` |
+| Key | Constant |
+| --- | -------- |

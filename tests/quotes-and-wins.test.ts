@@ -14,14 +14,14 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let quotes: typeof import('../src/lib/server/services/quotes');
-let wins: typeof import('../src/lib/server/services/wins');
+let quotes: typeof import('../src/lib/services/quotes');
+let wins: typeof import('../src/lib/services/wins');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
-	quotes = await import('../src/lib/server/services/quotes');
-	wins = await import('../src/lib/server/services/wins');
+	quotes = await import('../src/lib/services/quotes');
+	wins = await import('../src/lib/services/wins');
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 });

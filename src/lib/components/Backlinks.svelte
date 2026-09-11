@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/Icon.svelte';
-	import type { GoalBacklink } from '$lib/server/services/backlinks';
+	import type { GoalBacklink } from '$lib/services/backlinks';
 
 	/**
 	 * What this thing belongs to.

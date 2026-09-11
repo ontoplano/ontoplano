@@ -1,16 +1,16 @@
 import { fail } from '@sveltejs/kit';
-import { applyTemplate, TEMPLATE_KEYS, TEMPLATES } from '$lib/server/services/onboarding';
-import { oneOf } from '$lib/server/services/validate';
+import { applyTemplate, TEMPLATE_KEYS, TEMPLATES } from '$lib/services/onboarding';
+import { oneOf } from '$lib/services/validate';
 import type { Actions, PageServerLoad } from './$types';
 import { ratingsFromForm } from '$lib/ratings';
-import { listActivities, listCategories } from '$lib/server/services/activities';
-import { buildCtx, type Ctx } from '$lib/server/services/ctx';
-import { ServiceError } from '$lib/server/services/errors';
+import { listActivities, listCategories } from '$lib/services/activities';
+import { buildCtx, type Ctx } from '$lib/services/ctx';
+import { ServiceError } from '$lib/services/errors';
 import { toActionFailure } from '$lib/server/http-errors';
-import { metaFromFormData, metaPatchFromFormData } from '$lib/server/services/meta';
+import { metaFromFormData, metaPatchFromFormData } from '$lib/services/meta';
 import { listManifests } from '$lib/server/services/plugins';
-import { billsDueBetween } from '$lib/server/services/bills';
-import { listWorkouts } from '$lib/server/services/workouts';
+import { billsDueBetween } from '$lib/services/bills';
+import { listWorkouts } from '$lib/services/workouts';
 import {
 	addFeed,
 	listFeeds,
@@ -25,7 +25,7 @@ import {
 	listSchemes,
 	renameScheme,
 	saveScheme
-} from '$lib/server/services/schemes';
+} from '$lib/services/schemes';
 import {
 	convertRepeat,
 	copySlotsToWeekdays,
@@ -44,15 +44,10 @@ import {
 	unsuppressOccurrence,
 	updateExceptional,
 	updateSlot
-} from '$lib/server/services/slots';
-import {
-	demoteToTodo,
-	listForDate,
-	listUnscheduled,
-	promoteTodo
-} from '$lib/server/services/todos';
-import { listInstances, setStatusOn } from '$lib/server/services/instances';
-import { addDays } from '$lib/server/week-generator';
+} from '$lib/services/slots';
+import { demoteToTodo, listForDate, listUnscheduled, promoteTodo } from '$lib/services/todos';
+import { listInstances, setStatusOn } from '$lib/services/instances';
+import { addDays } from '$lib/services/week-generator';
 import { getGridHours } from '$lib/server/settings';
 
 /**

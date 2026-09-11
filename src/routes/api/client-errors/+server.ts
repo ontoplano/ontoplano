@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 
 import { readJson } from '$lib/server/api/auth';
 import { clientKey, rateLimit } from '$lib/server/rate-limit';
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx } from '$lib/services/ctx';
 import {
 	recordClientError,
 	recordVisitorError,

@@ -14,8 +14,8 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 type Services = {
-	recipes: typeof import('../src/lib/server/services/recipes');
-	shopping: typeof import('../src/lib/server/services/shopping');
+	recipes: typeof import('../src/lib/services/recipes');
+	shopping: typeof import('../src/lib/services/shopping');
 };
 
 let s: Services;
@@ -25,8 +25,8 @@ let pantry: number;
 
 beforeAll(async () => {
 	s = {
-		recipes: await import('../src/lib/server/services/recipes'),
-		shopping: await import('../src/lib/server/services/shopping')
+		recipes: await import('../src/lib/services/recipes'),
+		shopping: await import('../src/lib/services/shopping')
 	};
 	ctx = { userId: OWNER, now: new Date('2026-08-26T12:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };

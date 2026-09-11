@@ -1,9 +1,9 @@
 import { and, desc, eq, gt } from 'drizzle-orm';
 
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { session } from '$lib/db/schema.js';
-import type { Ctx } from './ctx.js';
-import { NotFoundError } from './errors.js';
+import type { Ctx } from '$lib/services/ctx.js';
+import { NotFoundError } from '$lib/services/errors.js';
 
 /**
  * The sessions an account currently has open.

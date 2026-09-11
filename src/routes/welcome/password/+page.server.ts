@@ -2,7 +2,7 @@ import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { chooseFirstPassword, passwordPending } from '$lib/server/services/family-invite';
 import { toActionFailure } from '$lib/server/http-errors';
-import { ValidationError } from '$lib/server/services/errors';
+import { ValidationError } from '$lib/services/errors';
 
 /**
  * The one page between a family invitation's link and the app.

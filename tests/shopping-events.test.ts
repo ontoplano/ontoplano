@@ -11,14 +11,14 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let shopping: typeof import('../src/lib/server/services/shopping');
+let shopping: typeof import('../src/lib/services/shopping');
 let webhooks: typeof import('../src/lib/server/services/webhooks');
 
 const ctx = { userId: OWNER, now: new Date('2026-08-29T12:00:00Z'), tz: 'UTC' };
 const fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
 
 beforeAll(async () => {
-	shopping = await import('../src/lib/server/services/shopping');
+	shopping = await import('../src/lib/services/shopping');
 	webhooks = await import('../src/lib/server/services/webhooks');
 	vi.stubGlobal('fetch', fetchMock);
 	webhooks.createSubscription(ctx, {

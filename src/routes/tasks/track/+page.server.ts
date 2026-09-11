@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
-import { addDays, getMonday } from '$lib/server/week-generator';
+import { buildCtx } from '$lib/services/ctx';
+import { addDays, getMonday } from '$lib/services/week-generator';
 
 /**
  * Track was folded into the board.

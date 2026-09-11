@@ -1,9 +1,9 @@
 import type { RequestHandler } from './$types';
 
 import { authenticateApi, readJson } from '$lib/server/api/auth';
-import { ValidationError } from '$lib/server/services/errors';
+import { ValidationError } from '$lib/services/errors';
 import { toJsonError } from '$lib/server/http-errors';
-import { setBought } from '$lib/server/services/shopping';
+import { setBought } from '$lib/services/shopping';
 
 /**
  * State, not a toggle: `{ "bought": true }` twice means bought, not un-bought.

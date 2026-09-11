@@ -3,11 +3,11 @@ import { randomBytes } from 'node:crypto';
 import { and, count, desc, eq, isNull } from 'drizzle-orm';
 
 import { isRegistrationMode, loadConfig, saveConfig, type RegistrationMode } from '../config.js';
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { invites } from '$lib/db/schema.js';
 import { user } from '$lib/db/auth.schema.js';
-import { ForbiddenError, NotFoundError, ValidationError } from './errors.js';
-import { optionalStr, str } from './validate.js';
+import { ForbiddenError, NotFoundError, ValidationError } from '$lib/services/errors.js';
+import { optionalStr, str } from '$lib/services/validate.js';
 
 /**
  * Who is allowed to create an account here.

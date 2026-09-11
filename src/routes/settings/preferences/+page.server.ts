@@ -1,9 +1,9 @@
 import type { Actions, PageServerLoad } from './$types';
 import { STYLES, STYLE_HINTS, STYLE_LABELS } from '$lib/style';
 import { clientErrorState, setClientErrorConsent } from '$lib/server/services/client-errors';
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
-import { createQuote, deleteQuote, importQuotes, listQuotes } from '$lib/server/services/quotes';
+import { createQuote, deleteQuote, importQuotes, listQuotes } from '$lib/services/quotes';
 import { CURRENCIES, normaliseCurrency } from '$lib/money';
 import { fail } from '@sveltejs/kit';
 import {
@@ -41,7 +41,7 @@ import {
 	saveWeekPreferences,
 	setUserStyle,
 	setUserTheme
-} from '$lib/server/services/preferences';
+} from '$lib/services/preferences';
 
 /** Everything on this page belongs to the account, never to the instance (I9). */
 export const load: PageServerLoad = async ({ locals }) => {

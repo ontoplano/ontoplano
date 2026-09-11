@@ -1,14 +1,14 @@
 import { and, count, desc, eq, like, or, sql } from 'drizzle-orm';
 
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { session, user } from '$lib/db/auth.schema.js';
 import { auditEvents, subscriptions } from '$lib/db/schema.js';
 import { ROLES, type Role } from '../../roles.js';
 import { isInstanceOwner, isSelfHosted } from '../settings.js';
-import { record } from './audit.js';
+import { record } from '$lib/services/audit.js';
 import { membersOf, resolvePlan, seatOwnerAccount, seatsFor, startTrial } from './subscriptions.js';
-import { NotFoundError, ValidationError } from './errors.js';
-import { str } from './validate.js';
+import { NotFoundError, ValidationError } from '$lib/services/errors.js';
+import { str } from '$lib/services/validate.js';
 import { deleteAccount } from './account.js';
 
 /**

@@ -20,7 +20,7 @@ afterAll(() => database.remove());
 type Services = {
 	api: typeof import('../src/lib/server/api/auth');
 	tokens: typeof import('../src/lib/server/services/tokens');
-	errors: typeof import('../src/lib/server/services/errors');
+	errors: typeof import('../src/lib/services/errors');
 	subscriptions: typeof import('../src/lib/server/services/subscriptions');
 };
 
@@ -43,7 +43,7 @@ beforeAll(async () => {
 	s = {
 		api: await import('../src/lib/server/api/auth'),
 		tokens: await import('../src/lib/server/services/tokens'),
-		errors: await import('../src/lib/server/services/errors'),
+		errors: await import('../src/lib/services/errors'),
 		subscriptions: await import('../src/lib/server/services/subscriptions')
 	};
 

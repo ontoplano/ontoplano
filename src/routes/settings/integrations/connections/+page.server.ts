@@ -1,7 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
 
 import { ASSISTANT_SCOPES, ASSISTANT_SCOPES_DESTRUCTIVE } from '$lib/server/mcp/tools';
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
 	deleteStream,
@@ -9,7 +9,7 @@ import {
 	streamStats,
 	updateStreamDisplay,
 	STREAM_DISPLAYS
-} from '$lib/server/services/streams';
+} from '$lib/services/streams';
 import {
 	ALL_SCOPES,
 	CALENDAR_LINK_LIMIT,

@@ -417,24 +417,34 @@ function apiPage() {
 /* --------------------------------------------------------------- services */
 
 function servicesPage() {
-	const dir = join(ROOT, 'src/lib/server/services');
-	const files = readdirSync(dir)
-		.filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
-		.sort();
+	// Two homes, one layer: `src/lib/services` holds the services any instance
+	// can run — a server, or the device itself — and `src/lib/server/services`
+	// the ones that only mean something on a server (mail, billing, admin).
+	const dirs = [join(ROOT, 'src/lib/services'), join(ROOT, 'src/lib/server/services')];
+	const files = dirs
+		.flatMap((dir) =>
+			readdirSync(dir)
+				.filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
+				.map((f) => ({ dir, file: f }))
+		)
+		.sort((a, b) => a.file.localeCompare(b.file));
 
 	const out = [
 		STAMP,
 		'# Services\n',
-		'Every module in `src/lib/server/services`, with the comment it carries at',
+		'Every service module, with the comment it carries at',
 		'the top and the functions it exports. All database access lives here:',
 		'routes are adapters that read a form and call one of these, which is why',
-		'this list is the closest thing the app has to a table of contents.\n',
+		'this list is the closest thing the app has to a table of contents.',
+		'Modules in `src/lib/services` run on any instance — a server, or the',
+		'device itself; the ones in `src/lib/server/services` only make sense on',
+		'a server.\n',
 		'Collected from the source, so a function renamed or a header rewritten',
 		'shows up here on the next build.\n'
 	];
 
 	const modules = [];
-	for (const file of files) {
+	for (const { dir, file } of files) {
 		const source = parse(join(dir, file));
 		const name = file.replace(/\.ts$/, '');
 

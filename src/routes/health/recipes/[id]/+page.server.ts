@@ -1,10 +1,10 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
-import { NotFoundError } from '$lib/server/services/errors';
-import { listCategories } from '$lib/server/services/activities';
+import { buildCtx } from '$lib/services/ctx';
+import { NotFoundError } from '$lib/services/errors';
+import { listCategories } from '$lib/services/activities';
 import { mediaLimits, picturesOf } from '$lib/server/services/media';
-import { edibleItems, getRecipe, ingredientsOf } from '$lib/server/services/recipes';
+import { edibleItems, getRecipe, ingredientsOf } from '$lib/services/recipes';
 import { recipeActions } from '../actions';
 
 export const load: PageServerLoad = async ({ locals, params }) => {

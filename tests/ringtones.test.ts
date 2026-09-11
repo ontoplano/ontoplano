@@ -14,8 +14,8 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 type Services = {
-	ringtones: typeof import('../src/lib/server/services/ringtones');
-	reminders: typeof import('../src/lib/server/services/reminders');
+	ringtones: typeof import('../src/lib/services/ringtones');
+	reminders: typeof import('../src/lib/services/reminders');
 };
 
 let s: Services;
@@ -26,8 +26,8 @@ const bytes = (n: number) => new Uint8Array(n).fill(1);
 
 beforeAll(async () => {
 	s = {
-		ringtones: await import('../src/lib/server/services/ringtones'),
-		reminders: await import('../src/lib/server/services/reminders')
+		ringtones: await import('../src/lib/services/ringtones'),
+		reminders: await import('../src/lib/services/reminders')
 	};
 	ctx = { userId: OWNER, now: new Date('2026-08-24T09:00:00Z'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
@@ -161,7 +161,7 @@ describe('what makes a sound', () => {
  */
 describe('a reminder naming a sound', () => {
 	test("somebody else's ringtone id is dropped, not stored", async () => {
-		const reminders = await import('../src/lib/server/services/reminders');
+		const reminders = await import('../src/lib/services/reminders');
 		const { db } = await import('../src/lib/server/db');
 		const schema = await import('../src/lib/db/schema');
 		const { eq } = await import('drizzle-orm');

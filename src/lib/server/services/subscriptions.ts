@@ -9,14 +9,14 @@ import {
 	type PlanId,
 	type SubscriptionStatus
 } from '../../plans.js';
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { apiTokens, dataPoints, dataStreams, planMembers, subscriptions } from '$lib/db/schema.js';
 import { isSelfHosted, pricing } from '../settings.js';
-import { record } from './audit.js';
+import { record } from '$lib/services/audit.js';
 import { user } from '$lib/db/auth.schema.js';
-import { NotFoundError, ValidationError } from './errors.js';
-import type { Ctx } from './ctx.js';
-import { ForbiddenError } from './errors.js';
+import { NotFoundError, ValidationError } from '$lib/services/errors.js';
+import type { Ctx } from '$lib/services/ctx.js';
+import { ForbiddenError } from '$lib/services/errors.js';
 
 /**
  * What an account may do, and until when.

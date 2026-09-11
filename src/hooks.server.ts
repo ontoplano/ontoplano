@@ -30,7 +30,7 @@ import {
 	onboardEntitlement
 } from '$lib/server/services/billing';
 import { accessHoldFor, holdDestination } from '$lib/server/services/access';
-import { record } from '$lib/server/services/audit';
+import { record } from '$lib/services/audit';
 import { toJsonError } from '$lib/server/http-errors';
 import { APP_COOKIE, APP_LAUNCH_PARAM, APP_LAUNCH_VALUE } from '$lib/platform';
 import { refuse } from '$lib/server/refuse';
@@ -772,7 +772,7 @@ declare global {
 if (!building && !globalThis.__ontoplanoSweep) {
 	const sweep = async () => {
 		try {
-			const { sweepAllStreams } = await import('$lib/server/services/streams');
+			const { sweepAllStreams } = await import('$lib/services/streams');
 			const { streams, deleted } = sweepAllStreams();
 			if (deleted > 0) {
 				console.log(

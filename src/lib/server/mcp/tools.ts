@@ -20,25 +20,30 @@
  * that calls a tool needing `notes:write` is refused, and the refusal names the
  * scope it lacked rather than saying no.
  */
-import { localDateOf, type Ctx } from '../services/ctx.js';
+import { localDateOf, type Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 
-import { createEntry, listEntries } from '../services/diary.js';
-import { createActivity, listActivities, updateActivity } from '../services/activities.js';
-import { createHabit, listHabits, updateHabit, HABIT_TYPES } from '../services/habits.js';
+import { createEntry, listEntries } from '$lib/services/diary.js';
+import { createActivity, listActivities, updateActivity } from '$lib/services/activities.js';
+import { createHabit, listHabits, updateHabit, HABIT_TYPES } from '$lib/services/habits.js';
 import {
 	createFreeReminder,
 	createReminder,
 	deleteReminder,
 	dismissReminder,
 	listReminders
-} from '../services/reminders.js';
-import { createPerson, listPeople, updatePerson } from '../services/people.js';
+} from '$lib/services/reminders.js';
+import { createPerson, listPeople, updatePerson } from '$lib/services/people.js';
 import { RELATIONSHIPS } from '../../people.js';
-import { listWins, saveWins, WINS_PER_DAY } from '../services/wins.js';
-import { readWeek, saveNote, weekStartOf, readNote } from '../services/review.js';
-import { getStreamBySlug, listStreams, pushPoints, serialiseStream } from '../services/streams.js';
-import { createSlot, deleteSlots, listWeeklySlots, updateSlot } from '../services/slots.js';
+import { listWins, saveWins, WINS_PER_DAY } from '$lib/services/wins.js';
+import { readWeek, saveNote, weekStartOf, readNote } from '$lib/services/review.js';
+import {
+	getStreamBySlug,
+	listStreams,
+	pushPoints,
+	serialiseStream
+} from '$lib/services/streams.js';
+import { createSlot, deleteSlots, listWeeklySlots, updateSlot } from '$lib/services/slots.js';
 import {
 	describeRecurrence,
 	formatDate as recFormatDate,
@@ -53,7 +58,7 @@ import {
 	toggleApplied,
 	toggleFavorite,
 	updateIdea
-} from '../services/ideas.js';
+} from '$lib/services/ideas.js';
 import {
 	addGoalLinks,
 	addGoalTarget,
@@ -67,14 +72,14 @@ import {
 	setTargetProgress,
 	updateGoal,
 	type GoalTarget
-} from '../services/goals.js';
+} from '$lib/services/goals.js';
 import {
 	contentsOf,
 	createNotebook,
 	deleteNotebook,
 	listNotebooks,
 	setNotebookShared
-} from '../services/notebooks.js';
+} from '$lib/services/notebooks.js';
 import {
 	cooked,
 	createRecipe,
@@ -84,7 +89,7 @@ import {
 	listRecipes,
 	setArchived,
 	updateRecipe
-} from '../services/recipes.js';
+} from '$lib/services/recipes.js';
 import {
 	listWorkouts,
 	getWorkout,
@@ -95,7 +100,7 @@ import {
 	listWorkoutCategories,
 	createWorkoutCategory,
 	deleteWorkoutCategory
-} from '../services/workouts.js';
+} from '$lib/services/workouts.js';
 import {
 	listBills,
 	getBill,
@@ -107,8 +112,8 @@ import {
 	listPayments,
 	monthSummary,
 	billsDueBetween
-} from '../services/bills.js';
-import { grouped, search } from '../services/search.js';
+} from '$lib/services/bills.js';
+import { grouped, search } from '$lib/services/search.js';
 import {
 	createCategory as createShoppingCategory,
 	createItem,
@@ -123,8 +128,8 @@ import {
 	setCategoryShared,
 	setSnoozed,
 	setItemCategory
-} from '../services/shopping.js';
-import { getTodayBoard } from '../services/today.js';
+} from '$lib/services/shopping.js';
+import { getTodayBoard } from '$lib/services/today.js';
 import {
 	createTodo,
 	deleteTodo,
@@ -132,18 +137,18 @@ import {
 	scheduleTodo,
 	setTodoStatus,
 	updateTodo
-} from '../services/todos.js';
-import { getUpcomingSchedule } from '../services/schedule.js';
-import { createExceptional } from '../services/slots.js';
+} from '$lib/services/todos.js';
+import { getUpcomingSchedule } from '$lib/services/schedule.js';
+import { createExceptional } from '$lib/services/slots.js';
 import {
 	cancelOccurrence,
 	changeOccurrence,
 	occurrenceRow,
 	recordIdOf,
 	setOccurrenceStatus
-} from '../services/instances.js';
-import { listCategories } from '../services/activities.js';
-import { listOccurrences, toggleOccurrence } from '../services/habits.js';
+} from '$lib/services/instances.js';
+import { listCategories } from '$lib/services/activities.js';
+import { listOccurrences, toggleOccurrence } from '$lib/services/habits.js';
 import {
 	locationTree,
 	createLocation,
@@ -151,13 +156,13 @@ import {
 	deleteLocation,
 	getLocation,
 	pathOf
-} from '../services/locations.js';
+} from '$lib/services/locations.js';
 import {
 	setItemLocation,
 	setItemAttributes,
 	listItems as listShoppingItems
-} from '../services/shopping.js';
-import { NotFoundError, ValidationError } from '../services/errors.js';
+} from '$lib/services/shopping.js';
+import { NotFoundError, ValidationError } from '$lib/services/errors.js';
 
 /** JSON Schema, the subset a tool's arguments actually use. */
 type Shape = {

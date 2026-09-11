@@ -1,5 +1,5 @@
-import { getUpcomingSchedule, type ScheduleOccurrence } from './schedule.js';
-import type { Ctx } from './ctx.js';
+import { getUpcomingSchedule, type ScheduleOccurrence } from '$lib/services/schedule.js';
+import type { Ctx } from '$lib/services/ctx.js';
 
 /**
  * The plan, published as a calendar anybody's software can read.

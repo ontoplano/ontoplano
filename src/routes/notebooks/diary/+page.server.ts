@@ -1,8 +1,8 @@
 import type { Actions, PageServerLoad } from './$types';
 import { DASHBOARD_LAYOUT_KEY, parseLayout } from '$lib/dashboard';
 import { getUserSetting } from '$lib/server/settings';
-import { buildCtx } from '$lib/server/services/ctx';
-import { pickableNotebooks } from '$lib/server/services/notebooks';
+import { buildCtx } from '$lib/services/ctx';
+import { pickableNotebooks } from '$lib/services/notebooks';
 import {
 	createEntry,
 	createWins,
@@ -10,9 +10,9 @@ import {
 	listEntries,
 	listTags,
 	updateEntry
-} from '$lib/server/services/diary';
+} from '$lib/services/diary';
 import { toActionFailure } from '$lib/server/http-errors';
-import { listPeople, peopleForEntries, setEntryPeople } from '$lib/server/services/people';
+import { listPeople, peopleForEntries, setEntryPeople } from '$lib/services/people';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);

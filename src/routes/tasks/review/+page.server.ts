@@ -1,6 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
-import { ValidationError } from '$lib/server/services/errors';
+import { buildCtx } from '$lib/services/ctx';
+import { ValidationError } from '$lib/services/errors';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
 	carryIntoTodos,
@@ -12,15 +12,9 @@ import {
 	settleWeek,
 	type Verdict,
 	weekStartOf
-} from '$lib/server/services/review';
-import {
-	completeStale,
-	dropStale,
-	keepStale,
-	listStale,
-	STALE_MONTHS
-} from '$lib/server/services/stale';
-import { addDays, getISOWeekNumber, getISOWeekYear } from '$lib/server/week-generator';
+} from '$lib/services/review';
+import { completeStale, dropStale, keepStale, listStale, STALE_MONTHS } from '$lib/services/stale';
+import { addDays, getISOWeekNumber, getISOWeekYear } from '$lib/services/week-generator';
 
 function dateString(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

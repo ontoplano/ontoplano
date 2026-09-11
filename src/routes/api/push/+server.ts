@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx } from '$lib/services/ctx';
 import { removeSubscription, saveSubscription } from '$lib/server/services/push';
 import { toJsonError } from '$lib/server/http-errors';
 

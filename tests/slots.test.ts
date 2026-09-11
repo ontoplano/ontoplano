@@ -15,15 +15,15 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let slots: typeof import('../src/lib/server/services/slots');
-let activities: typeof import('../src/lib/server/services/activities');
+let slots: typeof import('../src/lib/services/slots');
+let activities: typeof import('../src/lib/services/activities');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 let work: number;
 
 beforeAll(async () => {
-	slots = await import('../src/lib/server/services/slots');
-	activities = await import('../src/lib/server/services/activities');
+	slots = await import('../src/lib/services/slots');
+	activities = await import('../src/lib/services/activities');
 	// Monday 2026-08-17.
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };

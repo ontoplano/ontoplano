@@ -25,16 +25,16 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 let media: typeof import('../src/lib/server/services/media');
-let buildCtx: typeof import('../src/lib/server/services/ctx').buildCtx;
-let recipes: typeof import('../src/lib/server/services/recipes');
+let buildCtx: typeof import('../src/lib/services/ctx').buildCtx;
+let recipes: typeof import('../src/lib/services/recipes');
 
 const configDir = mkdtempSync(join(tmpdir(), 'ontoplano-media-config-'));
 
 beforeAll(async () => {
 	process.env.ONTOPLANO_CONFIG_DIR = configDir;
 	media = await import('../src/lib/server/services/media');
-	({ buildCtx } = await import('../src/lib/server/services/ctx'));
-	recipes = await import('../src/lib/server/services/recipes');
+	({ buildCtx } = await import('../src/lib/services/ctx'));
+	recipes = await import('../src/lib/services/recipes');
 });
 
 const ctx = () => buildCtx(OWNER, { tz: 'UTC', now: new Date('2026-03-14T10:00:00Z') });
@@ -263,7 +263,7 @@ describe('a recipe’s gallery', () => {
 	});
 
 	it('keeps them when somebody’s writing still mentions it', async () => {
-		const diary = await import('../src/lib/server/services/diary');
+		const diary = await import('../src/lib/services/diary');
 		const id = recipes.createRecipe(ctx(), { title: 'Mentioned' });
 		const shared = media.attachToRecipe(ctx(), id, { bytes: png(25), filename: 'shared.png' });
 		diary.createEntry(ctx(), { content: `Made it again ![it](/media/${shared.id})` });
@@ -341,7 +341,7 @@ describe('leaving with them', () => {
  */
 describe('a person’s face', () => {
 	it('replaces the old one and does not leave it behind', async () => {
-		const people = await import('../src/lib/server/services/people');
+		const people = await import('../src/lib/services/people');
 		withLimits('[media]\nmax_kilobytes = "500"\n');
 
 		const person = people.createPerson(ctx(), { name: 'Ana' });
@@ -362,7 +362,7 @@ describe('a person’s face', () => {
 	});
 
 	it('lets go of the bytes when the face is removed', async () => {
-		const people = await import('../src/lib/server/services/people');
+		const people = await import('../src/lib/services/people');
 		const person = people.createPerson(ctx(), { name: 'Bea' });
 		const face = media.setPersonPicture(ctx(), person, {
 			bytes: png(41),
@@ -375,7 +375,7 @@ describe('a person’s face', () => {
 	});
 
 	it('keeps a face that a recipe is also using', async () => {
-		const people = await import('../src/lib/server/services/people');
+		const people = await import('../src/lib/services/people');
 		const person = people.createPerson(ctx(), { name: 'Cec' });
 		const shared = media.setPersonPicture(ctx(), person, {
 			bytes: png(42),
@@ -389,7 +389,7 @@ describe('a person’s face', () => {
 	});
 
 	it('is not somebody else’s to set', async () => {
-		const people = await import('../src/lib/server/services/people');
+		const people = await import('../src/lib/services/people');
 		const mine = people.createPerson(ctx(), { name: 'Mine' });
 		expect(() =>
 			media.setPersonPicture(other(), mine, { bytes: png(43), filename: 'x.png' })

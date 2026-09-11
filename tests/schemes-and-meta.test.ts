@@ -16,19 +16,19 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let schemes: typeof import('../src/lib/server/services/schemes');
-let slots: typeof import('../src/lib/server/services/slots');
-let activities: typeof import('../src/lib/server/services/activities');
-let meta: typeof import('../src/lib/server/services/meta');
+let schemes: typeof import('../src/lib/services/schemes');
+let slots: typeof import('../src/lib/services/slots');
+let activities: typeof import('../src/lib/services/activities');
+let meta: typeof import('../src/lib/services/meta');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 let work: number;
 
 beforeAll(async () => {
-	schemes = await import('../src/lib/server/services/schemes');
-	slots = await import('../src/lib/server/services/slots');
-	activities = await import('../src/lib/server/services/activities');
-	meta = await import('../src/lib/server/services/meta');
+	schemes = await import('../src/lib/services/schemes');
+	slots = await import('../src/lib/services/slots');
+	activities = await import('../src/lib/services/activities');
+	meta = await import('../src/lib/services/meta');
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 	work = activities.createCategory(ctx, { name: 'Work', color: '#1d4ed8' });
@@ -242,10 +242,10 @@ describe('the metadata a form submits', () => {
  * still leave the rhythm alone, which is the other half of the same rule.
  */
 describe('changing how often a block comes round', () => {
-	let slots: typeof import('../src/lib/server/services/slots');
+	let slots: typeof import('../src/lib/services/slots');
 
 	beforeAll(async () => {
-		slots = await import('../src/lib/server/services/slots');
+		slots = await import('../src/lib/services/slots');
 	});
 
 	function aBlock() {

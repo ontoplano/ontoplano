@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
-import { readRingtone } from '$lib/server/services/ringtones';
+import { buildCtx } from '$lib/services/ctx';
+import { readRingtone } from '$lib/services/ringtones';
 
 /**
  * One uploaded sound, played by the page that raises a notification.

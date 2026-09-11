@@ -1,6 +1,6 @@
 import type { LayoutServerLoad } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
-import { listStreams } from '$lib/server/services/streams';
+import { buildCtx } from '$lib/services/ctx';
+import { listStreams } from '$lib/services/streams';
 
 /**
  * The section's tabs, from what the account actually has.

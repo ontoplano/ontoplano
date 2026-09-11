@@ -1,14 +1,14 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { user } from '$lib/db/schema.js';
 import { renderEmail } from '../email-template.js';
 import { getGridHours, getUserSetting, setUserSetting } from '../settings.js';
-import { addDays } from '../week-generator.js';
-import { buildCtx, localDateOf, type Ctx } from './ctx.js';
+import { addDays } from '$lib/services/week-generator.js';
+import { buildCtx, localDateOf, type Ctx } from '$lib/services/ctx.js';
 import { sendLogged } from './mail-log.js';
-import { readWeek, weekStartOf } from './review.js';
+import { readWeek, weekStartOf } from '$lib/services/review.js';
 
 /**
  * Monday morning: what last week actually was, in the inbox.

@@ -1,13 +1,13 @@
 import { and, asc, eq } from 'drizzle-orm';
 
 import { eventsBetween, type IcsEvent } from '../../ics.js';
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { calendarFeeds } from '$lib/db/schema.js';
 import { assertPublicUrl, fetchPublic } from '../outbound.js';
-import type { Ctx } from './ctx.js';
-import { NotFoundError } from './errors.js';
-import { stamp } from './time.js';
-import { str } from './validate.js';
+import type { Ctx } from '$lib/services/ctx.js';
+import { NotFoundError } from '$lib/services/errors.js';
+import { stamp } from '$lib/services/time.js';
+import { str } from '$lib/services/validate.js';
 
 /**
  * Calendars somebody else controls.

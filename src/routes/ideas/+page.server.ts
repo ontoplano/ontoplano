@@ -1,5 +1,5 @@
 import type { Actions, PageServerLoad } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
 	createIdea,
@@ -10,7 +10,7 @@ import {
 	toggleFavorite,
 	updateAppliedNote,
 	updateIdea
-} from '$lib/server/services/ideas';
+} from '$lib/services/ideas';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);

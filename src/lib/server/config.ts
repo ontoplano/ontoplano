@@ -11,7 +11,9 @@ const home = homedir();
  * of whoever is logged into the machine. The tests used to do exactly that,
  * which meant a suite could pass or fail depending on a file outside the repo.
  */
-export const CONFIG_DIR = process.env.ONTOPLANO_CONFIG_DIR || join(home, '.config', 'ontoplano');
+export function configDir(): string {
+	return process.env.ONTOPLANO_CONFIG_DIR || join(home, '.config', 'ontoplano');
+}
 
 /**
  * Where the database and anything else this instance writes lives.
@@ -23,10 +25,20 @@ export const CONFIG_DIR = process.env.ONTOPLANO_CONFIG_DIR || join(home, '.confi
  * this, the service account's home would have to be bent into
  * `/var/lib/ontoplano/.local/share/ontoplano/` to satisfy a path written here.
  */
-export const DATA_DIR =
-	process.env.ONTOPLANO_DATA_DIR || join(home, '.local', 'share', 'ontoplano');
-export const CONFIG_FILE = join(CONFIG_DIR, 'config.toml');
-export const DB_PATH = join(DATA_DIR, 'ontoplano.db');
+export function dataDir(): string {
+	return process.env.ONTOPLANO_DATA_DIR || join(home, '.local', 'share', 'ontoplano');
+}
+
+// Functions, not constants: a test sets the environment first and imports
+// whatever it likes after, and nothing here is allowed to remember the world
+// from before. Reading the environment at call time is what makes import
+// order not matter.
+export function configFile(): string {
+	return join(configDir(), 'config.toml');
+}
+export function dbPath(): string {
+	return join(dataDir(), 'ontoplano.db');
+}
 
 function parseToml(content: string): Record<string, Record<string, string>> {
 	const result: Record<string, Record<string, string>> = {};
@@ -207,14 +219,14 @@ export interface OntoplanoConfig {
 export const DEFAULT_TAGLINE = 'Managing life, one week at a time';
 
 export function ensureDirectories(): void {
-	mkdirSync(CONFIG_DIR, { recursive: true });
-	mkdirSync(DATA_DIR, { recursive: true });
+	mkdirSync(configDir(), { recursive: true });
+	mkdirSync(dataDir(), { recursive: true });
 }
 
 export function ensureConfig(): void {
 	ensureDirectories();
-	if (!existsSync(CONFIG_FILE)) {
-		writeFileSync(CONFIG_FILE, DEFAULT_CONFIG, 'utf-8');
+	if (!existsSync(configFile())) {
+		writeFileSync(configFile(), DEFAULT_CONFIG, 'utf-8');
 	}
 }
 
@@ -224,7 +236,7 @@ host = "${config.server.host}"
 port = "${config.server.port}"
 
 [database]
-${config.database.path !== DB_PATH ? `path = "${config.database.path}"` : ''}
+${config.database.path !== dbPath() ? `path = "${config.database.path}"` : ''}
 
 [week]
 first_day = "${config.week.firstDay}"
@@ -259,13 +271,13 @@ account_megabytes = "${config.media.accountMegabytes}"
 
 export function saveConfig(config: OntoplanoConfig): void {
 	ensureDirectories();
-	writeFileSync(CONFIG_FILE, toToml(config), 'utf-8');
+	writeFileSync(configFile(), toToml(config), 'utf-8');
 }
 
 export function loadConfig(): OntoplanoConfig {
 	ensureConfig();
 
-	const content = readFileSync(CONFIG_FILE, 'utf-8');
+	const content = readFileSync(configFile(), 'utf-8');
 	const parsed = parseToml(content);
 
 	const server = (parsed.server as Record<string, string>) || {};
@@ -292,7 +304,7 @@ export function loadConfig(): OntoplanoConfig {
 			// DATABASE_URL wins over the config file, because drizzle.config.ts and
 			// scripts/migrate.mjs already resolve it that way — without this the app
 			// could be reading one database while migrations rewrite another.
-			path: process.env.DATABASE_URL || database.path || DB_PATH
+			path: process.env.DATABASE_URL || database.path || dbPath()
 		},
 		week: {
 			firstDay: parseInt(week.first_day || '0', 10),

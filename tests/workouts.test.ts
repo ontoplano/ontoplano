@@ -14,14 +14,14 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let workouts: typeof import('../src/lib/server/services/workouts');
+let workouts: typeof import('../src/lib/services/workouts');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 /** A kind of this account's own, since the fixed five are rows now. */
 let strength: number;
 
 beforeAll(async () => {
-	workouts = await import('../src/lib/server/services/workouts');
+	workouts = await import('../src/lib/services/workouts');
 	ctx = { userId: OWNER, now: new Date('2026-09-06T12:00:00Z'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 	strength = workouts.listWorkoutCategories(ctx).find((c) => c.name === 'Strength')!.id;
@@ -77,12 +77,12 @@ describe('a workout', () => {
  * session on Monday's plan and Health still says it was never done.
  */
 describe('a workout put on a day', () => {
-	let instances: typeof import('../src/lib/server/services/instances');
-	let slots: typeof import('../src/lib/server/services/slots');
+	let instances: typeof import('../src/lib/services/instances');
+	let slots: typeof import('../src/lib/services/slots');
 
 	beforeAll(async () => {
-		instances = await import('../src/lib/server/services/instances');
-		slots = await import('../src/lib/server/services/slots');
+		instances = await import('../src/lib/services/instances');
+		slots = await import('../src/lib/services/slots');
 	});
 
 	test('becomes a block that IS the workout', () => {
@@ -163,10 +163,10 @@ describe('one account cannot reach another’s', () => {
  * so the failure looked like the form rather than the plumbing.
  */
 describe('a weekly block that is a workout', () => {
-	let slots: typeof import('../src/lib/server/services/slots');
+	let slots: typeof import('../src/lib/services/slots');
 
 	beforeAll(async () => {
-		slots = await import('../src/lib/server/services/slots');
+		slots = await import('../src/lib/services/slots');
 	});
 
 	test('is created from a workout, with no category to file it under', () => {
@@ -207,11 +207,11 @@ describe('a weekly block that is a workout', () => {
  * from the workout itself hid this, because that path writes a label as well.
  */
 describe('a workout block is named after its workout', () => {
-	let slots: typeof import('../src/lib/server/services/slots');
+	let slots: typeof import('../src/lib/services/slots');
 	let grid: typeof import('../src/lib/planner-grid');
 
 	beforeAll(async () => {
-		slots = await import('../src/lib/server/services/slots');
+		slots = await import('../src/lib/services/slots');
 		grid = await import('../src/lib/planner-grid');
 	});
 

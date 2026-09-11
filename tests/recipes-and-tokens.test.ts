@@ -18,16 +18,16 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let recipes: typeof import('../src/lib/server/services/recipes');
-let shopping: typeof import('../src/lib/server/services/shopping');
+let recipes: typeof import('../src/lib/services/recipes');
+let shopping: typeof import('../src/lib/services/shopping');
 let tokens: typeof import('../src/lib/server/services/tokens');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 const now = new Date('2026-08-17T09:00:00Z');
 
 beforeAll(async () => {
-	recipes = await import('../src/lib/server/services/recipes');
-	shopping = await import('../src/lib/server/services/shopping');
+	recipes = await import('../src/lib/services/recipes');
+	shopping = await import('../src/lib/services/shopping');
 	tokens = await import('../src/lib/server/services/tokens');
 	ctx = { userId: OWNER, now, tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };

@@ -12,9 +12,9 @@ import {
 	registrationMode
 } from '$lib/server/services/registration';
 import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
-import { ServiceError } from '$lib/server/services/errors';
+import { ServiceError } from '$lib/services/errors';
 import { toActionFailure } from '$lib/server/http-errors';
-import { record } from '$lib/server/services/audit';
+import { record } from '$lib/services/audit';
 import { isDemoAccount, resetDemoAccount } from '$lib/server/services/demo';
 import { claimFirstAccount } from '$lib/server/services/admin';
 import { onboardEntitlement, whyItCannotSell } from '$lib/server/services/billing';

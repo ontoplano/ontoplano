@@ -3,7 +3,7 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 import { ASSISTANT_SCOPES } from '$lib/server/mcp/tools';
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
 import { listAssistantCalls, putBack } from '$lib/server/services/assistant-log';
 import { SCOPES, createToken, isCalendarLink, listTokens } from '$lib/server/services/tokens';

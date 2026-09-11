@@ -2,7 +2,7 @@ import { error, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { LIMIT_KEYS, PLANS } from '$lib/plans';
 import { isSelfHosted } from '$lib/server/settings';
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx } from '$lib/services/ctx';
 import { exportAllowance } from '$lib/server/services/account';
 import {
 	acceptPlanInvite,
@@ -23,7 +23,7 @@ import {
 	isBillingConfigured
 } from '$lib/server/services/billing';
 import { activeProviderSubscription } from '$lib/server/services/subscriptions';
-import { RateLimitedError } from '$lib/server/services/errors';
+import { RateLimitedError } from '$lib/services/errors';
 import { toActionFailure } from '$lib/server/http-errors';
 import { rateLimit } from '$lib/server/rate-limit';
 

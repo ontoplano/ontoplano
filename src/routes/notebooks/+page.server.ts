@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
-import { contentsOf, listNotebooks, listOrphanedNotes } from '$lib/server/services/notebooks';
-import { listPeople } from '$lib/server/services/people';
+import { buildCtx } from '$lib/services/ctx';
+import { contentsOf, listNotebooks, listOrphanedNotes } from '$lib/services/notebooks';
+import { listPeople } from '$lib/services/people';
 import { notebookActions } from './actions';
 
 /** The query value that stands for the orphaned notes rather than a notebook. */

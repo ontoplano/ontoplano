@@ -1,15 +1,15 @@
 import { and, eq } from 'drizzle-orm';
 
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { reminders } from '$lib/db/schema.js';
-import { billsDueBetween } from './bills.js';
-import type { Ctx } from './ctx.js';
-import { reviewPending } from './review.js';
-import { listPeople } from './people.js';
-import type { ReminderKind } from './reminders.js';
+import { billsDueBetween } from '$lib/services/bills.js';
+import type { Ctx } from '$lib/services/ctx.js';
+import { reviewPending } from '$lib/services/review.js';
+import { listPeople } from '$lib/services/people.js';
+import type { ReminderKind } from '$lib/services/reminders.js';
 import { getCurrency, getGridHours } from '../settings.js';
 import { formatMoney } from '../../money.js';
-import { localOfInstant } from './time.js';
+import { localOfInstant } from '$lib/services/time.js';
 
 /**
  * The reminders nobody types.

@@ -14,21 +14,21 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let todos: typeof import('../src/lib/server/services/todos');
-let notebooks: typeof import('../src/lib/server/services/notebooks');
-let diary: typeof import('../src/lib/server/services/diary');
-let activities: typeof import('../src/lib/server/services/activities');
-let slots: typeof import('../src/lib/server/services/slots');
+let todos: typeof import('../src/lib/services/todos');
+let notebooks: typeof import('../src/lib/services/notebooks');
+let diary: typeof import('../src/lib/services/diary');
+let activities: typeof import('../src/lib/services/activities');
+let slots: typeof import('../src/lib/services/slots');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 let work: number;
 
 beforeAll(async () => {
-	todos = await import('../src/lib/server/services/todos');
-	notebooks = await import('../src/lib/server/services/notebooks');
-	diary = await import('../src/lib/server/services/diary');
-	activities = await import('../src/lib/server/services/activities');
-	slots = await import('../src/lib/server/services/slots');
+	todos = await import('../src/lib/services/todos');
+	notebooks = await import('../src/lib/services/notebooks');
+	diary = await import('../src/lib/services/diary');
+	activities = await import('../src/lib/services/activities');
+	slots = await import('../src/lib/services/slots');
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 	work = activities.createCategory(ctx, { name: 'Work', color: '#1d4ed8' });

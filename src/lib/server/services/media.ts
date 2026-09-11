@@ -25,11 +25,11 @@ import { and, eq, like, or, sql } from 'drizzle-orm';
 
 import { loadConfig } from '../config.js';
 import { pictureCeiling } from '../db/assert-body-limit.js';
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { diaryEntries, media, people, recipeImages, recipes } from '$lib/db/schema.js';
-import type { Ctx } from './ctx.js';
-import { NotFoundError, ValidationError } from './errors.js';
-import { stamp } from './time.js';
+import type { Ctx } from '$lib/services/ctx.js';
+import { NotFoundError, ValidationError } from '$lib/services/errors.js';
+import { stamp } from '$lib/services/time.js';
 
 /**
  * What a picture may be, and how its first bytes look.

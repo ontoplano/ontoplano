@@ -1,5 +1,5 @@
 import type { Actions, PageServerLoad } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
 	listWorkouts,
@@ -13,7 +13,7 @@ import {
 	createWorkoutCategory,
 	renameWorkoutCategory,
 	deleteWorkoutCategory
-} from '$lib/server/services/workouts';
+} from '$lib/services/workouts';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);

@@ -1,13 +1,13 @@
 import type { RequestEvent } from '@sveltejs/kit';
 
 import { paymentHoldFor } from '../services/access.js';
-import { buildCtx, type Ctx } from '../services/ctx.js';
+import { buildCtx, type Ctx } from '$lib/services/ctx.js';
 import {
 	RateLimitedError,
 	ServiceError,
 	UnauthorizedError,
 	ValidationError
-} from '../services/errors.js';
+} from '$lib/services/errors.js';
 import { rateLimit } from '../rate-limit.js';
 import { authenticateToken, requireScope, type Scope } from '../services/tokens.js';
 

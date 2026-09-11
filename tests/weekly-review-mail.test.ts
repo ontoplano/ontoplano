@@ -27,10 +27,10 @@ vi.mock('../src/lib/server/email', () => ({
 }));
 
 let mail: typeof import('../src/lib/server/services/review-mail');
-let slots: typeof import('../src/lib/server/services/slots');
-let activities: typeof import('../src/lib/server/services/activities');
-let instances: typeof import('../src/lib/server/services/instances');
-let review: typeof import('../src/lib/server/services/review');
+let slots: typeof import('../src/lib/services/slots');
+let activities: typeof import('../src/lib/services/activities');
+let instances: typeof import('../src/lib/services/instances');
+let review: typeof import('../src/lib/services/review');
 
 /** A Monday at 08:00 UTC — inside the send window for a UTC account. */
 const MONDAY = new Date('2026-08-24T08:00:00Z');
@@ -43,10 +43,10 @@ function ctxFor(userId: string, tz = 'UTC', now = new Date('2026-08-19T12:00:00'
 
 beforeAll(async () => {
 	mail = await import('../src/lib/server/services/review-mail');
-	slots = await import('../src/lib/server/services/slots');
-	activities = await import('../src/lib/server/services/activities');
-	instances = await import('../src/lib/server/services/instances');
-	review = await import('../src/lib/server/services/review');
+	slots = await import('../src/lib/services/slots');
+	activities = await import('../src/lib/services/activities');
+	instances = await import('../src/lib/services/instances');
+	review = await import('../src/lib/services/review');
 
 	process.env.ORIGIN = 'https://app.test.invalid';
 	process.env.BETTER_AUTH_SECRET = 'a-secret-for-tests';

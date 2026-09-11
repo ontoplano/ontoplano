@@ -14,9 +14,9 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 type Services = {
-	onboarding: typeof import('../src/lib/server/services/onboarding');
-	activities: typeof import('../src/lib/server/services/activities');
-	slots: typeof import('../src/lib/server/services/slots');
+	onboarding: typeof import('../src/lib/services/onboarding');
+	activities: typeof import('../src/lib/services/activities');
+	slots: typeof import('../src/lib/services/slots');
 };
 
 let s: Services;
@@ -25,9 +25,9 @@ let theirs: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
 	s = {
-		onboarding: await import('../src/lib/server/services/onboarding'),
-		activities: await import('../src/lib/server/services/activities'),
-		slots: await import('../src/lib/server/services/slots')
+		onboarding: await import('../src/lib/services/onboarding'),
+		activities: await import('../src/lib/services/activities'),
+		slots: await import('../src/lib/services/slots')
 	};
 	ctx = { userId: OWNER, now: new Date('2026-08-26T12:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };

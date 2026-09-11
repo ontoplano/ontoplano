@@ -42,12 +42,12 @@ vi.mock('../src/lib/server/config', async (importOriginal) => {
 });
 
 let list: typeof import('../src/lib/server/services/newsletter');
-let errors: typeof import('../src/lib/server/services/errors');
+let errors: typeof import('../src/lib/services/errors');
 
 beforeAll(async () => {
 	process.env.ORIGIN = 'https://app.test.invalid';
 	list = await import('../src/lib/server/services/newsletter');
-	errors = await import('../src/lib/server/services/errors');
+	errors = await import('../src/lib/services/errors');
 });
 
 beforeEach(() => {

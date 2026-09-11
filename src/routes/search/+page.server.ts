@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
-import { grouped, search } from '$lib/server/services/search';
+import { buildCtx } from '$lib/services/ctx';
+import { grouped, search } from '$lib/services/search';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const q = url.searchParams.get('q') ?? '';

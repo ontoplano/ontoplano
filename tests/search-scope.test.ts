@@ -14,11 +14,11 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 type Services = {
-	search: typeof import('../src/lib/server/services/search');
-	todos: typeof import('../src/lib/server/services/todos');
-	notebooks: typeof import('../src/lib/server/services/notebooks');
-	diary: typeof import('../src/lib/server/services/diary');
-	goals: typeof import('../src/lib/server/services/goals');
+	search: typeof import('../src/lib/services/search');
+	todos: typeof import('../src/lib/services/todos');
+	notebooks: typeof import('../src/lib/services/notebooks');
+	diary: typeof import('../src/lib/services/diary');
+	goals: typeof import('../src/lib/services/goals');
 };
 
 let s: Services;
@@ -29,11 +29,11 @@ let garden: number;
 
 beforeAll(async () => {
 	s = {
-		search: await import('../src/lib/server/services/search'),
-		todos: await import('../src/lib/server/services/todos'),
-		notebooks: await import('../src/lib/server/services/notebooks'),
-		diary: await import('../src/lib/server/services/diary'),
-		goals: await import('../src/lib/server/services/goals')
+		search: await import('../src/lib/services/search'),
+		todos: await import('../src/lib/services/todos'),
+		notebooks: await import('../src/lib/services/notebooks'),
+		diary: await import('../src/lib/services/diary'),
+		goals: await import('../src/lib/services/goals')
 	};
 	ctx = { userId: OWNER, now: new Date('2026-08-26T12:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };

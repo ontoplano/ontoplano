@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
 
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx } from '$lib/services/ctx';
 import { buildFeed } from '$lib/server/services/calendar-feed';
 import { paymentHoldFor } from '$lib/server/services/access';
 import { authenticateToken } from '$lib/server/services/tokens';

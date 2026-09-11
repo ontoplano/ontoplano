@@ -1,5 +1,5 @@
 import type { Actions, PageServerLoad } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
 import { getCurrency } from '$lib/server/settings';
 import { parseMoney } from '$lib/money';
@@ -15,7 +15,7 @@ import {
 	monthSummary,
 	periodFor,
 	type Rhythm
-} from '$lib/server/services/bills';
+} from '$lib/services/bills';
 
 function thisMonth(now: Date): string {
 	return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;

@@ -2,7 +2,7 @@ import type { RequestHandler } from './$types';
 
 import { authenticateApi } from '$lib/server/api/auth';
 import { toJsonError } from '$lib/server/http-errors';
-import { getTodayBoard } from '$lib/server/services/today';
+import { getTodayBoard } from '$lib/services/today';
 
 /**
  * Today's plan, for the home-screen widget.

@@ -1,19 +1,19 @@
 import { and, desc, eq, inArray, lt } from 'drizzle-orm';
 
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { apiTokens, assistantCalls } from '$lib/db/schema.js';
-import type { Ctx } from './ctx.js';
-import { stamp } from './time.js';
-import { NotFoundError, ValidationError } from './errors.js';
-import { createTodo } from './todos.js';
-import { createNotebook } from './notebooks.js';
-import { createIdea, toggleApplied, toggleFavorite } from './ideas.js';
-import { createItem, createCategory as createShoppingCategory } from './shopping.js';
-import { createFreeReminder } from './reminders.js';
-import { createSlot } from './slots.js';
-import { createLocation } from './locations.js';
-import { createWorkoutCategory } from './workouts.js';
-import { addGoalTarget, listGoals, setTargetProgress } from './goals.js';
+import type { Ctx } from '$lib/services/ctx.js';
+import { stamp } from '$lib/services/time.js';
+import { NotFoundError, ValidationError } from '$lib/services/errors.js';
+import { createTodo } from '$lib/services/todos.js';
+import { createNotebook } from '$lib/services/notebooks.js';
+import { createIdea, toggleApplied, toggleFavorite } from '$lib/services/ideas.js';
+import { createItem, createCategory as createShoppingCategory } from '$lib/services/shopping.js';
+import { createFreeReminder } from '$lib/services/reminders.js';
+import { createSlot } from '$lib/services/slots.js';
+import { createLocation } from '$lib/services/locations.js';
+import { createWorkoutCategory } from '$lib/services/workouts.js';
+import { addGoalTarget, listGoals, setTargetProgress } from '$lib/services/goals.js';
 
 /**
  * What an assistant did to an account, and the way back.

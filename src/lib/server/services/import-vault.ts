@@ -1,10 +1,10 @@
-import { db } from '../db/index.js';
-import type { Ctx } from './ctx.js';
-import { ValidationError } from './errors.js';
-import { createNotebook } from './notebooks.js';
-import { createEntry, MAX_ENTRY_LENGTH } from './diary.js';
-import { MAX_TITLE_LENGTH } from './todos.js';
-import { freeNotebookTitle } from './imports.js';
+import { db } from '$lib/db/index.js';
+import type { Ctx } from '$lib/services/ctx.js';
+import { ValidationError } from '$lib/services/errors.js';
+import { createNotebook } from '$lib/services/notebooks.js';
+import { createEntry, MAX_ENTRY_LENGTH } from '$lib/services/diary.js';
+import { MAX_TITLE_LENGTH } from '$lib/services/todos.js';
+import { freeNotebookTitle } from '$lib/services/imports.js';
 
 /**
  * A vault of markdown becomes notebook entries.

@@ -4,14 +4,14 @@ import { join } from 'node:path';
 import { and, eq, sql } from 'drizzle-orm';
 import webpush from 'web-push';
 
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { assertPublicUrl } from '../outbound.js';
 import { pushSubscriptions } from '$lib/db/schema.js';
-import { CONFIG_DIR } from '../config.js';
+import { configDir } from '../config.js';
 import { isSelfHosted } from '../settings.js';
-import { str } from './validate.js';
-import { ValidationError } from './errors.js';
-import type { Ctx } from './ctx.js';
+import { str } from '$lib/services/validate.js';
+import { ValidationError } from '$lib/services/errors.js';
+import type { Ctx } from '$lib/services/ctx.js';
 
 /**
  * Telling somebody something while the app is closed.
@@ -60,7 +60,7 @@ import type { Ctx } from './ctx.js';
  * file.
  */
 
-const KEY_FILE = join(CONFIG_DIR, 'vapid.json');
+const keyFile = () => join(configDir(), 'vapid.json');
 
 /**
  * Dropped after this many consecutive failures.
@@ -98,16 +98,16 @@ export function vapidKeys(): Keys | null {
 	// Off unless the instance is allowed to keep a key of its own. An operator
 	// running a read-only config directory gets in-page reminders and no error.
 	try {
-		if (existsSync(KEY_FILE)) {
-			const held = JSON.parse(readFileSync(KEY_FILE, 'utf-8')) as Partial<Keys>;
+		if (existsSync(keyFile())) {
+			const held = JSON.parse(readFileSync(keyFile(), 'utf-8')) as Partial<Keys>;
 			if (held.publicKey && held.privateKey) {
 				return (cached = { publicKey: held.publicKey, privateKey: held.privateKey });
 			}
 		}
 
 		const made = webpush.generateVAPIDKeys();
-		mkdirSync(CONFIG_DIR, { recursive: true });
-		writeFileSync(KEY_FILE, JSON.stringify(made, null, 2), { encoding: 'utf-8', mode: 0o600 });
+		mkdirSync(configDir(), { recursive: true });
+		writeFileSync(keyFile(), JSON.stringify(made, null, 2), { encoding: 'utf-8', mode: 0o600 });
 		return (cached = made);
 	} catch {
 		return (cached = null);

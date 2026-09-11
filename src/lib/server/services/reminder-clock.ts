@@ -1,10 +1,10 @@
 import { and, asc, isNull, lte } from 'drizzle-orm';
 
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { reminders } from '$lib/db/schema.js';
-import { offsetAt } from './time.js';
-import { serverTimezone } from './ctx.js';
-import { getTimezone } from '../settings.js';
+import { offsetAt } from '$lib/services/time.js';
+import { serverTimezone } from '$lib/services/ctx.js';
+import { getTimezone } from '$lib/services/settings.js';
 
 /**
  * The thing that makes a reminder arrive when it says it will.

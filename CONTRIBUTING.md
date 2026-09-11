@@ -83,7 +83,8 @@ reviewer or a lint rule will stop you on:
 - **Ownership lives in the `WHERE`.** Every query touching user data filters
   by the account inside the statement.
 - **Routes do not query the database.** `+page.server.ts` calls a service in
-  `src/lib/server/services/`; a lint rule enforces it.
+  `src/lib/services/` — or `src/lib/server/services/` for the server-only
+  ones; a lint rule enforces it.
 - **"Not yours" answers exactly like "does not exist"** — same status, same
   message. `e2e/idor.e2e.ts` has a case per entity.
 - **Strings are bounded at the service**, and a new table goes into

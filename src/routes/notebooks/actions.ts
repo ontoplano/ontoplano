@@ -1,8 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from '@sveltejs/kit';
-import { buildCtx } from '$lib/server/services/ctx';
-import { createEntry, deleteEntry, updateEntry } from '$lib/server/services/diary';
-import { setEntryPeople } from '$lib/server/services/people';
+import { buildCtx } from '$lib/services/ctx';
+import { createEntry, deleteEntry, updateEntry } from '$lib/services/diary';
+import { setEntryPeople } from '$lib/services/people';
 import { toActionFailure } from '$lib/server/http-errors';
 import { importVaultAction } from '$lib/server/import-vault-action';
 import {
@@ -11,7 +11,7 @@ import {
 	setNotebookClosed,
 	setNotebookShared,
 	updateNotebook
-} from '$lib/server/services/notebooks';
+} from '$lib/services/notebooks';
 
 /**
  * What can be done to a notebook, wherever it is on screen.

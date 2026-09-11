@@ -1,14 +1,14 @@
 import { randomBytes } from 'node:crypto';
 import { eq } from 'drizzle-orm';
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { user } from '$lib/db/auth.schema.js';
 import { planMembers } from '$lib/db/schema.js';
 import { renderEmail } from '../email-template.js';
 import { checkPassword } from '../../passwords.js';
 import { getUserSetting, setUserSetting } from '../settings.js';
-import { record } from './audit.js';
+import { record } from '$lib/services/audit.js';
 import { registrationMode } from './registration.js';
-import { ValidationError } from './errors.js';
+import { ValidationError } from '$lib/services/errors.js';
 import { sendLogged } from './mail-log.js';
 import { addToPlan, membersOf, resolvePlan, seatsFor } from './subscriptions.js';
 

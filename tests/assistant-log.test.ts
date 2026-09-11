@@ -18,17 +18,17 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 let handleBody: typeof import('../src/lib/server/mcp/protocol').handleBody;
-let buildCtx: typeof import('../src/lib/server/services/ctx').buildCtx;
+let buildCtx: typeof import('../src/lib/services/ctx').buildCtx;
 let log: typeof import('../src/lib/server/services/assistant-log');
 let TOOLS: typeof import('../src/lib/server/mcp/tools').TOOLS;
 
 beforeAll(async () => {
 	({ handleBody } = await import('../src/lib/server/mcp/protocol'));
-	({ buildCtx } = await import('../src/lib/server/services/ctx'));
+	({ buildCtx } = await import('../src/lib/services/ctx'));
 	({ TOOLS } = await import('../src/lib/server/mcp/tools'));
 	log = await import('../src/lib/server/services/assistant-log');
 
-	const { createCategory } = await import('../src/lib/server/services/activities');
+	const { createCategory } = await import('../src/lib/services/activities');
 	createCategory(ctx(), { name: 'work', color: '#1d4ed8' });
 });
 

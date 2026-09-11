@@ -1,7 +1,7 @@
 import { json, text } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { clientKey, rateLimit } from '$lib/server/rate-limit';
-import { ValidationError } from '$lib/server/services/errors';
+import { ValidationError } from '$lib/services/errors';
 import { newsletterEnabled, newsletterOrigin, subscribe } from '$lib/server/services/newsletter';
 
 /**

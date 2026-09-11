@@ -1,9 +1,9 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { mailFailures } from '$lib/db/schema.js';
 import { isEmailConfigured, sendEmail, type Email, type SendResult } from '../email.js';
-import { NotFoundError, ValidationError } from './errors.js';
+import { NotFoundError, ValidationError } from '$lib/services/errors.js';
 
 /**
  * Mail that must not fail silently.

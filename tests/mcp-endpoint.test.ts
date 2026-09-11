@@ -37,7 +37,7 @@ beforeAll(async () => {
 
 	endpoint = await import('../src/routes/api/mcp/+server');
 
-	const { buildCtx } = await import('../src/lib/server/services/ctx');
+	const { buildCtx } = await import('../src/lib/services/ctx');
 	const { createToken } = await import('../src/lib/server/services/tokens');
 	const { applySubscription } = await import('../src/lib/server/services/subscriptions');
 

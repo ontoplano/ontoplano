@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
-import { pastNotes } from '$lib/server/services/review';
+import { buildCtx } from '$lib/services/ctx';
+import { pastNotes } from '$lib/services/review';
 
 /**
  * Every week you have written about, in one place.

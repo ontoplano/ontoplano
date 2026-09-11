@@ -19,11 +19,11 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 type Services = {
-	reminders: typeof import('../src/lib/server/services/reminders');
-	slots: typeof import('../src/lib/server/services/slots');
-	instances: typeof import('../src/lib/server/services/instances');
-	activities: typeof import('../src/lib/server/services/activities');
-	todos: typeof import('../src/lib/server/services/todos');
+	reminders: typeof import('../src/lib/services/reminders');
+	slots: typeof import('../src/lib/services/slots');
+	instances: typeof import('../src/lib/services/instances');
+	activities: typeof import('../src/lib/services/activities');
+	todos: typeof import('../src/lib/services/todos');
 };
 
 let s: Services;
@@ -34,11 +34,11 @@ let block: number;
 
 beforeAll(async () => {
 	s = {
-		reminders: await import('../src/lib/server/services/reminders'),
-		slots: await import('../src/lib/server/services/slots'),
-		instances: await import('../src/lib/server/services/instances'),
-		activities: await import('../src/lib/server/services/activities'),
-		todos: await import('../src/lib/server/services/todos')
+		reminders: await import('../src/lib/services/reminders'),
+		slots: await import('../src/lib/services/slots'),
+		instances: await import('../src/lib/services/instances'),
+		activities: await import('../src/lib/services/activities'),
+		todos: await import('../src/lib/services/todos')
 	};
 	// Monday 2026-08-17, 08:00.
 	ctx = { userId: OWNER, now: new Date('2026-08-17T08:00:00'), tz: 'UTC' };

@@ -77,14 +77,8 @@ dashboard without shipping any code into ontoplano.
 The other direction: a subscription is an address, a set of events, and a
 secret the delivery is signed with, so the receiver can tell it is really us.
 
-| Event             | When it fires                       |
-| ----------------- | ----------------------------------- |
-| `todo.created`    | a todo is added                     |
-| `todo.completed`  | a todo is finished                  |
-| `idea.created`    | an idea is captured                 |
-| `diary.created`   | a diary entry is written            |
-| `shopping.added`  | something goes on the shopping list |
-| `shopping.bought` | something on the list is bought     |
+| Event | When it fires |
+| ----- | ------------- |
 
 A subscription that keeps failing is disabled rather than retried forever, and
 says so on the settings page where it can be revived.

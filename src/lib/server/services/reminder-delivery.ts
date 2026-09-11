@@ -1,12 +1,12 @@
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { pushSubscriptions, user } from '$lib/db/schema.js';
-import { buildCtx } from './ctx.js';
-import { ensureBirthdayReminders } from './birthdays.js';
+import { buildCtx } from '$lib/services/ctx.js';
+import { ensureBirthdayReminders } from '$lib/services/birthdays.js';
 import { ensureBillReminders, ensureReviewReminder } from './reminder-sources.js';
-import { markPushed, pushableReminders } from './reminders.js';
+import { markPushed, pushableReminders } from '$lib/services/reminders.js';
 import { pushConfigured, pushToUser } from './push.js';
-import { soundFor } from './ringtones.js';
-import { localOfInstant } from './time.js';
+import { soundFor } from '$lib/services/ringtones.js';
+import { localOfInstant } from '$lib/services/time.js';
 
 /**
  * The pass that makes a reminder arrive with the app shut.

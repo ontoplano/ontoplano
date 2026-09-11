@@ -2,7 +2,7 @@ import type { RequestHandler } from './$types';
 
 import { authenticateApi, readJson } from '$lib/server/api/auth';
 import { toJsonError } from '$lib/server/http-errors';
-import { createItem, ensureCategoryId } from '$lib/server/services/shopping';
+import { createItem, ensureCategoryId } from '$lib/services/shopping';
 
 /**
  * Put something on the list.

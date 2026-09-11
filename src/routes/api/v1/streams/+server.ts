@@ -2,7 +2,7 @@ import type { RequestHandler } from './$types';
 
 import { authenticateApi, readJson } from '$lib/server/api/auth';
 import { toJsonError } from '$lib/server/http-errors';
-import { listStreams, serialiseStream, upsertStream } from '$lib/server/services/streams';
+import { listStreams, serialiseStream, upsertStream } from '$lib/services/streams';
 
 /** List the caller's streams. */
 export const GET: RequestHandler = async (event) => {

@@ -14,20 +14,20 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let goals: typeof import('../src/lib/server/services/goals');
-let ideas: typeof import('../src/lib/server/services/ideas');
-let activities: typeof import('../src/lib/server/services/activities');
-let slots: typeof import('../src/lib/server/services/slots');
-let todos: typeof import('../src/lib/server/services/todos');
+let goals: typeof import('../src/lib/services/goals');
+let ideas: typeof import('../src/lib/services/ideas');
+let activities: typeof import('../src/lib/services/activities');
+let slots: typeof import('../src/lib/services/slots');
+let todos: typeof import('../src/lib/services/todos');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
-	goals = await import('../src/lib/server/services/goals');
-	ideas = await import('../src/lib/server/services/ideas');
-	activities = await import('../src/lib/server/services/activities');
-	slots = await import('../src/lib/server/services/slots');
-	todos = await import('../src/lib/server/services/todos');
+	goals = await import('../src/lib/services/goals');
+	ideas = await import('../src/lib/services/ideas');
+	activities = await import('../src/lib/services/activities');
+	slots = await import('../src/lib/services/slots');
+	todos = await import('../src/lib/services/todos');
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 });

@@ -2,10 +2,13 @@
 
 # Services
 
-Every module in `src/lib/server/services`, with the comment it carries at
+Every service module, with the comment it carries at
 the top and the functions it exports. All database access lives here:
 routes are adapters that read a form and call one of these, which is why
 this list is the closest thing the app has to a table of contents.
+Modules in `src/lib/services` run on any instance — a server, or the
+device itself; the ones in `src/lib/server/services` only make sense on
+a server.
 
 Collected from the source, so a function renamed or a header rewritten
 shows up here on the next build.
@@ -35,6 +38,7 @@ shows up here on the next build.
 | [`goals`](#goals)                               | Goals, and the progress that makes them more than a wish list.                                                                                                                                                                                                       |
 | [`habits`](#habits)                             | Habits are things to do or to avoid, logged one day at a time.                                                                                                                                                                                                       |
 | [`health`](#health)                             | Can this process actually reach the database?                                                                                                                                                                                                                        |
+| [`host`](#host)                                 | What the surrounding instance does for the services.                                                                                                                                                                                                                 |
 | [`ideas`](#ideas)                               | Quick capture: a thought, optionally tagged, optionally marked as applied.                                                                                                                                                                                           |
 | [`import-vault`](#import-vault)                 | A vault of markdown becomes notebook entries.                                                                                                                                                                                                                        |
 | [`imports`](#imports)                           | Bringing a list in from somewhere else.                                                                                                                                                                                                                              |
@@ -68,11 +72,13 @@ shows up here on the next build.
 | [`schemes`](#schemes)                           | Saved weeks.                                                                                                                                                                                                                                                         |
 | [`search`](#search)                             | One box over everything the account owns.                                                                                                                                                                                                                            |
 | [`sessions`](#sessions)                         | The sessions an account currently has open.                                                                                                                                                                                                                          |
+| [`settings`](#settings)                         | A person's own settings, kept in their rows.                                                                                                                                                                                                                         |
 | [`shopping`](#shopping)                         | Two lists that share a table: `replenish` is stock you keep, `someday` is a wishlist. The difference is what "bought" means — a replenish item comes back when it runs out, a someday item is done.                                                                  |
 | [`slots`](#slots)                               | The plan itself: blocks that repeat (`recurring_tasks`) and blocks that happen once (`exceptional_tasks`), plus the skips that cancel a single occurrence.                                                                                                           |
 | [`stale`](#stale)                               | Things that never ended.                                                                                                                                                                                                                                             |
 | [`streams`](#streams)                           | Declare a stream. Idempotent per (user, slug) so producers can call it at every startup.                                                                                                                                                                             |
 | [`subscriptions`](#subscriptions)               | What an account may do, and until when.                                                                                                                                                                                                                              |
+| [`tags`](#tags)                                 | Tags, and the rows that join them to what they tag.                                                                                                                                                                                                                  |
 | [`time`](#time)                                 | Time, in the two shapes this app actually has.                                                                                                                                                                                                                       |
 | [`today`](#today)                               | One day, in one request.                                                                                                                                                                                                                                             |
 | [`todos`](#todos)                               | Todos: tasks that have no date yet.                                                                                                                                                                                                                                  |
@@ -80,6 +86,7 @@ shows up here on the next build.
 | [`validate`](#validate)                         | Small hand-rolled validators.                                                                                                                                                                                                                                        |
 | [`version`](#version)                           | What is running here, and since when.                                                                                                                                                                                                                                |
 | [`webhooks`](#webhooks)                         | Webhooks: plugins that listen instead of push.                                                                                                                                                                                                                       |
+| [`week-generator`](#week-generator)             | Format a Date as 'YYYY-MM-DDTHH:MM:SS' in local time (no UTC conversion).                                                                                                                                                                                            |
 | [`wins`](#wins)                                 | Three things that went well today.                                                                                                                                                                                                                                   |
 | [`workouts`](#workouts)                         | Workouts: workouts you plan like meals.                                                                                                                                                                                                                              |
 
@@ -1329,6 +1336,31 @@ four lines.
 ### Types
 
 - `Resources` — What the box looks like from inside, for whatever is watching it.
+
+## host
+
+What the surrounding instance does for the services.
+
+A handful of things the services fire off are not theirs to implement:
+delivering a webhook, knowing who shares a family plan, enforcing a paid
+plan's limits. On the server those are real modules with network access and
+billing tables behind them; on a local instance they have nothing to stand
+on — and, more to the point, nothing to do.
+
+The defaults below ARE the local instance, correct by construction rather
+than by configuration: one account means the family circle is you; no
+billing means no limits to enforce; no listeners means an event announced
+to nobody. The server overrides all of it in `$lib/server/host.ts`, bound
+in the same breath as its database, so a server can no more forget these
+than forget where its data is.
+
+### Functions
+
+#### `bindHost(instance)`
+
+### Types
+
+- `Host`
 
 ## ideas
 
@@ -3340,6 +3372,109 @@ the office", not to build a device database.
 
 - `SessionSummary`
 
+## settings
+
+A person's own settings, kept in their rows.
+
+Everything here is one account reading and writing `user_settings`, which
+is why it can run on any instance — the server, or the device itself. What
+the _deployment_ is (self-hosted, staging, local) stays in
+`$lib/server/settings.ts`, because a browser has no environment to ask.
+
+### Functions
+
+#### `getUserSetting(userId, key)`
+
+#### `setUserSetting(userId, key, value)`
+
+#### `isTheme(value)`
+
+#### `getTheme(userId)`
+
+The user's stored theme, or `system` if they have never chosen one.
+
+`system` is resolved in CSS from `prefers-color-scheme`, not here — the
+server has no way to know what the device is set to, and guessing would make
+the first paint wrong for half of visitors.
+
+#### `setTheme(userId, theme)`
+
+#### `getHiddenSections(userId)`
+
+The sections this account has put away — out of every menu, still there at
+their URLs. Stored as a JSON array; unknown ids are dropped on read, so a
+section that stops existing disappears from the setting by itself.
+
+#### `setHiddenSections(userId, hidden)`
+
+#### `hasSeenTutorial(userId)`
+
+Whether this account has been shown around.
+
+The tour runs unasked exactly once — on the first screen after first run —
+and lives on a button in the corner from then on. One flag rather than one
+per screen: being walked through the app is a thing that happens to a person,
+not to a page, and an account that meets the same welcome on every new room
+has been nagged rather than helped.
+
+The demo does not consult this. Every visitor there is somebody's first visit
+and the account is shared with nobody, so the demo remembers a dismissal for
+the length of the tab and forgets it afterwards.
+
+#### `setTutorialSeen(userId, seen)`
+
+#### `getNavOrder(userId)`
+
+The order this account wants its rooms in, as a list of keys.
+
+Stored thin and validated on the way out rather than on the way in: what is
+a room changes as the app grows, so a list that was valid when it was saved
+can name something that no longer exists. `applyOrder` in `$lib/nav-order.ts`
+is where a missing key is dropped and a new room is kept, and it is the only
+place that decides either.
+
+#### `setNavOrder(userId, order)`
+
+#### `getSectionColors(userId)`
+
+The colours this account has changed, keyed by section. The rest are the
+app's own; `$lib/colors.ts` still holds those and is still the default.
+
+Only `#rrggbb` is stored and only `#rrggbb` is returned. A colour reaches a
+`style` attribute, which is one of the very few settings that does, so it is
+checked at both ends rather than trusted at either.
+
+#### `setSectionColors(userId, colors)`
+
+#### `getStyle(userId)`
+
+#### `setStyle(userId, style)`
+
+#### `getWeekSettings(userId)`
+
+#### `setWeekSettings(userId, week)`
+
+#### `getGridHours(userId)`
+
+#### `setGridHours(userId, hours)`
+
+#### `getCurrency(userId)`
+
+#### `setCurrency(userId, currency)`
+
+#### `getTimezone(userId)`
+
+#### `setTimezone(userId, tz)`
+
+#### `isOnboarded(userId)`
+
+#### `markOnboarded(userId)`
+
+### Types
+
+- `WeekSettings`
+- `GridHours`
+
 ## shopping
 
 Two lists that share a table: `replenish` is stock you keep, `someday` is a
@@ -3854,6 +3989,35 @@ Take an account off a plan. Their data is untouched; only the seat goes.
 
 - `Entitlement`
 
+## tags
+
+Tags, and the rows that join them to what they tag.
+
+Every statement here carries the account in its own `WHERE` (I1). The join
+tables used to have no `user_id` at all, so "delete this entry's tags" was a
+statement scoped by an id that arrived from a form — correct only for as long
+as the caller remembered to check first.
+
+### Functions
+
+#### `parseTags(raw)`
+
+Normalizes raw tag input. Strips leading #, splits on commas/spaces, lowercases, dedupes.
+All these produce ["tagfoo", "tagbar"]:
+"tagfoo, tagbar" | "tagfoo tagbar" | "#tagfoo #tagbar" | "#tagfoo, #tagbar"
+
+#### `ensureTagIds(tagNames, userId)`
+
+#### `linkDiaryTags(entryId, tagIds, userId)`
+
+#### `replaceDiaryTags(entryId, tagNames, userId)`
+
+#### `cleanupOrphanTags(userId)`
+
+#### `linkIdeaTags(ideaId, tagIds, userId)`
+
+#### `replaceIdeaTags(ideaId, tagNames, userId)`
+
 ## time
 
 Time, in the two shapes this app actually has.
@@ -4169,8 +4333,43 @@ has already happened — nothing here may throw into it or slow it down.
 
 ### Types
 
-- `WebhookEvent`
 - `Subscription`
+
+## week-generator
+
+Format a Date as 'YYYY-MM-DDTHH:MM:SS' in local time (no UTC conversion).
+
+### Functions
+
+#### `toLocalISOString(d)`
+
+A Date as a naive `YYYY-MM-DDTHH:MM:SS`, with no zone.
+
+This is for **wall-clock** values only — `task_records.scheduled_at` and
+the day bounds compared against it. Instants are UTC and come from
+`services/time.ts`; writing one of those with this function is finding S7
+all over again.
+
+#### `getISOWeekNumber(date)`
+
+Get ISO 8601 week number for a date.
+
+#### `getISOWeekYear(date)`
+
+Get the ISO week year (may differ from calendar year at year boundaries).
+
+#### `getMonday(date)`
+
+#### `addDays(date, days)`
+
+#### `generateWeekInstances(ctx, weekStart)`
+
+Idempotently generate instances for a week, for both kinds of block.
+
+The work now lives in `services/instances.ts`, which is also what reads them
+back; this stays as the week-shaped entry point the pages already call.
+
+#### `generateCurrentWeek(ctx)`
 
 ## wins
 

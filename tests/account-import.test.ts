@@ -20,20 +20,20 @@ afterAll(() => database.remove());
 
 let account: typeof import('../src/lib/server/services/account');
 let accountImport: typeof import('../src/lib/server/services/account-import');
-let activities: typeof import('../src/lib/server/services/activities');
-let todos: typeof import('../src/lib/server/services/todos');
-let shopping: typeof import('../src/lib/server/services/shopping');
-let ctx: typeof import('../src/lib/server/services/ctx');
+let activities: typeof import('../src/lib/services/activities');
+let todos: typeof import('../src/lib/services/todos');
+let shopping: typeof import('../src/lib/services/shopping');
+let ctx: typeof import('../src/lib/services/ctx');
 
 const now = new Date('2026-09-01T09:00:00Z');
 
 beforeAll(async () => {
 	account = await import('../src/lib/server/services/account');
 	accountImport = await import('../src/lib/server/services/account-import');
-	activities = await import('../src/lib/server/services/activities');
-	todos = await import('../src/lib/server/services/todos');
-	shopping = await import('../src/lib/server/services/shopping');
-	ctx = await import('../src/lib/server/services/ctx');
+	activities = await import('../src/lib/services/activities');
+	todos = await import('../src/lib/services/todos');
+	shopping = await import('../src/lib/services/shopping');
+	ctx = await import('../src/lib/services/ctx');
 });
 
 const owner = () => ctx.buildCtx(OWNER);
@@ -191,7 +191,7 @@ describe('what does not travel', () => {
 	 */
 	test('writes the account to disk before replacing it, and says where', async () => {
 		const { readFileSync } = await import('node:fs');
-		const audit = await import('../src/lib/server/services/audit');
+		const audit = await import('../src/lib/services/audit');
 
 		todos.createTodo(owner(), { title: 'about to be destroyed' });
 

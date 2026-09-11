@@ -17,7 +17,7 @@ import { makeDatabase, OWNER, seedAccounts } from './helpers/db';
 /*
  * Its own config directory, decided before anything imports the config module.
  *
- * `CONFIG_DIR` is read once at import time, and the suite otherwise shares one
+ * the config directory is read from the environment on every call, but the suite otherwise shares one
  * directory — so another file turning the instance's report setting off, in
  * another worker, turned it off here too. A test that passes alone and fails
  * in the suite is worse than one that fails.

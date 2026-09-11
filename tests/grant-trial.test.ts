@@ -15,12 +15,12 @@ afterAll(() => database.remove());
 
 let admin: typeof import('../src/lib/server/services/admin');
 let subscriptions: typeof import('../src/lib/server/services/subscriptions');
-let audit: typeof import('../src/lib/server/services/audit');
+let audit: typeof import('../src/lib/services/audit');
 
 beforeAll(async () => {
 	admin = await import('../src/lib/server/services/admin');
 	subscriptions = await import('../src/lib/server/services/subscriptions');
-	audit = await import('../src/lib/server/services/audit');
+	audit = await import('../src/lib/services/audit');
 
 	// Owner powers exist only under self-host, so hand out a column role while
 	// they still work — then run hosted, which is where this feature lives.

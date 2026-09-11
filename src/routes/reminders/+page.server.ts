@@ -1,7 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
-import { buildCtx, localDateOf } from '$lib/server/services/ctx';
-import { localOfInstant } from '$lib/server/services/time';
-import { ensureBirthdayReminders } from '$lib/server/services/birthdays';
+import { buildCtx, localDateOf } from '$lib/services/ctx';
+import { localOfInstant } from '$lib/services/time';
+import { ensureBirthdayReminders } from '$lib/services/birthdays';
 import {
 	MAX_UPCOMING_DAYS,
 	upcomingDerived,
@@ -16,7 +16,7 @@ import {
 	dismissReminder,
 	listReminders,
 	startOfDay
-} from '$lib/server/services/reminders';
+} from '$lib/services/reminders';
 import {
 	addRingtone,
 	listRingtones,
@@ -25,7 +25,7 @@ import {
 	removeRingtone,
 	setSoundChoice,
 	soundChoices
-} from '$lib/server/services/ringtones';
+} from '$lib/services/ringtones';
 
 /**
  * Everything with a time on it.

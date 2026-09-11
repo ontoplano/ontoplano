@@ -47,7 +47,8 @@ export default defineConfig(
 	},
 	{
 		// I2: route handlers are adapters, not data access. Everything that talks
-		// to the database lives in `src/lib/server/services/`, which is what makes
+		// to the database lives in `src/lib/services/` (or, for the server-only
+		// modules, `src/lib/server/services/`), which is what makes
 		// the same logic reachable from a form action and from the JSON API, and
 		// what keeps the ownership predicate (I1) in one place per entity.
 		files: ['src/routes/**'],
@@ -68,7 +69,7 @@ export default defineConfig(
 								'**/lib/db/*'
 							],
 							message:
-								'Routes do not query the database. Call a service in $lib/server/services instead (CONTRIBUTING.md, I2).'
+								'Routes do not query the database. Call a service in $lib/services instead (CONTRIBUTING.md, I2).'
 						}
 					]
 				}

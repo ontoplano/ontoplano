@@ -110,7 +110,7 @@ describe('the sweep', () => {
 	 */
 	it('takes their pictures with it', async () => {
 		const media = await import('../src/lib/server/services/media');
-		const { buildCtx } = await import('../src/lib/server/services/ctx');
+		const { buildCtx } = await import('../src/lib/services/ctx');
 
 		pretendVisitor('visitor-with-photos', new Date(Date.now() - 60_000).toISOString());
 		const ctx = buildCtx('visitor-with-photos');

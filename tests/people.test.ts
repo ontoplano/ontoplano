@@ -12,14 +12,14 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let people: typeof import('../src/lib/server/services/people');
-let diary: typeof import('../src/lib/server/services/diary');
+let people: typeof import('../src/lib/services/people');
+let diary: typeof import('../src/lib/services/diary');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
-	people = await import('../src/lib/server/services/people');
-	diary = await import('../src/lib/server/services/diary');
+	people = await import('../src/lib/services/people');
+	diary = await import('../src/lib/services/diary');
 	ctx = { userId: OWNER, now: new Date('2026-08-26T12:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 });

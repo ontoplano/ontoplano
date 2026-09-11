@@ -19,10 +19,10 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let instances: typeof import('../src/lib/server/services/instances');
-let slots: typeof import('../src/lib/server/services/slots');
-let schedule: typeof import('../src/lib/server/services/schedule');
-let activities: typeof import('../src/lib/server/services/activities');
+let instances: typeof import('../src/lib/services/instances');
+let slots: typeof import('../src/lib/services/slots');
+let schedule: typeof import('../src/lib/services/schedule');
+let activities: typeof import('../src/lib/services/activities');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 let work: number;
@@ -31,10 +31,10 @@ let work: number;
 const MONDAY = '2026-08-17';
 
 beforeAll(async () => {
-	instances = await import('../src/lib/server/services/instances');
-	slots = await import('../src/lib/server/services/slots');
-	schedule = await import('../src/lib/server/services/schedule');
-	activities = await import('../src/lib/server/services/activities');
+	instances = await import('../src/lib/services/instances');
+	slots = await import('../src/lib/services/slots');
+	schedule = await import('../src/lib/services/schedule');
+	activities = await import('../src/lib/services/activities');
 	ctx = { userId: OWNER, now: new Date(`${MONDAY}T08:00:00`), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 	work = activities.createCategory(ctx, { name: 'Work', color: '#1d4ed8' });

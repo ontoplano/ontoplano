@@ -1,6 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
-import { listActivities } from '$lib/server/services/activities';
-import { buildCtx } from '$lib/server/services/ctx';
+import { listActivities } from '$lib/services/activities';
+import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
 	closeGoal,
@@ -14,9 +14,9 @@ import {
 	setGoalLinks,
 	setTargetProgress,
 	updateGoal
-} from '$lib/server/services/goals';
-import { pickableNotebooks } from '$lib/server/services/notebooks';
-import { listTodos, setTodoStatus } from '$lib/server/services/todos';
+} from '$lib/services/goals';
+import { pickableNotebooks } from '$lib/services/notebooks';
+import { listTodos, setTodoStatus } from '$lib/services/todos';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);

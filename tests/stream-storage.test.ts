@@ -13,7 +13,7 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 type Services = {
-	streams: typeof import('../src/lib/server/services/streams');
+	streams: typeof import('../src/lib/services/streams');
 	plans: typeof import('../src/lib/plans');
 };
 
@@ -22,7 +22,7 @@ const ctx = { userId: OWNER, now: new Date('2026-08-29T12:00:00Z'), tz: 'UTC' };
 
 beforeAll(async () => {
 	s = {
-		streams: await import('../src/lib/server/services/streams'),
+		streams: await import('../src/lib/services/streams'),
 		plans: await import('../src/lib/plans')
 	};
 });

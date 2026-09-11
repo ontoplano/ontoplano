@@ -1,9 +1,9 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-import { buildCtx } from '$lib/server/services/ctx';
-import { NotFoundError } from '$lib/server/services/errors';
-import { getStreamBySlug, listPoints, serialisePoint } from '$lib/server/services/streams';
+import { buildCtx } from '$lib/services/ctx';
+import { NotFoundError } from '$lib/services/errors';
+import { getStreamBySlug, listPoints, serialisePoint } from '$lib/services/streams';
 
 export const load: PageServerLoad = async ({ locals, params, url }) => {
 	const ctx = buildCtx(locals.user!.id);

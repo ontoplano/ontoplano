@@ -1,8 +1,8 @@
 import type { PageServerLoad } from './$types';
-import { listCategories } from '$lib/server/services/activities';
-import { buildCtx } from '$lib/server/services/ctx';
+import { listCategories } from '$lib/services/activities';
+import { buildCtx } from '$lib/services/ctx';
 import { mainPictures } from '$lib/server/services/media';
-import { foodCategories, withMissingCounts } from '$lib/server/services/recipes';
+import { foodCategories, withMissingCounts } from '$lib/services/recipes';
 import { recipeActions } from './actions';
 
 /**

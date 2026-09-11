@@ -1,9 +1,9 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
-import { listCategories as listPlannerCategories } from '$lib/server/services/activities';
-import { listCategories as listShoppingCategories } from '$lib/server/services/shopping';
-import { listNotebooks } from '$lib/server/services/notebooks';
+import { buildCtx } from '$lib/services/ctx';
+import { listCategories as listPlannerCategories } from '$lib/services/activities';
+import { listCategories as listShoppingCategories } from '$lib/services/shopping';
+import { listNotebooks } from '$lib/services/notebooks';
 
 /**
  * The choices the capture dialogs offer, fetched when one opens.

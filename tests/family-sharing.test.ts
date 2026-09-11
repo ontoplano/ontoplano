@@ -18,18 +18,18 @@ afterAll(() => database.remove());
 const OUTSIDER = 'not-on-the-plan';
 
 let subscriptions: typeof import('../src/lib/server/services/subscriptions');
-let shopping: typeof import('../src/lib/server/services/shopping');
-let notebooks: typeof import('../src/lib/server/services/notebooks');
-let diary: typeof import('../src/lib/server/services/diary');
-let ctxOf: (id: string) => import('../src/lib/server/services/ctx').Ctx;
+let shopping: typeof import('../src/lib/services/shopping');
+let notebooks: typeof import('../src/lib/services/notebooks');
+let diary: typeof import('../src/lib/services/diary');
+let ctxOf: (id: string) => import('../src/lib/services/ctx').Ctx;
 
 beforeAll(async () => {
 	process.env.ONTOPLANO_SELF_HOST = 'false';
 	subscriptions = await import('../src/lib/server/services/subscriptions');
-	shopping = await import('../src/lib/server/services/shopping');
-	notebooks = await import('../src/lib/server/services/notebooks');
-	diary = await import('../src/lib/server/services/diary');
-	const { buildCtx } = await import('../src/lib/server/services/ctx');
+	shopping = await import('../src/lib/services/shopping');
+	notebooks = await import('../src/lib/services/notebooks');
+	diary = await import('../src/lib/services/diary');
+	const { buildCtx } = await import('../src/lib/services/ctx');
 	ctxOf = (id) => buildCtx(id, { tz: 'UTC' });
 
 	// A third account, on nobody's plan.

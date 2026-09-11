@@ -8,10 +8,10 @@
  */
 import { and, asc, eq } from 'drizzle-orm';
 
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { pluginManifests } from '$lib/db/schema.js';
-import { ValidationError } from './errors.js';
-import { META_KEY_PATTERN, MAX_KEY_LENGTH } from './meta.js';
+import { ValidationError } from '$lib/services/errors.js';
+import { META_KEY_PATTERN, MAX_KEY_LENGTH } from '$lib/services/meta.js';
 
 export type PluginMetaKey = {
 	key: string;

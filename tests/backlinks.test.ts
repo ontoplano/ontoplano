@@ -13,9 +13,9 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 type Services = {
-	backlinks: typeof import('../src/lib/server/services/backlinks');
-	goals: typeof import('../src/lib/server/services/goals');
-	todos: typeof import('../src/lib/server/services/todos');
+	backlinks: typeof import('../src/lib/services/backlinks');
+	goals: typeof import('../src/lib/services/goals');
+	todos: typeof import('../src/lib/services/todos');
 };
 
 let s: Services;
@@ -28,9 +28,9 @@ let runTodo: number;
 
 beforeAll(async () => {
 	s = {
-		backlinks: await import('../src/lib/server/services/backlinks'),
-		goals: await import('../src/lib/server/services/goals'),
-		todos: await import('../src/lib/server/services/todos')
+		backlinks: await import('../src/lib/services/backlinks'),
+		goals: await import('../src/lib/services/goals'),
+		todos: await import('../src/lib/services/todos')
 	};
 	ctx = { userId: OWNER, now: new Date('2026-08-26T12:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };

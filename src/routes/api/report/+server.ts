@@ -1,9 +1,9 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx } from '$lib/services/ctx';
 import { recordBugReport } from '$lib/server/services/client-errors';
 import { toJsonError } from '$lib/server/http-errors';
-import { UnauthorizedError } from '$lib/server/services/errors';
+import { UnauthorizedError } from '$lib/services/errors';
 
 /**
  * "Something here is wrong", from wherever somebody noticed it.

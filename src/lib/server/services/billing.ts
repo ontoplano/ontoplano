@@ -3,7 +3,7 @@ import { provider } from '../billing/index.js';
 import type { PlanTier } from '../billing/contract.js';
 import { isSelfHosted, pricing } from '../settings.js';
 import { applySubscription, startTrial, trialCarryover } from './subscriptions.js';
-import { ServiceError } from './errors.js';
+import { ServiceError } from '$lib/services/errors.js';
 
 /**
  * Billing, as the rest of the app sees it.

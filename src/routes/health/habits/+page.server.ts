@@ -1,5 +1,5 @@
 import type { Actions, PageServerLoad } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
 	createHabit,
@@ -12,7 +12,7 @@ import {
 	toggleOccurrence,
 	updateHabit,
 	updateOccurrence
-} from '$lib/server/services/habits';
+} from '$lib/services/habits';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);

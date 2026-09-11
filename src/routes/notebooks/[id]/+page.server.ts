@@ -1,10 +1,10 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx } from '$lib/services/ctx';
 import { familyUserIds } from '$lib/server/services/subscriptions';
-import { NotFoundError } from '$lib/server/services/errors';
-import { contentsOf, getNotebook } from '$lib/server/services/notebooks';
-import { listPeople } from '$lib/server/services/people';
+import { NotFoundError } from '$lib/services/errors';
+import { contentsOf, getNotebook } from '$lib/services/notebooks';
+import { listPeople } from '$lib/services/people';
 import { notebookActions } from '../actions';
 
 /**

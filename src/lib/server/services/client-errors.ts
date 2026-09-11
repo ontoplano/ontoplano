@@ -1,12 +1,12 @@
 import { desc, eq, sql } from 'drizzle-orm';
 
 import { loadConfig } from '../config.js';
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { clientErrors, user } from '$lib/db/schema.js';
 import { getUserSetting, setUserSetting } from '../settings.js';
-import type { Ctx } from './ctx.js';
-import { ForbiddenError } from './errors.js';
-import { oneOf, optionalStr, str } from './validate.js';
+import type { Ctx } from '$lib/services/ctx.js';
+import { ForbiddenError } from '$lib/services/errors.js';
+import { oneOf, optionalStr, str } from '$lib/services/validate.js';
 
 /**
  * Client-side errors, sent in with permission.

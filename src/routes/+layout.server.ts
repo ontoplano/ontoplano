@@ -15,9 +15,9 @@ import {
 } from '$lib/server/settings';
 import type { HideableSection } from '$lib/sections';
 import { clientErrorState } from '$lib/server/services/client-errors';
-import { needsFirstRun } from '$lib/server/services/onboarding';
-import { listCategories } from '$lib/server/services/activities';
-import { buildCtx } from '$lib/server/services/ctx';
+import { needsFirstRun } from '$lib/services/onboarding';
+import { listCategories } from '$lib/services/activities';
+import { buildCtx } from '$lib/services/ctx';
 import { loadConfig } from '$lib/server/config';
 import { mediaLimits } from '$lib/server/services/media';
 import { publicKey } from '$lib/server/services/push';

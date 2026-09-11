@@ -10,11 +10,11 @@
  */
 import { and, eq, type SQL } from 'drizzle-orm';
 
-import { db } from '../db/index.js';
+import { db } from '$lib/db/index.js';
 import { getUserSetting, setUserSetting } from '../settings.js';
 import { PLANS } from '../../plans.js';
-import { record as audit } from './audit.js';
-import { RateLimitedError } from './errors.js';
+import { record as audit } from '$lib/services/audit.js';
+import { RateLimitedError } from '$lib/services/errors.js';
 import { resolvePlan } from './subscriptions.js';
 import * as schema from '$lib/db/schema.js';
 

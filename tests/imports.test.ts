@@ -17,16 +17,16 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let imports: typeof import('../src/lib/server/services/imports');
-let todos: typeof import('../src/lib/server/services/todos');
-let notebooks: typeof import('../src/lib/server/services/notebooks');
+let imports: typeof import('../src/lib/services/imports');
+let todos: typeof import('../src/lib/services/todos');
+let notebooks: typeof import('../src/lib/services/notebooks');
 let db: typeof import('../src/lib/server/db/index');
 let ctx: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
-	imports = await import('../src/lib/server/services/imports');
-	todos = await import('../src/lib/server/services/todos');
-	notebooks = await import('../src/lib/server/services/notebooks');
+	imports = await import('../src/lib/services/imports');
+	todos = await import('../src/lib/services/todos');
+	notebooks = await import('../src/lib/services/notebooks');
 	db = await import('../src/lib/server/db/index');
 	ctx = { userId: OWNER, now: new Date('2026-09-01T10:00:00Z'), tz: 'UTC' };
 });

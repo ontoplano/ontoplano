@@ -14,9 +14,9 @@
  * to be audited, updated and kept from pulling a transport this app does not
  * want. If the protocol grows something this needs, it goes here.
  */
-import type { Ctx } from '../services/ctx.js';
+import type { Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
-import { ForbiddenError, ServiceError } from '../services/errors.js';
+import { ForbiddenError, ServiceError } from '$lib/services/errors.js';
 import { TOOLS, TOOLS_BY_NAME, type Tool } from './tools.js';
 import { changed, type Room } from '../live.js';
 import { spendCallBudget } from '../api/auth.js';

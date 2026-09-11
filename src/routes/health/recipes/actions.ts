@@ -1,9 +1,9 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from '@sveltejs/kit';
-import { buildCtx } from '$lib/server/services/ctx';
+import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
-import { createExceptional } from '$lib/server/services/slots';
-import { listCategories } from '$lib/server/services/activities';
+import { createExceptional } from '$lib/services/slots';
+import { listCategories } from '$lib/services/activities';
 import {
 	addIngredient,
 	cooked,
@@ -13,7 +13,7 @@ import {
 	removeIngredient,
 	setArchived,
 	updateRecipe
-} from '$lib/server/services/recipes';
+} from '$lib/services/recipes';
 import { attachToRecipe, detachFromRecipe, setMain } from '$lib/server/services/media';
 import { parseRecipeFromHtml } from '$lib/recipe-import';
 

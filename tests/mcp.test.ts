@@ -22,17 +22,17 @@ afterAll(() => database.remove());
 type Rpc = { jsonrpc: '2.0'; id?: number | string | null; method: string; params?: unknown };
 
 let handleBody: typeof import('../src/lib/server/mcp/protocol').handleBody;
-let buildCtx: typeof import('../src/lib/server/services/ctx').buildCtx;
+let buildCtx: typeof import('../src/lib/services/ctx').buildCtx;
 let TOOLS: typeof import('../src/lib/server/mcp/tools').TOOLS;
 
 beforeAll(async () => {
 	({ handleBody } = await import('../src/lib/server/mcp/protocol'));
-	({ buildCtx } = await import('../src/lib/server/services/ctx'));
+	({ buildCtx } = await import('../src/lib/services/ctx'));
 	({ TOOLS } = await import('../src/lib/server/mcp/tools'));
 
 	// A block belongs to a category, and a fresh account has none — the same
 	// state `add_block` refuses with a sentence rather than a crash.
-	const { createCategory } = await import('../src/lib/server/services/activities');
+	const { createCategory } = await import('../src/lib/services/activities');
 	createCategory(buildCtx(OWNER, { tz: 'UTC' }), { name: 'work', color: '#1d4ed8' });
 });
 

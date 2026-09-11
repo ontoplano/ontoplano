@@ -1,9 +1,9 @@
 import type { Actions, PageServerLoad } from './$types';
 import { ratingsFromForm } from '$lib/ratings';
-import { listActivities, listCategories } from '$lib/server/services/activities';
-import { goalBacklinks } from '$lib/server/services/backlinks';
-import { buildCtx } from '$lib/server/services/ctx';
-import { pickableNotebooks } from '$lib/server/services/notebooks';
+import { listActivities, listCategories } from '$lib/services/activities';
+import { goalBacklinks } from '$lib/services/backlinks';
+import { buildCtx } from '$lib/services/ctx';
+import { pickableNotebooks } from '$lib/services/notebooks';
 import { toActionFailure } from '$lib/server/http-errors';
 import {
 	createTodo,
@@ -13,7 +13,7 @@ import {
 	scheduleTodo,
 	setTodoStatus,
 	updateTodo
-} from '$lib/server/services/todos';
+} from '$lib/services/todos';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
