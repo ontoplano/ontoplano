@@ -42,7 +42,10 @@ declare global {
 			id?: string;
 		}
 		// interface PageData {}
-		// interface PageState {}
+		interface PageState {
+			/** A screen-like overlay's claim on one history entry; `$lib/back-closes`. */
+			backCloses?: number;
+		}
 		// interface Platform {}
 	}
 }

@@ -10,6 +10,13 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.136.0 — 2026-09-11
+
+- **The back gesture closes a form instead of leaving the app.** A dialog on
+  a phone is a screen, and a screen owns a history entry now: Android's back
+  button — or the browser's — closes it and stays on the page it was opened
+  from.
+
 ## 0.135.0 — 2026-09-11
 
 - **Changing screen no longer flicks before it dissolves.** The first frame of

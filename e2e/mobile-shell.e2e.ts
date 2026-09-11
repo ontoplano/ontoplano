@@ -88,6 +88,37 @@ test('a dialog on the phone is a screen with a back arrow', async ({ page }) => 
 	await expect(page.locator('dialog[open]')).toHaveCount(0);
 });
 
+/**
+ * The screen owns a history entry.
+ *
+ * On Android the back gesture is how a screen is left, and a modal drawn as a
+ * screen must answer it: back closes the form and stays in the app. Without
+ * the entry, the gesture walked out of the page the form was on — the one
+ * move that most says "this is a website".
+ */
+test('the system back gesture closes the screen, not the app', async ({ page }) => {
+	await register(page, `back-${Date.now()}@test.invalid`);
+	await visit(page, '/notebooks');
+
+	// `.first()`: an account with no notebooks yet offers the button twice —
+	// the header and the empty state.
+	await page.getByRole('button', { name: 'New notebook' }).first().click();
+	await expect(page.locator('dialog[open]')).toBeVisible();
+
+	await page.goBack();
+	await expect(page.locator('dialog[open]')).toHaveCount(0);
+	// Still on the page the form was opened from.
+	await expect(page).toHaveURL(/\/notebooks/);
+
+	// Closing it by its own back arrow takes the entry out again: the next
+	// back press must leave the page, not replay a ghost of the screen.
+	await page.getByRole('button', { name: 'New notebook' }).first().click();
+	await expect(page.locator('dialog[open]')).toBeVisible();
+	await page.locator('dialog[open]').getByRole('button', { name: 'Back' }).click();
+	await expect(page.locator('dialog[open]')).toHaveCount(0);
+	await expect(page).toHaveURL(/\/notebooks/);
+});
+
 test('the phone has no top bar — the bottom one carries everything', async ({ page }) => {
 	await register(page, `topbar-${Date.now()}@test.invalid`);
 	await visit(page, '/tasks/plan');
