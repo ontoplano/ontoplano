@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**68 tables.**
+**69 tables.**
 
 | Table                                             | Columns | Belongs to a user |
 | ------------------------------------------------- | ------- | ----------------- |
@@ -32,8 +32,8 @@ exist.
 | [`diary_entry_tags`](#diary_entry_tags)           | 4       | yes               |
 | [`entry_people`](#entry_people)                   | 4       | yes               |
 | [`exceptional_tasks`](#exceptional_tasks)         | 19      | yes               |
-| [`finance_rules`](#finance_rules)                 | 7       | yes               |
-| [`finance_transactions`](#finance_transactions)   | 9       | yes               |
+| [`finance_rules`](#finance_rules)                 | 8       | yes               |
+| [`finance_transactions`](#finance_transactions)   | 10      | yes               |
 | [`goal_areas`](#goal_areas)                       | 6       | yes               |
 | [`goal_links`](#goal_links)                       | 6       | yes               |
 | [`goal_targets`](#goal_targets)                   | 7       | yes               |
@@ -43,6 +43,7 @@ exist.
 | [`idea_tags`](#idea_tags)                         | 4       | yes               |
 | [`ideas`](#ideas)                                 | 8       | yes               |
 | [`invites`](#invites)                             | 9       | —                 |
+| [`ledgers`](#ledgers)                             | 10      | yes               |
 | [`locations`](#locations)                         | 8       | yes               |
 | [`mail_failures`](#mail_failures)                 | 11      | —                 |
 | [`media`](#media)                                 | 9       | yes               |
@@ -513,6 +514,7 @@ Checks — enforced by the database, not only by the service layer:
 | `kind`       | text    | not null | —                     | —                 |
 | `name`       | text    | not null | —                     | —                 |
 | `pattern`    | text    | not null | —                     | —                 |
+| `color`      | text    | not null | `'#475569'`           | —                 |
 | `position`   | integer | not null | `0`                   | —                 |
 | `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
@@ -527,6 +529,7 @@ Indexes:
 | -------------- | ------- | -------- | --------------------- | ----------------- |
 | `id`           | integer | not null | —                     | primary key, auto |
 | `user_id`      | text    | not null | —                     | → `user.id`       |
+| `ledger_id`    | integer | null     | —                     | → `ledgers.id`    |
 | `occurred_on`  | text    | not null | —                     | —                 |
 | `amount_cents` | integer | not null | —                     | —                 |
 | `description`  | text    | not null | —                     | —                 |
@@ -708,6 +711,26 @@ Indexes:
 Indexes:
 
 - `invites_code_unique` on `code` — unique
+
+## ledgers
+
+| Column           | Type    | Null     | Default               | Notes             |
+| ---------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`             | integer | not null | —                     | primary key, auto |
+| `user_id`        | text    | not null | —                     | → `user.id`       |
+| `name`           | text    | not null | —                     | —                 |
+| `kind`           | text    | not null | `'bank'`              | —                 |
+| `default_parser` | text    | null     | —                     | —                 |
+| `currency`       | text    | null     | —                     | —                 |
+| `sort_order`     | integer | not null | `0`                   | —                 |
+| `archived`       | integer | not null | `false`               | —                 |
+| `created_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| `updated_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `ledgers_user_idx` on `user_id`
+- `ledgers_user_name_unique` on `user_id`, `name` — unique
 
 ## locations
 

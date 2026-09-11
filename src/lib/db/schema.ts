@@ -2207,6 +2207,46 @@ export const billPayments = sqliteTable(
 	]
 );
 
+// --- Finance: ledgers and statements ---
+
+/**
+ * A ledger is one place money moves through: a current account, a credit
+ * card, a wallet.
+ *
+ * Transactions belong to one, which is what makes "the card's month" and
+ * "the account's month" separate questions with separate answers. The
+ * default parser is a convenience only — it preselects the export format
+ * when importing into this ledger, and any other can be chosen instead.
+ */
+export const ledgers = sqliteTable(
+	'ledgers',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull(),
+		kind: text('kind', { enum: ['bank', 'card', 'cash', 'other'] })
+			.notNull()
+			.default('bank'),
+		/** A parser key like 'nubank:conta_corrente'. Null means "ask every time". */
+		defaultParser: text('default_parser'),
+		currency: text('currency'),
+		sortOrder: integer('sort_order').notNull().default(0),
+		archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('ledgers_user_idx').on(table.userId),
+		uniqueIndex('ledgers_user_name_unique').on(table.userId, table.name)
+	]
+);
+
 // --- Finance: statements ---
 
 /**
@@ -2226,6 +2266,16 @@ export const financeTransactions = sqliteTable(
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id),
+		/**
+		 * Which ledger it moved through.
+		 *
+		 * No `ON DELETE` action, because SQLite's `ALTER TABLE … ADD COLUMN …
+		 * REFERENCES` cannot carry one and the migration would disagree with
+		 * this file for ever after. Deleting a ledger takes its lines with it
+		 * in `services/ledgers.ts`, where the sentence about what is being
+		 * destroyed also lives.
+		 */
+		ledgerId: integer('ledger_id').references(() => ledgers.id),
 		/** The civil date the bank reports, YYYY-MM-DD. */
 		occurredOn: text('occurred_on').notNull(),
 		amountCents: integer('amount_cents').notNull(),
@@ -2267,6 +2317,12 @@ export const financeRules = sqliteTable(
 		name: text('name').notNull(),
 		/** A JavaScript regular expression source, matched case-insensitively. */
 		pattern: text('pattern').notNull(),
+		/**
+		 * The colour a category paints its rows and its slice of the pie.
+		 * Tags carry one too, for their chips. Assigned from a palette when
+		 * the rule is made, and changeable.
+		 */
+		color: text('color').notNull().default('#475569'),
 		/** Category precedence: lower goes first. Meaningless for tags. */
 		position: integer('position').notNull().default(0),
 		createdAt: text('created_at')

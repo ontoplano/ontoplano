@@ -10,6 +10,34 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.142.0 — 2026-09-12
+
+- **Finance is ledgers now.** A ledger is one place money moves through — a
+  current account, a credit card — and every line belongs to one, which is
+  what makes "what did the card cost this month" a question with an answer.
+  A ledger remembers the export it usually receives, so importing into it is
+  one gesture. Lines can be written by hand, corrected, moved between
+  ledgers and dropped; a plugin can push them in over the API.
+- **Rules can be edited.** Every rule's name, pattern and colour is
+  changeable, rules move up _and_ down, and each one says how many lines it
+  currently claims. Categories wash their rows in their own colour and a
+  live ring shows where the month went, with "N lines no category claims"
+  beside it. The patterns are JavaScript regular expressions and the page
+  says so, with a link to the syntax.
+- **Insights.** What each month was made of, stacked by category; the whole
+  window as a ring; and what any one tag costs per month with its average —
+  one tag at a time, because tags overlap and adding them would count a line
+  twice. Filter by ledger and window.
+- **Bills are no longer the finance section**, since the section is about
+  money that actually moved. They keep their page, reachable from Ledgers,
+  because a bill is a thing that wants paying on a day — which is why it
+  rides your week.
+- **The Android app is called ontoplano and wears ontoplano's icon.** One
+  app, not a variant labelled by how it was built.
+- **A screen that needs a server says so.** On the self-contained app,
+  pages that cannot work there — the account, pictures — explain themselves
+  instead of failing with a 500.
+
 ## 0.141.0 — 2026-09-11
 
 - **Finance opens on Income**, and the statements tab is called

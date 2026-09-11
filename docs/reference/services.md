@@ -45,6 +45,7 @@ shows up here on the next build.
 | [`import-vault`](#import-vault)                 | A vault of markdown becomes notebook entries.                                                                                                                                                                                                                        |
 | [`imports`](#imports)                           | Bringing a list in from somewhere else.                                                                                                                                                                                                                              |
 | [`instances`](#instances)                       | The one answer to "what is on, between these dates".                                                                                                                                                                                                                 |
+| [`ledgers`](#ledgers)                           | Ledgers: the places money moves through.                                                                                                                                                                                                                             |
 | [`legal`](#legal)                               | The facts the policies are written around.                                                                                                                                                                                                                           |
 | [`locations`](#locations)                       | Locations: the tree an inventory hangs on.                                                                                                                                                                                                                           |
 | [`mail-log`](#mail-log)                         | Mail that must not fail silently.                                                                                                                                                                                                                                    |
@@ -78,7 +79,7 @@ shows up here on the next build.
 | [`shopping`](#shopping)                         | Two lists that share a table: `replenish` is stock you keep, `someday` is a wishlist. The difference is what "bought" means — a replenish item comes back when it runs out, a someday item is done.                                                                  |
 | [`slots`](#slots)                               | The plan itself: blocks that repeat (`recurring_tasks`) and blocks that happen once (`exceptional_tasks`), plus the skips that cancel a single occurrence.                                                                                                           |
 | [`stale`](#stale)                               | Things that never ended.                                                                                                                                                                                                                                             |
-| [`statements`](#statements)                     | Bank statements: lines imported from an export, and the rules that sort them.                                                                                                                                                                                        |
+| [`statements`](#statements)                     | What moved through a ledger, and the rules that make sense of it.                                                                                                                                                                                                    |
 | [`streams`](#streams)                           | Declare a stream. Idempotent per (user, slug) so producers can call it at every startup.                                                                                                                                                                             |
 | [`subscriptions`](#subscriptions)               | What an account may do, and until when.                                                                                                                                                                                                                              |
 | [`tags`](#tags)                                 | Tags, and the rows that join them to what they tag.                                                                                                                                                                                                                  |
@@ -1803,6 +1804,48 @@ that date only, which is reversible in the app and leaves the pattern alone.
 ### Types
 
 - `Occurrence` — A single occurrence, whichever kind of block produced it.
+
+## ledgers
+
+Ledgers: the places money moves through.
+
+A current account is one, a credit card is another, and keeping them
+apart is what makes "what did the card cost this month" answerable at
+all. Everything imported belongs to exactly one, and a ledger carries the
+export format it usually receives so importing into it is one gesture
+rather than two choices.
+
+### Functions
+
+#### `listLedgers(ctx, opts)`
+
+#### `getLedger(ctx, id)`
+
+#### `createLedger(ctx, input)`
+
+#### `updateLedger(ctx, id, input)`
+
+#### `setLedgerArchived(ctx, id, archived)`
+
+Put away without losing anything: its lines stay, and its totals with them.
+
+#### `deleteLedger(ctx, id)`
+
+Gone, and its lines with it.
+
+The lines go first and explicitly: SQLite cannot attach an `ON DELETE` to
+a column added by `ALTER TABLE`, so the cascade would have been a promise
+the migration could not keep. Doing it here is also where it belongs —
+beside the confirmation that says how many lines are about to go.
+
+#### `moveLedger(ctx, id, delta)`
+
+A move is a reinsertion: every ledger is resequenced around the one moved.
+
+### Types
+
+- `LedgerKind`
+- `Ledger`
 
 ## legal
 
@@ -3859,31 +3902,40 @@ else deletes nothing and reports nothing (I3).
 
 ## statements
 
-Bank statements: lines imported from an export, and the rules that sort
-them.
+What moved through a ledger, and the rules that make sense of it.
 
-The lines are kept as the bank said them — see the schema note on
+Lines are kept as the bank said them — see the schema note on
 `finance_transactions` — and the sorting happens at read time: a category
-is the first rule whose pattern matches (position order, so the partition
-is deterministic), tags are every rule that matches. Writing a rule today
-therefore sorts last year's lines too, with no resweep and nothing stored
-to drift.
+is the first rule whose pattern matches, in position order, so the
+partition is deterministic and a month's categories add up; tags are
+every rule that matches, so they overlap freely and are a lens rather
+than a sum. A rule written today therefore sorts last year's lines, with
+no resweep and nothing stored to drift.
 
 ### Functions
 
 #### `availableParsers()`
 
-The parsers the import screen can offer, by key and friendly name.
+The parsers an import can offer, by key and friendly name.
 
 #### `importStatement(ctx, input)`
 
-Import one export's text. Idempotent: the same file twice adds nothing.
+Import one export's text into one ledger. Idempotent: the same file twice
+adds nothing, and the same file into a _different_ ledger is a different
+set of lines, because a ledger is part of what a line is.
 
-`flip` negates every amount, for the person whose export means the
-opposite of what the parser expects — a statement kept from the card's
-point of view, say. The fingerprint uses the flipped amount, so the same
-file imported flipped and unflipped is two sets of lines, which is what
-it truthfully is.
+`flip` negates every amount, for an export whose signs mean the opposite
+of what the parser expects — a statement kept from the card's point of
+view, say.
+
+#### `recordMovement(ctx, input)`
+
+One line, recorded by hand or pushed in by a plugin.
+
+The same idempotency as an import: a plugin that re-sends a movement it
+already sent adds nothing, provided it names the same `externalId`.
+
+#### `updateMovement(ctx, id, input)`
 
 #### `deleteMovement(ctx, id)`
 
@@ -3893,36 +3945,67 @@ it truthfully is.
 
 #### `updateRule(ctx, id, input)`
 
+#### `moveRule(ctx, id, delta)`
+
+Move a rule within its kind. A move is a reinsertion and every sibling is
+resequenced around it, so two rules can never share a position and "up"
+always actually moves.
+
 #### `deleteRule(ctx, id)`
 
-#### `sortByRules(rules, description)`
+#### `sortByRules(ctx, description)`
 
-Sort one description: the first matching category (the partition), every
-matching tag (the lenses).
+What a description would be filed as, for anything that needs to ask.
 
-#### `listMovements(ctx, opts)`
+#### `listMovements(ctx, filter)`
+
+#### `uncategorizedCount(ctx, filter)`
+
+How many lines no category rule claims — the number that says "more rules".
 
 #### `monthKeys(now, months)`
 
-'YYYY-MM' for an instant, and the N keys ending at that month.
+'YYYY-MM' keys ending at the month `now` is in.
 
-#### `statementSeries(ctx, months)`
+#### `categorySlices(ctx, filter)`
 
-What the statements say, month by month.
+Spending by category over a window — the pie, and the table beside it.
+Every outgoing line is in exactly one slice, uncategorized included, so
+the slices are the whole of what was spent.
 
-#### `recordsSeries(ctx, months)`
+#### `monthlyTotals(ctx, months, filter)`
 
-What the app's own books say, month by month: income received against
-bills paid. Kept apart from the statement series on purpose — a salary
-that is both recorded here and visible in a statement would be counted
-twice by any series that merged them.
+In, out and net, month by month.
+
+#### `categoryMonths(ctx, months, filter)`
+
+Each category's spending across the months — the stacked bars on Insights.
+
+#### `tagMonths(ctx, tag, months, filter)`
+
+What one tag costs, month by month, with its average.
+
+A tag is a lens and tags overlap, so this is deliberately one tag at a
+time: summing several would count a line that carries two of them twice,
+and a chart that lies is worse than a chart that answers one question.
+
+#### `filterOptions(ctx)`
+
+Everything the movement filters can offer, for the pickers.
+
+#### `movementsIn(ctx, ids)`
+
+The ledgers a set of transaction ids belongs to — for bulk moves later.
 
 ### Types
 
 - `Movement`
 - `Rule`
+- `MovementFilter`
+- `CategorySlice`
 - `StatementMonth`
-- `RecordsMonth`
+- `CategoryMonths`
+- `TagMonths`
 
 ## streams
 

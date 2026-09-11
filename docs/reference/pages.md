@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**54 pages, 199 actions.**
+**54 pages, 213 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -22,10 +22,10 @@ write surface for everything else; both end up calling the same
 | `/data/[slug]`                       | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/demo`                              | `default`                                                                                                                                                                                                                                                                                                                                                                           |
 | `/demo/self-contained-db`            | —                                                                                                                                                                                                                                                                                                                                                                                   |
-| `/finance/bills`                     | —                                                                                                                                                                                                                                                                                                                                                                                   |
-| `/finance/income`                    | —                                                                                                                                                                                                                                                                                                                                                                                   |
-| `/finance/net`                       | —                                                                                                                                                                                                                                                                                                                                                                                   |
-| `/finance/transactions`              | `import`, `createRule`, `updateRule`, `deleteRule`, `deleteMovement`                                                                                                                                                                                                                                                                                                                |
+| `/finance/bills`                     | `create`, `update`, `pay`, `unpay`, `archive`, `delete`                                                                                                                                                                                                                                                                                                                             |
+| `/finance/insights`                  | —                                                                                                                                                                                                                                                                                                                                                                                   |
+| `/finance/ledgers`                   | `createLedger`, `updateLedger`, `moveLedger`, `archiveLedger`, `deleteLedger`, `import`, `addMovement`, `updateMovement`, `deleteMovement`                                                                                                                                                                                                                                          |
+| `/finance/rules`                     | `create`, `update`, `move`, `delete`                                                                                                                                                                                                                                                                                                                                                |
 | `/gallery`                           | `create`, `rename`, `delete`                                                                                                                                                                                                                                                                                                                                                        |
 | `/gallery/[id]`                      | `upload`, `addTo`, `move`, `remove`, `rename`, `tag`                                                                                                                                                                                                                                                                                                                                |
 | `/goals`                             | `setTodoStatus`, `createArea`, `deleteArea`, `create`, `update`, `setProgress`, `close`, `setLinks`, `remove`                                                                                                                                                                                                                                                                       |
@@ -119,19 +119,39 @@ So the wait has a screen. It also has somewhere to go: with the work behind
 a page the visitor is already looking at, the seed can be made slower under
 load without anybody experiencing a hang.
 
-### `/finance/net`
+### `/finance/bills`
 
-The month's two honest answers, side by side and never merged: what your
-own records say (income received against bills paid) and what your bank
-statements say. A salary that appears in both would be double-counted by
-any series that combined them, so none does.
+Bills are not the finance section any more — transactions are, and they
+come from the bank rather than from a form. What a bill still is: a thing
+that wants paying on a day, which is why it rides the week and the
+reminders. So the page stays, reachable from Ledgers, and the money it
+describes is the money the statements will show arriving and leaving.
 
-### `/finance/transactions`
+### `/finance/insights`
 
-Where a bank export becomes rows: pick the export's parser, hand over the
-file, and the lines land deduplicated — the same file twice adds nothing.
-The rules that sort those lines into categories and tags live here too,
-beside the lines they sort.
+The questions a year of statements can answer.
+
+Three, deliberately: what went in and out each month, where the spending
+went by category, and what one tag costs — the last on its own because
+tags overlap, and adding two of them would count a line twice.
+
+### `/finance/ledgers`
+
+Ledgers, and what moved through the one being looked at.
+
+The ledger in the URL is the one on screen; with none named it is the
+first. Everything the page can do to a line — file it elsewhere, correct
+it, drop it — is here, because a statement that can only be imported and
+never corrected is a statement somebody stops trusting.
+
+### `/finance/rules`
+
+The rules, and what they are currently doing.
+
+A rule is only as good as what it catches, so the page shows the count
+beside each one and the shape of the whole month's spending next to them:
+writing a pattern and watching the pie move is the loop this screen is
+for.
 
 ### `/gallery`
 

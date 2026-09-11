@@ -7,10 +7,9 @@
 	let { children }: { children: Snippet } = $props();
 
 	const tabs = [
-		{ href: resolve('/finance/income'), label: 'Income' },
-		{ href: resolve('/finance/bills'), label: 'Bills' },
-		{ href: resolve('/finance/net'), label: 'Net' },
-		{ href: resolve('/finance/transactions'), label: 'Transactions' }
+		{ href: resolve('/finance/ledgers'), label: 'Ledgers' },
+		{ href: resolve('/finance/rules'), label: 'Rules' },
+		{ href: resolve('/finance/insights'), label: 'Insights' }
 	];
 
 	function isActive(href: string): boolean {

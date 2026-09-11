@@ -214,6 +214,25 @@
 			}
 		}
 	},
+	"add_ledger": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"default_parser": {
+				"type": "string",
+				"required": false
+			},
+			"kind": {
+				"type": "string",
+				"required": false
+			},
+			"name": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
 	"add_location": {
 		"scope": "inventory:write",
 		"writes": true,
@@ -976,6 +995,29 @@
 			}
 		}
 	},
+	"change_sort_rule": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"color": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			},
+			"pattern": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"change_todo": {
 		"scope": "tasks:write",
 		"writes": true,
@@ -1221,6 +1263,12 @@
 			}
 		}
 	},
+	"ledgers": {
+		"scope": "statements:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
 	"link_to_goal": {
 		"scope": "tasks:write",
 		"writes": true,
@@ -1308,6 +1356,10 @@
 		"writes": false,
 		"destroys": false,
 		"params": {
+			"ledger_id": {
+				"type": "integer",
+				"required": false
+			},
 			"month": {
 				"type": "string",
 				"required": false
@@ -1387,6 +1439,33 @@
 			"id": {
 				"type": "integer",
 				"required": false
+			}
+		}
+	},
+	"record_movement": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"amount_cents": {
+				"type": "integer",
+				"required": true
+			},
+			"description": {
+				"type": "string",
+				"required": true
+			},
+			"external_id": {
+				"type": "string",
+				"required": false
+			},
+			"ledger_id": {
+				"type": "integer",
+				"required": true
+			},
+			"occurred_on": {
+				"type": "string",
+				"required": true
 			}
 		}
 	},
@@ -1668,11 +1747,35 @@
 		"destroys": false,
 		"params": {}
 	},
+	"spending_by_category": {
+		"scope": "statements:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"ledger_id": {
+				"type": "integer",
+				"required": false
+			},
+			"month": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"statement_months": {
 		"scope": "statements:read",
 		"writes": false,
 		"destroys": false,
-		"params": {}
+		"params": {
+			"ledger_id": {
+				"type": "integer",
+				"required": false
+			},
+			"months": {
+				"type": "integer",
+				"required": false
+			}
+		}
 	},
 	"tick_bought": {
 		"scope": "shopping:write",

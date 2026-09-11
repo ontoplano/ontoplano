@@ -1175,8 +1175,24 @@ billPaid(salary, '2026-08', 850000, 850000);
 billPaid(freelance, '2026-08', 200000, 180000);
 billPaid(salary, '2026-09', 850000, 850000);
 
-const movement = (occurredOn, amountCents, description, n = 1) => {
-	const fingerprint = `seed:${occurredOn}:${amountCents}:${description}:${n}`;
+const ledger = (name, kind, defaultParser) => {
+	const existing = one('select id from ledgers where user_id = ? and name = ?', uid, name);
+	if (existing) return existing.id;
+	return run(
+		'insert into ledgers (user_id, name, kind, default_parser, sort_order) values (?, ?, ?, ?, (select count(*) from ledgers where user_id = ?))',
+		uid,
+		name,
+		kind,
+		defaultParser,
+		uid
+	);
+};
+
+const account = ledger('Current account', 'bank', 'nubank:conta_corrente');
+const creditCard = ledger('Credit card', 'card', 'nubank:credit_card_month');
+
+const movement = (ledgerId, occurredOn, amountCents, description, n = 1) => {
+	const fingerprint = `${ledgerId}|seed:${occurredOn}:${amountCents}:${description}:${n}`;
 	if (
 		one(
 			'select id from finance_transactions where user_id = ? and fingerprint = ?',
@@ -1186,8 +1202,9 @@ const movement = (occurredOn, amountCents, description, n = 1) => {
 	)
 		return;
 	run(
-		"insert into finance_transactions (user_id, occurred_on, amount_cents, description, source, fingerprint) values (?, ?, ?, ?, 'nubank:conta_corrente', ?)",
+		"insert into finance_transactions (user_id, ledger_id, occurred_on, amount_cents, description, source, fingerprint) values (?, ?, ?, ?, ?, 'nubank:conta_corrente', ?)",
 		uid,
+		ledgerId,
 		occurredOn,
 		amountCents,
 		description,
@@ -1195,39 +1212,48 @@ const movement = (occurredOn, amountCents, description, n = 1) => {
 	);
 };
 
-movement('2026-08-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
-movement('2026-08-06', -18740, 'Compra no débito - Mercado Bom Preço');
-movement('2026-08-09', -4200, 'Compra no débito - Hortifruti da Esquina');
-movement('2026-08-12', -16240, 'Pagamento de boleto - Companhia de Energia');
-movement('2026-08-14', -8900, 'Compra no débito - Padaria Estrela');
-movement('2026-08-19', -2390, 'Dm *Company');
-movement('2026-08-19', -2390, 'Dm *Company', 2);
-movement('2026-08-23', -6500, 'Compra no débito - Academia Corpo São');
-movement('2026-09-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
-movement('2026-09-06', -21300, 'Compra no débito - Mercado Bom Preço');
-movement('2026-09-08', -5100, 'Compra no débito - Hortifruti da Esquina');
-movement('2026-09-09', -15880, 'Pagamento de boleto - Companhia de Energia');
+movement(account, '2026-07-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
+movement(account, '2026-07-12', -15990, 'Pagamento de boleto - Companhia de Energia');
+movement(creditCard, '2026-07-08', -19900, 'Mercado Bom Preço');
+movement(creditCard, '2026-07-15', -7400, 'Padaria Estrela');
+movement(creditCard, '2026-07-22', -6500, 'Academia Corpo São');
+movement(account, '2026-08-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
+movement(account, '2026-08-12', -16240, 'Pagamento de boleto - Companhia de Energia');
+movement(account, '2026-08-18', -120000, 'Transferência enviada pelo Pix - Aluguel');
+movement(creditCard, '2026-08-06', -18740, 'Mercado Bom Preço');
+movement(creditCard, '2026-08-09', -4200, 'Hortifruti da Esquina');
+movement(creditCard, '2026-08-14', -8900, 'Padaria Estrela');
+movement(creditCard, '2026-08-19', -2390, 'Dm *Company');
+movement(creditCard, '2026-08-19', -2390, 'Dm *Company', 2);
+movement(creditCard, '2026-08-23', -6500, 'Academia Corpo São');
+movement(account, '2026-09-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
+movement(account, '2026-09-09', -15880, 'Pagamento de boleto - Companhia de Energia');
+movement(creditCard, '2026-09-06', -21300, 'Mercado Bom Preço');
+movement(creditCard, '2026-09-08', -5100, 'Hortifruti da Esquina');
+movement(creditCard, '2026-09-10', -6500, 'Academia Corpo São');
 
-const sortRule = (kind, name, pattern, position) => {
+const sortRule = (kind, name, pattern, position, color) => {
 	if (
 		one('select id from finance_rules where user_id = ? and kind = ? and name = ?', uid, kind, name)
 	)
 		return;
 	run(
-		'insert into finance_rules (user_id, kind, name, pattern, position) values (?, ?, ?, ?, ?)',
+		'insert into finance_rules (user_id, kind, name, pattern, position, color) values (?, ?, ?, ?, ?, ?)',
 		uid,
 		kind,
 		name,
 		pattern,
-		position
+		position,
+		color
 	);
 };
 
-sortRule('category', 'Groceries', 'mercado|hortifruti|padaria', 0);
-sortRule('category', 'Utilities', 'energia|boleto', 1);
-sortRule('category', 'Subscriptions', String.raw`dm \*`, 2);
-sortRule('tag', 'healthy', 'hortifruti|academia', 0);
-sortRule('tag', 'pix', 'pix', 1);
+sortRule('category', 'Groceries', 'mercado|hortifruti|padaria', 0, '#1d4ed8');
+sortRule('category', 'Utilities', 'energia|boleto', 1, '#b45309');
+sortRule('category', 'Rent', 'aluguel', 2, '#7c2d12');
+sortRule('category', 'Subscriptions', String.raw`dm \*`, 3, '#6d28d9');
+sortRule('tag', 'healthy', 'hortifruti|academia', 0, '#0f766e');
+sortRule('tag', 'pix', 'pix', 1, '#9d174d');
 
 // --- locations (inventory) -----------------------------------------------------------
 //

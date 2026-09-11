@@ -377,20 +377,20 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/finance/income': {
-		label: 'Bills',
+	'/finance/ledgers': {
+		label: 'Ledgers',
 		steps: [
 			{
-				title: 'The bills you expect to pay',
-				body: 'A bill is a name, an amount you expect, and a rhythm — weekly, monthly, yearly. The line at the top is the month: expected, paid, and the gap between them.'
+				title: 'One ledger per place money moves',
+				body: 'A current account is one, a credit card another. Keeping them apart is what makes "what did the card cost" a question with an answer.'
 			},
 			{
-				title: 'Paid is what you actually paid',
-				body: 'Marking a bill paid records the real amount, which can differ from the expected one. Pay the same period twice and it corrects the first rather than doubling it.'
+				title: 'The statement is the record',
+				body: 'Import the bank\u2019s own export and the lines land here, deduplicated — the same file twice adds nothing. Anything the bank has not published yet you can write by hand.'
 			},
 			{
-				title: 'Nothing is a one-way door',
-				body: 'Undo a payment, or put a bill away when it stops — its history stays either way.'
+				title: 'Rules do the sorting',
+				body: 'Categories wash the row in their colour and every line has exactly one; tags overlap and sit beside it. Both are patterns you write once, on the Rules tab.'
 			}
 		]
 	},

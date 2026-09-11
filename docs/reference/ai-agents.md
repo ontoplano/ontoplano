@@ -832,11 +832,41 @@ Record that a workout happened just now — the gym’s version of marking a rec
 
 _Needs `workouts:write`; writes._
 
-### `statement_months` — Money in and out, by month
+### `ledgers` — Your ledgers
 
-Two monthly series, deliberately separate: what your recorded income and bills say, and what your imported bank statements say. Merging them would double-count anything visible in both. Amounts in minor units (cents).
+The places money moves through — a current account, a credit card — with how many lines each holds and what they add up to. Amounts are in minor units (cents).
 
 _Needs `statements:read`; read-only._
+
+### `add_ledger` — Add a ledger
+
+A new place money moves through. `kind` is bank, card, cash or other; `default_parser` preselects an export format when importing into it.
+
+_Needs `statements:write`; writes._
+
+### `record_movement` — Put a line in a ledger
+
+One movement, for a plugin that reads a bank the parsers do not, or for a purchase the statement has not published yet. Amounts are signed minor units: negative left the account. Give `external_id` and re-sending the same movement adds nothing.
+
+_Needs `statements:write`; writes._
+
+### `statement_months` — Money in and out, by month
+
+What arrived and what left, month by month, across every ledger or one of them. Amounts are in minor units (cents), and `out` is written positive.
+
+_Needs `statements:read`; read-only._
+
+### `spending_by_category` — Where the money went
+
+Spending split by category over a window. Every outgoing line is in exactly one slice — uncategorized included — so the slices are the whole of what was spent.
+
+_Needs `statements:read`; read-only._
+
+### `change_sort_rule` — Change a sorting rule
+
+Rewrite a rule’s name, pattern or colour. Only the fields given change, and the change re-sorts every line at once, past ones included.
+
+_Needs `statements:write`; writes._
 
 ### `movements` — Bank-statement lines
 

@@ -114,13 +114,16 @@ import {
 	billsDueBetween
 } from '$lib/services/bills.js';
 import {
+	categorySlices,
 	createRule,
 	deleteRule,
 	listMovements,
 	listRules,
-	recordsSeries,
-	statementSeries
+	monthlyTotals,
+	recordMovement,
+	updateRule
 } from '$lib/services/statements.js';
+import { createLedger, listLedgers } from '$lib/services/ledgers.js';
 import { grouped, search } from '$lib/services/search.js';
 import {
 	createCategory as createShoppingCategory,
@@ -2932,14 +2935,126 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
-		name: 'statement_months',
-		title: 'Money in and out, by month',
+		name: 'ledgers',
+		title: 'Your ledgers',
 		description:
-			'Two monthly series, deliberately separate: what your recorded income and bills say, and what your imported bank statements say. Merging them would double-count anything visible in both. Amounts in minor units (cents).',
+			'The places money moves through — a current account, a credit card — with how many lines each holds and what they add up to. Amounts are in minor units (cents).',
 		scope: 'statements:read',
 		writes: false,
 		input: object({}),
-		run: (ctx) => ({ records: recordsSeries(ctx), statements: statementSeries(ctx) })
+		run: (ctx) => ({ ledgers: listLedgers(ctx, { includeArchived: true }) })
+	},
+	{
+		name: 'add_ledger',
+		title: 'Add a ledger',
+		description:
+			'A new place money moves through. `kind` is bank, card, cash or other; `default_parser` preselects an export format when importing into it.',
+		scope: 'statements:write',
+		writes: true,
+		input: object(
+			{
+				name: text('What it is called — "Nubank", "Visa".'),
+				kind: text('bank, card, cash or other.'),
+				default_parser: text("An export key like 'nubank:conta_corrente'.")
+			},
+			['name']
+		),
+		run: (ctx, args) => ({
+			id: createLedger(ctx, {
+				name: args.name,
+				kind: args.kind ?? 'bank',
+				defaultParser: args.default_parser
+			}).id
+		})
+	},
+	{
+		name: 'record_movement',
+		title: 'Put a line in a ledger',
+		description:
+			'One movement, for a plugin that reads a bank the parsers do not, or for a purchase the statement has not published yet. Amounts are signed minor units: negative left the account. Give `external_id` and re-sending the same movement adds nothing.',
+		scope: 'statements:write',
+		writes: true,
+		input: object(
+			{
+				ledger_id: { type: 'integer', description: 'Which ledger, as `ledgers` gives it.' },
+				occurred_on: text('The day it moved, YYYY-MM-DD.'),
+				amount_cents: {
+					type: 'integer',
+					description: 'Signed minor units — negative when money left.'
+				},
+				description: text('What the bank would call it. The sorting rules read this.'),
+				external_id: text("The source's own id for it, if it has one.")
+			},
+			['ledger_id', 'occurred_on', 'amount_cents', 'description']
+		),
+		run: (ctx, args) =>
+			recordMovement(ctx, {
+				ledgerId: args.ledger_id,
+				occurredOn: args.occurred_on,
+				amountCents: args.amount_cents,
+				description: args.description,
+				source: 'plugin',
+				externalId: args.external_id
+			})
+	},
+	{
+		name: 'statement_months',
+		title: 'Money in and out, by month',
+		description:
+			'What arrived and what left, month by month, across every ledger or one of them. Amounts are in minor units (cents), and `out` is written positive.',
+		scope: 'statements:read',
+		writes: false,
+		input: object({
+			months: { type: 'integer', description: 'How many months back. 12 by default.' },
+			ledger_id: { type: 'integer', description: 'Only this ledger.' }
+		}),
+		run: (ctx, args) => ({
+			months: monthlyTotals(ctx, Number(args.months ?? 12), {
+				ledgerId: args.ledger_id ? Number(args.ledger_id) : undefined
+			})
+		})
+	},
+	{
+		name: 'spending_by_category',
+		title: 'Where the money went',
+		description:
+			'Spending split by category over a window. Every outgoing line is in exactly one slice — uncategorized included — so the slices are the whole of what was spent.',
+		scope: 'statements:read',
+		writes: false,
+		input: object({
+			month: text("Only this month, as 'YYYY-MM'."),
+			ledger_id: { type: 'integer', description: 'Only this ledger.' }
+		}),
+		run: (ctx, args) => ({
+			categories: categorySlices(ctx, {
+				month: typeof args.month === 'string' && args.month ? args.month : undefined,
+				ledgerId: args.ledger_id ? Number(args.ledger_id) : undefined
+			})
+		})
+	},
+	{
+		name: 'change_sort_rule',
+		title: 'Change a sorting rule',
+		description:
+			'Rewrite a rule\u2019s name, pattern or colour. Only the fields given change, and the change re-sorts every line at once, past ones included.',
+		scope: 'statements:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The rule, as `sort_rules` lists it.' },
+				name: text('The name, rewritten.'),
+				pattern: text('A JavaScript regular expression, matched case-insensitively.'),
+				color: text('A hex colour like #1d4ed8.')
+			},
+			['id']
+		),
+		run: (ctx, args) => ({
+			rule: updateRule(ctx, Number(args.id), {
+				name: args.name,
+				pattern: args.pattern,
+				color: args.color
+			})
+		})
 	},
 	{
 		name: 'movements',
@@ -2949,11 +3064,14 @@ export const TOOLS: Tool[] = [
 		scope: 'statements:read',
 		writes: false,
 		input: object({
-			month: text("Only this month, as 'YYYY-MM'. Everything if left out.")
+			month: text("Only this month, as 'YYYY-MM'. Everything if left out."),
+			ledger_id: { type: 'integer', description: 'Only this ledger.' }
 		}),
 		run: (ctx, args) => ({
 			movements: listMovements(ctx, {
-				month: typeof args.month === 'string' && args.month ? args.month : undefined
+				month: typeof args.month === 'string' && args.month ? args.month : undefined,
+				ledgerId: args.ledger_id ? Number(args.ledger_id) : undefined,
+				limit: 500
 			})
 		})
 	},

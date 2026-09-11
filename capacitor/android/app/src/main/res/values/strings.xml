@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">ontoplano (device)</string>
-    <string name="title_activity_main">ontoplano (device)</string>
+    <string name="app_name">ontoplano</string>
+    <string name="title_activity_main">ontoplano</string>
     <string name="package_name">app.ontoplano.selfcontained</string>
     <string name="custom_url_scheme">app.ontoplano.selfcontained</string>
 </resources>

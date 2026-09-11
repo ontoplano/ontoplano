@@ -14,9 +14,22 @@ import { env } from '$env/dynamic/public';
 
 export function isSelfContained(): boolean {
 	if (!browser) return false;
-	if (env.PUBLIC_ONTOPLANO_SELF_CONTAINED === 'true') return true;
+	if (isSelfContainedBuild()) return true;
 	return (
 		env.PUBLIC_ONTOPLANO_SELF_CONTAINED_OPT_IN === 'true' &&
 		new URLSearchParams(location.search).has('selfContained')
 	);
+}
+
+/**
+ * Whether this is the built self-contained app, as opposed to the `?selfContained`
+ * switch driving a page that a server is also serving.
+ *
+ * The difference decides what happens to a request the device cannot answer:
+ * behind the switch it goes to the server, which is there; in the built app
+ * there is no server at all, so it must become a sentence rather than a
+ * request that hangs or comes back empty.
+ */
+export function isSelfContainedBuild(): boolean {
+	return browser && env.PUBLIC_ONTOPLANO_SELF_CONTAINED === 'true';
 }

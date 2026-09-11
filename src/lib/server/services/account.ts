@@ -127,9 +127,10 @@ export const USER_TABLES: OwnedTable[] = [
 	// first (export any order, but the shared list also drives delete order).
 	owned('billPayments', schema.billPayments as never),
 	owned('bills', schema.bills as never),
-	// The statements and the rules that sort them point at nothing but the
-	// account itself.
+	// The statements point at their ledger, so they go first; the rules that
+	// sort them point at nothing but the account itself.
 	owned('financeTransactions', schema.financeTransactions as never),
+	owned('ledgers', schema.ledgers as never),
 	owned('financeRules', schema.financeRules as never),
 	owned('goalLinks', schema.goalLinks as never),
 	owned('goalTargets', schema.goalTargets as never),

@@ -17,7 +17,7 @@ under the pointer.
 | Screen                               | Tour         | Steps |
 | ------------------------------------ | ------------ | ----- |
 | `/`                                  | Ontoplano    | 8     |
-| `/finance/income`                    | Bills        | 3     |
+| `/finance/ledgers`                   | Ledgers      | 3     |
 | `/gallery`                           | Gallery      | 3     |
 | `/goals`                             | Goals        | 4     |
 | `/health/habits`                     | Habits       | 3     |
@@ -59,11 +59,11 @@ at the button that reopens it, so it is not listed here.
 7. What today looks like
 8. Yours to change
 
-### `/finance/income` — Bills
+### `/finance/ledgers` — Ledgers
 
-1. The bills you expect to pay
-2. Paid is what you actually paid
-3. Nothing is a one-way door
+1. One ledger per place money moves
+2. The statement is the record
+3. Rules do the sorting
 
 ### `/gallery` — Gallery
 

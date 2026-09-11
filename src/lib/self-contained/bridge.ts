@@ -11,9 +11,21 @@
  */
 import * as devalue from 'devalue';
 import { ask } from './client.js';
+import { isSelfContainedBuild } from './mode.js';
 import type { ActionReply, EndpointReply, LoadReply } from './routes.js';
 
 const DATA_SUFFIX = '/__data.json';
+
+/** The app's own files, which the shell serves and the bridge never touches. */
+function isAsset(pathname: string): boolean {
+	return (
+		pathname.startsWith('/_app/') ||
+		pathname.startsWith('/icons/') ||
+		pathname.startsWith('/sounds/') ||
+		pathname.startsWith('/help/') ||
+		/\.[a-z0-9]+$/i.test(pathname)
+	);
+}
 
 function json(body: string, status = 200): Response {
 	return new Response(body, {
@@ -106,6 +118,26 @@ export function installSelfContainedBridge(): void {
 					if (reply) return actionResponse(reply);
 				}
 			}
+		}
+
+		/*
+		 * Nothing on the device could answer it.
+		 *
+		 * Behind the `?selfContained` switch a server is still there, so the
+		 * request goes to it. In the built app there is none: the asset host
+		 * answers an unknown path with nothing, the client parses that empty
+		 * body as JSON and the screen reads "500" — which is what Estevão saw
+		 * on /settings/account. A screen that needs a server says so instead.
+		 */
+		if (isSelfContainedBuild() && url.origin === location.origin && !isAsset(url.pathname)) {
+			return dataResponse({
+				kind: 'error',
+				status: 501,
+				message:
+					'This screen needs an instance with a server. On this device ontoplano runs ' +
+					'on its own, so the parts that need something reachable — the account, ' +
+					'pictures, mail — are not here.'
+			});
 		}
 
 		return network(request);

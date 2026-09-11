@@ -3,9 +3,9 @@ import { register } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
- * Income is a bill pointed the other way, statements land deduplicated, the
- * rules sort what is already there, and Net draws both stories without ever
- * merging them.
+ * A ledger, a statement imported into it, rules that sort what arrived, and
+ * the plots that read the result. The whole finance loop, in the order
+ * somebody actually does it.
  */
 const CONTA_CORRENTE = [
 	'Data,Valor,Identificador,Descrição',
@@ -13,50 +13,62 @@ const CONTA_CORRENTE = [
 	'05/03/2026,1200.00,7b0aa001-0000-4000-8000-000000000001,Transferência recebida pelo Pix - ACME LTDA'
 ].join('\n');
 
-test('income, an imported statement, and the net of it', async ({ page }) => {
+test('a ledger, its statement, the rules and the plots', async ({ page }) => {
+	test.setTimeout(120_000);
 	await register(page, `finance-${Date.now()}@test.invalid`);
 
-	// The finance door opens on Income.
+	// The finance door opens on Ledgers.
 	await visit(page, '/finance');
-	await expect(page).toHaveURL(/\/finance\/income/);
-	await page.getByRole('button', { name: 'New income' }).click();
-	await page.locator('[name="heading"]').fill('Salary');
-	await page.locator('[name="amount"]').fill('8500.00');
-	await page.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(page.getByText('Salary')).toBeVisible();
-	await page.getByRole('button', { name: 'Mark Salary received' }).click();
-	await page.getByRole('button', { name: 'Received', exact: true }).click();
-	await expect(page.getByText('received', { exact: true })).toBeVisible();
+	await expect(page).toHaveURL(/\/finance\/ledgers/);
 
-	// And it is not a bill.
-	await page.getByRole('link', { name: 'Bills', exact: true }).click();
-	await expect(page.getByText('No bills yet')).toBeVisible();
+	// A ledger, with the export it usually receives.
+	await page.getByRole('button', { name: 'New ledger' }).click();
+	await page.locator('[name="heading"]').fill('Current account');
+	await page.locator('[name="defaultParser"]').selectOption('nubank:conta_corrente');
+	await page.getByRole('button', { name: 'Create', exact: true }).click();
+	await expect(page.getByRole('button', { name: /^Current account Account/ })).toBeVisible();
 
-	// A statement, pasted. The same file twice adds nothing.
-	await page.getByRole('link', { name: 'Transactions', exact: true }).click();
-	await page.getByRole('button', { name: 'or paste it' }).click();
-	await page.locator('[name="text"]').fill(CONTA_CORRENTE);
+	// Its statement, pasted. The parser is already the ledger's own.
 	await page.getByRole('button', { name: 'Import', exact: true }).click();
-	await expect(page.getByText('2 added, 0 already here.')).toBeVisible();
-	await page.locator('[name="text"]').fill(CONTA_CORRENTE);
-	await page.getByRole('button', { name: 'Import', exact: true }).click();
-	await expect(page.getByText('0 added, 2 already here.')).toBeVisible();
+	const importer = page.getByRole('dialog');
+	await expect(importer.locator('[name="source"]')).toHaveValue('nubank:conta_corrente');
+	await importer.locator('[name="text"]').fill(CONTA_CORRENTE);
+	await importer.getByRole('button', { name: 'Import', exact: true }).click();
+	await expect(importer.getByText('2 added, 0 already here.')).toBeVisible();
 
-	// A category rule sorts the line that was already here.
-	const categoryForm = page
-		.locator('form[action="?/createRule"]')
-		.filter({ has: page.locator('input[value="category"]') });
-	await categoryForm.locator('[name="heading"]').fill('Groceries');
-	await categoryForm.locator('[name="pattern"]').fill('mercado');
-	await categoryForm.getByRole('button', { name: 'Add' }).click();
+	// The same file again adds nothing.
+	await importer.locator('[name="text"]').fill(CONTA_CORRENTE);
+	await importer.getByRole('button', { name: 'Import', exact: true }).click();
+	await expect(importer.getByText('0 added, 2 already here.')).toBeVisible();
+	await importer.getByRole('button', { name: 'Done' }).click();
+
+	await expect(page.getByText('Mercado Bom Preço')).toBeVisible();
+
+	// A category rule sorts the line that was already there — and can be
+	// rewritten afterwards, which re-sorts it again.
+	await page.getByRole('link', { name: 'Rules', exact: true }).click();
+	const categories = page.locator('section', { hasText: 'Categories' }).last();
+	await categories.locator('[name="heading"]').fill('Groceries');
+	await categories.locator('[name="pattern"]').fill('mercado');
+	await categories.getByRole('button', { name: 'Add' }).click();
+	await expect(categories.getByText('/mercado/i')).toBeVisible();
+
+	await categories.getByRole('button', { name: 'Edit Groceries' }).click();
+	await categories.locator('[name="heading"]').first().fill('Food');
+	await categories.locator('[name="pattern"]').first().fill('mercado|padaria');
+	await categories.getByRole('button', { name: 'Save' }).click();
+	await expect(categories.getByText('/mercado|padaria/i')).toBeVisible();
+
+	// The line wears the category now — in its own column, and washing the row.
+	await page.getByRole('link', { name: 'Ledgers', exact: true }).click();
+	await page.waitForURL(/\/finance\/ledgers/);
 	await expect(
-		page.locator('tr', { hasText: 'Mercado Bom Preço' }).getByText('Groceries')
+		page.locator('tr', { hasText: 'Mercado Bom Preço' }).getByText('Food')
 	).toBeVisible();
 
-	// Net shows both stories, separately.
-	await page.getByRole('link', { name: 'Net', exact: true }).click();
-	await expect(page.getByRole('heading', { name: 'From your records' })).toBeVisible();
-	await expect(page.getByRole('heading', { name: 'From your statements' })).toBeVisible();
-	await expect(page.getByRole('heading', { name: 'Where 2026-03 went' })).toBeVisible();
-	await expect(page.getByRole('listitem').filter({ hasText: 'Groceries' })).toBeVisible();
+	// And Insights reads it back.
+	await page.getByRole('link', { name: 'Insights', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'In and out' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'What each month was made of' })).toBeVisible();
+	await expect(page.getByText('Biggest category')).toBeVisible();
 });

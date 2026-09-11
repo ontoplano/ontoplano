@@ -45,10 +45,9 @@ Can be put away in Preferences (`health`), which takes it out of the bar, the wh
 
 ### Finance
 
-- **Income** — `/finance/income`
-- **Bills** — `/finance/bills`
-- **Net** — `/finance/net`
-- **Transactions** — `/finance/transactions`
+- **Ledgers** — `/finance/ledgers`
+- **Rules** — `/finance/rules`
+- **Insights** — `/finance/insights`
 
 Can be put away in Preferences (`finance`), which takes it out of the bar, the wheel and the dashboard.
 
