@@ -10,6 +10,7 @@ import { emit } from './services/webhooks.js';
 import { assertWithinLimit, familyUserIds } from './services/subscriptions.js';
 import { assertEntryWithinLimit } from './services/media.js';
 import { wake } from './services/reminder-clock.js';
+import { assertPublicUrl, fetchPublic } from './outbound.js';
 
 export function bindServerHost(): void {
 	bindHost({
@@ -17,6 +18,10 @@ export function bindServerHost(): void {
 		familyUserIds,
 		assertWithinLimit,
 		assertEntryWithinLimit,
-		reminderScheduleChanged: wake
+		reminderScheduleChanged: wake,
+		assertPublicUrl,
+		// The dispatcher type is undici's own and not part of RequestInit;
+		// the host signature speaks the platform's fetch.
+		fetchPublic: fetchPublic as unknown as (url: string, init?: RequestInit) => Promise<Response>
 	});
 }

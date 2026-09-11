@@ -33,7 +33,8 @@ export const load: PageServerLoad = async (event) => {
 		request: event.request,
 		url: event.url,
 		params: event.params,
-		locals: { user: event.locals.user }
+		locals: { user: event.locals.user },
+		cookies: event.cookies
 	});
 };
 

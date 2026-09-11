@@ -89,7 +89,7 @@ export default defineConfig({
 	testMatch: '**/*.e2e.{ts,js}',
 	// Worktrees are whole copies of the repo; without this every spec would
 	// run once per open worktree.
-	testIgnore: '**/{.worktrees,.claude}/**',
+	testIgnore: ['**/{.worktrees,.claude}/**', '**/e2e-local/**'],
 
 	/*
 	 * The registration tests go last, on their own.
@@ -100,7 +100,14 @@ export default defineConfig({
 	 * that must finish first.
 	 */
 	projects: [
-		{ name: 'app', testIgnore: ['**/{registration,admin}.e2e.ts', '**/{.worktrees,.claude}/**'] },
+		{
+			name: 'app',
+			testIgnore: [
+				'**/{registration,admin}.e2e.ts',
+				'**/{.worktrees,.claude}/**',
+				'**/e2e-local/**'
+			]
+		},
 		// The administrator is the oldest account, so this cannot run until
 		// something has made accounts.
 		{ name: 'admin', testMatch: '**/admin.e2e.ts', dependencies: ['app'] },

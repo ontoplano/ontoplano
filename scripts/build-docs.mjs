@@ -335,7 +335,14 @@ function apiPage() {
 	 * walking only `/api` meant this page did not know it existed, while the
 	 * scope table above listed `calendar:read` as a permission nothing used.
 	 */
-	const files = walk(join(ROOT, 'src/routes'), (f) => f === '+server.ts');
+	// An endpoint that also runs on a local instance keeps its handlers — and
+	// its prose — in endpoint.local.ts, with +server.ts a bare re-export. Read
+	// the file the logic actually lives in.
+	const locals = new Set(walk(join(ROOT, 'src/routes'), (f) => f === 'endpoint.local.ts'));
+	const files = walk(join(ROOT, 'src/routes'), (f) => f === '+server.ts').map((f) => {
+		const local = join(dirname(f), 'endpoint.local.ts');
+		return locals.has(local) ? local : f;
+	});
 	const endpoints = [];
 
 	for (const file of files) {
@@ -864,13 +871,16 @@ function urlFor(dir) {
 
 function pagesPage() {
 	// A route that also runs on a local instance keeps its bodies — and its
-	// prose — in page.local.ts, with +page.server.ts a bare re-export. Read
-	// the file the logic actually lives in.
+	// prose — in page.local.ts, with +page.server.ts re-exporting it. Both
+	// files are read: a route may keep a server-only action beside the
+	// re-export (error-report consent does), and it belongs in the list too.
 	const locals = new Set(walk(join(ROOT, 'src/routes'), (f) => f === 'page.local.ts'));
-	const serverFiles = walk(join(ROOT, 'src/routes'), (f) => f === '+page.server.ts').map((f) => {
-		const local = join(dirname(f), 'page.local.ts');
-		return locals.has(local) ? local : f;
-	});
+	const serverFiles = walk(join(ROOT, 'src/routes'), (f) => f === '+page.server.ts').flatMap(
+		(f) => {
+			const local = join(dirname(f), 'page.local.ts');
+			return locals.has(local) ? [local, f] : [f];
+		}
+	);
 	const pageFiles = walk(join(ROOT, 'src/routes'), (f) => f === '+page.svelte');
 
 	const byUrl = new Map();
@@ -887,8 +897,9 @@ function pagesPage() {
 		const moduleDoc = moduleDocOf(source);
 		// The prose a route already carries at the top of its own file. Written
 		// beside the code it describes, so it moves with it — which is the only
-		// arrangement in which it stays true.
-		entry.doc = moduleDoc;
+		// arrangement in which it stays true. Where a route is split, the
+		// twin's prose (parsed first) speaks for the route.
+		entry.doc ||= moduleDoc;
 
 		for (const st of source.statements) {
 			if (!ts.isVariableStatement(st)) continue;

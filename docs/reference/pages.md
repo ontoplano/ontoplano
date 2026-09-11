@@ -55,7 +55,7 @@ write surface for everything else; both end up calling the same
 | `/settings/integrations`             | `createKey`, `putBack`                                                                                                                                                                                                                                                                                                                                                              |
 | `/settings/integrations/connections` | `createToken`, `calendarLink`, `putBack`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                                          |
 | `/settings/integrations/widget`      | `connect`                                                                                                                                                                                                                                                                                                                                                                           |
-| `/settings/preferences`              | `setErrorReports`, `saveCurrency`, `saveGridHours`, `saveMenu`, `resetMenu`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setTheme`, `saveWeek`                                                                                                                                                                                              |
+| `/settings/preferences`              | `saveCurrency`, `saveGridHours`, `saveMenu`, `resetMenu`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setTheme`, `saveWeek`, `setErrorReports`                                                                                                                                                                                              |
 | `/start`                             | `checkout`                                                                                                                                                                                                                                                                                                                                                                          |
 | `/tasks/activities`                  | `create`, `update`, `toggleActive`, `delete`, `createCategory`, `updateCategory`, `deleteCategory`                                                                                                                                                                                                                                                                                  |
 | `/tasks/board`                       | `setStatus`, `reorder`, `schedule`, `promote`, `demote`, `createTodo`, `setRatings`, `remind`, `unremind`, `editInstance`, `resolveActivity`, `deleteInstance`, `deleteTodo`                                                                                                                                                                                                        |
@@ -506,6 +506,16 @@ The verdicts arrive as one field per answered block —
 `verdict=<id>:<verb>[:<date>]` — because a form posts repeated names as a
 list and this is one list rather than four parallel ones that could get
 out of step with each other.
+
+### `/tasks/todo`
+
+The server's face of this route.
+
+The bodies live in `page.local.ts`, written against the slice of the
+request that also exists on a local instance — which is what lets the same
+load and the same actions run inside the device's worker, dispatched by
+$lib/local. A route with logic only a server can run keeps that logic
+here instead.
 
 ### `/welcome/password`
 

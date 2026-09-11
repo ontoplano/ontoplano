@@ -15,6 +15,7 @@
  * than forget where its data is.
  */
 import type { Ctx } from './ctx.js';
+import { ValidationError } from './errors.js';
 import type { LimitKey } from '../plans.js';
 import type { WebhookEvent } from '../webhook-events.js';
 
@@ -33,6 +34,14 @@ export interface Host {
 	 * a local instance will hand the schedule to the device's own alarms.
 	 */
 	reminderScheduleChanged(): void;
+	/**
+	 * An address the instance is willing to fetch from, checked before it is
+	 * stored. The server refuses anything that could reach into its own
+	 * network; a browser only speaks http(s) and enforces the rest itself.
+	 */
+	assertPublicUrl(raw: string, what: string): URL;
+	/** Fetch from the outside world, under the instance's own guard. */
+	fetchPublic(url: string, init?: RequestInit): Promise<Response>;
 }
 
 const localInstance: Host = {
@@ -42,7 +51,19 @@ const localInstance: Host = {
 	},
 	assertWithinLimit() {},
 	assertEntryWithinLimit() {},
-	reminderScheduleChanged() {}
+	reminderScheduleChanged() {},
+	assertPublicUrl(raw, what) {
+		let url: URL;
+		try {
+			url = new URL(raw);
+		} catch {
+			throw new ValidationError(`That is not a URL this ${what} can use`);
+		}
+		if (url.protocol !== 'http:' && url.protocol !== 'https:')
+			throw new ValidationError(`A ${what} address starts with http:// or https://`);
+		return url;
+	},
+	fetchPublic: (url, init) => fetch(url, init)
 };
 
 export let host: Host = localInstance;

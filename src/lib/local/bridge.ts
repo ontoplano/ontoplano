@@ -69,7 +69,11 @@ export function installLocalBridge(): void {
 			if (request.method === 'GET' && url.pathname.endsWith(DATA_SUFFIX)) {
 				const pathname = url.pathname.slice(0, -DATA_SUFFIX.length) || '/';
 				const search = url.search;
-				const reply = await ask<LoadReply | null>('route.load', { pathname, search });
+				const reply = await ask<LoadReply | null>('route.load', {
+					pathname,
+					search,
+					cookie: document.cookie
+				});
 				if (reply) return dataResponse(reply);
 			} else if (url.pathname.startsWith('/api/')) {
 				const body = ['GET', 'HEAD'].includes(request.method) ? null : await request.clone().text();

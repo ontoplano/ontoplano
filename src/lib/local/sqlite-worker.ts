@@ -98,8 +98,8 @@ const ops: Record<string, (args: never) => unknown> = {
 	// The dispatcher: the fetch bridge hands over the app's own data and
 	// action requests, and these run the same load/action bodies the server
 	// route would, out of `page.local.ts` / `layout.local.ts` twins.
-	'route.load': (args: { pathname: string; search: string }) =>
-		runLocalLoad(args.pathname, args.search),
+	'route.load': (args: { pathname: string; search: string; cookie?: string }) =>
+		runLocalLoad(args.pathname, args.search, args.cookie),
 	'route.action': (args: {
 		pathname: string;
 		search: string;

@@ -19,13 +19,13 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let plugins: typeof import('../src/lib/server/services/plugins');
+let plugins: typeof import('../src/lib/services/plugins');
 let dashboard: typeof import('../src/lib/dashboard');
 let legal: typeof import('../src/lib/server/services/legal');
 let version: typeof import('../src/lib/server/services/version');
 
 beforeAll(async () => {
-	plugins = await import('../src/lib/server/services/plugins');
+	plugins = await import('../src/lib/services/plugins');
 	dashboard = await import('../src/lib/dashboard');
 	legal = await import('../src/lib/server/services/legal');
 	version = await import('../src/lib/server/services/version');

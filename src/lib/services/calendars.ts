@@ -1,9 +1,9 @@
 import { and, asc, eq } from 'drizzle-orm';
 
-import { eventsBetween, type IcsEvent } from '../../ics.js';
+import { eventsBetween, type IcsEvent } from '../ics.js';
 import { db } from '$lib/db/index.js';
 import { calendarFeeds } from '$lib/db/schema.js';
-import { assertPublicUrl, fetchPublic } from '../outbound.js';
+import { host } from './host.js';
 import type { Ctx } from '$lib/services/ctx.js';
 import { NotFoundError } from '$lib/services/errors.js';
 import { stamp } from '$lib/services/time.js';
@@ -70,7 +70,7 @@ function parseUrl(raw: unknown): string {
 	// `webcal://` is what a calendar app registers; it is https underneath.
 	const normalised = value.replace(/^webcal:\/\//i, 'https://');
 
-	return assertPublicUrl(normalised, 'calendar address').toString();
+	return host.assertPublicUrl(normalised, 'calendar address').toString();
 }
 
 export function addFeed(ctx: Ctx, raw: { name?: unknown; url?: unknown; color?: unknown }): number {
@@ -121,7 +121,7 @@ export async function refreshFeed(ctx: Ctx, id: number): Promise<void> {
 	if (!feed) throw new NotFoundError('calendar');
 
 	try {
-		const res = await fetchPublic(feed.url, {
+		const res = await host.fetchPublic(feed.url, {
 			redirect: 'follow',
 			headers: { accept: 'text/calendar, text/plain' },
 			signal: AbortSignal.timeout(15_000)

@@ -27,14 +27,14 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-type Services = { calendars: typeof import('../src/lib/server/services/calendars') };
+type Services = { calendars: typeof import('../src/lib/services/calendars') };
 
 let s: Services;
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
-	s = { calendars: await import('../src/lib/server/services/calendars') };
+	s = { calendars: await import('../src/lib/services/calendars') };
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 });

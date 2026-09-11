@@ -28,6 +28,12 @@ export interface LocalRouteEvent {
 	 * bodies keep the same `locals.user!.id` they were born with.
 	 */
 	locals: { user?: { id: string } | undefined };
+	/**
+	 * The page's own cookies, forwarded by the bridge. Only what client code
+	 * can read — which is all a local instance has, and all the view
+	 * preferences that ride on cookies ever were.
+	 */
+	cookies: { get(name: string): string | undefined };
 }
 
 type PageModule = {
@@ -109,12 +115,25 @@ export function matchLocalRoute(
 	return null;
 }
 
-function eventFor(url: URL, params: Record<string, string>, request?: Request): LocalRouteEvent {
+function eventFor(
+	url: URL,
+	params: Record<string, string>,
+	request?: Request,
+	cookieHeader = ''
+): LocalRouteEvent {
+	const jar = new Map(
+		cookieHeader
+			.split(';')
+			.map((pair) => pair.trim().split('=') as [string, string])
+			.filter(([name]) => name)
+			.map(([name, value]) => [name, decodeURIComponent(value ?? '')])
+	);
 	return {
 		request: request ?? new Request(url),
 		url,
 		params,
-		locals: { user: { id: LOCAL_USER_ID } }
+		locals: { user: { id: LOCAL_USER_ID } },
+		cookies: { get: (name) => jar.get(name) }
 	};
 }
 
@@ -141,11 +160,15 @@ export type LoadReply =
 	| { kind: 'redirect'; location: string }
 	| { kind: 'error'; status: number; message: string };
 
-export async function runLocalLoad(pathname: string, search: string): Promise<LoadReply | null> {
+export async function runLocalLoad(
+	pathname: string,
+	search: string,
+	cookieHeader = ''
+): Promise<LoadReply | null> {
 	const hit = matchLocalRoute(pathname);
 	if (!hit) return null;
 	const url = new URL(pathname + search, self.location.origin);
-	const event = eventFor(url, hit.params);
+	const event = eventFor(url, hit.params, undefined, cookieHeader);
 	try {
 		const nodes: ({ data: unknown } | null)[] = [];
 		for (const slot of branchOf(hit.matcher.dir)) {

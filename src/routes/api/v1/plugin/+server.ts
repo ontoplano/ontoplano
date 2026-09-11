@@ -2,7 +2,7 @@ import type { RequestHandler } from './$types';
 
 import { authenticateApi, readJson } from '$lib/server/api/auth';
 import { toJsonError } from '$lib/http-errors';
-import { deleteManifest, listManifests, upsertManifest } from '$lib/server/services/plugins';
+import { deleteManifest, listManifests, upsertManifest } from '$lib/services/plugins';
 
 /** The manifests this account has been given. */
 export const GET: RequestHandler = async (event) => {
