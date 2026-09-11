@@ -56,6 +56,39 @@ final class Instance {
     }
 
     /**
+     * The address this launch should actually open.
+     *
+     * Two jobs, and both of them have to happen on every launch, so they are
+     * one call: point the URL at the chosen instance, and tell that instance
+     * the request is coming from this app.
+     */
+    static Uri launchUrl(Context context, Uri uri) {
+        return announce(rebase(context, uri));
+    }
+
+    /**
+     * The same link, with a word saying it came from the app.
+     *
+     * The pages inside are the pages any browser gets, and once in a while one
+     * of them needs to know the difference — the account page offers a way
+     * back to the instance chooser, and only an install that has a chooser can
+     * be offered it. There is nothing to ask the browser about: a TWA *is*
+     * Chrome, with Chrome's user agent, and `display-mode: standalone` is
+     * equally true of a page somebody saved to their home screen on a phone
+     * with no app on it at all.
+     *
+     * So the app says so itself, once per launch. The server keeps the answer
+     * in a cookie and takes the parameter back off the address, so it is not
+     * left sitting in a link somebody shares.
+     */
+    private static Uri announce(Uri uri) {
+        // An opaque URI — `mailto:` and friends — has no query to append to,
+        // and buildUpon on one produces something no browser will open.
+        if (uri == null || uri.isOpaque()) return uri;
+        return uri.buildUpon().appendQueryParameter("app", "android").build();
+    }
+
+    /**
      * The same link, aimed at the chosen instance.
      *
      * A TWA is generated pointing at one origin, and every URL the launcher
@@ -63,7 +96,7 @@ final class Instance {
      * that host. Swapping the scheme, host and port keeps the path and query,
      * so a link to a Tuesday still opens that Tuesday.
      */
-    static Uri rebase(Context context, Uri uri) {
+    private static Uri rebase(Context context, Uri uri) {
         String chosen = origin(context);
         if (chosen.isEmpty() || uri == null) return uri;
 

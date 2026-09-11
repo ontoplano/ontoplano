@@ -49,8 +49,9 @@ public class LauncherActivity
 
         // The instance chosen on first run wins over the one this
         // build was generated against. Same path and query, different
-        // host, so a deep link into a day still lands on that day.
-        uri = Instance.rebase(this, uri);
+        // host, so a deep link into a day still lands on that day —
+        // plus the mark that tells the instance this is the app.
+        uri = Instance.launchUrl(this, uri);
 
         
 

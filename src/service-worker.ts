@@ -27,6 +27,7 @@
  * works even if nobody has opened them since the worker took over.
  */
 import { build, files, version } from '$service-worker';
+import { APP_LAUNCH_PARAM, APP_LAUNCH_VALUE } from '$lib/platform';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
@@ -114,6 +115,31 @@ sw.addEventListener('fetch', (event) => {
 	// cached token list is a security answer that has gone stale.
 	if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/settings/account/export'))
 		return;
+
+	/*
+	 * The Android app's launch, which arrives with a mark on the address.
+	 *
+	 * Every launch opens `?app=android` and the server answers with a redirect
+	 * that takes it back off — so online, the page this ends up caching is the
+	 * plain one, as it always was. Offline there is no server to do that, and a
+	 * lookup keyed on the marked address misses every page we hold: a cold
+	 * launch on a train showed the offline page instead of the dashboard it had
+	 * from yesterday. So the fallback asks for the address without the mark.
+	 */
+	if (request.mode === 'navigate' && url.searchParams.get(APP_LAUNCH_PARAM) === APP_LAUNCH_VALUE) {
+		const plain = new URL(url);
+		plain.searchParams.delete(APP_LAUNCH_PARAM);
+
+		event.respondWith(
+			fetch(request).catch(async () => {
+				const cached = await caches.match(plain.href);
+				if (cached) return cached;
+				const offline = await caches.match(OFFLINE_URL);
+				return offline ?? new Response('Offline', { status: 503, statusText: 'Offline' });
+			})
+		);
+		return;
+	}
 
 	if (isAsset(url)) {
 		event.respondWith(caches.match(request).then((hit) => hit ?? fetch(request)));

@@ -1,6 +1,9 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
+	DEMO_ORIGIN,
 	defaultIdentity,
+	demoOriginFor,
 	identityFrom,
 	packageIdFor,
 	suffixFor
@@ -84,5 +87,32 @@ describe('the name and icon a build wears', () => {
 	it('does not mistake the maskable icon for the plain one', () => {
 		const app = identityFrom(manifest, ORIGIN);
 		expect(app.iconUrl).not.toBe(app.maskableIconUrl);
+	});
+});
+
+/**
+ * Who gets offered a look round before choosing.
+ *
+ * The chooser's demo button is the first screen of the app somebody who has
+ * not decided yet will use, and it is also the one thing on that screen that
+ * would be wrong in a copy built against somebody's own server: their phone
+ * has no business being pointed at our machine because they tapped the wrong
+ * button on their own install.
+ */
+describe('the demo a build offers', () => {
+	it('is offered by the production build alone', () => {
+		expect(demoOriginFor('app.ontoplano.com')).toBe(DEMO_ORIGIN);
+		expect(demoOriginFor('plan.example.com')).toBe('');
+		expect(demoOriginFor('192.168.1.50:1493')).toBe('');
+		// Including the demo's own build, which would be a button back to itself.
+		expect(demoOriginFor('demo.ontoplano.com')).toBe('');
+	});
+
+	it('is the same address the app offers on the web', () => {
+		// Two places name it and neither imports the other — a script the app
+		// cannot import, and a page the build script cannot. If it ever moves,
+		// this fails rather than leaving the phone pointed at a dead host.
+		const page = readFileSync('src/routes/start/+page.server.ts', 'utf8');
+		expect(page).toContain(DEMO_ORIGIN);
 	});
 });

@@ -20,6 +20,15 @@ declare global {
 			session?: Session;
 			/** Request id: stamped by the logging hook, echoed by the error page. */
 			rid?: string;
+			/**
+			 * Whether the Android app is drawing this page rather than a browser.
+			 *
+			 * The app says so on every launch and the answer is kept in a cookie;
+			 * see `$lib/platform.ts`. It is not a screen size and not
+			 * `display-mode: standalone` — both of those are also true of the site
+			 * saved to a home screen on a phone with no app on it.
+			 */
+			nativeApp?: boolean;
 		}
 
 		/**

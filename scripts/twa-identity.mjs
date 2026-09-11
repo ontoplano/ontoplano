@@ -15,6 +15,21 @@
 export const PRODUCTION_HOST = 'app.ontoplano.com';
 
 /**
+ * Where a build of the production app sends somebody who has not decided yet.
+ *
+ * Only that build: an APK somebody generated against their own server offers
+ * no demo at all, because pointing their phone at our machine is not an answer
+ * to "which of my instances is this". The same address the card page offers —
+ * `tests/twa-identity.test.ts` fails if the two drift apart.
+ */
+export const DEMO_ORIGIN = 'https://demo.ontoplano.com';
+
+/** @param {string} host @returns {string} */
+export function demoOriginFor(host) {
+	return host === PRODUCTION_HOST ? DEMO_ORIGIN : '';
+}
+
+/**
  * The package-name suffix for a host, or '' for production.
  *
  * Android identifies an app by its package: a second APK with the same package

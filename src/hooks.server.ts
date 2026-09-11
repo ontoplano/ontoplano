@@ -32,6 +32,7 @@ import {
 import { accessHoldFor, holdDestination } from '$lib/server/services/access';
 import { record } from '$lib/server/services/audit';
 import { toJsonError } from '$lib/server/http-errors';
+import { APP_COOKIE, APP_LAUNCH_PARAM, APP_LAUNCH_VALUE } from '$lib/platform';
 import { refuse } from '$lib/server/refuse';
 import { demoRefusal } from '$lib/server/demo-guard';
 
@@ -212,6 +213,48 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
  * hostname, nobody to tell, and no business writing cookies for a parent
  * domain it does not own.
  */
+/**
+ * Whether this request comes from the Android app.
+ *
+ * The app opens every launch on `?app=android` — the one thing that can tell
+ * the difference, since a Trusted Web Activity *is* Chrome and answers every
+ * browser question exactly as Chrome does. See `$lib/platform.ts`.
+ *
+ * Kept in a cookie and taken straight back off the address, for two reasons:
+ * the app says it once per launch and the pages that care are three taps
+ * further in, and a parameter left on the URL is a parameter somebody copies
+ * into a message. A year, because an install lasts one.
+ *
+ * The cookie is per browser profile rather than per app, which is the honest
+ * answer anyway: what it records is that this phone has the app, and that is
+ * exactly the condition under which offering `ontoplano://instance` means
+ * anything.
+ */
+const handleNativeApp: Handle = async ({ event, resolve }) => {
+	const declared =
+		event.request.method === 'GET' &&
+		event.url.searchParams.get(APP_LAUNCH_PARAM) === APP_LAUNCH_VALUE;
+
+	if (declared) {
+		event.cookies.set(APP_COOKIE, APP_LAUNCH_VALUE, {
+			path: '/',
+			httpOnly: true,
+			// A LAN build opens an http origin — `make android-lan` — and a secure
+			// cookie there is a cookie the phone never sends back.
+			secure: event.url.protocol === 'https:',
+			sameSite: 'lax',
+			maxAge: 60 * 60 * 24 * 365
+		});
+
+		const clean = new URL(event.url);
+		clean.searchParams.delete(APP_LAUNCH_PARAM);
+		redirect(302, `${clean.pathname}${clean.search}${clean.hash}`);
+	}
+
+	event.locals.nativeApp = event.cookies.get(APP_COOKIE) === APP_LAUNCH_VALUE;
+	return resolve(event);
+};
+
 const SIGNED_IN_HINT = 'ontoplano_signed_in';
 
 const handleSiteHint: Handle = async ({ event, resolve }) => {
@@ -656,6 +699,7 @@ const handleSignedOutWrites: Handle = ({ event, resolve }) => {
 export const handle: Handle = sequence(
 	handleRequestLog,
 	handleSecurityHeaders,
+	handleNativeApp,
 	handleAuthRateLimit,
 	handleRegistration,
 	handleDemoGuard,

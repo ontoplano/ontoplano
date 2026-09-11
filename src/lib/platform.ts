@@ -47,3 +47,23 @@ export function isStandalone(): boolean {
 		window.matchMedia('(display-mode: standalone)').matches
 	);
 }
+
+/**
+ * How a page knows it is inside the Android app rather than a browser.
+ *
+ * Not by screen size, and not by `isStandalone()` above. Both answer a
+ * different question: a phone-shaped window, or a window with no address bar —
+ * which is equally true of the site saved to a home screen on a phone that has
+ * never had the app installed. What the app can offer that a browser cannot is
+ * the native instance chooser, so the only useful question is whether *the
+ * app* is drawing this page, and the app is the one thing that knows.
+ *
+ * So it says so: every launch opens `?app=android` (`Instance.launchUrl` in
+ * `android/native/java/Instance.java`), the server writes that into a cookie
+ * and redirects the parameter back off the address, and from then on
+ * `locals.nativeApp` is the answer for every request on this install —
+ * including the ones that come back from a deep link months later.
+ */
+export const APP_LAUNCH_PARAM = 'app';
+export const APP_LAUNCH_VALUE = 'android';
+export const APP_COOKIE = 'ontoplano_app';

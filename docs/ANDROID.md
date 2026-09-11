@@ -273,18 +273,28 @@ rather than a screen: if an instance has been chosen it opens the app there,
 and if none has it asks. Every launch after the first passes straight through
 and draws nothing.
 
-The question offers two answers — the origin this build was made for, as a
-button, and a field for your own address. Whichever is chosen is checked
-against `/healthz` before it is kept, so a typo fails here rather than as a
-blank page later. It is stored in the same place the widgets read, so choosing
-an instance points them at it too.
+The question offers three answers: the origin this build was made for, as the
+one filled button; the demo, on a build of the published app and on no other,
+since sending somebody's self-hosted copy to our machine answers nothing they
+asked; and a field for your own address. Whichever is chosen is checked against
+`/healthz` before it is kept, so a typo fails here rather than as a blank page
+later. It is stored in the same place the widgets read, so choosing an instance
+points them at it too.
 
-**The way back** is the launcher icon's long-press menu: **Switch instance**.
-The app itself is a web view with no native chrome to hang a settings item on,
-and a page cannot start an activity, so a shortcut is the affordance Android
-gives an app of this shape. `ontoplano://instance` opens the same screen.
-"Use a different one" forgets the origin _and_ the widget key — a key minted by
-one instance means nothing to another.
+**The way back** is **Settings → Account → This instance → Switch instance**
+inside the app, and **Switch instance** on the launcher icon's long-press menu.
+Both land on `ontoplano://instance`, which is the same screen: a web page
+cannot start an activity, so the link is how one asks. "Forget this instance"
+drops the origin _and_ the widget key — a key minted by one instance means
+nothing to another.
+
+The account page only offers it inside the app, and it knows it is inside the
+app because the app said so. Nothing else can tell: a TWA is Chrome, with
+Chrome's user agent, and `display-mode: standalone` is just as true of the site
+saved to a home screen on a phone with no app installed. So every launch opens
+`?app=android` (`Instance.launchUrl`), the server keeps that in a cookie and
+redirects the parameter back off the address, and `locals.nativeApp` is the
+answer from then on.
 
 ### The address bar, on your own instance
 
@@ -343,6 +353,16 @@ the manifest — the provider, the list service and the configuration activity.
 time: the classes sit in the app's own package so `R` resolves, and the package
 is still configurable. `__ORIGIN__` is replaced with the origin the build is
 bound to, so the widget's Connect button opens the same instance the app does.
+`__DEMO__` is the address the chooser's demo button opens, and it is empty for
+every build but the one aimed at `app.ontoplano.com`.
+
+**`res/xml/shortcuts.xml` is not a source file.** Bubblewrap's Gradle template
+rewrites it from `twa-manifest.json` on every `preBuild`, so anything written
+into the file directly survives until the next build and no further — which is
+where the **Switch instance** shortcut went for a while. It is added to the
+generator in `app/build.gradle` instead. The list itself is declared on
+`InstanceActivity`, because Android reads it off whichever activity holds the
+launcher icon and nowhere else.
 
 They are Java, not Kotlin. The generated project has no Kotlin plugin, and
 adding one to a file that is rewritten on every build is a worse trade than a

@@ -10,6 +10,22 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.129.0 — 2026-09-11
+
+- **The phone app's first screen is a proper one.** It always asked which
+  ontoplano it was for; now it says so with the app's own mark and type, the
+  instance the app was built for is one button, your own address is a box under
+  it, and the copy from the store offers the demo as well — somewhere to look
+  before deciding anything.
+- **You can change which ontoplano the app opens without reinstalling it.**
+  Settings → Account, in the app only, beside the sessions and sign-out: it
+  names the server you are on and takes you back to the chooser.
+- **The home-screen shortcuts work again.** Long-pressing the icon offers
+  Board, Diary and Goals — and now Switch instance. They had been gone since
+  the app started asking which instance to open, because Android reads that
+  list off the launcher icon's own activity and the list had stayed behind on
+  the old one.
+
 ## 0.128.0 — 2026-09-10
 
 - **A goal can be measured by several things at once.** "Get the band going"

@@ -39,13 +39,16 @@
     <string name="widget_day_description">The whole day as one strip, with a mark where you are.</string>
     <!-- Choosing an instance: the first thing the app asks, and the only
          native screen somebody sees before the app itself. -->
+    <string name="instance_wordmark">ontoplano</string>
     <string name="instance_title">Which ontoplano?</string>
-    <string name="instance_help">This app is a window onto an ontoplano server. Use the one it was built for, or your own.</string>
+    <string name="instance_help">This app is a window onto an ontoplano server.</string>
     <string name="instance_use_default">Use %1$s</string>
+    <string name="instance_use_demo">Try the demo</string>
     <string name="instance_own_label">Or your own address</string>
     <string name="instance_address_hint">https://plan.example.com</string>
     <string name="instance_use_mine">Use this address</string>
-    <string name="instance_forget">Use a different one</string>
+    <string name="instance_current">Now on %1$s</string>
+    <string name="instance_forget">Forget this instance</string>
     <string name="instance_checking">Checking…</string>
     <string name="instance_no_answer">Nothing answered there. Check the address and that the server is up.</string>
     <string name="instance_bad_address">That needs to be a full address, starting with https://.</string>

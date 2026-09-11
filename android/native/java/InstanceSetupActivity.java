@@ -20,14 +20,16 @@ import java.util.concurrent.Executors;
  * Which ontoplano this app talks to.
  *
  * Asked once, on first run, and reachable afterwards from the launcher icon's
- * long-press menu — the app itself is a web view, so a native question needs a
- * native way back to it.
+ * long-press menu and from the account page inside the app — which opens
+ * `ontoplano://instance`, since a web page cannot start an activity on its own.
  *
- * There are two answers and they are not equal: most people want the instance
- * this build was made for, and that is the button. Somebody self-hosting types
- * an address, which is the whole reason this screen exists — a build bound to
- * one origin forever is a client for one company's service, and this app is
- * not that.
+ * There are three answers and they are not equal. Most people want the
+ * instance this build was made for, and that is the filled button. Somebody
+ * who has not decided yet wants a look first, which is the demo — offered only
+ * by a build pointed at the instance that runs one. Somebody self-hosting
+ * types an address, which is the whole reason this screen exists: a build
+ * bound to one origin forever is a client for one company's service, and this
+ * app is not that.
  *
  * The address is checked before it is kept. A typo here does not fail until
  * the app opens on a blank page, which is a long way from the mistake.
@@ -36,12 +38,22 @@ public class InstanceSetupActivity extends Activity {
     /** The origin this build was generated against, offered as the easy answer. */
     private static final String BUILT_FOR = "__ORIGIN__";
 
+    /**
+     * Somewhere to look before choosing, or empty.
+     *
+     * The build fills this in only for the instance that actually runs a demo.
+     * A copy somebody built against their own server has no business sending
+     * them to ours, so on those builds the button is not drawn at all.
+     */
+    private static final String DEMO = "__DEMO__";
+
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
 
     private EditText address;
     private TextView status;
     private Button use;
+    private Button demo;
     private Button mine;
     private Button forget;
 
@@ -53,19 +65,31 @@ public class InstanceSetupActivity extends Activity {
         address = findViewById(R.id.instance_address);
         status = findViewById(R.id.instance_status);
         use = findViewById(R.id.instance_use_default);
+        demo = findViewById(R.id.instance_use_demo);
         mine = findViewById(R.id.instance_use_mine);
         forget = findViewById(R.id.instance_forget);
+        TextView current = findViewById(R.id.instance_current);
 
-        String current = Instance.origin(this);
-        address.setText(current.isEmpty() ? BUILT_FOR : current);
+        String chosen = Instance.origin(this);
+
+        // Empty unless there is an address worth editing. Prefilling the box
+        // with the instance the button above already offers makes the two read
+        // as the same answer typed twice.
+        if (!chosen.isEmpty() && !chosen.equals(BUILT_FOR)) address.setText(chosen);
 
         use.setText(getString(R.string.instance_use_default, host(BUILT_FOR)));
         use.setOnClickListener(v -> choose(BUILT_FOR));
         mine.setOnClickListener(v -> choose(address.getText().toString()));
 
-        // Only once there is something to leave. On first run there is no
+        demo.setVisibility(DEMO.isEmpty() ? View.GONE : View.VISIBLE);
+        demo.setOnClickListener(v -> choose(DEMO));
+
+        // Both only once there is something to leave. On first run there is no
         // "forget", and a button that does nothing is worse than no button.
-        forget.setVisibility(current.isEmpty() ? View.GONE : View.VISIBLE);
+        int already = chosen.isEmpty() ? View.GONE : View.VISIBLE;
+        current.setVisibility(already);
+        forget.setVisibility(already);
+        current.setText(getString(R.string.instance_current, host(chosen)));
         forget.setOnClickListener(v -> {
             Instance.forget(this);
             finish();
@@ -86,6 +110,7 @@ public class InstanceSetupActivity extends Activity {
 
     private void busy(boolean on, String message) {
         use.setEnabled(!on);
+        demo.setEnabled(!on);
         mine.setEnabled(!on);
         status.setText(message);
     }

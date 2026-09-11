@@ -57,8 +57,8 @@ android {
         applicationId "app.ontoplano.twa"
         minSdkVersion 23
         targetSdkVersion 36
-        versionCode 12704
-        versionName "0.127.4"
+        versionCode 12900
+        versionName "0.129.0"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name
@@ -194,6 +194,15 @@ task generateShorcutsFile {
                             'android:data': s.url)
                     'categories'('android:name': 'android.intent.category.LAUNCHER')
                 }
+            }
+            'shortcut'(
+                    'android:shortcutId': 'instance',
+                    'android:enabled': 'true',
+                    'android:shortcutShortLabel': '@string/instance_shortcut') {
+                'intent'(
+                        'android:action': 'android.intent.action.VIEW',
+                        'android:targetPackage': twaManifest.applicationId,
+                        'android:targetClass': twaManifest.applicationId + '.InstanceSetupActivity')
             }
         }
     shortcutsFile.text = xmlWriter.toString() + '\n'

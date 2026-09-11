@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- fitsSystemWindows: the app targets edge-to-edge, and without it the
-     title draws under the status bar and is cropped. -->
+<!--
+    The first thing anybody sees, and on most phones the only native screen
+    this app has.
+
+    It is shaped like the web app's front door on purpose — the mark, the name,
+    one line about what this is, then the doors — because the next screen is
+    that front door and the two should not look like different products.
+
+    fitsSystemWindows: the app targets edge-to-edge, and without it the title
+    draws under the status bar and is cropped.
+-->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -11,11 +20,40 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:gravity="center_horizontal"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="48dp"
+        android:paddingBottom="32dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@mipmap/ic_launcher"
+                android:importantForAccessibility="no" />
+
+            <!-- Lowercase, as the app writes it everywhere else. -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="@string/instance_wordmark"
+                android:textColor="@color/widget_text"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:paddingTop="28dp"
+            android:gravity="center"
             android:text="@string/instance_title"
             android:textColor="@color/widget_text"
             android:textSize="20sp"
@@ -24,56 +62,117 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="8dp"
-            android:paddingBottom="20dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="28dp"
+            android:gravity="center"
             android:text="@string/instance_help"
             android:textColor="@color/widget_dim"
-            android:textSize="13sp" />
+            android:textSize="14sp" />
 
+        <!-- The recommended answer, and the only filled button on the screen. -->
         <Button
             android:id="@+id/instance_use_default"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:minHeight="52dp"
+            android:background="@drawable/instance_primary"
+            android:textColor="@color/widget_page"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textAllCaps="false" />
+
+        <!--
+            Somewhere to look before deciding anything, on the builds that have
+            one. A copy built against somebody's own server has no business
+            sending them to ours, so the build leaves the address empty and
+            this goes away.
+        -->
+        <Button
+            android:id="@+id/instance_use_demo"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:minHeight="52dp"
+            android:background="@drawable/instance_outline"
+            android:text="@string/instance_use_demo"
+            android:textColor="@color/widget_text"
+            android:textSize="16sp"
+            android:textAllCaps="false" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="24dp"
+            android:paddingTop="32dp"
+            android:paddingBottom="8dp"
             android:text="@string/instance_own_label"
             android:textColor="@color/widget_dim"
-            android:textSize="12sp" />
+            android:textSize="13sp" />
 
         <EditText
             android:id="@+id/instance_address"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:minHeight="52dp"
+            android:background="@drawable/instance_field"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
             android:hint="@string/instance_address_hint"
             android:inputType="textUri"
             android:importantForAutofill="no"
             android:textColor="@color/widget_text"
-            android:textColorHint="@color/widget_dim" />
+            android:textColorHint="@color/widget_dim"
+            android:textSize="16sp" />
 
         <Button
             android:id="@+id/instance_use_mine"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/instance_use_mine" />
+            android:layout_marginTop="12dp"
+            android:minHeight="52dp"
+            android:background="@drawable/instance_outline"
+            android:text="@string/instance_use_mine"
+            android:textColor="@color/widget_text"
+            android:textSize="16sp"
+            android:textAllCaps="false" />
 
+        <!--
+            Reserved, not grown. A message appearing here must not shove the
+            buttons above it or the way out below it — the space is part of the
+            layout whether anything is being said or not.
+        -->
         <TextView
             android:id="@+id/instance_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:minHeight="44dp"
             android:paddingTop="12dp"
             android:textColor="@color/widget_dim"
             android:textSize="13sp" />
 
-        <!-- The way out, and only once there is something to leave. -->
-        <Button
-            android:id="@+id/instance_forget"
+        <!-- Where this install is pointed, and the way to stop pointing it
+             anywhere. Both appear only once there is an answer to forget. -->
+        <TextView
+            android:id="@+id/instance_current"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:text="@string/instance_forget" />
+            android:paddingTop="20dp"
+            android:gravity="center"
+            android:textColor="@color/widget_dim"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/instance_forget"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:minHeight="48dp"
+            android:text="@string/instance_forget"
+            android:textColor="@color/widget_accent"
+            android:textSize="14sp"
+            android:textAllCaps="false" />
     </LinearLayout>
 </ScrollView>

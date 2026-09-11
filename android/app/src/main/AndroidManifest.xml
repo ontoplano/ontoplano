@@ -123,7 +123,6 @@
             <meta-data android:name="android.support.customtabs.trusted.FILE_PROVIDER_AUTHORITY"
                 android:value="@string/providerAuthority"/>
 
-            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
 
             <meta-data android:name="android.support.customtabs.trusted.FALLBACK_STRATEGY"
                 android:value="@string/fallbackType" />
@@ -296,6 +295,10 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- Android reads the shortcut list off the activity holding the
+                 launcher icon and nowhere else, so it moves here with it. -->
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
 
         <!--

@@ -21,9 +21,22 @@ import {
 	weeklyReviewMailEnabled
 } from '$lib/server/services/review-mail';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	return {
 		email: locals.user!.email,
+		/*
+		 * The phone app's way out of this instance, and the only page that has
+		 * one.
+		 *
+		 * The app is a window onto a server you choose, so leaving that server
+		 * is an app-level act with nowhere web-shaped to live — the native
+		 * chooser is behind `ontoplano://instance`, and the launcher's
+		 * long-press menu is not somewhere anybody looks. Shown only when the
+		 * app is what is drawing the page: in a browser the link opens nothing.
+		 */
+		nativeApp: locals.nativeApp === true,
+		/** Named rather than described: the card says which server this is. */
+		host: url.host,
 		emailVerified: locals.user!.emailVerified,
 		sessions: listSessions(buildCtx(locals.user!.id), locals.session?.token),
 		// Both credential changes are confirmed by mail, so the page says up

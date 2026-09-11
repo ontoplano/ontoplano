@@ -23,7 +23,7 @@ import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 
 import { androidEnv } from './lib/android-env.mjs';
-import { defaultIdentity, identityFrom, packageIdFor } from './twa-identity.mjs';
+import { defaultIdentity, demoOriginFor, identityFrom, packageIdFor } from './twa-identity.mjs';
 
 /*
  * Where the Android project is written.
@@ -566,6 +566,41 @@ if (!gradle.includes('androidx.browser:browser')) {
 	);
 }
 
+/*
+ * The way back to the instance chooser, added where it survives a build.
+ *
+ * `shortcuts.xml` is not a source file: Bubblewrap's Gradle template rewrites
+ * it from `twaManifest.shortcuts` on every `preBuild`, so an entry written
+ * into the file by hand lives exactly until the next `gradle assembleRelease`
+ * — which is to say it never reached a phone. Written into the generator
+ * instead, it is in every build.
+ *
+ * It cannot come from the web manifest like the others, because it is not a
+ * web shortcut: it starts a native activity rather than opening a URL.
+ */
+const instanceShortcut =
+	"            'shortcut'(\n" +
+	"                    'android:shortcutId': 'instance',\n" +
+	"                    'android:enabled': 'true',\n" +
+	"                    'android:shortcutShortLabel': '@string/instance_shortcut') {\n" +
+	"                'intent'(\n" +
+	"                        'android:action': 'android.intent.action.VIEW',\n" +
+	"                        'android:targetPackage': twaManifest.applicationId,\n" +
+	"                        'android:targetClass': twaManifest.applicationId + '.InstanceSetupActivity')\n" +
+	'            }\n';
+
+if (!gradle.includes("'android:shortcutId': 'instance'")) {
+	const closing = '        }\n    shortcutsFile.text';
+	if (!gradle.includes(closing)) {
+		throw new Error(
+			'No shortcuts generator to add the instance shortcut to in build.gradle.\n' +
+				"Bubblewrap has changed its Gradle template — without this the app's\n" +
+				'only native way back to the instance chooser is gone from every build.'
+		);
+	}
+	gradle = gradle.replace(closing, instanceShortcut + closing);
+}
+
 writeFileSync(gradlePath, gradle);
 console.log(`Set version ${versionName} (${versionCode})`);
 
@@ -606,8 +641,13 @@ function installNative() {
 
 	// __ORIGIN__ is the instance this build is bound to: the widget's Connect
 	// button opens it, so out of the box the widget points where the app does.
+	// __DEMO__ is the look-around address the chooser offers, and it is empty
+	// for every build but the production one — see `demoOriginFor`.
 	const substitute = (text) =>
-		text.replaceAll('__PACKAGE__', packageId).replaceAll('__ORIGIN__', parsed.origin);
+		text
+			.replaceAll('__PACKAGE__', packageId)
+			.replaceAll('__ORIGIN__', parsed.origin)
+			.replaceAll('__DEMO__', demoOriginFor(domain));
 	const mainDir = join(DIR, 'app', 'src', 'main');
 	const javaDir = join(mainDir, 'java', ...packageId.split('.'));
 
@@ -630,6 +670,19 @@ function installNative() {
 
 	const manifestXmlPath = join(mainDir, 'AndroidManifest.xml');
 	let xml = readFileSync(manifestXmlPath, 'utf8');
+
+	/*
+	 * The shortcut list comes off the web view's activity.
+	 *
+	 * Bubblewrap hangs it on LauncherActivity, which was where the launcher
+	 * icon used to be. Moving the icon to InstanceActivity — so the app can
+	 * ask which instance before opening one — took the shortcuts with it
+	 * silently: Android reads the list from the launcher activity only, so
+	 * from that day the app had none at all. Not Board, not Diary, and not the
+	 * way back to the chooser. It is declared on InstanceActivity below, and
+	 * two declarations would be one too many.
+	 */
+	xml = xml.replace(/^[ \t]*<meta-data android:name="android\.app\.shortcuts"[^>]*\/>\n/gm, '');
 
 	// The widget reads the instance over the network from the app's own
 	// process. The browser helper library declares this too, but a component
@@ -746,6 +799,10 @@ function installNative() {
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- Android reads the shortcut list off the activity holding the
+                 launcher icon and nowhere else, so it moves here with it. -->
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
 
         <!--
@@ -796,6 +853,15 @@ function installNative() {
 		'            <!-- The launcher icon is InstanceActivity, below. -->'
 	);
 
+	const shortcutLists = (xml.match(/android\.app\.shortcuts/g) ?? []).length;
+	if (shortcutLists !== 1) {
+		throw new Error(
+			`${shortcutLists} activities declare the shortcut list; exactly one should.\n` +
+				'It belongs to the activity holding the launcher icon — InstanceActivity —\n' +
+				'and nowhere else, or the app ships with no shortcuts at all.'
+		);
+	}
+
 	/*
 	 * Checked by the outcome rather than by whether the edit matched.
 	 *
@@ -830,7 +896,7 @@ function installNative() {
 		if (!before.includes(anchor)) {
 			throw new Error(`No getLaunchingUrl to redirect in ${launcherJava}`);
 		}
-		if (!before.includes('Instance.rebase')) {
+		if (!before.includes('Instance.launchUrl')) {
 			writeFileSync(
 				launcherJava,
 				before.replace(
@@ -838,55 +904,10 @@ function installNative() {
 					anchor +
 						'\n\n        // The instance chosen on first run wins over the one this\n' +
 						'        // build was generated against. Same path and query, different\n' +
-						'        // host, so a deep link into a day still lands on that day.\n' +
-						'        uri = Instance.rebase(this, uri);'
+						'        // host, so a deep link into a day still lands on that day —\n' +
+						'        // plus the mark that tells the instance this is the app.\n' +
+						'        uri = Instance.launchUrl(this, uri);'
 				)
-			);
-		}
-	}
-
-	/*
-	 * A way back to the question, from the launcher icon's long-press menu.
-	 *
-	 * The app is a web view: there is no native chrome to hang a settings item
-	 * on, and a page cannot start an activity. A shortcut is the one affordance
-	 * Android gives an app like this that costs the user nothing to find.
-	 */
-	const shortcutsPath = join(mainDir, 'res', 'xml', 'shortcuts.xml');
-	if (existsSync(shortcutsPath)) {
-		const shortcut =
-			`<shortcuts xmlns:android='http://schemas.android.com/apk/res/android'>\n` +
-			`    <shortcut\n` +
-			`        android:shortcutId="instance"\n` +
-			`        android:enabled="true"\n` +
-			`        android:shortcutShortLabel="@string/instance_shortcut">\n` +
-			`        <intent\n` +
-			`            android:action="android.intent.action.VIEW"\n` +
-			`            android:targetPackage="${packageId}"\n` +
-			`            android:targetClass="${packageId}.InstanceSetupActivity" />\n` +
-			`    </shortcut>\n` +
-			`</shortcuts>\n`;
-		/*
-		 * Two shapes, because the file has both.
-		 *
-		 * Bubblewrap writes an empty self-closing element when the web manifest
-		 * declares no shortcuts, and an open/close pair with one entry per
-		 * shortcut when it does — and which one you get depends on whether the
-		 * manifest could be fetched. Matching only the empty form meant the
-		 * instance shortcut silently vanished on every build that reached the
-		 * network, which is every real one.
-		 */
-		const current = readFileSync(shortcutsPath, 'utf8');
-		const entry = shortcut
-			.replace(`<shortcuts xmlns:android='http://schemas.android.com/apk/res/android'>\n`, '')
-			.replace('</shortcuts>\n', '');
-
-		if (!current.includes('shortcutId="instance"')) {
-			writeFileSync(
-				shortcutsPath,
-				current.includes('</shortcuts>')
-					? current.replace('</shortcuts>', `${entry}</shortcuts>`)
-					: current.replace(/<shortcuts[^>]*\/>/, shortcut.trim())
 			);
 		}
 	}

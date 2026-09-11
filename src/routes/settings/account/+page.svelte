@@ -437,6 +437,31 @@
 		</p>
 	</Card>
 
+	{#if data.nativeApp}
+		<!--
+			The way out of the instance, not out of the account.
+
+			The app is a window onto whichever ontoplano you pointed it at, and
+			until now the only way to point it somewhere else was the launcher
+			icon's long-press menu — an affordance nobody has ever gone looking
+			for. It lands here, beside sign-out, because leaving a server and
+			leaving an account are the two things somebody comes to this page to
+			do. Only in the app: `ontoplano://instance` is a native screen, and in
+			a browser the link opens nothing at all.
+		-->
+		<Card title="This instance">
+			{#snippet actions()}
+				<!-- eslint-disable svelte/no-navigation-without-resolve -- an app scheme, not a route -->
+				<a href="ontoplano://instance" class="btn btn-sm">Switch instance</a>
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
+			{/snippet}
+			<p class="text-sm text-gray-500">
+				This app is open on <strong class="text-gray-700">{data.host}</strong>. Switching points it
+				at another one.
+			</p>
+		</Card>
+	{/if}
+
 	<!--
 		The phone's only door out. The desktop has Sign out in the header menu;
 		the bottom bar carries no menu, so this page — where the account's other

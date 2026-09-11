@@ -6,4 +6,16 @@
     <color name="widget_dim">#9CA3AF</color>
     <color name="widget_accent">#93C5FD</color>
     <color name="widget_edge">#374151</color>
+
+    <!--
+        The instance chooser's own three, so its buttons look like the app's.
+
+        Square, flat, one filled and the rest outlined — the web app's `.btn`
+        in the only place a person meets this project before the web app
+        loads. The presses are the same ink at a third, which is what a ripple
+        on a flat surface wants.
+    -->
+    <color name="widget_field">#1F2937</color>
+    <color name="widget_press_on_light">#33111827</color>
+    <color name="widget_press_on_dark">#33F9FAFB</color>
 </resources>
