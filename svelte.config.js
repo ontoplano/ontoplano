@@ -52,7 +52,16 @@ const config = {
 			mode: 'auto',
 			directives: {
 				'default-src': ['self'],
-				'script-src': ['self'],
+				/*
+				 * SPIKE: WebAssembly needs saying out loud.
+				 *
+				 * `script-src 'self'` refuses `WebAssembly.instantiate` outright, so
+				 * SQLite on the device cannot start. `wasm-unsafe-eval` permits
+				 * compiling WebAssembly and nothing else — it does not bring
+				 * `eval()` or `new Function()` with it, which is what `unsafe-eval`
+				 * would have meant. Still a widening, and Estevão's call to keep.
+				 */
+				'script-src': ['self', 'wasm-unsafe-eval'],
 				'style-src': ['self', 'unsafe-inline'],
 				// @fontsource inlines some faces as data: URIs.
 				'font-src': ['self', 'data:'],

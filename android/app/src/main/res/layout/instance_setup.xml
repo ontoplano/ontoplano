@@ -60,12 +60,12 @@
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/instance_help"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="6dp"
             android:paddingBottom="28dp"
             android:gravity="center"
-            android:text="@string/instance_help"
             android:textColor="@color/widget_dim"
             android:textSize="14sp" />
 
@@ -76,6 +76,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="52dp"
+            android:text="@string/instance_use_default"
             android:background="@drawable/instance_primary"
             android:textColor="@color/widget_page"
             android:textSize="16sp"

@@ -43,6 +43,7 @@ import {
 } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assetNames } from './lib/release-assets.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PKG = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
@@ -433,7 +434,7 @@ function buildDeb(arch) {
 	}
 
 	mkdirSync(OUT, { recursive: true });
-	const file = join(OUT, `ontoplano_${VERSION}_${debArch}.deb`);
+	const file = join(OUT, assetNames(VERSION).deb.replace('amd64', debArch));
 	run('fakeroot', ['dpkg-deb', '--build', '-Zxz', root, file]);
 	return file;
 }
@@ -472,7 +473,7 @@ function buildRpm(arch) {
 		rpmArch,
 		join(top, 'SPECS/ontoplano.spec')
 	]);
-	return join(OUT, rpmArch, `ontoplano-${VERSION}-1.${rpmArch}.rpm`);
+	return join(OUT, rpmArch, assetNames(VERSION).rpm.replace('x86_64', rpmArch));
 }
 
 /* ───────────────────────────────────────────────────────────── the AUR ──── */
@@ -493,7 +494,7 @@ function buildRpm(arch) {
  * regenerated differently later.
  */
 function sourceTarball() {
-	const name = `ontoplano-${VERSION}.tar.gz`;
+	const name = assetNames(VERSION).tarball;
 	const path = join(OUT, name);
 
 	mkdirSync(OUT, { recursive: true });

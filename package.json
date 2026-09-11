@@ -1,6 +1,6 @@
 {
 	"name": "ontoplano",
-	"version": "0.133.0",
+	"version": "0.135.0",
 	"homepage": "https://ontoplano.com",
 	"repository": {
 		"type": "git",
@@ -9,8 +9,8 @@
 	"bugs": "https://github.com/ontoplano/ontoplano/issues",
 	"license": "AGPL-3.0-or-later",
 	"scripts": {
-		"dev": "vite dev",
-		"build": "vite build && node scripts/build-error-page.mjs",
+		"dev": "node scripts/copy-sqlite-wasm.mjs && vite dev",
+		"build": "node scripts/copy-sqlite-wasm.mjs && vite build && node scripts/build-error-page.mjs",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -50,6 +50,7 @@
 		"@eslint/js": "^10.0.1",
 		"@playwright/test": "^1.58.2",
 		"@resvg/resvg-js": "^2.6.2",
+		"@sqlite.org/sqlite-wasm": "^3.53.4-build1",
 		"@sveltejs/adapter-node": "^5.5.2",
 		"@sveltejs/kit": "^2.50.2",
 		"@sveltejs/package": "^2.5.7",

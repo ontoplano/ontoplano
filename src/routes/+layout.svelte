@@ -321,8 +321,15 @@
 		if (dev || typeof navigator === 'undefined' || !navigator.serviceWorker) return;
 
 		// Classic, not a module: that is how SvelteKit bundles it for a build.
-		void navigator.serviceWorker.register('/service-worker.js').catch(() => {
-			// A browser that refuses one still has an app; nothing here is fatal.
+		//
+		// A browser that refuses one still has an app, so this is not fatal — but
+		// it is not silent either. Swallowing the error entirely is how the worker
+		// came to be shipped on every deploy and never run anywhere, and a script
+		// that throws while the browser evaluates it fails in exactly the same
+		// invisible way. One line is the difference between a mystery and a
+		// message.
+		void navigator.serviceWorker.register('/service-worker.js').catch((e) => {
+			console.error('[sw] registration refused:', e);
 		});
 	});
 
@@ -502,7 +509,7 @@
 				result="field"
 			/>
 			<feComponentTransfer in="field" result="threshold">
-				<feFuncA id="{PAGE_TURN.outFilter}-ramp" type="linear" slope="1" intercept="0" />
+				<feFuncA id="{PAGE_TURN.outFilter}-ramp" type="linear" slope="1" intercept="1" />
 			</feComponentTransfer>
 			<feComposite in="SourceGraphic" in2="threshold" operator="in" />
 		</filter>
@@ -529,7 +536,7 @@
 				result="field"
 			/>
 			<feComponentTransfer in="field" result="threshold">
-				<feFuncA id="{PAGE_TURN.inFilter}-ramp" type="linear" slope="1" intercept="0" />
+				<feFuncA id="{PAGE_TURN.inFilter}-ramp" type="linear" slope="-1" intercept="0" />
 			</feComponentTransfer>
 			<feComposite in="SourceGraphic" in2="threshold" operator="in" />
 		</filter>

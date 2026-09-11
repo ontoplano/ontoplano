@@ -82,5 +82,15 @@ export function runDissolve(): void {
 		if (t < 1) requestAnimationFrame(frame);
 	}
 
-	requestAnimationFrame(frame);
+	/*
+	 * The first frame is set here and now, not scheduled.
+	 *
+	 * A turn begins with the filters holding whatever the last one left them at
+	 * — the outgoing screen fully erased — so waiting a frame to correct that
+	 * painted one frame of nothing before the dissolve started. On a short turn
+	 * that single frame is a large share of the whole thing, and it read as a
+	 * flick rather than as ink. Setting `t = 0` synchronously means the browser
+	 * never gets a chance to show the leftover state.
+	 */
+	frame(started);
 }

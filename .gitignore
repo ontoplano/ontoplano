@@ -101,3 +101,6 @@ dist/
 # fdroiddata, and the two things a person has to post. Regenerated per release,
 # never committed — the copy that matters lives in F-Droid's repository.
 fdroid-out/
+
+# Copied from node_modules by scripts/copy-sqlite-wasm.mjs on dev and build.
+/static/sqlite3.wasm

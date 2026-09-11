@@ -41,10 +41,10 @@
          native screen somebody sees before the app itself. -->
     <string name="instance_wordmark">ontoplano</string>
     <string name="instance_title">Which ontoplano?</string>
-    <string name="instance_help">This app is a window onto an ontoplano server.</string>
-    <string name="instance_use_default">Use %1$s</string>
+    <string name="instance_help">Pick a server before signing in — which accounts exist, and whether you can make one, is up to the server. The official one is %1$s.</string>
+    <string name="instance_use_default">Official instance</string>
     <string name="instance_use_demo">Try the demo</string>
-    <string name="instance_own_label">Or your own address</string>
+    <string name="instance_own_label">Custom instance</string>
     <string name="instance_address_hint">https://plan.example.com</string>
     <string name="instance_use_mine">Use this address</string>
     <string name="instance_current">Now on %1$s</string>

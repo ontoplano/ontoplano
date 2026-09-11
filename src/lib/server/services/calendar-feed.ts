@@ -151,8 +151,21 @@ function event(occurrence: ScheduleOccurrence, host: string, stampedAt: string):
 	if (occurrence.meta.location)
 		lines.push(`LOCATION:${escapeText(String(occurrence.meta.location))}`);
 
-	// Something already done is not something to be reminded about.
-	lines.push(`STATUS:${occurrence.status === 'cancelled' ? 'CANCELLED' : 'CONFIRMED'}`);
+	/*
+	 * A block you skipped is not a block you have.
+	 *
+	 * This read `=== 'cancelled'`, which is not one of the four statuses this
+	 * app has — so the branch never fired and every occurrence went out
+	 * `CONFIRMED`, skipped ones included. Somebody who dropped the gym on
+	 * Tuesday still had a gym block sitting in their calendar on Tuesday, which
+	 * is the feed disagreeing with the app about what happened.
+	 *
+	 * `skipped` is the only one that becomes `CANCELLED`: clients hide or strike
+	 * through those. `done` stays confirmed, because it did happen — a calendar
+	 * is a record as much as a plan, and deleting the past from it would be a
+	 * stranger kind of lie.
+	 */
+	lines.push(`STATUS:${occurrence.status === 'skipped' ? 'CANCELLED' : 'CONFIRMED'}`);
 	lines.push('END:VEVENT');
 
 	return lines;

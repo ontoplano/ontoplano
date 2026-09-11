@@ -30,15 +30,15 @@ starts on boot, and upgrades through the package manager you already use.
 **Debian, Ubuntu, Mint, Pop!\_OS, Raspberry Pi OS**
 
 ```sh
-curl -LO https://github.com/ontoplano/ontoplano/releases/latest/download/ontoplano_amd64.deb
-sudo apt install ./ontoplano_amd64.deb
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.127.4/ontoplano_0.127.4_amd64.deb
+sudo apt install ./ontoplano_0.127.4_amd64.deb
 ```
 
 **Fedora, RHEL and its rebuilds, openSUSE**
 
 ```sh
-curl -LO https://github.com/ontoplano/ontoplano/releases/latest/download/ontoplano.x86_64.rpm
-sudo dnf install ./ontoplano.x86_64.rpm     # or: sudo zypper install ./ontoplano.x86_64.rpm
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.127.4/ontoplano-0.127.4-1.x86_64.rpm
+sudo dnf install ./ontoplano-0.127.4-1.x86_64.rpm     # or: sudo zypper install ./ontoplano-0.127.4-1.x86_64.rpm
 ```
 
 **Arch, Manjaro, EndeavourOS** — from the AUR, built on your machine:
@@ -53,7 +53,7 @@ Every release carries a `SHA256SUMS` covering each file attached to it. In the
 directory you downloaded into:
 
 ```sh
-curl -LO https://github.com/ontoplano/ontoplano/releases/latest/download/SHA256SUMS
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.127.4/SHA256SUMS
 sha256sum --ignore-missing -c SHA256SUMS
 ```
 
@@ -62,9 +62,7 @@ about the ones you did not.
 
 The AUR route needs nothing done by hand. The recipe names the release's own
 source tarball and carries its checksum, so `makepkg` refuses to build if what
-it downloads is not that file — which is also why the recipe does not point at
-an archive the forge generates on demand, since those are not promised to stay
-byte-for-byte the same.
+it downloads is not that file.
 
 A checksum served from the same page as the download proves the file arrived
 whole. It is not a signature and does not pretend to be one.

@@ -10,6 +10,29 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.135.0 — 2026-09-11
+
+- **Changing screen no longer flicks before it dissolves.** The first frame of
+  a turn still carried the end of the previous one, which on a short turn is a
+  large share of it.
+
+## 0.134.0 — 2026-09-11
+
+- **A block you skipped no longer sits in your calendar.** The published feed
+  marked every occurrence as confirmed, skipped ones included, so dropping
+  Tuesday's gym left a gym block in Google Calendar on Tuesday. Skipped
+  occurrences now go out cancelled, which is what makes a client hide them.
+  Ones you finished stay as they were — they did happen.
+- **The install commands on the docs actually work.** They named a file that
+  has never existed (`ontoplano_amd64.deb`, when every release attaches
+  `ontoplano_<version>_amd64.deb`), so the first command on the page was a 404.
+  The download links are generated from the newest release now, and the
+  packager reads its file names from the same place, so the page cannot name a
+  file the build does not produce.
+- **The phone app asks for an official or a custom instance**, in those words,
+  and says which server the official one is. Choosing comes before signing in,
+  because which accounts exist is the server's answer and not the app's.
+
 ## 0.133.0 — 2026-09-11
 
 - **An instance now says what it cannot do, and why.** Some things are somebody

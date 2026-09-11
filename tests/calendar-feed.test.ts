@@ -261,6 +261,37 @@ describe('text somebody typed', () => {
 	});
 });
 
+describe('a block that was skipped', () => {
+	test('goes out cancelled, so a calendar stops showing it', async () => {
+		// The status branch used to test for 'cancelled', which is not one of the
+		// four this app has — so it never fired, and a block somebody had
+		// explicitly dropped still sat in their calendar looking like a plan.
+		const instances = await import('../src/lib/server/services/instances');
+		const schedule = await import('../src/lib/server/services/schedule');
+
+		const upcoming = schedule.getUpcomingSchedule(ctx, { days: 7, includeCompleted: true });
+		const first = upcoming.occurrences.find((o) => o.source === 'slot');
+		expect(first, 'the fixture week has a weekly block in it').toBeTruthy();
+
+		instances.setStatusOn(
+			ctx,
+			'slot',
+			Number(first!.id.split(':')[1]),
+			first!.local_date,
+			'skipped'
+		);
+
+		const events = build().split('BEGIN:VEVENT').slice(1);
+		const stamp = first!.at_local.replace(/[-:]/g, '');
+		const skipped = events.find((e) => e.includes(`DTSTART:${stamp}`));
+
+		expect(skipped, 'the skipped occurrence is still published').toBeTruthy();
+		expect(skipped).toContain('STATUS:CANCELLED');
+		// And the rest of the week is untouched.
+		expect(events.filter((e) => e.includes('STATUS:CONFIRMED')).length).toBeGreaterThan(0);
+	});
+});
+
 describe('what the feed carries besides the time', () => {
 	test('the category, so a client that colours by it can', () => {
 		expect(build()).toContain('CATEGORIES:Work');

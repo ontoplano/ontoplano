@@ -32,6 +32,7 @@ import ts from 'typescript';
 import * as prettier from 'prettier';
 
 import { anchor } from './lib/anchor.mjs';
+import { REPO, assetNames, downloadUrl, releaseTag, versionOf } from './lib/release-assets.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'docs', 'reference');
@@ -1196,6 +1197,75 @@ const FRAGMENTS = {
 			})
 		].join('\n');
 	},
+	/**
+	 * The install commands, with addresses that exist.
+	 *
+	 * Generated rather than typed because the file names carry the version, and
+	 * a hand-written `ontoplano_amd64.deb` was a 404 on the first line of the
+	 * install page. Names come from `lib/release-assets.mjs`, which the packager
+	 * reads too, so the page cannot name a file the build does not produce.
+	 *
+	 * With no tag to go on — a shallow clone, which is what CI has — this says
+	 * so plainly and points at the releases page rather than inventing a URL.
+	 */
+	downloads: () => {
+		const tag = releaseTag();
+		if (!tag) {
+			return (
+				`Pick the file for your system from [the latest release](${REPO}/releases/latest),` +
+				' then install it with your package manager.'
+			);
+		}
+
+		const names = assetNames(versionOf(tag));
+		const url = (name) => downloadUrl(tag, name);
+
+		return [
+			'**Debian, Ubuntu, Mint, Pop!\\_OS, Raspberry Pi OS**',
+			'',
+			'```sh',
+			`curl -LO ${url(names.deb)}`,
+			`sudo apt install ./${names.deb}`,
+			'```',
+			'',
+			'**Fedora, RHEL and its rebuilds, openSUSE**',
+			'',
+			'```sh',
+			`curl -LO ${url(names.rpm)}`,
+			`sudo dnf install ./${names.rpm}     # or: sudo zypper install ./${names.rpm}`,
+			'```',
+			'',
+			'**Arch, Manjaro, EndeavourOS** — from the AUR, built on your machine:',
+			'',
+			'```sh',
+			'yay -S ontoplano       # or: paru -S ontoplano',
+			'```',
+			'',
+			'### Checking what you downloaded',
+			'',
+			`Every release carries a \`${names.sums}\` covering each file attached to it. In the`,
+			'directory you downloaded into:',
+			'',
+			'```sh',
+			`curl -LO ${url(names.sums)}`,
+			`sha256sum --ignore-missing -c ${names.sums}`,
+			'```',
+			'',
+			'`--ignore-missing` checks the files you actually took rather than complaining',
+			'about the ones you did not.',
+			'',
+			"The AUR route needs nothing done by hand. The recipe names the release's own",
+			'source tarball and carries its checksum, so `makepkg` refuses to build if what',
+			'it downloads is not that file.',
+			'',
+			'A checksum served from the same page as the download proves the file arrived',
+			'whole. It is not a signature and does not pretend to be one.',
+			'',
+			'The Android package is a different promise and a stronger one: it is signed,',
+			'and Android itself refuses an update signed by a different key.'
+		].join('\n');
+	},
+
 	'webhook-events': () =>
 		[
 			'| Event | When it fires |',
@@ -1342,10 +1412,30 @@ for (const page of [...WRITTEN, ...PAGES]) built.set(page.file, await format(pag
 built.set('README.md', await format(indexPage(PAGES, WRITTEN)));
 
 if (CHECK) {
+	/*
+	 * A clone with no tags cannot know what the newest release is, so the
+	 * download block it would generate is the fallback rather than the real
+	 * addresses — and comparing that against the committed page would fail
+	 * every CI run, which fetches one commit and no tags.
+	 *
+	 * The same hole `build-badges.mjs` has, answered the same way: the lines
+	 * that depend on knowing the tag are not checked when the tag is unknown.
+	 * Everything else on the page still is.
+	 */
+	const blind = releaseTag() === null;
+	const comparable = (text) =>
+		blind
+			? text
+					.split('\n')
+					.filter((l) => !l.includes('/releases/'))
+					.join('\n')
+			: text;
+
 	const stale = [];
 	for (const [file, content] of built) {
 		const path = join(OUT, file);
-		if (!existsSync(path) || readFileSync(path, 'utf8') !== content) stale.push(file);
+		if (!existsSync(path) || comparable(readFileSync(path, 'utf8')) !== comparable(content))
+			stale.push(file);
 	}
 	// Something committed that the generator no longer produces is drift too.
 	const extra = existsSync(OUT)

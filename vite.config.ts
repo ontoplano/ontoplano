@@ -71,6 +71,13 @@ function noBacktickInCss() {
 }
 
 export default defineConfig({
+	// The dependency pre-bundler rewrites this one's worker and wasm loading
+	// until neither can find the other. Left alone, it works.
+	optimizeDeps: { exclude: ['@sqlite.org/sqlite-wasm'] },
+	// The database worker loads SQLite lazily, which is a code split, and the
+	// default IIFE worker format cannot do those. It is started as a module
+	// worker, so this is the format it was always going to need.
+	worker: { format: 'es' },
 	define: {
 		__APP_VERSION__: JSON.stringify(pkg.version),
 		// A trailing "+" means the build had uncommitted changes in it, which is

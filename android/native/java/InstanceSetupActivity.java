@@ -77,8 +77,12 @@ public class InstanceSetupActivity extends Activity {
         // as the same answer typed twice.
         if (!chosen.isEmpty() && !chosen.equals(BUILT_FOR)) address.setText(chosen);
 
-        use.setText(getString(R.string.instance_use_default, host(BUILT_FOR)));
+        // The label is the choice; the address it means is said in the line above,
+        // because "Official instance" is what somebody is picking between and
+        // a hostname is what they check afterwards.
         use.setOnClickListener(v -> choose(BUILT_FOR));
+        ((TextView) findViewById(R.id.instance_help))
+                .setText(getString(R.string.instance_help, host(BUILT_FOR)));
         mine.setOnClickListener(v -> choose(address.getText().toString()));
 
         demo.setVisibility(DEMO.isEmpty() ? View.GONE : View.VISIBLE);
