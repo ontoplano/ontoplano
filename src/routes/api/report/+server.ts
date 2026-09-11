@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { buildCtx } from '$lib/services/ctx';
 import { recordBugReport } from '$lib/server/services/client-errors';
-import { toJsonError } from '$lib/server/http-errors';
+import { toJsonError } from '$lib/http-errors';
 import { UnauthorizedError } from '$lib/services/errors';
 
 /**

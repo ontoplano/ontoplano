@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { playClaim, playConfigured } from '$lib/server/services/billing';
-import { toJsonError } from '$lib/server/http-errors';
+import { toJsonError } from '$lib/http-errors';
 
 /**
  * The store copy hands over its purchase.

@@ -3,7 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { buildCtx } from '$lib/services/ctx';
 import { importTasks } from '$lib/services/imports';
 import { importAccount, NOT_PORTABLE } from '$lib/server/services/account-import';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 import { importVaultAction } from '$lib/server/import-vault-action';
 
 /**

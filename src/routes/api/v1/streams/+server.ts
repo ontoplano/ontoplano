@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 
 import { authenticateApi, readJson } from '$lib/server/api/auth';
-import { toJsonError } from '$lib/server/http-errors';
+import { toJsonError } from '$lib/http-errors';
 import { listStreams, serialiseStream, upsertStream } from '$lib/services/streams';
 
 /** List the caller's streams. */

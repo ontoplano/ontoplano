@@ -31,7 +31,7 @@ import {
 } from '$lib/server/services/billing';
 import { accessHoldFor, holdDestination } from '$lib/server/services/access';
 import { record } from '$lib/services/audit';
-import { toJsonError } from '$lib/server/http-errors';
+import { toJsonError } from '$lib/http-errors';
 import { APP_COOKIE, APP_LAUNCH_PARAM, APP_LAUNCH_VALUE } from '$lib/platform';
 import { refuse } from '$lib/server/refuse';
 import { demoRefusal } from '$lib/server/demo-guard';

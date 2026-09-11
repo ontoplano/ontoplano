@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 
 import { authenticateApi } from '$lib/server/api/auth';
-import { toJsonError } from '$lib/server/http-errors';
+import { toJsonError } from '$lib/http-errors';
 import { deletePoint } from '$lib/services/streams';
 
 /** Delete a single point by its producer-supplied id. */

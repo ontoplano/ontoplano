@@ -24,7 +24,7 @@ import {
 } from '$lib/server/services/billing';
 import { activeProviderSubscription } from '$lib/server/services/subscriptions';
 import { RateLimitedError } from '$lib/services/errors';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 import { rateLimit } from '$lib/server/rate-limit';
 
 /**

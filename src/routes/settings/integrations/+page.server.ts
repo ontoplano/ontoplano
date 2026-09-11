@@ -4,7 +4,7 @@ import type { Actions, PageServerLoad } from './$types';
 
 import { ASSISTANT_SCOPES } from '$lib/server/mcp/tools';
 import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 import { listAssistantCalls, putBack } from '$lib/server/services/assistant-log';
 import { SCOPES, createToken, isCalendarLink, listTokens } from '$lib/server/services/tokens';
 import { capabilities } from '$lib/server/settings';

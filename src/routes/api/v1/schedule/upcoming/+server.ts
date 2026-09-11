@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 
 import { authenticateApi } from '$lib/server/api/auth';
-import { toJsonError } from '$lib/server/http-errors';
+import { toJsonError } from '$lib/http-errors';
 import { getUpcomingSchedule } from '$lib/services/schedule';
 
 /**

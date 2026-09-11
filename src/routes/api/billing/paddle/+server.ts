@@ -5,7 +5,7 @@ import {
 	isBillingConfigured,
 	verifySignature
 } from '$lib/server/services/billing';
-import { toJsonError } from '$lib/server/http-errors';
+import { toJsonError } from '$lib/http-errors';
 
 /**
  * Where Paddle tells us what happened.

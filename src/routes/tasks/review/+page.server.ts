@@ -1,7 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
 import { buildCtx } from '$lib/services/ctx';
 import { ValidationError } from '$lib/services/errors';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 import {
 	carryIntoTodos,
 	goalsTouched,

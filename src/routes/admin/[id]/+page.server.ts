@@ -10,7 +10,7 @@ import {
 	setRole
 } from '$lib/server/services/admin';
 import { listForSubject, record } from '$lib/services/audit';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 import { adminActions, requireAdminOr404 } from '../guard';
 import { isEmailConfigured } from '$lib/server/email';
 

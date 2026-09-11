@@ -22,15 +22,15 @@ let preferences: typeof import('../src/lib/services/preferences');
 let errors: typeof import('../src/lib/services/errors');
 // The two that turn a refusal into an HTTP answer live apart from the error
 // classes now: they import SvelteKit, and a service that does cannot be run by
-// the scheduled jobs. See src/lib/server/http-errors.ts.
-let http: typeof import('../src/lib/server/http-errors');
+// the scheduled jobs. See src/lib/http-errors.ts.
+let http: typeof import('../src/lib/http-errors');
 let settings: typeof import('../src/lib/server/settings');
 let ctx: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
 	preferences = await import('../src/lib/services/preferences');
 	errors = await import('../src/lib/services/errors');
-	http = await import('../src/lib/server/http-errors');
+	http = await import('../src/lib/http-errors');
 	settings = await import('../src/lib/server/settings');
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 });

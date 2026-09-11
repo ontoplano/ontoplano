@@ -1,6 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
 import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 import { getCurrency } from '$lib/server/settings';
 import { parseMoney } from '$lib/money';
 import {

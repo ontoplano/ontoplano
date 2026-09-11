@@ -7,7 +7,7 @@ import { isDemo, isStaging } from '$lib/server/settings';
 import { canEditInstance } from '$lib/server/services/admin';
 import { build } from '$lib/server/services/version';
 import { ValidationError } from '$lib/services/errors';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 import { counts, confirmedAddresses, newsletterEnabled } from '$lib/server/services/newsletter';
 import {
 	createInvite,

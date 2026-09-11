@@ -2,7 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 
 import { ASSISTANT_SCOPES, ASSISTANT_SCOPES_DESTRUCTIVE } from '$lib/server/mcp/tools';
 import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 import {
 	deleteStream,
 	listStreams,

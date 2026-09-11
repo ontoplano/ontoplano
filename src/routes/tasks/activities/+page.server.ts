@@ -12,7 +12,7 @@ import {
 } from '$lib/services/activities';
 import { goalBacklinks } from '$lib/services/backlinks';
 import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);

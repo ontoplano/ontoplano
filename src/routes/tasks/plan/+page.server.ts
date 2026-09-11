@@ -6,7 +6,7 @@ import { ratingsFromForm } from '$lib/ratings';
 import { listActivities, listCategories } from '$lib/services/activities';
 import { buildCtx, type Ctx } from '$lib/services/ctx';
 import { ServiceError } from '$lib/services/errors';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 import { metaFromFormData, metaPatchFromFormData } from '$lib/services/meta';
 import { listManifests } from '$lib/server/services/plugins';
 import { billsDueBetween } from '$lib/services/bills';

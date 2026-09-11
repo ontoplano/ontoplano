@@ -8,7 +8,7 @@ import {
 	upcomingWindow,
 	windowEnd
 } from '$lib/server/services/reminder-sources';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 import {
 	createFreeReminder,
 	localNow,

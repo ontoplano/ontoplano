@@ -2,7 +2,7 @@ import type { RequestHandler } from './$types';
 
 import { buildCtx } from '$lib/services/ctx';
 import { UnauthorizedError } from '$lib/services/errors';
-import { toJsonError } from '$lib/server/http-errors';
+import { toJsonError } from '$lib/http-errors';
 import { authenticateToken } from '$lib/server/services/tokens';
 
 /**

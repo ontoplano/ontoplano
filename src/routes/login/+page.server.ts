@@ -13,7 +13,7 @@ import {
 } from '$lib/server/services/registration';
 import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
 import { ServiceError } from '$lib/services/errors';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 import { record } from '$lib/services/audit';
 import { isDemoAccount, resetDemoAccount } from '$lib/server/services/demo';
 import { claimFirstAccount } from '$lib/server/services/admin';

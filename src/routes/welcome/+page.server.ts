@@ -2,7 +2,7 @@ import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { DEFAULT_THEME, DEFAULT_WEEK, getTheme } from '$lib/server/settings';
 import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 import { completeFirstRun, needsFirstRun, TEMPLATES } from '$lib/services/onboarding';
 import { passwordPending } from '$lib/server/services/family-invite';
 import { createToken } from '$lib/server/services/tokens';

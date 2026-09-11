@@ -11,7 +11,7 @@ import {
 	listTags,
 	updateEntry
 } from '$lib/services/diary';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 import { listPeople, peopleForEntries, setEntryPeople } from '$lib/services/people';
 
 export const load: PageServerLoad = async ({ locals }) => {

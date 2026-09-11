@@ -13,7 +13,7 @@ import {
 } from '$lib/server/services/protection';
 import { dismissClientError, recentClientErrors } from '$lib/server/services/client-errors';
 import { ValidationError } from '$lib/services/errors';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 import { billingStatus, whyItCannotSell } from '$lib/server/services/billing';
 import { isDemo } from '$lib/server/settings';
 

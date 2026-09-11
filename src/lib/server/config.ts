@@ -1,3 +1,4 @@
+import { DEFAULT_PICTURE_KILOBYTES, DEFAULT_UNDO_SECONDS } from '$lib/instance-defaults.js';
 import { readFileSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
@@ -335,7 +336,10 @@ export function loadConfig(): OntoplanoConfig {
 			 * a delete that has not happened yet is a delete somebody can lose by
 			 * closing the tab.
 			 */
-			undoSeconds: Math.min(Math.max(parseInt(ui.undo_seconds || '5', 10) || 0, 0), 60)
+			undoSeconds: Math.min(
+				Math.max(parseInt(ui.undo_seconds || String(DEFAULT_UNDO_SECONDS), 10) || 0, 0),
+				60
+			)
 		},
 		newsletter: {
 			// Silence is no, as everywhere else in this file.
@@ -368,7 +372,7 @@ export function loadConfig(): OntoplanoConfig {
 			 * bounds here are the most this code will honour, not a recommendation
 			 * — the defaults are what a sane instance runs.
 			 */
-			maxKilobytes: bounded(media.max_kilobytes, 500, 16, 20_000),
+			maxKilobytes: bounded(media.max_kilobytes, DEFAULT_PICTURE_KILOBYTES, 16, 20_000),
 			recipeImages: bounded(media.recipe_images, 6, 1, 50),
 			entryImages: bounded(media.entry_images, 20, 1, 200),
 			accountMegabytes: bounded(media.account_megabytes, 250, 1, 100_000)
