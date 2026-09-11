@@ -22,7 +22,12 @@ export interface LocalRouteEvent {
 	url: URL;
 	/** Every segment the route pattern names is present once it matched. */
 	params: Record<string, string>;
-	locals: { user: { id: string } };
+	/**
+	 * Optional to stay assignable from the server's own event, where a
+	 * session may be absent. Locally it is always the one account, so route
+	 * bodies keep the same `locals.user!.id` they were born with.
+	 */
+	locals: { user?: { id: string } | undefined };
 }
 
 type PageModule = {
