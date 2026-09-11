@@ -17,7 +17,7 @@ import {
 	taskRecords,
 	recurringTasks,
 	workouts
-} from '../db/schema.js';
+} from '$lib/db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { created, stamp, stamps } from './time.js';

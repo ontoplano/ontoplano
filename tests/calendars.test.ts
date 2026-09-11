@@ -281,7 +281,7 @@ describe('an address that got into the database anyway', () => {
 
 		try {
 			const { db } = await import('../src/lib/server/db');
-			const { calendarFeeds } = await import('../src/lib/server/db/schema');
+			const { calendarFeeds } = await import('../src/lib/db/schema');
 			const { eq } = await import('drizzle-orm');
 
 			const id = s.calendars.addFeed(ctx, {

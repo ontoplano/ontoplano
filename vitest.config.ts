@@ -86,6 +86,7 @@ export default defineConfig({
 				'**/*.d.ts',
 				// Schema and migrations describe shape; there is nothing to cover.
 				'src/lib/server/db/**',
+				'src/lib/db/**',
 				// Wired at boot and driven by the e2e suite, not by unit tests.
 				'src/lib/server/auth.ts'
 			],

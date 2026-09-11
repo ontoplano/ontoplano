@@ -11,7 +11,7 @@ import {
 } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 import { user } from './auth.schema.js';
-import { MAIL_KIND_NAMES } from '../../mail-kinds.js';
+import { MAIL_KIND_NAMES } from '../mail-kinds.js';
 
 export const categories = sqliteTable(
 	'categories',

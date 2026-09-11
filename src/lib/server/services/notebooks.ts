@@ -1,9 +1,9 @@
 import { and, inArray, or, count, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { user } from '../db/auth.schema.js';
+import { user } from '$lib/db/auth.schema.js';
 import { familyUserIds } from './subscriptions.js';
-import { diaryEntries, exceptionalTasks, goals, notebooks, todoTasks } from '../db/schema.js';
+import { diaryEntries, exceptionalTasks, goals, notebooks, todoTasks } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { tagsForEntries } from './diary.js';
 import { peopleForEntries } from './people.js';

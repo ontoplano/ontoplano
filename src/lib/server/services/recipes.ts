@@ -22,7 +22,7 @@ import {
 	shoppingCategories,
 	shoppingItems,
 	recurringTasks
-} from '../db/schema.js';
+} from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';

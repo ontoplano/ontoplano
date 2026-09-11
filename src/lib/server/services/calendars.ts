@@ -2,7 +2,7 @@ import { and, asc, eq } from 'drizzle-orm';
 
 import { eventsBetween, type IcsEvent } from '../../ics.js';
 import { db } from '../db/index.js';
-import { calendarFeeds } from '../db/schema.js';
+import { calendarFeeds } from '$lib/db/schema.js';
 import { assertPublicUrl, fetchPublic } from '../outbound.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError } from './errors.js';

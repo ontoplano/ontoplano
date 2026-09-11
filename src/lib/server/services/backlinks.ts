@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { goalLinks, goals } from '../db/schema.js';
+import { goalLinks, goals } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 
 /**

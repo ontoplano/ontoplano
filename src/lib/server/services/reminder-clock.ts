@@ -1,7 +1,7 @@
 import { and, asc, isNull, lte } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { reminders } from '../db/schema.js';
+import { reminders } from '$lib/db/schema.js';
 import { offsetAt } from './time.js';
 import { serverTimezone } from './ctx.js';
 import { getTimezone } from '../settings.js';

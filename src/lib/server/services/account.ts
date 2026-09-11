@@ -16,7 +16,7 @@ import { PLANS } from '../../plans.js';
 import { record as audit } from './audit.js';
 import { RateLimitedError } from './errors.js';
 import { resolvePlan } from './subscriptions.js';
-import * as schema from '../db/schema.js';
+import * as schema from '$lib/db/schema.js';
 
 /**
  * The slice of a connection a removal needs.

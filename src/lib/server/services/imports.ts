@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { notebooks } from '../db/schema.js';
+import { notebooks } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { ValidationError } from './errors.js';
 import { createEntry, MAX_ENTRY_LENGTH } from './diary.js';

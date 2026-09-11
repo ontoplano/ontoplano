@@ -1,7 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { habitOccurrences, habits } from '../db/schema.js';
+import { habitOccurrences, habits } from '$lib/db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { listHabits, scheduledOn } from './habits.js';
 import { getUpcomingSchedule } from './schedule.js';

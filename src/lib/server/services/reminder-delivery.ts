@@ -1,5 +1,5 @@
 import { db } from '../db/index.js';
-import { pushSubscriptions, user } from '../db/schema.js';
+import { pushSubscriptions, user } from '$lib/db/schema.js';
 import { buildCtx } from './ctx.js';
 import { ensureBirthdayReminders } from './birthdays.js';
 import { ensureBillReminders, ensureReviewReminder } from './reminder-sources.js';

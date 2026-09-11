@@ -61,7 +61,11 @@ export default defineConfig(
 								'$lib/server/db',
 								'$lib/server/db/*',
 								'**/lib/server/db',
-								'**/lib/server/db/*'
+								'**/lib/server/db/*',
+								'$lib/db',
+								'$lib/db/*',
+								'**/lib/db',
+								'**/lib/db/*'
 							],
 							message:
 								'Routes do not query the database. Call a service in $lib/server/services instead (CONTRIBUTING.md, I2).'

@@ -134,7 +134,7 @@ describe('what does not travel', () => {
 	 */
 	test('leaves this instance’s own rows exactly where they were', async () => {
 		const { db } = await import('../src/lib/server/db/index');
-		const schema = await import('../src/lib/server/db/schema');
+		const schema = await import('../src/lib/db/schema');
 
 		// A subscription and a token, as this instance issued them.
 		db.insert(schema.subscriptions)

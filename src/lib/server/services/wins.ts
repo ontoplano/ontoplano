@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { dailyWins } from '../db/schema.js';
+import { dailyWins } from '$lib/db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { created, stamps } from './time.js';
 import { str } from './validate.js';

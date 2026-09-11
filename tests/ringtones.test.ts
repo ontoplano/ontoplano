@@ -163,7 +163,7 @@ describe('a reminder naming a sound', () => {
 	test("somebody else's ringtone id is dropped, not stored", async () => {
 		const reminders = await import('../src/lib/server/services/reminders');
 		const { db } = await import('../src/lib/server/db');
-		const schema = await import('../src/lib/server/db/schema');
+		const schema = await import('../src/lib/db/schema');
 		const { eq } = await import('drizzle-orm');
 
 		const mine = s.ringtones.addRingtone(ctx, {

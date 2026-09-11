@@ -1,7 +1,7 @@
 import { and, eq, isNotNull, like, sql } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { people, reminders } from '../db/schema.js';
+import { people, reminders } from '$lib/db/schema.js';
 import { getGridHours } from '../settings.js';
 import { localOfInstant } from './time.js';
 

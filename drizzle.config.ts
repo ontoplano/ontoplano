@@ -13,7 +13,7 @@ const dbPath =
 	);
 
 export default defineConfig({
-	schema: './src/lib/server/db/schema.ts',
+	schema: './src/lib/db/schema.ts',
 	dialect: 'sqlite',
 	dbCredentials: { url: dbPath },
 	verbose: true,

@@ -8,7 +8,7 @@ import {
 	exceptionalTasks,
 	taskRecords,
 	recurringTasks
-} from '../db/schema.js';
+} from '$lib/db/schema.js';
 import { generateWeekInstances, getMonday, toLocalISOString, addDays } from '../week-generator.js';
 import type { Ctx } from './ctx.js';
 import { parseMeta, type SlotMeta } from './meta.js';

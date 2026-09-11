@@ -10,10 +10,10 @@ import {
 	type SubscriptionStatus
 } from '../../plans.js';
 import { db } from '../db/index.js';
-import { apiTokens, dataPoints, dataStreams, planMembers, subscriptions } from '../db/schema.js';
+import { apiTokens, dataPoints, dataStreams, planMembers, subscriptions } from '$lib/db/schema.js';
 import { isSelfHosted, pricing } from '../settings.js';
 import { record } from './audit.js';
-import { user } from '../db/auth.schema.js';
+import { user } from '$lib/db/auth.schema.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import type { Ctx } from './ctx.js';
 import { ForbiddenError } from './errors.js';

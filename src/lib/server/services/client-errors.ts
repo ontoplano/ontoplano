@@ -2,7 +2,7 @@ import { desc, eq, sql } from 'drizzle-orm';
 
 import { loadConfig } from '../config.js';
 import { db } from '../db/index.js';
-import { clientErrors, user } from '../db/schema.js';
+import { clientErrors, user } from '$lib/db/schema.js';
 import { getUserSetting, setUserSetting } from '../settings.js';
 import type { Ctx } from './ctx.js';
 import { ForbiddenError } from './errors.js';

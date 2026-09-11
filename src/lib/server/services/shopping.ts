@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray, or, sql } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { locations, pricePoints, shoppingCategories, shoppingItems } from '../db/schema.js';
+import { locations, pricePoints, shoppingCategories, shoppingItems } from '$lib/db/schema.js';
 import { getLocation } from './locations.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';

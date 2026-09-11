@@ -2,7 +2,7 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { apiTokens } from '../db/schema.js';
+import { apiTokens } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { stamps } from './time.js';
 import { ForbiddenError, NotFoundError, UnauthorizedError } from './errors.js';

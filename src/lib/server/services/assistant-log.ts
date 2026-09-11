@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray, lt } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { apiTokens, assistantCalls } from '../db/schema.js';
+import { apiTokens, assistantCalls } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { stamp } from './time.js';
 import { NotFoundError, ValidationError } from './errors.js';

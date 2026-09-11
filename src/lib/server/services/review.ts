@@ -2,7 +2,7 @@ import { and, desc, eq, gte, inArray, lt } from 'drizzle-orm';
 
 import { blockName } from '../../planner-grid.js';
 import { db } from '../db/index.js';
-import { goals, goalTargets, weeklyReviews } from '../db/schema.js';
+import { goals, goalTargets, weeklyReviews } from '$lib/db/schema.js';
 import { addDays, getMonday } from '../week-generator.js';
 import type { Ctx } from './ctx.js';
 import { listInstances, setInstanceStatus } from './instances.js';

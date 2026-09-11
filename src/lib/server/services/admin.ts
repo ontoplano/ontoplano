@@ -1,8 +1,8 @@
 import { and, count, desc, eq, like, or, sql } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { session, user } from '../db/auth.schema.js';
-import { auditEvents, subscriptions } from '../db/schema.js';
+import { session, user } from '$lib/db/auth.schema.js';
+import { auditEvents, subscriptions } from '$lib/db/schema.js';
 import { ROLES, type Role } from '../../roles.js';
 import { isInstanceOwner, isSelfHosted } from '../settings.js';
 import { record } from './audit.js';

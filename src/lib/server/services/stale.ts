@@ -1,7 +1,7 @@
 import { and, asc, eq, lt, notInArray } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { ideas, todoTasks, shoppingItems } from '../db/schema.js';
+import { ideas, todoTasks, shoppingItems } from '$lib/db/schema.js';
 import { CLOSED_STATUSES } from '../../task-status.js';
 import type { Ctx } from './ctx.js';
 import { stamp } from './time.js';

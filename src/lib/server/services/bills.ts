@@ -16,7 +16,7 @@
 import { and, asc, desc, eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { billPayments, bills, categories, goals } from '../db/schema.js';
+import { billPayments, bills, categories, goals } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { created, stamp, stamps } from './time.js';

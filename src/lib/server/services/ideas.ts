@@ -1,7 +1,7 @@
 import { and, desc, eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { ideaTags, ideas, tags } from '../db/schema.js';
+import { ideaTags, ideas, tags } from '$lib/db/schema.js';
 import {
 	cleanupOrphanTags,
 	ensureTagIds,

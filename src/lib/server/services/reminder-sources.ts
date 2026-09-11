@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { reminders } from '../db/schema.js';
+import { reminders } from '$lib/db/schema.js';
 import { billsDueBetween } from './bills.js';
 import type { Ctx } from './ctx.js';
 import { reviewPending } from './review.js';

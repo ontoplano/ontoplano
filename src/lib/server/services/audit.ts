@@ -1,7 +1,7 @@
 import { and, desc, eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { auditEvents } from '../db/schema.js';
+import { auditEvents } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 
 /**

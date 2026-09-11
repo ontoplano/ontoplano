@@ -18,7 +18,7 @@ import {
 	todoTasks,
 	taskRecords,
 	workouts
-} from '../db/schema.js';
+} from '$lib/db/schema.js';
 import { CLOSED_STATUSES, isStatus, type Status } from '../../task-status.js';
 import type { RatingValues } from '../../ratings.js';
 import type { Ctx } from './ctx.js';

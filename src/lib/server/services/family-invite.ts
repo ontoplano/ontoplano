@@ -1,8 +1,8 @@
 import { randomBytes } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { user } from '../db/auth.schema.js';
-import { planMembers } from '../db/schema.js';
+import { user } from '$lib/db/auth.schema.js';
+import { planMembers } from '$lib/db/schema.js';
 import { renderEmail } from '../email-template.js';
 import { checkPassword } from '../../passwords.js';
 import { getUserSetting, setUserSetting } from '../settings.js';

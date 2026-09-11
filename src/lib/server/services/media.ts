@@ -26,7 +26,7 @@ import { and, eq, like, or, sql } from 'drizzle-orm';
 import { loadConfig } from '../config.js';
 import { pictureCeiling } from '../db/assert-body-limit.js';
 import { db } from '../db/index.js';
-import { diaryEntries, media, people, recipeImages, recipes } from '../db/schema.js';
+import { diaryEntries, media, people, recipeImages, recipes } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { stamp } from './time.js';

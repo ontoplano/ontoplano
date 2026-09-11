@@ -9,7 +9,7 @@ import {
 	ringtones,
 	taskRecords,
 	recurringTasks
-} from '../db/schema.js';
+} from '$lib/db/schema.js';
 import { blockName } from '../../planner-grid.js';
 
 import type { Ctx } from './ctx.js';

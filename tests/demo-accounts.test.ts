@@ -21,7 +21,7 @@ afterAll(() => database.remove());
 let demo: typeof import('../src/lib/server/services/demo');
 let settings: typeof import('../src/lib/server/settings');
 let db: typeof import('../src/lib/server/db/index');
-let schema: typeof import('../src/lib/server/db/schema');
+let schema: typeof import('../src/lib/db/schema');
 
 /** A demo account, made the way the service marks one, without better-auth. */
 function pretendVisitor(id: string, expiresAt: string) {
@@ -47,7 +47,7 @@ beforeAll(async () => {
 	demo = await import('../src/lib/server/services/demo');
 	settings = await import('../src/lib/server/settings');
 	db = await import('../src/lib/server/db/index');
-	schema = await import('../src/lib/server/db/schema');
+	schema = await import('../src/lib/db/schema');
 });
 
 describe('a demo account', () => {

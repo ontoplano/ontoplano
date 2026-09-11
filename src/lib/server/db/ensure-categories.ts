@@ -1,5 +1,5 @@
 import { db } from './index.js';
-import { categories } from './schema.js';
+import { categories } from '$lib/db/schema.js';
 import { eq } from 'drizzle-orm';
 
 /**

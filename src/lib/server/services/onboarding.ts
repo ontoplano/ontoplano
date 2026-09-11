@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { activities, categories, recurringTasks } from '../db/schema.js';
+import { activities, categories, recurringTasks } from '$lib/db/schema.js';
 import {
 	isOnboarded,
 	isTheme,

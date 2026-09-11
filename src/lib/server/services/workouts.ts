@@ -16,7 +16,7 @@
 import { and, asc, eq, getTableColumns, isNull, sql } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { exceptionalTasks, workoutCategories, workouts } from '../db/schema.js';
+import { exceptionalTasks, workoutCategories, workouts } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';

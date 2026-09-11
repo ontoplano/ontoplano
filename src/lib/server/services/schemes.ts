@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { planningSchemes, schemeSlots, recurringTasks } from '../db/schema.js';
+import { planningSchemes, schemeSlots, recurringTasks } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError } from './errors.js';
 import { clearWeeklyPlanIn } from './slots.js';

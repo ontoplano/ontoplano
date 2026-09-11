@@ -2,7 +2,7 @@ import { createHmac, randomBytes } from 'node:crypto';
 import { and, eq, isNull } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { webhookSubscriptions } from '../db/schema.js';
+import { webhookSubscriptions } from '$lib/db/schema.js';
 import { assertPublicUrl, fetchPublic } from '../outbound.js';
 import { isSelfHosted } from '../settings.js';
 import type { Ctx } from './ctx.js';

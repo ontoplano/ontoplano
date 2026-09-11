@@ -1,7 +1,7 @@
 import { and, asc, eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { reminderSounds, ringtones } from '../db/schema.js';
+import { reminderSounds, ringtones } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { REMINDER_KINDS, type ReminderKind } from './reminders.js';

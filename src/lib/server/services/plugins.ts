@@ -9,7 +9,7 @@
 import { and, asc, eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { pluginManifests } from '../db/schema.js';
+import { pluginManifests } from '$lib/db/schema.js';
 import { ValidationError } from './errors.js';
 import { META_KEY_PATTERN, MAX_KEY_LENGTH } from './meta.js';
 

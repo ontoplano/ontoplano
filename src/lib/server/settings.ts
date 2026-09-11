@@ -2,7 +2,7 @@ import { DEFAULT_PRICING, type Pricing } from '../plans.js';
 import { and, eq } from 'drizzle-orm';
 
 import { db } from './db/index.js';
-import { user, userSettings } from './db/schema.js';
+import { user, userSettings } from '$lib/db/schema.js';
 import { STYLES, isStyle, type Style } from '../style.js';
 import { THEMES, type Theme } from '../theme.js';
 import { DEFAULT_CURRENCY, isCurrency, type Currency } from '../money.js';

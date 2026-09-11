@@ -25,7 +25,7 @@ import {
 	todoTasks,
 	taskRecords,
 	recurringTasks
-} from '../db/schema.js';
+} from '$lib/db/schema.js';
 import { periodEnd, periodStart, isGoalStatus, isHorizon, type Horizon } from '../../goals.js';
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';

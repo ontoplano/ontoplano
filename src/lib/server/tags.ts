@@ -1,5 +1,5 @@
 import { db } from '$lib/server/db';
-import { tags, diaryEntryTags, ideaTags } from '$lib/server/db/schema';
+import { tags, diaryEntryTags, ideaTags } from '$lib/db/schema';
 import { eq, and, notInArray } from 'drizzle-orm';
 
 /**

@@ -1,7 +1,7 @@
 import { and, desc, eq, gte } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { habitOccurrences, habits } from '../db/schema.js';
+import { habitOccurrences, habits } from '$lib/db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { created } from './time.js';
 import { ConflictError, NotFoundError } from './errors.js';

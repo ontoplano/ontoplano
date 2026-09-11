@@ -24,7 +24,7 @@
 		"db:migrate": "node scripts/migrate.mjs",
 		"db:snapshot": "node scripts/db-snapshot.mjs",
 		"db:studio": "drizzle-kit studio",
-		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes",
+		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/db/auth.schema.ts --yes",
 		"test:unit": "vitest run",
 		"package": "node scripts/package.mjs",
 		"test:packaging": "bash tests/packaging.sh",

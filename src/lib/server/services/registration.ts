@@ -4,8 +4,8 @@ import { and, count, desc, eq, isNull } from 'drizzle-orm';
 
 import { isRegistrationMode, loadConfig, saveConfig, type RegistrationMode } from '../config.js';
 import { db } from '../db/index.js';
-import { invites } from '../db/schema.js';
-import { user } from '../db/auth.schema.js';
+import { invites } from '$lib/db/schema.js';
+import { user } from '$lib/db/auth.schema.js';
 import { ForbiddenError, NotFoundError, ValidationError } from './errors.js';
 import { optionalStr, str } from './validate.js';
 

@@ -1,7 +1,7 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { mailFailures } from '../db/schema.js';
+import { mailFailures } from '$lib/db/schema.js';
 import { isEmailConfigured, sendEmail, type Email, type SendResult } from '../email.js';
 import { NotFoundError, ValidationError } from './errors.js';
 

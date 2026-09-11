@@ -13,7 +13,7 @@
 import { and, asc, eq, isNull } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { locations, shoppingItems } from '../db/schema.js';
+import { locations, shoppingItems } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';

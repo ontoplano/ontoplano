@@ -6,7 +6,7 @@ import webpush from 'web-push';
 
 import { db } from '../db/index.js';
 import { assertPublicUrl } from '../outbound.js';
-import { pushSubscriptions } from '../db/schema.js';
+import { pushSubscriptions } from '$lib/db/schema.js';
 import { CONFIG_DIR } from '../config.js';
 import { isSelfHosted } from '../settings.js';
 import { str } from './validate.js';

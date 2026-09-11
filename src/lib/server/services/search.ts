@@ -25,7 +25,7 @@ import {
 	todoTasks,
 	shoppingItems,
 	recurringTasks
-} from '../db/schema.js';
+} from '$lib/db/schema.js';
 import {
 	KIND_LABELS,
 	MIN_QUERY,

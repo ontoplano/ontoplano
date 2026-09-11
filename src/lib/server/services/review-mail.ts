@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { user } from '../db/schema.js';
+import { user } from '$lib/db/schema.js';
 import { renderEmail } from '../email-template.js';
 import { getGridHours, getUserSetting, setUserSetting } from '../settings.js';
 import { addDays } from '../week-generator.js';

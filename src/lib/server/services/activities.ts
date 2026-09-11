@@ -2,7 +2,7 @@ import { and, count, eq } from 'drizzle-orm';
 
 import { CATEGORY_DEFAULT_NEW } from '../../colors.js';
 import { db } from '../db/index.js';
-import { activities, categories, taskRecords, recurringTasks } from '../db/schema.js';
+import { activities, categories, taskRecords, recurringTasks } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';

@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, gte, inArray, isNotNull, lt, lte } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { dataPoints, dataStreams } from '../db/schema.js';
+import { dataPoints, dataStreams } from '$lib/db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { stamps } from './time.js';
 import { NotFoundError, ValidationError } from './errors.js';

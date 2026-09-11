@@ -2,7 +2,7 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 
 import { isRelationship, parsePeople, type Relationship } from '../../people.js';
 import { db } from '../db/index.js';
-import { diaryEntries, entryPeople, people } from '../db/schema.js';
+import { diaryEntries, entryPeople, people } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { stamps } from './time.js';

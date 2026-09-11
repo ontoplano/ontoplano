@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { eq, isNotNull, isNull, and } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { subscribers } from '../db/schema.js';
+import { subscribers } from '$lib/db/schema.js';
 import { renderEmail } from '../email-template.js';
 import { loadConfig } from '../config.js';
 import { sendLogged } from './mail-log.js';

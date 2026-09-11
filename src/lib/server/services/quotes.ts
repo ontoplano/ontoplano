@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { quotes } from '../db/schema.js';
+import { quotes } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { created } from './time.js';
 import { NotFoundError, ValidationError } from './errors.js';

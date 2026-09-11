@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray, isNull, max } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { diaryEntries, diaryEntryTags, tags } from '../db/schema.js';
+import { diaryEntries, diaryEntryTags, tags } from '$lib/db/schema.js';
 import { getUserSetting, setUserSetting } from '../settings.js';
 import {
 	cleanupOrphanTags,

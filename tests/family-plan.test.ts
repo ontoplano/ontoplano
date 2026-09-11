@@ -35,8 +35,8 @@ afterAll(() => database.remove());
 let subscriptions: typeof import('../src/lib/server/services/subscriptions');
 let access: typeof import('../src/lib/server/services/access');
 let db: typeof import('../src/lib/server/db');
-let schema: typeof import('../src/lib/server/db/schema');
-let authSchema: typeof import('../src/lib/server/db/auth.schema');
+let schema: typeof import('../src/lib/db/schema');
+let authSchema: typeof import('../src/lib/db/auth.schema');
 
 /** The seeded second account's address, read rather than assumed. */
 function strangerEmail(): string {
@@ -64,8 +64,8 @@ beforeAll(async () => {
 	subscriptions = await import('../src/lib/server/services/subscriptions');
 	access = await import('../src/lib/server/services/access');
 	db = await import('../src/lib/server/db');
-	schema = await import('../src/lib/server/db/schema');
-	authSchema = await import('../src/lib/server/db/auth.schema');
+	schema = await import('../src/lib/db/schema');
+	authSchema = await import('../src/lib/db/auth.schema');
 });
 
 afterAll(() => {

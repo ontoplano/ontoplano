@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { categories } from './schema.js';
+import { categories } from '$lib/db/schema.js';
 import { loadConfig } from '../config.js';
 
 const config = loadConfig();

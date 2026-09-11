@@ -34,7 +34,7 @@ import {
 	taskRecords,
 	recurringTasks,
 	workouts
-} from '../db/schema.js';
+} from '$lib/db/schema.js';
 
 import type { Status } from '../../task-status.js';
 import type { RatingValues } from '../../ratings.js';

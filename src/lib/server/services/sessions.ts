@@ -1,7 +1,7 @@
 import { and, desc, eq, gt } from 'drizzle-orm';
 
 import { db } from '../db/index.js';
-import { session } from '../db/schema.js';
+import { session } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError } from './errors.js';
 
