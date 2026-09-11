@@ -1199,6 +1199,10 @@ gains the gallery when media does.
 
 ### Functions
 
+#### `albumTree(ctx)`
+
+The albums as they belong to each other, roots first.
+
 #### `listAlbums(ctx)`
 
 #### `createAlbum(ctx, input)`
@@ -1252,6 +1256,7 @@ Move: out of one album, into another, one gesture.
 
 - `Album`
 - `AlbumPicture`
+- `AlbumNode`
 - `FolderPlan` — A folder of pictures, as albums.
 
 ## goals

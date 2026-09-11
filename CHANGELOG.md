@@ -10,6 +10,22 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.145.0 — 2026-09-12
+
+- **A folder import says what it will do before it does it.** Choosing a
+  folder lists every file, the album each would land in, and the ones that
+  would be refused with their size in red against this instance's ceiling —
+  then you decide. Nothing is uploaded until you do.
+- **The gallery is a tree.** Albums that came from folders inside folders now
+  read that way: roots on the screen, what is inside them behind a chevron,
+  the way inventory's locations work — and the same tree when dragging a
+  picture from one album to another. A parent's count includes what is under
+  it.
+- **A year band across the statement.** MM/DD says nothing about which year
+  it is; when the rows cross into another one, the list says so.
+- **The regex link on Finance → Rules went nowhere** — MDN moved the
+  cheatsheet out of Reference and into Guide.
+
 ## 0.144.0 — 2026-09-12
 
 - **The phone screen is one surface, not a stack of boxes.** Every card,

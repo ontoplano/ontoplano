@@ -6,6 +6,7 @@ import { mediaLimits } from '$lib/server/services/media';
 import {
 	addToAlbum,
 	albumPictures,
+	albumTree,
 	listAlbums,
 	moveBetweenAlbums,
 	removeFromAlbum,
@@ -22,6 +23,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	return {
 		album,
 		albums,
+		tree: albumTree(ctx),
 		pictures: albumPictures(ctx, album.id),
 		pictureKilobytes: mediaLimits().maxKilobytes
 	};

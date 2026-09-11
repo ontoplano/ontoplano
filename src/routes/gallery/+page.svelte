@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import Modal from '$lib/components/Modal.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { armed } from '$lib/actions/armed';
@@ -11,6 +12,22 @@
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	let showNew = $state(false);
+	/*
+	 * Which branches are open.
+	 *
+	 * An import of `birds/Falconiformes/…` makes albums that belong to each
+	 * other, and listing every one of them side by side loses exactly the
+	 * arrangement somebody made in their own folders. Roots are on the
+	 * screen; a chevron opens what is under them, the way inventory's
+	 * locations work.
+	 */
+	const opened = new SvelteSet<number>();
+	const toggle = (id: number) => {
+		if (opened.has(id)) opened.delete(id);
+		else opened.add(id);
+	};
+	/** The name as it reads under its parent: the last part of the path. */
+	const leafName = (name: string) => name.split(' — ').at(-1) ?? name;
 	let folderForm: HTMLFormElement | undefined = $state();
 	let planForm: HTMLFormElement | undefined = $state();
 	let importing = $state(false);
@@ -191,51 +208,77 @@
 			description="An album is where pictures live. Make one, and putting the same picture in a second album never copies it — a picture lives once, however many albums hold it."
 		/>
 	{:else}
-		<ul class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-			{#each data.albums as album (album.id)}
-				<li class="group relative">
-					<a
-						href="{resolve('/gallery')}/{album.id}"
-						class="block overflow-hidden rounded-lg border border-gray-200"
-					>
-						<span class="block aspect-square bg-gray-50">
-							{#if album.coverId}
-								<img
-									src="/media/{album.coverId}"
-									alt=""
-									loading="lazy"
-									class="h-full w-full object-cover"
-								/>
-							{:else}
-								<span class="flex h-full w-full items-center justify-center text-gray-300">
-									<Icon name="image" size={40} />
-								</span>
-							{/if}
-						</span>
-						<span class="flex items-baseline justify-between gap-2 px-2.5 py-2">
-							<span class="truncate text-sm font-medium text-gray-900">{album.name}</span>
-							<span class="shrink-0 text-xs text-gray-500 tabular-nums">{album.count}</span>
-						</span>
-					</a>
-					<span class="absolute top-1.5 right-1.5 flex gap-1">
-						<button
-							class="icon-btn bg-white/80"
-							aria-label="Rename {album.name}"
-							onclick={() => (renaming = album)}
-						>
-							<Icon name="edit" />
-						</button>
-						<button
-							class="icon-btn bg-white/80"
-							aria-label="Delete {album.name}"
-							onclick={() => (confirmingDelete = album)}
-						>
-							<Icon name="trash" />
-						</button>
+		{#snippet albumCard(node: PageServerData['tree'][number])}
+			<li class="group relative">
+				<a
+					href="{resolve('/gallery')}/{node.id}"
+					class="block overflow-hidden rounded-lg border border-gray-200"
+				>
+					<span class="block aspect-square bg-gray-50">
+						{#if node.coverId}
+							<img
+								src="/media/{node.coverId}"
+								alt=""
+								loading="lazy"
+								class="h-full w-full object-cover"
+							/>
+						{:else}
+							<span class="flex h-full w-full items-center justify-center text-gray-300">
+								<Icon name="image" size={40} />
+							</span>
+						{/if}
 					</span>
-				</li>
-			{/each}
-		</ul>
+					<span class="flex items-baseline justify-between gap-2 px-2.5 py-2">
+						<span class="truncate text-sm font-medium text-gray-900">{leafName(node.name)}</span>
+						<span class="shrink-0 text-xs text-gray-500 tabular-nums">
+							{node.totalCount ?? node.count}
+						</span>
+					</span>
+				</a>
+				<span class="absolute top-1.5 right-1.5 flex gap-1">
+					<button
+						class="icon-btn bg-white/80"
+						aria-label="Rename {node.name}"
+						onclick={() => (renaming = node)}
+					>
+						<Icon name="edit" />
+					</button>
+					<button
+						class="icon-btn bg-white/80"
+						aria-label="Delete {node.name}"
+						onclick={() => (confirmingDelete = node)}
+					>
+						<Icon name="trash" />
+					</button>
+				</span>
+				{#if node.children.length > 0}
+					<button
+						class="mt-1 flex w-full items-center gap-1 px-1 text-xs text-gray-500 hover:text-gray-700"
+						aria-expanded={opened.has(node.id)}
+						onclick={() => toggle(node.id)}
+					>
+						<Icon name={opened.has(node.id) ? 'chevron-down' : 'chevron-right'} size={14} />
+						{node.children.length}
+						{node.children.length === 1 ? 'album' : 'albums'} inside
+					</button>
+				{/if}
+			</li>
+		{/snippet}
+
+		{#snippet branch(nodes: PageServerData['tree'])}
+			<ul class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+				{#each nodes as node (node.id)}
+					{@render albumCard(node)}
+					{#if opened.has(node.id) && node.children.length > 0}
+						<li class="col-span-full border-l-2 border-gray-200 pl-3">
+							{@render branch(node.children)}
+						</li>
+					{/if}
+				{/each}
+			</ul>
+		{/snippet}
+
+		{@render branch(data.tree)}
 	{/if}
 </div>
 

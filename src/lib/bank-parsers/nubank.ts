@@ -13,7 +13,7 @@
  * identical espressos apart lives with the importer, which sees the whole
  * file.
  */
-import { decimalToCents, type BankParser, type ParsedMovement } from './index.js';
+import { decimalToCents, type BankParser, type ParsedMovement } from './shape.js';
 
 /** Non-empty data lines, the header dropped by matching, not by position. */
 function dataLines(text: string, header: RegExp): string[] {

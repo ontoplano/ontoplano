@@ -2,6 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
 import {
+	albumTree,
 	createAlbum,
 	deleteAlbum,
 	importFolder,
@@ -18,7 +19,8 @@ import { fail } from '@sveltejs/kit';
  * media.
  */
 export const load: PageServerLoad = async ({ locals }) => {
-	return { albums: listAlbums(buildCtx(locals.user!.id)) };
+	const ctx = buildCtx(locals.user!.id);
+	return { albums: listAlbums(ctx), tree: albumTree(ctx) };
 };
 
 export const actions: Actions = {

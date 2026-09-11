@@ -42,7 +42,9 @@ test('a ledger, its statement, the rules and the plots', async ({ page }) => {
 	await expect(importer.getByText('0 added, 2 already here.')).toBeVisible();
 	await importer.getByRole('button', { name: 'Done' }).click();
 
-	await expect(page.getByText('Mercado Bom Preço')).toBeVisible();
+	// The statement is drawn twice — a table at this width, a list at a
+	// phone's — so the row is asked for in the one that is showing.
+	await expect(page.getByRole('cell', { name: /Mercado Bom Preço/ })).toBeVisible();
 
 	// A category rule sorts the line that was already there — and can be
 	// rewritten afterwards, which re-sorts it again.

@@ -204,7 +204,7 @@
 		<code>|</code> is or, <code>^</code> and <code>$</code> anchor, <code>\d</code> is a digit, and
 		a literal <code>*</code> or <code>.</code> needs a backslash.
 		<a
-			href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Cheatsheet"
+			href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions/Cheatsheet"
 			target="_blank"
 			rel="noreferrer"
 			class="underline">The full syntax →</a

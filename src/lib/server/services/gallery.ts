@@ -30,6 +30,8 @@ export type Album = {
 	count: number;
 	/** The newest picture, for the album card. Null while it is empty. */
 	coverId: number | null;
+	/** This album's pictures plus everything under it, set by `albumTree`. */
+	totalCount?: number;
 };
 
 export type AlbumPicture = {
@@ -41,6 +43,57 @@ export type AlbumPicture = {
 	/** Every album holding this picture, for "also in". */
 	albums: { id: number; name: string }[];
 };
+
+/**
+ * How an album's name says where it belongs.
+ *
+ * A folder import writes `birds — Falconiformes`, which is a name and a
+ * lineage at once. Rather than a parent column that the import would have to
+ * keep in step, the separator IS the relationship: split it and the flat
+ * list is a tree. It also means somebody who renames an album to
+ * `birds — Owls` has moved it, which is the behaviour they would expect
+ * from typing that.
+ */
+export const ALBUM_SEPARATOR = ' — ';
+
+export type AlbumNode = Album & { depth: number; children: AlbumNode[] };
+
+/** The albums as they belong to each other, roots first. */
+export function albumTree(ctx: Ctx): AlbumNode[] {
+	const flat = listAlbums(ctx);
+	const nodes = new Map<string, AlbumNode>(
+		flat.map((a) => [
+			a.name,
+			{ ...a, depth: a.name.split(ALBUM_SEPARATOR).length - 1, children: [] }
+		])
+	);
+
+	const roots: AlbumNode[] = [];
+	for (const node of nodes.values()) {
+		const parts = node.name.split(ALBUM_SEPARATOR);
+		parts.pop();
+		// The nearest ancestor that actually exists: an album named
+		// `a — b — c` with no `a — b` hangs off `a` rather than off nothing.
+		let parent: AlbumNode | undefined;
+		while (parts.length > 0 && !parent) {
+			parent = nodes.get(parts.join(ALBUM_SEPARATOR));
+			parts.pop();
+		}
+		if (parent) parent.children.push(node);
+		else roots.push(node);
+	}
+
+	// What a parent holds includes what its children hold: a root album with
+	// its pictures in subfolders was reading "0", which is true of the album
+	// and false of the thing somebody is looking at.
+	const withTotals = (node: AlbumNode): number => {
+		const total = node.children.reduce((n, child) => n + withTotals(child), node.count);
+		node.totalCount = total;
+		return total;
+	};
+	roots.forEach(withTotals);
+	return roots;
+}
 
 export function listAlbums(ctx: Ctx): Album[] {
 	const rows = db

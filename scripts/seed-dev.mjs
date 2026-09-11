@@ -1191,6 +1191,18 @@ const ledger = (name, kind, defaultParser) => {
 const account = ledger('Current account', 'bank', 'nubank:conta_corrente');
 const creditCard = ledger('Credit card', 'card', 'nubank:credit_card_month');
 
+/*
+ * The movements, taken from the two exports Estevão actually has.
+ *
+ * Written as rows rather than as CSV text put through the parsers, because
+ * this file is rsynced to the staging box on its own and has to run with
+ * nothing but better-sqlite3 — importing the app's parsers would break the
+ * hourly reset. The parsers are exercised against these same two shapes in
+ * `tests/finance-statements.test.ts`, which is where that fidelity belongs.
+ *
+ * Both signs as the app stores them: negative left the account, and a card
+ * charge (positive in Nubank's export) is money leaving.
+ */
 const movement = (ledgerId, occurredOn, amountCents, description, n = 1) => {
 	const fingerprint = `${ledgerId}|seed:${occurredOn}:${amountCents}:${description}:${n}`;
 	if (
@@ -1202,32 +1214,45 @@ const movement = (ledgerId, occurredOn, amountCents, description, n = 1) => {
 	)
 		return;
 	run(
-		"insert into finance_transactions (user_id, ledger_id, occurred_on, amount_cents, description, source, fingerprint) values (?, ?, ?, ?, ?, 'nubank:conta_corrente', ?)",
+		'insert into finance_transactions (user_id, ledger_id, occurred_on, amount_cents, description, source, fingerprint) values (?, ?, ?, ?, ?, ?, ?)',
 		uid,
 		ledgerId,
 		occurredOn,
 		amountCents,
 		description,
+		ledgerId === creditCard ? 'nubank:credit_card_month' : 'nubank:conta_corrente',
 		fingerprint
 	);
 };
 
-movement(account, '2026-07-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
+// The account, as `Data,Valor,Identificador,Descrição` reads it. The two
+// December/January lines are there so the list crosses a year and the band
+// that says which one has something to say.
+movement(account, '2025-12-28', -9000, 'Cachacanoponto');
+movement(account, '2026-01-01', -4250, 'Personalfarma');
+movement(account, '2026-07-02', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
 movement(account, '2026-07-12', -15990, 'Pagamento de boleto - Companhia de Energia');
+movement(account, '2026-08-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
+movement(account, '2026-08-12', -16240, 'Pagamento de boleto - Companhia de Energia');
+movement(
+	account,
+	'2026-08-18',
+	-120000,
+	'Transferência enviada pelo Pix - Zé Cova - •••.821.910-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 89023719-0'
+);
+movement(account, '2026-09-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
+movement(account, '2026-09-09', -15880, 'Pagamento de boleto - Companhia de Energia');
+
+// And the card, as `date,title,amount` reads it — charges, so all outgoing.
 movement(creditCard, '2026-07-08', -19900, 'Mercado Bom Preço');
 movement(creditCard, '2026-07-15', -7400, 'Padaria Estrela');
 movement(creditCard, '2026-07-22', -6500, 'Academia Corpo São');
-movement(account, '2026-08-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
-movement(account, '2026-08-12', -16240, 'Pagamento de boleto - Companhia de Energia');
-movement(account, '2026-08-18', -120000, 'Transferência enviada pelo Pix - Aluguel');
 movement(creditCard, '2026-08-06', -18740, 'Mercado Bom Preço');
 movement(creditCard, '2026-08-09', -4200, 'Hortifruti da Esquina');
-movement(creditCard, '2026-08-14', -8900, 'Padaria Estrela');
+movement(creditCard, '2026-08-14', -1000, 'Casa - do caralho');
 movement(creditCard, '2026-08-19', -2390, 'Dm *Company');
 movement(creditCard, '2026-08-19', -2390, 'Dm *Company', 2);
 movement(creditCard, '2026-08-23', -6500, 'Academia Corpo São');
-movement(account, '2026-09-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
-movement(account, '2026-09-09', -15880, 'Pagamento de boleto - Companhia de Energia');
 movement(creditCard, '2026-09-06', -21300, 'Mercado Bom Preço');
 movement(creditCard, '2026-09-08', -5100, 'Hortifruti da Esquina');
 movement(creditCard, '2026-09-10', -6500, 'Academia Corpo São');

@@ -246,6 +246,28 @@ describe('albums', () => {
 		expect(gallery.listAlbums(ctx).map((a) => a.name)).toContain('2026 — gulls');
 	});
 
+	test('albums that belong to each other read as a tree', () => {
+		// Its own name, so the albums the earlier tests made are not in the way.
+		gallery.importFolder(ctx, [
+			{ path: 'aves/kingfisher.jpg', filename: 'k.jpg', bytes: png([50, 1, 1]) },
+			{ path: 'aves/Falconiformes/caracara.jpg', filename: 'c.jpg', bytes: png([51, 1, 1]) },
+			{ path: 'aves/Falconiformes/small/chick.jpg', filename: 'ch.jpg', bytes: png([52, 1, 1]) }
+		]);
+
+		const tree = gallery.albumTree(ctx);
+		const aves = tree.find((n) => n.name === 'aves')!;
+		expect(aves.children.map((c) => c.name)).toContain('aves — Falconiformes');
+		// Its own one, plus the two underneath — what somebody is looking at.
+		expect(aves.totalCount).toBe(3);
+
+		const falcons = aves.children.find((c) => c.name === 'aves — Falconiformes')!;
+		expect(falcons.depth).toBe(1);
+		expect(falcons.children.map((c) => c.name)).toEqual(['aves — Falconiformes — small']);
+		// And nothing is listed twice: a child is under its parent and not
+		// also at the top.
+		expect(tree.map((n) => n.name)).not.toContain('aves — Falconiformes');
+	});
+
 	test('another account reaches none of it', () => {
 		const room = gallery.listAlbums(ctx)[0];
 		const id = gallery.albumPictures(ctx, room.id)[0].id;

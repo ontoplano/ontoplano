@@ -58,6 +58,10 @@ test('a picture lives once, however many albums hold it', async ({ page }) => {
 	// A picture into Trips: choosing the file is the submit.
 	await page.getByRole('link', { name: /Trips/ }).click();
 	await page.waitForURL(/\/gallery\/\d+/);
+	// The album's own screen, not the albums index a beat earlier: the URL
+	// changes before the component mounts, and setting files on the outgoing
+	// page's picker uploads nothing at all.
+	await expect(page.getByText('Add pictures', { exact: true })).toBeVisible();
 	await page.locator('input[name="file"]:not([webkitdirectory])').setInputFiles(png([9, 120, 200]));
 	await expect(page.locator('li img')).toHaveCount(1, { timeout: 15_000 });
 

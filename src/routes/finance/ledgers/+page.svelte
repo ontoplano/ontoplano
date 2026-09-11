@@ -72,6 +72,29 @@
 	}
 
 	const dayOf = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+
+	/*
+	 * Which rows start a year.
+	 *
+	 * A statement is read as DD/MM and nothing on the row says which year —
+	 * fine until the list crosses new year's, where 31/12 sits above 01/01
+	 * and they are twelve months apart. A band across the list says which
+	 * year the rows under it belong to, the way a bank statement does. The
+	 * first row gets one too: the newest year is a fact worth stating rather
+	 * than leaving to be inferred from the ones below.
+	 */
+	const yearBands = $derived(
+		new Map(
+			data.movements
+				.map((m, i) => [
+					m.id,
+					i === 0 || m.occurredOn.slice(0, 4) !== data.movements[i - 1].occurredOn.slice(0, 4)
+						? m.occurredOn.slice(0, 4)
+						: null
+				])
+				.filter((entry): entry is [number, string] => entry[1] !== null)
+		)
+	);
 	const asDecimal = (cents: number) => (Math.abs(cents) / 100).toFixed(2);
 	const today = new Date().toISOString().slice(0, 10);
 </script>
@@ -257,6 +280,13 @@
 				class="max-h-[70vh] divide-y divide-gray-100 overflow-y-auto rounded border border-gray-200 sm:hidden"
 			>
 				{#each data.movements as m (m.id)}
+					{#if yearBands.has(m.id)}
+						<li
+							class="bg-gray-50 px-4 py-1 text-center text-xs font-medium tracking-widest text-gray-500 tabular-nums"
+						>
+							{yearBands.get(m.id)}
+						</li>
+					{/if}
 					<li
 						class="px-4 py-2.5"
 						style={m.categoryColor ? `background-color: ${m.categoryColor}14` : ''}
@@ -332,6 +362,16 @@
 					</thead>
 					<tbody class="divide-y divide-gray-100">
 						{#each data.movements as m (m.id)}
+							{#if yearBands.has(m.id)}
+								<tr class="bg-gray-50">
+									<td
+										colspan="6"
+										class="px-3 py-1 text-center text-xs font-medium tracking-widest text-gray-500 tabular-nums"
+									>
+										{yearBands.get(m.id)}
+									</td>
+								</tr>
+							{/if}
 							<tr style={m.categoryColor ? `background-color: ${m.categoryColor}14` : ''}>
 								<td class="px-3 py-2 whitespace-nowrap text-gray-500 tabular-nums">
 									{dayOf(m.occurredOn)}

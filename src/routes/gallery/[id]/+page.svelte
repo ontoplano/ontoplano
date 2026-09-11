@@ -4,6 +4,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import Modal from '$lib/components/Modal.svelte';
 	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
@@ -11,6 +12,20 @@
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	const others = $derived(data.albums.filter((a) => a.id !== data.album.id));
+
+	/*
+	 * The albums a picture can be dropped on, as they belong to each other.
+	 *
+	 * A flat row of every album in the account wrapped onto three lines and
+	 * said nothing about which of them were inside which. Roots, with a
+	 * chevron where there is something under them.
+	 */
+	const opened = new SvelteSet<number>();
+	const toggle = (id: number) => {
+		if (opened.has(id)) opened.delete(id);
+		else opened.add(id);
+	};
+	const leafName = (name: string) => name.split(' — ').at(-1) ?? name;
 
 	/** Filtering by a tag, the way the diary does. Empty means everything. */
 	let filterTag = $state('');
@@ -101,30 +116,57 @@
 		</p>
 	{/if}
 
-	{#if others.length > 0 && data.pictures.length > 0}
-		<div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-			<span>Drag a picture onto an album to move it — hold Ctrl to put it in both:</span>
-			{#each others as album (album.id)}
-				<span
-					role="listitem"
-					class="rounded-full border px-2.5 py-1 text-sm transition-colors {dropTarget === album.id
-						? 'border-gray-900 bg-gray-100 text-gray-900'
-						: 'border-gray-200 text-gray-700'}"
-					ondragover={(e) => {
-						e.preventDefault();
-						dropTarget = album.id;
-					}}
-					ondragleave={() => (dropTarget = null)}
-					ondrop={(e) => dropOn(album.id, e)}
-				>
-					{album.name}
+	{#snippet targets(nodes: PageServerData['tree'], depth: number)}
+		{#each nodes as node (node.id)}
+			{#if node.id !== data.album.id}
+				<span class="flex items-center gap-1" style="padding-left: {depth * 0.75}rem">
+					{#if node.children.length > 0}
+						<button
+							class="icon-btn"
+							aria-label="{opened.has(node.id) ? 'Hide' : 'Show'} what is inside {node.name}"
+							aria-expanded={opened.has(node.id)}
+							onclick={() => toggle(node.id)}
+						>
+							<Icon name={opened.has(node.id) ? 'chevron-down' : 'chevron-right'} size={14} />
+						</button>
+					{:else}
+						<span class="size-4 shrink-0"></span>
+					{/if}
+					<span
+						role="listitem"
+						class="rounded-full border px-2.5 py-1 text-sm transition-colors {dropTarget === node.id
+							? 'border-gray-900 bg-gray-100 text-gray-900'
+							: 'border-gray-200 text-gray-700'}"
+						ondragover={(e) => {
+							e.preventDefault();
+							dropTarget = node.id;
+						}}
+						ondragleave={() => (dropTarget = null)}
+						ondrop={(e) => dropOn(node.id, e)}
+					>
+						{leafName(node.name)}
+					</span>
 				</span>
-			{/each}
+			{/if}
+			{#if opened.has(node.id)}
+				{@render targets(node.children, depth + 1)}
+			{/if}
+		{/each}
+	{/snippet}
+
+	{#if others.length > 0 && data.pictures.length > 0}
+		<div class="text-xs text-gray-500">
+			<p class="mb-1">Drag a picture onto an album to move it — hold Ctrl to put it in both.</p>
+			<div class="flex flex-col gap-1">
+				{@render targets(data.tree, 0)}
+			</div>
 		</div>
 	{/if}
 
-	<!-- The diary's own gesture: click a tag to see just it, click it again
-	     to let go. In the gallery's colour rather than the diary's. -->
+	<!--
+		The diary's own gesture: click a tag to see just it, click it again to
+		let go. In the gallery's colour rather than the diary's.
+	-->
 	{#if albumTags.length > 0}
 		<div class="flex flex-wrap gap-2">
 			{#each albumTags as tag (tag)}
