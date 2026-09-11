@@ -478,9 +478,47 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
  * dialog is not standing in the gutter, so it has nothing to bleed out of.
  */
 @media (max-width: 639px) {
-	.page-gutter .shadow-card:not(.shadow-card .shadow-card):not(.bg-gray-50 *):not(dialog *) {
+	/*
+	 * "A surface standing in the page column" is not one class: half of them
+	 * are `.shadow-card` and half are a Tailwind pair written inline. Both
+	 * are caught, by the tokens Tailwind actually emits, so a page written
+	 * either way behaves the same and nobody has to remember which.
+	 *
+	 * The `:not(…)` is glued to the `:is(…)` on purpose — whitespace between
+	 * them is a descendant combinator, which moves the contents of a card
+	 * instead of the card, and slides every title off the left of the screen.
+	 */
+	.page-gutter
+		:is(
+			.shadow-card,
+			[class~='rounded'][class~='border'],
+			[class~='rounded-lg'][class~='border']
+		):not(:is(.shadow-card, [class~='rounded'][class~='border']) *):not(.bg-gray-50 *):not(
+			dialog *
+		) {
 		margin-inline: calc(-1 * var(--page-gutter));
 		border-inline-width: 0;
+		/*
+		 * And square. A rounded corner is a corner of something that ends
+		 * where you can see it end; a surface glued to both edges of the
+		 * screen does not end there, and the curve reads as a mistake.
+		 */
+		border-radius: 0;
+	}
+
+	/*
+	 * The line between two rows, on a screen the rows now reach across.
+	 *
+	 * A 1px gray-200 rule was a desktop's separator taken outdoors: at the
+	 * full width of a phone it draws as a stripe. This is thinner in effect —
+	 * the section's own colour dropped almost to the background — with a
+	 * single lighter line under it, so the join reads as a fold in one
+	 * surface rather than as two surfaces stacked.
+	 */
+	.page-gutter :is(.shadow-card, [class~='rounded'][class~='border']) > * + *,
+	.page-gutter [class*='divide-y'] > * + * {
+		border-top-color: color-mix(in srgb, var(--section-accent, #64748b) 22%, transparent);
+		box-shadow: inset 0 1px 0 color-mix(in srgb, white 4%, transparent);
 	}
 }
 
@@ -778,24 +816,28 @@ label:has(> input[type='radio']:not(:disabled)) {
 		padding: 0.75rem 1rem;
 	}
 
+	/*
+	 * The title takes the room that is left, and the actions keep theirs.
+	 *
+	 * This used to be `min-width: 100%` below 640px, which put the title on
+	 * its own line and threw the icon rail onto a second one — right-aligned,
+	 * under half a line of nothing. Every list on a phone was then twice as
+	 * tall as it needed to be and nothing lined up with anything. Row actions
+	 * here are icons (see the rail below), so they cost about 140px however
+	 * long the title is: the title shrinks, they do not, and the row is one
+	 * line at any width.
+	 */
 	.list-row-main {
-		min-width: 100%;
+		min-width: 0;
 		flex: 1 1 0;
 	}
 
 	.list-row-actions {
 		display: flex;
-		flex: 1 1 auto;
-		flex-wrap: wrap;
+		flex: 0 0 auto;
 		align-items: center;
 		justify-content: flex-end;
 		gap: 0.25rem;
-	}
-
-	@media (min-width: 40rem) {
-		.list-row-main {
-			min-width: 0;
-		}
 	}
 
 	.icon-btn:hover {
@@ -846,6 +888,21 @@ label:has(> input[type='radio']:not(:disabled)) {
 		align-items: center;
 		gap: 0.125rem;
 		margin-left: auto;
+	}
+
+	/*
+	 * On a phone the rail is under the text, so it lines up with it.
+	 *
+	 * Pushed right, on its own line, it left the whole left half of a card
+	 * empty and the buttons aligned with nothing — the card read as mostly
+	 * air. Below the phone breakpoint the card is a column, and a column
+	 * has one edge: this one.
+	 */
+	@media (max-width: 639px) {
+		.row-actions {
+			justify-content: flex-start;
+			margin-left: 0;
+		}
 	}
 
 	/*

@@ -46,6 +46,20 @@
 		color: var(--color-gray-900);
 	}
 
+	/*
+	 * A banner is a surface standing in the page column, so on a phone it
+	 * reaches the edges like every other one — see the rule in layout.css.
+	 * Its own left bar stays: that is what says which kind of notice it is,
+	 * and it is the one border that carries meaning rather than an outline.
+	 */
+	@media (max-width: 639px) {
+		.banner {
+			margin-inline: calc(-1 * var(--page-gutter, 1rem));
+			border-inline-end-width: 0;
+			border-radius: 0;
+		}
+	}
+
 	/* The text takes the room, so anything beside it — a dismiss button — sits
 	   at the far edge rather than against the words. */
 	.body {

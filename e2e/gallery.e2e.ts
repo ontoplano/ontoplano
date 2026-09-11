@@ -58,7 +58,7 @@ test('a picture lives once, however many albums hold it', async ({ page }) => {
 	// A picture into Trips: choosing the file is the submit.
 	await page.getByRole('link', { name: /Trips/ }).click();
 	await page.waitForURL(/\/gallery\/\d+/);
-	await page.locator('input[type="file"]').setInputFiles(png([9, 120, 200]));
+	await page.locator('input[name="file"]:not([webkitdirectory])').setInputFiles(png([9, 120, 200]));
 	await expect(page.locator('li img')).toHaveCount(1, { timeout: 15_000 });
 
 	// Tags read like diary tags — spaces or commas — and come back as chips.
@@ -113,4 +113,17 @@ test('a picture lives once, however many albums hold it', async ({ page }) => {
 	await page.waitForTimeout(600);
 	await page.getByRole('button', { name: 'Remove', exact: true }).click();
 	await expect(page.locator('li img')).toHaveCount(0);
+});
+
+test('a whole folder can be chosen at once, from the albums screen', async ({ page }) => {
+	await register(page, `folder-${Date.now()}@test.invalid`);
+	await visit(page, '/gallery');
+
+	// One picker, and it is the one that takes a directory — the album's own
+	// picker takes files. Playwright cannot hand a directory to a file input,
+	// so what is checked here is that the gesture is offered and wired; the
+	// filing itself is proved in tests/gallery.test.ts.
+	await expect(page.getByText('Import a folder')).toBeVisible();
+	await expect(page.locator('input[webkitdirectory]')).toHaveCount(1);
+	await expect(page.locator('form[action="?/importFolder"]')).toHaveCount(1);
 });

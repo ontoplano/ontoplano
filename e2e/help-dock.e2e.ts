@@ -46,8 +46,14 @@ test('a reported problem reaches the admin page', async ({ page }) => {
 	await register(page, `dock-report-${Date.now()}@test.invalid`);
 	await visit(page, '/tasks/plan');
 
-	await page.getByRole('button', { name: 'Report a problem with this screen' }).click();
-	const dialog = page.getByRole('dialog', { name: 'Something wrong here?' });
+	await page.getByRole('button', { name: 'Report a problem, or suggest something' }).click();
+	const dialog = page.getByRole('dialog', { name: 'Tell the operator' });
+	// A problem, not an idea: the dialog opens on this one, and the admin page
+	// below tells the two apart.
+	await expect(dialog.getByRole('button', { name: 'Something is wrong' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
 	await dialog.locator('textarea').fill(mark);
 	await dialog.getByRole('button', { name: 'Send' }).click();
 	await expect(dialog).toContainText('Thank you');

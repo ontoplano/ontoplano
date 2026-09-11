@@ -10,6 +10,20 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.144.0 — 2026-09-12
+
+- **The phone screen is one surface, not a stack of boxes.** Every card,
+  list and notice now reaches both edges and squares its corners there — a
+  rounded corner belongs to something that ends where you can see it end.
+  The line between two rows is the section's own colour, dropped almost to
+  the background and lit by a single hairline, so a join reads as a fold
+  rather than as two things stacked.
+- **A row is one line again.** A list row put its title on one line and threw
+  its buttons onto a second, right-aligned under half a line of nothing —
+  every list on a phone was twice as tall as it needed to be. Title and
+  actions share the row now, and a card's actions line up with the card's
+  own left edge instead of floating in the corner.
+
 ## 0.143.0 — 2026-09-12
 
 - **A whole folder of pictures goes into the gallery at once**, subfolders
