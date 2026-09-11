@@ -15,6 +15,7 @@ import { buildCtx } from '$lib/services/ctx.js';
 import { createTodo, listTodos } from '$lib/services/todos.js';
 import { wasmClient, type Oo1Db } from './wasm-client.js';
 import { DB_FILE, LOCAL_USER_ID, POOL_NAME } from './config.js';
+import { runLocalAction, runLocalLoad } from './routes.js';
 
 type Request = { id: number; op: string; args?: unknown };
 type Reply = { id: number; ok: true; result: unknown } | { id: number; ok: false; error: string };
@@ -93,7 +94,18 @@ const ctx = () => buildCtx(LOCAL_USER_ID);
 const ops: Record<string, (args: never) => unknown> = {
 	status: () => ({ vfs: `opfs-sahpool, ${tables} tables`, tables }),
 	'todos.list': () => listTodos(ctx()),
-	'todos.create': (args: { title: unknown }) => createTodo(ctx(), { title: args.title })
+	'todos.create': (args: { title: unknown }) => createTodo(ctx(), { title: args.title }),
+	// The dispatcher: the fetch bridge hands over the app's own data and
+	// action requests, and these run the same load/action bodies the server
+	// route would, out of `page.local.ts` / `layout.local.ts` twins.
+	'route.load': (args: { pathname: string; search: string }) =>
+		runLocalLoad(args.pathname, args.search),
+	'route.action': (args: {
+		pathname: string;
+		search: string;
+		action: string;
+		form: [string, string][];
+	}) => runLocalAction(args.pathname, args.search, args.action, args.form)
 };
 
 let ready: Promise<Oo1Db> | null = null;
@@ -105,7 +117,7 @@ self.onmessage = async (event: MessageEvent<Request>) => {
 		await ready;
 		const handler = ops[op];
 		if (!handler) throw new Error(`No such operation: ${op}`);
-		const reply: Reply = { id, ok: true, result: handler(args as never) };
+		const reply: Reply = { id, ok: true, result: await handler(args as never) };
 		self.postMessage(reply);
 	} catch (e) {
 		const reply: Reply = { id, ok: false, error: String(e).slice(0, 500) };

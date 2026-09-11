@@ -52,6 +52,10 @@ export default defineConfig({
 			KEEP_ALIVE_TIMEOUT: '120',
 			ORIGIN: 'http://localhost:4173',
 			BETTER_AUTH_SECRET: 'playwright-secret-playwright-secret',
+			// Lets a test flip one page into local mode with `?local`, so the
+			// suite can drive the device instance and the server through one
+			// build. Dead in any build that does not opt in.
+			PUBLIC_ONTOPLANO_LOCAL_OPT_IN: 'true',
 			// Keep the tests off whatever the developer's own config says.
 			ONTOPLANO_CONFIG_DIR: TEST_CONFIG_DIR,
 			// The instance-owner pages only exist on a self-hosted instance, and

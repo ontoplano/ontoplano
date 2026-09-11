@@ -3,7 +3,7 @@ import type { Actions } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
 import { createEntry, deleteEntry, updateEntry } from '$lib/services/diary';
 import { setEntryPeople } from '$lib/services/people';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 import { importVaultAction } from '$lib/server/import-vault-action';
 import {
 	createNotebook,

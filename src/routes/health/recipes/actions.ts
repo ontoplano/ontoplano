@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/server/http-errors';
+import { toActionFailure } from '$lib/http-errors';
 import { createExceptional } from '$lib/services/slots';
 import { listCategories } from '$lib/services/activities';
 import {
