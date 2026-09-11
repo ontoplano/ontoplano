@@ -16,7 +16,7 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 type Services = {
-	sources: typeof import('../src/lib/server/services/reminder-sources');
+	sources: typeof import('../src/lib/services/reminder-sources');
 	reminders: typeof import('../src/lib/services/reminders');
 	bills: typeof import('../src/lib/services/bills');
 	people: typeof import('../src/lib/services/people');
@@ -35,7 +35,7 @@ function billSaid(ctx: ReturnType<typeof ctxAt>): string[] {
 
 beforeAll(async () => {
 	s = {
-		sources: await import('../src/lib/server/services/reminder-sources'),
+		sources: await import('../src/lib/services/reminder-sources'),
 		reminders: await import('../src/lib/services/reminders'),
 		bills: await import('../src/lib/services/bills'),
 		people: await import('../src/lib/services/people')

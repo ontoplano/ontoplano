@@ -40,6 +40,15 @@ const pages = import.meta.glob('/src/routes/**/page.local.ts', { eager: true }) 
 	string,
 	PageModule
 >;
+type EndpointModule = Partial<
+	Record<
+		'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+		(event: LocalRouteEvent) => Response | Promise<Response>
+	>
+>;
+const endpoints = import.meta.glob('/src/routes/**/endpoint.local.ts', {
+	eager: true
+}) as Record<string, EndpointModule>;
 const layouts = import.meta.glob('/src/routes/**/layout.local.ts', { eager: true }) as Record<
 	string,
 	LayoutModule
@@ -149,6 +158,39 @@ export async function runLocalLoad(pathname: string, search: string): Promise<Lo
 		if (isHttpError(e)) return { kind: 'error', status: e.status, message: e.body.message };
 		throw e;
 	}
+}
+
+export type EndpointReply = { status: number; contentType: string | null; text: string };
+
+/**
+ * An app-internal API call — /api/reminders, /api/search — answered locally.
+ * The twin returns a real Response; only its readable parts cross the worker
+ * boundary, because a Response does not survive postMessage.
+ */
+export async function runLocalEndpoint(
+	method: string,
+	pathname: string,
+	search: string,
+	body: string | null,
+	contentType: string | null
+): Promise<EndpointReply | null> {
+	const clean = pathname !== '/' && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+	const module = endpoints[`${PREFIX}${clean}/endpoint.local.ts`];
+	const handler = module?.[method as 'GET'];
+	if (!handler) return null;
+
+	const url = new URL(pathname + search, self.location.origin);
+	const request = new Request(url, {
+		method,
+		body: body ?? undefined,
+		headers: contentType ? { 'content-type': contentType } : undefined
+	});
+	const response = await handler(eventFor(url, {}, request));
+	return {
+		status: response.status,
+		contentType: response.headers.get('content-type'),
+		text: await response.text()
+	};
 }
 
 export type ActionReply =

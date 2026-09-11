@@ -11,7 +11,7 @@
  */
 import * as devalue from 'devalue';
 import { ask } from './client.js';
-import type { ActionReply, LoadReply } from './routes.js';
+import type { ActionReply, EndpointReply, LoadReply } from './routes.js';
 
 const DATA_SUFFIX = '/__data.json';
 
@@ -71,6 +71,20 @@ export function installLocalBridge(): void {
 				const search = url.search;
 				const reply = await ask<LoadReply | null>('route.load', { pathname, search });
 				if (reply) return dataResponse(reply);
+			} else if (url.pathname.startsWith('/api/')) {
+				const body = ['GET', 'HEAD'].includes(request.method) ? null : await request.clone().text();
+				const reply = await ask<EndpointReply | null>('route.endpoint', {
+					method: request.method,
+					pathname: url.pathname,
+					search: url.search,
+					body,
+					contentType: request.headers.get('content-type')
+				});
+				if (reply)
+					return new Response(reply.text, {
+						status: reply.status,
+						headers: reply.contentType ? { 'content-type': reply.contentType } : undefined
+					});
 			} else if (request.method === 'POST') {
 				const action = [...url.searchParams.keys()].find((k) => k.startsWith('/'))?.slice(1);
 				if (action) {

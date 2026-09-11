@@ -16,7 +16,7 @@ export default defineConfig({
 	plugins: [sveltekit()],
 	test: {
 		include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
-		exclude: ['**/node_modules/**', '**/*.e2e.ts'],
+		exclude: ['**/node_modules/**', '**/*.e2e.ts', '**/{.worktrees,.claude}/**'],
 		/*
 		 * Node by default; a browser only where a test needs one.
 		 *

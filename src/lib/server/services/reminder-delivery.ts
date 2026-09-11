@@ -2,7 +2,7 @@ import { db } from '$lib/db/index.js';
 import { pushSubscriptions, user } from '$lib/db/schema.js';
 import { buildCtx } from '$lib/services/ctx.js';
 import { ensureBirthdayReminders } from '$lib/services/birthdays.js';
-import { ensureBillReminders, ensureReviewReminder } from './reminder-sources.js';
+import { ensureBillReminders, ensureReviewReminder } from '$lib/services/reminder-sources.js';
 import { markPushed, pushableReminders } from '$lib/services/reminders.js';
 import { pushConfigured, pushToUser } from './push.js';
 import { soundFor } from '$lib/services/ringtones.js';

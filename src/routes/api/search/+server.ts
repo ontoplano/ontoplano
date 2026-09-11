@@ -1,17 +1,3 @@
-import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
-import { buildCtx } from '$lib/services/ctx';
-import { search } from '$lib/services/search';
-
-/**
- * Search, for the command palette.
- *
- * Session-authenticated like the rest of the app rather than token-based like
- * `/api/v1` — this exists for the page that is already open, not for a plugin.
- */
-export const GET: RequestHandler = async ({ locals, url }) => {
-	if (!locals.user) return json({ hits: [] }, { status: 401 });
-
-	const hits = search(buildCtx(locals.user.id), url.searchParams.get('q'));
-	return json({ hits });
-};
+// The handlers live in endpoint.local.ts, written against the slice of the
+// request that also exists on a local instance — see \$lib/local/routes.ts.
+export { GET } from './endpoint.local';

@@ -87,6 +87,9 @@ export default defineConfig({
 	// passes all day and fails after 21:00.
 	use: { baseURL: 'http://localhost:4173', timezoneId: 'UTC' },
 	testMatch: '**/*.e2e.{ts,js}',
+	// Worktrees are whole copies of the repo; without this every spec would
+	// run once per open worktree.
+	testIgnore: '**/{.worktrees,.claude}/**',
 
 	/*
 	 * The registration tests go last, on their own.
@@ -97,7 +100,7 @@ export default defineConfig({
 	 * that must finish first.
 	 */
 	projects: [
-		{ name: 'app', testIgnore: '**/{registration,admin}.e2e.ts' },
+		{ name: 'app', testIgnore: ['**/{registration,admin}.e2e.ts', '**/{.worktrees,.claude}/**'] },
 		// The administrator is the oldest account, so this cannot run until
 		// something has made accounts.
 		{ name: 'admin', testMatch: '**/admin.e2e.ts', dependencies: ['app'] },

@@ -7,8 +7,8 @@ import type { Ctx } from '$lib/services/ctx.js';
 import { reviewPending } from '$lib/services/review.js';
 import { listPeople } from '$lib/services/people.js';
 import type { ReminderKind } from '$lib/services/reminders.js';
-import { getCurrency, getGridHours } from '../settings.js';
-import { formatMoney } from '../../money.js';
+import { getCurrency, getGridHours } from './settings.js';
+import { formatMoney } from '../money.js';
 import { localOfInstant } from '$lib/services/time.js';
 
 /**

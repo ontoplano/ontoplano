@@ -59,7 +59,9 @@ test('the todo page runs against the device, and the server never hears of it', 
 		['Board', '/tasks/board'],
 		['Goals', '/goals'],
 		['Ideas', '/ideas'],
-		['Home', '/']
+		// The wordmark is the desktop way home; the Home tab lives in the
+		// phone's bottom bar.
+		['ontoplano', '/']
 	] as const) {
 		await visit(page, '/tasks/todo?local=1');
 		await page.getByRole('link', { name, exact: true }).first().click();
@@ -67,9 +69,29 @@ test('the todo page runs against the device, and the server never hears of it', 
 		await expect(page.locator('body')).not.toContainText('Internal Error');
 	}
 
+	// Reminders are the device's own business: set through the local page,
+	// found due by the layout's poll of /api/reminders — which the bridge
+	// answers from the worker — and marked delivered back into OPFS.
+	const yesterday = new Date();
+	yesterday.setDate(yesterday.getDate() - 1);
+	await visit(page, '/reminders?local=1');
+	await page.locator('[name="day"]').fill(yesterday.toISOString().slice(0, 10));
+	await page.locator('[name="time"]').fill('09:00');
+	await page.locator('[name="label"]').first().fill('set on the device');
+	await page.getByRole('button', { name: 'Set it' }).click();
+	// Flipping to the past view is a client-side navigation, so the list it
+	// draws comes through the bridge. (A full reload here would be the
+	// server's render — the hybrid caveat from the top of this file.)
+	await page.getByRole('button', { name: 'Past', exact: true }).click();
+	await page.waitForURL((u) => u.searchParams.get('past') === '1');
+	await expect(page.getByText('set on the device')).toBeVisible({ timeout: 30_000 });
+
 	// The server's own render of the same page has never seen the row. This
 	// is the whole claim: local mode did not leak a single write.
 	await visit(page, '/tasks/todo');
 	await expect(page.getByRole('button', { name: /New to-do/ }).first()).toBeVisible();
 	await expect(page.getByText(title)).toHaveCount(0);
+	await visit(page, '/reminders?days=7&past=1');
+	await expect(page.locator('main')).toBeVisible();
+	await expect(page.getByText('set on the device')).toHaveCount(0);
 });

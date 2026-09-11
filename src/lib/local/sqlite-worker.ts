@@ -15,7 +15,7 @@ import { buildCtx } from '$lib/services/ctx.js';
 import { createTodo, listTodos } from '$lib/services/todos.js';
 import { wasmClient, type Oo1Db } from './wasm-client.js';
 import { DB_FILE, LOCAL_USER_ID, POOL_NAME } from './config.js';
-import { runLocalAction, runLocalLoad } from './routes.js';
+import { runLocalAction, runLocalEndpoint, runLocalLoad } from './routes.js';
 
 type Request = { id: number; op: string; args?: unknown };
 type Reply = { id: number; ok: true; result: unknown } | { id: number; ok: false; error: string };
@@ -105,7 +105,14 @@ const ops: Record<string, (args: never) => unknown> = {
 		search: string;
 		action: string;
 		form: [string, string][];
-	}) => runLocalAction(args.pathname, args.search, args.action, args.form)
+	}) => runLocalAction(args.pathname, args.search, args.action, args.form),
+	'route.endpoint': (args: {
+		method: string;
+		pathname: string;
+		search: string;
+		body: string | null;
+		contentType: string | null;
+	}) => runLocalEndpoint(args.method, args.pathname, args.search, args.body, args.contentType)
 };
 
 let ready: Promise<Oo1Db> | null = null;

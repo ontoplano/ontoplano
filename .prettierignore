@@ -18,3 +18,5 @@ bun.lockb
 # so F-Droid can build a tag without a network; restyling its JSON would be
 # undone by the next `make android-project` and mean nothing in between.
 android/
+.worktrees/
+.claude/

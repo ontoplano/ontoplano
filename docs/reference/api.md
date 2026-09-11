@@ -54,7 +54,6 @@ sentence somebody agrees to when they grant it.
 | `/api/billing/paddle`                        | POST   | —                 |
 | `/api/billing/play/claim`                    | POST   | —                 |
 | `/api/billing/play/rtdn`                     | POST   | —                 |
-| `/api/capture-options`                       | GET    | —                 |
 | `/api/client-errors`                         | POST   | —                 |
 | `/api/imports`                               | GET    | —                 |
 | `/api/jobs/reminders`                        | POST   | —                 |
@@ -66,11 +65,8 @@ sentence somebody agrees to when they grant it.
 | `/api/push`                                  | POST   | —                 |
 | `/api/push`                                  | DELETE | —                 |
 | `/api/push/test`                             | POST   | —                 |
-| `/api/reminders`                             | GET    | —                 |
-| `/api/reminders`                             | POST   | —                 |
 | `/api/report`                                | POST   | —                 |
 | `/api/ringtones/[id]`                        | GET    | —                 |
-| `/api/search`                                | GET    | —                 |
 | `/api/subscribe`                             | POST   | —                 |
 | `/api/tutorial`                              | POST   | —                 |
 | `/api/v1/me`                                 | GET    | —                 |
@@ -173,17 +169,6 @@ non-2xx makes Pub/Sub retry, and retrying something deliberately ignored is
 noise on both sides.
 
 **POST**
-
-### `/api/capture-options`
-
-The choices the capture dialogs offer, fetched when one opens.
-
-Capture lives in the app shell, which is on every page — so putting these
-into the layout's own load would run three queries on every request to serve
-a dialog most visits never open. Asked for once, the first time one is
-opened, and held for the rest of the session.
-
-**GET**
 
 ### `/api/client-errors`
 
@@ -350,20 +335,6 @@ bypasses anything — it pushes for real, which is the point.
 
 **POST**
 
-### `/api/reminders`
-
-What should have gone off by now.
-
-Polled by the page that is already open, so it is session-authenticated like
-`/api/search` rather than token-based like `/api/v1`. The reads and the
-"I have shown this" are separate calls on purpose: a reminder is only marked
-delivered once something has actually put it in front of somebody, so a
-failed request loses nothing.
-
-**GET**
-
-**POST**
-
 ### `/api/report`
 
 "Something here is wrong", from wherever somebody noticed it.
@@ -388,15 +359,6 @@ Yours or nothing: the lookup is scoped to the account, so an id belonging to
 somebody else is a 404 and not a quiet leak of three hundred kilobytes.
 Cached hard because the bytes never change — a ringtone is replaced by
 uploading another one under another name, not by editing this one.
-
-**GET**
-
-### `/api/search`
-
-Search, for the command palette.
-
-Session-authenticated like the rest of the app rather than token-based like
-`/api/v1` — this exists for the page that is already open, not for a plugin.
 
 **GET**
 
