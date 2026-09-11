@@ -28,6 +28,7 @@ help:
 
 ## which switches each make command takes
 #: ONLY=shots  just that one command, rather than every command that takes a switch
+#: SERVER_SRC=path  a server-repo checkout whose defaults.env is listed too, when present
 vars:
 	@node scripts/make-vars.mjs $(if $(ONLY),--only=$(ONLY),) \
 		$(sort $(MAKEFILE_LIST)) defaults.env $(wildcard $(SERVER_SRC)/defaults.env)
