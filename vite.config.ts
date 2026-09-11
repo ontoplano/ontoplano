@@ -30,8 +30,8 @@ function git(command: string): string {
  * In a browser bundle, 'better-sqlite3' is a stand-in.
  *
  * Drizzle's better-sqlite3 driver imports the native module unconditionally
- * but only constructs it when given a filename instead of a client. The local
- * instance always passes a client, so the browser build swaps the native
+ * but only constructs it when given a filename instead of a client. The
+ * self-contained instance always passes a client, so the browser build swaps the native
  * module for a stub that resolves cleanly and refuses construction. The
  * server build is untouched.
  */
@@ -41,7 +41,7 @@ function browserSqlite() {
 		enforce: 'pre' as const,
 		resolveId(source: string, importer: string | undefined, options: { ssr?: boolean }) {
 			if (source === 'better-sqlite3' && !options?.ssr) {
-				return `${import.meta.dirname}/src/lib/local/better-sqlite3-stub.ts`;
+				return `${import.meta.dirname}/src/lib/self-contained/better-sqlite3-stub.ts`;
 			}
 		}
 	};

@@ -53,7 +53,7 @@ export default defineConfig(
 		// these directories also runs in a browser worker, where $lib/server
 		// does not exist. An import from there fails the worker build with a
 		// far worse message than this one.
-		files: ['src/lib/services/**', 'src/lib/db/**', 'src/lib/local/**'],
+		files: ['src/lib/services/**', 'src/lib/db/**', 'src/lib/self-contained/**'],
 		rules: {
 			'no-restricted-imports': [
 				'error',
