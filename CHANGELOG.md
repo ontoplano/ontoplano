@@ -10,6 +10,11 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.130.1 — 2026-09-11
+
+- **The page turn is quicker** — 240ms rather than 480. Same dots, half the
+  wait.
+
 ## 0.130.0 — 2026-09-11
 
 - **Changing screen turns the page.** The screen you were on breaks up into

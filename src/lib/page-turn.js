@@ -23,7 +23,7 @@ export const PAGE_TURN = {
 	 * The knob worth touching. Long enough to read as ink flipping, short
 	 * enough that somebody moving quickly through the app never waits on it.
 	 */
-	durationMs: 480,
+	durationMs: 240,
 
 	/**
 	 * How many thresholds the dissolve passes through.
