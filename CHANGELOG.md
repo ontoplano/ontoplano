@@ -10,6 +10,12 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.137.0 — 2026-09-11
+
+- **No side margins on a phone.** Below the phone breakpoint a card takes the
+  screen edge to edge and loses its side borders, so a small screen spends
+  its width on the content rather than on white space either side of it.
+
 ## 0.136.0 — 2026-09-11
 
 - **The back gesture closes a form instead of leaving the app.** A dialog on

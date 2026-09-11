@@ -119,6 +119,31 @@ test('the system back gesture closes the screen, not the app', async ({ page }) 
 	await expect(page).toHaveURL(/\/notebooks/);
 });
 
+/**
+ * No side margins on a phone.
+ *
+ * A card spans the screen edge to edge below the phone breakpoint: the gutter
+ * the shell pads the page with is exactly what the card bleeds back out, so a
+ * 390px screen spends its width on the list, not on white space either side.
+ */
+test('a card takes the whole width of the phone', async ({ page }) => {
+	await register(page, `bleed-${Date.now()}@test.invalid`);
+	await visit(page, '/notebooks');
+
+	const card = page.locator('main .shadow-card').first();
+	const box = await card.boundingBox();
+	expect(box).toBeTruthy();
+	expect(box!.x).toBe(0);
+	expect(box!.width).toBe(390);
+
+	// The page must not gain a sideways scroll from the bleed.
+	const overflow = await page.evaluate(() => {
+		const main = document.querySelector('main')!;
+		return main.scrollWidth - main.clientWidth;
+	});
+	expect(overflow).toBe(0);
+});
+
 test('the phone has no top bar — the bottom one carries everything', async ({ page }) => {
 	await register(page, `topbar-${Date.now()}@test.invalid`);
 	await visit(page, '/tasks/plan');
