@@ -2,7 +2,8 @@
 	import { onMount } from 'svelte';
 
 	let vfs = $state('…');
-	let rows = $state(-1);
+	let todos = $state(-1);
+	let latest = $state('');
 	let persisted = $state('…');
 	let error = $state('');
 
@@ -12,20 +13,49 @@
 		const worker = new Worker(new URL('$lib/local/sqlite-worker.ts', import.meta.url), {
 			type: 'module'
 		});
+
+		let nextId = 0;
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- request bookkeeping, not state the page renders
+		const pending = new Map<number, (r: unknown) => void>();
 		worker.onmessage = (e) => {
-			if (e.data.ok) {
-				rows = e.data.rows;
-				vfs = e.data.vfs;
-			} else {
-				error = e.data.error;
-				rows = -2;
-			}
+			pending.get(e.data.id)?.(e.data);
+			pending.delete(e.data.id);
 		};
-		worker.postMessage('beat');
+		const ask = (op: string, args?: unknown) =>
+			new Promise<{ ok: boolean; result?: unknown; error?: string }>((resolve) => {
+				const id = nextId++;
+				pending.set(id, resolve as (r: unknown) => void);
+				worker.postMessage({ id, op, args });
+			});
+
+		const status = await ask('status');
+		if (!status.ok) {
+			error = status.error ?? '';
+			todos = -2;
+			return;
+		}
+		vfs = (status.result as { vfs: string }).vfs;
+
+		const made = await ask('todos.create', { title: `written on the device` });
+		if (!made.ok) {
+			error = made.error ?? '';
+			todos = -2;
+			return;
+		}
+		const list = await ask('todos.list');
+		if (!list.ok) {
+			error = list.error ?? '';
+			todos = -2;
+			return;
+		}
+		const rows = list.result as { title: string }[];
+		todos = rows.length;
+		latest = rows[0]?.title ?? '';
 	});
 </script>
 
 <p data-testid="vfs">{vfs}</p>
-<p data-testid="rows">{rows}</p>
+<p data-testid="todos">{todos}</p>
+<p data-testid="latest">{latest}</p>
 <p data-testid="persisted">{persisted}</p>
 <p data-testid="error">{error}</p>

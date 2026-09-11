@@ -1,4 +1,4 @@
-import { db } from '$lib/server/db';
+import { db } from '$lib/db/index.js';
 import { tags, diaryEntryTags, ideaTags } from '$lib/db/schema';
 import { eq, and, notInArray } from 'drizzle-orm';
 

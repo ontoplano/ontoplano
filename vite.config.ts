@@ -26,6 +26,27 @@ function git(command: string): string {
 	}
 }
 
+/**
+ * In a browser bundle, 'better-sqlite3' is a stand-in.
+ *
+ * Drizzle's better-sqlite3 driver imports the native module unconditionally
+ * but only constructs it when given a filename instead of a client. The local
+ * instance always passes a client, so the browser build swaps the native
+ * module for a stub that resolves cleanly and refuses construction. The
+ * server build is untouched.
+ */
+function browserSqlite() {
+	return {
+		name: 'browser-sqlite-stub',
+		enforce: 'pre' as const,
+		resolveId(source: string, importer: string | undefined, options: { ssr?: boolean }) {
+			if (source === 'better-sqlite3' && !options?.ssr) {
+				return `${import.meta.dirname}/src/lib/local/better-sqlite3-stub.ts`;
+			}
+		}
+	};
+}
+
 const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
 const commit = git('git rev-parse --short HEAD');
 const dirty = git('git status --porcelain') !== '' ? '+' : '';
@@ -77,7 +98,7 @@ export default defineConfig({
 	// The database worker loads SQLite lazily, which is a code split, and the
 	// default IIFE worker format cannot do those. It is started as a module
 	// worker, so this is the format it was always going to need.
-	worker: { format: 'es' },
+	worker: { format: 'es', plugins: () => [browserSqlite()] },
 	define: {
 		__APP_VERSION__: JSON.stringify(pkg.version),
 		// A trailing "+" means the build had uncommitted changes in it, which is
@@ -85,7 +106,7 @@ export default defineConfig({
 		__APP_COMMIT__: JSON.stringify(commit === 'unknown' ? commit : commit + dirty),
 		__APP_BUILT_AT__: JSON.stringify(new Date().toISOString())
 	},
-	plugins: [tailwindcss(), sveltekit(), noBacktickInCss()],
+	plugins: [tailwindcss(), sveltekit(), noBacktickInCss(), browserSqlite()],
 	server: {
 		/**
 		 * Listen on every address, not just `localhost`.

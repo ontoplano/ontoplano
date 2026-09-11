@@ -46,6 +46,27 @@ export default defineConfig(
 		}
 	},
 	{
+		// The portable core is what lets a phone be an instance: everything in
+		// these directories also runs in a browser worker, where $lib/server
+		// does not exist. An import from there fails the worker build with a
+		// far worse message than this one.
+		files: ['src/lib/services/**', 'src/lib/db/**', 'src/lib/local/**'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							group: ['$lib/server', '$lib/server/*', '**/lib/server', '**/lib/server/*'],
+							message:
+								'This module also runs on a local instance, where the server does not exist. Bind what you need through $lib/services/host.ts instead.'
+						}
+					]
+				}
+			]
+		}
+	},
+	{
 		// I2: route handlers are adapters, not data access. Everything that talks
 		// to the database lives in `src/lib/services/` (or, for the server-only
 		// modules, `src/lib/server/services/`), which is what makes

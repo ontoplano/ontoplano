@@ -1,17 +1,27 @@
 /**
- * The database, in the only place the browser will let it live.
+ * The local instance's server: the database and the services, in the only
+ * place the browser will let them live together.
  *
  * SQLite writes to OPFS through `createSyncAccessHandle`, which exists in a
  * dedicated worker and nowhere else — not on the page, and not in the service
- * worker. So the database is a worker, and everything that wants it asks by
- * message. That is a constraint rather than a preference, and it decides the
- * shape of the whole local instance.
+ * worker. So the database is a worker, the services (synchronous over
+ * Drizzle, exactly as on the server) run in here beside it, and everything
+ * else asks by message. That is a constraint rather than a preference, and it
+ * decides the shape of the whole local instance.
  */
-type Reply = { ok: true; rows: number; vfs: string } | { ok: false; error: string };
+import * as schema from '$lib/db/schema.js';
+import { bindDb } from '$lib/db/index.js';
+import { buildCtx } from '$lib/services/ctx.js';
+import { createTodo, listTodos } from '$lib/services/todos.js';
+import { wasmClient, type Oo1Db } from './wasm-client.js';
+import { DB_FILE, LOCAL_USER_ID, POOL_NAME } from './config.js';
 
-let ready: Promise<{ rows: () => number; vfs: string }> | null = null;
+type Request = { id: number; op: string; args?: unknown };
+type Reply = { id: number; ok: true; result: unknown } | { id: number; ok: false; error: string };
 
-async function open() {
+let tables = 0;
+
+async function open(): Promise<Oo1Db> {
 	const { default: init } = await import('@sqlite.org/sqlite-wasm');
 	const sqlite3 = await (init as (o?: unknown) => Promise<never>)({
 		locateFile: () => '/sqlite3.wasm'
@@ -22,24 +32,21 @@ async function open() {
 	const pool = await (
 		sqlite3 as unknown as {
 			installOpfsSAHPoolVfs: (o: { name: string }) => Promise<{
-				OpfsSAHPoolDb: new (path: string) => {
-					exec: (s: unknown) => void;
-					selectValue: (s: string) => unknown;
-				};
+				OpfsSAHPoolDb: new (path: string) => Oo1Db;
 			}>;
 		}
-	).installOpfsSAHPoolVfs({ name: 'ontoplano-spike' });
+	).installOpfsSAHPoolVfs({ name: POOL_NAME });
 
-	const db = new pool.OpfsSAHPoolDb('/spike.db');
+	const db = new pool.OpfsSAHPoolDb(DB_FILE);
+	// The same promise the server makes: a row cannot point at nothing.
+	db.exec('pragma foreign_keys = on');
 
 	/*
 	 * The app's own migrations, unchanged.
 	 *
-	 * This is the question that decides whether the local instance is wiring or
-	 * a rewrite: the schema was written for the server's SQLite, and if the same
-	 * files do not apply here then every table is a negotiation. They are read
-	 * straight out of `drizzle/`, in order, split on the marker drizzle writes
-	 * between statements.
+	 * This is what makes the local instance wiring rather than a rewrite: the
+	 * schema is the schema the server runs, read straight out of `drizzle/`,
+	 * in order, split on the marker drizzle writes between statements.
 	 */
 	const files = import.meta.glob('/drizzle/*.sql', {
 		query: '?raw',
@@ -57,44 +64,51 @@ async function open() {
 		}
 	}
 
-	/*
-	 * The one account a local instance has.
-	 *
-	 * `user_id` stays on every table — one codebase serves both, and the
-	 * instance that pays is the multi-tenant one — so a local database is the
-	 * same schema with exactly one row in `user`. The foreign keys are real and
-	 * enforced here, which is how this was found: an insert without this row is
-	 * refused, exactly as it would be on the server.
-	 */
 	db.exec({
 		sql: 'insert or ignore into user (id, name, email) values (?, ?, ?)',
-		bind: ['me', 'me', 'me@localhost']
+		bind: [LOCAL_USER_ID, LOCAL_USER_ID, `${LOCAL_USER_ID}@localhost`]
 	});
 
-	const tables = db.selectValue(
+	tables = db.selectValue(
 		"select count(*) from sqlite_master where type='table' and name not like 'sqlite_%'"
 	) as number;
 
-	return {
-		vfs: `opfs-sahpool, ${tables} tables`,
-		rows: () => {
-			// A real table from the real schema, not one invented for the test.
-			db.exec({
-				sql: 'insert into categories (user_id, name, color) values (?, ?, ?)',
-				bind: ['me', `spike-${Date.now()}`, '#1d4ed8']
-			});
-			return db.selectValue('select count(*) from categories') as number;
-		}
-	};
+	// From here on the services see this database, through the same driver
+	// and the same binding the server uses. Nothing below this line is
+	// local-instance code; it is the app.
+	const { drizzle } = await import('drizzle-orm/better-sqlite3');
+	bindDb(drizzle(wasmClient(db) as never, { schema }));
+	return db;
 }
 
-self.onmessage = async () => {
+const ctx = () => buildCtx(LOCAL_USER_ID);
+
+/**
+ * What the page may ask for, by name.
+ *
+ * Real services, real validation, real errors — the entries here are the
+ * dispatcher's vocabulary, and each one is a line, because the logic already
+ * exists. Grows with the routes the local instance serves.
+ */
+const ops: Record<string, (args: never) => unknown> = {
+	status: () => ({ vfs: `opfs-sahpool, ${tables} tables`, tables }),
+	'todos.list': () => listTodos(ctx()),
+	'todos.create': (args: { title: unknown }) => createTodo(ctx(), { title: args.title })
+};
+
+let ready: Promise<Oo1Db> | null = null;
+
+self.onmessage = async (event: MessageEvent<Request>) => {
+	const { id, op, args } = event.data;
 	try {
 		ready ??= open();
-		const handle = await ready;
-		const reply: Reply = { ok: true, rows: handle.rows(), vfs: handle.vfs };
+		await ready;
+		const handler = ops[op];
+		if (!handler) throw new Error(`No such operation: ${op}`);
+		const reply: Reply = { id, ok: true, result: handler(args as never) };
 		self.postMessage(reply);
 	} catch (e) {
-		self.postMessage({ ok: false, error: String(e).slice(0, 300) } satisfies Reply);
+		const reply: Reply = { id, ok: false, error: String(e).slice(0, 500) };
+		self.postMessage(reply);
 	}
 };
