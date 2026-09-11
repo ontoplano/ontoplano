@@ -335,12 +335,12 @@ function apiPage() {
 	 * walking only `/api` meant this page did not know it existed, while the
 	 * scope table above listed `calendar:read` as a permission nothing used.
 	 */
-	// An endpoint that also runs on a local instance keeps its handlers — and
-	// its prose — in endpoint.local.ts, with +server.ts a bare re-export. Read
+	// An endpoint that also runs on a self-contained instance keeps its handlers — and
+	// its prose — in endpoint.self-contained.ts, with +server.ts a bare re-export. Read
 	// the file the logic actually lives in.
-	const locals = new Set(walk(join(ROOT, 'src/routes'), (f) => f === 'endpoint.local.ts'));
+	const locals = new Set(walk(join(ROOT, 'src/routes'), (f) => f === 'endpoint.self-contained.ts'));
 	const files = walk(join(ROOT, 'src/routes'), (f) => f === '+server.ts').map((f) => {
-		const local = join(dirname(f), 'endpoint.local.ts');
+		const local = join(dirname(f), 'endpoint.self-contained.ts');
 		return locals.has(local) ? local : f;
 	});
 	const endpoints = [];
@@ -870,14 +870,14 @@ function urlFor(dir) {
 }
 
 function pagesPage() {
-	// A route that also runs on a local instance keeps its bodies — and its
-	// prose — in page.local.ts, with +page.server.ts re-exporting it. Both
+	// A route that also runs on a self-contained instance keeps its bodies — and its
+	// prose — in page.self-contained.ts, with +page.server.ts re-exporting it. Both
 	// files are read: a route may keep a server-only action beside the
 	// re-export (error-report consent does), and it belongs in the list too.
-	const locals = new Set(walk(join(ROOT, 'src/routes'), (f) => f === 'page.local.ts'));
+	const locals = new Set(walk(join(ROOT, 'src/routes'), (f) => f === 'page.self-contained.ts'));
 	const serverFiles = walk(join(ROOT, 'src/routes'), (f) => f === '+page.server.ts').flatMap(
 		(f) => {
-			const local = join(dirname(f), 'page.local.ts');
+			const local = join(dirname(f), 'page.self-contained.ts');
 			return locals.has(local) ? [local, f] : [f];
 		}
 	);

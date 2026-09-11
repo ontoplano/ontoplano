@@ -354,22 +354,22 @@ preview:
 
 # The instance that runs on the device itself: static files, no server, the
 # database in the browser's own storage. This is what the phone app wraps.
-## the local-instance build (static, serverless)
+## the self-contained build (static, serverless)
 local:
-	ONTOPLANO_LOCAL_BUILD=1 PUBLIC_ONTOPLANO_LOCAL=true yarn build
+	ONTOPLANO_SELF_CONTAINED_BUILD=1 PUBLIC_ONTOPLANO_SELF_CONTAINED=true yarn build
 
-## serve the local-instance build, the way its shell would
+## serve the self-contained build, the way its shell would
 local-preview:
-	node scripts/serve-local.mjs
+	node scripts/serve-self-contained.mjs
 
-## the local-instance e2e, against the static build
+## the self-contained e2e, against the static build
 test-local:
-	yarn playwright test -c playwright.local.config.ts
+	yarn playwright test -c playwright.self-contained.config.ts
 
 # The Capacitor shell wraps the same static build the browser gets; the
 # native project lives in capacitor/, and the SDK is found the same way the
 # TWA's build finds it.
-## the local-instance Android app (debug APK, via the Capacitor shell)
+## the self-contained Android app (debug APK, via the Capacitor shell)
 android-local: local
 	cd capacitor && npx cap sync android
 	cd capacitor/android && ANDROID_HOME=$${ANDROID_HOME:-$$HOME/android-sdk} ./gradlew -q assembleDebug

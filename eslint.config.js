@@ -62,7 +62,7 @@ export default defineConfig(
 						{
 							group: ['$lib/server', '$lib/server/*', '**/lib/server', '**/lib/server/*'],
 							message:
-								'This module also runs on a local instance, where the server does not exist. Bind what you need through $lib/services/host.ts instead.'
+								'This module also runs on a self-contained instance, where the server does not exist. Bind what you need through $lib/services/host.ts instead.'
 						}
 					]
 				}

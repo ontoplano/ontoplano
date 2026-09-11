@@ -21,7 +21,7 @@ write surface for everything else; both end up calling the same
 | `/buy`                               | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/data/[slug]`                       | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/demo`                              | `default`                                                                                                                                                                                                                                                                                                                                                                           |
-| `/demo/local-db`                     | —                                                                                                                                                                                                                                                                                                                                                                                   |
+| `/demo/self-contained-db`            | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/finance/bills`                     | `create`, `update`, `pay`, `unpay`, `archive`, `delete`                                                                                                                                                                                                                                                                                                                             |
 | `/goals`                             | `setTodoStatus`, `createArea`, `deleteArea`, `create`, `update`, `setProgress`, `close`, `setLinks`, `remove`                                                                                                                                                                                                                                                                       |
 | `/health/habits`                     | `create`, `update`, `delete`, `logOccurrence`, `toggleOccurrence`, `updateOccurrence`, `deleteOccurrence`                                                                                                                                                                                                                                                                           |
@@ -73,10 +73,10 @@ the rest are named for what they do.
 
 ### `/`
 
-The dashboard, for whoever is signed in — which on a local instance is
+The dashboard, for whoever is signed in — which on a self-contained instance is
 whoever is holding the device. The signed-out front door stays in
 +page.server.ts: whether anyone may register is a question about a
-deployment, and a local instance has no door.
+deployment, and a self-contained instance has no door.
 
 ### `/admin`
 
@@ -511,8 +511,8 @@ out of step with each other.
 
 The server's face of this route.
 
-The bodies live in `page.local.ts`, written against the slice of the
-request that also exists on a local instance — which is what lets the same
+The bodies live in `page.self-contained.ts`, written against the slice of the
+request that also exists on a self-contained instance — which is what lets the same
 load and the same actions run inside the device's worker, dispatched by
 $lib/local. A route with logic only a server can run keeps that logic
 here instead.

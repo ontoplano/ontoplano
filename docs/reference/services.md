@@ -205,7 +205,7 @@ The account row itself, for whatever draws a name at the top of a page.
 
 The rest of `user` handling — sessions, passwords, deletion — is the
 server's business and stays there. This is the one read that every
-instance needs: on a local instance it is the single seeded account, and
+instance needs: on a self-contained instance it is the single seeded account, and
 the layout builds its `user` from it.
 
 ### Functions
@@ -1358,10 +1358,10 @@ What the surrounding instance does for the services.
 A handful of things the services fire off are not theirs to implement:
 delivering a webhook, knowing who shares a family plan, enforcing a paid
 plan's limits. On the server those are real modules with network access and
-billing tables behind them; on a local instance they have nothing to stand
+billing tables behind them; on a self-contained instance they have nothing to stand
 on — and, more to the point, nothing to do.
 
-The defaults below ARE the local instance, correct by construction rather
+The defaults below ARE the self-contained instance, correct by construction rather
 than by configuration: one account means the family circle is you; no
 billing means no limits to enforce; no listeners means an event announced
 to nobody. The server overrides all of it in `$lib/server/host.ts`, bound

@@ -1,0 +1,250 @@
+/**
+ * The self-contained instance's routing table.
+ *
+ * Each route that runs on the device keeps its logic in a `page.self-contained.ts` beside
+ * its `+page.server.ts`, which re-exports it — one body, two callers. Layout
+ * data comes from `layout.self-contained.ts` the same way. This module collects them
+ * all, matches a pathname the way SvelteKit would, and runs the right one
+ * against the single local account. It runs inside the database worker,
+ * because the services it calls are synchronous over the database that lives
+ * there.
+ */
+import { isActionFailure, isRedirect, isHttpError } from '@sveltejs/kit';
+import { SELF_CONTAINED_USER_ID } from './config.js';
+
+/**
+ * The slice of SvelteKit's request event the self-contained routes are written
+ * against. Small on purpose: everything in it exists in a worker, so a route
+ * that stays inside it runs identically on the server and on the device.
+ */
+export interface SelfContainedEvent {
+	request: Request;
+	url: URL;
+	/** Every segment the route pattern names is present once it matched. */
+	params: Record<string, string>;
+	/**
+	 * Optional to stay assignable from the server's own event, where a
+	 * session may be absent. On a self-contained instance it is always the one account, so route
+	 * bodies keep the same `locals.user!.id` they were born with.
+	 */
+	locals: { user?: { id: string } | undefined };
+	/**
+	 * The page's own cookies, forwarded by the bridge. Only what client code
+	 * can read — which is all a self-contained instance has, and all the view
+	 * preferences that ride on cookies ever were.
+	 */
+	cookies: { get(name: string): string | undefined };
+}
+
+type PageModule = {
+	load?: (event: SelfContainedEvent) => unknown;
+	actions?: Record<string, (event: SelfContainedEvent) => unknown>;
+};
+type LayoutModule = { load?: (event: SelfContainedEvent) => unknown };
+
+const pages = import.meta.glob('/src/routes/**/page.self-contained.ts', { eager: true }) as Record<
+	string,
+	PageModule
+>;
+type EndpointModule = Partial<
+	Record<
+		'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+		(event: SelfContainedEvent) => Response | Promise<Response>
+	>
+>;
+const endpoints = import.meta.glob('/src/routes/**/endpoint.self-contained.ts', {
+	eager: true
+}) as Record<string, EndpointModule>;
+const layouts = import.meta.glob('/src/routes/**/layout.self-contained.ts', {
+	eager: true
+}) as Record<string, LayoutModule>;
+// Keys only, never compiled: the node array a data request answers with has
+// one slot per +layout.svelte on the branch, so their positions are needed
+// even though their components never run here. `?url` keeps the Svelte
+// compiler out of the worker build — the values are ignored.
+const layoutShells = import.meta.glob('/src/routes/**/+layout.svelte', {
+	query: '?url',
+	import: 'default',
+	eager: true
+});
+
+const PREFIX = '/src/routes';
+
+/** '/src/routes/tasks/todo/page.self-contained.ts' -> '/tasks/todo'; root -> '/'. */
+function dirOf(key: string, suffix: string): string {
+	return key.slice(PREFIX.length, -suffix.length) || '/';
+}
+
+type Matcher = { dir: string; pattern: RegExp; names: string[]; module: PageModule };
+
+const matchers: Matcher[] = Object.entries(pages)
+	.map(([key, module]) => {
+		const dir = dirOf(key, '/page.self-contained.ts');
+		const names: string[] = [];
+		const pattern = new RegExp(
+			'^' +
+				dir
+					.split('/')
+					.map((segment) => {
+						const dynamic = segment.match(/^\[(.+)]$/);
+						if (!dynamic) return segment.replace(/[.*+?^${}()|\\]/g, '\\$&');
+						names.push(dynamic[1]);
+						return '([^/]+)';
+					})
+					.join('/') +
+				'$'
+		);
+		return { dir, pattern, names, module };
+	})
+	// Static segments outrank dynamic ones, the way SvelteKit ranks routes.
+	.sort((a, b) => Number(a.dir.includes('[')) - Number(b.dir.includes('[')));
+
+export function matchSelfContainedRoute(
+	pathname: string
+): { matcher: Matcher; params: Record<string, string> } | null {
+	const clean = pathname !== '/' && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+	for (const matcher of matchers) {
+		const hit = clean.match(matcher.pattern);
+		if (hit) {
+			const params: Record<string, string> = {};
+			matcher.names.forEach((name, i) => (params[name] = decodeURIComponent(hit[i + 1])));
+			return { matcher, params };
+		}
+	}
+	return null;
+}
+
+function eventFor(
+	url: URL,
+	params: Record<string, string>,
+	request?: Request,
+	cookieHeader = ''
+): SelfContainedEvent {
+	const jar = new Map(
+		cookieHeader
+			.split(';')
+			.map((pair) => pair.trim().split('=') as [string, string])
+			.filter(([name]) => name)
+			.map(([name, value]) => [name, decodeURIComponent(value ?? '')])
+	);
+	return {
+		request: request ?? new Request(url),
+		url,
+		params,
+		locals: { user: { id: SELF_CONTAINED_USER_ID } },
+		cookies: { get: (name) => jar.get(name) }
+	};
+}
+
+/** The branch of layout slots for a route dir, leaf excluded. */
+function branchOf(dir: string): { shell: boolean; module: LayoutModule | null }[] {
+	const prefixes = ['/'];
+	if (dir !== '/') {
+		const parts = dir.split('/').slice(1);
+		for (let i = 1; i <= parts.length; i++) prefixes.push('/' + parts.slice(0, i).join('/'));
+	}
+	return prefixes
+		.map((prefix) => {
+			const at = prefix === '/' ? '' : prefix;
+			return {
+				shell: `${PREFIX}${at}/+layout.svelte` in layoutShells,
+				module: layouts[`${PREFIX}${at}/layout.self-contained.ts`] ?? null
+			};
+		})
+		.filter((slot) => slot.shell || slot.module);
+}
+
+export type LoadReply =
+	| { kind: 'data'; nodes: ({ data: unknown } | null)[] }
+	| { kind: 'redirect'; location: string }
+	| { kind: 'error'; status: number; message: string };
+
+export async function runSelfContainedLoad(
+	pathname: string,
+	search: string,
+	cookieHeader = ''
+): Promise<LoadReply | null> {
+	const hit = matchSelfContainedRoute(pathname);
+	if (!hit) return null;
+	const url = new URL(pathname + search, self.location.origin);
+	const event = eventFor(url, hit.params, undefined, cookieHeader);
+	try {
+		const nodes: ({ data: unknown } | null)[] = [];
+		for (const slot of branchOf(hit.matcher.dir)) {
+			nodes.push(slot.module?.load ? { data: await slot.module.load(event) } : null);
+		}
+		nodes.push(hit.matcher.module.load ? { data: await hit.matcher.module.load(event) } : null);
+		return { kind: 'data', nodes };
+	} catch (e) {
+		if (isRedirect(e)) return { kind: 'redirect', location: e.location };
+		if (isHttpError(e)) return { kind: 'error', status: e.status, message: e.body.message };
+		throw e;
+	}
+}
+
+export type EndpointReply = { status: number; contentType: string | null; text: string };
+
+/**
+ * An app-internal API call — /api/reminders, /api/search — answered on the device.
+ * The twin returns a real Response; only its readable parts cross the worker
+ * boundary, because a Response does not survive postMessage.
+ */
+export async function runSelfContainedEndpoint(
+	method: string,
+	pathname: string,
+	search: string,
+	body: string | null,
+	contentType: string | null
+): Promise<EndpointReply | null> {
+	const clean = pathname !== '/' && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+	const module = endpoints[`${PREFIX}${clean}/endpoint.self-contained.ts`];
+	const handler = module?.[method as 'GET'];
+	if (!handler) return null;
+
+	const url = new URL(pathname + search, self.location.origin);
+	const request = new Request(url, {
+		method,
+		body: body ?? undefined,
+		headers: contentType ? { 'content-type': contentType } : undefined
+	});
+	const response = await handler(eventFor(url, {}, request));
+	return {
+		status: response.status,
+		contentType: response.headers.get('content-type'),
+		text: await response.text()
+	};
+}
+
+export type ActionReply =
+	| { kind: 'success'; status: number; data: unknown }
+	| { kind: 'failure'; status: number; data: unknown }
+	| { kind: 'redirect'; status: number; location: string }
+	| { kind: 'error'; status: number; message: string };
+
+export async function runSelfContainedAction(
+	pathname: string,
+	search: string,
+	action: string,
+	form: [string, string][]
+): Promise<ActionReply | null> {
+	const hit = matchSelfContainedRoute(pathname);
+	if (!hit) return null;
+	const handler = hit.matcher.module.actions?.[action];
+	if (!handler) return { kind: 'error', status: 405, message: `No such action: ${action}` };
+
+	const body = new FormData();
+	for (const [name, value] of form) body.append(name, value);
+	const url = new URL(pathname + search, self.location.origin);
+	const request = new Request(url, { method: 'POST', body });
+
+	try {
+		const result = await handler(eventFor(url, hit.params, request));
+		if (isActionFailure(result))
+			return { kind: 'failure', status: result.status, data: result.data };
+		return { kind: 'success', status: result ? 200 : 204, data: result };
+	} catch (e) {
+		if (isRedirect(e)) return { kind: 'redirect', status: e.status, location: e.location };
+		if (isHttpError(e)) return { kind: 'error', status: e.status, message: e.body.message };
+		throw e;
+	}
+}

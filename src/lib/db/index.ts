@@ -18,7 +18,7 @@ export type Db = BetterSQLite3Database<typeof schema>;
  * Loud, immediate, and named: a service reached for the database before
  * anything had bound one. The fix is always in the caller's setup — the
  * server binds in `$lib/server/db`, a test binds through `tests/helpers/db`,
- * the local instance binds in its worker.
+ * the self-contained instance binds in its worker.
  */
 const unbound = new Proxy({} as Db, {
 	get(_target, property) {

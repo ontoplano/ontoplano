@@ -162,7 +162,6 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_HEALTH_TOKEN`               | `src/lib/server/settings.ts`, `src/routes/api/jobs/reminders/+server.ts`, `src/routes/api/jobs/weekly-reviews/+server.ts`, `src/routes/healthz/+server.ts` |
 | `ONTOPLANO_HTTPS`                      | `src/hooks.server.ts`                                                                                                                                      |
 | `ONTOPLANO_JURISDICTION`               | `src/lib/server/services/legal.ts`                                                                                                                         |
-| `ONTOPLANO_LOCAL`                      | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_MAIL_FROM`                  | `src/lib/server/services/push.ts`                                                                                                                          |
 | `ONTOPLANO_OPERATOR`                   | `src/lib/server/services/legal.ts`                                                                                                                         |
 | `ONTOPLANO_ORIGIN`                     | `scripts/build-twa.mjs`                                                                                                                                    |
@@ -178,6 +177,8 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_REGISTRATION`               | `src/lib/server/services/registration.ts`                                                                                                                  |
 | `ONTOPLANO_REQUIRE_VERIFIED_EMAIL`     | `src/lib/server/services/access.ts`                                                                                                                        |
 | `ONTOPLANO_REVIEW_MAIL_OFFSET_HOURS`   | `src/lib/server/services/review-mail.ts`                                                                                                                   |
+| `ONTOPLANO_SELF_CONTAINED`             | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_SELF_CONTAINED_BUILD`       | `scripts/build-error-page.mjs`                                                                                                                             |
 | `ONTOPLANO_SELF_HOST`                  | `src/lib/server/services/billing.ts`, `src/lib/server/settings.ts`                                                                                         |
 | `ONTOPLANO_SELLS`                      | `src/lib/server/services/billing.ts`                                                                                                                       |
 | `ONTOPLANO_SITE_COOKIE_DOMAIN`         | `src/lib/server/settings.ts`                                                                                                                               |

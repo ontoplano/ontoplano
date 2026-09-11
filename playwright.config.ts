@@ -52,10 +52,10 @@ export default defineConfig({
 			KEEP_ALIVE_TIMEOUT: '120',
 			ORIGIN: 'http://localhost:4173',
 			BETTER_AUTH_SECRET: 'playwright-secret-playwright-secret',
-			// Lets a test flip one page into local mode with `?local`, so the
+			// Lets a test flip one page into local mode with `?selfContained`, so the
 			// suite can drive the device instance and the server through one
 			// build. Dead in any build that does not opt in.
-			PUBLIC_ONTOPLANO_LOCAL_OPT_IN: 'true',
+			PUBLIC_ONTOPLANO_SELF_CONTAINED_OPT_IN: 'true',
 			// Keep the tests off whatever the developer's own config says.
 			ONTOPLANO_CONFIG_DIR: TEST_CONFIG_DIR,
 			// The instance-owner pages only exist on a self-hosted instance, and
@@ -89,7 +89,7 @@ export default defineConfig({
 	testMatch: '**/*.e2e.{ts,js}',
 	// Worktrees are whole copies of the repo; without this every spec would
 	// run once per open worktree.
-	testIgnore: ['**/{.worktrees,.claude}/**', '**/e2e-local/**'],
+	testIgnore: ['**/{.worktrees,.claude}/**', '**/e2e-self-contained/**'],
 
 	/*
 	 * The registration tests go last, on their own.
@@ -105,7 +105,7 @@ export default defineConfig({
 			testIgnore: [
 				'**/{registration,admin}.e2e.ts',
 				'**/{.worktrees,.claude}/**',
-				'**/e2e-local/**'
+				'**/e2e-self-contained/**'
 			]
 		},
 		// The administrator is the oldest account, so this cannot run until

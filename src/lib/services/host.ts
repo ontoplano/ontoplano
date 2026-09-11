@@ -4,10 +4,10 @@
  * A handful of things the services fire off are not theirs to implement:
  * delivering a webhook, knowing who shares a family plan, enforcing a paid
  * plan's limits. On the server those are real modules with network access and
- * billing tables behind them; on a local instance they have nothing to stand
+ * billing tables behind them; on a self-contained instance they have nothing to stand
  * on — and, more to the point, nothing to do.
  *
- * The defaults below ARE the local instance, correct by construction rather
+ * The defaults below ARE the self-contained instance, correct by construction rather
  * than by configuration: one account means the family circle is you; no
  * billing means no limits to enforce; no listeners means an event announced
  * to nobody. The server overrides all of it in `$lib/server/host.ts`, bound
@@ -31,7 +31,7 @@ export interface Host {
 	/**
 	 * A reminder was created, changed, or deleted, so whatever fires them
 	 * should look at the schedule again. The server pokes its delivery clock;
-	 * a local instance will hand the schedule to the device's own alarms.
+	 * a self-contained instance will hand the schedule to the device's own alarms.
 	 */
 	reminderScheduleChanged(): void;
 	/**

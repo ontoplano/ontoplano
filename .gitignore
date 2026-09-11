@@ -105,5 +105,5 @@ fdroid-out/
 # Copied from node_modules by scripts/copy-sqlite-wasm.mjs on dev and build.
 /static/sqlite3.wasm
 .worktrees/
-build-local/
+build-self-contained/
 capacitor/node_modules/

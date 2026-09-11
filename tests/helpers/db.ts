@@ -56,7 +56,7 @@ export function makeDatabase(): TestDatabase {
 	process.env.DATABASE_URL = path;
 
 	// The services read the portable binding in $lib/db, not the environment,
-	// so give them this file directly — the same move the local instance's
+	// so give them this file directly — the same move the self-contained instance's
 	// worker makes. Tests that also import $lib/server/db rebind to the same
 	// path, which is a no-op.
 	const client = new Database(path);

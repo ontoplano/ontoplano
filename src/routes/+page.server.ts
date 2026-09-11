@@ -2,7 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { docsUrl, siteUrl } from '$lib/server/settings';
 import { loadConfig } from '$lib/server/config';
 import { instanceIsEmpty, registrationMode } from '$lib/server/services/registration';
-import { load as dashboard, actions as local } from './page.local';
+import { load as dashboard, actions as local } from './page.self-contained';
 
 export const load: PageServerLoad = async (event) => {
 	/*
@@ -12,8 +12,8 @@ export const load: PageServerLoad = async (event) => {
 	 * trial length, the video, the demo link — was for the landing page, which
 	 * now lives at ontoplano.com in a repository of its own. What is left is
 	 * the one fact the door needs: whether there is any point offering a
-	 * Register button. The dashboard itself lives in page.local.ts, because it
-	 * is the same dashboard on a local instance.
+	 * Register button. The dashboard itself lives in page.self-contained.ts, because it
+	 * is the same dashboard on a self-contained instance.
 	 */
 	if (!event.locals.user) {
 		return {

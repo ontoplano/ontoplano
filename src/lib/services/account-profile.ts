@@ -3,7 +3,7 @@
  *
  * The rest of `user` handling — sessions, passwords, deletion — is the
  * server's business and stays there. This is the one read that every
- * instance needs: on a local instance it is the single seeded account, and
+ * instance needs: on a self-contained instance it is the single seeded account, and
  * the layout builds its `user` from it.
  */
 import { eq } from 'drizzle-orm';

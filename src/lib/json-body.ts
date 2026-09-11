@@ -4,7 +4,7 @@
  * Everything that accepts JSON goes through this: the size is checked before
  * and after reading, and anything that is not a JSON object is refused with
  * the same sentence everywhere. Portable because it needs nothing but the
- * request itself — a local instance parses its own posts with it.
+ * request itself — a self-contained instance parses its own posts with it.
  */
 import { ValidationError } from '$lib/services/errors.js';
 
