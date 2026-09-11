@@ -80,20 +80,30 @@
 	<!-- The ledgers themselves. -->
 	<div class="flex flex-wrap items-center gap-2">
 		{#each active as ledger (ledger.id)}
+			<!--
+				One ledger, as a tile you can read at a glance: what it is
+				called over what it holds. Written as two lines rather than
+				four things strung across one, because on a phone the strung
+				version ran two ledgers into each other and off the screen.
+			-->
 			<button
-				class="flex items-baseline gap-2 rounded border px-3 py-2 text-left transition-colors {data
+				class="flex min-w-36 shrink-0 flex-col items-start gap-0.5 rounded border px-3 py-2 text-left transition-colors {data
 					.current?.id === ledger.id
 					? 'border-gray-900 bg-gray-50'
 					: 'border-gray-200 hover:border-gray-400'}"
 				onclick={() => show(ledger.id)}
 			>
-				<span class="text-sm font-medium text-gray-900">{ledger.name}</span>
-				<span class="text-xs text-gray-500">{LEDGER_KIND_LABELS[ledger.kind]}</span>
-				<span class="text-xs text-gray-400 tabular-nums">{ledger.count}</span>
-				<span
-					class="text-xs tabular-nums {ledger.balanceCents < 0 ? 'text-red-600' : 'text-blue-700'}"
-				>
-					{money(ledger.balanceCents)}
+				<span class="w-full truncate text-sm font-medium text-gray-900">{ledger.name}</span>
+				<span class="flex w-full items-baseline gap-2">
+					<span class="text-xs text-gray-500">{LEDGER_KIND_LABELS[ledger.kind]}</span>
+					<span class="text-xs text-gray-400 tabular-nums">{ledger.count}</span>
+					<span
+						class="ml-auto text-xs tabular-nums {ledger.balanceCents < 0
+							? 'text-red-600'
+							: 'text-blue-700'}"
+					>
+						{money(ledger.balanceCents)}
+					</span>
 				</span>
 			</button>
 		{/each}
@@ -157,7 +167,8 @@
 					{data.unsorted} uncategorized →
 				</a>
 			{/if}
-			<span class="ml-auto flex items-center gap-1">
+			<!-- On a phone these are the row, not an afterthought pushed right. -->
+			<span class="flex w-full items-center gap-1 sm:ml-auto sm:w-auto">
 				<button class="btn btn-sm" onclick={() => (showImport = true)}>
 					<Icon name="download" /> Import
 				</button>
@@ -233,7 +244,81 @@
 		{:else}
 			<!-- The list scrolls inside itself: a year of a card's statement is
 			     hundreds of rows, and the ledger switcher must stay reachable. -->
-			<div class="max-h-[60vh] overflow-y-auto rounded border border-gray-200">
+			<!--
+				A statement is a table on a desktop and a list on a phone.
+				Six columns across 390px squeezed the amount off the right and
+				stood the tag chips on their heads — "# p ix" down the side of
+				the screen. The same rows, laid out twice: the table below the
+				`sm` breakpoint is replaced by a block per movement, with the
+				day and the description on the first line and everything that
+				sorts it on the second.
+			-->
+			<ul
+				class="max-h-[70vh] divide-y divide-gray-100 overflow-y-auto rounded border border-gray-200 sm:hidden"
+			>
+				{#each data.movements as m (m.id)}
+					<li
+						class="px-4 py-2.5"
+						style={m.categoryColor ? `background-color: ${m.categoryColor}14` : ''}
+					>
+						<div class="flex items-baseline gap-2">
+							<span class="shrink-0 text-xs text-gray-500 tabular-nums">
+								{dayOf(m.occurredOn)}
+							</span>
+							<span class="min-w-0 flex-1 truncate text-gray-900" title={m.description}>
+								{m.description}
+							</span>
+							<span
+								class="shrink-0 tabular-nums {m.amountCents >= 0
+									? 'text-blue-700'
+									: 'text-gray-900'}"
+							>
+								{money(m.amountCents)}
+							</span>
+						</div>
+						<div class="mt-1 flex items-center gap-2">
+							{#if m.category}
+								<span
+									class="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium"
+									style="color: {m.categoryColor}"
+								>
+									<span
+										class="inline-block h-2 w-2 rounded-sm"
+										style="background-color: {m.categoryColor}"
+									></span>
+									{m.category}
+								</span>
+							{/if}
+							<span class="flex min-w-0 flex-1 flex-wrap gap-1">
+								{#each m.tags as tag (tag.name)}
+									<span
+										class="rounded-full px-1.5 py-0.5 text-xs whitespace-nowrap"
+										style="background-color: {tag.color}1f; color: {tag.color}"
+									>
+										#{tag.name}
+									</span>
+								{/each}
+							</span>
+							<button
+								class="icon-btn shrink-0"
+								aria-label="Edit this line"
+								onclick={() => (editingId = m.id)}
+							>
+								<Icon name="edit" />
+							</button>
+							<button
+								class="icon-btn shrink-0"
+								aria-label="Delete this line"
+								onclick={() => (deletingMovement = m)}
+							>
+								<Icon name="trash" />
+							</button>
+						</div>
+					</li>
+				{/each}
+			</ul>
+
+			<div class="hidden max-h-[60vh] overflow-y-auto rounded border border-gray-200 sm:block">
 				<table class="w-full text-sm">
 					<thead class="sticky top-0 bg-white">
 						<tr class="border-b border-gray-200 text-left text-xs text-gray-500">

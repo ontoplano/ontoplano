@@ -481,15 +481,34 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 	/*
 	 * "A surface standing in the page column" is not one class: half of them
 	 * are `.shadow-card` and half are a Tailwind pair written inline. Both
-	 * are caught, by the tokens Tailwind actually emits, so a page written
-	 * either way behaves the same and nobody has to remember which.
+	 * are caught, by the tokens Tailwind actually emits.
 	 *
-	 * The `:not(…)` is glued to the `:is(…)` on purpose — whitespace between
+	 * What is deliberately NOT caught: anything you press. A button, a chip
+	 * and a link wear the same `rounded border` pair, and the first cut of
+	 * this rule dragged the ledger switcher out to the screen edge and
+	 * squared one corner of it — a control stretched across a phone, which
+	 * is not a surface standing in a column. Only boxes are boxes.
+	 *
+	 * The `:not(…)` is glued to the `:is(…)` on purpose: whitespace between
 	 * them is a descendant combinator, which moves the contents of a card
-	 * instead of the card, and slides every title off the left of the screen.
+	 * instead of the card and slides every title off the left of the screen.
 	 */
 	.page-gutter
 		:is(
+			div,
+			section,
+			article,
+			aside,
+			ul,
+			ol,
+			li,
+			table,
+			details,
+			nav,
+			form,
+			a[class~='block'],
+			a[class~='grid']
+		):is(
 			.shadow-card,
 			[class~='rounded'][class~='border'],
 			[class~='rounded-lg'][class~='border']
@@ -504,21 +523,130 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		 * screen does not end there, and the curve reads as a mistake.
 		 */
 		border-radius: 0;
+		/*
+		 * Raised, not sunk.
+		 *
+		 * The outline around each box made the gaps between them read as
+		 * trenches — the page showing through, which is relief the wrong way
+		 * round. A lit top edge and a shadow beneath it instead: the surface
+		 * sits above the page, and the boundary between two of them is the
+		 * edge of the upper one rather than a gap.
+		 */
+		border-block-color: transparent;
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, white 7%, transparent),
+			0 2px 4px -2px rgb(0 0 0 / 0.55);
+	}
+
+	/*
+	 * And they stack against each other. The page's own vertical rhythm is
+	 * for a desktop, where a card is an object on a page; on a phone the
+	 * cards ARE the page, and a strip of background between two of them is
+	 * the empty space this whole pass exists to remove.
+	 */
+	.page-gutter
+		:is(
+			div,
+			section,
+			article,
+			aside,
+			ul,
+			ol,
+			li,
+			table,
+			details,
+			nav,
+			form,
+			a[class~='block'],
+			a[class~='grid']
+		):is(.shadow-card, [class~='rounded'][class~='border'], [class~='rounded-lg'][class~='border'])
+		+ :is(
+			div,
+			section,
+			article,
+			aside,
+			ul,
+			ol,
+			li,
+			table,
+			details,
+			nav,
+			form,
+			a[class~='block'],
+			a[class~='grid']
+		):is(
+			.shadow-card,
+			[class~='rounded'][class~='border'],
+			[class~='rounded-lg'][class~='border']
+		) {
+		margin-block-start: 0;
+	}
+
+	/*
+	 * A grid of cards closes up too.
+	 *
+	 * `S + S { margin: 0 }` handles the pages that stack with margins; a grid
+	 * spaces its children with `gap`, which no margin rule can reach. So a
+	 * container holding surfaces loses its gap: on a phone the cards are the
+	 * page, and the strip of background between two of them is the trench
+	 * this pass exists to fill.
+	 */
+	.page-gutter
+		:is(div, ul, ol, section):has(
+			> :is(div, section, article, aside, ul, ol, li, a[class~='block']):is(
+					.shadow-card,
+					[class~='rounded'][class~='border'],
+					[class~='rounded-lg'][class~='border']
+				)
+		) {
+		gap: 0;
 	}
 
 	/*
 	 * The line between two rows, on a screen the rows now reach across.
 	 *
 	 * A 1px gray-200 rule was a desktop's separator taken outdoors: at the
-	 * full width of a phone it draws as a stripe. This is thinner in effect —
-	 * the section's own colour dropped almost to the background — with a
-	 * single lighter line under it, so the join reads as a fold in one
-	 * surface rather than as two surfaces stacked.
+	 * full width of a phone it draws as a stripe. This is a lit edge with a
+	 * shadow above it — the row below reads as a plate lying on the one
+	 * above, which is the same relief the surface itself has.
 	 */
 	.page-gutter :is(.shadow-card, [class~='rounded'][class~='border']) > * + *,
 	.page-gutter [class*='divide-y'] > * + * {
-		border-top-color: color-mix(in srgb, var(--section-accent, #64748b) 22%, transparent);
-		box-shadow: inset 0 1px 0 color-mix(in srgb, white 4%, transparent);
+		border-top-color: color-mix(in srgb, white 7%, transparent);
+		box-shadow: 0 -1px 0 rgb(0 0 0 / 0.4);
+	}
+
+	/*
+	 * A full-width row inside such a surface is square too.
+	 *
+	 * The playful style rounds every button there is, which is right for a
+	 * button and wrong for a row: inventory's selected location drew its
+	 * highlight as a pill with two corners trapped against the screen. A row
+	 * that spans the list is the list, so it takes the list's corners —
+	 * which, at the screen's edge, are none. `w-full` is the marker because
+	 * it is exactly what makes a button a row.
+	 */
+	.page-gutter
+		:is(.shadow-card, [class~='rounded'][class~='border'], [class*='divide-y'])
+		:is(button, a, label)[class~='w-full'] {
+		border-radius: 0;
+	}
+
+	/*
+	 * Nothing inside a surface that reaches the edge keeps a rounded corner
+	 * against that edge. A selected row in a list — inventory's "Everything"
+	 * — drew its highlight as a pill with two corners trapped against the
+	 * screen; full width and square is what a selected row looks like when
+	 * the list is the page.
+	 */
+	.page-gutter
+		:is(.shadow-card, [class~='rounded'][class~='border'])
+		> :is([class~='rounded'], [class~='rounded-lg'], [class~='rounded-md']),
+	.page-gutter
+		:is(.shadow-card, [class~='rounded'][class~='border'])
+		> *
+		> :is(button, a)[class~='rounded'] {
+		border-radius: 0;
 	}
 }
 

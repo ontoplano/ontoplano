@@ -126,7 +126,7 @@
 					</button>
 					<a
 						href={resolve('/health/recipes/[id]', { id: String(recipe.id) })}
-						class="lift block border border-gray-200 bg-white p-4 shadow-card"
+						class="lift block border border-gray-200 bg-white p-4 shadow-card max-sm:flex max-sm:items-start max-sm:gap-3"
 					>
 						<!--
 						The picture, when there is one: a cookbook you recognise by
@@ -146,31 +146,35 @@
 								src="/media/{recipe.mainPicture}"
 								alt=""
 								loading="lazy"
-								class="mb-3 block size-[9.6rem] rounded-md border border-gray-200 bg-white object-cover"
+								class="mb-3 block size-[9.6rem] rounded-md border border-gray-200 bg-white object-cover max-sm:mb-0 max-sm:size-20 max-sm:shrink-0"
 							/>
 						{/if}
 
-						<span class="block text-sm font-medium text-gray-900">{recipe.title}</span>
+						<!-- On a phone the picture is beside the words, so they share a
+						     column of their own rather than sitting under an empty half. -->
+						<span class="block min-w-0 max-sm:flex-1">
+							<span class="block text-sm font-medium text-gray-900">{recipe.title}</span>
 
-						<span class="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-							{#if recipe.minutes}<span class="tabular">{recipe.minutes} min</span>{/if}
-							{#if recipe.servings}<span class="tabular">serves {recipe.servings}</span>{/if}
-							<span class="tabular">{recipe.ingredients} ingredients</span>
-						</span>
+							<span class="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+								{#if recipe.minutes}<span class="tabular">{recipe.minutes} min</span>{/if}
+								{#if recipe.servings}<span class="tabular">serves {recipe.servings}</span>{/if}
+								<span class="tabular">{recipe.ingredients} ingredients</span>
+							</span>
 
-						<span class="mt-2 block text-xs">
-							{#if recipe.ingredients === 0}
-								<span class="text-gray-500">nothing in it yet</span>
-							{:else if recipe.missing === 0}
-								<span class="text-teal-700">you have everything</span>
-							{:else}
-								<span class="text-amber-700">
-									missing {recipe.missing}
-									{recipe.missing === 1 ? 'ingredient' : 'ingredients'}
-								</span>
-							{/if}
-						</span>
-					</a>
+							<span class="mt-2 block text-xs">
+								{#if recipe.ingredients === 0}
+									<span class="text-gray-500">nothing in it yet</span>
+								{:else if recipe.missing === 0}
+									<span class="text-teal-700">you have everything</span>
+								{:else}
+									<span class="text-amber-700">
+										missing {recipe.missing}
+										{recipe.missing === 1 ? 'ingredient' : 'ingredients'}
+									</span>
+								{/if}
+							</span>
+						</span></a
+					>
 				</div>
 			{/each}
 		</div>

@@ -206,6 +206,76 @@ export function uploadToAlbum(
  * Everything is deduplicated as it always is: the same picture twice is one
  * row and two memberships, so a tree with copies costs its bytes once.
  */
+export type FolderPlan = {
+	/** Where each file would land, and whether it would. */
+	files: {
+		path: string;
+		album: string;
+		bytes: number;
+		ok: boolean;
+		/** Said in the person's words, with the instance's own number in it. */
+		refusedBecause?: string;
+	}[];
+	albums: string[];
+	/** The instance's ceiling, so the screen can name it rather than imply it. */
+	maxKilobytes: number;
+	willImport: number;
+	willRefuse: number;
+};
+
+/**
+ * What an import would do, before it does any of it.
+ *
+ * A folder of two hundred photographs is exactly the case where "18 in, 10
+ * refused" after the fact is useless: by then the ten are lost in a number
+ * and nobody knows which. So the browser reads the names and sizes, this
+ * says what would happen to each, and the import proper only runs on a
+ * second press.
+ *
+ * Deliberately pure: it takes names and sizes, never the bytes, so looking
+ * costs one small request instead of the whole folder going up twice.
+ */
+export function planFolder(
+	ctx: Ctx,
+	files: { path: string; bytes: number }[],
+	opts: { under?: string } = {}
+): FolderPlan {
+	const limits = mediaLimits();
+	const albums = new Set<string>();
+
+	const planned = files.map((file) => {
+		const parts = file.path.split('/').filter(Boolean);
+		parts.pop();
+		const album = [opts.under, ...parts].filter(Boolean).join(' — ') || 'Imported';
+
+		const tooBig = file.bytes > limits.maxBytes;
+		const empty = file.bytes === 0;
+		if (!tooBig && !empty) albums.add(album);
+
+		return {
+			path: file.path,
+			album,
+			bytes: file.bytes,
+			ok: !tooBig && !empty,
+			refusedBecause: empty
+				? 'That file is empty.'
+				: tooBig
+					? `Pictures here are at most ${limits.maxKilobytes}KB, and that one is ${Math.ceil(
+							file.bytes / 1024
+						)}KB.`
+					: undefined
+		};
+	});
+
+	return {
+		files: planned,
+		albums: [...albums],
+		maxKilobytes: limits.maxKilobytes,
+		willImport: planned.filter((f) => f.ok).length,
+		willRefuse: planned.filter((f) => !f.ok).length
+	};
+}
+
 export function importFolder(
 	ctx: Ctx,
 	files: { path: string; bytes: Buffer; filename: string }[],

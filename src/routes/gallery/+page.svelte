@@ -12,7 +12,13 @@
 
 	let showNew = $state(false);
 	let folderForm: HTMLFormElement | undefined = $state();
+	let planForm: HTMLFormElement | undefined = $state();
 	let importing = $state(false);
+	/** The files the picker handed over, kept until the person says go. */
+	let chosen: File[] = $state([]);
+	const plan = $derived(form && 'plan' in form && form.success ? form.plan : null);
+
+	const asKB = (bytes: number) => `${Math.ceil(bytes / 1024)}KB`;
 
 	/**
 	 * Choosing the folder is the submit.
@@ -27,22 +33,48 @@
 		node.webkitdirectory = true;
 	}
 
-	async function folderChosen(event: Event) {
+	/*
+	 * Choosing the folder asks what would happen; a second press does it.
+	 *
+	 * Only names and sizes are sent for the asking, so looking at a folder of
+	 * two hundred photographs costs one small request rather than the whole
+	 * folder going up twice.
+	 */
+	function folderChosen(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
 		if (!input.files?.length) return;
-		importing = true;
-		// The paths ride alongside the files: one hidden field per file, in the
-		// same order, because a File loses `webkitRelativePath` on the way.
+		chosen = [...input.files];
+		const listing = planForm?.querySelector('input[name="files"]') as HTMLInputElement | null;
+		if (!listing) return;
+		listing.value = JSON.stringify(
+			chosen.map((file) => ({ path: file.webkitRelativePath || file.name, bytes: file.size }))
+		);
+		planForm?.requestSubmit();
+	}
+
+	/** Go: the files themselves, and only the ones that would be taken. */
+	function sendFolder() {
 		const form = folderForm;
-		if (!form) return;
+		if (!form || chosen.length === 0) return;
+		importing = true;
+
+		const data = new DataTransfer();
 		form.querySelectorAll('input[name="path"]').forEach((el) => el.remove());
-		for (const file of [...input.files]) {
+		const taking = new Set(plan?.files.filter((f) => f.ok).map((f) => f.path) ?? []);
+		for (const file of chosen) {
+			const path = file.webkitRelativePath || file.name;
+			if (!taking.has(path)) continue;
+			data.items.add(file);
+			// The paths ride alongside the files, in the same order, because a
+			// File loses `webkitRelativePath` on the way.
 			const carrier = document.createElement('input');
 			carrier.type = 'hidden';
 			carrier.name = 'path';
-			carrier.value = file.webkitRelativePath || file.name;
+			carrier.value = path;
 			form.append(carrier);
 		}
+		const picker = form.querySelector('input[name="file"]') as HTMLInputElement | null;
+		if (picker) picker.files = data.files;
 		form.requestSubmit();
 	}
 	let renaming: (typeof data.albums)[number] | null = $state(null);
@@ -54,23 +86,13 @@
 		<h1 class="text-lg font-bold text-gray-900">Gallery</h1>
 		<span class="flex items-center gap-2">
 			<!-- A folder of pictures, with its subfolders as albums. -->
-			<form
-				method="post"
-				action="?/importFolder"
-				enctype="multipart/form-data"
-				bind:this={folderForm}
-				use:enhance={() =>
-					({ update }) => {
-						importing = false;
-						return update({ reset: false });
-					}}
-			>
+			<!-- Ask first: what is in this folder, and what would be refused. -->
+			<form method="post" action="?/planFolder" bind:this={planForm} use:enhance>
+				<input type="hidden" name="files" />
 				<label class="btn btn-sm cursor-pointer">
-					<Icon name="download" />
-					{importing ? 'Reading the folder…' : 'Import a folder'}
+					<Icon name="download" /> Import a folder
 					<input
 						type="file"
-						name="file"
 						accept="image/png,image/jpeg,image/gif,image/webp"
 						multiple
 						use:directory
@@ -79,11 +101,79 @@
 					/>
 				</label>
 			</form>
+
+			<!-- And then, on the second press, the files themselves. -->
+			<form
+				method="post"
+				action="?/importFolder"
+				enctype="multipart/form-data"
+				bind:this={folderForm}
+				class="hidden"
+				use:enhance={() =>
+					({ update }) => {
+						importing = false;
+						chosen = [];
+						return update({ reset: false });
+					}}
+			>
+				<input type="file" name="file" multiple />
+			</form>
 			<button class="btn btn-primary btn-sm" onclick={() => (showNew = true)}>
 				<Icon name="plus" /> New album
 			</button>
 		</span>
 	</div>
+
+	<!--
+		What would happen, before it happens.
+
+		The refused ones are named, with their size against the instance's
+		ceiling — a number somebody can act on (compress it, or raise the
+		limit in config.toml) rather than a count of files that vanished.
+	-->
+	{#if plan}
+		<div class="rounded border border-gray-200">
+			<div class="flex flex-wrap items-baseline gap-2 border-b border-gray-200 px-4 py-3">
+				<span class="text-sm font-medium text-gray-900">
+					{plan.willImport} picture{plan.willImport === 1 ? '' : 's'} into {plan.albums.length}
+					album{plan.albums.length === 1 ? '' : 's'}
+				</span>
+				{#if plan.willRefuse > 0}
+					<span class="text-sm text-red-700">
+						{plan.willRefuse} refused
+					</span>
+				{/if}
+				<span class="ml-auto flex items-center gap-2">
+					<button class="btn btn-sm" type="button" onclick={() => (chosen = [])}>Cancel</button>
+					<button
+						class="btn btn-primary btn-sm"
+						type="button"
+						disabled={plan.willImport === 0 || importing}
+						onclick={sendFolder}
+					>
+						{importing ? 'Importing…' : `Import ${plan.willImport}`}
+					</button>
+				</span>
+			</div>
+
+			<ul class="max-h-72 divide-y divide-gray-100 overflow-y-auto text-sm">
+				{#each plan.files as file (file.path)}
+					<li class="flex items-baseline gap-2 px-4 py-1.5">
+						<span class="min-w-0 flex-1 truncate {file.ok ? 'text-gray-900' : 'text-gray-500'}">
+							{file.path}
+						</span>
+						<span class="shrink-0 text-xs text-gray-500">{file.album}</span>
+						<span
+							class="shrink-0 text-xs tabular-nums {file.ok ? 'text-gray-400' : 'text-red-700'}"
+							title={file.refusedBecause ?? `Pictures here are at most ${plan.maxKilobytes}KB.`}
+						>
+							{asKB(file.bytes)}
+						</span>
+					</li>
+				{/each}
+			</ul>
+		</div>
+	{/if}
 
 	{#if form && 'pictures' in form && form.success}
 		<p class="rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">

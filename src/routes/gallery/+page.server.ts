@@ -6,6 +6,7 @@ import {
 	deleteAlbum,
 	importFolder,
 	listAlbums,
+	planFolder,
 	renameAlbum
 } from '$lib/server/services/gallery';
 import { fail } from '@sveltejs/kit';
@@ -38,6 +39,38 @@ export const actions: Actions = {
 	 * what `webkitdirectory` adds — so the tree survives the trip and nobody
 	 * uploads two hundred pictures one at a time.
 	 */
+	/*
+	 * What would happen, before anything happens.
+	 *
+	 * Names and sizes only — the bytes stay on the device until the person
+	 * has seen the list and said go. A folder of two hundred photographs is
+	 * exactly where "18 in, 10 refused" after the fact is useless.
+	 */
+	planFolder: async ({ request, locals }) => {
+		const form = await request.formData();
+		try {
+			const listed = JSON.parse(String(form.get('files') ?? '[]')) as {
+				path: string;
+				bytes: number;
+			}[];
+			if (!Array.isArray(listed) || listed.length === 0)
+				return fail(400, { message: 'Choose a folder first.' });
+			return {
+				success: true,
+				plan: planFolder(
+					buildCtx(locals.user!.id),
+					listed.slice(0, 2000).map((f) => ({
+						path: String(f.path ?? ''),
+						bytes: Number(f.bytes ?? 0)
+					})),
+					{ under: String(form.get('under') ?? '').trim() || undefined }
+				)
+			};
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	importFolder: async ({ request, locals }) => {
 		const form = await request.formData();
 		try {

@@ -1216,19 +1216,20 @@ only there goes with them — bytes nobody can see are not kept.
 
 A new picture, straight into an album.
 
+#### `planFolder(ctx, files, opts)`
+
+What an import would do, before it does any of it.
+
+A folder of two hundred photographs is exactly the case where "18 in, 10
+refused" after the fact is useless: by then the ten are lost in a number
+and nobody knows which. So the browser reads the names and sizes, this
+says what would happen to each, and the import proper only runs on a
+second press.
+
+Deliberately pure: it takes names and sizes, never the bytes, so looking
+costs one small request instead of the whole folder going up twice.
+
 #### `importFolder(ctx, files, opts)`
-
-A folder of pictures, as albums.
-
-The browser hands over a whole tree with each file's path inside it, and
-this files each one into the album its folder names: `Birds/Herons/a.jpg`
-becomes the album "Birds — Herons". Nested rather than flattened, because
-somebody who sorted their pictures into folders meant that sorting; joined
-with an em dash rather than made into folders of albums, because an album
-holding albums is a folder, and the gallery deliberately has none.
-
-Everything is deduplicated as it always is: the same picture twice is one
-row and two memberships, so a tree with copies costs its bytes once.
 
 #### `addToAlbum(ctx, albumId, mediaId)`
 
@@ -1251,6 +1252,7 @@ Move: out of one album, into another, one gesture.
 
 - `Album`
 - `AlbumPicture`
+- `FolderPlan` — A folder of pictures, as albums.
 
 ## goals
 

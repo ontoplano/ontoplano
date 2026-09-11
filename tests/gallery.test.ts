@@ -208,6 +208,35 @@ describe('albums', () => {
 		expect(gallery.listAlbums(ctx).find((a) => a.name === 'birds')!.count).toBe(1);
 	});
 
+	test('the plan says what would land and what would not, and why', () => {
+		writeFileSync(
+			join(configDir, 'config.toml'),
+			'[media]\nmax_kilobytes = "16"\ngallery_albums = "50"\nalbum_images = "50"\n'
+		);
+
+		const plan = gallery.planFolder(ctx, [
+			{ path: 'birds/small.jpg', bytes: 4 * 1024 },
+			{ path: 'birds/herons/huge.jpg', bytes: 900 * 1024 },
+			{ path: 'birds/empty.jpg', bytes: 0 }
+		]);
+
+		expect(plan.willImport).toBe(1);
+		expect(plan.willRefuse).toBe(2);
+		expect(plan.maxKilobytes).toBe(16);
+		// The album an accepted file would land in, named before it lands.
+		expect(plan.files[0]).toMatchObject({ album: 'birds', ok: true });
+		// And the refusals say the number somebody can act on.
+		expect(plan.files[1].refusedBecause).toMatch(/at most 16KB, and that one is 900KB/);
+		expect(plan.files[2].refusedBecause).toMatch(/empty/);
+		// An album nothing would land in is not counted as one about to exist.
+		expect(plan.albums).toEqual(['birds']);
+
+		writeFileSync(
+			join(configDir, 'config.toml'),
+			'[media]\nmax_kilobytes = "500"\ngallery_albums = "50"\nalbum_images = "50"\n'
+		);
+	});
+
 	test('a folder can be filed under a name of its own', () => {
 		gallery.importFolder(
 			ctx,
