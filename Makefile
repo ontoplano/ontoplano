@@ -39,7 +39,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-gapp android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean
+.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-gapp android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean self-contained self-contained-preview test-self-contained android-self-contained
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -355,22 +355,22 @@ preview:
 # The instance that runs on the device itself: static files, no server, the
 # database in the browser's own storage. This is what the phone app wraps.
 ## the self-contained build (static, serverless)
-local:
+self-contained:
 	ONTOPLANO_SELF_CONTAINED_BUILD=1 PUBLIC_ONTOPLANO_SELF_CONTAINED=true yarn build
 
 ## serve the self-contained build, the way its shell would
-local-preview:
+self-contained-preview:
 	node scripts/serve-self-contained.mjs
 
 ## the self-contained e2e, against the static build
-test-local:
+test-self-contained:
 	yarn playwright test -c playwright.self-contained.config.ts
 
 # The Capacitor shell wraps the same static build the browser gets; the
 # native project lives in capacitor/, and the SDK is found the same way the
 # TWA's build finds it.
 ## the self-contained Android app (debug APK, via the Capacitor shell)
-android-local: local
+android-self-contained: self-contained
 	cd capacitor && npx cap sync android
 	cd capacitor/android && ANDROID_HOME=$${ANDROID_HOME:-$$HOME/android-sdk} ./gradlew -q assembleDebug
 	@echo "APK: capacitor/android/app/build/outputs/apk/debug/app-debug.apk"

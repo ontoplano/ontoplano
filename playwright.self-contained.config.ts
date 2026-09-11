@@ -19,7 +19,7 @@ export default defineConfig({
 		trace: 'retain-on-failure'
 	},
 	webServer: {
-		command: 'make -s local && node scripts/serve-self-contained.mjs',
+		command: 'make -s self-contained && node scripts/serve-self-contained.mjs',
 		port: 4180,
 		reuseExistingServer: false,
 		timeout: 300_000
