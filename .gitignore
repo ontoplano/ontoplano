@@ -106,3 +106,4 @@ fdroid-out/
 /static/sqlite3.wasm
 .worktrees/
 build-local/
+capacitor/node_modules/

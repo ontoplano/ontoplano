@@ -365,6 +365,15 @@ local-preview:
 test-local:
 	yarn playwright test -c playwright.local.config.ts
 
+# The Capacitor shell wraps the same static build the browser gets; the
+# native project lives in capacitor/, and the SDK is found the same way the
+# TWA's build finds it.
+## the local-instance Android app (debug APK, via the Capacitor shell)
+android-local: local
+	cd capacitor && npx cap sync android
+	cd capacitor/android && ANDROID_HOME=$${ANDROID_HOME:-$$HOME/android-sdk} ./gradlew -q assembleDebug
+	@echo "APK: capacitor/android/app/build/outputs/apk/debug/app-debug.apk"
+
 ## run the built server
 start: build
 	node build/index.js

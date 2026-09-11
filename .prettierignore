@@ -20,3 +20,4 @@ bun.lockb
 android/
 .worktrees/
 .claude/
+capacitor/

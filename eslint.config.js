@@ -24,6 +24,9 @@ const localIgnores = existsSync(excludePath) ? [includeIgnoreFile(excludePath)] 
 
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
+	// The Capacitor shell is a generated native project; its JavaScript is
+	// Capacitor's, not this app's, and the app's rules do not apply to it.
+	{ ignores: ['capacitor/**'] },
 	...localIgnores,
 	js.configs.recommended,
 	ts.configs.recommended,
