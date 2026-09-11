@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.132.0 — 2026-09-11
+
+- **Every release can now be checked.** A `SHA256SUMS` file goes up with the
+  packages, covering each one by the name you download it under, and the docs
+  say how to use it. The Arch recipe carries a real checksum of the release's
+  own source tarball instead of skipping the check entirely, so `makepkg`
+  refuses to build anything that is not that file.
+
 ## 0.131.0 — 2026-09-11
 
 - **The page turn dissolves properly now.** The dots are drawn live rather than

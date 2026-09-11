@@ -47,6 +47,31 @@ sudo dnf install ./ontoplano.x86_64.rpm     # or: sudo zypper install ./ontoplan
 yay -S ontoplano       # or: paru -S ontoplano
 ```
 
+### Checking what you downloaded
+
+Every release carries a `SHA256SUMS` covering each file attached to it. In the
+directory you downloaded into:
+
+```sh
+curl -LO https://github.com/ontoplano/ontoplano/releases/latest/download/SHA256SUMS
+sha256sum --ignore-missing -c SHA256SUMS
+```
+
+`--ignore-missing` checks the files you actually took rather than complaining
+about the ones you did not.
+
+The AUR route needs nothing done by hand. The recipe names the release's own
+source tarball and carries its checksum, so `makepkg` refuses to build if what
+it downloads is not that file — which is also why the recipe does not point at
+an archive the forge generates on demand, since those are not promised to stay
+byte-for-byte the same.
+
+A checksum served from the same page as the download proves the file arrived
+whole. It is not a signature and does not pretend to be one.
+
+The Android package is a different promise and a stronger one: it is signed,
+and Android itself refuses an update signed by a different key.
+
 Then, on any of them:
 
 ```sh

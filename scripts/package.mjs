@@ -478,6 +478,34 @@ function buildRpm(arch) {
 /* ───────────────────────────────────────────────────────────── the AUR ──── */
 
 /**
+ * The source this release is, as one file with one checksum.
+ *
+ * `makepkg` verifies what it downloads against `sha256sums`, and ours said
+ * `SKIP` — which means it verified nothing at all, on the one format whose
+ * whole point is that the person installing can read and check it first. The
+ * reason it said that is a chicken-and-egg: the recipe is written before the
+ * tag exists, so there is nothing yet to take a sum of.
+ *
+ * `git archive` breaks it. The tree is already here, the release refuses to
+ * run against a dirty one, and the tag will point at this commit — so the
+ * bytes are knowable now. The release attaches this file and the recipe names
+ * it, which also means the checksum is of something that cannot be
+ * regenerated differently later.
+ */
+function sourceTarball() {
+	const name = `ontoplano-${VERSION}.tar.gz`;
+	const path = join(OUT, name);
+
+	mkdirSync(OUT, { recursive: true });
+	// The prefix is what `makepkg` expects to `cd` into after extracting.
+	run('git', ['archive', '--format=tar.gz', `--prefix=ontoplano-${VERSION}/`, '-o', path, 'HEAD']);
+
+	const sha256 = createHash('sha256').update(readFileSync(path)).digest('hex');
+	say(`  ${name}  ${sha256.slice(0, 16)}…`);
+	return { name, path, sha256 };
+}
+
+/**
  * A PKGBUILD, which is a recipe rather than a package.
  *
  * Arch builds on the machine that will run it, so this one compiles
@@ -490,9 +518,11 @@ function buildArch() {
 	mkdirSync(join(OUT, 'arch'), { recursive: true });
 
 	const tag = `v${VERSION}`;
+	const tarball = sourceTarball();
 	const pkgbuild = readFileSync(join(ROOT, 'packaging/arch/PKGBUILD'), 'utf8')
 		.replace(/@VERSION@/g, VERSION)
-		.replace(/@TAG@/g, tag);
+		.replace(/@TAG@/g, tag)
+		.replace(/@SHA256@/g, tarball.sha256);
 	writeFileSync(join(OUT, 'arch/PKGBUILD'), pkgbuild);
 
 	// The .install file systemd packages carry: what to say after installing,

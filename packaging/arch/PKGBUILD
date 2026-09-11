@@ -12,8 +12,13 @@ depends=('nodejs>=20' 'systemd')
 makedepends=('yarn' 'python' 'gcc' 'make')
 backup=('etc/ontoplano/ontoplano.env')
 install=ontoplano.install
-source=("$pkgname-$pkgver.tar.gz::https://github.com/ontoplano/ontoplano/archive/refs/tags/@TAG@.tar.gz")
-sha256sums=('SKIP')
+# The release's own tarball rather than the one the forge generates on demand.
+# A generated archive is not promised to be byte-for-byte stable — the gzip
+# settings behind it have changed before, and every checksum published against
+# them broke at once. This one is a file, uploaded once, and the sum below is
+# of exactly it.
+source=("$pkgname-$pkgver.tar.gz::https://github.com/ontoplano/ontoplano/releases/download/@TAG@/$pkgname-$pkgver.tar.gz")
+sha256sums=('@SHA256@')
 
 build() {
 	cd "$srcdir/$pkgname-$pkgver"
