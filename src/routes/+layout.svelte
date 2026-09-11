@@ -1,10 +1,13 @@
 <script lang="ts">
 	import './layout.css';
+	// Generated beside the masks it names: scripts/build-eink-masks.mjs.
+	import './page-turn.css';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
 	import { live } from '$lib/live';
-	import { afterNavigate, goto } from '$app/navigation';
+	import { afterNavigate, goto, onNavigate } from '$app/navigation';
+	import { PAGE_TURN } from '$lib/page-turn.js';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { NAV_PLACES } from '$lib/sections-nav';
@@ -32,6 +35,71 @@
 	import type { Snippet } from 'svelte';
 
 	let { children, data }: { children: Snippet; data: LayoutServerData } = $props();
+
+	/**
+	 * Changing screen looks like an e-reader changing page.
+	 *
+	 * The browser will hold the old screen and the new one on top of each other
+	 * for the length of one transition if asked; the dissolve itself is in
+	 * `layout.css`, over masks built by `scripts/build-eink-masks.mjs`. All this
+	 * does is ask, and decide when not to.
+	 *
+	 * **Only a link or the back button.** A page turn is something a person did.
+	 * The other kinds of navigation are the app moving itself — the redirect
+	 * after signing up, a form action's answer — and those are also the ones
+	 * that chain: the first leg's `complete` never settles, which used to leave
+	 * the transition running for ever with a picture of the old page nailed over
+	 * the live one. Everything still worked underneath and nothing could be
+	 * clicked, which is the worst way for this to fail.
+	 *
+	 * Two more refusals. Without the API there is nothing to ask. With reduced
+	 * motion the browser's own cross-fade would run in place of ours — the
+	 * stylesheet only replaces it where motion is welcome — so it has to be
+	 * declined here rather than styled away.
+	 *
+	 * And a navigation that stays on the same route is paging the week or
+	 * changing a filter, which is not a page turn: half a second of dots between
+	 * one Tuesday and the next would be something to turn off rather than
+	 * something to like.
+	 */
+	/*
+	 * The turn's length, from the one file that holds it.
+	 *
+	 * The stylesheet carries the same number as a fallback so a page renders
+	 * correctly before any of this runs; stamping it here is what makes the
+	 * speed a single line to change in `$lib/page-turn.js` rather than a
+	 * regenerated stylesheet.
+	 */
+	$effect(() => {
+		document.documentElement.style.setProperty('--page-turn', `${PAGE_TURN.durationMs}ms`);
+	});
+
+	onNavigate((navigation) => {
+		const start = (
+			document as Document & {
+				startViewTransition?: (run: () => Promise<void>) => { finished: Promise<void> };
+			}
+		).startViewTransition;
+
+		if (!start) return;
+		if (navigation.type !== 'link' && navigation.type !== 'popstate') return;
+		if (navigation.to?.route.id === navigation.from?.route.id) return;
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+		return new Promise((resolve) => {
+			start.call(document, async () => {
+				resolve();
+				// Waited for, but never indefinitely. The await is what makes the
+				// browser photograph the new page rather than the old one; a
+				// promise that never settles would freeze the app, and no
+				// decoration is worth that risk.
+				await Promise.race([
+					navigation.complete.catch(() => undefined),
+					new Promise((done) => setTimeout(done, PAGE_TURN.holdMs))
+				]);
+			});
+		});
+	});
 
 	// Autofill is opt-in: see $lib/autofill. Once, for every form the app ever mounts.
 	$effect(() => suppressAutofill(document.body));

@@ -456,6 +456,7 @@ lint:
 	@$(MAKE) -s docs-check
 	@yarn -s changelog:check
 	@yarn -s badges:check
+	@yarn -s eink:check
 	@node scripts/check-no-secrets.mjs
 	@node scripts/check-android-version.mjs
 	@node scripts/check-make-help.mjs

@@ -10,6 +10,16 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.130.0 — 2026-09-11
+
+- **Changing screen turns the page.** The screen you were on breaks up into
+  dots and the one you asked for arrives in the gaps they leave, the way an
+  e-reader changes page. It happens when you follow a link or press back, and
+  not when you page the week or change a filter — those stay instant. It is
+  off if your system asks for reduced motion, and it costs nothing: the dots
+  are eight small images made at build time rather than something computed
+  while you wait.
+
 ## 0.129.1 — 2026-09-11
 
 - **Calendar subscriptions are stamped the way the format requires.** Each
