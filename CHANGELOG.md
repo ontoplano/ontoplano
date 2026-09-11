@@ -10,6 +10,17 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.136.0 — 2026-09-11
+
+- **The app can run entirely on your own device.** `make local` builds a copy
+  that needs no server, no account and no network: the database lives in the
+  browser's own storage, every screen runs against it, and reminders ring
+  while the app is open. `make android-local` wraps the same build as an
+  Android app. The main rooms — the plan, the board, to-dos, goals, notebooks
+  and the diary, ideas, habits, workouts, bills, inventory, reminders, search
+  and the settings that are yours — all work; photos and mail need an
+  instance with a server, as they always did.
+
 ## 0.135.0 — 2026-09-11
 
 - **Changing screen no longer flicks before it dissolves.** The first frame of
