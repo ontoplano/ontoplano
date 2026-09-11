@@ -26,6 +26,13 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// The self-contained build has no server and serves its own error states from
+// the app shell; the 503 page belongs to the node build alone.
+if (process.env.ONTOPLANO_SELF_CONTAINED_BUILD === '1') {
+	console.log('error page: skipped for the self-contained build');
+	process.exit(0);
+}
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'build', 'client', '503.html');
 

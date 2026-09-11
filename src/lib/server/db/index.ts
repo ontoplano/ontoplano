@@ -1,18 +1,11 @@
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import * as schema from '$lib/db/schema.js';
-import { bindDb } from '$lib/db/index.js';
+import { bindDb, db as bound } from '$lib/db/index.js';
 import { bindServerHost } from '../host.js';
 import { loadConfig, ensureDirectories } from '../config.js';
 import { assertMigrated } from './assert-migrated.js';
 import { reconcileBodyLimit } from './assert-body-limit.js';
-
-ensureDirectories();
-const config = loadConfig();
-const client = new Database(config.database.path);
-
-client.pragma('journal_mode = WAL');
-client.pragma('foreign_keys = ON');
 
 // A server about to serve must be migrated; a BUILD must not care. `vite
 // build` loads this module on whatever machine is building, and that
@@ -43,14 +36,38 @@ try {
 	// Outside the app: a script. The migration check applies; the body one does
 	// not, because nothing here is answering a request.
 }
-if (!building) assertMigrated(client, config.database.path);
-// Same moment: a setting that makes the configured picture ceiling impossible
-// is reconciled here and said out loud, rather than either surfacing as an
-// unreadable crash later or — as it did once — refusing to start at all.
-if (served) reconcileBodyLimit(config.media.maxKilobytes);
 
-export const db = drizzle(client, { schema });
-// The portable binding the services read. Bound here so that having a server
-// database and having the services see it are the same event, never two.
-bindDb(db);
-bindServerHost();
+/*
+ * A build never opens the database — not the file, not even the native
+ * driver, whose .node binary is the one thing here that can refuse to load
+ * on a machine whose node changed underneath it. Building renders at most a
+ * fallback page, and a page rendered at build time has no business reading
+ * anybody's data; if one tries, the unbound handle in $lib/db refuses with
+ * the reason. This is also what lets the self-contained build — which has no
+ * server at all — be built on a machine where better-sqlite3 cannot even
+ * dlopen.
+ */
+if (!building) {
+	ensureDirectories();
+	const config = loadConfig();
+	const client = new Database(config.database.path);
+
+	client.pragma('journal_mode = WAL');
+	client.pragma('foreign_keys = ON');
+
+	assertMigrated(client, config.database.path);
+	// Same moment: a setting that makes the configured picture ceiling
+	// impossible is reconciled here and said out loud, rather than either
+	// surfacing as an unreadable crash later or — as it did once — refusing
+	// to start at all.
+	if (served) reconcileBodyLimit(config.media.maxKilobytes);
+
+	// The portable binding the services read. Bound here so that having a
+	// server database and having the services see it are the same event.
+	bindDb(drizzle(client, { schema }));
+	bindServerHost();
+}
+
+// The live binding from $lib/db: the instance bound above, or — mid-build —
+// the handle that refuses with an explanation.
+export const db = bound;

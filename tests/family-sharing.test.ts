@@ -34,7 +34,9 @@ beforeAll(async () => {
 
 	// A third account, on nobody's plan.
 	const { db } = await import('../src/lib/server/db');
-	db.$client
+	// The portable handle does not advertise the raw client; reaching past
+	// Drizzle is a test-only move for a row no service would write.
+	(db as unknown as { $client: import('better-sqlite3').Database }).$client
 		.prepare(
 			`insert into user (id, name, email, email_verified, created_at, updated_at)
 			 values (?, 'Outsider', 'outsider@test.invalid', 0, '2026-01-01T00:00:00', '2026-01-01T00:00:00')`
