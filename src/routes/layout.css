@@ -95,6 +95,13 @@
 	--max-width-page: 110rem;
 
 	/*
+	 * How wide a column of prose may get, where reading is the whole point —
+	 * cook mode, a maximized notebook. Past this a line is one the eye loses
+	 * its place tracking back from.
+	 */
+	--max-width-reading: 48rem;
+
+	/*
 	 * The dimmer behind an overlay.
 	 *
 	 * Its own token because it must not ride the ramp. The gray ramp inverts in

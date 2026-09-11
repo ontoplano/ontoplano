@@ -10,6 +10,13 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.138.0 — 2026-09-11
+
+- **A notebook can be maximized.** The whole screen for reading or writing,
+  with a type-size control in steps that the device remembers. Leaving puts
+  everything — a half-written note included — back exactly where it was, and
+  on a phone the back gesture leaves it too.
+
 ## 0.137.0 — 2026-09-11
 
 - **No side margins on a phone.** Below the phone breakpoint a card takes the
