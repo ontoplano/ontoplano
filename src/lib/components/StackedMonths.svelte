@@ -30,6 +30,9 @@
 	const slot = $derived((W - PAD * 2) / Math.max(1, months.length));
 	const barWidth = $derived(Math.min(34, slot * 0.62));
 
+	/** The same rule the in/out chart uses: numbers under wide columns only. */
+	const labelAmounts = $derived(months.length <= 6);
+
 	const label = (key: string) =>
 		new Date(`${key}-15T12:00:00Z`).toLocaleString('en', { month: 'short', timeZone: 'UTC' });
 	const height = (cents: number) => (FLOOR - 6) * (cents / peak);
@@ -39,6 +42,7 @@
 	<svg
 		viewBox="0 0 {W} {H}"
 		class="w-full min-w-140"
+		style="max-height: 230px"
 		role="img"
 		aria-label="Spending by category, by month"
 	>
@@ -72,15 +76,17 @@
 			<text x={cx} y={FLOOR + 14} text-anchor="middle" class="fill-gray-500 text-[10px]">
 				{label(month)}
 			</text>
-			<text
-				x={cx}
-				y={FLOOR + 25}
-				text-anchor="middle"
-				class="fill-gray-400 text-[9px]"
-				style="font-variant-numeric: tabular-nums"
-			>
-				{monthTotals[i] === 0 ? '' : formatMoney(monthTotals[i], currency)}
-			</text>
+			{#if labelAmounts}
+				<text
+					x={cx}
+					y={FLOOR + 25}
+					text-anchor="middle"
+					class="fill-gray-400 text-[9px]"
+					style="font-variant-numeric: tabular-nums"
+				>
+					{monthTotals[i] === 0 ? '' : formatMoney(monthTotals[i], currency)}
+				</text>
+			{/if}
 		{/each}
 	</svg>
 </div>

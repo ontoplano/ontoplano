@@ -47,7 +47,7 @@
 	<!-- What is being looked at. -->
 	<div class="flex flex-wrap items-center gap-2">
 		<select
-			class="input input-sm"
+			class="input input-sm w-auto"
 			value={data.ledgerId}
 			onchange={(e) => filter({ ledger: Number((e.currentTarget as HTMLSelectElement).value) })}
 		>
@@ -55,7 +55,7 @@
 			{#each data.ledgers as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
 		</select>
 		<select
-			class="input input-sm"
+			class="input input-sm w-auto"
 			value={data.months}
 			onchange={(e) => filter({ months: Number((e.currentTarget as HTMLSelectElement).value) })}
 		>
@@ -145,7 +145,7 @@
 				<h2 class="text-sm font-semibold text-gray-900">What one tag costs</h2>
 				{#if data.tags.length > 0}
 					<select
-						class="input input-sm"
+						class="input input-sm w-auto"
 						value={data.tag}
 						onchange={(e) => filter({ tag: (e.currentTarget as HTMLSelectElement).value })}
 					>

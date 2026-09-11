@@ -26,6 +26,13 @@
 	const slot = $derived((W - PAD * 2) / Math.max(1, rows.length));
 	const barWidth = $derived(Math.min(18, slot / 2 - 2));
 
+	/**
+	 * Money under every column only fits while the columns are wide. Past
+	 * half a year the strings collide into a smear, so the number goes to
+	 * the tooltip and the month keeps its label.
+	 */
+	const labelAmounts = $derived(rows.length <= 6);
+
 	const monthLabel = (key: string) =>
 		new Date(`${key}-15T12:00:00Z`).toLocaleString('en', { month: 'short', timeZone: 'UTC' });
 	const y = (cents: number) => (H - 24) * (cents / peak);
@@ -36,6 +43,7 @@
 	<svg
 		viewBox="0 0 {W} {H}"
 		class="w-full min-w-120"
+		style="max-height: 210px"
 		role="img"
 		aria-label="{inLabel} against {outLabel}, by month"
 	>
@@ -71,15 +79,17 @@
 			<text x={cx} y={H - 12} text-anchor="middle" class="fill-gray-500 text-[10px]">
 				{monthLabel(r.month)}
 			</text>
-			<text
-				x={cx}
-				y={H - 1}
-				text-anchor="middle"
-				class="text-[9px] {r.netCents >= 0 ? 'fill-blue-700' : 'fill-red-600'}"
-				style="font-variant-numeric: tabular-nums"
-			>
-				{r.netCents === 0 ? '' : money(r.netCents)}
-			</text>
+			{#if labelAmounts}
+				<text
+					x={cx}
+					y={H - 1}
+					text-anchor="middle"
+					class="text-[9px] {r.netCents >= 0 ? 'fill-blue-700' : 'fill-red-600'}"
+					style="font-variant-numeric: tabular-nums"
+				>
+					{r.netCents === 0 ? '' : money(r.netCents)}
+				</text>
+			{/if}
 		{/each}
 	</svg>
 	<div class="mt-1 flex items-center gap-4 text-xs text-gray-500">

@@ -213,7 +213,7 @@
 			<input
 				type="month"
 				value={data.month}
-				class="input"
+				class="input w-auto"
 				onchange={(e) => filter({ month: (e.currentTarget as HTMLInputElement).value })}
 			/>
 			{#if data.query || data.month}
