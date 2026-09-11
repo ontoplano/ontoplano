@@ -863,7 +863,14 @@ function urlFor(dir) {
 }
 
 function pagesPage() {
-	const serverFiles = walk(join(ROOT, 'src/routes'), (f) => f === '+page.server.ts');
+	// A route that also runs on a local instance keeps its bodies — and its
+	// prose — in page.local.ts, with +page.server.ts a bare re-export. Read
+	// the file the logic actually lives in.
+	const locals = new Set(walk(join(ROOT, 'src/routes'), (f) => f === 'page.local.ts'));
+	const serverFiles = walk(join(ROOT, 'src/routes'), (f) => f === '+page.server.ts').map((f) => {
+		const local = join(dirname(f), 'page.local.ts');
+		return locals.has(local) ? local : f;
+	});
 	const pageFiles = walk(join(ROOT, 'src/routes'), (f) => f === '+page.svelte');
 
 	const byUrl = new Map();

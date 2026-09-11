@@ -1,4 +1,4 @@
-import type { Actions, PageServerLoad } from './$types';
+import type { LocalRouteEvent } from '$lib/local/routes';
 import { ratingsFromForm } from '$lib/ratings';
 import { listActivities, listCategories } from '$lib/services/activities';
 import { goalBacklinks } from '$lib/services/backlinks';
@@ -15,7 +15,7 @@ import {
 	updateTodo
 } from '$lib/services/todos';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load = async ({ locals }: LocalRouteEvent) => {
 	const ctx = buildCtx(locals.user!.id);
 
 	return {
@@ -27,8 +27,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	};
 };
 
-export const actions: Actions = {
-	create: async ({ request, locals }) => {
+export const actions = {
+	create: async ({ request, locals }: LocalRouteEvent) => {
 		const formData = await request.formData();
 		try {
 			createTodo(buildCtx(locals.user!.id), {
@@ -55,7 +55,7 @@ export const actions: Actions = {
 	 * `services/reminders.ts`.
 	 */
 
-	update: async ({ request, locals }) => {
+	update: async ({ request, locals }: LocalRouteEvent) => {
 		const formData = await request.formData();
 		try {
 			updateTodo(buildCtx(locals.user!.id), Number(formData.get('id')), {
@@ -71,7 +71,7 @@ export const actions: Actions = {
 		}
 	},
 
-	setStatus: async ({ request, locals }) => {
+	setStatus: async ({ request, locals }: LocalRouteEvent) => {
 		const formData = await request.formData();
 		try {
 			setTodoStatus(buildCtx(locals.user!.id), Number(formData.get('id')), formData.get('status'));
@@ -81,7 +81,7 @@ export const actions: Actions = {
 		}
 	},
 
-	schedule: async ({ request, locals }) => {
+	schedule: async ({ request, locals }: LocalRouteEvent) => {
 		const formData = await request.formData();
 		try {
 			scheduleTodo(
@@ -95,7 +95,7 @@ export const actions: Actions = {
 		}
 	},
 
-	delete: async ({ request, locals }) => {
+	delete: async ({ request, locals }: LocalRouteEvent) => {
 		const formData = await request.formData();
 		try {
 			deleteTodo(buildCtx(locals.user!.id), Number(formData.get('id')));
@@ -105,7 +105,7 @@ export const actions: Actions = {
 		}
 	},
 
-	delegate: async ({ request, locals }) => {
+	delegate: async ({ request, locals }: LocalRouteEvent) => {
 		const formData = await request.formData();
 		try {
 			delegateTodo(buildCtx(locals.user!.id), Number(formData.get('id')), {

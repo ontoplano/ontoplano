@@ -17,6 +17,7 @@ shows up here on the next build.
 | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`access`](#access)                             | The account-level holds, decided in exactly one place.                                                                                                                                                                                                               |
 | [`account-import`](#account-import)             | Putting an exported account back.                                                                                                                                                                                                                                    |
+| [`account-profile`](#account-profile)           | The account row itself, for whatever draws a name at the top of a page.                                                                                                                                                                                              |
 | [`account`](#account)                           | Taking your data out, and closing your account.                                                                                                                                                                                                                      |
 | [`activities`](#activities)                     | Categories are the areas of a life; activities are the named recurring things inside them. Both are referenced by planner slots and by history, so neither can be deleted while something still points at it — history that loses its category stops being readable. |
 | [`admin`](#admin)                               | Administration: looking at somebody else's account.                                                                                                                                                                                                                  |
@@ -197,6 +198,19 @@ working around.
 ### Types
 
 - `ImportResult`
+
+## account-profile
+
+The account row itself, for whatever draws a name at the top of a page.
+
+The rest of `user` handling — sessions, passwords, deletion — is the
+server's business and stays there. This is the one read that every
+instance needs: on a local instance it is the single seeded account, and
+the layout builds its `user` from it.
+
+### Functions
+
+#### `profileOf(userId)`
 
 ## account
 

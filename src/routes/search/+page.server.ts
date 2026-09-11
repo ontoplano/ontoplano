@@ -1,10 +1,3 @@
-import type { PageServerLoad } from './$types';
-import { buildCtx } from '$lib/services/ctx';
-import { grouped, search } from '$lib/services/search';
-
-export const load: PageServerLoad = async ({ locals, url }) => {
-	const q = url.searchParams.get('q') ?? '';
-	const ctx = buildCtx(locals.user!.id);
-
-	return { q, groups: grouped(search(ctx, q)) };
-};
+// The bodies live in page.local.ts, written against the slice of the request
+// that also exists on a local instance — see $lib/local/routes.ts.
+export { load } from './page.local';

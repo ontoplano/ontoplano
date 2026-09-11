@@ -52,6 +52,20 @@ test('the todo page runs against the device, and the server never hears of it', 
 	await page.goBack();
 	await expect(page.getByText(title)).toBeVisible({ timeout: 30_000 });
 
+	// The other ported routes answer from the device too: each client-side
+	// navigation here is a __data.json the bridge resolves in the worker, and
+	// a route whose local twin broke would 500 instead of rendering.
+	for (const [name, path] of [
+		['Board', '/tasks/board'],
+		['Goals', '/goals'],
+		['Ideas', '/ideas']
+	] as const) {
+		await visit(page, '/tasks/todo?local=1');
+		await page.getByRole('link', { name, exact: true }).first().click();
+		await page.waitForURL(`**${path}`);
+		await expect(page.locator('body')).not.toContainText('Internal Error');
+	}
+
 	// The server's own render of the same page has never seen the row. This
 	// is the whole claim: local mode did not leak a single write.
 	await visit(page, '/tasks/todo');

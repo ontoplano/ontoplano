@@ -20,7 +20,8 @@ import { LOCAL_USER_ID } from './config.js';
 export interface LocalRouteEvent {
 	request: Request;
 	url: URL;
-	params: Partial<Record<string, string>>;
+	/** Every segment the route pattern names is present once it matched. */
+	params: Record<string, string>;
 	locals: { user: { id: string } };
 }
 
