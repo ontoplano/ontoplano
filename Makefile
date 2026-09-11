@@ -371,6 +371,9 @@ test-self-contained:
 # TWA's build finds it.
 ## the self-contained Android app (debug APK, via the Capacitor shell)
 android-self-contained: self-contained
+	@# The shell's own dependencies, fetched on first use — a fresh clone has
+	@# no capacitor/node_modules and must not be expected to know that.
+	@[ -d capacitor/node_modules ] || (cd capacitor && npm install --no-audit --no-fund)
 	cd capacitor && npx cap sync android
 	cd capacitor/android && ANDROID_HOME=$${ANDROID_HOME:-$$HOME/android-sdk} ./gradlew -q assembleDebug
 	@echo "APK: capacitor/android/app/build/outputs/apk/debug/app-debug.apk"
