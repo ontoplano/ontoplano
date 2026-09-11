@@ -48,7 +48,7 @@ Can be put away in Preferences (`health`), which takes it out of the bar, the wh
 - **Income** — `/finance/income`
 - **Bills** — `/finance/bills`
 - **Net** — `/finance/net`
-- **Imports** — `/finance/imports`
+- **Transactions** — `/finance/transactions`
 
 Can be put away in Preferences (`finance`), which takes it out of the bar, the wheel and the dashboard.
 

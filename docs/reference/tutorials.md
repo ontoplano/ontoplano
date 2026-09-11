@@ -17,7 +17,7 @@ under the pointer.
 | Screen                               | Tour         | Steps |
 | ------------------------------------ | ------------ | ----- |
 | `/`                                  | Ontoplano    | 8     |
-| `/finance/bills`                     | Bills        | 3     |
+| `/finance/income`                    | Bills        | 3     |
 | `/gallery`                           | Gallery      | 3     |
 | `/goals`                             | Goals        | 4     |
 | `/health/habits`                     | Habits       | 3     |
@@ -59,7 +59,7 @@ at the button that reopens it, so it is not listed here.
 7. What today looks like
 8. Yours to change
 
-### `/finance/bills` — Bills
+### `/finance/income` — Bills
 
 1. The bills you expect to pay
 2. Paid is what you actually paid

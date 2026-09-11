@@ -15,7 +15,7 @@ import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import { albumMedia, albums, media, mediaTags, tags } from '$lib/db/schema.js';
-import { replaceMediaTags } from '$lib/services/tags.js';
+import { parseTags, replaceMediaTags } from '$lib/services/tags.js';
 import type { Ctx } from '$lib/services/ctx.js';
 import { stamp, stamps } from '$lib/services/time.js';
 import { ConflictError, NotFoundError, ValidationError } from '$lib/services/errors.js';
@@ -246,6 +246,16 @@ export function moveBetweenAlbums(ctx: Ctx, from: number, to: number, mediaId: n
 			.run();
 }
 
+export function renamePicture(ctx: Ctx, mediaId: number, input: { name: unknown }): void {
+	const name = str(input.name, 'name', { max: 200 });
+	const changed = db
+		.update(media)
+		.set({ filename: name })
+		.where(and(eq(media.id, mediaId), eq(media.userId, ctx.userId)))
+		.run();
+	if (changed.changes === 0) throw new NotFoundError('picture');
+}
+
 export function tagPicture(ctx: Ctx, mediaId: number, raw: unknown): void {
 	const owned = db
 		.select({ id: media.id })
@@ -253,10 +263,7 @@ export function tagPicture(ctx: Ctx, mediaId: number, raw: unknown): void {
 		.where(and(eq(media.id, mediaId), eq(media.userId, ctx.userId)))
 		.get();
 	if (!owned) throw new NotFoundError('picture');
-	const names = String(raw ?? '')
-		.slice(0, 500)
-		.split(',')
-		.map((t) => t.trim())
-		.filter(Boolean);
-	replaceMediaTags(mediaId, names, ctx.userId);
+	// The same reading the diary gives tags: commas or spaces, #-prefixes
+	// dropped, lowercased, deduplicated — one habit across the whole app.
+	replaceMediaTags(mediaId, parseTags(String(raw ?? '').slice(0, 500)), ctx.userId);
 }

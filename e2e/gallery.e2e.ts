@@ -57,15 +57,32 @@ test('a picture lives once, however many albums hold it', async ({ page }) => {
 
 	// A picture into Trips: choosing the file is the submit.
 	await page.getByRole('link', { name: /Trips/ }).click();
+	await page.waitForURL(/\/gallery\/\d+/);
 	await page.locator('input[type="file"]').setInputFiles(png([9, 120, 200]));
 	await expect(page.locator('li img')).toHaveCount(1, { timeout: 15_000 });
 
-	// Into the second album too, from the picture itself.
+	// Tags read like diary tags — spaces or commas — and come back as chips.
 	await page.locator('li img').first().click();
 	const lightbox = page.getByRole('dialog');
+	await lightbox.locator('[name="tags"]').fill('#Beach family');
+	await lightbox.getByRole('button', { name: 'Save tags' }).click();
+	await expect(lightbox.getByRole('button', { name: '#beach' })).toBeVisible();
+	await expect(lightbox.getByRole('button', { name: '#family' })).toBeVisible();
+
+	// A rename sticks.
+	await lightbox.locator('[name="heading"]').fill('the good one');
+	await lightbox.getByRole('button', { name: 'Save name' }).click();
+	await expect(lightbox.getByRole('heading', { name: 'the good one' })).toBeVisible();
+
+	// Into the second album too, from the picture itself.
 	await lightbox.getByRole('button', { name: 'Add', exact: true }).click();
 	await expect(page.getByText(/Also in: Best of/)).toBeVisible();
+
+	// The album filters by tag, and clicking the tag again lets go.
 	await lightbox.getByRole('button', { name: 'Close', exact: true }).last().click();
+	await page.getByRole('button', { name: '#beach' }).click();
+	await expect(page.locator('li img')).toHaveCount(1);
+	await page.getByRole('button', { name: '#beach' }).click();
 
 	// Both albums count it.
 	await visit(page, '/gallery');
@@ -75,6 +92,7 @@ test('a picture lives once, however many albums hold it', async ({ page }) => {
 
 	// Out of Best of: the confirmation says it stays in Trips, and it does.
 	await page.getByRole('link', { name: /Best of/ }).click();
+	await page.waitForURL(/\/gallery\/\d+/);
 	await page.locator('li img').first().click();
 	await page.getByRole('button', { name: 'Remove from this album' }).click();
 	await expect(page.getByText(/It stays in Trips/)).toBeVisible();
@@ -88,6 +106,7 @@ test('a picture lives once, however many albums hold it', async ({ page }) => {
 
 	// Out of its last album: the confirmation says gone-for-good this time.
 	await page.getByRole('link', { name: /Trips/ }).click();
+	await page.waitForURL(/\/gallery\/\d+/);
 	await page.locator('li img').first().click();
 	await page.getByRole('button', { name: 'Remove from this album' }).click();
 	await expect(page.getByText(/deleted for good/)).toBeVisible();

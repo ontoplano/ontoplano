@@ -16,7 +16,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
  */
 const config: CapacitorConfig = {
 	appId: 'app.ontoplano.selfcontained',
-	appName: 'ontoplano',
+	appName: 'ontoplano (device)',
 	webDir: '../build-self-contained'
 };
 

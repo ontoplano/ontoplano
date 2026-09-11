@@ -10,6 +10,22 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.141.0 — 2026-09-11
+
+- **Finance opens on Income**, and the statements tab is called
+  Transactions — which is what it holds; importing is one card on it.
+- **Gallery tags behave like diary tags.** Written with spaces or commas,
+  #-prefixes dropped, shown as chips — and clicking a chip filters the
+  album to that tag, the same gesture the diary has. Pictures can be
+  renamed from their own view.
+- **`make android-self-contained-install`** puts the self-contained app on
+  a phone over adb — `make android-install` installs the store app (the
+  TWA), which is a different artifact, and installing one while meaning
+  the other was exactly the trap. While both apps exist the shell is
+  labelled "ontoplano (device)". The `android-lan` and `android-staging`
+  targets are retired: which instance the app talks to is chosen inside
+  the app, on the instance screen, never baked into an APK.
+
 ## 0.140.0 — 2026-09-11
 
 - **Finance grew three tabs.** Income, before Bills, records money coming in

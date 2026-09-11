@@ -9,6 +9,7 @@ import {
 	listAlbums,
 	moveBetweenAlbums,
 	removeFromAlbum,
+	renamePicture,
 	tagPicture,
 	uploadToAlbum
 } from '$lib/server/services/gallery';
@@ -79,6 +80,18 @@ export const actions: Actions = {
 		const form = await request.formData();
 		try {
 			removeFromAlbum(buildCtx(locals.user!.id), Number(params.id), Number(form.get('mediaId')));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	rename: async ({ request, locals }) => {
+		const form = await request.formData();
+		try {
+			renamePicture(buildCtx(locals.user!.id), Number(form.get('mediaId')), {
+				name: form.get('heading')
+			});
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

@@ -10,7 +10,7 @@
 		{ href: resolve('/finance/income'), label: 'Income' },
 		{ href: resolve('/finance/bills'), label: 'Bills' },
 		{ href: resolve('/finance/net'), label: 'Net' },
-		{ href: resolve('/finance/imports'), label: 'Imports' }
+		{ href: resolve('/finance/transactions'), label: 'Transactions' }
 	];
 
 	function isActive(href: string): boolean {

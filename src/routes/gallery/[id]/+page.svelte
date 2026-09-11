@@ -12,6 +12,13 @@
 
 	const others = $derived(data.albums.filter((a) => a.id !== data.album.id));
 
+	/** Filtering by a tag, the way the diary does. Empty means everything. */
+	let filterTag = $state('');
+	const shown = $derived(
+		filterTag ? data.pictures.filter((p) => p.tags.includes(filterTag)) : data.pictures
+	);
+	const albumTags = $derived([...new Set(data.pictures.flatMap((p) => p.tags))].sort());
+
 	let uploadForm: HTMLFormElement | undefined = $state();
 	let viewingId: number | null = $state(null);
 	let confirmingRemoveId: number | null = $state(null);
@@ -116,6 +123,23 @@
 		</div>
 	{/if}
 
+	<!-- The diary's own gesture: click a tag to see just it, click it again
+	     to let go. In the gallery's colour rather than the diary's. -->
+	{#if albumTags.length > 0}
+		<div class="flex flex-wrap gap-2">
+			{#each albumTags as tag (tag)}
+				<button
+					onclick={() => (filterTag = filterTag === tag ? '' : tag)}
+					class="chip {filterTag === tag
+						? 'border-fuchsia-700 bg-fuchsia-50 text-fuchsia-800'
+						: 'text-gray-500 hover:text-gray-700'}"
+				>
+					#{tag}
+				</button>
+			{/each}
+		</div>
+	{/if}
+
 	{#if data.pictures.length === 0}
 		<EmptyState
 			icon="image"
@@ -124,7 +148,7 @@
 		/>
 	{:else}
 		<ul class="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-			{#each data.pictures as picture (picture.id)}
+			{#each shown as picture (picture.id)}
 				<li>
 					<button
 						class="block w-full overflow-hidden rounded"
@@ -169,15 +193,38 @@
 				alt={viewing.alt}
 				class="max-h-[60vh] w-full rounded object-contain"
 			/>
+			<form method="post" action="?/rename" class="flex items-end gap-2" use:enhance>
+				<input type="hidden" name="mediaId" value={viewing.id} />
+				<label class="block flex-1 text-sm">
+					<span class="text-gray-600">Name</span>
+					<OneLine name="heading" value={viewing.filename} class="input mt-1 w-full" required />
+				</label>
+				<button class="btn btn-sm" type="submit">Save name</button>
+			</form>
+			{#if viewing.tags.length > 0}
+				<div class="flex flex-wrap gap-1.5">
+					{#each viewing.tags as tag (tag)}
+						<button
+							class="chip"
+							onclick={() => {
+								filterTag = tag;
+								viewingId = null;
+							}}
+						>
+							#{tag}
+						</button>
+					{/each}
+				</div>
+			{/if}
 			<form method="post" action="?/tag" class="flex items-end gap-2" use:enhance>
 				<input type="hidden" name="mediaId" value={viewing.id} />
 				<label class="block flex-1 text-sm">
-					<span class="text-gray-600">Tags, comma-separated</span>
+					<span class="text-gray-600">Tags</span>
 					<OneLine
 						name="tags"
-						value={viewing.tags.join(', ')}
+						value={viewing.tags.join(' ')}
 						class="input mt-1 w-full"
-						placeholder="beach, family"
+						placeholder="tags, commas or spaces"
 					/>
 				</label>
 				<button class="btn btn-sm" type="submit">Save tags</button>

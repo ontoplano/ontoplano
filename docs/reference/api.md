@@ -40,7 +40,7 @@ sentence somebody agrees to when they grant it.
 | `workouts:write`   | Add and change workouts and their categories, put them away, and mark one done                                                                    |
 | `bills:read`       | See your bills, your recorded income, and what you have actually paid or received                                                                 |
 | `statements:read`  | Read your imported bank-statement lines, their categories and tags, and the monthly in/out figures                                                |
-| `statements:write` | Import bank exports into your statements, and add or remove the rules that sort them                                                              |
+| `statements:write` | Add and remove the rules that sort your statement lines                                                                                           |
 | `bills:write`      | Add and change bills, and mark them paid                                                                                                          |
 | `people:read`      | See the people in your life, and whose birthday is coming                                                                                         |
 | `people:write`     | Add people, and change what is recorded about them                                                                                                |

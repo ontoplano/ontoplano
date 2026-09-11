@@ -377,7 +377,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/finance/bills': {
+	'/finance/income': {
 		label: 'Bills',
 		steps: [
 			{

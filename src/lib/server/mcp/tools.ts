@@ -116,7 +116,6 @@ import {
 import {
 	createRule,
 	deleteRule,
-	importStatement,
 	listMovements,
 	listRules,
 	recordsSeries,
@@ -2957,28 +2956,6 @@ export const TOOLS: Tool[] = [
 				month: typeof args.month === 'string' && args.month ? args.month : undefined
 			})
 		})
-	},
-	{
-		name: 'import_statement',
-		title: 'Import a bank export',
-		description:
-			'Feed a bank export through one of the named parsers. Idempotent: lines already imported are skipped, so re-sending a file is safe. `flip` negates every amount for an export whose signs mean the opposite.',
-		scope: 'statements:write',
-		writes: true,
-		input: object(
-			{
-				source: text("Which parser, e.g. 'nubank:conta_corrente' or 'nubank:credit_card_month'."),
-				content: text('The export, verbatim.'),
-				flip: { type: 'boolean', description: 'Negate every amount.' }
-			},
-			['source', 'content']
-		),
-		run: (ctx, args) =>
-			importStatement(ctx, {
-				source: args.source,
-				text: String(args.content ?? ''),
-				flip: !!args.flip
-			})
 	},
 	{
 		name: 'add_sort_rule',

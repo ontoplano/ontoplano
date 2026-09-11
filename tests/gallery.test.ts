@@ -154,6 +154,27 @@ describe('albums', () => {
 		expect(gallery.albumPictures(ctx, room.id).find((p) => p.id === id)?.tags).toEqual([]);
 	});
 
+	test('tags read the way diary tags read: spaces, commas, #-prefixes, case', () => {
+		const room = gallery.listAlbums(ctx).find((a) => a.name === 'Two')!;
+		const id = gallery.albumPictures(ctx, room.id)[0].id;
+		gallery.tagPicture(ctx, id, '#Beach  family, beach');
+		expect(gallery.albumPictures(ctx, room.id).find((p) => p.id === id)?.tags).toEqual([
+			'beach',
+			'family'
+		]);
+		gallery.tagPicture(ctx, id, '');
+	});
+
+	test('a picture can be renamed, and only by its owner', () => {
+		const room = gallery.listAlbums(ctx).find((a) => a.name === 'Two')!;
+		const id = gallery.albumPictures(ctx, room.id)[0].id;
+		gallery.renamePicture(ctx, id, { name: 'the good one' });
+		expect(gallery.albumPictures(ctx, room.id).find((p) => p.id === id)?.filename).toBe(
+			'the good one'
+		);
+		expect(() => gallery.renamePicture(theirs, id, { name: 'not yours' })).toThrow();
+	});
+
 	test('another account reaches none of it', () => {
 		const room = gallery.listAlbums(ctx)[0];
 		const id = gallery.albumPictures(ctx, room.id)[0].id;

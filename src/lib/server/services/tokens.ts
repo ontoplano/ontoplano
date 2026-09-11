@@ -115,8 +115,7 @@ export const SCOPES = {
 	'bills:read': 'See your bills, your recorded income, and what you have actually paid or received',
 	'statements:read':
 		'Read your imported bank-statement lines, their categories and tags, and the monthly in/out figures',
-	'statements:write':
-		'Import bank exports into your statements, and add or remove the rules that sort them',
+	'statements:write': 'Add and remove the rules that sort your statement lines',
 	'bills:write': 'Add and change bills, and mark them paid',
 	/*
 	 * People, apart from everything: names, birthdays and phone numbers are

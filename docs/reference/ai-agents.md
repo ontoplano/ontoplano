@@ -844,12 +844,6 @@ Imported statement lines, newest first, each with the category (at most one — 
 
 _Needs `statements:read`; read-only._
 
-### `import_statement` — Import a bank export
-
-Feed a bank export through one of the named parsers. Idempotent: lines already imported are skipped, so re-sending a file is safe. `flip` negates every amount for an export whose signs mean the opposite.
-
-_Needs `statements:write`; writes._
-
 ### `add_sort_rule` — Add a sorting rule
 
 A regular expression that sorts statement lines, applied at read time — past lines included. Categories partition (first match, in position order, wins); tags overlap freely.

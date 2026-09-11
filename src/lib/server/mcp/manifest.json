@@ -1221,25 +1221,6 @@
 			}
 		}
 	},
-	"import_statement": {
-		"scope": "statements:write",
-		"writes": true,
-		"destroys": false,
-		"params": {
-			"content": {
-				"type": "string",
-				"required": true
-			},
-			"flip": {
-				"type": "boolean",
-				"required": false
-			},
-			"source": {
-				"type": "string",
-				"required": true
-			}
-		}
-	},
 	"link_to_goal": {
 		"scope": "tasks:write",
 		"writes": true,

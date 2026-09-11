@@ -39,7 +39,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-gapp android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean self-contained self-contained-preview test-self-contained android-self-contained
+.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-gapp android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean android-self-contained-install self-contained self-contained-preview test-self-contained android-self-contained
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -386,6 +386,15 @@ android-self-contained: self-contained
 	fi; \
 	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q assembleDebug
 	@echo "APK: capacitor/android/app/build/outputs/apk/debug/app-debug.apk"
+
+## install the self-contained app over adb
+android-self-contained-install:
+	@command -v adb >/dev/null || { echo "adb not found. Install android-tools-adb."; exit 1; }
+	@apk=capacitor/android/app/build/outputs/apk/debug/app-debug.apk; \
+	[ -f "$$apk" ] || { echo "No APK yet: run 'make android-self-contained' first."; exit 1; }; \
+	[ -n "$$(adb devices | sed -n '2p')" ] || { echo "No device over adb. Plug in, enable USB debugging, accept the prompt."; exit 1; }; \
+	echo "Installing to $$(adb devices | sed -n '2p' | cut -f1)…"; \
+	adb install -r -d "$$apk"
 
 ## run the built server
 start: build
@@ -846,6 +855,13 @@ LAN_IP := $(shell ip route get 1.1.1.1 2>/dev/null | awk '{print $$7; exit}')
 # the tree it builds from.
 ## regenerate the committed Gradle project F-Droid builds
 #: ONTOPLANO_ORIGIN=https://app.example.com  the instance the phone app is bound to
+# The whole android picture, in one place. Two store artifacts exist —
+# `android` (F-Droid, the unencumbered default) and `android-gapp` (Play,
+# with Play Billing) — and *which instance* they talk to is chosen inside
+# the app, on the instance screen: official, staging, or any URL. No target
+# bakes an instance into an APK. `android-self-contained` is the interim
+# native shell around the self-contained build; it exists until the store
+# app gains the same chooser and becomes the one app.
 android-project:
 	ONTOPLANO_ORIGIN=https://app.ontoplano.com TWA_DIR=android \
 		node scripts/build-twa.mjs --project-only --no-billing
@@ -910,9 +926,6 @@ android-gapp:
 # Against this machine over wifi, for working on the phone without deploying.
 #: LAN_IP=192.168.0.10  this machine's address, for android-lan and android-share
 ## an APK pointed at this machine over wifi
-android-lan:
-	@$(MAKE) android ONTOPLANO_ORIGIN=http://$(LAN_IP):$(APP_PORT)
-
 # Does the server agree that this app is allowed to drop its URL bar?
 #
 # The single most common TWA complaint is "it works but it looks like a

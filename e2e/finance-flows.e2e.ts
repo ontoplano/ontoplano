@@ -16,8 +16,9 @@ const CONTA_CORRENTE = [
 test('income, an imported statement, and the net of it', async ({ page }) => {
 	await register(page, `finance-${Date.now()}@test.invalid`);
 
-	// Income, recorded the way a bill is.
-	await visit(page, '/finance/income');
+	// The finance door opens on Income.
+	await visit(page, '/finance');
+	await expect(page).toHaveURL(/\/finance\/income/);
 	await page.getByRole('button', { name: 'New income' }).click();
 	await page.locator('[name="heading"]').fill('Salary');
 	await page.locator('[name="amount"]').fill('8500.00');
@@ -32,7 +33,7 @@ test('income, an imported statement, and the net of it', async ({ page }) => {
 	await expect(page.getByText('No bills yet')).toBeVisible();
 
 	// A statement, pasted. The same file twice adds nothing.
-	await page.getByRole('link', { name: 'Imports', exact: true }).click();
+	await page.getByRole('link', { name: 'Transactions', exact: true }).click();
 	await page.getByRole('button', { name: 'or paste it' }).click();
 	await page.locator('[name="text"]').fill(CONTA_CORRENTE);
 	await page.getByRole('button', { name: 'Import', exact: true }).click();

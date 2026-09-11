@@ -81,7 +81,7 @@ export const NAV_PLACES: NavPlace[] = [
 		label: 'Finance',
 		section: 'finance',
 		icon: 'wallet',
-		href: '/finance/bills',
+		href: '/finance/income',
 		hide: 'finance'
 	},
 	{

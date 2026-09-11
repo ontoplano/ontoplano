@@ -1228,6 +1228,8 @@ Out of this album; gone entirely if this was its last reference anywhere.
 
 Move: out of one album, into another, one gesture.
 
+#### `renamePicture(ctx, mediaId, input)`
+
 #### `tagPicture(ctx, mediaId, raw)`
 
 ### Types
