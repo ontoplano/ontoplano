@@ -7,18 +7,21 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**59 tables.**
+**68 tables.**
 
 | Table                                             | Columns | Belongs to a user |
 | ------------------------------------------------- | ------- | ----------------- |
 | [`account`](#account)                             | 13      | yes               |
 | [`activities`](#activities)                       | 9       | yes               |
+| [`album_media`](#album_media)                     | 6       | yes               |
+| [`albums`](#albums)                               | 6       | yes               |
 | [`api_tokens`](#api_tokens)                       | 12      | yes               |
+| [`assistant_calls`](#assistant_calls)             | 9       | yes               |
 | [`audit_events`](#audit_events)                   | 7       | yes               |
 | [`bill_payments`](#bill_payments)                 | 10      | yes               |
 | [`billing_checkouts`](#billing_checkouts)         | 8       | yes               |
 | [`billing_events`](#billing_events)               | 8       | —                 |
-| [`bills`](#bills)                                 | 16      | yes               |
+| [`bills`](#bills)                                 | 17      | yes               |
 | [`calendar_feeds`](#calendar_feeds)               | 9       | yes               |
 | [`categories`](#categories)                       | 5       | yes               |
 | [`client_errors`](#client_errors)                 | 8       | yes               |
@@ -29,9 +32,12 @@ exist.
 | [`diary_entry_tags`](#diary_entry_tags)           | 4       | yes               |
 | [`entry_people`](#entry_people)                   | 4       | yes               |
 | [`exceptional_tasks`](#exceptional_tasks)         | 19      | yes               |
+| [`finance_rules`](#finance_rules)                 | 7       | yes               |
+| [`finance_transactions`](#finance_transactions)   | 9       | yes               |
 | [`goal_areas`](#goal_areas)                       | 6       | yes               |
 | [`goal_links`](#goal_links)                       | 6       | yes               |
-| [`goals`](#goals)                                 | 17      | yes               |
+| [`goal_targets`](#goal_targets)                   | 7       | yes               |
+| [`goals`](#goals)                                 | 14      | yes               |
 | [`habit_occurrences`](#habit_occurrences)         | 6       | yes               |
 | [`habits`](#habits)                               | 7       | yes               |
 | [`idea_tags`](#idea_tags)                         | 4       | yes               |
@@ -40,6 +46,7 @@ exist.
 | [`locations`](#locations)                         | 8       | yes               |
 | [`mail_failures`](#mail_failures)                 | 11      | —                 |
 | [`media`](#media)                                 | 9       | yes               |
+| [`media_tags`](#media_tags)                       | 4       | yes               |
 | [`notebooks`](#notebooks)                         | 8       | yes               |
 | [`people`](#people)                               | 12      | yes               |
 | [`plan_members`](#plan_members)                   | 5       | —                 |
@@ -52,7 +59,9 @@ exist.
 | [`recipe_items`](#recipe_items)                   | 8       | yes               |
 | [`recipes`](#recipes)                             | 12      | yes               |
 | [`recurring_tasks`](#recurring_tasks)             | 20      | yes               |
-| [`reminders`](#reminders)                         | 10      | yes               |
+| [`reminder_sounds`](#reminder_sounds)             | 7       | yes               |
+| [`reminders`](#reminders)                         | 12      | yes               |
+| [`ringtones`](#ringtones)                         | 7       | yes               |
 | [`scheme_slots`](#scheme_slots)                   | 11      | yes               |
 | [`session`](#session)                             | 9       | yes               |
 | [`shopping_categories`](#shopping_categories)     | 7       | yes               |
@@ -113,6 +122,39 @@ Indexes:
 - `activities_category_idx` on `category_id`
 - `activities_active_idx` on `active`
 
+## album_media
+
+| Column     | Type    | Null     | Default               | Notes             |
+| ---------- | ------- | -------- | --------------------- | ----------------- |
+| `id`       | integer | not null | —                     | primary key, auto |
+| `user_id`  | text    | not null | —                     | → `user.id`       |
+| `album_id` | integer | not null | —                     | → `albums.id`     |
+| `media_id` | integer | not null | —                     | → `media.id`      |
+| `position` | integer | not null | `0`                   | —                 |
+| `added_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `album_media_user_idx` on `user_id`
+- `album_media_media_idx` on `media_id`
+- `album_media_album_media_unique` on `album_id`, `media_id` — unique
+
+## albums
+
+| Column       | Type    | Null     | Default               | Notes             |
+| ------------ | ------- | -------- | --------------------- | ----------------- |
+| `id`         | integer | not null | —                     | primary key, auto |
+| `user_id`    | text    | not null | —                     | → `user.id`       |
+| `name`       | text    | not null | —                     | —                 |
+| `sort_order` | integer | not null | `0`                   | —                 |
+| `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| `updated_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `albums_user_idx` on `user_id`
+- `albums_user_name_unique` on `user_id`, `name` — unique
+
 ## api_tokens
 
 | Column         | Type    | Null     | Default | Notes             |
@@ -135,12 +177,30 @@ Indexes:
 - `api_tokens_hash_unique` on `token_hash` — unique
 - `api_tokens_user_idx` on `user_id`
 
+## assistant_calls
+
+| Column        | Type    | Null     | Default               | Notes             |
+| ------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`          | integer | not null | —                     | primary key, auto |
+| `user_id`     | text    | not null | —                     | → `user.id`       |
+| `token_id`    | integer | null     | —                     | —                 |
+| `tool`        | text    | not null | —                     | —                 |
+| `args`        | text    | not null | `'{}'`                | —                 |
+| `before`      | text    | null     | —                     | —                 |
+| `destroyed`   | integer | not null | `false`               | —                 |
+| `restored_at` | text    | null     | —                     | —                 |
+| `created_at`  | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `assistant_calls_user_idx` on `user_id`, `id`
+
 ## audit_events
 
 | Column       | Type    | Null     | Default               | Notes             |
 | ------------ | ------- | -------- | --------------------- | ----------------- |
 | `id`         | integer | not null | —                     | primary key, auto |
-| `user_id`    | text    | not null | —                     | → `user.id`       |
+| `user_id`    | text    | null     | —                     | → `user.id`       |
 | `actor_id`   | text    | null     | —                     | —                 |
 | `event`      | text    | not null | —                     | —                 |
 | `detail`     | text    | not null | `'{}'`                | —                 |
@@ -220,6 +280,7 @@ Indexes:
 | `due_day`         | integer | null     | —                     | —                 |
 | `due_month`       | integer | null     | —                     | —                 |
 | `pay_lead_days`   | integer | not null | `0`                   | —                 |
+| `flow`            | text    | not null | `'out'`               | —                 |
 | `rhythm`          | text    | not null | `'monthly'`           | —                 |
 | `category_id`     | integer | null     | —                     | → `categories.id` |
 | `goal_id`         | integer | null     | —                     | → `goals.id`      |
@@ -443,6 +504,43 @@ Checks — enforced by the database, not only by the service layer:
 - `exceptional_mode_activity`: `"exceptional_tasks"."mode" != 'activity' OR "exceptional_tasks"."activity_id" IS NOT NULL`
 - `exceptional_mode_workout`: `"exceptional_tasks"."mode" != 'workout' OR "exceptional_tasks"."workout_id" IS NOT NULL`
 
+## finance_rules
+
+| Column       | Type    | Null     | Default               | Notes             |
+| ------------ | ------- | -------- | --------------------- | ----------------- |
+| `id`         | integer | not null | —                     | primary key, auto |
+| `user_id`    | text    | not null | —                     | → `user.id`       |
+| `kind`       | text    | not null | —                     | —                 |
+| `name`       | text    | not null | —                     | —                 |
+| `pattern`    | text    | not null | —                     | —                 |
+| `position`   | integer | not null | `0`                   | —                 |
+| `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `finance_rules_user_idx` on `user_id`
+- `finance_rules_name_unique` on `user_id`, `kind`, `name` — unique
+
+## finance_transactions
+
+| Column         | Type    | Null     | Default               | Notes             |
+| -------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`           | integer | not null | —                     | primary key, auto |
+| `user_id`      | text    | not null | —                     | → `user.id`       |
+| `occurred_on`  | text    | not null | —                     | —                 |
+| `amount_cents` | integer | not null | —                     | —                 |
+| `description`  | text    | not null | —                     | —                 |
+| `source`       | text    | not null | —                     | —                 |
+| `external_id`  | text    | null     | —                     | —                 |
+| `fingerprint`  | text    | not null | —                     | —                 |
+| `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `finance_transactions_user_idx` on `user_id`
+- `finance_transactions_user_date_idx` on `user_id`, `occurred_on`
+- `finance_transactions_fingerprint_unique` on `user_id`, `fingerprint` — unique
+
 ## goal_areas
 
 | Column       | Type    | Null     | Default               | Notes             |
@@ -479,27 +577,45 @@ Checks — enforced by the database, not only by the service layer:
 
 - `goal_link_has_exactly_one_target`: `(CASE WHEN "goal_links"."slot_id" IS NULL THEN 0 ELSE 1 END) + (CASE WHEN "goal_links"."todo_id" IS NULL THEN 0 ELSE 1 END) + (CASE WHEN "goal_links"."activity_id" IS NULL THEN 0 ELSE 1 END) = 1`
 
+## goal_targets
+
+| Column          | Type    | Null     | Default | Notes             |
+| --------------- | ------- | -------- | ------- | ----------------- |
+| `id`            | integer | not null | —       | primary key, auto |
+| `user_id`       | text    | not null | —       | → `user.id`       |
+| `goal_id`       | integer | not null | —       | → `goals.id`      |
+| `target_value`  | real    | not null | —       | —                 |
+| `current_value` | real    | not null | `0`     | —                 |
+| `unit`          | text    | not null | `''`    | —                 |
+| `sort_order`    | integer | not null | `0`     | —                 |
+
+Indexes:
+
+- `goal_targets_user_idx` on `user_id`
+- `goal_targets_goal_idx` on `goal_id`
+
+Checks — enforced by the database, not only by the service layer:
+
+- `goal_targets_positive`: `"goal_targets"."target_value" > 0`
+
 ## goals
 
-| Column          | Type    | Null     | Default               | Notes             |
-| --------------- | ------- | -------- | --------------------- | ----------------- |
-| `id`            | integer | not null | —                     | primary key, auto |
-| `user_id`       | text    | not null | —                     | → `user.id`       |
-| `area_id`       | integer | null     | —                     | → `goal_areas.id` |
-| `notebook_id`   | integer | null     | —                     | → `notebooks.id`  |
-| `parent_id`     | integer | null     | —                     | —                 |
-| `title`         | text    | not null | —                     | —                 |
-| `notes`         | text    | null     | `''`                  | —                 |
-| `horizon`       | text    | not null | —                     | —                 |
-| `period_start`  | text    | not null | —                     | —                 |
-| `target_value`  | real    | null     | —                     | —                 |
-| `current_value` | real    | not null | `0`                   | —                 |
-| `unit`          | text    | null     | `''`                  | —                 |
-| `status`        | text    | not null | `'open'`              | —                 |
-| `outcome`       | text    | null     | `''`                  | —                 |
-| `closed_at`     | text    | null     | —                     | —                 |
-| `created_at`    | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
-| `updated_at`    | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| Column         | Type    | Null     | Default               | Notes             |
+| -------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`           | integer | not null | —                     | primary key, auto |
+| `user_id`      | text    | not null | —                     | → `user.id`       |
+| `area_id`      | integer | null     | —                     | → `goal_areas.id` |
+| `notebook_id`  | integer | null     | —                     | → `notebooks.id`  |
+| `parent_id`    | integer | null     | —                     | —                 |
+| `title`        | text    | not null | —                     | —                 |
+| `notes`        | text    | null     | `''`                  | —                 |
+| `horizon`      | text    | not null | —                     | —                 |
+| `period_start` | text    | not null | —                     | —                 |
+| `status`       | text    | not null | `'open'`              | —                 |
+| `outcome`      | text    | null     | `''`                  | —                 |
+| `closed_at`    | text    | null     | —                     | —                 |
+| `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| `updated_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
 
@@ -508,10 +624,6 @@ Indexes:
 - `goals_parent_idx` on `parent_id`
 - `goals_area_idx` on `area_id`
 - `goals_notebook_idx` on `notebook_id`
-
-Checks — enforced by the database, not only by the service layer:
-
-- `goals_target_positive`: `"goals"."target_value" IS NULL OR "goals"."target_value" > 0`
 
 ## habit_occurrences
 
@@ -657,6 +769,22 @@ Indexes:
 Checks — enforced by the database, not only by the service layer:
 
 - `media_size_positive`: `"media"."byte_size" > 0`
+
+## media_tags
+
+| Column     | Type    | Null     | Default | Notes             |
+| ---------- | ------- | -------- | ------- | ----------------- |
+| `id`       | integer | not null | —       | primary key, auto |
+| `user_id`  | text    | not null | —       | → `user.id`       |
+| `media_id` | integer | not null | —       | → `media.id`      |
+| `tag_id`   | integer | not null | —       | → `tags.id`       |
+
+Indexes:
+
+- `media_tags_user_idx` on `user_id`
+- `media_tags_media_idx` on `media_id`
+- `media_tags_tag_idx` on `tag_id`
+- `media_tags_media_tag_unique` on `media_id`, `tag_id` — unique
 
 ## notebooks
 
@@ -905,6 +1033,22 @@ Checks — enforced by the database, not only by the service layer:
 - `slots_mode_activity`: `"recurring_tasks"."mode" != 'activity' OR "recurring_tasks"."activity_id" IS NOT NULL`
 - `slots_mode_workout`: `"recurring_tasks"."mode" != 'workout' OR "recurring_tasks"."workout_id" IS NOT NULL`
 
+## reminder_sounds
+
+| Column        | Type    | Null     | Default               | Notes             |
+| ------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`          | integer | not null | —                     | primary key, auto |
+| `user_id`     | text    | not null | —                     | → `user.id`       |
+| `kind`        | text    | not null | —                     | —                 |
+| `ringtone_id` | integer | null     | —                     | → `ringtones.id`  |
+| `audible`     | integer | not null | `false`               | —                 |
+| `created_at`  | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| `updated_at`  | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `reminder_sounds_user_kind_unique` on `user_id`, `kind` — unique
+
 ## reminders
 
 | Column         | Type    | Null     | Default               | Notes             |
@@ -918,6 +1062,8 @@ Checks — enforced by the database, not only by the service layer:
 | `delivered_at` | text    | null     | —                     | —                 |
 | `pushed_at`    | text    | null     | —                     | —                 |
 | `dismissed_at` | text    | null     | —                     | —                 |
+| `audible`      | integer | null     | —                     | —                 |
+| `ringtone_id`  | integer | null     | —                     | → `ringtones.id`  |
 | `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
@@ -925,6 +1071,24 @@ Indexes:
 - `reminders_user_idx` on `user_id`
 - `reminders_due_idx` on `user_id`, `delivered_at`, `remind_at`
 - `reminders_subject_idx` on `subject_kind`, `subject_id`
+- `reminders_pending_idx` on `user_id`, `pushed_at`, `remind_at`
+
+## ringtones
+
+| Column       | Type    | Null     | Default               | Notes             |
+| ------------ | ------- | -------- | --------------------- | ----------------- |
+| `id`         | integer | not null | —                     | primary key, auto |
+| `user_id`    | text    | not null | —                     | → `user.id`       |
+| `name`       | text    | not null | —                     | —                 |
+| `mime`       | text    | not null | —                     | —                 |
+| `bytes`      | integer | not null | —                     | —                 |
+| `data`       | blob    | not null | —                     | —                 |
+| `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `ringtones_user_idx` on `user_id`
+- `ringtones_user_name_unique` on `user_id`, `name` — unique
 
 ## scheme_slots
 

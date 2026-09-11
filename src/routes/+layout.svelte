@@ -185,7 +185,8 @@
 		ideas: 'ideas',
 		health: 'health',
 		finance: 'wallet',
-		inventory: 'shopping'
+		inventory: 'shopping',
+		gallery: 'image'
 	};
 
 	/**

@@ -36,6 +36,7 @@ shows up here on the next build.
 | [`diary`](#diary)                               | The journal: free text, free-form tags, one running number per account.                                                                                                                                                                                              |
 | [`errors`](#errors)                             | Typed errors thrown by service functions.                                                                                                                                                                                                                            |
 | [`family-invite`](#family-invite)               | Inviting somebody to the plan, and the account that makes for them.                                                                                                                                                                                                  |
+| [`gallery`](#gallery)                           | Albums: lists of references over the one media table.                                                                                                                                                                                                                |
 | [`goals`](#goals)                               | Goals, and the progress that makes them more than a wish list.                                                                                                                                                                                                       |
 | [`habits`](#habits)                             | Habits are things to do or to avoid, logged one day at a time.                                                                                                                                                                                                       |
 | [`health`](#health)                             | Can this process actually reach the database?                                                                                                                                                                                                                        |
@@ -77,6 +78,7 @@ shows up here on the next build.
 | [`shopping`](#shopping)                         | Two lists that share a table: `replenish` is stock you keep, `someday` is a wishlist. The difference is what "bought" means — a replenish item comes back when it runs out, a someday item is done.                                                                  |
 | [`slots`](#slots)                               | The plan itself: blocks that repeat (`recurring_tasks`) and blocks that happen once (`exceptional_tasks`), plus the skips that cancel a single occurrence.                                                                                                           |
 | [`stale`](#stale)                               | Things that never ended.                                                                                                                                                                                                                                             |
+| [`statements`](#statements)                     | Bank statements: lines imported from an export, and the rules that sort them.                                                                                                                                                                                        |
 | [`streams`](#streams)                           | Declare a stream. Idempotent per (user, slug) so producers can call it at every startup.                                                                                                                                                                             |
 | [`subscriptions`](#subscriptions)               | What an account may do, and until when.                                                                                                                                                                                                                              |
 | [`tags`](#tags)                                 | Tags, and the rows that join them to what they tag.                                                                                                                                                                                                                  |
@@ -703,7 +705,7 @@ Undo a payment for a period — it was never paid, or paid in error.
 
 #### `listPayments(ctx, billId)`
 
-#### `monthSummary(ctx, month)`
+#### `monthSummary(ctx, month, flow)`
 
 A month, the way the section's first page reads it: what was expected of the
 monthly bills, what has actually been paid this month across all bills, and
@@ -714,6 +716,7 @@ the gap between the two.
 ### Types
 
 - `Rhythm`
+- `Flow`
 - `Bill`
 - `BillPayment`
 - `BillDue` — The bills that want paying between two dates.
@@ -1178,6 +1181,59 @@ one the funnel already has.
 Creation is only offered where registration is open. On an invite-only or
 closed instance a payer typing addresses must not be a way to mint
 accounts, so those fall back to the old rule: the account has to exist.
+
+## gallery
+
+Albums: lists of references over the one media table.
+
+A picture lives once in `media`, deduplicated by hash; an album holds
+membership rows. Putting a picture in a second album is a second row —
+"duplicating" a photo never copies bytes, which is why it is cheap and
+why removing it from one album leaves the other untouched. A picture
+whose last reference goes is deleted with it: the gallery never leaves
+invisible bytes behind on somebody's instance.
+
+Lives on the server because the bytes do; the self-contained instance
+gains the gallery when media does.
+
+### Functions
+
+#### `listAlbums(ctx)`
+
+#### `createAlbum(ctx, input)`
+
+#### `renameAlbum(ctx, id, input)`
+
+#### `deleteAlbum(ctx, id)`
+
+Deleting an album lets go of its references, and any picture that was
+only there goes with them — bytes nobody can see are not kept.
+
+#### `albumPictures(ctx, albumId)`
+
+#### `uploadToAlbum(ctx, albumId, input)`
+
+A new picture, straight into an album.
+
+#### `addToAlbum(ctx, albumId, mediaId)`
+
+The reference duplicate: the same picture, now in another album too.
+Idempotent — an album holds a picture once.
+
+#### `removeFromAlbum(ctx, albumId, mediaId)`
+
+Out of this album; gone entirely if this was its last reference anywhere.
+
+#### `moveBetweenAlbums(ctx, from, to, mediaId)`
+
+Move: out of one album, into another, one gesture.
+
+#### `tagPicture(ctx, mediaId, raw)`
+
+### Types
+
+- `Album`
+- `AlbumPicture`
 
 ## goals
 
@@ -3799,6 +3855,73 @@ else deletes nothing and reports nothing (I3).
 
 - `StaleThing`
 
+## statements
+
+Bank statements: lines imported from an export, and the rules that sort
+them.
+
+The lines are kept as the bank said them — see the schema note on
+`finance_transactions` — and the sorting happens at read time: a category
+is the first rule whose pattern matches (position order, so the partition
+is deterministic), tags are every rule that matches. Writing a rule today
+therefore sorts last year's lines too, with no resweep and nothing stored
+to drift.
+
+### Functions
+
+#### `availableParsers()`
+
+The parsers the import screen can offer, by key and friendly name.
+
+#### `importStatement(ctx, input)`
+
+Import one export's text. Idempotent: the same file twice adds nothing.
+
+`flip` negates every amount, for the person whose export means the
+opposite of what the parser expects — a statement kept from the card's
+point of view, say. The fingerprint uses the flipped amount, so the same
+file imported flipped and unflipped is two sets of lines, which is what
+it truthfully is.
+
+#### `deleteMovement(ctx, id)`
+
+#### `listRules(ctx)`
+
+#### `createRule(ctx, input)`
+
+#### `updateRule(ctx, id, input)`
+
+#### `deleteRule(ctx, id)`
+
+#### `sortByRules(rules, description)`
+
+Sort one description: the first matching category (the partition), every
+matching tag (the lenses).
+
+#### `listMovements(ctx, opts)`
+
+#### `monthKeys(now, months)`
+
+'YYYY-MM' for an instant, and the N keys ending at that month.
+
+#### `statementSeries(ctx, months)`
+
+What the statements say, month by month.
+
+#### `recordsSeries(ctx, months)`
+
+What the app's own books say, month by month: income received against
+bills paid. Kept apart from the statement series on purpose — a salary
+that is both recorded here and visible in a statement would be counted
+twice by any series that merged them.
+
+### Types
+
+- `Movement`
+- `Rule`
+- `StatementMonth`
+- `RecordsMonth`
+
 ## streams
 
 Declare a stream. Idempotent per (user, slug) so producers can call it at every startup.
@@ -4031,6 +4154,10 @@ All these produce ["tagfoo", "tagbar"]:
 #### `linkIdeaTags(ideaId, tagIds, userId)`
 
 #### `replaceIdeaTags(ideaId, tagNames, userId)`
+
+#### `linkMediaTags(mediaId, tagIds, userId)`
+
+#### `replaceMediaTags(mediaId, tagNames, userId)`
 
 ## time
 

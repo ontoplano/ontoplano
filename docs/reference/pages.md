@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**49 pages, 191 actions.**
+**54 pages, 198 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -22,7 +22,12 @@ write surface for everything else; both end up calling the same
 | `/data/[slug]`                       | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/demo`                              | `default`                                                                                                                                                                                                                                                                                                                                                                           |
 | `/demo/self-contained-db`            | —                                                                                                                                                                                                                                                                                                                                                                                   |
-| `/finance/bills`                     | `create`, `update`, `pay`, `unpay`, `archive`, `delete`                                                                                                                                                                                                                                                                                                                             |
+| `/finance/bills`                     | —                                                                                                                                                                                                                                                                                                                                                                                   |
+| `/finance/imports`                   | `import`, `createRule`, `updateRule`, `deleteRule`, `deleteMovement`                                                                                                                                                                                                                                                                                                                |
+| `/finance/income`                    | —                                                                                                                                                                                                                                                                                                                                                                                   |
+| `/finance/net`                       | —                                                                                                                                                                                                                                                                                                                                                                                   |
+| `/gallery`                           | `create`, `rename`, `delete`                                                                                                                                                                                                                                                                                                                                                        |
+| `/gallery/[id]`                      | `upload`, `addTo`, `move`, `remove`, `tag`                                                                                                                                                                                                                                                                                                                                          |
 | `/goals`                             | `setTodoStatus`, `createArea`, `deleteArea`, `create`, `update`, `setProgress`, `close`, `setLinks`, `remove`                                                                                                                                                                                                                                                                       |
 | `/health/habits`                     | `create`, `update`, `delete`, `logOccurrence`, `toggleOccurrence`, `updateOccurrence`, `deleteOccurrence`                                                                                                                                                                                                                                                                           |
 | `/health/recipes`                    | —                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -113,6 +118,27 @@ slow site rather than as something being built for you.
 So the wait has a screen. It also has somewhere to go: with the work behind
 a page the visitor is already looking at, the seed can be made slower under
 load without anybody experiencing a hang.
+
+### `/finance/imports`
+
+Where a bank export becomes rows: pick the export's parser, hand over the
+file, and the lines land deduplicated — the same file twice adds nothing.
+The rules that sort those lines into categories and tags live here too,
+beside the lines they sort.
+
+### `/finance/net`
+
+The month's two honest answers, side by side and never merged: what your
+own records say (income received against bills paid) and what your bank
+statements say. A salary that appears in both would be double-counted by
+any series that combined them, so none does.
+
+### `/gallery`
+
+The gallery opens on albums, because that is how anybody actually keeps
+pictures. Server-side for now: the pictures' bytes live where the media
+table does, so the self-contained instance gains this room when it gains
+media.
 
 ### `/health/recipes`
 

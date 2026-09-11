@@ -20,3 +20,12 @@ export const DB_FILE = '/ontoplano.db';
  * with exactly one row in `user`.
  */
 export const SELF_CONTAINED_USER_ID = 'me';
+
+/**
+ * How long the page waits for the worker before calling it broken.
+ *
+ * Generous: the first answer includes compiling SQLite and running every
+ * migration on a phone. But finite, because past it the truthful thing is a
+ * sentence about what did not answer — not a splash screen forever.
+ */
+export const WORKER_DEADLINE_MS = 30_000;

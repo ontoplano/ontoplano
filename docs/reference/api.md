@@ -12,38 +12,40 @@ next build.
 A token holds some of these and nothing else. Each description is the
 sentence somebody agrees to when they grant it.
 
-| Scope             | What it permits                                                                                                                                   |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `streams:write`   | Send readings into your data streams, and create new streams                                                                                      |
-| `streams:read`    | Read everything your data streams have ever recorded                                                                                              |
-| `schedule:read`   | Read everything on your calendar for the days ahead, today included                                                                               |
-| `schedule:write`  | Put blocks on your week — one-off and repeating — move and rename them, take them off a day, set reminders on them, and mark them done or skipped |
-| `today:read`      | See today's plan — the blocks and the tasks on it                                                                                                 |
-| `habits:read`     | See your habits, which are due today, and whether you kept them                                                                                   |
-| `habits:write`    | Mark a habit kept, or unmark one                                                                                                                  |
-| `plugin:declare`  | Name and describe itself on your integrations page                                                                                                |
-| `webhooks:manage` | Send itself a message when something changes here — a task finished, a block done — to an address it chooses                                      |
-| `shopping:read`   | See everything on your shopping list                                                                                                              |
-| `shopping:write`  | Add to your shopping list, tick things bought, and take things off it                                                                             |
-| `inventory:read`  | See where your things live, and what is in each room and drawer                                                                                   |
-| `inventory:write` | Add and change rooms and drawers, and say where a thing lives                                                                                     |
-| `calendar:read`   | Show your plan in a calendar app. It can see the plan and change nothing                                                                          |
-| `notes:read`      | Read your diary and your notebooks                                                                                                                |
-| `notes:write`     | Write in your diary and your notebooks                                                                                                            |
-| `ideas:read`      | See your ideas                                                                                                                                    |
-| `ideas:write`     | Add ideas, change them, and remove them                                                                                                           |
-| `tasks:read`      | Read your todo list and your goals                                                                                                                |
-| `tasks:write`     | Add, finish and delete todos, move them on and off a day, and close a goal                                                                        |
-| `kitchen:read`    | Read your recipes                                                                                                                                 |
-| `kitchen:write`   | Add and change recipes                                                                                                                            |
-| `workouts:read`   | See your workouts                                                                                                                                 |
-| `workouts:write`  | Add and change workouts and their categories, put them away, and mark one done                                                                    |
-| `bills:read`      | See your bills and what you have paid                                                                                                             |
-| `bills:write`     | Add and change bills, and mark them paid                                                                                                          |
-| `people:read`     | See the people in your life, and whose birthday is coming                                                                                         |
-| `people:write`    | Add people, and change what is recorded about them                                                                                                |
-| `search:read`     | Search everything you have written, in one go                                                                                                     |
-| `destructive`     | Delete things outright — with only the write grants, it can add and change but never remove                                                       |
+| Scope              | What it permits                                                                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `streams:write`    | Send readings into your data streams, and create new streams                                                                                      |
+| `streams:read`     | Read everything your data streams have ever recorded                                                                                              |
+| `schedule:read`    | Read everything on your calendar for the days ahead, today included                                                                               |
+| `schedule:write`   | Put blocks on your week — one-off and repeating — move and rename them, take them off a day, set reminders on them, and mark them done or skipped |
+| `today:read`       | See today's plan — the blocks and the tasks on it                                                                                                 |
+| `habits:read`      | See your habits, which are due today, and whether you kept them                                                                                   |
+| `habits:write`     | Mark a habit kept, or unmark one                                                                                                                  |
+| `plugin:declare`   | Name and describe itself on your integrations page                                                                                                |
+| `webhooks:manage`  | Send itself a message when something changes here — a task finished, a block done — to an address it chooses                                      |
+| `shopping:read`    | See everything on your shopping list                                                                                                              |
+| `shopping:write`   | Add to your shopping list, tick things bought, and take things off it                                                                             |
+| `inventory:read`   | See where your things live, and what is in each room and drawer                                                                                   |
+| `inventory:write`  | Add and change rooms and drawers, and say where a thing lives                                                                                     |
+| `calendar:read`    | Show your plan in a calendar app. It can see the plan and change nothing                                                                          |
+| `notes:read`       | Read your diary and your notebooks                                                                                                                |
+| `notes:write`      | Write in your diary and your notebooks                                                                                                            |
+| `ideas:read`       | See your ideas                                                                                                                                    |
+| `ideas:write`      | Add ideas, change them, and remove them                                                                                                           |
+| `tasks:read`       | Read your todo list and your goals                                                                                                                |
+| `tasks:write`      | Add, finish and delete todos, move them on and off a day, and close a goal                                                                        |
+| `kitchen:read`     | Read your recipes                                                                                                                                 |
+| `kitchen:write`    | Add and change recipes                                                                                                                            |
+| `workouts:read`    | See your workouts                                                                                                                                 |
+| `workouts:write`   | Add and change workouts and their categories, put them away, and mark one done                                                                    |
+| `bills:read`       | See your bills, your recorded income, and what you have actually paid or received                                                                 |
+| `statements:read`  | Read your imported bank-statement lines, their categories and tags, and the monthly in/out figures                                                |
+| `statements:write` | Import bank exports into your statements, and add or remove the rules that sort them                                                              |
+| `bills:write`      | Add and change bills, and mark them paid                                                                                                          |
+| `people:read`      | See the people in your life, and whose birthday is coming                                                                                         |
+| `people:write`     | Add people, and change what is recorded about them                                                                                                |
+| `search:read`      | Search everything you have written, in one go                                                                                                     |
+| `destructive`      | Delete things outright — with only the write grants, it can add and change but never remove                                                       |
 
 ## Endpoints
 

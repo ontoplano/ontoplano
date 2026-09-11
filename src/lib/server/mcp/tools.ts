@@ -113,6 +113,15 @@ import {
 	monthSummary,
 	billsDueBetween
 } from '$lib/services/bills.js';
+import {
+	createRule,
+	deleteRule,
+	importStatement,
+	listMovements,
+	listRules,
+	recordsSeries,
+	statementSeries
+} from '$lib/services/statements.js';
 import { grouped, search } from '$lib/services/search.js';
 import {
 	createCategory as createShoppingCategory,
@@ -2924,6 +2933,97 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
+		name: 'statement_months',
+		title: 'Money in and out, by month',
+		description:
+			'Two monthly series, deliberately separate: what your recorded income and bills say, and what your imported bank statements say. Merging them would double-count anything visible in both. Amounts in minor units (cents).',
+		scope: 'statements:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => ({ records: recordsSeries(ctx), statements: statementSeries(ctx) })
+	},
+	{
+		name: 'movements',
+		title: 'Bank-statement lines',
+		description:
+			'Imported statement lines, newest first, each with the category (at most one — they partition) and tags (any number) your sorting rules give it. Amounts in minor units, negative when money left.',
+		scope: 'statements:read',
+		writes: false,
+		input: object({
+			month: text("Only this month, as 'YYYY-MM'. Everything if left out.")
+		}),
+		run: (ctx, args) => ({
+			movements: listMovements(ctx, {
+				month: typeof args.month === 'string' && args.month ? args.month : undefined
+			})
+		})
+	},
+	{
+		name: 'import_statement',
+		title: 'Import a bank export',
+		description:
+			'Feed a bank export through one of the named parsers. Idempotent: lines already imported are skipped, so re-sending a file is safe. `flip` negates every amount for an export whose signs mean the opposite.',
+		scope: 'statements:write',
+		writes: true,
+		input: object(
+			{
+				source: text("Which parser, e.g. 'nubank:conta_corrente' or 'nubank:credit_card_month'."),
+				content: text('The export, verbatim.'),
+				flip: { type: 'boolean', description: 'Negate every amount.' }
+			},
+			['source', 'content']
+		),
+		run: (ctx, args) =>
+			importStatement(ctx, {
+				source: args.source,
+				text: String(args.content ?? ''),
+				flip: !!args.flip
+			})
+	},
+	{
+		name: 'add_sort_rule',
+		title: 'Add a sorting rule',
+		description:
+			'A regular expression that sorts statement lines, applied at read time — past lines included. Categories partition (first match, in position order, wins); tags overlap freely.',
+		scope: 'statements:write',
+		writes: true,
+		input: object(
+			{
+				kind: text("'category' or 'tag'."),
+				name: text('What the category or tag is called.'),
+				pattern: text('A JavaScript regular expression, matched case-insensitively.')
+			},
+			['kind', 'name', 'pattern']
+		),
+		run: (ctx, args) => ({
+			id: createRule(ctx, { kind: args.kind, name: args.name, pattern: args.pattern }).id
+		})
+	},
+	{
+		name: 'delete_sort_rule',
+		title: 'Delete a sorting rule',
+		description: 'The rule goes; the lines it sorted stay, now sorted by the rules that remain.',
+		scope: 'statements:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The rule, as listed by sort_rules.' } }, [
+			'id'
+		]),
+		run: (ctx, args) => {
+			deleteRule(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+	{
+		name: 'sort_rules',
+		title: 'The sorting rules',
+		description:
+			'Every sorting rule — categories and tags, with their regular expressions — in the order categories win.',
+		scope: 'statements:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => ({ rules: listRules(ctx) })
+	},
+	{
 		name: 'bills',
 		title: 'Your bills',
 		description:
@@ -2931,9 +3031,17 @@ export const TOOLS: Tool[] = [
 		scope: 'bills:read',
 		writes: false,
 		input: object({
-			include_archived: { type: 'boolean', description: 'Include ones put away.' }
+			include_archived: { type: 'boolean', description: 'Include ones put away.' },
+			flow: text(
+				"Which direction: 'out' (bills, the default) or 'in' — income, recorded exactly the way bills are."
+			)
 		}),
-		run: (ctx, args) => ({ bills: listBills(ctx, { includeArchived: !!args.include_archived }) })
+		run: (ctx, args) => ({
+			bills: listBills(ctx, {
+				includeArchived: !!args.include_archived,
+				flow: args.flow === 'in' ? 'in' : 'out'
+			})
+		})
 	},
 	{
 		name: 'bill_payments',
@@ -3005,6 +3113,7 @@ export const TOOLS: Tool[] = [
 						'Pay it this many days before the due day (0 = on the day). It turns up on the week that day.'
 				},
 				currency: text('A currency code like BRL. The account\u2019s default if left out.'),
+				flow: text("'out' for a bill (the default), 'in' for income."),
 				notes: text('Anything else.')
 			},
 			['name']
@@ -3014,6 +3123,7 @@ export const TOOLS: Tool[] = [
 				name: args.name,
 				amountExpected: args.amount_expected ?? 0,
 				rhythm: args.rhythm,
+				flow: args.flow === 'in' ? 'in' : 'out',
 				dueDay: args.due_day,
 				dueMonth: args.due_month,
 				payLeadDays: args.pay_lead_days,

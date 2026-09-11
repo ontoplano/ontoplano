@@ -832,6 +832,42 @@ Record that a workout happened just now — the gym’s version of marking a rec
 
 _Needs `workouts:write`; writes._
 
+### `statement_months` — Money in and out, by month
+
+Two monthly series, deliberately separate: what your recorded income and bills say, and what your imported bank statements say. Merging them would double-count anything visible in both. Amounts in minor units (cents).
+
+_Needs `statements:read`; read-only._
+
+### `movements` — Bank-statement lines
+
+Imported statement lines, newest first, each with the category (at most one — they partition) and tags (any number) your sorting rules give it. Amounts in minor units, negative when money left.
+
+_Needs `statements:read`; read-only._
+
+### `import_statement` — Import a bank export
+
+Feed a bank export through one of the named parsers. Idempotent: lines already imported are skipped, so re-sending a file is safe. `flip` negates every amount for an export whose signs mean the opposite.
+
+_Needs `statements:write`; writes._
+
+### `add_sort_rule` — Add a sorting rule
+
+A regular expression that sorts statement lines, applied at read time — past lines included. Categories partition (first match, in position order, wins); tags overlap freely.
+
+_Needs `statements:write`; writes._
+
+### `delete_sort_rule` — Delete a sorting rule
+
+The rule goes; the lines it sorted stay, now sorted by the rules that remain.
+
+_Needs `statements:write`; writes._
+
+### `sort_rules` — The sorting rules
+
+Every sorting rule — categories and tags, with their regular expressions — in the order categories win.
+
+_Needs `statements:read`; read-only._
+
 ### `bills` — Your bills
 
 The bills you expect to pay, and what you have actually paid. Amounts are in minor units (cents): 12000 is R$120,00. Marking one paid records the real amount, which can differ from the expected one.

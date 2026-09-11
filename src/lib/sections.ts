@@ -66,6 +66,12 @@ export const HIDEABLE_SECTIONS = [
 			'What to buy, and where the things you already own live — the same rows seen twice. Ticking things off works with no signal at all, which is what a supermarket basement is.'
 	},
 	{
+		id: 'gallery',
+		label: 'Gallery',
+		blurb:
+			'Your pictures, kept in albums. A picture lives once however many albums hold it, and a tag cuts across all of them.'
+	},
+	{
 		id: 'recipes',
 		label: 'Recipes',
 		blurb:

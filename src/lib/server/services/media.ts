@@ -26,7 +26,7 @@ import { and, eq, like, or, sql } from 'drizzle-orm';
 import { loadConfig } from '../config.js';
 import { pictureCeiling } from '../db/assert-body-limit.js';
 import { db } from '$lib/db/index.js';
-import { diaryEntries, media, people, recipeImages, recipes } from '$lib/db/schema.js';
+import { albumMedia, diaryEntries, media, people, recipeImages, recipes } from '$lib/db/schema.js';
 import type { Ctx } from '$lib/services/ctx.js';
 import { NotFoundError, ValidationError } from '$lib/services/errors.js';
 import { stamp } from '$lib/services/time.js';
@@ -99,7 +99,9 @@ export function mediaLimits() {
 		recipeImages: limits.recipeImages,
 		entryImages: limits.entryImages,
 		accountBytes: limits.accountMegabytes * 1024 * 1024,
-		accountMegabytes: limits.accountMegabytes
+		accountMegabytes: limits.accountMegabytes,
+		galleryAlbums: limits.galleryAlbums,
+		albumImages: limits.albumImages
 	};
 }
 
@@ -247,6 +249,13 @@ export function list(ctx: Ctx): Picture[] {
  * follow an id, so `/media/1` does not count `/media/17` as a reference to it.
  */
 export function isReferenced(ctx: Ctx, id: number): boolean {
+	const inAlbum = db
+		.select({ id: albumMedia.id })
+		.from(albumMedia)
+		.where(and(eq(albumMedia.userId, ctx.userId), eq(albumMedia.mediaId, id)))
+		.get();
+	if (inAlbum) return true;
+
 	const isAFace = db
 		.select({ id: people.id })
 		.from(people)

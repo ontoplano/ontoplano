@@ -2133,6 +2133,15 @@ export const bills = sqliteTable(
 		// before that. This is that lead, so "rent, due the 5th, pay it on the
 		// 2nd" is one number rather than a second date to keep in step.
 		payLeadDays: integer('pay_lead_days').notNull().default(0),
+		/**
+		 * Which way the money moves. Income is recorded exactly the way bills
+		 * are — a name, an expected amount, a rhythm, a payment per period —
+		 * so it is the same table with the sign named rather than implied.
+		 * 'out' is a bill; 'in' is income.
+		 */
+		flow: text('flow', { enum: ['in', 'out'] })
+			.notNull()
+			.default('out'),
 		rhythm: text('rhythm', { enum: ['weekly', 'monthly', 'yearly', 'once'] })
 			.notNull()
 			.default('monthly'),
@@ -2195,6 +2204,157 @@ export const billPayments = sqliteTable(
 		index('bill_payments_user_idx').on(table.userId),
 		index('bill_payments_bill_idx').on(table.billId),
 		uniqueIndex('bill_payments_bill_period_unique').on(table.billId, table.period)
+	]
+);
+
+// --- Finance: statements ---
+
+/**
+ * A line from a bank export, kept as the bank said it.
+ *
+ * Signed minor units: negative left the account, positive arrived. The
+ * fingerprint is what makes importing the same file twice a no-op — the
+ * bank's own id when the export carries one, a hash of the line when (like a
+ * card export) it does not. Tags and categories are not columns here on
+ * purpose: they are rules applied at read time, so a rule written today
+ * sorts last year's lines without a resweep.
+ */
+export const financeTransactions = sqliteTable(
+	'finance_transactions',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		/** The civil date the bank reports, YYYY-MM-DD. */
+		occurredOn: text('occurred_on').notNull(),
+		amountCents: integer('amount_cents').notNull(),
+		description: text('description').notNull(),
+		/** Which parser read it: 'nubank:conta_corrente', 'nubank:credit_card_month'. */
+		source: text('source').notNull(),
+		/** The bank's own id for the movement, when the export carries one. */
+		externalId: text('external_id'),
+		fingerprint: text('fingerprint').notNull(),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('finance_transactions_user_idx').on(table.userId),
+		index('finance_transactions_user_date_idx').on(table.userId, table.occurredOn),
+		uniqueIndex('finance_transactions_fingerprint_unique').on(table.userId, table.fingerprint)
+	]
+);
+
+/**
+ * How statement lines are sorted, written as regular expressions.
+ *
+ * Categories are a partition: a line belongs to the first category whose
+ * pattern matches, in position order, or to none — so a month's category
+ * totals add up with nothing counted twice. Tags overlap freely: every tag
+ * whose pattern matches applies, which is what makes a broad tag like
+ * "healthy" possible and its monthly total honest about being a lens rather
+ * than a sum.
+ */
+export const financeRules = sqliteTable(
+	'finance_rules',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		kind: text('kind', { enum: ['category', 'tag'] }).notNull(),
+		name: text('name').notNull(),
+		/** A JavaScript regular expression source, matched case-insensitively. */
+		pattern: text('pattern').notNull(),
+		/** Category precedence: lower goes first. Meaningless for tags. */
+		position: integer('position').notNull().default(0),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('finance_rules_user_idx').on(table.userId),
+		uniqueIndex('finance_rules_name_unique').on(table.userId, table.kind, table.name)
+	]
+);
+
+// --- Gallery ---
+
+/**
+ * An album is a list of references, not a folder of files.
+ *
+ * The picture lives once in `media`; membership is a row here. Putting the
+ * same picture in a second album is a second membership row — which is all
+ * "duplicate" ever means in the gallery, so the bytes never double.
+ */
+export const albums = sqliteTable(
+	'albums',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		name: text('name').notNull(),
+		sortOrder: integer('sort_order').notNull().default(0),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('albums_user_idx').on(table.userId),
+		uniqueIndex('albums_user_name_unique').on(table.userId, table.name)
+	]
+);
+
+export const albumMedia = sqliteTable(
+	'album_media',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		albumId: integer('album_id')
+			.notNull()
+			.references(() => albums.id, { onDelete: 'cascade' }),
+		mediaId: integer('media_id')
+			.notNull()
+			.references(() => media.id, { onDelete: 'cascade' }),
+		position: integer('position').notNull().default(0),
+		addedAt: text('added_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('album_media_user_idx').on(table.userId),
+		index('album_media_media_idx').on(table.mediaId),
+		uniqueIndex('album_media_album_media_unique').on(table.albumId, table.mediaId)
+	]
+);
+
+/** Tags on pictures, the same shape diary entries and ideas use. */
+export const mediaTags = sqliteTable(
+	'media_tags',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		mediaId: integer('media_id')
+			.notNull()
+			.references(() => media.id, { onDelete: 'cascade' }),
+		tagId: integer('tag_id')
+			.notNull()
+			.references(() => tags.id, { onDelete: 'cascade' })
+	},
+	(table) => [
+		index('media_tags_user_idx').on(table.userId),
+		index('media_tags_media_idx').on(table.mediaId),
+		index('media_tags_tag_idx').on(table.tagId),
+		uniqueIndex('media_tags_media_tag_unique').on(table.mediaId, table.tagId)
 	]
 );
 

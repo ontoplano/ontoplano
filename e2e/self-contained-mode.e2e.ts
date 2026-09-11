@@ -87,8 +87,10 @@ test('the todo page runs against the device, and the server never hears of it', 
 	// Flipping to the past view is a client-side navigation, so the list it
 	// draws comes through the bridge. (A full reload here would be the
 	// server's render — the hybrid caveat from the top of this file.)
-	await page.getByRole('button', { name: 'Past', exact: true }).click();
-	await page.waitForURL((u) => u.searchParams.get('past') === '1');
+	await expect(async () => {
+		await page.getByRole('button', { name: 'Past', exact: true }).click();
+		await page.waitForURL((u) => u.searchParams.get('past') === '1', { timeout: 5000 });
+	}).toPass({ timeout: 60_000 });
 	await expect(page.getByText('set on the device')).toBeVisible({ timeout: 30_000 });
 
 	// The server's own render of the same page has never seen the row. This

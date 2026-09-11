@@ -1,0 +1,3 @@
+// The bodies live in page.self-contained.ts, written against the slice of the
+// request that also exists on a self-contained instance.
+export { load, actions } from './page.self-contained';

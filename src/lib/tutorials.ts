@@ -414,6 +414,24 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
+	'/gallery': {
+		label: 'Gallery',
+		steps: [
+			{
+				title: 'Albums, not folders',
+				body: 'Pictures live in albums. Putting one in a second album never copies it — one picture, two places.'
+			},
+			{
+				title: 'Moving and sharing',
+				body: 'Drag a picture onto another album to move it there; hold Ctrl while dropping to keep it in both.'
+			},
+			{
+				title: 'Tags cut across',
+				body: 'A tag on a picture works across every album. Removing a picture from its last album deletes it, and the confirmation says so.'
+			}
+		]
+	},
+
 	'/reminders': {
 		label: 'Reminders',
 		steps: [

@@ -73,7 +73,9 @@ export function installSelfContainedBridge(): void {
 					pathname,
 					search,
 					cookie: document.cookie
-				});
+				}).catch(
+					(e): LoadReply => ({ kind: 'error', status: 500, message: String(e?.message ?? e) })
+				);
 				if (reply) return dataResponse(reply);
 			} else if (url.pathname.startsWith('/api/')) {
 				const body = ['GET', 'HEAD'].includes(request.method) ? null : await request.clone().text();

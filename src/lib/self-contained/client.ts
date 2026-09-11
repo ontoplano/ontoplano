@@ -5,6 +5,8 @@
  * messages. Everything above this — the fetch bridge, the demo page — asks
  * through `ask()` and never sees a Worker.
  */
+import { WORKER_DEADLINE_MS } from './config.js';
+
 type Reply = { id: number; ok: boolean; result?: unknown; error?: string };
 
 let worker: Worker | null = null;
@@ -34,6 +36,20 @@ export async function ask<T>(op: string, args?: unknown): Promise<T> {
 		const id = nextId++;
 		pending.set(id, resolve);
 		start().postMessage({ id, op, args });
+		// A worker that answers nothing — a script that never loaded, a fetch
+		// its host never serves — must still become a sentence on screen.
+		setTimeout(() => {
+			if (!pending.has(id)) return;
+			pending.delete(id);
+			resolve({
+				id,
+				ok: false,
+				error:
+					`The device's database did not answer within ${WORKER_DEADLINE_MS / 1000}s ` +
+					`(asked for '${op}'). If this is an installed app, the system WebView may be ` +
+					'too old or unable to load the app\u2019s own files.'
+			});
+		}, WORKER_DEADLINE_MS);
 	});
 	if (!reply.ok) throw new Error(reply.error);
 	return reply.result as T;

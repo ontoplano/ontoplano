@@ -112,7 +112,11 @@ export const SCOPES = {
 	'workouts:read': 'See your workouts',
 	'workouts:write':
 		'Add and change workouts and their categories, put them away, and mark one done',
-	'bills:read': 'See your bills and what you have paid',
+	'bills:read': 'See your bills, your recorded income, and what you have actually paid or received',
+	'statements:read':
+		'Read your imported bank-statement lines, their categories and tags, and the monthly in/out figures',
+	'statements:write':
+		'Import bank exports into your statements, and add or remove the rules that sort them',
 	'bills:write': 'Add and change bills, and mark them paid',
 	/*
 	 * People, apart from everything: names, birthdays and phone numbers are

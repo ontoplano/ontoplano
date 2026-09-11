@@ -80,6 +80,8 @@ no. Nothing is ever sent before both have said yes.
 | `recipeImages`     | `number` | How many pictures one recipe may carry. One of them is the main one. |
 | `entryImages`      | `number` | How many pictures one notebook entry may carry.                      |
 | `accountMegabytes` | `number` | Everything one account's pictures may add up to, in megabytes.       |
+| `galleryAlbums`    | `number` | How many albums one account may keep.                                |
+| `albumImages`      | `number` | How many pictures one album may hold.                                |
 
 **`maxKilobytes`**
 

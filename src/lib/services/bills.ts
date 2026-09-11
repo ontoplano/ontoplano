@@ -25,6 +25,16 @@ import { num, oneOf, optionalStr, str } from './validate.js';
 export const RHYTHMS = ['weekly', 'monthly', 'yearly', 'once'] as const;
 export type Rhythm = (typeof RHYTHMS)[number];
 
+/**
+ * Which way the money moves. Income is recorded exactly the way bills are —
+ * same table, same rhythms, same one-payment-per-period — so every function
+ * here takes the direction rather than assuming it. The default is 'out'
+ * everywhere, which is what keeps the planner, the dashboard and the
+ * reminders talking about bills and nothing else.
+ */
+export const FLOWS = ['in', 'out'] as const;
+export type Flow = (typeof FLOWS)[number];
+
 export const MAX_NAME_LENGTH = 200;
 export const MAX_NOTE_LENGTH = 2000;
 
@@ -39,6 +49,7 @@ export type Bill = {
 	/** Days before the due day it wants paying — 0 means on the day. */
 	payLeadDays: number;
 	rhythm: Rhythm;
+	flow: Flow;
 	categoryId: number | null;
 	categoryName: string | null;
 	categoryColor: string | null;
@@ -67,6 +78,7 @@ type BillInput = {
 	dueMonth?: unknown;
 	payLeadDays?: unknown;
 	rhythm?: unknown;
+	flow?: unknown;
 	categoryId?: unknown;
 	goalId?: unknown;
 	notes?: unknown;
@@ -114,6 +126,7 @@ function row(r: {
 		dueMonth: r.bill.dueMonth,
 		payLeadDays: r.bill.payLeadDays,
 		rhythm: r.bill.rhythm as Rhythm,
+		flow: r.bill.flow as Flow,
 		categoryId: r.bill.categoryId,
 		categoryName: r.categoryName,
 		categoryColor: r.categoryColor,
@@ -125,10 +138,11 @@ function row(r: {
 }
 
 /** Every bill, active first, newest within each. */
-export function listBills(ctx: Ctx, opts: { includeArchived?: boolean } = {}): Bill[] {
+export function listBills(ctx: Ctx, opts: { includeArchived?: boolean; flow?: Flow } = {}): Bill[] {
+	const direction = eq(bills.flow, opts.flow ?? 'out');
 	const where = opts.includeArchived
-		? eq(bills.userId, ctx.userId)
-		: and(eq(bills.userId, ctx.userId), eq(bills.active, true));
+		? and(eq(bills.userId, ctx.userId), direction)
+		: and(eq(bills.userId, ctx.userId), eq(bills.active, true), direction);
 	return db
 		.select({
 			bill: bills,
@@ -208,6 +222,7 @@ function fields(ctx: Ctx, input: BillInput) {
 				: num(input.payLeadDays, 'pay lead', { int: true, min: 0, max: 27 }),
 		rhythm:
 			input.rhythm === undefined ? ('monthly' as Rhythm) : oneOf(input.rhythm, 'rhythm', RHYTHMS),
+		flow: input.flow === undefined ? ('out' as Flow) : oneOf(input.flow, 'flow', FLOWS),
 		categoryId: ownedCategory(ctx, input.categoryId),
 		goalId: ownedGoal(ctx, input.goalId),
 		notes: optionalStr(input.notes, 'notes', { max: MAX_NOTE_LENGTH }) || ''
@@ -348,15 +363,20 @@ export function listPayments(ctx: Ctx, billId: number): BillPayment[] {
  */
 export function monthSummary(
 	ctx: Ctx,
-	month: string
+	month: string,
+	flow: Flow = 'out'
 ): { expected: number; paid: number; difference: number; paidCount: number; billCount: number } {
-	const active = listBills(ctx).filter((b) => b.rhythm === 'monthly');
+	const active = listBills(ctx, { flow }).filter((b) => b.rhythm === 'monthly');
 	const expected = active.reduce((sum, b) => sum + b.amountExpected, 0);
 	const paidRows = db
-		.select()
+		.select({ payment: billPayments })
 		.from(billPayments)
-		.where(and(eq(billPayments.userId, ctx.userId), eq(billPayments.period, month)))
-		.all();
+		.innerJoin(bills, eq(billPayments.billId, bills.id))
+		.where(
+			and(eq(billPayments.userId, ctx.userId), eq(billPayments.period, month), eq(bills.flow, flow))
+		)
+		.all()
+		.map((r) => r.payment);
 	const paid = paidRows.reduce((sum, p) => sum + p.amountPaid, 0);
 	return {
 		expected,

@@ -97,6 +97,12 @@ export const USER_TABLES: OwnedTable[] = [
 	// Pictures: the join first, then the recipes, then the bytes. A recipe's
 	// gallery row points at both of the others, and `media` is last because
 	// deleting it while a row still names it is the one order that fails.
+	// The gallery's joins point at albums, media and tags, so they go first;
+	// the albums follow, and `media` keeps its place further down as the last
+	// thing pictures point at.
+	owned('albumMedia', schema.albumMedia as never),
+	owned('mediaTags', schema.mediaTags as never),
+	owned('albums', schema.albums as never),
 	owned('recipeImages', schema.recipeImages as never),
 	owned('recipeItems', schema.recipeItems as never),
 	owned('recipes', schema.recipes as never),
@@ -121,6 +127,10 @@ export const USER_TABLES: OwnedTable[] = [
 	// first (export any order, but the shared list also drives delete order).
 	owned('billPayments', schema.billPayments as never),
 	owned('bills', schema.bills as never),
+	// The statements and the rules that sort them point at nothing but the
+	// account itself.
+	owned('financeTransactions', schema.financeTransactions as never),
+	owned('financeRules', schema.financeRules as never),
 	owned('goalLinks', schema.goalLinks as never),
 	owned('goalTargets', schema.goalTargets as never),
 	owned('goals', schema.goals as never),

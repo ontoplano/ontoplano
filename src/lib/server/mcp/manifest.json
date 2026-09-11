@@ -41,6 +41,10 @@
 				"type": "integer",
 				"required": false
 			},
+			"flow": {
+				"type": "string",
+				"required": false
+			},
 			"name": {
 				"type": "string",
 				"required": true
@@ -378,6 +382,25 @@
 			}
 		}
 	},
+	"add_sort_rule": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"kind": {
+				"type": "string",
+				"required": true
+			},
+			"name": {
+				"type": "string",
+				"required": true
+			},
+			"pattern": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
 	"add_to_shopping_list": {
 		"scope": "shopping:write",
 		"writes": true,
@@ -556,6 +579,10 @@
 		"writes": false,
 		"destroys": false,
 		"params": {
+			"flow": {
+				"type": "string",
+				"required": false
+			},
 			"include_archived": {
 				"type": "boolean",
 				"required": false
@@ -1063,6 +1090,17 @@
 		"destroys": false,
 		"params": {}
 	},
+	"delete_sort_rule": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"diary": {
 		"scope": "notes:read",
 		"writes": false,
@@ -1183,6 +1221,25 @@
 			}
 		}
 	},
+	"import_statement": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"content": {
+				"type": "string",
+				"required": true
+			},
+			"flip": {
+				"type": "boolean",
+				"required": false
+			},
+			"source": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
 	"link_to_goal": {
 		"scope": "tasks:write",
 		"writes": true,
@@ -1256,6 +1313,17 @@
 	},
 	"month_bills": {
 		"scope": "bills:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"month": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"movements": {
+		"scope": "statements:read",
 		"writes": false,
 		"destroys": false,
 		"params": {
@@ -1612,6 +1680,18 @@
 				"required": false
 			}
 		}
+	},
+	"sort_rules": {
+		"scope": "statements:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
+	"statement_months": {
+		"scope": "statements:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
 	},
 	"tick_bought": {
 		"scope": "shopping:write",

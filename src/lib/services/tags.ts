@@ -1,5 +1,5 @@
 import { db } from '$lib/db/index.js';
-import { tags, diaryEntryTags, ideaTags } from '$lib/db/schema';
+import { tags, diaryEntryTags, ideaTags, mediaTags } from '$lib/db/schema';
 import { eq, and, notInArray } from 'drizzle-orm';
 
 /**
@@ -73,7 +73,15 @@ export function cleanupOrphanTags(userId: string): void {
 		.all()
 		.map((r) => r.tagId);
 
-	const referencedIds = [...new Set([...diaryRefIds, ...ideaRefIds])];
+	const mediaRefIds = db
+		.select({ tagId: mediaTags.tagId })
+		.from(mediaTags)
+		.innerJoin(tags, eq(mediaTags.tagId, tags.id))
+		.where(eq(tags.userId, userId))
+		.all()
+		.map((r) => r.tagId);
+
+	const referencedIds = [...new Set([...diaryRefIds, ...ideaRefIds, ...mediaRefIds])];
 
 	if (referencedIds.length === 0) {
 		db.delete(tags).where(eq(tags.userId, userId)).run();
@@ -97,5 +105,21 @@ export function replaceIdeaTags(ideaId: number, tagNames: string[], userId: stri
 
 	if (tagNames.length > 0) {
 		linkIdeaTags(ideaId, ensureTagIds(tagNames, userId), userId);
+	}
+}
+
+export function linkMediaTags(mediaId: number, tagIds: number[], userId: string): void {
+	for (const tagId of tagIds) {
+		db.insert(mediaTags).values({ userId, mediaId, tagId }).run();
+	}
+}
+
+export function replaceMediaTags(mediaId: number, tagNames: string[], userId: string): void {
+	db.delete(mediaTags)
+		.where(and(eq(mediaTags.mediaId, mediaId), eq(mediaTags.userId, userId)))
+		.run();
+
+	if (tagNames.length > 0) {
+		linkMediaTags(mediaId, ensureTagIds(tagNames, userId), userId);
 	}
 }

@@ -10,6 +10,33 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.140.0 — 2026-09-11
+
+- **Finance grew three tabs.** Income, before Bills, records money coming in
+  exactly the way bills record money going out — a name, an expected amount,
+  a rhythm, one payment per period. Net draws the last twelve months as
+  paired in/out bars with the net under each — once from your own records,
+  once from your imported statements, never merged, so nothing counts twice.
+  And Imports reads bank exports: pick the export (Nubank conta corrente and
+  the card's monthly export to start), hand over the file or paste it, and
+  the lines land deduplicated — the same file twice adds nothing. A "flip
+  amounts" switch covers an export whose signs mean the opposite.
+- **Statement lines sort themselves by your rules.** A category or tag is a
+  regular expression: any line matching it belongs. Categories partition —
+  first match wins, so a month's totals add up — while tags overlap freely,
+  which is what makes a broad "healthy" tag possible. Rules apply at read
+  time, so one written today sorts last year's lines too.
+- **A Gallery, of albums.** Pictures live in albums; the same picture put in
+  a second album is one picture and two references, never a copy — remove it
+  from one album and it stays in the other; remove it from its last and it
+  is deleted for real, and the confirmation says which is about to happen.
+  Drag a picture onto another album to move it, hold Ctrl to have it in
+  both; pictures take tags, and choosing files is the upload. Self-hosters
+  set their own ceilings (`gallery_albums`, `album_images` in config.toml).
+- **The self-contained app fails out loud instead of hanging.** A device
+  whose WebView cannot hold the database, or whose worker never answers, now
+  gets a sentence naming the problem — never an eternal splash screen.
+
 ## 0.139.0 — 2026-09-11
 
 - **A notebook can be maximized.** The whole screen for reading or writing,

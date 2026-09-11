@@ -27,6 +27,17 @@ type Reply = { id: number; ok: true; result: unknown } | { id: number; ok: false
 let tables = 0;
 
 async function open(): Promise<Oo1Db> {
+	// Said out loud before anything is attempted: a WebView too old for
+	// private file storage would otherwise fail somewhere deep in SQLite's
+	// setup, or not fail at all — and an eternal splash screen is the worst
+	// of all error messages.
+	if (typeof navigator.storage?.getDirectory !== 'function')
+		throw new Error(
+			'This browser cannot keep the database: it has no origin-private file ' +
+				'storage. A system WebView (or Chrome) from 2022 or newer is needed. ' +
+				`Here: ${navigator.userAgent}`
+		);
+
 	const { default: init } = await import('@sqlite.org/sqlite-wasm');
 	const sqlite3 = await (init as (o?: unknown) => Promise<never>)({
 		locateFile: () => '/sqlite3.wasm'

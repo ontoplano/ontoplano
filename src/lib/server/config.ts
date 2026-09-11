@@ -103,6 +103,12 @@ tagline = "Managing life, one week at a time"
 max_kilobytes = "500"
 recipe_images = "6"
 entry_images = "20"
+
+# The gallery's ceilings: how many albums an account may keep, and how many
+# pictures one album may hold. Generous here because this instance is yours;
+# a hosted instance names tighter ones.
+gallery_albums = "100"
+album_images = "500"
 account_megabytes = "250"
 `;
 
@@ -178,6 +184,10 @@ export interface OntoplanoConfig {
 		entryImages: number;
 		/** Everything one account's pictures may add up to, in megabytes. */
 		accountMegabytes: number;
+		/** How many albums one account may keep. */
+		galleryAlbums: number;
+		/** How many pictures one album may hold. */
+		albumImages: number;
 	};
 	newsletter: {
 		/**
@@ -266,6 +276,8 @@ tagline = "${config.instance.tagline}"
 max_kilobytes = "${config.media.maxKilobytes}"
 recipe_images = "${config.media.recipeImages}"
 entry_images = "${config.media.entryImages}"
+gallery_albums = "${config.media.galleryAlbums}"
+album_images = "${config.media.albumImages}"
 account_megabytes = "${config.media.accountMegabytes}"
 `;
 }
@@ -375,6 +387,11 @@ export function loadConfig(): OntoplanoConfig {
 			maxKilobytes: bounded(media.max_kilobytes, DEFAULT_PICTURE_KILOBYTES, 16, 20_000),
 			recipeImages: bounded(media.recipe_images, 6, 1, 50),
 			entryImages: bounded(media.entry_images, 20, 1, 200),
+			// Generous by default — the defaults are a stranger's own instance,
+			// and their disk is theirs. A hosted instance names its own ceilings
+			// in its config.
+			galleryAlbums: bounded(media.gallery_albums, 100, 1, 10_000),
+			albumImages: bounded(media.album_images, 500, 1, 100_000),
 			accountMegabytes: bounded(media.account_megabytes, 250, 1, 100_000)
 		}
 	};

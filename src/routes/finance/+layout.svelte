@@ -6,8 +6,12 @@
 
 	let { children }: { children: Snippet } = $props();
 
-	// One tab for now; the section is built to grow (income, a month's shape).
-	const tabs = [{ href: resolve('/finance/bills'), label: 'Bills' }];
+	const tabs = [
+		{ href: resolve('/finance/income'), label: 'Income' },
+		{ href: resolve('/finance/bills'), label: 'Bills' },
+		{ href: resolve('/finance/net'), label: 'Net' },
+		{ href: resolve('/finance/imports'), label: 'Imports' }
+	];
 
 	function isActive(href: string): boolean {
 		return page.url.pathname === href;
