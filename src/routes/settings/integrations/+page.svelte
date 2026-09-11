@@ -7,6 +7,8 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import type { ActionData, PageData } from './$types';
+	import Banner from '$lib/components/Banner.svelte';
+	import { whyNot } from '$lib/capabilities';
 
 	/**
 	 * Letting an assistant use this account, for somebody who has never heard
@@ -21,6 +23,9 @@
 	 * anybody wiring up a script.
 	 */
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	/** Null on a normal instance; a sentence naming both ways round it otherwise. */
+	const assistantsWhyNot = $derived(whyNot(data.capabilities, 'assistants'));
 
 	let naming = $state(false);
 	/*
@@ -152,6 +157,19 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 		description="Your week, to-do list, diary, shopping list or whatever you want, reachable by an assistant you already talk to."
 	>
 		<!--
+			Said, not hidden.
+
+			An instance on a phone cannot do this, and the temptation is to drop
+			the card. But somebody who installed the app from a store has no other
+			way to learn that this exists at all, and a feature nobody can see is a
+			feature nobody asks for. So it stays, greyed, with the reason and both
+			ways round it — ours is not the only one.
+		-->
+		{#if assistantsWhyNot}
+			<div class="mb-4"><Banner kind="info" message={assistantsWhyNot} /></div>
+		{/if}
+		<div class:opacity-60={assistantsWhyNot} class:pointer-events-none={assistantsWhyNot}>
+			<!--
 			Room to read.
 
 			Everything here was text-sm at a tight leading, stacked, and stretched
@@ -162,49 +180,49 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 			the app reads at, and a paragraph stops at a length an eye can track
 			back from. The card still uses the width; only the sentences stop.
 		-->
-		<div class="space-y-8">
-			<!-- Step one. -->
-			<div>
-				<h3 class="text-base font-semibold text-gray-900">1 · Make a key</h3>
-				<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
-					A key is the password you hand to the assistant. It is shown once, when you make it.
-					<!-- Its own line, not the tail of the one above: a warning broken across
+			<div class="space-y-8">
+				<!-- Step one. -->
+				<div>
+					<h3 class="text-base font-semibold text-gray-900">1 · Make a key</h3>
+					<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
+						A key is the password you hand to the assistant. It is shown once, when you make it.
+						<!-- Its own line, not the tail of the one above: a warning broken across
 					     a wrap reads as an afterthought, and this one is the point. -->
-					<br />
-					<strong class="font-semibold text-red-600">Do not share it with anyone.</strong>
-				</p>
+						<br />
+						<strong class="font-semibold text-red-600">Do not share it with anyone.</strong>
+					</p>
 
-				<!--
+					<!--
 					The button and the form occupy the same place: naming a key is one
 					field, and a form that appears below the button it replaced pushes
 					everything under it down the page.
 				-->
-				{#if naming}
-					<form
-						method="post"
-						action="?/createKey"
-						use:enhance={() => {
-							return async ({ update }) => {
-								naming = false;
-								await update();
-							};
-						}}
-						class="mt-2 flex flex-wrap items-center gap-2"
-					>
-						<div class="flex w-full flex-wrap items-center gap-2">
-							<OneLine
-								name="label"
-								placeholder="AI assistant"
-								class="input w-auto flex-1 sm:max-w-64"
-								ariaLabel="What to call this key"
-							/>
-							<button class="btn btn-primary btn-sm" type="submit">Make it</button>
-							<button type="button" class="btn btn-sm btn-quiet" onclick={() => (naming = false)}>
-								Cancel
-							</button>
-						</div>
+					{#if naming}
+						<form
+							method="post"
+							action="?/createKey"
+							use:enhance={() => {
+								return async ({ update }) => {
+									naming = false;
+									await update();
+								};
+							}}
+							class="mt-2 flex flex-wrap items-center gap-2"
+						>
+							<div class="flex w-full flex-wrap items-center gap-2">
+								<OneLine
+									name="label"
+									placeholder="AI assistant"
+									class="input w-auto flex-1 sm:max-w-64"
+									ariaLabel="What to call this key"
+								/>
+								<button class="btn btn-primary btn-sm" type="submit">Make it</button>
+								<button type="button" class="btn btn-sm btn-quiet" onclick={() => (naming = false)}>
+									Cancel
+								</button>
+							</div>
 
-						<!--
+							<!--
 							What it may do, ticked and changeable.
 
 							Every box is on to begin with, because the whole set is what an
@@ -218,13 +236,13 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 							this list, and nor is deleting. The Integrations tab has the form
 							with all of them.
 						-->
-						<fieldset class="w-full">
-							<legend class="eyebrow text-gray-600">What it may do</legend>
-							<p class="mt-1 mb-3 max-w-2xl text-xs leading-relaxed text-gray-500">
-								All of it, unless you say otherwise. Anything unticked stays out of reach.
-							</p>
+							<fieldset class="w-full">
+								<legend class="eyebrow text-gray-600">What it may do</legend>
+								<p class="mt-1 mb-3 max-w-2xl text-xs leading-relaxed text-gray-500">
+									All of it, unless you say otherwise. Anything unticked stays out of reach.
+								</p>
 
-							<!--
+								<!--
 								A grid, not a column of sentences.
 
 								Every grant is a thing and a verb, and written out as twenty-six
@@ -235,54 +253,55 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 								glance down two columns. The sentence is still on the row, as its
 								title, for anybody who wants the detail.
 							-->
-							<div class="max-w-md overflow-x-auto">
-								<table class="w-full text-sm">
-									<thead>
-										<tr class="border-b border-gray-200">
-											<th class="py-1 text-left font-normal text-gray-500"></th>
-											<th class="eyebrow w-16 py-1 text-center text-gray-600">Read</th>
-											<th class="eyebrow w-16 py-1 text-center text-gray-600">Write</th>
-										</tr>
-									</thead>
-									<tbody class="divide-y divide-gray-200">
-										{#each data.permissions as row (row.subject)}
-											<tr>
-												<td class="py-1.5 text-gray-700" title={row.says.join('\n')}>{row.label}</td
-												>
-												{#each [row.read, row.write] as scope, i (i)}
-													<td class="py-1.5 text-center">
-														<!--
+								<div class="max-w-md overflow-x-auto">
+									<table class="w-full text-sm">
+										<thead>
+											<tr class="border-b border-gray-200">
+												<th class="py-1 text-left font-normal text-gray-500"></th>
+												<th class="eyebrow w-16 py-1 text-center text-gray-600">Read</th>
+												<th class="eyebrow w-16 py-1 text-center text-gray-600">Write</th>
+											</tr>
+										</thead>
+										<tbody class="divide-y divide-gray-200">
+											{#each data.permissions as row (row.subject)}
+												<tr>
+													<td class="py-1.5 text-gray-700" title={row.says.join('\n')}
+														>{row.label}</td
+													>
+													{#each [row.read, row.write] as scope, i (i)}
+														<td class="py-1.5 text-center">
+															<!--
 															A box that is not offered is drawn anyway, disabled: an
 															empty cell reads as a column that ran out, and the
 															question "can it write to this?" deserves the answer
 															"no, never" rather than no answer.
 														-->
-														{#if scope}
-															<input
-																type="checkbox"
-																name="scopes"
-																value={scope}
-																checked
-																aria-label="{row.label}: {i === 0 ? 'read' : 'write'}"
-															/>
-														{:else}
-															<input
-																type="checkbox"
-																disabled
-																aria-label="{row.label}: {i === 0
-																	? 'read'
-																	: 'write'} — not something this can do"
-															/>
-														{/if}
-													</td>
-												{/each}
-											</tr>
-										{/each}
-									</tbody>
-								</table>
-							</div>
+															{#if scope}
+																<input
+																	type="checkbox"
+																	name="scopes"
+																	value={scope}
+																	checked
+																	aria-label="{row.label}: {i === 0 ? 'read' : 'write'}"
+																/>
+															{:else}
+																<input
+																	type="checkbox"
+																	disabled
+																	aria-label="{row.label}: {i === 0
+																		? 'read'
+																		: 'write'} — not something this can do"
+																/>
+															{/if}
+														</td>
+													{/each}
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								</div>
 
-							<!--
+								<!--
 								Deleting, apart from the rest and unticked.
 
 								It is not another column: removing a person or a habit's whole
@@ -291,25 +310,29 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 								of. Red on its own ground, which is the app's colour for a thing
 								that goes wrong.
 							-->
-							<label
-								class="mt-3 flex max-w-md items-start gap-2 border border-red-200 bg-red-50 px-3 py-2 text-sm text-gray-700"
-							>
-								<input type="checkbox" name="scopes" value="destructive" class="mt-0.5" />
-								<span>
-									<strong class="font-semibold text-red-600">…and let it delete things</strong>
-									<span class="mt-0.5 block text-xs leading-relaxed text-gray-500">
-										Removing is permanent. Without this, an assistant can add and change things but
-										never take them away.
+								<label
+									class="mt-3 flex max-w-md items-start gap-2 border border-red-200 bg-red-50 px-3 py-2 text-sm text-gray-700"
+								>
+									<input type="checkbox" name="scopes" value="destructive" class="mt-0.5" />
+									<span>
+										<strong class="font-semibold text-red-600">…and let it delete things</strong>
+										<span class="mt-0.5 block text-xs leading-relaxed text-gray-500">
+											Removing is permanent. Without this, an assistant can add and change things
+											but never take them away.
+										</span>
 									</span>
-								</span>
-							</label>
-						</fieldset>
-					</form>
-				{:else}
-					<button type="button" class="btn btn-primary btn-sm mt-2" onclick={() => (naming = true)}>
-						Make a key
-					</button>
-					<!--
+								</label>
+							</fieldset>
+						</form>
+					{:else}
+						<button
+							type="button"
+							class="btn btn-primary btn-sm mt-2"
+							onclick={() => (naming = true)}
+						>
+							Make a key
+						</button>
+						<!--
 						The count and the way to them, and nothing else.
 
 						It used to carry the warning about a secret being shown once, which
@@ -317,42 +340,42 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 						somebody who has not done anything yet. That warning belongs to the
 						moment a key exists, and it is there.
 					-->
-					{#if data.assistants.length > 0}
-						<p class="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500">
-							You already have {data.assistants.length === 1
-								? `one, “${data.assistants[0].name}”`
-								: data.assistants.length}.
-							<a
-								href={resolve('/settings/integrations/connections')}
-								class="underline underline-offset-2"
-								>See {data.assistants.length === 1 ? 'it' : 'them'}
-								here</a
-							>.
-						</p>
+						{#if data.assistants.length > 0}
+							<p class="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500">
+								You already have {data.assistants.length === 1
+									? `one, “${data.assistants[0].name}”`
+									: data.assistants.length}.
+								<a
+									href={resolve('/settings/integrations/connections')}
+									class="underline underline-offset-2"
+									>See {data.assistants.length === 1 ? 'it' : 'them'}
+									here</a
+								>.
+							</p>
+						{/if}
 					{/if}
-				{/if}
 
-				{#if key}
-					<!--
+					{#if key}
+						<!--
 						Shown once, and said so twice: it is not recoverable, and the
 						pasteable things below already have it in them, so the common case
 						needs nothing copied from here at all.
 					-->
-					<div class="mt-3 border border-gray-300 bg-gray-50 p-3">
-						<span class="eyebrow block text-gray-600">Your new key</span>
-						<div class="mt-1">
-							<CopyBlock text={key} label="Copy the key" />
+						<div class="mt-3 border border-gray-300 bg-gray-50 p-3">
+							<span class="eyebrow block text-gray-600">Your new key</span>
+							<div class="mt-1">
+								<CopyBlock text={key} label="Copy the key" />
+							</div>
+							<p class="mt-2 text-xs leading-relaxed text-gray-500">
+								<strong class="font-semibold text-gray-900"
+									>This secret will only be shown once.</strong
+								> It is already in the text below.
+							</p>
 						</div>
-						<p class="mt-2 text-xs leading-relaxed text-gray-500">
-							<strong class="font-semibold text-gray-900"
-								>This secret will only be shown once.</strong
-							> It is already in the text below.
-						</p>
-					</div>
-				{/if}
-			</div>
+					{/if}
+				</div>
 
-			<!--
+				<!--
 				Step two: the paste, and only the paste.
 
 				The command used to be first, under "Using Claude Code?", which asked
@@ -363,46 +386,49 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 				configuration file edited, which is a page of its own and lives in the
 				docs.
 			-->
-			<div>
-				<h3 class="text-base font-semibold text-gray-900">2 · Hand it to your assistant</h3>
-				<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">Which one are you using?</p>
+				<div>
+					<h3 class="text-base font-semibold text-gray-900">2 · Hand it to your assistant</h3>
+					<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
+						Which one are you using?
+					</p>
 
-				<!--
+					<!--
 					The picker, and the text under it changing with it.
 
 					A row of names rather than a select: there are five, they are short,
 					and what is being chosen changes what is on screen — which is a set
 					of tabs, not a form field.
 				-->
-				<div class="mt-2 flex flex-wrap gap-1">
-					{#each clients as client (client.id)}
-						<!-- Buttons that press in, not tabs: a tab role promises a tabpanel
+					<div class="mt-2 flex flex-wrap gap-1">
+						{#each clients as client (client.id)}
+							<!-- Buttons that press in, not tabs: a tab role promises a tabpanel
 						     and arrow-key navigation between them, and half an ARIA pattern
 						     is worse to a screen reader than none. `aria-pressed` says what
 						     this actually is. -->
-						<button
-							type="button"
-							aria-pressed={using === client.id}
-							onclick={() => (using = client.id)}
-							class="btn btn-sm {using === client.id ? 'btn-primary' : 'btn-quiet'}"
-						>
-							{client.name}
-						</button>
-					{/each}
+							<button
+								type="button"
+								aria-pressed={using === client.id}
+								onclick={() => (using = client.id)}
+								class="btn btn-sm {using === client.id ? 'btn-primary' : 'btn-quiet'}"
+							>
+								{client.name}
+							</button>
+						{/each}
+					</div>
+
+					<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">{chosen.note}</p>
+
+					<div class="mt-2 max-w-3xl">
+						<CopyBlock text={chosen.text} wrap={chosen.wrap} label="Copy this" />
+					</div>
+
+					{#if !key}
+						<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
+							It says <code class="font-mono">YOUR_KEY</code> until you make one above — then it comes
+							with the key already in it.
+						</p>
+					{/if}
 				</div>
-
-				<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">{chosen.note}</p>
-
-				<div class="mt-2 max-w-3xl">
-					<CopyBlock text={chosen.text} wrap={chosen.wrap} label="Copy this" />
-				</div>
-
-				{#if !key}
-					<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
-						It says <code class="font-mono">YOUR_KEY</code> until you make one above — then it comes with
-						the key already in it.
-					</p>
-				{/if}
 			</div>
 		</div>
 	</Card>

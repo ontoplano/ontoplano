@@ -162,6 +162,7 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_HEALTH_TOKEN`               | `src/lib/server/settings.ts`, `src/routes/api/jobs/reminders/+server.ts`, `src/routes/api/jobs/weekly-reviews/+server.ts`, `src/routes/healthz/+server.ts` |
 | `ONTOPLANO_HTTPS`                      | `src/hooks.server.ts`                                                                                                                                      |
 | `ONTOPLANO_JURISDICTION`               | `src/lib/server/services/legal.ts`                                                                                                                         |
+| `ONTOPLANO_LOCAL`                      | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_MAIL_FROM`                  | `src/lib/server/services/push.ts`                                                                                                                          |
 | `ONTOPLANO_OPERATOR`                   | `src/lib/server/services/legal.ts`                                                                                                                         |
 | `ONTOPLANO_ORIGIN`                     | `scripts/build-twa.mjs`                                                                                                                                    |

@@ -7,6 +7,7 @@ import { buildCtx } from '$lib/server/services/ctx';
 import { toActionFailure } from '$lib/server/http-errors';
 import { listAssistantCalls, putBack } from '$lib/server/services/assistant-log';
 import { SCOPES, createToken, isCalendarLink, listTokens } from '$lib/server/services/tokens';
+import { capabilities } from '$lib/server/settings';
 
 /** What each family of permissions is called, in the words the app uses. */
 const SUBJECT_LABELS: Record<string, string> = {
@@ -75,6 +76,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	return {
 		origin: url.origin,
+		/*
+		 * What this instance can do, which decides whether half of this page is
+		 * anything but a description. An assistant reaches in from the internet,
+		 * and an instance living on a phone is not somewhere anything can reach.
+		 */
+		capabilities: capabilities(),
 		assistants: assistants.map((t) => ({ id: t.id, name: t.name, createdAt: t.createdAt })),
 		/*
 		 * What an assistant may do, as a grid rather than a column of sentences.

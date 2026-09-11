@@ -10,6 +10,16 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.133.0 — 2026-09-11
+
+- **An instance now says what it cannot do, and why.** Some things are somebody
+  else reaching in — a calendar client fetching your feed, an assistant, an app
+  pushing readings — and some happen while nobody is looking, like the Monday
+  review mail. An instance that cannot do one of those now says so where the
+  feature lives, with both ways round it, instead of offering a button that
+  quietly does nothing. Nothing changes on an ordinary server, which can do all
+  of it.
+
 ## 0.132.0 — 2026-09-11
 
 - **Every release can now be checked.** A `SHA256SUMS` file goes up with the

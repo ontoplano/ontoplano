@@ -9,6 +9,7 @@ import { DEFAULT_CURRENCY, isCurrency, type Currency } from '../money.js';
 import { isHideableSection, type HideableSection } from '../sections.js';
 import { SECTIONS } from '../colors.js';
 import { isHexColor } from '../nav-order.js';
+import { FULL, type Capabilities } from '$lib/capabilities';
 
 export function getUserSetting(userId: string, key: string): string | null {
 	const row = db
@@ -367,6 +368,37 @@ export function markOnboarded(userId: string): void {
  */
 export function isSelfHosted(): boolean {
 	return process.env.ONTOPLANO_SELF_HOST === 'true';
+}
+
+/**
+ * Is this instance running on the device it is used from?
+ *
+ * The phone build will be: ontoplano serving itself, on the phone, for the one
+ * person holding it. That is a perfectly good instance and most of the app
+ * does not care — but a handful of features are somebody else dialling in, or
+ * something happening while nobody is looking, and a phone can do neither.
+ *
+ * Declared rather than detected, and off by default, because the default here
+ * is a stranger's own server: a machine that stays on and answers the door.
+ * Only the build that knows it is living on a phone says so.
+ */
+export function isLocalInstance(): boolean {
+	return process.env.ONTOPLANO_LOCAL === 'true';
+}
+
+/**
+ * What this instance can do, as the two questions in `$lib/capabilities.ts`.
+ *
+ * Not a plan, and it must never be read as one. Everything in the app is in
+ * the repository and anybody may run all of it; this says where *this copy*
+ * happens to be running, which is a fact rather than a purchase.
+ */
+export function capabilities(): Capabilities {
+	if (!isLocalInstance()) return FULL;
+	// Nothing can reach a phone — mobile data is behind carrier-grade NAT, so
+	// there is not even a port to forward — and it is not running when the app
+	// is closed.
+	return { reachable: false, awake: false };
 }
 
 /**
