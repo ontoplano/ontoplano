@@ -7,7 +7,7 @@
 	import { navigating, page } from '$app/state';
 	import { live } from '$lib/live';
 	import { afterNavigate, goto, onNavigate } from '$app/navigation';
-	import { PAGE_TURN } from '$lib/page-turn.js';
+	import { PAGE_TURN, runDissolve } from '$lib/page-turn';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { NAV_PLACES } from '$lib/sections-nav';
@@ -67,8 +67,7 @@
 	 *
 	 * The stylesheet carries the same number as a fallback so a page renders
 	 * correctly before any of this runs; stamping it here is what makes the
-	 * speed a single line to change in `$lib/page-turn.js` rather than a
-	 * regenerated stylesheet.
+	 * speed a single line to change in `$lib/page-turn.ts`.
 	 */
 	$effect(() => {
 		document.documentElement.style.setProperty('--page-turn', `${PAGE_TURN.durationMs}ms`);
@@ -77,7 +76,10 @@
 	onNavigate((navigation) => {
 		const start = (
 			document as Document & {
-				startViewTransition?: (run: () => Promise<void>) => { finished: Promise<void> };
+				startViewTransition?: (run: () => Promise<void>) => {
+					ready: Promise<void>;
+					finished: Promise<void>;
+				};
 			}
 		).startViewTransition;
 
@@ -87,7 +89,7 @@
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
 		return new Promise((resolve) => {
-			start.call(document, async () => {
+			const turn = start.call(document, async () => {
 				resolve();
 				// Waited for, but never indefinitely. The await is what makes the
 				// browser photograph the new page rather than the old one; a
@@ -98,6 +100,11 @@
 					new Promise((done) => setTimeout(done, PAGE_TURN.holdMs))
 				]);
 			});
+
+			// `ready` is the moment the two snapshots exist and their animations
+			// are about to run, which is the only moment the filter can start
+			// sliding without the first frames landing on nothing.
+			turn.ready.then(runDissolve, () => undefined);
 		});
 	});
 
@@ -458,6 +465,76 @@
 </script>
 
 <svelte:window onkeydown={handleGlobalKeydown} onclick={handleClickOutside} />
+
+<!--
+	The page turn's two filters, which have to live in the document the
+	transition happens in.
+
+	`feTurbulence` draws a field of noise; `feColorMatrix` moves its red channel
+	into alpha; `feComponentTransfer` multiplies that alpha by a large slope and
+	slides it with an intercept, which clamps almost every pixel to fully on or
+	fully off. Sliding the intercept is the dissolve, and `runDissolve` is what
+	slides it. Both filters take the same seed and frequency, so the pixels one
+	gives up are exactly the pixels the other takes — the handover an e-reader
+	makes when it flips a dot.
+-->
+<svg width="0" height="0" aria-hidden="true" class="absolute" focusable="false">
+	<defs>
+		<filter
+			id={PAGE_TURN.outFilter}
+			x="0"
+			y="0"
+			width="100%"
+			height="100%"
+			color-interpolation-filters="sRGB"
+		>
+			<feTurbulence
+				type="fractalNoise"
+				baseFrequency={PAGE_TURN.grain}
+				numOctaves="1"
+				seed={PAGE_TURN.seed}
+				result="noise"
+			/>
+			<feColorMatrix
+				in="noise"
+				type="matrix"
+				values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 0"
+				result="field"
+			/>
+			<feComponentTransfer in="field" result="threshold">
+				<feFuncA id="{PAGE_TURN.outFilter}-ramp" type="linear" slope="1" intercept="0" />
+			</feComponentTransfer>
+			<feComposite in="SourceGraphic" in2="threshold" operator="in" />
+		</filter>
+
+		<filter
+			id={PAGE_TURN.inFilter}
+			x="0"
+			y="0"
+			width="100%"
+			height="100%"
+			color-interpolation-filters="sRGB"
+		>
+			<feTurbulence
+				type="fractalNoise"
+				baseFrequency={PAGE_TURN.grain}
+				numOctaves="1"
+				seed={PAGE_TURN.seed}
+				result="noise"
+			/>
+			<feColorMatrix
+				in="noise"
+				type="matrix"
+				values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 0"
+				result="field"
+			/>
+			<feComponentTransfer in="field" result="threshold">
+				<feFuncA id="{PAGE_TURN.inFilter}-ramp" type="linear" slope="1" intercept="0" />
+			</feComponentTransfer>
+			<feComposite in="SourceGraphic" in2="threshold" operator="in" />
+		</filter>
+	</defs>
+</svg>
 
 {#if data.user && !bareScreen}
 	<!--
