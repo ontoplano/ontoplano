@@ -375,7 +375,16 @@ android-self-contained: self-contained
 	@# no capacitor/node_modules and must not be expected to know that.
 	@[ -d capacitor/node_modules ] || (cd capacitor && npm install --no-audit --no-fund)
 	cd capacitor && npx cap sync android
-	cd capacitor/android && ANDROID_HOME=$${ANDROID_HOME:-$$HOME/android-sdk} ./gradlew -q assembleDebug
+	@# The SDK, found the way the TWA build finds it: the environment first,
+	@# then the toolchain bubblewrap configured, then the conventional path.
+	@sdk="$${ANDROID_HOME:-}"; \
+	[ -n "$$sdk" ] || sdk=$$(node -e "try{console.log(require(require('os').homedir()+'/.bubblewrap/config.json').androidSdkPath||'')}catch{console.log('')}"); \
+	[ -n "$$sdk" ] || { [ -d "$$HOME/android-sdk" ] && sdk="$$HOME/android-sdk"; }; \
+	if [ -z "$$sdk" ] || [ ! -d "$$sdk" ]; then \
+		echo "No Android SDK found. Set ANDROID_HOME, or run 'make android' once so ~/.bubblewrap/config.json names one."; \
+		exit 1; \
+	fi; \
+	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q assembleDebug
 	@echo "APK: capacitor/android/app/build/outputs/apk/debug/app-debug.apk"
 
 ## run the built server
