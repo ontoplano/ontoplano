@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { tick, type Snippet } from 'svelte';
+	import { BackCloses } from '$lib/back-closes';
 	import Banner from '$lib/components/Banner.svelte';
+	import { isPhone } from '$lib/breakpoints';
 	import { panelHeight, readViewport } from '$lib/keyboard';
 
 	/**
@@ -154,9 +156,24 @@
 		field?.focus();
 	}
 
+	/**
+	 * On a phone this is a screen, and a screen answers the system back
+	 * gesture: while it is open it holds one history entry, so Android's back
+	 * button closes the form instead of leaving the app. Closing it any other
+	 * way — the arrow, Escape, a saved form — takes the entry back out.
+	 */
+	const back = new BackCloses(() => handleClose());
+
+	$effect(() => {
+		if (open && isPhone()) back.claim();
+	});
+
+	$effect(() => back.watch());
+
 	function handleClose() {
 		open = false;
 		onclose?.();
+		back.release();
 	}
 
 	/**

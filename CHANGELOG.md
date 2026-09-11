@@ -10,6 +10,26 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.139.0 — 2026-09-11
+
+- **A notebook can be maximized.** The whole screen for reading or writing,
+  with a type-size control in steps that the device remembers. Leaving puts
+  everything — a half-written note included — back exactly where it was, and
+  on a phone the back gesture leaves it too.
+
+## 0.138.0 — 2026-09-11
+
+- **No side margins on a phone.** Below the phone breakpoint a card takes the
+  screen edge to edge and loses its side borders, so a small screen spends
+  its width on the content rather than on white space either side of it.
+
+## 0.137.0 — 2026-09-11
+
+- **The back gesture closes a form instead of leaving the app.** A dialog on
+  a phone is a screen, and a screen owns a history entry now: Android's back
+  button — or the browser's — closes it and stays on the page it was opened
+  from.
+
 ## 0.136.0 — 2026-09-11
 
 - **The app can run entirely on your own device.** `make local` builds a copy

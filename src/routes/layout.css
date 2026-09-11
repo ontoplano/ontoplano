@@ -95,6 +95,13 @@
 	--max-width-page: 110rem;
 
 	/*
+	 * How wide a column of prose may get, where reading is the whole point —
+	 * cook mode, a maximized notebook. Past this a line is one the eye loses
+	 * its place tracking back from.
+	 */
+	--max-width-reading: 48rem;
+
+	/*
 	 * The dimmer behind an overlay.
 	 *
 	 * Its own token because it must not ride the ramp. The gray ramp inverts in
@@ -434,6 +441,47 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 	 * with it. This is still tight; it just contains what it is setting.
 	 */
 	line-height: 1.15;
+}
+
+/*
+ * The page's side gutter, and where it stops existing.
+ *
+ * One variable rather than `px-4 sm:px-6` on the shell, because the phone
+ * rule below has to subtract exactly what the shell added: a card that bleeds
+ * by a different amount than the padding either leaves a sliver of gutter or
+ * makes the page scroll sideways, and nothing type-checks across that gap.
+ */
+.page-gutter {
+	--page-gutter: 1rem;
+	padding-inline: var(--page-gutter);
+}
+
+@media (min-width: 640px) {
+	.page-gutter {
+		--page-gutter: 1.5rem;
+	}
+}
+
+/*
+ * No side margins on a phone.
+ *
+ * A card on a 390px screen was spending 8% of its width on white space either
+ * side, plus two borders saying where the screen already ends. Below the
+ * phone breakpoint a card takes the whole width — out of the gutter by
+ * exactly the gutter — and loses its side borders, keeping the horizontal
+ * rules between rows. The text inside keeps its inset, because a card pads
+ * itself; only the surface reaches the edge.
+ *
+ * The default, not a class call sites remember: any card standing in the page
+ * column gets it. The exceptions select themselves — a card inside another
+ * card, inside a tinted panel (the board's columns and rail), or inside a
+ * dialog is not standing in the gutter, so it has nothing to bleed out of.
+ */
+@media (max-width: 639px) {
+	.page-gutter .shadow-card:not(.shadow-card .shadow-card):not(.bg-gray-50 *):not(dialog *) {
+		margin-inline: calc(-1 * var(--page-gutter));
+		border-inline-width: 0;
+	}
 }
 
 /*

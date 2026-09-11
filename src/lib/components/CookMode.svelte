@@ -135,7 +135,7 @@
 		</header>
 
 		<div class="min-h-0 flex-1 overflow-y-auto">
-			<div class="mx-auto max-w-3xl px-4 py-6">
+			<div class="mx-auto max-w-reading px-4 py-6">
 				{#if ingredients.length}
 					<!-- Pinned, because the question during step four is always "how much
 					     of the thing from step one". -->
