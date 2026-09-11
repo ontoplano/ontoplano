@@ -74,6 +74,27 @@ describe('the bytes a calendar client is handed', () => {
 		expect(build()).toContain('X-WR-CALNAME:Ontoplano');
 	});
 
+	test('stamp themselves in UTC, which is the one time here that is not local', () => {
+		/*
+		 * DTSTAMP is not an appointment, it is when the feed was written, and the
+		 * format requires UTC for it. It used to be emitted naive like the block
+		 * times — a floating instant, which is a contradiction — and the round
+		 * trip through our own parser could never see it, because our parser is
+		 * as lenient about it as Google is.
+		 */
+		const stamped = build().match(/DTSTAMP:(\S+)/g) ?? [];
+		expect(stamped.length).toBeGreaterThan(0);
+		for (const line of stamped) expect(line).toMatch(/^DTSTAMP:\d{8}T\d{6}Z$/);
+		// MONDAY is 08:00 with no zone, so the process's own zone decides the
+		// instant; what matters is that the stamp is that instant, expressed in
+		// UTC, rather than the wall clock it was written with.
+		expect(stamped[0]).toBe(
+			`DTSTAMP:${MONDAY.toISOString()
+				.replace(/[-:]/g, '')
+				.replace(/\.\d{3}/, '')}`
+		);
+	});
+
 	test('and say how often to come back', () => {
 		const text = build();
 		expect(text).toContain('REFRESH-INTERVAL;VALUE=DURATION:PT1H');

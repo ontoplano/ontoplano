@@ -126,13 +126,13 @@ function uidFor(occurrence: ScheduleOccurrence, host: string): string {
 	return `${occurrence.id.replace(/:/g, '-')}-${occurrence.local_date}@${host}`;
 }
 
-function event(occurrence: ScheduleOccurrence, host: string, now: string): string[] {
+function event(occurrence: ScheduleOccurrence, host: string, stampedAt: string): string[] {
 	const end = addMinutes(occurrence.at_local, occurrence.duration_minutes);
 
 	const lines = [
 		'BEGIN:VEVENT',
 		`UID:${uidFor(occurrence, host)}`,
-		`DTSTAMP:${stamp(now)}`,
+		`DTSTAMP:${stampedAt}`,
 		`DTSTART:${stamp(occurrence.at_local)}`,
 		`DTEND:${stamp(end)}`,
 		`SUMMARY:${escapeText(occurrence.title)}`
@@ -176,7 +176,7 @@ export function buildFeed(
 		includeCompleted: true
 	});
 
-	const now = toLocal(ctx.now);
+	const stampedAt = utcStamp(ctx.now);
 	const lines = [
 		'BEGIN:VCALENDAR',
 		'VERSION:2.0',
@@ -191,7 +191,7 @@ export function buildFeed(
 		'X-PUBLISHED-TTL:PT1H'
 	];
 
-	for (const occurrence of occurrences) lines.push(...event(occurrence, opts.host, now));
+	for (const occurrence of occurrences) lines.push(...event(occurrence, opts.host, stampedAt));
 
 	lines.push('END:VCALENDAR');
 
@@ -200,7 +200,19 @@ export function buildFeed(
 	return lines.map(fold).join('\r\n') + '\r\n';
 }
 
-function toLocal(d: Date): string {
-	const pad = (n: number) => String(n).padStart(2, '0');
-	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+/**
+ * `20260817T080000Z` — when this copy of the feed was written, in UTC.
+ *
+ * The one stamp here that is not wall-clock, and the reason is that it is not
+ * a time anybody keeps an appointment at: DTSTAMP says when the event was
+ * published, which RFC 5545 requires in UTC. It was being written naive like
+ * the others, which is a floating value — a moment with no fixed instant,
+ * which is a contradiction for this property. Lenient clients ignored it;
+ * strict ones are entitled not to.
+ */
+function utcStamp(at: Date): string {
+	return at
+		.toISOString()
+		.replace(/[-:]/g, '')
+		.replace(/\.\d{3}/, '');
 }

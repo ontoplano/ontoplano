@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.129.1 — 2026-09-11
+
+- **Calendar subscriptions are stamped the way the format requires.** Each
+  event said when it was published in local time with no zone on it, which is
+  a contradiction the lenient clients ignored and the strict ones are entitled
+  to refuse. The blocks themselves are unchanged — those are deliberately
+  wall-clock, so 09:00 stays 09:00 wherever you are.
+
 ## 0.129.0 — 2026-09-11
 
 - **The phone app's first screen is a proper one.** It always asked which
