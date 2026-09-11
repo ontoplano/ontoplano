@@ -58,7 +58,7 @@
 	/** The filters ride the URL, so a view can be kept open or shared. */
 	function filter(changes: { q?: string; month?: string }) {
 		const params: [string, string][] = [];
-		if (data.current) params.set('ledger', String(data.current.id));
+		if (data.current) params.push(['ledger', String(data.current.id)]);
 		const q = changes.q ?? data.query;
 		const month = changes.month ?? data.month;
 		if (q) params.push(['q', String(q)]);

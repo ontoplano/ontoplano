@@ -890,14 +890,14 @@ There is no stored consent for somebody with no account, so the only way in
 is an explicit press of the button on the error page. The instance switch
 still decides whether the feature exists at all.
 
-#### `recordBugReport(ctx, input)`
+#### `recordBugReport(ctx, input, kind)`
 
-A bug somebody sat down and reported.
+Something somebody wants the operator to read: a problem, or an idea.
 
-Deliberately not behind the crash-report consent: that switch answers "may
-the app send me things it noticed", and this is a person typing a sentence
-and pressing send. Refusing it because automatic reporting is off would mean
-an instance where nobody can tell the operator anything.
+Both are recorded the same way and both are mailed if the instance names
+an address — the difference is one word in the subject, because "the
+board scrolls wrong" and "the board should scroll the other way" want
+reading in the same place but sorting differently once read.
 
 #### `recentClientErrors(limit)`
 
@@ -1215,6 +1215,20 @@ only there goes with them — bytes nobody can see are not kept.
 #### `uploadToAlbum(ctx, albumId, input)`
 
 A new picture, straight into an album.
+
+#### `importFolder(ctx, files, opts)`
+
+A folder of pictures, as albums.
+
+The browser hands over a whole tree with each file's path inside it, and
+this files each one into the album its folder names: `Birds/Herons/a.jpg`
+becomes the album "Birds — Herons". Nested rather than flattened, because
+somebody who sorted their pictures into folders meant that sorting; joined
+with an em dash rather than made into folders of albums, because an album
+holding albums is a folder, and the gallery deliberately has none.
+
+Everything is deduplicated as it always is: the same picture twice is one
+row and two memberships, so a tree with copies costs its bytes once.
 
 #### `addToAlbum(ctx, albumId, mediaId)`
 

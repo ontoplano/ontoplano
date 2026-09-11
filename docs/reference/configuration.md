@@ -54,9 +54,10 @@ letting it be changed is the operator's call, not the account holder's.
 
 ### `[reports]`
 
-| Key            | Type      | Means                                                         |
-| -------------- | --------- | ------------------------------------------------------------- |
-| `clientErrors` | `boolean` | Whether the app may ask people to send in client-side errors. |
+| Key             | Type      | Means                                                            |
+| --------------- | --------- | ---------------------------------------------------------------- |
+| `clientErrors`  | `boolean` | Whether the app may ask people to send in client-side errors.    |
+| `feedbackEmail` | `string`  | Where a report or a suggestion is mailed, beside being recorded. |
 
 **`clientErrors`**
 
@@ -65,6 +66,15 @@ Whether the app may ask people to send in client-side errors.
 Off by default: a stack trace is somebody's data leaving their browser,
 so the instance opts in, and then each person is asked once and can say
 no. Nothing is ever sent before both have said yes.
+
+**`feedbackEmail`**
+
+Where a report or a suggestion is mailed, beside being recorded.
+
+Empty means nowhere: the instance keeps them in its own table and the
+operator reads them in /admin, which is the right default for
+somebody running this for a household. An instance with somebody
+actually listening names an address here.
 
 ### `[ui]`
 

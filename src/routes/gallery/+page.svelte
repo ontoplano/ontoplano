@@ -11,6 +11,40 @@
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	let showNew = $state(false);
+	let folderForm: HTMLFormElement | undefined = $state();
+	let importing = $state(false);
+
+	/**
+	 * Choosing the folder is the submit.
+	 *
+	 * `webkitdirectory` is how a browser offers a whole tree, and it hands
+	 * each file's path inside it — which is what lets the subfolders become
+	 * albums rather than one flat pile. The attribute is set from script
+	 * because Svelte will not write a non-standard boolean attribute, and the
+	 * property is the part browsers actually read.
+	 */
+	function directory(node: HTMLInputElement) {
+		node.webkitdirectory = true;
+	}
+
+	async function folderChosen(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		if (!input.files?.length) return;
+		importing = true;
+		// The paths ride alongside the files: one hidden field per file, in the
+		// same order, because a File loses `webkitRelativePath` on the way.
+		const form = folderForm;
+		if (!form) return;
+		form.querySelectorAll('input[name="path"]').forEach((el) => el.remove());
+		for (const file of [...input.files]) {
+			const carrier = document.createElement('input');
+			carrier.type = 'hidden';
+			carrier.name = 'path';
+			carrier.value = file.webkitRelativePath || file.name;
+			form.append(carrier);
+		}
+		form.requestSubmit();
+	}
 	let renaming: (typeof data.albums)[number] | null = $state(null);
 	let confirmingDelete: (typeof data.albums)[number] | null = $state(null);
 </script>
@@ -18,10 +52,47 @@
 <div class="space-y-4">
 	<div class="flex items-center justify-between">
 		<h1 class="text-lg font-bold text-gray-900">Gallery</h1>
-		<button class="btn btn-primary btn-sm" onclick={() => (showNew = true)}>
-			<Icon name="plus" /> New album
-		</button>
+		<span class="flex items-center gap-2">
+			<!-- A folder of pictures, with its subfolders as albums. -->
+			<form
+				method="post"
+				action="?/importFolder"
+				enctype="multipart/form-data"
+				bind:this={folderForm}
+				use:enhance={() =>
+					({ update }) => {
+						importing = false;
+						return update({ reset: false });
+					}}
+			>
+				<label class="btn btn-sm cursor-pointer">
+					<Icon name="download" />
+					{importing ? 'Reading the folder…' : 'Import a folder'}
+					<input
+						type="file"
+						name="file"
+						accept="image/png,image/jpeg,image/gif,image/webp"
+						multiple
+						use:directory
+						class="hidden"
+						onchange={folderChosen}
+					/>
+				</label>
+			</form>
+			<button class="btn btn-primary btn-sm" onclick={() => (showNew = true)}>
+				<Icon name="plus" /> New album
+			</button>
+		</span>
 	</div>
+
+	{#if form && 'pictures' in form && form.success}
+		<p class="rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+			{form.pictures} picture{form.pictures === 1 ? '' : 's'} into {form.albums} album{form.albums ===
+			1
+				? ''
+				: 's'}{form.skipped ? `, ${form.skipped} refused` : ''}.
+		</p>
+	{/if}
 
 	{#if data.albums.length === 0}
 		<EmptyState

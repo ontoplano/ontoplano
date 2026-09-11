@@ -16,7 +16,8 @@ export const MAIL_KINDS = {
 	'family-offer': 'Family plan offer',
 	'trial-notice': 'Trial notice',
 	'weekly-review': 'Weekly review',
-	'newsletter-confirm': 'Newsletter confirmation'
+	'newsletter-confirm': 'Newsletter confirmation',
+	feedback: 'Report or suggestion'
 } as const;
 
 export type MailKind = keyof typeof MAIL_KINDS;

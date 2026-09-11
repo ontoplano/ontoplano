@@ -143,7 +143,10 @@ export const actions: Actions = {
 
 		saveConfig({
 			...current,
-			reports: { clientErrors: formData.get('clientErrors') === 'true' }
+			reports: {
+				...current.reports,
+				clientErrors: formData.get('clientErrors') === 'true'
+			}
 		});
 
 		return { success: true, action: 'setClientErrors' };

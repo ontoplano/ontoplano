@@ -17,8 +17,8 @@
  * it finds. Re-runnable: every write is get-or-create.
  */
 import { createHash, randomBytes } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
 
@@ -1788,6 +1788,47 @@ const inAlbum = (albumId, mediaId) => {
 	);
 };
 
+/*
+ * Estevão's own photographs, when they are there.
+ *
+ * `scripts/demo-media/birds/` is his — gitignored, his copyright, his to
+ * compress — and the seed reads whatever it finds there, folders and all:
+ * `birds/herons/a.jpg` becomes the album "Birds — Herons", the same reading
+ * the folder import in the gallery gives. With the directory absent the seed
+ * says so once and carries on, like every other picture here.
+ */
+function seedPictureFolders(root, label) {
+	let dirents;
+	try {
+		dirents = readdirSync(join(here, 'demo-media', root), { withFileTypes: true, recursive: true });
+	} catch {
+		console.log(`  no scripts/demo-media/${root}/ — seeding the gallery without it`);
+		return 0;
+	}
+
+	const titled = (parts) =>
+		[label, ...parts]
+			.filter(Boolean)
+			.map((part) => part.charAt(0).toUpperCase() + part.slice(1).replace(/[-_]+/g, ' '))
+			.join(' — ');
+
+	let stored = 0;
+	for (const entry of dirents) {
+		if (!entry.isFile() || !/\.(jpe?g|png|webp|gif)$/i.test(entry.name)) continue;
+		const from = join(entry.parentPath ?? entry.path, entry.name);
+		const inside = relative(join(here, 'demo-media', root), from).split(sep);
+		inside.pop();
+
+		const albumId = album(titled(inside), 90 + stored);
+		const mediaId = picture(entry.name, entry.name.replace(/\.[^.]+$/, ''), readFileSync(from));
+		if (!mediaId) continue;
+		inAlbum(albumId, mediaId);
+		stored += 1;
+	}
+	if (stored > 0) console.log(`  ${stored} pictures from demo-media/${root}/`);
+	return stored;
+}
+
 const tripsAlbum = album('Portugal', 0);
 const kitchenAlbum = album('Kitchen', 1);
 const kitchenPicture = picture('kitchen.jpg', 'The kitchen shelf', demoPicture('kitchen.jpg'));
@@ -1796,6 +1837,8 @@ inAlbum(kitchenAlbum, kitchenPicture);
 inAlbum(kitchenAlbum, pastaPicture);
 // The pasta shot belongs to the trip too — one picture, two albums.
 inAlbum(tripsAlbum, pastaPicture);
+seedPictureFolders('birds', 'birds');
+
 if (pastaPicture) {
 	const foodTag = tag('food');
 	if (!one('select id from media_tags where media_id = ? and tag_id = ?', pastaPicture, foodTag))

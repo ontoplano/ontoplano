@@ -1217,7 +1217,7 @@ export const clientErrors = sqliteTable(
 		 * collected only where it was allowed, and a report is somebody typing
 		 * it and pressing send, which is consent by construction.
 		 */
-		kind: text('kind', { enum: ['crash', 'report'] })
+		kind: text('kind', { enum: ['crash', 'report', 'suggestion'] })
 			.notNull()
 			.default('crash'),
 		createdAt: text('created_at')

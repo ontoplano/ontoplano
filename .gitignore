@@ -107,3 +107,4 @@ fdroid-out/
 .worktrees/
 build-self-contained/
 capacitor/node_modules/
+scripts/demo-media/birds/

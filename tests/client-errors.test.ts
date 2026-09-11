@@ -47,7 +47,7 @@ beforeAll(async () => {
  * the suite is worse than one that fails.
  */
 beforeEach(() => {
-	config.saveConfig({ ...config.loadConfig(), reports: { clientErrors: true } });
+	config.saveConfig({ ...config.loadConfig(), reports: { clientErrors: true, feedbackEmail: '' } });
 });
 
 describe('an error report', () => {
@@ -95,7 +95,10 @@ describe('an error report', () => {
 	});
 
 	it('is refused from the error page too when the instance has reporting off', () => {
-		config.saveConfig({ ...config.loadConfig(), reports: { clientErrors: false } });
+		config.saveConfig({
+			...config.loadConfig(),
+			reports: { clientErrors: false, feedbackEmail: '' }
+		});
 		expect(() => service.recordClientError(ctx, { message: 'nope' }, { once: true })).toThrow(
 			/not enabled on this server/
 		);
@@ -120,10 +123,33 @@ describe('an error report', () => {
 	});
 
 	it('and refused from them when the instance has reporting off', () => {
-		config.saveConfig({ ...config.loadConfig(), reports: { clientErrors: false } });
+		config.saveConfig({
+			...config.loadConfig(),
+			reports: { clientErrors: false, feedbackEmail: '' }
+		});
 		expect(() => service.recordVisitorError({ message: 'nope' }, new Date())).toThrow(
 			/not enabled on this server/
 		);
+	});
+
+	/*
+	 * A report and a suggestion travel the same road and arrive labelled.
+	 *
+	 * Neither needs the client-error consent: that gate is about a stack
+	 * trace leaving somebody's browser on its own, and this is somebody
+	 * choosing to write a sentence.
+	 */
+	it('carries a problem and an idea, told apart by their kind', () => {
+		service.recordBugReport(ctx, { message: 'the board scrolls wrong', url: '/tasks/board' });
+		service.recordBugReport(
+			ctx,
+			{ message: 'the board should scroll the other way', url: '/tasks/board' },
+			'suggestion'
+		);
+
+		const sent = service.recentClientErrors();
+		expect(sent.find((r) => r.message === 'the board scrolls wrong')?.kind).toBe('report');
+		expect(sent.find((r) => r.message.startsWith('the board should'))?.kind).toBe('suggestion');
 	});
 
 	it('can be dismissed once it is dealt with', () => {

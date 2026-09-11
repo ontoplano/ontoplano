@@ -88,6 +88,9 @@ allow_email_change = "false"
 
 [reports]
 client_errors = "false"
+# Where reports and suggestions are mailed, on top of being recorded here.
+# Empty keeps them in this instance only.
+feedback_email = ""
 
 [ui]
 undo_seconds = "5"
@@ -163,6 +166,15 @@ export interface OntoplanoConfig {
 		 * no. Nothing is ever sent before both have said yes.
 		 */
 		clientErrors: boolean;
+		/**
+		 * Where a report or a suggestion is mailed, beside being recorded.
+		 *
+		 * Empty means nowhere: the instance keeps them in its own table and the
+		 * operator reads them in /admin, which is the right default for
+		 * somebody running this for a household. An instance with somebody
+		 * actually listening names an address here.
+		 */
+		feedbackEmail: string;
 	};
 	ui: {
 		/** Seconds a delete waits, undoably, before it happens. Zero turns it off. */
@@ -261,6 +273,7 @@ allow_email_change = "${config.account.allowEmailChange}"
 
 [reports]
 client_errors = "${config.reports.clientErrors}"
+feedback_email = "${config.reports.feedbackEmail}"
 
 [ui]
 undo_seconds = "${config.ui.undoSeconds}"
@@ -334,7 +347,8 @@ export function loadConfig(): OntoplanoConfig {
 		},
 		reports: {
 			// And again: silence is no.
-			clientErrors: reports.client_errors === 'true'
+			clientErrors: reports.client_errors === 'true',
+			feedbackEmail: (reports.feedback_email || '').trim()
 		},
 		ui: {
 			/*

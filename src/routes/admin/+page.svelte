@@ -276,8 +276,8 @@
 			was to be told in person.
 		-->
 		<Card
-			title="Problems people hit"
-			description="Bugs somebody reported, and crashes they chose to send. Dismiss one once it is dealt with."
+			title="What people sent in"
+			description="Problems somebody reported, ideas they suggested, and crashes they chose to send. Dismiss one once it is dealt with."
 			flush
 		>
 			{#if data.clientErrors.length === 0}
@@ -291,6 +291,10 @@
 								     from a stack trace the app noticed on its own. -->
 								{#if report.kind === 'report'}
 									<span class="chip mr-2 align-middle">reported</span>
+								{:else if report.kind === 'suggestion'}
+									<span class="chip mr-2 border-blue-300 bg-blue-50 align-middle text-blue-800">
+										suggested
+									</span>
 								{/if}
 								<span class="text-gray-900">{report.message}</span>
 								<span class="block truncate text-xs text-gray-500">

@@ -1,6 +1,8 @@
 import { desc, eq, sql } from 'drizzle-orm';
 
 import { loadConfig } from '../config.js';
+import { renderEmail } from '../email-template.js';
+import { sendLogged } from './mail-log.js';
 import { db } from '$lib/db/index.js';
 import { clientErrors, user } from '$lib/db/schema.js';
 import { getUserSetting, setUserSetting } from '../settings.js';
@@ -103,15 +105,62 @@ export function recordVisitorError(input: Record<string, unknown>, now: Date): v
  * and pressing send. Refusing it because automatic reporting is off would mean
  * an instance where nobody can tell the operator anything.
  */
-export function recordBugReport(ctx: Ctx, input: Record<string, unknown>): void {
-	write(ctx.userId, input, ctx.now, 'report');
+/**
+ * Something somebody wants the operator to read: a problem, or an idea.
+ *
+ * Both are recorded the same way and both are mailed if the instance names
+ * an address — the difference is one word in the subject, because "the
+ * board scrolls wrong" and "the board should scroll the other way" want
+ * reading in the same place but sorting differently once read.
+ */
+export function recordBugReport(
+	ctx: Ctx,
+	input: Record<string, unknown>,
+	kind: 'report' | 'suggestion' = 'report'
+): void {
+	write(ctx.userId, input, ctx.now, kind);
+	void mailFeedback(ctx, input, kind);
+}
+
+/**
+ * Out of the instance, to whoever is listening.
+ *
+ * Deliberately not awaited by the caller: somebody pressing Send is told it
+ * arrived when it is *recorded*, because the record is what the operator
+ * reads in /admin. A mail that fails lands in the failure list like every
+ * other, retryable, rather than turning a working report into an error
+ * message.
+ */
+async function mailFeedback(
+	ctx: Ctx,
+	input: Record<string, unknown>,
+	kind: 'report' | 'suggestion'
+): Promise<void> {
+	const to = loadConfig().reports.feedbackEmail;
+	if (!to) return;
+
+	const what = kind === 'suggestion' ? 'Suggestion' : 'Report';
+	const where = optionalStr(input.url, 'url', { max: 300 }) || 'somewhere';
+	const body = [
+		`${what} from ${ctx.userId}`,
+		`Page: ${where}`,
+		`Browser: ${optionalStr(input.userAgent, 'userAgent', { max: 300 }) || 'not said'}`,
+		'',
+		str(input.message, 'message', { max: 500 })
+	].join('\n');
+
+	const rendered = renderEmail({
+		subject: `${what}: ${where}`,
+		lines: body.split('\n').filter(Boolean)
+	});
+	await sendLogged('feedback', { to, ...rendered }, { retryable: true });
 }
 
 function write(
 	userId: string | null,
 	input: Record<string, unknown>,
 	now: Date,
-	kind: 'crash' | 'report' = 'crash'
+	kind: 'crash' | 'report' | 'suggestion' = 'crash'
 ): void {
 	const message = str(input.message, 'message', { max: 500 });
 	const url = optionalStr(input.url, 'url', { max: 300 });
@@ -121,7 +170,7 @@ function write(
 	console.error(
 		JSON.stringify({
 			at: now.toISOString(),
-			level: kind === 'report' ? 'bug-report' : 'client-error',
+			level: kind === 'crash' ? 'client-error' : `user-${kind}`,
 			user: userId,
 			message,
 			url,
@@ -158,7 +207,7 @@ export type ReportedError = {
 	url: string | null;
 	stack: string | null;
 	userAgent: string | null;
-	kind: 'crash' | 'report';
+	kind: 'crash' | 'report' | 'suggestion';
 	createdAt: string;
 };
 

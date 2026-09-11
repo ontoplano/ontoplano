@@ -10,6 +10,17 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.143.0 — 2026-09-12
+
+- **A whole folder of pictures goes into the gallery at once**, subfolders
+  and all: `Birds/Herons/…` becomes the album "Birds — Herons". Choosing the
+  folder is the gesture, and a picture that appears twice in the tree still
+  costs its bytes once.
+- **The report button takes ideas too.** One dialog, one press to say whether
+  this is something wrong or something that could be better, and the operator
+  sees which it was. An instance that names `feedback_email` in its config
+  gets them by mail as well, as a retryable send like every other.
+
 ## 0.142.0 — 2026-09-12
 
 - **Finance is ledgers now.** A ledger is one place money moves through — a

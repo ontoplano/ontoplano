@@ -175,6 +175,48 @@ describe('albums', () => {
 		expect(() => gallery.renamePicture(theirs, id, { name: 'not yours' })).toThrow();
 	});
 
+	test('a folder becomes albums, and its subfolders become their own', () => {
+		// The ceilings test above deliberately fills this instance; a folder
+		// import needs room, and the limits are the instance's to set.
+		writeFileSync(
+			join(configDir, 'config.toml'),
+			'[media]\nmax_kilobytes = "500"\ngallery_albums = "50"\nalbum_images = "50"\n'
+		);
+
+		const result = gallery.importFolder(ctx, [
+			{ path: 'birds/kingfisher.jpg', filename: 'kingfisher.jpg', bytes: png([30, 1, 1]) },
+			{ path: 'birds/herons/dawn.jpg', filename: 'dawn.jpg', bytes: png([31, 1, 1]) },
+			{ path: 'birds/herons/dusk.jpg', filename: 'dusk.jpg', bytes: png([32, 1, 1]) }
+		]);
+		expect(result).toEqual({ albums: 2, pictures: 3, skipped: 0 });
+
+		const names = gallery.listAlbums(ctx).map((a) => a.name);
+		expect(names).toContain('birds');
+		expect(names).toContain('birds — herons');
+
+		const herons = gallery.listAlbums(ctx).find((a) => a.name === 'birds — herons')!;
+		expect(herons.count).toBe(2);
+	});
+
+	test('the same tree twice costs its bytes once', () => {
+		const before = media.list(ctx).length;
+		gallery.importFolder(ctx, [
+			{ path: 'birds/kingfisher.jpg', filename: 'kingfisher.jpg', bytes: png([30, 1, 1]) }
+		]);
+		// Same bytes, same picture, same album: nothing new anywhere.
+		expect(media.list(ctx)).toHaveLength(before);
+		expect(gallery.listAlbums(ctx).find((a) => a.name === 'birds')!.count).toBe(1);
+	});
+
+	test('a folder can be filed under a name of its own', () => {
+		gallery.importFolder(
+			ctx,
+			[{ path: 'gulls/one.jpg', filename: 'one.jpg', bytes: png([40, 2, 2]) }],
+			{ under: '2026' }
+		);
+		expect(gallery.listAlbums(ctx).map((a) => a.name)).toContain('2026 — gulls');
+	});
+
 	test('another account reaches none of it', () => {
 		const room = gallery.listAlbums(ctx)[0];
 		const id = gallery.albumPictures(ctx, room.id)[0].id;

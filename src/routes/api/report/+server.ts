@@ -6,7 +6,8 @@ import { toJsonError } from '$lib/http-errors';
 import { UnauthorizedError } from '$lib/services/errors';
 
 /**
- * "Something here is wrong", from wherever somebody noticed it.
+ * "Something here is wrong" — or "this could be better" — from wherever
+ * somebody noticed it.
  *
  * Four things travel: the account, the sentence, the page, and the browser.
  * The page because the first question anybody reading these asks is "where",
@@ -22,11 +23,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
 		if (!locals.user) throw new UnauthorizedError('Sign in first');
 		const body = (await request.json()) as Record<string, unknown>;
-		recordBugReport(buildCtx(locals.user.id), {
-			message: body.message,
-			url: body.url,
-			userAgent: request.headers.get('user-agent')
-		});
+		recordBugReport(
+			buildCtx(locals.user.id),
+			{
+				message: body.message,
+				url: body.url,
+				userAgent: request.headers.get('user-agent')
+			},
+			body.kind === 'suggestion' ? 'suggestion' : 'report'
+		);
 		return json({ ok: true });
 	} catch (e) {
 		return toJsonError(e);

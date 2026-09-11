@@ -27,8 +27,8 @@
 		const params: [string, string][] = [];
 		const ledger = changes.ledger ?? data.ledgerId;
 		const months = changes.months ?? data.months;
-		if (ledger) params.set('ledger', String(ledger));
-		if (months !== 12) params.set('months', String(months));
+		if (ledger) params.push(['ledger', String(ledger)]);
+		if (months !== 12) params.push(['months', String(months)]);
 		// The path is resolved; the rule cannot see through the appended query.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		void goto(`${resolve('/finance/rules')}?${new URLSearchParams(params)}`, { noScroll: true });

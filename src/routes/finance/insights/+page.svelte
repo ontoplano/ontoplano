@@ -21,8 +21,8 @@
 		const ledger = changes.ledger ?? data.ledgerId;
 		const months = changes.months ?? data.months;
 		const tag = changes.tag ?? data.tag;
-		if (ledger) params.set('ledger', String(ledger));
-		if (months !== 12) params.set('months', String(months));
+		if (ledger) params.push(['ledger', String(ledger)]);
+		if (months !== 12) params.push(['months', String(months)]);
 		if (tag) params.push(['tag', String(tag)]);
 		// The path is resolved; the rule cannot see through the appended query.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve

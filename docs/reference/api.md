@@ -368,7 +368,8 @@ failed request loses nothing.
 
 ### `/api/report`
 
-"Something here is wrong", from wherever somebody noticed it.
+"Something here is wrong" — or "this could be better" — from wherever
+somebody noticed it.
 
 Four things travel: the account, the sentence, the page, and the browser.
 The page because the first question anybody reading these asks is "where",
