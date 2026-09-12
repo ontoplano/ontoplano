@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { scheduleDeviceReminders } from '$lib/isolated/notifications';
+	import { scheduleDeviceReminders } from '$lib/phone-notifications';
 	import { browser } from '$app/environment';
 	import { enablePush, pushSupported } from '$lib/push';
 	import { page } from '$app/state';

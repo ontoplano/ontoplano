@@ -10,6 +10,48 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+Which number to bump: **the patch**, for the ordinary day's work, however much
+of it there is. A batch of fixes and a handful of small features is a patch.
+The **minor** is for a structural change somebody would notice as a different
+app — the phone becoming one app instead of four, a room arriving or leaving,
+the shape of the data changing. Bumping the minor per batch is what ran this
+file to 0.161 in a few months, which tells a reader nothing about which
+releases mattered.
+
+## 0.162.0 — 2026-09-12
+
+A minor, and it is the first one under the new rule: the phone stopped being a
+window onto ontoplano and became one, which is the kind of change that number
+is for.
+
+- **Reminders arrive with the app closed.** Android's web view has no Push API
+  at all, so the app used to say it had no push support and suggest installing
+  it as an app — to somebody holding the app. It books its own alarms with
+  Android now, on any instance, and asks Android for permission rather than a
+  browser.
+- **Recipes and the address book work on a phone-only instance.** Neither ever
+  needed a server; both were on the list of screens that do.
+- **A picture goes into a note on a phone-only instance.** It answered "this
+  screen needs an instance with a server" about bytes that were only ever going
+  to live on that phone.
+- **Changing screen dissolves as the page loads, not after it.** It could not
+  before: the effect was built on a browser feature that cannot start until the
+  new page is ready, which put the whole thing after the wait it was meant to
+  cover. It also now works in Firefox, which that feature never did here.
+- **A goal is counted or measured.** Twelve books gets a plus and a minus on its
+  card, because a book is finished one at a time; 21.1 kilometres keeps a field,
+  because 14.6 is not two presses away from anything. Which one it is is chosen
+  beside the number, as ℤ or ℚ.
+- **Bills has a tab**, and a bill can be attached to the line that paid it —
+  the amount then comes from the statement rather than from what was expected.
+  Ticking one paid without attaching anything still works.
+- **A sideways swipe stays in the thing being swiped.** Pushing a room's tabs
+  past their end dragged the whole page sideways and left it there.
+- **The habit grid shows 90 days on a phone**, a year where there is room for
+  one. Fifty-two columns of small squares on a phone is a wall.
+- **The back gesture goes back**, and a link that leaves ontoplano opens outside
+  it instead of replacing the app in a window with no way out.
+
 ## 0.161.1 — 2026-09-12
 
 - **The phone app opens again.** Wiring up the back gesture called `.then` on

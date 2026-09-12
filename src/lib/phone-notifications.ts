@@ -1,12 +1,12 @@
 /**
- * A reminder that arrives with the app shut, on an instance that is a phone.
+ * A reminder that arrives with the app shut, on a phone.
  *
- * An instance with a server behind it wakes a phone over web push: the job
- * that notices a reminder is due sends one, and the phone rings whether or not
- * ontoplano is open. A phone that *is* the instance has no such job and nothing
- * to be woken by — the only thing that knows the reminder exists is the
- * database sitting in this device's own storage, and nothing reads it while the
- * app is closed.
+ * On the web, an instance with a server wakes a phone over web push. Android's
+ * web view has no Push API at all — no `PushManager`, whatever the instance
+ * behind it can do — so inside this app that road is closed both ways: on a
+ * phone-only instance there is no server to send one, and on a connected
+ * instance there is nothing here to receive one. The app said so, and told
+ * somebody already holding the app to "install it as an app".
  *
  * So the app books the alarms with Android before it goes away. Every time it
  * opens it hands the next few weeks of reminders to the system, which fires
@@ -20,7 +20,7 @@
  * bookkeeping problem with no upside — cancelling everything this app booked
  * and booking it again is one call each and cannot drift.
  */
-import { isIsolatedBuild } from './mode';
+import { inPhoneApp } from './instance-choice';
 
 /** How a reminder comes back from `/api/reminders?upcoming`. */
 type Upcoming = {
@@ -57,8 +57,8 @@ type Notifications = {
 const MAX_ID = 2 ** 31 - 1;
 
 /** The plugin, if this is running inside the shell that carries it. */
-function plugin(): Notifications | null {
-	if (!isIsolatedBuild()) return null;
+export function phoneNotifications(): Notifications | null {
+	if (!inPhoneApp()) return null;
 	const capacitor = (globalThis as { Capacitor?: { Plugins?: Record<string, unknown> } }).Capacitor;
 	const found = capacitor?.Plugins?.LocalNotifications;
 	return found ? (found as Notifications) : null;
@@ -74,15 +74,14 @@ function plugin(): Notifications | null {
  * somebody and their reminder.
  */
 export async function scheduleDeviceReminders(): Promise<number> {
-	const notifications = plugin();
+	const notifications = phoneNotifications();
 	if (!notifications) return 0;
 
 	try {
+		// Asked for, not demanded: a phone that has said no keeps saying no, and
+		// the reminder still appears the next time the app is opened.
 		const allowed = await notifications.checkPermissions();
-		if (allowed.display !== 'granted') {
-			const asked = await notifications.requestPermissions();
-			if (asked.display !== 'granted') return 0;
-		}
+		if (allowed.display !== 'granted') return 0;
 
 		// Everything this app booked before, so a reminder that has since been
 		// dismissed or moved does not ring at its old time.
@@ -113,5 +112,35 @@ export async function scheduleDeviceReminders(): Promise<number> {
 		return wanted.length;
 	} catch {
 		return 0;
+	}
+}
+
+/** Whether this phone will show a reminder with the app closed. */
+export async function phoneWillNotify(): Promise<boolean> {
+	const notifications = phoneNotifications();
+	if (!notifications) return false;
+	try {
+		return (await notifications.checkPermissions()).display === 'granted';
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Ask Android for permission, and book what is already due once it is given.
+ *
+ * Returns whether it was granted, so the screen that asked can say what
+ * happened rather than leaving somebody looking at an unchanged page.
+ */
+export async function askPhoneToNotify(): Promise<boolean> {
+	const notifications = phoneNotifications();
+	if (!notifications) return false;
+	try {
+		const asked = await notifications.requestPermissions();
+		if (asked.display !== 'granted') return false;
+		await scheduleDeviceReminders();
+		return true;
+	} catch {
+		return false;
 	}
 }

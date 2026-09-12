@@ -4,30 +4,32 @@ import { register } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
- * Changing screen dissolves, and finishes dissolving.
+ * Changing screen turns the page, in two halves, and finishes.
  *
- * Screenshots cannot test this: the two snapshots a view transition draws live
- * in the browser's top layer, which a headless capture does not see, so the
- * frame comes back blank whatever is happening. What can be tested is the
- * machinery — that the turn is held open, that the threshold inside the filter
- * actually moves — and, far more importantly, that nothing is left running.
+ * Screenshots cannot test this — the dots are drawn by an SVG filter and a
+ * headless capture of a mid-turn frame tells you nothing — so what is checked
+ * is the machinery: that the page is filtered the moment a navigation starts,
+ * that the threshold inside the filter actually moves, and that nothing is
+ * left behind.
  *
- * That last one is the whole reason this file exists. The turn used to await a
- * promise that never settles when a navigation redirects, which left a picture
- * of the previous screen nailed over the live one for ever: the app worked,
- * the DOM was correct, and not one thing on it could be clicked. Every other
- * suite failed at once and none of them said why.
+ * That last one is why this file exists. The turn used to be a View
+ * Transition, and `onNavigate` held the navigation until it resolved: a burst
+ * of navigations left the app unable to move at all, twice, and every other
+ * suite failed at once without saying why. Nothing is returned from
+ * `onNavigate` any more, and this pins that.
  */
 test.use({ viewport: { width: 1280, height: 820 } });
 
-/** Where the dissolve's threshold currently sits, on both halves. */
-async function ramps(page: import('@playwright/test').Page) {
+/** Where the threshold sits, and whether the page is being filtered at all. */
+async function turning(page: import('@playwright/test').Page) {
 	return page.evaluate(
-		([out, into]) => ({
-			out: document.getElementById(`${out}-ramp`)?.getAttribute('intercept') ?? null,
-			into: document.getElementById(`${into}-ramp`)?.getAttribute('intercept') ?? null
+		(out) => ({
+			intercept: document.getElementById(`${out}-ramp`)?.getAttribute('intercept') ?? null,
+			filtered: /url\(/.test(
+				(document.querySelector('.page-turning') as HTMLElement | null)?.style.filter ?? ''
+			)
 		}),
-		[PAGE_TURN.outFilter, PAGE_TURN.inFilter]
+		PAGE_TURN.outFilter
 	);
 }
 
@@ -37,48 +39,37 @@ test('a link to another screen turns the page, then gets out of the way', async 
 	await register(page, `page-turn-${Date.now()}@test.invalid`);
 	await visit(page, '/');
 
-	const before = await ramps(page);
+	const before = await turning(page);
+	expect(before.filtered).toBe(false);
 
 	await page.locator('a[href="/goals"]:visible').first().click();
 
-	// Polled rather than slept: the turn starts on the browser's own schedule,
-	// and a fixed wait is a flake waiting for a slow machine.
+	/*
+	 * The filter goes on when the navigation starts, not when it lands.
+	 *
+	 * This is the half that covers the wait: on a phone the loading bar used to
+	 * appear, the page arrive, and only then did the screen dissolve — the
+	 * whole effect happening after the thing it was meant to hide.
+	 */
 	await page.waitForFunction(
 		() =>
-			document
-				.getAnimations()
-				.some((a) =>
-					String((a as unknown as { animationName?: string }).animationName).startsWith('page-turn')
-				),
+			/url\(/.test(
+				(document.querySelector('.page-turning') as HTMLElement | null)?.style.filter ?? ''
+			),
 		undefined,
 		{ timeout: 5000 }
 	);
 
-	const running = await page.evaluate(() =>
-		document.getAnimations().map((a) => {
-			const effect = a.effect as KeyframeEffect | null;
-			return `${(a as unknown as { animationName?: string }).animationName}@${effect?.pseudoElement}`;
-		})
-	);
-
-	// What holds the turn open. A view transition ends when the animations on
-	// its pseudo-elements do, so with none at all it is over before it starts —
-	// and the browser's own cross-fade, which the stylesheet replaces, would
-	// smear the dots into a blur.
-	expect(running).toContain('page-turn-hold@::view-transition-old(root)');
-	expect(running).toContain('page-turn-hold@::view-transition-new(root)');
-
-	// And the threshold is actually being slid: the filters are what draw the
-	// dots, and a hold animation on its own would just be a hard cut.
-	const during = await ramps(page);
-	expect(during.out).not.toBe(before.out);
-	expect(during.into).not.toBe(before.into);
+	// And the threshold is being slid: a filter that does not move is a page
+	// that simply vanishes.
+	const during = await turning(page);
+	expect(during.intercept).not.toBe(before.intercept);
 
 	await expect(page.locator('h1')).toContainText('Goals');
-	await page.waitForTimeout(PAGE_TURN.durationMs + PAGE_TURN.holdMs);
 
-	// Nothing left over. A turn that never ends is one that covers the app.
-	expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
+	// Nothing left over. A page left filtered is a page nobody can press —
+	// the stylesheet takes its pointer events away while it turns.
+	await expect.poll(async () => (await turning(page)).filtered, { timeout: 5000 }).toBe(false);
 });
 
 test('paging within one screen does not turn the page', async ({ page }) => {
@@ -89,10 +80,28 @@ test('paging within one screen does not turn the page', async ({ page }) => {
 	// The week arrows stay on `/tasks/plan`. Dots between one Tuesday and the
 	// next are something somebody would turn off.
 	await page.evaluate(() => history.pushState({}, '', '/tasks/plan?from=2026-01-05'));
-	await page.waitForTimeout(120);
+	await page.waitForTimeout(200);
 
-	const running = await page.evaluate(() =>
-		document.getAnimations().map((a) => (a as unknown as { animationName?: string }).animationName)
-	);
-	expect(running).not.toContain('page-turn-hold');
+	expect((await turning(page)).filtered).toBe(false);
+});
+
+/**
+ * And a burst of navigations still leaves an app that navigates.
+ *
+ * The onboarding wizard is six presses of Next in a few seconds, and it is
+ * what broke — twice — when the turn was allowed to hold a navigation open.
+ * It is cheap to state here and it is the case that actually costs an evening.
+ */
+test('a burst of navigations does not jam the app', async ({ page }) => {
+	test.setTimeout(90_000);
+	await register(page, `page-burst-${Date.now()}@test.invalid`);
+	await visit(page, '/');
+
+	for (const path of ['/goals', '/tasks/todo', '/notebooks', '/goals', '/']) {
+		await page.evaluate((to) => history.pushState({}, '', to), path);
+	}
+
+	// The app still moves under its own steam afterwards.
+	await page.locator('a[href="/goals"]:visible').first().click();
+	await expect(page.locator('h1')).toContainText('Goals', { timeout: 15_000 });
 });

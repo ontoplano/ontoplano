@@ -94,6 +94,19 @@ export const SECTION_COLORS = {
 // -- Habits -------------------------------------------------------------------
 
 /** Heatmap background classes (Tailwind) indexed by intensity 0-3 */
+/**
+ * How much of a habit's history the grid shows, and where the line is.
+ *
+ * A year is 52 columns of small squares, which is a wall on a phone: it
+ * overflows sideways and compresses into something narrower than a thumb.
+ * Ninety days is thirteen columns, fits, and is the span a habit is actually
+ * judged over. The breakpoint is Tailwind's `sm`, which is where the rest of
+ * the app stops being a phone.
+ */
+export const HEATMAP_YEAR = 365;
+export const HEATMAP_SEASON = 90;
+export const HEATMAP_FULL_YEAR_FROM = '640px';
+
 export const HEATMAP_BAD = ['bg-slate-100', 'bg-red-300', 'bg-red-500', 'bg-red-700'] as const;
 export const HEATMAP_GOOD = ['bg-slate-100', 'bg-blue-300', 'bg-blue-500', 'bg-blue-700'] as const;
 export const HEATMAP_NEUTRAL = [

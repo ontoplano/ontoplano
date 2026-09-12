@@ -705,6 +705,16 @@ enforces one payment per period, so this upserts). The expected amount is
 snapshotted from the bill as it stands, so a later edit to the bill does not
 rewrite what was actually asked at the time.
 
+#### `markPaidFromMovement(ctx, billId, movementId, period)`
+
+Mark a bill paid by pointing at the line that paid it.
+
+The amount comes from the statement rather than from what was expected,
+which is the whole point: the gap between the two is the number this room
+exists to show, and typing it in by hand is how that number becomes fiction.
+Money out is negative in a ledger and a payment is a positive amount, so the
+sign is dropped.
+
 #### `unmarkPaid(ctx, billId, period)`
 
 Undo a payment for a period — it was never paid, or paid in error.

@@ -491,6 +491,20 @@
       "when": 1789198637693,
       "tag": "0069_cooing_squirrel_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "6",
+      "when": 1789245969939,
+      "tag": "0070_stiff_giant_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "6",
+      "when": 1789249446458,
+      "tag": "0071_graceful_gamora",
+      "breakpoints": true
     }
   ]
 }

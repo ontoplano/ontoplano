@@ -7,9 +7,9 @@
 	import { navigating, page } from '$app/state';
 	import { live } from '$lib/live';
 	import { afterNavigate, goto, onNavigate } from '$app/navigation';
-	import { canDissolve, PAGE_TURN_DEFAULTS } from '$lib/page-turn';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
-	import { PAGE_TURN, runDissolve } from '$lib/page-turn.svelte';
+	import { PAGE_TURN, turnIn, turnOut } from '$lib/page-turn.svelte';
+	import { PAGE_TURN_DEFAULTS } from '$lib/page-turn';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { NAV_PLACES } from '$lib/sections-nav';
@@ -96,97 +96,37 @@
 		goto(resolve(CHOOSE_PATH as '/instance'));
 	});
 
-	/** Whether a dissolve is running. See the note in `onNavigate` below. */
-	let turning = false;
+	/** The page itself, which is what the turn is applied to. */
+	let turning = $state<HTMLDivElement>();
+
+	/*
+	 * The page turns as the navigation happens, not after it.
+	 *
+	 * Nothing is returned from `onNavigate`: SvelteKit holds the navigation
+	 * until whatever it gets back resolves, and holding it on a decoration is
+	 * how a burst of them — onboarding's six Next presses — left the app unable
+	 * to move at all. The turn is two independent halves that simply run.
+	 */
+	let turnedOut = false;
 
 	onNavigate((navigation) => {
-		const start = (
-			document as Document & {
-				startViewTransition?: (run: () => Promise<void>) => {
-					ready: Promise<void>;
-					finished: Promise<void>;
-				};
-			}
-		).startViewTransition;
-
-		if (!start) return;
-		// A browser that cannot draw the dissolve navigates the ordinary way,
-		// rather than showing a blank screen where the filter should have been.
-		if (!canDissolve()) return;
-		/*
-		 * A press on a link, the back gesture, or a room chosen from the pie.
-		 *
-		 * `goto` is in this list because it is how the whole bottom bar moves:
-		 * the pie calls it, so every change of *room* was the one kind of
-		 * navigation that never dissolved — the tabs within a room are ordinary
-		 * links and did. That is exactly backwards from what the effect is for.
-		 * What stays out is `form` and `enter`: a form submission that lands on
-		 * the same screen should not blink it, and the first page of a session
-		 * has nothing to dissolve from.
-		 */
-		/*
-		 * A press on a link, the back gesture, or a room chosen from the pie.
-		 *
-		 * `goto` is deliberately NOT here, for now, and that is why a change of
-		 * room does not dissolve while the tabs inside one do: `onNavigate`
-		 * holds the navigation until what it returns resolves, and a burst of
-		 * `goto`s — onboarding's six Next presses — left the app unable to
-		 * navigate at all. Rooms get their dissolve back with the rewrite that
-		 * gives it a Firefox path and starts the fade when the navigation
-		 * starts rather than after it lands.
-		 */
-		if (!['link', 'popstate'].includes(navigation.type)) return;
-		/*
-		 * And never two at once.
-		 *
-		 * `onNavigate` holds the navigation until what it returns resolves, and
-		 * a view transition that is superseded by the next one never runs its
-		 * callback at all — so the promise never settles and the app stops
-		 * navigating entirely. Six steps of onboarding pressed a second apart
-		 * did exactly that. A dissolve is decoration; the second one is dropped
-		 * rather than allowed to hold the door.
-		 */
-		if (turning) return;
 		if (navigation.to?.route.id === navigation.from?.route.id) return;
-		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		turnedOut = true;
+		turnOut(turning);
+	});
 
-		turning = true;
-		return new Promise((resolve) => {
-			/*
-			 * Let go whatever happens.
-			 *
-			 * If the browser never calls the callback — a transition it decided
-			 * to abandon — this is what stops the app from waiting for it for
-			 * ever. Belt and braces beside the flag above, because the cost of
-			 * being wrong here is an app that will not move.
-			 */
-			const release = setTimeout(() => {
-				turning = false;
-				resolve();
-			}, PAGE_TURN_DEFAULTS.holdMs + PAGE_TURN.durationMs);
-
-			const turn = start.call(document, async () => {
-				clearTimeout(release);
-				resolve();
-				// Waited for, but never indefinitely. The await is what makes the
-				// browser photograph the new page rather than the old one; a
-				// promise that never settles would freeze the app, and no
-				// decoration is worth that risk.
-				await Promise.race([
-					navigation.complete.catch(() => undefined),
-					new Promise((done) => setTimeout(done, PAGE_TURN_DEFAULTS.holdMs))
-				]);
-			});
-
-			// `ready` is the moment the two snapshots exist and their animations
-			// are about to run, which is the only moment the filter can start
-			// sliding without the first frames landing on nothing.
-			turn.ready.then(runDissolve, () => undefined);
-			turn.finished.then(
-				() => (turning = false),
-				() => (turning = false)
-			);
-		});
+	/*
+	 * And in again — but only if it went out.
+	 *
+	 * `afterNavigate` runs for the first page of a session too, and there is
+	 * nothing to arrive from on a page that was loaded rather than navigated
+	 * to: turning in there is half a dissolve over a screen that was simply
+	 * there.
+	 */
+	afterNavigate(() => {
+		if (!turnedOut) return;
+		turnedOut = false;
+		turnIn(turning);
 	});
 
 	// Autofill is opt-in: see $lib/autofill. Once, for every form the app ever mounts.
@@ -567,8 +507,9 @@
 	`feTurbulence` draws a field of noise; `feColorMatrix` moves its red channel
 	into alpha; `feComponentTransfer` multiplies that alpha by a large slope and
 	slides it with an intercept, which clamps almost every pixel to fully on or
-	fully off. Sliding the intercept is the dissolve, and `runDissolve` is what
-	slides it. Both filters take the same seed and frequency, so the pixels one
+	fully off. Sliding the intercept is the dissolve, and `turnOut`/`turnIn` are what
+	slides it. One filter, not two: the page goes out under it and the next page
+	comes in under the same one with the ramp run backwards, so the pixels one
 	gives up are exactly the pixels the other takes — the handover an e-reader
 	makes when it flips a dot.
 -->
@@ -597,33 +538,6 @@
 			/>
 			<feComponentTransfer in="field" result="threshold">
 				<feFuncA id="{PAGE_TURN_DEFAULTS.outFilter}-ramp" type="linear" slope="1" intercept="1" />
-			</feComponentTransfer>
-			<feComposite in="SourceGraphic" in2="threshold" operator="in" />
-		</filter>
-
-		<filter
-			id={PAGE_TURN_DEFAULTS.inFilter}
-			x="0"
-			y="0"
-			width="100%"
-			height="100%"
-			color-interpolation-filters="sRGB"
-		>
-			<feTurbulence
-				type="fractalNoise"
-				baseFrequency={PAGE_TURN.grain}
-				numOctaves="1"
-				seed={PAGE_TURN_DEFAULTS.seed}
-				result="noise"
-			/>
-			<feColorMatrix
-				in="noise"
-				type="matrix"
-				values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 0"
-				result="field"
-			/>
-			<feComponentTransfer in="field" result="threshold">
-				<feFuncA id="{PAGE_TURN_DEFAULTS.inFilter}-ramp" type="linear" slope="-1" intercept="0" />
 			</feComponentTransfer>
 			<feComposite in="SourceGraphic" in2="threshold" operator="in" />
 		</filter>
@@ -1035,7 +949,11 @@
 			bind:this={scroller}
 			class="page-gutter relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto overscroll-y-contain pt-[calc(var(--safe-top)+1rem)] pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+var(--help-dock-height)+0.75rem)] lg:overflow-visible lg:pt-6 lg:pb-[calc(var(--help-dock-height)+1.5rem)]"
 		>
-			{@render children()}
+			<!-- What the page turn is applied to: the page, not the chrome. A
+			     filter makes a containing block, so the bars must stay outside
+			     it — and the bars staying put while the page turns is the
+			     better effect anyway. -->
+			<div bind:this={turning} class="page-turning">{@render children()}</div>
 		</main>
 
 		<!--

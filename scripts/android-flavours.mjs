@@ -112,28 +112,19 @@ function lanAddress() {
 /**
  * The addresses the app may open in itself.
  *
- * A self-hosted instance is somewhere nobody here can know, so this is as wide
- * as it can be while still being made of hostnames: the official instance and
- * anything under it, and the three private ranges a machine at home sits in.
- * Anything else opens in the system's own browser — which is the right answer
- * for a link that is not an ontoplano, and is what `$lib/outside-links` does
- * for the documentation.
+ * `*`, and it has to be. A self-hosted instance is at an address nobody here
+ * can know, and Capacitor's matcher cannot express "anything on my network":
+ * `HostMask.Simple.matches` refuses outright when the mask has more than one
+ * part and the host has a different number of them, so `192.168.*` never
+ * matches `192.168.1.10` and the app hands your own laptop to the system
+ * browser. A single `*` is one part, skips that test, and matches everything —
+ * which is the offer the instance screen actually makes.
+ *
+ * It is not a hole. Nothing navigates on its own: every address here is one
+ * somebody typed on that screen, and a link that leaves ontoplano is caught by
+ * `$lib/outside-links` and opened outside the app on purpose.
  */
-const ALLOWED_INSTANCES = [
-	'ontoplano.com',
-	'*.ontoplano.com',
-	'localhost',
-	'127.0.0.1',
-	'192.168.*',
-	'10.*',
-	'172.16.*',
-	'172.17.*',
-	'172.18.*',
-	'172.19.*',
-	'172.2*.*',
-	'172.30.*',
-	'172.31.*'
-];
+const ALLOWED_INSTANCES = ['*'];
 
 const FLAVOURS = [
 	{

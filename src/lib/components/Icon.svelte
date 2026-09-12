@@ -13,6 +13,7 @@
 	export const ICONS = {
 		// actions
 		plus: 'M12 5v14M5 12h14',
+		minus: 'M5 12h14',
 		edit: 'M4 20h4l10-10-4-4L4 16zM14 6l4 4',
 		trash: 'M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13M10 11v6M14 11v6',
 		close: 'M6 6l12 12M18 6L6 18',

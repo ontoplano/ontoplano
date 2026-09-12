@@ -23,6 +23,19 @@
 	let showForm = $state(false);
 	let editing: (typeof data.bills)[number] | null = $state(null);
 	let paying: number | null = $state(null);
+	/** The bill whose payment is being pointed at a statement line. */
+	let attaching: number | null = $state(null);
+	/** Narrowing that list, because six weeks of a current account is long. */
+	let movementQuery = $state('');
+
+	const attachingBill = $derived(data.bills.find((b) => b.id === attaching) ?? null);
+	const movementChoices = $derived(
+		movementQuery.trim() === ''
+			? data.recentMovements
+			: data.recentMovements.filter((m) =>
+					m.description.toLowerCase().includes(movementQuery.trim().toLowerCase())
+				)
+	);
 	let showArchived = $state(false);
 	/** The archived bill waiting on its delete confirmation, in its own dialog. */
 	let confirmingDelete: (typeof data.bills)[number] | null = $state(null);
@@ -195,6 +208,23 @@
 								onclick={() => (paying = bill.id)}
 							>
 								<Icon name="check" />
+							</button>
+							<!--
+								And the other way to pay one: point at the line that did it.
+								
+								The tick is somebody saying a bill was paid; this is the bank
+								saying so, and the amount comes from the statement rather than
+								from what was expected. Both are real — cash, a transfer that
+								has not landed, an account this instance does not import — so
+								neither replaces the other.
+							-->
+							<button
+								class="icon-btn"
+								title="Attach the payment"
+								aria-label="Attach a transaction to {bill.name}"
+								onclick={() => (attaching = bill.id)}
+							>
+								<Icon name="link" />
 							</button>
 						{/if}
 
@@ -406,5 +436,86 @@
 			<input type="hidden" name="id" value={confirmingDelete?.id} />
 			<button class="btn btn-danger" type="submit" use:armed>Delete</button>
 		</form>
+	{/snippet}
+</Modal>
+
+<!--
+	Which line paid this bill.
+
+	A list rather than a search box with an id in it: nobody knows a
+	transaction's number, they know it was about forty euros to the energy
+	company around the tenth. So it is the recent money-out of every ledger,
+	newest first, with a filter for when the list is long.
+-->
+<Modal
+	open={attaching !== null}
+	title={attachingBill ? `What paid ${attachingBill.name}?` : 'What paid it?'}
+	description="The amount comes from the line you pick, not from what the bill expected."
+	onclose={() => {
+		attaching = null;
+		movementQuery = '';
+	}}
+>
+	{#if attachingBill}
+		<OneLine
+			name="movementSearch"
+			bind:value={movementQuery}
+			placeholder="Filter by description"
+			class="input w-full"
+		/>
+
+		{#if movementChoices.length === 0}
+			<p class="mt-3 text-sm text-gray-500">
+				Nothing in the last few weeks matches. A bill paid from an account this instance does not
+				import can still be ticked by hand.
+			</p>
+		{:else}
+			<ul class="mt-3 max-h-80 divide-y divide-gray-200 overflow-y-auto border border-gray-200">
+				{#each movementChoices as movement (movement.id)}
+					<li>
+						<form
+							method="post"
+							action="?/payFromMovement"
+							use:enhance={() =>
+								async ({ result, update }) => {
+									if (result.type === 'success') {
+										attaching = null;
+										movementQuery = '';
+									}
+									await update();
+								}}
+						>
+							<input type="hidden" name="id" value={attachingBill.id} />
+							<input type="hidden" name="period" value={attachingBill.period} />
+							<input type="hidden" name="movementId" value={movement.id} />
+							<button
+								class="flex w-full items-baseline gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50"
+							>
+								<span class="shrink-0 text-xs text-gray-500 tabular-nums">
+									{movement.occurredOn.slice(5)}
+								</span>
+								<span class="min-w-0 flex-1 truncate text-gray-900">{movement.description}</span>
+								<span class="shrink-0 text-xs text-gray-700 tabular-nums">
+									{money(Math.abs(movement.amountCents))}
+								</span>
+							</button>
+						</form>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+	{/if}
+
+	{#snippet footer()}
+		<button
+			type="button"
+			class="btn"
+			onclick={() => {
+				attaching = null;
+				movementQuery = '';
+			}}
+		>
+			Cancel
+		</button>
 	{/snippet}
 </Modal>

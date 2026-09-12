@@ -5,6 +5,8 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
+	import { MediaQuery } from 'svelte/reactivity';
+	import { HEATMAP_FULL_YEAR_FROM, HEATMAP_SEASON, HEATMAP_YEAR } from '$lib/colors';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -98,14 +100,14 @@
 	 * them reactively, and SvelteDate here would only be slower.
 	 */
 	/* eslint-disable svelte/prefer-svelte-reactivity */
-	function buildHeatmapWeeks(): string[][] {
+	function buildHeatmapWeeks(days: number): string[][] {
 		const weeks: string[][] = [];
 		const today = new Date();
 		const fd = getFirstDay();
 
 		const endDay = new Date(today);
 		const startDay = new Date(today);
-		startDay.setDate(startDay.getDate() - 364);
+		startDay.setDate(startDay.getDate() - (days - 1));
 
 		const startDow = startDay.getDay();
 		const adjustedStart = new Date(startDay);
@@ -152,7 +154,21 @@
 		return HEATMAP_NEUTRAL[Math.min(count, HEATMAP_NEUTRAL.length - 1)];
 	}
 
-	const heatmapWeeks = buildHeatmapWeeks();
+	/*
+	 * A year on a screen with room for one, and a season on a phone.
+	 *
+	 * Fifty-two columns of two-and-a-half-pixel squares is a wall on a phone:
+	 * it overflows sideways, and a year of somebody's habit compressed into
+	 * a strip narrower than a thumb says nothing you could read. Ninety days is
+	 * thirteen columns, which fits, and is the span a habit is actually judged
+	 * over.
+	 *
+	 * Rebuilt when the window crosses the breakpoint rather than measured once:
+	 * a phone turned sideways is a different answer.
+	 */
+	const wide = new MediaQuery(`(min-width: ${HEATMAP_FULL_YEAR_FROM})`);
+	const heatmapWeeks = $derived(buildHeatmapWeeks(wide.current ? HEATMAP_YEAR : HEATMAP_SEASON));
+	const heatmapSpan = $derived(wide.current ? 'Last 365 days' : 'Last 90 days');
 
 	function formatScheduledDays(raw: string | null): string {
 		if (!raw || raw.trim() === '') return 'Every day';
@@ -593,7 +609,7 @@
 					{#if expandedHabitId === habit.id}
 						{@const counts = occurrenceCountByDate(habit.id)}
 						<div class="border-t border-gray-200 px-4 py-3">
-							<div class="mb-2 text-xs font-medium text-gray-500">Last 365 days</div>
+							<div class="mb-2 text-xs font-medium text-gray-500">{heatmapSpan}</div>
 							<div class="overflow-x-auto">
 								<div class="inline-flex items-start gap-px">
 									{#each heatmapWeeks as week, wi (wi)}

@@ -52,7 +52,8 @@ function targetsFrom(formData: FormData) {
 	const ids = formData.getAll('targetId');
 	const values = formData.getAll('targetValue');
 	const units = formData.getAll('targetUnit');
-	return values.map((value, i) => ({ id: ids[i], value, unit: units[i] }));
+	const wholes = formData.getAll('targetWhole');
+	return values.map((value, i) => ({ id: ids[i], value, unit: units[i], whole: wholes[i] }));
 }
 
 export const actions = {

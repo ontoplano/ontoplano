@@ -50,6 +50,13 @@ export type GoalTarget = {
 	targetValue: number;
 	currentValue: number;
 	unit: string;
+	/**
+	 * Whether this is counted or measured — twelve books against 21.1 km.
+	 *
+	 * The screen reads it to decide what to offer: a plus and a minus for a
+	 * thing you finish one at a time, a field for a thing you measure.
+	 */
+	whole: boolean;
 	/** 0-1, how far this one measure has got. */
 	fraction: number;
 };
@@ -229,6 +236,7 @@ export function listGoals(ctx: Ctx, opts: { includeClosed?: boolean } = {}): Goa
 						targetValue: t.targetValue,
 						currentValue: t.currentValue,
 						unit: t.unit,
+						whole: t.whole,
 						fraction: Math.min(t.currentValue / t.targetValue, 1)
 					})
 				);
@@ -386,6 +394,7 @@ export function createGoal(
 					goalId: id,
 					targetValue: t.value,
 					unit: t.unit,
+					whole: t.whole,
 					sortOrder: i
 				})
 				.run();
@@ -463,7 +472,7 @@ export function updateGoal(
 			if (t.id !== null && existing.includes(t.id)) {
 				kept.add(t.id);
 				tx.update(goalTargets)
-					.set({ targetValue: t.value, unit: t.unit, sortOrder: i })
+					.set({ targetValue: t.value, unit: t.unit, whole: t.whole, sortOrder: i })
 					.where(and(eq(goalTargets.id, t.id), eq(goalTargets.userId, ctx.userId)))
 					.run();
 				return;
@@ -474,6 +483,7 @@ export function updateGoal(
 					goalId: id,
 					targetValue: t.value,
 					unit: t.unit,
+					whole: t.whole,
 					sortOrder: i
 				})
 				.run();
@@ -793,13 +803,20 @@ function parseAnchor(value: unknown): Date | null {
  * is dropped rather than refused. A row with a unit and no number is a mistake
  * worth saying out loud: "5 books" and "books" are not the same claim.
  */
-function parseTargets(value: unknown): { id: number | null; value: number; unit: string }[] | null {
+function parseTargets(
+	value: unknown
+): { id: number | null; value: number; unit: string; whole: boolean }[] | null {
 	if (value === undefined || value === null) return null;
 	if (!Array.isArray(value)) throw new ValidationError('Invalid measures');
 
-	const out: { id: number | null; value: number; unit: string }[] = [];
+	const out: { id: number | null; value: number; unit: string; whole: boolean }[] = [];
 	for (const entry of value) {
-		const row = (entry ?? {}) as { id?: unknown; value?: unknown; unit?: unknown };
+		const row = (entry ?? {}) as {
+			id?: unknown;
+			value?: unknown;
+			unit?: unknown;
+			whole?: unknown;
+		};
 		const rawValue = row.value === undefined || row.value === null ? '' : String(row.value).trim();
 		const unit = optionalStr(row.unit, 'unit', { max: MAX_UNIT_LENGTH });
 		if (rawValue === '' && unit === '') continue;
@@ -809,7 +826,10 @@ function parseTargets(value: unknown): { id: number | null; value: number; unit:
 					? null
 					: num(row.id, 'measure', { int: true, min: 1 }),
 			value: num(rawValue, 'target', { min: 0.000001 }),
-			unit
+			unit,
+			// A form sends "true"/"false"; anything else and it is counted, which
+			// is what most goals are.
+			whole: String(row.whole ?? 'true') !== 'false'
 		});
 	}
 

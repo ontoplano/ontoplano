@@ -41,6 +41,7 @@ Can be put away in Preferences (`health`), which takes it out of the bar, the wh
 ### Finance
 
 - **Ledgers** — `/finance/ledgers`
+- **Bills** — `/finance/bills`
 - **Rules** — `/finance/rules`
 - **Insights** — `/finance/insights`
 

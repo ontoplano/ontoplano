@@ -1581,6 +1581,19 @@ export const goalTargets = sqliteTable(
 		targetValue: real('target_value').notNull(),
 		currentValue: real('current_value').notNull().default(0),
 		unit: text('unit').notNull().default(''),
+		/*
+		 * Whether this is counted or measured.
+		 *
+		 * Twelve books and 21.1 kilometres are both numbers, and the difference
+		 * decides what the screen should offer: a thing you count gets a plus
+		 * and a minus, because you finish one book at a time and reaching for a
+		 * keyboard to turn 3 into 4 is absurd. A thing you measure gets a field,
+		 * because 14.6 is not two presses away from anything.
+		 *
+		 * Stored rather than guessed from the value: a distance goal standing at
+		 * exactly 14 is still a distance, and would sprout arrows for a day.
+		 */
+		whole: integer('whole', { mode: 'boolean' }).notNull().default(true),
 		sortOrder: integer('sort_order').notNull().default(0)
 	},
 	(table) => [
@@ -2200,6 +2213,21 @@ export const billPayments = sqliteTable(
 		// actually asked at the time.
 		amountExpected: integer('amount_expected').notNull().default(0),
 		amountPaid: integer('amount_paid').notNull().default(0),
+		/*
+		 * The line on a statement this payment actually is, when there is one.
+		 *
+		 * A bill marked paid by hand is somebody saying so; a bill attached to a
+		 * movement is the bank saying so, and the amount comes from the bank
+		 * rather than from what was expected. Nullable because both are real:
+		 * cash, a transfer that has not landed yet, a bill paid from an account
+		 * this instance does not import.
+		 *
+		 * `set null` on delete: deleting an imported line should not silently
+		 * un-pay a bill, only forget which line it was.
+		 */
+		movementId: integer('movement_id').references(() => financeTransactions.id, {
+			onDelete: 'set null'
+		}),
 		currency: text('currency'),
 		paidAt: text('paid_at')
 			.notNull()

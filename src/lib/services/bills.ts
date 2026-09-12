@@ -16,7 +16,7 @@
 import { and, asc, desc, eq } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
-import { billPayments, bills, categories, goals } from '$lib/db/schema.js';
+import { billPayments, bills, categories, financeTransactions, goals } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { created, stamp, stamps } from './time.js';
@@ -68,6 +68,8 @@ export type BillPayment = {
 	currency: string | null;
 	paidAt: string;
 	notes: string;
+	/** The statement line this payment is, when it was attached to one. */
+	movementId: number | null;
 };
 
 type BillInput = {
@@ -279,7 +281,7 @@ export function deleteBill(ctx: Ctx, id: number): void {
 export function markPaid(
 	ctx: Ctx,
 	billId: number,
-	input: { amountPaid?: unknown; period?: unknown; notes?: unknown } = {}
+	input: { amountPaid?: unknown; period?: unknown; notes?: unknown; movementId?: unknown } = {}
 ): BillPayment {
 	const bill = getBill(ctx, billId);
 	const period =
@@ -291,6 +293,10 @@ export function markPaid(
 			? bill.amountExpected
 			: num(input.amountPaid, 'amount paid', { int: true, min: 0 });
 	const notes = optionalStr(input.notes, 'notes', { max: MAX_NOTE_LENGTH }) || '';
+	const movementId =
+		input.movementId === undefined || input.movementId === null || input.movementId === ''
+			? null
+			: ownedMovement(ctx, num(input.movementId, 'movement', { int: true, min: 1 }));
 
 	db.insert(billPayments)
 		.values({
@@ -300,12 +306,19 @@ export function markPaid(
 			amountExpected: bill.amountExpected,
 			amountPaid,
 			currency: bill.currency,
+			movementId,
 			paidAt: stamp(ctx),
 			...created(ctx)
 		})
 		.onConflictDoUpdate({
 			target: [billPayments.billId, billPayments.period],
-			set: { amountPaid, amountExpected: bill.amountExpected, notes, paidAt: stamp(ctx) }
+			set: {
+				amountPaid,
+				amountExpected: bill.amountExpected,
+				notes,
+				movementId,
+				paidAt: stamp(ctx)
+			}
 		})
 		.run();
 
@@ -316,6 +329,53 @@ export function markPaid(
 		.get();
 	if (!p) throw new NotFoundError('bill payment');
 	return payment(p);
+}
+
+/**
+ * A statement line of this account's own, or nothing.
+ *
+ * Checked rather than trusted: a bill payment carrying somebody else's
+ * transaction id would report their money as yours, and the id arrives from a
+ * form.
+ */
+function ownedMovement(ctx: Ctx, movementId: number): number {
+	const found = db
+		.select({ id: financeTransactions.id })
+		.from(financeTransactions)
+		.where(and(eq(financeTransactions.id, movementId), eq(financeTransactions.userId, ctx.userId)))
+		.get();
+	if (!found) throw new NotFoundError('movement');
+	return found.id;
+}
+
+/**
+ * Mark a bill paid by pointing at the line that paid it.
+ *
+ * The amount comes from the statement rather than from what was expected,
+ * which is the whole point: the gap between the two is the number this room
+ * exists to show, and typing it in by hand is how that number becomes fiction.
+ * Money out is negative in a ledger and a payment is a positive amount, so the
+ * sign is dropped.
+ */
+export function markPaidFromMovement(
+	ctx: Ctx,
+	billId: number,
+	movementId: unknown,
+	period?: unknown
+): BillPayment {
+	const id = ownedMovement(ctx, num(movementId, 'movement', { int: true, min: 1 }));
+	const line = db
+		.select({ amountCents: financeTransactions.amountCents })
+		.from(financeTransactions)
+		.where(eq(financeTransactions.id, id))
+		.get();
+	if (!line) throw new NotFoundError('movement');
+
+	return markPaid(ctx, billId, {
+		amountPaid: Math.abs(line.amountCents),
+		movementId: id,
+		period
+	});
 }
 
 /** Undo a payment for a period — it was never paid, or paid in error. */
@@ -341,7 +401,8 @@ function payment(p: typeof billPayments.$inferSelect): BillPayment {
 		amountPaid: p.amountPaid,
 		currency: p.currency,
 		paidAt: p.paidAt,
-		notes: p.notes ?? ''
+		notes: p.notes ?? '',
+		movementId: p.movementId ?? null
 	};
 }
 

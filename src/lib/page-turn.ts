@@ -10,37 +10,13 @@
  *
  * It is driven from script rather than from CSS because no CSS animation can
  * reach inside a filter to move `intercept` — that loop is in
- * `page-turn.svelte.ts`, along with the values in force right now, which a
- * tuner can move while the app runs. That is also the cost: turbulence is
- * computed over the viewport every frame, on the CPU. It is affordable at
- * this duration and would not be at five times it.
+ * `page-turn.svelte.ts`, in two halves: the page breaks up when a navigation
+ * starts and the next one arrives when it lands. That is also the cost:
+ * turbulence is computed over the page every frame, on the CPU. It is
+ * affordable at this duration and would not be at five times it.
  *
  * This file holds no runes, because it is read by things that are not Svelte.
  */
-/**
- * Whether this browser can actually draw the dissolve.
- *
- * The turn is an SVG filter applied to `::view-transition-old(root)` and
- * `::view-transition-new(root)`. Chromium honours that. Firefox has
- * `startViewTransition` and does not honour the filter on those
- * pseudo-elements: both snapshots come out with nothing in them, so a
- * navigation is a blank screen and then the new page — which is far worse
- * than no transition at all, and is what it was doing.
- *
- * There is no capability to test for. `filter` is supported, `url(#id)` is
- * supported, and whether the two work together on a snapshot in the top layer
- * is not something CSS will answer. So this asks which engine it is, through
- * the one API only Chromium ships, and everything else changes screen the way
- * a page always has. When Firefox honours it, this check is the only thing to
- * delete.
- */
-export function canDissolve(): boolean {
-	if (typeof navigator === 'undefined') return false;
-	const brands = (navigator as Navigator & { userAgentData?: { brands?: { brand: string }[] } })
-		.userAgentData?.brands;
-	return Array.isArray(brands) && brands.some((b) => /Chromium/i.test(b.brand));
-}
-
 export const PAGE_TURN_DEFAULTS = {
 	/**
 	 * How long the dissolve takes, end to end.
@@ -68,18 +44,8 @@ export const PAGE_TURN_DEFAULTS = {
 	/** One field for both halves. Fixed, so the two stay complementary. */
 	seed: 7,
 
-	/**
-	 * The longest the app may be held still waiting for a navigation to settle.
-	 *
-	 * The turn waits so the browser photographs the new screen rather than the
-	 * old one, but a navigation that redirects can leave that promise unsettled
-	 * for ever — and a frozen app is not a price worth paying for a decoration.
-	 */
-	holdMs: 1000,
-
-	/** The filters in `+layout.svelte`, named once for both of its readers. */
-	outFilter: 'page-turn-out',
-	inFilter: 'page-turn-in'
+	/** The filter in `+layout.svelte`, named once for both of its readers. */
+	outFilter: 'page-turn-out'
 } as const;
 
 /** The three worth turning by hand. Everything else is decided. */

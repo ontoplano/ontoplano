@@ -1,7 +1,7 @@
 # Contributing
 
 Thanks for contributing! As of now, Ontoplano is one person's project, so every issue,
-fix and pull request genuinely moves it.
+fix and pull request genuinely helps it.
 
 ## Ways to contribute
 
@@ -26,9 +26,8 @@ make dev            # http://localhost:1493 (yarn dev elsewhere)
 make db-seed        # synthetic data for the dev account
 ```
 
-SQLite at `~/.local/share/ontoplano/ontoplano.db`, config at
-`~/.config/ontoplano/config.toml` — both created on first run. Never develop
-against real data.
+SQLite DB is located at `~/.local/share/ontoplano/ontoplano.db`, config at
+`~/.config/ontoplano/config.toml` — both created on first run.
 
 There are a lot of make targets. Bare `make` lists them; `make vars` says which
 switches each one takes, `make vars ONLY=package` for one.
@@ -66,6 +65,10 @@ make test           # the Playwright e2e suite
 - **Dev seed data**, so the dev account has a little of everything.
 - **The data export**, if the feature owns an account-scoped table — there is
   a test that fails when a table is missing from it.
+- **Docs and Tutorial**, docs should be generated as much as possible, meaning that
+  a change to the code should propagate automatically to it, instead of making it
+  obsolete. Tutorial is brief, a quick visual explanation in the UI, applies basically
+  only to new routes.
 
 ### Bug fixes
 
@@ -75,25 +78,6 @@ code.
 A security problem is the one thing that does not go in an issue: use a
 [private advisory](https://github.com/ontoplano/ontoplano/security/advisories/new).
 
-## Routes run on both instances
-
-Ontoplano runs two ways: served from a box, and entirely inside a phone with
-no server at all. Both run **the same files** — a route's `+page.server.ts` is
-loaded by SvelteKit on a server and by a worker on a device. There is no
-second copy to keep in step.
-
-The one thing to know when you add a route: its server file cannot import
-`$lib/server/*`, `$app/environment`, `$env/*` or Node builtins, because none
-of those exist in a worker. If it does, the isolated build fails and names the
-import.
-
-If your route needs something only a served instance has, add it to the host
-seam in `src/lib/services/host.ts`: an interface method whose default is
-correct for a device and whose real implementation is bound in
-`src/lib/server/host.ts`. If the whole screen is about a deployment — billing,
-the account, the admin pages — add it to the exclusion list at the top of
-`src/lib/isolated/routes.ts` and it will say plainly that it needs a server.
-
 ## Code style
 
 Match what is around you — naming, layout, comment density. The rules a
@@ -102,8 +86,7 @@ reviewer or a lint rule will stop you on:
 - **Ownership lives in the `WHERE`.** Every query touching user data filters
   by the account inside the statement.
 - **Routes do not query the database.** `+page.server.ts` calls a service in
-  `src/lib/services/` — or `src/lib/server/services/` for the server-only
-  ones; a lint rule enforces it.
+  `src/lib/server/services/`; a lint rule enforces it.
 - **"Not yours" answers exactly like "does not exist"** — same status, same
   message. `e2e/idor.e2e.ts` has a case per entity.
 - **Strings are bounded at the service**, and a new table goes into
@@ -117,3 +100,5 @@ reviewer or a lint rule will stop you on:
   not on the page alone. Two exceptions: anything to do with security, and
   deleting personal data (people, habits, goals). Those stay in the app,
   where the person does them by hand.
+- **Avoid hardcoding strings and numbers.** Anything that is ad-hoc and subject
+  to future change should go into the appropriate configuration for i.t

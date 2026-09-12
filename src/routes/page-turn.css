@@ -3,60 +3,28 @@
  *
  * Routes change the way an e-reader changes page: the old screen breaks up
  * into dots and the new one arrives in the gaps they leave, over one shared
- * field of noise, so a dot going out is a dot coming in. The filters are in
- * `+layout.svelte` and the threshold is slid by `runDissolve` in
- * `$lib/page-turn.ts`; nothing here decides a number.
+ * field of noise, so a dot going out is a dot coming in.
+ *
+ * There is almost nothing here because almost none of it is CSS. The filter is
+ * in `+layout.svelte` and both halves of the turn are slid by `turnOut` and
+ * `turnIn` in `$lib/page-turn.svelte.ts`; nothing here decides a number.
+ *
+ * It used to be built on View Transitions, and this file was full of rules for
+ * their pseudo-elements. Two things were wrong with that. A view transition
+ * cannot start until the new page is ready, so the half that should cover the
+ * wait ran after it — on a phone the loading bar appeared, the page arrived,
+ * and only then did the screen dissolve. And Firefox, which has the API, draws
+ * nothing into a filtered snapshot, so the whole effect had to be switched off
+ * there. Filtering the page itself has neither problem.
  */
 
 /*
- * A tap during the turn reaches the app, not the photograph.
+ * The page being turned.
  *
- * The snapshots are drawn in the browser's top layer, above everything, and
- * they take the pointer with them — so every press during the turn would land
- * on a picture of a screen that is no longer there and simply be lost.
- * Nothing in that layer is interactive by design, so none of it is hit-tested.
+ * A filter is applied to this and removed again, so there is nothing to
+ * declare — except that a page mid-turn must not be pressed. It is a picture
+ * of a screen on its way out; a press landing on it goes nowhere.
  */
-::view-transition,
-::view-transition-group(*),
-::view-transition-image-pair(*),
-::view-transition-old(*),
-::view-transition-new(*) {
+.page-turning[style*='filter'] {
 	pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-	::view-transition-old(root),
-	::view-transition-new(root) {
-		/*
-		 * The browser's own cross-fade, off.
-		 *
-		 * Its default fades both layers and sets `mix-blend-mode: plus-lighter`
-		 * to stop the middle of that fade going grey. Left on underneath the
-		 * filters it washes the dots into a smear — the exact look this replaces.
-		 *
-		 * `hold` is what remains, and it animates nothing: a view transition ends
-		 * when the animations on its pseudo-elements do, so with none at all it
-		 * would be over before the first frame. This keeps it open for exactly as
-		 * long as the dissolve needs, and the dissolve itself is the filter.
-		 */
-		mix-blend-mode: normal;
-		animation: page-turn-hold var(--page-turn) linear both;
-	}
-
-	::view-transition-old(root) {
-		filter: url('#page-turn-out');
-	}
-
-	::view-transition-new(root) {
-		filter: url('#page-turn-in');
-	}
-
-	@keyframes page-turn-hold {
-		from {
-			opacity: 1;
-		}
-		to {
-			opacity: 1;
-		}
-	}
 }

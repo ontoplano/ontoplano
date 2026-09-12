@@ -18,7 +18,7 @@ exist.
 | [`api_tokens`](#api_tokens)                       | 12      | yes               |
 | [`assistant_calls`](#assistant_calls)             | 9       | yes               |
 | [`audit_events`](#audit_events)                   | 7       | yes               |
-| [`bill_payments`](#bill_payments)                 | 10      | yes               |
+| [`bill_payments`](#bill_payments)                 | 11      | yes               |
 | [`billing_checkouts`](#billing_checkouts)         | 8       | yes               |
 | [`billing_events`](#billing_events)               | 8       | —                 |
 | [`bills`](#bills)                                 | 17      | yes               |
@@ -36,7 +36,7 @@ exist.
 | [`finance_transactions`](#finance_transactions)   | 10      | yes               |
 | [`goal_areas`](#goal_areas)                       | 6       | yes               |
 | [`goal_links`](#goal_links)                       | 6       | yes               |
-| [`goal_targets`](#goal_targets)                   | 7       | yes               |
+| [`goal_targets`](#goal_targets)                   | 8       | yes               |
 | [`goals`](#goals)                                 | 14      | yes               |
 | [`habit_occurrences`](#habit_occurrences)         | 6       | yes               |
 | [`habits`](#habits)                               | 7       | yes               |
@@ -215,18 +215,19 @@ Indexes:
 
 ## bill_payments
 
-| Column            | Type    | Null     | Default               | Notes             |
-| ----------------- | ------- | -------- | --------------------- | ----------------- |
-| `id`              | integer | not null | —                     | primary key, auto |
-| `user_id`         | text    | not null | —                     | → `user.id`       |
-| `bill_id`         | integer | not null | —                     | → `bills.id`      |
-| `period`          | text    | not null | —                     | —                 |
-| `amount_expected` | integer | not null | `0`                   | —                 |
-| `amount_paid`     | integer | not null | `0`                   | —                 |
-| `currency`        | text    | null     | —                     | —                 |
-| `paid_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
-| `notes`           | text    | null     | `''`                  | —                 |
-| `created_at`      | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| Column            | Type    | Null     | Default               | Notes                       |
+| ----------------- | ------- | -------- | --------------------- | --------------------------- |
+| `id`              | integer | not null | —                     | primary key, auto           |
+| `user_id`         | text    | not null | —                     | → `user.id`                 |
+| `bill_id`         | integer | not null | —                     | → `bills.id`                |
+| `period`          | text    | not null | —                     | —                           |
+| `amount_expected` | integer | not null | `0`                   | —                           |
+| `amount_paid`     | integer | not null | `0`                   | —                           |
+| `movement_id`     | integer | null     | —                     | → `finance_transactions.id` |
+| `currency`        | text    | null     | —                     | —                           |
+| `paid_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                           |
+| `notes`           | text    | null     | `''`                  | —                           |
+| `created_at`      | text    | not null | `(CURRENT_TIMESTAMP)` | —                           |
 
 Indexes:
 
@@ -591,6 +592,7 @@ Checks — enforced by the database, not only by the service layer:
 | `target_value`  | real    | not null | —       | —                 |
 | `current_value` | real    | not null | `0`     | —                 |
 | `unit`          | text    | not null | `''`    | —                 |
+| `whole`         | integer | not null | `true`  | —                 |
 | `sort_order`    | integer | not null | `0`     | —                 |
 
 Indexes:

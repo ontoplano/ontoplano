@@ -3,12 +3,14 @@ import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
 import { getCurrency } from '$lib/services/settings';
 import { parseMoney } from '$lib/money';
+import { listMovements } from '$lib/services/statements';
 import {
 	createBill,
 	updateBill,
 	setArchived,
 	deleteBill,
 	markPaid,
+	markPaidFromMovement,
 	unmarkPaid,
 	listBills,
 	listPayments,
@@ -28,6 +30,15 @@ function thisMonth(now: Date): string {
 	return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
+/**
+ * How far back the "which line paid this?" picker looks, and how much of it.
+ *
+ * A bill is paid near when it is due, so six weeks covers a monthly one that
+ * went out late without turning the picker into the whole statement.
+ */
+const MOVEMENT_PICKER_DAYS = 45;
+const MOVEMENT_PICKER_LIMIT = 200;
+
 export const load = async ({ locals }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
 	const bills = listBills(ctx, { includeArchived: true });
@@ -42,12 +53,27 @@ export const load = async ({ locals }: IsolatedEvent) => {
 			.map((p) => p.billId)
 	);
 
+	/*
+	 * Recent money leaving, to attach a bill to.
+	 *
+	 * The whole list would be thousands of lines and a picker nobody scrolls;
+	 * a bill is paid near when it is due, so the last few weeks is where the
+	 * line actually is. Out only: a bill is money leaving.
+	 */
+	const since = new Date(ctx.now);
+	since.setDate(since.getDate() - MOVEMENT_PICKER_DAYS);
+
 	return {
 		currency: getCurrency(ctx.userId),
 		month,
 		bills: bills.map((b) => ({ ...b, paidThisPeriod: paid.has(b.id), period: periods[b.id] })),
 		summary: monthSummary(ctx, month),
-		periods
+		periods,
+		recentMovements: listMovements(ctx, {
+			from: since.toISOString().slice(0, 10),
+			direction: 'out',
+			limit: MOVEMENT_PICKER_LIMIT
+		})
 	};
 };
 
@@ -99,6 +125,28 @@ export const actions = {
 				amountPaid: paid ? (parseMoney(paid, getCurrency(ctx.userId)) ?? undefined) : undefined,
 				period: form.get('period') || undefined
 			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/*
+	 * Paid, and here is the line that paid it.
+	 *
+	 * The amount comes from the statement rather than from what the bill
+	 * expected — the gap between the two is the number this room exists to
+	 * show, and typing it in by hand is how that number becomes fiction.
+	 */
+	payFromMovement: async ({ request, locals }: IsolatedEvent) => {
+		const form = await request.formData();
+		try {
+			markPaidFromMovement(
+				buildCtx(locals.user!.id),
+				Number(form.get('id')),
+				form.get('movementId'),
+				form.get('period') || undefined
+			);
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

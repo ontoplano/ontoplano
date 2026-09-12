@@ -190,10 +190,20 @@ test('a goal can be measured by several things, and each keeps its own number', 
 	await expect(page.getByText('/ 5 songs')).toBeVisible();
 	await expect(page.getByText('2 measures')).toBeVisible();
 
-	// Every gig played. Half the goal, not all of it.
-	await rows.first().locator('input[name="currentValue"]').fill('3');
-	await rows.first().getByRole('button', { name: 'Save progress' }).click();
-	await page.waitForTimeout(800);
+	/*
+	 * Every gig played. Half the goal, not all of it.
+	 *
+	 * Gigs are counted, so the card offers a plus rather than a field: each
+	 * press is the whole gesture — the button carries the new number and
+	 * submits — which is why there is no save afterwards.
+	 */
+	for (let played = 0; played < 3; played += 1) {
+		await rows
+			.first()
+			.getByRole('button', { name: /One more/ })
+			.click();
+		await page.waitForTimeout(500);
+	}
 	await expect(page.getByText('50%')).toBeVisible();
 
 	// Nothing overflows the phone.
@@ -210,5 +220,13 @@ test('a goal can be measured by several things, and each keeps its own number', 
 	await page.waitForTimeout(800);
 
 	await expect(page.getByText('/ 3 gigs played')).toBeVisible();
-	await expect(rows.first().locator('input[name="currentValue"]')).toHaveValue('3');
+	/*
+	 * And the three already played survive the rename.
+	 *
+	 * Still 50%: three of three gigs and none of five songs, averaged. A
+	 * counted measure carries its number between the minus and the plus, and
+	 * the minus being pressable is what says the number is not zero.
+	 */
+	await expect(page.getByText('50%')).toBeVisible();
+	await expect(rows.first().getByRole('button', { name: /One fewer/ })).toBeEnabled();
 });

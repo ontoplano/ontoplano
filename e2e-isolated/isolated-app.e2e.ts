@@ -186,6 +186,37 @@ test('a picture goes into a note on the device', async ({ page }) => {
 	expect(answer.body?.markdown).toMatch(/!\[.*]\(\/media\/\d+\)/);
 });
 
+/**
+ * A thing made on the device is on the screen at once.
+ *
+ * Reported twice: creating a ledger appears to do nothing until the page is
+ * reloaded, in the app but not in a desktop browser. On the device every write
+ * goes through the bridge — the action runs in the worker and the page's data
+ * is re-fetched from it — so this is where that round trip is pinned.
+ */
+test.fixme('a ledger made on the device appears without a reload', async ({ page }) => {
+	// Reproduced and left failing on purpose, so it stays visible: pressing
+	// "New ledger" on the device does not bring up the form it should. Reported
+	// as "creating a ledger does nothing until you reload"; what it actually
+	// looks like from here is that the modal never opens.
+	test.setTimeout(120_000);
+	await page.goto('/finance/ledgers');
+	await expect(page.getByRole('heading', { name: 'Finance' })).toBeVisible({ timeout: 60_000 });
+
+	const tour = page.getByRole('dialog', { name: 'Tutorial' });
+	if (await tour.isVisible().catch(() => false)) {
+		await tour.getByRole('button', { name: 'Dismiss' }).click();
+		await tour.getByRole('button', { name: 'Okay, dismiss!' }).click();
+	}
+
+	await page.getByRole('button', { name: 'New ledger' }).first().click();
+	await page.locator('input[name="heading"]').fill('Money on this phone');
+	await page.getByRole('button', { name: 'Create', exact: true }).click();
+
+	// No reload, no second navigation: the list is what the action changed.
+	await expect(page.getByText('Money on this phone').first()).toBeVisible({ timeout: 15_000 });
+});
+
 test('a picture is stored and drawn with no server anywhere', async ({ page }) => {
 	test.setTimeout(120_000);
 	page.on('pageerror', (e) => console.log('PAGEERROR ' + String(e).slice(0, 300)));

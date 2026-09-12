@@ -3,6 +3,8 @@
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { enhance } from '$app/forms';
 	import Banner from '$lib/components/Banner.svelte';
+	import { inPhoneApp } from '$lib/instance-choice';
+	import { askPhoneToNotify, phoneWillNotify } from '$lib/phone-notifications';
 	import Card from '$lib/components/Card.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -87,10 +89,15 @@
 	async function allow() {
 		asking = true;
 		try {
-			await enablePush(page.data.pushKey ?? null);
+			// In the phone app it is Android being asked, not the browser: this
+			// web view has no Push API to subscribe to, and the alarms are booked
+			// with the system instead.
+			if (inPhoneApp()) allowed = await askPhoneToNotify();
+			else await enablePush(page.data.pushKey ?? null);
 		} finally {
 			asking = false;
-			allowed = typeof Notification !== 'undefined' && Notification.permission === 'granted';
+			if (!inPhoneApp())
+				allowed = typeof Notification !== 'undefined' && Notification.permission === 'granted';
 		}
 	}
 
@@ -157,7 +164,8 @@
 	onMount(() => {
 		insecure = !window.isSecureContext;
 		origin = `${location.protocol}//${location.host}`;
-		allowed = typeof Notification !== 'undefined' && Notification.permission === 'granted';
+		if (inPhoneApp()) phoneWillNotify().then((yes) => (allowed = yes));
+		else allowed = typeof Notification !== 'undefined' && Notification.permission === 'granted';
 	});
 
 	/**
@@ -278,14 +286,24 @@
 		<Banner kind="warning">
 			<div class="flex flex-wrap items-center gap-3">
 				<span>
-					This browser has not been allowed to notify you, so reminders arrive only while this page
-					is open.
+					{inPhoneApp()
+						? 'This phone has not been allowed to notify you, so reminders arrive only while ontoplano is open.'
+						: 'This browser has not been allowed to notify you, so reminders arrive only while this page is open.'}
 				</span>
 				<button type="button" class="btn btn-primary" onclick={allow} disabled={asking}>
 					{asking ? 'Asking…' : 'Allow notifications'}
 				</button>
 			</div>
-			{#if !pushSupported()}
+			<!--
+				And the sentence about push, which is not the phone app's problem.
+
+				Android's web view has no Push API, so inside the app that line was
+				always shown — telling somebody who is holding the app to install it
+				as an app. The app does not need push: it books the reminders with
+				Android itself while it is open, and they arrive whether or not it
+				is.
+			-->
+			{#if !pushSupported() && !inPhoneApp()}
 				<p class="mt-2 text-sm">
 					This browser has no push support, so reminders will only arrive while ontoplano is open.
 					Installing it as an app usually fixes that.

@@ -495,13 +495,18 @@ const goal = (title, horizon, periodStart, extra = {}) => {
 	);
 
 	(extra.measures ?? []).forEach((m, at) => {
+		// Counted or measured: books are counted, kilometres are not. Taken from
+		// the numbers unless the measure says, so the dev database has one of
+		// each and both halves of the goal card are on screen.
+		const whole = m.whole ?? (Number.isInteger(m.target) && Number.isInteger(m.current ?? 0));
 		run(
-			'insert into goal_targets (user_id, goal_id, target_value, current_value, unit, sort_order) values (?, ?, ?, ?, ?, ?)',
+			'insert into goal_targets (user_id, goal_id, target_value, current_value, unit, whole, sort_order) values (?, ?, ?, ?, ?, ?, ?)',
 			uid,
 			id,
 			m.target,
 			m.current ?? 0,
 			m.unit ?? '',
+			whole ? 1 : 0,
 			at
 		);
 	});
@@ -876,7 +881,9 @@ goal('run a half marathon', 'quarter', quarterStart, {
 	areaId: areaHealth,
 	parentId: null,
 	notes: 'build up to 21km without walking',
-	measures: [{ target: 21, current: 14, unit: 'km' }]
+	// A distance, measured rather than counted — 21.1 is the half marathon and
+	// the point of the other kind of measure.
+	measures: [{ target: 21.1, current: 14.6, unit: 'km', whole: false }]
 });
 // The multi-measure case: one commitment, three numbers under it.
 goal('get the band playing again', 'year', yearStart, {

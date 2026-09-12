@@ -1,6 +1,7 @@
 <script lang="ts">
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import RoomBar from '$lib/components/RoomBar.svelte';
+	import { COUNT_STEP, NUMBER_KINDS } from '$lib/number-kinds';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
@@ -55,7 +56,9 @@
 	 * A row carries the id of the measure it edits so the number already on it
 	 * survives a rename of its unit; a row with no id is a new one.
 	 */
-	let formTargets: { id: number | null; value: string; unit: string }[] = $state([]);
+	let formTargets: { id: number | null; value: string; unit: string; whole: boolean }[] = $state(
+		[]
+	);
 	let selectedIndex = $state(0);
 
 	const accent = SECTION_COLORS.home;
@@ -116,7 +119,8 @@
 	}
 
 	function blankTarget() {
-		return { id: null, value: '', unit: '' };
+		// Counted by default: most goals are a number of things done.
+		return { id: null, value: '', unit: '', whole: true };
 	}
 
 	function openCreate() {
@@ -133,7 +137,12 @@
 		formStart = goal.periodStart;
 		formTargets =
 			goal.targets.length > 0
-				? goal.targets.map((t) => ({ id: t.id, value: String(t.targetValue), unit: t.unit }))
+				? goal.targets.map((t) => ({
+						id: t.id,
+						value: String(t.targetValue),
+						unit: t.unit,
+						whole: t.whole
+					}))
 				: [blankTarget()];
 		showForm = true;
 	}
@@ -409,11 +418,32 @@
 						{#each formTargets as target, i (i)}
 							<div class="flex items-center gap-2">
 								<input type="hidden" name="targetId" value={target.id ?? ''} />
+								<!--
+									Counted or measured, before the number itself.
+
+									It decides what the goal's own card offers later — a plus
+									and a minus, or a field — so it sits where the number is
+									being decided rather than somewhere in a settings screen.
+								-->
+								<label class="shrink-0">
+									<span class="sr-only">What kind of number</span>
+									<select
+										name="targetWhole"
+										bind:value={target.whole}
+										class="select w-16 text-center text-base"
+										title={NUMBER_KINDS.find((k) => k.whole === target.whole)?.label}
+									>
+										{#each NUMBER_KINDS as kind (kind.symbol)}
+											<option value={kind.whole} title={kind.label}>{kind.symbol}</option>
+										{/each}
+									</select>
+								</label>
 								<NumberBox
 									autocomplete="off"
 									name="targetValue"
 									min="0"
-									step="any"
+									step={target.whole ? COUNT_STEP : 'any'}
+									inputmode={target.whole ? 'numeric' : 'decimal'}
 									placeholder="3"
 									bind:value={target.value}
 									class="tabular w-24 shrink-0"
@@ -601,15 +631,51 @@
 														class="flex flex-wrap items-center gap-2"
 													>
 														<input type="hidden" name="targetId" value={target.id} />
-														<NumberBox
-															autocomplete="off"
-															name="currentValue"
-															min="0"
-															step="any"
-															value={target.currentValue}
-															aria-label={`Progress towards ${target.targetValue} ${target.unit}`.trim()}
-															class="tabular w-20 border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-														/>
+														<!--
+															A thing you count moves one at a time.
+															
+															Twelve books is finished a book at a time, and
+															reaching for a keyboard to turn 3 into 4 is absurd —
+															so a counted measure gets a minus and a plus, each of
+															which is the whole gesture: the button carries the new
+															number, so a press is a submit and there is nothing to
+															save afterwards. A measured one keeps its field,
+															because 14.6 is not two presses away from anything.
+														-->
+														{#if target.whole}
+															<button
+																class="icon-btn"
+																name="currentValue"
+																value={Math.max(0, target.currentValue - COUNT_STEP)}
+																disabled={target.currentValue <= 0}
+																title="One fewer"
+																aria-label={`One fewer ${target.unit || 'towards this'}`.trim()}
+															>
+																<Icon name="minus" />
+															</button>
+															<span class="tabular text-xs text-gray-700">
+																{target.currentValue}
+															</span>
+															<button
+																class="icon-btn"
+																name="currentValue"
+																value={target.currentValue + COUNT_STEP}
+																title="One more"
+																aria-label={`One more ${target.unit || 'towards this'}`.trim()}
+															>
+																<Icon name="plus" />
+															</button>
+														{:else}
+															<NumberBox
+																autocomplete="off"
+																name="currentValue"
+																min="0"
+																step="any"
+																value={target.currentValue}
+																aria-label={`Progress towards ${target.targetValue} ${target.unit}`.trim()}
+																class="tabular w-20 border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+															/>
+														{/if}
 														<span class="tabular text-xs text-gray-500">
 															/ {target.targetValue}
 															{target.unit}
@@ -621,13 +687,15 @@
 																	background-color: {goal.areaColor ?? accent}"
 															></div>
 														</div>
-														<button
-															class="icon-btn"
-															title="Save progress"
-															aria-label="Save progress"
-														>
-															<Icon name="check" />
-														</button>
+														{#if !target.whole}
+															<button
+																class="icon-btn"
+																title="Save progress"
+																aria-label="Save progress"
+															>
+																<Icon name="check" />
+															</button>
+														{/if}
 													</form>
 												{/each}
 											</div>
