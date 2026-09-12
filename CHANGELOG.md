@@ -10,6 +10,19 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.159.1 — 2026-09-13
+
+- **The room's header reaches the top of the screen.** A sticky element pins
+  to the scrollport, which began below the page's own top padding — so the bar
+  could never sit higher than that padding and a strip of page showed above
+  it, with content sliding through. The scroller gives that padding up and the
+  bar carries it.
+- **The mark is the mark.** A logo exported on a plate arrives as a square of
+  cream with the octagon in the middle, and every icon drawn from it carried
+  the square. `make icon` lifts a flat ground to transparency — flood-filled
+  from inside the edge, so the white _inside_ the mark is untouched — and
+  squares what is left on the mark itself.
+
 ## 0.159.0 — 2026-09-13
 
 - **A button has an edge.** Its border was transparent and its fill six

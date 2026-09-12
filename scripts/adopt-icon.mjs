@@ -69,8 +69,107 @@ if (skew > MOST_SKEW) {
 	process.exit(1);
 }
 
-copyFileSync(source, MARK);
-console.log(`mark: src/lib/logo/mark.png ← ${from} (${width}×${height})`);
+/**
+ * A logo exported on a plate arrives as a square of cream with the mark in
+ * the middle of it, and every icon drawn from it carries that square — a
+ * white thing containing the logo rather than the logo.
+ *
+ * Flood-filled from the four corners rather than keyed on a colour, so the
+ * white *inside* the mark is untouched: the ground is only what the corners
+ * can reach, and anything enclosed by the artwork cannot be reached. A
+ * picture that already has transparent corners is left alone, and so is one
+ * whose corners disagree — that is a photograph, not a plate.
+ */
+const GROUND_FUZZ = 20;
+
+/**
+ * How far inside the edge the fill starts.
+ *
+ * An exported logo often carries a hairline frame a shade off its own ground,
+ * and a fill started in the very corner stops at that line — lifting four
+ * single pixels and leaving the plate. A hundredth of the picture is past any
+ * such line and still nowhere near the mark.
+ */
+const INSET = (size) => Math.max(4, Math.round(size * 0.01));
+
+function liftGround(file, out) {
+	const px = (x, y) =>
+		execFileSync('magick', [file, '-format', `%[pixel:p{${x},${y}}]`, 'info:'], {
+			encoding: 'utf8'
+		}).trim();
+
+	/** `srgb(241,237,234)` or `srgba(…,0)` into four numbers. */
+	const rgba = (pixel) => {
+		const n = pixel.match(/[\d.]+/g)?.map(Number) ?? [];
+		return { r: n[0] ?? 0, g: n[1] ?? 0, b: n[2] ?? 0, a: n[3] ?? 1 };
+	};
+
+	const inx = INSET(width);
+	const iny = INSET(height);
+	const corners = [
+		px(inx, iny),
+		px(width - 1 - inx, iny),
+		px(inx, height - 1 - iny),
+		px(width - 1 - inx, height - 1 - iny)
+	].map(rgba);
+
+	// Already cut out: nothing to lift.
+	if (corners.some((c) => c.a === 0)) return false;
+
+	/*
+	 * A plate is four corners of the same colour, give or take the noise a
+	 * JPEG-ish export leaves behind. Compared with a tolerance rather than for
+	 * equality, because no two corners of a real export are ever identical —
+	 * which is what made the first version of this refuse every picture.
+	 */
+	const first = corners[0];
+	const far = corners.some(
+		(c) =>
+			Math.abs(c.r - first.r) > 12 || Math.abs(c.g - first.g) > 12 || Math.abs(c.b - first.b) > 12
+	);
+	if (far) {
+		console.log('  the corners are four different colours, so this is not a plate — kept as it is');
+		return false;
+	}
+
+	execFileSync('magick', [
+		file,
+		'-alpha',
+		'set',
+		'-fuzz',
+		`${GROUND_FUZZ}%`,
+		'-fill',
+		'none',
+		'-draw',
+		`alpha ${inx},${iny} floodfill`,
+		'-draw',
+		`alpha ${width - 1 - inx},${iny} floodfill`,
+		'-draw',
+		`alpha ${inx},${height - 1 - iny} floodfill`,
+		'-draw',
+		`alpha ${width - 1 - inx},${height - 1 - iny} floodfill`,
+		// What is left is the mark and nothing around it, squared up so every
+		// icon drawn from it is centred on the mark rather than on the plate.
+		'-trim',
+		'+repage',
+		'-background',
+		'none',
+		'-gravity',
+		'center',
+		'-extent',
+		'%[fx:max(w,h)]x%[fx:max(w,h)]',
+		out
+	]);
+	return true;
+}
+
+if (liftGround(source, MARK)) {
+	const now = execFileSync('magick', [MARK, '-format', '%wx%h', 'info:'], { encoding: 'utf8' });
+	console.log(`mark: src/lib/logo/mark.png ← ${from}, its ground lifted (${now})`);
+} else {
+	copyFileSync(source, MARK);
+	console.log(`mark: src/lib/logo/mark.png ← ${from} (${width}×${height})`);
+}
 
 /** Each step says what it did; a missing toolchain says so and stops. */
 const run = (label, args) => {

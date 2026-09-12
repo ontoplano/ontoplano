@@ -461,24 +461,36 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 }
 
 @media (max-width: 639px) {
+	/*
+	 * The bar reaches the top, and the page's breathing room moves into it.
+	 *
+	 * A sticky element pins to the scrollport, which is the *padding* box — so
+	 * while the scroller kept a safe-area inset plus a rem of padding, a bar
+	 * at `top: 0` could never sit higher than that padding, and a strip of
+	 * page showed above it with the content sliding through. A negative margin
+	 * does not help: sticky ignores it once engaged, and it is engaged from
+	 * the first pixel.
+	 *
+	 * So the scroller gives the padding up and the bar carries it. Anything
+	 * that is not a bar keeps it, as a margin of its own, so a screen without
+	 * one still starts below the status bar.
+	 */
+	main.page-gutter {
+		padding-top: 0;
+	}
+
+	main.page-gutter > *:not(:has(.room-bar)) {
+		margin-top: calc(var(--safe-top) + 1rem);
+	}
+
 	.room-bar {
 		position: sticky;
-		/*
-		 * Against the very top, not under the page's own breathing room.
-		 *
-		 * The scroller starts below a safe-area inset plus a rem of padding, so
-		 * a bar stuck at `top: 0` sat a strip of background below the screen's
-		 * edge and the page slid through the gap. It is pulled up by exactly
-		 * what the scroller added and pays that back as its own padding, so the
-		 * status bar still has its room and nothing shows above the bar.
-		 */
 		top: 0;
-		margin-top: calc(-1 * (var(--safe-top) + 1rem));
-		padding-top: calc(var(--safe-top) + 0.5rem);
 		z-index: 20;
 		gap: 0;
 		margin-inline: calc(-1 * var(--page-gutter));
 		padding-inline: var(--page-gutter);
+		padding-top: calc(var(--safe-top) + 0.75rem);
 		background-color: var(--color-gray-100);
 	}
 }
