@@ -98,9 +98,11 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<!-- Title and button on one line; the button had a row of its own. -->
-	<div class="flex flex-wrap items-center justify-between gap-3">
-		<h1 class="text-lg font-bold text-gray-900">People</h1>
+	<!--
+		No second heading: the room's name is above and the People tab is lit,
+		so a page saying "People" under both said it three times.
+	-->
+	<div class="flex flex-wrap items-center justify-end gap-3">
 		<button onclick={openCreate} class="btn btn-primary btn-sm" data-tour="people-new">
 			<Icon name="plus" /> New person
 			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
@@ -261,35 +263,42 @@
 			{/if}
 		</Card>
 
-		<Card
-			title={selectedPerson ? selectedPerson.name : 'Mentions'}
-			description={selectedPerson
-				? RELATIONSHIP_LABELS[selectedPerson.relationship]
-				: 'Pick somebody to see everything you wrote about them.'}
-			accent={SECTION_COLORS.diary}
-			flush
-		>
-			{#if !selectedPerson}
-				<EmptyState icon="diary" title="Nobody selected" />
-			{:else if data.entries.length === 0}
-				<EmptyState
-					icon="diary"
-					title="Nothing written about {selectedPerson.name} yet"
-					description="Mention them in a diary entry and it will show up here."
-				/>
-			{:else}
-				<div class="divide-y divide-gray-200">
-					{#each data.entries as entry (entry.id)}
-						<article class="px-4 py-3">
-							<p class="text-sm whitespace-pre-wrap text-gray-900">{entry.content}</p>
-							<p class="tabular mt-1 text-xs text-gray-500">
-								{when(entry.createdAt)}{#if entry.forDate}&nbsp;· for {entry.forDate}{/if}
-							</p>
-						</article>
-					{/each}
-				</div>
-			{/if}
-		</Card>
+		<!--
+			The second column is whoever you picked, and on a phone there is no
+			second column. With nobody picked it said so twice under a list that
+			was already empty.
+		-->
+		<div class:hidden={!selectedPerson} class="contents lg:!block">
+			<Card
+				title={selectedPerson ? selectedPerson.name : 'Mentions'}
+				description={selectedPerson
+					? RELATIONSHIP_LABELS[selectedPerson.relationship]
+					: 'Pick somebody to see everything you wrote about them.'}
+				accent={SECTION_COLORS.diary}
+				flush
+			>
+				{#if !selectedPerson}
+					<EmptyState icon="diary" title="Nobody selected" />
+				{:else if data.entries.length === 0}
+					<EmptyState
+						icon="diary"
+						title="Nothing written about {selectedPerson.name} yet"
+						description="Mention them in a diary entry and it will show up here."
+					/>
+				{:else}
+					<div class="divide-y divide-gray-200">
+						{#each data.entries as entry (entry.id)}
+							<article class="px-4 py-3">
+								<p class="text-sm whitespace-pre-wrap text-gray-900">{entry.content}</p>
+								<p class="tabular mt-1 text-xs text-gray-500">
+									{when(entry.createdAt)}{#if entry.forDate}&nbsp;· for {entry.forDate}{/if}
+								</p>
+							</article>
+						{/each}
+					</div>
+				{/if}
+			</Card>
+		</div>
 	</div>
 </div>
 

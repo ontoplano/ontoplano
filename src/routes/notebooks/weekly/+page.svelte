@@ -27,9 +27,11 @@
 
 <svelte:head><title>Weekly notes · Ontoplano</title></svelte:head>
 
+<!--
+	No second heading: the room's name is above and the Weekly notes tab is
+	lit, so a page saying it again said it three times.
+-->
 <div class="space-y-4">
-	<h1 class="text-lg font-bold text-gray-900">Weekly notes</h1>
-
 	{#if data.weeks.length === 0}
 		<EmptyState
 			icon="note"

@@ -58,9 +58,14 @@
 			<button type="button" onclick={() => show(capture)} class="btn btn-sm">
 				<span style="color:{capture.color}"><Icon name={capture.icon} /></span>
 				{capture.label}
-				<!-- `kbd-hint` so a touch screen wide enough for this row still drops
-				     it: a keystroke is noise where there is no keyboard. -->
-				<span class="kbd-hint text-gray-500">({capture.shortcut})</span>
+				<!--
+					`kbd-hint` so a touch screen wide enough for this row still drops
+					it: a keystroke is noise where there is no keyboard. `gray-600`
+					rather than `gray-500` because it sits on a button's face, which
+					is lighter than the page — twelve-point type needs 4.5:1 and grey
+					on that ground was 4.27.
+				-->
+				<span class="kbd-hint text-gray-600">({capture.shortcut})</span>
 			</button>
 		{/each}
 	</div>

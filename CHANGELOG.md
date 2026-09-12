@@ -10,6 +10,21 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.159.0 — 2026-09-13
+
+- **A button has an edge.** Its border was transparent and its fill six
+  shades from the page, so on a dark screen a button was a word floating
+  where a control should be — and inside a card, whose surface is lighter
+  than that fill, it read as a dent.
+- **Inventory's controls stop wrapping into rags.** One action in the room's
+  header, which list you are in on a row of its own, and what it hides below
+  that. Six controls of three different kinds beside the room's name broke
+  wherever they happened to run out of width.
+- A page under a room with tabs no longer repeats the room's name: People
+  said "People" three times, once in the header, once in the lit tab and
+  once as its own heading. Neither People nor Notebooks tells a phone that
+  nothing is selected in a column a phone does not have.
+
 ## 0.158.0 — 2026-09-13
 
 - **Notebooks are folders when you want them to be.** A name with an em dash

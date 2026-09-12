@@ -891,8 +891,17 @@ label:has(> input[type='radio']:not(:disabled)) {
 		align-items: center;
 		justify-content: center;
 		gap: 0.375rem;
-		border: 1px solid transparent;
-		background-color: var(--color-gray-150);
+		/*
+		 * A button has an edge.
+		 *
+		 * The border was transparent and the fill six shades from the page,
+		 * which on a dark screen is a word floating where a control should be —
+		 * and inside a card, whose surface is lighter than the fill, it read as
+		 * a dent. The face is its own token so a theme can put it above its own
+		 * ground rather than below.
+		 */
+		border: 1px solid var(--color-gray-300);
+		background-color: var(--btn-face);
 		padding: 0.5rem 1rem;
 		font-size: 0.875rem;
 		font-weight: 500;
@@ -1804,6 +1813,9 @@ html[data-theme='dark'] {
 	 */
 	--ink-on-fill: #0a0d12;
 
+	/* Above the page *and* above a card, so a button reads on either. */
+	--btn-face: #2f3644;
+
 	--color-gray-50: #161a20;
 	--color-gray-100: #1c212a;
 	--color-gray-150: #222732;
@@ -1919,6 +1931,9 @@ html[data-theme='dark'] {
 
 		/* Ink on a filled control, where the fill is the near-white gray-900. */
 		--ink-on-fill: #0a0d12;
+
+		/* Above the page *and* above a card, so a button reads on either. */
+		--btn-face: #2f3644;
 
 		--color-gray-50: #161a20;
 		--color-gray-100: #1c212a;
@@ -2038,6 +2053,8 @@ option {
 	--control-on: #1d4ed8;
 	/* Ink on a filled control. Dark themes override it; see the dark block. */
 	--ink-on-fill: #ffffff;
+	/* What a plain button is made of. Above the page in every theme. */
+	--btn-face: var(--color-gray-150);
 }
 
 /*
