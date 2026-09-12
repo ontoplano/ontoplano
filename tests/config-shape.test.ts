@@ -117,6 +117,29 @@ describe('config.toml', () => {
 		expect(missing, 'declared in the interface, dropped by saveConfig').toEqual([]);
 	});
 
+	/*
+	 * Two of these values are free text somebody types into a form. They used
+	 * to be interpolated straight between two quotes, so a tagline with a
+	 * quote in it ended the string early and left the file unparseable — an
+	 * instance that cannot read its own settings on the next boot.
+	 */
+	it('survives a setting with a quote, a backslash and a newline in it', async () => {
+		const dir = mkdtempSync(join(tmpdir(), 'ontoplano-config-'));
+		process.env.ONTOPLANO_CONFIG_DIR = dir;
+
+		const config = await import('../src/lib/server/config');
+		const nasty = 'a "quoted" \\ tagline';
+		config.saveConfig({
+			...config.loadConfig(),
+			instance: { tagline: `${nasty}\nmode = "open"` }
+		});
+
+		const read = config.loadConfig();
+		expect(read.instance.tagline).toContain('"quoted"');
+		// And nothing smuggled in on the second line became a setting.
+		expect(read.registration.mode).not.toBe('open');
+	});
+
 	it('refuses a picture ceiling somebody fat-fingered', async () => {
 		const dir = mkdtempSync(join(tmpdir(), 'ontoplano-config-'));
 		process.env.ONTOPLANO_CONFIG_DIR = dir;

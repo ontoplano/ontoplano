@@ -78,7 +78,7 @@ test('a picture lives once, however many albums hold it', async ({ page }) => {
 
 	// A rename sticks.
 	await lightbox.locator('[name="heading"]').fill('the good one');
-	await lightbox.getByRole('button', { name: 'Save name' }).click();
+	await lightbox.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(lightbox.getByRole('heading', { name: 'the good one' })).toBeVisible();
 
 	// Into the second album too, from the picture itself.

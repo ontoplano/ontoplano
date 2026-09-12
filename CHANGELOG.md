@@ -10,6 +10,38 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.149.0 — 2026-09-12
+
+- **The gallery's albums are cards again on a phone.** Every surface on a
+  phone is pulled out to both screen edges, which is right for a stack of
+  cards and wrong for a grid that keeps two columns: the albums drew their
+  covers over each other and one album's count landed against the next one's
+  name. A grid can now say it keeps its cells. What is inside an album — "5
+  albums inside" — sits in the card rather than floating under it.
+- **A category colours its whole row.** The wash was 8% of the colour, which
+  is invisible on a dark screen, so a category was only ever the dot beside
+  its name.
+- **A picture has a description.** The name is for finding it again; the
+  description is what a screen reader says and what stands in when the bytes
+  do not arrive. It was the one field of a picture the gallery could not
+  edit.
+- **The operator sets where reports go.** The address feedback is mailed to
+  is on the instance screen beside the switch that turns reporting on, rather
+  than only in `config.toml`. Reports are capped at twenty an hour per
+  account — each one is a mail the instance sends on somebody's say-so — and
+  when one is refused the screen says why instead of "try again in a moment".
+- Finance → Rules: "7 lines no category claims" was not a sentence, and the
+  Add button sat between the two fields it needs.
+- **`make android-phones` leaves your checkout alone.** It rewrote eighty
+  tracked icons on every run — the PNG encoder is not byte-stable — so a
+  build left the tree dirty. They are generated before every build now, from
+  the one source they always came from, and `make android-self-contained`
+  generates its own too instead of relying on what was committed.
+- A setting with a quote in it no longer corrupts `config.toml`. Every value
+  the writer emits is escaped, and the reader understands the escapes — a
+  tagline reading `a "quoted" one` was enough to leave an instance unable to
+  read its own settings on the next boot.
+
 ## 0.148.0 — 2026-09-12
 
 - **The gallery works on the phone with nothing behind it.** Pictures were the

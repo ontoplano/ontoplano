@@ -96,7 +96,8 @@ export const actions = {
 		const form = await request.formData();
 		try {
 			renamePicture(buildCtx(locals.user!.id), Number(form.get('mediaId')), {
-				name: form.get('heading')
+				name: form.get('heading'),
+				alt: form.get('alt')
 			});
 			return { success: true };
 		} catch (e) {

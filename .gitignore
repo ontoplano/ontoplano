@@ -107,4 +107,18 @@ fdroid-out/
 .worktrees/
 build-self-contained/
 capacitor/node_modules/
+# The Android icons, written before every build: the launcher icons by
+# scripts/brand-android.mjs from src/lib/logo/mark.png, and each flavour's own
+# name, icon and instance URL by scripts/android-flavours.mjs. All derived, and
+# the PNG encoder is not byte-stable, so committing them meant eighty modified
+# files in the tree after every `make android-phones`.
+capacitor/android/app/src/main/res/mipmap-hdpi/
+capacitor/android/app/src/main/res/mipmap-mdpi/
+capacitor/android/app/src/main/res/mipmap-xhdpi/
+capacitor/android/app/src/main/res/mipmap-xxhdpi/
+capacitor/android/app/src/main/res/mipmap-xxxhdpi/
+capacitor/android/app/src/official/
+capacitor/android/app/src/dev/
+capacitor/android/app/src/staging/
+capacitor/android/app/src/device/
 scripts/demo-media/birds/

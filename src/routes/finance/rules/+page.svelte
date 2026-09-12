@@ -62,7 +62,7 @@
 					href={resolve('/finance/ledgers')}
 					class="ml-auto rounded bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800"
 				>
-					{data.unsorted} line{data.unsorted === 1 ? '' : 's'} no category claims →
+					{data.unsorted} uncategorized →
 				</a>
 			{:else}
 				<span class="ml-auto text-xs text-gray-500">Every outgoing line has a category.</span>
@@ -185,18 +185,20 @@
 					{/if}
 				</ul>
 
+				<!-- Both fields, then the button: it used to sit between them, so the
+				     only submit on the form came before one of the things it needs. -->
 				<form method="post" action="?/create" class="mt-3 grid gap-2" use:enhance>
 					<input type="hidden" name="kind" value={group.kind} />
+					<OneLine name="heading" placeholder={group.placeholder} class="input w-full" required />
 					<div class="flex items-center gap-2">
-						<OneLine name="heading" placeholder={group.placeholder} class="input flex-1" required />
+						<OneLine
+							name="pattern"
+							placeholder={group.pattern}
+							class="input flex-1 font-mono text-xs"
+							required
+						/>
 						<button class="btn btn-sm" type="submit">Add</button>
 					</div>
-					<OneLine
-						name="pattern"
-						placeholder={group.pattern}
-						class="input w-full font-mono text-xs"
-						required
-					/>
 				</form>
 			</section>
 		{/each}

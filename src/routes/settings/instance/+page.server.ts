@@ -1,4 +1,4 @@
-import { error } from '@sveltejs/kit';
+import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { loadConfig, saveConfig, isRegistrationMode } from '$lib/server/config';
 import { instanceSells } from '$lib/server/services/billing';
@@ -141,11 +141,24 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const current = loadConfig();
 
+		/*
+		 * An address, or nothing at all.
+		 *
+		 * Empty means the reports are only in /admin, which is the default and
+		 * a perfectly good answer for one person on one box. Validated the way
+		 * every other address on this page is, so a typo is refused here rather
+		 * than discovered as a bounced mail weeks later.
+		 */
+		const feedbackEmail = String(formData.get('feedbackEmail') ?? '').trim();
+		if (feedbackEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(feedbackEmail))
+			return fail(400, { message: 'That is not an email address.' });
+
 		saveConfig({
 			...current,
 			reports: {
 				...current.reports,
-				clientErrors: formData.get('clientErrors') === 'true'
+				clientErrors: formData.get('clientErrors') === 'true',
+				feedbackEmail
 			}
 		});
 

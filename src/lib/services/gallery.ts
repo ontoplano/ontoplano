@@ -20,16 +20,20 @@ import { parseTags, replaceMediaTags } from './tags.js';
 import type { Ctx } from './ctx.js';
 import { stamp, stamps } from './time.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
-import { str } from './validate.js';
+import { optionalStr, str } from './validate.js';
 import {
 	ACCEPTED_EXTENSIONS,
 	bytesStored,
+	MAX_ALT_LENGTH,
+	MAX_FILENAME_LENGTH,
 	mediaLimits,
 	removeIfUnreferenced,
 	store
 } from './media.js';
 
 export const MAX_ALBUM_NAME_LENGTH = 120;
+/** A picture's name, as long as the column that holds it. */
+export const MAX_PICTURE_NAME_LENGTH = MAX_FILENAME_LENGTH;
 /**
  * How much of one folder's name survives into the album's.
  *
@@ -508,11 +512,28 @@ export function moveBetweenAlbums(ctx: Ctx, from: number, to: number, mediaId: n
 			.run();
 }
 
-export function renamePicture(ctx: Ctx, mediaId: number, input: { name: unknown }): void {
-	const name = str(input.name, 'name', { max: 200 });
+/**
+ * What a picture is called, and what it says to somebody who cannot see it.
+ *
+ * The description is optional and separate from the name on purpose: a
+ * filename is for finding it again, and `alt` is what a screen reader speaks
+ * and what stands in when the bytes do not load. It is the one field of a
+ * picture the gallery could not edit — recipes and people set it on upload
+ * and the gallery never asked.
+ */
+export function renamePicture(
+	ctx: Ctx,
+	mediaId: number,
+	input: { name: unknown; alt?: unknown }
+): void {
+	const name = str(input.name, 'name', { max: MAX_PICTURE_NAME_LENGTH });
+	const alt =
+		input.alt === undefined || input.alt === null
+			? undefined
+			: optionalStr(input.alt, 'description', { max: MAX_ALT_LENGTH });
 	const changed = db
 		.update(media)
-		.set({ filename: name })
+		.set(alt === undefined ? { filename: name } : { filename: name, alt })
 		.where(and(eq(media.id, mediaId), eq(media.userId, ctx.userId)))
 		.run();
 	if (changed.changes === 0) throw new NotFoundError('picture');

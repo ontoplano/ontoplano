@@ -15,6 +15,16 @@
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	const currency = $derived(data.currency as Currency);
+
+	/**
+	 * How much of its category's colour a line's row carries.
+	 *
+	 * A category is meant to be legible as a wash across the whole row, not
+	 * only as the dot beside its name. Hex alpha rather than an opacity: the
+	 * text on the row must not fade with the background. It was 8%, which is
+	 * invisible on a dark screen.
+	 */
+	const CATEGORY_WASH_ALPHA = '2b';
 	const money = (cents: number) => formatMoney(cents, currency);
 
 	type Ledger = PageServerData['ledgers'][number];
@@ -289,7 +299,9 @@
 					{/if}
 					<li
 						class="px-4 py-2.5"
-						style={m.categoryColor ? `background-color: ${m.categoryColor}14` : ''}
+						style={m.categoryColor
+							? `background-color: ${m.categoryColor}${CATEGORY_WASH_ALPHA}`
+							: ''}
 					>
 						<div class="flex items-baseline gap-2">
 							<span class="shrink-0 text-xs text-gray-500 tabular-nums">
@@ -372,7 +384,11 @@
 									</td>
 								</tr>
 							{/if}
-							<tr style={m.categoryColor ? `background-color: ${m.categoryColor}14` : ''}>
+							<tr
+								style={m.categoryColor
+									? `background-color: ${m.categoryColor}${CATEGORY_WASH_ALPHA}`
+									: ''}
+							>
 								<td class="px-3 py-2 whitespace-nowrap text-gray-500 tabular-nums">
 									{dayOf(m.occurredOn)}
 								</td>

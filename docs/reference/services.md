@@ -1289,6 +1289,14 @@ Move: out of one album, into another, one gesture.
 
 #### `renamePicture(ctx, mediaId, input)`
 
+What a picture is called, and what it says to somebody who cannot see it.
+
+The description is optional and separate from the name on purpose: a
+filename is for finding it again, and `alt` is what a screen reader speaks
+and what stands in when the bytes do not load. It is the one field of a
+picture the gallery could not edit — recipes and people set it on upload
+and the gallery never asked.
+
 #### `tagPicture(ctx, mediaId, raw)`
 
 ### Types

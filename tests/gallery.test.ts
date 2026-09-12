@@ -292,6 +292,23 @@ describe('albums', () => {
 		);
 	});
 
+	test('a picture keeps a name and a description, and both can be changed', async () => {
+		const album = gallery.createAlbum(ctx, { name: 'Described' });
+		const id = await gallery.uploadToAlbum(ctx, album.id, {
+			bytes: png([60, 60, 60]),
+			filename: 'IMG_4821.png'
+		});
+
+		gallery.renamePicture(ctx, id, { name: 'the heron at dawn', alt: 'a heron in shallow water' });
+		const [picture] = gallery.albumPictures(ctx, album.id);
+		expect(picture.filename).toBe('the heron at dawn');
+		expect(picture.alt).toBe('a heron in shallow water');
+
+		// Renaming without saying anything about the description leaves it be.
+		gallery.renamePicture(ctx, id, { name: 'the heron' });
+		expect(gallery.albumPictures(ctx, album.id)[0].alt).toBe('a heron in shallow water');
+	});
+
 	test('a folder can be filed under a name of its own', async () => {
 		await gallery.importFolder(
 			ctx,

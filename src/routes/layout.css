@@ -493,6 +493,18 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 	 * them is a descendant combinator, which moves the contents of a card
 	 * instead of the card and slides every title off the left of the screen.
 	 */
+	/*
+	 * `.tiles` is the way out of all of this.
+	 *
+	 * Everything below assumes a surface is the width of the screen, because
+	 * on a phone almost every one of them is. A grid that keeps two columns
+	 * at phone width is the exception, and pulling each of its cells out to
+	 * both screen edges makes them overlap: the gallery's albums drew their
+	 * covers over each other and the first album's count landed against the
+	 * second album's name. A grid marked `tiles` keeps its cells, its gap and
+	 * its corners.
+	 */
+
 	.page-gutter
 		:is(
 			div,
@@ -516,7 +528,7 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		):not(
 			:is(.shadow-card, [class~='rounded'][class~='border'], [class~='shadow-sm'][class~='border'])
 				*
-		):not(.bg-gray-50 *):not(dialog *) {
+		):not(.bg-gray-50 *):not(dialog *):not(.tiles *) {
 		margin-inline: calc(-1 * var(--page-gutter));
 		border-inline-width: 0;
 		/*
@@ -581,7 +593,7 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 			[class~='rounded'][class~='border'],
 			[class~='rounded-lg'][class~='border'],
 			[class~='shadow-sm'][class~='border']
-		) {
+		):not(.tiles *) {
 		margin-block-start: 0;
 	}
 
@@ -595,7 +607,7 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 	 * this pass exists to fill.
 	 */
 	.page-gutter
-		:is(div, ul, ol, section):has(
+		:is(div, ul, ol, section):not(.tiles):has(
 			> :is(div, section, article, aside, ul, ol, li, a[class~='block']):is(
 					.shadow-card,
 					[class~='rounded'][class~='border'],

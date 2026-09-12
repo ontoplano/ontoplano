@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import FormError from '$lib/components/FormError.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -110,11 +111,7 @@
 		</form>
 	</div>
 
-	{#if form?.message}
-		<p class="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-			{form.message}
-		</p>
-	{/if}
+	<FormError message={form?.message} />
 
 	{#snippet targets(nodes: PageServerData['tree'], depth: number)}
 		{#each nodes as node (node.id)}
@@ -235,13 +232,29 @@
 				alt={viewing.alt}
 				class="max-h-[60vh] w-full rounded object-contain"
 			/>
-			<form method="post" action="?/rename" class="flex items-end gap-2" use:enhance>
+			<!--
+				The name and the description together, because they are saved
+				together: one is for finding the picture again, the other is what a
+				screen reader says and what stands in when the bytes do not arrive.
+			-->
+			<form method="post" action="?/rename" class="grid gap-2" use:enhance>
 				<input type="hidden" name="mediaId" value={viewing.id} />
-				<label class="block flex-1 text-sm">
+				<label class="block text-sm">
 					<span class="text-gray-600">Name</span>
 					<OneLine name="heading" value={viewing.filename} class="input mt-1 w-full" required />
 				</label>
-				<button class="btn btn-sm" type="submit">Save name</button>
+				<div class="flex items-end gap-2">
+					<label class="block flex-1 text-sm">
+						<span class="text-gray-600">Description</span>
+						<OneLine
+							name="alt"
+							value={viewing.alt}
+							class="input mt-1 w-full"
+							placeholder="what is in the picture"
+						/>
+					</label>
+					<button class="btn btn-sm" type="submit">Save</button>
+				</div>
 			</form>
 			{#if viewing.tags.length > 0}
 				<div class="flex flex-wrap gap-1.5">

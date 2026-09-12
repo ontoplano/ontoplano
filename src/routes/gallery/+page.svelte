@@ -236,11 +236,16 @@
 		/>
 	{:else}
 		{#snippet albumCard(node: PageServerData['tree'][number])}
-			<li class="group relative">
-				<a
-					href="{resolve('/gallery')}/{node.id}"
-					class="block overflow-hidden rounded-lg border border-gray-200"
-				>
+			<!--
+				The card is the `li`, not the link inside it.
+
+				What is under an album belongs to the album, and a "5 albums inside"
+				line floating under the card read as page furniture rather than as
+				part of it. So the border is the cell's, and the link and the
+				disclosure both sit inside it.
+			-->
+			<li class="group relative overflow-hidden rounded-lg border border-gray-200">
+				<a href="{resolve('/gallery')}/{node.id}" class="block">
 					<span class="block aspect-square bg-gray-50">
 						{#if node.coverId}
 							<img
@@ -280,7 +285,7 @@
 				</span>
 				{#if node.children.length > 0}
 					<button
-						class="mt-1 flex w-full items-center gap-1 px-1 text-xs text-gray-500 hover:text-gray-700"
+						class="flex w-full items-center gap-1 border-t border-gray-200 px-2.5 py-1.5 text-xs text-gray-500 hover:text-gray-700"
 						aria-expanded={opened.has(node.id)}
 						onclick={() => toggle(node.id)}
 					>
@@ -293,7 +298,9 @@
 		{/snippet}
 
 		{#snippet branch(nodes: PageServerData['tree'])}
-			<ul class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+			<!-- `tiles`: two columns at phone width, so each cell keeps its own
+			     edges rather than bleeding to both sides of the screen. -->
+			<ul class="tiles grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
 				{#each nodes as node (node.id)}
 					{@render albumCard(node)}
 					{#if opened.has(node.id) && node.children.length > 0}

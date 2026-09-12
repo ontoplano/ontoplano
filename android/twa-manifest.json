@@ -20,8 +20,8 @@
     "path": "./android.keystore",
     "alias": "ontoplano"
   },
-  "appVersionName": "0.148.0",
-  "appVersionCode": 14800,
+  "appVersionName": "0.149.0",
+  "appVersionCode": 14900,
   "shellVersion": "1.0.0",
   "webManifestUrl": "https://app.ontoplano.com/manifest.webmanifest",
   "fallbackType": "customtabs",

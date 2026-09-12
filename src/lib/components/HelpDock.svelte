@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { MAX_REPORT_LENGTH } from '$lib/report';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -42,6 +43,8 @@
 	let reporting = $state(false);
 	let reportText = $state('');
 	let reportState = $state<'idle' | 'sending' | 'sent' | 'failed'>('idle');
+	/** What the server said when it refused, when it said anything. */
+	let reportProblem = $state('');
 
 	/*
 	 * A problem and an idea arrive through the same door.
@@ -82,7 +85,18 @@
 				})
 			});
 			reportState = res.ok ? 'sent' : 'failed';
-			if (res.ok) reportText = '';
+			if (res.ok) {
+				reportText = '';
+				reportProblem = '';
+			} else {
+				// The server's own sentence when it has one — "that is a lot of
+				// reports at once" is worth reading, and "try again in a moment"
+				// in its place is a lie.
+				reportProblem = await res
+					.json()
+					.then((body: { message?: string }) => body.message ?? '')
+					.catch(() => '');
+			}
 		} catch {
 			reportState = 'failed';
 		}
@@ -283,12 +297,19 @@
 			<span class="eyebrow text-gray-600">
 				{reportKind === 'suggestion' ? 'Your idea' : 'What happened'}
 			</span>
-			<textarea bind:value={reportText} rows="4" placeholder={kindHint} class="textarea mt-1"
+			<textarea
+				bind:value={reportText}
+				rows="4"
+				maxlength={MAX_REPORT_LENGTH}
+				placeholder={kindHint}
+				class="textarea mt-1"
 			></textarea>
 		</label>
 
 		{#if reportState === 'failed'}
-			<p class="mt-2 text-xs text-red-700">That did not send. Try again in a moment.</p>
+			<p class="mt-2 text-xs text-red-700">
+				{reportProblem || 'That did not send. Try again in a moment.'}
+			</p>
 		{/if}
 	{/if}
 

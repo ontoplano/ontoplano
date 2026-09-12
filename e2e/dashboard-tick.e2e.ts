@@ -48,8 +48,12 @@ test('ticking one off can be undone, and then it never happened', async ({ page 
 	await page.reload({ waitUntil: 'load' });
 	await page.waitForSelector('html[data-ready]');
 
-	// Still tickable, so still not done.
-	await expect(page.getByRole('button', { name: `Mark ${title} done`, exact: true })).toBeVisible();
+	// Still tickable, so still not done. The same patience `firstTask` needs:
+	// the dashboard fetches its day and then draws it, and under a full
+	// parallel run five seconds after a reload is not always enough.
+	await expect(page.getByRole('button', { name: `Mark ${title} done`, exact: true })).toBeVisible({
+		timeout: 15_000
+	});
 });
 
 test('pressing it twice is the same as pressing Undo', async ({ page }) => {

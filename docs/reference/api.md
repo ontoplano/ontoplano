@@ -368,6 +368,15 @@ failed request loses nothing.
 
 ### `/api/report`
 
+How much one account may say per hour.
+
+Enough for somebody hitting a bad afternoon and reporting every wall they
+walk into; not enough to be a way of posting into the operator's mailbox
+at will, which is what this endpoint becomes without a number here — each
+report is a mail the instance sends on the sender's say-so.
+
+**POST**
+
 "Something here is wrong" — or "this could be better" — from wherever
 somebody noticed it.
 
@@ -380,8 +389,6 @@ The dialog in `HelpDock.svelte` names all four. It said "nothing else" while
 this quietly attached a user agent, which is the kind of promise that is
 worse than saying nothing: anything added here has to be added there in the
 same edit.
-
-**POST**
 
 ### `/api/ringtones/[id]`
 

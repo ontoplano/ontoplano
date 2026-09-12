@@ -359,7 +359,7 @@
 	</Card>
 
 	<Card
-		title="Error reports"
+		title="Reports and suggestions"
 		description="When a page breaks in somebody's browser, the server normally never hears about it."
 	>
 		<form
@@ -385,6 +385,19 @@
 						sent without their yes. What is sent is what broke — never what they wrote.
 					</span>
 				</span>
+			</label>
+
+			<label class="block text-sm">
+				<span class="block font-medium text-gray-900">Send reports and suggestions to</span>
+				<span class="block text-gray-500">
+					Leave it empty and they only appear in the admin screen.
+				</span>
+				<OneLine
+					name="feedbackEmail"
+					value={data.config.reports.feedbackEmail}
+					class="input mt-1 w-full sm:max-w-sm"
+					placeholder="you@example.com"
+				/>
 			</label>
 
 			<button class="btn btn-primary">Save</button>

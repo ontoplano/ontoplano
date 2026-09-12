@@ -56,9 +56,18 @@ function parseToml(content: string): Record<string, Record<string, string>> {
 			continue;
 		}
 
-		const kvMatch = line.match(/^(\w+)\s*=\s*"?([^"]*)"?$/);
-		if (kvMatch) {
-			const [, key, value] = kvMatch;
+		/*
+		 * A quoted value may contain an escaped quote, because `q()` puts one
+		 * there: a tagline reading `a "quoted" one` is written `a \"quoted\" one`
+		 * and has to come back as it went in. Bare values — what a hand-edited
+		 * file usually holds — are taken as they are.
+		 */
+		const quoted = line.match(/^(\w+)\s*=\s*"((?:[^"\\]|\\.)*)"\s*$/);
+		const bare = quoted ? null : line.match(/^(\w+)\s*=\s*(.*)$/);
+		const match = quoted ?? bare;
+		if (match) {
+			const key = match[1];
+			const value = quoted ? match[2].replace(/\\(["\\])/g, '$1') : match[2].trim();
 			if (currentSection) {
 				result[currentSection][key] = value;
 			} else {
@@ -266,46 +275,66 @@ export function ensureConfig(): void {
 	}
 }
 
+/**
+ * A value, as a TOML string it cannot escape from.
+ *
+ * Several of these come from a form — the tagline, the address reports go to
+ * — and every one of them used to be interpolated straight between two
+ * quotes. A value holding a quote or a newline ended the string early and
+ * left the file unparseable, which on the next boot is an instance that
+ * cannot read its own settings. Escaped here rather than validated at each
+ * call site, because the writer is the one place every setting passes
+ * through.
+ */
+function q(value: unknown): string {
+	const text = String(value ?? '')
+		// eslint-disable-next-line no-control-regex
+		.replace(/[\u0000-\u001f\u007f]/g, ' ')
+		.replace(/\\/g, '\\\\')
+		.replace(/"/g, '\\"');
+	return `"${text}"`;
+}
+
 function toToml(config: OntoplanoConfig): string {
 	return `[server]
-host = "${config.server.host}"
-port = "${config.server.port}"
+host = ${q(config.server.host)}
+port = ${q(config.server.port)}
 
 [database]
-${config.database.path !== dbPath() ? `path = "${config.database.path}"` : ''}
+${config.database.path !== dbPath() ? `path = ${q(config.database.path)}` : ''}
 
 [week]
-first_day = "${config.week.firstDay}"
-generate_day = "${config.week.generateDay}"
+first_day = ${q(config.week.firstDay)}
+generate_day = ${q(config.week.generateDay)}
 
 [registration]
-mode = "${config.registration.mode}"
+mode = ${q(config.registration.mode)}
 
 [account]
-allow_email_change = "${config.account.allowEmailChange}"
+allow_email_change = ${q(config.account.allowEmailChange)}
 
 [reports]
-client_errors = "${config.reports.clientErrors}"
-feedback_email = "${config.reports.feedbackEmail}"
+client_errors = ${q(config.reports.clientErrors)}
+feedback_email = ${q(config.reports.feedbackEmail)}
 
 [ui]
-undo_seconds = "${config.ui.undoSeconds}"
+undo_seconds = ${q(config.ui.undoSeconds)}
 
 [newsletter]
-enabled = "${config.newsletter.enabled}"
-origin = "${config.newsletter.origin}"
+enabled = ${q(config.newsletter.enabled)}
+origin = ${q(config.newsletter.origin)}
 
 [instance]
-tagline = "${config.instance.tagline}"
+tagline = ${q(config.instance.tagline)}
 
 [media]
-max_kilobytes = "${config.media.maxKilobytes}"
-recipe_images = "${config.media.recipeImages}"
-entry_images = "${config.media.entryImages}"
-gallery_albums = "${config.media.galleryAlbums}"
-album_images = "${config.media.albumImages}"
-account_megabytes = "${config.media.accountMegabytes}"
-import_files = "${config.media.importFiles}"
+max_kilobytes = ${q(config.media.maxKilobytes)}
+recipe_images = ${q(config.media.recipeImages)}
+entry_images = ${q(config.media.entryImages)}
+gallery_albums = ${q(config.media.galleryAlbums)}
+album_images = ${q(config.media.albumImages)}
+account_megabytes = ${q(config.media.accountMegabytes)}
+import_files = ${q(config.media.importFiles)}
 `;
 }
 

@@ -374,7 +374,12 @@ android-self-contained: self-contained
 	@# The shell's own dependencies, fetched on first use — a fresh clone has
 	@# no capacitor/node_modules and must not be expected to know that.
 	@[ -d capacitor/node_modules ] || (cd capacitor && npm install --no-audit --no-fund)
+	@node scripts/brand-android.mjs
 	cd capacitor && npx cap sync android
+	@# The flavours, including this one's name, icon and instance. Written on
+	@# every build rather than committed: they are derived from static/icons/,
+	@# and a fresh clone must not have to know they were meant to be there.
+	@node scripts/android-flavours.mjs
 	@# The SDK, found the way the TWA build finds it: the environment first,
 	@# then the toolchain bubblewrap configured, then the conventional path.
 	@sdk="$${ANDROID_HOME:-}"; \

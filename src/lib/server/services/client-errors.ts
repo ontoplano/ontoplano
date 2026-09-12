@@ -4,6 +4,7 @@ import { loadConfig } from '../config.js';
 import { renderEmail } from '../email-template.js';
 import { sendLogged } from './mail-log.js';
 import { db } from '$lib/db/index.js';
+import { MAX_REPORT_LENGTH } from '$lib/report.js';
 import { clientErrors, user } from '$lib/db/schema.js';
 import { getUserSetting, setUserSetting } from '../settings.js';
 import type { Ctx } from '$lib/services/ctx.js';
@@ -119,7 +120,11 @@ export function recordBugReport(
 	kind: 'report' | 'suggestion' = 'report'
 ): void {
 	write(ctx.userId, input, ctx.now, kind);
-	void mailFeedback(ctx, input, kind);
+	// Caught, not merely un-awaited: an unhandled rejection ends the process,
+	// and a report that was written is not worth the server for.
+	void mailFeedback(ctx, input, kind).catch((e: unknown) =>
+		console.error('feedback mail could not be sent:', e)
+	);
 }
 
 /**
@@ -146,7 +151,7 @@ async function mailFeedback(
 		`Page: ${where}`,
 		`Browser: ${optionalStr(input.userAgent, 'userAgent', { max: 300 }) || 'not said'}`,
 		'',
-		str(input.message, 'message', { max: 500 })
+		str(input.message, 'message', { max: MAX_REPORT_LENGTH })
 	].join('\n');
 
 	const rendered = renderEmail({
@@ -162,7 +167,7 @@ function write(
 	now: Date,
 	kind: 'crash' | 'report' | 'suggestion' = 'crash'
 ): void {
-	const message = str(input.message, 'message', { max: 500 });
+	const message = str(input.message, 'message', { max: MAX_REPORT_LENGTH });
 	const url = optionalStr(input.url, 'url', { max: 300 });
 	const stack = optionalStr(input.stack, 'stack', { max: 8000 });
 	const userAgent = optionalStr(input.userAgent, 'userAgent', { max: 300 });
