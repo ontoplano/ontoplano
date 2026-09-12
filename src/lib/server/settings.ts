@@ -146,6 +146,19 @@ export function isDemo(): boolean {
 }
 
 /**
+ * Whether this instance carries the workbenches under `/dev`.
+ *
+ * Its own setting rather than "is this staging", because staging runs
+ * production's code and differs only in what its env file says — a screen
+ * that appears because an instance is called staging is exactly the branch
+ * that rule exists to prevent. Off unless an env file turns it on, so a
+ * self-hosted instance never learns these pages exist.
+ */
+export function devToolsEnabled(): boolean {
+	return process.env.ONTOPLANO_DEV_TOOLS === 'true';
+}
+
+/**
  * Hide the bands that say what kind of instance this is.
  *
  * For recording. The demo's amber strip and staging's band exist so nobody

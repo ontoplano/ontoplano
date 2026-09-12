@@ -23,29 +23,29 @@ android {
             dimension "instance"
             applicationId "app.ontoplano"
             resValue "string", "app_name", "Ontoplano"
-            versionCode 14900
-            versionName "0.149.0"
+            versionCode 15000
+            versionName "0.150.0"
         }
         dev {
             dimension "instance"
             applicationId "app.ontoplano.dev"
             resValue "string", "app_name", "Ontoplano DEV"
-            versionCode 14900
-            versionName "0.149.0"
+            versionCode 15000
+            versionName "0.150.0"
         }
         staging {
             dimension "instance"
             applicationId "app.ontoplano.staging"
             resValue "string", "app_name", "Ontoplano — Staging"
-            versionCode 14900
-            versionName "0.149.0"
+            versionCode 15000
+            versionName "0.150.0"
         }
         device {
             dimension "instance"
             applicationId "app.ontoplano.selfcontained"
             resValue "string", "app_name", "Ontoplano"
-            versionCode 14900
-            versionName "0.149.0"
+            versionCode 15000
+            versionName "0.150.0"
         }
     }
     // ontoplano flavours >>>

@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**54 pages, 215 actions.**
+**55 pages, 215 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -22,6 +22,7 @@ write surface for everything else; both end up calling the same
 | `/data/[slug]`                       | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/demo`                              | `default`                                                                                                                                                                                                                                                                                                                                                                           |
 | `/demo/self-contained-db`            | —                                                                                                                                                                                                                                                                                                                                                                                   |
+| `/dev/page-turn`                     | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/finance/bills`                     | `create`, `update`, `pay`, `unpay`, `archive`, `delete`                                                                                                                                                                                                                                                                                                                             |
 | `/finance/insights`                  | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/finance/ledgers`                   | `createLedger`, `updateLedger`, `moveLedger`, `archiveLedger`, `deleteLedger`, `import`, `addMovement`, `updateMovement`, `deleteMovement`                                                                                                                                                                                                                                          |
@@ -118,6 +119,17 @@ slow site rather than as something being built for you.
 So the wait has a screen. It also has somewhere to go: with the work behind
 a page the visitor is already looking at, the seed can be made slower under
 load without anybody experiencing a hang.
+
+### `/dev/page-turn`
+
+A workbench, not a screen of the app.
+
+The dissolve is decided by watching it, not by reading three numbers, so
+this exists to be opened on a real phone and fiddled with. It is not a
+preference and it is not shipped: an instance answers 404 unless its env
+file says `ONTOPLANO_DEV_TOOLS=true`, and anyone running one never learns
+it was here. A setting rather than "is this staging", because staging runs
+production's code.
 
 ### `/finance/bills`
 

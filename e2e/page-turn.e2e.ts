@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { PAGE_TURN } from '../src/lib/page-turn';
+import { PAGE_TURN_DEFAULTS as PAGE_TURN } from '../src/lib/page-turn';
 import { register } from './helpers/account';
 import { visit } from './helpers/visit';
 

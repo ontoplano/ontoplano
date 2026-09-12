@@ -7,7 +7,8 @@
 	import { navigating, page } from '$app/state';
 	import { live } from '$lib/live';
 	import { afterNavigate, goto, onNavigate } from '$app/navigation';
-	import { PAGE_TURN, runDissolve } from '$lib/page-turn';
+	import { PAGE_TURN_DEFAULTS } from '$lib/page-turn';
+	import { PAGE_TURN, runDissolve } from '$lib/page-turn.svelte';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { NAV_PLACES } from '$lib/sections-nav';
@@ -66,8 +67,9 @@
 	 * The turn's length, from the one file that holds it.
 	 *
 	 * The stylesheet carries the same number as a fallback so a page renders
-	 * correctly before any of this runs; stamping it here is what makes the
-	 * speed a single line to change in `$lib/page-turn.ts`.
+	 * correctly before any of this runs. Stamped in an effect because the
+	 * number can move while the app runs — the tuner at /dev/page-turn turns
+	 * it, and the next screen change uses what it now says.
 	 */
 	$effect(() => {
 		document.documentElement.style.setProperty('--page-turn', `${PAGE_TURN.durationMs}ms`);
@@ -97,7 +99,7 @@
 				// decoration is worth that risk.
 				await Promise.race([
 					navigation.complete.catch(() => undefined),
-					new Promise((done) => setTimeout(done, PAGE_TURN.holdMs))
+					new Promise((done) => setTimeout(done, PAGE_TURN_DEFAULTS.holdMs))
 				]);
 			});
 
@@ -489,7 +491,7 @@
 <svg width="0" height="0" aria-hidden="true" class="absolute" focusable="false">
 	<defs>
 		<filter
-			id={PAGE_TURN.outFilter}
+			id={PAGE_TURN_DEFAULTS.outFilter}
 			x="0"
 			y="0"
 			width="100%"
@@ -500,7 +502,7 @@
 				type="fractalNoise"
 				baseFrequency={PAGE_TURN.grain}
 				numOctaves="1"
-				seed={PAGE_TURN.seed}
+				seed={PAGE_TURN_DEFAULTS.seed}
 				result="noise"
 			/>
 			<feColorMatrix
@@ -510,13 +512,13 @@
 				result="field"
 			/>
 			<feComponentTransfer in="field" result="threshold">
-				<feFuncA id="{PAGE_TURN.outFilter}-ramp" type="linear" slope="1" intercept="1" />
+				<feFuncA id="{PAGE_TURN_DEFAULTS.outFilter}-ramp" type="linear" slope="1" intercept="1" />
 			</feComponentTransfer>
 			<feComposite in="SourceGraphic" in2="threshold" operator="in" />
 		</filter>
 
 		<filter
-			id={PAGE_TURN.inFilter}
+			id={PAGE_TURN_DEFAULTS.inFilter}
 			x="0"
 			y="0"
 			width="100%"
@@ -527,7 +529,7 @@
 				type="fractalNoise"
 				baseFrequency={PAGE_TURN.grain}
 				numOctaves="1"
-				seed={PAGE_TURN.seed}
+				seed={PAGE_TURN_DEFAULTS.seed}
 				result="noise"
 			/>
 			<feColorMatrix
@@ -537,7 +539,7 @@
 				result="field"
 			/>
 			<feComponentTransfer in="field" result="threshold">
-				<feFuncA id="{PAGE_TURN.inFilter}-ramp" type="linear" slope="-1" intercept="0" />
+				<feFuncA id="{PAGE_TURN_DEFAULTS.inFilter}-ramp" type="linear" slope="-1" intercept="0" />
 			</feComponentTransfer>
 			<feComposite in="SourceGraphic" in2="threshold" operator="in" />
 		</filter>

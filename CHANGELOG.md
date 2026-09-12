@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.150.0 — 2026-09-12
+
+- **The page turn can be turned while it runs.** `/dev/page-turn` — on a dev
+  server or on staging, never on a production instance — puts speed, grain
+  and hardness under three sliders, with links to bounce between screens so
+  the next turn uses what you just moved. The numbers stay in that browser,
+  so you can carry a phone around the app with them, and the page prints the
+  three lines to paste into the source once it feels right.
+
 ## 0.149.0 — 2026-09-12
 
 - **The gallery's albums are cards again on a phone.** Every surface on a

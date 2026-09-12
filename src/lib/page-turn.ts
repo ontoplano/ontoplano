@@ -1,5 +1,5 @@
 /**
- * How changing screen looks, and the one loop that drives it.
+ * How changing screen looks: the numbers, and what each of them means.
  *
  * The dissolve is an SVG turbulence filter thresholded hard enough that every
  * pixel snaps fully on or fully off, with the threshold slid across the screen
@@ -8,16 +8,21 @@
  * makes it read as ink flipping rather than two pictures fading past
  * each other.
  *
- * It is driven from here rather than from CSS because no CSS animation can
- * reach inside a filter to move `intercept`. That is also the cost: turbulence
- * is computed over the viewport every frame, on the CPU. It is affordable at
+ * It is driven from script rather than from CSS because no CSS animation can
+ * reach inside a filter to move `intercept` — that loop is in
+ * `page-turn.svelte.ts`, along with the values in force right now, which a
+ * tuner can move while the app runs. That is also the cost: turbulence is
+ * computed over the viewport every frame, on the CPU. It is affordable at
  * this duration and would not be at five times it.
+ *
+ * This file holds no runes, because it is read by things that are not Svelte.
  */
-export const PAGE_TURN = {
+export const PAGE_TURN_DEFAULTS = {
 	/**
 	 * How long the dissolve takes, end to end.
 	 *
-	 * The knob worth touching. Change it and reload; nothing else has to move.
+	 * The knob worth touching. /dev/page-turn turns it live; this is what
+	 * everybody gets who has not.
 	 */
 	durationMs: 240,
 
@@ -54,43 +59,12 @@ export const PAGE_TURN = {
 	inFilter: 'page-turn-in'
 } as const;
 
-/**
- * Slide the threshold across both halves for the length of one turn.
- *
- * `alpha = slope × noise + intercept`, clamped — so with a large slope the
- * result is 0 or 1 almost everywhere and the intercept decides where the edge
- * falls. Sweeping it from one end to the other is the dissolve. The incoming
- * half runs the same ramp with the slope negated, which is exactly the
- * complement of the outgoing one over the same noise.
- */
-export function runDissolve(): void {
-	const out = document.getElementById(`${PAGE_TURN.outFilter}-ramp`);
-	const into = document.getElementById(`${PAGE_TURN.inFilter}-ramp`);
-	if (!out || !into) return;
+/** The three worth turning by hand. Everything else is decided. */
+export type PageTurnTuning = { durationMs: number; grain: number; hardness: number };
 
-	const { durationMs, hardness } = PAGE_TURN;
-	const started = performance.now();
-
-	function frame(now: number) {
-		const t = Math.min(1, (now - started) / durationMs);
-
-		out!.setAttribute('slope', String(hardness));
-		out!.setAttribute('intercept', String(1 - hardness * t));
-		into!.setAttribute('slope', String(-hardness));
-		into!.setAttribute('intercept', String(hardness * t));
-
-		if (t < 1) requestAnimationFrame(frame);
-	}
-
-	/*
-	 * The first frame is set here and now, not scheduled.
-	 *
-	 * A turn begins with the filters holding whatever the last one left them at
-	 * — the outgoing screen fully erased — so waiting a frame to correct that
-	 * painted one frame of nothing before the dissolve started. On a short turn
-	 * that single frame is a large share of the whole thing, and it read as a
-	 * flick rather than as ink. Setting `t = 0` synchronously means the browser
-	 * never gets a chance to show the leftover state.
-	 */
-	frame(started);
-}
+/** What each one may be, so a slider cannot ask for something absurd. */
+export const PAGE_TURN_RANGES = {
+	durationMs: { min: 60, max: 900, step: 10, label: 'Speed', unit: 'ms' },
+	grain: { min: 0.2, max: 2, step: 0.05, label: 'Grain', unit: '' },
+	hardness: { min: 2, max: 80, step: 1, label: 'Hardness', unit: '' }
+} as const;
