@@ -10,6 +10,15 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.154.1 — 2026-09-12
+
+- An album's card counts its own pictures. A folder import's root said 28 and
+  opened empty — the 28 were in the albums inside it, which the disclosure
+  under the card now says.
+- Inside an album, the drag-onto-another-album row is a desktop's: it says so
+  itself, and on a phone it took the top third of the screen to offer
+  something no finger can do.
+
 ## 0.154.0 — 2026-09-12
 
 - **The phone keeps the room at the top.** Where you are, its tabs and the way

@@ -151,8 +151,15 @@
 		{/each}
 	{/snippet}
 
+	<!--
+		Dragging is a mouse, so this is a desktop's row.
+
+		It says so itself — a finger uses the picture's own "Add to album" —
+		and on a phone the sentence and the chips under it took the top third
+		of the screen to offer something no finger can do.
+	-->
 	{#if others.length > 0 && data.pictures.length > 0}
-		<div class="text-xs text-gray-500">
+		<div class="hidden text-xs text-gray-500 sm:block">
 			<p class="mb-1">Drag a picture onto an album to move it — hold Ctrl to put it in both.</p>
 			<div class="flex flex-col gap-1">
 				{@render targets(data.tree, 0)}

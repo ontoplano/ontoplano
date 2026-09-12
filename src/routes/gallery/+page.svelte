@@ -260,11 +260,18 @@
 							</span>
 						{/if}
 					</span>
+					<!--
+						Its own pictures, not its branch's.
+
+						The card used to show the total under it, so a folder import's
+						root said 28 and opened empty — the 28 were in the albums
+						inside it, and the number promised something the screen behind
+						it did not have. The branch's total is on the disclosure below,
+						where the albums it counts are.
+					-->
 					<span class="flex items-baseline justify-between gap-2 px-2.5 py-2">
 						<span class="truncate text-sm font-medium text-gray-900">{leafName(node.name)}</span>
-						<span class="shrink-0 text-xs text-gray-500 tabular-nums">
-							{node.totalCount ?? node.count}
-						</span>
+						<span class="shrink-0 text-xs text-gray-500 tabular-nums">{node.count}</span>
 					</span>
 				</a>
 				<span class="absolute top-1.5 right-1.5 flex gap-1">
@@ -292,6 +299,9 @@
 						<Icon name={opened.has(node.id) ? 'chevron-down' : 'chevron-right'} size={14} />
 						{node.children.length}
 						{node.children.length === 1 ? 'album' : 'albums'} inside
+						{#if (node.totalCount ?? node.count) > node.count}
+							· {(node.totalCount ?? node.count) - node.count} pictures
+						{/if}
 					</button>
 				{/if}
 			</li>
