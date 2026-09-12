@@ -39,7 +39,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
+.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -488,6 +488,18 @@ start: build
 # produced a wrong migration three times; production goes through
 # generate → review → db-migrate. The guard refuses the production database.
 ### database
+
+# What a database has actually run, and what this build cannot account for.
+#
+# `scripts/migrate.mjs` refuses a database holding a migration hash the repo
+# cannot produce — which is right, and says how many rather than which. This
+# names them, with the moment each was applied, which is usually enough to say
+# which build a database belongs to. Read-only, so it is safe against a live
+# server file.
+#: DATABASE_URL=~/.local/share/ontoplano-staging/staging.db  which database to read
+## list the migrations a database has applied, naming any strangers
+db-strangers:
+	@node scripts/migration-strangers.mjs "$(DATABASE_URL)"
 
 ## apply the schema straight to the dev database
 db-push:

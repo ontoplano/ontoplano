@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.162.1 — 2026-09-12
+
+- **`make db-strangers`** lists the migrations a database has actually applied,
+  naming any the build cannot account for and saying when each ran. The
+  migrator already refuses such a database — correctly, before touching
+  anything — but it says how many rather than which, which is the hard half of
+  the question when a server will not start.
+
 ## 0.162.0 — 2026-09-12
 
 A minor, and it is the first one under the new rule: the phone stopped being a
