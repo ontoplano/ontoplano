@@ -1228,6 +1228,25 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
+	 * Only where there is something to drag with.
+	 *
+	 * A drag affordance — the sentence explaining it, the row of targets to
+	 * drop onto — is meaningless to a finger, and the test for that is the
+	 * pointer rather than the width of the window. A phone held sideways is a
+	 * wide screen with no mouse in it, and the gallery's "hold Ctrl to put it
+	 * in both" turned up there because the rule said `sm:` and meant "mouse".
+	 */
+	.mouse-only {
+		display: none;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.mouse-only {
+			display: revert;
+		}
+	}
+
+	/*
 	 * The keyboard cursor: which card j/k is standing on.
 	 *
 	 * Outside the card, not inside it — an inset ring redrew the card's own
@@ -1660,6 +1679,8 @@ html[data-style='playful'] .card-accent {
 
 .md pre {
 	overflow-x: auto;
+	/* A wide code block scrolls itself, not the page under it. */
+	overscroll-behavior-x: contain;
 	border: 1px solid var(--color-gray-200);
 	background-color: var(--color-gray-50);
 	padding: 0.5rem 0.75rem;
@@ -2067,6 +2088,23 @@ option {
 	--ink-on-fill: #ffffff;
 	/* What a plain button is made of. Above the page in every theme. */
 	--btn-face: var(--color-gray-150);
+
+	/*
+	 * The mark on the phone's bottom bar, and everything that follows from it.
+	 *
+	 * One number. The button is clipped to the mark's outline, a ground sits
+	 * behind it in the same shape so the bar's top line does not run through
+	 * the notches of its rim, and both are lifted so the mark rises out of the
+	 * bar — four measurements that have to agree, and did not: they were four
+	 * literals in the markup and the mark quietly lost a quarter of its size
+	 * when the button stopped being a circle.
+	 */
+	--bar-mark: 4.5rem;
+	/* A hair larger, so the mark has an edge to end at. */
+	--bar-mark-ground: calc(var(--bar-mark) + 0.4rem);
+	/* How far it stands proud of the bar. */
+	--bar-mark-rise: calc(var(--bar-mark) * 0.27);
+	--bar-mark-ground-rise: calc(var(--bar-mark-rise) + 0.15rem);
 }
 
 /*
@@ -2329,6 +2367,16 @@ html button.tab-link {
 	position: relative;
 	overflow-x: auto;
 	scrollbar-width: none;
+	/*
+	 * The swipe stays in the strip.
+	 *
+	 * Without this, pushing the room's tabs past their end hands the rest of
+	 * the gesture to the page — which in a web view drags the whole screen
+	 * sideways, title and all, and leaves it there. `.snap-strip` learned the
+	 * same lesson; every horizontal scroller in the app needs it, because the
+	 * page underneath is never the thing somebody meant to move.
+	 */
+	overscroll-behavior-x: contain;
 }
 
 .scroll-hints::-webkit-scrollbar {
@@ -2435,6 +2483,25 @@ html button.tab-link {
 		grid-auto-columns: minmax(0, 1fr);
 		overflow-x: visible;
 	}
+}
+
+/*
+ * A sideways swipe stays in the thing being swiped.
+ *
+ * Pushing a horizontal strip past its end hands the rest of the gesture to
+ * whatever is underneath, and in a web view that drags the entire page
+ * sideways — title, body and all — and leaves it there. It looked like the
+ * notebooks room had a layout too wide for the screen; nothing was too wide,
+ * the tab strip was simply handing the swipe on.
+ *
+ * Written once, against the utility itself, rather than remembered at each
+ * scroller: there are eight of them today and the ninth would be wrong.
+ */
+[class~='overflow-x-auto'],
+.scroll-hints,
+.snap-strip,
+.md pre {
+	overscroll-behavior-x: contain;
 }
 
 /*

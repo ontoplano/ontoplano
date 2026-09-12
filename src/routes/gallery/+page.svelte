@@ -268,12 +268,18 @@
 						The card used to show the total under it, so a folder import's
 						root said 28 and opened empty — the 28 were in the albums
 						inside it, and the number promised something the screen behind
-						it did not have. The branch's total is on the disclosure below,
-						where the albums it counts are.
+						it did not have.
+
+						It does have them now: an album shows everything beneath it,
+						so the branch's total is what opening this card produces and
+						the number is honest again. A folder import's root said 0 and
+						opened onto twenty-eight birds.
 					-->
 					<span class="flex items-baseline justify-between gap-2 px-2.5 py-2">
 						<span class="truncate text-sm font-medium text-gray-900">{leafName(node.name)}</span>
-						<span class="shrink-0 text-xs text-gray-500 tabular-nums">{node.count}</span>
+						<span class="shrink-0 text-xs text-gray-500 tabular-nums">
+							{node.totalCount ?? node.count}
+						</span>
 					</span>
 				</a>
 				<span class="absolute top-1.5 right-1.5 flex gap-1">
@@ -301,9 +307,6 @@
 						<Icon name={opened.has(node.id) ? 'chevron-down' : 'chevron-right'} size={14} />
 						{node.children.length}
 						{node.children.length === 1 ? 'album' : 'albums'} inside
-						{#if (node.totalCount ?? node.count) > node.count}
-							· {(node.totalCount ?? node.count) - node.count} pictures
-						{/if}
 					</button>
 				{/if}
 			</li>
@@ -325,6 +328,34 @@
 		{/snippet}
 
 		{@render branch(data.tree)}
+	{/if}
+
+	<!--
+		The pictures that are in notebooks.
+		
+		Not an album somebody made and not one they can make: a picture is in a
+		notebook because a note mentions it, so this is a view of the writing
+		rather than a place to put things. It draws a notebook rather than a
+		cover for the same reason — a preview would suggest it is a pile of
+		pictures like the others, and opening it shows folders named after
+		notebooks, not a wall.
+	-->
+	{#if data.notebookPictures > 0}
+		<ul class="tiles mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+			<li class="group relative overflow-hidden rounded-lg border border-gray-200">
+				<a href="{resolve('/gallery')}/notebooks" class="block">
+					<span class="flex aspect-square items-center justify-center bg-gray-50 text-gray-300">
+						<Icon name="notebook" size={56} />
+					</span>
+					<span class="flex items-baseline gap-2 px-3 py-2">
+						<span class="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">
+							Notebooks
+						</span>
+						<span class="text-xs text-gray-400 tabular-nums">{data.notebookPictures}</span>
+					</span>
+				</a>
+			</li>
+		</ul>
 	{/if}
 </div>
 

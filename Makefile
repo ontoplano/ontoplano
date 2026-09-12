@@ -39,7 +39,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-store android-install android-install-all _adb-install android-uninstall isolated isolated-preview test-isolated
+.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -383,18 +383,27 @@ test-isolated:
 # One app, which is the app: it carries the whole of ontoplano and its first
 # screen asks where yours lives — the official instance, one you run yourself,
 # or this phone and nothing else.
-## install the phone app over adb
-android-install: android
+#
+# Installs; it does not build. `make android` is the one that builds, and a
+# target that quietly did both meant every install paid for a Gradle run
+# whether or not anything had changed.
+## install the built phone app over adb
+android-install:
+	@$(MAKE) --no-print-directory _apks-are-fresh FLAVOURS=official BUILT_BY="make android"
 	@$(MAKE) --no-print-directory _adb-install FLAVOURS=official
 
 # The same app three times, each with its own icon and its own answer already
 # typed on that first screen: the real instance, a laptop on the LAN, and
 # staging. Three application ids, so Android keeps them apart and a bug on
 # staging can be read while your own week sits in the other one.
-## install it three times — Ontoplano, Ontoplano DEV and Ontoplano — Staging
+## build all three — Ontoplano, OntoplanoDev and OntoplanoStaging
 #: ONTOPLANO_DEV_ORIGIN=http://192.168.1.10:1493  where the DEV app points
-android-install-all: isolated
-	@[ -d capacitor/node_modules ] || (cd capacitor && npm install --no-audit --no-fund)
+android-all: isolated
+	@# Installed, and up to date with what the shell now asks for: adding a
+	@# plugin changes package.json, and a node_modules that merely exists is how
+	@# a build ships without the plugin it was supposed to gain.
+	@[ -d capacitor/node_modules ] && [ capacitor/node_modules -nt capacitor/package.json ] \
+		|| (cd capacitor && npm install --no-audit --no-fund)
 	@node scripts/brand-android.mjs
 	cd capacitor && npx cap sync android
 	@# The DEV app's address comes from the environment or from defaults.env,
@@ -409,7 +418,37 @@ android-install-all: isolated
 	}; \
 	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q \
 		assembleOfficialDebug assembleDevDebug assembleStagingDebug
+	@echo "Built all three. Put them on the phone with: make android-install-all"
+
+## install all three over adb
+android-install-all:
+	@$(MAKE) --no-print-directory _apks-are-fresh FLAVOURS="official dev staging" BUILT_BY="make android-all"
 	@$(MAKE) --no-print-directory _adb-install FLAVOURS="official dev staging"
+
+# Is what is on disk actually this version of the app?
+#
+# `make android` builds one flavour, so `make android-install-all` after it
+# installed yesterday's DEV and staging — which looks exactly like the app
+# ignoring every change you just made, and cost an evening of confusion. An APK
+# older than the web build inside it is refused by name, with the command that
+# would fix it.
+_apks-are-fresh:
+	@built=capacitor/android/app/build/outputs/apk; \
+	web=build-isolated/index.html; \
+	[ -f "$$web" ] || { echo "No web build yet. Run: $(BUILT_BY)"; exit 1; }; \
+	missing=""; stale=""; \
+	for f in $(FLAVOURS); do \
+		apk="$$built/$$f/debug/app-$$f-debug.apk"; \
+		if [ ! -f "$$apk" ]; then missing="$$missing $$f"; \
+		elif [ "$$web" -nt "$$apk" ]; then stale="$$stale $$f"; fi; \
+	done; \
+	if [ -n "$$missing" ] || [ -n "$$stale" ]; then \
+		[ -z "$$missing" ] || echo "Never built:$$missing"; \
+		[ -z "$$stale" ] || echo "Older than the app they carry:$$stale"; \
+		echo; \
+		echo "  $(BUILT_BY)"; \
+		exit 1; \
+	fi
 
 # Whatever FLAVOURS names, onto whatever is plugged in.
 #
@@ -860,7 +899,11 @@ uninstall-service:
 # lets them be committed without a build dirtying the tree.
 ## regenerate the committed Gradle project the stores build
 android-project:
-	@[ -d capacitor/node_modules ] || (cd capacitor && npm install --no-audit --no-fund)
+	@# Installed, and up to date with what the shell now asks for: adding a
+	@# plugin changes package.json, and a node_modules that merely exists is how
+	@# a build ships without the plugin it was supposed to gain.
+	@[ -d capacitor/node_modules ] && [ capacitor/node_modules -nt capacitor/package.json ] \
+		|| (cd capacitor && npm install --no-audit --no-fund)
 	@node scripts/brand-android.mjs
 	cd capacitor && npx cap sync android
 	@node scripts/android-flavours.mjs
@@ -975,6 +1018,35 @@ CA_FILE := $(CADDY_DATA)/pki/authorities/local/root.crt
 CA_PORT ?= 1494
 #: TRUST_LOCAL=0  serve https-local without asking this machine to trust the CA
 TRUST_LOCAL ?= 1
+#: HTTPS_PORT=8443  serve https-local on a high port, which needs no root at all
+HTTPS_PORT ?= 443
+
+# The caddyfile, somewhere this user owns.
+#
+# It used to be one fixed name in /tmp, which is a path every user on the
+# machine shares: a second person running this cannot write it, and `sudo make
+# https-local` failed on exactly that. Per-user, in the runtime directory where
+# there is one.
+CADDY_CONF := $(if $(XDG_RUNTIME_DIR),$(XDG_RUNTIME_DIR),/tmp)/ontoplano-caddy-$(shell id -u).caddyfile
+
+# Whether caddy may bind a port below 1024 without root.
+#
+# `caddy run` as yourself dies with "listen tcp :443: bind: permission denied"
+# unless the binary carries CAP_NET_BIND_SERVICE — which some distributions set
+# and some do not. Asked of the binary rather than guessed, so the answer names
+# the fix instead of the symptom.
+CADDY_BIN := $(shell command -v caddy 2>/dev/null)
+CADDY_MAY_BIND_LOW := $(shell [ -n "$(CADDY_BIN)" ] && getcap "$(CADDY_BIN)" 2>/dev/null | grep -q cap_net_bind_service && echo yes)
+
+# The two addresses the phone needs, written once.
+HTTPS_URL := https://$(LAN_IP)$(if $(filter 443,$(HTTPS_PORT)),,:$(HTTPS_PORT))
+CA_URL := http://$(LAN_IP):$(CA_PORT)/root.crt
+
+# A QR code in the terminal, so an address gets onto a phone by pointing its
+# camera at the screen rather than by typing an IP and a path without a typo.
+# Quiet about it when qrencode is not installed: it is a convenience here, not
+# a dependency, and the address is printed either way.
+qr = $(if $(shell command -v qrencode 2>/dev/null),qrencode -t UTF8 -m 1 "$(1)",echo "    (install qrencode and this becomes a QR code)")
 
 ### odds and ends
 
@@ -987,13 +1059,25 @@ https-local:
 		exit 1; \
 	}
 	@test -n "$(LAN_IP)" || { echo "Could not work out this machine's LAN address."; exit 1; }
+	@# A low port needs either the capability or root, and neither is something
+	@# to discover from caddy's own error three screens down.
+	@if [ "$(HTTPS_PORT)" -lt 1024 ] && [ "$$(id -u)" != 0 ] && [ -z "$(CADDY_MAY_BIND_LOW)" ]; then \
+		echo "caddy cannot bind port $(HTTPS_PORT) as you — it has no CAP_NET_BIND_SERVICE."; \
+		echo; \
+		echo "  Either use a high port, which needs nothing:"; \
+		echo "    make https-local HTTPS_PORT=8443"; \
+		echo; \
+		echo "  Or give caddy the capability once, and keep the tidy address:"; \
+		echo "    sudo setcap cap_net_bind_service=+ep $(CADDY_BIN)"; \
+		exit 1; \
+	fi
 	@printf '%s\n' \
 		"{" \
 		"$(if $(filter 0,$(TRUST_LOCAL)),	skip_install_trust,	# this machine trusts the CA: the one sudo prompt)" \
 		"	admin off" \
 		"}" \
 		"" \
-		"https://$(LAN_IP) {" \
+		"https://$(LAN_IP):$(HTTPS_PORT) {" \
 		"	tls internal" \
 		"	reverse_proxy 127.0.0.1:$(APP_PORT)" \
 		"}" \
@@ -1003,12 +1087,12 @@ https-local:
 		"http://$(LAN_IP):$(CA_PORT) {" \
 		"	root * $(dir $(CA_FILE))" \
 		"	file_server" \
-		"}" > /tmp/ontoplano-caddy.caddyfile
-	@caddy fmt --overwrite /tmp/ontoplano-caddy.caddyfile >/dev/null 2>&1 || true
+		"}" > $(CADDY_CONF)
+	@caddy fmt --overwrite $(CADDY_CONF) >/dev/null 2>&1 || true
 	@echo
 	@echo "  ontoplano over HTTPS, on this network"
 	@echo "  ────────────────────────────────────────────────────────────────"
-	@echo "  The app:        https://$(LAN_IP)"
+	@echo "  The app:        $(HTTPS_URL)"
 	@echo "  Its authority:  http://$(LAN_IP):$(CA_PORT)/root.crt"
 	@echo
 ifeq ($(TRUST_LOCAL),0)
@@ -1022,12 +1106,17 @@ else
 endif
 	@echo
 	@echo "  On an Android phone, once:"
-	@echo "    1. Open http://$(LAN_IP):$(CA_PORT)/root.crt and let it download."
+	@echo "    1. Point the camera at this, and let root.crt download:"
+	@echo
+	@$(call qr,$(CA_URL))
+	@echo
 	@echo "    2. Settings → Security → More security settings →"
 	@echo "       Encryption & credentials → Install a certificate →"
 	@echo "       CA certificate → Install anyway → pick root.crt."
 	@echo "       (Some phones: Settings → Security → Install from storage.)"
-	@echo "    3. Open https://$(LAN_IP) in Chrome."
+	@echo "    3. Then point it at this, which is the app:"
+	@echo
+	@$(call qr,$(HTTPS_URL))
 	@echo
 	@echo "  Chrome trusts what you install there. Firefox for Android does"
 	@echo "  not — it carries its own list and ignores the system one, so use"
@@ -1039,7 +1128,7 @@ endif
 	@echo
 	@echo "  Ctrl-C stops it."
 	@echo
-	@caddy run --config /tmp/ontoplano-caddy.caddyfile --adapter caddyfile
+	@caddy run --config $(CADDY_CONF) --adapter caddyfile
 
 # ─── Clean ────────────────────────────────────────────────────────────────────
 

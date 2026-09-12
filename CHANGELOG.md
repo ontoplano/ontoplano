@@ -10,6 +10,43 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.161.0 — 2026-09-12
+
+- **Recipes and the address book run on the device.** Both were on the phone's
+  "needs a server" list and neither needed one; the list existed in two places
+  and only one of them had been corrected. A test opens every room the device
+  is supposed to have, so the next one that was never ported fails the build
+  rather than being found by opening it.
+- **A picture goes into a note on the phone-only instance.** The composer posts
+  to `/media`, and the device was only ever asked about `/api`, so attaching a
+  photograph answered "this screen needs an instance with a server" about bytes
+  that were going to live on that phone. The form crosses intact, too — read as
+  text, it would have stored a corrupted copy.
+- **The back gesture goes back.** It walks the app's own history and only puts
+  the app away at the first screen of the session, the way every other app on
+  the phone behaves.
+- **A link that leaves ontoplano opens outside it.** The documentation replaced
+  the app in a window with no address bar and no way back.
+- **Reminders arrive on a phone-only instance.** There is no server to wake the
+  phone, so the app hands the next few weeks of reminders to Android's own
+  alarms whenever it opens or goes to the background.
+- **The diary stopped offering to file a note in a notebook.** The diary is not
+  one notebook among others — it is the day — and the question took notes out
+  of the diary somebody was looking at.
+- **Goals: the filters sit together.** The area chips and "Show closed" share a
+  line, with managing areas up beside "New goal" where it belongs.
+- **A sideways swipe stays in the thing being swiped.** Pushing a room's tabs
+  past their end handed the rest of the gesture to the page, which a phone
+  drags sideways and leaves there. Nothing was too wide; the strip was passing
+  the swipe on.
+- **The phone apps are Ontoplano, OntoplanoDev and OntoplanoStaging**, and
+  `make android-install` refuses an app older than the build it carries — which
+  is how yesterday's DEV and staging were installed over today's work and every
+  fix looked like it had not landed.
+- **The screen transition's numbers are in `src/lib/page-turn.ts`.** The screen
+  with sliders that turned them while the app ran is gone: three numbers in one
+  file do not need a page.
+
 ## 0.160.0 — 2026-09-12
 
 - **One phone app, and the phone-only instance is a choice inside it.** There

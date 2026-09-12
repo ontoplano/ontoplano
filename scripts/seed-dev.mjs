@@ -1227,37 +1227,94 @@ const movement = (ledgerId, occurredOn, amountCents, description, n = 1) => {
 	);
 };
 
-// The account, as `Data,Valor,Identificador,Descrição` reads it. The two
-// December/January lines are there so the list crosses a year and the band
-// that says which one has something to say.
+// The account, as `Data,Valor,Identificador,Descrição` reads it.
+//
+// Three months of a life rather than three lines repeated: the salary and the
+// bills do come back every month, which is the point of a ledger, but a
+// statement that is only those reads as a placeholder and tests nothing — no
+// rule matches more than one thing, the charts have one shape, and the search
+// box has nothing to find. So the recurring ones recur and everything else is
+// what a month actually has in it. The two December/January lines are there so
+// the list crosses a year and shows the band that says which one.
 movement(account, '2025-12-28', -9000, 'Cachacanoponto');
 movement(account, '2026-01-01', -4250, 'Personalfarma');
+
+// July
 movement(account, '2026-07-02', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
+movement(account, '2026-07-05', -180000, 'Pagamento de boleto - Aluguel Imobiliária Vista');
+movement(account, '2026-07-07', -13500, 'Débito automático - Sabesp');
+movement(account, '2026-07-09', -9990, 'Débito automático - Vivo Fibra');
+movement(account, '2026-07-10', -45900, 'Pagamento de boleto - Unimed');
 movement(account, '2026-07-12', -15990, 'Pagamento de boleto - Companhia de Energia');
+movement(account, '2026-07-14', -21000, 'Compra no débito - Posto Ipiranga');
+movement(account, '2026-07-17', 32000, 'Estorno de compra - Magazine Luiza');
+movement(account, '2026-07-21', -8000, 'Saque - Banco24Horas Terminal 4412');
+movement(
+	account,
+	'2026-07-24',
+	-25000,
+	'Transferência enviada pelo Pix - Dona Cleide - •••.447.201-•• - ITAÚ UNIBANCO (0341) Agência: 3712 Conta: 04418-2'
+);
+movement(account, '2026-07-28', -300000, 'Aplicação - Tesouro Selic 2029');
+movement(account, '2026-07-30', -3790, 'Compra no débito - Livraria Cultura');
+
+// August
 movement(account, '2026-08-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
+movement(account, '2026-08-05', -180000, 'Pagamento de boleto - Aluguel Imobiliária Vista');
+movement(account, '2026-08-07', -14120, 'Débito automático - Sabesp');
+movement(account, '2026-08-09', -9990, 'Débito automático - Vivo Fibra');
+movement(account, '2026-08-10', -45900, 'Pagamento de boleto - Unimed');
 movement(account, '2026-08-12', -16240, 'Pagamento de boleto - Companhia de Energia');
+movement(account, '2026-08-13', 45000, 'Transferência recebida pelo Pix - Marina Duarte');
 movement(
 	account,
 	'2026-08-18',
 	-120000,
 	'Transferência enviada pelo Pix - Zé Cova - •••.821.910-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 89023719-0'
 );
+movement(account, '2026-08-20', -18700, 'Compra no débito - Posto Ipiranga');
+movement(account, '2026-08-22', -64300, 'Pagamento de boleto - IPVA 2026 parcela 3/3');
+movement(account, '2026-08-26', -11200, 'Compra no débito - Pet Shop Focinho Feliz');
+movement(account, '2026-08-29', -300000, 'Aplicação - Tesouro Selic 2029');
+
+// September
 movement(account, '2026-09-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
+movement(account, '2026-09-05', -180000, 'Pagamento de boleto - Aluguel Imobiliária Vista');
+movement(account, '2026-09-07', -12880, 'Débito automático - Sabesp');
 movement(account, '2026-09-09', -15880, 'Pagamento de boleto - Companhia de Energia');
+movement(account, '2026-09-09', -9990, 'Débito automático - Vivo Fibra');
+movement(account, '2026-09-10', -45900, 'Pagamento de boleto - Unimed');
+movement(account, '2026-09-11', 120000, 'Transferência recebida pelo Pix - Restituição IRPF');
+movement(account, '2026-09-12', -7600, 'Compra no débito - Feira da Praça');
 
 // And the card, as `date,title,amount` reads it — charges, so all outgoing.
+// The same shape of variety, and for the same reason: a card statement where
+// every line is the supermarket is a card statement nobody has.
 movement(creditCard, '2026-07-08', -19900, 'Mercado Bom Preço');
+movement(creditCard, '2026-07-11', -3990, 'Spotify');
+movement(creditCard, '2026-07-13', -5590, 'Netflix.com');
 movement(creditCard, '2026-07-15', -7400, 'Padaria Estrela');
+movement(creditCard, '2026-07-18', -8900, 'Uber *Trip');
+movement(creditCard, '2026-07-19', -13400, 'Drogaria São Paulo');
 movement(creditCard, '2026-07-22', -6500, 'Academia Corpo São');
+movement(creditCard, '2026-07-25', -4780, 'Ifood *Cantina da Vó');
+movement(creditCard, '2026-07-27', -29900, 'Amazon Marketplace');
 movement(creditCard, '2026-08-06', -18740, 'Mercado Bom Preço');
 movement(creditCard, '2026-08-09', -4200, 'Hortifruti da Esquina');
+movement(creditCard, '2026-08-11', -3990, 'Spotify');
+movement(creditCard, '2026-08-13', -5590, 'Netflix.com');
 movement(creditCard, '2026-08-14', -1000, 'Casa - do caralho');
+movement(creditCard, '2026-08-16', -11250, 'Cinemark Shopping');
 movement(creditCard, '2026-08-19', -2390, 'Dm *Company');
 movement(creditCard, '2026-08-19', -2390, 'Dm *Company', 2);
+movement(creditCard, '2026-08-21', -9800, 'Ifood *Sushi Kenzo');
 movement(creditCard, '2026-08-23', -6500, 'Academia Corpo São');
+movement(creditCard, '2026-08-27', -15600, 'Renner');
+movement(creditCard, '2026-09-02', -8300, 'Uber *Trip');
 movement(creditCard, '2026-09-06', -21300, 'Mercado Bom Preço');
 movement(creditCard, '2026-09-08', -5100, 'Hortifruti da Esquina');
 movement(creditCard, '2026-09-10', -6500, 'Academia Corpo São');
+movement(creditCard, '2026-09-11', -3990, 'Spotify');
 
 const sortRule = (kind, name, pattern, position, color) => {
 	if (
@@ -1275,11 +1332,20 @@ const sortRule = (kind, name, pattern, position, color) => {
 	);
 };
 
-sortRule('category', 'Groceries', 'mercado|hortifruti|padaria', 0, '#1d4ed8');
-sortRule('category', 'Utilities', 'energia|boleto', 1, '#b45309');
-sortRule('category', 'Rent', 'aluguel', 2, '#7c2d12');
-sortRule('category', 'Subscriptions', String.raw`dm \*`, 3, '#6d28d9');
-sortRule('tag', 'healthy', 'hortifruti|academia', 0, '#0f766e');
+// Order matters: the first rule that matches wins, so the specific ones sit
+// above the general. `boleto` used to be the whole of Utilities, which put a
+// health plan and a rent payment under it — every bill in Brazil arrives as a
+// boleto, and a rule that matches the envelope rather than the thing inside it
+// is the mistake this seed should be demonstrating the fix for.
+sortRule('category', 'Rent', 'aluguel', 0, '#7c2d12');
+sortRule('category', 'Health', 'unimed|drogaria|farma', 1, '#0e7490');
+sortRule('category', 'Utilities', 'energia|sabesp|vivo', 2, '#b45309');
+sortRule('category', 'Groceries', 'mercado|hortifruti|padaria|feira', 3, '#1d4ed8');
+sortRule('category', 'Transport', 'posto|uber', 4, '#4d7c0f');
+sortRule('category', 'Eating out', 'ifood|cantina|sushi', 5, '#be123c');
+sortRule('category', 'Subscriptions', String.raw`dm \*|spotify|netflix`, 6, '#6d28d9');
+sortRule('category', 'Savings', 'aplicação|tesouro', 7, '#0f766e');
+sortRule('tag', 'healthy', 'hortifruti|academia|feira', 0, '#0f766e');
 sortRule('tag', 'pix', 'pix', 1, '#9d174d');
 
 // --- locations (inventory) -----------------------------------------------------------
@@ -1922,11 +1988,15 @@ function seedPictureFolders(root, label) {
 const tripsAlbum = album('Portugal', 0);
 const kitchenAlbum = album('Kitchen', 1);
 const kitchenPicture = picture('kitchen.jpg', 'The kitchen shelf', demoPicture('kitchen.jpg'));
-inAlbum(tripsAlbum, horsePicture);
-inAlbum(kitchenAlbum, kitchenPicture);
+// The pasta shot belongs to both — one picture, two albums, which is the
+// thing the gallery has to handle and the thing a screenshot has to show.
+// Added first in each so it is not the cover of either: an album card shows
+// its newest membership, and two albums wearing the same photograph looks
+// like the covers are broken rather than like a picture is shared.
 inAlbum(kitchenAlbum, pastaPicture);
-// The pasta shot belongs to the trip too — one picture, two albums.
 inAlbum(tripsAlbum, pastaPicture);
+inAlbum(kitchenAlbum, kitchenPicture);
+inAlbum(tripsAlbum, horsePicture);
 seedPictureFolders('birds', 'birds');
 
 if (pastaPicture) {
@@ -1939,6 +2009,56 @@ if (pastaPicture) {
 			foodTag
 		);
 }
+
+/*
+ * Pictures inside notes, which is a different thing from pictures in an album.
+ *
+ * A picture in a note is markdown pointing at `/media/<id>` and nothing
+ * records which notebook it is in — the gallery works that out by reading the
+ * writing, which is what puts the "Notebooks" album there. Without this the
+ * album is empty on a fresh dev database and the whole feature is invisible
+ * until somebody hand-writes a note with a photograph in it.
+ */
+const pictureInNote = (seq, mediaId, alt) => {
+	if (!mediaId) return;
+	const entry = one(
+		'select id, content from diary_entries where user_id = ? and seq = ?',
+		uid,
+		seq
+	);
+	if (!entry || entry.content.includes(`/media/${mediaId}`)) return;
+	run(
+		'update diary_entries set content = ? where id = ?',
+		`${entry.content}\n\n![${alt}](/media/${mediaId})`,
+		entry.id
+	);
+};
+
+/*
+ * And a notebook inside a notebook, so the folder tree is a tree.
+ *
+ * `Kitchen renovation — Countertops` is one notebook inside another for the
+ * same reason `Birds — Passeriformes` is one album inside another: the
+ * separator is the relationship. The gallery draws it as a folder inside a
+ * folder, and nothing anywhere had two levels of it to draw.
+ */
+const countertops = notebook(
+	'Kitchen renovation — Countertops',
+	'The three quotes, and what each of them actually includes.'
+);
+diary(
+	30,
+	'Granite from the second place, and they measured the corner properly. The other two quoted from the drawing.',
+	['home']
+);
+inNotebook('diary_entries', 'seq', 30, countertops);
+
+// Different pictures in the parent and the child, so the folder above counts
+// two and the one inside counts one — a tree with the same photograph twice
+// counts it once and looks like the totals are broken.
+pictureInNote(5, kitchenPicture, 'The kitchen shelf');
+pictureInNote(30, pastaPicture, 'The corner they measured');
+pictureInNote(7, horsePicture, 'On the way out of Lisbon');
 
 // A meal is a block with a recipe on it, on the grid with everything else.
 const dinner = one("select id from recurring_tasks where user_id = ? and label = 'cooking'", uid);

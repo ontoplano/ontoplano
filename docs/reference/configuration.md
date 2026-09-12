@@ -193,10 +193,11 @@ self-hosted instance wants even with the list turned on.
 Whether this instance carries the workbenches under `/dev`.
 
 Off everywhere unless somebody turns it on. They are not screens of
-the app — `/dev/page-turn` puts the screen transition's grain, speed
-and hardness on sliders so it can be judged by watching it on a real
-phone — and an instance somebody else runs has no reason to carry
-them or to know they exist.
+the app, and an instance somebody else runs has no reason to carry
+them or to know they exist. There are none at the moment — the screen
+transition had one, with its numbers on sliders, and the numbers turned
+out to be better off in `src/lib/page-turn.ts` where they can simply be
+edited.
 
 Here rather than in an environment variable because this is a thing
 the instance allows, and everything an instance allows is in this

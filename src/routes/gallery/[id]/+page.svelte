@@ -5,6 +5,8 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import RoomBar from '$lib/components/RoomBar.svelte';
+	import { leafAlbumName } from '$lib/album-path';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Modal from '$lib/components/Modal.svelte';
 	import { armed } from '$lib/actions/armed';
@@ -26,7 +28,7 @@
 		if (opened.has(id)) opened.delete(id);
 		else opened.add(id);
 	};
-	const leafName = (name: string) => name.split(' — ').at(-1) ?? name;
+	const leafName = leafAlbumName;
 
 	/** Filtering by a tag, the way the diary does. Empty means everything. */
 	let filterTag = $state('');
@@ -84,32 +86,35 @@
 </script>
 
 <div class="space-y-4">
-	<div class="flex flex-wrap items-center gap-3">
-		<a href={resolve('/gallery')} class="icon-btn" aria-label="Back to the albums">
-			<Icon name="undo" />
-		</a>
-		<h1 class="min-w-0 flex-1 truncate text-lg font-bold text-gray-900">{data.album.name}</h1>
-		<span class="text-sm text-gray-500 tabular-nums">{data.pictures.length}</span>
-		<form
-			method="post"
-			action="?/upload"
-			enctype="multipart/form-data"
-			bind:this={uploadForm}
-			use:enhance
-		>
-			<label class="btn btn-primary btn-sm cursor-pointer">
-				<Icon name="plus" /> Add pictures
-				<input
-					type="file"
-					name="file"
-					accept="image/png,image/jpeg,image/gif,image/webp"
-					multiple
-					class="hidden"
-					onchange={filesChosen}
-				/>
-			</label>
-		</form>
-	</div>
+	<!--
+		The room's own bar, so this page has the header every other one has:
+		it stays at the top with a surface under it while the grid scrolls, and
+		the arrow where a room shows its glyph goes back to the albums.
+	-->
+	<RoomBar title={data.album.name} back={resolve('/gallery')} backLabel="Back to the albums">
+		{#snippet actions()}
+			<span class="text-sm text-gray-500 tabular-nums">{data.pictures.length}</span>
+			<form
+				method="post"
+				action="?/upload"
+				enctype="multipart/form-data"
+				bind:this={uploadForm}
+				use:enhance
+			>
+				<label class="btn btn-primary btn-sm cursor-pointer">
+					<Icon name="plus" /> Add pictures
+					<input
+						type="file"
+						name="file"
+						accept="image/png,image/jpeg,image/gif,image/webp"
+						multiple
+						class="hidden"
+						onchange={filesChosen}
+					/>
+				</label>
+			</form>
+		{/snippet}
+	</RoomBar>
 
 	<FormError message={form?.message} />
 
@@ -152,14 +157,15 @@
 	{/snippet}
 
 	<!--
-		Dragging is a mouse, so this is a desktop's row.
+		Dragging is a mouse, so this is a mouse's row.
 
-		It says so itself — a finger uses the picture's own "Add to album" —
-		and on a phone the sentence and the chips under it took the top third
-		of the screen to offer something no finger can do.
+		A finger uses the picture's own "Add to album". The test is the pointer,
+		not the width: a phone held sideways is a wide screen, and this sentence
+		and the chips under it took the top third of one to offer something no
+		finger can do.
 	-->
 	{#if others.length > 0 && data.pictures.length > 0}
-		<div class="hidden text-xs text-gray-500 sm:block">
+		<div class="mouse-only text-xs text-gray-500">
 			<p class="mb-1">Drag a picture onto an album to move it — hold Ctrl to put it in both.</p>
 			<div class="flex flex-col gap-1">
 				{@render targets(data.tree, 0)}
@@ -186,7 +192,46 @@
 		</div>
 	{/if}
 
-	{#if data.pictures.length === 0}
+	<!--
+		The folders in this album, above its pictures.
+		
+		Without these an album was a flat wall and the only way to the folder
+		inside it was back out to the index — and the grid below is everything
+		beneath this album, so a parent whose pictures all live in subfolders is
+		the wall somebody expects rather than an empty page with a count on it.
+	-->
+	{#if data.folders.length > 0}
+		<ul class="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+			{#each data.folders as folder (folder.id)}
+				<li>
+					<a href="{resolve('/gallery')}/{folder.id}" class="block">
+						<span class="block aspect-square overflow-hidden rounded bg-gray-50">
+							{#if folder.coverId}
+								<img
+									src="/media/{folder.coverId}"
+									alt=""
+									loading="lazy"
+									class="h-full w-full object-cover"
+								/>
+							{:else}
+								<span class="flex h-full w-full items-center justify-center text-gray-300">
+									<Icon name="image" size={32} />
+								</span>
+							{/if}
+						</span>
+						<span class="mt-1 flex items-baseline gap-1">
+							<span class="min-w-0 flex-1 truncate text-xs font-medium text-gray-700">
+								{leafName(folder.name)}
+							</span>
+							<span class="text-xs text-gray-400 tabular-nums">{folder.count}</span>
+						</span>
+					</a>
+				</li>
+			{/each}
+		</ul>
+	{/if}
+
+	{#if data.pictures.length === 0 && data.folders.length === 0}
 		<EmptyState
 			icon="image"
 			title="Nothing here yet"

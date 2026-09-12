@@ -144,7 +144,16 @@ const ops: Record<string, (args: never) => unknown> = {
 		search: string;
 		body: string | null;
 		contentType: string | null;
-	}) => runIsolatedEndpoint(args.method, args.pathname, args.search, args.body, args.contentType)
+		form?: [string, FormDataEntryValue][];
+	}) =>
+		runIsolatedEndpoint(
+			args.method,
+			args.pathname,
+			args.search,
+			args.body,
+			args.contentType,
+			args.form
+		)
 };
 
 let ready: Promise<Oo1Db> | null = null;

@@ -89,23 +89,12 @@ export function installIsolatedBridge(): void {
 					(e): LoadReply => ({ kind: 'error', status: 500, message: String(e?.message ?? e) })
 				);
 				if (reply) return dataResponse(reply);
-			} else if (url.pathname.startsWith('/api/')) {
-				const body = ['GET', 'HEAD'].includes(request.method) ? null : await request.clone().text();
-				const reply = await ask<EndpointReply | null>('route.endpoint', {
-					method: request.method,
-					pathname: url.pathname,
-					search: url.search,
-					body,
-					contentType: request.headers.get('content-type')
-				});
-				if (reply)
-					return new Response(reply.text, {
-						status: reply.status,
-						headers: reply.contentType ? { 'content-type': reply.contentType } : undefined
-					});
-			} else if (request.method === 'POST') {
-				const action = [...url.searchParams.keys()].find((k) => k.startsWith('/'))?.slice(1);
-				if (action) {
+			} else if (
+				request.method === 'POST' &&
+				[...url.searchParams.keys()].some((k) => k.startsWith('/'))
+			) {
+				const action = [...url.searchParams.keys()].find((k) => k.startsWith('/'))!.slice(1);
+				{
 					/*
 					 * Files go over as files.
 					 *
@@ -123,6 +112,36 @@ export function installIsolatedBridge(): void {
 					});
 					if (reply) return actionResponse(reply);
 				}
+			} else if (!isAsset(url.pathname)) {
+				/*
+				 * Any endpoint the device carries, not only the ones under `/api`.
+				 *
+				 * `/media` is the one that made this matter: it is where the note
+				 * composer posts a picture, it is not an API route, and asking only
+				 * about `/api` meant attaching a picture to a note on the device
+				 * answered "this screen needs an instance with a server" — which was
+				 * never true of bytes that were going to live on this phone. The
+				 * worker says `null` for a path it has no endpoint for, and then
+				 * this falls through exactly as before.
+				 */
+				const contentType = request.headers.get('content-type');
+				const posted = !['GET', 'HEAD'].includes(request.method);
+				const isForm =
+					posted &&
+					/multipart\/form-data|application\/x-www-form-urlencoded/.test(contentType ?? '');
+				const reply = await ask<EndpointReply | null>('route.endpoint', {
+					method: request.method,
+					pathname: url.pathname,
+					search: url.search,
+					body: posted && !isForm ? await request.clone().text() : null,
+					contentType,
+					form: isForm ? [...(await request.clone().formData()).entries()] : undefined
+				});
+				if (reply)
+					return new Response(reply.text, {
+						status: reply.status,
+						headers: reply.contentType ? { 'content-type': reply.contentType } : undefined
+					});
 			}
 		}
 

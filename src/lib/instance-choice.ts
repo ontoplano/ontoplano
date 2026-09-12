@@ -42,6 +42,26 @@ export const ARRIVING_HOME = 'here';
 export const ARRIVING_AT = 'at';
 
 /**
+ * The mark saying "ask me again" — the way out of an instance.
+ *
+ * Without it, going back to the question would be answered by the question
+ * itself: the launch reads what was chosen last time and sends you straight
+ * back to the instance you were trying to leave. This forgets first.
+ */
+export const ARRIVING_TO_ASK = 'ask';
+
+/**
+ * The address of the question, for a page that wants out of wherever it is.
+ *
+ * Always the copy of the app on the device, never `/instance` on the instance
+ * being left: that instance may be running a version of ontoplano old enough
+ * not to have this screen, and a way back that depends on what somebody else
+ * deployed is not a way back.
+ */
+export const askAgainOnThisPhone = (): string =>
+	`${DEVICE_ORIGIN}${CHOOSE_PATH}?${ARRIVING_TO_ASK}=1`;
+
+/**
  * The question's address on the copy of the app the phone carries, carrying
  * the answer with it.
  *
@@ -127,8 +147,41 @@ export function rememberInstance(url: string | null): void {
 	if (typeof localStorage === 'undefined') return;
 	try {
 		localStorage.setItem(KEPT_AT, url || PHONE);
+		if (!url) rememberPhoneInstance();
 	} catch {
 		/* a browser that refuses storage still gets the app it is looking at */
+	}
+}
+
+/**
+ * That a phone-only instance was once started here.
+ *
+ * Kept apart from the choice itself, and never cleared: connecting to a server
+ * afterwards does not delete what is on the phone, so the question on the
+ * instance screen stops being "start one" and becomes "go back to the one you
+ * have". Somebody who has written a month into this device and then tried the
+ * official instance should not be offered a button that reads like it is about
+ * to start again from nothing.
+ */
+const PHONE_MADE_AT = 'ontoplano:phone-instance';
+
+/** Whether this device has been an instance at some point. */
+export function phoneInstanceExists(): boolean {
+	if (typeof localStorage === 'undefined') return false;
+	try {
+		return localStorage.getItem(PHONE_MADE_AT) === 'yes';
+	} catch {
+		return false;
+	}
+}
+
+/** Remember that it does. Called the first time the phone is chosen. */
+export function rememberPhoneInstance(): void {
+	if (typeof localStorage === 'undefined') return;
+	try {
+		localStorage.setItem(PHONE_MADE_AT, 'yes');
+	} catch {
+		/* a browser that refuses storage still gets the instance it is looking at */
 	}
 }
 

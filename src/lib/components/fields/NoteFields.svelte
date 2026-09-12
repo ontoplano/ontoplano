@@ -22,6 +22,17 @@
 		/** Off where there is no room for it, like the capture sheet's four rows. */
 		pictures = true,
 		/**
+		 * Whether this note may be filed in a notebook.
+		 *
+		 * Off in the diary, which is not one notebook among others — it is the
+		 * day, and a note written into it is a note about the day. Offering to
+		 * move it somewhere else at the moment of writing asks a question the
+		 * page has already answered, and answering it took the note out of the
+		 * diary the writer was looking at. A note can still be filed later, from
+		 * the note itself.
+		 */
+		notebook = true,
+		/**
 		 * What the box is called.
 		 *
 		 * "Note" on the diary page, where the page is the diary and the word is
@@ -37,6 +48,7 @@
 		notebooks?: { id: number; title: string }[];
 		compact?: boolean;
 		pictures?: boolean;
+		notebook?: boolean;
 		label?: string;
 	} = $props();
 
@@ -58,7 +70,9 @@
 </Field>
 
 {#snippet rest()}
-	<NotebookField {notebooks} value={notebookId} span={12} />
+	{#if notebook}
+		<NotebookField {notebooks} value={notebookId} span={12} />
+	{/if}
 
 	<Field label="Tags" span={12} hint="Separate with commas or spaces. A leading # is fine.">
 		<OneLine name="tags" placeholder="work, health" value={tags} class="input" />
@@ -66,7 +80,10 @@
 {/snippet}
 
 {#if compact}
-	<MoreOptions label="Notebook, tags" count={(tags ? 1 : 0) + (notebookId ? 1 : 0)}>
+	<MoreOptions
+		label={notebook ? 'Notebook, tags' : 'Tags'}
+		count={(tags ? 1 : 0) + (notebook && notebookId ? 1 : 0)}
+	>
 		{@render rest()}
 	</MoreOptions>
 {:else}

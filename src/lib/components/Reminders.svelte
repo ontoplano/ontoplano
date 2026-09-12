@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { scheduleDeviceReminders } from '$lib/isolated/notifications';
 	import { browser } from '$app/environment';
 	import { enablePush, pushSupported } from '$lib/push';
 	import { page } from '$app/state';
@@ -139,17 +140,34 @@
 		void enablePush(key);
 	});
 
+	/*
+	 * And, on a phone that is the instance, book the alarms with Android.
+	 *
+	 * There is no server here to wake the phone, so the app hands the next few
+	 * weeks of reminders to the system while it is open and the system fires
+	 * them on its own clock. Twice: when the app opens, and every time it is
+	 * about to go away or has just come back — which is when what was booked
+	 * may have stopped matching what the database says. It does nothing at all
+	 * anywhere else, because everywhere else has a server and push.
+	 */
+	function reschedule() {
+		scheduleDeviceReminders();
+	}
+
 	$effect(() => {
 		if (!browser) return;
 
 		poll();
+		reschedule();
 		const timer = setInterval(poll, EVERY);
 		// Coming back to the tab is exactly when you want to know what you missed.
 		document.addEventListener('visibilitychange', poll);
+		document.addEventListener('visibilitychange', reschedule);
 
 		return () => {
 			clearInterval(timer);
 			document.removeEventListener('visibilitychange', poll);
+			document.removeEventListener('visibilitychange', reschedule);
 		};
 	});
 </script>

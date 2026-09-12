@@ -1,0 +1,131 @@
+<script lang="ts">
+	import { resolve } from '$app/paths';
+	import EmptyState from '$lib/components/EmptyState.svelte';
+	import Icon from '$lib/components/Icon.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import RoomBar from '$lib/components/RoomBar.svelte';
+	import { NOTEBOOK_SEPARATOR } from '$lib/notebook-path';
+	import type { PageServerData } from './$types';
+
+	/**
+	 * Every picture that is in a notebook, arranged the way the notebooks are.
+	 *
+	 * The same screen as any other album — folders above, a grid below, a
+	 * picture opens — with one difference that is not cosmetic: nothing here
+	 * can be changed. A picture is in this album because a note's markdown
+	 * points at it, so there is nothing to move, nothing to remove, and nothing
+	 * to upload into. Editing the note is how a picture arrives or leaves, and
+	 * that is a better place for it than a gallery screen that would have to
+	 * invent which note to write to.
+	 */
+	let { data }: { data: PageServerData } = $props();
+
+	/** Where a folder's link goes: one segment per level of the notebook. */
+	const linkTo = (name: string) =>
+		`${resolve('/gallery')}/notebooks/${name
+			.split(NOTEBOOK_SEPARATOR)
+			.map(encodeURIComponent)
+			.join('/')}`;
+
+	/** The way up: the notebook above this one, or the album itself. */
+	const upTo = $derived.by(() => {
+		const parts = data.path ? data.path.split(NOTEBOOK_SEPARATOR) : [];
+		parts.pop();
+		return parts.length > 0
+			? linkTo(parts.join(NOTEBOOK_SEPARATOR))
+			: data.path
+				? `${resolve('/gallery')}/notebooks`
+				: resolve('/gallery');
+	});
+
+	let viewingId: number | null = $state(null);
+	const viewing = $derived(
+		viewingId === null ? null : (data.pictures.find((p) => p.id === viewingId) ?? null)
+	);
+</script>
+
+<svelte:head><title>{data.title} — pictures</title></svelte:head>
+
+<div class="space-y-4">
+	<RoomBar title={data.title} back={upTo} backLabel="Back">
+		{#snippet actions()}
+			<span class="text-sm text-gray-500 tabular-nums">{data.pictures.length}</span>
+		{/snippet}
+	</RoomBar>
+
+	<p class="text-xs text-gray-500">
+		The pictures in your notebooks. Each one lives in the note that mentions it.
+	</p>
+
+	{#if data.folders.length > 0}
+		<ul class="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+			{#each data.folders as folder (folder.name)}
+				<li>
+					<!-- `linkTo` starts from resolve('/gallery') and appends the
+					     notebook's own segments. -->
+					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+					<a href={linkTo(folder.name)} class="block">
+						<span class="block aspect-square overflow-hidden rounded bg-gray-50">
+							<span class="flex h-full w-full items-center justify-center text-gray-300">
+								<Icon name="notebook" size={32} />
+							</span>
+						</span>
+						<span class="mt-1 flex items-baseline gap-1">
+							<span class="min-w-0 flex-1 truncate text-xs font-medium text-gray-700">
+								{folder.leaf}
+							</span>
+							<span class="text-xs text-gray-400 tabular-nums">{folder.totalCount}</span>
+						</span>
+					</a>
+				</li>
+			{/each}
+		</ul>
+	{/if}
+
+	{#if data.pictures.length === 0 && data.folders.length === 0}
+		<EmptyState
+			icon="notebook"
+			title="No pictures in your notebooks"
+			description="Put a picture in a note and it turns up here, in a folder named after its notebook."
+		/>
+	{:else if data.pictures.length > 0}
+		<ul class="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+			{#each data.pictures as picture (picture.id)}
+				<li>
+					<button
+						class="block w-full overflow-hidden rounded"
+						aria-label={picture.alt || picture.filename || 'A picture'}
+						onclick={() => (viewingId = picture.id)}
+					>
+						<img
+							src="/media/{picture.id}"
+							alt={picture.alt}
+							loading="lazy"
+							class="aspect-square w-full bg-gray-50 object-cover"
+						/>
+					</button>
+				</li>
+			{/each}
+		</ul>
+	{/if}
+</div>
+
+<Modal
+	open={viewing !== null}
+	title={viewing?.alt || viewing?.filename || 'A picture'}
+	onclose={() => (viewingId = null)}
+>
+	{#if viewing}
+		<img src="/media/{viewing.id}" alt={viewing.alt} class="max-h-[70vh] w-full object-contain" />
+		{#if viewing.tags.length > 0}
+			<p class="mt-2 flex flex-wrap gap-2">
+				{#each viewing.tags as tag (tag)}
+					<span class="chip text-gray-500">#{tag}</span>
+				{/each}
+			</p>
+		{/if}
+	{/if}
+	{#snippet footer()}
+		<button class="btn" type="button" onclick={() => (viewingId = null)}>Close</button>
+	{/snippet}
+</Modal>

@@ -19,12 +19,19 @@ import {
 	renameAlbum
 } from '$lib/services/gallery';
 import { mediaLimits } from '$lib/services/media';
+import { notebookMediaCount } from '$lib/services/notebook-media';
 import { fail } from '@sveltejs/kit';
 
 /** The gallery opens on albums, because that is how anybody actually keeps pictures. */
 export const load = async ({ locals }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
-	return { albums: listAlbums(ctx), tree: albumTree(ctx) };
+	return {
+		albums: listAlbums(ctx),
+		tree: albumTree(ctx),
+		// The pictures that are in notebooks, which are not an album anybody
+		// made and cannot be one: see `$lib/services/notebook-media`.
+		notebookPictures: notebookMediaCount(ctx)
+	};
 };
 
 export const actions = {

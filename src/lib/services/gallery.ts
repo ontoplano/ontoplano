@@ -74,7 +74,8 @@ export type AlbumPicture = {
  * `birds — Owls` has moved it, which is the behaviour they would expect
  * from typing that.
  */
-export const ALBUM_SEPARATOR = ' — ';
+export { ALBUM_SEPARATOR } from '../album-path.js';
+import { ALBUM_SEPARATOR } from '../album-path.js';
 
 /**
  * The album a chosen file belongs in, from the path the browser sent.
@@ -156,6 +157,17 @@ export function albumTree(ctx: Ctx): AlbumNode[] {
 	const withTotals = (node: AlbumNode): number => {
 		const total = node.children.reduce((n, child) => n + withTotals(child), node.count);
 		node.totalCount = total;
+		/*
+		 * And a cover from inside, for an album that holds nothing itself.
+		 *
+		 * A folder import's root is exactly that — `Birds` with every bird in a
+		 * subfolder — and it drew the empty-album placeholder beside a count of
+		 * twenty-eight. The card opens onto those twenty-eight, so it should
+		 * look like it.
+		 */
+		if (node.coverId === null) {
+			node.coverId = node.children.find((child) => child.coverId !== null)?.coverId ?? null;
+		}
 		return total;
 	};
 	roots.forEach(withTotals);
@@ -232,6 +244,50 @@ export function deleteAlbum(ctx: Ctx, id: number): void {
 		.where(and(eq(albums.id, id), eq(albums.userId, ctx.userId)))
 		.run();
 	for (const mediaId of held) removeIfUnreferenced(ctx, mediaId);
+}
+
+/**
+ * The albums directly inside one, and everything beneath it.
+ *
+ * An album's name is its lineage — see `ALBUM_SEPARATOR` — so "inside" is a
+ * string test rather than a join. The nearest existing descendant on each
+ * branch, not everything one separator deeper: a folder import can leave
+ * `Birds — Falconiformes — Hawks` with no `Birds — Falconiformes`, and that
+ * album still has to appear somewhere rather than vanishing into a gap.
+ */
+export function albumsInside(ctx: Ctx, albumId: number): { direct: Album[]; beneath: Album[] } {
+	const all = listAlbums(ctx);
+	const self = all.find((a) => a.id === albumId);
+	if (!self) return { direct: [], beneath: [] };
+
+	const under = `${self.name}${ALBUM_SEPARATOR}`;
+	const beneath = all.filter((a) => a.name.startsWith(under));
+	const direct = beneath.filter(
+		(a) => !beneath.some((other) => a.name.startsWith(other.name + ALBUM_SEPARATOR))
+	);
+	return { direct, beneath };
+}
+
+/**
+ * Every picture in an album and in everything inside it.
+ *
+ * What somebody means by "the Birds album" is the birds, and a folder import
+ * puts every one of them in a subfolder — so the album itself holds nothing
+ * and the page was a wall of white. A picture that is in two folders under the
+ * same parent appears once.
+ */
+export function albumPicturesDeep(ctx: Ctx, albumId: number): AlbumPicture[] {
+	const { beneath } = albumsInside(ctx, albumId);
+	const seen = new Set<number>();
+	const out: AlbumPicture[] = [];
+	for (const album of [{ id: albumId }, ...beneath]) {
+		for (const picture of albumPictures(ctx, album.id)) {
+			if (seen.has(picture.id)) continue;
+			seen.add(picture.id);
+			out.push(picture);
+		}
+	}
+	return out;
 }
 
 export function albumPictures(ctx: Ctx, albumId: number): AlbumPicture[] {

@@ -105,6 +105,87 @@ test('the app opens onto a working instance and keeps what it is told', async ({
  * `naturalWidth` — an image that did not decode is zero wide, whatever the
  * markup says.
  */
+/**
+ * Every room the device is supposed to have, actually reachable.
+ *
+ * A screen the bridge has no route for falls through to the file host, which
+ * answers an unknown path with an empty 404 — so a room that was never ported
+ * looks like a room that does not exist, and the only way to find out is to
+ * open it. Recipes and the address book were exactly that for months: both
+ * work on the device and both were on the list of things it refuses.
+ */
+test('every room that runs on the device opens on it', async ({ page }) => {
+	test.setTimeout(180_000);
+	const rooms = [
+		'/tasks/todo',
+		'/tasks/board',
+		'/goals',
+		'/notebooks',
+		'/notebooks/diary',
+		'/notebooks/people',
+		'/health/habits',
+		'/health/recipes',
+		'/health/workouts',
+		'/finance/ledgers',
+		'/finance/bills',
+		'/gallery',
+		'/inventory',
+		'/reminders'
+	];
+
+	await page.goto('/');
+	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 60_000 });
+
+	const missing: string[] = [];
+	for (const room of rooms) {
+		const answer = await page.evaluate(async (path) => {
+			const res = await fetch(`${path}/__data.json`);
+			return res.status;
+		}, room);
+		if (answer !== 200) missing.push(`${room} -> ${answer}`);
+	}
+
+	expect(missing).toEqual([]);
+});
+
+/**
+ * A picture put into a note, on a device with nothing behind it.
+ *
+ * The composer posts the file to `/media` and writes the address it answers
+ * with into the markdown. `/media` is not under `/api`, and the bridge used to
+ * ask the device only about `/api` — so this answered "this screen needs an
+ * instance with a server", about bytes that were only ever going to live on
+ * this phone.
+ */
+test('a picture goes into a note on the device', async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.goto('/notebooks/diary');
+	await expect(page.getByRole('heading', { name: 'Notebooks' })).toBeVisible({ timeout: 60_000 });
+
+	const tour = page.getByRole('dialog', { name: 'Tutorial' });
+	if (await tour.isVisible().catch(() => false)) {
+		await tour.getByRole('button', { name: 'Dismiss' }).click();
+		await tour.getByRole('button', { name: 'Okay, dismiss!' }).click();
+	}
+
+	// Straight at the endpoint the composer uses: what this is about is whether
+	// the device answers it at all, and driving a file picker adds nothing.
+	const answer = await page.evaluate(async () => {
+		// A one-pixel GIF, which is a real picture as far as the store is concerned.
+		const bytes = Uint8Array.from(atob('R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='), (c) =>
+			c.charCodeAt(0)
+		);
+		const form = new FormData();
+		form.append('file', new File([bytes], 'dot.gif', { type: 'image/gif' }));
+		const res = await fetch('/media', { method: 'POST', body: form });
+		return { status: res.status, body: await res.json().catch(() => null) };
+	});
+
+	expect(answer.status).toBe(200);
+	// And the markdown it hands back points at a picture this device can draw.
+	expect(answer.body?.markdown).toMatch(/!\[.*]\(\/media\/\d+\)/);
+});
+
 test('a picture is stored and drawn with no server anywhere', async ({ page }) => {
 	test.setTimeout(120_000);
 	page.on('pageerror', (e) => console.log('PAGEERROR ' + String(e).slice(0, 300)));
@@ -211,10 +292,13 @@ test('the phone can leave the instance it is', async ({ page }) => {
 		'aria-checked',
 		'true'
 	);
-	await expect(page.getByText(/assistants can reach it over MCP/)).toBeVisible();
+	await expect(page.getByText(/Assistants reach it over MCP/)).toBeVisible();
 
-	// And the other one says what it costs before anybody presses it.
+	// And the other one says what it costs before anybody presses it — as a
+	// list, because this is the one decision in the app that cannot be undone
+	// by pressing something else later.
 	await page.getByRole('radio', { name: /This phone only/ }).click();
-	await expect(page.getByText(/nothing is backed up/)).toBeVisible();
-	await expect(page.getByRole('button', { name: 'Keep it on this phone' })).toBeEnabled();
+	await expect(page.getByText(/Nothing is backed up/)).toBeVisible();
+	await expect(page.getByText(/Reminders still arrive/)).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Start isolated instance' })).toBeEnabled();
 });

@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { MIN_PASSWORD_LENGTH, PASSWORD_RULE } from '$lib/passwords';
+	import { askAgainOnThisPhone, inPhoneApp } from '$lib/instance-choice';
 	import Banner from '$lib/components/Banner.svelte';
 	import StagingBand from '$lib/components/StagingBand.svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -185,6 +186,26 @@
 		{#if mode === 'register' && data.isFirstAccount}
 			<p class="mt-3 text-center text-xs text-gray-500">
 				This is the first account on this instance, so it owns it.
+			</p>
+		{/if}
+
+		<!--
+			The way out of the wrong instance.
+			
+			A sign-in screen is where somebody lands when the app sends them to an
+			instance, and until this existed it was a dead end: the account you
+			want is on a different ontoplano and there is no address bar in an app
+			to type one into. Only inside the app, where the copy on the phone is
+			one navigation away; a browser already has a way to leave a page.
+		-->
+		{#if inPhoneApp()}
+			<p class="mt-4 text-center text-sm">
+				<!-- Another origin entirely — the copy of the app on the phone —
+				     which is not a route this app can resolve. -->
+				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+				<a href={askAgainOnThisPhone()} class="font-medium text-gray-900 underline">
+					Use a different ontoplano
+				</a>
 			</p>
 		{/if}
 

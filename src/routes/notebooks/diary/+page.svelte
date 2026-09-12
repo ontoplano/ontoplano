@@ -335,9 +335,13 @@
 			{/if}
 
 			<FormGrid>
+				<!-- No notebook picker: the diary is not one notebook among others,
+				     and offering to move a note out of it at the moment of writing
+				     answered a question this page had already answered. -->
 				<NoteFields
 					content={editingId ? (editingEntry()?.content ?? '') : ''}
 					tags={editingId ? editingTagString() : ''}
+					notebook={false}
 					notebooks={data.notebooks}
 				/>
 

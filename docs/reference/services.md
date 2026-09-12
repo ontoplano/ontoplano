@@ -54,6 +54,7 @@ shows up here on the next build.
 | [`media`](#media)                               | Pictures: what is accepted, where they go, and who may see one.                                                                                                                                                                                                      |
 | [`meta`](#meta)                                 | User-defined key/value metadata attached to planner slots.                                                                                                                                                                                                           |
 | [`newsletter`](#newsletter)                     | The one channel nobody else can take away.                                                                                                                                                                                                                           |
+| [`notebook-media`](#notebook-media)             | Every picture that is in a notebook, as a gallery album.                                                                                                                                                                                                             |
 | [`notebooks`](#notebooks)                       | Notebooks: a subject you write against, with no deadline.                                                                                                                                                                                                            |
 | [`onboarding-templates`](#onboarding-templates) | The starter weeks, as data.                                                                                                                                                                                                                                          |
 | [`onboarding`](#onboarding)                     | First run.                                                                                                                                                                                                                                                           |
@@ -1253,6 +1254,25 @@ The albums as they belong to each other, roots first.
 Deleting an album lets go of its references, and any picture that was
 only there goes with them — bytes nobody can see are not kept.
 
+#### `albumsInside(ctx, albumId)`
+
+The albums directly inside one, and everything beneath it.
+
+An album's name is its lineage — see `ALBUM_SEPARATOR` — so "inside" is a
+string test rather than a join. The nearest existing descendant on each
+branch, not everything one separator deeper: a folder import can leave
+`Birds — Falconiformes — Hawks` with no `Birds — Falconiformes`, and that
+album still has to appear somewhere rather than vanishing into a gap.
+
+#### `albumPicturesDeep(ctx, albumId)`
+
+Every picture in an album and in everything inside it.
+
+What somebody means by "the Birds album" is the birds, and a folder import
+puts every one of them in a subfolder — so the album itself holds nothing
+and the page was a wall of white. A picture that is in two folders under the
+same parent appears once.
+
 #### `albumPictures(ctx, albumId)`
 
 #### `uploadToAlbum(ctx, albumId, input)`
@@ -2322,6 +2342,61 @@ people who never confirmed would be the thing that gets that sender banned.
 ### Types
 
 - `Subscriber`
+
+## notebook-media
+
+Every picture that is in a notebook, as a gallery album.
+
+A picture in a note is an ordinary `media` row that the note's markdown
+points at — `![a shelf](/media/12)` — and nothing records which notebook it
+belongs to. That is on purpose: the writing is where the picture lives, so
+moving a note between notebooks, deleting the line, or pasting the same
+picture into a second note are all just edits to text, and a table recording
+"picture 12 is in the kitchen notebook" would be wrong within a week.
+
+So this is derived, every time it is asked. The gallery gets a folder per
+notebook that has any pictures, named the way the notebook is named — which
+means a notebook inside a notebook is a folder inside a folder, and
+`Home — Kitchen` in the notebooks room is `Home — Kitchen` here too.
+
+Derived also decides what can be done to it: pictures can be looked at,
+named and tagged like any other, but nothing is uploaded _into_ a notebook
+folder and nothing is dragged out of one. There is no such thing as being in
+one — a note mentions a picture, and that is the only fact there is.
+
+### Functions
+
+#### `picturesMentionedIn(content)`
+
+Which pictures a piece of writing points at.
+
+The markdown the app writes is `![alt](/media/12)`, but somebody editing by
+hand may well have written the address on its own, so this looks for the
+address rather than for the whole image syntax.
+
+#### `notebookMediaFolders(ctx)`
+
+The notebooks that have pictures, with the pictures in each.
+
+Ordered by name, so the folders sit in the order the notebooks room shows
+them and a folder's parent always comes before it.
+
+#### `notebookMediaCount(ctx)`
+
+How many pictures are in notebooks at all, for the tile on the index.
+
+#### `notebookMediaView(ctx, path)`
+
+One folder of the notebooks album: what is directly inside it, and the
+pictures in it and everything under it.
+
+`path` is the notebook's title. Empty means the album itself, which holds no
+pictures of its own — every picture is in some notebook — and shows one
+folder per notebook at the top of the tree.
+
+### Types
+
+- `NotebookMediaFolder` — A notebook that has pictures in it, and which ones.
 
 ## notebooks
 

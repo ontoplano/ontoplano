@@ -1,54 +1,19 @@
 /**
- * The dissolve's numbers while the app is running, and the loop that uses them.
+ * The dissolve's numbers, and the loop that uses them.
  *
  * Split from `page-turn.ts` because that file is read by things that are not
  * Svelte — the end-to-end test imports the defaults to assert against — and a
- * module holding `$state` cannot be loaded by plain Node. Defaults and ranges
- * live there; what is in force right now lives here.
+ * module holding Svelte state cannot be loaded by plain Node.
+ *
+ * The numbers themselves are `PAGE_TURN_DEFAULTS`, in that file, and changing
+ * the feel of the dissolve means editing them there. There was a screen with
+ * sliders on it that turned them while the app ran; it is gone. This is three
+ * numbers in one file, not a setting, and certainly not a setting with a page.
  */
 import { PAGE_TURN_DEFAULTS, type PageTurnTuning } from './page-turn.js';
 
-const STORED_AT = 'ontoplano:page-turn';
-
-function stored(): Partial<PageTurnTuning> {
-	if (typeof localStorage === 'undefined') return {};
-	try {
-		return JSON.parse(localStorage.getItem(STORED_AT) ?? '{}') as Partial<PageTurnTuning>;
-	} catch {
-		return {};
-	}
-}
-
-/**
- * The values in force, which a tuner may change while the app is running.
- *
- * The point of this is to be watched rather than reasoned about: the feel of
- * a dissolve is not something anybody gets right by reading three numbers, so
- * the numbers move under your thumb and the next screen change uses them.
- * Kept in the browser it is being watched in — this is not a preference and
- * does not belong to the account.
- */
-export const PAGE_TURN: PageTurnTuning = $state({
-	durationMs: PAGE_TURN_DEFAULTS.durationMs,
-	grain: PAGE_TURN_DEFAULTS.grain,
-	hardness: PAGE_TURN_DEFAULTS.hardness,
-	...stored()
-});
-
-/** Remember what is on screen now, for the next page and the next launch. */
-export function keepPageTurn(): void {
-	if (typeof localStorage === 'undefined') return;
-	const { durationMs, grain, hardness } = PAGE_TURN;
-	localStorage.setItem(STORED_AT, JSON.stringify({ durationMs, grain, hardness }));
-}
-
-/** Back to what the app ships with. */
-export function resetPageTurn(): void {
-	PAGE_TURN.durationMs = PAGE_TURN_DEFAULTS.durationMs;
-	PAGE_TURN.grain = PAGE_TURN_DEFAULTS.grain;
-	PAGE_TURN.hardness = PAGE_TURN_DEFAULTS.hardness;
-	if (typeof localStorage !== 'undefined') localStorage.removeItem(STORED_AT);
-}
+/** What is in force. One place, read wherever the dissolve is drawn. */
+export const PAGE_TURN: PageTurnTuning = PAGE_TURN_DEFAULTS;
 
 /**
  * Slide the threshold across both halves for the length of one turn.

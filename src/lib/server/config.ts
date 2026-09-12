@@ -118,8 +118,9 @@ origin = ""
 tagline = "Managing life, one week at a time"
 
 # The workbenches under /dev — not screens of the app, and off unless the
-# person running this wants them. /dev/page-turn is the screen transition
-# with its grain, speed and hardness on sliders.
+# person running this wants them. There are none at the moment: the screen
+# transition's numbers are edited in src/lib/page-turn.ts, which is where three
+# numbers belong.
 dev_tools = "false"
 
 # Your own copy, rather than one somebody sells. Off means hosted, which is
@@ -345,10 +346,11 @@ export interface OntoplanoConfig {
 		 * Whether this instance carries the workbenches under `/dev`.
 		 *
 		 * Off everywhere unless somebody turns it on. They are not screens of
-		 * the app — `/dev/page-turn` puts the screen transition's grain, speed
-		 * and hardness on sliders so it can be judged by watching it on a real
-		 * phone — and an instance somebody else runs has no reason to carry
-		 * them or to know they exist.
+		 * the app, and an instance somebody else runs has no reason to carry
+		 * them or to know they exist. There are none at the moment — the screen
+		 * transition had one, with its numbers on sliders, and the numbers turned
+		 * out to be better off in `src/lib/page-turn.ts` where they can simply be
+		 * edited.
 		 *
 		 * Here rather than in an environment variable because this is a thing
 		 * the instance allows, and everything an instance allows is in this

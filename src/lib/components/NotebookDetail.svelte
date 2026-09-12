@@ -329,11 +329,7 @@
 						form asking what to call it, and one without a name is listed by
 						its first line.
 					-->
-					<OneLine
-						name="heading"
-						placeholder="What is it about? (optional)"
-						class="input mb-2 w-full font-medium"
-					/>
+					<OneLine name="heading" placeholder="Title" class="input mb-2 w-full font-medium" />
 					<textarea
 						bind:this={addBox}
 						name="content"
@@ -486,7 +482,7 @@
 							<OneLine
 								name="heading"
 								value={entry.title ?? ''}
-								placeholder="What is it about? (optional)"
+								placeholder="Title"
 								class="input mb-2 w-full font-medium"
 							/>
 							<textarea

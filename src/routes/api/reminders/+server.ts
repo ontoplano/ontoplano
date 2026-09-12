@@ -1,7 +1,12 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { json } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
-import { dismissReminder, dueReminders, markDelivered } from '$lib/services/reminders';
+import {
+	dismissReminder,
+	dueReminders,
+	listReminders,
+	markDelivered
+} from '$lib/services/reminders';
 import { ensureBirthdayReminders } from '$lib/services/birthdays';
 
 /**
@@ -13,10 +18,41 @@ import { ensureBirthdayReminders } from '$lib/services/birthdays';
  * delivered once something has actually put it in front of somebody, so a
  * failed request loses nothing.
  */
-export const GET = async ({ locals }: IsolatedEvent) => {
+/**
+ * How many reminders ahead the device is told about, and how far.
+ *
+ * Android holds a limited number of pending alarms per app and the list is
+ * re-scheduled from scratch every time the app opens, so there is no value in
+ * booking a year of them: what matters is that whatever is coming up soon will
+ * fire with the app shut. Named here because the page that schedules them and
+ * this, which decides what to hand over, have to agree.
+ */
+const AHEAD = 64;
+const AHEAD_DAYS = 30;
+
+export const GET = async ({ locals, url }: IsolatedEvent) => {
 	if (!locals.user) return json({ due: [] }, { status: 401 });
 
 	const ctx = buildCtx(locals.user.id);
+
+	/*
+	 * What is still to come, for a device that has to schedule it itself.
+	 *
+	 * An instance with a server wakes a phone over push; a phone that *is* the
+	 * instance has no server to be woken by, so it books the alarms with
+	 * Android before it is closed. It needs the ones that have not gone off
+	 * yet rather than the ones that have.
+	 */
+	if (url.searchParams.has('upcoming')) {
+		const now = new Date();
+		const until = new Date(now.getTime() + AHEAD_DAYS * 24 * 60 * 60 * 1000).toISOString();
+		const upcoming = listReminders(ctx)
+			.filter(
+				(r) => r.deliveredAt === null && r.remindAt > now.toISOString() && r.remindAt <= until
+			)
+			.slice(0, AHEAD);
+		return json({ upcoming });
+	}
 	/*
 	 * Today's birthdays are written here as well as by the delivery job.
 	 *

@@ -48,7 +48,8 @@ export type Notebook = {
  * moves it, which is what typing that plainly means. One idea in the app
  * rather than two.
  */
-export const NOTEBOOK_SEPARATOR = ' — ';
+export { NOTEBOOK_SEPARATOR } from '../notebook-path.js';
+import { NOTEBOOK_SEPARATOR } from '../notebook-path.js';
 
 export type NotebookNode = Notebook & {
 	depth: number;

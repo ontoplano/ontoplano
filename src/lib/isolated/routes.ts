@@ -64,12 +64,10 @@ const pages = import.meta.glob(
 		'!/src/routes/buy/**',
 		'!/src/routes/demo/**',
 		'!/src/routes/dev/**',
-		'!/src/routes/health/recipes/**',
 		'!/src/routes/legal/**',
 		'!/src/routes/login/**',
 		'!/src/routes/mail/**',
 		'!/src/routes/newsletter/**',
-		'!/src/routes/notebooks/people/**',
 		'!/src/routes/settings/**',
 		'!/src/routes/start/**',
 		'!/src/routes/welcome/**'
@@ -91,12 +89,10 @@ const notHere = import.meta.glob(
 		'/src/routes/buy/+page.server.ts',
 		'/src/routes/demo/**/+page.server.ts',
 		'/src/routes/dev/**/+page.server.ts',
-		'/src/routes/health/recipes/**/+page.server.ts',
 		'/src/routes/legal/**/+page.server.ts',
 		'/src/routes/login/**/+page.server.ts',
 		'/src/routes/mail/**/+page.server.ts',
 		'/src/routes/newsletter/**/+page.server.ts',
-		'/src/routes/notebooks/people/+page.server.ts',
 		'/src/routes/settings/**/+page.server.ts',
 		'/src/routes/start/+page.server.ts',
 		'/src/routes/welcome/**/+page.server.ts'
@@ -128,7 +124,18 @@ const endpoints = import.meta.glob(
 		'/src/routes/api/capture-options/+server.ts',
 		'/src/routes/api/reminders/+server.ts',
 		'/src/routes/api/search/+server.ts',
-		'/src/routes/api/tutorial/+server.ts'
+		'/src/routes/api/tutorial/+server.ts',
+		/*
+		 * Where a picture goes before the writing that mentions it exists.
+		 *
+		 * Not under `/api`, because it is not one — it is the endpoint the note
+		 * composer posts a file to, and the address it answers with is what gets
+		 * written into the markdown. Without it here, attaching a picture to a
+		 * note on the device fell through to the file host and came back as
+		 * "this screen needs an instance with a server", which is untrue: the
+		 * bytes were always going to live on this phone.
+		 */
+		'/src/routes/media/+server.ts'
 	],
 	{ eager: true }
 ) as Record<string, EndpointModule>;
@@ -292,7 +299,16 @@ export async function runIsolatedEndpoint(
 	pathname: string,
 	search: string,
 	body: string | null,
-	contentType: string | null
+	contentType: string | null,
+	/**
+	 * A posted form, when there was one, instead of `body`.
+	 *
+	 * A picture is bytes, and bytes do not survive being read as text and
+	 * written back out — `/media` would have stored a corrupted copy of every
+	 * photograph. `File` is structured-cloneable, so the form crosses to the
+	 * worker intact and is rebuilt here, the same way a page action's is.
+	 */
+	form?: [string, FormDataEntryValue][]
 ): Promise<EndpointReply | null> {
 	const clean = pathname !== '/' && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
 	const module = endpoints[`${PREFIX}${clean}/+server.ts`];
@@ -300,10 +316,20 @@ export async function runIsolatedEndpoint(
 	if (!handler) return null;
 
 	const url = new URL(pathname + search, self.location.origin);
+	let sent: BodyInit | undefined;
+	if (form) {
+		const data = new FormData();
+		for (const [name, value] of form) data.append(name, value as string);
+		sent = data;
+	} else if (body !== null) {
+		sent = body;
+	}
 	const request = new Request(url, {
 		method,
-		body: body ?? undefined,
-		headers: contentType ? { 'content-type': contentType } : undefined
+		body: sent,
+		// A FormData body writes its own content-type, boundary and all; setting
+		// the page's would name a boundary this one does not have.
+		headers: contentType && !form ? { 'content-type': contentType } : undefined
 	});
 	const response = await handler(eventFor(url, {}, request));
 	return {

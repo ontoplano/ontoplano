@@ -8,6 +8,7 @@
 		OFFICIAL_INSTANCE,
 		chooseOnThisPhone,
 		inPhoneApp,
+		phoneInstanceExists,
 		rememberInstance,
 		storedInstance,
 		suggestedInstance
@@ -94,29 +95,61 @@
 		};
 	});
 
+	/*
+	 * What each answer actually costs, as a list rather than a paragraph.
+	 *
+	 * This is the one decision in the app that cannot be undone by pressing
+	 * something else later — it decides where a year of somebody's writing
+	 * lives — and a wall of prose is how people agree to things they have not
+	 * read. One line per difference, in the same order for both, so the two are
+	 * read against each other.
+	 */
 	const CHOICES = {
 		connected: {
 			label: 'Connect to an instance',
 			glyph: 'server' as const,
-			says:
-				'The official instance, or one you run yourself on a server or a computer at home. ' +
-				'Your week is on every device you sign in from, assistants can reach it over MCP, ' +
-				'plugins work, and a reminder arrives while the phone is in your pocket.',
+			says: [
+				'The official instance, or one you run yourself.',
+				'Your week is on every device you sign in from.',
+				'Backed up wherever that instance is backed up.',
+				'Assistants reach it over MCP, and plugins work.',
+				'Reminders arrive on every device, not just this one.'
+			],
 			proceed: 'Connect'
 		},
 		phone: {
 			label: 'This phone only',
 			glyph: 'phone' as const,
-			says:
-				'Everything lives on this phone and nothing leaves it — no account, no sign-in, ' +
-				'nothing to reach. Which also means nothing is backed up: if the phone goes, so ' +
-				'does what is on it, unless you export it yourself. No assistants over MCP, no ' +
-				'plugins, and nothing arrives while you are not looking.',
-			proceed: 'Keep it on this phone'
+			says: [
+				'Everything lives on this phone. Nothing leaves it.',
+				'No account, no sign-in, nothing to reach.',
+				'Reminders still arrive — this phone schedules them itself.',
+				'Nothing is backed up: if the phone goes, so does what is on it.',
+				'No assistants over MCP, and no plugins.'
+			],
+			proceed: 'Start isolated instance'
 		}
 	} as const;
 
-	const chosen = $derived(CHOICES[kind]);
+	/**
+	 * Whether this phone has already been an instance.
+	 *
+	 * It changes what the button promises: "start" is a beginning and "go to"
+	 * is a return, and somebody with a month of writing on the device should not
+	 * be offered the first when they mean the second. Read once, on mount —
+	 * nothing on this screen changes it.
+	 */
+	const alreadyHere = phoneInstanceExists();
+
+	const chosen = $derived(
+		(kind as Kind) === 'phone' && alreadyHere
+			? {
+					...CHOICES.phone,
+					says: ['This phone already has one, with whatever you put in it.', ...CHOICES.phone.says],
+					proceed: 'Go to isolated instance'
+				}
+			: CHOICES[kind]
+	);
 
 	/**
 	 * Whether this phone can be the instance.
@@ -180,7 +213,18 @@
 		{/each}
 	</div>
 
-	<p class="mt-4 min-h-24 text-sm text-gray-600">{chosen.says}</p>
+	<!--
+		A fixed block whichever is chosen, so choosing moves nothing under it.
+		Both lists are the same length for the same reason.
+	-->
+	<ul class="mt-4 min-h-40 space-y-1 text-sm text-gray-600">
+		{#each chosen.says as line (line)}
+			<li class="flex gap-2">
+				<span class="text-gray-400" aria-hidden="true">—</span>
+				<span>{line}</span>
+			</li>
+		{/each}
+	</ul>
 
 	{#if kind === 'connected'}
 		<label class="mt-2 block text-sm">
@@ -192,9 +236,6 @@
 				class="input mt-1 w-full"
 				placeholder={OFFICIAL_INSTANCE}
 			/>
-			<span class="mt-1 block text-xs text-gray-500">
-				Your phone's back gesture brings you back here.
-			</span>
 		</label>
 	{:else if !canRunHere}
 		<p class="mt-2 text-sm text-amber-800">

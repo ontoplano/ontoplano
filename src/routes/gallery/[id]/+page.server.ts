@@ -9,8 +9,9 @@ import { toActionFailure } from '$lib/http-errors';
 import { mediaLimits } from '$lib/services/media';
 import {
 	addToAlbum,
-	albumPictures,
+	albumPicturesDeep,
 	albumTree,
+	albumsInside,
 	listAlbums,
 	moveBetweenAlbums,
 	removeFromAlbum,
@@ -28,7 +29,11 @@ export const load = async ({ locals, params }: IsolatedEvent) => {
 		album,
 		albums,
 		tree: albumTree(ctx),
-		pictures: albumPictures(ctx, album.id),
+		// The folders in this one, drawn above the grid — and the grid itself is
+		// everything beneath, because a parent whose pictures are all in
+		// subfolders was an empty page with a count on it.
+		folders: albumsInside(ctx, album.id).direct,
+		pictures: albumPicturesDeep(ctx, album.id),
 		pictureKilobytes: mediaLimits().maxKilobytes
 	};
 };

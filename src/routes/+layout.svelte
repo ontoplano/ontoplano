@@ -15,6 +15,7 @@
 	import { NAV_PLACES } from '$lib/sections-nav';
 	import { accentsWith, placesFor } from '$lib/nav-order';
 	import { MARK_CLIP_PATH } from '$lib/logo/mark-shape';
+	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
 	import { THEMES } from '$lib/theme.js';
 	import type { SectionKey } from '$lib/colors.js';
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
@@ -69,12 +70,34 @@
 	 *
 	 * The stylesheet carries the same number as a fallback so a page renders
 	 * correctly before any of this runs. Stamped in an effect because the
-	 * number can move while the app runs — the tuner at /dev/page-turn turns
-	 * it, and the next screen change uses what it now says.
+	 * number lives in `page-turn.ts` and the stylesheet carries the same value
+	 * as a fallback, so a page renders correctly before any of this runs.
 	 */
 	$effect(() => {
 		document.documentElement.style.setProperty('--page-turn', `${PAGE_TURN.durationMs}ms`);
 	});
+
+	/*
+	 * First launch on a phone asks where your ontoplano lives.
+	 *
+	 * Through the router rather than through the address bar: the app's own
+	 * files are served by the shell, which has no `/instance` file to hand over
+	 * — a `location.replace` to it is a white screen on the first launch of
+	 * every fresh install. `goto` is a client-side move between screens this
+	 * build already carries, which is what this always was.
+	 *
+	 * Only in the phone app, only on the copy it carries, and only while
+	 * nothing has been chosen: `storedChoice()` is written the moment somebody
+	 * answers, so this runs once in the life of an install.
+	 */
+	$effect(() => {
+		if (!onDevice || !inPhoneApp() || storedChoice()) return;
+		if (page.url.pathname.startsWith(CHOOSE_PATH)) return;
+		goto(resolve(CHOOSE_PATH as '/instance'));
+	});
+
+	/** Whether a dissolve is running. See the note in `onNavigate` below. */
+	let turning = false;
 
 	onNavigate((navigation) => {
 		const start = (
@@ -90,12 +113,60 @@
 		// A browser that cannot draw the dissolve navigates the ordinary way,
 		// rather than showing a blank screen where the filter should have been.
 		if (!canDissolve()) return;
-		if (navigation.type !== 'link' && navigation.type !== 'popstate') return;
+		/*
+		 * A press on a link, the back gesture, or a room chosen from the pie.
+		 *
+		 * `goto` is in this list because it is how the whole bottom bar moves:
+		 * the pie calls it, so every change of *room* was the one kind of
+		 * navigation that never dissolved — the tabs within a room are ordinary
+		 * links and did. That is exactly backwards from what the effect is for.
+		 * What stays out is `form` and `enter`: a form submission that lands on
+		 * the same screen should not blink it, and the first page of a session
+		 * has nothing to dissolve from.
+		 */
+		/*
+		 * A press on a link, the back gesture, or a room chosen from the pie.
+		 *
+		 * `goto` is deliberately NOT here, for now, and that is why a change of
+		 * room does not dissolve while the tabs inside one do: `onNavigate`
+		 * holds the navigation until what it returns resolves, and a burst of
+		 * `goto`s — onboarding's six Next presses — left the app unable to
+		 * navigate at all. Rooms get their dissolve back with the rewrite that
+		 * gives it a Firefox path and starts the fade when the navigation
+		 * starts rather than after it lands.
+		 */
+		if (!['link', 'popstate'].includes(navigation.type)) return;
+		/*
+		 * And never two at once.
+		 *
+		 * `onNavigate` holds the navigation until what it returns resolves, and
+		 * a view transition that is superseded by the next one never runs its
+		 * callback at all — so the promise never settles and the app stops
+		 * navigating entirely. Six steps of onboarding pressed a second apart
+		 * did exactly that. A dissolve is decoration; the second one is dropped
+		 * rather than allowed to hold the door.
+		 */
+		if (turning) return;
 		if (navigation.to?.route.id === navigation.from?.route.id) return;
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
+		turning = true;
 		return new Promise((resolve) => {
+			/*
+			 * Let go whatever happens.
+			 *
+			 * If the browser never calls the callback — a transition it decided
+			 * to abandon — this is what stops the app from waiting for it for
+			 * ever. Belt and braces beside the flag above, because the cost of
+			 * being wrong here is an app that will not move.
+			 */
+			const release = setTimeout(() => {
+				turning = false;
+				resolve();
+			}, PAGE_TURN_DEFAULTS.holdMs + PAGE_TURN.durationMs);
+
 			const turn = start.call(document, async () => {
+				clearTimeout(release);
 				resolve();
 				// Waited for, but never indefinitely. The await is what makes the
 				// browser photograph the new page rather than the old one; a
@@ -111,6 +182,10 @@
 			// are about to run, which is the only moment the filter can start
 			// sliding without the first frames landing on nothing.
 			turn.ready.then(runDissolve, () => undefined);
+			turn.finished.then(
+				() => (turning = false),
+				() => (turning = false)
+			);
 		});
 	});
 
@@ -172,10 +247,13 @@
 	 *
 	 * First run, because every other page bounces straight back to it until it
 	 * is done. The policies, because they have to read the same whether or not
-	 * anybody is signed in.
+	 * anybody is signed in. And the instance screen, because until it has been
+	 * answered there is no instance for a nav bar to be about: every room on it
+	 * belongs to whichever ontoplano you have not chosen yet, and pressing one
+	 * leaves by a door with no way back.
 	 */
 	const bareScreen = $derived(
-		['/login/verify', '/start', '/buy'].includes(page.url.pathname) ||
+		['/login/verify', '/start', '/buy', CHOOSE_PATH].includes(page.url.pathname) ||
 			page.url.pathname.startsWith('/welcome') ||
 			page.url.pathname.startsWith('/legal')
 	);
@@ -604,13 +682,36 @@
 				staging session was pixel-identical to the real one. That is the
 				state in which somebody types a real week into a copy.
 			-->
+			<!--
+				On a wide screen it sits at the top of the page, where a banner
+				goes and where there is room for the sentence.
+			-->
 			<div
-				class="relative z-50 flex flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950"
+				class="relative z-50 hidden flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950 lg:flex"
 			>
 				<span>
 					<strong>Staging.</strong> A copy of Ontoplano for trying things on.
 					<strong class="text-red-900">Nothing here is promised to survive.</strong>
 				</span>
+			</div>
+
+			<!--
+				On a phone it sits above the bottom bar, exactly where the demo's
+				band does — and for the reason that one is there rather than at the
+				top: the top of a phone screen belongs to the status bar, and a
+				band put there is drawn underneath the clock and the battery. It
+				was, and the first two words of it were unreadable.
+
+				Two halves, split around the mark that rises out of the middle of
+				the bar, the same way the demo's band is split.
+			-->
+			<div
+				class="fixed inset-x-0 z-30 flex items-center justify-between bg-amber-500 px-3 text-[11px] leading-none font-medium text-amber-950 lg:hidden"
+				style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom)); height: 1.95rem"
+			>
+				<span><strong>Staging</strong></span>
+				<!-- Clear of the help dock, which floats over this corner. -->
+				<span class="pe-10">nothing survives</span>
 			</div>
 		{/if}
 
@@ -1028,13 +1129,13 @@
 					-->
 					<span
 						aria-hidden="true"
-						style="clip-path: {MARK_CLIP_PATH}"
-						class="pointer-events-none absolute -top-[1.1rem] left-1/2 h-[3.9rem] w-[3.9rem] -translate-x-1/2 bg-chrome"
+						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-ground-rise)); height: var(--bar-mark-ground); width: var(--bar-mark-ground)"
+						class="pointer-events-none absolute left-1/2 -translate-x-1/2 bg-chrome"
 					></span>
 					<button
 						onpointerdown={(e) => rooms?.summon(e)}
-						style="clip-path: {MARK_CLIP_PATH}"
-						class="tap tap-shape pie-handle absolute -top-[0.95rem] left-1/2 flex h-[3.5rem] w-[3.5rem] -translate-x-1/2 items-center justify-center {roomsOpen
+						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-rise)); height: var(--bar-mark); width: var(--bar-mark)"
+						class="tap tap-shape pie-handle absolute left-1/2 flex -translate-x-1/2 items-center justify-center {roomsOpen
 							? 'text-chrome-ink'
 							: 'text-chrome-muted'}"
 						aria-label="Go to a section"
@@ -1042,8 +1143,10 @@
 						data-tour="rooms"
 					>
 						<!-- Edge to edge: the button's own outline is the mark's, so any
-						     inset here would show as a gap inside its own shape. -->
-						<Logo size={56} />
+						     inset here would show as a gap inside its own shape. The
+						     size comes from the button rather than from a number of its
+						     own, which is how the two came apart before. -->
+						<Logo fill />
 					</button>
 				</div>
 
@@ -1101,7 +1204,8 @@
 				     this strip. Anything longer was cut off by the menu button and
 				     read as "one shared a—", which says less than nothing. -->
 				<span><strong>Demo version</strong></span>
-				<span>yours, and temporary</span>
+				<!-- Clear of the help dock, which floats over this corner. -->
+				<span class="pe-10">yours, and temporary</span>
 			</div>
 		{/if}
 

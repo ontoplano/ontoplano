@@ -78,8 +78,23 @@ it('a note form offers a notebook, and its actions read it', () => {
 	const action = readFileSync('src/routes/notebooks/diary/+page.server.ts', 'utf8');
 	// Both writes: the quick create and the edit.
 	expect(action.match(/notebookId: formData\.get\('notebookId'\)/g)?.length).toBe(2);
+});
 
-	// And the capture wheel hands the list over, or the field renders empty.
-	const capture = readFileSync('src/lib/components/CaptureForm.svelte', 'utf8');
-	expect(capture).toMatch(/NoteFields compact label="Diary note" notebooks=\{options\.notebooks\}/);
+/**
+ * Except in the diary, which is not one notebook among others.
+ *
+ * It is the day, and a note written into it is a note about the day — offering
+ * to file it somewhere else at the moment of writing asks a question the page
+ * has already answered, and answering it took the note out of the diary the
+ * writer was looking at. Both doors into the diary are pinned: the page itself
+ * and the capture wheel's "Diary note", which is the same note by another
+ * route and drifted from it once already.
+ */
+it('the diary does not offer a notebook to file a note in', () => {
+	for (const path of [
+		'src/routes/notebooks/diary/+page.svelte',
+		'src/lib/components/CaptureForm.svelte'
+	]) {
+		expect(readFileSync(path, 'utf8'), path).toMatch(/notebook=\{false\}/);
+	}
 });

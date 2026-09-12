@@ -218,17 +218,10 @@
 			<div class="flex items-center gap-2">
 				<!-- Nothing to filter and nothing to file: an account with no goals is
 			     offered one button, which is the one that helps. -->
+				<!-- Managing areas is not filtering by them: the button that opens
+				     the list of areas belongs up here with "New goal", and the
+				     filters live together on their own line below. -->
 				{#if data.goals.length > 0}
-					<!-- Both branches are resolved; the rule reads the href expression
-				     and does not look inside a conditional. -->
-					<!-- eslint-disable svelte/no-navigation-without-resolve -->
-					<a
-						href={data.includeClosed ? resolve('/goals') : resolve('/goals?closed=1')}
-						class="btn btn-sm"
-					>
-						{data.includeClosed ? 'Hide closed' : 'Show closed'}
-					</a>
-					<!-- eslint-enable svelte/no-navigation-without-resolve -->
 					<button onclick={() => (showAreas = true)} class="btn btn-sm" data-tour="goal-areas">
 						Areas
 					</button>
@@ -294,15 +287,27 @@
 		{/snippet}
 	</Modal>
 
-	{#if data.areas.length > 0}
+	<!--
+		The filters, together and on one line.
+
+		An area chip and "Show closed" do the same kind of thing — they narrow
+		what is on the page — so they sit in the same row, with the areas on the
+		left where reading starts and the closed switch at the far right where it
+		is not mistaken for one more area.
+	-->
+	{#if data.areas.length > 0 || data.goals.length > 0}
 		<div class="flex flex-wrap items-center gap-1 text-xs">
-			<span class="eyebrow mr-1 text-gray-500">Area</span>
-			<button
-				onclick={() => (areaFilter = null)}
-				class="border px-2 py-0.5 {areaFilter === null
-					? 'border-gray-900 bg-gray-900 font-semibold text-white'
-					: 'border-gray-300 bg-white text-gray-600 hover:text-gray-900'}">All</button
-			>
+			{#if data.areas.length > 0}
+				<span class="eyebrow mr-1 text-gray-500">Area</span>
+			{/if}
+			{#if data.areas.length > 0}
+				<button
+					onclick={() => (areaFilter = null)}
+					class="border px-2 py-0.5 {areaFilter === null
+						? 'border-gray-900 bg-gray-900 font-semibold text-white'
+						: 'border-gray-300 bg-white text-gray-600 hover:text-gray-900'}">All</button
+				>
+			{/if}
 			{#each data.areas as area (area.id)}
 				<button
 					onclick={() => (areaFilter = areaFilter === area.id ? null : area.id)}
@@ -313,6 +318,19 @@
 					{area.name}
 				</button>
 			{/each}
+
+			{#if data.goals.length > 0}
+				<!-- Both branches are resolved; the rule reads the href expression
+				     and does not look inside a conditional. -->
+				<!-- eslint-disable svelte/no-navigation-without-resolve -->
+				<a
+					href={data.includeClosed ? resolve('/goals') : resolve('/goals?closed=1')}
+					class="ml-auto border border-gray-300 bg-white px-2 py-0.5 text-gray-600 hover:text-gray-900"
+				>
+					{data.includeClosed ? 'Hide closed' : 'Show closed'}
+				</a>
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
+			{/if}
 		</div>
 	{/if}
 

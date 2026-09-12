@@ -45,8 +45,7 @@ export const PAGE_TURN_DEFAULTS = {
 	/**
 	 * How long the dissolve takes, end to end.
 	 *
-	 * The knob worth touching. /dev/page-turn turns it live; this is what
-	 * everybody gets who has not.
+	 * The number worth touching if the dissolve ever feels wrong.
 	 */
 	durationMs: 240,
 

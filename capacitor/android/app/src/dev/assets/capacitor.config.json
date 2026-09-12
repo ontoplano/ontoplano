@@ -1,6 +1,6 @@
 {
   "appId": "app.ontoplano.dev",
-  "appName": "Ontoplano DEV",
+  "appName": "OntoplanoDev",
   "webDir": "public",
   "appendUserAgent": "OntoplanoApp",
   "server": {

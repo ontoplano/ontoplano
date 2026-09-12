@@ -114,3 +114,8 @@ capacitor/node_modules/
 # anyway.
 capacitor/android/app/src/*/assets/public/
 scripts/demo-media/birds/
+
+# My queue, for Estevão to read and reorder. The file itself is committed in
+# ontoplano-development; this is the link to it from here.
+.ORDERS.md
+.ORDERS.md

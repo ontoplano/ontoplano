@@ -16,6 +16,15 @@
 	let {
 		size = 24,
 		/**
+		 * Take the size of whatever contains this, rather than a number.
+		 *
+		 * For the one place where the container's size IS the mark's — the
+		 * raised button on the phone bar, which is clipped to the mark's own
+		 * outline. Given as a number there, the two drifted apart and the mark
+		 * ended up a quarter smaller than the shape it was supposed to fill.
+		 */
+		fill = false,
+		/**
 		 * Paint the brand ground behind the mark. Off nearly everywhere: the mark
 		 * carries its own dark field inside a bright rim, so it holds up on the
 		 * app's dark bar and on a white card without help. On only where the mark
@@ -26,6 +35,7 @@
 		class: klass = ''
 	}: {
 		size?: number;
+		fill?: boolean;
 		background?: boolean;
 		label?: string;
 		class?: string;
@@ -33,13 +43,17 @@
 </script>
 
 <span
-	class="ontoplano-logo inline-flex shrink-0 items-center justify-center {klass}"
-	style="width: {size}px; height: {size}px; {background ? `background: ${BRAND_GROUND}` : ''}"
+	class="ontoplano-logo inline-flex shrink-0 items-center justify-center {fill
+		? 'h-full w-full'
+		: ''} {klass}"
+	style="{fill ? '' : `width: ${size}px; height: ${size}px;`} {background
+		? `background: ${BRAND_GROUND}`
+		: ''}"
 	role={label ? 'img' : 'presentation'}
 	aria-label={label || undefined}
 	aria-hidden={label ? undefined : 'true'}
 >
-	<img src={mark} alt="" width={size} height={size} />
+	<img src={mark} alt="" width={fill ? undefined : size} height={fill ? undefined : size} />
 </span>
 
 <style>

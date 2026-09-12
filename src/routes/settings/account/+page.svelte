@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { askAgainOnThisPhone, inPhoneApp } from '$lib/instance-choice';
 	import { getAction } from '$lib/shortcuts';
 	import { invalidateAll } from '$app/navigation';
 	import { enhance } from '$app/forms';
@@ -496,6 +497,22 @@
 			</form>
 		{/snippet}
 		<p class="text-sm text-gray-500">This device only. The sessions above list the others.</p>
+		<!--
+			And the other reason somebody opens this card in the app: not to leave
+			the account, but to leave the instance. Signing out lands on that
+			instance's sign-in screen, which is the wrong place to discover you
+			wanted a different ontoplano.
+		-->
+		{#if inPhoneApp()}
+			<p class="mt-2 text-sm">
+				<!-- Another origin entirely — the copy of the app on the phone —
+				     which is not a route this app can resolve. -->
+				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+				<a href={askAgainOnThisPhone()} class="font-medium text-gray-900 underline">
+					Use a different ontoplano
+				</a>
+			</p>
+		{/if}
 	</Card>
 
 	<Card title="Delete your account" accent="#b91c1c">

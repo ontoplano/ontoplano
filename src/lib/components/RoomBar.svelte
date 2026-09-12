@@ -25,10 +25,23 @@
 	 */
 	let {
 		title,
+		back,
+		backLabel = 'Back',
 		actions,
 		children
 	}: {
 		title: string;
+		/**
+		 * Where the way back goes, for a page inside a room rather than a room.
+		 *
+		 * An album, a notebook, one recipe: the name in the bar is the thing's,
+		 * not the room's, and there has to be a way up to the list it came from.
+		 * It takes the glyph's place, because the glyph says which room this is
+		 * and an arrow pointing at that room says it too.
+		 */
+		back?: string;
+		/** What the way back is called, for a screen reader. */
+		backLabel?: string;
 		/** What sits beside the name — a room's own buttons. */
 		actions?: import('svelte').Snippet;
 		/** The room's tab strip, when it has one. */
@@ -47,7 +60,14 @@
 
 <div class="room-bar">
 	<div class="flex flex-wrap items-center gap-2 pb-2 sm:pb-0">
-		{#if glyph}
+		{#if back}
+			<!-- Already resolved: `back` is whatever the page passed, and the page
+			     built it with resolve(). -->
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+			<a href={back} class="icon-btn shrink-0" aria-label={backLabel}>
+				<Icon name="undo" />
+			</a>
+		{:else if glyph}
 			<span class="shrink-0 text-gray-500 sm:hidden" aria-hidden="true">
 				<Icon name={glyph} size={20} />
 			</span>
