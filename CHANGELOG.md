@@ -10,6 +10,18 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.153.0 — 2026-09-12
+
+- **Where your ontoplano lives is a screen.** Two squares: connect to an
+  instance — the official one or one you run yourself — or keep it on this
+  phone alone. The paragraph under them changes as you choose and says what
+  each costs, including the one nobody should pick by accident: on a
+  phone-only instance nothing is backed up, no assistant can reach it over
+  MCP, and no plugin runs. Choosing moves nothing on the page.
+- On a phone that is its own instance the account press opens that screen
+  instead, because there is no account there to open — and it is the only
+  way off a phone-only instance, so it cannot be a page that needs a server.
+
 ## 0.152.0 — 2026-09-12
 
 - **The Trusted Web Activity is gone.** The Android app is the Capacitor

@@ -60,6 +60,15 @@
 		settings:
 			'M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM10.4 3h3.2l.4 2.2 1.7 1 2.1-.7 1.6 2.8-1.7 1.4a6.4 6.4 0 0 1 0 2.6l1.7 1.4-1.6 2.8-2.1-.7-1.7 1-.4 2.2h-3.2l-.4-2.2-1.7-1-2.1.7-1.6-2.8 1.7-1.4a6.4 6.4 0 0 1 0-2.6L4.6 8.3l1.6-2.8 2.1.7 1.7-1z',
 
+		/*
+		 * The two kinds of instance, on the screen that chooses between them.
+		 *
+		 * A phone is a slab with a speaker slot; a server is a box with a rack
+		 * light. Deliberately not a cloud — what is on the other end is a
+		 * computer somebody runs, and half the time it is theirs.
+		 */
+		phone: 'M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM10 5h4M11 18h2',
+		server: 'M4 5h16v6H4zM4 13h16v6H4zM7 8h.01M7 16h.01M11 8h6M11 16h6',
 		// things
 		calendar: 'M4 6h16v15H4zM4 10h16M8 3v4M16 3v4',
 		clock: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 8v4l3 2',

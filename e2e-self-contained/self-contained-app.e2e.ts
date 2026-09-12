@@ -168,3 +168,38 @@ test('a screen with no twin says it needs a server', async ({ page }) => {
 	expect(answer.status).toBe(501);
 	expect(answer.body).toMatch(/needs an instance with a server/);
 });
+
+/**
+ * Leaving, from a device that is its own instance.
+ *
+ * There is no account here — no address, no sessions, nothing anybody else
+ * can see — so the press that opens the account everywhere else opens the
+ * screen that chooses where your ontoplano lives. It is also the only way
+ * off a phone-only instance, which is why it cannot be a page that needs a
+ * server.
+ */
+test('the phone can leave the instance it is', async ({ page }) => {
+	test.setTimeout(120_000);
+	// The bar this press lives in is the phone's.
+	await page.setViewportSize({ width: 420, height: 900 });
+
+	await page.goto('/');
+	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 60_000 });
+
+	await page.getByRole('link', { name: 'Where this lives' }).click();
+	await expect(page.getByRole('heading', { name: /Where your ontoplano lives/ })).toBeVisible({
+		timeout: 30_000
+	});
+
+	// The connected one is chosen first, and its own paragraph is showing.
+	await expect(page.getByRole('radio', { name: /Connect to an instance/ })).toHaveAttribute(
+		'aria-checked',
+		'true'
+	);
+	await expect(page.getByText(/assistants can reach it over MCP/)).toBeVisible();
+
+	// And the other one says what it costs before anybody presses it.
+	await page.getByRole('radio', { name: /This phone only/ }).click();
+	await expect(page.getByText(/nothing is backed up/)).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Keep it on this phone' })).toBeEnabled();
+});

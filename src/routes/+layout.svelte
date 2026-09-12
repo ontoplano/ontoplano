@@ -8,6 +8,7 @@
 	import { live } from '$lib/live';
 	import { afterNavigate, goto, onNavigate } from '$app/navigation';
 	import { PAGE_TURN_DEFAULTS } from '$lib/page-turn';
+	import { isSelfContainedBuild } from '$lib/self-contained/mode';
 	import { PAGE_TURN, runDissolve } from '$lib/page-turn.svelte';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
@@ -115,6 +116,8 @@
 	// And once for every number box: clicking one selects what is in it, so
 	// typing 2 into a field showing 0 gives 2 rather than 02.
 	$effect(() => smartNumberFields(document));
+	/** This app is its own instance: no account, and leaving means choosing another. */
+	const onDevice = $derived(isSelfContainedBuild());
 	let menuOpen = $state(false);
 	let pie = $state<CapturePie | undefined>();
 	let rooms = $state<NavPie | undefined>();
@@ -1035,15 +1038,21 @@
 					<Icon name="plus" size={24} />
 				</button>
 
+				<!--
+					On a device that is its own instance there is no account to
+					open — no address, no sessions, nothing anybody else can see.
+					What the same press is for there is leaving: the screen that
+					chooses where your ontoplano lives.
+				-->
 				<a
-					href={resolve('/settings/account')}
+					href={resolve(onDevice ? '/instance' : '/settings/account')}
 					class="tap flex flex-1 items-center justify-center {page.url.pathname.startsWith(
 						'/settings'
-					)
+					) || page.url.pathname === '/instance'
 						? 'text-chrome-ink'
 						: 'text-chrome-muted'}"
-					aria-label="Account"
-					title="Account"
+					aria-label={onDevice ? 'Where this lives' : 'Account'}
+					title={onDevice ? 'Where this lives' : 'Account'}
 					data-tour="menu"
 				>
 					<Icon name="user" size={22} />
