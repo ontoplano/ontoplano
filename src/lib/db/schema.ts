@@ -351,6 +351,15 @@ export const diaryEntries = sqliteTable(
 		 * anything with no notebook.
 		 */
 		notebookSeq: integer('notebook_seq'),
+		/**
+		 * What the note is called, for a list you can read at a glance.
+		 *
+		 * Empty for a diary entry, which is a day's writing and has no name —
+		 * and for notes written before this existed, where the list falls back
+		 * to the first line. A notebook is a subject somebody keeps coming back
+		 * to, and a column of first lines is not a table of contents.
+		 */
+		title: text('title').notNull().default(''),
 		content: text('content').notNull(),
 		forDate: text('for_date'),
 		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),

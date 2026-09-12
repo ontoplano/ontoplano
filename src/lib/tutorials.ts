@@ -324,7 +324,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/ideas': {
+	'/notebooks/ideas': {
 		label: 'Ideas',
 		steps: [
 			{

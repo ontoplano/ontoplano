@@ -93,6 +93,7 @@ export const notebookActions = {
 		try {
 			const ctx = buildCtx(locals.user!.id);
 			const id = createEntry(ctx, {
+				title: formData.get('heading'),
 				content: formData.get('content'),
 				tags: formData.get('tags'),
 				notebookId
@@ -122,6 +123,7 @@ export const notebookActions = {
 			const ctx = buildCtx(locals.user!.id);
 			const id = Number(formData.get('id'));
 			updateEntry(ctx, id, {
+				title: formData.get('heading'),
 				content: formData.get('content'),
 				tags: formData.get('tags'),
 				notebookId

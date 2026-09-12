@@ -303,7 +303,7 @@
 				<span class="text-gray-600">Rhythm</span>
 				<select
 					name="rhythm"
-					class="input mt-1 w-full"
+					class="select mt-1 w-full"
 					value={editing?.rhythm ?? 'monthly'}
 					onchange={(e) => (formRhythm = (e.currentTarget as HTMLSelectElement).value)}
 				>
@@ -315,7 +315,7 @@
 			{#if formRhythm === 'weekly'}
 				<label class="block text-sm">
 					<span class="text-gray-600">Due on</span>
-					<select name="dueDay" class="input mt-1 w-full" value={editing?.dueDay ?? 5}>
+					<select name="dueDay" class="select mt-1 w-full" value={editing?.dueDay ?? 5}>
 						{#each WEEKDAYS as d (d.value)}<option value={d.value}>{d.label}</option>{/each}
 					</select>
 					<span class="mt-1 block text-xs text-gray-500">The last day it can be paid.</span>
@@ -323,7 +323,7 @@
 			{:else if formRhythm === 'yearly'}
 				<label class="block text-sm">
 					<span class="text-gray-600">Due month</span>
-					<select name="dueMonth" class="input mt-1 w-full" value={editing?.dueMonth ?? 1}>
+					<select name="dueMonth" class="select mt-1 w-full" value={editing?.dueMonth ?? 1}>
 						{#each MONTHS as m, i (m)}<option value={i + 1}>{m}</option>{/each}
 					</select>
 				</label>

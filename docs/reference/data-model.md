@@ -28,7 +28,7 @@ exist.
 | [`daily_wins`](#daily_wins)                       | 6       | yes               |
 | [`data_points`](#data_points)                     | 10      | yes               |
 | [`data_streams`](#data_streams)                   | 14      | yes               |
-| [`diary_entries`](#diary_entries)                 | 9       | yes               |
+| [`diary_entries`](#diary_entries)                 | 10      | yes               |
 | [`diary_entry_tags`](#diary_entry_tags)           | 4       | yes               |
 | [`entry_people`](#entry_people)                   | 4       | yes               |
 | [`exceptional_tasks`](#exceptional_tasks)         | 19      | yes               |
@@ -421,6 +421,7 @@ Indexes:
 | `user_id`      | text    | not null | —                     | → `user.id`       |
 | `seq`          | integer | not null | `0`                   | —                 |
 | `notebook_seq` | integer | null     | —                     | —                 |
+| `title`        | text    | not null | `''`                  | —                 |
 | `content`      | text    | not null | —                     | —                 |
 | `for_date`     | text    | null     | —                     | —                 |
 | `notebook_id`  | integer | null     | —                     | → `notebooks.id`  |

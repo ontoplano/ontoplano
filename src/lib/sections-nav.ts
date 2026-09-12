@@ -67,7 +67,6 @@ export const NAV_PLACES: NavPlace[] = [
 		href: '/notebooks',
 		hide: 'diary'
 	},
-	{ key: 'ideas', label: 'Ideas', section: 'ideas', icon: 'ideas', href: '/ideas', hide: 'ideas' },
 	{
 		key: 'health',
 		label: 'Health',

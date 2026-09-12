@@ -30,7 +30,7 @@ export const CAPTURES: Capture[] = [
 		label: 'Idea',
 		icon: 'ideas',
 		color: SECTION_COLORS.ideas,
-		action: '/ideas?/create',
+		action: '/notebooks/ideas?/create',
 		hide: 'ideas'
 	},
 	{

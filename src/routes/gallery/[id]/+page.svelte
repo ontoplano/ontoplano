@@ -296,7 +296,7 @@
 					<input type="hidden" name="mediaId" value={viewing.id} />
 					<label class="block text-sm">
 						<span class="text-gray-600">Also put it in</span>
-						<select name="albumId" class="input mt-1 block">
+						<select name="albumId" class="select mt-1 block">
 							{#each others as album (album.id)}
 								<option value={album.id}>{album.name}</option>
 							{/each}

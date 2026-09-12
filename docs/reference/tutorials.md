@@ -22,10 +22,10 @@ under the pointer.
 | `/goals`                             | Goals        | 4     |
 | `/health/habits`                     | Habits       | 3     |
 | `/health/recipes`                    | Recipes      | 5     |
-| `/ideas`                             | Ideas        | 3     |
 | `/inventory`                         | Shopping     | 3     |
 | `/notebooks`                         | Notebooks    | 2     |
 | `/notebooks/diary`                   | Diary        | 4     |
+| `/notebooks/ideas`                   | Ideas        | 3     |
 | `/notebooks/people`                  | People       | 3     |
 | `/reminders`                         | Reminders    | 3     |
 | `/settings/account`                  | Account      | 3     |
@@ -97,12 +97,6 @@ at the button that reopens it, so it is not listed here.
 1. Workouts, planned like meals
 2. Done, and put away
 
-### `/ideas` — Ideas
-
-1. Catch it now, judge it later
-2. A sentence is a complete idea
-3. Star it, or mark it done
-
 ### `/inventory` — Shopping
 
 1. Two lists, one page
@@ -120,6 +114,12 @@ at the button that reopens it, so it is not listed here.
 2. Tags and people, as you write
 3. Three wins
 4. Find it again by tag
+
+### `/notebooks/ideas` — Ideas
+
+1. Catch it now, judge it later
+2. A sentence is a complete idea
+3. Star it, or mark it done
 
 ### `/notebooks/people` — People
 

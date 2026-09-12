@@ -29,7 +29,7 @@ const ROUTES = [
 	'/notebooks/diary',
 	'/notebooks',
 	'/notebooks/people',
-	'/ideas',
+	'/notebooks/ideas',
 	'/health/habits',
 	'/inventory',
 	'/health/recipes',

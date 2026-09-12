@@ -94,7 +94,7 @@ test('saving the menu does not empty the list', async ({ page }) => {
 
 	// Still put away, and every other room still listed.
 	await expect(menu.getByRole('button', { name: 'Show' })).toHaveCount(1);
-	// Seven visible: eight rooms — seven since People and Recipes became tabs
+	// Seven visible: eight rooms — since People, Recipes and Ideas became tabs
 	// of Notebooks and Health, plus Reminders — with one put away.
-	await expect(menu.getByRole('button', { name: /^Move .* up$/ })).toHaveCount(8);
+	await expect(menu.getByRole('button', { name: /^Move .* up$/ })).toHaveCount(7);
 });

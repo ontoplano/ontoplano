@@ -19,14 +19,14 @@ describe('the order', () => {
 	});
 
 	test('puts the named rooms first, in the order they were named', () => {
-		const out = applyOrder(NAV_PLACES, ['inventory', 'ideas']);
-		expect(keys(out).slice(0, 2)).toEqual(['inventory', 'ideas']);
+		const out = applyOrder(NAV_PLACES, ['inventory', 'gallery']);
+		expect(keys(out).slice(0, 2)).toEqual(['inventory', 'gallery']);
 	});
 
 	test('drops a key for a room that no longer exists', () => {
-		const out = applyOrder(NAV_PLACES, ['beliefs', 'ideas']);
+		const out = applyOrder(NAV_PLACES, ['beliefs', 'gallery']);
 		expect(keys(out)).not.toContain('beliefs');
-		expect(keys(out)[0]).toBe('ideas');
+		expect(keys(out)[0]).toBe('gallery');
 		expect(out).toHaveLength(NAV_PLACES.length);
 	});
 
@@ -39,7 +39,7 @@ describe('the order', () => {
 	});
 
 	test('never loses or duplicates a room, whatever it is given', () => {
-		const nonsense = ['ideas', 'ideas', 'nope', '', 'home'];
+		const nonsense = ['gallery', 'gallery', 'nope', '', 'home'];
 		const out = applyOrder(NAV_PLACES, nonsense);
 		expect(out).toHaveLength(NAV_PLACES.length);
 		expect(new Set(keys(out)).size).toBe(NAV_PLACES.length);
@@ -78,8 +78,8 @@ describe('the colours', () => {
 
 describe('what the shell renders', () => {
 	test('is the order and the colours together, one call', () => {
-		const out = placesFor(NAV_PLACES, { order: ['ideas'], colors: { ideas: '#010203' } });
-		expect(out[0].key).toBe('ideas');
+		const out = placesFor(NAV_PLACES, { order: ['gallery'], colors: { gallery: '#010203' } });
+		expect(out[0].key).toBe('gallery');
 		expect(out[0].accent).toBe('#010203');
 	});
 });

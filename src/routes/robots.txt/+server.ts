@@ -40,7 +40,7 @@ export const GET: RequestHandler = () => {
 				'Disallow: /goals',
 				'Disallow: /health/',
 				'Disallow: /healthz',
-				'Disallow: /ideas',
+				'Disallow: /notebooks/ideas',
 				// Retired as a room; the redirect to /health is still served, and a
 				// crawler has no business following it.
 				'Disallow: /kitchen/',

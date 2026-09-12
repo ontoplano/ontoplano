@@ -45,7 +45,7 @@
 	<Card title="Where it went" accent="var(--section-accent)">
 		<div class="mb-3 flex flex-wrap items-center gap-2">
 			<select
-				class="input input-sm w-auto"
+				class="select select-sm w-auto"
 				value={data.ledgerId}
 				onchange={(e) => filter({ ledger: Number((e.currentTarget as HTMLSelectElement).value) })}
 			>
@@ -53,7 +53,7 @@
 				{#each data.ledgers as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
 			</select>
 			<select
-				class="input input-sm w-auto"
+				class="select select-sm w-auto"
 				value={data.months}
 				onchange={(e) => filter({ months: Number((e.currentTarget as HTMLSelectElement).value) })}
 			>

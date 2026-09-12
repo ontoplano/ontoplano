@@ -126,7 +126,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'e', action: 'edit', description: 'Edit entry' }
 		]
 	},
-	'/ideas': {
+	'/notebooks/ideas': {
 		label: 'Ideas',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate ideas' },

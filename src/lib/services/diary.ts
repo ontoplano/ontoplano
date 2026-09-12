@@ -99,11 +99,17 @@ export function listTags(ctx: Ctx) {
 
 export function createEntry(
 	ctx: Ctx,
-	raw: { content: unknown; tags?: unknown; notebookId?: unknown }
+	raw: { content: unknown; tags?: unknown; notebookId?: unknown; title?: unknown }
 ): number {
 	const content = str(raw.content, 'content', { max: MAX_ENTRY_LENGTH });
 	host.assertEntryWithinLimit(content);
-	const entryId = insertEntry(ctx, content, undefined, ownedNotebookId(ctx, raw.notebookId));
+	const entryId = insertEntry(
+		ctx,
+		content,
+		undefined,
+		ownedNotebookId(ctx, raw.notebookId),
+		noteTitle(raw.title)
+	);
 
 	const tagNames = parseTags(tagInput(raw.tags));
 	if (tagNames.length > 0) linkDiaryTags(entryId, ensureTagIds(tagNames, ctx.userId), ctx.userId);
@@ -145,14 +151,28 @@ export function createWins(
 export function updateEntry(
 	ctx: Ctx,
 	id: number,
-	raw: { content: unknown; tags?: unknown; notebookId?: unknown }
+	raw: { content: unknown; tags?: unknown; notebookId?: unknown; title?: unknown }
 ): void {
 	const content = str(raw.content, 'content', { max: MAX_ENTRY_LENGTH });
 	host.assertEntryWithinLimit(content);
 
 	const res = db
 		.update(diaryEntries)
-		.set({ content, notebookId: ownedNotebookId(ctx, raw.notebookId), updatedAt: stamp(ctx) })
+		.set({
+			content,
+			/*
+			 * A field the caller did not mention keeps what it had.
+			 *
+			 * Both of these are edited from more than one screen and not every
+			 * screen offers both: the diary's edit form has no title field, and
+			 * an edit that said nothing about the notebook used to move the note
+			 * out of it — silently, because `undefined` read as "no notebook"
+			 * rather than as "not my business".
+			 */
+			...(raw.title === undefined ? {} : { title: noteTitle(raw.title) }),
+			...(raw.notebookId === undefined ? {} : { notebookId: ownedNotebookId(ctx, raw.notebookId) }),
+			updatedAt: stamp(ctx)
+		})
 		.where(and(eq(diaryEntries.id, id), eq(diaryEntries.userId, ctx.userId)))
 		.run();
 
@@ -190,7 +210,8 @@ function insertEntry(
 	ctx: Ctx,
 	content: string,
 	forDate?: string,
-	notebookId?: number | null
+	notebookId?: number | null,
+	title = ''
 ): number {
 	return db.transaction((tx) => {
 		// The high-water mark, not the highest number still present.
@@ -222,6 +243,7 @@ function insertEntry(
 			.values({
 				...stamps(ctx),
 				userId: ctx.userId,
+				title,
 				content,
 				seq: highest + 1,
 				notebookId: notebookId ?? null,
@@ -232,6 +254,21 @@ function insertEntry(
 
 		return Number(result.lastInsertRowid);
 	});
+}
+
+/**
+ * What a note is called.
+ *
+ * Optional, and empty is a real answer: a diary entry is a day's writing and
+ * has no name, and a note jotted in a hurry should not be held up by a form
+ * asking for one. Where it is empty the list falls back to the first line,
+ * which is what somebody would have typed anyway.
+ */
+export const MAX_NOTE_TITLE_LENGTH = 120;
+
+function noteTitle(value: unknown): string {
+	if (value === undefined || value === null) return '';
+	return String(value).trim().slice(0, MAX_NOTE_TITLE_LENGTH);
 }
 
 function tagInput(value: unknown): string {

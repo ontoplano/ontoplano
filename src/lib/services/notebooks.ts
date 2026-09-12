@@ -147,6 +147,7 @@ export function listOrphanedNotes(ctx: Ctx) {
 		.select({
 			id: diaryEntries.id,
 			seq: diaryEntries.seq,
+			title: diaryEntries.title,
 			content: diaryEntries.content,
 			forDate: diaryEntries.forDate,
 			createdAt: diaryEntries.createdAt
@@ -236,6 +237,7 @@ export function contentsOf(ctx: Ctx, id: number) {
 					// The notebook's own numbering; `seq` counts the whole account and
 					// means nothing to somebody reading one notebook.
 					seq: diaryEntries.notebookSeq,
+					title: diaryEntries.title,
 					content: diaryEntries.content,
 					forDate: diaryEntries.forDate,
 					createdAt: diaryEntries.createdAt,

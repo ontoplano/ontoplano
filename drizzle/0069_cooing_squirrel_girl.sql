@@ -1,0 +1,1 @@
+ALTER TABLE `diary_entries` ADD `title` text DEFAULT '' NOT NULL;

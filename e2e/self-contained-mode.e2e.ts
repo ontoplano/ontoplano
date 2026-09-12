@@ -58,7 +58,6 @@ test('the todo page runs against the device, and the server never hears of it', 
 	for (const [name, path] of [
 		['Board', '/tasks/board'],
 		['Goals', '/goals'],
-		['Ideas', '/ideas'],
 		['Plan', '/tasks/plan'],
 		['Notebooks', '/notebooks'],
 		['Inventory', '/inventory'],

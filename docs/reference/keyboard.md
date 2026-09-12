@@ -48,17 +48,6 @@ works is a key listed here and the reverse.
 | ------------ | ---------- |
 | <kbd>n</kbd> | New recipe |
 
-## Ideas — `/ideas`
-
-| Key          | Does            |
-| ------------ | --------------- |
-| <kbd>j</kbd> | Navigate ideas  |
-| <kbd>k</kbd> | Navigate ideas  |
-| <kbd>n</kbd> | New idea        |
-| <kbd>e</kbd> | Edit idea       |
-| <kbd>f</kbd> | Toggle favorite |
-| <kbd>a</kbd> | Toggle applied  |
-
 ## To buy — `/inventory`
 
 | Key          | Does                    |
@@ -89,6 +78,17 @@ works is a key listed here and the reverse.
 | <kbd>k</kbd> | Navigate entries |
 | <kbd>n</kbd> | New entry        |
 | <kbd>e</kbd> | Edit entry       |
+
+## Ideas — `/notebooks/ideas`
+
+| Key          | Does            |
+| ------------ | --------------- |
+| <kbd>j</kbd> | Navigate ideas  |
+| <kbd>k</kbd> | Navigate ideas  |
+| <kbd>n</kbd> | New idea        |
+| <kbd>e</kbd> | Edit idea       |
+| <kbd>f</kbd> | Toggle favorite |
+| <kbd>a</kbd> | Toggle applied  |
 
 ## People — `/notebooks/people`
 

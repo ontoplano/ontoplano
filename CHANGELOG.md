@@ -10,6 +10,25 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.156.0 — 2026-09-13
+
+- **Things sit on something.** A card, a panel, a row or a tile with a border
+  and no fill was a hairline drawn on the page — outlines floating in space on
+  a dark screen. Every bordered surface has the page's raised colour under it
+  now, and on the dark theme that colour is _above_ the page rather than below
+  it, which is the difference between a card and a hole.
+- **A dropdown is the app's, not the platform's.** Still a real `<select>` —
+  a phone opens its own wheel — in a box drawn like every other field.
+- **Ideas is a tab of Notebooks**, after Diary. It is writing, and a room of
+  its own in the bar for something that small was a room nobody entered.
+- **A note has a name, and a notebook is a list of names.** Notes open on
+  press and stay open; one without a name is listed by its first line. Naming
+  is optional, because a note jotted in a hurry should not be held up by a
+  form asking what to call it.
+- Editing a note no longer takes it out of its notebook. An edit that said
+  nothing about the notebook read as "no notebook" rather than as "not my
+  business", and quietly unfiled the note.
+
 ## 0.155.0 — 2026-09-13
 
 - **One file per route.** A route's `+page.server.ts` is the only copy of its

@@ -50,7 +50,7 @@ export const DESTINATIONS: Destination[] = [
 		icon: 'user',
 		hide: 'people'
 	},
-	{ label: 'Ideas', group: 'Writing', href: '/ideas', icon: 'ideas', hide: 'ideas' },
+	{ label: 'Ideas', group: 'Writing', href: '/notebooks/ideas', icon: 'ideas', hide: 'ideas' },
 
 	{ label: 'Habits', group: 'Health', href: '/health/habits', icon: 'health', hide: 'health' },
 

@@ -205,7 +205,7 @@
 				</label>
 				<label class="block text-sm">
 					<span class="text-gray-600">Category</span>
-					<select name="categoryId" class="input mt-1 w-full" value={editing?.categoryId ?? ''}>
+					<select name="categoryId" class="select mt-1 w-full" value={editing?.categoryId ?? ''}>
 						<option value="">— no category —</option>
 						{#each data.categories as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
 					</select>

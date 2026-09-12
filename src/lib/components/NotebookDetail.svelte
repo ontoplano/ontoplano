@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { SvelteSet } from 'svelte/reactivity';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
@@ -28,6 +29,8 @@
 	type Entry = {
 		id: number;
 		seq: number | null;
+		/** What it is called. Empty on anything written before notes had names. */
+		title?: string;
 		content: string;
 		createdAt: string;
 		tags: { id: number; name: string }[];
@@ -55,6 +58,38 @@
 	} = $props();
 
 	let editingNoteId = $state<number | null>(null);
+
+	/*
+	 * Which notes are open. Closed is the resting state, and opening one does
+	 * not close another: comparing two notes is the reason to have a notebook.
+	 */
+	const openNotes = new SvelteSet<number>();
+	const toggleNote = (id: number) => {
+		if (openNotes.has(id)) openNotes.delete(id);
+		else openNotes.add(id);
+	};
+
+	/**
+	 * What to call a note in a list.
+	 *
+	 * Its title when it has one. Before titles existed every note was its
+	 * content, so the first line stands in — which is what somebody would have
+	 * typed as a title anyway — trimmed of the markdown that would read as
+	 * punctuation in a list.
+	 */
+	function noteName(entry: { title?: string; content: string }): string {
+		if (entry.title) return entry.title;
+		const first = entry.content
+			.split('\n')
+			.map((line) =>
+				line
+					.replace(/^#{1,6}\s*/, '')
+					.replace(/^[-*+]\s+/, '')
+					.trim()
+			)
+			.find(Boolean);
+		return first ? first.slice(0, 120) : 'Untitled';
+	}
 
 	/**
 	 * Maximized: the notebook takes the whole screen.
@@ -287,6 +322,18 @@
 					class="border-b border-gray-200 bg-gray-50 px-4 pt-3 pb-4"
 				>
 					<input type="hidden" name="notebookId" value={notebook.id} />
+					<!--
+						A name first, because the list is names.
+
+						Not required: a note jotted in a hurry should not be held up by a
+						form asking what to call it, and one without a name is listed by
+						its first line.
+					-->
+					<OneLine
+						name="heading"
+						placeholder="What is it about? (optional)"
+						class="input mb-2 w-full font-medium"
+					/>
 					<textarea
 						bind:this={addBox}
 						name="content"
@@ -436,6 +483,12 @@
 							{#if notebookId !== null}
 								<input type="hidden" name="notebookId" value={notebookId} />
 							{/if}
+							<OneLine
+								name="heading"
+								value={entry.title ?? ''}
+								placeholder="What is it about? (optional)"
+								class="input mb-2 w-full font-medium"
+							/>
 							<textarea
 								bind:this={editBox}
 								name="content"
@@ -461,12 +514,35 @@
 							</div>
 						</form>
 					{:else}
-						<div class="md text-sm text-gray-900">
-							<!-- `renderMarkdown` escapes every character of the input before it emits a
-							     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
-							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-							{@html renderMarkdown(entry.content)}
-						</div>
+						<!--
+							A note is its name until you open it.
+
+							A notebook is a subject somebody comes back to for months, and a
+							column of full notes is a wall: what a list of them is for is
+							finding the one you meant. Pressing the title opens it, and it
+							stays open until pressed again.
+						-->
+						<button
+							type="button"
+							class="flex w-full items-baseline gap-2 text-left"
+							aria-expanded={openNotes.has(entry.id)}
+							onclick={() => toggleNote(entry.id)}
+						>
+							<span class="shrink-0 text-gray-400">
+								<Icon name={openNotes.has(entry.id) ? 'chevron-down' : 'chevron-right'} size={14} />
+							</span>
+							<span class="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">
+								{noteName(entry)}
+							</span>
+						</button>
+						{#if openNotes.has(entry.id)}
+							<div class="md mt-2 text-sm text-gray-900">
+								<!-- `renderMarkdown` escapes every character of the input before it emits a
+								     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
+								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+								{@html renderMarkdown(entry.content)}
+							</div>
+						{/if}
 						<div class="mt-1 flex flex-wrap items-center gap-2">
 							<span class="tabular text-xs text-gray-500">
 								{entry.seq === null ? '' : `#${entry.seq} · `}{when(entry.createdAt)}

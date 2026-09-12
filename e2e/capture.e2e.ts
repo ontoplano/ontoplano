@@ -159,7 +159,7 @@ test('the section pie lands you in the room', async ({ page }) => {
 	// Home either — the bar carries that as a plain button, so no wedge is
 	// spent on it.
 	await expect(page.getByText('cancel')).toBeVisible();
-	for (const room of ['Tasks', 'Goals', 'Notebooks', 'Ideas', 'Health', 'Finance', 'Inventory']) {
+	for (const room of ['Tasks', 'Goals', 'Notebooks', 'Health', 'Finance', 'Inventory']) {
 		await expect(page.locator('.pie').getByText(room, { exact: true })).toBeVisible();
 	}
 	await expect(page.locator('.pie').getByText('Home', { exact: true })).toHaveCount(0);

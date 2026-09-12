@@ -767,6 +767,30 @@ label:has(> input[type='radio']:not(:disabled)) {
  * classes below are the vocabulary; a form picks from it and nothing else.
  */
 @layer components {
+	/*
+	 * A bordered thing stands on something.
+	 *
+	 * Cards, panels, list rows and album tiles were `border` and nothing else,
+	 * which on a light page is invisible enough to pass and on a dark one is a
+	 * hairline drawn on the background — outlines floating in space, spider
+	 * webs. Every one of them gets the page's raised surface underneath by
+	 * default.
+	 *
+	 * In `components` rather than beside the rest of this file on purpose: a
+	 * Tailwind utility lives in a later layer, so any element that says
+	 * `bg-something` still gets exactly that and this is only the answer for
+	 * the ones that never said.
+	 */
+	:where(div, section, article, aside, ul, ol, li, nav, form, details, table, a):is(
+		.shadow-card,
+		[class~='rounded'][class~='border'],
+		[class~='rounded-lg'][class~='border'],
+		[class~='rounded-md'][class~='border'],
+		[class~='shadow-sm'][class~='border']
+	) {
+		background-color: var(--color-white);
+	}
+
 	.input,
 	.select,
 	.textarea {
@@ -779,6 +803,30 @@ label:has(> input[type='radio']:not(:disabled)) {
 		line-height: 1.25rem;
 		color: var(--color-gray-900);
 		box-shadow: var(--shadow-card);
+	}
+
+	/*
+	 * A select is ours, not the platform's idea of one.
+	 *
+	 * It stays a real `<select>` — a phone still opens its own wheel, a
+	 * keyboard still types to jump — but the box it sits in is drawn here, so
+	 * it matches every other field instead of being whatever the OS thought a
+	 * dropdown looked like. `appearance: none` takes the chrome; the chevron
+	 * is drawn back on, in the grey the rest of the app uses for a hint, which
+	 * reads on both themes.
+	 */
+	.select {
+		appearance: none;
+		padding-right: 2rem;
+		background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23909aab' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+		background-repeat: no-repeat;
+		background-position: right 0.55rem center;
+		background-size: 1rem 1rem;
+	}
+
+	/* A select's own width, where a full-width field would be absurd. */
+	.select.w-auto {
+		width: auto;
 	}
 
 	.input:hover:not(:focus),
@@ -887,8 +935,8 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	.btn-primary {
-		--btn-ink: var(--color-white);
-		--btn-ink-hover: var(--color-white);
+		--btn-ink: var(--ink-on-fill);
+		--btn-ink-hover: var(--ink-on-fill);
 
 		border-color: var(--color-gray-900);
 		background-color: var(--color-gray-900);
@@ -1286,7 +1334,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 */
 	.seg > .seg-alarm[aria-pressed='true'] {
 		background-color: var(--color-red-600);
-		color: var(--color-white);
+		color: var(--ink-on-fill);
 	}
 
 	.seg > .seg-alarm {
@@ -1298,7 +1346,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	.seg > .seg-alarm[aria-pressed='true']:hover {
-		color: var(--color-white);
+		color: var(--ink-on-fill);
 	}
 
 	/*
@@ -1738,8 +1786,23 @@ html[data-theme='dark'] {
 	--color-chrome-muted: #c5cddb;
 	--color-chrome-ink: #f2f5fa;
 
-	--color-white: #101317;
+	/*
+	 * A surface sits above the page, not below it.
+	 *
+	 * This was #101317 — darker than the page it lies on — so every card read
+	 * as a hole, and anything with a border and no fill read as an outline
+	 * drawn on nothing. Relief the wrong way round, and the reason the app
+	 * looked like wireframes on a dark screen. Above the page's #1c212a now.
+	 */
+	--color-white: #232935;
 	--color-black: #ffffff;
+
+	/*
+	 * Ink on a filled control, where the fill is the near-white gray-900.
+	 * Its own token because `--color-white` used to serve both jobs, and only
+	 * one of them wanted to move.
+	 */
+	--ink-on-fill: #0a0d12;
 
 	--color-gray-50: #161a20;
 	--color-gray-100: #1c212a;
@@ -1850,8 +1913,12 @@ html[data-theme='dark'] {
 		--color-chrome-muted: #c5cddb;
 		--color-chrome-ink: #f2f5fa;
 
-		--color-white: #101317;
+		/* A surface sits above the page — see the note in the chosen-dark block. */
+		--color-white: #232935;
 		--color-black: #ffffff;
+
+		/* Ink on a filled control, where the fill is the near-white gray-900. */
+		--ink-on-fill: #0a0d12;
 
 		--color-gray-50: #161a20;
 		--color-gray-100: #1c212a;
@@ -1969,6 +2036,8 @@ option {
  */
 :root {
 	--control-on: #1d4ed8;
+	/* Ink on a filled control. Dark themes override it; see the dark block. */
+	--ink-on-fill: #ffffff;
 }
 
 /*

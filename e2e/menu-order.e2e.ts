@@ -47,7 +47,7 @@ test.describe('the menu order', () => {
 		await visit(page, '/settings/preferences');
 		await page.evaluate(async () => {
 			const body = new FormData();
-			body.append('room', 'ideas');
+			body.append('room', 'inventory');
 			await fetch('/settings/preferences?/saveMenu', {
 				method: 'POST',
 				headers: { 'x-sveltekit-action': 'true' },
@@ -57,13 +57,13 @@ test.describe('the menu order', () => {
 
 		await visit(page, '/settings/preferences');
 		const menu = page.locator('form[action="?/saveMenu"]');
-		// Ideas first, and every other room still listed behind it.
-		await expect(menu.getByRole('button', { name: 'Move Ideas up' })).toBeDisabled();
+		// Inventory first, and every other room still listed behind it.
+		await expect(menu.getByRole('button', { name: 'Move Inventory up' })).toBeDisabled();
 		// Every room but Home, which is never listed: it is always on and is not
 		// on the wheel, so a row for it would be one with nothing to change.
-		// Nine rooms: seven, since People became a tab of Notebooks and Recipes
-		// one of Health, plus Reminders and the Gallery.
-		await expect(menu.getByRole('button', { name: /^Move .* up$/ })).toHaveCount(9);
+		// Eight, since People became a tab of Notebooks, Recipes one of Health,
+		// and Ideas one of Notebooks.
+		await expect(menu.getByRole('button', { name: /^Move .* up$/ })).toHaveCount(8);
 	});
 });
 
@@ -129,16 +129,16 @@ test.describe('the one menu list', () => {
 		await visit(page, '/settings/preferences');
 		const menu = page.locator('form[action="?/saveMenu"]');
 
-		// The row is the one whose Move buttons name Ideas; its Hide is the
+		// The row is the one whose Move buttons name Inventory; its Hide is the
 		// sibling of those.
 		const ideas = menu.locator('div').filter({
-			has: page.getByRole('button', { name: 'Move Ideas up' })
+			has: page.getByRole('button', { name: 'Move Inventory up' })
 		});
 		await ideas.getByRole('button', { name: 'Hide' }).click();
 
 		// It loses its arrows the moment it is put away — there is no order for
 		// it to have a position in.
-		await expect(menu.getByRole('button', { name: 'Move Ideas up' })).toHaveCount(0);
+		await expect(menu.getByRole('button', { name: 'Move Inventory up' })).toHaveCount(0);
 
 		await menu.getByRole('button', { name: 'Save menu' }).click();
 		await page.waitForTimeout(600);
@@ -147,7 +147,7 @@ test.describe('the one menu list', () => {
 		await expect(page.getByRole('link', { name: 'Ideas' })).toHaveCount(0);
 
 		// And the page it owns still answers, because hiding is a menu matter.
-		const res = await visit(page, '/ideas');
+		const res = await visit(page, '/notebooks/ideas');
 		expect(res?.status()).toBe(200);
 	});
 

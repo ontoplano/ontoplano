@@ -928,12 +928,14 @@
 		{#snippet card_ideas()}
 			<Card title="Ideas" accent={SECTION_COLORS.ideas}>
 				{#snippet actions()}
-					<a href={resolve('/ideas')} class="text-xs text-gray-500 hover:text-gray-900">Open →</a>
+					<a href={resolve('/notebooks/ideas')} class="text-xs text-gray-500 hover:text-gray-900"
+						>Open →</a
+					>
 				{/snippet}
 				{#if (data.latestIdeas ?? []).length === 0}
 					{@render nothingYet(
 						'No ideas yet. This is the place for the ones with nowhere else to go.',
-						'/ideas',
+						'/notebooks/ideas',
 						'Write one down'
 					)}
 				{:else}

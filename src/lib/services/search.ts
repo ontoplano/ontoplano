@@ -193,7 +193,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			id: row.id,
 			title: firstLine(row.content),
 			snippet: '',
-			href: '/ideas'
+			href: '/notebooks/ideas'
 		});
 
 	// --- what you have to do ----------------------------------------------------

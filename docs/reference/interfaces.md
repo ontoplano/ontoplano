@@ -24,16 +24,11 @@ Can be put away in Preferences (`goals`), which takes it out of the bar, the whe
 
 - **Notebooks** — `/notebooks`
 - **Diary** — `/notebooks/diary`
+- **Ideas** — `/notebooks/ideas`
 - **Weekly notes** — `/notebooks/weekly`
 - **People** — `/notebooks/people`
 
 Can be put away in Preferences (`diary`), which takes it out of the bar, the wheel and the dashboard.
-
-### Ideas
-
-- `/ideas` — one page, no tabs
-
-Can be put away in Preferences (`ideas`), which takes it out of the bar, the wheel and the dashboard.
 
 ### Health
 

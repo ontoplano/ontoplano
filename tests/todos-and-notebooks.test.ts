@@ -270,3 +270,47 @@ describe('a birthday, as a card shows it', () => {
 		expect(birthdayLabel('not a date')).toBeNull();
 	});
 });
+
+/**
+ * A note has a name, and a list of them is names.
+ *
+ * A notebook is a subject somebody comes back to for months; a column of full
+ * notes is a wall, and finding the one you meant is what the list is for. The
+ * name is optional because a note jotted in a hurry should not be held up by
+ * a form asking what to call it — the screen falls back to the first line.
+ */
+describe('a note is called something', () => {
+	test('keeps the name it was given, and lets it be changed', () => {
+		const id = notebooks.createNotebook(ctx, { title: 'Named notes A' });
+		const note = diary.createEntry(ctx, {
+			title: 'Three quotes in',
+			content: 'All three agree the pipes have to move.',
+			notebookId: id
+		});
+
+		const named = () => notebooks.contentsOf(ctx, id).entries.find((e) => e.id === note)!;
+		expect(named()).toMatchObject({ title: 'Three quotes in' });
+
+		diary.updateEntry(ctx, note, { title: 'Four quotes in', content: 'And a fourth.' });
+		expect(named().title).toBe('Four quotes in');
+	});
+
+	test('is nameless when nobody named it, rather than refusing', () => {
+		const id = notebooks.createNotebook(ctx, { title: 'Named notes B' });
+		const note = diary.createEntry(ctx, { content: 'a line with no name', notebookId: id });
+		expect(notebooks.contentsOf(ctx, id).entries.find((e) => e.id === note)!.title).toBe('');
+	});
+
+	test('an edit that mentions neither keeps the note where it is, with its name', () => {
+		const id = notebooks.createNotebook(ctx, { title: 'Named notes C' });
+		const note = diary.createEntry(ctx, {
+			title: 'Book I',
+			content: 'On justice.',
+			notebookId: id
+		});
+
+		// The diary's own edit form has no title field; it must not erase one.
+		diary.updateEntry(ctx, note, { content: 'On justice, again.' });
+		expect(notebooks.contentsOf(ctx, id).entries.find((e) => e.id === note)!.title).toBe('Book I');
+	});
+});

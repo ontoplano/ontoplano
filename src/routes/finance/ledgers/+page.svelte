@@ -270,7 +270,7 @@
 				native everywhere, and shorter.
 			-->
 			<select
-				class="input w-auto"
+				class="select w-auto"
 				aria-label="Month"
 				value={data.month}
 				onchange={(e) => filter({ month: (e.currentTarget as HTMLSelectElement).value })}
@@ -505,7 +505,7 @@
 			</label>
 			<label class="block text-sm">
 				<span class="text-gray-600">What it is</span>
-				<select name="kind" class="input mt-1 w-full">
+				<select name="kind" class="select mt-1 w-full">
 					{#each LEDGER_KINDS as kind (kind)}
 						<option value={kind}>{LEDGER_KIND_LABELS[kind]}</option>
 					{/each}
@@ -513,7 +513,7 @@
 			</label>
 			<label class="block text-sm">
 				<span class="text-gray-600">Usual export</span>
-				<select name="defaultParser" class="input mt-1 w-full">
+				<select name="defaultParser" class="select mt-1 w-full">
 					<option value="">Ask every time</option>
 					{#each data.parsers as p (p.key)}<option value={p.key}>{p.name}</option>{/each}
 				</select>
@@ -556,7 +556,7 @@
 				</label>
 				<label class="block text-sm">
 					<span class="text-gray-600">What it is</span>
-					<select name="kind" class="input mt-1 w-full" value={editingLedger.kind}>
+					<select name="kind" class="select mt-1 w-full" value={editingLedger.kind}>
 						{#each LEDGER_KINDS as kind (kind)}
 							<option value={kind}>{LEDGER_KIND_LABELS[kind]}</option>
 						{/each}
@@ -566,7 +566,7 @@
 					<span class="text-gray-600">Usual export</span>
 					<select
 						name="defaultParser"
-						class="input mt-1 w-full"
+						class="select mt-1 w-full"
 						value={editingLedger.defaultParser ?? ''}
 					>
 						<option value="">Ask every time</option>
@@ -629,7 +629,7 @@
 			<div class="grid gap-3">
 				<label class="block text-sm">
 					<span class="text-gray-600">Export</span>
-					<select name="source" class="input mt-1 w-full" value={data.current.defaultParser ?? ''}>
+					<select name="source" class="select mt-1 w-full" value={data.current.defaultParser ?? ''}>
 						{#each data.parsers as p (p.key)}<option value={p.key}>{p.name}</option>{/each}
 					</select>
 				</label>
@@ -707,7 +707,7 @@
 				</label>
 				<label class="block text-sm sm:col-span-2">
 					<span class="text-gray-600">Direction</span>
-					<select name="direction" class="input mt-1 w-full">
+					<select name="direction" class="select mt-1 w-full">
 						<option value="out">Money out</option>
 						<option value="in">Money in</option>
 					</select>
@@ -771,7 +771,7 @@
 					<span class="text-gray-600">Direction</span>
 					<select
 						name="direction"
-						class="input mt-1 w-full"
+						class="select mt-1 w-full"
 						value={editing.amountCents >= 0 ? 'in' : 'out'}
 					>
 						<option value="out">Money out</option>
@@ -780,7 +780,7 @@
 				</label>
 				<label class="block text-sm">
 					<span class="text-gray-600">Ledger</span>
-					<select name="ledgerId" class="input mt-1 w-full" value={editing.ledgerId ?? ''}>
+					<select name="ledgerId" class="select mt-1 w-full" value={editing.ledgerId ?? ''}>
 						{#each data.ledgers as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
 					</select>
 				</label>

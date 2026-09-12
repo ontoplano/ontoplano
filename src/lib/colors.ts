@@ -67,10 +67,12 @@ export function sectionFor(pathname: string): SectionKey {
 	if (pathname.startsWith('/goals')) return 'goals';
 	if (pathname.startsWith('/health')) return 'health';
 	if (pathname.startsWith('/finance')) return 'finance';
+	// Ideas keeps its own colour inside the room, and the room's own comes
+	// after it — a prefix test on the parent would swallow the child.
+	if (pathname.startsWith('/notebooks/ideas')) return 'ideas';
 	// The whole Notebooks room wears the diary section's colour, as the room
 	// did when it lived at /diary.
 	if (pathname.startsWith('/notebooks')) return 'diary';
-	if (pathname.startsWith('/ideas')) return 'ideas';
 	if (pathname.startsWith('/inventory')) return 'inventory';
 	if (pathname.startsWith('/gallery')) return 'gallery';
 	return 'home';

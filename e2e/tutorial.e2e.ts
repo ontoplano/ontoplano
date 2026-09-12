@@ -52,7 +52,7 @@ test('the button in the corner opens the tour for the screen you are on', async 
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, `tour-corner-${Date.now()}@test.invalid`);
 
-	await visit(page, '/ideas');
+	await visit(page, '/notebooks/ideas');
 	await page.getByRole('button', { name: 'Show me around this screen' }).click();
 
 	const tour = tourOf(page);

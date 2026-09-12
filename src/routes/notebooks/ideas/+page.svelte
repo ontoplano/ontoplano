@@ -130,7 +130,7 @@
 			return;
 
 		const items = filteredIdeas;
-		const action = getAction('/ideas', e.key);
+		const action = getAction('/notebooks/ideas', e.key);
 		if (!action) return;
 		e.preventDefault();
 

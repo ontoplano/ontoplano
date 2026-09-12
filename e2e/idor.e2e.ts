@@ -122,10 +122,10 @@ test.describe('one account cannot reach another account by id', () => {
 	}[] = [
 		{
 			name: 'idea',
-			page: '/ideas',
+			page: '/notebooks/ideas',
 			payloadKey: 'ideas',
-			create: { path: '/ideas?/create', form: { content: "alice's idea" } },
-			attack: (id) => ({ path: '/ideas?/update', form: { id, content: 'taken' } })
+			create: { path: '/notebooks/ideas?/create', form: { content: "alice's idea" } },
+			attack: (id) => ({ path: '/notebooks/ideas?/update', form: { id, content: 'taken' } })
 		},
 		{
 			name: 'diary entry',
