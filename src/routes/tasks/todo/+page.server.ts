@@ -1,10 +1,124 @@
-/**
- * The server's face of this route.
- *
- * The bodies live in `page.self-contained.ts`, written against the slice of the
- * request that also exists on a self-contained instance — which is what lets the same
- * load and the same actions run inside the device's worker, dispatched by
- * $lib/self-contained. A route with logic only a server can run keeps that logic
- * here instead.
- */
-export { load, actions } from './page.self-contained';
+import type { IsolatedEvent } from '$lib/isolated/routes';
+import { ratingsFromForm } from '$lib/ratings';
+import { listActivities, listCategories } from '$lib/services/activities';
+import { goalBacklinks } from '$lib/services/backlinks';
+import { buildCtx } from '$lib/services/ctx';
+import { pickableNotebooks } from '$lib/services/notebooks';
+import { toActionFailure } from '$lib/http-errors';
+import {
+	createTodo,
+	delegateTodo,
+	deleteTodo,
+	listTodos,
+	scheduleTodo,
+	setTodoStatus,
+	updateTodo
+} from '$lib/services/todos';
+
+export const load = async ({ locals }: IsolatedEvent) => {
+	const ctx = buildCtx(locals.user!.id);
+
+	return {
+		todos: listTodos(ctx),
+		categories: listCategories(ctx),
+		notebooks: pickableNotebooks(ctx),
+		activities: listActivities(ctx, { activeOnly: true }),
+		goalLinks: goalBacklinks(ctx)
+	};
+};
+
+export const actions = {
+	create: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			createTodo(buildCtx(locals.user!.id), {
+				title: formData.get('heading'),
+				notes: formData.get('notes'),
+				categoryId: formData.get('categoryId'),
+				notebookId: formData.get('notebookId'),
+				scheduledDate: formData.get('scheduledDate'),
+				ratings: ratingsFromForm(formData)
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/*
+	 * There is no `remind` here any more.
+	 *
+	 * A todo has no time on it — that is what makes it a todo — so there is
+	 * nothing for a reminder to be *before*. Wanting to be reminded of one is
+	 * wanting it to happen at a time: give it a day and a time, which makes it a
+	 * block, and the block's editor takes the reminder. See
+	 * `services/reminders.ts`.
+	 */
+
+	update: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			updateTodo(buildCtx(locals.user!.id), Number(formData.get('id')), {
+				title: formData.get('heading'),
+				notes: formData.get('notes'),
+				categoryId: formData.get('categoryId'),
+				notebookId: formData.get('notebookId'),
+				ratings: ratingsFromForm(formData)
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	setStatus: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			setTodoStatus(buildCtx(locals.user!.id), Number(formData.get('id')), formData.get('status'));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	schedule: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			scheduleTodo(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('scheduledDate')
+			);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	delete: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			deleteTodo(buildCtx(locals.user!.id), Number(formData.get('id')));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	delegate: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			delegateTodo(buildCtx(locals.user!.id), Number(formData.get('id')), {
+				date: formData.get('date'),
+				startTime: formData.get('startTime'),
+				durationMinutes: formData.get('durationMinutes'),
+				mode: formData.get('mode'),
+				categoryId: formData.get('categoryId'),
+				activityId: formData.get('activityId')
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	}
+};

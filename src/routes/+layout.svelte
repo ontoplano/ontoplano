@@ -7,8 +7,8 @@
 	import { navigating, page } from '$app/state';
 	import { live } from '$lib/live';
 	import { afterNavigate, goto, onNavigate } from '$app/navigation';
-	import { PAGE_TURN_DEFAULTS } from '$lib/page-turn';
-	import { isSelfContainedBuild } from '$lib/self-contained/mode';
+	import { canDissolve, PAGE_TURN_DEFAULTS } from '$lib/page-turn';
+	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import { PAGE_TURN, runDissolve } from '$lib/page-turn.svelte';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
@@ -87,6 +87,9 @@
 		).startViewTransition;
 
 		if (!start) return;
+		// A browser that cannot draw the dissolve navigates the ordinary way,
+		// rather than showing a blank screen where the filter should have been.
+		if (!canDissolve()) return;
 		if (navigation.type !== 'link' && navigation.type !== 'popstate') return;
 		if (navigation.to?.route.id === navigation.from?.route.id) return;
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -117,7 +120,7 @@
 	// typing 2 into a field showing 0 gives 2 rather than 02.
 	$effect(() => smartNumberFields(document));
 	/** This app is its own instance: no account, and leaving means choosing another. */
-	const onDevice = $derived(isSelfContainedBuild());
+	const onDevice = $derived(isIsolatedBuild());
 	let menuOpen = $state(false);
 	let pie = $state<CapturePie | undefined>();
 	let rooms = $state<NavPie | undefined>();

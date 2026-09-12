@@ -26,10 +26,10 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// The self-contained build has no server and serves its own error states from
+// The isolated build has no server and serves its own error states from
 // the app shell; the 503 page belongs to the node build alone.
-if (process.env.ONTOPLANO_SELF_CONTAINED_BUILD === '1') {
-	console.log('error page: skipped for the self-contained build');
+if (process.env.ONTOPLANO_ISOLATED_BUILD === '1') {
+	console.log('error page: skipped for the isolated build');
 	process.exit(0);
 }
 

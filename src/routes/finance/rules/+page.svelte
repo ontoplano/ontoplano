@@ -9,7 +9,7 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
-	import { type Currency } from '$lib/money';
+	import { formatMoney, type Currency } from '$lib/money';
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -24,12 +24,14 @@
 	let editingId: number | null = $state(null);
 	let deleting: Rule | null = $state(null);
 
-	function filter(changes: { ledger?: number; months?: number }) {
+	function filter(changes: { ledger?: number; months?: number; showing?: string }) {
 		const params: [string, string][] = [];
 		const ledger = changes.ledger ?? data.ledgerId;
 		const months = changes.months ?? data.months;
+		const showing = changes.showing ?? data.showing;
 		if (ledger) params.push(['ledger', String(ledger)]);
 		if (months !== 12) params.push(['months', String(months)]);
+		if (showing) params.push(['showing', showing]);
 		// The path is resolved; the rule cannot see through the appended query.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		void goto(`${resolve('/finance/rules')}?${new URLSearchParams(params)}`, { noScroll: true });
@@ -140,12 +142,27 @@
 											not running
 										</span>
 									{:else}
-										<span
-											class="shrink-0 text-xs text-gray-400 tabular-nums"
-											title="lines it claims"
+										<!--
+											The count is the way in.
+
+											"Six lines" is not an answer to "is this pattern right" —
+											which six is. Pressing it puts them below the rules, and
+											pressing it again puts them away.
+										-->
+										<button
+											class="shrink-0 rounded px-1.5 text-xs tabular-nums transition {data.showing ===
+											String(rule.id)
+												? 'bg-gray-900 text-white'
+												: 'text-gray-400 hover:text-gray-700'}"
+											title="Which lines this claims"
+											aria-pressed={data.showing === String(rule.id)}
+											onclick={() =>
+												filter({
+													showing: data.showing === String(rule.id) ? '' : String(rule.id)
+												})}
 										>
 											{rule.matches}
-										</span>
+										</button>
 									{/if}
 									<form method="post" action="?/move" use:enhance>
 										<input type="hidden" name="id" value={rule.id} />
@@ -215,6 +232,46 @@
 			</Card>
 		{/each}
 	</div>
+
+	<!--
+		The lines behind a number.
+
+		Under the two columns rather than inside one of them: it is the answer
+		to a question asked in either, and a panel that appears inside a card
+		would push the other column's rows around.
+	-->
+	{#if data.showing}
+		<Card title={data.showingLabel} accent="var(--section-accent)" flush>
+			{#snippet actions()}
+				<button class="btn btn-sm" onclick={() => filter({ showing: '' })}>Close</button>
+			{/snippet}
+			{#if data.lines.length === 0}
+				<p class="px-4 py-6 text-center text-sm text-gray-500">Nothing here.</p>
+			{:else}
+				<ul class="divide-y divide-gray-200">
+					{#each data.lines as line (line.id)}
+						<li
+							class="flex items-baseline gap-3 px-4 py-2"
+							style={line.categoryColor ? `background-color: ${line.categoryColor}2b` : ''}
+						>
+							<span class="tabular shrink-0 text-xs text-gray-500">{line.occurredOn}</span>
+							<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{line.description}</span>
+							{#if line.ledgerName}
+								<span class="shrink-0 text-xs text-gray-500">{line.ledgerName}</span>
+							{/if}
+							<span
+								class="shrink-0 text-sm tabular-nums {line.amountCents < 0
+									? 'text-gray-900'
+									: 'text-blue-700'}"
+							>
+								{formatMoney(line.amountCents, currency)}
+							</span>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</Card>
+	{/if}
 
 	<!--
 		Which regular expressions these are, said plainly. "Regex" is several

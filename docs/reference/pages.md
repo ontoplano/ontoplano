@@ -21,7 +21,7 @@ write surface for everything else; both end up calling the same
 | `/buy`                               | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/data/[slug]`                       | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/demo`                              | `default`                                                                                                                                                                                                                                                                                                                                                                           |
-| `/demo/self-contained-db`            | —                                                                                                                                                                                                                                                                                                                                                                                   |
+| `/demo/isolated-db`                  | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/dev/page-turn`                     | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/finance/bills`                     | `create`, `update`, `pay`, `unpay`, `archive`, `delete`                                                                                                                                                                                                                                                                                                                             |
 | `/finance/insights`                  | —                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -62,7 +62,7 @@ write surface for everything else; both end up calling the same
 | `/settings/integrations`             | `createKey`, `putBack`                                                                                                                                                                                                                                                                                                                                                              |
 | `/settings/integrations/connections` | `createToken`, `calendarLink`, `putBack`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                                          |
 | `/settings/integrations/widget`      | `connect`                                                                                                                                                                                                                                                                                                                                                                           |
-| `/settings/preferences`              | `saveCurrency`, `saveGridHours`, `saveMenu`, `resetMenu`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setTheme`, `saveWeek`, `setErrorReports`                                                                                                                                                                                              |
+| `/settings/preferences`              | `setErrorReports`, `saveCurrency`, `saveGridHours`, `saveMenu`, `resetMenu`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setTheme`, `saveWeek`                                                                                                                                                                                              |
 | `/start`                             | `checkout`                                                                                                                                                                                                                                                                                                                                                                          |
 | `/tasks/activities`                  | `create`, `update`, `toggleActive`, `delete`, `createCategory`, `updateCategory`, `deleteCategory`                                                                                                                                                                                                                                                                                  |
 | `/tasks/board`                       | `setStatus`, `reorder`, `schedule`, `promote`, `demote`, `createTodo`, `setRatings`, `remind`, `unremind`, `editInstance`, `resolveActivity`, `deleteInstance`, `deleteTodo`                                                                                                                                                                                                        |
@@ -80,10 +80,10 @@ the rest are named for what they do.
 
 ### `/`
 
-The dashboard, for whoever is signed in — which on a self-contained instance is
+The dashboard, for whoever is signed in — which on an isolated instance is
 whoever is holding the device. The signed-out front door stays in
 +page.server.ts: whether anyone may register is a question about a
-deployment, and a self-contained instance has no door.
+deployment, and an isolated instance has no door.
 
 ### `/admin`
 
@@ -562,16 +562,6 @@ The verdicts arrive as one field per answered block —
 `verdict=<id>:<verb>[:<date>]` — because a form posts repeated names as a
 list and this is one list rather than four parallel ones that could get
 out of step with each other.
-
-### `/tasks/todo`
-
-The server's face of this route.
-
-The bodies live in `page.self-contained.ts`, written against the slice of the
-request that also exists on a self-contained instance — which is what lets the same
-load and the same actions run inside the device's worker, dispatched by
-$lib/self-contained. A route with logic only a server can run keeps that logic
-here instead.
 
 ### `/welcome/password`
 

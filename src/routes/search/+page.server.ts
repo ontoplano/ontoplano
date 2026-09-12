@@ -1,3 +1,10 @@
-// The bodies live in page.self-contained.ts, written against the slice of the request
-// that also exists on a self-contained instance — see $lib/self-contained/routes.ts.
-export { load } from './page.self-contained';
+import type { IsolatedEvent } from '$lib/isolated/routes';
+import { buildCtx } from '$lib/services/ctx';
+import { grouped, search } from '$lib/services/search';
+
+export const load = async ({ locals, url }: IsolatedEvent) => {
+	const q = url.searchParams.get('q') ?? '';
+	const ctx = buildCtx(locals.user!.id);
+
+	return { q, groups: grouped(search(ctx, q)) };
+};

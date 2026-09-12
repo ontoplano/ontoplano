@@ -21,12 +21,12 @@ One project, four flavours. They differ in an application id, a name, an icon
 and the instance they open on — nothing else, and the same code runs in all of
 them.
 
-| Flavour    | Application id                | Opens on                |
-| ---------- | ----------------------------- | ----------------------- |
-| `official` | `app.ontoplano`               | `app.ontoplano.com`     |
-| `dev`      | `app.ontoplano.dev`           | `$ONTOPLANO_DEV_ORIGIN` |
-| `staging`  | `app.ontoplano.staging`       | `staging.ontoplano.com` |
-| `device`   | `app.ontoplano.selfcontained` | the phone itself        |
+| Flavour    | Application id           | Opens on                |
+| ---------- | ------------------------ | ----------------------- |
+| `official` | `app.ontoplano`          | `app.ontoplano.com`     |
+| `dev`      | `app.ontoplano.dev`      | `$ONTOPLANO_DEV_ORIGIN` |
+| `staging`  | `app.ontoplano.staging`  | `staging.ontoplano.com` |
+| `device`   | `app.ontoplano.isolated` | the phone itself        |
 
 The instance a flavour opens on is its default, not a cage.
 
@@ -35,7 +35,7 @@ The instance a flavour opens on is its default, not a cage.
 ```sh
 make android                 # the store artifact: official, release, unsigned
 make android-phones          # official, dev and staging, built and installed over adb
-make android-self-contained  # the one that is its own instance
+make android-isolated  # the one that is its own instance
 make android-project         # regenerate the committed Gradle project
 ```
 

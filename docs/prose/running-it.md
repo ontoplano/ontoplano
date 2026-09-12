@@ -123,7 +123,7 @@ installs exactly as it does on Ubuntu, which is the shortest route if you are on
 Windows right now.
 
 A proper installer is a good first contribution, and an unusually
-self-contained one: the app itself is one Node process and one SQLite file, so
+isolated one: the app itself is one Node process and one SQLite file, so
 what is missing is the packaging around it — an MSI or a winget manifest, a
 service registration, and somewhere sensible to put the database. If you want to
 build it, [CONTRIBUTING.md](https://github.com/ontoplano/ontoplano/blob/master/CONTRIBUTING.md)

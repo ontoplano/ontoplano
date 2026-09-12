@@ -14,7 +14,7 @@ declare global {
 	const __APP_COMMIT__: string;
 	const __APP_BUILT_AT__: string;
 	/** True in the build that is the instance on the device. */
-	const __SELF_CONTAINED_BUILD__: boolean;
+	const __ISOLATED_BUILD__: boolean;
 
 	namespace App {
 		interface Locals {

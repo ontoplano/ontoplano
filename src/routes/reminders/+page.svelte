@@ -1,4 +1,5 @@
 <script lang="ts">
+	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { enhance } from '$app/forms';
 	import Banner from '$lib/components/Banner.svelte';
 	import Card from '$lib/components/Card.svelte';
@@ -238,7 +239,7 @@
 <audio bind:this={audio} class="hidden"></audio>
 
 <div class="space-y-4">
-	<h1 class="text-lg font-bold text-gray-900">Reminders</h1>
+	<RoomBar title="Reminders" />
 
 	<FormError message={form?.message} />
 

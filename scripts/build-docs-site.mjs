@@ -14,7 +14,7 @@
  * MkDocs Material or Starlight and delete this file. It is a hundred lines; it
  * is meant to be deletable.
  *
- * Output is self-contained: one stylesheet inline, no fonts fetched, no
+ * Output is isolated: one stylesheet inline, no fonts fetched, no
  * scripts. It is served by nginx as plain files.
  *
  *   node scripts/build-docs-site.mjs [outdir]     # default: build-docs/

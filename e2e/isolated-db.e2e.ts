@@ -6,7 +6,7 @@ import { visit } from './helpers/visit';
  * The app's own services, against a real database, on the device — and still
  * there afterwards.
  *
- * Everything the self-contained instance will be rests on this working, and three
+ * Everything the isolated instance will be rests on this working, and three
  * parts of it are not obvious. SQLite is WebAssembly, which the app's own CSP
  * refuses unless `wasm-unsafe-eval` is granted. Its OPFS backend needs
  * `createSyncAccessHandle`, which exists in a dedicated worker and nowhere
@@ -27,7 +27,7 @@ test('the services run on the device and their writes survive a reload', async (
 	});
 
 	await register(page, `localdb-${Date.now()}@test.invalid`);
-	await visit(page, '/demo/self-contained-db');
+	await visit(page, '/demo/isolated-db');
 	await expect(page.getByTestId('todos')).not.toHaveText('-1', { timeout: 30_000 });
 
 	await expect(page.getByTestId('error')).toHaveText('');

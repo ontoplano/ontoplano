@@ -105,5 +105,10 @@
 		</div>
 	{/if}
 
-	<a href={resolve('/')} class="btn btn-primary mt-8 inline-flex">Back to today</a>
+	<!--
+		Where it goes is the dashboard, so that is what it says. "Back to today"
+		read as a date — the day you were looking at — on a page reached from
+		somewhere that has days on it.
+	-->
+	<a href={resolve('/')} class="btn btn-primary mt-8 inline-flex">Back to the dashboard</a>
 </div>

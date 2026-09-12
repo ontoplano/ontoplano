@@ -1,4 +1,5 @@
 <script lang="ts">
+	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
@@ -211,32 +212,35 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<div class="flex flex-wrap items-center justify-between gap-3">
-		<h1 class="text-lg font-bold text-gray-900">Goals</h1>
-		<div class="flex items-center gap-2">
-			<!-- Nothing to filter and nothing to file: an account with no goals is
+	<RoomBar title="Goals">
+		{#snippet actions()}
+			<div class="flex items-center gap-2">
+				<!-- Nothing to filter and nothing to file: an account with no goals is
 			     offered one button, which is the one that helps. -->
-			{#if data.goals.length > 0}
-				<!-- Both branches are resolved; the rule reads the href expression
+				{#if data.goals.length > 0}
+					<!-- Both branches are resolved; the rule reads the href expression
 				     and does not look inside a conditional. -->
-				<!-- eslint-disable svelte/no-navigation-without-resolve -->
-				<a
-					href={data.includeClosed ? resolve('/goals') : resolve('/goals?closed=1')}
-					class="btn btn-sm"
-				>
-					{data.includeClosed ? 'Hide closed' : 'Show closed'}
-				</a>
-				<!-- eslint-enable svelte/no-navigation-without-resolve -->
-				<button onclick={() => (showAreas = true)} class="btn btn-sm" data-tour="goal-areas">
-					Areas
+					<!-- eslint-disable svelte/no-navigation-without-resolve -->
+					<a
+						href={data.includeClosed ? resolve('/goals') : resolve('/goals?closed=1')}
+						class="btn btn-sm"
+					>
+						{data.includeClosed ? 'Hide closed' : 'Show closed'}
+					</a>
+					<!-- eslint-enable svelte/no-navigation-without-resolve -->
+					<button onclick={() => (showAreas = true)} class="btn btn-sm" data-tour="goal-areas">
+						Areas
+					</button>
+				{/if}
+				<button onclick={openCreate} class="btn btn-primary btn-sm" data-tour="goal-new">
+					<Icon name="plus" /> New goal
+					<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
+						>{keyFor('/goals', 'new')}</kbd
+					>
 				</button>
-			{/if}
-			<button onclick={openCreate} class="btn btn-primary btn-sm" data-tour="goal-new">
-				<Icon name="plus" /> New goal
-				<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs">{keyFor('/goals', 'new')}</kbd>
-			</button>
-		</div>
-	</div>
+			</div>
+		{/snippet}
+	</RoomBar>
 
 	<FormError message={form?.message} />
 

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Icon from '$lib/components/Icon.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
-	import { isSelfContainedBuild } from '$lib/self-contained/mode';
+	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import { OFFICIAL_INSTANCE, rememberInstance, storedInstance } from '$lib/instance-choice';
 
 	/*
@@ -50,7 +50,7 @@
 	 * for it carries. In any other build it is something to know about rather
 	 * than something to press.
 	 */
-	const canRunHere = $derived(isSelfContainedBuild());
+	const canRunHere = $derived(isIsolatedBuild());
 
 	function go() {
 		if (kind === 'phone') {

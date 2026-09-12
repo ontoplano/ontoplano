@@ -1,4 +1,5 @@
 <script lang="ts">
+	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { deserialize, enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -142,31 +143,32 @@
 </script>
 
 <div class="space-y-4">
-	<div class="flex items-center justify-between">
-		<h1 class="text-lg font-bold text-gray-900">Gallery</h1>
-		<span class="flex items-center gap-2">
-			<!-- A folder of pictures, with its subfolders as albums. -->
-			<!-- Ask first: what is in this folder, and what would be refused. -->
-			<form method="post" action="?/planFolder" bind:this={planForm} use:enhance>
-				<input type="hidden" name="files" />
-				<label class="btn btn-sm cursor-pointer">
-					<Icon name="download" /> Import a folder
-					<input
-						type="file"
-						accept="image/png,image/jpeg,image/gif,image/webp"
-						multiple
-						use:directory
-						class="hidden"
-						onchange={folderChosen}
-					/>
-				</label>
-			</form>
+	<RoomBar title="Gallery">
+		{#snippet actions()}
+			<span class="flex items-center gap-2">
+				<!-- A folder of pictures, with its subfolders as albums. -->
+				<!-- Ask first: what is in this folder, and what would be refused. -->
+				<form method="post" action="?/planFolder" bind:this={planForm} use:enhance>
+					<input type="hidden" name="files" />
+					<label class="btn btn-sm cursor-pointer">
+						<Icon name="download" /> Import a folder
+						<input
+							type="file"
+							accept="image/png,image/jpeg,image/gif,image/webp"
+							multiple
+							use:directory
+							class="hidden"
+							onchange={folderChosen}
+						/>
+					</label>
+				</form>
 
-			<button class="btn btn-primary btn-sm" onclick={() => (showNew = true)}>
-				<Icon name="plus" /> New album
-			</button>
-		</span>
-	</div>
+				<button class="btn btn-primary btn-sm" onclick={() => (showNew = true)}>
+					<Icon name="plus" /> New album
+				</button>
+			</span>
+		{/snippet}
+	</RoomBar>
 
 	<!--
 		What would happen, before it happens.

@@ -61,6 +61,19 @@ test('a ledger, its statement, the rules and the plots', async ({ page }) => {
 	await categories.getByRole('button', { name: 'Save' }).click();
 	await expect(categories.getByText('/mercado|padaria/i')).toBeVisible();
 
+	/*
+	 * A count is not an answer to "is this pattern right"; which lines is.
+	 * Pressing the number opens them under the two columns, and the pile
+	 * nothing claims opens the same way.
+	 */
+	await categories.getByTitle('Which lines this claims').first().click();
+	await page.waitForURL(/showing=/);
+	await expect(page.getByRole('heading', { name: 'Food' })).toBeVisible();
+	await expect(page.getByText('Mercado Bom Preço')).toBeVisible();
+
+	await page.getByRole('button', { name: 'Close' }).click();
+	await expect(page.getByText('Mercado Bom Preço')).toHaveCount(0);
+
 	// The line wears the category now — in its own column, and washing the row.
 	await page.getByRole('link', { name: 'Ledgers', exact: true }).click();
 	await page.waitForURL(/\/finance\/ledgers/);

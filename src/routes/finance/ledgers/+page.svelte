@@ -25,6 +25,13 @@
 	 * invisible on a dark screen.
 	 */
 	const CATEGORY_WASH_ALPHA = '2b';
+
+	/** `2026-02` as somebody would say it. */
+	const monthName = (key: string) =>
+		new Date(`${key}-01T00:00:00`).toLocaleDateString(undefined, {
+			month: 'long',
+			year: 'numeric'
+		});
 	const money = (cents: number) => formatMoney(cents, currency);
 
 	type Ledger = PageServerData['ledgers'][number];
@@ -255,20 +262,24 @@
 				oninput={(e) => filter({ q: (e.currentTarget as HTMLInputElement).value })}
 			/>
 			<!--
-				A month box says nothing about itself when it is empty — an
-				unfilled `type="month"` draws as dashes, which beside a search
-				field reads as a second search field that lost its placeholder.
-				The word is the label.
+				The months this ledger has, not a date field.
+				
+				`input type="month"` is a picker in Chromium and a bare text box in
+				Firefox, where typing "2" filters to nothing and the box explains
+				nothing. A list of the months there is something to look at is
+				native everywhere, and shorter.
 			-->
-			<label class="flex items-center gap-2 text-sm text-gray-600">
-				Month
-				<input
-					type="month"
-					value={data.month}
-					class="input w-auto"
-					onchange={(e) => filter({ month: (e.currentTarget as HTMLInputElement).value })}
-				/>
-			</label>
+			<select
+				class="input w-auto"
+				aria-label="Month"
+				value={data.month}
+				onchange={(e) => filter({ month: (e.currentTarget as HTMLSelectElement).value })}
+			>
+				<option value="">Every month</option>
+				{#each data.months as m (m)}
+					<option value={m}>{monthName(m)}</option>
+				{/each}
+			</select>
 			{#if data.query || data.month}
 				<button class="btn btn-sm" onclick={() => filter({ q: '', month: '' })}>Clear</button>
 			{/if}

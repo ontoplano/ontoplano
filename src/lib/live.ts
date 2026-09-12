@@ -1,4 +1,4 @@
-import { isSelfContained } from '$lib/self-contained/mode';
+import { isIsolated } from '$lib/isolated/mode';
 import { invalidateAll } from '$app/navigation';
 
 /**
@@ -58,9 +58,9 @@ function busyTyping(): boolean {
  */
 export function live(options: LiveOptions = {}): () => void {
 	if (typeof window === 'undefined' || typeof EventSource === 'undefined') return () => {};
-	// A self-contained instance has exactly one client — this one — so there is nobody
+	// An isolated instance has exactly one client — this one — so there is nobody
 	// whose changes could arrive, and no server to hold the stream open.
-	if (isSelfContained()) return () => {};
+	if (isIsolated()) return () => {};
 
 	const wanted = options.rooms ?? [];
 	let pending: LiveChange | null = null;

@@ -47,8 +47,8 @@ export function isSelfHosted(): boolean {
  * is a stranger's own server: a machine that stays on and answers the door.
  * Only the build that knows it is living on a phone says so.
  */
-export function isSelfContained(): boolean {
-	return process.env.ONTOPLANO_SELF_CONTAINED === 'true';
+export function isIsolated(): boolean {
+	return process.env.ONTOPLANO_ISOLATED === 'true';
 }
 
 /**
@@ -59,7 +59,7 @@ export function isSelfContained(): boolean {
  * happens to be running, which is a fact rather than a purchase.
  */
 export function capabilities(): Capabilities {
-	if (!isSelfContained()) return FULL;
+	if (!isIsolated()) return FULL;
 	// Nothing can reach a phone — mobile data is behind carrier-grade NAT, so
 	// there is not even a port to forward — and it is not running when the app
 	// is closed.

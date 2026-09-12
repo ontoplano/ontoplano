@@ -4,10 +4,10 @@
  * A handful of things the services fire off are not theirs to implement:
  * delivering a webhook, knowing who shares a family plan, enforcing a paid
  * plan's limits. On the server those are real modules with network access and
- * billing tables behind them; on a self-contained instance they have nothing to stand
+ * billing tables behind them; on an isolated instance they have nothing to stand
  * on — and, more to the point, nothing to do.
  *
- * The defaults below ARE the self-contained instance, correct by construction rather
+ * The defaults below ARE the isolated instance, correct by construction rather
  * than by configuration: one account means the family circle is you; no
  * billing means no limits to enforce; no listeners means an event announced
  * to nobody. The server overrides all of it in `$lib/server/host.ts`, bound
@@ -19,6 +19,17 @@ import { ValidationError } from './errors.js';
 import type { LimitKey } from '../plans.js';
 import { DEVICE_MEDIA_LIMITS, type MediaLimits } from './media-limits.js';
 import type { WebhookEvent } from '../webhook-events.js';
+
+/** The signed-out door's four facts. */
+export type FrontDoor = {
+	canRegister: boolean;
+	tagline: string;
+	siteUrl: string;
+	docsUrl: string;
+};
+
+/** Off, or asked-and-answered. The same three words the settings row uses. */
+export type ClientErrorState = 'off' | 'ask' | 'yes' | 'no';
 
 export interface Host {
 	/** Announce that something happened, to whatever is subscribed to hear it. */
@@ -37,7 +48,7 @@ export interface Host {
 	/**
 	 * A reminder was created, changed, or deleted, so whatever fires them
 	 * should look at the schedule again. The server pokes its delivery clock;
-	 * a self-contained instance will hand the schedule to the device's own alarms.
+	 * an isolated instance will hand the schedule to the device's own alarms.
 	 */
 	reminderScheduleChanged(): void;
 	/**
@@ -48,6 +59,23 @@ export interface Host {
 	assertPublicUrl(raw: string, what: string): URL;
 	/** Fetch from the outside world, under the instance's own guard. */
 	fetchPublic(url: string, init?: RequestInit): Promise<Response>;
+	/**
+	 * What the signed-out door says, or null where nobody can be signed out.
+	 *
+	 * Every part of it is a fact about a deployment — whether registration is
+	 * open, the operator's tagline, where this instance's site and docs are —
+	 * so the served instance answers and an isolated one has no door at all:
+	 * the person holding the device is the account.
+	 */
+	frontDoor(): FrontDoor | null;
+	/**
+	 * Whether this instance collects what broke in somebody's browser, and
+	 * whether this account has said yes. `off` everywhere the question does
+	 * not arise, which is also what hides the row.
+	 */
+	clientErrorReports(userId: string): ClientErrorState;
+	/** Record the answer to that question. Nothing to record where it is `off`. */
+	setClientErrorReports(ctx: Ctx, decision: unknown): void;
 }
 
 const localInstance: Host = {
@@ -70,7 +98,11 @@ const localInstance: Host = {
 			throw new ValidationError(`A ${what} address starts with http:// or https://`);
 		return url;
 	},
-	fetchPublic: (url, init) => fetch(url, init)
+	fetchPublic: (url, init) => fetch(url, init),
+	// An isolated instance has nobody to sign in and nobody to report to.
+	frontDoor: () => null,
+	clientErrorReports: () => 'off',
+	setClientErrorReports() {}
 };
 
 export let host: Host = localInstance;

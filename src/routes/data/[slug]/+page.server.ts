@@ -1,3 +1,34 @@
-// The bodies live in page.self-contained.ts, written against the slice of the request
-// that also exists on a self-contained instance — see $lib/self-contained/routes.ts.
-export { load } from './page.self-contained';
+import type { IsolatedEvent } from '$lib/isolated/routes';
+import { error } from '@sveltejs/kit';
+
+import { buildCtx } from '$lib/services/ctx';
+import { NotFoundError } from '$lib/services/errors';
+import { getStreamBySlug, listPoints, serialisePoint } from '$lib/services/streams';
+
+export const load = async ({ locals, params, url }: IsolatedEvent) => {
+	const ctx = buildCtx(locals.user!.id);
+
+	const rangeDays = Number(url.searchParams.get('days') ?? 180);
+	const since = new Date(ctx.now.getTime() - rangeDays * 86400_000).toISOString();
+
+	try {
+		const stream = getStreamBySlug(ctx, params.slug)!;
+		const points = listPoints(ctx, params.slug, { since, limit: 5000 });
+
+		return {
+			stream: {
+				slug: stream.slug,
+				name: stream.name,
+				source: stream.source,
+				kind: stream.kind,
+				unit: stream.unit,
+				display: stream.display
+			},
+			points: points.map(serialisePoint),
+			rangeDays
+		};
+	} catch (e) {
+		if (e instanceof NotFoundError) error(404, 'Stream not found');
+		throw e;
+	}
+};

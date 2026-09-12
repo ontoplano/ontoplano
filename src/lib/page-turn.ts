@@ -17,6 +17,30 @@
  *
  * This file holds no runes, because it is read by things that are not Svelte.
  */
+/**
+ * Whether this browser can actually draw the dissolve.
+ *
+ * The turn is an SVG filter applied to `::view-transition-old(root)` and
+ * `::view-transition-new(root)`. Chromium honours that. Firefox has
+ * `startViewTransition` and does not honour the filter on those
+ * pseudo-elements: both snapshots come out with nothing in them, so a
+ * navigation is a blank screen and then the new page — which is far worse
+ * than no transition at all, and is what it was doing.
+ *
+ * There is no capability to test for. `filter` is supported, `url(#id)` is
+ * supported, and whether the two work together on a snapshot in the top layer
+ * is not something CSS will answer. So this asks which engine it is, through
+ * the one API only Chromium ships, and everything else changes screen the way
+ * a page always has. When Firefox honours it, this check is the only thing to
+ * delete.
+ */
+export function canDissolve(): boolean {
+	if (typeof navigator === 'undefined') return false;
+	const brands = (navigator as Navigator & { userAgentData?: { brands?: { brand: string }[] } })
+		.userAgentData?.brands;
+	return Array.isArray(brands) && brands.some((b) => /Chromium/i.test(b.brand));
+}
+
 export const PAGE_TURN_DEFAULTS = {
 	/**
 	 * How long the dissolve takes, end to end.

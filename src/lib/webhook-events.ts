@@ -3,7 +3,7 @@
  *
  * A list, not logic: it names what the app announces, so it is needed both by
  * the server that delivers webhooks and by the services that fire them —
- * which also run on a self-contained instance, where nothing is listening but the
+ * which also run on an isolated instance, where nothing is listening but the
  * sentence "this fired todo.created" is still the same sentence.
  */
 export const WEBHOOK_EVENTS = [

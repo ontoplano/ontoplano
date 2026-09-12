@@ -1,5 +1,5 @@
 /**
- * The self-contained instance's server: the database and the services, in the only
+ * The isolated instance's server: the database and the services, in the only
  * place the browser will let them live together.
  *
  * SQLite writes to OPFS through `createSyncAccessHandle`, which exists in a
@@ -7,7 +7,7 @@
  * worker. So the database is a worker, the services (synchronous over
  * Drizzle, exactly as on the server) run in here beside it, and everything
  * else asks by message. That is a constraint rather than a preference, and it
- * decides the shape of the whole self-contained instance.
+ * decides the shape of the whole isolated instance.
  */
 import * as schema from '$lib/db/schema.js';
 import { installBufferStandIn } from './buffer-stand-in.js';
@@ -16,12 +16,8 @@ import { buildCtx } from '$lib/services/ctx.js';
 import { createTodo, listTodos } from '$lib/services/todos.js';
 import { read as readPicture } from '$lib/services/media.js';
 import { wasmClient, type Oo1Db } from './wasm-client.js';
-import { DB_FILE, SELF_CONTAINED_USER_ID, POOL_NAME } from './config.js';
-import {
-	runSelfContainedAction,
-	runSelfContainedEndpoint,
-	runSelfContainedLoad
-} from './routes.js';
+import { DB_FILE, ISOLATED_USER_ID, POOL_NAME } from './config.js';
+import { runIsolatedAction, runIsolatedEndpoint, runIsolatedLoad } from './routes.js';
 
 /*
  * Before any row is read.
@@ -73,7 +69,7 @@ async function open(): Promise<Oo1Db> {
 	/*
 	 * The app's own migrations, unchanged.
 	 *
-	 * This is what makes the self-contained instance wiring rather than a rewrite: the
+	 * This is what makes the isolated instance wiring rather than a rewrite: the
 	 * schema is the schema the server runs, read straight out of `drizzle/`,
 	 * in order, split on the marker drizzle writes between statements.
 	 */
@@ -95,7 +91,7 @@ async function open(): Promise<Oo1Db> {
 
 	db.exec({
 		sql: 'insert or ignore into user (id, name, email) values (?, ?, ?)',
-		bind: [SELF_CONTAINED_USER_ID, SELF_CONTAINED_USER_ID, `${SELF_CONTAINED_USER_ID}@localhost`]
+		bind: [ISOLATED_USER_ID, ISOLATED_USER_ID, `${ISOLATED_USER_ID}@localhost`]
 	});
 
 	tables = db.selectValue(
@@ -104,20 +100,20 @@ async function open(): Promise<Oo1Db> {
 
 	// From here on the services see this database, through the same driver
 	// and the same binding the server uses. Nothing below this line is
-	// self-contained-instance code; it is the app.
+	// isolated-instance code; it is the app.
 	const { drizzle } = await import('drizzle-orm/better-sqlite3');
 	bindDb(drizzle(wasmClient(db) as never, { schema }));
 	return db;
 }
 
-const ctx = () => buildCtx(SELF_CONTAINED_USER_ID);
+const ctx = () => buildCtx(ISOLATED_USER_ID);
 
 /**
  * What the page may ask for, by name.
  *
  * Real services, real validation, real errors — the entries here are the
  * dispatcher's vocabulary, and each one is a line, because the logic already
- * exists. Grows with the routes the self-contained instance serves.
+ * exists. Grows with the routes the isolated instance serves.
  */
 const ops: Record<string, (args: never) => unknown> = {
 	status: () => ({ vfs: `opfs-sahpool, ${tables} tables`, tables }),
@@ -125,31 +121,30 @@ const ops: Record<string, (args: never) => unknown> = {
 	'todos.create': (args: { title: unknown }) => createTodo(ctx(), { title: args.title }),
 	// The dispatcher: the fetch bridge hands over the app's own data and
 	// action requests, and these run the same load/action bodies the server
-	// route would, out of `page.self-contained.ts` / `layout.self-contained.ts` twins.
+	// route would — the very same `+page.server.ts` files.
 	/*
 	 * One picture's bytes.
 	 *
 	 * Not part of the route dispatcher: `<img src="/media/3">` is not a fetch
 	 * the page makes, so the bridge never sees it. The service worker does,
-	 * and asks the page, which asks this. See `$lib/self-contained/pictures.ts`.
+	 * and asks the page, which asks this. See `$lib/isolated/pictures.ts`.
 	 */
 	'media.read': (args: { id: number }) => readPicture(ctx(), args.id),
 	'route.load': (args: { pathname: string; search: string; cookie?: string }) =>
-		runSelfContainedLoad(args.pathname, args.search, args.cookie),
+		runIsolatedLoad(args.pathname, args.search, args.cookie),
 	'route.action': (args: {
 		pathname: string;
 		search: string;
 		action: string;
 		form: [string, FormDataEntryValue][];
-	}) => runSelfContainedAction(args.pathname, args.search, args.action, args.form),
+	}) => runIsolatedAction(args.pathname, args.search, args.action, args.form),
 	'route.endpoint': (args: {
 		method: string;
 		pathname: string;
 		search: string;
 		body: string | null;
 		contentType: string | null;
-	}) =>
-		runSelfContainedEndpoint(args.method, args.pathname, args.search, args.body, args.contentType)
+	}) => runIsolatedEndpoint(args.method, args.pathname, args.search, args.body, args.contentType)
 };
 
 let ready: Promise<Oo1Db> | null = null;

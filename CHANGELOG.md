@@ -10,6 +10,33 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.155.0 — 2026-09-13
+
+- **One file per route.** A route's `+page.server.ts` is the only copy of its
+  load and its actions, and the instance running on a phone imports that exact
+  file. There used to be a second file beside it and a one-line re-export — a
+  pattern you had to know about before you could add a screen. The handful of
+  screens that are about a deployment are named in one list and say so; what a
+  route needs from a server goes through the host seam instead. Written down
+  in CONTRIBUTING and in the architecture page.
+- **"Self-contained" is called isolated**, everywhere: the mode, the
+  directory, the make targets, the build flag, the copy.
+- **The transition only runs where it draws.** Firefox has
+  `startViewTransition` but does not honour an SVG filter on the snapshots, so
+  a navigation there was a blank screen and then the new page. It changes
+  screen the ordinary way now.
+- **The room's header stays at the top of a phone**, in every room rather than
+  the four with tabs — and it starts at the screen's edge instead of a strip
+  below it. Beside the name is the room's own glyph, which is not a button:
+  the way home is the bar underneath, with a bigger target.
+- `make icon FROM=…` makes a picture the app's mark everywhere at once — the
+  favicon, the touch icons, the maskable ones, dev and staging, every Android
+  flavour, and the header, which draws the same file.
+- The error page's button says where it goes. A ledger's month filter is a
+  list of the months that have lines, because `input type="month"` is a text
+  box in Firefox. Pressing a rule's count shows the lines it claims, and the
+  uncategorized pile opens the same way.
+
 ## 0.154.1 — 2026-09-12
 
 - An album's card counts its own pictures. A folder import's root said 28 and
@@ -138,7 +165,7 @@ version.
 - **`make android-phones` leaves your checkout alone.** It rewrote eighty
   tracked icons on every run — the PNG encoder is not byte-stable — so a
   build left the tree dirty. They are generated before every build now, from
-  the one source they always came from, and `make android-self-contained`
+  the one source they always came from, and `make android-isolated`
   generates its own too instead of relying on what was committed.
 - A setting with a quote in it no longer corrupts `config.toml`. Every value
   the writer emits is escaped, and the reader understands the escapes — a
@@ -272,7 +299,7 @@ version.
   rides your week.
 - **The Android app is called ontoplano and wears ontoplano's icon.** One
   app, not a variant labelled by how it was built.
-- **A screen that needs a server says so.** On the self-contained app,
+- **A screen that needs a server says so.** On the isolated app,
   pages that cannot work there — the account, pictures — explain themselves
   instead of failing with a 500.
 
@@ -284,7 +311,7 @@ version.
   #-prefixes dropped, shown as chips — and clicking a chip filters the
   album to that tag, the same gesture the diary has. Pictures can be
   renamed from their own view.
-- **`make android-self-contained-install`** puts the self-contained app on
+- **`make android-isolated-install`** puts the isolated app on
   a phone over adb — `make android-install` installs the store app (the
   TWA), which is a different artifact, and installing one while meaning
   the other was exactly the trap. While both apps exist the shell is
@@ -315,7 +342,7 @@ version.
   Drag a picture onto another album to move it, hold Ctrl to have it in
   both; pictures take tags, and choosing files is the upload. Self-hosters
   set their own ceilings (`gallery_albums`, `album_images` in config.toml).
-- **The self-contained app fails out loud instead of hanging.** A device
+- **The isolated app fails out loud instead of hanging.** A device
   whose WebView cannot hold the database, or whose worker never answers, now
   gets a sentence naming the problem — never an eternal splash screen.
 

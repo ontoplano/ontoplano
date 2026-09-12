@@ -29,5 +29,5 @@ test('an error page says what happened and offers a way back', async ({ page }) 
 	expect(res?.status()).toBe(404);
 
 	await expect(page.getByText('404')).toBeVisible();
-	await expect(page.getByRole('link', { name: /back to today/i })).toBeVisible();
+	await expect(page.getByRole('link', { name: /back to the dashboard/i })).toBeVisible();
 });

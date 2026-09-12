@@ -1,5 +1,5 @@
 /**
- * What the shell is told on a self-contained instance.
+ * What the shell is told on an isolated instance.
  *
  * `+layout.server.ts` stays the server's answer — sessions, the demo, the
  * staging band, push keys are all questions about a deployment. This is the
@@ -10,7 +10,7 @@
  */
 import type { LayoutServerData } from './$types';
 import { redirect } from '@sveltejs/kit';
-import type { SelfContainedEvent } from '$lib/self-contained/routes';
+import type { IsolatedEvent } from '$lib/isolated/routes';
 import { profileOf } from '$lib/services/account-profile';
 import { listCategories } from '$lib/services/activities';
 import { buildCtx } from '$lib/services/ctx';
@@ -24,7 +24,7 @@ import {
 } from '$lib/services/settings';
 import { DEFAULT_PICTURE_KILOBYTES, DEFAULT_UNDO_SECONDS } from '$lib/instance-defaults';
 
-export async function load(event: SelfContainedEvent): Promise<LayoutServerData> {
+export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 	const user = profileOf(event.locals.user!.id);
 	// The one account is seeded with the database; reaching this without it
 	// means the database is broken, and /login at least says so out loud.
@@ -54,7 +54,7 @@ export async function load(event: SelfContainedEvent): Promise<LayoutServerData>
 		config: { week: getWeekSettings(user.id) },
 		undoSeconds: DEFAULT_UNDO_SECONDS,
 		maxPictureKilobytes: DEFAULT_PICTURE_KILOBYTES,
-		// A self-contained instance has nowhere to send an error report.
+		// An isolated instance has nowhere to send an error report.
 		clientErrorReports: 'off'
 	};
 }

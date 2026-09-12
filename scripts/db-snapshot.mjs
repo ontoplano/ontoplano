@@ -3,7 +3,7 @@
  *
  * Uses `VACUUM INTO` rather than copying the file: with WAL enabled, the .db
  * file alone is not a complete picture, and a plain `cp` can capture a torn
- * state. This produces a single self-contained, fully checkpointed copy.
+ * state. This produces a single isolated, fully checkpointed copy.
  */
 import Database from 'better-sqlite3';
 import { existsSync, readdirSync, statSync, unlinkSync } from 'node:fs';

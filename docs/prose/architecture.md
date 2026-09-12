@@ -39,6 +39,27 @@ timezone — as its first argument. That is not ceremony. It is what makes
 "which day is today" answerable for somebody in São Paulo while the server is
 in Frankfurt, and it is what makes the whole layer testable without a browser.
 
+## One route, two instances
+
+Ontoplano runs served from a box and, on a phone, entirely inside the device
+with no server anywhere. Both run the same files: a route's `+page.server.ts`
+is loaded by SvelteKit on a server and imported by a worker on a device, where
+the same load and the same actions run against SQLite compiled to
+WebAssembly. There is no second implementation and nothing to keep in step.
+
+The constraint that makes it work is that such a file may not reach for
+`$lib/server`, for `$env`, or for Node. Anything that genuinely belongs to a
+deployment — whether registration is open, whether this instance collects
+error reports, what it charges — goes through the host seam in
+`services/host.ts`, whose defaults are what is true on a device and whose real
+answers a server binds at boot. A handful of screens are about a deployment
+and nothing else; those are named in one list and say so plainly rather than
+half-working.
+
+Layouts are the exception, and honestly so: `+layout.server.ts` answers
+questions about a deployment, so where the two instances differ there is a
+`layout.isolated.ts` beside it.
+
 ## Two doors, one rule
 
 The app has two write surfaces: form actions, and the HTTP API. They are

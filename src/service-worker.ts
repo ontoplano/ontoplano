@@ -28,7 +28,7 @@
  */
 import { build, files, version } from '$service-worker';
 import { APP_LAUNCH_PARAM, APP_LAUNCH_VALUE } from '$lib/platform';
-import { PICTURE_REQUEST, type PictureReply } from '$lib/self-contained/picture-protocol';
+import { PICTURE_REQUEST, type PictureReply } from '$lib/isolated/picture-protocol';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
@@ -164,7 +164,7 @@ sw.addEventListener('fetch', (event) => {
 		return;
 
 	// A picture on the device comes out of the device's own database.
-	const picture = __SELF_CONTAINED_BUILD__ && PICTURE_PATH.exec(url.pathname);
+	const picture = __ISOLATED_BUILD__ && PICTURE_PATH.exec(url.pathname);
 	if (picture) {
 		event.respondWith(pictureFromAPage(Number(picture[1])));
 		return;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { enhance } from '$app/forms';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { resolve } from '$app/paths';
@@ -861,76 +862,77 @@
 {/snippet}
 
 <div class="space-y-4">
-	<div class="flex flex-wrap items-center justify-between gap-3">
-		<h1 class="shrink-0 text-lg font-bold text-gray-900">Inventory</h1>
-		<!--
+	<RoomBar title="Inventory">
+		{#snippet actions()}
+			<!--
 			Six buttons of identical weight said everything here was equally worth
 			pressing. They are three different kinds of thing, so they now look like
 			three: which list you are in (one setting, one track), what it hides (two
 			quiet toggles), and the one thing you came to do.
 		-->
-		<div class="flex flex-wrap items-center gap-2">
-			<div class="seg" role="group" aria-label="Which list">
-				<button
-					onclick={() => (filterType = 'all')}
-					aria-pressed={filterType === 'all'}
-					title="Everything, both lists">All</button
-				>
-				<button
-					onclick={() => (filterType = filterType === 'replenish' ? 'all' : 'replenish')}
-					aria-pressed={filterType === 'replenish'}
-					title="Restock ({keyFor('/inventory', 'filter-replenish')})">Restock</button
-				>
-				<button
-					onclick={() => (filterType = filterType === 'someday' ? 'all' : 'someday')}
-					aria-pressed={filterType === 'someday'}
-					title="Wishlist ({keyFor('/inventory', 'filter-someday')})">Wishlist</button
-				>
-				<button
-					onclick={() => (filterType = filterType === 'short' ? 'all' : 'short')}
-					aria-pressed={filterType === 'short'}
-					class="seg-alarm"
-					title="Only what you have fewer of than you keep">Short</button
-				>
-			</div>
+			<div class="flex flex-wrap items-center gap-2">
+				<div class="seg" role="group" aria-label="Which list">
+					<button
+						onclick={() => (filterType = 'all')}
+						aria-pressed={filterType === 'all'}
+						title="Everything, both lists">All</button
+					>
+					<button
+						onclick={() => (filterType = filterType === 'replenish' ? 'all' : 'replenish')}
+						aria-pressed={filterType === 'replenish'}
+						title="Restock ({keyFor('/inventory', 'filter-replenish')})">Restock</button
+					>
+					<button
+						onclick={() => (filterType = filterType === 'someday' ? 'all' : 'someday')}
+						aria-pressed={filterType === 'someday'}
+						title="Wishlist ({keyFor('/inventory', 'filter-someday')})">Wishlist</button
+					>
+					<button
+						onclick={() => (filterType = filterType === 'short' ? 'all' : 'short')}
+						aria-pressed={filterType === 'short'}
+						class="seg-alarm"
+						title="Only what you have fewer of than you keep">Short</button
+					>
+				</div>
 
-			<button
-				onclick={() => (showBought = !showBought)}
-				aria-pressed={showBought}
-				class="btn btn-sm btn-quiet"
-				title="Show what you already have ({keyFor('/inventory', 'toggle-show-bought')})"
-			>
-				{showBought ? 'Hide' : 'Show'} bought
-			</button>
-			<button
-				onclick={() => (showSnoozed = !showSnoozed)}
-				aria-pressed={showSnoozed}
-				class="btn btn-sm btn-quiet"
-				title="Show what you put away ({keyFor('/inventory', 'toggle-show-snoozed')})"
-			>
-				{showSnoozed ? 'Hide' : 'Show'} archived
-			</button>
-			<label class="sr-only" for="inventory-find">Find</label>
-			<OneLine
-				id="inventory-find"
-				name="find"
-				bind:value={find}
-				placeholder="Find…"
-				class="input w-36 py-1 text-sm"
-			/>
-			<button onclick={() => (showCategories = true)} class="btn btn-sm btn-quiet"
-				>Categories</button
-			>
-			<button
-				onclick={() => (showForm ? (showForm = false) : openCreateForm())}
-				class="btn btn-sm btn-primary"
-				data-tour="shopping-new"
-			>
-				{showForm ? 'Cancel' : 'Add item'}
-				<kbd class="border border-white/30 px-1">{keyFor('/inventory', 'new')}</kbd>
-			</button>
-		</div>
-	</div>
+				<button
+					onclick={() => (showBought = !showBought)}
+					aria-pressed={showBought}
+					class="btn btn-sm btn-quiet"
+					title="Show what you already have ({keyFor('/inventory', 'toggle-show-bought')})"
+				>
+					{showBought ? 'Hide' : 'Show'} bought
+				</button>
+				<button
+					onclick={() => (showSnoozed = !showSnoozed)}
+					aria-pressed={showSnoozed}
+					class="btn btn-sm btn-quiet"
+					title="Show what you put away ({keyFor('/inventory', 'toggle-show-snoozed')})"
+				>
+					{showSnoozed ? 'Hide' : 'Show'} archived
+				</button>
+				<label class="sr-only" for="inventory-find">Find</label>
+				<OneLine
+					id="inventory-find"
+					name="find"
+					bind:value={find}
+					placeholder="Find…"
+					class="input w-36 py-1 text-sm"
+				/>
+				<button onclick={() => (showCategories = true)} class="btn btn-sm btn-quiet"
+					>Categories</button
+				>
+				<button
+					onclick={() => (showForm ? (showForm = false) : openCreateForm())}
+					class="btn btn-sm btn-primary"
+					data-tour="shopping-new"
+				>
+					{showForm ? 'Cancel' : 'Add item'}
+					<kbd class="border border-white/30 px-1">{keyFor('/inventory', 'new')}</kbd>
+				</button>
+			</div>
+		{/snippet}
+	</RoomBar>
 
 	<!--
 		What the filters are keeping off the screen, in the layout whether or not

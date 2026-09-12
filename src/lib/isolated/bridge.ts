@@ -1,17 +1,17 @@
 /**
- * The self-contained instance's answer to the app's own requests.
+ * The isolated instance's answer to the app's own requests.
  *
  * SvelteKit's client asks a server for two things: `__data.json` when it
- * loads a page, and a `?/action` POST when a form submits. In self-contained mode this
+ * loads a page, and a `?/action` POST when a form submits. In isolated mode this
  * bridge sits on `fetch` and answers both from the worker, in the exact wire
  * format the server would use — so the app above it does not know there is no
  * server, and no route, form, or component changes to run on the device. A request
- * for anything else, or for a route with no self-contained twin, goes to the network
+ * for anything else, or for a route with no isolated twin, goes to the network
  * as if this file did not exist.
  */
 import * as devalue from 'devalue';
 import { ask } from './client.js';
-import { isSelfContainedBuild } from './mode.js';
+import { isIsolatedBuild } from './mode.js';
 import type { ActionReply, EndpointReply, LoadReply } from './routes.js';
 
 const DATA_SUFFIX = '/__data.json';
@@ -66,7 +66,7 @@ function actionResponse(reply: ActionReply): Response {
 
 let installed = false;
 
-export function installSelfContainedBridge(): void {
+export function installIsolatedBridge(): void {
 	if (installed) return;
 	installed = true;
 
@@ -129,7 +129,7 @@ export function installSelfContainedBridge(): void {
 		/*
 		 * Nothing on the device could answer it.
 		 *
-		 * Behind the `?selfContained` switch a server is still there, so the
+		 * Behind the `?isolated` switch a server is still there, so the
 		 * request goes to it. In the built app there is none: the asset host
 		 * answers an unknown path with nothing, the client parses that empty
 		 * body as JSON and the screen reads "500" — which is what Estevão saw
@@ -150,7 +150,7 @@ export function installSelfContainedBridge(): void {
 			? url.pathname.slice(0, -DATA_SUFFIX.length) || '/'
 			: url.pathname;
 
-		if (isSelfContainedBuild() && url.origin === location.origin && !isAsset(asked)) {
+		if (isIsolatedBuild() && url.origin === location.origin && !isAsset(asked)) {
 			return dataResponse({
 				kind: 'error',
 				status: 501,

@@ -707,6 +707,32 @@ export function filterOptions(ctx: Ctx) {
 	};
 }
 
+/**
+ * The months this ledger actually has lines in, newest first.
+ *
+ * A list rather than a date field. `input type="month"` is a picker in
+ * Chromium and a bare text box in Firefox — where somebody typing "2" gets a
+ * filter that matches nothing and a box that explains nothing — and even
+ * where it is a picker it offers every month since the calendar began, all
+ * but a handful of which are empty. These are the months there is something
+ * to look at.
+ */
+export function monthsWithLines(ctx: Ctx, ledgerId?: number | null): string[] {
+	const rows = db
+		.select({ occurredOn: financeTransactions.occurredOn })
+		.from(financeTransactions)
+		.where(
+			ledgerId
+				? and(
+						eq(financeTransactions.userId, ctx.userId),
+						eq(financeTransactions.ledgerId, ledgerId)
+					)
+				: eq(financeTransactions.userId, ctx.userId)
+		)
+		.all();
+	return [...new Set(rows.map((r) => r.occurredOn.slice(0, 7)))].sort().reverse();
+}
+
 /** The ledgers a set of transaction ids belongs to — for bulk moves later. */
 export function movementsIn(ctx: Ctx, ids: number[]): Movement[] {
 	if (ids.length === 0) return [];

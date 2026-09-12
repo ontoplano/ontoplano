@@ -1,5 +1,5 @@
 /**
- * Serve the self-contained build the way its shell would.
+ * Serve the isolated build the way its shell would.
  *
  * Capacitor, or any static host, serves files and answers unknown paths with
  * the fallback page — that is the whole contract. This does the same, for
@@ -9,8 +9,8 @@ import { createServer } from 'node:http';
 import sirv from 'sirv';
 
 const port = Number(process.env.PORT || 4180);
-const serve = sirv('build-self-contained', { single: 'index.html', dev: true });
+const serve = sirv('build-isolated', { single: 'index.html', dev: true });
 
 createServer((req, res) => serve(req, res)).listen(port, () => {
-	console.log(`self-contained build on http://localhost:${port}`);
+	console.log(`isolated build on http://localhost:${port}`);
 });

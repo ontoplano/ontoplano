@@ -1,11 +1,11 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 /**
- * The native shell around the self-contained build.
+ * The native shell around the isolated build.
  *
- * Capacitor serves `make self-contained`'s output from the app's own origin — static
+ * Capacitor serves `make isolated`'s output from the app's own origin — static
  * files, the fallback page for every path, exactly the contract
- * scripts/serve-self-contained.mjs mimics. Everything the app is lives in that build;
+ * scripts/serve-isolated.mjs mimics. Everything the app is lives in that build;
  * this project exists for what a web page cannot reach: Android's alarms for
  * reminders, the device calendar, a biometric lock. Those arrive as plugins
  * here, one by one.
@@ -15,9 +15,9 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * Estevão's call, made at release time, changed in this one line.
  */
 const config: CapacitorConfig = {
-	appId: 'app.ontoplano.selfcontained',
+	appId: 'app.ontoplano.isolated',
 	appName: 'ontoplano',
-	webDir: '../build-self-contained'
+	webDir: '../build-isolated'
 };
 
 export default config;

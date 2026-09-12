@@ -45,9 +45,16 @@
 	}
 </script>
 
-{#if showTabs}
-	<div class="mb-4 space-y-3">
-		<h1 class="text-lg font-bold text-gray-900">Notebooks</h1>
+<!--
+	The bar and the page it heads share one box.
+
+	A sticky element sticks inside its own parent and nowhere else, so a bar
+	wrapped in a div as tall as itself scrolls away with that div — which is
+	exactly what it did here while the other three rooms, whose bar is a
+	direct child of the container the page sits in, stayed put.
+-->
+<div class="space-y-4">
+	{#if showTabs}
 		<RoomBar title="Notebooks">
 			<nav
 				use:scrollHints
@@ -73,7 +80,7 @@
 				{/each}
 			</nav>
 		</RoomBar>
-	</div>
-{/if}
+	{/if}
 
-{@render children()}
+	{@render children()}
+</div>

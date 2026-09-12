@@ -53,7 +53,7 @@ export default defineConfig(
 		// these directories also runs in a browser worker, where $lib/server
 		// does not exist. An import from there fails the worker build with a
 		// far worse message than this one.
-		files: ['src/lib/services/**', 'src/lib/db/**', 'src/lib/self-contained/**'],
+		files: ['src/lib/services/**', 'src/lib/db/**', 'src/lib/isolated/**'],
 		rules: {
 			'no-restricted-imports': [
 				'error',
@@ -62,7 +62,7 @@ export default defineConfig(
 						{
 							group: ['$lib/server', '$lib/server/*', '**/lib/server', '**/lib/server/*'],
 							message:
-								'This module also runs on a self-contained instance, where the server does not exist. Bind what you need through $lib/services/host.ts instead.'
+								'This module also runs on an isolated instance, where the server does not exist. Bind what you need through $lib/services/host.ts instead.'
 						}
 					]
 				}

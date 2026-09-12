@@ -75,6 +75,25 @@ code.
 A security problem is the one thing that does not go in an issue: use a
 [private advisory](https://github.com/ontoplano/ontoplano/security/advisories/new).
 
+## Routes run on both instances
+
+Ontoplano runs two ways: served from a box, and entirely inside a phone with
+no server at all. Both run **the same files** — a route's `+page.server.ts` is
+loaded by SvelteKit on a server and by a worker on a device. There is no
+second copy to keep in step.
+
+The one thing to know when you add a route: its server file cannot import
+`$lib/server/*`, `$app/environment`, `$env/*` or Node builtins, because none
+of those exist in a worker. If it does, the isolated build fails and names the
+import.
+
+If your route needs something only a served instance has, add it to the host
+seam in `src/lib/services/host.ts`: an interface method whose default is
+correct for a device and whose real implementation is bound in
+`src/lib/server/host.ts`. If the whole screen is about a deployment — billing,
+the account, the admin pages — add it to the exclusion list at the top of
+`src/lib/isolated/routes.ts` and it will say plainly that it needs a server.
+
 ## Code style
 
 Match what is around you — naming, layout, comment density. The rules a

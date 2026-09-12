@@ -1,4 +1,4 @@
-package app.ontoplano.selfcontained;
+package app.ontoplano.isolated;
 
 import com.getcapacitor.BridgeActivity;
 

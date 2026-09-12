@@ -1,5 +1,6 @@
 <script lang="ts">
 	/* biome-ignore-all assist/source/organizeImports lint/correctness/noUnusedImports lint/correctness/noUnusedVariables lint/style/useConst: Svelte template and rune usage in this file triggers false positives in current Biome diagnostics. */
+	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { enhance } from '$app/forms';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -163,22 +164,23 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<div class="flex flex-wrap items-center justify-between gap-3">
-		<h1 class="shrink-0 text-lg font-bold text-gray-900">Ideas</h1>
-		<button
-			onclick={() => {
-				if (showForm) {
-					closeForms();
-				} else {
-					openIdeaForm();
-				}
-			}}
-			class="btn btn-sm"
-			data-tour="idea-new"
-		>
-			{showForm ? 'Cancel' : 'New idea'}
-		</button>
-	</div>
+	<RoomBar title="Ideas">
+		{#snippet actions()}
+			<button
+				onclick={() => {
+					if (showForm) {
+						closeForms();
+					} else {
+						openIdeaForm();
+					}
+				}}
+				class="btn btn-sm"
+				data-tour="idea-new"
+			>
+				{showForm ? 'Cancel' : 'New idea'}
+			</button>
+		{/snippet}
+	</RoomBar>
 
 	<!--
 		The tags fold away, and start folded.

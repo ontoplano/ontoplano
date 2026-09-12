@@ -1,5 +1,5 @@
 /**
- * Which settings tabs a self-contained instance shows: the personal ones.
+ * Which settings tabs an isolated instance shows: the personal ones.
  *
  * Deployment editing, administration, billing and family are all questions
  * about a server somebody else can reach — a device's own instance has none

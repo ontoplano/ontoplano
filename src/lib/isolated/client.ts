@@ -1,5 +1,5 @@
 /**
- * The page's handle on the self-contained instance.
+ * The page's handle on the isolated instance.
  *
  * One worker per page, started on first use, spoken to in matched pairs of
  * messages. Everything above this — the fetch bridge, the demo page — asks
@@ -23,7 +23,7 @@ function start(): Worker {
 	// A worker that failed to evaluate never answers anything: without this,
 	// every ask() would hang instead of failing with the actual reason.
 	worker.onerror = (e) => {
-		const error = `The self-contained instance's worker failed: ${e.message} (${e.filename}:${e.lineno})`;
+		const error = `The isolated instance's worker failed: ${e.message} (${e.filename}:${e.lineno})`;
 		console.error(error);
 		for (const [id, resolve] of pending) resolve({ id, ok: false, error });
 		pending.clear();

@@ -68,7 +68,7 @@ const FLAVOURS = [
 	{
 		// No URL: this one is the app, not a window onto one.
 		key: 'device',
-		id: 'app.ontoplano.selfcontained',
+		id: 'app.ontoplano.isolated',
 		label: 'Ontoplano',
 		icons: '',
 		url: null

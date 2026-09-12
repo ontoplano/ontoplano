@@ -10,7 +10,7 @@
 	onMount(async () => {
 		persisted = String(await navigator.storage?.persist?.());
 
-		const worker = new Worker(new URL('$lib/self-contained/sqlite-worker.ts', import.meta.url), {
+		const worker = new Worker(new URL('$lib/isolated/sqlite-worker.ts', import.meta.url), {
 			type: 'module'
 		});
 

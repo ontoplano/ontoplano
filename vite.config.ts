@@ -31,7 +31,7 @@ function git(command: string): string {
  *
  * Drizzle's better-sqlite3 driver imports the native module unconditionally
  * but only constructs it when given a filename instead of a client. The
- * self-contained instance always passes a client, so the browser build swaps the native
+ * isolated instance always passes a client, so the browser build swaps the native
  * module for a stub that resolves cleanly and refuses construction. The
  * server build is untouched.
  */
@@ -41,7 +41,7 @@ function browserSqlite() {
 		enforce: 'pre' as const,
 		resolveId(source: string, importer: string | undefined, options: { ssr?: boolean }) {
 			if (source === 'better-sqlite3' && !options?.ssr) {
-				return `${import.meta.dirname}/src/lib/self-contained/better-sqlite3-stub.ts`;
+				return `${import.meta.dirname}/src/lib/isolated/better-sqlite3-stub.ts`;
 			}
 		}
 	};
@@ -110,10 +110,10 @@ export default defineConfig({
 		 *
 		 * Baked in here rather than read through `$env`, because the service
 		 * worker needs it too and neither flavour of SvelteKit's env module is
-		 * available in that context. `make self-contained` is what sets the
+		 * available in that context. `make isolated` is what sets the
 		 * variable this reads.
 		 */
-		__SELF_CONTAINED_BUILD__: JSON.stringify(process.env.ONTOPLANO_SELF_CONTAINED_BUILD === '1')
+		__ISOLATED_BUILD__: JSON.stringify(process.env.ONTOPLANO_ISOLATED_BUILD === '1')
 	},
 	plugins: [tailwindcss(), sveltekit(), noBacktickInCss(), browserSqlite()],
 	server: {

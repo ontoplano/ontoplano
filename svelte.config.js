@@ -23,17 +23,17 @@ const config = {
 		inlineStyleThreshold: 1024 * 1024,
 		/*
 		 * Two builds from one tree. The server build is adapter-node, as ever.
-		 * ONTOPLANO_SELF_CONTAINED_BUILD=1 produces the self-contained instance instead: static
+		 * ONTOPLANO_ISOLATED_BUILD=1 produces the isolated instance instead: static
 		 * files, no server anywhere — every page is the SPA fallback, the
 		 * fetch bridge answers the app's own requests from the worker, and
 		 * whatever serves the files (Capacitor, a static host) needs to know
 		 * nothing. `make local` is the front door.
 		 */
 		adapter:
-			process.env.ONTOPLANO_SELF_CONTAINED_BUILD === '1'
+			process.env.ONTOPLANO_ISOLATED_BUILD === '1'
 				? adapterStatic({
-						pages: 'build-self-contained',
-						assets: 'build-self-contained',
+						pages: 'build-isolated',
+						assets: 'build-isolated',
 						fallback: 'index.html'
 					})
 				: adapterNode(),

@@ -43,7 +43,7 @@ try {
  * on a machine whose node changed underneath it. Building renders at most a
  * fallback page, and a page rendered at build time has no business reading
  * anybody's data; if one tries, the unbound handle in $lib/db refuses with
- * the reason. This is also what lets the self-contained build — which has no
+ * the reason. This is also what lets the isolated build — which has no
  * server at all — be built on a machine where better-sqlite3 cannot even
  * dlopen.
  */

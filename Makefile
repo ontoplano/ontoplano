@@ -39,7 +39,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-uninstall android-self-contained-install android-phones self-contained self-contained-preview test-self-contained android-self-contained
+.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon up-phone deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-uninstall android-isolated-install android-phones isolated isolated-preview test-isolated android-isolated
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -348,28 +348,40 @@ build: _billing-provider
 icons:
 	@yarn -s icons
 
+# One picture becomes every icon the app has.
+#
+# The favicon, the touch icons, the maskable ones, the dev and staging
+# variants, every Android flavour's launcher icon, and the mark in the app's
+# own header — all drawn from `src/lib/logo/mark.png`. This puts a new picture
+# there and redraws the lot, so the next build and deploy are already right.
+## adopt a new logo: make icon FROM=static/icons/new-icon.png
+#: FROM=path/to/icon.png  the picture to become the mark
+icon:
+	@[ -n "$(FROM)" ] || { echo "Which picture? make icon FROM=static/icons/new-icon.png"; exit 1; }
+	@node scripts/adopt-icon.mjs "$(FROM)"
+
 ## serve that build locally
 preview:
 	yarn preview
 
 # The instance that runs on the device itself: static files, no server, the
 # database in the browser's own storage. This is what the phone app wraps.
-## the self-contained build (static, serverless)
-self-contained:
-	ONTOPLANO_SELF_CONTAINED_BUILD=1 PUBLIC_ONTOPLANO_SELF_CONTAINED=true yarn build
+## the isolated build (static, serverless)
+isolated:
+	ONTOPLANO_ISOLATED_BUILD=1 PUBLIC_ONTOPLANO_ISOLATED=true yarn build
 
-## serve the self-contained build, the way its shell would
-self-contained-preview:
-	node scripts/serve-self-contained.mjs
+## serve the isolated build, the way its shell would
+isolated-preview:
+	node scripts/serve-isolated.mjs
 
-## the self-contained e2e, against the static build
-test-self-contained:
-	yarn playwright test -c playwright.self-contained.config.ts
+## the isolated e2e, against the static build
+test-isolated:
+	yarn playwright test -c playwright.isolated.config.ts
 
 # The Capacitor shell wraps the same static build the browser gets; the
 # native project lives in capacitor/.
-## the self-contained Android app (debug APK, via the Capacitor shell)
-android-self-contained: self-contained
+## the isolated Android app (debug APK, via the Capacitor shell)
+android-isolated: isolated
 	@# The shell's own dependencies, fetched on first use — a fresh clone has
 	@# no capacitor/node_modules and must not be expected to know that.
 	@[ -d capacitor/node_modules ] || (cd capacitor && npm install --no-audit --no-fund)
@@ -392,7 +404,7 @@ android-self-contained: self-contained
 # a bug on staging be read while your own week sits in the other app.
 ## build and install Ontoplano, Ontoplano DEV and Ontoplano — Staging
 #: ONTOPLANO_DEV_ORIGIN=http://192.168.1.10:1493  where the DEV app points
-android-phones: self-contained
+android-phones: isolated
 	@[ -d capacitor/node_modules ] || (cd capacitor && npm install --no-audit --no-fund)
 	@node scripts/brand-android.mjs
 	cd capacitor && npx cap sync android
@@ -431,11 +443,11 @@ android-phones: self-contained
 		|| { echo "Some did not install. An app signed by a different key has to go first:"; \
 			 echo "  adb uninstall app.ontoplano   (and .dev, .staging)"; exit 1; }
 
-## install the self-contained app over adb
-android-self-contained-install:
+## install the isolated app over adb
+android-isolated-install:
 	@command -v adb >/dev/null || { echo "adb not found. Install android-tools-adb."; exit 1; }
 	@apk=capacitor/android/app/build/outputs/apk/device/debug/app-device-debug.apk; \
-	[ -f "$$apk" ] || { echo "No APK yet: run 'make android-self-contained' first."; exit 1; }; \
+	[ -f "$$apk" ] || { echo "No APK yet: run 'make android-isolated' first."; exit 1; }; \
 	[ -n "$$(adb devices | sed -n '2p')" ] || { echo "No device over adb. Plug in, enable USB debugging, accept the prompt."; exit 1; }; \
 	echo "Installing to $$(adb devices | sed -n '2p' | cut -f1)…"; \
 	adb install -r -d "$$apk"
@@ -895,7 +907,7 @@ fdroid:
 # that path would only be a key to lose. For a phone in your hand,
 # `android-phones` builds and installs the debug ones.
 ## the release APK for the stores
-android: self-contained android-project
+android: isolated android-project
 	@sdk="$${ANDROID_HOME:-}"; \
 	[ -n "$$sdk" ] || { [ -d "$$HOME/android-sdk" ] && sdk="$$HOME/android-sdk"; }; \
 	if [ -z "$$sdk" ] || [ ! -d "$$sdk" ]; then \
@@ -910,7 +922,7 @@ android-uninstall:
 	@sdk="$${ANDROID_HOME:-$$HOME/android-sdk}"; \
 	adb="$$(command -v adb || echo "$$sdk/platform-tools/adb")"; \
 	[ -x "$$adb" ] || { echo "No adb. Install android-tools-adb."; exit 1; }; \
-	for id in app.ontoplano app.ontoplano.dev app.ontoplano.staging app.ontoplano.selfcontained; do \
+	for id in app.ontoplano app.ontoplano.dev app.ontoplano.staging app.ontoplano.isolated; do \
 		"$$adb" uninstall "$$id" >/dev/null 2>&1 && echo "removed $$id"; \
 	done; true
 

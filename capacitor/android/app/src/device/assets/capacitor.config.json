@@ -1,5 +1,5 @@
 {
-  "appId": "app.ontoplano.selfcontained",
+  "appId": "app.ontoplano.isolated",
   "appName": "Ontoplano",
   "webDir": "public"
 }

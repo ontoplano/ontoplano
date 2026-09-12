@@ -153,16 +153,27 @@ test('the phone carries the room at the top and the app at the bottom', async ({
 	await expect(page.locator('header a', { hasText: 'ontoplano' })).toBeHidden();
 	await expect(page.locator('nav[aria-label="Primary"]')).toBeVisible();
 
-	// What is at the top instead is where you are: the room's name, its tabs,
-	// and the way home — and it stays there while the room scrolls under it,
-	// which is most of what makes this feel like an app rather than a page.
+	// What is at the top instead is where you are: the room's name and its
+	// tabs, staying there while the room scrolls under them, which is most of
+	// what makes this feel like an app rather than a page.
 	const bar = page.locator('.room-bar');
 	await expect(bar).toBeVisible();
-	await expect(bar.getByRole('link', { name: 'Back to today' })).toBeVisible();
 	await expect(bar.getByRole('heading', { name: 'Tasks' })).toBeVisible();
 
+	/*
+	 * The page has to actually move for "the bar did not" to mean anything —
+	 * the first version of this asserted only the second half and would have
+	 * passed on a page that could not scroll at all, which is how a bar
+	 * wrapped in a box its own height went out unnoticed. A sticky element
+	 * sticks inside its parent and nowhere else.
+	 */
 	const before = await bar.boundingBox();
-	await page.locator('main').evaluate((m) => m.scrollBy(0, 400));
+	const scrolled = await page.locator('main').evaluate((m) => {
+		const was = m.scrollTop;
+		m.scrollBy(0, 400);
+		return m.scrollTop - was;
+	});
+	expect(scrolled, 'the page under the bar has to have moved').toBeGreaterThan(100);
 	await page.waitForTimeout(300);
 	expect(await bar.boundingBox()).toMatchObject({ y: before!.y });
 });

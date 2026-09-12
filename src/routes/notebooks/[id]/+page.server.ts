@@ -1,3 +1,37 @@
-// The bodies live in page.self-contained.ts, written against the slice of the request
-// that also exists on a self-contained instance — see $lib/self-contained/routes.ts.
-export { load, actions } from './page.self-contained';
+import type { IsolatedEvent } from '$lib/isolated/routes';
+import { error } from '@sveltejs/kit';
+import { buildCtx } from '$lib/services/ctx';
+import { host } from '$lib/services/host';
+import { NotFoundError } from '$lib/services/errors';
+import { contentsOf, getNotebook } from '$lib/services/notebooks';
+import { listPeople } from '$lib/services/people';
+import { notebookActions } from '../actions';
+
+/**
+ * One notebook, with nothing else on the page.
+ *
+ * The index shows a notebook beside the list of them, which is the right shape
+ * for moving between subjects and the wrong one for sitting inside a single
+ * one. This is the same notebook with the whole width.
+ */
+export const load = async ({ locals, params }: IsolatedEvent) => {
+	const ctx = buildCtx(locals.user!.id);
+	const id = Number(params.id);
+	if (!Number.isInteger(id) || id <= 0) error(404, 'Not found');
+
+	try {
+		return {
+			notebook: getNotebook(ctx, id),
+			contents: contentsOf(ctx, id),
+			allPeople: listPeople(ctx),
+			onFamilyPlan: host.familyUserIds(ctx.userId).length > 1
+		};
+	} catch (e) {
+		// Somebody else's notebook and one that does not exist answer the same
+		// way, which is the whole point (I3).
+		if (e instanceof NotFoundError) error(404, 'Notebook not found');
+		throw e;
+	}
+};
+
+export const actions = notebookActions;
