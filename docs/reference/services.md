@@ -597,9 +597,10 @@ to, and the refusal below would have met them on their first registration.
 The overwhelmingly common instance must be the one that needs no
 configuration at all.
 
-So there is one variable and it is opt-in: `ONTOPLANO_SELLS=true`. An
-instance that says it sells and cannot is broken and says so; an instance
-that never mentions money is a personal one and gets on with it.
+So there is one setting and it is opt-in: `[pricing] sells` in
+`config.toml`. An instance that says it sells and cannot is broken and says
+so; an instance that never mentions money is a personal one and gets on
+with it.
 
 #### `whyItCannotSell()`
 

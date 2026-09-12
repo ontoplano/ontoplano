@@ -2,7 +2,27 @@
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/Icon.svelte';
 	import { PAGE_TURN_DEFAULTS, PAGE_TURN_RANGES } from '$lib/page-turn';
-	import { PAGE_TURN, keepPageTurn, resetPageTurn } from '$lib/page-turn.svelte';
+	import { PAGE_TURN, keepPageTurn, resetPageTurn, runDissolve } from '$lib/page-turn.svelte';
+
+	/*
+	 * The dissolve, on this page, without going anywhere.
+	 *
+	 * A real turn only happens on a real navigation, and it is over in a
+	 * quarter of a second — which is long enough to see that something
+	 * happened and far too short to judge what. The two swatches below carry
+	 * the same two filters the view transition puts on its snapshots, and
+	 * pressing play slides the same threshold across them, so the grain and
+	 * the hardness can be looked at for as long as it takes.
+	 *
+	 * It is the same `runDissolve`: the numbers cannot be right here and wrong
+	 * in the app, because there is one of them.
+	 */
+	let playing = $state(false);
+	function play() {
+		playing = true;
+		runDissolve();
+		setTimeout(() => (playing = false), PAGE_TURN.durationMs + 60);
+	}
 
 	/*
 	 * Somewhere to go and come back from.
@@ -87,6 +107,36 @@
 		What to put in the file once it feels right, so the answer is not
 		trapped in one phone's local storage.
 	-->
+	<section class="rounded border border-gray-200 p-4">
+		<div class="mb-3 flex flex-wrap items-baseline gap-3">
+			<h2 class="text-sm font-semibold text-gray-900">What it looks like</h2>
+			<p class="min-w-0 flex-1 text-xs text-gray-500">
+				The same two filters the real turn uses, on two stacked panels. The one leaving breaks into
+				dots; the one arriving fills the gaps they leave.
+			</p>
+			<button class="btn btn-sm" type="button" onclick={play} disabled={playing}>
+				{playing ? 'turning…' : 'Play it'}
+			</button>
+		</div>
+
+		<div class="relative h-44 overflow-hidden rounded border border-gray-200">
+			<!-- Arriving, underneath. -->
+			<div
+				class="absolute inset-0 grid place-items-center bg-gray-900 text-lg font-semibold text-white"
+				style="filter: url('#{PAGE_TURN_DEFAULTS.inFilter}')"
+			>
+				the screen arriving
+			</div>
+			<!-- Leaving, on top of it. -->
+			<div
+				class="absolute inset-0 grid place-items-center bg-gray-100 text-lg font-semibold text-gray-900"
+				style="filter: url('#{PAGE_TURN_DEFAULTS.outFilter}')"
+			>
+				the screen leaving
+			</div>
+		</div>
+	</section>
+
 	<section class="rounded border border-gray-200 p-4">
 		<h2 class="text-sm font-semibold text-gray-900">To keep it</h2>
 		<p class="mt-1 mb-2 text-xs text-gray-500">

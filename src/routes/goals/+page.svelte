@@ -482,7 +482,15 @@
 		</div>
 	{/if}
 
-	<div class="space-y-4" data-tour="goal-list">
+	<!--
+		No strip of page between two groups on a phone.
+
+		Each horizon is a card, and on a phone the cards are the page — a band
+		of background between MONTH and QUARTER reads as a trench rather than
+		as a boundary. The gap comes back at desktop width, where a card is an
+		object on a page again.
+	-->
+	<div class="space-y-0 sm:space-y-4" data-tour="goal-list">
 		{#each byHorizon as column (column.horizon)}
 			<section
 				class="card-accent border border-gray-200 bg-white p-4 shadow-card"
@@ -541,7 +549,9 @@
 										     progress rather than the absence of one. -->
 										<div class="mt-2 flex items-center gap-3">
 											{#if pct !== null}
-												<div class="h-1.5 w-24 shrink-0 bg-gray-200 sm:w-40">
+												<!-- Grows into the width instead of leaving it empty: on a
+												     phone a fixed 6rem bar left two thirds of the row blank. -->
+												<div class="h-1.5 min-w-24 flex-1 bg-gray-200 sm:max-w-40 sm:flex-none">
 													<div
 														class="h-full"
 														style="width: {pct}%; background-color: {goal.areaColor ?? accent}"

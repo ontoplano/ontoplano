@@ -10,6 +10,39 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.151.0 — 2026-09-12
+
+- **Everything an instance decides is in `config.toml`.** How many albums an
+  account keeps, how many people a family plan covers, what this instance
+  charges, who runs it for the privacy page, whether the address has to be
+  confirmed, when the review mail goes out — all of it was scattered across
+  a dozen `ONTOPLANO_*` variables or compiled in. The file also grows: a
+  config written before a setting existed gets the line written into it on
+  the next boot, with the value in force, so there is always something to
+  edit. A variable still set in the environment still wins and says so by
+  name, once, so the move can be finished at your own pace. What stays in
+  the environment is what the deployment is — where the database lives, what
+  to bind, secrets — plus `ONTOPLANO_DEMO` and `ONTOPLANO_STAGING`.
+- `ONTOPLANO_RECORDING` is gone. It hid the demo and staging bands for
+  videos and was never used.
+- **A screen that needs a server says so on the phone instead of looking
+  broken.** The data request for a page ends in `.json`, which the bridge
+  read as a file — so the account page went to the phone's own file server
+  and came back as a 500. Every un-ported screen was affected.
+- **The stray horizontal lines are gone.** A phone rule painted a separator
+  above every second child of every card, so a heading and its own
+  description had a line between them.
+- Finance → Rules is a card like every other list — a header band, rows on a
+  surface, the add form on a strip of its own — rather than text floating on
+  the background. On a phone the goal groups no longer have a strip of page
+  between them, and a goal's progress bar uses the width instead of leaving
+  two thirds of the row empty.
+- **"What you have decided" is its own thing again**, not another weekday
+  band under Sunday.
+- The seeded photographs are scaled to what an upload would be — they were
+  camera JPEGs, fifteen times the size this instance accepts — and they get
+  a root album to hang off.
+
 ## 0.150.1 — 2026-09-12
 
 - The switch that turns the `/dev` workbenches on is `[instance] dev_tools`

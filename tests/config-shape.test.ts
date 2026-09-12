@@ -131,7 +131,7 @@ describe('config.toml', () => {
 		const nasty = 'a "quoted" \\ tagline';
 		config.saveConfig({
 			...config.loadConfig(),
-			instance: { tagline: `${nasty}\nmode = "open"` }
+			instance: { ...config.loadConfig().instance, tagline: `${nasty}\nmode = "open"` }
 		});
 
 		const read = config.loadConfig();

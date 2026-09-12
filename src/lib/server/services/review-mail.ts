@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 
+import { loadConfig } from '../config.js';
 import { db } from '$lib/db/index.js';
 import { user } from '$lib/db/schema.js';
 import { renderEmail } from '../email-template.js';
@@ -75,9 +76,7 @@ const LAST_SENT_KEY = 'mail.weekly-review.last';
  * Bounded to a day, since past that it is no longer the same morning.
  */
 export function reviewMailOffsetHours(): number {
-	const raw = Number(process.env.ONTOPLANO_REVIEW_MAIL_OFFSET_HOURS);
-	if (!Number.isFinite(raw)) return 1;
-	return Math.min(Math.max(Math.round(raw), 0), 23);
+	return loadConfig().review.mailOffsetHours;
 }
 
 /** Off unless the account said otherwise. Nobody is mailed unasked. */

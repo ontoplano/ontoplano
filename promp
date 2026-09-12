@@ -1,0 +1,3 @@
+  this is my config.toml. Where is the how many albums limitation? the 5 member per family? don't you think
+  we should be centralizing config? ONTOPLANO_DEMO and _STAGING, RECORDING (which can go, never was useful
+  anyway) and makes sense be env vars, is sec related, but the others could be well (R

@@ -5,7 +5,7 @@
  * re-exported here so server code keeps one import for both.
  */
 import { loadConfig } from './config.js';
-import { DEFAULT_PRICING, type Pricing } from '../plans.js';
+import type { Pricing } from '../plans.js';
 import { db } from '$lib/db/index.js';
 import { user } from '$lib/db/schema.js';
 import { FULL, type Capabilities } from '$lib/capabilities';
@@ -32,7 +32,7 @@ export * from '$lib/services/settings.js';
  * treated as hosted, which is the answer with the fewer consequences.
  */
 export function isSelfHosted(): boolean {
-	return process.env.ONTOPLANO_SELF_HOST === 'true';
+	return loadConfig().instance.selfHost;
 }
 
 /**
@@ -106,11 +106,11 @@ export function isStaging(): boolean {
  * asks whether it is staging (S-STAGING).
  */
 export function siteUrl(): string {
-	return (process.env.ONTOPLANO_SITE_URL || 'https://ontoplano.com').replace(/\/+$/, '');
+	return loadConfig().instance.siteUrl;
 }
 
 export function docsUrl(): string {
-	return (process.env.ONTOPLANO_DOCS_URL || 'https://docs.ontoplano.com').replace(/\/+$/, '');
+	return loadConfig().instance.docsUrl;
 }
 
 /**
@@ -164,24 +164,6 @@ export function devToolsEnabled(): boolean {
 }
 
 /**
- * Hide the bands that say what kind of instance this is.
- *
- * For recording. The demo's amber strip and staging's band exist so nobody
- * mistakes either for their own account, and they are exactly what you do not
- * want across the bottom of a video — a thirty-second clip of the app with
- * "Demo version" stamped under it looks like a screenshot of somebody else's
- * trial.
- *
- * It hides the bands and nothing else: a demo instance still expires accounts,
- * still limits how many there are, still behaves in every way like the demo.
- * Turning this on does not turn the instance into a real one, and it must not
- * be set on a box the public can reach.
- */
-export function isRecording(): boolean {
-	return process.env.ONTOPLANO_RECORDING === 'true';
-}
-
-/**
  * How long a demo account outlives its last page view.
  *
  * Since last seen rather than since created: somebody reading carefully for two
@@ -213,44 +195,31 @@ export function demoMaxAccounts(): number {
 /**
  * What this instance charges, and how its trial runs.
  *
- * From the environment rather than compiled in, because a price is not a fact
- * about the software — the person running the instance decides it, and changing
- * it should not be a deploy. The defaults are argued for in the marketing
- * repository, alongside the study of what everyone else charges.
+ * From `[pricing]` in `config.toml` rather than compiled in, because a price
+ * is not a fact about the software — the person running the instance decides
+ * it, and changing it should not be a deploy. It is in the same file as
+ * everything else an instance decides, so there is one place to look. The
+ * defaults are argued for in the marketing repository, alongside the study of
+ * what everyone else charges.
  */
 export function pricing(): Pricing {
-	const int = (name: string, fallback: number) => {
-		const raw = Number(process.env[name]);
-		return Number.isFinite(raw) && raw >= 0 ? Math.round(raw) : fallback;
-	};
-
+	const { pricing: set } = loadConfig();
 	return {
-		monthlyCents: int('ONTOPLANO_PRICE_MONTHLY_CENTS', DEFAULT_PRICING.monthlyCents),
-		yearlyCents: int('ONTOPLANO_PRICE_YEARLY_CENTS', DEFAULT_PRICING.yearlyCents),
+		monthlyCents: set.monthlyCents,
+		yearlyCents: set.yearlyCents,
 		// The family rate, always quoted. It briefly had a switch of its own —
 		// the family plan used to be inferred from a payment provider's price id
 		// being present, and when the provider left this repository something had
 		// to replace that. But the product offers a family plan; a second
-		// variable saying so is a thing to remember to set, and the day that
-		// changes is a day the pricing page is being redesigned anyway.
-		familyMonthlyCents: int(
-			'ONTOPLANO_PRICE_FAMILY_MONTHLY_CENTS',
-			DEFAULT_PRICING.familyMonthlyCents
-		),
-		familyYearlyCents: int(
-			'ONTOPLANO_PRICE_FAMILY_YEARLY_CENTS',
-			DEFAULT_PRICING.familyYearlyCents
-		),
-		familySeats: Math.min(
-			Math.max(int('ONTOPLANO_FAMILY_SEATS', DEFAULT_PRICING.familySeats), 2),
-			20
-		),
-		currency: process.env.ONTOPLANO_PRICE_CURRENCY || DEFAULT_PRICING.currency,
-		// Bounded: a trial has to span two weekly reviews to show what the app is
-		// for, and one longer than a season is not a trial.
-		trialDays: Math.min(Math.max(int('ONTOPLANO_TRIAL_DAYS', DEFAULT_PRICING.trialDays), 0), 90),
-		trialRequiresCard: process.env.ONTOPLANO_TRIAL_REQUIRES_CARD !== 'false',
-		provider: process.env.ONTOPLANO_PAYMENT_PROVIDER || DEFAULT_PRICING.provider
+		// setting saying so is a thing to remember, and the day that changes is
+		// a day the pricing page is being redesigned anyway.
+		familyMonthlyCents: set.familyMonthlyCents,
+		familyYearlyCents: set.familyYearlyCents,
+		familySeats: set.familySeats,
+		currency: set.currency,
+		trialDays: set.trialDays,
+		trialRequiresCard: set.trialRequiresCard,
+		provider: set.provider
 	};
 }
 

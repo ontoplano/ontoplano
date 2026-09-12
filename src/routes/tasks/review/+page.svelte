@@ -384,17 +384,28 @@
 						<input type="hidden" name="weekStart" value={data.reading.weekStart} />
 
 						<!--
-							Above it, on a phone, the same gap it has below before the
-							notes: stacked under the last day of the week it read as that
-							day's tail rather than as the other half of the screen.
+							A header, not another weekday.
+
+							This is the other half of the screen — on a wide one it is the
+							right-hand column — and stacked under Sunday it wore exactly
+							the band a day wears, so it read as one more day of the week
+							with a strange name. It takes the card's own header treatment
+							instead: the section's tint, a rule in the section's colour
+							above it, and a sentence saying what the pile is for.
 						-->
-						<div class="eyebrow border-b border-gray-200 bg-gray-50 px-4 py-1.5 text-gray-600">
-							What you have decided
+						<div
+							class="section-tint border-y border-gray-200 px-4 py-3"
+							style="border-top: 2px solid var(--section-accent)"
+						>
+							<h3 class="eyebrow text-gray-600">What you have decided</h3>
+							<p class="mt-1 text-sm text-gray-500">
+								Nothing here has happened yet. Save to write all of it at once.
+							</p>
 						</div>
 
 						{#if decided.length === 0}
 							<p class="px-4 py-6 text-center text-sm text-gray-500">
-								Answer one on the left and it moves over here. Nothing is written until you save.
+								Answer one and it moves over here.
 							</p>
 						{:else}
 							<ul class="divide-y divide-gray-200">

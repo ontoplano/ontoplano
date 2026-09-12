@@ -559,7 +559,7 @@
 		class="page-surface relative flex h-[100dvh] flex-col overflow-hidden bg-gray-100 lg:h-auto lg:min-h-screen lg:overflow-visible"
 		style="{categoryStyle()};--section-accent:{section.accent}"
 	>
-		{#if data.demo && data.bands}
+		{#if data.demo}
 			<!--
 				The demo says so at the very top: this page is not what it
 				looks like. Above `lg` only; the phone gets
@@ -588,7 +588,7 @@
 			</div>
 		{/if}
 
-		{#if data.staging && data.bands}
+		{#if data.staging}
 			<!--
 				Staging says so on every page, in the same place and the same shape
 				as the demo's band — they are the same statement: this is not the
@@ -1051,7 +1051,7 @@
 			</div>
 		</nav>
 
-		{#if data.demo && data.bands}
+		{#if data.demo}
 			<!--
 				On a phone: a strip sitting on top of the bottom bar, one line
 				tall, its top edge level with the top of the raised pie button

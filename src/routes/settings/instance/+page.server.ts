@@ -129,7 +129,10 @@ export const actions: Actions = {
 
 		saveConfig({
 			...current,
-			account: { allowEmailChange: formData.get('allowEmailChange') === 'true' }
+			account: {
+				...current.account,
+				allowEmailChange: formData.get('allowEmailChange') === 'true'
+			}
 		});
 
 		return { success: true, action: 'setEmailChange' };

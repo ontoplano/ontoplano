@@ -143,3 +143,28 @@ test('a picture is stored and drawn with no server anywhere', async ({ page }) =
 		.poll(() => again.evaluate((img: HTMLImageElement) => img.naturalWidth), { timeout: 30_000 })
 		.toBeGreaterThan(0);
 });
+
+/**
+ * A screen that needs a server says so, rather than looking broken.
+ *
+ * The account, mail, anything with somebody else in it: there is no twin for
+ * those and there cannot be. What must not happen is what did — the data
+ * request for such a page ends in `.json`, the bridge's asset test read that
+ * as a file, and it went to whatever is serving the app's files. That answers
+ * an unknown path with an empty 404, which the phone rendered as a 500 and
+ * this file server as "that page is not here". Absent is a sentence; broken
+ * is a bug report.
+ */
+test('a screen with no twin says it needs a server', async ({ page }) => {
+	test.setTimeout(120_000);
+
+	await page.goto('/');
+	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 60_000 });
+
+	const answer = await page.evaluate(async () => {
+		const res = await fetch('/settings/account/__data.json');
+		return { status: res.status, body: await res.text() };
+	});
+	expect(answer.status).toBe(501);
+	expect(answer.body).toMatch(/needs an instance with a server/);
+});

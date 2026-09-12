@@ -1,3 +1,4 @@
+import { loadConfig } from '../config.js';
 import { pricing } from '../settings.js';
 import { isBillingConfigured } from './billing.js';
 import { resolvePlan } from './subscriptions.js';
@@ -13,10 +14,11 @@ import { resolvePlan } from './subscriptions.js';
  */
 export type AccessHold = 'verify' | 'billing' | 'expired' | null;
 
-const REQUIRE_VERIFIED_EMAIL = process.env.ONTOPLANO_REQUIRE_VERIFIED_EMAIL === 'true';
+/** `[registration] require_verified_email`, read per call: the file can change. */
+const requireVerifiedEmail = () => loadConfig().registration.requireVerifiedEmail;
 
 export function accessHoldFor(user: { id: string; emailVerified: boolean }): AccessHold {
-	if (REQUIRE_VERIFIED_EMAIL && !user.emailVerified) return 'verify';
+	if (requireVerifiedEmail() && !user.emailVerified) return 'verify';
 	return paymentHoldFor(user.id);
 }
 

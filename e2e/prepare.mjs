@@ -30,7 +30,11 @@ rmSync(configDir, { recursive: true, force: true });
 mkdirSync(configDir, { recursive: true });
 writeFileSync(
 	join(configDir, 'config.toml'),
-	'[server]\nhost = "0.0.0.0"\nport = "4173"\n\n[database]\n\n[week]\nfirst_day = "0"\ngenerate_day = "6"\n\n[registration]\nmode = "open"\n'
+	'[server]\nhost = "0.0.0.0"\nport = "4173"\n\n[database]\n\n[week]\nfirst_day = "0"\ngenerate_day = "6"\n\n' +
+		'[registration]\nmode = "open"\n\n' +
+		// The workbenches under /dev are part of what the suite checks, and they
+		// exist only where an instance says so. This is that instance saying so.
+		'[instance]\ndev_tools = "true"\n'
 );
 
 /*

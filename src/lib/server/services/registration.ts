@@ -75,7 +75,7 @@ export function registrationMode(): RegistrationMode {
 
 export function setRegistrationMode(mode: RegistrationMode): void {
 	const current = loadConfig();
-	saveConfig({ ...current, registration: { mode } });
+	saveConfig({ ...current, registration: { ...current.registration, mode } });
 }
 
 /** Whether anybody has an account yet. The first one is always allowed in. */

@@ -16,8 +16,10 @@
  * seeds `dev@ontoplano.test` when that account exists, otherwise the first user
  * it finds. Re-runnable: every write is get-or-create.
  */
+import { execFileSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
-import { readdirSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
@@ -1822,6 +1824,64 @@ const inAlbum = (albumId, mediaId) => {
  * the folder import in the gallery gives. With the directory absent the seed
  * says so once and carries on, like every other picture here.
  */
+/**
+ * The biggest a seeded photograph may be, and how far down to scale it.
+ *
+ * A camera's JPEG is five to seven megabytes, and this instance refuses
+ * anything over five hundred kilobytes — so storing the originals would fill
+ * the seeded gallery with pictures the app itself would not have accepted,
+ * and serve seven megabytes to draw a thumbnail. The originals on disk are
+ * untouched; what is stored is what an upload would have looked like.
+ */
+const SEEDED_PICTURE_KB = 480;
+const SEEDED_PICTURE_EDGE = 1600;
+
+/**
+ * A photograph at a size this app would take, or the bytes as they are.
+ *
+ * ImageMagick when it is there — it already is, for the Android icons — and
+ * the original otherwise, because a missing tool must not cost the seed its
+ * gallery. Said once, not once per picture.
+ */
+let magick = 'unknown';
+function scaled(from) {
+	const original = readFileSync(from);
+	if (original.length <= SEEDED_PICTURE_KB * 1024) return original;
+
+	if (magick === 'unknown') {
+		try {
+			execFileSync('magick', ['-version'], { stdio: 'ignore' });
+			magick = 'yes';
+		} catch {
+			magick = 'no';
+			console.log(
+				`  no imagemagick here, so photographs are seeded at their own size — ` +
+					`bigger than the ${SEEDED_PICTURE_KB}KB this instance accepts`
+			);
+		}
+	}
+	if (magick === 'no') return original;
+
+	const dir = mkdtempSync(join(tmpdir(), 'ontoplano-seed-'));
+	const out = join(dir, 'scaled.jpg');
+	try {
+		execFileSync('magick', [
+			from,
+			'-auto-orient',
+			'-resize',
+			`${SEEDED_PICTURE_EDGE}x${SEEDED_PICTURE_EDGE}>`,
+			'-define',
+			`jpeg:extent=${SEEDED_PICTURE_KB}kb`,
+			out
+		]);
+		return readFileSync(out);
+	} catch {
+		return original;
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+}
+
 function seedPictureFolders(root, label) {
 	let dirents;
 	try {
@@ -1837,6 +1897,11 @@ function seedPictureFolders(root, label) {
 			.map((part) => part.charAt(0).toUpperCase() + part.slice(1).replace(/[-_]+/g, ' '))
 			.join(' — ');
 
+	// The root the subfolders hang off. Without it `Birds — Falconiformes`
+	// has no ancestor in the table and the gallery draws ten roots instead of
+	// one album with ten inside.
+	album(titled([]), 89);
+
 	let stored = 0;
 	for (const entry of dirents) {
 		if (!entry.isFile() || !/\.(jpe?g|png|webp|gif)$/i.test(entry.name)) continue;
@@ -1845,7 +1910,7 @@ function seedPictureFolders(root, label) {
 		inside.pop();
 
 		const albumId = album(titled(inside), 90 + stored);
-		const mediaId = picture(entry.name, entry.name.replace(/\.[^.]+$/, ''), readFileSync(from));
+		const mediaId = picture(entry.name, entry.name.replace(/\.[^.]+$/, ''), scaled(from));
 		if (!mediaId) continue;
 		inAlbum(albumId, mediaId);
 		stored += 1;

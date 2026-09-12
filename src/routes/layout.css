@@ -626,10 +626,23 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 	 * shadow above it — the row below reads as a plate lying on the one
 	 * above, which is the same relief the surface itself has.
 	 */
-	.page-gutter :is(.shadow-card, [class~='rounded'][class~='border']) > * + *,
 	.page-gutter [class*='divide-y'] > * + * {
 		border-top-color: color-mix(in srgb, white 7%, transparent);
 		box-shadow: 0 -1px 0 rgb(0 0 0 / 0.4);
+	}
+
+	/*
+	 * Anything else inside a surface only has its existing line recoloured.
+	 *
+	 * This used to paint the same shadow on every child after the first of
+	 * every card, which drew a line wherever two elements happened to be
+	 * siblings — between a heading and its own description, most visibly. A
+	 * separator belongs between rows of a list, and a list says so with
+	 * `divide-y`; everywhere else this recolours a border that is already
+	 * there and draws nothing where there is none.
+	 */
+	.page-gutter :is(.shadow-card, [class~='rounded'][class~='border']) > * + * {
+		border-top-color: color-mix(in srgb, white 7%, transparent);
 	}
 
 	/*

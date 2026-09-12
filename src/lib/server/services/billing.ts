@@ -1,6 +1,7 @@
 import type { Pricing, SubscriptionStatus } from '../../plans.js';
 import { provider } from '../billing/index.js';
 import type { PlanTier } from '../billing/contract.js';
+import { loadConfig } from '../config.js';
 import { isSelfHosted, pricing } from '../settings.js';
 import { applySubscription, startTrial, trialCarryover } from './subscriptions.js';
 import { ServiceError } from '$lib/services/errors.js';
@@ -155,13 +156,14 @@ export function checkoutTrialDays(userId: string): number {
  * The overwhelmingly common instance must be the one that needs no
  * configuration at all.
  *
- * So there is one variable and it is opt-in: `ONTOPLANO_SELLS=true`. An
- * instance that says it sells and cannot is broken and says so; an instance
- * that never mentions money is a personal one and gets on with it.
+ * So there is one setting and it is opt-in: `[pricing] sells` in
+ * `config.toml`. An instance that says it sells and cannot is broken and says
+ * so; an instance that never mentions money is a personal one and gets on
+ * with it.
  */
 export function instanceSells(): boolean {
 	if (isSelfHosted()) return false;
-	return process.env.ONTOPLANO_SELLS === 'true';
+	return loadConfig().pricing.sells;
 }
 
 /**

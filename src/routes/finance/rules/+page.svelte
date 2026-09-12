@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import Card from '$lib/components/Card.svelte';
 	import CategoryDonut from '$lib/components/CategoryDonut.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -39,9 +40,8 @@
 
 <div class="space-y-5">
 	<!-- What the rules add up to, and what is still unsorted. -->
-	<section class="rounded border border-gray-200 p-4">
+	<Card title="Where it went" accent="var(--section-accent)">
 		<div class="mb-3 flex flex-wrap items-center gap-2">
-			<h2 class="text-sm font-semibold text-gray-900">Where it went</h2>
 			<select
 				class="input input-sm w-auto"
 				value={data.ledgerId}
@@ -69,20 +69,27 @@
 			{/if}
 		</div>
 		<CategoryDonut slices={data.slices} {currency} />
-	</section>
+	</Card>
 
 	<FormError message={form?.message} />
 
 	<!-- The rules. Categories partition; tags overlap. -->
 	<div class="grid gap-4 lg:grid-cols-2">
 		{#each [{ kind: 'category' as const, title: 'Categories', rules: categories, blurb: 'A line belongs to the first category that matches, so the order below decides ties and the totals always add up.', placeholder: 'Groceries', pattern: 'mercado|hortifruti' }, { kind: 'tag' as const, title: 'Tags', rules: tags, blurb: 'Every tag that matches applies, so tags overlap freely — a lens rather than a sum.', placeholder: 'healthy', pattern: 'gym|salad' }] as group (group.kind)}
-			<section class="rounded border border-gray-200 p-4">
-				<h2 class="text-sm font-semibold text-gray-900">{group.title}</h2>
-				<p class="mt-1 mb-3 text-xs text-gray-500">{group.blurb}</p>
+			<!--
+				A card, like every other list in the app.
 
-				<ul class="divide-y divide-gray-100">
+				These two were a bordered box with a heading loose inside it and
+				rows with nothing under them, so the page read as text floating on
+				the background while the rest of the app reads as things sitting on
+				surfaces. Same component the notebooks list uses: a header band in
+				the section's colour, full-width rows against it, and the form to
+				add one on a strip of its own at the foot.
+			-->
+			<Card title={group.title} description={group.blurb} accent="var(--section-accent)" flush>
+				<ul class="divide-y divide-gray-200">
 					{#each group.rules as rule, index (rule.id)}
-						<li class="py-2">
+						<li class="px-4 py-2.5">
 							{#if editingId === rule.id}
 								<form
 									method="post"
@@ -181,13 +188,18 @@
 						</li>
 					{/each}
 					{#if group.rules.length === 0}
-						<li class="py-2 text-sm text-gray-500">None yet.</li>
+						<li class="px-4 py-6 text-center text-sm text-gray-500">None yet.</li>
 					{/if}
 				</ul>
 
 				<!-- Both fields, then the button: it used to sit between them, so the
 				     only submit on the form came before one of the things it needs. -->
-				<form method="post" action="?/create" class="mt-3 grid gap-2" use:enhance>
+				<form
+					method="post"
+					action="?/create"
+					class="grid gap-2 border-t border-gray-200 bg-gray-50 px-4 py-3"
+					use:enhance
+				>
 					<input type="hidden" name="kind" value={group.kind} />
 					<OneLine name="heading" placeholder={group.placeholder} class="input w-full" required />
 					<div class="flex items-center gap-2">
@@ -200,7 +212,7 @@
 						<button class="btn btn-sm" type="submit">Add</button>
 					</div>
 				</form>
-			</section>
+			</Card>
 		{/each}
 	</div>
 

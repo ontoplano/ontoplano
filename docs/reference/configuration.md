@@ -34,9 +34,16 @@ interface, so this table is that interface.
 
 ### `[registration]`
 
-| Key    | Type               | Means |
-| ------ | ------------------ | ----- |
-| `mode` | `RegistrationMode` | —     |
+| Key                    | Type               | Means                                                                                                                                                                                                   |
+| ---------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mode`                 | `RegistrationMode` | —                                                                                                                                                                                                       |
+| `requireVerifiedEmail` | `boolean`          | Whether an account must confirm its address before it can use anything. Off by default: on a box for one household the mail may not be set up at all, and an account that cannot confirm cannot get in. |
+
+**`requireVerifiedEmail`**
+
+Whether an account must confirm its address before it can use
+anything. Off by default: on a box for one household the mail may not
+be set up at all, and an account that cannot confirm cannot get in.
 
 ### `[account]`
 
@@ -81,6 +88,36 @@ actually listening names an address here.
 | Key           | Type     | Means                                                                   |
 | ------------- | -------- | ----------------------------------------------------------------------- |
 | `undoSeconds` | `number` | Seconds a delete waits, undoably, before it happens. Zero turns it off. |
+
+### `[legal]`
+
+| Key             | Type     | Means                                          |
+| --------------- | -------- | ---------------------------------------------- |
+| `operator`      | `string` | —                                              |
+| `contactEmail`  | `string` | —                                              |
+| `jurisdiction`  | `string` | —                                              |
+| `policyUpdated` | `string` | The date the pages say they were last changed. |
+
+### `[pricing]`
+
+| Key                  | Type      | Means                                        |
+| -------------------- | --------- | -------------------------------------------- |
+| `sells`              | `boolean` | —                                            |
+| `monthlyCents`       | `number`  | —                                            |
+| `yearlyCents`        | `number`  | —                                            |
+| `familyMonthlyCents` | `number`  | —                                            |
+| `familyYearlyCents`  | `number`  | —                                            |
+| `familySeats`        | `number`  | How many accounts one family invoice covers. |
+| `currency`           | `string`  | —                                            |
+| `trialDays`          | `number`  | —                                            |
+| `trialRequiresCard`  | `boolean` | —                                            |
+| `provider`           | `string`  | —                                            |
+
+### `[review]`
+
+| Key               | Type     | Means                                                |
+| ----------------- | -------- | ---------------------------------------------------- |
+| `mailOffsetHours` | `number` | Hours after the week turns before the mail goes out. |
 
 ### `[media]`
 
@@ -143,10 +180,13 @@ self-hosted instance wants even with the list turned on.
 
 ### `[instance]`
 
-| Key        | Type      | Means                                                       |
-| ---------- | --------- | ----------------------------------------------------------- |
-| `devTools` | `boolean` | Whether this instance carries the workbenches under `/dev`. |
-| `tagline`  | `string`  | The one line under the name on the signed-out front page.   |
+| Key        | Type      | Means                                                             |
+| ---------- | --------- | ----------------------------------------------------------------- |
+| `devTools` | `boolean` | Whether this instance carries the workbenches under `/dev`.       |
+| `selfHost` | `boolean` | Whether this is somebody's own copy rather than one that is sold. |
+| `docsUrl`  | `string`  | Where this instance's documentation and project pages are.        |
+| `siteUrl`  | `string`  | —                                                                 |
+| `tagline`  | `string`  | The one line under the name on the signed-out front page.         |
 
 **`devTools`**
 
@@ -161,6 +201,13 @@ them or to know they exist.
 Here rather than in an environment variable because this is a thing
 the instance allows, and everything an instance allows is in this
 one file.
+
+**`selfHost`**
+
+Whether this is somebody's own copy rather than one that is sold.
+
+Off by default, which treats an instance as hosted — the answer with
+the fewer consequences for an instance that forgot to say.
 
 **`tagline`**
 
@@ -187,46 +234,45 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_BAN_CONTROL`                | `src/lib/server/services/protection.ts`                                                                                                                    |
 | `ONTOPLANO_BAN_CONTROL_CMD`            | `src/lib/server/services/protection.ts`                                                                                                                    |
 | `ONTOPLANO_CONFIG_DIR`                 | `src/lib/server/config.ts`                                                                                                                                 |
-| `ONTOPLANO_CONTACT_EMAIL`              | `src/lib/server/services/legal.ts`                                                                                                                         |
+| `ONTOPLANO_CONTACT_EMAIL`              | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_DATA_DIR`                   | `scripts/migrate.mjs`, `src/lib/server/config.ts`                                                                                                          |
 | `ONTOPLANO_DEMO`                       | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_DEMO_EMAIL`                 | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_DEMO_MAX_ACCOUNTS`          | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_DEMO_TTL_MINUTES`           | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_DEV_ORIGIN`                 | `scripts/android-flavours.mjs`                                                                                                                             |
-| `ONTOPLANO_DOCS_URL`                   | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_DOCS_URL`                   | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_FAIL2BAN_LOG`               | `src/lib/server/services/protection.ts`                                                                                                                    |
-| `ONTOPLANO_FAMILY_SEATS`               | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_FAMILY_SEATS`               | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_HEALTH_TOKEN`               | `src/lib/server/settings.ts`, `src/routes/api/jobs/reminders/+server.ts`, `src/routes/api/jobs/weekly-reviews/+server.ts`, `src/routes/healthz/+server.ts` |
 | `ONTOPLANO_HTTPS`                      | `src/hooks.server.ts`                                                                                                                                      |
-| `ONTOPLANO_JURISDICTION`               | `src/lib/server/services/legal.ts`                                                                                                                         |
+| `ONTOPLANO_JURISDICTION`               | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_MAIL_FROM`                  | `src/lib/server/services/push.ts`                                                                                                                          |
-| `ONTOPLANO_OPERATOR`                   | `src/lib/server/services/legal.ts`                                                                                                                         |
+| `ONTOPLANO_OPERATOR`                   | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_ORIGIN`                     | `scripts/android-flavours.mjs`, `scripts/build-twa.mjs`                                                                                                    |
 | `ONTOPLANO_OWNER_ID`                   | `src/lib/server/settings.ts`                                                                                                                               |
-| `ONTOPLANO_PAYMENT_PROVIDER`           | `src/lib/server/settings.ts`                                                                                                                               |
-| `ONTOPLANO_POLICY_UPDATED`             | `src/lib/server/services/legal.ts`                                                                                                                         |
-| `ONTOPLANO_PRICE_CURRENCY`             | `src/lib/server/settings.ts`                                                                                                                               |
-| `ONTOPLANO_PRICE_FAMILY_MONTHLY_CENTS` | `src/lib/server/settings.ts`                                                                                                                               |
-| `ONTOPLANO_PRICE_FAMILY_YEARLY_CENTS`  | `src/lib/server/settings.ts`                                                                                                                               |
-| `ONTOPLANO_PRICE_MONTHLY_CENTS`        | `src/lib/server/settings.ts`                                                                                                                               |
-| `ONTOPLANO_PRICE_YEARLY_CENTS`         | `src/lib/server/settings.ts`                                                                                                                               |
-| `ONTOPLANO_RECORDING`                  | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_PAYMENT_PROVIDER`           | `src/lib/server/config.ts`                                                                                                                                 |
+| `ONTOPLANO_POLICY_UPDATED`             | `src/lib/server/config.ts`                                                                                                                                 |
+| `ONTOPLANO_PRICE_CURRENCY`             | `src/lib/server/config.ts`                                                                                                                                 |
+| `ONTOPLANO_PRICE_FAMILY_MONTHLY_CENTS` | `src/lib/server/config.ts`                                                                                                                                 |
+| `ONTOPLANO_PRICE_FAMILY_YEARLY_CENTS`  | `src/lib/server/config.ts`                                                                                                                                 |
+| `ONTOPLANO_PRICE_MONTHLY_CENTS`        | `src/lib/server/config.ts`                                                                                                                                 |
+| `ONTOPLANO_PRICE_YEARLY_CENTS`         | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_REGISTRATION`               | `src/lib/server/services/registration.ts`                                                                                                                  |
-| `ONTOPLANO_REQUIRE_VERIFIED_EMAIL`     | `src/lib/server/services/access.ts`                                                                                                                        |
-| `ONTOPLANO_REVIEW_MAIL_OFFSET_HOURS`   | `src/lib/server/services/review-mail.ts`                                                                                                                   |
+| `ONTOPLANO_REQUIRE_VERIFIED_EMAIL`     | `src/lib/server/config.ts`                                                                                                                                 |
+| `ONTOPLANO_REVIEW_MAIL_OFFSET_HOURS`   | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_SELF_CONTAINED`             | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_SELF_CONTAINED_BUILD`       | `scripts/build-error-page.mjs`                                                                                                                             |
-| `ONTOPLANO_SELF_HOST`                  | `src/lib/server/services/billing.ts`, `src/lib/server/settings.ts`                                                                                         |
-| `ONTOPLANO_SELLS`                      | `src/lib/server/services/billing.ts`                                                                                                                       |
+| `ONTOPLANO_SELF_HOST`                  | `src/lib/server/config.ts`, `src/lib/server/services/billing.ts`                                                                                           |
+| `ONTOPLANO_SELLS`                      | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_SITE_COOKIE_DOMAIN`         | `src/lib/server/settings.ts`                                                                                                                               |
-| `ONTOPLANO_SITE_URL`                   | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_SITE_URL`                   | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_SKIP_MIGRATION_CHECK`       | `src/lib/server/db/assert-migrated.ts`                                                                                                                     |
 | `ONTOPLANO_STAGING`                    | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_STAGING_HOST`               | `scripts/android-flavours.mjs`                                                                                                                             |
 | `ONTOPLANO_STAGING_ORIGIN`             | `scripts/android-flavours.mjs`                                                                                                                             |
-| `ONTOPLANO_TRIAL_DAYS`                 | `src/lib/server/settings.ts`                                                                                                                               |
-| `ONTOPLANO_TRIAL_REQUIRES_CARD`        | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_TRIAL_DAYS`                 | `src/lib/server/config.ts`                                                                                                                                 |
+| `ONTOPLANO_TRIAL_REQUIRES_CARD`        | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_TRUST_PROXY`                | `src/lib/server/rate-limit.ts`                                                                                                                             |
 | `ONTOPLANO_VAPID_PRIVATE_KEY`          | `src/lib/server/services/push.ts`                                                                                                                          |
 | `ONTOPLANO_VAPID_PUBLIC_KEY`           | `src/lib/server/services/push.ts`                                                                                                                          |

@@ -135,7 +135,22 @@ export function installSelfContainedBridge(): void {
 		 * body as JSON and the screen reads "500" — which is what Estevão saw
 		 * on /settings/account. A screen that needs a server says so instead.
 		 */
-		if (isSelfContainedBuild() && url.origin === location.origin && !isAsset(url.pathname)) {
+		/*
+		 * The route asked for, not the file SvelteKit fetches for it.
+		 *
+		 * A page's data arrives as `/settings/account/__data.json`, which ends
+		 * in an extension — so the asset test said "asset", the sentence below
+		 * never fired, and the request went to the file host instead. It
+		 * answers an unknown path with an empty 404, which the client renders
+		 * as "that page is not here" (or, on the phone's own server, as a 500
+		 * from an unparseable body). Every screen without a twin looked broken
+		 * rather than absent.
+		 */
+		const asked = url.pathname.endsWith(DATA_SUFFIX)
+			? url.pathname.slice(0, -DATA_SUFFIX.length) || '/'
+			: url.pathname;
+
+		if (isSelfContainedBuild() && url.origin === location.origin && !isAsset(asked)) {
 			return dataResponse({
 				kind: 'error',
 				status: 501,

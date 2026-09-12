@@ -46,7 +46,6 @@ export async function load(event: SelfContainedEvent): Promise<LayoutServerData>
 		navOrder: getNavOrder(user.id),
 		sectionColors: getSectionColors(user.id),
 		demo: false,
-		bands: true,
 		staging: false,
 		tutorialPending: !hasSeenTutorial(user.id),
 		demoHost: null,

@@ -1,4 +1,5 @@
 import { describeYearly, formatPrice } from '../../plans.js';
+import { loadConfig } from '../config.js';
 import { isSelfHosted } from '../settings.js';
 import { displayPricing } from './billing.js';
 
@@ -24,15 +25,16 @@ import { displayPricing } from './billing.js';
 export async function legalFacts() {
 	const price = await displayPricing();
 
+	const legal = loadConfig().legal;
 	return {
-		updated: process.env.ONTOPLANO_POLICY_UPDATED ?? '25 August 2026',
-		operator: process.env.ONTOPLANO_OPERATOR ?? 'the person who runs this instance',
+		updated: legal.policyUpdated,
+		operator: legal.operator || 'the person who runs this instance',
 		// Null rather than an invented address: a self-hoster who has not set
 		// one must not ship a policy telling their users to write to a mailbox
 		// the operator does not own. The pages say "ask whoever runs this
 		// instance" instead.
-		contactEmail: process.env.ONTOPLANO_CONTACT_EMAIL ?? null,
-		jurisdiction: process.env.ONTOPLANO_JURISDICTION ?? 'the operator’s own country',
+		contactEmail: legal.contactEmail || null,
+		jurisdiction: legal.jurisdiction || 'the operator’s own country',
 		backupRetentionDays: Number(process.env.ONTOPLANO_BACKUP_RETENTION_DAYS ?? 30),
 		trialDays: price.trialDays,
 		trialRequiresCard: price.trialRequiresCard,
