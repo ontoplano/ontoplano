@@ -83,7 +83,26 @@ if (isIsolated()) {
  * view and the same problem — the documentation replaced the app and the back
  * gesture minimised it.
  */
-sendOutsideLinksToTheBrowser();
+/*
+ * Nothing here may take the app down with it.
+ *
+ * These are conveniences for the phone — a link that opens outside the app, a
+ * back gesture that goes back — and this module runs while the client is
+ * starting. A throw here is not a broken convenience, it is a blank screen:
+ * one of them called `.then` on a Capacitor listener handle that is not a
+ * promise, and every build of the app opened to nothing at all, on every
+ * flavour, with one line in logcat to say why.
+ *
+ * So each is called on its own and each is allowed to fail on its own. If the
+ * back gesture cannot be wired up, the app still opens.
+ */
+function optional(what: string, start: () => unknown): void {
+	try {
+		start();
+	} catch (e) {
+		console.warn(`ontoplano: ${what} is not available here`, e);
+	}
+}
 
-/* And the back gesture walks back through the app rather than leaving it. */
-backGestureGoesBack();
+optional('opening outside links in the browser', sendOutsideLinksToTheBrowser);
+optional('the back gesture', backGestureGoesBack);

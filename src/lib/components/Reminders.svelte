@@ -151,7 +151,13 @@
 	 * anywhere else, because everywhere else has a server and push.
 	 */
 	function reschedule() {
-		scheduleDeviceReminders();
+		// Nothing about a reminder arriving later should be able to break the
+		// screen that is open now — see the note in `hooks.client.ts`.
+		try {
+			scheduleDeviceReminders().catch(() => undefined);
+		} catch {
+			/* no such plugin here, which is every instance with a server */
+		}
 	}
 
 	$effect(() => {

@@ -109,6 +109,32 @@ function lanAddress() {
 	return 'localhost';
 }
 
+/**
+ * The addresses the app may open in itself.
+ *
+ * A self-hosted instance is somewhere nobody here can know, so this is as wide
+ * as it can be while still being made of hostnames: the official instance and
+ * anything under it, and the three private ranges a machine at home sits in.
+ * Anything else opens in the system's own browser — which is the right answer
+ * for a link that is not an ontoplano, and is what `$lib/outside-links` does
+ * for the documentation.
+ */
+const ALLOWED_INSTANCES = [
+	'ontoplano.com',
+	'*.ontoplano.com',
+	'localhost',
+	'127.0.0.1',
+	'192.168.*',
+	'10.*',
+	'172.16.*',
+	'172.17.*',
+	'172.18.*',
+	'172.19.*',
+	'172.2*.*',
+	'172.30.*',
+	'172.31.*'
+];
+
 const FLAVOURS = [
 	{
 		key: 'official',
@@ -237,10 +263,16 @@ for (const flavour of FLAVOURS) {
 	 * first screen asks.
 	 *
 	 * `allowNavigation` is what lets that screen move the web view somewhere
-	 * else without it refusing to follow. Anywhere the person points it: the
-	 * offer is "the official one, or one you run yourself", and a self-hosted
-	 * instance is at an address nobody here can know. It is still the person
-	 * typing it — nothing navigates on its own.
+	 * else without it refusing to follow.
+	 *
+	 * Patterns rather than a bare `*`. Capacitor does two things with each
+	 * entry: it becomes a host mask deciding what the web view may follow, and
+	 * it is registered as an authority on the app's own local file server. The
+	 * second is why `*` is wrong — it is not a hostname, and registering it
+	 * asks the server that serves this app's files to also answer for an
+	 * authority that cannot exist. The masks below cover what the offer on the
+	 * instance screen actually promises: the official instance, anything under
+	 * the same name, and a machine on your own network.
 	 *
 	 * `appendUserAgent` is how a page knows it is inside this app once it is
 	 * on somebody else's origin, where none of the app's own globals reach.
@@ -252,7 +284,7 @@ for (const flavour of FLAVOURS) {
 		appName: flavour.label,
 		webDir: 'public',
 		appendUserAgent: APP_USER_AGENT,
-		server: { allowNavigation: ['*'] }
+		server: { allowNavigation: ALLOWED_INSTANCES }
 	};
 	writeFileSync(join(src, 'assets/capacitor.config.json'), JSON.stringify(config, null, 2) + '\n');
 

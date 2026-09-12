@@ -10,6 +10,18 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.161.1 — 2026-09-12
+
+- **The phone app opens again.** Wiring up the back gesture called `.then` on
+  something that is not a promise — Capacitor hands a listener back directly
+  when the app holds the plugin the way this one does — and the throw happened
+  while the client was starting, so nothing drew at all. Every build, every
+  flavour, a white screen. The conveniences for the phone are each wired up on
+  their own and each allowed to fail on their own now: losing the back gesture
+  should cost you the back gesture.
+- **The app may open the addresses it offers.** The list of what the web view
+  will follow is hostnames again rather than a bare `*`, which is not one.
+
 ## 0.161.0 — 2026-09-12
 
 - **Recipes and the address book run on the device.** Both were on the phone's

@@ -15,13 +15,23 @@
  */
 import { inPhoneApp } from './instance-choice';
 
-/** The slice of Capacitor's App plugin this uses. */
+/**
+ * The slice of Capacitor's App plugin this uses.
+ *
+ * `addListener` comes back either as a handle or as a promise of one, and
+ * which of the two depends on whether you hold the generated wrapper or the
+ * raw proxy the native layer injects. This holds the raw proxy — see the note
+ * on `phoneApp()` — and it hands back the handle directly. Calling `.then` on
+ * it threw, and because this runs while the client is starting, the throw took
+ * the whole app with it: every build opened to a white screen.
+ */
+type ListenerHandle = { remove(): unknown };
 type PhoneApp = {
 	addListener(
 		event: 'backButton',
 		handler: (state: { canGoBack: boolean }) => void
-	): Promise<{ remove(): Promise<void> }>;
-	minimizeApp(): Promise<void>;
+	): ListenerHandle | Promise<ListenerHandle>;
+	minimizeApp(): unknown;
 };
 
 function phoneApp(): PhoneApp | null {
@@ -46,22 +56,25 @@ export function backGestureGoesBack(): () => void {
 	if (!app) return () => {};
 
 	startedAt = window.history.length;
-	let listener: { remove(): Promise<void> } | null = null;
+	let listener: ListenerHandle | null = null;
 	let gone = false;
 
-	app
-		.addListener('backButton', () => {
+	// `Promise.resolve` takes either shape — a handle or a promise of one — so
+	// this does not care which half of Capacitor's API it is holding.
+	Promise.resolve(
+		app.addListener('backButton', () => {
 			if (window.history.length > startedAt) window.history.back();
-			else app.minimizeApp().catch(() => undefined);
+			else Promise.resolve(app.minimizeApp()).catch(() => undefined);
 		})
+	)
 		.then((handle) => {
-			if (gone) handle.remove().catch(() => undefined);
+			if (gone) Promise.resolve(handle.remove()).catch(() => undefined);
 			else listener = handle;
 		})
 		.catch(() => undefined);
 
 	return () => {
 		gone = true;
-		listener?.remove().catch(() => undefined);
+		if (listener) Promise.resolve(listener.remove()).catch(() => undefined);
 	};
 }
