@@ -6,13 +6,15 @@
  * your own week is in the other app is the ordinary case, and one app that
  * switches between them loses whichever you were not looking at.
  *
- * They are the same shell and the same build: what differs is an application
- * id (so Android keeps them apart), a name, an icon, and the instance each
- * one opens on. The `device` flavour is the odd one out and the reason this
- * file exists at all — it opens on the copy of the app bundled inside it,
- * with no server anywhere.
+ * They are the same shell and the same build, and every one of them carries
+ * the whole app inside it. What differs is an application id (so Android
+ * keeps them apart), a name, an icon, and which address its first screen
+ * suggests. None of them is pointed at a server by the native layer: each
+ * boots its own copy and the person says where to go, which is what lets any
+ * of them be turned into a phone-only instance and back without a different
+ * build existing.
  *
- * Run from `make android-phones`; it rewrites what it owns every time, so
+ * Run from `make android-install-all`; it rewrites what it owns every time, so
  * `cap add android` regenerating the project loses nothing.
  */
 import { execFileSync } from 'node:child_process';
@@ -22,6 +24,36 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const APP = join(ROOT, 'capacitor/android/app');
+
+/**
+ * How much of the adaptive icon's foreground the mark fills, read from the one
+ * file that decides how the brand is drawn rather than repeated here — a
+ * number two scripts have to agree on is a number that drifts.
+ */
+/**
+ * The two strings the app and this script have to agree on, read out of the
+ * app's own module rather than repeated here: a user agent marker the page
+ * tests for, and the name of the file this writes for it to read.
+ */
+const { APP_USER_AGENT, INSTANCE_SUGGESTION_FILE } = (() => {
+	const source = readFileSync(join(ROOT, 'src/lib/instance-choice.ts'), 'utf8');
+	const read = (name) => {
+		const found = source.match(new RegExp(`export const ${name} = '([^']+)';`));
+		if (!found) throw new Error(`src/lib/instance-choice.ts no longer exports ${name}`);
+		return found[1];
+	};
+	return {
+		APP_USER_AGENT: read('APP_USER_AGENT'),
+		INSTANCE_SUGGESTION_FILE: read('INSTANCE_SUGGESTION_FILE')
+	};
+})();
+
+const ADAPTIVE_FOREGROUND_SCALE = (() => {
+	const brand = readFileSync(join(ROOT, 'src/lib/logo/brand.ts'), 'utf8');
+	const found = brand.match(/export const ADAPTIVE_FOREGROUND_SCALE = ([^;]+);/);
+	if (!found) throw new Error('src/lib/logo/brand.ts no longer exports ADAPTIVE_FOREGROUND_SCALE');
+	return Number(found[1].trim());
+})();
 
 /*
  * The app's own version, so a phone can say which build it is holding.
@@ -72,7 +104,7 @@ function lanAddress() {
 		'flavours: this machine cannot tell what its address on the wifi is — a build inside a\n' +
 			'          container never can. The DEV app is pointed at localhost, which on a phone is\n' +
 			'          the phone itself. Set it once in local.mk, or for one run:\n' +
-			`            make android-phones ONTOPLANO_DEV_ORIGIN=http://192.168.1.23:${DEV_PORT}`
+			`            make android-install-all ONTOPLANO_DEV_ORIGIN=http://192.168.1.10:${DEV_PORT}`
 	);
 	return 'localhost';
 }
@@ -83,31 +115,23 @@ const FLAVOURS = [
 		id: 'app.ontoplano',
 		label: 'Ontoplano',
 		icons: '',
-		url: process.env.ONTOPLANO_ORIGIN || 'https://app.ontoplano.com'
+		suggests: process.env.ONTOPLANO_ORIGIN || 'https://app.ontoplano.com'
 	},
 	{
 		key: 'dev',
 		id: 'app.ontoplano.dev',
 		label: 'Ontoplano DEV',
 		icons: '-dev',
-		url: process.env.ONTOPLANO_DEV_ORIGIN || `http://${lanAddress()}:${DEV_PORT}`
+		suggests: process.env.ONTOPLANO_DEV_ORIGIN || `http://${lanAddress()}:${DEV_PORT}`
 	},
 	{
 		key: 'staging',
 		id: 'app.ontoplano.staging',
 		label: 'Ontoplano — Staging',
 		icons: '-staging',
-		url:
+		suggests:
 			process.env.ONTOPLANO_STAGING_ORIGIN ||
 			`https://${process.env.ONTOPLANO_STAGING_HOST || 'staging.ontoplano.com'}`
-	},
-	{
-		// No URL: this one is the app, not a window onto one.
-		key: 'device',
-		id: 'app.ontoplano.isolated',
-		label: 'Ontoplano',
-		icons: '',
-		url: null
 	}
 ];
 
@@ -128,6 +152,35 @@ function resize(source, out, size) {
 	execFileSync('magick', [
 		source,
 		'-resize',
+		`${size}x${size}`,
+		'-strip',
+		'-define',
+		'png:exclude-chunk=date,time,tIME',
+		out
+	]);
+}
+
+/**
+ * The foreground layer of an adaptive icon: the mark, small, on nothing.
+ *
+ * Not the web's maskable icon resized, which is what this used to be. The two
+ * have different safe zones — a launcher shows 72dp of a 108dp foreground and
+ * guarantees only 66 — so reusing one asset for both means the stricter of
+ * them is wrong, and the way it is wrong is that the launcher's mask eats the
+ * mark's corners. Drawn from the plain icon, which is the mark with no ground
+ * and no margin of its own, so the only margin here is the one this asks for.
+ */
+function foreground(source, out, size) {
+	const inner = Math.round(size * ADAPTIVE_FOREGROUND_SCALE);
+	execFileSync('magick', [
+		source,
+		'-resize',
+		`${inner}x${inner}`,
+		'-background',
+		'none',
+		'-gravity',
+		'center',
+		'-extent',
 		`${size}x${size}`,
 		'-strip',
 		'-define',
@@ -168,42 +221,59 @@ for (const flavour of FLAVOURS) {
 			mkdirSync(dir, { recursive: true });
 			resize(square, join(dir, 'ic_launcher.png'), size);
 			resize(square, join(dir, 'ic_launcher_round.png'), size);
-			resize(maskable, join(dir, 'ic_launcher_foreground.png'), FOREGROUND[density]);
+			foreground(square, join(dir, 'ic_launcher_foreground.png'), FOREGROUND[density]);
 		}
 	}
 
 	/*
-	 * Where it opens.
+	 * What it is, and where it is allowed to go.
 	 *
 	 * A flavour's assets win over the shared ones, so this is the config the
-	 * app reads. `allowNavigation` is what lets the instance screen inside the
-	 * app move it somewhere else without the web view refusing to follow.
+	 * app reads. There is deliberately no `server.url`: the native layer used
+	 * to point three of these at a server, which made the app a window onto an
+	 * instance rather than an instance — the bundled copy was never served, so
+	 * "this phone only" could not be chosen in them and a fourth build existed
+	 * solely to offer it. Now every one of them boots its own copy and the
+	 * first screen asks.
+	 *
+	 * `allowNavigation` is what lets that screen move the web view somewhere
+	 * else without it refusing to follow. Anywhere the person points it: the
+	 * offer is "the official one, or one you run yourself", and a self-hosted
+	 * instance is at an address nobody here can know. It is still the person
+	 * typing it — nothing navigates on its own.
+	 *
+	 * `appendUserAgent` is how a page knows it is inside this app once it is
+	 * on somebody else's origin, where none of the app's own globals reach.
+	 * The instance screen needs that to offer the way back.
 	 */
 	mkdirSync(join(src, 'assets'), { recursive: true });
 	const config = {
 		appId: flavour.id,
 		appName: flavour.label,
 		webDir: 'public',
-		...(flavour.url
-			? {
-					server: {
-						url: flavour.url,
-						cleartext: flavour.url.startsWith('http://'),
-						/*
-						 * Anywhere the person points it.
-						 *
-						 * The instance screen's whole offer is "the official one, or
-						 * one you run yourself", and a self-hosted instance is at an
-						 * address nobody here can know. A list of the addresses we
-						 * happen to ship would make that offer a lie. It is still the
-						 * person typing it: nothing navigates on its own.
-						 */
-						allowNavigation: ['*']
-					}
-				}
-			: {})
+		appendUserAgent: APP_USER_AGENT,
+		server: { allowNavigation: ['*'] }
 	};
 	writeFileSync(join(src, 'assets/capacitor.config.json'), JSON.stringify(config, null, 2) + '\n');
+
+	/*
+	 * And the address its first screen suggests.
+	 *
+	 * Read by the app at launch, not acted on: a suggestion fills the instance
+	 * screen's address field and nothing else. That is the difference between
+	 * these three apps and one app three times — the DEV one opens on the
+	 * laptop because that is what its box says, and the same install becomes a
+	 * phone-only instance the moment somebody chooses the other square.
+	 *
+	 * A flavour's assets are merged over the shared ones, so this file lands
+	 * beside the app's own and each flavour sees only its own.
+	 */
+	const bundle = join(src, 'assets/public');
+	mkdirSync(bundle, { recursive: true });
+	writeFileSync(
+		join(bundle, INSTANCE_SUGGESTION_FILE),
+		JSON.stringify({ suggests: flavour.suggests }, null, 2) + '\n'
+	);
 }
 
 /*

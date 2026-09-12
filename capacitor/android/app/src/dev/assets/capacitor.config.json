@@ -2,9 +2,8 @@
   "appId": "app.ontoplano.dev",
   "appName": "Ontoplano DEV",
   "webDir": "public",
+  "appendUserAgent": "OntoplanoApp",
   "server": {
-    "url": "http://localhost:1493",
-    "cleartext": true,
     "allowNavigation": [
       "*"
     ]

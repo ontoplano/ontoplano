@@ -2,9 +2,8 @@
   "appId": "app.ontoplano",
   "appName": "Ontoplano",
   "webDir": "public",
+  "appendUserAgent": "OntoplanoApp",
   "server": {
-    "url": "https://app.ontoplano.com",
-    "cleartext": false,
     "allowNavigation": [
       "*"
     ]

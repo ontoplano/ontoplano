@@ -2,9 +2,8 @@
   "appId": "app.ontoplano.staging",
   "appName": "Ontoplano — Staging",
   "webDir": "public",
+  "appendUserAgent": "OntoplanoApp",
   "server": {
-    "url": "https://staging.ontoplano.com",
-    "cleartext": false,
     "allowNavigation": [
       "*"
     ]

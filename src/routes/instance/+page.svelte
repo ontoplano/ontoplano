@@ -2,7 +2,16 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
-	import { OFFICIAL_INSTANCE, rememberInstance, storedInstance } from '$lib/instance-choice';
+	import {
+		ARRIVING_AT,
+		ARRIVING_HOME,
+		OFFICIAL_INSTANCE,
+		chooseOnThisPhone,
+		inPhoneApp,
+		rememberInstance,
+		storedInstance,
+		suggestedInstance
+	} from '$lib/instance-choice';
 
 	/*
 	 * Where your ontoplano lives.
@@ -41,6 +50,50 @@
 			: OFFICIAL_INSTANCE;
 	}
 
+	/*
+	 * A build that suggests an address fills the field with it.
+	 *
+	 * This is the whole of what makes the DEV app the DEV app: it carries the
+	 * same copy of ontoplano as every other build and opens this screen with
+	 * the laptop's address already typed. Asked for after the field already has
+	 * something in it, so the screen is usable in the frame before the answer
+	 * arrives, and never allowed to overwrite an address the person is editing.
+	 */
+	let untouched = $state(true);
+
+	/*
+	 * Arriving with the answer already given.
+	 *
+	 * A page on somebody else's origin cannot choose this phone — its storage is
+	 * not this origin's — so leaving an instance means being sent here with the
+	 * answer in the address. Recorded and acted on immediately: nobody asked to
+	 * be asked twice.
+	 */
+	$effect(() => {
+		const carried = new URLSearchParams(location.search);
+		if (carried.has(ARRIVING_HOME)) {
+			rememberInstance(null);
+			location.replace('/');
+			return;
+		}
+		const instance = carried.get(ARRIVING_AT);
+		if (instance) {
+			rememberInstance(instance);
+			location.replace(instance);
+		}
+	});
+
+	$effect(() => {
+		if (storedInstance()) return;
+		let alive = true;
+		suggestedInstance().then((suggested) => {
+			if (alive && untouched && suggested) address = suggested;
+		});
+		return () => {
+			alive = false;
+		};
+	});
+
 	const CHOICES = {
 		connected: {
 			label: 'Connect to an instance',
@@ -66,22 +119,33 @@
 	const chosen = $derived(CHOICES[kind]);
 
 	/**
-	 * The phone-only instance is the app's own files, which only the build made
-	 * for it carries. In any other build it is something to know about rather
-	 * than something to press.
+	 * Whether this phone can be the instance.
+	 *
+	 * Either this page is already the copy the phone carries, or it is a page
+	 * from somewhere else being drawn inside the app — which carries that copy
+	 * one navigation away. A desktop browser is neither, and there the phone
+	 * square is something to know about rather than something to press.
 	 */
-	const canRunHere = $derived(isIsolatedBuild());
+	const canRunHere = $derived(isIsolatedBuild() || inPhoneApp());
 
 	function go() {
-		if (kind === 'phone') {
-			rememberInstance(null);
-			location.href = '/';
+		const url = kind === 'phone' ? null : address.trim().replace(/\/+$/, '');
+		if (url !== null && !/^https?:\/\/.+/.test(url)) return;
+
+		/*
+		 * A page an instance served cannot answer this question itself.
+		 *
+		 * Storage belongs to an origin, and the app reads its answer out of the
+		 * origin its own copy is served from — so from anywhere else the answer
+		 * travels as an address and is recorded on arrival. In a browser there is
+		 * nowhere to arrive at and the choice is simply where to go.
+		 */
+		if (inPhoneApp() && !isIsolatedBuild()) {
+			location.href = chooseOnThisPhone(url);
 			return;
 		}
-		const url = address.trim().replace(/\/+$/, '');
-		if (!/^https?:\/\/.+/.test(url)) return;
 		rememberInstance(url);
-		location.href = url;
+		location.href = url || '/';
 	}
 </script>
 
@@ -124,6 +188,7 @@
 			<OneLine
 				name="instance"
 				bind:value={address}
+				oninput={() => (untouched = false)}
 				class="input mt-1 w-full"
 				placeholder={OFFICIAL_INSTANCE}
 			/>

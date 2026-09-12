@@ -186,6 +186,21 @@ test('the phone can leave the instance it is', async ({ page }) => {
 	await page.goto('/');
 	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 60_000 });
 
+	/*
+	 * The tour, if this is the first open here.
+	 *
+	 * Its dismissal is remembered by the device, so whether it is up depends on
+	 * whether a test before this one has already been shown around — which is
+	 * not something this test should care about. It covers the bar, so a press
+	 * on the bar cannot land until it is gone.
+	 */
+	const tour = page.getByRole('dialog', { name: 'Tutorial' });
+	if (await tour.isVisible()) {
+		await tour.getByRole('button', { name: 'Dismiss' }).click();
+		await tour.getByRole('button', { name: 'Okay, dismiss!' }).click();
+		await expect(tour).toBeHidden();
+	}
+
 	await page.getByRole('link', { name: 'Where this lives' }).click();
 	await expect(page.getByRole('heading', { name: /Where your ontoplano lives/ })).toBeVisible({
 		timeout: 30_000

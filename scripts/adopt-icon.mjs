@@ -148,6 +148,23 @@ function liftGround(file, out) {
 		`alpha ${inx},${height - 1 - iny} floodfill`,
 		'-draw',
 		`alpha ${width - 1 - inx},${height - 1 - iny} floodfill`,
+		/*
+		 * Then the ring the fill was started inside of.
+		 *
+		 * The inset exists because an export often carries a hairline frame a
+		 * shade off its own ground, and a fill started in the very corner stops
+		 * at it. That frame survives the fill — and filling again from the true
+		 * corners does nothing, because the fill has already made them
+		 * transparent and a flood through transparency spreads through
+		 * transparency. So the ring outside the inset is cut off instead:
+		 * nothing in it was ever trusted, it is a hundredth of the picture, and
+		 * leaving it in is what makes `-trim` trim to the frame rather than to
+		 * the mark — which draws the mark a sixth too small in every box it is
+		 * given, with the bar's button clipped to the same wrong outline.
+		 */
+		'-crop',
+		`${width - 2 * inx}x${height - 2 * iny}+${inx}+${iny}`,
+		'+repage',
 		// What is left is the mark and nothing around it, squared up so every
 		// icon drawn from it is centred on the mark rather than on the plate.
 		'-trim',

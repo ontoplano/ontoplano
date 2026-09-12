@@ -753,14 +753,18 @@
 						the bar on purpose — if the bar goes untouched for a fortnight it
 						can go, and if it does not, nothing was lost.
 					-->
+					<!-- The mark, and no box around it: the octagon is its own outline,
+					     so a bordered square behind it reads as two shapes where there
+					     is one — the same reason the phone bar's button is clipped to
+					     the mark rather than drawn as a circle holding it. -->
 					<button
 						onpointerdown={(e) => rooms?.summon(e)}
-						class="pie-handle flex h-8 w-8 items-center justify-center border border-chrome-line bg-chrome-raised text-chrome-muted shadow-sm transition hover:text-chrome-ink hover:brightness-125"
+						class="pie-handle flex h-8 w-8 items-center justify-center transition hover:brightness-125"
 						aria-label="Jump to a section"
 						title="Jump to a section"
 						data-tour="rooms"
 					>
-						<Logo size={18} />
+						<Logo size={32} />
 					</button>
 
 					<!-- Capture, beside search: the two things you reach for without

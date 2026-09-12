@@ -107,4 +107,10 @@ fdroid-out/
 .worktrees/
 build-isolated/
 capacitor/node_modules/
+
+# Each flavour's suggested instance, written at build time. The DEV app's is
+# this machine's address on the wifi, which is nobody else's; a build that has
+# none falls back to the official instance, which is what a store build wants
+# anyway.
+capacitor/android/app/src/*/assets/public/
 scripts/demo-media/birds/

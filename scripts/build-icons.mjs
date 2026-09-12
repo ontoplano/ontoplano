@@ -209,88 +209,147 @@ const rasteriser = await (async () => {
  * Measured by casting rays from the centre and finding where the alpha stops,
  * then keeping the local maxima — which for a convex polygon are its corners.
  * Written into `src/lib/logo/mark-shape.ts`, which the stylesheet reads.
+ *
+ * The pixels come from decoding the mark itself rather than from re-rendering
+ * it inside an SVG: wrapped that way it comes back inset by a few per cent,
+ * and an outline measured from the inset copy draws the bar's button a sixth
+ * too small with its points cut off — which is exactly what happened the first
+ * time the mark was exported edge to edge rather than on a plate.
  */
+const SAMPLE = 256;
+
+/** The mark's alpha at `SAMPLE` square, or null if nothing here can decode it. */
+function markAlpha() {
+	try {
+		const raw = execFileSync(
+			'magick',
+			[markFile, '-resize', `${SAMPLE}x${SAMPLE}!`, '-depth', '8', 'rgba:-'],
+			{ maxBuffer: SAMPLE * SAMPLE * 4 * 2 }
+		);
+		if (raw.length !== SAMPLE * SAMPLE * 4) return null;
+		return { pixels: raw, width: SAMPLE, height: SAMPLE };
+	} catch {
+		return null;
+	}
+}
+
 function outlinePolygon() {
-	if (!rasteriser || rasteriser.name !== '@resvg/resvg-js') return null;
-
-	const SAMPLE = 256;
-	const svg = `${header}
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${SAMPLE}" height="${SAMPLE}"><image width="${SAMPLE}" height="${SAMPLE}" preserveAspectRatio="xMidYMid meet" xlink:href="${dataUri}"/></svg>`;
-
-	const rendered = rasteriser.raw(svg, SAMPLE);
+	const rendered = markAlpha();
 	if (!rendered) return null;
 	const { pixels, width, height } = rendered;
+	const opaque = (x, y) => pixels[(y * width + x) * 4 + 3] > 24;
 
-	const opaque = (x, y) => {
-		if (x < 0 || y < 0 || x >= width || y >= height) return false;
-		return pixels[(y * width + x) * 4 + 3] > 24;
+	/*
+	 * The outline is the convex hull of what is painted.
+	 *
+	 * Rays from the centre were the first attempt and they cannot describe a
+	 * mark that reaches the edge of its own canvas: a ray has to stop at the
+	 * frame, so the shape it measures is the frame. A hull has no such limit,
+	 * it is exact for any convex mark, and for an octagon it comes back as the
+	 * octagon — with a few extra points along each side from the anti-aliased
+	 * edge, which the collinear pass below drops.
+	 */
+	const points = [];
+	for (let y = 0; y < height; y++) {
+		let first = -1;
+		let last = -1;
+		for (let x = 0; x < width; x++) {
+			if (!opaque(x, y)) continue;
+			if (first < 0) first = x;
+			last = x;
+		}
+		if (first >= 0) {
+			points.push([first, y]);
+			points.push([last, y]);
+		}
+	}
+	if (points.length < 6) return null;
+
+	// Andrew's monotone chain.
+	points.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+	const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+	const half = (list) => {
+		const out = [];
+		for (const p of list) {
+			while (out.length > 1 && cross(out[out.length - 2], out[out.length - 1], p) <= 0) out.pop();
+			out.push(p);
+		}
+		out.pop();
+		return out;
+	};
+	const hull = [...half(points), ...half([...points].reverse())];
+	if (hull.length < 3) return null;
+
+	/*
+	 * A corner is where the outline changes direction.
+	 *
+	 * The hull has a point for every row the anti-aliased edge touches, so the
+	 * sides arrive as long runs of nearly parallel edges. Grouping consecutive
+	 * edges that keep within a few degrees of the run they started leaves one
+	 * point per real corner — eight for an octagon, and whatever another mark
+	 * actually has. Measuring the turn rather than the distance from a chord is
+	 * what keeps a long straight side from swallowing the corner at its end.
+	 */
+	const TURN = (15 * Math.PI) / 180;
+	const heading = (a, b) => Math.atan2(b[1] - a[1], b[0] - a[0]);
+	const apart = (a, b) => {
+		const d = Math.abs(a - b) % (Math.PI * 2);
+		return d > Math.PI ? Math.PI * 2 - d : d;
 	};
 
-	const cx = width / 2;
-	const cy = height / 2;
-	const STEPS = 720;
-	const radii = [];
-
-	for (let i = 0; i < STEPS; i++) {
-		const angle = (i / STEPS) * Math.PI * 2;
-		const dx = Math.cos(angle);
-		const dy = Math.sin(angle);
-		let hit = 0;
-		// Outwards in, so a hole in the middle of the artwork cannot be mistaken
-		// for its edge.
-		for (let r = Math.min(cx, cy); r > 0; r -= 0.5) {
-			if (opaque(Math.round(cx + dx * r), Math.round(cy + dy * r))) {
-				hit = r;
-				break;
-			}
+	const simplified = [];
+	let runFrom = heading(hull[0], hull[1 % hull.length]);
+	for (let i = 0; i < hull.length; i++) {
+		const to = heading(hull[i], hull[(i + 1) % hull.length]);
+		if (apart(to, runFrom) > TURN) {
+			simplified.push(hull[i]);
+			runFrom = to;
 		}
-		radii.push(hit);
 	}
+	if (simplified.length < 3) return null;
 
-	// A corner is where the radius is a local maximum. Smoothed first, or the
-	// anti-aliased edge produces a maximum every few degrees.
-	const smooth = radii.map((_, i) => {
-		let sum = 0;
-		for (let k = -4; k <= 4; k++) sum += radii[(i + k + STEPS) % STEPS];
-		return sum / 9;
-	});
-
-	const corners = [];
-	const WINDOW = 20;
-	for (let i = 0; i < STEPS; i++) {
-		let isMax = true;
-		for (let k = -WINDOW; k <= WINDOW; k++) {
-			if (smooth[(i + k + STEPS) % STEPS] > smooth[i] + 1e-9) {
-				isMax = false;
-				break;
-			}
+	/*
+	 * A corner is one point, not two.
+	 *
+	 * Rasterised at this size a corner is a short flat cap rather than a point,
+	 * so both of its ends read as a turn and every vertex comes out doubled.
+	 * Anything within a few pixels of the last corner is the same corner, and
+	 * the pair averages to where the corner actually is.
+	 */
+	const TOGETHER = width * 0.03;
+	const merged = [];
+	for (const point of simplified) {
+		const last = merged[merged.length - 1];
+		if (last && Math.hypot(point[0] - last.x / last.n, point[1] - last.y / last.n) < TOGETHER) {
+			last.x += point[0];
+			last.y += point[1];
+			last.n++;
+			continue;
 		}
-		if (!isMax) continue;
-		// One corner per plateau: an exactly flat run would otherwise give one
-		// point per sample.
-		const angle = (i / STEPS) * Math.PI * 2;
-		const last = corners[corners.length - 1];
-		if (last && Math.abs(angle - last.angle) < 0.25) continue;
-		corners.push({ angle, r: radii[i] });
+		merged.push({ x: point[0], y: point[1], n: 1 });
 	}
-
-	// The wrap-around: the last corner and the first are the same corner when
-	// the ray sweep comes back round to where it started.
-	if (
-		corners.length > 3 &&
-		Math.abs(corners[0].angle + Math.PI * 2 - corners[corners.length - 1].angle) < 0.25
-	) {
-		corners.pop();
+	// The first and the last are the same corner when the walk comes back round.
+	if (merged.length > 3) {
+		const first = merged[0];
+		const last = merged[merged.length - 1];
+		if (
+			Math.hypot(first.x / first.n - last.x / last.n, first.y / first.n - last.y / last.n) <
+			TOGETHER
+		) {
+			first.x += last.x;
+			first.y += last.y;
+			first.n += last.n;
+			merged.pop();
+		}
 	}
-
+	const corners = merged.map(({ x, y, n }) => [x / n, y / n]);
 	if (corners.length < 3) return null;
 
 	return corners
-		.map(({ angle, r }) => {
-			const x = ((cx + Math.cos(angle) * r) / width) * 100;
-			const y = ((cy + Math.sin(angle) * r) / height) * 100;
-			return `${x.toFixed(2)}% ${y.toFixed(2)}%`;
-		})
+		.map(
+			([x, y]) =>
+				`${((x / (width - 1)) * 100).toFixed(2)}% ${((y / (height - 1)) * 100).toFixed(2)}%`
+		)
 		.join(', ');
 }
 

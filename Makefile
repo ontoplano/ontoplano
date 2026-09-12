@@ -39,7 +39,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon up-phone deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-uninstall android-isolated-install android-phones isolated isolated-preview test-isolated android-isolated
+.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-store android-install android-install-all _adb-install android-uninstall isolated isolated-preview test-isolated
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -378,33 +378,22 @@ isolated-preview:
 test-isolated:
 	yarn playwright test -c playwright.isolated.config.ts
 
-# The Capacitor shell wraps the same static build the browser gets; the
-# native project lives in capacitor/.
-## the isolated Android app (debug APK, via the Capacitor shell)
-android-isolated: isolated
-	@# The shell's own dependencies, fetched on first use — a fresh clone has
-	@# no capacitor/node_modules and must not be expected to know that.
-	@[ -d capacitor/node_modules ] || (cd capacitor && npm install --no-audit --no-fund)
-	@node scripts/brand-android.mjs
-	cd capacitor && npx cap sync android
-	@# The flavours: each one's name, icon and the instance it opens on.
-	@node scripts/android-flavours.mjs
-	@sdk="$${ANDROID_HOME:-}"; \
-	[ -n "$$sdk" ] || { [ -d "$$HOME/android-sdk" ] && sdk="$$HOME/android-sdk"; }; \
-	if [ -z "$$sdk" ] || [ ! -d "$$sdk" ]; then \
-		echo "No Android SDK found. Set ANDROID_HOME to where it lives."; \
-		exit 1; \
-	fi; \
-	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q assembleDeviceDebug
-	@echo "APK: capacitor/android/app/build/outputs/apk/device/debug/app-device-debug.apk"
+# Onto the phone over adb.
+#
+# One app, which is the app: it carries the whole of ontoplano and its first
+# screen asks where yours lives — the official instance, one you run yourself,
+# or this phone and nothing else.
+## install the phone app over adb
+android-install: android
+	@$(MAKE) --no-print-directory _adb-install FLAVOURS=official
 
-# Three apps on one phone: the real instance, a laptop on the LAN, and
-# staging. Same shell, same build — different application id, name, icon and
-# opening instance, which is what lets Android keep them apart and what lets
-# a bug on staging be read while your own week sits in the other app.
-## build and install Ontoplano, Ontoplano DEV and Ontoplano — Staging
+# The same app three times, each with its own icon and its own answer already
+# typed on that first screen: the real instance, a laptop on the LAN, and
+# staging. Three application ids, so Android keeps them apart and a bug on
+# staging can be read while your own week sits in the other one.
+## install it three times — Ontoplano, Ontoplano DEV and Ontoplano — Staging
 #: ONTOPLANO_DEV_ORIGIN=http://192.168.1.10:1493  where the DEV app points
-android-phones: isolated
+android-install-all: isolated
 	@[ -d capacitor/node_modules ] || (cd capacitor && npm install --no-audit --no-fund)
 	@node scripts/brand-android.mjs
 	cd capacitor && npx cap sync android
@@ -412,48 +401,43 @@ android-phones: isolated
 	@# which local.mk includes — a build in a container cannot work out which
 	@# address on the wifi is this laptop's.
 	@ONTOPLANO_DEV_ORIGIN="$(ONTOPLANO_DEV_ORIGIN)" node scripts/android-flavours.mjs
-	@sdk="$${ANDROID_HOME:-}"; \
-	[ -n "$$sdk" ] || { [ -d "$$HOME/android-sdk" ] && sdk="$$HOME/android-sdk"; }; \
-	if [ -z "$$sdk" ] || [ ! -d "$$sdk" ]; then \
-		echo "No Android SDK found. Set ANDROID_HOME to where it lives."; \
+	@sdk=$$(node scripts/android-sdk.mjs) || { \
+		echo "No Android SDK here. It is looked for in ANDROID_HOME, ANDROID_SDK_ROOT,"; \
+		echo "~/.bubblewrap/config.json, ~/android-sdk, ~/Android/Sdk and beside adb."; \
+		echo "  make $@ ANDROID_HOME=/path/to/sdk"; \
 		exit 1; \
-	fi; \
+	}; \
 	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q \
 		assembleOfficialDebug assembleDevDebug assembleStagingDebug
-	@# adb the way the rest of the android targets find their toolchain: the
-	@# SDK's copy when it is not on PATH.
-	@sdk="$${ANDROID_HOME:-$$HOME/android-sdk}"; \
+	@$(MAKE) --no-print-directory _adb-install FLAVOURS="official dev staging"
+
+# Whatever FLAVOURS names, onto whatever is plugged in.
+#
+# adb the way the rest of the android targets find their toolchain: the SDK's
+# copy when it is not on PATH.
+_adb-install:
+	@sdk=$$(node scripts/android-sdk.mjs || echo ""); \
 	adb="$$(command -v adb || echo "$$sdk/platform-tools/adb")"; \
 	built=capacitor/android/app/build/outputs/apk; \
 	if [ ! -x "$$adb" ]; then \
-		echo "Built all three. No adb here to install them:"; \
-		for f in official dev staging; do echo "  $$built/$$f/debug/app-$$f-debug.apk"; done; \
+		echo "Built. No adb here to install with:"; \
+		for f in $(FLAVOURS); do echo "  $$built/$$f/debug/app-$$f-debug.apk"; done; \
 		exit 0; \
 	fi; \
 	if [ -z "$$("$$adb" devices | sed -n '2p')" ]; then \
-		echo "Built all three. No phone over adb — plug in, enable USB debugging, then:"; \
-		echo "  make android-phones"; \
+		echo "Built. No phone over adb — plug in, enable USB debugging, then run this again."; \
 		exit 0; \
 	fi; \
 	failed=0; \
-	for flavour in official dev staging; do \
+	for flavour in $(FLAVOURS); do \
 		echo "installing $$flavour…"; \
 		"$$adb" install -r -d "$$built/$$flavour/debug/app-$$flavour-debug.apk" >/dev/null \
 			|| { echo "  $$flavour did not install"; failed=1; }; \
 	done; \
 	[ "$$failed" = 0 ] \
-		&& echo "Ontoplano, Ontoplano DEV and Ontoplano — Staging are on the phone." \
+		&& echo "On the phone." \
 		|| { echo "Some did not install. An app signed by a different key has to go first:"; \
-			 echo "  adb uninstall app.ontoplano   (and .dev, .staging)"; exit 1; }
-
-## install the isolated app over adb
-android-isolated-install:
-	@command -v adb >/dev/null || { echo "adb not found. Install android-tools-adb."; exit 1; }
-	@apk=capacitor/android/app/build/outputs/apk/device/debug/app-device-debug.apk; \
-	[ -f "$$apk" ] || { echo "No APK yet: run 'make android-isolated' first."; exit 1; }; \
-	[ -n "$$(adb devices | sed -n '2p')" ] || { echo "No device over adb. Plug in, enable USB debugging, accept the prompt."; exit 1; }; \
-	echo "Installing to $$(adb devices | sed -n '2p' | cut -f1)…"; \
-	adb install -r -d "$$apk"
+			 echo "  make android-uninstall"; exit 1; }
 
 ## run the built server
 start: build
@@ -792,10 +776,6 @@ deploy-local: build db-migrate
 		echo "Deploy complete."; \
 	fi
 
-## rebuild and reinstall the phone app
-up-phone: android android-install
-	@echo "Phone updated against $(ONTOPLANO_ORIGIN)."
-
 ## the app and its jobs as a systemd user service
 install-service: deploy-local
 	@echo "Installing ontoplano systemd service..."
@@ -866,7 +846,7 @@ uninstall-service:
 # never could. It is gone rather than kept beside the new one.
 #
 # Which instance an app opens is a build flavour, not a cage — see
-# `android-phones` above for the three that go on a developer's own phone.
+# `android-install-all` above for the three that go on a developer's own phone.
 # `android` is the one that goes to a store.
 
 ### phone
@@ -904,25 +884,41 @@ android-project:
 fdroid:
 	@node scripts/fdroid-metadata.mjs $(if $(FROM),--from $(FROM),)
 
+# The app, built. One artifact, and it is the app: a build carries the whole
+# of ontoplano and asks on first launch where your ontoplano lives, so there
+# is nothing here to choose between.
+## build the phone app
+android: isolated android-project
+	@sdk=$$(node scripts/android-sdk.mjs) || { \
+		echo "No Android SDK here. It is looked for in ANDROID_HOME, ANDROID_SDK_ROOT,"; \
+		echo "~/.bubblewrap/config.json, ~/android-sdk, ~/Android/Sdk and beside adb."; \
+		echo "  make $@ ANDROID_HOME=/path/to/sdk"; \
+		exit 1; \
+	}; \
+	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q assembleOfficialDebug
+	@echo "APK: capacitor/android/app/build/outputs/apk/official/debug/app-official-debug.apk"
+
 # The store artifact: the official flavour, release, unsigned.
 #
 # Unsigned on purpose — F-Droid signs what it builds, and a key of ours in
-# that path would only be a key to lose. For a phone in your hand,
-# `android-phones` builds and installs the debug ones.
+# that path would only be a key to lose. For a phone in your hand, `make
+# android-install`.
 ## the release APK for the stores
-android: isolated android-project
-	@sdk="$${ANDROID_HOME:-}"; \
-	[ -n "$$sdk" ] || { [ -d "$$HOME/android-sdk" ] && sdk="$$HOME/android-sdk"; }; \
-	if [ -z "$$sdk" ] || [ ! -d "$$sdk" ]; then \
-		echo "No Android SDK found. Set ANDROID_HOME to where it lives."; \
+android-store: isolated android-project
+	@sdk=$$(node scripts/android-sdk.mjs) || { \
+		echo "No Android SDK here. It is looked for in ANDROID_HOME, ANDROID_SDK_ROOT,"; \
+		echo "~/.bubblewrap/config.json, ~/android-sdk, ~/Android/Sdk and beside adb."; \
+		echo "  make $@ ANDROID_HOME=/path/to/sdk"; \
 		exit 1; \
-	fi; \
+	}; \
 	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q assembleOfficialRelease
 	@echo "APK: capacitor/android/app/build/outputs/apk/official/release/app-official-release-unsigned.apk"
 
 ## remove the app from the phone over adb
+# app.ontoplano.isolated is the retired fourth build, still listed so a phone
+# that has one can be cleaned off. Nothing produces it any more.
 android-uninstall:
-	@sdk="$${ANDROID_HOME:-$$HOME/android-sdk}"; \
+	@sdk=$$(node scripts/android-sdk.mjs || echo ""); \
 	adb="$$(command -v adb || echo "$$sdk/platform-tools/adb")"; \
 	[ -x "$$adb" ] || { echo "No adb. Install android-tools-adb."; exit 1; }; \
 	for id in app.ontoplano app.ontoplano.dev app.ontoplano.staging app.ontoplano.isolated; do \

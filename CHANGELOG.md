@@ -10,7 +10,37 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
-## 0.159.1 — 2026-09-13
+## 0.160.0 — 2026-09-12
+
+- **One phone app, and the phone-only instance is a choice inside it.** There
+  were four Android builds: three pointed at a server by the native layer and
+  a fourth, under its own application id, that was the only one able to be an
+  instance of its own — two launcher icons both called Ontoplano, and a
+  decision made at build time that belongs to whoever is holding the phone.
+  Every build now carries the whole app and boots on the copy it carries. The
+  first screen asks where your ontoplano lives, with that build's address
+  already typed, and the answer is remembered. Choosing the phone from a page
+  an instance served comes home to the copy on the device.
+- **The mark draws at the size it is given.** `make icon` left the hairline
+  frame around an exported logo in place, so the mark kept a margin it was not
+  meant to have and every icon drawn from it — the button in the bar, the
+  favicon, the launcher — came out about a sixth too small. The frame is cut
+  off now, and the button in the bar is the octagon itself rather than an
+  octagon inside a bordered square.
+- **The launcher icon stops losing its corners.** Android shows 72dp of a
+  108dp foreground and the web's maskable icon is measured against a wider safe
+  zone; one asset was being used for both, so the stricter of them was wrong.
+  The adaptive icon's foreground is drawn for its own safe zone now.
+- **Three commands for the phone, and they say what they do.** `make android`
+  builds it, `make android-install` puts it on the phone, and
+  `make android-install-all` installs the same app three times with its own
+  icon and instance each. `make android-store` is the release artifact for the
+  stores. `make up-phone` is gone — it called a target that no longer existed.
+- **`make android` finds the SDK again.** It is looked for in `ANDROID_HOME`,
+  `ANDROID_SDK_ROOT`, bubblewrap's config, `~/android-sdk`, `~/Android/Sdk`
+  and beside `adb` — in one place, rather than three copies that had drifted.
+
+## 0.159.1 — 2026-09-12
 
 - **The room's header reaches the top of the screen.** A sticky element pins
   to the scrollport, which began below the page's own top padding — so the bar
@@ -23,7 +53,7 @@ version.
   from inside the edge, so the white _inside_ the mark is untouched — and
   squares what is left on the mark itself.
 
-## 0.159.0 — 2026-09-13
+## 0.159.0 — 2026-09-12
 
 - **A button has an edge.** Its border was transparent and its fill six
   shades from the page, so on a dark screen a button was a word floating
@@ -38,7 +68,7 @@ version.
   once as its own heading. Neither People nor Notebooks tells a phone that
   nothing is selected in a column a phone does not have.
 
-## 0.158.0 — 2026-09-13
+## 0.158.0 — 2026-09-12
 
 - **Notebooks are folders when you want them to be.** A name with an em dash
   in it is a place: “Renovation — Kitchen” sits inside “Renovation”, which is
@@ -48,7 +78,7 @@ version.
 - **A number field and a text box are components**, so the day they change
   there is one file rather than twenty-five call sites.
 
-## 0.157.0 — 2026-09-13
+## 0.157.0 — 2026-09-12
 
 - **The board slides sideways on a phone.** The columns are side by side in a
   strip that snaps, and a card dragged to the edge takes the strip with it.
@@ -67,7 +97,7 @@ version.
   type, which is what "or one you run yourself" means.
 - An account with no notebooks stops saying so three times.
 
-## 0.156.0 — 2026-09-13
+## 0.156.0 — 2026-09-12
 
 - **Things sit on something.** A card, a panel, a row or a tile with a border
   and no fill was a hairline drawn on the page — outlines floating in space on
@@ -86,7 +116,7 @@ version.
   nothing about the notebook read as "no notebook" rather than as "not my
   business", and quietly unfiled the note.
 
-## 0.155.0 — 2026-09-13
+## 0.155.0 — 2026-09-12
 
 - **One file per route.** A route's `+page.server.ts` is the only copy of its
   load and its actions, and the instance running on a phone imports that exact

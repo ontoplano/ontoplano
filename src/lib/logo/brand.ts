@@ -38,21 +38,40 @@ export const CHROME_GROUND = '#111827';
 /**
  * How much of a plain icon the mark fills.
  *
- * One: `mark.png` already carries about a tenth of itself as margin, which is
- * the right amount for an icon that is not going to be cropped.
+ * One. `make icon` normalises the artwork so the mark reaches the edges of its
+ * own file, which means a plain icon — never cropped, never masked — is the
+ * mark and nothing else. Every scale below is a fraction of a mark that fills
+ * its square, so they are the whole story about margin; there is none hiding in
+ * the file any more.
  */
 export const ICON_SCALE = 1;
 
 /**
  * A maskable icon is cropped to whatever shape the launcher likes, so the mark
  * shrinks into the middle and the ring around it is ground the launcher is
- * welcome to eat. Android's safe zone is the middle 80% of the circle; this is
- * inside it.
+ * welcome to eat.
+ *
+ * The safe zone is the middle 80% of the width, as a circle. A mark with
+ * corners has to fit inside that circle, not inside the square around it: the
+ * octagon's own corners sit at 1/cos(22.5°) — about 1.082 — of half its width
+ * from the centre, so 0.74 puts them at 0.40 of the width, which is the edge of
+ * the circle exactly.
  */
-export const MASKABLE_SCALE = 0.81;
+export const MASKABLE_SCALE = 0.74;
 
 /**
  * iOS ignores the manifest and the safe zone both: it takes the apple-touch
- * icon whole and rounds its corners. So barely any margin, on the ground.
+ * icon whole and rounds its corners. So barely any margin, on the ground —
+ * enough that the rounding does not clip the mark's own corners.
  */
-export const APPLE_SCALE = 0.94;
+export const APPLE_SCALE = 0.86;
+
+/**
+ * How much of an Android adaptive icon's foreground layer the mark fills.
+ *
+ * Stricter than the web's maskable, and a different asset for that reason: the
+ * foreground is 108dp of which the launcher shows 72 and guarantees 66, so the
+ * mark's corners have to fall inside a circle of 0.333 of the width. The same
+ * 1.082 arithmetic puts the limit at 0.616; this is just under it.
+ */
+export const ADAPTIVE_FOREGROUND_SCALE = 0.6;

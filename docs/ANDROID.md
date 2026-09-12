@@ -17,37 +17,53 @@ did this does, and it could never have held an instance of its own.
 
 ## The four apps, and which is which
 
-One project, four flavours. They differ in an application id, a name, an icon
-and the instance they open on — nothing else, and the same code runs in all of
-them.
+One project, three flavours. They differ in an application id, a name, an icon
+and the address their first screen suggests — nothing else, and the same code
+runs in all of them.
 
-| Flavour    | Application id           | Opens on                |
-| ---------- | ------------------------ | ----------------------- |
-| `official` | `app.ontoplano`          | `app.ontoplano.com`     |
-| `dev`      | `app.ontoplano.dev`      | `$ONTOPLANO_DEV_ORIGIN` |
-| `staging`  | `app.ontoplano.staging`  | `staging.ontoplano.com` |
-| `device`   | `app.ontoplano.isolated` | the phone itself        |
+| Flavour    | Application id          | Suggests                |
+| ---------- | ----------------------- | ----------------------- |
+| `official` | `app.ontoplano`         | `app.ontoplano.com`     |
+| `dev`      | `app.ontoplano.dev`     | `$ONTOPLANO_DEV_ORIGIN` |
+| `staging`  | `app.ontoplano.staging` | `staging.ontoplano.com` |
 
-The instance a flavour opens on is its default, not a cage.
+Every one of them carries the whole app and boots on the copy it carries. No
+flavour is pointed at a server by the native layer, which is what lets any
+install be an instance of its own: the first screen asks, "Connect to an
+instance" is selected with that flavour's address already typed, and "This
+phone only" keeps everything on the device. The answer is remembered, so the
+question is asked once.
+
+Leaving an instance — signing out, or the instance screen from a connected
+one — comes back to the same question. Choosing the phone from a page served
+by an instance navigates to the copy on the device, because a different origin
+has its own storage and only an address reaches it.
+
+There is no separate build for the phone-only case. There was, and it was the
+same app under a fourth application id, which meant two icons called Ontoplano
+and a choice made at build time that belongs to whoever is holding the phone.
 
 ## Building
 
 ```sh
-make android                 # the store artifact: official, release, unsigned
-make android-phones          # official, dev and staging, built and installed over adb
-make android-isolated  # the one that is its own instance
-make android-project         # regenerate the committed Gradle project
+make android              # build the app
+make android-install      # and put it on the phone over adb
+make android-install-all  # the same app three times, one per instance
+make android-store        # the store artifact: official, release, unsigned
+make android-project      # regenerate the committed Gradle project
 ```
 
-`make android-phones` takes the dev app's address from the environment, because
-a laptop's place on the wifi changes:
+`make android-install-all` takes the DEV app's address from the environment,
+because a laptop's place on the wifi changes:
 
 ```sh
-ONTOPLANO_DEV_ORIGIN=http://192.168.1.23:1493 make android-phones
+ONTOPLANO_DEV_ORIGIN=http://192.168.1.10:1493 make android-install-all
 ```
 
-Everything needs an Android SDK; set `ANDROID_HOME` if it is not at
-`~/android-sdk`.
+Everything needs an Android SDK. It is looked for in `ANDROID_HOME`,
+`ANDROID_SDK_ROOT`, `~/.bubblewrap/config.json`, `~/android-sdk`,
+`~/Android/Sdk` and beside whatever `adb` is on the path; pass
+`ANDROID_HOME=/path/to/sdk` if it lives somewhere else.
 
 ## What is committed, and why
 
