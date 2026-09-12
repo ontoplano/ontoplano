@@ -18,6 +18,15 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.162.3 — 2026-09-12
+
+- **A migration cannot be edited after it is written.** Changing one strands
+  every database that already ran the old bytes, because that is how an applied
+  migration is identified — and the discovery happens during a deploy. A dev
+  machine and the staging instance were both refused for exactly that reason
+  tonight. `make lint` now fails on any edit to a committed migration, and
+  `scripts/repair-0070.mjs` puts the two affected databases right.
+
 ## 0.162.2 — 2026-09-12
 
 - **`make db-dry-run`** rehearses a deploy's migration against a throwaway copy
