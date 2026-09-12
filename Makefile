@@ -408,7 +408,10 @@ android-phones: isolated
 	@[ -d capacitor/node_modules ] || (cd capacitor && npm install --no-audit --no-fund)
 	@node scripts/brand-android.mjs
 	cd capacitor && npx cap sync android
-	@node scripts/android-flavours.mjs
+	@# The DEV app's address comes from the environment or from defaults.env,
+	@# which local.mk includes — a build in a container cannot work out which
+	@# address on the wifi is this laptop's.
+	@ONTOPLANO_DEV_ORIGIN="$(ONTOPLANO_DEV_ORIGIN)" node scripts/android-flavours.mjs
 	@sdk="$${ANDROID_HOME:-}"; \
 	[ -n "$$sdk" ] || { [ -d "$$HOME/android-sdk" ] && sdk="$$HOME/android-sdk"; }; \
 	if [ -z "$$sdk" ] || [ ! -d "$$sdk" ]; then \

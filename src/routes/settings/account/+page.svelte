@@ -6,6 +6,7 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import Card from '$lib/components/Card.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -365,6 +366,27 @@
 				<p class="px-4 py-3 text-sm text-gray-500">No other sessions.</p>
 			{/each}
 		</div>
+	</Card>
+
+	<!--
+		Which ontoplano this app is looking at.
+		
+		Reachable from every build, not only the one that is its own instance:
+		the app on a phone can be pointed at the official instance, at a laptop
+		on the same wifi, or at a server somebody runs themselves, and the
+		screen that does it has to be findable from inside whichever one it is
+		currently showing.
+	-->
+	<Card
+		title="Where this ontoplano lives"
+		description="This app can open the official instance, one you run yourself, or nothing at all — everything on the phone."
+	>
+		{#snippet actions()}
+			<a href={resolve('/instance')} class="btn btn-sm">Change instance</a>
+		{/snippet}
+		<p class="text-sm text-gray-500">
+			You are looking at <span class="font-medium text-gray-900">{page.url.origin}</span>.
+		</p>
 	</Card>
 
 	<Card title="Export your data">

@@ -41,6 +41,42 @@ const versionCode = major * 10000 + minor * 100 + patch;
  * the project's own as the default. A LAN address changes whenever the
  * router feels like it: pass it in rather than editing this file.
  */
+/** The port `make dev` serves on. One number, named where it is read. */
+const DEV_PORT = 1493;
+
+/**
+ * This machine's address on the wifi, which is the one a phone can reach.
+ *
+ * Asked of the routing table rather than of an interface name, because which
+ * card is "the" card differs per machine — and asked at all because the DEV
+ * app's whole job is to open the laptop sitting next to the phone. A guess
+ * baked in a month ago is an app that opens nothing.
+ */
+function lanAddress() {
+	try {
+		const route = execFileSync('ip', ['route', 'get', '1.1.1.1'], { encoding: 'utf8' });
+		const found = /\bsrc\s+(\S+)/.exec(route)?.[1];
+		/*
+		 * A container's own address is not the wifi's.
+		 *
+		 * Docker's default bridge is 172.17–172.31, and a build running inside
+		 * one finds that rather than the laptop it is running on — an address
+		 * no phone on the network can reach. Better to say so than to ship an
+		 * app that opens nothing.
+		 */
+		if (found && !/^172\.(1[6-9]|2\d|3[01])\./.test(found)) return found;
+	} catch {
+		/* no `ip`, or no route out: fall through */
+	}
+	console.warn(
+		'flavours: this machine cannot tell what its address on the wifi is — a build inside a\n' +
+			'          container never can. The DEV app is pointed at localhost, which on a phone is\n' +
+			'          the phone itself. Set it once in local.mk, or for one run:\n' +
+			`            make android-phones ONTOPLANO_DEV_ORIGIN=http://192.168.1.23:${DEV_PORT}`
+	);
+	return 'localhost';
+}
+
 const FLAVOURS = [
 	{
 		key: 'official',
@@ -54,7 +90,7 @@ const FLAVOURS = [
 		id: 'app.ontoplano.dev',
 		label: 'Ontoplano DEV',
 		icons: '-dev',
-		url: process.env.ONTOPLANO_DEV_ORIGIN || 'http://192.168.1.10:1493'
+		url: process.env.ONTOPLANO_DEV_ORIGIN || `http://${lanAddress()}:${DEV_PORT}`
 	},
 	{
 		key: 'staging',
@@ -153,9 +189,16 @@ for (const flavour of FLAVOURS) {
 					server: {
 						url: flavour.url,
 						cleartext: flavour.url.startsWith('http://'),
-						allowNavigation: FLAVOURS.filter((f) => f.url).map((f) =>
-							new URL(f.url).host.replace(/:\d+$/, '')
-						)
+						/*
+						 * Anywhere the person points it.
+						 *
+						 * The instance screen's whole offer is "the official one, or
+						 * one you run yourself", and a self-hosted instance is at an
+						 * address nobody here can know. A list of the addresses we
+						 * happen to ship would make that offer a lie. It is still the
+						 * person typing it: nothing navigates on its own.
+						 */
+						allowNavigation: ['*']
 					}
 				}
 			: {})

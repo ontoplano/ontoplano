@@ -6,9 +6,7 @@
     "url": "https://app.ontoplano.com",
     "cleartext": false,
     "allowNavigation": [
-      "app.ontoplano.com",
-      "192.168.1.10",
-      "staging.ontoplano.com"
+      "*"
     ]
   }
 }

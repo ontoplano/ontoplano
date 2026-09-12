@@ -19,7 +19,27 @@
 	 */
 	type Kind = 'connected' | 'phone';
 	let kind: Kind = $state('connected');
-	let address = $state(storedInstance() ?? OFFICIAL_INSTANCE);
+	/*
+	 * The address to edit is the one you are on.
+	 *
+	 * The commonest reason to open this screen is that the laptop moved: the
+	 * app is pointed at 192.168.1.10 and the wifi now says .23. Prefilling
+	 * with what it is currently showing makes that two keystrokes; prefilling
+	 * with the official address would make it a retype.
+	 */
+	let address = $state(startingAddress());
+
+	function startingAddress(): string {
+		const stored = storedInstance();
+		if (stored) return stored;
+		if (typeof location === 'undefined') return OFFICIAL_INSTANCE;
+		// The app's own files are served from a local origin; that is not an
+		// instance somebody types.
+		return /^https?:/.test(location.origin) &&
+			!/localhost|127\.0\.0\.1|^file:/.test(location.origin)
+			? location.origin
+			: OFFICIAL_INSTANCE;
+	}
 
 	const CHOICES = {
 		connected: {
@@ -107,6 +127,9 @@
 				class="input mt-1 w-full"
 				placeholder={OFFICIAL_INSTANCE}
 			/>
+			<span class="mt-1 block text-xs text-gray-500">
+				Your phone's back gesture brings you back here.
+			</span>
 		</label>
 	{:else if !canRunHere}
 		<p class="mt-2 text-sm text-amber-800">

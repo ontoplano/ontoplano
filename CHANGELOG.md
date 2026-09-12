@@ -10,6 +10,25 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.157.0 — 2026-09-13
+
+- **The board slides sideways on a phone.** The columns are side by side in a
+  strip that snaps, and a card dragged to the edge takes the strip with it.
+  One column at a time is a list with a tab strip, and moving a card between
+  two things you cannot see at once is a gesture nobody can aim.
+- **The mark on the bottom bar is a docked button, not a sticker.** It was
+  84 pixels hanging a third of itself over the page, with the bar's own line
+  running through it and the page showing through the notches of its rim.
+- **Where this ontoplano lives** is reachable from the account screen in every
+  build, not only the one that is its own instance — and it opens prefilled
+  with the address you are on, because the usual reason to open it is that a
+  laptop moved.
+- `make android-phones` takes the DEV app's address from `defaults.env`, and
+  says plainly that a build inside a container cannot work out which address
+  on the wifi is the laptop's. The app may now be pointed at any instance you
+  type, which is what "or one you run yourself" means.
+- An account with no notebooks stops saying so three times.
+
 ## 0.156.0 — 2026-09-13
 
 - **Things sit on something.** A card, a panel, a row or a tile with a border

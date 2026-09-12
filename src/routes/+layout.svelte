@@ -1013,10 +1013,24 @@
 						No border and no ground: a clipped edge cannot carry a border,
 						and the mark's own bright rim is the edge.
 					-->
+					<!--
+						A ground the shape sits on.
+
+						The button is clipped to the mark's outline, and a clipped edge
+						carries no border — so the bar's own top line ran straight
+						through the shape and the page showed through the notches of
+						its rim. This is the bar's colour in the same outline, a hair
+						larger, which gives the mark an edge to end at.
+					-->
+					<span
+						aria-hidden="true"
+						style="clip-path: {MARK_CLIP_PATH}"
+						class="pointer-events-none absolute -top-[1.1rem] left-1/2 h-[3.9rem] w-[3.9rem] -translate-x-1/2 bg-chrome"
+					></span>
 					<button
 						onpointerdown={(e) => rooms?.summon(e)}
 						style="clip-path: {MARK_CLIP_PATH}"
-						class="tap tap-shape pie-handle absolute -top-[1.95rem] left-1/2 flex h-[5.25rem] w-[5.25rem] -translate-x-1/2 items-center justify-center {roomsOpen
+						class="tap tap-shape pie-handle absolute -top-[0.95rem] left-1/2 flex h-[3.5rem] w-[3.5rem] -translate-x-1/2 items-center justify-center {roomsOpen
 							? 'text-chrome-ink'
 							: 'text-chrome-muted'}"
 						aria-label="Go to a section"
@@ -1025,7 +1039,7 @@
 					>
 						<!-- Edge to edge: the button's own outline is the mark's, so any
 						     inset here would show as a gap inside its own shape. -->
-						<Logo size={84} />
+						<Logo size={56} />
 					</button>
 				</div>
 

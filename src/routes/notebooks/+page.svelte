@@ -249,40 +249,48 @@
 			{/if}
 		</Card>
 
-		<Card
-			title={showingOrphans ? 'Notes without a notebook' : (selected?.title ?? 'Nothing chosen')}
-			description={showingOrphans
-				? 'Their notebook was deleted. The writing was kept — it is not part of the journal, so it waits here.'
-				: selected
-					? (selected.description ?? '')
-					: 'Pick a notebook to see everything that belongs to it.'}
-			accent={SECTION_COLORS.diary}
-			flush
-		>
-			{#snippet actions()}
-				{#if selected}
-					<!-- The way to the notebook's own page, from the column that is
+		<!--
+			The second column is the one you picked, and on a phone there is no
+			second column — there is what is under your thumb. An account with
+			nothing in it showed "no notebooks yet" and then, under it, two more
+			panels saying nothing was chosen.
+		-->
+		<div class:hidden={!selected && !showingOrphans} class="contents lg:!block">
+			<Card
+				title={showingOrphans ? 'Notes without a notebook' : (selected?.title ?? 'Nothing chosen')}
+				description={showingOrphans
+					? 'Their notebook was deleted. The writing was kept — it is not part of the journal, so it waits here.'
+					: selected
+						? (selected.description ?? '')
+						: 'Pick a notebook to see everything that belongs to it.'}
+				accent={SECTION_COLORS.diary}
+				flush
+			>
+				{#snippet actions()}
+					{#if selected}
+						<!-- The way to the notebook's own page, from the column that is
 					     showing it. The list on the left chooses what appears here. -->
-					<a href={resolve('/notebooks/[id]', { id: String(selected.id) })} class="btn btn-sm">
-						Open <Icon name="arrow-right" />
-					</a>
-					<!-- The confirmation is a dialog, not a second button in the same
+						<a href={resolve('/notebooks/[id]', { id: String(selected.id) })} class="btn btn-sm">
+							Open <Icon name="arrow-right" />
+						</a>
+						<!-- The confirmation is a dialog, not a second button in the same
 					     place: a two-step delete that puts "Yes" where "Delete" was is a
 					     double-click away from destroying something. -->
-					<button onclick={() => (confirmingDelete = true)} class="btn btn-danger btn-sm">
-						<Icon name="trash" /> Delete
-					</button>
-				{/if}
-			{/snippet}
+						<button onclick={() => (confirmingDelete = true)} class="btn btn-danger btn-sm">
+							<Icon name="trash" /> Delete
+						</button>
+					{/if}
+				{/snippet}
 
-			<NotebookDetail
-				notebook={selected}
-				contents={data.contents}
-				{orphaned}
-				{showingOrphans}
-				allPeople={data.allPeople}
-			/>
-		</Card>
+				<NotebookDetail
+					notebook={selected}
+					contents={data.contents}
+					{orphaned}
+					{showingOrphans}
+					allPeople={data.allPeople}
+				/>
+			</Card>
+		</div>
 	</div>
 </div>
 

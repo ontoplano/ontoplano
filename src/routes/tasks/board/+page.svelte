@@ -176,20 +176,49 @@
 	);
 
 	/**
-	 * On a phone the board is one column at a time.
+	 * On a phone the board slides sideways.
 	 *
-	 * It used to be a sideways snapping strip of them, which is the standard
-	 * answer and the wrong one here: the columns are as tall as the tallest, so a
-	 * busy Doing in the middle made getting from Pending to Done a scroll through
-	 * a screen and a half of somebody else's cards. Three columns are not enough
-	 * to be worth navigating — they are enough to be named.
+	 * A board is columns; one column at a time is a list with a tab strip, and
+	 * moving a card between two things you cannot see at once is a gesture
+	 * nobody can aim. The columns are side by side now and the strip snaps, so
+	 * a drag can carry a card to the edge and the strip follows it.
+	 *
+	 * Each column is most of the screen wide rather than all of it: the sliver
+	 * of the next one is what says there is a next one.
 	 */
+	let strip: HTMLElement | undefined = $state();
+
+	/** Which column the strip is showing, for the names above it. */
 	let phoneColumn: Status = $state('todo');
 
 	// Hiding Skipped while it is the one on screen would leave a blank board.
 	$effect(() => {
 		if (!columns.some((c) => c.status === phoneColumn)) phoneColumn = 'todo';
 	});
+
+	/** Bring a column into view, from the names above or after a drop. */
+	function showColumn(status: Status) {
+		phoneColumn = status;
+		const at = columns.findIndex((c) => c.status === status);
+		const child = strip?.children[at] as HTMLElement | undefined;
+		child?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+	}
+
+	/**
+	 * A card carried to the edge takes the board with it.
+	 *
+	 * Without this the only way to reach the far column mid-drag is to let go,
+	 * scroll, and pick the card up again — which is not a gesture, it is three.
+	 * The zone is a thumb's width and the step is one frame's worth.
+	 */
+	const EDGE_ZONE = 56;
+	const EDGE_STEP = 18;
+	function scrollAtEdge(event: DragEvent) {
+		if (!strip) return;
+		const box = strip.getBoundingClientRect();
+		if (event.clientX < box.left + EDGE_ZONE) strip.scrollLeft -= EDGE_STEP;
+		else if (event.clientX > box.right - EDGE_ZONE) strip.scrollLeft += EDGE_STEP;
+	}
 
 	const focusedCard = $derived(columns[focusCol]?.cards[focusRow] ?? null);
 
@@ -864,7 +893,7 @@
 				{#each columns as column (column.status)}
 					<button
 						type="button"
-						onclick={() => (phoneColumn = column.status)}
+						onclick={() => showColumn(column.status)}
 						aria-pressed={phoneColumn === column.status}
 						ondragover={(e) => {
 							e.preventDefault();
@@ -876,9 +905,9 @@
 						ondrop={async (e) => {
 							const card = dragging;
 							await onDropInColumn(column.status, e);
-							// Follow it. A card that moved to a column you cannot see
-							// has, as far as the screen is concerned, vanished.
-							if (card) phoneColumn = column.status;
+							// Follow it: the card has moved, and the board should be
+							// looking at where it went.
+							if (card) showColumn(column.status);
 						}}
 						class="flex-1 gap-1.5 {dragging && dragOverColumn === column.status
 							? 'bg-gray-900 text-white'
@@ -895,14 +924,15 @@
 			</div>
 
 			<div
-				class="grid grid-cols-1 gap-3 md:auto-cols-fr md:grid-flow-col"
+				bind:this={strip}
+				ondragover={scrollAtEdge}
+				class="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:auto-cols-fr md:grid-flow-col md:overflow-visible md:px-0"
 				data-tour="board-columns"
 			>
 				{#each columns as column, ci (column.status)}
 					<section
-						class="min-h-64 flex-col border bg-gray-50 {phoneColumn === column.status
-							? 'flex'
-							: 'hidden'} md:flex {dragOverColumn === column.status
+						class="flex min-h-64 w-[86%] shrink-0 snap-start flex-col border bg-gray-50 md:w-auto {dragOverColumn ===
+						column.status
 							? 'border-gray-900'
 							: 'border-gray-200'}"
 						ondragover={(e) => {

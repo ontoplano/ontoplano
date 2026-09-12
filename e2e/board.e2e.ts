@@ -182,13 +182,14 @@ test.describe('undo on a card ticked off', () => {
  *
  * It was a sideways snapping strip of columns, all as tall as the tallest, so
  * getting from Pending to Done meant scrolling past a full-height Doing. Three
- * columns are not enough to be worth navigating — they are enough to be named,
- * so the phone shows one at a time and a switcher above it.
+ * columns are a board, and a board you can only see one column of is a list
+ * with a tab strip — so the phone slides sideways, and the names above it jump
+ * the strip to a column rather than swapping which one exists.
  */
 test.describe('the board on a phone', () => {
 	test.use({ viewport: { width: 390, height: 844 } });
 
-	test('shows one column at a time, chosen by name', async ({ page }) => {
+	test('slides sideways, and the names jump to a column', async ({ page }) => {
 		await register(page, `board-phone-${Date.now()}@example.test`);
 		const title = 'A card to find under Done';
 		await newCard(page, title);
@@ -200,14 +201,20 @@ test.describe('the board on a phone', () => {
 		);
 		await expect(page.getByText(title, { exact: true })).toBeVisible();
 
+		// The columns are all there — side by side, in a strip that scrolls.
+		const strip = page.locator('[data-tour="board-columns"]');
+		const room = await strip.evaluate((s) => s.scrollWidth - s.clientWidth);
+		expect(room, 'the columns have somewhere to slide to').toBeGreaterThan(50);
+
+		const was = await strip.evaluate((s) => s.scrollLeft);
 		await page.getByRole('button', { name: /^Done/ }).click();
 		await expect(page.getByRole('button', { name: /^Done/ })).toHaveAttribute(
 			'aria-pressed',
 			'true'
 		);
-		// One column on screen at a time: Pending's card is no longer on it, and
-		// nothing had to be scrolled past to get here.
-		await expect(page.getByText(title, { exact: true })).toBeHidden();
+		await expect
+			.poll(() => strip.evaluate((s) => s.scrollLeft), { timeout: 5000 })
+			.toBeGreaterThan(was);
 	});
 });
 
