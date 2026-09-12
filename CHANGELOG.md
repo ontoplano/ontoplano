@@ -10,6 +10,14 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.150.1 — 2026-09-12
+
+- The switch that turns the `/dev` workbenches on is `[instance] dev_tools`
+  in `config.toml`, with everything else an instance allows, rather than an
+  environment variable of its own. What the deployment is — where the
+  database lives, what to bind — is the environment's; what the instance
+  permits is one file.
+
 ## 0.150.0 — 2026-09-12
 
 - **The page turn can be turned while it runs.** `/dev/page-turn` — on a dev

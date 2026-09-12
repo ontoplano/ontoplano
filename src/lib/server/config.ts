@@ -111,6 +111,11 @@ origin = ""
 [instance]
 tagline = "Managing life, one week at a time"
 
+# The workbenches under /dev — not screens of the app, and off unless the
+# person running this wants them. /dev/page-turn is the screen transition
+# with its grain, speed and hardness on sliders.
+dev_tools = "false"
+
 [media]
 max_kilobytes = "500"
 recipe_images = "6"
@@ -249,6 +254,20 @@ export interface OntoplanoConfig {
 	};
 	instance: {
 		/**
+		 * Whether this instance carries the workbenches under `/dev`.
+		 *
+		 * Off everywhere unless somebody turns it on. They are not screens of
+		 * the app — `/dev/page-turn` puts the screen transition's grain, speed
+		 * and hardness on sliders so it can be judged by watching it on a real
+		 * phone — and an instance somebody else runs has no reason to carry
+		 * them or to know they exist.
+		 *
+		 * Here rather than in an environment variable because this is a thing
+		 * the instance allows, and everything an instance allows is in this
+		 * one file.
+		 */
+		devTools: boolean;
+		/**
 		 * The one line under the name on the signed-out front page.
 		 *
 		 * Here rather than in the component because it is the operator's
@@ -326,6 +345,7 @@ origin = ${q(config.newsletter.origin)}
 
 [instance]
 tagline = ${q(config.instance.tagline)}
+dev_tools = ${q(config.instance.devTools)}
 
 [media]
 max_kilobytes = ${q(config.media.maxKilobytes)}
@@ -429,7 +449,8 @@ export function loadConfig(): OntoplanoConfig {
 			})()
 		},
 		instance: {
-			tagline: (instance.tagline || '').trim() || DEFAULT_TAGLINE
+			tagline: (instance.tagline || '').trim() || DEFAULT_TAGLINE,
+			devTools: instance.dev_tools === 'true'
 		},
 		media: {
 			/*

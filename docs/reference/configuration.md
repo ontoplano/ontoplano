@@ -143,9 +143,24 @@ self-hosted instance wants even with the list turned on.
 
 ### `[instance]`
 
-| Key       | Type     | Means                                                     |
-| --------- | -------- | --------------------------------------------------------- |
-| `tagline` | `string` | The one line under the name on the signed-out front page. |
+| Key        | Type      | Means                                                       |
+| ---------- | --------- | ----------------------------------------------------------- |
+| `devTools` | `boolean` | Whether this instance carries the workbenches under `/dev`. |
+| `tagline`  | `string`  | The one line under the name on the signed-out front page.   |
+
+**`devTools`**
+
+Whether this instance carries the workbenches under `/dev`.
+
+Off everywhere unless somebody turns it on. They are not screens of
+the app — `/dev/page-turn` puts the screen transition's grain, speed
+and hardness on sliders so it can be judged by watching it on a real
+phone — and an instance somebody else runs has no reason to carry
+them or to know they exist.
+
+Here rather than in an environment variable because this is a thing
+the instance allows, and everything an instance allows is in this
+one file.
 
 **`tagline`**
 
@@ -179,7 +194,6 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_DEMO_MAX_ACCOUNTS`          | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_DEMO_TTL_MINUTES`           | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_DEV_ORIGIN`                 | `scripts/android-flavours.mjs`                                                                                                                             |
-| `ONTOPLANO_DEV_TOOLS`                  | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_DOCS_URL`                   | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_FAIL2BAN_LOG`               | `src/lib/server/services/protection.ts`                                                                                                                    |
 | `ONTOPLANO_FAMILY_SEATS`               | `src/lib/server/settings.ts`                                                                                                                               |

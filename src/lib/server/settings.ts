@@ -4,6 +4,7 @@
  * nature. A person's own settings live in `$lib/services/settings.ts` and are
  * re-exported here so server code keeps one import for both.
  */
+import { loadConfig } from './config.js';
 import { DEFAULT_PRICING, type Pricing } from '../plans.js';
 import { db } from '$lib/db/index.js';
 import { user } from '$lib/db/schema.js';
@@ -148,14 +149,18 @@ export function isDemo(): boolean {
 /**
  * Whether this instance carries the workbenches under `/dev`.
  *
- * Its own setting rather than "is this staging", because staging runs
- * production's code and differs only in what its env file says — a screen
- * that appears because an instance is called staging is exactly the branch
- * that rule exists to prevent. Off unless an env file turns it on, so a
- * self-hosted instance never learns these pages exist.
+ * `[instance] dev_tools` in `config.toml`, with everything else an instance
+ * allows, rather than an environment variable of its own — the deployment's
+ * variables say where the database is and what to bind; what the instance
+ * permits is one file.
+ *
+ * A setting rather than "is this staging", too: staging runs production's
+ * code, and a screen that appears because an instance is called staging is
+ * exactly the branch that rule exists to prevent. Off unless somebody says
+ * otherwise, so a self-hosted instance never learns these pages exist.
  */
 export function devToolsEnabled(): boolean {
-	return process.env.ONTOPLANO_DEV_TOOLS === 'true';
+	return loadConfig().instance.devTools;
 }
 
 /**

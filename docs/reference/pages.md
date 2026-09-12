@@ -126,10 +126,10 @@ A workbench, not a screen of the app.
 
 The dissolve is decided by watching it, not by reading three numbers, so
 this exists to be opened on a real phone and fiddled with. It is not a
-preference and it is not shipped: an instance answers 404 unless its env
-file says `ONTOPLANO_DEV_TOOLS=true`, and anyone running one never learns
-it was here. A setting rather than "is this staging", because staging runs
-production's code.
+preference and it is not shipped: an instance answers 404 unless
+`[instance] dev_tools` in its `config.toml` says otherwise, and anyone
+running one never learns it was here. A setting rather than "is this
+staging", because staging runs production's code.
 
 ### `/finance/bills`
 
