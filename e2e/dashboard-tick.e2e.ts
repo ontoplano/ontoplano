@@ -97,17 +97,49 @@ test('ticking one off moves nothing on the card', async ({ page }) => {
 
 	const title = await firstTask(page);
 	const rows = card.locator('li');
-	const below = await rows.nth(1).boundingBox();
+	// The last row rather than the second: how many tasks the starter week
+	// puts on today depends on which weekday today is, and the furthest one
+	// down the card is the one anything growing above it would move.
+	const below = await rows.last().boundingBox();
 	const box = await card.boundingBox();
 
 	await page.getByRole('button', { name: `Mark ${title} done`, exact: true }).click();
 	await expect(card.getByText('1 done', { exact: true })).toBeVisible();
 
-	// To the pixel: the row under the one that was pressed has not moved, and
-	// the card has not grown under it either — "1 done" appearing at the foot
-	// of it is a line the card was already paying for.
-	expect(await rows.nth(1).boundingBox()).toMatchObject({ y: below!.y });
+	// To the pixel: nothing under the press has moved, and the card has not
+	// grown under it either — the count going from none to one is a line the
+	// card was already paying for.
+	expect(await rows.last().boundingBox()).toMatchObject({ y: below!.y });
 	expect(await card.boundingBox()).toMatchObject({ y: box!.y, height: box!.height });
+});
+
+/*
+ * The card at the top used to empty itself when the day ran out of blocks,
+ * and everything under it jumped up its whole height — including the list the
+ * person had just pressed something in, several seconds after they pressed
+ * it. Answering from it must move nothing, whether or not it was the last
+ * block of the day, which is why this waits the write out rather than
+ * measuring while it is still held.
+ */
+test('answering the block at the top moves nothing under it', async ({ page }) => {
+	await register(page, `dash-now-${Date.now()}@test.invalid`);
+	await visit(page, '/');
+
+	const card = page
+		.locator('section')
+		.filter({ has: page.getByRole('heading', { name: "Today's Tasks" }) });
+	await expect(card).toBeVisible();
+	const before = await card.boundingBox();
+
+	await page.getByRole('button', { name: 'Done', exact: true }).click();
+	// Past the undo window, so the server has answered and the page has been
+	// redrawn from it.
+	await expect(page.getByText(/^Completed /)).toHaveCount(0, { timeout: 15_000 });
+	// Still there with the day answered in it, rather than gone.
+	await expect(page.locator('.now-card')).toBeVisible();
+	await expect(card).toBeVisible();
+
+	expect(await card.boundingBox()).toMatchObject({ y: before!.y });
 });
 
 test('letting the window run out really does finish it', async ({ page }) => {

@@ -20,9 +20,24 @@ import type { Ctx } from '$lib/services/ctx.js';
 import { stamp, stamps } from '$lib/services/time.js';
 import { ConflictError, NotFoundError, ValidationError } from '$lib/services/errors.js';
 import { str } from '$lib/services/validate.js';
-import { mediaLimits, removeIfUnreferenced, store } from './media.js';
+import {
+	ACCEPTED_EXTENSIONS,
+	bytesStored,
+	mediaLimits,
+	removeIfUnreferenced,
+	store
+} from './media.js';
 
 export const MAX_ALBUM_NAME_LENGTH = 120;
+/**
+ * How much of one folder's name survives into the album's.
+ *
+ * A folder name is a string from somebody's disk, and a deep tree of long
+ * ones would exceed what an album may be called. Per segment rather than on
+ * the joined name, so a long folder deep down does not eat the names above
+ * it.
+ */
+export const MAX_ALBUM_SEGMENT_LENGTH = 60;
 
 export type Album = {
 	id: number;
@@ -55,6 +70,53 @@ export type AlbumPicture = {
  * from typing that.
  */
 export const ALBUM_SEPARATOR = ' — ';
+
+/**
+ * The album a chosen file belongs in, from the path the browser sent.
+ *
+ * `webkitRelativePath` looks like a path but it is a string the client
+ * wrote, and this is where it stops being one: the segments are split off,
+ * `.` and `..` are dropped rather than resolved, separators and control
+ * characters are removed, and the em-dash this module uses to mean "inside"
+ * is taken out of each segment so a folder literally called `a — b` names
+ * one album rather than forging two levels. Nothing here ever reaches a
+ * filesystem — the bytes are a column — but a name that still looks like a
+ * path invites somebody later to treat it as one.
+ *
+ * Too deep or too long lands in the nearest ancestor that fits, because an
+ * import that refuses a photograph over the length of a folder name is worse
+ * than one that files it a level up.
+ */
+export function albumNameFor(path: string, under?: string): string {
+	const clean = (raw: string) =>
+		raw
+			.replace(/[\\/]/g, ' ')
+			// eslint-disable-next-line no-control-regex
+			.replace(/[\u0000-\u001f\u007f]/g, '')
+			.replace(/[—–]/g, '-')
+			.replace(/\s+/g, ' ')
+			.trim()
+			.slice(0, MAX_ALBUM_SEGMENT_LENGTH);
+
+	const folders = String(path)
+		.split('/')
+		.map(clean)
+		.filter((part) => part && part !== '.' && part !== '..');
+	// The last segment is the file itself, not a folder.
+	folders.pop();
+
+	const parts = [...(under ? [clean(under)] : []), ...folders].filter(Boolean);
+	while (parts.length > 1 && parts.join(ALBUM_SEPARATOR).length > MAX_ALBUM_NAME_LENGTH)
+		parts.pop();
+
+	return parts.join(ALBUM_SEPARATOR).slice(0, MAX_ALBUM_NAME_LENGTH) || 'Imported';
+}
+
+/** Does this name claim to be one of the formats taken here? */
+function looksLikePicture(path: string): boolean {
+	const extension = path.split('.').pop()?.toLowerCase() ?? '';
+	return ACCEPTED_EXTENSIONS.includes(extension);
+}
 
 export type AlbumNode = Album & { depth: number; children: AlbumNode[] };
 
@@ -272,6 +334,9 @@ export type FolderPlan = {
 	albums: string[];
 	/** The instance's ceiling, so the screen can name it rather than imply it. */
 	maxKilobytes: number;
+	/** How many files one import may carry, and how much one request may. */
+	maxFiles: number;
+	batchBytes: number;
 	willImport: number;
 	willRefuse: number;
 };
@@ -285,8 +350,9 @@ export type FolderPlan = {
  * says what would happen to each, and the import proper only runs on a
  * second press.
  *
- * Deliberately pure: it takes names and sizes, never the bytes, so looking
- * costs one small request instead of the whole folder going up twice.
+ * Names and sizes, never the bytes, so looking at a folder costs one small
+ * request instead of the whole folder going up twice — and every ceiling the
+ * import will be judged against is counted here, so "will import" means it.
  */
 export function planFolder(
 	ctx: Ctx,
@@ -296,34 +362,58 @@ export function planFolder(
 	const limits = mediaLimits();
 	const albums = new Set<string>();
 
-	const planned = files.map((file) => {
-		const parts = file.path.split('/').filter(Boolean);
-		parts.pop();
-		const album = [opts.under, ...parts].filter(Boolean).join(' — ') || 'Imported';
+	// What the account has already spent, and what each album already holds:
+	// the ceilings the import will actually be judged against. Counted here
+	// too, so the preview promises what happens rather than the happy case.
+	let bytesLeft = limits.accountBytes - bytesStored(ctx);
+	const existing = listAlbums(ctx);
+	const held = new Map(existing.map((a) => [a.name, a.count]));
+	let albumsLeft = limits.galleryAlbums - existing.length;
 
-		const tooBig = file.bytes > limits.maxBytes;
-		const empty = file.bytes === 0;
-		if (!tooBig && !empty) albums.add(album);
+	/*
+	 * Why this file would not land, in the order the import would find out.
+	 * The first true one is the reason given, because that is the one the
+	 * person has to act on.
+	 */
+	const refusalFor = (file: { path: string; bytes: number }, album: string, index: number) => {
+		if (!looksLikePicture(file.path))
+			return 'That is not a picture this instance takes — JPEG, PNG, GIF or WebP.';
+		if (file.bytes === 0) return 'That file is empty.';
+		if (file.bytes > limits.maxBytes)
+			return `Pictures here are at most ${limits.maxKilobytes}KB, and that one is ${Math.ceil(
+				file.bytes / 1024
+			)}KB.`;
+		if (index >= limits.importFiles)
+			return `One import takes ${limits.importFiles} files, and this folder has more.`;
+		if (file.bytes > bytesLeft)
+			return `Your pictures would go over this instance's ${limits.accountMegabytes}MB.`;
+		if (!held.has(album) && albumsLeft <= 0)
+			return `This instance keeps ${limits.galleryAlbums} albums, and that is all of them.`;
+		if ((held.get(album) ?? 0) >= limits.albumImages)
+			return `An album holds ${limits.albumImages} pictures, and "${album}" is full.`;
+		return undefined;
+	};
 
-		return {
-			path: file.path,
-			album,
-			bytes: file.bytes,
-			ok: !tooBig && !empty,
-			refusedBecause: empty
-				? 'That file is empty.'
-				: tooBig
-					? `Pictures here are at most ${limits.maxKilobytes}KB, and that one is ${Math.ceil(
-							file.bytes / 1024
-						)}KB.`
-					: undefined
-		};
+	const planned = files.map((file, index) => {
+		const album = albumNameFor(file.path, opts.under);
+		const refusedBecause = refusalFor(file, album, index);
+
+		if (!refusedBecause) {
+			albums.add(album);
+			bytesLeft -= file.bytes;
+			if (!held.has(album)) albumsLeft -= 1;
+			held.set(album, (held.get(album) ?? 0) + 1);
+		}
+
+		return { path: file.path, album, bytes: file.bytes, ok: !refusedBecause, refusedBecause };
 	});
 
 	return {
 		files: planned,
 		albums: [...albums],
 		maxKilobytes: limits.maxKilobytes,
+		maxFiles: limits.importFiles,
+		batchBytes: limits.importBatchBytes,
 		willImport: planned.filter((f) => f.ok).length,
 		willRefuse: planned.filter((f) => !f.ok).length
 	};
@@ -338,26 +428,25 @@ export function importFolder(
 	let pictures = 0;
 	let skipped = 0;
 
-	for (const file of files) {
-		// The path as the picker gives it: 'Birds/Herons/a.jpg'. The file's own
-		// name is the last part, so everything before it names the album.
-		const parts = file.path.split('/').filter(Boolean);
-		parts.pop();
-		const name = [opts.under, ...parts].filter(Boolean).join(' — ') || 'Imported';
-
-		let albumId = made.get(name);
-		if (albumId === undefined) {
-			const existing = listAlbums(ctx).find((a) => a.name === name);
-			albumId = existing ? existing.id : createAlbum(ctx, { name }).id;
-			made.set(name, albumId);
-		}
+	// The same ceiling the preview counted against. A batch is one request of
+	// several, so this bounds what one request does, not what a whole tree
+	// may be — the tree's own ceiling is the preview's.
+	for (const file of files.slice(0, mediaLimits().importFiles)) {
+		const name = albumNameFor(file.path, opts.under);
 
 		try {
+			let albumId = made.get(name);
+			if (albumId === undefined) {
+				const existing = listAlbums(ctx).find((a) => a.name === name);
+				albumId = existing ? existing.id : createAlbum(ctx, { name }).id;
+				made.set(name, albumId);
+			}
 			uploadToAlbum(ctx, albumId, { bytes: file.bytes, filename: file.filename });
 			pictures += 1;
 		} catch {
-			// One picture too big, or one album full: the rest of the tree still
-			// arrives, and the count says how many did not.
+			// One picture too big, one album full, or no room for another album:
+			// the rest of the tree still arrives, and the count says how many
+			// did not. Which ones is what the preview is for.
 			skipped += 1;
 		}
 	}

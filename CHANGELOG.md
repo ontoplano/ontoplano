@@ -10,6 +10,35 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.147.0 — 2026-09-12
+
+- **A big folder imports.** The tree is sent in batches that fit in one
+  request instead of all at once, which is what a hundred photographs needed:
+  a single upload that large was refused by the server before the app saw it,
+  with an error no page could read. The button counts as it goes.
+- **The preview promises what happens.** It now counts the ceilings the
+  import is actually judged against — your instance's megabytes, how many
+  albums it keeps, how full an album already is, how many files one import
+  takes — so "will import 40" means forty, not forty minus whatever the
+  quota eats.
+- **A folder's name is a name.** Paths from the picker stop being paths: no
+  `..`, no separators, no control characters, and a folder called `a — b`
+  makes one album rather than forging two levels. A tree too deep to name
+  lands in the nearest album that fits instead of failing.
+- **A pattern that could never finish is refused.** A finance rule like
+  `(a+)+$` takes exponential time on a line that nearly matches and cannot be
+  interrupted once running — on a shared instance that is everybody's app
+  stopping. Rules are checked when written and again when read, and a rule
+  that is not being run now says so beside its name instead of looking like
+  one that matches nothing.
+- A statement import has named ceilings — how much text, how many lines, how
+  long a description — rather than an unbounded read.
+- **Answering the last block of the day no longer throws the page upwards.**
+  The card at the top of the dashboard emptied itself and everything under it
+  — including the list you had just pressed something in — jumped up its whole
+  height, several seconds after the press. It keeps its height now and says
+  the day is answered.
+
 ## 0.146.0 — 2026-09-12
 
 - **Three apps on the phone, one command.** `make android-phones` builds and

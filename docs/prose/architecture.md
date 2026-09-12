@@ -79,6 +79,16 @@ Three rules guard what comes in, and all three are in `services/media.ts`:
 - **The ceilings are the operator's** — per picture, per recipe, per entry and
   per account — and they are enforced in the service, so the API has them too.
 
+Importing a folder adds two more. The path the browser sends is a string the
+client wrote, so `albumNameFor` strips it back to segments and refuses to
+treat it as a path: no `..`, no separators, no control characters, and the
+em dash that means "inside" is taken out of each folder's own name. And a
+folder is many pictures, so it is sent in batches sized to what the server
+will read in one body (`[media] import_files` bounds the tree,
+`BODY_SIZE_LIMIT` less its framing bounds the batch) — a whole tree in one
+POST is refused by the Node adapter before this app runs, with a plain 413
+whose body no page can read.
+
 Serving is `/media/<id>`, scoped by owner in the `WHERE`, with `nosniff` and an
 immutable cache. Inside somebody's writing a picture is markdown pointing at
 that address, and the renderer refuses any other address: an external one would

@@ -113,6 +113,10 @@ entry_images = "20"
 gallery_albums = "100"
 album_images = "500"
 account_megabytes = "250"
+
+# The most files one folder import may carry. The browser sends the tree in
+# batches that fit in one request; this is the whole tree's ceiling.
+import_files = "2000"
 `;
 
 /**
@@ -200,6 +204,15 @@ export interface OntoplanoConfig {
 		galleryAlbums: number;
 		/** How many pictures one album may hold. */
 		albumImages: number;
+		/**
+		 * How many files one folder import may carry.
+		 *
+		 * A tree chosen in the picker is a number the person did not type, and
+		 * a hundred thousand of them would be read into this process's memory
+		 * one request at a time. The ceiling is named so the preview can say
+		 * what it left out rather than silently stopping at some number.
+		 */
+		importFiles: number;
 	};
 	newsletter: {
 		/**
@@ -292,6 +305,7 @@ entry_images = "${config.media.entryImages}"
 gallery_albums = "${config.media.galleryAlbums}"
 album_images = "${config.media.albumImages}"
 account_megabytes = "${config.media.accountMegabytes}"
+import_files = "${config.media.importFiles}"
 `;
 }
 
@@ -406,7 +420,8 @@ export function loadConfig(): OntoplanoConfig {
 			// in its config.
 			galleryAlbums: bounded(media.gallery_albums, 100, 1, 10_000),
 			albumImages: bounded(media.album_images, 500, 1, 100_000),
-			accountMegabytes: bounded(media.account_megabytes, 250, 1, 100_000)
+			accountMegabytes: bounded(media.account_megabytes, 250, 1, 100_000),
+			importFiles: bounded(media.import_files, 2000, 1, 100_000)
 		}
 	};
 }

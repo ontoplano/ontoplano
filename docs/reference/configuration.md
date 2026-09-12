@@ -92,6 +92,7 @@ actually listening names an address here.
 | `accountMegabytes` | `number` | Everything one account's pictures may add up to, in megabytes.       |
 | `galleryAlbums`    | `number` | How many albums one account may keep.                                |
 | `albumImages`      | `number` | How many pictures one album may hold.                                |
+| `importFiles`      | `number` | How many files one folder import may carry.                          |
 
 **`maxKilobytes`**
 
@@ -101,6 +102,15 @@ Enforced on the server against the bytes actually received, not against
 what the browser said it was sending. Pictures are rows in the same
 SQLite file as everything else, so this is also the number that decides
 how fast that file grows.
+
+**`importFiles`**
+
+How many files one folder import may carry.
+
+A tree chosen in the picker is a number the person did not type, and
+a hundred thousand of them would be read into this process's memory
+one request at a time. The ceiling is named so the preview can say
+what it left out rather than silently stopping at some number.
 
 ### `[newsletter]`
 

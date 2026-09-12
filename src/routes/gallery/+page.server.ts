@@ -10,6 +10,7 @@ import {
 	planFolder,
 	renameAlbum
 } from '$lib/server/services/gallery';
+import { mediaLimits } from '$lib/server/services/media';
 import { fail } from '@sveltejs/kit';
 
 /**
@@ -61,7 +62,10 @@ export const actions: Actions = {
 				success: true,
 				plan: planFolder(
 					buildCtx(locals.user!.id),
-					listed.slice(0, 2000).map((f) => ({
+					// One more than the ceiling is enough to say "and more" —
+					// a listing of a hundred thousand names is itself a body
+					// this has no reason to hold.
+					listed.slice(0, mediaLimits().importFiles + 1).map((f) => ({
 						path: String(f.path ?? ''),
 						bytes: Number(f.bytes ?? 0)
 					})),
@@ -73,26 +77,44 @@ export const actions: Actions = {
 		}
 	},
 
+	/*
+	 * One batch of the tree, as bytes.
+	 *
+	 * The browser sends the folder in several requests rather than one: a
+	 * hundred photographs in a single POST is a body the Node adapter
+	 * refuses before this app runs, with a plain 413 no page can read. Each
+	 * file is read in turn rather than all at once, so the memory this holds
+	 * is one picture and not the batch.
+	 */
 	importFolder: async ({ request, locals }) => {
 		const form = await request.formData();
 		try {
-			const files = form.getAll('file').filter((f): f is File => f instanceof File && f.size > 0);
+			const limits = mediaLimits();
+			const files = form
+				.getAll('file')
+				.filter((f): f is File => f instanceof File && f.size > 0)
+				.slice(0, limits.importFiles);
 			const paths = form.getAll('path').map(String);
 			if (files.length === 0) return fail(400, { message: 'Choose a folder first.' });
 
-			const result = importFolder(
-				buildCtx(locals.user!.id),
-				await Promise.all(
-					files.map(async (file, i) => ({
-						// The relative path when the picker gave one, else the bare name.
-						path: paths[i] || file.name,
-						filename: file.name,
-						bytes: Buffer.from(await file.arrayBuffer())
-					}))
-				),
-				{ under: String(form.get('under') ?? '').trim() || undefined }
-			);
-			return { success: true, ...result };
+			const read: { path: string; filename: string; bytes: Buffer }[] = [];
+			for (const [i, file] of files.entries()) {
+				// Over the ceiling never becomes a buffer: the service would
+				// refuse it, and reading it first is the cost without the use.
+				if (file.size > limits.maxBytes) continue;
+				read.push({
+					// The relative path when the picker gave one, else the bare name.
+					path: paths[i] || file.name,
+					filename: file.name,
+					bytes: Buffer.from(await file.arrayBuffer())
+				});
+			}
+			const skippedBySize = files.length - read.length;
+
+			const result = importFolder(buildCtx(locals.user!.id), read, {
+				under: String(form.get('under') ?? '').trim() || undefined
+			});
+			return { success: true, ...result, skipped: result.skipped + skippedBySize };
 		} catch (e) {
 			return toActionFailure(e);
 		}

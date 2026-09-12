@@ -128,9 +128,18 @@
 									<code class="min-w-0 flex-1 truncate text-xs text-gray-500" title={rule.pattern}>
 										/{rule.pattern}/i
 									</code>
-									<span class="shrink-0 text-xs text-gray-400 tabular-nums" title="lines it claims">
-										{rule.matches}
-									</span>
+									{#if rule.problem}
+										<span class="shrink-0 text-xs font-medium text-red-700" title={rule.problem}>
+											not running
+										</span>
+									{:else}
+										<span
+											class="shrink-0 text-xs text-gray-400 tabular-nums"
+											title="lines it claims"
+										>
+											{rule.matches}
+										</span>
+									{/if}
 									<form method="post" action="?/move" use:enhance>
 										<input type="hidden" name="id" value={rule.id} />
 										<input type="hidden" name="delta" value="-1" />

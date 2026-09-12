@@ -63,6 +63,7 @@ shows up here on the next build.
 | [`push`](#push)                                 | Telling somebody something while the app is closed.                                                                                                                                                                                                                  |
 | [`quotes`](#quotes)                             | The quotes shown one-per-day on the dashboard.                                                                                                                                                                                                                       |
 | [`recipes`](#recipes)                           | Recipes, and the loop they close.                                                                                                                                                                                                                                    |
+| [`regex-safety`](#regex-safety)                 | Patterns somebody types, and the ones that never finish.                                                                                                                                                                                                             |
 | [`registration`](#registration)                 | Who is allowed to create an account here.                                                                                                                                                                                                                            |
 | [`reminder-clock`](#reminder-clock)             | The thing that makes a reminder arrive when it says it will.                                                                                                                                                                                                         |
 | [`reminder-delivery`](#reminder-delivery)       | The pass that makes a reminder arrive with the app shut.                                                                                                                                                                                                             |
@@ -1199,6 +1200,23 @@ gains the gallery when media does.
 
 ### Functions
 
+#### `albumNameFor(path, under)`
+
+The album a chosen file belongs in, from the path the browser sent.
+
+`webkitRelativePath` looks like a path but it is a string the client
+wrote, and this is where it stops being one: the segments are split off,
+`.` and `..` are dropped rather than resolved, separators and control
+characters are removed, and the em-dash this module uses to mean "inside"
+is taken out of each segment so a folder literally called `a — b` names
+one album rather than forging two levels. Nothing here ever reaches a
+filesystem — the bytes are a column — but a name that still looks like a
+path invites somebody later to treat it as one.
+
+Too deep or too long lands in the nearest ancestor that fits, because an
+import that refuses a photograph over the length of a folder name is worse
+than one that files it a level up.
+
 #### `albumTree(ctx)`
 
 The albums as they belong to each other, roots first.
@@ -1230,8 +1248,9 @@ and nobody knows which. So the browser reads the names and sizes, this
 says what would happen to each, and the import proper only runs on a
 second press.
 
-Deliberately pure: it takes names and sizes, never the bytes, so looking
-costs one small request instead of the whole folder going up twice.
+Names and sizes, never the bytes, so looking at a folder costs one small
+request instead of the whole folder going up twice — and every ceiling the
+import will be judged against is counted here, so "will import" means it.
 
 #### `importFolder(ctx, files, opts)`
 
@@ -2818,6 +2837,37 @@ Recipes ordered by how much of them you already have.
 - `Ingredient`
 - `Recipe`
 - `Needed`
+
+## regex-safety
+
+Patterns somebody types, and the ones that never finish.
+
+A finance rule is a regular expression written by a person and then run
+against every line of every statement, on the server, every time a page is
+drawn. JavaScript's engine backtracks, so a pattern like `(a+)+$` takes
+exponential time on an input that nearly matches: a few dozen characters is
+already longer than the heat death of the sun, and there is no way to
+interrupt a running match — it holds the whole process, which on a shared
+instance means everybody's.
+
+The engine gives no timeout, so the check has to happen before the pattern
+is ever run. What makes a pattern explode is always the same shape: a
+repetition wrapped in another repetition, where the inner one can match the
+same text in more than one way. That is what is looked for here, plus the
+two other things that cost more than they are worth — backreferences, which
+force the backtracking engine, and counted repetitions with enormous counts.
+
+This refuses some patterns that would in fact have been fine. That is the
+right direction to be wrong in: the answer names the shape and the person
+writes `[a-z]+` instead of `(a+)+`, which is what they meant anyway.
+
+### Functions
+
+#### `unsafePattern(pattern)`
+
+Why this pattern must not be run, or null if it may be.
+
+The reason is a sentence for whoever typed it, not a diagnostic.
 
 ## registration
 

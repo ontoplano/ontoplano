@@ -1906,6 +1906,20 @@ option {
 	--control-on: #1d4ed8;
 }
 
+/*
+ * The card at the top of the dashboard keeps its height whether or not there
+ * is something next.
+ *
+ * Answering the last block of the day used to empty it, and everything under
+ * it — including the list the person had just pressed something in — jumped
+ * up the height of the card. A press must not move what you were about to
+ * press next, so the space is the card's whether it has an answer in it or
+ * not.
+ */
+.now-card {
+	min-height: 7.5rem;
+}
+
 input[type='checkbox'],
 input[type='radio'] {
 	background-color: transparent;

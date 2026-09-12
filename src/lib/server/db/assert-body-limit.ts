@@ -36,7 +36,7 @@ export function parseByteSize(raw: string | undefined): number | null {
  * Multipart framing, headers and the other fields of the form, over and above
  * the file itself. Generous: being wrong in this direction costs nothing.
  */
-const ENVELOPE = 64 * 1024;
+export const ENVELOPE = 64 * 1024;
 
 /** adapter-node's own default, which is the case this exists for. */
 const ADAPTER_DEFAULT = 512 * 1024;

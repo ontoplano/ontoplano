@@ -217,11 +217,15 @@ describe('albums', () => {
 		const plan = gallery.planFolder(ctx, [
 			{ path: 'birds/small.jpg', bytes: 4 * 1024 },
 			{ path: 'birds/herons/huge.jpg', bytes: 900 * 1024 },
-			{ path: 'birds/empty.jpg', bytes: 0 }
+			{ path: 'birds/empty.jpg', bytes: 0 },
+			// A folder holds whatever it holds; the name says this one is not a
+			// picture, and the bytes would say so too.
+			{ path: 'birds/notes.txt', bytes: 300 }
 		]);
 
 		expect(plan.willImport).toBe(1);
-		expect(plan.willRefuse).toBe(2);
+		expect(plan.willRefuse).toBe(3);
+		expect(plan.files[3].refusedBecause).toMatch(/not a picture/);
 		expect(plan.maxKilobytes).toBe(16);
 		// The album an accepted file would land in, named before it lands.
 		expect(plan.files[0]).toMatchObject({ album: 'birds', ok: true });
@@ -230,6 +234,54 @@ describe('albums', () => {
 		expect(plan.files[2].refusedBecause).toMatch(/empty/);
 		// An album nothing would land in is not counted as one about to exist.
 		expect(plan.albums).toEqual(['birds']);
+
+		writeFileSync(
+			join(configDir, 'config.toml'),
+			'[media]\nmax_kilobytes = "500"\ngallery_albums = "50"\nalbum_images = "50"\n'
+		);
+	});
+
+	/*
+	 * A path from the picker is a string the client wrote. These are the
+	 * shapes somebody sends when they are not using the picker at all.
+	 */
+	test('a path from the client never escapes the name it becomes', () => {
+		expect(gallery.albumNameFor('../../etc/passwd.jpg')).toBe('etc');
+		expect(gallery.albumNameFor('/absolute/birds/a.jpg')).toBe('absolute — birds');
+		expect(gallery.albumNameFor('birds/../../a.jpg')).toBe('birds');
+		expect(gallery.albumNameFor('a.jpg')).toBe('Imported');
+		// A folder whose own name holds the separator names one album, not two.
+		expect(gallery.albumNameFor('birds — herons/a.jpg')).toBe('birds - herons');
+		// Backslashes and control characters are not separators either.
+		expect(gallery.albumNameFor('bir\u0000ds\\herons/a.jpg')).toBe('birds herons');
+		// A name too long to be an album lands in the nearest one that fits.
+		const deep = Array.from({ length: 12 }, (_, i) => `folder-number-${i}-with-a-long-name`);
+		const landed = gallery.albumNameFor(`${deep.join('/')}/a.jpg`);
+		expect(landed.length).toBeLessThanOrEqual(gallery.MAX_ALBUM_NAME_LENGTH);
+		expect(landed.startsWith('folder-number-0')).toBe(true);
+	});
+
+	test('the plan counts the ceilings the import is judged against', () => {
+		writeFileSync(
+			join(configDir, 'config.toml'),
+			'[media]\nmax_kilobytes = "500"\ngallery_albums = "50"\nalbum_images = "50"\naccount_megabytes = "1"\nimport_files = "3"\n'
+		);
+
+		const plan = gallery.planFolder(ctx, [
+			{ path: 'quota/a.jpg', bytes: 400 * 1024 },
+			{ path: 'quota/b.jpg', bytes: 400 * 1024 },
+			{ path: 'quota/c.jpg', bytes: 400 * 1024 },
+			{ path: 'quota/d.jpg', bytes: 4 * 1024 }
+		]);
+
+		// The fourth is past the instance's file ceiling, whatever its size.
+		expect(plan.maxFiles).toBe(3);
+		expect(plan.files[3].refusedBecause).toMatch(/3 files/);
+		// And the account's megabyte runs out before the third one fits.
+		expect(plan.files[2].refusedBecause).toMatch(/over this instance's 1MB/);
+		expect(plan.willImport).toBe(2);
+		// One request cannot carry more than the server will read.
+		expect(plan.batchBytes).toBeGreaterThan(0);
 
 		writeFileSync(
 			join(configDir, 'config.toml'),

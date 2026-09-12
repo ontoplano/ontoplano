@@ -19,8 +19,22 @@ import { getLedger } from './ledgers.js';
 import { stamp } from './time.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { num, oneOf, str } from './validate.js';
+import { unsafePattern } from './regex-safety.js';
 
 export const MAX_PATTERN_LENGTH = 300;
+/**
+ * The biggest statement one import reads, and the most lines it takes from it.
+ *
+ * A bank's year of a busy account is a few hundred kilobytes; these are far
+ * above that and still far below what would hold the process. The line
+ * ceiling matters separately from the byte one because a parser turns text
+ * into inserts, and a file of nothing but short valid lines is the cheapest
+ * way to ask for a million of them.
+ */
+export const MAX_STATEMENT_LENGTH = 2_000_000;
+export const MAX_STATEMENT_LINES = 50_000;
+/** As long a description as a line may carry into the table. */
+export const MAX_DESCRIPTION_LENGTH = 500;
 export const MAX_RULE_NAME_LENGTH = 100;
 /** How far back the plots look by default. Far enough for a shape. */
 export const DEFAULT_MONTHS = 12;
@@ -69,6 +83,16 @@ export type Rule = {
 	position: number;
 	/** How many of this account's lines the rule currently claims. */
 	matches: number;
+	/**
+	 * Why this rule is not being run, when it is not.
+	 *
+	 * A rule that no longer compiles, or one written before the safety check
+	 * existed, is skipped rather than taken as read — and a skipped rule that
+	 * says nothing about itself looks exactly like a rule that matches
+	 * nothing, which is the one thing somebody debugging a pattern must not
+	 * be told by mistake.
+	 */
+	problem?: string;
 };
 
 /** The parsers an import can offer, by key and friendly name. */
@@ -112,9 +136,9 @@ export function importStatement(
 	const source = str(input.source, 'bank export', { max: 100 });
 	const parser = parserFor(source);
 	if (!parser) throw new ValidationError('No parser knows that export.');
-	const text = str(input.text, 'statement', { max: 2_000_000 });
+	const text = str(input.text, 'statement', { max: MAX_STATEMENT_LENGTH });
 
-	const parsed = parser.parse(text);
+	const parsed = parser.parse(text).slice(0, MAX_STATEMENT_LINES);
 	if (parsed.length === 0)
 		throw new ValidationError(`That does not look like "${parser.name}" — no lines matched.`);
 
@@ -126,10 +150,14 @@ export function importStatement(
 	let added = 0;
 	for (const line of parsed) {
 		const amountCents = input.flip ? -line.amountCents : line.amountCents;
+		// A parser reads whatever the file said; the description it returns is
+		// still text from outside and is bounded here, where everything else
+		// that reaches this column is.
+		const description = line.description.slice(0, MAX_DESCRIPTION_LENGTH);
 		const base = line.externalId
 			? `${source}:${line.externalId}`
 			: (() => {
-					const content = `${source}|${line.occurredOn}|${amountCents}|${line.description}`;
+					const content = `${source}|${line.occurredOn}|${amountCents}|${description}`;
 					const n = (seen.get(content) ?? 0) + 1;
 					seen.set(content, n);
 					return `h:${lineHash(`${content}|${n}`)}`;
@@ -141,7 +169,7 @@ export function importStatement(
 				ledgerId,
 				occurredOn: line.occurredOn,
 				amountCents,
-				description: line.description,
+				description,
 				source,
 				externalId: line.externalId ?? null,
 				fingerprint: `${ledgerId}|${base}`,
@@ -175,7 +203,7 @@ export function recordMovement(
 	getLedger(ctx, ledgerId);
 	const occurredOn = str(input.occurredOn, 'date', { max: 10, pattern: /^\d{4}-\d{2}-\d{2}$/ });
 	const amountCents = num(input.amountCents, 'amount', { int: true });
-	const description = str(input.description, 'description', { max: 500 });
+	const description = str(input.description, 'description', { max: MAX_DESCRIPTION_LENGTH });
 	const source = input.source ? str(input.source, 'source', { max: 100 }) : 'manual';
 	const externalId = input.externalId ? str(input.externalId, 'external id', { max: 200 }) : null;
 	const fingerprint = externalId
@@ -262,6 +290,10 @@ export function deleteMovement(ctx: Ctx, id: number): void {
 // ── Rules ────────────────────────────────────────────────────────────────────
 
 function compiled(rule: { pattern: string }): RegExp | null {
+	// Checked again on the way out, not only on the way in: a row written
+	// before this check existed, or by anything that reaches the table
+	// directly, must not run either.
+	if (unsafePattern(rule.pattern)) return null;
 	try {
 		return new RegExp(rule.pattern, 'i');
 	} catch {
@@ -269,6 +301,18 @@ function compiled(rule: { pattern: string }): RegExp | null {
 		// whole list down with it.
 		return null;
 	}
+}
+
+/** What stops a stored pattern being run, said for whoever wrote it. */
+function whyNotRun(pattern: string): string | undefined {
+	const unsafe = unsafePattern(pattern);
+	if (unsafe) return unsafe;
+	try {
+		new RegExp(pattern, 'i');
+	} catch (e) {
+		return `That pattern is not a valid expression: ${(e as Error).message}`;
+	}
+	return undefined;
 }
 
 function rawRules(ctx: Ctx) {
@@ -302,7 +346,8 @@ export function listRules(ctx: Ctx): Rule[] {
 		matches:
 			r.kind === 'category'
 				? sorted.filter((s) => s.category === r.name).length
-				: sorted.filter((s) => s.tags.some((t) => t.name === r.name)).length
+				: sorted.filter((s) => s.tags.some((t) => t.name === r.name)).length,
+		problem: whyNotRun(r.pattern)
 	}));
 }
 
@@ -315,6 +360,11 @@ function ruleFields(input: { kind?: unknown; name?: unknown; pattern?: unknown; 
 		// than "invalid" when a bracket is unclosed thirty characters in.
 		throw new ValidationError(`That pattern is not a valid expression: ${(e as Error).message}`);
 	}
+	// Valid is not the same as safe: the engine compiles `(a+)+$` happily and
+	// then takes for ever on a line that nearly matches, with nothing able to
+	// interrupt it. Refused here rather than discovered in production.
+	const unsafe = unsafePattern(pattern);
+	if (unsafe) throw new ValidationError(unsafe);
 	return {
 		kind: oneOf(input.kind, 'kind', ['category', 'tag'] as const),
 		name: str(input.name, 'name', { max: MAX_RULE_NAME_LENGTH }),

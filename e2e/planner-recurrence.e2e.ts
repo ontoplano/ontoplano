@@ -23,6 +23,19 @@ function dayAfter(base: Date, n: number): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+/**
+ * The next day that falls on this weekday, today counting as itself.
+ *
+ * A Thursday reached backwards from this week's Monday is in the past from
+ * Friday onwards, and a one-off cannot be put in the past — which made this
+ * test pass on four days of the week and fail on three.
+ */
+function nextWeekday(target: number): string {
+	const d = new Date();
+	d.setHours(0, 0, 0, 0);
+	return dayAfter(d, (target - d.getDay() + 7) % 7);
+}
+
 async function onDay(page: Page, date: string, label: string): Promise<number> {
 	return countIn(page, `/tasks/plan?view=day&from=${date}`, label);
 }
@@ -434,12 +447,13 @@ test.describe('the preview on the grid', () => {
 		await register(page, `preview-once-${Date.now()}@test.invalid`);
 
 		// A Thursday, chosen because it is not the weekday a block defaults to.
+		// The next one, not this week's: a one-off in the past cannot be saved.
 		// The one-off preview used to be built through the repeating path, which
 		// asks a recurrence rule whether the date qualifies — and a one-off has a
 		// weekday nobody sets, so it drew only on Mondays. Every other day it
 		// drew nothing and, since the block being edited gives way to its
 		// preview, editing a one-off made it vanish off the grid.
-		const thursday = dayAfter(monday(), 3);
+		const thursday = nextWeekday(4);
 		await visit(page, `/tasks/plan?view=day&from=${thursday}`);
 		await expect(page.locator('.ec-main')).toBeVisible();
 		await page.waitForTimeout(600);

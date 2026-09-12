@@ -151,6 +151,31 @@ describe('the rules', () => {
 		);
 	});
 
+	/*
+	 * A pattern is run against every line, on the server, every time a page
+	 * is drawn — and the engine cannot be interrupted mid-match. A pattern
+	 * that backtracks exponentially therefore holds the whole process, so it
+	 * is refused on the way in and, for anything already stored, on the way
+	 * out.
+	 */
+	test('a pattern that could never finish is refused', () => {
+		expect(() =>
+			statements.createRule(ctx, { kind: 'tag', name: 'slow', pattern: '(a+)+$' })
+		).toThrow(/repetition inside a repetition/i);
+		expect(statements.listRules(ctx).some((r) => r.name === 'slow')).toBe(false);
+	});
+
+	test('a stored pattern that is not run says so', () => {
+		const rule = statements.createRule(ctx, { kind: 'tag', name: 'later', pattern: 'harmless' });
+		// Straight into the table, the way a rule written before the check was
+		// there would already be sitting.
+		database.exec(`update finance_rules set pattern = '(x+x+)+y' where id = ${rule.id}`);
+		const stored = statements.listRules(ctx).find((r) => r.id === rule.id)!;
+		expect(stored.problem).toMatch(/exponential/i);
+		expect(stored.matches).toBe(0);
+		statements.deleteRule(ctx, rule.id);
+	});
+
 	test('categories are a partition — the first match wins, in position order', () => {
 		statements.createRule(ctx, { kind: 'category', name: 'Company things', pattern: 'company' });
 		statements.createRule(ctx, { kind: 'category', name: 'Everything Dm', pattern: '^dm' });

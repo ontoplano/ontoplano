@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { deflateSync } from 'node:zlib';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { register } from './helpers/account';
 import { visit } from './helpers/visit';
 
@@ -119,15 +122,35 @@ test('a picture lives once, however many albums hold it', async ({ page }) => {
 	await expect(page.locator('li img')).toHaveCount(0);
 });
 
-test('a whole folder can be chosen at once, from the albums screen', async ({ page }) => {
+/** A tree on disk, because a directory is what this picker takes. */
+function folder(): string {
+	const root = mkdtempSync(join(tmpdir(), 'ontoplano-birds-'));
+	const birds = join(root, 'birds');
+	mkdirSync(join(birds, 'herons'), { recursive: true });
+	writeFileSync(join(birds, 'kingfisher.png'), png([7, 30, 90]).buffer);
+	writeFileSync(join(birds, 'herons', 'dawn.png'), png([8, 31, 91]).buffer);
+	return birds;
+}
+
+test('a folder is looked at before any of it is sent', async ({ page }) => {
 	await register(page, `folder-${Date.now()}@test.invalid`);
 	await visit(page, '/gallery');
 
-	// One picker, and it is the one that takes a directory — the album's own
-	// picker takes files. Playwright cannot hand a directory to a file input,
-	// so what is checked here is that the gesture is offered and wired; the
-	// filing itself is proved in tests/gallery.test.ts.
+	// The directory picker is its own: the album's own picker takes files.
+	// Playwright cannot hand over a real directory, so these arrive with bare
+	// names and land in "Imported" — the filing of a tree is proved in
+	// tests/gallery.test.ts. What is proved here is the two presses: the
+	// first says what would happen, the second does it.
 	await expect(page.getByText('Import a folder')).toBeVisible();
-	await expect(page.locator('input[webkitdirectory]')).toHaveCount(1);
-	await expect(page.locator('form[action="?/importFolder"]')).toHaveCount(1);
+	await page.locator('input[webkitdirectory]').setInputFiles(folder());
+
+	await expect(page.getByText('2 pictures into 2 albums')).toBeVisible();
+	// Nothing has been uploaded yet — the plan was names and sizes.
+	await expect(page.getByRole('link', { name: /herons/ })).toHaveCount(0);
+
+	await page.getByRole('button', { name: /^Import 2$/ }).click();
+	await expect(page.getByText('2 pictures into 2 albums.')).toBeVisible();
+	// The subfolder became an album under its parent, which is the point of
+	// choosing a folder rather than files.
+	await expect(page.getByRole('link', { name: /^birds/ })).toBeVisible();
 });

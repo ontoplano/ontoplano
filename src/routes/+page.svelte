@@ -382,51 +382,75 @@
 		past at the top of the screen somebody opens to ask what to do next. The
 		count is still there; it is just no longer the answer.
 	-->
-		{#if data.now}
-			{@const { task, state, minutes } = data.now}
+		{#if data.now || data.taskSummary.total > 0}
+			{@const now = data.now}
 			<section
-				class="card-accent flex flex-col border border-gray-200 bg-white p-4 shadow-card sm:flex-row sm:items-center sm:gap-6"
-				style="--card-accent: {task.categoryColor ?? SECTION_COLORS.planner}"
+				class="card-accent now-card flex flex-col border border-gray-200 bg-white p-4 shadow-card sm:flex-row sm:items-center sm:gap-6"
+				style="--card-accent: {now?.task.categoryColor ?? SECTION_COLORS.planner}"
 			>
 				<div class="min-w-0 flex-1">
-					<span class="eyebrow text-gray-600">
-						{state === 'now' ? 'Now' : 'Next'}
-					</span>
-					<p class="mt-1 text-xl font-bold text-gray-900">{task.name}</p>
-					<p class="mt-1 text-sm text-gray-500">
-						<span class="tabular">{task.startTime}</span>
-						{#if task.categoryName}· {task.categoryName}{/if}
-						·
-						{#if state === 'now'}
-							{minutes} {minutes === 1 ? 'minute' : 'minutes'} left
-						{:else if minutes < 60}
-							in {minutes} {minutes === 1 ? 'minute' : 'minutes'}
-						{:else}
-							in {Math.round(minutes / 60)} {Math.round(minutes / 60) === 1 ? 'hour' : 'hours'}
-						{/if}
-					</p>
+					{#if now}
+						<span class="eyebrow text-gray-600">
+							{now.state === 'now' ? 'Now' : 'Next'}
+						</span>
+						<p class="mt-1 text-xl font-bold text-gray-900">{now.task.name}</p>
+						<p class="mt-1 text-sm text-gray-500">
+							<span class="tabular">{now.task.startTime}</span>
+							{#if now.task.categoryName}· {now.task.categoryName}{/if}
+							·
+							{#if now.state === 'now'}
+								{now.minutes} {now.minutes === 1 ? 'minute' : 'minutes'} left
+							{:else if now.minutes < 60}
+								in {now.minutes} {now.minutes === 1 ? 'minute' : 'minutes'}
+							{:else}
+								in {Math.round(now.minutes / 60)}
+								{Math.round(now.minutes / 60) === 1 ? 'hour' : 'hours'}
+							{/if}
+						</p>
+					{:else}
+						<!-- The same card, with the day answered in it. -->
+						<span class="eyebrow text-gray-600">Next</span>
+						<p class="mt-1 text-xl font-bold text-gray-900">Nothing else today</p>
+						<p class="mt-1 text-sm text-gray-500">Every block on today's plan has an answer.</p>
+					{/if}
 				</div>
 
 				<!--
-				Two answers, because there are two.
+					Two answers, because there are two.
 
-				A block you planned and did not do is not a failure the app should
-				make you argue with: some weeks the gym does not happen, and saying so
-				is the honest input. Leaving only "Done" meant the only way to tell
-				the truth was to say nothing, which is how a tracker starts lying.
-			-->
-				<!--
-					Both answers wait a few seconds before they are sent.
+					A block you planned and did not do is not a failure the app should
+					make you argue with: some weeks the gym does not happen, and saying
+					so is the honest input. Leaving only "Done" meant the only way to
+					tell the truth was to say nothing, which is how a tracker starts
+					lying.
 
-					This is the pair somebody presses without looking — it is the
-					first thing on the screen and it is under a thumb on a phone —
-					and until now either one was final the instant it landed.
+					Both answers wait a few seconds before they are sent: this is the
+					pair somebody presses without looking — it is the first thing on
+					the screen and it is under a thumb on a phone.
+
+					Drawn whether or not there is a block to answer, and the card keeps
+					its height either way, because answering the last block of the day
+					used to empty this card and jump everything under it — the list
+					the person had just pressed something in — up the screen.
 				-->
-				<div class="mt-3 flex shrink-0 items-center gap-2 sm:mt-0">
-					<button type="button" class="btn btn-primary" onclick={() => answerLater(task, 'done')}>
+				<div
+					class="mt-3 flex shrink-0 items-center gap-2 sm:mt-0 {now ? '' : 'invisible'}"
+					aria-hidden={now ? undefined : 'true'}
+				>
+					<button
+						type="button"
+						class="btn btn-primary"
+						disabled={!now}
+						onclick={() => now && answerLater(now.task, 'done')}
+					>
 						<Icon name="check" /> Done
 					</button>
-					<button type="button" class="btn" onclick={() => answerLater(task, 'skipped')}>
+					<button
+						type="button"
+						class="btn"
+						disabled={!now}
+						onclick={() => now && answerLater(now.task, 'skipped')}
+					>
 						<Icon name="skip" /> Skipped
 					</button>
 				</div>

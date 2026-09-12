@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { deserialize, enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -28,9 +29,12 @@
 	};
 	/** The name as it reads under its parent: the last part of the path. */
 	const leafName = (name: string) => name.split(' — ').at(-1) ?? name;
-	let folderForm: HTMLFormElement | undefined = $state();
 	let planForm: HTMLFormElement | undefined = $state();
 	let importing = $state(false);
+	/** How many of the chosen files have been sent, for the button. */
+	let progress = $state(0);
+	/** What the whole import came to, once every batch is in. */
+	let outcome: { pictures: number; albums: number; skipped: number } | null = $state(null);
 	/** The files the picker handed over, kept until the person says go. */
 	let chosen: File[] = $state([]);
 	const plan = $derived(form && 'plan' in form && form.success ? form.plan : null);
@@ -69,31 +73,70 @@
 		planForm?.requestSubmit();
 	}
 
-	/** Go: the files themselves, and only the ones that would be taken. */
-	function sendFolder() {
-		const form = folderForm;
-		if (!form || chosen.length === 0) return;
-		importing = true;
-
-		const data = new DataTransfer();
-		form.querySelectorAll('input[name="path"]').forEach((el) => el.remove());
+	/*
+	 * Go: the files themselves, in batches that fit in one request.
+	 *
+	 * A folder is many pictures and the server reads one body at a time — a
+	 * whole tree in a single POST is refused by the Node adapter before the
+	 * app sees it, with a 413 whose body no page can read. So the batch is
+	 * filled up to what the instance says one request holds (`batchBytes`,
+	 * its own body limit less the multipart framing) and the next one starts.
+	 * The counts add up across the batches; the albums are what the plan
+	 * already said they would be.
+	 */
+	async function sendFolder() {
 		const taking = new Set(plan?.files.filter((f) => f.ok).map((f) => f.path) ?? []);
-		for (const file of chosen) {
-			const path = file.webkitRelativePath || file.name;
-			if (!taking.has(path)) continue;
-			data.items.add(file);
-			// The paths ride alongside the files, in the same order, because a
-			// File loses `webkitRelativePath` on the way.
-			const carrier = document.createElement('input');
-			carrier.type = 'hidden';
-			carrier.name = 'path';
-			carrier.value = path;
-			form.append(carrier);
+		const queue = chosen.filter((f) => taking.has(f.webkitRelativePath || f.name));
+		if (queue.length === 0 || !plan) return;
+
+		importing = true;
+		progress = 0;
+		outcome = null;
+		let pictures = 0;
+		let skipped = 0;
+
+		const send = async (batch: File[]) => {
+			const body = new FormData();
+			for (const file of batch) {
+				body.append('file', file, file.name);
+				// The paths ride alongside the files, in the same order, because
+				// a File loses `webkitRelativePath` on the way.
+				body.append('path', file.webkitRelativePath || file.name);
+			}
+			const response = await fetch('?/importFolder', {
+				method: 'POST',
+				headers: { 'x-sveltekit-action': 'true' },
+				body
+			});
+			const result = deserialize(await response.text());
+			if (result.type === 'success' && result.data) {
+				pictures += Number(result.data.pictures ?? 0);
+				skipped += Number(result.data.skipped ?? 0);
+			} else {
+				skipped += batch.length;
+			}
+			progress += batch.length;
+		};
+
+		let batch: File[] = [];
+		let bytes = 0;
+		for (const file of queue) {
+			if (batch.length > 0 && bytes + file.size > plan.batchBytes) {
+				await send(batch);
+				batch = [];
+				bytes = 0;
+			}
+			batch.push(file);
+			bytes += file.size;
 		}
-		const picker = form.querySelector('input[name="file"]') as HTMLInputElement | null;
-		if (picker) picker.files = data.files;
-		form.requestSubmit();
+		if (batch.length > 0) await send(batch);
+
+		outcome = { pictures, skipped, albums: plan.albums.length };
+		importing = false;
+		chosen = [];
+		await invalidateAll();
 	}
+
 	let renaming: (typeof data.albums)[number] | null = $state(null);
 	let confirmingDelete: (typeof data.albums)[number] | null = $state(null);
 </script>
@@ -119,22 +162,6 @@
 				</label>
 			</form>
 
-			<!-- And then, on the second press, the files themselves. -->
-			<form
-				method="post"
-				action="?/importFolder"
-				enctype="multipart/form-data"
-				bind:this={folderForm}
-				class="hidden"
-				use:enhance={() =>
-					({ update }) => {
-						importing = false;
-						chosen = [];
-						return update({ reset: false });
-					}}
-			>
-				<input type="file" name="file" multiple />
-			</form>
 			<button class="btn btn-primary btn-sm" onclick={() => (showNew = true)}>
 				<Icon name="plus" /> New album
 			</button>
@@ -168,7 +195,7 @@
 						disabled={plan.willImport === 0 || importing}
 						onclick={sendFolder}
 					>
-						{importing ? 'Importing…' : `Import ${plan.willImport}`}
+						{importing ? `Importing ${progress}/${plan.willImport}…` : `Import ${plan.willImport}`}
 					</button>
 				</span>
 			</div>
@@ -192,12 +219,12 @@
 		</div>
 	{/if}
 
-	{#if form && 'pictures' in form && form.success}
+	{#if outcome}
 		<p class="rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-			{form.pictures} picture{form.pictures === 1 ? '' : 's'} into {form.albums} album{form.albums ===
+			{outcome.pictures} picture{outcome.pictures === 1 ? '' : 's'} into {outcome.albums} album{outcome.albums ===
 			1
 				? ''
-				: 's'}{form.skipped ? `, ${form.skipped} refused` : ''}.
+				: 's'}{outcome.skipped ? `, ${outcome.skipped} refused` : ''}.
 		</p>
 	{/if}
 

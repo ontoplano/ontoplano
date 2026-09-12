@@ -24,7 +24,7 @@ import { createHash } from 'node:crypto';
 import { and, eq, like, or, sql } from 'drizzle-orm';
 
 import { loadConfig } from '../config.js';
-import { pictureCeiling } from '../db/assert-body-limit.js';
+import { ENVELOPE, pictureCeiling } from '../db/assert-body-limit.js';
 import { db } from '$lib/db/index.js';
 import { albumMedia, diaryEntries, media, people, recipeImages, recipes } from '$lib/db/schema.js';
 import type { Ctx } from '$lib/services/ctx.js';
@@ -69,6 +69,16 @@ const SIGNATURES: { mime: string; extension: string; matches: (b: Buffer) => boo
 /** The list a file input may advertise. Not a check — the check is the bytes. */
 export const ACCEPTED_TYPES = SIGNATURES.map((s) => s.mime);
 
+/**
+ * The names those formats are usually given.
+ *
+ * Also not a check: a `.png` holding something else is refused by `sniff`
+ * like anything else would be. It is here so that a preview of a folder can
+ * say "that is not a picture" about the video sitting in it, rather than
+ * promising to import it and then quietly not.
+ */
+export const ACCEPTED_EXTENSIONS = [...SIGNATURES.map((s) => s.extension), 'jpeg'];
+
 export const MAX_ALT_LENGTH = 300;
 export const MAX_FILENAME_LENGTH = 200;
 
@@ -92,7 +102,8 @@ export type Picture = {
  */
 export function mediaLimits() {
 	const { media: limits } = loadConfig();
-	const maxKilobytes = pictureCeiling(limits.maxKilobytes).kilobytes;
+	const ceiling = pictureCeiling(limits.maxKilobytes);
+	const maxKilobytes = ceiling.kilobytes;
 	return {
 		maxBytes: maxKilobytes * 1024,
 		maxKilobytes,
@@ -101,9 +112,30 @@ export function mediaLimits() {
 		accountBytes: limits.accountMegabytes * 1024 * 1024,
 		accountMegabytes: limits.accountMegabytes,
 		galleryAlbums: limits.galleryAlbums,
-		albumImages: limits.albumImages
+		albumImages: limits.albumImages,
+		importFiles: limits.importFiles,
+		/*
+		 * The most one folder-import request may carry.
+		 *
+		 * A folder is many pictures, and all of them in one POST is a body
+		 * the Node adapter refuses before this app runs — a plain 413 with a
+		 * body no page can read, which is the exact failure `pictureCeiling`
+		 * exists to prevent for a single picture. So the browser sends the
+		 * tree in batches that fit, and this is what fits: the server's own
+		 * body limit less the multipart framing, never less than one picture.
+		 */
+		importBatchBytes:
+			ceiling.limit === 0
+				? UNLIMITED_BATCH_BYTES
+				: Math.max(ceiling.limit - ENVELOPE, maxKilobytes * 1024)
 	};
 }
+
+/**
+ * How much one batch carries where the operator has turned the body limit
+ * off. Not unbounded: the bytes still become a `FormData` in memory.
+ */
+const UNLIMITED_BATCH_BYTES = 32 * 1024 * 1024;
 
 /**
  * The filename, reduced to something safe to show and store.
