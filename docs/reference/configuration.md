@@ -168,6 +168,7 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_DEMO_EMAIL`                 | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_DEMO_MAX_ACCOUNTS`          | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_DEMO_TTL_MINUTES`           | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_DEV_ORIGIN`                 | `scripts/android-flavours.mjs`                                                                                                                             |
 | `ONTOPLANO_DOCS_URL`                   | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_FAIL2BAN_LOG`               | `src/lib/server/services/protection.ts`                                                                                                                    |
 | `ONTOPLANO_FAMILY_SEATS`               | `src/lib/server/settings.ts`                                                                                                                               |
@@ -176,7 +177,7 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_JURISDICTION`               | `src/lib/server/services/legal.ts`                                                                                                                         |
 | `ONTOPLANO_MAIL_FROM`                  | `src/lib/server/services/push.ts`                                                                                                                          |
 | `ONTOPLANO_OPERATOR`                   | `src/lib/server/services/legal.ts`                                                                                                                         |
-| `ONTOPLANO_ORIGIN`                     | `scripts/build-twa.mjs`                                                                                                                                    |
+| `ONTOPLANO_ORIGIN`                     | `scripts/android-flavours.mjs`, `scripts/build-twa.mjs`                                                                                                    |
 | `ONTOPLANO_OWNER_ID`                   | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_PAYMENT_PROVIDER`           | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_POLICY_UPDATED`             | `src/lib/server/services/legal.ts`                                                                                                                         |
@@ -197,6 +198,8 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_SITE_URL`                   | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_SKIP_MIGRATION_CHECK`       | `src/lib/server/db/assert-migrated.ts`                                                                                                                     |
 | `ONTOPLANO_STAGING`                    | `src/lib/server/settings.ts`                                                                                                                               |
+| `ONTOPLANO_STAGING_HOST`               | `scripts/android-flavours.mjs`                                                                                                                             |
+| `ONTOPLANO_STAGING_ORIGIN`             | `scripts/android-flavours.mjs`                                                                                                                             |
 | `ONTOPLANO_TRIAL_DAYS`                 | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_TRIAL_REQUIRES_CARD`        | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_TRUST_PROXY`                | `src/lib/server/rate-limit.ts`                                                                                                                             |

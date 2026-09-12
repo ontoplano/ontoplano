@@ -16,6 +16,40 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // <<< ontoplano flavours
+    flavorDimensions "instance"
+    productFlavors {
+        official {
+            dimension "instance"
+            applicationId "app.ontoplano"
+            resValue "string", "app_name", "Ontoplano"
+            versionCode 14600
+            versionName "0.146.0"
+        }
+        dev {
+            dimension "instance"
+            applicationId "app.ontoplano.dev"
+            resValue "string", "app_name", "Ontoplano DEV"
+            versionCode 14600
+            versionName "0.146.0"
+        }
+        staging {
+            dimension "instance"
+            applicationId "app.ontoplano.staging"
+            resValue "string", "app_name", "Ontoplano — Staging"
+            versionCode 14600
+            versionName "0.146.0"
+        }
+        device {
+            dimension "instance"
+            applicationId "app.ontoplano.selfcontained"
+            resValue "string", "app_name", "Ontoplano"
+            versionCode 14600
+            versionName "0.146.0"
+        }
+    }
+    // ontoplano flavours >>>
+
     buildTypes {
         release {
             minifyEnabled false

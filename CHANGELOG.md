@@ -10,6 +10,23 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.146.0 — 2026-09-12
+
+- **Three apps on the phone, one command.** `make android-phones` builds and
+  installs Ontoplano, Ontoplano DEV and Ontoplano — Staging side by side,
+  each with its own icon and its own instance. `ONTOPLANO_DEV_ORIGIN=…`
+  points the DEV one at whatever address your laptop has today.
+- **The week's note is prose.** Written, it renders as markdown with a pencil
+  to edit; only an unwritten week opens straight into the box. The box used
+  to sit open for ever holding whatever the browser had rather than what was
+  stored, which is what made saving twice hard to tell from saving once.
+- **The review says how many answers are waiting.** A count at the top of
+  "What did not happen" scrolls to the pile at the bottom; it is drawn on
+  every render and merely invisible when there is nothing to commit, so it
+  never pushes the first row down under the finger about to press it. And
+  the pile has air above it on a phone.
+- **The plan's grid reaches the edges** on a phone like everything else.
+
 ## 0.145.0 — 2026-09-12
 
 - **A folder import says what it will do before it does it.** Choosing a

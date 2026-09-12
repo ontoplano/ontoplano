@@ -39,7 +39,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-gapp android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean android-self-contained-install self-contained self-contained-preview test-self-contained android-self-contained
+.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-gapp android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean android-self-contained-install android-phones self-contained self-contained-preview test-self-contained android-self-contained
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -384,13 +384,59 @@ android-self-contained: self-contained
 		echo "No Android SDK found. Set ANDROID_HOME, or run 'make android' once so ~/.bubblewrap/config.json names one."; \
 		exit 1; \
 	fi; \
-	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q assembleDebug
-	@echo "APK: capacitor/android/app/build/outputs/apk/debug/app-debug.apk"
+	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q assembleDeviceDebug
+	@echo "APK: capacitor/android/app/build/outputs/apk/device/debug/app-device-debug.apk"
+
+# Three apps on one phone: the real instance, a laptop on the LAN, and
+# staging. Same shell, same build — different application id, name, icon and
+# opening instance, which is what lets Android keep them apart and what lets
+# a bug on staging be read while your own week sits in the other app.
+## build and install Ontoplano, Ontoplano DEV and Ontoplano — Staging
+#: ONTOPLANO_DEV_ORIGIN=http://192.168.1.10:1493  where the DEV app points
+android-phones: self-contained
+	@[ -d capacitor/node_modules ] || (cd capacitor && npm install --no-audit --no-fund)
+	@node scripts/brand-android.mjs
+	cd capacitor && npx cap sync android
+	@node scripts/android-flavours.mjs
+	@sdk="$${ANDROID_HOME:-}"; \
+	[ -n "$$sdk" ] || sdk=$$(node -e "try{console.log(require(require('os').homedir()+'/.bubblewrap/config.json').androidSdkPath||'')}catch{console.log('')}"); \
+	[ -n "$$sdk" ] || { [ -d "$$HOME/android-sdk" ] && sdk="$$HOME/android-sdk"; }; \
+	if [ -z "$$sdk" ] || [ ! -d "$$sdk" ]; then \
+		echo "No Android SDK found. Set ANDROID_HOME, or run 'make android' once."; \
+		exit 1; \
+	fi; \
+	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q \
+		assembleOfficialDebug assembleDevDebug assembleStagingDebug
+	@# adb the way the rest of the android targets find their toolchain: the
+	@# SDK's copy when it is not on PATH.
+	@sdk="$${ANDROID_HOME:-$$HOME/android-sdk}"; \
+	adb="$$(command -v adb || echo "$$sdk/platform-tools/adb")"; \
+	built=capacitor/android/app/build/outputs/apk; \
+	if [ ! -x "$$adb" ]; then \
+		echo "Built all three. No adb here to install them:"; \
+		for f in official dev staging; do echo "  $$built/$$f/debug/app-$$f-debug.apk"; done; \
+		exit 0; \
+	fi; \
+	if [ -z "$$("$$adb" devices | sed -n '2p')" ]; then \
+		echo "Built all three. No phone over adb — plug in, enable USB debugging, then:"; \
+		echo "  make android-phones"; \
+		exit 0; \
+	fi; \
+	failed=0; \
+	for flavour in official dev staging; do \
+		echo "installing $$flavour…"; \
+		"$$adb" install -r -d "$$built/$$flavour/debug/app-$$flavour-debug.apk" >/dev/null \
+			|| { echo "  $$flavour did not install"; failed=1; }; \
+	done; \
+	[ "$$failed" = 0 ] \
+		&& echo "Ontoplano, Ontoplano DEV and Ontoplano — Staging are on the phone." \
+		|| { echo "Some did not install. An app signed by a different key has to go first:"; \
+			 echo "  adb uninstall app.ontoplano   (and .dev, .staging)"; exit 1; }
 
 ## install the self-contained app over adb
 android-self-contained-install:
 	@command -v adb >/dev/null || { echo "adb not found. Install android-tools-adb."; exit 1; }
-	@apk=capacitor/android/app/build/outputs/apk/debug/app-debug.apk; \
+	@apk=capacitor/android/app/build/outputs/apk/device/debug/app-device-debug.apk; \
 	[ -f "$$apk" ] || { echo "No APK yet: run 'make android-self-contained' first."; exit 1; }; \
 	[ -n "$$(adb devices | sed -n '2p')" ] || { echo "No device over adb. Plug in, enable USB debugging, accept the prompt."; exit 1; }; \
 	echo "Installing to $$(adb devices | sed -n '2p' | cut -f1)…"; \

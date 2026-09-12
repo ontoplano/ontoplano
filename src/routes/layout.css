@@ -511,10 +511,12 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		):is(
 			.shadow-card,
 			[class~='rounded'][class~='border'],
-			[class~='rounded-lg'][class~='border']
-		):not(:is(.shadow-card, [class~='rounded'][class~='border']) *):not(.bg-gray-50 *):not(
-			dialog *
-		) {
+			[class~='rounded-lg'][class~='border'],
+			[class~='shadow-sm'][class~='border']
+		):not(
+			:is(.shadow-card, [class~='rounded'][class~='border'], [class~='shadow-sm'][class~='border'])
+				*
+		):not(.bg-gray-50 *):not(dialog *) {
 		margin-inline: calc(-1 * var(--page-gutter));
 		border-inline-width: 0;
 		/*
@@ -577,7 +579,8 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		):is(
 			.shadow-card,
 			[class~='rounded'][class~='border'],
-			[class~='rounded-lg'][class~='border']
+			[class~='rounded-lg'][class~='border'],
+			[class~='shadow-sm'][class~='border']
 		) {
 		margin-block-start: 0;
 	}
@@ -596,7 +599,8 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 			> :is(div, section, article, aside, ul, ol, li, a[class~='block']):is(
 					.shadow-card,
 					[class~='rounded'][class~='border'],
-					[class~='rounded-lg'][class~='border']
+					[class~='rounded-lg'][class~='border'],
+					[class~='shadow-sm'][class~='border']
 				)
 		) {
 		gap: 0;

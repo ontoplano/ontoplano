@@ -7,10 +7,26 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import { renderMarkdown } from '$lib/markdown';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { armed } from '$lib/actions/armed';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	/*
+	 * The week's note: read by default, edited on purpose.
+	 *
+	 * The draft is its own state rather than the textarea's DOM value, so
+	 * what is on screen after a save is what was stored and not what the
+	 * browser happened to keep.
+	 */
+	let editingNote = $state(false);
+	let noteDraft = $state('');
+	$effect(() => {
+		// A different week is a different note; leave whatever is being typed
+		// alone while the box is open.
+		if (!editingNote) noteDraft = data.note;
+	});
 
 	/**
 	 * The week, once it is over.
@@ -250,6 +266,30 @@
 			accent="var(--section-accent)"
 			flush
 		>
+			<!--
+				How many answers are waiting to be written, at the top where the
+				answering happens — the pile they land in is at the bottom of a
+				long list and easy to miss entirely.
+
+				Drawn on every render and made invisible when the count is zero,
+				never added and removed: appearing would push the first row down
+				under the finger about to press it.
+			-->
+			{#snippet actions()}
+				<button
+					type="button"
+					class="btn btn-sm {decided.length === 0 ? 'invisible' : ''}"
+					aria-hidden={decided.length === 0}
+					tabindex={decided.length === 0 ? -1 : 0}
+					onclick={() =>
+						document
+							.getElementById('review-decided')
+							?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+				>
+					{decided.length}
+					{decided.length === 1 ? 'answer' : 'answers'} to commit
+				</button>
+			{/snippet}
 			{#if data.loose.length === 0}
 				<EmptyState icon="check" title="Everything you planned, you did" />
 			{:else}
@@ -338,10 +378,16 @@
 								verdicts = {};
 							};
 						}}
-						class="min-w-0 border-t border-gray-200 lg:border-t-0 lg:border-l"
+						id="review-decided"
+						class="mt-6 min-w-0 border-t border-gray-200 lg:mt-0 lg:border-t-0 lg:border-l"
 					>
 						<input type="hidden" name="weekStart" value={data.reading.weekStart} />
 
+						<!--
+							Above it, on a phone, the same gap it has below before the
+							notes: stacked under the last day of the week it read as that
+							day's tail rather than as the other half of the screen.
+						-->
 						<div class="eyebrow border-b border-gray-200 bg-gray-50 px-4 py-1.5 text-gray-600">
 							What you have decided
 						</div>
@@ -514,35 +560,90 @@
 				it. The three are the placeholder now, which is what they always were:
 				a suggestion of what to write about.
 			-->
-			<form
-				method="post"
-				action="?/saveNote"
-				use:enhance
-				class="space-y-2"
-				data-tour="review-lines"
-			>
-				<input type="hidden" name="weekStart" value={data.reading.weekStart} />
+			<!--
+				Written prose is read, not edited.
 
-				<label class="sr-only" for="week-note">Notes about the week</label>
-				<textarea
-					id="week-note"
-					name="note"
-					rows="6"
-					autocomplete="off"
-					placeholder="What went well, what did not, what you will do different…"
-					class="input w-full resize-y"
-					maxlength={8000}>{data.note}</textarea
-				>
-
-				<div class="flex items-center justify-end gap-3">
-					{#if form?.saved}
-						<span class="text-xs text-gray-500">Saved.</span>
-					{/if}
-					<button type="submit" class="btn btn-primary btn-sm" title="Save" aria-label="Save">
-						<Icon name="check" size={16} />
+				The box used to sit open for ever with the note inside it, which is
+				a form where a paragraph should be — and after a save the textarea
+				kept whatever the DOM had rather than what was stored, so it was
+				never quite clear what the week actually said. A written note is
+				its own rendering now, with a pencil; an empty week opens straight
+				into the box, because there is nothing to read yet.
+			-->
+			{#if data.note && !editingNote}
+				<div class="flex items-start gap-3">
+					<!-- `renderMarkdown` escapes every character of the input before it
+					     emits a tag, and emits only attributes it writes itself. See
+					     `$lib/markdown.ts`. -->
+					<div class="md min-w-0 flex-1 text-sm text-gray-900">
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html renderMarkdown(data.note)}
+					</div>
+					<button
+						class="icon-btn shrink-0"
+						title="Edit the note"
+						aria-label="Edit the note"
+						onclick={() => {
+							noteDraft = data.note;
+							editingNote = true;
+						}}
+					>
+						<Icon name="edit" />
 					</button>
 				</div>
-			</form>
+			{:else}
+				<form
+					method="post"
+					action="?/saveNote"
+					class="space-y-2"
+					data-tour="review-lines"
+					use:enhance={() =>
+						({ update }) => {
+							editingNote = false;
+							return update({ reset: false });
+						}}
+				>
+					<input type="hidden" name="weekStart" value={data.reading.weekStart} />
+
+					<label class="sr-only" for="week-note">Notes about the week</label>
+					<!--
+						Bound, not printed into the markup: a textarea whose value is its
+						child text keeps the browser's copy after a save, and what is
+						stored and what is shown drift apart from there.
+					-->
+					<textarea
+						id="week-note"
+						name="note"
+						rows="6"
+						autocomplete="off"
+						placeholder="What went well, what did not, what you will do different…"
+						class="input w-full resize-y"
+						maxlength={8000}
+						bind:value={noteDraft}
+					></textarea>
+
+					<div class="flex items-center justify-end gap-3">
+						{#if form?.saved}
+							<span class="text-xs text-gray-500">Saved.</span>
+						{/if}
+						{#if data.note}
+							<button
+								type="button"
+								class="btn btn-sm"
+								onclick={() => {
+									noteDraft = data.note;
+									editingNote = false;
+								}}
+							>
+								Cancel
+							</button>
+						{/if}
+						<button type="submit" class="btn btn-primary btn-sm" title="Save" aria-label="Save">
+							<Icon name="check" size={16} />
+						</button>
+					</div>
+				</form>
+			{/if}
 		</Card>
 	{/if}
 
