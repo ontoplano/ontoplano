@@ -10,6 +10,25 @@
  * decides the shape of the whole isolated instance.
  */
 import * as schema from '$lib/db/schema.js';
+
+/**
+ * Which migrations this device has run.
+ *
+ * Its own table rather than drizzle's: drizzle records a hash of each file and
+ * this replays by name, because a device upgrading from before any of this was
+ * recorded has to be able to re-run what it already has without being refused.
+ */
+const MIGRATIONS_TABLE = '__ontoplano_device_migrations';
+
+/** Whether an error means "that part of the schema is already here". */
+function alreadyDone(error: unknown): boolean {
+	const said = String((error as { message?: string })?.message ?? error).toLowerCase();
+	return (
+		said.includes('duplicate column') ||
+		said.includes('already exists') ||
+		said.includes('duplicate index')
+	);
+}
 import { installBufferStandIn } from './buffer-stand-in.js';
 import { bindDb } from '$lib/db/index.js';
 import { buildCtx } from '$lib/services/ctx.js';
@@ -72,6 +91,12 @@ async function open(): Promise<Oo1Db> {
 	 * This is what makes the isolated instance wiring rather than a rewrite: the
 	 * schema is the schema the server runs, read straight out of `drizzle/`,
 	 * in order, split on the marker drizzle writes between statements.
+	 *
+	 * They used to run only when the database was empty, which meant a device
+	 * was frozen at the schema of the build that first opened it: every release
+	 * after that shipped code expecting columns the phone did not have, and the
+	 * rooms that needed them simply broke. A phone-only instance has nobody to
+	 * run a migration for it, so it runs its own.
 	 */
 	const files = import.meta.glob('/drizzle/*.sql', {
 		query: '?raw',
@@ -79,14 +104,45 @@ async function open(): Promise<Oo1Db> {
 		eager: true
 	}) as Record<string, string>;
 
-	const applied = db.selectValue("select count(*) from sqlite_master where type='table'") as number;
-	if (applied === 0) {
-		for (const path of Object.keys(files).sort()) {
-			for (const statement of files[path].split('--> statement-breakpoint')) {
-				const sql = statement.trim();
-				if (sql) db.exec(sql);
+	db.exec(
+		`create table if not exists ${MIGRATIONS_TABLE} (
+			tag text primary key,
+			applied_at text not null
+		)`
+	);
+
+	// Stepped rather than `selectValue`, which answers with a single cell.
+	const done = new Set<string>();
+	{
+		const rows = db.prepare(`select tag from ${MIGRATIONS_TABLE}`);
+		while (rows.step()) done.add(String((rows.get([]) as unknown[])[0]));
+	}
+
+	for (const path of Object.keys(files).sort()) {
+		const tag = path.replace(/^.*\//, '').replace(/\.sql$/, '');
+		if (done.has(tag)) continue;
+
+		for (const statement of files[path].split('--> statement-breakpoint')) {
+			const sql = statement.trim();
+			if (!sql) continue;
+			try {
+				db.exec(sql);
+			} catch (e) {
+				/*
+				 * A device that predates this bookkeeping has the tables but no
+				 * record of them, so its first upgrade replays everything. What
+				 * has already happened says so — "duplicate column", "already
+				 * exists" — and is the expected answer rather than a failure.
+				 * Anything else is real and stops the run.
+				 */
+				if (!alreadyDone(e)) throw e;
 			}
 		}
+
+		db.exec({
+			sql: `insert or replace into ${MIGRATIONS_TABLE} (tag, applied_at) values (?, ?)`,
+			bind: [tag, new Date().toISOString()]
+		});
 	}
 
 	db.exec({

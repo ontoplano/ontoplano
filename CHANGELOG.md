@@ -18,6 +18,29 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.162.4 — 2026-09-12
+
+- **The phone build stops running out of memory.** It compiles every route
+  twice — once into the app, once into the database worker — and node's default
+  heap is a guess about the machine rather than about the work. It says which
+  heap it is using now, and appends to `NODE_OPTIONS` rather than obeying a
+  small one silently.
+- **A phone-only instance applies new migrations.** It only ever ran them into
+  an empty database, so a device was frozen at the schema of the build that
+  first opened it and every later release expected columns it did not have. It
+  keeps its own record now and runs what it has not.
+- **A goal card reads across again.** On a wide screen its actions took the
+  whole row and the text beside them collapsed to one character per line — the
+  title read downwards.
+- **Changing screen no longer flicks.** The second half of the dissolve started
+  from "gone" however far the first half had got, so a page that arrived
+  quickly jumped there for a frame.
+- **The page stops shifting sideways** between a room tall enough to need a
+  scrollbar and one that is not.
+- **The notebooks album behaves like an album**: each folder wears a picture
+  from inside it rather than a glyph, and its contents are in it rather than
+  also loose underneath.
+
 ## 0.162.3 — 2026-09-12
 
 - **A migration cannot be edited after it is written.** Changing one strands

@@ -112,15 +112,22 @@ describe('the notebooks album', () => {
 		diary.createEntry(ctx, { content: `The shelf.\n\n${shelf.markdown}`, notebookId: kitchen });
 		diary.createEntry(ctx, { content: `Granite.\n\n${granite.markdown}`, notebookId: tops });
 
+		/*
+		 * A folder shows what is in it on its own tile, so a level shows only
+		 * the pictures that belong to it directly. Listing everything beneath as
+		 * well is the same pictures twice: two folders, and then their two
+		 * photographs loose underneath them.
+		 */
 		const top = notebookMedia.notebookMediaView(ctx, '');
 		expect(top.folders.map((f) => f.name)).toEqual(['Kitchen']);
-		// The album itself holds nothing — every picture is in some notebook —
-		// and shows everything beneath it.
-		expect(top.pictures.map((p) => p.id).sort()).toEqual([shelf.id, granite.id].sort());
+		// Every picture is in some notebook, so the album itself holds none.
+		expect(top.pictures).toEqual([]);
+		// And the folder wears one, rather than a glyph that only repeats its shape.
+		expect(top.folders[0].coverId).not.toBeNull();
 
 		const inKitchen = notebookMedia.notebookMediaView(ctx, 'Kitchen');
 		expect(inKitchen.folders.map((f) => f.leaf)).toEqual(['Countertops']);
-		expect(inKitchen.pictures.map((p) => p.id).sort()).toEqual([shelf.id, granite.id].sort());
+		expect(inKitchen.pictures.map((p) => p.id)).toEqual([shelf.id]);
 		expect(notebookMedia.notebookMediaView(ctx, 'Kitchen — Countertops').pictures).toHaveLength(1);
 	});
 

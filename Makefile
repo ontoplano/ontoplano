@@ -366,9 +366,27 @@ preview:
 
 # The instance that runs on the device itself: static files, no server, the
 # database in the browser's own storage. This is what the phone app wraps.
+#: ISOLATED_HEAP_MB=4096  how much heap the isolated build gets
+ISOLATED_HEAP_MB ?= 4096
+
 ## the isolated build (static, serverless)
 isolated:
-	ONTOPLANO_ISOLATED_BUILD=1 PUBLIC_ONTOPLANO_ISOLATED=true yarn build
+	@# A heap big enough for this build, and said out loud.
+	@#
+	@# It compiles every route twice — once into the app and once into the
+	@# database worker — and died with "Ineffective mark-compacts near heap
+	@# limit" at 490MB on a machine with plenty of RAM: node's default is a
+	@# guess about the machine, not about the work. Appended to whatever
+	@# NODE_OPTIONS already says rather than replacing it, and skipped only when
+	@# a size is already named there, so a shell that exports a small one is not
+	@# quietly obeyed.
+	@opts="$(NODE_OPTIONS)"; \
+	case "$$opts" in \
+		*max-old-space-size*) echo "node heap: as NODE_OPTIONS says ($$opts)" ;; \
+		*) opts="$$opts --max-old-space-size=$(ISOLATED_HEAP_MB)"; \
+		   echo "node heap: $(ISOLATED_HEAP_MB)MB" ;; \
+	esac; \
+	NODE_OPTIONS="$$opts" ONTOPLANO_ISOLATED_BUILD=1 PUBLIC_ONTOPLANO_ISOLATED=true yarn build
 
 ## serve the isolated build, the way its shell would
 isolated-preview:

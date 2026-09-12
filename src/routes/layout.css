@@ -2505,6 +2505,20 @@ html button.tab-link {
 }
 
 /*
+ * The page does not move sideways when a route happens to be tall.
+ *
+ * On a wide screen the document scrolls, so a room long enough to need a
+ * scrollbar is a room fifteen pixels narrower than one that is not — and the
+ * centred column jumps left and right as you move between them. Reserving the
+ * gutter always costs those pixels once and never moves anything again. On a
+ * phone nothing here scrolls the document and the scrollbars are overlays, so
+ * this reserves nothing.
+ */
+html {
+	scrollbar-gutter: stable;
+}
+
+/*
  * Deliberately NOT `overflow-x: hidden` on the body.
  *
  * That hides sideways overflow rather than fixing it — and not even reliably:

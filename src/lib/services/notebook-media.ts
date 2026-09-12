@@ -62,6 +62,14 @@ export type NotebookMediaFolder = {
 	pictureIds: number[];
 	/** These and every folder under this one, which is what a tile counts. */
 	totalCount: number;
+	/**
+	 * What the folder's tile shows: its newest picture, or the newest of
+	 * anything inside it when the notebook itself holds none.
+	 *
+	 * A tile with a picture on it says what is in there. A tile with a glyph on
+	 * it says only that it is a folder, which the shape already said.
+	 */
+	coverId: number | null;
 };
 
 /**
@@ -110,7 +118,13 @@ export function notebookMediaFolders(ctx: Ctx): NotebookMediaFolder[] {
 		const pictureIds = [...held].filter((id) => alive.has(id)).sort((a, b) => b - a);
 		if (pictureIds.length === 0) continue;
 		const parts = name.split(NOTEBOOK_SEPARATOR);
-		folders.push({ name, leaf: parts[parts.length - 1], pictureIds, totalCount: 0 });
+		folders.push({
+			name,
+			leaf: parts[parts.length - 1],
+			pictureIds,
+			totalCount: 0,
+			coverId: null
+		});
 	}
 	folders.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -122,7 +136,10 @@ export function notebookMediaFolders(ctx: Ctx): NotebookMediaFolder[] {
 		const beneath = folders.filter(
 			(other) => other === folder || other.name.startsWith(folder.name + NOTEBOOK_SEPARATOR)
 		);
-		folder.totalCount = new Set(beneath.flatMap((other) => other.pictureIds)).size;
+		const inside = [...new Set(beneath.flatMap((other) => other.pictureIds))];
+		folder.totalCount = inside.length;
+		// Newest first, as everywhere else a picture is shown.
+		folder.coverId = inside.sort((a, b) => b - a)[0] ?? null;
 	}
 	return folders;
 }
@@ -163,11 +180,15 @@ export function notebookMediaView(
 		(folder) => !inside.some((other) => folder.name.startsWith(other.name + NOTEBOOK_SEPARATOR))
 	);
 
-	// Everything beneath here, newest first, which is the order a grid of
-	// pictures is read in everywhere else in the gallery.
-	const ids = [
-		...new Set([...(here?.pictureIds ?? []), ...inside.flatMap((folder) => folder.pictureIds)])
-	].sort((a, b) => b - a);
+	/*
+	 * This notebook's own pictures, and no deeper.
+	 *
+	 * A folder shows what is in it on its own tile, so listing its contents
+	 * underneath as well is the same pictures twice — which is exactly what the
+	 * album looked like: two folders, and then their two pictures loose beneath
+	 * them. Going into the folder is how you see what is in it.
+	 */
+	const ids = [...(here?.pictureIds ?? [])].sort((a, b) => b - a);
 
 	return { folders: direct, pictures: ids.length ? picturesById(ctx, ids) : [] };
 }

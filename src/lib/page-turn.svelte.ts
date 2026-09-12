@@ -42,22 +42,38 @@ const HALF = () => PAGE_TURN.durationMs / 2;
 /** The frame loop in flight, so a second navigation replaces the first. */
 let running = 0;
 
-function ramp(filterId: string, from: number, to: number, onDone?: () => void): void {
+/**
+ * How far the page is currently broken up: 0 whole, 1 gone.
+ *
+ * Kept because the second half has to start wherever the first half got to.
+ * A navigation that lands in thirty milliseconds leaves the page a quarter
+ * erased, and an incoming ramp that begins at "fully gone" jumps it there for
+ * one frame — which is not a dissolve, it is a flash. That is what a change of
+ * room looked like on a fast machine: a flick rather than ink.
+ */
+let at = 0;
+
+function ramp(filterId: string, to: number, onDone?: () => void): void {
 	const el = document.getElementById(`${filterId}-ramp`);
 	if (!el) {
+		at = to;
 		onDone?.();
 		return;
 	}
 
 	const { hardness } = PAGE_TURN;
-	const duration = HALF();
+	const from = at;
+	// Proportional: half a turn covers the whole range, so a quarter of it
+	// takes a quarter of the time. Otherwise the shorter half runs faster and
+	// the two halves of one dissolve move at different speeds.
+	const duration = Math.max(1, HALF() * Math.abs(to - from));
 	const started = performance.now();
 	const mine = ++running;
 
 	function frame(now: number) {
 		if (mine !== running) return;
 		const t = Math.min(1, (now - started) / duration);
-		const at = from + (to - from) * t;
+		at = from + (to - from) * t;
 		el!.setAttribute('slope', String(hardness));
 		el!.setAttribute('intercept', String(1 - hardness * at));
 		if (t < 1) requestAnimationFrame(frame);
@@ -83,7 +99,7 @@ export function turnsPages(): boolean {
 export function turnOut(page: HTMLElement | undefined): void {
 	if (!page || !turnsPages()) return;
 	page.style.filter = `url('#${PAGE_TURN_DEFAULTS.outFilter}')`;
-	ramp(PAGE_TURN_DEFAULTS.outFilter, 0, 1);
+	ramp(PAGE_TURN_DEFAULTS.outFilter, 1);
 }
 
 /** And let the new one arrive out of the gaps the old one left. */
@@ -94,7 +110,7 @@ export function turnIn(page: HTMLElement | undefined): void {
 		return;
 	}
 	page.style.filter = `url('#${PAGE_TURN_DEFAULTS.outFilter}')`;
-	ramp(PAGE_TURN_DEFAULTS.outFilter, 1, 0, () => {
+	ramp(PAGE_TURN_DEFAULTS.outFilter, 0, () => {
 		// Nothing is filtered while nothing is turning: the filter forces the
 		// page to be rasterised, and a page that is not moving should not pay
 		// for that.

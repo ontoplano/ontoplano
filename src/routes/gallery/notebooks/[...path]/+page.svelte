@@ -66,9 +66,24 @@
 					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 					<a href={linkTo(folder.name)} class="block">
 						<span class="block aspect-square overflow-hidden rounded bg-gray-50">
-							<span class="flex h-full w-full items-center justify-center text-gray-300">
-								<Icon name="notebook" size={32} />
-							</span>
+							<!--
+								The folder wears what is in it, like every other album tile.
+								The notebook glyph belongs on the one card at /gallery that
+								stands for all of this — there it says what kind of thing you
+								are about to open; here it would only repeat the shape.
+							-->
+							{#if folder.coverId}
+								<img
+									src="/media/{folder.coverId}"
+									alt=""
+									loading="lazy"
+									class="h-full w-full object-cover"
+								/>
+							{:else}
+								<span class="flex h-full w-full items-center justify-center text-gray-300">
+									<Icon name="image" size={32} />
+								</span>
+							{/if}
 						</span>
 						<span class="mt-1 flex items-baseline gap-1">
 							<span class="min-w-0 flex-1 truncate text-xs font-medium text-gray-700">

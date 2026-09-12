@@ -740,7 +740,15 @@
 									glyphs against the right edge. On a phone the whole rail sat
 									left and the right half of the card was air.
 								-->
-								<div class="row-actions w-full gap-1">
+								<!--
+									Full width only where the card is a column.
+
+									`.row-actions` is `flex: none`, so `w-full` on a row makes
+									it take the whole width and the text beside it collapses to
+									one character per line. That is what a goal card did on a
+									desktop: the title read downwards, a letter at a time.
+								-->
+								<div class="row-actions w-full gap-1 sm:w-auto">
 									{#if goal.status === 'open'}
 										<!--
 											Closing a goal is a verdict on months of work, and it was

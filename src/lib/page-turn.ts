@@ -23,7 +23,7 @@ export const PAGE_TURN_DEFAULTS = {
 	 *
 	 * The number worth touching if the dissolve ever feels wrong.
 	 */
-	durationMs: 240,
+	durationMs: 400,
 
 	/**
 	 * How fine the dots are — `feTurbulence`'s base frequency.
@@ -31,7 +31,7 @@ export const PAGE_TURN_DEFAULTS = {
 	 * Higher is finer. Much above 1 and it reads as film grain rather than as
 	 * ink; much below 0.4 and the blotches are big enough to look like a wipe.
 	 */
-	grain: 0.85,
+	grain: 0.4,
 
 	/**
 	 * How hard the threshold snaps, as the slope of the alpha ramp.
