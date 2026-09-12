@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$app/forms';
@@ -359,14 +360,13 @@ Token: ${token}`;
 					</Field>
 
 					<Field label="Expires in" span={4} hint="Days. Empty means never.">
-						<input
+						<NumberBox
 							autocomplete="off"
 							name="expiresInDays"
-							type="number"
 							min="1"
 							max="3650"
 							placeholder="never"
-							class="input tabular"
+							class="tabular"
 						/>
 					</Field>
 
@@ -656,8 +656,7 @@ Token: ${token}`;
 								title="Points older than this are deleted, nightly. Leave empty to keep everything."
 							>
 								Keep
-								<input
-									type="number"
+								<NumberBox
 									name="retentionDays"
 									min="1"
 									max="3650"

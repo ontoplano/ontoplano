@@ -10,6 +10,16 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.158.0 — 2026-09-13
+
+- **Notebooks are folders when you want them to be.** A name with an em dash
+  in it is a place: “Renovation — Kitchen” sits inside “Renovation”, which is
+  the same reading the gallery gives an album and the same tree inventory
+  draws for a location. A folder counts what is under it, and renaming one
+  moves it.
+- **A number field and a text box are components**, so the day they change
+  there is one file rather than twenty-five call sites.
+
 ## 0.157.0 — 2026-09-13
 
 - **The board slides sideways on a phone.** The columns are side by side in a

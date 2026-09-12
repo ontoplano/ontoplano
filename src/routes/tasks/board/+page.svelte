@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$app/forms';
@@ -794,15 +795,14 @@
 						</Field>
 
 						<Field label="Minutes" span={6}>
-							<input
+							<NumberBox
 								autocomplete="off"
 								name="durationMinutes"
-								type="number"
 								min="5"
 								max="1440"
 								step="5"
 								value={card.durationMinutes}
-								class="input tabular"
+								class="tabular"
 							/>
 						</Field>
 

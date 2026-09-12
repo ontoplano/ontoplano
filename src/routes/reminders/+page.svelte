@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NumberBox from '$lib/components/NumberBox.svelte';
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { enhance } from '$app/forms';
 	import Banner from '$lib/components/Banner.svelte';
@@ -483,16 +484,15 @@
 				class="flex items-center gap-2"
 			>
 				<label class="text-xs whitespace-nowrap text-gray-500" for="how-far">or</label>
-				<input
+				<NumberBox
 					id="how-far"
 					name="days"
-					type="number"
 					min="1"
 					max={data.maxDays}
 					bind:value={howFar}
 					autocomplete="off"
 					title="How many days to cover, up to {data.maxDays}"
-					class="input tabular w-20 py-1 text-sm"
+					class="tabular w-20 py-1 text-sm"
 				/>
 				<span class="text-xs whitespace-nowrap text-gray-500">days</span>
 				<button type="submit" class="btn btn-sm" title="Look that far">Go</button>

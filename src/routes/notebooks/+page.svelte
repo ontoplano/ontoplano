@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { SvelteSet } from 'svelte/reactivity';
+	import { NOTEBOOK_SEPARATOR } from '$lib/services/notebooks';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$app/forms';
@@ -31,6 +33,16 @@
 		editingId ? (data.notebooks.find((n) => n.id === editingId) ?? null) : null
 	);
 	const selected = $derived(data.notebooks.find((n) => n.id === data.selected) ?? null);
+
+	/** Which folders are open. Closed is the resting state, as in the gallery. */
+	const opened = new SvelteSet<number>();
+	const toggle = (id: number) => {
+		if (opened.has(id)) opened.delete(id);
+		else opened.add(id);
+	};
+
+	/** The name as it reads under its parent: the last part of the path. */
+	const leafTitle = (title: string) => title.split(NOTEBOOK_SEPARATOR).at(-1) ?? title;
 	const orphaned = $derived(data.orphaned);
 	const showingOrphans = $derived(data.orphanedSelected && !selected);
 
@@ -162,68 +174,93 @@
 					{/snippet}
 				</EmptyState>
 			{:else}
-				<div class="flex h-full flex-col divide-y divide-gray-200">
-					{#each data.notebooks as notebook (notebook.id)}
-						<div
-							class="flex items-center gap-3 px-4 py-3 {notebook.id === data.selected
-								? 'bg-gray-100'
-								: ''}"
-						>
-							<!--
-								Picking a notebook fills the column beside it, which is what a
-								two-column page is for. It used to leave for the notebook's own
-								page instead, so the right-hand column could be looked at and
-								never changed — the only way to see a second notebook there was
-								to come back and pick again. The full page is reached from that
-								column now (Open, above), where the thing it opens is.
-							-->
-							<a
-								href="{resolve('/notebooks')}?notebook={notebook.id}"
-								class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
-							>
-								<span class:text-gray-500={notebook.closedAt}>{notebook.title}</span>
-								{#if !notebook.mine}
-									<span class="eyebrow ml-1 text-gray-500">{notebook.sharedBy}’s</span>
-								{:else if notebook.sharedWithFamily}
-									<span class="eyebrow ml-1 text-gray-500">family</span>
-								{/if}
-								{#if notebook.closedAt}
-									<span class="eyebrow ml-2 text-gray-500">closed</span>
-								{/if}
-								<span class="block truncate text-xs text-gray-500">{tally(notebook)}</span>
-							</a>
+				<!--
+					Notebooks belong to each other.
 
+					A name with an em dash in it is a place: `Renovation — Kitchen`
+					sits inside `Renovation`, the same reading the gallery gives an
+					album and the same tree inventory draws for a location. Nothing
+					to keep in step and nothing new to learn — renaming one moves it.
+				-->
+				{#snippet notebookRow(node: (typeof data.tree)[number])}
+					<div
+						class="flex items-center gap-3 py-3 pr-4 {node.id === data.selected
+							? 'bg-gray-100'
+							: ''}"
+						style="padding-left: calc(1rem + {node.depth} * 1.6rem)"
+					>
+						{#if node.children.length > 0}
 							<button
-								onclick={() => openEdit(notebook)}
-								class="icon-btn"
-								aria-label="Edit {notebook.title}"
+								class="icon-btn -ml-1 shrink-0"
+								aria-label="{opened.has(node.id) ? 'Hide' : 'Show'} what is inside {node.title}"
+								aria-expanded={opened.has(node.id)}
+								onclick={() => toggle(node.id)}
 							>
-								<Icon name="edit" />
+								<Icon name={opened.has(node.id) ? 'chevron-down' : 'chevron-right'} size={14} />
 							</button>
+						{:else}
+							<span class="size-4 shrink-0"></span>
+						{/if}
 
-							<form
-								method="post"
-								action="?/setClosed"
-								use:enhance={() =>
-									async ({ update }) => {
-										await update({ reset: false });
-									}}
+						<!--
+							Picking a notebook fills the column beside it, which is what a
+							two-column page is for. The full page is reached from that
+							column (Open, above), where the thing it opens is.
+						-->
+						<a
+							href="{resolve('/notebooks')}?notebook={node.id}"
+							class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
+						>
+							<span class:text-gray-500={node.closedAt}>{leafTitle(node.title)}</span>
+							{#if !node.mine}
+								<span class="eyebrow ml-1 text-gray-500">{node.sharedBy}’s</span>
+							{:else if node.sharedWithFamily}
+								<span class="eyebrow ml-1 text-gray-500">family</span>
+							{/if}
+							{#if node.closedAt}
+								<span class="eyebrow ml-2 text-gray-500">closed</span>
+							{/if}
+							<span class="block truncate text-xs text-gray-500">{tally(node)}</span>
+						</a>
+
+						<button onclick={() => openEdit(node)} class="icon-btn" aria-label="Edit {node.title}">
+							<Icon name="edit" />
+						</button>
+
+						<form
+							method="post"
+							action="?/setClosed"
+							use:enhance={() =>
+								async ({ update }) => {
+									await update({ reset: false });
+								}}
+						>
+							<input type="hidden" name="id" value={node.id} />
+							<input type="hidden" name="closed" value={node.closedAt ? 'false' : 'true'} />
+							<button
+								class="icon-btn"
+								title={node.closedAt ? 'Reopen it' : 'Close it'}
+								aria-label="{node.closedAt ? 'Reopen' : 'Close'} {node.title}"
 							>
-								<input type="hidden" name="id" value={notebook.id} />
-								<input type="hidden" name="closed" value={notebook.closedAt ? 'false' : 'true'} />
-								<button
-									class="icon-btn"
-									title={notebook.closedAt ? 'Reopen it' : 'Close it'}
-									aria-label="{notebook.closedAt ? 'Reopen' : 'Close'} {notebook.title}"
-								>
-									{#if notebook.closedAt}
-										<Icon name="undo" />
-									{:else}
-										<Icon name="check" />
-									{/if}
-								</button>
-							</form>
-						</div>
+								{#if node.closedAt}
+									<Icon name="undo" />
+								{:else}
+									<Icon name="check" />
+								{/if}
+							</button>
+						</form>
+					</div>
+
+					{#if opened.has(node.id)}
+						{#each node.children as child (child.id)}
+							{@render notebookRow(child)}
+						{/each}
+					{/if}
+				{/snippet}
+
+				<div class="flex h-full flex-col divide-y divide-gray-200">
+					{#each data.tree as node (node.id)}
+						{@render notebookRow(node)}
 					{/each}
 
 					<!--
@@ -319,7 +356,12 @@
 		{/if}
 
 		<FormGrid>
-			<Field label="Title" span={12} required>
+			<Field
+				label="Title"
+				span={12}
+				required
+				hint="An em dash makes a folder: “Renovation — Kitchen” sits inside “Renovation”."
+			>
 				<OneLine
 					name="heading"
 					placeholder="Kitchen renovation"

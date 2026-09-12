@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NumberBox from '$lib/components/NumberBox.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -67,14 +68,13 @@
 		     what this is bigger than the count on the row. One, for almost
 		     everything, which is why it is filled in already. -->
 		<Field label="How many you keep" span={6} hint="The count the list compares against.">
-			<input
+			<NumberBox
 				name="idealQty"
-				type="number"
 				min="0"
 				step="1"
 				inputmode="numeric"
 				bind:value={idealQty}
-				class="input tabular"
+				class="tabular"
 			/>
 		</Field>
 

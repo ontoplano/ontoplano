@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { enhance } from '$app/forms';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -329,13 +330,12 @@
 				</label>
 				<label class="block text-sm">
 					<span class="text-gray-600">Due day of that month</span>
-					<input
+					<NumberBox
 						name="dueDay"
-						type="number"
 						min="1"
 						max="28"
 						value={editing?.dueDay ?? ''}
-						class="input mt-1 w-full"
+						class="mt-1 w-full"
 						placeholder="15"
 					/>
 					<span class="mt-1 block text-xs text-gray-500">The last day it can be paid.</span>
@@ -343,13 +343,12 @@
 			{:else}
 				<label class="block text-sm">
 					<span class="text-gray-600">Due day of the month</span>
-					<input
+					<NumberBox
 						name="dueDay"
-						type="number"
 						min="1"
 						max="28"
 						value={editing?.dueDay ?? ''}
-						class="input mt-1 w-full"
+						class="mt-1 w-full"
 						placeholder="5"
 					/>
 					<span class="mt-1 block text-xs text-gray-500">The last day it can be paid.</span>
@@ -357,13 +356,12 @@
 			{/if}
 			<label class="block text-sm">
 				<span class="text-gray-600">Pay it this many days before</span>
-				<input
+				<NumberBox
 					name="payLeadDays"
-					type="number"
 					min="0"
 					max="27"
 					value={editing?.payLeadDays ?? 0}
-					class="input mt-1 w-full"
+					class="mt-1 w-full"
 					placeholder="0"
 				/>
 				<span class="mt-1 block text-xs text-gray-500">

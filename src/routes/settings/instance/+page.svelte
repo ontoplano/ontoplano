@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { enhance } from '$app/forms';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { settingsForm } from '$lib/actions/settings-form';
@@ -463,14 +464,7 @@
 				</Field>
 
 				<Field label="Code expires in" span={6} hint="Days. Leave empty for no expiry.">
-					<input
-						autocomplete="off"
-						name="expiresInDays"
-						type="number"
-						min="1"
-						max="365"
-						class="input tabular"
-					/>
+					<NumberBox autocomplete="off" name="expiresInDays" min="1" max="365" class="tabular" />
 				</Field>
 
 				{#if data.sellsAnything}

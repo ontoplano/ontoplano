@@ -39,6 +39,71 @@ export type Notebook = {
 	goals: number;
 };
 
+/**
+ * How a notebook's name says where it belongs.
+ *
+ * The same em dash the gallery's albums use, for the same reason: a notebook
+ * called `Renovation — Kitchen` is a name and a place at once, so there is no
+ * parent column to keep in step and renaming one to `Renovation — Bathroom`
+ * moves it, which is what typing that plainly means. One idea in the app
+ * rather than two.
+ */
+export const NOTEBOOK_SEPARATOR = ' — ';
+
+export type NotebookNode = Notebook & {
+	depth: number;
+	children: NotebookNode[];
+	/** Everything under it, so a folder can say what it holds. */
+	totals?: { entries: number; tasks: number; goals: number };
+};
+
+/** The notebooks as they belong to each other, roots first. */
+export function notebookTree(ctx: Ctx): NotebookNode[] {
+	const flat = listNotebooks(ctx);
+	const nodes = new Map<string, NotebookNode>(
+		flat.map((n) => [
+			n.title,
+			{ ...n, depth: n.title.split(NOTEBOOK_SEPARATOR).length - 1, children: [] }
+		])
+	);
+
+	const roots: NotebookNode[] = [];
+	for (const node of nodes.values()) {
+		const parts = node.title.split(NOTEBOOK_SEPARATOR);
+		parts.pop();
+		// The nearest ancestor that exists: `a — b — c` with no `a — b` hangs
+		// off `a` rather than off nothing.
+		let parent: NotebookNode | undefined;
+		while (parts.length > 0 && !parent) {
+			parent = nodes.get(parts.join(NOTEBOOK_SEPARATOR));
+			parts.pop();
+		}
+		if (parent) parent.children.push(node);
+		else roots.push(node);
+	}
+
+	// What a folder holds is what is under it: a notebook whose writing all
+	// lives in its children was reading "0 notes", which is true of the row
+	// and false of the thing somebody is looking at.
+	const withTotals = (node: NotebookNode): { entries: number; tasks: number; goals: number } => {
+		const totals = node.children.reduce(
+			(sum, child) => {
+				const under = withTotals(child);
+				return {
+					entries: sum.entries + under.entries,
+					tasks: sum.tasks + under.tasks,
+					goals: sum.goals + under.goals
+				};
+			},
+			{ entries: node.entries, tasks: node.tasks, goals: node.goals }
+		);
+		node.totals = totals;
+		return totals;
+	};
+	roots.forEach(withTotals);
+	return roots;
+}
+
 type Tally = { entries: number; tasks: number; goals: number };
 
 const NOTHING: Tally = { entries: 0, tasks: 0, goals: 0 };

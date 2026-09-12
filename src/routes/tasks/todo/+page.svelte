@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { enhance } from '$app/forms';
 	import Backlinks from '$lib/components/Backlinks.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
@@ -370,14 +371,13 @@
 						/>
 					</Field>
 					<Field label="Minutes" span={3}>
-						<input
+						<NumberBox
 							autocomplete="off"
 							name="durationMinutes"
-							type="number"
 							min="15"
 							step="15"
 							value="60"
-							class="input tabular"
+							class="tabular"
 						/>
 					</Field>
 					<Field label="Category" span={12} required>

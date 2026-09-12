@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Banner from '$lib/components/Banner.svelte';
@@ -3016,10 +3017,9 @@
 						{#if recurrenceKind === 'weeks' || recurrenceKind === 'days'}
 							<label class="flex items-center gap-2 text-sm text-gray-700">
 								Every
-								<input
+								<NumberBox
 									autocomplete="off"
 									name="recurrenceInterval"
-									type="number"
 									min="1"
 									max={MAX_INTERVAL}
 									bind:value={recurrenceInterval}
@@ -3030,10 +3030,9 @@
 						{:else if recurrenceKind === 'monthly'}
 							<label class="flex items-center gap-2 text-sm text-gray-700">
 								Day
-								<input
+								<NumberBox
 									autocomplete="off"
 									name="recurrenceMonthDay"
-									type="number"
 									min="1"
 									max="31"
 									bind:value={recurrenceMonthDay}
@@ -3133,14 +3132,12 @@
 						/>
 					</Field>
 					<Field label="Duration" span={4} hint="minutes">
-						<input
+						<NumberBox
 							autocomplete="off"
 							name="durationMinutes"
-							type="number"
 							min="15"
 							step="15"
 							bind:value={formDuration}
-							class="input"
 						/>
 					</Field>
 				</FormGrid>
@@ -3263,16 +3260,15 @@
 							box is what is submitted.
 						-->
 						<div class="flex flex-wrap items-center gap-2">
-							<input
+							<NumberBox
 								autocomplete="off"
 								name="remindLeadMinutes"
-								type="number"
 								min="0"
 								max="1440"
 								step="5"
 								bind:value={remindLead}
 								placeholder="0"
-								class="input tabular w-28"
+								class="tabular w-28"
 								aria-label="Minutes before it starts"
 							/>
 							<div class="flex flex-wrap gap-1">

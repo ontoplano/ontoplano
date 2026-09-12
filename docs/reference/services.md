@@ -2335,6 +2335,10 @@ design, and the reason this is not a second task system.
 
 ### Functions
 
+#### `notebookTree(ctx)`
+
+The notebooks as they belong to each other, roots first.
+
 #### `listNotebooks(ctx)`
 
 Open ones first: a closed notebook is history, not a place you are writing.
@@ -2394,6 +2398,7 @@ Share a notebook with the family, or stop. The owner's switch alone.
 ### Types
 
 - `Notebook`
+- `NotebookNode`
 
 ## onboarding-templates
 

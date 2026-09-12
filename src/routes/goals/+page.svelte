@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NumberBox from '$lib/components/NumberBox.svelte';
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -390,15 +391,14 @@
 						{#each formTargets as target, i (i)}
 							<div class="flex items-center gap-2">
 								<input type="hidden" name="targetId" value={target.id ?? ''} />
-								<input
+								<NumberBox
 									autocomplete="off"
 									name="targetValue"
-									type="number"
 									min="0"
 									step="any"
 									placeholder="3"
 									bind:value={target.value}
-									class="input tabular w-24 shrink-0"
+									class="tabular w-24 shrink-0"
 								/>
 								<input
 									autocomplete="off"
@@ -583,10 +583,9 @@
 														class="flex flex-wrap items-center gap-2"
 													>
 														<input type="hidden" name="targetId" value={target.id} />
-														<input
+														<NumberBox
 															autocomplete="off"
 															name="currentValue"
-															type="number"
 															min="0"
 															step="any"
 															value={target.currentValue}

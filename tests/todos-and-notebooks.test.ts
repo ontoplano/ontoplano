@@ -314,3 +314,47 @@ describe('a note is called something', () => {
 		expect(notebooks.contentsOf(ctx, id).entries.find((e) => e.id === note)!.title).toBe('Book I');
 	});
 });
+
+/**
+ * Notebooks belong to each other, by name.
+ *
+ * The same em dash the gallery's albums use: `Renovation — Kitchen` sits
+ * inside `Renovation`. No parent column to keep in step, and renaming one to
+ * `Renovation — Bathroom` moves it, which is what typing that plainly means.
+ */
+describe('notebooks as folders', () => {
+	test('a name with a dash in it hangs off the one before it', () => {
+		notebooks.createNotebook(ctx, { title: 'Renovation' });
+		notebooks.createNotebook(ctx, { title: 'Renovation — Kitchen' });
+		notebooks.createNotebook(ctx, { title: 'Renovation — Bathroom' });
+
+		const root = notebooks.notebookTree(ctx).find((n) => n.title === 'Renovation')!;
+		expect(root.depth).toBe(0);
+		expect(root.children.map((c) => c.title).sort()).toEqual([
+			'Renovation — Bathroom',
+			'Renovation — Kitchen'
+		]);
+		expect(root.children[0].depth).toBe(1);
+	});
+
+	test('hangs off the nearest ancestor that exists, not off nothing', () => {
+		notebooks.createNotebook(ctx, { title: 'Trip' });
+		// No `Trip — 2026`: the grandchild still belongs under Trip.
+		notebooks.createNotebook(ctx, { title: 'Trip — 2026 — Lisbon' });
+
+		const trip = notebooks.notebookTree(ctx).find((n) => n.title === 'Trip')!;
+		expect(trip.children.map((c) => c.title)).toEqual(['Trip — 2026 — Lisbon']);
+	});
+
+	test('a folder counts what is under it, not only its own', () => {
+		const parent = notebooks.createNotebook(ctx, { title: 'Reading list' });
+		const child = notebooks.createNotebook(ctx, { title: 'Reading list — Philosophy' });
+		diary.createEntry(ctx, { content: 'one', notebookId: parent });
+		diary.createEntry(ctx, { content: 'two', notebookId: child });
+		diary.createEntry(ctx, { content: 'three', notebookId: child });
+
+		const root = notebooks.notebookTree(ctx).find((n) => n.title === 'Reading list')!;
+		expect(root.entries).toBe(1);
+		expect(root.totals?.entries).toBe(3);
+	});
+});

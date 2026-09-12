@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$app/forms';
@@ -235,10 +236,10 @@
 				<OneLine name="heading" class="input" required />
 			</Field>
 			<Field label="Serves" span={4}>
-				<input autocomplete="off" name="servings" type="number" min="1" class="input" />
+				<NumberBox autocomplete="off" name="servings" min="1" />
 			</Field>
 			<Field label="Minutes" span={4}>
-				<input autocomplete="off" name="minutes" type="number" min="1" class="input" />
+				<NumberBox autocomplete="off" name="minutes" min="1" />
 			</Field>
 			<Field label="Where it came from" span={4}>
 				<OneLine name="source" class="input" />
@@ -312,14 +313,12 @@
 					/>
 				</Field>
 				<Field label="For" span={6} hint="Minutes.">
-					<input
+					<NumberBox
 						autocomplete="off"
 						name="durationMinutes"
-						type="number"
 						min="5"
 						step="5"
 						value={planning.minutes ?? 45}
-						class="input"
 					/>
 				</Field>
 				<Field label="Counts as" span={6}>

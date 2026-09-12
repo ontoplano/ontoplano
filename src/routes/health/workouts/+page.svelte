@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { enhance } from '$app/forms';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -212,12 +213,11 @@
 				</label>
 				<label class="block text-sm">
 					<span class="text-gray-600">About how long (min)</span>
-					<input
+					<NumberBox
 						name="minutes"
-						type="number"
 						min="1"
 						value={editing?.minutes ?? ''}
-						class="input mt-1 w-full"
+						class="mt-1 w-full"
 						placeholder="45"
 					/>
 				</label>
@@ -289,12 +289,11 @@
 				</label>
 				<label class="block text-sm">
 					<span class="text-gray-600">Minutes</span>
-					<input
+					<NumberBox
 						name="durationMinutes"
-						type="number"
 						min="5"
 						value={scheduling.minutes ?? 60}
-						class="input mt-1 w-full"
+						class="mt-1 w-full"
 					/>
 				</label>
 			</div>

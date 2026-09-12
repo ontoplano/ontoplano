@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { tick } from 'svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$app/forms';
@@ -185,14 +186,13 @@
 			>
 				<input type="hidden" name="recipeId" value={data.recipe.id} />
 				<div class="flex flex-wrap gap-2">
-					<input
+					<NumberBox
 						autocomplete="off"
 						name="quantity"
-						type="number"
 						step="any"
 						min="0"
 						placeholder="2"
-						class="input w-16"
+						class="w-16"
 						aria-label="Amount"
 					/>
 					<input
@@ -498,24 +498,10 @@
 				<OneLine name="heading" value={data.recipe.title} class="input" required />
 			</Field>
 			<Field label="Serves" span={4}>
-				<input
-					autocomplete="off"
-					name="servings"
-					type="number"
-					min="1"
-					value={data.recipe.servings ?? ''}
-					class="input"
-				/>
+				<NumberBox autocomplete="off" name="servings" min="1" value={data.recipe.servings ?? ''} />
 			</Field>
 			<Field label="Minutes" span={4}>
-				<input
-					autocomplete="off"
-					name="minutes"
-					type="number"
-					min="1"
-					value={data.recipe.minutes ?? ''}
-					class="input"
-				/>
+				<NumberBox autocomplete="off" name="minutes" min="1" value={data.recipe.minutes ?? ''} />
 			</Field>
 			<Field label="Where it came from" span={4}>
 				<OneLine name="source" value={data.recipe.source} class="input" />
@@ -648,14 +634,12 @@
 				/>
 			</Field>
 			<Field label="For" span={6} hint="Minutes.">
-				<input
+				<NumberBox
 					autocomplete="off"
 					name="durationMinutes"
-					type="number"
 					min="5"
 					step="5"
 					value={data.recipe.minutes ?? 45}
-					class="input"
 				/>
 			</Field>
 			<Field label="Counts as" span={6}>
