@@ -15,10 +15,74 @@
  * server's live file.
  */
 import Database from 'better-sqlite3';
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+
+const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
+
+/**
+ * Every version of every migration this repository has ever held.
+ *
+ * A stranger is a hash the working tree cannot produce, and the useful next
+ * question is always "which migration was it, and when did it look like that".
+ * Git knows: each commit that touched `drizzle/` has its own copy of each file,
+ * so hashing all of them gives a lookup from the mystery hash to a name and the
+ * commit it came from.
+ *
+ * Skipped silently outside a checkout — a deployed copy is not one — because
+ * the list of applied migrations is still worth printing there.
+ */
+function everyVersionEverCommitted() {
+	const seen = new Map();
+	let commits;
+	try {
+		commits = execFileSync(
+			'git',
+			['log', '--all', '--format=%H %ad', '--date=short', '--', 'drizzle'],
+			{
+				encoding: 'utf8'
+			}
+		)
+			.trim()
+			.split('\n')
+			.filter(Boolean);
+	} catch {
+		return seen;
+	}
+
+	for (const line of commits) {
+		const [commit, date] = line.split(' ');
+		let files;
+		try {
+			files = execFileSync('git', ['ls-tree', '-r', '--name-only', commit, '--', 'drizzle'], {
+				encoding: 'utf8'
+			})
+				.trim()
+				.split('\n')
+				.filter((name) => name.endsWith('.sql'));
+		} catch {
+			continue;
+		}
+		for (const file of files) {
+			try {
+				const bytes = execFileSync('git', ['show', `${commit}:${file}`], {
+					encoding: 'buffer',
+					maxBuffer: 1 << 24
+				});
+				const hash = sha(bytes);
+				// The oldest commit holding a given content is the one worth naming:
+				// it is when that version of the file came into being.
+				seen.set(hash, { tag: file.replace(/^drizzle\//, '').replace(/\.sql$/, ''), commit, date });
+			} catch {
+				/* a path that did not exist at that commit */
+			}
+		}
+	}
+	return seen;
+}
 
 const path =
 	process.argv[2] ||
@@ -76,9 +140,26 @@ const missing = journal.entries.filter(
 if (missing.length > 0) console.log(`\n  not yet applied: ${missing.map((e) => e.tag).join(', ')}`);
 
 if (strangers.length > 0) {
-	console.log(
-		`\n  ${strangers.length} stranger(s). The timestamp above says when this database ran it,\n` +
-			'  which is usually enough to say which build it came from.'
-	);
+	console.log(`\n  ${strangers.length} stranger(s):\n`);
+	const history = everyVersionEverCommitted();
+	for (const row of strangers) {
+		const found = history.get(row.hash);
+		if (found) {
+			console.log(
+				`  ${row.hash}\n` +
+					`    is ${found.tag} as it stood at ${found.commit.slice(0, 8)} (${found.date}).\n` +
+					'    This database ran that version; the working tree holds a different one.\n'
+			);
+		} else {
+			console.log(
+				`  ${row.hash}\n` +
+					'    matches no version of any migration this repository has ever held.\n' +
+					'    It came from somewhere else: another branch, a migration written by\n' +
+					'    hand, or a database copied from a different instance.\n'
+			);
+		}
+	}
+	if (history.size === 0)
+		console.log('  (no git history here, so none of them could be looked up by name)');
 	process.exit(1);
 }

@@ -39,7 +39,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
+.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-dry-run db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -500,6 +500,17 @@ start: build
 ## list the migrations a database has applied, naming any strangers
 db-strangers:
 	@node scripts/migration-strangers.mjs "$(DATABASE_URL)"
+
+# Would this deploy migrate cleanly? Answered without deploying.
+#
+# A copy of the database, taken with SQLite's own snapshot so a live server can
+# be checked while it serves, migrated by the same migrator the deploy uses,
+# foreign keys checked, thrown away. Finding out by doing it to production is
+# not a plan.
+#: DATABASE_URL=~/.local/share/ontoplano/ontoplano.db  which database to rehearse
+## rehearse the migration against a throwaway copy
+db-dry-run:
+	@node scripts/migrate-dry-run.mjs "$(DATABASE_URL)"
 
 ## apply the schema straight to the dev database
 db-push:

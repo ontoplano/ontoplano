@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.162.2 — 2026-09-12
+
+- **`make db-dry-run`** rehearses a deploy's migration against a throwaway copy
+  of the database — taken with SQLite's own snapshot, so a live server can be
+  checked while it serves — and reports whether it would work. Finding out by
+  doing it to production is not a plan.
+- **`make db-strangers`** now names a stranger rather than counting it: it
+  hashes every version of every migration this repository has ever held and
+  says which one the database ran and when that version existed.
+
 ## 0.162.1 — 2026-09-12
 
 - **`make db-strangers`** lists the migrations a database has actually applied,
