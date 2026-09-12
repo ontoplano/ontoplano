@@ -24,7 +24,7 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let media: typeof import('../src/lib/server/services/media');
+let media: typeof import('../src/lib/services/media');
 let buildCtx: typeof import('../src/lib/services/ctx').buildCtx;
 let recipes: typeof import('../src/lib/services/recipes');
 
@@ -32,7 +32,7 @@ const configDir = mkdtempSync(join(tmpdir(), 'ontoplano-media-config-'));
 
 beforeAll(async () => {
 	process.env.ONTOPLANO_CONFIG_DIR = configDir;
-	media = await import('../src/lib/server/services/media');
+	media = await import('../src/lib/services/media');
 	({ buildCtx } = await import('../src/lib/services/ctx'));
 	recipes = await import('../src/lib/services/recipes');
 });
@@ -41,6 +41,11 @@ const ctx = () => buildCtx(OWNER, { tz: 'UTC', now: new Date('2026-03-14T10:00:0
 const other = () => buildCtx(STRANGER, { tz: 'UTC', now: new Date('2026-03-14T10:00:00Z') });
 
 /** A real PNG of one colour — the bytes a browser would actually send. */
+/** Two blobs, byte for byte — `Buffer.equals` is Node's, and these are not. */
+function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+	return a.length === b.length && a.every((byte, i) => byte === b[i]);
+}
+
 function png(size = 8, colour: [number, number, number] = [1, 2, 3]): Buffer {
 	const table = Array.from({ length: 256 }, (_, n) => {
 		let c = n;
@@ -97,16 +102,16 @@ function withLimits(toml: string) {
 }
 
 describe('what is accepted', () => {
-	beforeEach(() => withLimits('[media]\nmax_kilobytes = "500"\nrecipe_images = "6"\n'));
+	beforeEach(async () => withLimits('[media]\nmax_kilobytes = "500"\nrecipe_images = "6"\n'));
 
-	it('takes the four raster formats a browser draws inertly', () => {
+	it('takes the four raster formats a browser draws inertly', async () => {
 		for (const [what, bytes] of [
 			['png', png()],
 			['jpeg', jpeg()],
 			['gif', gif()],
 			['webp', webp()]
 		] as const) {
-			const stored = media.store(ctx(), { bytes, filename: `a.${what}` });
+			const stored = await media.store(ctx(), { bytes, filename: `a.${what}` });
 			expect(stored.mime, what).toMatch(/^image\//);
 		}
 	});
@@ -117,7 +122,7 @@ describe('what is accepted', () => {
 	 * Every one of these arrives named like a picture. None of them is one, and
 	 * an app that believed the name would be serving them from its own origin.
 	 */
-	it('refuses anything that is not one of them, whatever it is called', () => {
+	it('refuses anything that is not one of them, whatever it is called', async () => {
 		const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script/></svg>');
 		const html = Buffer.from('<!doctype html><script>alert(1)</script>');
 		const pdf = Buffer.from('%PDF-1.4\n%…………………………');
@@ -129,19 +134,20 @@ describe('what is accepted', () => {
 			['pdf', pdf],
 			['zip', zip]
 		] as const)
-			expect(() => media.store(ctx(), { bytes, filename: `nice.${what}.png` }), what).toThrow(
-				/not a picture/i
-			);
+			await expect(
+				media.store(ctx(), { bytes, filename: `nice.${what}.png` }),
+				what
+			).rejects.toThrow(/not a picture/i);
 	});
 
-	it('refuses an empty file', () => {
-		expect(() => media.store(ctx(), { bytes: Buffer.alloc(0) })).toThrow(/empty/i);
+	it('refuses an empty file', async () => {
+		await expect(media.store(ctx(), { bytes: Buffer.alloc(0) })).rejects.toThrow(/empty/i);
 	});
 
-	it('refuses one over the instance’s ceiling, and says the number', () => {
+	it('refuses one over the instance’s ceiling, and says the number', async () => {
 		withLimits('[media]\nmax_kilobytes = "16"\n');
 		const big = Buffer.concat([png(), Buffer.alloc(20 * 1024, 0)]);
-		expect(() => media.store(ctx(), { bytes: big })).toThrow(/16KB/);
+		await expect(media.store(ctx(), { bytes: big })).rejects.toThrow(/16KB/);
 	});
 
 	/**
@@ -149,8 +155,8 @@ describe('what is accepted', () => {
 	 * that could steer either survives it. It is never a path: the bytes are a
 	 * column.
 	 */
-	it('strips a filename that could steer a header or a path', () => {
-		const nasty = media.store(ctx(), {
+	it('strips a filename that could steer a header or a path', async () => {
+		const nasty = await media.store(ctx(), {
 			bytes: png(9),
 			filename: '../../etc/passwd"; attachment; x="a.png'
 		});
@@ -160,17 +166,17 @@ describe('what is accepted', () => {
 		expect(nasty.filename).not.toContain(';');
 	});
 
-	it('gives a nameless file a name of its own', () => {
-		expect(media.store(ctx(), { bytes: png(10) }).filename).toMatch(/\.png$/);
+	it('gives a nameless file a name of its own', async () => {
+		expect((await media.store(ctx(), { bytes: png(10) })).filename).toMatch(/\.png$/);
 	});
 
-	it('stores the same picture once', () => {
-		const first = media.store(ctx(), { bytes: png(11), filename: 'a.png' });
-		const again = media.store(ctx(), { bytes: png(11), filename: 'b.png' });
+	it('stores the same picture once', async () => {
+		const first = await media.store(ctx(), { bytes: png(11), filename: 'a.png' });
+		const again = await media.store(ctx(), { bytes: png(11), filename: 'b.png' });
 		expect(again.id).toBe(first.id);
 	});
 
-	it('refuses to go over the account’s total', () => {
+	it('refuses to go over the account’s total', async () => {
 		withLimits('[media]\nmax_kilobytes = "500"\naccount_megabytes = "1"\n');
 
 		// Real pictures, each a fifth of the allowance. Padded with noise rather
@@ -178,49 +184,59 @@ describe('what is accepted', () => {
 		// that thinks it stored a megabyte would pass whatever the code did.
 		const heavy = (n: number) => Buffer.concat([png(8, [n, 0, 0]), randomBytes(200 * 1024)]);
 
-		expect(() => {
-			for (let i = 0; i < 10; i++) media.store(ctx(), { bytes: heavy(i), filename: `${i}.png` });
-		}).toThrow(/1MB/);
+		await expect(async () => {
+			for (let i = 0; i < 10; i++)
+				await media.store(ctx(), { bytes: heavy(i), filename: `${i}.png` });
+		}).rejects.toThrow(/1MB/);
 	});
 });
 
 describe('whose it is', () => {
-	beforeEach(() => withLimits('[media]\nmax_kilobytes = "500"\n'));
+	beforeEach(async () => withLimits('[media]\nmax_kilobytes = "500"\n'));
 
-	it('is not readable by anybody else, and not found rather than refused', () => {
-		const mine = media.store(ctx(), { bytes: png(12), filename: 'mine.png' });
+	it('is not readable by anybody else, and not found rather than refused', async () => {
+		const mine = await media.store(ctx(), { bytes: png(12), filename: 'mine.png' });
 		expect(media.read(ctx(), mine.id).bytes.length).toBeGreaterThan(0);
 		expect(() => media.read(other(), mine.id)).toThrow(/no such picture/i);
 	});
 
-	it('cannot be deleted by anybody else', () => {
-		const mine = media.store(ctx(), { bytes: png(13), filename: 'mine.png' });
+	it('cannot be deleted by anybody else', async () => {
+		const mine = await media.store(ctx(), { bytes: png(13), filename: 'mine.png' });
 		expect(() => media.remove(other(), mine.id)).toThrow(/no such picture/i);
 		// …and it is still there.
 		expect(media.read(ctx(), mine.id).bytes.length).toBeGreaterThan(0);
 	});
 
-	it('cannot be attached to somebody else’s recipe', () => {
+	it('cannot be attached to somebody else’s recipe', async () => {
 		const theirs = recipes.createRecipe(other(), { title: 'Not yours' });
-		expect(() =>
+		await expect(
 			media.attachToRecipe(ctx(), theirs, { bytes: png(14), filename: 'x.png' })
-		).toThrow(/no such recipe/i);
+		).rejects.toThrow(/no such recipe/i);
 	});
 });
 
 describe('a recipe’s gallery', () => {
-	beforeEach(() => withLimits('[media]\nmax_kilobytes = "500"\nrecipe_images = "3"\n'));
+	beforeEach(async () => withLimits('[media]\nmax_kilobytes = "500"\nrecipe_images = "3"\n'));
 
-	it('makes the first one the main one without being asked', () => {
+	it('makes the first one the main one without being asked', async () => {
 		const id = recipes.createRecipe(ctx(), { title: 'First' });
-		const one = media.attachToRecipe(ctx(), id, { bytes: png(20, [1, 0, 0]), filename: '1.png' });
+		const one = await media.attachToRecipe(ctx(), id, {
+			bytes: png(20, [1, 0, 0]),
+			filename: '1.png'
+		});
 		expect(one.isMain).toBe(true);
 	});
 
-	it('has exactly one main, and moving it is a swap', () => {
+	it('has exactly one main, and moving it is a swap', async () => {
 		const id = recipes.createRecipe(ctx(), { title: 'Swap' });
-		const a = media.attachToRecipe(ctx(), id, { bytes: png(21, [1, 0, 0]), filename: 'a.png' });
-		const b = media.attachToRecipe(ctx(), id, { bytes: png(21, [2, 0, 0]), filename: 'b.png' });
+		const a = await media.attachToRecipe(ctx(), id, {
+			bytes: png(21, [1, 0, 0]),
+			filename: 'a.png'
+		});
+		const b = await media.attachToRecipe(ctx(), id, {
+			bytes: png(21, [2, 0, 0]),
+			filename: 'b.png'
+		});
 
 		media.setMain(ctx(), id, b.id);
 		const after = media.picturesOf(ctx(), id);
@@ -228,10 +244,13 @@ describe('a recipe’s gallery', () => {
 		expect(after.find((p) => p.id === a.id)?.isMain).toBe(false);
 	});
 
-	it('keeps a main one when the main one is removed', () => {
+	it('keeps a main one when the main one is removed', async () => {
 		const id = recipes.createRecipe(ctx(), { title: 'Removed' });
-		const a = media.attachToRecipe(ctx(), id, { bytes: png(22, [1, 0, 0]), filename: 'a.png' });
-		media.attachToRecipe(ctx(), id, { bytes: png(22, [2, 0, 0]), filename: 'b.png' });
+		const a = await media.attachToRecipe(ctx(), id, {
+			bytes: png(22, [1, 0, 0]),
+			filename: 'a.png'
+		});
+		await media.attachToRecipe(ctx(), id, { bytes: png(22, [2, 0, 0]), filename: 'b.png' });
 
 		media.detachFromRecipe(ctx(), id, a.id);
 		const left = media.picturesOf(ctx(), id);
@@ -239,14 +258,14 @@ describe('a recipe’s gallery', () => {
 		expect(left[0].isMain).toBe(true);
 	});
 
-	it('refuses more than the instance allows', () => {
+	it('refuses more than the instance allows', async () => {
 		const id = recipes.createRecipe(ctx(), { title: 'Full' });
 		for (let i = 0; i < 3; i++)
-			media.attachToRecipe(ctx(), id, { bytes: png(23, [i, 0, 0]), filename: `${i}.png` });
+			await media.attachToRecipe(ctx(), id, { bytes: png(23, [i, 0, 0]), filename: `${i}.png` });
 
-		expect(() =>
+		await expect(
 			media.attachToRecipe(ctx(), id, { bytes: png(23, [9, 0, 0]), filename: 'x.png' })
-		).toThrow(/at most 3/);
+		).rejects.toThrow(/at most 3/);
 	});
 
 	/**
@@ -254,9 +273,9 @@ describe('a recipe’s gallery', () => {
 	 * else still names it. Otherwise every removed picture is storage nobody can
 	 * see and nobody can reclaim.
 	 */
-	it('drops the bytes when nothing else wants them', () => {
+	it('drops the bytes when nothing else wants them', async () => {
 		const id = recipes.createRecipe(ctx(), { title: 'Orphan' });
-		const only = media.attachToRecipe(ctx(), id, { bytes: png(24), filename: 'only.png' });
+		const only = await media.attachToRecipe(ctx(), id, { bytes: png(24), filename: 'only.png' });
 
 		media.detachFromRecipe(ctx(), id, only.id);
 		expect(() => media.read(ctx(), only.id)).toThrow(/no such picture/i);
@@ -265,7 +284,10 @@ describe('a recipe’s gallery', () => {
 	it('keeps them when somebody’s writing still mentions it', async () => {
 		const diary = await import('../src/lib/services/diary');
 		const id = recipes.createRecipe(ctx(), { title: 'Mentioned' });
-		const shared = media.attachToRecipe(ctx(), id, { bytes: png(25), filename: 'shared.png' });
+		const shared = await media.attachToRecipe(ctx(), id, {
+			bytes: png(25),
+			filename: 'shared.png'
+		});
 		diary.createEntry(ctx(), { content: `Made it again ![it](/media/${shared.id})` });
 
 		media.detachFromRecipe(ctx(), id, shared.id);
@@ -274,17 +296,17 @@ describe('a recipe’s gallery', () => {
 });
 
 describe('pictures inside writing', () => {
-	it('counts the ones an entry actually mentions', () => {
+	it('counts the ones an entry actually mentions', async () => {
 		const content = 'a ![one](/media/1) b ![two](/media/2) and ![again](/media/1)';
 		expect(media.referencedIn(content).sort()).toEqual([1, 2]);
 	});
 
-	it('does not count a link that only looks like one', () => {
+	it('does not count a link that only looks like one', async () => {
 		expect(media.referencedIn('[not a picture](/media/9)')).toEqual([]);
 		expect(media.referencedIn('![elsewhere](https://example.com/a.png)')).toEqual([]);
 	});
 
-	it('refuses an entry over the instance’s per-entry ceiling', () => {
+	it('refuses an entry over the instance’s per-entry ceiling', async () => {
 		withLimits('[media]\nentry_images = "2"\n');
 		const three = [1, 2, 3].map((n) => `![p](/media/${n})`).join('\n');
 		expect(() => media.assertEntryWithinLimit(three)).toThrow(/at most 2/);
@@ -309,7 +331,7 @@ describe('leaving with them', () => {
 
 		withLimits('[media]\nmax_kilobytes = "500"\n');
 		const bytes = png(30, [7, 8, 9]);
-		const stored = media.store(ctx(), { bytes, filename: 'leaving.png' });
+		const stored = await media.store(ctx(), { bytes, filename: 'leaving.png' });
 
 		const file = account.exportAccount(OWNER, new Date('2026-04-01T10:00:00Z'));
 		// A plain JSON file: it has to survive being written to disk and read back.
@@ -324,9 +346,9 @@ describe('leaving with them', () => {
 
 		const theirs = media.list(other()).find((p) => p.filename === 'leaving.png');
 		expect(theirs, 'the picture arrived').toBeTruthy();
-		expect(media.read(other(), theirs!.id).bytes.equals(bytes), 'byte for byte').toBe(true);
+		expect(sameBytes(media.read(other(), theirs!.id).bytes, bytes), 'byte for byte').toBe(true);
 		// And the original is untouched.
-		expect(media.read(ctx(), stored.id).bytes.equals(bytes)).toBe(true);
+		expect(sameBytes(media.read(ctx(), stored.id).bytes, bytes)).toBe(true);
 	});
 });
 
@@ -345,11 +367,11 @@ describe('a person’s face', () => {
 		withLimits('[media]\nmax_kilobytes = "500"\n');
 
 		const person = people.createPerson(ctx(), { name: 'Ana' });
-		const first = media.setPersonPicture(ctx(), person, {
+		const first = await media.setPersonPicture(ctx(), person, {
 			bytes: png(40, [1, 0, 0]),
 			filename: 'ana.png'
 		});
-		const second = media.setPersonPicture(ctx(), person, {
+		const second = await media.setPersonPicture(ctx(), person, {
 			bytes: png(40, [2, 0, 0]),
 			filename: 'ana2.png'
 		});
@@ -364,7 +386,7 @@ describe('a person’s face', () => {
 	it('lets go of the bytes when the face is removed', async () => {
 		const people = await import('../src/lib/services/people');
 		const person = people.createPerson(ctx(), { name: 'Bea' });
-		const face = media.setPersonPicture(ctx(), person, {
+		const face = await media.setPersonPicture(ctx(), person, {
 			bytes: png(41),
 			filename: 'bea.png'
 		});
@@ -377,12 +399,12 @@ describe('a person’s face', () => {
 	it('keeps a face that a recipe is also using', async () => {
 		const people = await import('../src/lib/services/people');
 		const person = people.createPerson(ctx(), { name: 'Cec' });
-		const shared = media.setPersonPicture(ctx(), person, {
+		const shared = await media.setPersonPicture(ctx(), person, {
 			bytes: png(42),
 			filename: 'shared.png'
 		});
 		const recipe = recipes.createRecipe(ctx(), { title: 'Hers' });
-		media.attachToRecipe(ctx(), recipe, { bytes: png(42), filename: 'same.png' });
+		await media.attachToRecipe(ctx(), recipe, { bytes: png(42), filename: 'same.png' });
 
 		media.removePersonPicture(ctx(), person);
 		expect(media.read(ctx(), shared.id).bytes.length).toBeGreaterThan(0);
@@ -391,8 +413,8 @@ describe('a person’s face', () => {
 	it('is not somebody else’s to set', async () => {
 		const people = await import('../src/lib/services/people');
 		const mine = people.createPerson(ctx(), { name: 'Mine' });
-		expect(() =>
+		await expect(
 			media.setPersonPicture(other(), mine, { bytes: png(43), filename: 'x.png' })
-		).toThrow(/no such person/i);
+		).rejects.toThrow(/no such person/i);
 	});
 });

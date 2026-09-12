@@ -17,6 +17,7 @@
 import type { Ctx } from './ctx.js';
 import { ValidationError } from './errors.js';
 import type { LimitKey } from '../plans.js';
+import { DEVICE_MEDIA_LIMITS, type MediaLimits } from './media-limits.js';
 import type { WebhookEvent } from '../webhook-events.js';
 
 export interface Host {
@@ -26,6 +27,11 @@ export interface Host {
 	familyUserIds(userId: string): string[];
 	/** Refuse a write that would take a paid plan past what it covers. */
 	assertWithinLimit(ctx: Ctx, key: LimitKey, adding?: number): void;
+	/**
+	 * What this instance allows a picture to be. The server reads its config
+	 * file; a device answers with its own numbers.
+	 */
+	mediaLimits(): MediaLimits;
 	/** Refuse an entry that references more pictures than this instance allows. */
 	assertEntryWithinLimit(content: string): void;
 	/**
@@ -50,6 +56,7 @@ const localInstance: Host = {
 		return [userId];
 	},
 	assertWithinLimit() {},
+	mediaLimits: () => DEVICE_MEDIA_LIMITS,
 	assertEntryWithinLimit() {},
 	reminderScheduleChanged() {},
 	assertPublicUrl(raw, what) {

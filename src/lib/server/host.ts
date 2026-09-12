@@ -8,7 +8,8 @@
 import { bindHost } from '$lib/services/host.js';
 import { emit } from './services/webhooks.js';
 import { assertWithinLimit, familyUserIds } from './services/subscriptions.js';
-import { assertEntryWithinLimit } from './services/media.js';
+import { assertEntryWithinLimit } from '$lib/services/media.js';
+import { servedMediaLimits } from './media-limits.js';
 import { wake } from './services/reminder-clock.js';
 import { assertPublicUrl, fetchPublic } from './outbound.js';
 
@@ -17,6 +18,7 @@ export function bindServerHost(): void {
 		emit,
 		familyUserIds,
 		assertWithinLimit,
+		mediaLimits: servedMediaLimits,
 		assertEntryWithinLimit,
 		reminderScheduleChanged: wake,
 		assertPublicUrl,

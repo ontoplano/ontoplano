@@ -19,7 +19,7 @@ import { needsFirstRun } from '$lib/services/onboarding';
 import { listCategories } from '$lib/services/activities';
 import { buildCtx } from '$lib/services/ctx';
 import { loadConfig } from '$lib/server/config';
-import { mediaLimits } from '$lib/server/services/media';
+import { mediaLimits } from '$lib/services/media';
 import { publicKey } from '$lib/server/services/push';
 import { invitationFor } from '$lib/server/services/subscriptions';
 

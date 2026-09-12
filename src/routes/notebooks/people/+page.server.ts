@@ -9,7 +9,7 @@ import {
 	listPeople,
 	updatePerson
 } from '$lib/services/people';
-import { mediaLimits, removePersonPicture, setPersonPicture } from '$lib/server/services/media';
+import { mediaLimits, removePersonPicture, setPersonPicture } from '$lib/services/media';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
@@ -81,8 +81,8 @@ export const actions: Actions = {
 			return fail(400, { message: 'Choose a picture first.' });
 
 		try {
-			setPersonPicture(buildCtx(locals.user!.id), id, {
-				bytes: Buffer.from(await file.arrayBuffer()),
+			await setPersonPicture(buildCtx(locals.user!.id), id, {
+				bytes: new Uint8Array(await file.arrayBuffer()),
 				filename: file.name,
 				alt: String(formData.get('name') ?? '')
 			});

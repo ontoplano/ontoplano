@@ -94,6 +94,15 @@ immutable cache. Inside somebody's writing a picture is markdown pointing at
 that address, and the renderer refuses any other address: an external one would
 tell a third party who is reading, and when.
 
+On a device there is no route to serve it, and an `<img>` is the one request
+the fetch bridge cannot see — a browser loads an image itself and never
+consults `window.fetch`. Nor can the address be swapped for a `blob:` one in
+the components, because pictures also arrive inside rendered markdown. So the
+service worker answers `/media/<id>` by asking the open page, which asks the
+database worker: three hops, each between two parties already in the room. The
+same `<img src="/media/3">` draws on both instances, which is what keeps the
+gallery one screen rather than two.
+
 ## What is deliberately absent
 
 - **No ORM cleverness.** Drizzle is used as typed SQL. A query you cannot read

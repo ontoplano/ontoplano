@@ -51,7 +51,7 @@ import { db } from '$lib/db/index.js';
 import { record as audit } from '$lib/services/audit.js';
 import { ValidationError } from '$lib/services/errors.js';
 import { collectAccount, USER_TABLES, type AccountExport } from './account.js';
-import { sniff, tidyFilename } from './media.js';
+import { sniff, tidyFilename } from '$lib/services/media.js';
 import { RINGTONE_TYPES } from '$lib/services/ringtones.js';
 import { dataDir } from '../config.js';
 

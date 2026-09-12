@@ -28,6 +28,7 @@
  */
 import { build, files, version } from '$service-worker';
 import { APP_LAUNCH_PARAM, APP_LAUNCH_VALUE } from '$lib/platform';
+import { PICTURE_REQUEST, type PictureReply } from '$lib/self-contained/picture-protocol';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
@@ -82,6 +83,52 @@ sw.addEventListener('activate', (event) => {
 	);
 });
 
+/** `/media/3` and nothing else — never `/media/3/anything`. */
+const PICTURE_PATH = /^\/media\/(\d+)$/;
+
+/** How long a page has to find a picture before the image is a broken one. */
+const PICTURE_DEADLINE_MS = 10_000;
+
+/**
+ * A picture, out of the database only the page can reach.
+ *
+ * On a served instance `/media/3` is a route and none of this runs. On the
+ * device there is no server at all, and an `<img>` is the one request the
+ * fetch bridge cannot see — so this asks a page for the bytes and answers
+ * with them, which is what makes a photograph in a note draw at all.
+ */
+async function pictureFromAPage(id: number): Promise<Response> {
+	const clients = await sw.clients.matchAll({ type: 'window', includeUncontrolled: true });
+	for (const client of clients) {
+		const reply = await new Promise<PictureReply | null>((resolve) => {
+			const channel = new MessageChannel();
+			const timer = setTimeout(() => resolve(null), PICTURE_DEADLINE_MS);
+			channel.port1.onmessage = (event: MessageEvent<PictureReply>) => {
+				clearTimeout(timer);
+				resolve(event.data);
+			};
+			client.postMessage({ kind: PICTURE_REQUEST, id }, [channel.port2]);
+		});
+		if (!reply) continue;
+		if (!reply.ok) return new Response('Not found', { status: 404 });
+
+		return new Response(reply.bytes, {
+			headers: {
+				'content-type': reply.mime,
+				'content-length': String(reply.bytes.byteLength),
+				'content-disposition': `inline; filename="${reply.filename}"`,
+				'x-content-type-options': 'nosniff',
+				'content-security-policy': "default-src 'none'; sandbox",
+				// Never cached here: the bytes are already on this device, and a
+				// second copy in the cache is the same picture stored twice.
+				'cache-control': 'no-store'
+			}
+		});
+	}
+	// No page to ask — the app is not open, which is the only way to get here.
+	return new Response('Not found', { status: 404 });
+}
+
 function isAsset(url: URL): boolean {
 	return build.includes(url.pathname) || files.includes(url.pathname);
 }
@@ -115,6 +162,13 @@ sw.addEventListener('fetch', (event) => {
 	// cached token list is a security answer that has gone stale.
 	if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/settings/account/export'))
 		return;
+
+	// A picture on the device comes out of the device's own database.
+	const picture = __SELF_CONTAINED_BUILD__ && PICTURE_PATH.exec(url.pathname);
+	if (picture) {
+		event.respondWith(pictureFromAPage(Number(picture[1])));
+		return;
+	}
 
 	/*
 	 * The Android app's launch, which arrives with a mark on the address.

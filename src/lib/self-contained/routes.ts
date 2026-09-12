@@ -225,7 +225,7 @@ export async function runSelfContainedAction(
 	pathname: string,
 	search: string,
 	action: string,
-	form: [string, string][]
+	form: [string, FormDataEntryValue][]
 ): Promise<ActionReply | null> {
 	const hit = matchSelfContainedRoute(pathname);
 	if (!hit) return null;

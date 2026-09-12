@@ -3,7 +3,7 @@ import type { PageServerLoad } from './$types';
 import { buildCtx } from '$lib/services/ctx';
 import { NotFoundError } from '$lib/services/errors';
 import { listCategories } from '$lib/services/activities';
-import { mediaLimits, picturesOf } from '$lib/server/services/media';
+import { mediaLimits, picturesOf } from '$lib/services/media';
 import { edibleItems, getRecipe, ingredientsOf } from '$lib/services/recipes';
 import { recipeActions } from '../actions';
 

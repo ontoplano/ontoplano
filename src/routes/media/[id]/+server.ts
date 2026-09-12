@@ -2,7 +2,7 @@ import type { RequestHandler } from './$types';
 
 import { buildCtx } from '$lib/services/ctx';
 import { NotFoundError } from '$lib/services/errors';
-import { read } from '$lib/server/services/media';
+import { read } from '$lib/services/media';
 
 /**
  * One picture, to the one account it belongs to.

@@ -14,7 +14,7 @@ import {
 	setArchived,
 	updateRecipe
 } from '$lib/services/recipes';
-import { attachToRecipe, detachFromRecipe, setMain } from '$lib/server/services/media';
+import { attachToRecipe, detachFromRecipe, setMain } from '$lib/services/media';
 import { parseRecipeFromHtml } from '$lib/recipe-import';
 
 /** A recipe page is tens of kilobytes. This is where a paste stops being one. */
@@ -174,8 +174,8 @@ export const recipeActions = {
 			return fail(400, { message: 'Choose a picture first.' });
 
 		try {
-			attachToRecipe(buildCtx(locals.user!.id), recipeId, {
-				bytes: Buffer.from(await file.arrayBuffer()),
+			await attachToRecipe(buildCtx(locals.user!.id), recipeId, {
+				bytes: new Uint8Array(await file.arrayBuffer()),
 				filename: file.name,
 				alt: String(formData.get('alt') ?? '')
 			});

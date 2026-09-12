@@ -34,6 +34,7 @@ shows up here on the next build.
 | [`ctx`](#ctx)                                   | The single argument every service function takes.                                                                                                                                                                                                                    |
 | [`demo`](#demo)                                 | A demo where everybody gets their own copy.                                                                                                                                                                                                                          |
 | [`diary`](#diary)                               | The journal: free text, free-form tags, one running number per account.                                                                                                                                                                                              |
+| [`digest`](#digest)                             | The content hash a picture is deduplicated by.                                                                                                                                                                                                                       |
 | [`errors`](#errors)                             | Typed errors thrown by service functions.                                                                                                                                                                                                                            |
 | [`family-invite`](#family-invite)               | Inviting somebody to the plan, and the account that makes for them.                                                                                                                                                                                                  |
 | [`gallery`](#gallery)                           | Albums: lists of references over the one media table.                                                                                                                                                                                                                |
@@ -49,6 +50,7 @@ shows up here on the next build.
 | [`legal`](#legal)                               | The facts the policies are written around.                                                                                                                                                                                                                           |
 | [`locations`](#locations)                       | Locations: the tree an inventory hangs on.                                                                                                                                                                                                                           |
 | [`mail-log`](#mail-log)                         | Mail that must not fail silently.                                                                                                                                                                                                                                    |
+| [`media-limits`](#media-limits)                 | What an instance allows a picture to be.                                                                                                                                                                                                                             |
 | [`media`](#media)                               | Pictures: what is accepted, where they go, and who may see one.                                                                                                                                                                                                      |
 | [`meta`](#meta)                                 | User-defined key/value metadata attached to planner slots.                                                                                                                                                                                                           |
 | [`newsletter`](#newsletter)                     | The one channel nobody else can take away.                                                                                                                                                                                                                           |
@@ -1113,6 +1115,23 @@ The most recent entry, for the dashboard card.
 
 - `Tag`
 
+## digest
+
+The content hash a picture is deduplicated by.
+
+WebCrypto rather than `node:crypto`, because this runs in both worlds: on
+the server, and inside the worker that is the whole instance on a phone,
+where there is no Node at all. `crypto.subtle` is the one digest both of
+them have — which makes it asynchronous, and that is why `store` is.
+
+It is a fingerprint, not a secret: the same bytes must reach the same
+string on every instance, so an export taken from a server and opened on a
+phone still knows that two rows are one picture.
+
+### Functions
+
+#### `sha256Hex(bytes)`
+
 ## errors
 
 Typed errors thrown by service functions.
@@ -1195,8 +1214,9 @@ why removing it from one album leaves the other untouched. A picture
 whose last reference goes is deleted with it: the gallery never leaves
 invisible bytes behind on somebody's instance.
 
-Lives on the server because the bytes do; the self-contained instance
-gains the gallery when media does.
+Portable, like the media service under it: the bytes are a column in the
+same database either way, so an instance running on a phone has a gallery
+for the same reason a served one does.
 
 ### Functions
 
@@ -2003,6 +2023,22 @@ How many mails are sitting failed — one number, for the health probe.
 
 - `MailFailure`
 
+## media-limits
+
+What an instance allows a picture to be.
+
+Its own module because two very different things answer the question. A
+served instance reads `[media]` out of `config.toml` and reconciles it with
+the body its server will actually accept; an instance running on a phone
+has no config file and no body limit, and its numbers are the ones below.
+
+The type is shared so neither can quietly answer a different question, and
+the services ask through `host.mediaLimits()` rather than either directly.
+
+### Types
+
+- `MediaLimits`
+
 ## media
 
 Pictures: what is accepted, where they go, and who may see one.
@@ -2020,11 +2056,18 @@ those is refused. Nothing is ever stored under a name the sender chose.
 from this app's own origin, which is same-origin script execution dressed up
 as a picture. There is no configuration for it.
 
-**The ceilings are the operator's.** `[media]` in `config.toml` decides how
-big one picture may be, how many a recipe or an entry may carry, and what one
-account's pictures may add up to. Every one of them is enforced here, in the
-service, rather than in a form — a limit checked in a form is a limit the API
-does not have.
+**The ceilings are the instance's.** On a server `[media]` in `config.toml`
+decides how big one picture may be, how many a recipe or an entry may carry,
+and what one account's pictures may add up to; on a phone they are the
+numbers in `media-limits.ts`. Either way they arrive through
+`host.mediaLimits()` and are enforced here, in the service, rather than in a
+form — a limit checked in a form is a limit the API does not have.
+
+Nothing here is the server's. The bytes are a column, the type comes from
+reading them, and the hash is WebCrypto's — so the same file serves the
+instance running on a phone, where there is no Node, no `Buffer` and no
+config file. That is why `store` is asynchronous: `crypto.subtle` is the one
+digest both worlds have.
 
 ### Functions
 

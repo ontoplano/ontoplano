@@ -20,8 +20,8 @@ seedAccounts(database.path);
 const configDir = mkdtempSync(join(tmpdir(), 'ontoplano-gallery-config-'));
 afterAll(() => database.remove());
 
-let gallery: typeof import('../src/lib/server/services/gallery');
-let media: typeof import('../src/lib/server/services/media');
+let gallery: typeof import('../src/lib/services/gallery');
+let media: typeof import('../src/lib/services/media');
 let tags: typeof import('../src/lib/services/tags');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
@@ -65,25 +65,27 @@ beforeAll(async () => {
 		join(configDir, 'config.toml'),
 		'[media]\nmax_kilobytes = "500"\ngallery_albums = "3"\nalbum_images = "4"\n'
 	);
-	gallery = await import('../src/lib/server/services/gallery');
-	media = await import('../src/lib/server/services/media');
+	gallery = await import('../src/lib/services/gallery');
+	media = await import('../src/lib/services/media');
 	tags = await import('../src/lib/services/tags');
 	ctx = { userId: OWNER, now: new Date('2026-09-11T12:00:00Z'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 });
 
 describe('albums', () => {
-	test('a picture in two albums is one picture and two rows', () => {
+	test('a picture in two albums is one picture and two rows', async () => {
 		const trips = gallery.createAlbum(ctx, { name: 'Trips' });
 		const best = gallery.createAlbum(ctx, { name: 'Best of' });
-		const id = gallery.uploadToAlbum(ctx, trips.id, { bytes: png(), filename: 'sea.png' });
+		const id = await gallery.uploadToAlbum(ctx, trips.id, { bytes: png(), filename: 'sea.png' });
 
 		gallery.addToAlbum(ctx, best.id, id);
 		expect(gallery.albumPictures(ctx, trips.id).map((p) => p.id)).toEqual([id]);
 		expect(gallery.albumPictures(ctx, best.id).map((p) => p.id)).toEqual([id]);
 		// One media row: the same bytes uploaded again into the other album
 		// dedup to the same picture rather than doubling the storage.
-		expect(gallery.uploadToAlbum(ctx, best.id, { bytes: png(), filename: 'sea.png' })).toBe(id);
+		expect(await gallery.uploadToAlbum(ctx, best.id, { bytes: png(), filename: 'sea.png' })).toBe(
+			id
+		);
 		expect(media.list(ctx)).toHaveLength(1);
 		// "Also in" names both homes.
 		expect(
@@ -94,7 +96,7 @@ describe('albums', () => {
 		).toEqual(['Best of', 'Trips']);
 	});
 
-	test('removed from one album it stays in the other; removed from the last it is gone', () => {
+	test('removed from one album it stays in the other; removed from the last it is gone', async () => {
 		const [trips, best] = gallery.listAlbums(ctx);
 		const id = gallery.albumPictures(ctx, trips.id)[0].id;
 
@@ -106,10 +108,10 @@ describe('albums', () => {
 		expect(media.list(ctx)).toHaveLength(0);
 	});
 
-	test('deleting an album takes its only-here pictures with it and spares the shared ones', () => {
+	test('deleting an album takes its only-here pictures with it and spares the shared ones', async () => {
 		const [trips, best] = gallery.listAlbums(ctx);
-		const shared = gallery.uploadToAlbum(ctx, trips.id, { bytes: png([9, 9, 9]) });
-		const only = gallery.uploadToAlbum(ctx, trips.id, { bytes: png([7, 7, 7]) });
+		const shared = await gallery.uploadToAlbum(ctx, trips.id, { bytes: png([9, 9, 9]) });
+		const only = await gallery.uploadToAlbum(ctx, trips.id, { bytes: png([7, 7, 7]) });
 		gallery.addToAlbum(ctx, best.id, shared);
 
 		gallery.deleteAlbum(ctx, trips.id);
@@ -118,22 +120,23 @@ describe('albums', () => {
 		expect(kept).not.toContain(only);
 	});
 
-	test('the instance names its ceilings', () => {
+	test('the instance names its ceilings', async () => {
 		gallery.createAlbum(ctx, { name: 'Two' });
 		gallery.createAlbum(ctx, { name: 'Three' });
 		expect(() => gallery.createAlbum(ctx, { name: 'Four' })).toThrow(/at most 3 albums/);
 
 		const room = gallery.listAlbums(ctx).find((a) => a.name === 'Two')!;
-		for (let i = 0; i < 3; i++) gallery.uploadToAlbum(ctx, room.id, { bytes: png([10 + i, 0, 0]) });
+		for (let i = 0; i < 3; i++)
+			await gallery.uploadToAlbum(ctx, room.id, { bytes: png([10 + i, 0, 0]) });
 		// The shared picture from the earlier test still counts toward its album,
 		// not this one; the fourth here fills it, the fifth is refused.
-		gallery.uploadToAlbum(ctx, room.id, { bytes: png([20, 0, 0]) });
-		expect(() => gallery.uploadToAlbum(ctx, room.id, { bytes: png([21, 0, 0]) })).toThrow(
+		await gallery.uploadToAlbum(ctx, room.id, { bytes: png([20, 0, 0]) });
+		await expect(gallery.uploadToAlbum(ctx, room.id, { bytes: png([21, 0, 0]) })).rejects.toThrow(
 			/at most 4 pictures/
 		);
 	});
 
-	test('tags ride the shared table and survive the diary cleanup', () => {
+	test('tags ride the shared table and survive the diary cleanup', async () => {
 		const room = gallery.listAlbums(ctx).find((a) => a.name === 'Two')!;
 		const id = gallery.albumPictures(ctx, room.id)[0].id;
 		gallery.tagPicture(ctx, id, 'beach, family');
@@ -154,7 +157,7 @@ describe('albums', () => {
 		expect(gallery.albumPictures(ctx, room.id).find((p) => p.id === id)?.tags).toEqual([]);
 	});
 
-	test('tags read the way diary tags read: spaces, commas, #-prefixes, case', () => {
+	test('tags read the way diary tags read: spaces, commas, #-prefixes, case', async () => {
 		const room = gallery.listAlbums(ctx).find((a) => a.name === 'Two')!;
 		const id = gallery.albumPictures(ctx, room.id)[0].id;
 		gallery.tagPicture(ctx, id, '#Beach  family, beach');
@@ -165,7 +168,7 @@ describe('albums', () => {
 		gallery.tagPicture(ctx, id, '');
 	});
 
-	test('a picture can be renamed, and only by its owner', () => {
+	test('a picture can be renamed, and only by its owner', async () => {
 		const room = gallery.listAlbums(ctx).find((a) => a.name === 'Two')!;
 		const id = gallery.albumPictures(ctx, room.id)[0].id;
 		gallery.renamePicture(ctx, id, { name: 'the good one' });
@@ -175,7 +178,7 @@ describe('albums', () => {
 		expect(() => gallery.renamePicture(theirs, id, { name: 'not yours' })).toThrow();
 	});
 
-	test('a folder becomes albums, and its subfolders become their own', () => {
+	test('a folder becomes albums, and its subfolders become their own', async () => {
 		// The ceilings test above deliberately fills this instance; a folder
 		// import needs room, and the limits are the instance's to set.
 		writeFileSync(
@@ -183,7 +186,7 @@ describe('albums', () => {
 			'[media]\nmax_kilobytes = "500"\ngallery_albums = "50"\nalbum_images = "50"\n'
 		);
 
-		const result = gallery.importFolder(ctx, [
+		const result = await gallery.importFolder(ctx, [
 			{ path: 'birds/kingfisher.jpg', filename: 'kingfisher.jpg', bytes: png([30, 1, 1]) },
 			{ path: 'birds/herons/dawn.jpg', filename: 'dawn.jpg', bytes: png([31, 1, 1]) },
 			{ path: 'birds/herons/dusk.jpg', filename: 'dusk.jpg', bytes: png([32, 1, 1]) }
@@ -198,9 +201,9 @@ describe('albums', () => {
 		expect(herons.count).toBe(2);
 	});
 
-	test('the same tree twice costs its bytes once', () => {
+	test('the same tree twice costs its bytes once', async () => {
 		const before = media.list(ctx).length;
-		gallery.importFolder(ctx, [
+		await gallery.importFolder(ctx, [
 			{ path: 'birds/kingfisher.jpg', filename: 'kingfisher.jpg', bytes: png([30, 1, 1]) }
 		]);
 		// Same bytes, same picture, same album: nothing new anywhere.
@@ -208,7 +211,7 @@ describe('albums', () => {
 		expect(gallery.listAlbums(ctx).find((a) => a.name === 'birds')!.count).toBe(1);
 	});
 
-	test('the plan says what would land and what would not, and why', () => {
+	test('the plan says what would land and what would not, and why', async () => {
 		writeFileSync(
 			join(configDir, 'config.toml'),
 			'[media]\nmax_kilobytes = "16"\ngallery_albums = "50"\nalbum_images = "50"\n'
@@ -245,7 +248,7 @@ describe('albums', () => {
 	 * A path from the picker is a string the client wrote. These are the
 	 * shapes somebody sends when they are not using the picker at all.
 	 */
-	test('a path from the client never escapes the name it becomes', () => {
+	test('a path from the client never escapes the name it becomes', async () => {
 		expect(gallery.albumNameFor('../../etc/passwd.jpg')).toBe('etc');
 		expect(gallery.albumNameFor('/absolute/birds/a.jpg')).toBe('absolute — birds');
 		expect(gallery.albumNameFor('birds/../../a.jpg')).toBe('birds');
@@ -261,7 +264,7 @@ describe('albums', () => {
 		expect(landed.startsWith('folder-number-0')).toBe(true);
 	});
 
-	test('the plan counts the ceilings the import is judged against', () => {
+	test('the plan counts the ceilings the import is judged against', async () => {
 		writeFileSync(
 			join(configDir, 'config.toml'),
 			'[media]\nmax_kilobytes = "500"\ngallery_albums = "50"\nalbum_images = "50"\naccount_megabytes = "1"\nimport_files = "3"\n'
@@ -289,8 +292,8 @@ describe('albums', () => {
 		);
 	});
 
-	test('a folder can be filed under a name of its own', () => {
-		gallery.importFolder(
+	test('a folder can be filed under a name of its own', async () => {
+		await gallery.importFolder(
 			ctx,
 			[{ path: 'gulls/one.jpg', filename: 'one.jpg', bytes: png([40, 2, 2]) }],
 			{ under: '2026' }
@@ -298,9 +301,9 @@ describe('albums', () => {
 		expect(gallery.listAlbums(ctx).map((a) => a.name)).toContain('2026 — gulls');
 	});
 
-	test('albums that belong to each other read as a tree', () => {
+	test('albums that belong to each other read as a tree', async () => {
 		// Its own name, so the albums the earlier tests made are not in the way.
-		gallery.importFolder(ctx, [
+		await gallery.importFolder(ctx, [
 			{ path: 'aves/kingfisher.jpg', filename: 'k.jpg', bytes: png([50, 1, 1]) },
 			{ path: 'aves/Falconiformes/caracara.jpg', filename: 'c.jpg', bytes: png([51, 1, 1]) },
 			{ path: 'aves/Falconiformes/small/chick.jpg', filename: 'ch.jpg', bytes: png([52, 1, 1]) }
@@ -320,7 +323,7 @@ describe('albums', () => {
 		expect(tree.map((n) => n.name)).not.toContain('aves — Falconiformes');
 	});
 
-	test('another account reaches none of it', () => {
+	test('another account reaches none of it', async () => {
 		const room = gallery.listAlbums(ctx)[0];
 		const id = gallery.albumPictures(ctx, room.id)[0].id;
 		expect(gallery.listAlbums(theirs)).toHaveLength(0);

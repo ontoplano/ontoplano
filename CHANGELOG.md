@@ -10,6 +10,22 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.148.0 — 2026-09-12
+
+- **The gallery works on the phone with nothing behind it.** Pictures were the
+  last room that still needed a server. The bytes were never the problem —
+  they are a column in the same SQLite file as everything else — but the media
+  service was written in Node's terms (`Buffer`, `node:crypto`, a config file)
+  and an `<img>` is the one request the app's bridge cannot see, because a
+  browser loads an image itself. So: the service is plain web bytes and a
+  WebCrypto hash, its ceilings come from whichever instance is running, and
+  the service worker answers `/media/<id>` by asking the open page, which asks
+  the database. Albums, uploads, folder imports, tags and renames all run on
+  the device now, through the same code a server runs.
+- A picture uploaded twice is still one picture. On a Node Buffer the old
+  hashing read the shared memory pool behind the bytes rather than the bytes,
+  so two different small pictures could come out with the same fingerprint.
+
 ## 0.147.0 — 2026-09-12
 
 - **A big folder imports.** The tree is sent in batches that fit in one

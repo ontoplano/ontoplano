@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { buildCtx } from '$lib/services/ctx';
 import { UnauthorizedError } from '$lib/services/errors';
 import { toJsonError } from '$lib/http-errors';
-import { mediaLimits, store } from '$lib/server/services/media';
+import { mediaLimits, store } from '$lib/services/media';
 
 /**
  * Somewhere to put a picture, before the writing that mentions it exists.
@@ -41,8 +41,8 @@ export const POST: RequestHandler = async (event) => {
 				{ status: 413 }
 			);
 
-		const picture = store(buildCtx(event.locals.user.id), {
-			bytes: Buffer.from(await file.arrayBuffer()),
+		const picture = await store(buildCtx(event.locals.user.id), {
+			bytes: new Uint8Array(await file.arrayBuffer()),
 			filename: file.name,
 			alt: String(form.get('alt') ?? '')
 		});

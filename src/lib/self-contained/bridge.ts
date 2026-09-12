@@ -106,9 +106,15 @@ export function installSelfContainedBridge(): void {
 			} else if (request.method === 'POST') {
 				const action = [...url.searchParams.keys()].find((k) => k.startsWith('/'))?.slice(1);
 				if (action) {
-					const form = [...(await request.clone().formData()).entries()].filter(
-						(entry): entry is [string, string] => typeof entry[1] === 'string'
-					);
+					/*
+					 * Files go over as files.
+					 *
+					 * A `File` is structured-cloneable, so the bytes of a picture
+					 * cross to the worker without being turned into a string
+					 * first — which is what lets the gallery's upload be the same
+					 * action body on both sides.
+					 */
+					const form = [...(await request.clone().formData()).entries()];
 					const reply = await ask<ActionReply | null>('route.action', {
 						pathname: url.pathname,
 						search: url.search,
@@ -136,7 +142,7 @@ export function installSelfContainedBridge(): void {
 				message:
 					'This screen needs an instance with a server. On this device ontoplano runs ' +
 					'on its own, so the parts that need something reachable — the account, ' +
-					'pictures, mail — are not here.'
+					'mail, anything with somebody else in it — are not here.'
 			});
 		}
 

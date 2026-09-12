@@ -14,22 +14,29 @@
  * from this app's own origin, which is same-origin script execution dressed up
  * as a picture. There is no configuration for it.
  *
- * **The ceilings are the operator's.** `[media]` in `config.toml` decides how
- * big one picture may be, how many a recipe or an entry may carry, and what one
- * account's pictures may add up to. Every one of them is enforced here, in the
- * service, rather than in a form — a limit checked in a form is a limit the API
- * does not have.
+ * **The ceilings are the instance's.** On a server `[media]` in `config.toml`
+ * decides how big one picture may be, how many a recipe or an entry may carry,
+ * and what one account's pictures may add up to; on a phone they are the
+ * numbers in `media-limits.ts`. Either way they arrive through
+ * `host.mediaLimits()` and are enforced here, in the service, rather than in a
+ * form — a limit checked in a form is a limit the API does not have.
+ *
+ * Nothing here is the server's. The bytes are a column, the type comes from
+ * reading them, and the hash is WebCrypto's — so the same file serves the
+ * instance running on a phone, where there is no Node, no `Buffer` and no
+ * config file. That is why `store` is asynchronous: `crypto.subtle` is the one
+ * digest both worlds have.
  */
-import { createHash } from 'node:crypto';
 import { and, eq, like, or, sql } from 'drizzle-orm';
 
-import { loadConfig } from '../config.js';
-import { ENVELOPE, pictureCeiling } from '../db/assert-body-limit.js';
 import { db } from '$lib/db/index.js';
 import { albumMedia, diaryEntries, media, people, recipeImages, recipes } from '$lib/db/schema.js';
-import type { Ctx } from '$lib/services/ctx.js';
-import { NotFoundError, ValidationError } from '$lib/services/errors.js';
-import { stamp } from '$lib/services/time.js';
+import type { Ctx } from './ctx.js';
+import { sha256Hex } from './digest.js';
+import { NotFoundError, ValidationError } from './errors.js';
+import { host } from './host.js';
+import type { MediaLimits } from './media-limits.js';
+import { stamp } from './time.js';
 
 /**
  * What a picture may be, and how its first bytes look.
@@ -37,32 +44,34 @@ import { stamp } from '$lib/services/time.js';
  * Raster formats a browser renders inertly, and nothing else. GIF is here
  * because an animation is a picture; SVG is not, and never will be.
  */
-const SIGNATURES: { mime: string; extension: string; matches: (b: Buffer) => boolean }[] = [
+/** Do these bytes start with exactly this run of bytes? */
+const starts = (b: Uint8Array, at: number, expected: number[]) =>
+	expected.every((byte, i) => b[at + i] === byte);
+
+/** The ASCII a run of bytes spells, for the formats whose marker is a word. */
+const ascii = (b: Uint8Array, from: number, to: number) =>
+	String.fromCharCode(...b.subarray(from, to));
+
+const SIGNATURES: { mime: string; extension: string; matches: (b: Uint8Array) => boolean }[] = [
 	{
 		mime: 'image/jpeg',
 		extension: 'jpg',
-		matches: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff
+		matches: (b) => starts(b, 0, [0xff, 0xd8, 0xff])
 	},
 	{
 		mime: 'image/png',
 		extension: 'png',
-		matches: (b) => b.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+		matches: (b) => starts(b, 0, [137, 80, 78, 71, 13, 10, 26, 10])
 	},
 	{
 		mime: 'image/gif',
 		extension: 'gif',
-		matches: (b) =>
-			b
-				.subarray(0, 6)
-				.toString('latin1')
-				.match(/^GIF8[79]a$/) !== null
+		matches: (b) => /^GIF8[79]a$/.test(ascii(b, 0, 6))
 	},
 	{
 		mime: 'image/webp',
 		extension: 'webp',
-		matches: (b) =>
-			b.subarray(0, 4).toString('latin1') === 'RIFF' &&
-			b.subarray(8, 12).toString('latin1') === 'WEBP'
+		matches: (b) => ascii(b, 0, 4) === 'RIFF' && ascii(b, 8, 12) === 'WEBP'
 	}
 ];
 
@@ -100,42 +109,9 @@ export type Picture = {
  * page can read. One effective number, honestly reported: the pages quote it,
  * the browser refuses against it, and the service enforces it.
  */
-export function mediaLimits() {
-	const { media: limits } = loadConfig();
-	const ceiling = pictureCeiling(limits.maxKilobytes);
-	const maxKilobytes = ceiling.kilobytes;
-	return {
-		maxBytes: maxKilobytes * 1024,
-		maxKilobytes,
-		recipeImages: limits.recipeImages,
-		entryImages: limits.entryImages,
-		accountBytes: limits.accountMegabytes * 1024 * 1024,
-		accountMegabytes: limits.accountMegabytes,
-		galleryAlbums: limits.galleryAlbums,
-		albumImages: limits.albumImages,
-		importFiles: limits.importFiles,
-		/*
-		 * The most one folder-import request may carry.
-		 *
-		 * A folder is many pictures, and all of them in one POST is a body
-		 * the Node adapter refuses before this app runs — a plain 413 with a
-		 * body no page can read, which is the exact failure `pictureCeiling`
-		 * exists to prevent for a single picture. So the browser sends the
-		 * tree in batches that fit, and this is what fits: the server's own
-		 * body limit less the multipart framing, never less than one picture.
-		 */
-		importBatchBytes:
-			ceiling.limit === 0
-				? UNLIMITED_BATCH_BYTES
-				: Math.max(ceiling.limit - ENVELOPE, maxKilobytes * 1024)
-	};
+export function mediaLimits(): MediaLimits {
+	return host.mediaLimits();
 }
-
-/**
- * How much one batch carries where the operator has turned the body limit
- * off. Not unbounded: the bytes still become a `FormData` in memory.
- */
-const UNLIMITED_BATCH_BYTES = 32 * 1024 * 1024;
 
 /**
  * The filename, reduced to something safe to show and store.
@@ -162,7 +138,7 @@ export function tidyFilename(raw: string): string {
 }
 
 /** What these bytes actually are, or nothing. */
-export function sniff(bytes: Buffer): { mime: string; extension: string } | null {
+export function sniff(bytes: Uint8Array): { mime: string; extension: string } | null {
 	if (bytes.length < 12) return null;
 	const hit = SIGNATURES.find((s) => s.matches(bytes));
 	return hit ? { mime: hit.mime, extension: hit.extension } : null;
@@ -185,10 +161,10 @@ export function bytesStored(ctx: Ctx): number {
  * screenshot should not cost twice, and the second upload returns the first
  * row rather than failing on the unique index.
  */
-export function store(
+export async function store(
 	ctx: Ctx,
-	input: { bytes: Buffer; filename?: string; alt?: string }
-): Picture {
+	input: { bytes: Uint8Array; filename?: string; alt?: string }
+): Promise<Picture> {
 	const limits = mediaLimits();
 
 	if (!input.bytes || input.bytes.length === 0) throw new ValidationError('That file was empty.');
@@ -205,7 +181,7 @@ export function store(
 			'That is not a picture this instance takes — JPEG, PNG, GIF or WebP.'
 		);
 
-	const sha256 = createHash('sha256').update(input.bytes).digest('hex');
+	const sha256 = await sha256Hex(input.bytes);
 	const existing = db
 		.select()
 		.from(media)
@@ -231,7 +207,9 @@ export function store(
 			filename,
 			alt: (input.alt ?? '').trim().slice(0, MAX_ALT_LENGTH),
 			byteSize: input.bytes.length,
-			bytes: input.bytes,
+			// The column is typed as Node's Buffer; on a device the same bytes
+			// are a plain Uint8Array, and SQLite stores a blob either way.
+			bytes: input.bytes as Buffer,
 			sha256,
 			createdAt: stamp(ctx)
 		})
@@ -258,14 +236,14 @@ function toPicture(row: typeof media.$inferSelect): Picture {
  * Scoped in the `WHERE`, so somebody else's id is a 404 rather than a picture:
  * not found and not yours are the same answer.
  */
-export function read(ctx: Ctx, id: number): { mime: string; filename: string; bytes: Buffer } {
+export function read(ctx: Ctx, id: number): { mime: string; filename: string; bytes: Uint8Array } {
 	const row = db
 		.select()
 		.from(media)
 		.where(and(eq(media.id, id), eq(media.userId, ctx.userId)))
 		.get();
 	if (!row) throw new NotFoundError('No such picture.');
-	return { mime: row.mime, filename: row.filename, bytes: Buffer.from(row.bytes as Buffer) };
+	return { mime: row.mime, filename: row.filename, bytes: new Uint8Array(row.bytes) };
 }
 
 export function list(ctx: Ctx): Picture[] {
@@ -383,11 +361,11 @@ function assertOwnsPerson(ctx: Ctx, personId: number): void {
 }
 
 /** Give somebody a face, replacing whatever was there. */
-export function setPersonPicture(
+export async function setPersonPicture(
 	ctx: Ctx,
 	personId: number,
-	input: { bytes: Buffer; filename?: string; alt?: string }
-): Picture {
+	input: { bytes: Uint8Array; filename?: string; alt?: string }
+): Promise<Picture> {
 	assertOwnsPerson(ctx, personId);
 
 	const previous = db
@@ -396,7 +374,7 @@ export function setPersonPicture(
 		.where(and(eq(people.id, personId), eq(people.userId, ctx.userId)))
 		.get()?.pictureId;
 
-	const picture = store(ctx, input);
+	const picture = await store(ctx, input);
 	db.update(people)
 		.set({ pictureId: picture.id })
 		.where(and(eq(people.id, personId), eq(people.userId, ctx.userId)))
@@ -475,11 +453,11 @@ function assertOwnsRecipe(ctx: Ctx, recipeId: number): void {
  * single picture is not the one the list shows would be a bug nobody would
  * think to report.
  */
-export function attachToRecipe(
+export async function attachToRecipe(
 	ctx: Ctx,
 	recipeId: number,
-	input: { bytes: Buffer; filename?: string; alt?: string }
-): RecipePicture {
+	input: { bytes: Uint8Array; filename?: string; alt?: string }
+): Promise<RecipePicture> {
 	assertOwnsRecipe(ctx, recipeId);
 
 	const limits = mediaLimits();
@@ -489,7 +467,7 @@ export function attachToRecipe(
 			`A recipe here holds at most ${limits.recipeImages} pictures. Remove one first.`
 		);
 
-	const picture = store(ctx, input);
+	const picture = await store(ctx, input);
 
 	if (already.some((p) => p.id === picture.id))
 		throw new ValidationError('That picture is already on this recipe.');

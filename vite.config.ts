@@ -104,7 +104,16 @@ export default defineConfig({
 		// A trailing "+" means the build had uncommitted changes in it, which is
 		// worth knowing when a deployed version does not behave like the tag.
 		__APP_COMMIT__: JSON.stringify(commit === 'unknown' ? commit : commit + dirty),
-		__APP_BUILT_AT__: JSON.stringify(new Date().toISOString())
+		__APP_BUILT_AT__: JSON.stringify(new Date().toISOString()),
+		/*
+		 * Whether this build is the instance that runs on the device.
+		 *
+		 * Baked in here rather than read through `$env`, because the service
+		 * worker needs it too and neither flavour of SvelteKit's env module is
+		 * available in that context. `make self-contained` is what sets the
+		 * variable this reads.
+		 */
+		__SELF_CONTAINED_BUILD__: JSON.stringify(process.env.ONTOPLANO_SELF_CONTAINED_BUILD === '1')
 	},
 	plugins: [tailwindcss(), sveltekit(), noBacktickInCss(), browserSqlite()],
 	server: {

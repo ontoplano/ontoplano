@@ -10,9 +10,11 @@
  * decides the shape of the whole self-contained instance.
  */
 import * as schema from '$lib/db/schema.js';
+import { installBufferStandIn } from './buffer-stand-in.js';
 import { bindDb } from '$lib/db/index.js';
 import { buildCtx } from '$lib/services/ctx.js';
 import { createTodo, listTodos } from '$lib/services/todos.js';
+import { read as readPicture } from '$lib/services/media.js';
 import { wasmClient, type Oo1Db } from './wasm-client.js';
 import { DB_FILE, SELF_CONTAINED_USER_ID, POOL_NAME } from './config.js';
 import {
@@ -20,6 +22,17 @@ import {
 	runSelfContainedEndpoint,
 	runSelfContainedLoad
 } from './routes.js';
+
+/*
+ * Before any row is read.
+ *
+ * Drizzle's blob column reaches for Node's `Buffer` the moment a picture
+ * comes back out of SQLite, and this is the one runtime here that has none.
+ * Import order would not be enough — imports are evaluated before any
+ * statement in this file — but nothing touches `Buffer` while it is being
+ * imported, only later when a row is mapped.
+ */
+installBufferStandIn();
 
 type Request = { id: number; op: string; args?: unknown };
 type Reply = { id: number; ok: true; result: unknown } | { id: number; ok: false; error: string };
@@ -113,13 +126,21 @@ const ops: Record<string, (args: never) => unknown> = {
 	// The dispatcher: the fetch bridge hands over the app's own data and
 	// action requests, and these run the same load/action bodies the server
 	// route would, out of `page.self-contained.ts` / `layout.self-contained.ts` twins.
+	/*
+	 * One picture's bytes.
+	 *
+	 * Not part of the route dispatcher: `<img src="/media/3">` is not a fetch
+	 * the page makes, so the bridge never sees it. The service worker does,
+	 * and asks the page, which asks this. See `$lib/self-contained/pictures.ts`.
+	 */
+	'media.read': (args: { id: number }) => readPicture(ctx(), args.id),
 	'route.load': (args: { pathname: string; search: string; cookie?: string }) =>
 		runSelfContainedLoad(args.pathname, args.search, args.cookie),
 	'route.action': (args: {
 		pathname: string;
 		search: string;
 		action: string;
-		form: [string, string][];
+		form: [string, FormDataEntryValue][];
 	}) => runSelfContainedAction(args.pathname, args.search, args.action, args.form),
 	'route.endpoint': (args: {
 		method: string;

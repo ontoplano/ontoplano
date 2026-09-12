@@ -8,18 +8,19 @@
  * whose last reference goes is deleted with it: the gallery never leaves
  * invisible bytes behind on somebody's instance.
  *
- * Lives on the server because the bytes do; the self-contained instance
- * gains the gallery when media does.
+ * Portable, like the media service under it: the bytes are a column in the
+ * same database either way, so an instance running on a phone has a gallery
+ * for the same reason a served one does.
  */
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import { albumMedia, albums, media, mediaTags, tags } from '$lib/db/schema.js';
-import { parseTags, replaceMediaTags } from '$lib/services/tags.js';
-import type { Ctx } from '$lib/services/ctx.js';
-import { stamp, stamps } from '$lib/services/time.js';
-import { ConflictError, NotFoundError, ValidationError } from '$lib/services/errors.js';
-import { str } from '$lib/services/validate.js';
+import { parseTags, replaceMediaTags } from './tags.js';
+import type { Ctx } from './ctx.js';
+import { stamp, stamps } from './time.js';
+import { ConflictError, NotFoundError, ValidationError } from './errors.js';
+import { str } from './validate.js';
 import {
 	ACCEPTED_EXTENSIONS,
 	bytesStored,
@@ -293,14 +294,14 @@ function assertRoom(ctx: Ctx, albumId: number): void {
 }
 
 /** A new picture, straight into an album. */
-export function uploadToAlbum(
+export async function uploadToAlbum(
 	ctx: Ctx,
 	albumId: number,
-	input: { bytes: Buffer; filename?: string; alt?: string }
-): number {
+	input: { bytes: Uint8Array; filename?: string; alt?: string }
+): Promise<number> {
 	ownedAlbum(ctx, albumId);
 	assertRoom(ctx, albumId);
-	const picture = store(ctx, input);
+	const picture = await store(ctx, input);
 	db.insert(albumMedia)
 		.values({ userId: ctx.userId, albumId, mediaId: picture.id, addedAt: stamp(ctx) })
 		.onConflictDoNothing()
@@ -419,11 +420,11 @@ export function planFolder(
 	};
 }
 
-export function importFolder(
+export async function importFolder(
 	ctx: Ctx,
-	files: { path: string; bytes: Buffer; filename: string }[],
+	files: { path: string; bytes: Uint8Array; filename: string }[],
 	opts: { under?: string } = {}
-): { albums: number; pictures: number; skipped: number } {
+): Promise<{ albums: number; pictures: number; skipped: number }> {
 	const made = new Map<string, number>();
 	let pictures = 0;
 	let skipped = 0;
@@ -441,7 +442,7 @@ export function importFolder(
 				albumId = existing ? existing.id : createAlbum(ctx, { name }).id;
 				made.set(name, albumId);
 			}
-			uploadToAlbum(ctx, albumId, { bytes: file.bytes, filename: file.filename });
+			await uploadToAlbum(ctx, albumId, { bytes: file.bytes, filename: file.filename });
 			pictures += 1;
 		} catch {
 			// One picture too big, one album full, or no room for another album:

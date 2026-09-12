@@ -9,5 +9,9 @@
  */
 import { isSelfContained } from '$lib/self-contained/mode';
 import { installSelfContainedBridge } from '$lib/self-contained/bridge';
+import { servePicturesToServiceWorker } from '$lib/self-contained/pictures';
 
-if (isSelfContained()) installSelfContainedBridge();
+if (isSelfContained()) {
+	installSelfContainedBridge();
+	servePicturesToServiceWorker();
+}

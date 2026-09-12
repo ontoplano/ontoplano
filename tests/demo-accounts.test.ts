@@ -51,24 +51,24 @@ beforeAll(async () => {
 });
 
 describe('a demo account', () => {
-	it('is only one because it is marked as one', () => {
+	it('is only one because it is marked as one', async () => {
 		// The account the tests were seeded with is somebody's real account, and
 		// a sweep that took it would be the worst bug this file could have.
 		expect(demo.demoExpiry(OWNER)).toBeNull();
 	});
 
-	it('carries an expiry from the moment it is made', () => {
+	it('carries an expiry from the moment it is made', async () => {
 		pretendVisitor('visitor-live', new Date(Date.now() + 60_000).toISOString());
 		expect(demo.demoExpiry('visitor-live')).toBeTruthy();
 	});
 
-	it('is counted against the instance ceiling', () => {
+	it('is counted against the instance ceiling', async () => {
 		const before = demo.demoAccountCount();
 		pretendVisitor('visitor-counted', new Date(Date.now() + 60_000).toISOString());
 		expect(demo.demoAccountCount()).toBe(before + 1);
 	});
 
-	it('has its expiry pushed out while somebody is using it', () => {
+	it('has its expiry pushed out while somebody is using it', async () => {
 		const soon = new Date(Date.now() + 1_000).toISOString();
 		pretendVisitor('visitor-touched', soon);
 
@@ -88,7 +88,7 @@ describe('resetting', () => {
 });
 
 describe('the sweep', () => {
-	it('deletes the ones whose time has passed and leaves the rest', () => {
+	it('deletes the ones whose time has passed and leaves the rest', async () => {
 		pretendVisitor('visitor-expired', new Date(Date.now() - 60_000).toISOString());
 		pretendVisitor('visitor-fresh', new Date(Date.now() + 600_000).toISOString());
 
@@ -109,7 +109,7 @@ describe('the sweep', () => {
 	 * same promise asserted from the other end.
 	 */
 	it('takes their pictures with it', async () => {
-		const media = await import('../src/lib/server/services/media');
+		const media = await import('../src/lib/services/media');
 		const { buildCtx } = await import('../src/lib/services/ctx');
 
 		pretendVisitor('visitor-with-photos', new Date(Date.now() - 60_000).toISOString());
@@ -119,7 +119,7 @@ describe('the sweep', () => {
 			Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
 			Buffer.alloc(64, 3)
 		]);
-		media.store(ctx, { bytes, filename: 'holiday.png' });
+		await media.store(ctx, { bytes, filename: 'holiday.png' });
 		expect(media.list(ctx)).toHaveLength(1);
 
 		demo.sweepDemoAccounts();
@@ -131,7 +131,7 @@ describe('the sweep', () => {
 		).toBe(0);
 	});
 
-	it('takes the whole account with it', () => {
+	it('takes the whole account with it', async () => {
 		pretendVisitor('visitor-gone', new Date(Date.now() - 60_000).toISOString());
 		demo.sweepDemoAccounts();
 
@@ -143,7 +143,7 @@ describe('the sweep', () => {
 		expect(left).not.toContain('visitor-gone');
 	});
 
-	it('never touches an account that is not a demo one', () => {
+	it('never touches an account that is not a demo one', async () => {
 		pretendVisitor('visitor-also-expired', new Date(Date.now() - 60_000).toISOString());
 		demo.sweepDemoAccounts();
 
@@ -167,7 +167,7 @@ describe('the sweep', () => {
  * their own expired session alive indefinitely.
  */
 describe('the sweep, unprompted', () => {
-	it('runs on a request that creates nothing', () => {
+	it('runs on a request that creates nothing', async () => {
 		pretendVisitor('visitor-stale', new Date(Date.now() - 60_000).toISOString());
 
 		// The throttle is per-process and other tests have already tripped it,
@@ -177,7 +177,7 @@ describe('the sweep, unprompted', () => {
 		expect(demo.demoExpiry('visitor-stale')).toBeNull();
 	});
 
-	it('does not run twice in the same minute', () => {
+	it('does not run twice in the same minute', async () => {
 		const at = new Date(Date.now() + 40 * 60_000);
 		demo.maybeSweepDemoAccounts(at);
 
@@ -228,7 +228,7 @@ describe('the operator way in', () => {
 });
 
 describe('the ceiling', () => {
-	it('is a number the instance can set', () => {
+	it('is a number the instance can set', async () => {
 		process.env.ONTOPLANO_DEMO_MAX_ACCOUNTS = '3';
 		expect(settings.demoMaxAccounts()).toBe(3);
 		delete process.env.ONTOPLANO_DEMO_MAX_ACCOUNTS;

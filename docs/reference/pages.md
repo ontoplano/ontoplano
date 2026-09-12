@@ -155,10 +155,7 @@ for.
 
 ### `/gallery`
 
-The gallery opens on albums, because that is how anybody actually keeps
-pictures. Server-side for now: the pictures' bytes live where the media
-table does, so the self-contained instance gains this room when it gains
-media.
+The gallery opens on albums, because that is how anybody actually keeps pictures.
 
 ### `/health/recipes`
 
