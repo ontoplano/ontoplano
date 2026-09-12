@@ -10,6 +10,23 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.152.0 — 2026-09-12
+
+- **The Trusted Web Activity is gone.** The Android app is the Capacitor
+  shell, which does everything the TWA did and one thing it never could: hold
+  an instance on the device itself. With it go the keystore, the fingerprint,
+  the Digital Asset Links dance and eight make targets. `make android` builds
+  the store artifact; `make android-phones` puts the three developer apps on
+  a phone. The project F-Droid builds is `capacitor/android/`, committed with
+  its icons — which are byte-identical from one run to the next now, so a
+  build no longer leaves eighty modified files behind.
+- A release is a version bump and nothing else: the Gradle project takes its
+  version from `package.json` rather than from a number typed into it.
+- The home-screen widget's native sources are kept at `capacitor/native/` and
+  are **not yet wired into the shell** — the TWA project copied them in and
+  declared them, and this one has no equivalent step yet. A freshly installed
+  app offers no widget until it does.
+
 ## 0.151.0 — 2026-09-12
 
 - **Everything an instance decides is in `config.toml`.** How many albums an

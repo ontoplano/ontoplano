@@ -229,7 +229,6 @@ kind of thing that stays in a deployment script for years.
 | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ONTOPLANO_ALLOW_PUSH`                 | `scripts/guard-push.mjs`                                                                                                                                   |
 | `ONTOPLANO_APP_URL`                    | `scripts/build-docs-site.mjs`                                                                                                                              |
-| `ONTOPLANO_ASSET_ORIGIN`               | `scripts/build-twa.mjs`                                                                                                                                    |
 | `ONTOPLANO_BACKUP_RETENTION_DAYS`      | `src/lib/server/services/legal.ts`                                                                                                                         |
 | `ONTOPLANO_BAN_CONTROL`                | `src/lib/server/services/protection.ts`                                                                                                                    |
 | `ONTOPLANO_BAN_CONTROL_CMD`            | `src/lib/server/services/protection.ts`                                                                                                                    |
@@ -249,7 +248,7 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_JURISDICTION`               | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_MAIL_FROM`                  | `src/lib/server/services/push.ts`                                                                                                                          |
 | `ONTOPLANO_OPERATOR`                   | `src/lib/server/config.ts`                                                                                                                                 |
-| `ONTOPLANO_ORIGIN`                     | `scripts/android-flavours.mjs`, `scripts/build-twa.mjs`                                                                                                    |
+| `ONTOPLANO_ORIGIN`                     | `scripts/android-flavours.mjs`                                                                                                                             |
 | `ONTOPLANO_OWNER_ID`                   | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_PAYMENT_PROVIDER`           | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_POLICY_UPDATED`             | `src/lib/server/config.ts`                                                                                                                                 |

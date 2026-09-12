@@ -1,7 +1,7 @@
 /**
  * The committed Android project is the one F-Droid can build.
  *
- * `android/` is generated and checked in so F-Droid can build a tag on a
+ * `capacitor/android/` is generated and checked in so F-Droid can build a tag on a
  * machine with no network. Generated and checked in is exactly the arrangement
  * where a file goes stale: the app was on 0.110.0 while the project still said
  * 0.101.0, which would have published a build announcing a version that had
@@ -30,7 +30,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const GRADLE = join(ROOT, 'android', 'app', 'build.gradle');
+const GRADLE = join(ROOT, 'capacitor', 'android', 'app', 'build.gradle');
 
 if (!existsSync(GRADLE)) {
 	console.log('android: no committed project to check');

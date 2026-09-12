@@ -28,8 +28,26 @@ const APP_NAME = 'ontoplano';
 const LAUNCHER = { mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192 };
 const FOREGROUND = { mdpi: 108, hdpi: 162, xhdpi: 216, xxhdpi: 324, xxxhdpi: 432 };
 
+/*
+ * The same source at the same size gives the same bytes, every time.
+ *
+ * ImageMagick stamps a PNG with the moment it wrote it and whatever else it
+ * knows, so re-running this rewrote every icon with different bytes and left
+ * eighty modified files in the tree after a build. `-strip` and excluding the
+ * date chunks make the output a function of the input, which is what lets
+ * these be committed — F-Droid builds from the committed project and cannot
+ * run an image toolchain to make them.
+ */
 function resize(source, out, size) {
-	execFileSync('magick', [source, '-resize', `${size}x${size}`, out]);
+	execFileSync('magick', [
+		source,
+		'-resize',
+		`${size}x${size}`,
+		'-strip',
+		'-define',
+		'png:exclude-chunk=date,time,tIME',
+		out
+	]);
 }
 
 if (!existsSync(RES)) {

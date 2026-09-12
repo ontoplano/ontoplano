@@ -36,7 +36,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-const PACKAGE = 'app.ontoplano.twa';
+const PACKAGE = 'app.ontoplano';
 const SOURCE = 'https://github.com/ontoplano/ontoplano';
 
 const args = process.argv.slice(2);
@@ -51,7 +51,7 @@ const FROM = flag('--from');
 const version = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
 const [major, minor, patch] = version.split('.').map(Number);
 
-/** The same arithmetic `build-twa.mjs` does: 0.110.0 is 11000. */
+/** The same arithmetic `android-flavours.mjs` does: 0.110.0 is 11000. */
 const versionCode = major * 100000 + minor * 100 + patch;
 const tag = `v${version}`;
 
@@ -78,7 +78,7 @@ try {
 const buildEntry = `  - versionName: ${version}
     versionCode: ${versionCode}
     commit: ${tag}
-    subdir: android/app
+    subdir: capacitor/android/app
     gradle:
       - yes
 `;
@@ -197,14 +197,14 @@ The Android app is a Trusted Web Activity over that site, with home-screen
 widgets, push notifications and app shortcuts as native code. On first run it
 asks which instance to use — the one I host, or an address you type — so it is
 a client for ontoplano and not for my copy of it. The Play build carries Play
-Billing; the build in \`android/\` in the repository does not, and has no
+Billing; the build in \`capacitor/android/\` in the repository does not, and has no
 proprietary dependencies: it links only \`androidx\` and
 \`com.google.androidbrowserhelper\`, both Apache-2.0.
 
 There is a paid plan on the instance I host. Payment happens on the web, not in
 the app: there is no in-app purchase code in this build at all.
 
-The Gradle project is committed at \`android/\`, so a build needs no network
+The Gradle project is committed at \`capacitor/android/\`, so a build needs no network
 beyond Gradle's own dependency fetch:
 
     git clone --depth 1 ${SOURCE}.git
@@ -224,8 +224,8 @@ Adds \`${PACKAGE}\` — ontoplano, an AGPL life management tool, and its listing
 **Source:** ${SOURCE}
 **Builds:** \`${tag}\`, versionCode \`${versionCode}\`
 
-The Gradle project is committed at \`android/\` in the app repository, so the
-build is \`subdir: android/app\` with no prebuilt anything and no init step.
+The Gradle project is committed at \`capacitor/android/\` in the app repository, so the
+build is \`subdir: capacitor/android/app\` with no prebuilt anything and no init step.
 
 **Native features.** The policy asks for them when an app wraps a website, so:
 three home-screen widgets drawing to bitmaps (\`TodayWidgetProvider\` and

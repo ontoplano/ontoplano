@@ -39,7 +39,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local android-lan android-gapp android-check doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-install android-uninstall android-share android-fingerprint android-keystore-reset android-clean android-self-contained-install android-phones self-contained self-contained-preview test-self-contained android-self-contained
+.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons up-phone deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-uninstall android-self-contained-install android-phones self-contained self-contained-preview test-self-contained android-self-contained
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -367,8 +367,7 @@ test-self-contained:
 	yarn playwright test -c playwright.self-contained.config.ts
 
 # The Capacitor shell wraps the same static build the browser gets; the
-# native project lives in capacitor/, and the SDK is found the same way the
-# TWA's build finds it.
+# native project lives in capacitor/.
 ## the self-contained Android app (debug APK, via the Capacitor shell)
 android-self-contained: self-contained
 	@# The shell's own dependencies, fetched on first use — a fresh clone has
@@ -376,17 +375,12 @@ android-self-contained: self-contained
 	@[ -d capacitor/node_modules ] || (cd capacitor && npm install --no-audit --no-fund)
 	@node scripts/brand-android.mjs
 	cd capacitor && npx cap sync android
-	@# The flavours, including this one's name, icon and instance. Written on
-	@# every build rather than committed: they are derived from static/icons/,
-	@# and a fresh clone must not have to know they were meant to be there.
+	@# The flavours: each one's name, icon and the instance it opens on.
 	@node scripts/android-flavours.mjs
-	@# The SDK, found the way the TWA build finds it: the environment first,
-	@# then the toolchain bubblewrap configured, then the conventional path.
 	@sdk="$${ANDROID_HOME:-}"; \
-	[ -n "$$sdk" ] || sdk=$$(node -e "try{console.log(require(require('os').homedir()+'/.bubblewrap/config.json').androidSdkPath||'')}catch{console.log('')}"); \
 	[ -n "$$sdk" ] || { [ -d "$$HOME/android-sdk" ] && sdk="$$HOME/android-sdk"; }; \
 	if [ -z "$$sdk" ] || [ ! -d "$$sdk" ]; then \
-		echo "No Android SDK found. Set ANDROID_HOME, or run 'make android' once so ~/.bubblewrap/config.json names one."; \
+		echo "No Android SDK found. Set ANDROID_HOME to where it lives."; \
 		exit 1; \
 	fi; \
 	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q assembleDeviceDebug
@@ -404,10 +398,9 @@ android-phones: self-contained
 	cd capacitor && npx cap sync android
 	@node scripts/android-flavours.mjs
 	@sdk="$${ANDROID_HOME:-}"; \
-	[ -n "$$sdk" ] || sdk=$$(node -e "try{console.log(require(require('os').homedir()+'/.bubblewrap/config.json').androidSdkPath||'')}catch{console.log('')}"); \
 	[ -n "$$sdk" ] || { [ -d "$$HOME/android-sdk" ] && sdk="$$HOME/android-sdk"; }; \
 	if [ -z "$$sdk" ] || [ ! -d "$$sdk" ]; then \
-		echo "No Android SDK found. Set ANDROID_HOME, or run 'make android' once."; \
+		echo "No Android SDK found. Set ANDROID_HOME to where it lives."; \
 		exit 1; \
 	fi; \
 	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q \
@@ -848,75 +841,34 @@ uninstall-service:
 
 # ─── Android ─────────────────────────────────────────────────────────────────
 #
-# The APK lives in android-twa/, which is inside the repo, so `android-install`
-# and `android-share` need nothing but the file — no JDK, no Android SDK. Only
-# `android` (the build) needs the toolchain; see docs/ANDROID.md.
-
-# Two builds, and the plain one is the free one.
+# One shell, and it is Capacitor's: `capacitor/` holds the native project and
+# it wraps the same build a browser gets. What used to be here was a Trusted
+# Web Activity — a Chrome tab in an app's clothing, built by bubblewrap into
+# `android-twa/`, bound to one origin by Digital Asset Links and needing a
+# keystore, a fingerprint and a served `assetlinks.json` before it would even
+# hide its address bar. Everything it did the shell does better, and the shell
+# can also carry the instance that runs on the device itself, which a tab
+# never could. It is gone rather than kept beside the new one.
 #
-# The Play build links androidbrowserhelper:billing, which pulls the
-# proprietary com.android.billingclient and declares com.android.vending.BILLING
-# — a dependency that exists only because of Google, and one that would get the
-# app rejected from F-Droid. So it is the marked case: `android-gapp` asks for
-# it by name, and plain `android` builds the one anybody can redistribute.
-#
-# Separate directories, because the two differ in their dependencies and a
-# Gradle tree half-built as one and half as the other is a confusing afternoon.
-TWA_DIR := android-twa
-GAPP_DIR := android-twa-gapp
-
-APK := $(TWA_DIR)/app-release-signed.apk
-GAPP_APK := $(GAPP_DIR)/app-release-signed.apk
-AAB := $(GAPP_DIR)/app-release-bundle.aab
-
-# Where the phone downloads from. The first address on this machine, which is
-# the one a phone on the same wifi can reach — not 127.0.0.1.
-# Whichever address this machine would use to reach the outside world, which is
-# the one a phone on the same wifi can reach. Asking the routing table rather
-# than naming an interface, which would be one machine’s network card.
-LAN_IP := $(shell ip route get 1.1.1.1 2>/dev/null | awk '{print $$7; exit}')
-
-# The address the app opens, out of the box.
-#
-# A TWA is bound to one origin at build time — Digital Asset Links names one
-# site — so this is what the app offers on first run and what its widgets are
-# prefilled with. It is not a cage: the app asks which instance to use and can
-# be pointed elsewhere afterwards, which is what makes it a client for
-# ontoplano rather than for one company's copy of it. An origin the build was
-# not made for is unverified, so it opens with an address bar unless that
-# server serves this app's fingerprint too.
-#
-# There is no sensible default and none in defaults.env: set ONTOPLANO_ORIGIN
-# in local.mk for the instance you deploy, or use `make android-lan` to build
-# against this machine over wifi.
+# Which instance an app opens is a build flavour, not a cage — see
+# `android-phones` above for the three that go on a developer's own phone.
+# `android` is the one that goes to a store.
 
 ### phone
 
-# The Android project the stores build, regenerated against the origin the
-# published app opens.
+# The project the stores build, regenerated and committed.
 #
-# It is committed, unlike the scratch project `make android` writes: F-Droid
-# builds from a git tag on a machine with no network, so it cannot run the
-# generator — a project that only exists after `npx bubblewrap` has phoned home
-# is a project F-Droid cannot build at all. Committed, a tag is `gradle
-# assembleRelease` and nothing else, which is the whole of their recipe.
-#
-# `make android` still writes android-twa/ and is still ignored: that one is
-# built against whatever origin you are testing, and a build must never change
-# the tree it builds from.
-## regenerate the committed Gradle project F-Droid builds
-#: ONTOPLANO_ORIGIN=https://app.example.com  the instance the phone app is bound to
-# The whole android picture, in one place. Two store artifacts exist —
-# `android` (F-Droid, the unencumbered default) and `android-gapp` (Play,
-# with Play Billing) — and *which instance* they talk to is chosen inside
-# the app, on the instance screen: official, staging, or any URL. No target
-# bakes an instance into an APK. `android-self-contained` is the interim
-# native shell around the self-contained build; it exists until the store
-# app gains the same chooser and becomes the one app.
+# F-Droid builds from a git tag on a machine with no network and no toolchain
+# of ours, so what is committed has to be buildable as it stands: the Gradle
+# project, its icons, and each flavour's own name and address. The icon
+# scripts write the same bytes from the same source every time, which is what
+# lets them be committed without a build dirtying the tree.
+## regenerate the committed Gradle project the stores build
 android-project:
-	ONTOPLANO_ORIGIN=https://app.ontoplano.com TWA_DIR=android \
-		node scripts/build-twa.mjs --project-only --no-billing
-	@node scripts/sanitise-twa-manifest.mjs android/twa-manifest.json
+	@[ -d capacitor/node_modules ] || (cd capacitor && npm install --no-audit --no-fund)
+	@node scripts/brand-android.mjs
+	cd capacitor && npx cap sync android
+	@node scripts/android-flavours.mjs
 
 # Everything F-Droid needs for this version, written into fdroid-out/.
 #
@@ -933,206 +885,41 @@ android-project:
 # and the merge request description, and fails loudly if the tag this version
 # would build has not been pushed.
 ## F-Droid's recipe and listing for this version
-#: FROM=metadata/app.ontoplano.twa.yml  an existing recipe to add this release to
+#: FROM=metadata/app.ontoplano.yml  an existing recipe to add this release to
 fdroid:
 	@node scripts/fdroid-metadata.mjs $(if $(FROM),--from $(FROM),)
 
-## the APK anybody can redistribute — no Play Billing
-android:
-	@# Catches an empty or host-less ONTOPLANO_ORIGIN, which would otherwise
-	@# build an app pointed at nothing and fail confusingly on the phone
-	@# rather than here.
-	@case "$(ONTOPLANO_ORIGIN)" in \
-		""|*://:*|*://) \
-			echo "ONTOPLANO_ORIGIN has no host: $(ONTOPLANO_ORIGIN)"; \
-			echo "LAN_IP came back empty. Either fix it or pass an origin:"; \
-			echo "  make android ONTOPLANO_ORIGIN=https://plan.example.com"; \
-			exit 1;; \
-	esac
-	@echo "Building against $(ONTOPLANO_ORIGIN)"
-	ONTOPLANO_ORIGIN="$(ONTOPLANO_ORIGIN)" TWA_DIR=$(TWA_DIR) \
-		node scripts/build-twa.mjs --no-billing
-	@$(MAKE) -s android-check
-
-# The same app for Google Play, which is the one that can take a payment.
+# The store artifact: the official flavour, release, unsigned.
 #
-# Play Billing is the only difference and it is not a small one: it is a
-# proprietary library, so this artefact cannot be redistributed anywhere that
-# cares. It writes to its own directory and produces the bundle Play wants.
-## the Play build, with Play Billing and the .aab
-android-gapp:
-	@case "$(ONTOPLANO_ORIGIN)" in \
-		""|*://:*|*://) \
-			echo "ONTOPLANO_ORIGIN has no host: $(ONTOPLANO_ORIGIN)"; \
-			echo "  make android-gapp ONTOPLANO_ORIGIN=https://plan.example.com"; \
-			exit 1;; \
-	esac
-	@echo "Building the Play app against $(ONTOPLANO_ORIGIN)"
-	ONTOPLANO_ORIGIN="$(ONTOPLANO_ORIGIN)" TWA_DIR=$(GAPP_DIR) \
-		node scripts/build-twa.mjs
-	@echo
-	@echo "  $(AAB)"
-	@echo "  Upload that one to Play."
-
-# Against this machine over wifi, for working on the phone without deploying.
-#: LAN_IP=192.168.0.10  this machine's address, for android-lan and android-share
-## an APK pointed at this machine over wifi
-# Does the server agree that this app is allowed to drop its URL bar?
-#
-# The single most common TWA complaint is "it works but it looks like a
-# browser", and the cause is always the same: the site is not serving this
-# keystore's fingerprint at /.well-known/assetlinks.json. That is invisible
-# until the app is installed, so it is worth asking the server now.
-## ask the server whether it will hide the URL bar
-android-check:
-	@case "$(ONTOPLANO_ORIGIN)" in https://*) ;; *) exit 0;; esac; \
-	fp=$$($(MAKE) -s android-fingerprint 2>/dev/null | head -1); \
-	body=$$(curl -fsS -m 10 "$(ONTOPLANO_ORIGIN)/.well-known/assetlinks.json" 2>/dev/null); \
-	if [ -z "$$body" ]; then \
-		echo; \
-		echo "Warning: $(ONTOPLANO_ORIGIN)/.well-known/assetlinks.json did not answer."; \
-		echo "The app will work and will show a URL bar."; \
-	elif [ -n "$$fp" ] && ! echo "$$body" | grep -qiF "$$fp"; then \
-		echo; \
-		echo "Warning: the server is not serving this keystore's fingerprint."; \
-		echo "On the server, in ~/.config/ontoplano/env:"; \
-		echo "  ANDROID_CERT_FINGERPRINTS=$$fp"; \
-		echo "then: systemctl --user restart ontoplano"; \
-	else \
-		echo "Server confirms this app: the URL bar will be hidden."; \
-	fi
-
-# Straight onto a phone over USB or wireless debugging.
-## install the APK over adb
-android-install: $(APK)
-	@command -v adb >/dev/null || { \
-		echo "adb not found. Install android-tools-adb, or use 'make android-share'"; \
-		echo "to download the APK onto the phone over wifi instead."; \
-		exit 1; \
-	}
-	@if [ -z "$$(adb devices | sed -n '2p')" ]; then \
-		echo "No device. Either:"; \
-		echo "  USB      — plug in, enable USB debugging, accept the prompt on the phone"; \
-		echo "  wireless — Developer options > Wireless debugging, then:"; \
-		echo "               adb pair <phone-ip>:<pair-port>   (one time)"; \
-		echo "               adb connect <phone-ip>:<port>"; \
-		exit 1; \
-	fi
-	@echo "Installing to $$(adb devices | sed -n '2p' | cut -f1)…"
-	@# -r reinstalls over an existing copy; -d allows going back to an older
-	@# version, which happens whenever you rebuild without bumping the version.
-	@# Android refuses an update signed by a different key than the installed
-	@# copy, which is a deliberate protection and not something -r can override —
-	@# so say what it means instead of leaving the raw failure.
-	@if ! adb install -r -d $(APK) 2>&1 | tee /tmp/ontoplano-adb.log; then :; fi
-	@if grep -q INSTALL_FAILED_UPDATE_INCOMPATIBLE /tmp/ontoplano-adb.log; then \
-		echo; \
-		echo "The copy on the phone was signed with a different key than this build."; \
-		echo "Android will not replace it — that check is what stops someone else"; \
-		echo "shipping an update to your app. Remove the old one first:"; \
-		echo; \
-		echo "  make android-uninstall && make android-install"; \
-		echo; \
-		echo "Its data goes with it. For a TWA that is only the browser storage;"; \
-		echo "your planner data lives on the server."; \
-		exit 1; \
-	fi
-	@grep -q "^Success" /tmp/ontoplano-adb.log && echo "Installed. Look for Ontoplano in the launcher."
-
-# No adb, no cable: serve the APK and scan the code with the phone's camera.
-#
-# Served out of a directory holding nothing but a copy of the APK, because
-# android-twa/ also contains the signing keystore and pointing an open HTTP
-# server at that directory would publish the key to the local network. The
-# directory is stable rather than temporary, so there is nothing to clean up
-# when this is ended with Ctrl-C — which is how it is meant to be ended.
-SHARE_DIR := $(TWA_DIR)/dist
-
-## serve the APK on this network, with a QR code
-android-share: $(APK)
-	@if [ -z "$(LAN_IP)" ]; then echo "Could not determine this machine's IP address."; exit 1; fi
-	@mkdir -p $(SHARE_DIR)
-	@cp -f $(APK) $(SHARE_DIR)/
-	@echo
-	@echo "  http://$(LAN_IP):$(APK_PORT)/$(notdir $(APK))"
-	@echo
-	@command -v qrencode >/dev/null \
-		&& qrencode -t ANSIUTF8 "http://$(LAN_IP):$(APK_PORT)/$(notdir $(APK))" \
-		|| echo "  (apt install qrencode for a scannable code)"
-	@echo
-	@echo "  Open that on the phone, then allow installing from this browser."
-	@echo "  If the phone cannot reach it, check both are on the same wifi."
-	@echo "  Ctrl-C when the download finishes."
-	@echo
-	@cd $(SHARE_DIR) && python3 -m http.server $(APK_PORT) --bind 0.0.0.0
-
-# The fingerprint that goes in ANDROID_CERT_FINGERPRINTS on the server, without
-# which the app shows a URL bar.
-## the signing fingerprint the server has to serve
-android-fingerprint:
-	@command -v keytool >/dev/null || { echo "keytool not found — install a JDK."; exit 1; }
-	@keystore="$(ANDROID_KEYSTORE)"; \
-	if [ ! -f "$$keystore" ]; then \
-		echo "No keystore at $$keystore. Build once with 'make android' first."; \
+# Unsigned on purpose — F-Droid signs what it builds, and a key of ours in
+# that path would only be a key to lose. For a phone in your hand,
+# `android-phones` builds and installs the debug ones.
+## the release APK for the stores
+android: self-contained android-project
+	@sdk="$${ANDROID_HOME:-}"; \
+	[ -n "$$sdk" ] || { [ -d "$$HOME/android-sdk" ] && sdk="$$HOME/android-sdk"; }; \
+	if [ -z "$$sdk" ] || [ ! -d "$$sdk" ]; then \
+		echo "No Android SDK found. Set ANDROID_HOME to where it lives."; \
 		exit 1; \
 	fi; \
-	pass=$${ANDROID_KEYSTORE_PASSWORD:-$$BUBBLEWRAP_KEYSTORE_PASSWORD}; \
-	if [ -z "$$pass" ] && [ -f "$$keystore.pass" ]; then pass=$$(cat "$$keystore.pass"); fi; \
-	if [ -n "$$pass" ]; then set -- -storepass "$$pass"; else set --; fi; \
-	fp=$$(keytool -list -v -keystore "$$keystore" \
-		-alias "$(ANDROID_KEY_ALIAS)" "$$@" 2>/dev/null \
-		| grep "SHA256:" | head -1 | sed 's/.*SHA256: *//'); \
-	if [ -z "$$fp" ]; then \
-		echo "Could not read the fingerprint from $$keystore."; \
-		echo "Wrong alias, or no password — the build writes one to $$keystore.pass,"; \
-		echo "or set ANDROID_KEYSTORE_PASSWORD for a key from elsewhere."; \
-		exit 1; \
-	fi; \
-	echo "$$fp"; \
-	echo; \
-	echo "Set this on the server so the app can drop its URL bar:"; \
-	echo "  ANDROID_CERT_FINGERPRINTS=$$fp"; \
-	echo; \
-	echo "Once published, add Play's app-signing fingerprint too — Play re-signs"; \
-	echo "uploads, so trusting only this key shows a URL bar for store installs."
+	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q assembleOfficialRelease
+	@echo "APK: capacitor/android/app/build/outputs/apk/official/release/app-official-release-unsigned.apk"
 
-# Removing the app is the only way past a signing-key change.
-## remove it from the phone
+## remove the app from the phone over adb
 android-uninstall:
-	@command -v adb >/dev/null || { echo "adb not found."; exit 1; }
-	adb uninstall "$(ANDROID_PACKAGE_NAME)"
-
-# Start a new signing key, when the old one's password is lost.
-#
-# Only safe while the app is self-distributed: a published app is tied to its
-# key forever, and a new key means a new Play listing that existing users will
-# not receive updates from.
-## start a new signing key, when the old one is lost
-android-keystore-reset:
-	@keystore="$(ANDROID_KEYSTORE)"; \
-	if [ ! -f "$$keystore" ]; then echo "No keystore at $$keystore — nothing to reset."; exit 0; fi; \
-	echo "This deletes $$keystore and the app can no longer update the copy"; \
-	echo "installed on any phone — you will need 'make android-uninstall' there."; \
-	printf 'Type the word reset to continue: '; \
-	read answer; \
-	[ "$$answer" = reset ] || { echo "Cancelled."; exit 1; }; \
-	stamp=$$(date +%Y%m%d%H%M%S); \
-	mv "$$keystore" "$$keystore.$$stamp.bak"; \
-	[ -f "$$keystore.pass" ] && mv "$$keystore.pass" "$$keystore.pass.$$stamp.bak"; \
-	echo "Old key kept alongside as .bak."; \
-	echo "Now run: make android — it will make a new key and its own password."
-
-## delete the generated Android projects
-android-clean:
-	rm -rf android-twa
-
-$(APK):
-	@echo "$(APK) does not exist yet. Build it with:"
-	@echo "  ONTOPLANO_ORIGIN=https://plan.example.com make android"
-	@exit 1
-
+	@sdk="$${ANDROID_HOME:-$$HOME/android-sdk}"; \
+	adb="$$(command -v adb || echo "$$sdk/platform-tools/adb")"; \
+	[ -x "$$adb" ] || { echo "No adb. Install android-tools-adb."; exit 1; }; \
+	for id in app.ontoplano app.ontoplano.dev app.ontoplano.staging app.ontoplano.selfcontained; do \
+		"$$adb" uninstall "$$id" >/dev/null 2>&1 && echo "removed $$id"; \
+	done; true
 
 # ─── HTTPS ───────────────────────────────────────────────────────────────────
+#
+# Whichever address this machine would use to reach the outside world, which is
+# the one a phone on the same wifi can reach. Asking the routing table rather
+# than naming an interface, which would be one machine's network card.
+LAN_IP := $(shell ip route get 1.1.1.1 2>/dev/null | awk '{print $$7; exit}')
 #
 # The Android app shows a browser-style URL bar until it can prove it owns the
 # site it opens, and that proof — Digital Asset Links — is only checked over
