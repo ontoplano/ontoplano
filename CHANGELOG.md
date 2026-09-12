@@ -10,6 +10,21 @@ enforces that, from `make lint`, because the rule alone did not hold. There is
 no "Unreleased" section, deliberately — it is where entries go to lose their
 version.
 
+## 0.154.0 — 2026-09-12
+
+- **The phone keeps the room at the top.** Where you are, its tabs and the way
+  home stay put while the room scrolls under them — which is most of what
+  makes an app feel like one rather than like a page. Four rooms drew that
+  header themselves and had already drifted; there is one of it now.
+- **A tab's underline is straight.** The playful style rounds every anchor,
+  which on an element whose only border is the bottom one drew the underline
+  as a shallow bowl curving up under the word.
+- Ideas opens on the ones you have not acted on yet.
+- The month filter in a ledger says "Month" — empty, it drew as dashes beside
+  the search box and read as a second search box that lost its placeholder.
+- A goal's edit and delete sit at the right edge instead of packed against
+  the words on the left.
+
 ## 0.153.0 — 2026-09-12
 
 - **Where your ontoplano lives is a screen.** Two squares: connect to an

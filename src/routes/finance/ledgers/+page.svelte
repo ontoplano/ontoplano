@@ -254,12 +254,21 @@
 				class="input w-56"
 				oninput={(e) => filter({ q: (e.currentTarget as HTMLInputElement).value })}
 			/>
-			<input
-				type="month"
-				value={data.month}
-				class="input w-auto"
-				onchange={(e) => filter({ month: (e.currentTarget as HTMLInputElement).value })}
-			/>
+			<!--
+				A month box says nothing about itself when it is empty — an
+				unfilled `type="month"` draws as dashes, which beside a search
+				field reads as a second search field that lost its placeholder.
+				The word is the label.
+			-->
+			<label class="flex items-center gap-2 text-sm text-gray-600">
+				Month
+				<input
+					type="month"
+					value={data.month}
+					class="input w-auto"
+					onchange={(e) => filter({ month: (e.currentTarget as HTMLInputElement).value })}
+				/>
+			</label>
 			{#if data.query || data.month}
 				<button class="btn btn-sm" onclick={() => filter({ q: '', month: '' })}>Clear</button>
 			{/if}

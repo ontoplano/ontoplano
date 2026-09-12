@@ -444,6 +444,36 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 }
 
 /*
+ * A room's header stays where it is while the room scrolls under it.
+ *
+ * On a phone this is what the app's chrome is: the name of where you are, the
+ * way between its tabs, and the way home, all of them there whether you are
+ * at the top of the screen or six cards down. A web page lets its heading
+ * scroll away; an app does not, and that difference is most of what "feels
+ * like an app" means.
+ *
+ * It reaches both screen edges like every other surface, and paints the
+ * page's own background so what passes underneath does not show through.
+ */
+.room-bar {
+	display: grid;
+	gap: 0.75rem;
+}
+
+@media (max-width: 639px) {
+	.room-bar {
+		position: sticky;
+		top: 0;
+		z-index: 20;
+		gap: 0;
+		margin-inline: calc(-1 * var(--page-gutter));
+		padding-inline: var(--page-gutter);
+		padding-top: 0.25rem;
+		background-color: var(--color-gray-100);
+	}
+}
+
+/*
  * The page's side gutter, and where it stops existing.
  *
  * One variable rather than `px-4 sm:px-6` on the shell, because the phone
@@ -2156,8 +2186,18 @@ html .ec {
  * layers lose to unlayered CSS. So a two-pixel underline was drawn as a smile
  * under the word. Stated here, where it can actually win.
  */
+/*
+ * A tab is underlined, and an underline is straight.
+ *
+ * The playful style rounds every anchor and button, which on an element whose
+ * only border is the bottom one draws the underline as a shallow bowl —
+ * curving up at both ends under a word. It reads as a mistake at every size.
+ * `.tab-link` is the marker every tab strip in the app carries.
+ */
 html[data-style] a.tab-link,
-html a.tab-link {
+html a.tab-link,
+html[data-style] button.tab-link,
+html button.tab-link {
 	/* Specific enough to win outright rather than on source order: the playful
 	   rule is `html[data-style='playful'] a`, and where these two land relative
 	   to each other after the stylesheet is assembled is not something to rely

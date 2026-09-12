@@ -27,7 +27,14 @@
 	 * and every tag ever used is a wall of chips above the thing itself.
 	 */
 	let tagsOpen = $state(false);
-	let filterApplied: 'all' | 'applied' | 'not-applied' = $state('all');
+	/*
+	 * The ones still waiting, first.
+	 *
+	 * An idea you already acted on is a record; an idea you have not is the
+	 * reason to open this screen. Opening on everything buried the second in
+	 * the first, and the filter is one press away either way.
+	 */
+	let filterApplied: 'all' | 'applied' | 'not-applied' = $state('not-applied');
 	let filterFavorite: 'all' | 'favorite' | 'not-favorite' = $state('all');
 	let confirmingDeleteId: number | null = $state(null);
 

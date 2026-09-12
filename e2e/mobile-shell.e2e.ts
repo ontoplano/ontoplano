@@ -144,14 +144,27 @@ test('a card takes the whole width of the phone', async ({ page }) => {
 	expect(overflow).toBe(0);
 });
 
-test('the phone has no top bar — the bottom one carries everything', async ({ page }) => {
+test('the phone carries the room at the top and the app at the bottom', async ({ page }) => {
 	await register(page, `topbar-${Date.now()}@test.invalid`);
 	await visit(page, '/tasks/plan');
 
-	// The wordmark header is desktop-only now: on a phone it spent a strip of
-	// a small screen saying the app's own name.
+	// The wordmark header is desktop-only: on a phone it spent a strip of a
+	// small screen saying the app's own name.
 	await expect(page.locator('header a', { hasText: 'ontoplano' })).toBeHidden();
 	await expect(page.locator('nav[aria-label="Primary"]')).toBeVisible();
+
+	// What is at the top instead is where you are: the room's name, its tabs,
+	// and the way home — and it stays there while the room scrolls under it,
+	// which is most of what makes this feel like an app rather than a page.
+	const bar = page.locator('.room-bar');
+	await expect(bar).toBeVisible();
+	await expect(bar.getByRole('link', { name: 'Back to today' })).toBeVisible();
+	await expect(bar.getByRole('heading', { name: 'Tasks' })).toBeVisible();
+
+	const before = await bar.boundingBox();
+	await page.locator('main').evaluate((m) => m.scrollBy(0, 400));
+	await page.waitForTimeout(300);
+	expect(await bar.boundingBox()).toMatchObject({ y: before!.y });
 });
 
 /**

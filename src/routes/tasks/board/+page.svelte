@@ -498,7 +498,7 @@
 						tab = t.v as typeof tab;
 						focusRow = 0;
 					}}
-					class="border-b-2 px-3 py-1.5 text-sm {tab === t.v
+					class="tab-link border-b-2 px-3 py-1.5 text-sm {tab === t.v
 						? 'font-semibold text-gray-900'
 						: 'border-transparent font-medium text-gray-500 hover:text-gray-900'}"
 					style={tab === t.v ? 'border-color: var(--section-accent)' : ''}

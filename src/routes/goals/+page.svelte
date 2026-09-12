@@ -646,7 +646,12 @@
 									member it was what pushed the row past the width of a phone —
 									which put delete on a line of its own, alone, in the corner.
 								-->
-								<div class="row-actions gap-1">
+								<!--
+									The words on the left, under the goal's own text; the two
+									glyphs against the right edge. On a phone the whole rail sat
+									left and the right half of the card was air.
+								-->
+								<div class="row-actions w-full gap-1">
 									{#if goal.status === 'open'}
 										<!--
 											Closing a goal is a verdict on months of work, and it was
@@ -681,7 +686,7 @@
 										title="Edit"
 										aria-label="Edit"
 										onclick={() => openEdit(goal)}
-										class="icon-btn"><Icon name="edit" /></button
+										class="icon-btn ml-auto"><Icon name="edit" /></button
 									>
 									{#if confirmingDelete === goal.id}
 										<form method="post" action="?/remove" use:enhance>

@@ -697,7 +697,7 @@
 							<a
 								href={item.href}
 								title={item.label}
-								class="flex shrink-0 items-center gap-1 border-b-2 px-3 py-4 text-sm whitespace-nowrap transition-colors min-[1460px]:gap-1.5 min-[1460px]:px-3 xl:px-1.5 [&>svg]:h-5 [&>svg]:w-5 xl:[&>svg]:h-4 xl:[&>svg]:w-4 {active
+								class="tab-link flex shrink-0 items-center gap-1 border-b-2 px-3 py-4 text-sm whitespace-nowrap transition-colors min-[1460px]:gap-1.5 min-[1460px]:px-3 xl:px-1.5 [&>svg]:h-5 [&>svg]:w-5 xl:[&>svg]:h-4 xl:[&>svg]:w-4 {active
 									? 'font-semibold text-chrome-ink'
 									: 'border-transparent font-medium text-chrome-muted hover:border-chrome-line hover:text-chrome-ink'}"
 								style={active ? `border-color: ${item.accent}` : ''}
