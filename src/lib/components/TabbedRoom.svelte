@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { afterNavigate, goto, onNavigate } from '$app/navigation';
-	import { page } from '$app/state';
+	import { navigating, page } from '$app/state';
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { scrollHints } from '$lib/actions/scroll-hints';
 	import { onSwipe } from '$lib/swipe';
 	import { swipeSurface } from '$lib/swipe-surface';
-	import { slideAway, slideOn, slidesHere } from '$lib/slide';
+	import { slideAway, slideOn, slidesHere, stopHiding } from '$lib/slide';
 
 	/**
 	 * A room with tabs: the strip, and the movement between them.
@@ -109,6 +109,18 @@
 	afterNavigate(() => {
 		if (went && pane && slidesHere()) slideOn(pane, went);
 		went = 0;
+	});
+
+	/*
+	 * Nothing may leave the screen hidden.
+	 *
+	 * A screen goes out of sight while its copy travels, and it is `slideOn`
+	 * that brings it back — which never runs for a navigation that is abandoned
+	 * or superseded. So the moment nothing is navigating, whatever is here is
+	 * on view, whether a movement finished or not.
+	 */
+	$effect(() => {
+		if (!navigating.to) stopHiding(pane);
 	});
 </script>
 

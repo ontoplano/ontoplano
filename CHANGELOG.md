@@ -18,6 +18,25 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.165.1 — 2026-09-13
+
+- **The screen leaves the moment you ask it to.** It was leaving as a copy laid
+  over the original, which had not moved — so nothing appeared to happen until
+  the new page arrived and slid in, which read as the whole movement waiting
+  for the load. The original goes out of sight now while its copy travels.
+- **The mark turns while you wait.** Behind a screen that has left there is
+  nothing to look at; that is where it goes. It waits a third of a second
+  before appearing, because most navigations are over before anybody could read
+  it.
+- **Moving between rooms works from the dashboard too.** Anywhere that is not a
+  room — the dashboard above all — counts as the hub the wheel turns around.
+  Without that there was no movement on a phone at all: the way between two
+  rooms there is the dashboard or the pie, so every hop had the hub at one end
+  and was being thrown away as "not between rooms".
+- **`make shots` takes the seven-inch tablet set** Play asks for alongside the
+  ten-inch one. Its own walk rather than the ten-inch pictures scaled down: at
+  1600 wide the app lays itself out differently from 1920.
+
 ## 0.165.0 — 2026-09-13
 
 - **A swipe works anywhere on the screen.** It was listened for over the room's

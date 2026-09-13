@@ -12,7 +12,7 @@
 	import { NAV_PLACES } from '$lib/sections-nav';
 	import { accentsWith, placesFor } from '$lib/nav-order';
 	import { provideSwipeSurface } from '$lib/swipe-surface';
-	import { slideAway, slideOn, slidesHere } from '$lib/slide';
+	import { slideAway, slideOn, slidesHere, stopHiding } from '$lib/slide';
 	import { MARK_CLIP_PATH } from '$lib/logo/mark-shape';
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
 	import { THEMES } from '$lib/theme.js';
@@ -263,17 +263,26 @@
 		const from = roomAt(navigation.from?.url.pathname ?? '');
 		const to = roomAt(navigation.to?.url.pathname ?? '');
 		/*
-		 * Only between rooms: a change of tab is the room's own business, and
-		 * sliding both would be two movements over one navigation.
+		 * Anywhere that is not a room — the dashboard above all, and search and
+		 * settings — counts as the hub the wheel turns around, which is `-1` and
+		 * therefore before every room. Going out to a room turns one way and
+		 * coming back turns the other.
+		 *
+		 * Not doing that is why there was no movement on a phone at all: the way
+		 * between two rooms there is the dashboard or the pie, so every hop was
+		 * room → hub → room, and a hop with the hub at one end was being thrown
+		 * away as "not between rooms".
+		 *
+		 * Still nothing when both ends are the same place: a change of tab is
+		 * the room's own business, and sliding both would be two movements over
+		 * one navigation.
 		 *
 		 * Negated, deliberately. Going *down* the menu brings the new room in
 		 * from the left, which is the opposite of what a tab does — and it is
 		 * what was asked for. A tab change has a finger behind it and the screen
-		 * follows the finger; picking a room off the menu has none, and the row
-		 * being walked is vertical, so borrowing the tabs' handedness only made
-		 * it look like a tab change that had gone the wrong way.
+		 * follows the finger; picking a room off the menu has none.
 		 */
-		changedRoom = from < 0 || to < 0 || from === to ? 0 : -Math.sign(to - from);
+		changedRoom = from === to ? 0 : -Math.sign(to - from);
 		// `arc`: a room change is a turn of the menu, so it travels round the
 		// wheel rather than straight across. See `$lib/slide`.
 		if (changedRoom && page$ && roomStage && slidesHere())
@@ -283,6 +292,18 @@
 	afterNavigate(() => {
 		if (changedRoom && page$ && slidesHere()) slideOn(page$, changedRoom, true);
 		changedRoom = 0;
+	});
+
+	/*
+	 * Nothing may leave the screen hidden.
+	 *
+	 * A screen goes out of sight while its copy travels, and it is `slideOn`
+	 * that brings it back — which never runs for a navigation that is abandoned
+	 * or superseded. So the moment nothing is navigating, whatever is here is
+	 * on view, whether a movement finished or not.
+	 */
+	$effect(() => {
+		if (!navigating.to) stopHiding(page$);
 	});
 
 	afterNavigate(() => scroller?.scrollTo({ top: 0 }));
@@ -896,6 +917,19 @@
 			<div class="slide-frame">
 				<div bind:this={page$}>{@render children()}</div>
 				<div bind:this={roomStage} class="slide-stage" aria-hidden="true"></div>
+
+				<!--
+					What is behind a screen that has left: the wait itself.
+
+					The movement happens the moment you ask for it, so between the old
+					screen going and the new one arriving there is nothing to look at.
+					The mark turns there. It waits a moment before appearing, because
+					most navigations are over before anybody could read it and a
+					spinner that flashes is worse than none.
+				-->
+				{#if navigating.to && !givenUp}
+					<div class="nav-waiting" aria-hidden="true"><Logo size={40} /></div>
+				{/if}
 			</div>
 		</main>
 

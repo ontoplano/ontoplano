@@ -61,6 +61,17 @@ export const ARC_DEGREES = 4;
 export const SWIPE_MIN_PX = 60;
 export const SWIPE_RATIO = 1.6;
 
+/**
+ * Put a screen back on view without moving it.
+ *
+ * For the navigation that never arrives — one abandoned, or superseded by
+ * another — where the screen was hidden for a movement that is not going to
+ * finish. Nothing here should be able to leave the app looking at nothing.
+ */
+export function stopHiding(pane: HTMLElement | undefined): void {
+	if (pane) pane.style.visibility = '';
+}
+
 /** Whether this screen gets the movement at all. */
 export function slidesHere(): boolean {
 	return (
@@ -115,6 +126,17 @@ export function slideAway(
 	direction: number,
 	arc = false
 ): void {
+	/*
+	 * And the original goes out of sight while its copy travels.
+	 *
+	 * Without this the copy slides off over a screen that is identical to it
+	 * and has not moved, so nothing appears to happen — and then the new page
+	 * arrives and slides in, which reads as the whole movement waiting for the
+	 * load. It is the other way round: the screen leaves the moment you ask it
+	 * to, and what is behind it is the wait.
+	 */
+	pane.style.visibility = 'hidden';
+
 	const leaving = pane.cloneNode(true) as HTMLElement;
 	leaving.setAttribute('aria-hidden', 'true');
 	leaving.style.cssText = `position:absolute;inset:0;pointer-events:none;width:${pane.offsetWidth}px`;
@@ -137,6 +159,7 @@ export function slideAway(
 
 /** And bring the one that arrived on from the other side. */
 export function slideOn(pane: HTMLElement, direction: number, arc = false): void {
+	pane.style.visibility = '';
 	if (arc) pane.style.transformOrigin = hub(pane);
 
 	// Explicit rather than `none`: an animation whose last keyframe is `none`

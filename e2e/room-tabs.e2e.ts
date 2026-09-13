@@ -218,57 +218,77 @@ test.describe('between rooms', () => {
 		await register(page, `rooms-${Date.now()}@test.invalid`);
 		await visit(page, '/tasks/plan');
 
+		/*
+		 * Everything the two screens do, recorded as they do it.
+		 *
+		 * Not a sample at a chosen moment: the movement is a quarter of a second
+		 * long, and a machine running the whole suite can miss that window
+		 * entirely. This watches every frame and keeps the extremes, so the
+		 * assertions are about what happened rather than about when it was
+		 * looked at.
+		 */
+		await page.evaluate(() => {
+			const seen = {
+				leavingX: 0,
+				arrivingX: 0,
+				leavingDip: 0,
+				tilted: false
+			};
+			(window as unknown as { __moved: typeof seen }).__moved = seen;
+
+			const watch = () => {
+				const frame = document.querySelector('main .slide-frame');
+				if (frame) {
+					const rest = frame.getBoundingClientRect();
+					const middle = rest.top + rest.height / 2;
+					const read = (el: Element | null) => {
+						if (!el) return null;
+						const r = el.getBoundingClientRect();
+						return {
+							x: r.left - rest.left,
+							// The centre, because a tilted box grows: its top edge rises
+							// even while the thing itself is on its way down.
+							dip: r.top + r.height / 2 - middle,
+							tilt: new DOMMatrixReadOnly(getComputedStyle(el).transform).b
+						};
+					};
+					const leaving = read(document.querySelector('main .slide-stage > div'));
+					const arriving = read(document.querySelector('main .slide-frame > div'));
+					if (leaving) {
+						if (leaving.x > seen.leavingX) seen.leavingX = leaving.x;
+						if (leaving.dip > seen.leavingDip) seen.leavingDip = leaving.dip;
+						if (leaving.tilt !== 0) seen.tilted = true;
+					}
+					if (arriving && arriving.x < seen.arrivingX) seen.arrivingX = arriving.x;
+				}
+				requestAnimationFrame(watch);
+			};
+			requestAnimationFrame(watch);
+		});
+
 		// Health sits after Tasks in the menu, and the room movement runs against
 		// the menu on purpose — so the screen leaving goes right and the one
 		// arriving comes from the left. The opposite of a tab change, which has a
 		// finger behind it to follow.
 		await page.locator('a[href="/health/habits"]:visible').first().click();
-		await page.waitForTimeout(120);
+		await page.waitForTimeout(600);
 
-		/*
-		 * Where each screen actually is, not what its matrix says.
-		 *
-		 * The movement is a rotation about a point far below the screen, and a
-		 * rotation's computed matrix carries no translation at all — the
-		 * sideways travel comes from the origin, which `getComputedStyle` does
-		 * not put in. Measuring the box against where it rests is the only
-		 * reading that describes what somebody sees.
-		 */
-		const moving = await page.evaluate(() => {
-			// The frame is where both of them rest, and the copy on its way out is
-			// pinned to it — so this is the same origin for both.
-			const rest = document.querySelector('main .slide-frame')!.getBoundingClientRect();
-			const box = (el: Element | null) => {
-				if (!el) return null;
-				const r = el.getBoundingClientRect();
-				const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
-				// The centre, because a tilted box grows: its top edge rises even
-				// while the thing itself is on its way down.
-				return {
-					x: r.left - rest.left,
-					dip: r.top + r.height / 2 - (rest.top + rest.height / 2),
-					tilt: m.b
-				};
-			};
-			return {
-				leaving: box(document.querySelector('main .slide-stage > div')),
-				arriving: box(document.querySelector('main .slide-frame > div'))
-			};
-		});
+		const moving = await page.evaluate(
+			() => (window as unknown as { __moved: Record<string, number | boolean> }).__moved
+		);
 
 		// Both of them, and the whole way: a quarter of the width with a fade
 		// read as a wobble rather than as one screen replacing another.
-		expect(moving.leaving!.x).toBeGreaterThan(100);
-		expect(moving.arriving!.x).toBeLessThan(-100);
+		expect(moving.leavingX).toBeGreaterThan(100);
+		expect(moving.arrivingX).toBeLessThan(-100);
 
 		/*
 		 * And round, not across. The rooms come off the menu wheel, so a screen
 		 * on its way out sinks and tilts as it goes rather than sliding level —
 		 * which is the difference between this and a tab change.
 		 */
-		expect(moving.leaving!.dip).toBeGreaterThan(0);
-		expect(moving.leaving!.tilt).not.toBe(0);
-		expect(moving.arriving!.tilt).not.toBe(0);
+		expect(moving.leavingDip).toBeGreaterThan(0);
+		expect(moving.tilted).toBe(true);
 
 		// And nothing is left over.
 		await page.waitForTimeout(600);
