@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.165.2 — 2026-09-13
+
+- **The screens either side of the wheel move too.** Home, Search and the
+  account screen all answered "not a room", so a hop between any two of them
+  had the same non-answer at both ends and stood still. They have places in the
+  row now: the dashboard is the hub the wheel turns around, and the rest
+  follow.
+
 ## 0.165.1 — 2026-09-13
 
 - **The screen leaves the moment you ask it to.** It was leaving as a copy laid

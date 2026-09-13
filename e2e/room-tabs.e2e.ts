@@ -381,6 +381,46 @@ test.describe('on a phone, through the pie', () => {
 		expect(wheel.travelled).toBeGreaterThan(300);
 		expect(wheel.tilt).toBeGreaterThan(0);
 	});
+
+	/**
+	 * The screens either side of the wheel move too.
+	 *
+	 * Home, Search and the account screen are not rooms, and all three answered
+	 * "not a room" — so a hop between any two of them had the same non-answer at
+	 * both ends and was discarded. They have places in the row now: the
+	 * dashboard is the hub the wheel turns around, and the rest follow it.
+	 */
+	test('the dashboard and the screens beside the wheel are places too', async ({ page }) => {
+		test.setTimeout(180_000);
+		await register(page, `bar-arc-${Date.now()}@test.invalid`);
+		await visit(page, '/');
+
+		await page.evaluate(() => {
+			const seen = { travelled: 0 };
+			(window as unknown as { __bar: typeof seen }).__bar = seen;
+			const watch = () => {
+				const frame = document.querySelector('main .slide-frame');
+				const clone = document.querySelector('main .slide-stage > div');
+				if (frame && clone)
+					seen.travelled = Math.max(
+						seen.travelled,
+						Math.abs(clone.getBoundingClientRect().left - frame.getBoundingClientRect().left)
+					);
+				requestAnimationFrame(watch);
+			};
+			requestAnimationFrame(watch);
+		});
+
+		// Through the bar, which is a client navigation — `visit` reloads the
+		// page, and a reload is not a move along anything.
+		await page.locator('nav').last().getByRole('link', { name: 'Account' }).click();
+		await page.waitForTimeout(700);
+
+		const moved = await page.evaluate(
+			() => (window as unknown as { __bar: { travelled: number } }).__bar.travelled
+		);
+		expect(moved).toBeGreaterThan(100);
+	});
 });
 
 test.describe('with a mouse', () => {

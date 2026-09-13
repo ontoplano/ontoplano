@@ -98,9 +98,11 @@ const tableNames = (d: Database.Database) =>
 			.all() as { name: string }[]
 	).map((row) => row.name);
 
+// Its own timeout: a `describe` timeout covers the cases, not the hooks, and
+// building a database means replaying the whole of `drizzle/`.
 beforeEach(() => {
 	db = upToDate();
-});
+}, 60_000);
 
 // Each case replays the real history — seventy-odd files — more than once.
 describe('a device migrating itself', { timeout: 60_000 }, () => {

@@ -239,19 +239,40 @@
 	provideSwipeSurface(() => scroller);
 
 	/**
-	 * Which room a path is in, by the order they sit in this account's menu.
+	 * The other top-level screens, in the order the bottom bar has them.
 	 *
-	 * The rooms are a row, the same as a room's tabs are, and moving along it
-	 * should look like moving along it. Which way depends on where you were and
-	 * where you went — Tasks to Health is one way, Health to Tasks the other.
-	 *
-	 * Against the row rather than along it: see `changedRoom`.
+	 * The rooms are the wheel; these are the places either side of it. Home is
+	 * the hub, so it comes before every room, and the rest follow — which is
+	 * what makes tapping between Home, Search and Account move at all. They all
+	 * counted as "not a room" before, and a hop with the same non-answer at both
+	 * ends is a hop that was thrown away.
 	 */
-	function roomAt(pathname: string): number {
-		return allNav.findIndex((place) => {
+	const BESIDE_THE_WHEEL = ['/search', '/settings', '/instance', '/account'];
+
+	/**
+	 * Where a path sits in the row of screens.
+	 *
+	 * The rooms in this account's own menu order, the dashboard before them as
+	 * the hub the wheel turns around, and the rest after. Moving along the row
+	 * should look like moving along it, and which way depends on where you were
+	 * and where you went.
+	 *
+	 * Anywhere deeper than a top-level screen answers with the screen it is
+	 * inside, so opening a notebook or changing tab is not a move along this row
+	 * — those are the room's own business.
+	 */
+	function placeAt(pathname: string): number {
+		const room = allNav.findIndex((place) => {
 			const root = place.href.split('/')[1];
 			return root ? pathname === `/${root}` || pathname.startsWith(`/${root}/`) : false;
 		});
+		if (room >= 0) return room;
+		if (pathname === '/') return -1;
+
+		const beside = BESIDE_THE_WHEEL.findIndex(
+			(href) => pathname === href || pathname.startsWith(`${href}/`)
+		);
+		return allNav.length + (beside >= 0 ? beside : BESIDE_THE_WHEEL.length);
 	}
 
 	let page$ = $state<HTMLElement>();
@@ -260,22 +281,12 @@
 	let changedRoom = 0;
 
 	onNavigate((navigation) => {
-		const from = roomAt(navigation.from?.url.pathname ?? '');
-		const to = roomAt(navigation.to?.url.pathname ?? '');
+		const from = placeAt(navigation.from?.url.pathname ?? '');
+		const to = placeAt(navigation.to?.url.pathname ?? '');
 		/*
-		 * Anywhere that is not a room — the dashboard above all, and search and
-		 * settings — counts as the hub the wheel turns around, which is `-1` and
-		 * therefore before every room. Going out to a room turns one way and
-		 * coming back turns the other.
-		 *
-		 * Not doing that is why there was no movement on a phone at all: the way
-		 * between two rooms there is the dashboard or the pie, so every hop was
-		 * room → hub → room, and a hop with the hub at one end was being thrown
-		 * away as "not between rooms".
-		 *
-		 * Still nothing when both ends are the same place: a change of tab is
-		 * the room's own business, and sliding both would be two movements over
-		 * one navigation.
+		 * Nothing when both ends are the same place: a change of tab, or opening
+		 * something inside a room, is the room's own business, and sliding both
+		 * would be two movements over one navigation.
 		 *
 		 * Negated, deliberately. Going *down* the menu brings the new room in
 		 * from the left, which is the opposite of what a tab does — and it is
