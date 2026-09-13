@@ -84,6 +84,25 @@ function everyVersionEverCommitted() {
 	return seen;
 }
 
+/**
+ * Whether this checkout is missing commits its remote has.
+ *
+ * Asked only when there are strangers, and only to say so: the answer is a
+ * cheap `rev-list` against whatever `@{upstream}` resolves to, and a clone
+ * with no upstream — a deployed copy, an export — is simply not behind.
+ */
+function behindTheRemote() {
+	try {
+		const count = execFileSync('git', ['rev-list', '--count', 'HEAD..@{upstream}'], {
+			encoding: 'utf8',
+			stdio: ['ignore', 'pipe', 'ignore']
+		}).trim();
+		return Number(count) > 0;
+	} catch {
+		return false;
+	}
+}
+
 const path =
 	process.argv[2] ||
 	process.env.DATABASE_URL ||
@@ -161,5 +180,22 @@ if (strangers.length > 0) {
 	}
 	if (history.size === 0)
 		console.log('  (no git history here, so none of them could be looked up by name)');
+
+	/*
+	 * Or the clone is simply behind.
+	 *
+	 * The lookup can only name a migration this checkout has heard of, so a
+	 * tree that has not fetched the commit which added one reports it as
+	 * "from somewhere else" — four perfectly good migrations, applied by a
+	 * deploy an hour earlier, accused of coming from nowhere. That reads as
+	 * data corruption and it is a stale `git fetch`.
+	 */
+	if (strangers.length > 0 && behindTheRemote()) {
+		console.log(
+			'  This clone is behind its remote, which is the ordinary reason for all\n' +
+				'  of the above: a migration it has never fetched cannot be named. Try\n' +
+				'  `git fetch --all --tags` and run this again before believing any of it.\n'
+		);
+	}
 	process.exit(1);
 }

@@ -18,6 +18,13 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.168.1 — 2026-09-13
+
+- **`make db-strangers` says when the clone is behind.** It can only name a
+  migration the checkout has heard of, so a tree that has not fetched the
+  commit which added one reported four perfectly good migrations as coming
+  from nowhere. That reads as data corruption and it is a stale `git fetch`.
+
 ## 0.168.0 — 2026-09-13
 
 - **Workouts keep a register.** "Last done" says whether you are keeping a
