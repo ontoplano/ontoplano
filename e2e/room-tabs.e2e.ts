@@ -324,6 +324,65 @@ test.describe('between rooms', () => {
 	});
 });
 
+/**
+ * And the way a phone actually gets between rooms, which is the pie.
+ *
+ * Worth its own case because the room movement did nothing there for a while
+ * and the wide-screen test above was green throughout: on a phone the way
+ * between two rooms is the dashboard or the pie, and anywhere that is not a
+ * room was being treated as "not a room change" rather than as the hub the
+ * wheel turns around. Every hop had the hub at one end, so every hop was
+ * discarded.
+ */
+test.describe('on a phone, through the pie', () => {
+	test.use({ viewport: { width: 390, height: 800 }, hasTouch: true, isMobile: true });
+
+	test('picking a room off the pie turns the wheel', async ({ page }) => {
+		test.setTimeout(180_000);
+		await register(page, `pie-arc-${Date.now()}@test.invalid`);
+		await visit(page, '/');
+
+		await page.evaluate(() => {
+			const seen = { travelled: 0, tilt: 0 };
+			(window as unknown as { __wheel: typeof seen }).__wheel = seen;
+			const watch = () => {
+				const frame = document.querySelector('main .slide-frame');
+				const clone = document.querySelector('main .slide-stage > div');
+				if (frame && clone) {
+					const rest = frame.getBoundingClientRect();
+					seen.travelled = Math.max(
+						seen.travelled,
+						Math.abs(clone.getBoundingClientRect().left - rest.left)
+					);
+					seen.tilt = Math.max(
+						seen.tilt,
+						Math.abs(new DOMMatrixReadOnly(getComputedStyle(clone).transform).b)
+					);
+				}
+				requestAnimationFrame(watch);
+			};
+			requestAnimationFrame(watch);
+		});
+
+		await page
+			.locator('nav')
+			.last()
+			.getByRole('button', { name: 'Go to a section' })
+			.dispatchEvent('pointerdown', { pointerId: 1, clientX: 195, clientY: 780 });
+		const wedges = page.locator('.pie [role="menuitem"]');
+		await expect(wedges.first()).toBeVisible();
+		await wedges.nth(3).click();
+		await page.waitForTimeout(900);
+
+		const wheel = await page.evaluate(
+			() => (window as unknown as { __wheel: { travelled: number; tilt: number } }).__wheel
+		);
+		// The whole width of the screen, and off level on the way.
+		expect(wheel.travelled).toBeGreaterThan(300);
+		expect(wheel.tilt).toBeGreaterThan(0);
+	});
+});
+
 test.describe('with a mouse', () => {
 	test.use({ viewport: { width: 1280, height: 820 } });
 
