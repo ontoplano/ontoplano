@@ -27,6 +27,9 @@
 
 	const COOLDOWN_MS = 5000;
 
+	/** Whether the file should carry the picture bytes. On, for a backup. */
+	let withPictures = $state(true);
+
 	async function download() {
 		if (downloading || cooling) return;
 
@@ -34,7 +37,9 @@
 		exportError = null;
 
 		try {
-			const res = await fetch(resolve('/settings/account/export'));
+			const res = await fetch(
+				resolve('/settings/account/export') + (withPictures ? '' : '?pictures=no')
+			);
 
 			if (!res.ok) {
 				const body = await res.json().catch(() => null);
@@ -47,7 +52,7 @@
 			const url = URL.createObjectURL(blob);
 			const link = document.createElement('a');
 			link.href = url;
-			link.download = `ontoplano-export-${new Date().toISOString().slice(0, 10)}.json`;
+			link.download = `ontoplano-export-${new Date().toISOString().slice(0, 10)}${withPictures ? '' : '-no-pictures'}.json`;
 			link.click();
 			URL.revokeObjectURL(url);
 
@@ -416,6 +421,24 @@
 			Everything this account owns, as JSON: plans, tasks, diary, habits, goals, shopping, ideas and
 			settings. The raw rows, so it is complete rather than pretty.
 		</p>
+
+		<!--
+			The pictures are most of the weight. Their bytes ride in the JSON as
+			base64, so an account with a gallery in it makes a file bigger than a
+			small instance will accept back — which is exactly when somebody is
+			exporting to move rather than to keep. Leaving them out is a choice on
+			the file, not a different feature.
+		-->
+		<label class="mt-3 flex cursor-pointer items-start gap-2 text-sm">
+			<input type="checkbox" bind:checked={withPictures} class="mt-0.5" />
+			<span>
+				<span class="text-gray-900">Include pictures</span>
+				<span class="block text-gray-500">
+					They are most of the file's size. Leave them out for a file that moves to another
+					instance; keep them for a backup.
+				</span>
+			</span>
+		</label>
 
 		<!--
 			Always says where you stand, rather than only warning near the end.

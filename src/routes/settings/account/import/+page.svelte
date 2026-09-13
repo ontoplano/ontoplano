@@ -75,8 +75,39 @@
 
 	async function readRestore(event: Event) {
 		const text = await readChosen(event, { many: false, ceiling: restoreCeiling });
-		if (text !== null) restoreText = text;
+		if (text !== null) {
+			restoreText = text;
+			// Choosing the file is the ask: the preview runs now, not behind a
+			// second button somebody has to know about.
+			previewForm?.requestSubmit();
+		}
 	}
+
+	/**
+	 * The preview, run for whatever is in the box.
+	 *
+	 * A restore empties the account first, so what the file holds — whose it
+	 * was, what lands, what is left behind, what the import would refuse — has
+	 * to be on the screen before REPLACE is typed. Posted through a form of its
+	 * own so the answer arrives the same way every action's does; debounced for
+	 * a paste, because a paste has no single finished moment the way choosing a
+	 * file does.
+	 */
+	let previewForm = $state<HTMLFormElement>();
+	let previewTimer: ReturnType<typeof setTimeout> | undefined;
+
+	function previewSoon() {
+		clearTimeout(previewTimer);
+		if (!restoreText.trim() || restoreTooBig) return;
+		previewTimer = setTimeout(() => previewForm?.requestSubmit(), 600);
+	}
+
+	const preview = $derived(
+		form?.success && form.action === 'previewImport' && form.preview ? form.preview : null
+	);
+
+	/** "Bring in the rest" — only offered once the refusals are on screen. */
+	let dropBad = $state(false);
 
 	/**
 	 * And a paste is measured too, on the way out rather than on the way back.
@@ -209,6 +240,7 @@
 			<textarea
 				name="text"
 				bind:value={restoreText}
+				oninput={previewSoon}
 				rows="3"
 				placeholder="…or paste the export here"
 				class="input font-mono text-xs"
@@ -216,6 +248,63 @@
 
 			{#if restoreTooBig}
 				<Banner kind="error">{restoreTooBig}</Banner>
+			{/if}
+
+			{#if preview}
+				<!--
+					What the restore will do, before the word that lets it.
+
+					Numbers rather than adjectives: whose account, how many rows, and
+					the two lists that matter — what is left behind by policy, and what
+					the import would refuse outright. The second list is the one that
+					used to surface as a failure three seconds after everything had
+					already been emptied and rolled back.
+				-->
+				<div class="space-y-2 border border-gray-200 bg-gray-50 p-3 text-sm">
+					<p class="text-gray-900">
+						{#if preview.from}
+							<strong>{preview.from.email}</strong>'s account, exported
+							{preview.from.exportedAt.slice(0, 10)}:
+						{/if}
+						<strong>{preview.total}</strong> rows will land.
+					</p>
+					{#if preview.tables.length > 0}
+						<p class="text-gray-600">
+							{preview.tables
+								.slice(0, 6)
+								.map((t) => `${t.rows} ${t.name}`)
+								.join(', ')}{preview.tables.length > 6
+								? ` and ${preview.tables.length - 6} smaller tables`
+								: ''}.
+						</p>
+					{/if}
+					{#if preview.skipped.length > 0}
+						<p class="text-gray-600">
+							Left behind: {preview.skipped
+								.map((skip) => `${skip.rows} ${skip.name} (${skip.why})`)
+								.join('; ')}.
+						</p>
+					{/if}
+					{#if preview.unacceptable.length > 0}
+						<div class="border border-red-200 bg-red-50 p-2">
+							<p class="text-sm text-gray-900">
+								The restore would refuse this file:
+								{preview.unacceptable
+									.map((bad) => `${bad.rows} ${bad.name} ${bad.why}`)
+									.join('; ')}.
+							</p>
+							<label class="mt-1 flex cursor-pointer items-start gap-2 text-sm text-gray-900">
+								<input
+									type="checkbox"
+									name="dropUnacceptable"
+									bind:checked={dropBad}
+									class="mt-0.5"
+								/>
+								<span>Leave those out and bring in everything else</span>
+							</label>
+						</div>
+					{/if}
+				</div>
 			{/if}
 
 			<!--
@@ -245,7 +334,31 @@
 			<!-- Not pressable while the thing in the box cannot be sent: the server
 			     refuses a body that size before this app sees it, and what comes
 			     back is a 500 rather than a reason. -->
-			<button type="submit" class="btn btn-sm" disabled={restoreTooBig !== null}>Restore</button>
+			<!-- Not pressable while the thing in the box cannot be sent, or while
+			     the preview has named rows the restore would refuse and nobody has
+			     answered what to do about them. -->
+			<button
+				type="submit"
+				class="btn btn-sm"
+				disabled={restoreTooBig !== null ||
+					(preview != null && preview.unacceptable.length > 0 && !dropBad)}
+			>
+				Restore
+			</button>
+		</form>
+
+		<!--
+			Its own form, because it is its own act: this one writes nothing and
+			needs no REPLACE. It carries the same text, posted the same way.
+		-->
+		<form
+			method="post"
+			action="?/previewImport"
+			class="hidden"
+			bind:this={previewForm}
+			use:settingsForm={{}}
+		>
+			<input type="hidden" name="text" value={restoreText} />
 		</form>
 
 		{#if form?.success && form.action === 'importAccount'}

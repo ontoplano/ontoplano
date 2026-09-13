@@ -2,7 +2,7 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { buildCtx } from '$lib/services/ctx';
 import { importTasks } from '$lib/services/imports';
-import { importAccount, NOT_PORTABLE } from '$lib/server/services/account-import';
+import { importAccount, previewImport, NOT_PORTABLE } from '$lib/server/services/account-import';
 import { toActionFailure } from '$lib/http-errors';
 import { importVaultAction } from '$lib/server/import-vault-action';
 import { ENVELOPE, parseByteSize } from '$lib/server/body-limit';
@@ -102,6 +102,29 @@ export const actions: Actions = {
 	importVault: importVaultAction,
 
 	/**
+	 * What a restore would do, said before it does anything.
+	 *
+	 * The restore empties the account first, so everything worth knowing about
+	 * the file \u2014 whose it was, what lands, what is left behind, what the
+	 * import would refuse \u2014 has to be on the screen before the word REPLACE
+	 * is typed, not in the message after. Reads the same text the restore will
+	 * read and writes nothing.
+	 */
+	previewImport: async ({ request, locals }) => {
+		void locals;
+		const formData = await request.formData();
+		try {
+			return {
+				success: true,
+				action: 'previewImport',
+				preview: previewImport(formData.get('text'))
+			};
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
 	 * Put an exported account back \u2014 into this one, over what is here.
 	 *
 	 * Destructive, so it asks for a typed word rather than a click: this
@@ -122,7 +145,11 @@ export const actions: Actions = {
 			});
 
 		try {
-			const result = importAccount(locals.user!.id, formData.get('text'));
+			const result = importAccount(locals.user!.id, formData.get('text'), {
+				// Only meaningful when the preview said some rows would be refused
+				// and the person read that and chose to go on without them.
+				dropUnacceptable: formData.get('dropUnacceptable') === 'on'
+			});
 
 			const parts = [
 				`Imported ${result.total} rows${result.from ? ` from ${result.from.email}` : ''}.`

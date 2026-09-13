@@ -108,3 +108,70 @@ test('an Obsidian vault lands as entries in a notebook of its own', async ({ pag
 
 	rmSync(vault, { recursive: true, force: true });
 });
+
+/**
+ * A restore says what it will do before the word that lets it.
+ *
+ * The preview runs the moment something lands in the box, because a restore
+ * empties the account first: whose file it is, what lands, what is left
+ * behind, and what would be refused all belong on the screen before REPLACE
+ * is typed. And when the file carries something the import refuses, the way
+ * through — leave those out, bring in the rest — is offered there rather than
+ * discovered as a failure.
+ */
+test('restoring shows a preview first, and a bad row offers a way through', async ({ page }) => {
+	test.setTimeout(120_000);
+	await register(page, `preview-${Date.now()}@test.invalid`);
+	await page.goto('/settings/account/import');
+
+	// A file with one good row and one picture the import will refuse: the
+	// bytes say HTML however the row is dressed.
+	const doc = Buffer.from('<p>not a picture</p>').toString('base64');
+	const file = JSON.stringify({
+		exportedAt: '2026-09-01T09:00:00.000Z',
+		account: { id: 'x', name: 'Mover', email: 'mover@example.test' },
+		data: {
+			// The onboarding flag rides along: a restore replaces the settings
+			// rows, and an account whose file says nothing about first run looks
+			// brand new — the app then bounces to /welcome before the result can
+			// be read. A real export always carries it, being a settings row.
+			userSettings: [
+				{ id: 1, userId: 'x', key: 'ui.tutorialSeen', value: 'true' },
+				{ id: 2, userId: 'x', key: 'onboarding.done', value: 'true' }
+			],
+			ideas: [{ id: 1, userId: 'x', content: 'the idea that travels' }],
+			media: [
+				{
+					id: 1,
+					userId: 'x',
+					mime: 'image/png',
+					filename: 'p.png',
+					byteSize: 1,
+					sha256: 'x',
+					bytes: doc
+				}
+			]
+		}
+	});
+
+	const box = page.getByPlaceholder('…or paste the export here');
+	await box.fill(file);
+	await box.dispatchEvent('input');
+
+	// The preview arrives on its own — nobody pressed anything else.
+	await expect(page.getByText(/mover@example\.test/)).toBeVisible({ timeout: 10_000 });
+	await expect(page.getByText(/1 ideas/)).toBeVisible();
+	await expect(page.getByText(/would refuse/)).toBeVisible();
+
+	// Refusals block the button until they are answered.
+	const restore = page.getByRole('button', { name: 'Restore' });
+	await expect(restore).toBeDisabled();
+	await page.getByText('Leave those out and bring in everything else').click();
+	await expect(restore).toBeEnabled();
+
+	await page.locator('[name="confirm"]').fill('REPLACE');
+	await restore.click();
+	// `.first()`: the sentence appears on the page and in the toast at once.
+	await expect(page.getByText(/Imported 3 rows/).first()).toBeVisible({ timeout: 15_000 });
+	await expect(page.getByText(/left out on request/).first()).toBeVisible();
+});

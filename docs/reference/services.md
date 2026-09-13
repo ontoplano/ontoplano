@@ -193,18 +193,22 @@ refuse somebody their own restore. It says so and carries on.
 
 The shape `exportAccount` produces, checked rather than trusted.
 
-#### `importAccount(userId, payload)`
+#### `previewImport(payload)`
 
-Replace everything in this account with what is in the file.
+Everything the import would decide, decided before anything is written.
 
-One transaction: it all lands or none of it does. Foreign keys are left on —
-the parents-first order is what makes that possible, and a failure here means
-the file is inconsistent, which is a thing worth hearing about rather than
-working around.
+A restore empties the account first, so the moment to learn that the file
+carries a picture the import will refuse is before agreeing to that, not
+three seconds into a transaction that then rolls back with one sentence.
+This runs the same parsing, the same skip rules and the same byte-sniffing
+the import runs, and writes nothing.
+
+#### `importAccount(userId, payload, opts)`
 
 ### Types
 
 - `ImportResult`
+- `ImportPreview` — Replace everything in this account with what is in the file.
 
 ## account-profile
 
@@ -258,7 +262,7 @@ both of which are right when a person asks for their data — and both of which
 are wrong when the app is taking a safety copy on their behalf. This is the
 rows and nothing else.
 
-#### `exportAccount(userId, now)`
+#### `exportAccount(userId, now, opts)`
 
 #### `deleteAccount(userId)`
 

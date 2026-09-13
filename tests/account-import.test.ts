@@ -24,6 +24,7 @@ let activities: typeof import('../src/lib/services/activities');
 let todos: typeof import('../src/lib/services/todos');
 let shopping: typeof import('../src/lib/services/shopping');
 let ctx: typeof import('../src/lib/services/ctx');
+let ideasService: typeof import('../src/lib/services/ideas');
 
 const now = new Date('2026-09-01T09:00:00Z');
 
@@ -34,6 +35,7 @@ beforeAll(async () => {
 	todos = await import('../src/lib/services/todos');
 	shopping = await import('../src/lib/services/shopping');
 	ctx = await import('../src/lib/services/ctx');
+	ideasService = await import('../src/lib/services/ideas');
 });
 
 const owner = () => ctx.buildCtx(OWNER);
@@ -352,5 +354,83 @@ describe('a file cannot lie about the type of its bytes', () => {
 				}
 			})
 		).toThrow(/not a format this app accepts/);
+	});
+});
+
+/**
+ * The preview: everything the import would decide, decided with nothing written.
+ *
+ * A restore empties the account first, so the moment to learn that the file
+ * carries a picture the import will refuse is before agreeing to that — not
+ * three seconds into a transaction that rolls back with one sentence. And
+ * somebody who has read that list gets a way through: drop exactly those rows
+ * and bring in the rest, which is what `dropUnacceptable` is.
+ */
+describe('the preview, and the way through it offers', () => {
+	const PNG = Buffer.concat([
+		Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+		Buffer.from('the signature is what decides')
+	]);
+	const DOC = Buffer.from('<script>fetch("/api/v1/export")</script>');
+
+	const media = (id: number, bytes: Buffer) => ({
+		id,
+		userId: 'x',
+		mime: 'image/png',
+		filename: `p${id}.png`,
+		byteSize: bytes.length,
+		sha256: 'x',
+		bytes: bytes.toString('base64')
+	});
+
+	const file = {
+		exportedAt: now.toISOString(),
+		account: { id: 'x', name: 'x', email: 'mover@example.test' },
+		data: {
+			media: [media(1, PNG), media(2, DOC)],
+			apiTokens: [{ id: 1, userId: 'x', name: 'old', hash: 'x', scopes: '' }],
+			ideas: [{ id: 1, userId: 'x', content: 'the one idea' }]
+		}
+	};
+
+	test('says whose file it is, what lands, what is left and what would be refused', () => {
+		const seen = accountImport.previewImport(file);
+
+		expect(seen.from).toEqual({ email: 'mover@example.test', exportedAt: now.toISOString() });
+		expect(seen.tables).toContainEqual({ name: 'ideas', rows: 1 });
+		expect(seen.skipped).toContainEqual({
+			name: 'apiTokens',
+			rows: 1,
+			why: expect.stringContaining('secret')
+		});
+		expect(seen.unacceptable).toEqual([
+			{ name: 'media', rows: 1, why: expect.stringContaining('not a picture format') }
+		]);
+	});
+
+	test('writes nothing at all', () => {
+		// Read through the services, the way every other case here does.
+		const before = ideasService.listIdeas(ctx.buildCtx(STRANGER)).length;
+		accountImport.previewImport(file);
+		expect(ideasService.listIdeas(ctx.buildCtx(STRANGER)).length).toBe(before);
+	});
+
+	test('the refusal still stands by default', () => {
+		expect(() => accountImport.importAccount(STRANGER, file)).toThrow(
+			/not a format this app accepts/
+		);
+	});
+
+	test('dropUnacceptable brings in the rest and says what it left', () => {
+		const result = accountImport.importAccount(STRANGER, file, { dropUnacceptable: true });
+
+		// The good picture and the idea landed; the crafted one did not.
+		expect(result.tables).toContainEqual({ name: 'media', rows: 1 });
+		expect(result.tables).toContainEqual({ name: 'ideas', rows: 1 });
+		expect(result.skipped).toContainEqual({
+			name: 'media',
+			rows: 1,
+			why: expect.stringContaining('left out on request')
+		});
 	});
 });

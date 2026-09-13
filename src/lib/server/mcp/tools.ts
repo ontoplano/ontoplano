@@ -920,6 +920,11 @@ export const TOOLS: Tool[] = [
 				id: { type: 'integer', description: 'The todo\u2019s id, as `todos` gives it.' },
 				title: text('The new title, in the person\u2019s own words.'),
 				notes: text('The new notes.'),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook to file it under, as `notebooks` gives its id. `0` takes it out of whichever one it is in. `add_todo` can file a task at birth; this is how one already made moves.'
+				},
 				...ratingArgs
 			},
 			['id']
@@ -932,7 +937,14 @@ export const TOOLS: Tool[] = [
 				title: args.title ?? current.title,
 				notes: args.notes ?? current.notes,
 				categoryId: current.categoryId,
-				notebookId: current.notebookId,
+				// `0` empties it on purpose: "take this out of the notebook" needs
+				// a spelling, and omitting the field already means "leave it be".
+				notebookId:
+					args.notebookId === undefined
+						? current.notebookId
+						: Number(args.notebookId) === 0
+							? null
+							: args.notebookId,
 				...(gaveARating(args)
 					? {
 							ratings: {

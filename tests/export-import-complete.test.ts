@@ -103,3 +103,43 @@ describe('a round trip loses nothing', () => {
 		}
 	});
 });
+
+/**
+ * The file that moves an account rather than keeping one.
+ *
+ * The picture bytes ride in the JSON as base64, so a seeded account already
+ * exports to more than a small instance's body limit accepts back — 16MB
+ * against 12MB is the case that prompted this. Without pictures, everything
+ * that is not the pictures still travels, and the file imports cleanly: no
+ * dangling gallery rows, no recipe images pointing at nothing.
+ */
+describe('an export without pictures', () => {
+	test('is the same account minus exactly the picture tables', () => {
+		const slim = account.exportAccount(OWNER, new Date('2026-09-01T09:00:02Z'), {
+			withoutPictures: true
+		});
+
+		for (const name of ['media', 'albumMedia', 'mediaTags', 'recipeImages'])
+			expect(slim.data[name], name).toEqual([]);
+
+		// Everything else is untouched, row for row. The non-portable tables are
+		// left out of the comparison: the audit log grows by one line per export,
+		// which is the log doing its job.
+		for (const [name, rows] of Object.entries(counts(slim.data))) {
+			if (['media', 'albumMedia', 'mediaTags', 'recipeImages'].includes(name)) continue;
+			if (name in accountImport.NOT_PORTABLE) continue;
+			expect(rows, name).toBe(before[name] ?? 0);
+		}
+
+		// And it is a fraction of the weight, which is its whole reason to exist.
+		const whole = JSON.stringify(
+			account.exportAccount(OWNER, new Date('2026-09-01T09:00:03Z')).data
+		).length;
+		expect(JSON.stringify(slim.data).length).toBeLessThan(whole / 2);
+
+		// The round trip: it restores without a word of complaint.
+		const result = accountImport.importAccount(STRANGER, slim);
+		expect(result.total).toBeGreaterThan(0);
+		expect(result.skipped.filter((skip) => skip.why.includes('format'))).toEqual([]);
+	});
+});

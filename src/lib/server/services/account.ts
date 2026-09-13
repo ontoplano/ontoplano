@@ -339,7 +339,22 @@ export function collectAccount(userId: string, now: Date = new Date()): AccountE
 	return { exportedAt: now.toISOString(), account, data };
 }
 
-export function exportAccount(userId: string, now: Date = new Date()): AccountExport {
+/**
+ * The tables that are nothing without the picture bytes beside them.
+ *
+ * An export without pictures leaves these out too: a gallery row or a recipe
+ * image pointing at a picture that is not in the file is an inconsistency the
+ * import would have to clean up, and the tags on a picture that is not there
+ * tag nothing. `albums` stays — an album's name and order are the person's
+ * work, and pictures put back later land in it.
+ */
+const PICTURE_TABLES = ['media', 'albumMedia', 'mediaTags', 'recipeImages'] as const;
+
+export function exportAccount(
+	userId: string,
+	now: Date = new Date(),
+	opts: { withoutPictures?: boolean } = {}
+): AccountExport {
 	const account = db
 		.select({ id: schema.user.id, name: schema.user.name, email: schema.user.email })
 		.from(schema.user)
@@ -357,8 +372,18 @@ export function exportAccount(userId: string, now: Date = new Date()): AccountEx
 	recordExport(userId, now);
 	audit(userId, 'data_exported');
 
+	/*
+	 * Without pictures, on request. Base64 makes the bytes a third bigger than
+	 * they are, and an account with a gallery in it passes any small instance's
+	 * body limit without trying — 16MB against a 12MB ceiling is the one that
+	 * prompted this. The structure is what moves between instances; the
+	 * pictures can follow by hand, or not at all.
+	 */
+	const leaveOut = new Set<string>(opts.withoutPictures ? PICTURE_TABLES : []);
+
 	const data: Record<string, unknown[]> = {};
-	for (const table of USER_TABLES) data[table.name] = table.rows(userId);
+	for (const table of USER_TABLES)
+		data[table.name] = leaveOut.has(table.name) ? [] : table.rows(userId);
 
 	return { exportedAt: now.toISOString(), account, data };
 }

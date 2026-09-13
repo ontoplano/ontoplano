@@ -18,6 +18,20 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.166.0 — 2026-09-13
+
+- **Restoring shows a preview before it does anything.** A restore empties the
+  account first, so whose file it is, how many rows will land, what is left
+  behind by policy, and what the import would refuse are all on screen before
+  you type REPLACE. When the file carries a row the import cannot accept — a
+  picture in no format it serves — you can leave those out and bring in the
+  rest, rather than having the whole restore fail three seconds in.
+- **Export without the pictures.** They ride in the JSON as base64 and are most
+  of an account's weight, so a gallery makes a file too big for a small
+  instance to take back. "Include pictures" is off for a file that moves an
+  account between instances, on for a backup.
+- **An assistant can move a todo into a notebook**, or out of one.
+
 ## 0.165.7 — 2026-09-13
 
 - **Restoring an export says why it will not fit, before you send it.** An

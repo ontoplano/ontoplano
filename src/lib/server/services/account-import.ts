@@ -237,7 +237,108 @@ function sqlNames(): Map<string, string> {
  * the file is inconsistent, which is a thing worth hearing about rather than
  * working around.
  */
-export function importAccount(userId: string, payload: unknown): ImportResult {
+
+export type ImportPreview = {
+	/** Whose account the file says it was, or null for a file that does not say. */
+	from: { email: string; exportedAt: string } | null;
+	/** What would land, per table, largest first. */
+	tables: { name: string; rows: number }[];
+	total: number;
+	/** What would be left behind, and why. */
+	skipped: { name: string; rows: number; why: string }[];
+	/**
+	 * Rows the import would refuse outright — a picture in no format this app
+	 * accepts, a sound outside the allowlist. One of these fails the whole
+	 * restore unless it is dropped on the way in.
+	 */
+	unacceptable: { name: string; rows: number; why: string }[];
+};
+
+/**
+ * Everything the import would decide, decided before anything is written.
+ *
+ * A restore empties the account first, so the moment to learn that the file
+ * carries a picture the import will refuse is before agreeing to that, not
+ * three seconds into a transaction that then rolls back with one sentence.
+ * This runs the same parsing, the same skip rules and the same byte-sniffing
+ * the import runs, and writes nothing.
+ */
+export function previewImport(payload: unknown): ImportPreview {
+	const parsed = parseExport(payload);
+	const byName = new Map(USER_TABLES.map((t) => [t.name, t]));
+
+	const skipped: ImportPreview['skipped'] = [];
+	for (const [name, why] of Object.entries(NOT_PORTABLE)) {
+		const rows = parsed.data[name];
+		if (Array.isArray(rows) && rows.length > 0) skipped.push({ name, rows: rows.length, why });
+	}
+	for (const name of Object.keys(parsed.data)) {
+		if (byName.has(name) || name in NOT_PORTABLE) continue;
+		const rows = parsed.data[name];
+		if (Array.isArray(rows) && rows.length > 0)
+			skipped.push({ name, rows: rows.length, why: 'this version has no such table' });
+	}
+
+	const unacceptable: ImportPreview['unacceptable'] = [];
+	const bad = countUnacceptable(parsed);
+	if (bad.media > 0)
+		unacceptable.push({
+			name: 'media',
+			rows: bad.media,
+			why: 'not a picture format this app accepts'
+		});
+	if (bad.ringtones > 0)
+		unacceptable.push({
+			name: 'ringtones',
+			rows: bad.ringtones,
+			why: 'not a sound format this app accepts'
+		});
+
+	const tables: ImportPreview['tables'] = [];
+	for (const table of USER_TABLES) {
+		if (table.name in NOT_PORTABLE) continue;
+		const rows = parsed.data[table.name];
+		if (Array.isArray(rows) && rows.length > 0)
+			tables.push({ name: table.name, rows: rows.length });
+	}
+
+	return {
+		from: parsed.account.email
+			? { email: parsed.account.email, exportedAt: parsed.exportedAt }
+			: null,
+		tables: tables.sort((a, b) => b.rows - a.rows),
+		total: tables.reduce((sum, t) => sum + t.rows, 0),
+		skipped,
+		unacceptable
+	};
+}
+
+/** Whether one media or ringtone row is something this app would serve. */
+function acceptableBytes(name: string, raw: unknown): boolean {
+	if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return true;
+	const row = raw as Record<string, unknown>;
+	if (name === 'media') {
+		const bytes = typeof row.bytes === 'string' ? Buffer.from(row.bytes, 'base64') : null;
+		return bytes !== null && sniff(bytes) !== null;
+	}
+	if (name === 'ringtones') return (RINGTONE_TYPES as readonly string[]).includes(String(row.mime));
+	return true;
+}
+
+function countUnacceptable(parsed: AccountExport): { media: number; ringtones: number } {
+	const count = (name: 'media' | 'ringtones') => {
+		const rows = parsed.data[name];
+		if (!Array.isArray(rows)) return 0;
+		return rows.filter((row) => !acceptableBytes(name, row)).length;
+	};
+	return { media: count('media'), ringtones: count('ringtones') };
+}
+
+export function importAccount(
+	userId: string,
+	payload: unknown,
+	opts: { dropUnacceptable?: boolean } = {}
+): ImportResult {
 	const parsed = parseExport(payload);
 
 	const toSql = sqlNames();
@@ -303,8 +404,24 @@ export function importAccount(userId: string, payload: unknown): ImportResult {
 			const mine = new Map<number, number>();
 			remap.set(toSql.get(table.name)!, mine);
 
+			let droppedHere = 0;
 			for (const raw of rows) {
 				if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
+
+				/*
+				 * A row the checks below would refuse, left out on request.
+				 *
+				 * The default is still to fail the whole restore: silently
+				 * losing a picture is worse than saying no. But the page's
+				 * preview names exactly these rows, and somebody who has read
+				 * that list and said "bring in the rest" should not be held
+				 * hostage by them.
+				 */
+				if (opts.dropUnacceptable && !acceptableBytes(table.name, raw)) {
+					droppedHere++;
+					continue;
+				}
+
 				const row = sanitise(raw as Record<string, unknown>);
 
 				// …and the blob columns back into bytes. The export wrote them as
@@ -373,7 +490,13 @@ export function importAccount(userId: string, payload: unknown): ImportResult {
 				if (inserted && typeof wasId === 'number') mine.set(wasId, inserted.id);
 			}
 
-			counts.push({ name: table.name, rows: rows.length });
+			counts.push({ name: table.name, rows: rows.length - droppedHere });
+			if (droppedHere > 0)
+				skipped.push({
+					name: table.name,
+					rows: droppedHere,
+					why: 'not a format this app accepts, left out on request'
+				});
 		}
 	});
 

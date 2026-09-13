@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**56 pages, 217 actions.**
+**56 pages, 218 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -55,7 +55,7 @@ write surface for everything else; both end up calling the same
 | `/reminders`                         | `create`, `dismiss`, `remove`, `addSound`, `removeSound`, `setSound`                                                                                                                                                                                                                                                                                                                |
 | `/search`                            | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/settings/account`                  | `setWeeklyReviewMail`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `delete`                                                                                                                                                                                                                                                                              |
-| `/settings/account/import`           | `importTasks`, `importVault`, `importAccount`                                                                                                                                                                                                                                                                                                                                       |
+| `/settings/account/import`           | `importTasks`, `importVault`, `previewImport`, `importAccount`                                                                                                                                                                                                                                                                                                                      |
 | `/settings/billing`                  | `acceptFamilyOffer`, `declineFamilyOffer`, `checkout`, `switchInterval`                                                                                                                                                                                                                                                                                                             |
 | `/settings/family`                   | `addSeat`, `withdrawInvite`, `removeSeat`                                                                                                                                                                                                                                                                                                                                           |
 | `/settings/instance`                 | `exportSubscribers`, `setRegistration`, `setEmailChange`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                                         |
@@ -377,6 +377,16 @@ the browser can hand over a whole folder, and nothing is uploaded as a
 file — the same arrangement the task import uses, for the same reason.
 The path matters as well as the text, because a vault's folders are
 structure and they come across as tags.
+
+**`previewImport`**
+
+What a restore would do, said before it does anything.
+
+The restore empties the account first, so everything worth knowing about
+the file \u2014 whose it was, what lands, what is left behind, what the
+import would refuse \u2014 has to be on the screen before the word REPLACE
+is typed, not in the message after. Reads the same text the restore will
+read and writes nothing.
 
 **`importAccount`**
 
