@@ -11,30 +11,13 @@
  */
 import * as schema from '$lib/db/schema.js';
 
-/**
- * Which migrations this device has run.
- *
- * Its own table rather than drizzle's: drizzle records a hash of each file and
- * this replays by name, because a device upgrading from before any of this was
- * recorded has to be able to re-run what it already has without being refused.
- */
-const MIGRATIONS_TABLE = '__ontoplano_device_migrations';
-
-/** Whether an error means "that part of the schema is already here". */
-function alreadyDone(error: unknown): boolean {
-	const said = String((error as { message?: string })?.message ?? error).toLowerCase();
-	return (
-		said.includes('duplicate column') ||
-		said.includes('already exists') ||
-		said.includes('duplicate index')
-	);
-}
 import { installBufferStandIn } from './buffer-stand-in.js';
 import { bindDb } from '$lib/db/index.js';
 import { buildCtx } from '$lib/services/ctx.js';
 import { createTodo, listTodos } from '$lib/services/todos.js';
 import { read as readPicture } from '$lib/services/media.js';
 import { wasmClient, type Oo1Db } from './wasm-client.js';
+import { migrateDevice } from './device-migrations.js';
 import { DB_FILE, ISOLATED_USER_ID, POOL_NAME } from './config.js';
 import { runIsolatedAction, runIsolatedEndpoint, runIsolatedLoad } from './routes.js';
 
@@ -73,6 +56,8 @@ async function open(): Promise<Oo1Db> {
 
 	// `opfs-sahpool`, not plain `opfs`: the plain one wants the page
 	// cross-origin isolated, and those headers break the checkout overlay.
+	const oo1 = (sqlite3 as unknown as { oo1: { DB: new (path: string) => Oo1Db } }).oo1;
+
 	const pool = await (
 		sqlite3 as unknown as {
 			installOpfsSAHPoolVfs: (o: { name: string }) => Promise<{
@@ -82,8 +67,6 @@ async function open(): Promise<Oo1Db> {
 	).installOpfsSAHPoolVfs({ name: POOL_NAME });
 
 	const db = new pool.OpfsSAHPoolDb(DB_FILE);
-	// The same promise the server makes: a row cannot point at nothing.
-	db.exec('pragma foreign_keys = on');
 
 	/*
 	 * The app's own migrations, unchanged.
@@ -104,46 +87,9 @@ async function open(): Promise<Oo1Db> {
 		eager: true
 	}) as Record<string, string>;
 
-	db.exec(
-		`create table if not exists ${MIGRATIONS_TABLE} (
-			tag text primary key,
-			applied_at text not null
-		)`
-	);
-
-	// Stepped rather than `selectValue`, which answers with a single cell.
-	const done = new Set<string>();
-	{
-		const rows = db.prepare(`select tag from ${MIGRATIONS_TABLE}`);
-		while (rows.step()) done.add(String((rows.get([]) as unknown[])[0]));
-	}
-
-	for (const path of Object.keys(files).sort()) {
-		const tag = path.replace(/^.*\//, '').replace(/\.sql$/, '');
-		if (done.has(tag)) continue;
-
-		for (const statement of files[path].split('--> statement-breakpoint')) {
-			const sql = statement.trim();
-			if (!sql) continue;
-			try {
-				db.exec(sql);
-			} catch (e) {
-				/*
-				 * A device that predates this bookkeeping has the tables but no
-				 * record of them, so its first upgrade replays everything. What
-				 * has already happened says so — "duplicate column", "already
-				 * exists" — and is the expected answer rather than a failure.
-				 * Anything else is real and stops the run.
-				 */
-				if (!alreadyDone(e)) throw e;
-			}
-		}
-
-		db.exec({
-			sql: `insert or replace into ${MIGRATIONS_TABLE} (tag, applied_at) values (?, ?)`,
-			bind: [tag, new Date().toISOString()]
-		});
-	}
+	// The scratch database the migrator places this device against: plain
+	// in-memory, no VFS, thrown away the moment it has served.
+	migrateDevice(db, files, () => new oo1.DB(':memory:'));
 
 	db.exec({
 		sql: 'insert or ignore into user (id, name, email) values (?, ?, ?)',

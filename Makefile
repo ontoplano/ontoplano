@@ -39,7 +39,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-dry-run db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
+.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-dry-run db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local _a-real-workstation android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -364,11 +364,23 @@ icon:
 preview:
 	yarn preview
 
+# How much heap the isolated build gets, from what the machine actually has.
+#
+# A flat number is wrong in both directions: node's default is about 490MB on a
+# small VPS, which this build exhausts, and 4GB on a box with 1GB of RAM is a
+# promise the kernel keeps by killing something. Half of physical memory, held
+# between 1GB and 4GB, fits a laptop and a server without either being told.
+#: ISOLATED_HEAP_MB=1024  megabytes of node heap the isolated build may use
+ISOLATED_HEAP_MB ?= $(shell \
+	total=$$(free -m 2>/dev/null | awk '/^Mem:/ {print $$2}'); \
+	[ -n "$$total" ] || total=8192; \
+	half=$$((total / 2)); \
+	[ "$$half" -lt 1024 ] && half=1024; \
+	[ "$$half" -gt 4096 ] && half=4096; \
+	echo $$half)
+
 # The instance that runs on the device itself: static files, no server, the
 # database in the browser's own storage. This is what the phone app wraps.
-#: ISOLATED_HEAP_MB=4096  how much heap the isolated build gets
-ISOLATED_HEAP_MB ?= 4096
-
 ## the isolated build (static, serverless)
 isolated:
 	@# A heap big enough for this build, and said out loud.
@@ -416,7 +428,7 @@ android-install:
 # staging can be read while your own week sits in the other one.
 ## build all three — Ontoplano, OntoplanoDev and OntoplanoStaging
 #: ONTOPLANO_DEV_ORIGIN=http://192.168.1.10:1493  where the DEV app points
-android-all: isolated
+android-all: _a-real-workstation isolated
 	@# Installed, and up to date with what the shell now asks for: adding a
 	@# plugin changes package.json, and a node_modules that merely exists is how
 	@# a build ships without the plugin it was supposed to gain.
@@ -971,8 +983,34 @@ fdroid:
 # The app, built. One artifact, and it is the app: a build carries the whole
 # of ontoplano and asks on first launch where your ontoplano lives, so there
 # is nothing here to choose between.
+# Not on a server.
+#
+# Compiling the app takes a gigabyte of heap and every core it can find. Done
+# on the box that serves ontoplano it is an outage: memory to 94%, load above 3
+# on one core, and the deploy's own build starved beside it. Refused by
+# default on a machine that looks like a server, because nobody has ever meant
+# to do this.
+#: PHONE_BUILD_ANYWHERE=1  build the phone app on this machine whatever it looks like
+_a-real-workstation:
+	@[ -z "$(PHONE_BUILD_ANYWHERE)" ] || exit 0; \
+	total=$$(free -m 2>/dev/null | awk '/^Mem:/ {print $$2}'); \
+	cores=$$(nproc 2>/dev/null || echo 1); \
+	[ -n "$$total" ] || exit 0; \
+	if [ "$$total" -lt 3000 ] || [ "$$cores" -lt 2 ]; then \
+		echo "This machine has $${total}MB of RAM and $$cores core(s)."; \
+		echo; \
+		echo "Building the phone app here would take most of both — on the box that"; \
+		echo "serves ontoplano that is an outage, not a slow build. Build it on your"; \
+		echo "own machine and put it on the phone from there:"; \
+		echo; \
+		echo "  make android-all && make android-install-all"; \
+		echo; \
+		echo "If you really mean it, add PHONE_BUILD_ANYWHERE=1 to the command."; \
+		exit 1; \
+	fi
+
 ## build the phone app
-android: isolated android-project
+android: _a-real-workstation isolated android-project
 	@sdk=$$(node scripts/android-sdk.mjs) || { \
 		echo "No Android SDK here. It is looked for in ANDROID_HOME, ANDROID_SDK_ROOT,"; \
 		echo "~/.bubblewrap/config.json, ~/android-sdk, ~/Android/Sdk and beside adb."; \
@@ -988,7 +1026,7 @@ android: isolated android-project
 # that path would only be a key to lose. For a phone in your hand, `make
 # android-install`.
 ## the release APK for the stores
-android-store: isolated android-project
+android-store: _a-real-workstation isolated android-project
 	@sdk=$$(node scripts/android-sdk.mjs) || { \
 		echo "No Android SDK here. It is looked for in ANDROID_HOME, ANDROID_SDK_ROOT,"; \
 		echo "~/.bubblewrap/config.json, ~/android-sdk, ~/Android/Sdk and beside adb."; \

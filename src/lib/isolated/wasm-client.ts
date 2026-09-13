@@ -17,6 +17,7 @@ interface Oo1Statement {
 	get(target: Record<string, unknown>): Record<string, unknown>;
 	get(target: unknown[]): unknown[];
 	reset(alsoClearBinds?: boolean): Oo1Statement;
+	finalize(): void;
 }
 
 export interface Oo1Db {

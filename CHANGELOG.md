@@ -18,6 +18,24 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.162.5 — 2026-09-13
+
+- **A phone-only instance stops breaking its own database.** 0.162.4 taught the
+  device to run new migrations, and it went about it by replaying the whole
+  history and ignoring every "already exists" on the way. On a device that was
+  already up to date that gets as far as migration 33 and dies —
+  `there is already another table or index with this name: exceptional_tasks` —
+  because migration 0 happily recreates a table migration 33 renamed away. It
+  now works out which release the device is standing at before running
+  anything, runs each migration whole or not at all, repairs a schema an
+  earlier build mangled, and clears away the tables it left behind. Nothing is
+  asked of you: open the app.
+- **The phone build reads the machine it is on.** The heap it takes is half of
+  physical memory rather than a flat 4GB, and `make android` refuses outright
+  on a machine too small to be a workstation — building it on the server that
+  runs the app is an outage, not a slow build. `PHONE_BUILD_ANYWHERE=1` if you
+  mean it.
+
 ## 0.162.4 — 2026-09-12
 
 - **The phone build stops running out of memory.** It compiles every route
