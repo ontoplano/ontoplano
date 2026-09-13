@@ -1,12 +1,11 @@
 /**
  * `make reset-dev` will not throw away somebody's data.
  *
- * It replaces a whole database with a fresh one. On a server that is the live
- * database: moved aside, its write-ahead log deleted out from under the
- * running process, an empty one migrated in its place, seeded with invented
- * data, and an operator account created whose password is written in the
- * Makefile. Nothing was deleted, so it was recoverable — everything else about
- * it was as bad as it sounds.
+ * It deletes a database and everything beside it. On a server that is the live
+ * one: gone, along with the copies of it, replaced by an empty one seeded with
+ * invented data and an operator account whose password is written in the
+ * Makefile. It used to move the file aside rather than delete it, which made
+ * that recoverable; it is not any more, which is why the check comes first.
  *
  * The check is "does this database hold an account that is not the dev one",
  * because the only database this is for is the one the project seeds, and that
@@ -92,7 +91,8 @@ describe('the command itself', () => {
 		// And it says how to mean it anyway, rather than only saying no.
 		expect(said).toContain('RESET_DEV_ANYWAY=1');
 
-		// Untouched: no copy moved aside, because it never got that far.
+		// Untouched, and still there: this deletes the file, so refusing has to
+		// happen before anything is removed.
 		expect(strangers(path)).toBe('1');
 	});
 });

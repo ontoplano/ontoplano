@@ -148,28 +148,31 @@ _dev-migrated:
 	@out=$$(yarn -s db:migrate 2>&1) || { echo "$$out"; exit 1; }; \
 	case "$$out" in *"migration"*) echo "$$out" | grep -v '^Snapshot:' ;; esac
 
-# The way out of a wedged dev database — a migration mismatch, an experiment
-# gone sideways. The old file is kept beside itself, never deleted; then a
-# clean migrate, a dev account, and the seed.
+# A clean dev database, every time: nothing kept, nothing carried over.
 #
-# It refuses to touch anything that is not a dev database, and the two checks
-# are what make that true rather than hoped for. Run on a server by accident
-# this used to move the live database aside, delete its write-ahead log out
-# from under the running process, migrate an empty one in its place and seed it
-# with invented data — and then create an operator account whose password is
-# written in this file. Nothing was deleted, so it was recoverable; everything
-# else about it was as bad as it sounds.
+# Deletes the database and everything beside it — the write-ahead log, the
+# copies past resets kept, the snapshots taken before past migrations — then
+# migrates, makes the same account it always makes, and seeds. What you get is
+# the same slate whatever state you were in.
 #
-#: RESET_DEV_ANYWAY=1  skip the checks below, for a database you know is yours
-## a fresh dev database, the old one kept beside it
+# It used to move the old file aside instead of deleting it, which was worse
+# than useless: `make dev` runs as a service that holds the database open, and
+# a moved file is still that service's file. The app went on serving the old
+# data and the reset "did nothing". So the service is stopped first and started
+# again afterwards, and the old data is gone rather than kept where the next
+# reset will pretend it matters.
+#
+# It still refuses a database that is not a dev one — see below.
+#
+#: RESET_DEV_ANYWAY=1  reset a database holding accounts that are not the dev one
+## a clean, seeded dev database — same account, every time
 reset-dev:
 	@db="$${DATABASE_URL:-$$HOME/.local/share/ontoplano/ontoplano.db}"; \
 	if [ -z "$$RESET_DEV_ANYWAY" ] && systemctl is-active --quiet ontoplano 2>/dev/null; then \
-		echo "ontoplano is running as a service against $$db."; \
+		echo "ontoplano is running as a system service against $$db."; \
 		echo ""; \
-		echo "This moves that database aside and puts an empty one in its place —"; \
-		echo "and deleting its write-ahead log while a server holds it open is how"; \
-		echo "committed writes are lost. Stop the service first, or say you mean it:"; \
+		echo "That is a deployment, not a dev machine, and this deletes the whole"; \
+		echo "database. If you mean it:"; \
 		echo ""; \
 		echo "  make reset-dev RESET_DEV_ANYWAY=1"; \
 		exit 1; \
@@ -179,22 +182,24 @@ reset-dev:
 		if [ "$$others" != "0" ]; then \
 			echo "$$db holds $$others account(s) that are not the dev one."; \
 			echo ""; \
-			echo "A dev database has one account, dev@ontoplano.test, and this replaces"; \
-			echo "the whole file with a fresh one. Anything else is somebody's data."; \
+			echo "A dev database has one account, dev@ontoplano.test, and this deletes"; \
+			echo "the whole file. Anything else is somebody's data."; \
 			echo ""; \
 			echo "  make reset-dev RESET_DEV_ANYWAY=1"; \
 			exit 1; \
 		fi; \
 	fi; \
-	if [ -f "$$db" ]; then \
-		kept="$$db.kept-$$(date +%Y%m%dT%H%M%S)"; \
-		mv "$$db" "$$kept"; rm -f "$$db-wal" "$$db-shm"; \
-		echo "old database kept at $$kept"; \
+	running=""; \
+	if systemctl --user is-active --quiet ontoplano-dev 2>/dev/null; then \
+		running=yes; systemctl --user stop ontoplano-dev; \
+		echo "stopped ontoplano-dev — it was holding the database open"; \
 	fi; \
-	DATABASE_URL="$$db" node scripts/migrate.mjs && \
+	rm -f "$$db" "$$db"-wal "$$db"-shm "$$db".*; \
+	DATABASE_URL="$$db" node scripts/migrate.mjs >/dev/null && \
 	printf 'ontoplano-dev\n' | DATABASE_URL="$$db" node scripts/make-operator.mjs dev@ontoplano.test >/dev/null && \
 	node scripts/seed-dev.mjs "$$db" dev@ontoplano.test && \
-	echo "fresh — sign in as dev@ontoplano.test / ontoplano-dev"
+	if [ -n "$$running" ]; then systemctl --user start ontoplano-dev; echo "started ontoplano-dev again"; fi; \
+	echo "clean — sign in as dev@ontoplano.test / ontoplano-dev"
 
 ## stop that service
 dev-stop:

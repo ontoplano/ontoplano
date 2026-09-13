@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.165.6 — 2026-09-13
+
+- **`make reset-dev` gives you a clean slate, every time.** It moved the old
+  database aside instead of deleting it, and `make dev` runs as a service that
+  holds that file open — so the app went on serving the old data and the reset
+  appeared to do nothing. It stops the service, deletes the database and
+  everything beside it (the write-ahead log, the copies past resets kept, the
+  snapshots taken before past migrations), migrates, makes the same account it
+  always makes, seeds, and starts the service again.
+
 ## 0.165.5 — 2026-09-13
 
 - **The instance chooser uses glyphs rather than ticks and crosses.** A link
