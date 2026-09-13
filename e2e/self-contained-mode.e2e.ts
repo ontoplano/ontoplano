@@ -65,7 +65,7 @@ test('the todo page runs against the device, and the server never hears of it', 
 		['Health', '/health/habits'],
 		// The wordmark is the desktop way home; the Home tab lives in the
 		// phone's bottom bar.
-		['ontoplano', '/']
+		['Ontoplano', '/']
 	] as const) {
 		await visit(page, '/tasks/todo?isolated=1');
 		await page.getByRole('link', { name, exact: true }).first().click();

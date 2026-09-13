@@ -46,7 +46,7 @@ test('but every other route still redirects to /login', async ({ page }) => {
 
 test('login page renders sign in form', async ({ page }) => {
 	await openSignIn(page);
-	await expect(page.locator('h1')).toHaveText('ontoplano');
+	await expect(page.locator('h1')).toHaveText('Ontoplano');
 	await expect(page.locator('input[name="email"]')).toBeVisible();
 	await expect(page.locator('input[name="password"]')).toBeVisible();
 	await expect(page.locator('button[type="submit"]')).toHaveText('Sign in');

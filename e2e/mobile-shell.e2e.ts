@@ -172,7 +172,7 @@ test('the phone carries the room at the top and the app at the bottom', async ({
 
 	// The wordmark header is desktop-only: on a phone it spent a strip of a
 	// small screen saying the app's own name.
-	await expect(page.locator('header a', { hasText: 'ontoplano' })).toBeHidden();
+	await expect(page.locator('header a', { hasText: 'Ontoplano' })).toBeHidden();
 	await expect(page.locator('nav[aria-label="Primary"]')).toBeVisible();
 
 	// What is at the top instead is where you are: the room's name and its

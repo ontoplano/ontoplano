@@ -18,6 +18,17 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.168.3 — 2026-09-13
+
+- **The mark moved to the top-left corner, beside the name.** It was over on
+  the right among the tools, which made it read as a fourth button rather than
+  as the thing the app is called. It still opens the rooms.
+- **The app writes its name as Ontoplano** — in the header, on the login
+  screen, on the front door and above the legal pages.
+- **The journal says which database the instance opened**, on every start.
+  Three instances share that box, and when the wrong one is opened nothing
+  downstream names the cause.
+
 ## 0.168.2 — 2026-09-13
 
 - **Screens now move when you press, not when the data arrives.** The change

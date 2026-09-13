@@ -711,11 +711,40 @@
 		>
 			<div class="mx-auto flex w-full max-w-page items-stretch justify-between px-4 sm:px-6">
 				<div class="flex min-w-0 items-stretch gap-4 min-[1460px]:gap-6">
-					<a
-						href={resolve('/')}
-						class="flex shrink-0 items-center text-lg font-bold tracking-tight whitespace-nowrap text-chrome-ink"
-						>ontoplano</a
-					>
+					<!--
+						The mark and the name, together, at the corner every app puts them
+						in. The mark was over on the right among the tools, which made it
+						read as a fourth button rather than as the thing the app is called
+						— and left the name beside it looking like a word somebody forgot
+						to give a logo.
+
+						It is still the way into the rooms. The rooms, as a pie: the bar
+						beside it tells you where you are and ⌘K is faster once you know
+						it exists; this is the one for a hand on the mouse.
+					-->
+					<div class="flex shrink-0 items-center gap-2">
+						<!-- No box around it: the octagon is its own outline, so a
+						     bordered square behind it reads as two shapes where there is
+						     one — the same reason the phone bar's button is clipped to
+						     the mark rather than drawn as a circle holding it. -->
+						<button
+							onpointerdown={(e) => rooms?.summon(e)}
+							class="pie-handle flex h-8 w-8 items-center justify-center transition hover:brightness-125"
+							aria-label="Jump to a section"
+							title="Jump to a section"
+							data-tour="rooms"
+						>
+							<Logo size={32} />
+						</button>
+						<!-- Lit the same way the mark beside it is: the two are one
+						     control to look at, and only half of it answering the mouse
+						     reads as the other half being decoration. -->
+						<a
+							href={resolve('/')}
+							class="text-lg font-bold tracking-tight whitespace-nowrap text-chrome-ink transition hover:brightness-125"
+							>Ontoplano</a
+						>
+					</div>
 					<!--
 						Ten sections of words need about a thousand pixels; below `lg` the
 						bottom bar takes over, which also covers a tablet.
@@ -785,28 +814,6 @@
 							>{key} K</kbd
 						>
 					</button>
-					<!--
-						The rooms, as a pie.
-
-						The bar above tells you where you are and ⌘K is faster once you
-						know it exists; this is the one for a hand on the mouse. Alongside
-						the bar on purpose — if the bar goes untouched for a fortnight it
-						can go, and if it does not, nothing was lost.
-					-->
-					<!-- The mark, and no box around it: the octagon is its own outline,
-					     so a bordered square behind it reads as two shapes where there
-					     is one — the same reason the phone bar's button is clipped to
-					     the mark rather than drawn as a circle holding it. -->
-					<button
-						onpointerdown={(e) => rooms?.summon(e)}
-						class="pie-handle flex h-8 w-8 items-center justify-center transition hover:brightness-125"
-						aria-label="Jump to a section"
-						title="Jump to a section"
-						data-tour="rooms"
-					>
-						<Logo size={32} />
-					</button>
-
 					<!-- Capture, beside search: the two things you reach for without
 					     having decided where you are going. -->
 					<button

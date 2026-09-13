@@ -16,7 +16,7 @@
 <div class="min-h-screen bg-gray-50 px-4 py-10">
 	<div class="mx-auto w-full max-w-2xl">
 		<header class="mb-8 flex flex-wrap items-baseline justify-between gap-3">
-			<a href={resolve('/')} class="text-lg font-bold tracking-tight text-gray-900">ontoplano</a>
+			<a href={resolve('/')} class="text-lg font-bold tracking-tight text-gray-900">Ontoplano</a>
 			<nav class="flex gap-4 text-sm">
 				{#each pages as item (item.path)}
 					<a

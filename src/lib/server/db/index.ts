@@ -62,6 +62,17 @@ if (!building) {
 	// to start at all.
 	if (served) reconcileBodyLimit(config.media.maxKilobytes);
 
+	/*
+	 * Which database, said out loud, once, at the top of the journal.
+	 *
+	 * Three instances live on one box and each is told where its database is by
+	 * a file. When the wrong file wins, everything downstream is confusing in a
+	 * way that does not name the cause: sign-ins refused, API tokens unknown,
+	 * the real data untouched and unreachable beside it. Production spent an
+	 * evening there. `journalctl -u ontoplano -n 20` answers it now.
+	 */
+	console.log(`ontoplano: database ${config.database.path}`);
+
 	// The portable binding the services read. Bound here so that having a
 	// server database and having the services see it are the same event.
 	bindDb(drizzle(client, { schema }));

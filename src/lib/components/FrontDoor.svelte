@@ -46,7 +46,7 @@
 >
 	<Logo size={44} />
 
-	<h1 class="mt-5 text-2xl font-bold text-gray-900">ontoplano</h1>
+	<h1 class="mt-5 text-2xl font-bold text-gray-900">Ontoplano</h1>
 	<p class="mt-2 text-base text-gray-600">{tagline}</p>
 
 	<div class="mt-8 flex flex-wrap items-center justify-center gap-3">
