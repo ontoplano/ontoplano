@@ -18,6 +18,22 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.165.5 — 2026-09-13
+
+- **The instance chooser uses glyphs rather than ticks and crosses.** A link
+  for reachable, a box for backed up, a plug for plugins — the same glyph on
+  both sides so the two columns read against each other. What the phone does
+  not have is dimmed rather than crossed out: three red crosses is an argument,
+  and this screen is not making one.
+- **Home and the account screen turn the other way** from the rooms. They are
+  what the wheel turns around rather than points on it.
+- **`make reset-dev` refuses a database that is not a dev one.** It replaces
+  the whole file, and on a server that is production: moved aside, its
+  write-ahead log deleted under the running process, an empty one seeded in its
+  place, and an operator account created whose password is in the Makefile.
+- **An assistant can put a task in a notebook and give a note a title.** Both
+  were things the app could do and the tools could not.
+
 ## 0.165.4 — 2026-09-13
 
 - **The instance chooser says what it is.** "Cloud instance" and "On device"

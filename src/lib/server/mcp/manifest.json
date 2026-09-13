@@ -453,6 +453,10 @@
 				"type": "integer",
 				"required": false
 			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
+			},
 			"notes": {
 				"type": "string",
 				"required": false
@@ -1977,6 +1981,10 @@
 				"required": false
 			},
 			"tags": {
+				"type": "string",
+				"required": false
+			},
+			"title": {
 				"type": "string",
 				"required": false
 			}

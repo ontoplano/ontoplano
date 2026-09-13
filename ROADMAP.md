@@ -166,6 +166,15 @@ This may be a big task of its own
 
 ---
 
+### Instances talking to each other
+
+Two people on two instances — or one person on two of their own — have no way
+to reach across. The obvious first thing is a calendar: an event one instance
+holds, visible or subscribable from another, without either of them handing
+over an account. What that looks like is open; whether it is a feed, an
+invitation, or something two instances agree on between themselves is part of
+the question.
+
 ## Decided against
 
 So they stop coming back:

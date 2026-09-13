@@ -155,11 +155,43 @@ const BADGES = {
 
 mkdirSync(OUT, { recursive: true });
 
+/**
+ * Whether a badge on disk already names a release newer than this clone's.
+ *
+ * The release badge is drawn from `git describe`, so a clone whose tags are
+ * behind draws the older release it knows about — and the committed badge,
+ * made after the newer one was tagged, then reads as stale. It is not: the
+ * clone is. Writing it here would put the badge back to a version that is no
+ * longer out, which in a diff looks like an ordinary regeneration.
+ */
+const ordinal = (v) => v.replace(/^v/, '').split('.').map(Number);
+function namesSomethingNewer(svg) {
+	if (!released) return false;
+	const mine = ordinal(released);
+	return [...svg.matchAll(/v?([0-9]+(?:\.[0-9]+)+)/g)].some(([, found]) => {
+		const theirs = ordinal(found);
+		for (let i = 0; i < Math.max(mine.length, theirs.length); i++) {
+			if ((theirs[i] ?? 0) > (mine[i] ?? 0)) return true;
+			if ((theirs[i] ?? 0) < (mine[i] ?? 0)) return false;
+		}
+		return false;
+	});
+}
+
 let stale = 0;
+let behind = 0;
 for (const [name, svg] of Object.entries(BADGES)) {
 	const path = join(OUT, `${name}.svg`);
 	const current = existsSync(path) ? readFileSync(path, 'utf8') : null;
 	if (current === svg) continue;
+	if (current !== null && namesSomethingNewer(current)) {
+		console.log(
+			`badges: ${name}.svg names a release newer than ${released}, the newest tag ` +
+				'this clone has. Left alone — `git fetch --tags` first.'
+		);
+		behind++;
+		continue;
+	}
 	if (CHECK) {
 		console.error(`badges: ${name}.svg is stale — run \`make badges\``);
 		stale++;
@@ -172,6 +204,8 @@ if (CHECK) {
 	if (stale > 0) process.exit(1);
 	if (!released) {
 		console.log('badges: up to date (no tags here, so the release badge was not checked)');
+	} else if (behind > 0) {
+		console.log(`badges: up to date, except the ${behind} this clone's tags are behind on`);
 	} else {
 		console.log(`badges: up to date, release ${released}`);
 	}

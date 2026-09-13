@@ -314,7 +314,7 @@ test('the phone can leave the instance it is', async ({ page }) => {
 	}
 
 	await page.getByRole('link', { name: 'Where this lives' }).click();
-	await expect(page.getByRole('heading', { name: /Where your ontoplano lives/ })).toBeVisible({
+	await expect(page.getByRole('heading', { name: /Where your Ontoplano lives/ })).toBeVisible({
 		timeout: 30_000
 	});
 

@@ -15,7 +15,7 @@
 	} from '$lib/instance-choice';
 
 	/*
-	 * Where your ontoplano lives.
+	 * Where your Ontoplano lives.
 	 *
 	 * The app can be two different things and the difference is not a setting
 	 * buried in preferences — it decides whether there is a server at all. So
@@ -110,22 +110,22 @@
 			glyph: 'server' as const,
 			heading: 'Connect to an external server',
 			says: [
-				{ has: true, line: 'Reachable from any device' },
-				{ has: true, line: 'Backed up' },
-				{ has: true, line: 'Works with AI assistants' },
-				{ has: true, line: 'Plugins work' }
+				{ has: true, glyph: 'link' as const, line: 'Reachable from any device' },
+				{ has: true, glyph: 'archive' as const, line: 'Backed up' },
+				{ has: true, glyph: 'star' as const, line: 'Works with AI assistants' },
+				{ has: true, glyph: 'plug' as const, line: 'Plugins work' }
 			],
 			proceed: 'Connect'
 		},
 		phone: {
 			label: 'On device',
 			glyph: 'phone' as const,
-			heading: 'Use ontoplano on the phone only',
+			heading: 'Use Ontoplano on the phone only',
 			says: [
-				{ has: true, line: 'Fully offline' },
-				{ has: false, line: 'Cannot be reached from another device' },
-				{ has: false, line: 'No AI assistants' },
-				{ has: false, line: 'No backups' }
+				{ has: true, glyph: 'phone' as const, line: 'Fully offline' },
+				{ has: false, glyph: 'link' as const, line: 'Cannot be reached from another device' },
+				{ has: false, glyph: 'star' as const, line: 'No AI assistants' },
+				{ has: false, glyph: 'archive' as const, line: 'No backups' }
 			],
 			proceed: 'Start isolated instance'
 		}
@@ -146,7 +146,11 @@
 			? {
 					...CHOICES.phone,
 					says: [
-						{ has: true, line: 'This phone already has one, with whatever you put in it.' },
+						{
+							has: true,
+							glyph: 'phone' as const,
+							line: 'This phone already has one, with whatever you put in it.'
+						},
 						...CHOICES.phone.says
 					],
 					proceed: 'Go to isolated instance'
@@ -185,10 +189,10 @@
 	}
 </script>
 
-<svelte:head><title>Where your ontoplano lives</title></svelte:head>
+<svelte:head><title>Where your Ontoplano lives</title></svelte:head>
 
 <div class="mx-auto w-full max-w-xl px-4 py-8">
-	<h1 class="text-2xl font-bold tracking-tight text-gray-900">Where your ontoplano lives</h1>
+	<h1 class="text-2xl font-bold tracking-tight text-gray-900">Where your Ontoplano lives</h1>
 	<p class="mt-1 text-sm text-gray-500">You can change this later.</p>
 
 	<!--
@@ -217,27 +221,26 @@
 	</div>
 
 	<!--
-		What each answer costs, headed and ticked off.
+		What each answer costs, headed and drawn.
 		
 		A fixed block whichever is chosen, so choosing moves nothing under it,
-		and both lists are the same length for the same reason. The mark says
-		which way each line goes — a tick for what you get, a cross for what you
-		give up — because a list of plain lines reads as four good things
-		whichever column it is in. Colour is the second signal and never the
-		only one: blue and red rather than green and red, and a shape either
-		way.
+		and both lists are the same length for the same reason.
+		
+		A glyph for the thing itself — a link for reachable, a box for backed
+		up, a plug for plugins — and the same glyph on both sides, so the two
+		columns are read against each other line by line. What the phone does
+		not have is dimmed rather than crossed out: a red cross against three of
+		four lines is an argument, and this screen is not making one. Absence is
+		absence, and a greyed row says it without shouting.
 	-->
 	<h2 class="mt-4 text-sm font-semibold text-gray-900">{chosen.heading}</h2>
 	<ul class="mt-2 min-h-36 space-y-1.5 text-sm">
 		{#each chosen.says as said (said.line)}
-			<li class="flex items-start gap-2">
-				<span
-					class="mt-0.5 shrink-0 {said.has ? 'text-blue-700' : 'text-red-700'}"
-					aria-hidden="true"
-				>
-					<Icon name={said.has ? 'check' : 'close'} size={16} />
+			<li class="flex items-start gap-2.5 {said.has ? '' : 'opacity-45'}">
+				<span class="mt-0.5 shrink-0 text-gray-500" aria-hidden="true">
+					<Icon name={said.glyph} size={16} />
 				</span>
-				<span class={said.has ? 'text-gray-700' : 'text-gray-500'}>{said.line}</span>
+				<span class="text-gray-700">{said.line}</span>
 			</li>
 		{/each}
 	</ul>

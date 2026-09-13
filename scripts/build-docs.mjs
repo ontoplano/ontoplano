@@ -1456,23 +1456,66 @@ if (CHECK) {
 	 * path rather than ours — and a fork gets a check that passes rather than
 	 * one that is wrong.
 	 */
-	const blind = releaseTag() === null;
+	const tag = releaseTag();
+	const blind = tag === null;
 	const NAMES_THE_RELEASE = new Set(['running-it.md']);
+
+	/**
+	 * Whether a committed page names a release this clone has never heard of.
+	 *
+	 * The other half of the same hole. A clone whose tags are behind generates
+	 * the install page for the older release it knows about, and the committed
+	 * page — written after the newer one was tagged — then reads as stale. It
+	 * is not: the clone is. Regenerating there rewrites the page backwards to a
+	 * version that is no longer current, and in a diff that looks like an
+	 * ordinary regeneration. It has happened twice.
+	 */
+	const ordinal = (v) => v.split('.').map(Number);
+	const newerThanUs = (text) => {
+		if (blind) return false;
+		const named = [...text.matchAll(/releases\/download\/v([0-9]+(?:\.[0-9]+)*)/g)].map(
+			(m) => m[1]
+		);
+		const mine = ordinal(versionOf(tag));
+		return named.some((v) => {
+			const theirs = ordinal(v);
+			for (let i = 0; i < Math.max(mine.length, theirs.length); i++) {
+				if ((theirs[i] ?? 0) > (mine[i] ?? 0)) return true;
+				if ((theirs[i] ?? 0) < (mine[i] ?? 0)) return false;
+			}
+			return false;
+		});
+	};
 
 	const stale = [];
 	const unchecked = [];
+	const behind = [];
 	for (const [file, content] of built) {
-		if (blind && NAMES_THE_RELEASE.has(file)) {
-			unchecked.push(file);
-			continue;
-		}
 		const path = join(OUT, file);
+		if (NAMES_THE_RELEASE.has(file)) {
+			if (blind) {
+				unchecked.push(file);
+				continue;
+			}
+			if (existsSync(path) && newerThanUs(readFileSync(path, 'utf8'))) {
+				behind.push(file);
+				continue;
+			}
+		}
 		if (!existsSync(path) || readFileSync(path, 'utf8') !== content) stale.push(file);
 	}
 	// Something committed that the generator no longer produces is drift too.
 	const extra = existsSync(OUT)
 		? readdirSync(OUT).filter((f) => f.endsWith('.md') && !built.has(f))
 		: [];
+
+	if (behind.length > 0) {
+		console.log(
+			`docs: ${behind.join(', ')} names a release newer than ${tag}, which is the ` +
+				'newest tag this clone has. Not checked, and do not run `yarn docs` here — ' +
+				'it would write the page back to the older release. `git fetch --tags` first.'
+		);
+	}
 
 	if (stale.length || extra.length) {
 		console.error('The docs is out of date. Run `yarn docs` and commit the result.\n');
@@ -1485,7 +1528,7 @@ if (CHECK) {
 			`docs: ${unchecked.join(', ')} not checked — this clone has no tags, so the ` +
 				'release its download links name is unknown'
 		);
-	console.log(`docs: ${built.size - unchecked.length} pages up to date`);
+	console.log(`docs: ${built.size - unchecked.length - behind.length} pages up to date`);
 } else {
 	rmSync(OUT, { recursive: true, force: true });
 	mkdirSync(OUT, { recursive: true });

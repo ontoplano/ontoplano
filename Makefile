@@ -150,10 +150,42 @@ _dev-migrated:
 
 # The way out of a wedged dev database — a migration mismatch, an experiment
 # gone sideways. The old file is kept beside itself, never deleted; then a
-# clean migrate, a dev account, and the seed. One command, no questions.
+# clean migrate, a dev account, and the seed.
+#
+# It refuses to touch anything that is not a dev database, and the two checks
+# are what make that true rather than hoped for. Run on a server by accident
+# this used to move the live database aside, delete its write-ahead log out
+# from under the running process, migrate an empty one in its place and seed it
+# with invented data — and then create an operator account whose password is
+# written in this file. Nothing was deleted, so it was recoverable; everything
+# else about it was as bad as it sounds.
+#
+#: RESET_DEV_ANYWAY=1  skip the checks below, for a database you know is yours
 ## a fresh dev database, the old one kept beside it
 reset-dev:
 	@db="$${DATABASE_URL:-$$HOME/.local/share/ontoplano/ontoplano.db}"; \
+	if [ -z "$$RESET_DEV_ANYWAY" ] && systemctl is-active --quiet ontoplano 2>/dev/null; then \
+		echo "ontoplano is running as a service against $$db."; \
+		echo ""; \
+		echo "This moves that database aside and puts an empty one in its place —"; \
+		echo "and deleting its write-ahead log while a server holds it open is how"; \
+		echo "committed writes are lost. Stop the service first, or say you mean it:"; \
+		echo ""; \
+		echo "  make reset-dev RESET_DEV_ANYWAY=1"; \
+		exit 1; \
+	fi; \
+	if [ -z "$$RESET_DEV_ANYWAY" ] && [ -f "$$db" ]; then \
+		others=$$(node scripts/strangers-in-the-db.mjs "$$db" 2>/dev/null || echo unknown); \
+		if [ "$$others" != "0" ]; then \
+			echo "$$db holds $$others account(s) that are not the dev one."; \
+			echo ""; \
+			echo "A dev database has one account, dev@ontoplano.test, and this replaces"; \
+			echo "the whole file with a fresh one. Anything else is somebody's data."; \
+			echo ""; \
+			echo "  make reset-dev RESET_DEV_ANYWAY=1"; \
+			exit 1; \
+		fi; \
+	fi; \
 	if [ -f "$$db" ]; then \
 		kept="$$db.kept-$$(date +%Y%m%dT%H%M%S)"; \
 		mv "$$db" "$$kept"; rm -f "$$db-wal" "$$db-shm"; \

@@ -827,6 +827,11 @@ export const TOOLS: Tool[] = [
 				title: text('What the task is, in the person’s own words.'),
 				notes: text('Anything else about it.'),
 				scheduledDate: text('The day to put it on, as YYYY-MM-DD. Usually omitted.'),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook this task belongs to, as `notebooks` gives its id. A subject somebody is working through — a renovation, a project — keeps its tasks together, and the app shows them on the notebook itself.'
+				},
 				goalId: {
 					type: 'integer',
 					description:
@@ -839,6 +844,7 @@ export const TOOLS: Tool[] = [
 			const id = createTodo(ctx, {
 				title: args.title,
 				notes: args.notes ?? '',
+				notebookId: args.notebookId ?? null,
 				scheduledDate: args.scheduledDate ? day(args.scheduledDate, 'scheduledDate') : null
 			});
 			/*
@@ -1181,6 +1187,9 @@ export const TOOLS: Tool[] = [
 		input: object(
 			{
 				content: text('The entry, as Markdown.'),
+				title: text(
+					'What to call it. Optional: a note without one is listed by its first line, which is right for an ordinary day and wrong for anything somebody will come back looking for.'
+				),
 				tags: text('Comma-separated tags.'),
 				notebookId: { type: 'integer', description: 'The notebook it belongs to, if any.' }
 			},
@@ -1189,6 +1198,7 @@ export const TOOLS: Tool[] = [
 		run: (ctx, args) => {
 			const id = createEntry(ctx, {
 				content: args.content,
+				title: args.title ?? '',
 				tags: args.tags ?? '',
 				notebookId: args.notebookId ?? null
 			});

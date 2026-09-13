@@ -293,7 +293,16 @@
 		 * what was asked for. A tab change has a finger behind it and the screen
 		 * follows the finger; picking a room off the menu has none.
 		 */
-		changedRoom = from === to ? 0 : -Math.sign(to - from);
+		/*
+		 * And the screens either side of the wheel turn the other way again.
+		 *
+		 * Home and the account screen are not on the wheel — they are what it
+		 * turns around — so borrowing the rooms' handedness made going out to
+		 * one look like going backwards along the row. Either end off the wheel
+		 * flips it.
+		 */
+		const offTheWheel = from < 0 || to < 0 || from >= allNav.length || to >= allNav.length;
+		changedRoom = from === to ? 0 : (offTheWheel ? 1 : -1) * Math.sign(to - from);
 		// `arc`: a room change is a turn of the menu, so it travels round the
 		// wheel rather than straight across. See `$lib/slide`.
 		if (changedRoom && page$ && roomStage && slidesHere())
