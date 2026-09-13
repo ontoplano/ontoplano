@@ -18,6 +18,17 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.163.3 — 2026-09-13
+
+- **Changing screen actually turns the page.** The second half of the dissolve
+  began the moment the new page arrived, and against a server on the same
+  machine that is inside one frame — so the first half had not moved yet, the
+  threshold sat at "whole" from beginning to end, and no navigation anywhere
+  showed anything. The page that arrives now waits for the screen it is
+  replacing to finish leaving.
+- **The logo is your logo again.** 0.163.0 put the previous one back as the
+  source every icon is drawn from.
+
 ## 0.163.2 — 2026-09-13
 
 - **The device test for creating a ledger runs again.** It had been parked as a

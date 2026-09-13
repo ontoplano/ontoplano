@@ -19,23 +19,21 @@ const points = [...MARK_CLIP_PATH.matchAll(/([\d.]+)%\s+([\d.]+)%/g)].map(([, x,
 
 describe('the mark outline', () => {
 	/*
-	 * Enough vertices to be an outline, few enough to be this outline.
+	 * Eight, and it means eight.
 	 *
-	 * Not exactly eight, which is what this asked for and what the mark has:
-	 * the shape is measured off rasterised artwork whose corners are rounded
-	 * and anti-aliased, so a convex hull of it puts two or three vertices
-	 * round each corner however the simplification is tuned — and tuning a
-	 * generator until one test's number falls out is how it stops working on
-	 * the next logo.
+	 * This was briefly relaxed to a range, on the evidence that the
+	 * measurement put two or three vertices round each rounded corner however
+	 * the simplification was tuned. It does — against the *previous* logo,
+	 * which is what was in `mark.png` at the time, because a `git add -A` had
+	 * put it back there. Against the real one the generator gives eight, as it
+	 * always said it would.
 	 *
-	 * The bound is what the failures actually looked like. A degenerate
-	 * measurement collapses to a triangle, which is what was committed when
-	 * this was last wrong; a measurement that has found texture rather than an
-	 * edge runs to hundreds.
+	 * So the number stays exact. A relaxed assertion here would have let both
+	 * of the failures through: the degenerate measurement that collapsed to a
+	 * triangle, and the wrong logo underneath it.
 	 */
-	test('is a convex outline of a few sides, not a triangle and not a scribble', () => {
-		expect(points.length).toBeGreaterThanOrEqual(8);
-		expect(points.length).toBeLessThanOrEqual(24);
+	test('is an octagon', () => {
+		expect(points).toHaveLength(8);
 	});
 
 	test('reaches the edges of the box it is given', () => {

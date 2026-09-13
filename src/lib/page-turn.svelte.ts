@@ -49,6 +49,25 @@ const HALF = () => PAGE_TURN.durationMs / 2;
 let running = 0;
 
 /**
+ * How broken up the screen has to be before the new one can arrive out of it.
+ *
+ * The second half needs gaps to arrive through, and against a server on the
+ * same machine a page lands inside one frame — before the first half has moved
+ * at all. Two wrong answers were tried. Ramping in from wherever the first
+ * half got to means ramping in from "whole": the filter goes on, nothing
+ * dissolves, and it comes off again, which is what every navigation on
+ * localhost looked like. Making the arriving page wait for the first half to
+ * finish is worse, because SvelteKit has already swapped the content — so what
+ * breaks up is the page that just arrived, and the whole turn plays after the
+ * navigation instead of over it.
+ *
+ * So an instant arrival starts from gone. The outgoing half covers a wait when
+ * there is one, and when there is not, what you see is the new screen coming
+ * up out of the dots — which is the half that was worth watching anyway.
+ */
+const ARRIVE_FROM = 1;
+
+/**
  * How far the page is currently broken up: 0 whole, 1 gone.
  *
  * Kept because the second half has to start wherever the first half got to.
@@ -116,6 +135,12 @@ export function turnIn(page: HTMLElement | undefined): void {
 		return;
 	}
 	page.style.filter = `url('#${PAGE_TURN_DEFAULTS.outFilter}')`;
+
+	// See `ARRIVE_FROM`: there have to be gaps for the new screen to arrive
+	// through, and a navigation that landed before the old one began to break
+	// up has not made any.
+	if (at < ARRIVE_FROM) at = ARRIVE_FROM;
+
 	ramp(PAGE_TURN_DEFAULTS.outFilter, 0, () => {
 		// Nothing is filtered while nothing is turning: the filter forces the
 		// page to be rasterised, and a page that is not moving should not pay

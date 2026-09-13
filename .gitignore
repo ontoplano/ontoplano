@@ -89,6 +89,15 @@ coverage/
 /static/*.zip
 /static/*.tar.gz
 
+# And beside the logo itself: the vector it was delivered as, and the copies
+# you keep of the one before it. `src/lib/logo/mark.png` is the single source
+# every icon is generated from — the rest is your working material, and a
+# `git add -A` swept it into the history once, along with an older mark that
+# then became the source. Ignored so that cannot happen twice.
+/src/lib/logo/mark.svg
+/src/lib/logo/mark~*.png
+/src/lib/logo/mark~*.svg
+
 # Built packages, and the tree they are staged in.
 dist/
 .package-work/
