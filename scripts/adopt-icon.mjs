@@ -113,7 +113,7 @@ function liftGround(file, out) {
 		px(width - 1 - inx, height - 1 - iny)
 	].map(rgba);
 
-	// Already cut out: nothing to lift.
+	// Already cut out: nothing to lift, but it still has to be squared up.
 	if (corners.some((c) => c.a === 0)) return false;
 
 	/*
@@ -180,12 +180,39 @@ function liftGround(file, out) {
 	return true;
 }
 
+/**
+ * Trim to the drawing and centre it in a square.
+ *
+ * The same finish `liftGround` gives a plate, for a picture that arrives
+ * already cut out. That case used to be a plain copy, which is how a mark with
+ * a couple of per cent of empty margin around it became the source: every icon
+ * drawn from it wore that margin, and the phone bar's button — clipped to the
+ * outline measured from this file — came out a shade too small.
+ * `tests/mark-outline.test.ts` is what says so.
+ */
+function squareUp(file, out) {
+	execFileSync('magick', [
+		file,
+		'-trim',
+		'+repage',
+		'-background',
+		'none',
+		'-gravity',
+		'center',
+		'-extent',
+		'%[fx:max(w,h)]x%[fx:max(w,h)]',
+		out
+	]);
+}
+
 if (liftGround(source, MARK)) {
 	const now = execFileSync('magick', [MARK, '-format', '%wx%h', 'info:'], { encoding: 'utf8' });
 	console.log(`mark: src/lib/logo/mark.png ← ${from}, its ground lifted (${now})`);
 } else {
-	copyFileSync(source, MARK);
-	console.log(`mark: src/lib/logo/mark.png ← ${from} (${width}×${height})`);
+	if (source !== MARK) copyFileSync(source, MARK);
+	squareUp(MARK, MARK);
+	const now = execFileSync('magick', [MARK, '-format', '%wx%h', 'info:'], { encoding: 'utf8' });
+	console.log(`mark: src/lib/logo/mark.png ← ${from}, squared up (${now})`);
 }
 
 /** Each step says what it did; a missing toolchain says so and stops. */

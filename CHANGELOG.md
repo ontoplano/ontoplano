@@ -18,6 +18,22 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.168.4 — 2026-09-13
+
+- **The demo says no to an export instead of preparing one for ever.** An
+  export is every row and every picture in one file; on the demo's box that
+  request took minutes or died, and the button said "Preparing…" for the rest
+  of the visit. It is refused now, in a sentence — and everywhere else the
+  button gives up after two minutes rather than sticking.
+- **The domain vouches for the app that is actually built.**
+  `/.well-known/assetlinks.json` still named `app.ontoplano.twa`, the Trusted
+  Web Activity retired in 0.152.0 — so the file whose whole job is saying which
+  app owns this domain named one nobody builds.
+- **Less ring around the launcher icon**, and the mark itself trimmed to its
+  own edges: the artwork carried a couple of per cent of empty margin, which
+  every icon drawn from it wore, and which made the phone bar's raised button
+  a shade too small.
+
 ## 0.168.3 — 2026-09-13
 
 - **The mark moved to the top-left corner, beside the name.** It was over on

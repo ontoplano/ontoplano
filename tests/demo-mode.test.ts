@@ -106,6 +106,23 @@ describe('the demo refusals', () => {
 		expect(demoRefusal('POST', '/admin')?.scope).toBe('everyone');
 	});
 
+	/*
+	 * The export is the one GET the demo says no to.
+	 *
+	 * It is every row and every picture in one JSON string, on a box with under
+	 * a gigabyte and accounts seeded with a gallery — so the request took
+	 * minutes or died, and the button said "Preparing…" for the rest of the
+	 * visit. Refused here so it is a sentence instead.
+	 */
+	it('refuse the export, and say why', () => {
+		expect(said('GET', '/settings/account/export')).toMatch(/temporary/i);
+		expect(demoRefusal('GET', '/settings/account/export')?.scope).toBe('demo-account');
+		// The query the "without pictures" download uses is the same refusal.
+		expect(said('GET', '/settings/account/export', '?pictures=no')).toMatch(/temporary/i);
+		// And the page it lives on is still readable.
+		expect(said('GET', '/settings/account')).toBeNull();
+	});
+
 	it('leave the administration pages readable', () => {
 		// Deliberate: somebody deciding whether to run this themselves should see
 		// what administering it looks like.

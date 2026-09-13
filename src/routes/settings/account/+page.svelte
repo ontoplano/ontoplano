@@ -7,6 +7,7 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { resolve } from '$app/paths';
+	import { notify } from '$lib/notify.svelte';
 	import { page } from '$app/state';
 	import Card from '$lib/components/Card.svelte';
 	import Field from '$lib/components/Field.svelte';
@@ -25,6 +26,16 @@
 	let cooling = $state(false);
 	let exportError: string | null = $state(null);
 
+	/**
+	 * How long an export may take before the button stops waiting for it.
+	 *
+	 * Two minutes: an account with a full gallery is tens of megabytes to
+	 * gather, serialise and send, and cutting a good export off is worse than
+	 * waiting. This is not a performance budget — it is the guarantee that the
+	 * button always comes back.
+	 */
+	const EXPORT_LIMIT_MS = 120_000;
+
 	const COOLDOWN_MS = 5000;
 
 	/** Whether the file should carry the picture bytes. On, for a backup. */
@@ -36,14 +47,47 @@
 		downloading = true;
 		exportError = null;
 
+		/*
+		 * And a limit on the waiting, so the button cannot stick.
+		 *
+		 * "Preparing…" with nothing behind it is the worst of the three things
+		 * this can do — worse than a refusal and worse than a failure — because
+		 * it is the only one that never ends. An export of a large account is
+		 * slow enough that a short limit would cut off a good one, so this is
+		 * generous; what matters is that there is one.
+		 */
+		const giveUp = new AbortController();
+		let gaveUp = false;
+		const stop = setTimeout(() => {
+			gaveUp = true;
+			giveUp.abort();
+		}, EXPORT_LIMIT_MS);
+
 		try {
 			const res = await fetch(
-				resolve('/settings/account/export') + (withPictures ? '' : '?pictures=no')
+				resolve('/settings/account/export') + (withPictures ? '' : '?pictures=no'),
+				{ signal: giveUp.signal }
 			);
 
 			if (!res.ok) {
-				const body = await res.json().catch(() => null);
-				exportError = body?.message ?? 'The export did not come back. Try again in a moment.';
+				/*
+				 * A refusal arrives as plain text, not as JSON.
+				 *
+				 * `$lib/server/refuse` answers an enhanced form with an action
+				 * envelope and everything else — this fetch included — with the
+				 * sentence as text. Reading only JSON threw that away and showed
+				 * the generic "did not come back", which is a sentence about the
+				 * network for something the server said on purpose.
+				 */
+				const said = (await res.text().catch(() => '')).trim();
+				let message = said;
+				try {
+					message = JSON.parse(said)?.message ?? said;
+				} catch {
+					// It was the sentence itself.
+				}
+				exportError = message || 'The export did not come back. Try again in a moment.';
+				notify.error(exportError);
 				return;
 			}
 
@@ -59,8 +103,12 @@
 			cooling = true;
 			setTimeout(() => (cooling = false), COOLDOWN_MS);
 		} catch {
-			exportError = 'The export did not come back. Check your connection and try again.';
+			exportError = gaveUp
+				? 'The export is taking too long. Try again, or leave the pictures out.'
+				: 'The export did not come back. Check your connection and try again.';
+			notify.error(exportError);
 		} finally {
+			clearTimeout(stop);
 			downloading = false;
 			// The allowance has changed on the server; say so without a reload.
 			await invalidateAll();

@@ -61,14 +61,15 @@ export const ICON_SCALE = 1;
  * the circle, landing them on it exactly, and any launcher shape at all leaves
  * the mark whole.
  *
- * **0.80** is what is here, and it is past that on purpose: the ring at 0.74
- * was wider than it needed to look like, and a fully circular mask now takes
- * the last 8% of each of the eight corner tips. Every launcher shape short of
- * a circle — the squircle Android actually draws, the rounded square, the
- * square — leaves it alone.
+ * **0.9** is what is here, and it is past that deliberately. The squircle is
+ * the shape Android actually draws and the one this is drawn for; a launcher
+ * set to crop circles takes a bite out of each of the eight corners, which is
+ * the price of the ring not being wider than it needs to look.
  *
- * Above about 0.84 the corners start reaching the edge of the square and the
- * ring stops reading as deliberate.
+ * There is no second icon for that case to reach for: an adaptive icon is one
+ * foreground and the launcher masks it however it likes, so the choice here is
+ * a single number for every shape. Above about 0.95 the corners reach the edge
+ * of the square and there is no ring left at all.
  */
 export const MASKABLE_SCALE = 0.9;
 

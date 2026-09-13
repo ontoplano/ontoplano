@@ -61,6 +61,19 @@ export const DEMO_NO_EXIT_ACTION = '/signOut';
 /** Writes allowed inside a read-only room. Empty since impersonation left. */
 export const DEMO_WRITABLE: string[] = [];
 
+/**
+ * The one read the demo refuses.
+ *
+ * An export is every row the account owns and every picture in it, held in
+ * memory as one JSON string. The demo's accounts are seeded with a gallery, and
+ * the box the demo runs on has under a gigabyte — so asking for one there is a
+ * request that takes minutes or dies, and what the person sees is a button that
+ * says "Preparing…" for the rest of the visit. There is also nothing in a demo
+ * account worth carrying away: it was invented for this visit and it goes with
+ * it.
+ */
+export const DEMO_NO_EXPORT = ['/settings/account/export'];
+
 const under = (path: string, prefixes: string[]) =>
 	prefixes.some((p) => path === p || path.startsWith(`${p}/`));
 
@@ -105,6 +118,12 @@ export function demoRefusal(method: string, path: string, search = ''): DemoRefu
 			scope: 'demo-account'
 		};
 	}
+
+	if (under(path, DEMO_NO_EXPORT))
+		return {
+			said: 'The demo account is temporary — there is nothing in it to take away.',
+			scope: 'demo-account'
+		};
 
 	if (writes && path.startsWith('/settings/integrations')) {
 		// The sentence he asked for, in the words he asked for them: short, and

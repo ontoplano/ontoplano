@@ -27,18 +27,33 @@ function outsideVite(source: string): string {
 	const file = join(dir, 'probe.mts');
 	try {
 		writeFileSync(file, source);
-		return execFileSync('npx', ['tsx', file], {
-			cwd: process.cwd(),
-			encoding: 'utf8',
-			// The provider pulls the database in behind it, and this probe is about
-			// resolution rather than data: an empty in-memory one is enough.
-			env: {
-				...process.env,
-				DATABASE_URL: ':memory:',
-				ONTOPLANO_SKIP_MIGRATION_CHECK: 'true'
-			},
-			stdio: ['ignore', 'pipe', 'pipe']
-		}).trim();
+		return (
+			execFileSync('npx', ['tsx', file], {
+				cwd: process.cwd(),
+				encoding: 'utf8',
+				// The provider pulls the database in behind it, and this probe is about
+				// resolution rather than data: an empty in-memory one is enough.
+				env: {
+					...process.env,
+					DATABASE_URL: ':memory:',
+					ONTOPLANO_SKIP_MIGRATION_CHECK: 'true'
+				},
+				stdio: ['ignore', 'pipe', 'pipe']
+			})
+				.trim()
+				/*
+				 * The last line, not the whole output.
+				 *
+				 * Starting the app prints things before the probe gets a word in —
+				 * which database it opened, which settings the environment is
+				 * shadowing — and this is about what the probe printed. Matching the
+				 * whole stream made every one of those a failure of billing
+				 * resolution.
+				 */
+				.split('\n')
+				.at(-1)!
+				.trim()
+		);
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}

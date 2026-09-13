@@ -19,7 +19,19 @@ import type { RequestHandler } from './$types';
  * so an app that only trusts the upload key shows the URL bar for every user
  * who installs from the store while working perfectly on the developer's phone.
  */
-const DEFAULT_PACKAGE = 'app.ontoplano.twa';
+/**
+ * The package this instance's Android app is built as.
+ *
+ * `app.ontoplano` — the official flavour in `scripts/android-flavours.mjs`,
+ * which is the one that goes to a store. It said `app.ontoplano.twa` until
+ * now, which was the Trusted Web Activity's, retired in 0.152.0: a file whose
+ * whole job is naming the app that owns this domain, naming an app that is not
+ * built any more.
+ *
+ * `ANDROID_PACKAGE_NAME` overrides it, for a self-hoster shipping a build of
+ * their own under their own id.
+ */
+const DEFAULT_PACKAGE = 'app.ontoplano';
 
 function fingerprints(): string[] {
 	return (process.env.ANDROID_CERT_FINGERPRINTS ?? '')
