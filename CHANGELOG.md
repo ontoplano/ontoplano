@@ -18,6 +18,12 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.163.2 — 2026-09-13
+
+- **The device test for creating a ledger runs again.** It had been parked as a
+  known failure on the strength of a reproduction that was really a wrong
+  selector in the test itself.
+
 ## 0.163.1 — 2026-09-13
 
 - **The raised button in the phone bar is the shape of the mark again.** The

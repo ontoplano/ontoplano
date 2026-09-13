@@ -194,13 +194,11 @@ test('a picture goes into a note on the device', async ({ page }) => {
  * goes through the bridge — the action runs in the worker and the page's data
  * is re-fetched from it — so this is where that round trip is pinned.
  */
-test.fixme('a ledger made on the device appears without a reload', async ({ page }) => {
-	// Reproduced and left failing on purpose, so it stays visible: pressing
-	// "New ledger" on the device does not bring up the form it should. Reported
-	// as "creating a ledger does nothing until you reload"; what it actually
-	// looks like from here is that the modal never opens.
+test('a ledger made on the device appears without a reload', async ({ page }) => {
 	test.setTimeout(120_000);
-	await page.goto('/finance/ledgers');
+	// As the app launches it, mark and all: on a device with no server there is
+	// nothing to redirect the mark away, so every request carries it.
+	await page.goto('/finance/ledgers?app=android');
 	await expect(page.getByRole('heading', { name: 'Finance' })).toBeVisible({ timeout: 60_000 });
 
 	const tour = page.getByRole('dialog', { name: 'Tutorial' });
@@ -210,7 +208,9 @@ test.fixme('a ledger made on the device appears without a reload', async ({ page
 	}
 
 	await page.getByRole('button', { name: 'New ledger' }).first().click();
-	await page.locator('input[name="heading"]').fill('Money on this phone');
+	// `[name=...]`, not `input[name=...]`: `OneLine` is a textarea that behaves
+	// like a single-line field, which is what this selector got wrong before.
+	await page.locator('[name="heading"]').fill('Money on this phone');
 	await page.getByRole('button', { name: 'Create', exact: true }).click();
 
 	// No reload, no second navigation: the list is what the action changed.
