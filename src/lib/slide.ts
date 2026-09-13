@@ -20,13 +20,18 @@ export const SLIDE_MS = 260;
 /**
  * How far the two screens travel, as a fraction of the pane's width.
  *
- * The whole way. A quarter of the width with a fade was the first attempt and
- * it read as a wobble — the screen never left, so nothing was replaced; it
- * just moved a little and changed. What an app does here is take the old
- * screen off the edge and bring the new one on from the other, and the reason
- * it is convincing is that it is the whole distance.
+ * The whole way, and a little past it. A quarter of the width with a fade was
+ * the first attempt and it read as a wobble — the screen never left, so
+ * nothing was replaced; it just moved a little and changed. What an app does
+ * here is take the old screen off the edge and bring the new one on from the
+ * other, and the reason it is convincing is that it is the whole distance.
+ *
+ * The extra is margin rather than decoration: a screen that stops exactly on
+ * the edge is a screen with a sliver of itself still showing, and it shows
+ * until the copy is taken away a frame later — which is the piece that used to
+ * stand in the corner after the new screen had arrived.
  */
-export const SLIDE_TRAVEL = 1;
+export const SLIDE_TRAVEL = 1.08;
 
 /** The easing both halves use. */
 export const SLIDE_EASING = 'cubic-bezier(0.2, 0, 0, 1)';
@@ -49,7 +54,7 @@ export const SLIDE_EASING = 'cubic-bezier(0.2, 0, 0, 1)';
  * a swipe along the tabs has a finger behind it going in a straight line, and
  * a room comes off a wheel.
  */
-export const ARC_DEGREES = 4;
+export const ARC_DEGREES = 12;
 
 /**
  * How far a finger has to go sideways before it is changing screen.
@@ -69,7 +74,10 @@ export const SWIPE_RATIO = 1.6;
  * finish. Nothing here should be able to leave the app looking at nothing.
  */
 export function stopHiding(pane: HTMLElement | undefined): void {
-	if (pane) pane.style.visibility = '';
+	if (!pane) return;
+	pane.style.visibility = '';
+	pane.style.transform = '';
+	pane.style.willChange = '';
 }
 
 /** Whether this screen gets the movement at all. */
@@ -97,13 +105,22 @@ export function slidesHere(): boolean {
  * screen sideways, sinks it and tilts it, and the path it takes between here
  * and there is the arc rather than a diagonal.
  *
- * The radius is whatever puts the screen's own centre `SLIDE_TRAVEL` of a
- * width away after `ARC_DEGREES` of turn, so the movement covers the same
- * distance a straight slide would and only the path differs.
+ * The radius is set from the *lowest* part of the screen anybody can see, not
+ * from its centre. On a wheel, how far a point travels depends on how far it
+ * is from the hub — and the hub is below, so the bottom of the screen moves
+ * least. Sized from the centre, the bottom fell short of the edge by the
+ * difference and a wedge of the old screen stood in the corner until its copy
+ * was taken away. Sized from the bottom, everything above it travels further
+ * and the whole screen clears.
+ *
+ * Capped at the window: a room whose page is three screens tall has its bottom
+ * far below anything on view, and correcting for a part nobody can see only
+ * makes the movement longer.
  */
 function hub(pane: HTMLElement): string {
 	const travel = pane.offsetWidth * SLIDE_TRAVEL;
-	const radius = travel / Math.sin((ARC_DEGREES * Math.PI) / 180);
+	const onView = Math.min(pane.offsetHeight, window.innerHeight);
+	const radius = travel / Math.sin((ARC_DEGREES * Math.PI) / 180) + onView / 2;
 	// Measured from the element's top edge, so its own half-height comes first.
 	return `50% ${pane.offsetHeight / 2 + radius}px`;
 }
@@ -139,14 +156,26 @@ export function slideAway(
 
 	const leaving = pane.cloneNode(true) as HTMLElement;
 	leaving.setAttribute('aria-hidden', 'true');
-	leaving.style.cssText = `position:absolute;inset:0;pointer-events:none;width:${pane.offsetWidth}px`;
+	/*
+	 * `will-change` puts it on a layer of its own before the first frame rather
+	 * than during it. Without that the browser discovers halfway through that
+	 * this thing is moving, promotes it then, and the promotion itself is a
+	 * frame or two — on a screen the size of a page, that is the stutter.
+	 */
+	leaving.style.cssText =
+		`position:absolute;inset:0;pointer-events:none;` +
+		`width:${pane.offsetWidth}px;will-change:transform`;
 	if (arc) leaving.style.transformOrigin = hub(pane);
-	stage.append(leaving);
 
 	const level = arc ? 'rotate(0deg)' : 'translateX(0%)';
 	const gone = arc
 		? `rotate(${-direction * ARC_DEGREES}deg)`
 		: `translateX(${-direction * SLIDE_TRAVEL * 100}%)`;
+
+	// Where it starts, before it is in the document: a copy appended without
+	// this is painted once at rest and then jumps, which is the flick.
+	leaving.style.transform = level;
+	stage.append(leaving);
 
 	leaving
 		.animate([{ transform: level }, { transform: gone }], {
@@ -159,7 +188,6 @@ export function slideAway(
 
 /** And bring the one that arrived on from the other side. */
 export function slideOn(pane: HTMLElement, direction: number, arc = false): void {
-	pane.style.visibility = '';
 	if (arc) pane.style.transformOrigin = hub(pane);
 
 	// Explicit rather than `none`: an animation whose last keyframe is `none`
@@ -170,8 +198,32 @@ export function slideOn(pane: HTMLElement, direction: number, arc = false): void
 		? `rotate(${direction * ARC_DEGREES}deg)`
 		: `translateX(${direction * SLIDE_TRAVEL * 100}%)`;
 
-	pane.animate([{ transform: from }, { transform: level }], {
+	/*
+	 * Placed where it starts, and only then shown.
+	 *
+	 * An animation's first frame is the next frame, and the screen was being
+	 * made visible in this one — so the browser painted it once at its resting
+	 * place before jumping it to the edge to come in. That single wrong frame
+	 * is the flick. Setting the transform and the visibility together means
+	 * the first time it is seen, it is already where it starts from.
+	 */
+	pane.style.willChange = 'transform';
+	pane.style.transform = from;
+	pane.style.visibility = '';
+
+	const arriving = pane.animate([{ transform: from }, { transform: level }], {
 		duration: SLIDE_MS,
 		easing: SLIDE_EASING
+	});
+
+	// The inline transform is only there to hold the first frame; the animation
+	// owns it after that, and a layer nobody is animating costs memory.
+	arriving.addEventListener('finish', () => {
+		pane.style.transform = '';
+		pane.style.willChange = '';
+	});
+	arriving.addEventListener('cancel', () => {
+		pane.style.transform = '';
+		pane.style.willChange = '';
 	});
 }

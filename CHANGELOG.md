@@ -18,6 +18,21 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.165.3 — 2026-09-13
+
+- **No more flick at the start of a movement.** A screen was made visible in
+  one frame and moved to its starting place in the next, so it was painted
+  once where it would end up before jumping to the edge to come in. It is put
+  where it starts and shown in the same breath now.
+- **The movement is smoother.** Both screens are given a layer of their own
+  before the first frame rather than during it — otherwise the browser works
+  out halfway through that something the size of a page is moving, and
+  promoting it there costs the frames you can see.
+- **Nothing of the old screen is left standing in the corner.** On a wheel, how
+  far a point travels depends on how far it is from the hub, and the hub is
+  below — so the bottom of the screen moved least and a wedge of it sat there
+  until the copy was taken away a frame later.
+
 ## 0.165.2 — 2026-09-13
 
 - **The screens either side of the wheel move too.** Home, Search and the

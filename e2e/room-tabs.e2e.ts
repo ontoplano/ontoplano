@@ -383,6 +383,61 @@ test.describe('on a phone, through the pie', () => {
 	});
 
 	/**
+	 * Nothing of the old screen is left standing when the new one is there.
+	 *
+	 * On a wheel, how far a point travels depends on how far it is from the
+	 * hub — and the hub is below, so the bottom of the screen moves least. Sized
+	 * from the centre, the bottom fell short of the edge and a wedge of the old
+	 * screen sat in the corner until its copy was removed a frame later. Very
+	 * quick, and ugly.
+	 */
+	test('the screen that left is off the screen before it is taken away', async ({ page }) => {
+		test.setTimeout(180_000);
+		await register(page, `pie-clear-${Date.now()}@test.invalid`);
+		await visit(page, '/');
+
+		// The worst overlap in the last third of the movement, when the copy is
+		// as far as it is going to get.
+		await page.evaluate(() => {
+			const seen = { worst: 0, samples: 0 };
+			(window as unknown as { __clear: typeof seen }).__clear = seen;
+			let started = 0;
+			const watch = () => {
+				const clone = document.querySelector('main .slide-stage > div');
+				if (clone) {
+					if (!started) started = performance.now();
+					if (performance.now() - started > 180) {
+						const r = clone.getBoundingClientRect();
+						// How much of it is still inside the window, sideways.
+						const inside = Math.min(r.right, window.innerWidth) - Math.max(r.left, 0);
+						if (inside > seen.worst) seen.worst = inside;
+						seen.samples += 1;
+					}
+				}
+				requestAnimationFrame(watch);
+			};
+			requestAnimationFrame(watch);
+		});
+
+		await page
+			.locator('nav')
+			.last()
+			.getByRole('button', { name: 'Go to a section' })
+			.dispatchEvent('pointerdown', { pointerId: 1, clientX: 195, clientY: 780 });
+		const wedges = page.locator('.pie [role="menuitem"]');
+		await expect(wedges.first()).toBeVisible();
+		await wedges.nth(3).click();
+		await page.waitForTimeout(900);
+
+		const clear = await page.evaluate(
+			() => (window as unknown as { __clear: { worst: number; samples: number } }).__clear
+		);
+		expect(clear.samples, 'the movement was never seen').toBeGreaterThan(0);
+		// A pixel of slack for rounding; a wedge is tens of them.
+		expect(clear.worst).toBeLessThanOrEqual(2);
+	});
+
+	/**
 	 * The screens either side of the wheel move too.
 	 *
 	 * Home, Search and the account screen are not rooms, and all three answered
