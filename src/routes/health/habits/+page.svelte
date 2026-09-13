@@ -6,7 +6,12 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { MediaQuery } from 'svelte/reactivity';
-	import { HEATMAP_FULL_YEAR_FROM, HEATMAP_SEASON, HEATMAP_YEAR } from '$lib/colors';
+	import {
+		HEATMAP_FULL_YEAR_FROM,
+		HEATMAP_MAX_DAY_REM,
+		HEATMAP_SEASON,
+		HEATMAP_YEAR
+	} from '$lib/colors';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -610,31 +615,48 @@
 						{@const counts = occurrenceCountByDate(habit.id)}
 						<div class="border-t border-gray-200 px-4 py-3">
 							<div class="mb-2 text-xs font-medium text-gray-500">{heatmapSpan}</div>
+							<!--
+								The weeks share the width rather than each taking ten pixels.
+								
+								Ninety days is thirteen columns, and at a fixed cell size that
+								is a third of a phone screen with two thirds of nothing beside
+								it. Each column is a fraction of what there is instead, the
+								days are square, and the whole thing is capped so the same
+								grid on a desktop card is not a wall of tiles.
+							-->
 							<div class="overflow-x-auto">
-								<div class="inline-flex items-start gap-px">
-									{#each heatmapWeeks as week, wi (wi)}
-										<div class="flex flex-col gap-px">
-											{#each week as day, di (di)}
-												{#if day}
-													<button
-														type="button"
-														onclick={() => toggleOccurrence(habit.id, day)}
-														class="h-2.5 w-2.5 cursor-pointer {isBad
-															? badHeatmapColor(counts[day] || 0)
-															: isNeutral
-																? neutralHeatmapColor(counts[day] || 0)
-																: goodHeatmapColor(counts[day] || 0)}"
-														title={day}
-													></button>
-												{:else}
-													<div class="h-2.5 w-2.5"></div>
-												{/if}
-											{/each}
-										</div>
-									{/each}
-									<div class="ml-1 flex flex-col gap-px">
+								<div
+									class="flex items-start gap-1"
+									style="max-width: calc({heatmapWeeks.length} * {HEATMAP_MAX_DAY_REM}rem)"
+								>
+									<div
+										class="grid min-w-0 flex-1 gap-px"
+										style="grid-template-columns: repeat({heatmapWeeks.length}, minmax(0, 1fr))"
+									>
+										{#each heatmapWeeks as week, wi (wi)}
+											<div class="grid grid-rows-7 gap-px">
+												{#each week as day, di (di)}
+													{#if day}
+														<button
+															type="button"
+															onclick={() => toggleOccurrence(habit.id, day)}
+															class="heat-day cursor-pointer {isBad
+																? badHeatmapColor(counts[day] || 0)
+																: isNeutral
+																	? neutralHeatmapColor(counts[day] || 0)
+																	: goodHeatmapColor(counts[day] || 0)}"
+															title={day}
+														></button>
+													{:else}
+														<div class="heat-day"></div>
+													{/if}
+												{/each}
+											</div>
+										{/each}
+									</div>
+									<div class="grid shrink-0 grid-rows-7 gap-px">
 										{#each orderedDayLabels() as label, i (i)}
-											<span class="flex h-2.5 items-center text-[9px] leading-none text-gray-500"
+											<span class="flex items-center text-[9px] leading-none text-gray-500"
 												>{label}</span
 											>
 										{/each}

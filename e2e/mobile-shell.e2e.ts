@@ -3,6 +3,28 @@ import { register } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
+ * The width the page actually has, which is not always the window's.
+ *
+ * `html` reserves a scrollbar gutter so a route with a scrollbar and one
+ * without do not shift the page sideways between them. Where the browser
+ * draws classic scrollbars — a headless Linux Chromium does, a phone does not
+ * — that gutter comes off the initial containing block, so an overlay pinned
+ * to `inset: 0` is fifteen pixels narrower than the window, and narrower than
+ * `clientWidth` too, which counts the gutter as page. Measured rather than
+ * derived: a `fixed; inset: 0` probe is the thing being asserted about.
+ */
+async function layoutWidth(page: import('@playwright/test').Page): Promise<number> {
+	return page.evaluate(() => {
+		const probe = document.createElement('div');
+		probe.style.cssText = 'position:fixed;inset:0;pointer-events:none;visibility:hidden';
+		document.body.append(probe);
+		const width = probe.getBoundingClientRect().width;
+		probe.remove();
+		return width;
+	});
+}
+
+/**
  * The shell, held in a hand.
  *
  * Installed as a TWA this is an app, and the app-ness is specific things:
@@ -80,7 +102,7 @@ test('a dialog on the phone is a screen with a back arrow', async ({ page }) => 
 	// It takes the screen: full width, top to bottom.
 	const box = await dialog.locator('.panel').boundingBox();
 	expect(box).toBeTruthy();
-	expect(box!.width).toBeGreaterThan(380);
+	expect(box!.width).toBe(await layoutWidth(page));
 	expect(box!.height).toBeGreaterThan(800);
 
 	// And the back arrow closes it.
@@ -134,7 +156,7 @@ test('a card takes the whole width of the phone', async ({ page }) => {
 	const box = await card.boundingBox();
 	expect(box).toBeTruthy();
 	expect(box!.x).toBe(0);
-	expect(box!.width).toBe(390);
+	expect(box!.width).toBe(await layoutWidth(page));
 
 	// The page must not gain a sideways scroll from the bleed.
 	const overflow = await page.evaluate(() => {

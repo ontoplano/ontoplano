@@ -3,6 +3,28 @@ import { register } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
+ * The width the page actually has, which is not always the window's.
+ *
+ * `html` reserves a scrollbar gutter so a route with a scrollbar and one
+ * without do not shift the page sideways between them. Where the browser
+ * draws classic scrollbars — a headless Linux Chromium does, a phone does not
+ * — that gutter comes off the initial containing block, so an overlay pinned
+ * to `inset: 0` is fifteen pixels narrower than the window, and narrower than
+ * `clientWidth` too, which counts the gutter as page. Measured rather than
+ * derived: a `fixed; inset: 0` probe is the thing being asserted about.
+ */
+async function layoutWidth(page: import('@playwright/test').Page): Promise<number> {
+	return page.evaluate(() => {
+		const probe = document.createElement('div');
+		probe.style.cssText = 'position:fixed;inset:0;pointer-events:none;visibility:hidden';
+		document.body.append(probe);
+		const width = probe.getBoundingClientRect().width;
+		probe.remove();
+		return width;
+	});
+}
+
+/**
  * A notebook, maximized.
  *
  * Reading or writing anything longer than a note wants the whole screen and a
@@ -40,9 +62,8 @@ test('maximizing takes the screen and puts everything back', async ({ page }) =>
 
 	// The whole screen, not a floating card.
 	const box = await surface.boundingBox();
-	const viewport = page.viewportSize()!;
-	expect(box!.width).toBe(viewport.width);
-	expect(box!.height).toBe(viewport.height);
+	expect(box!.width).toBe(await layoutWidth(page));
+	expect(box!.height).toBe(page.viewportSize()!.height);
 
 	// The draft crossed over untouched: same DOM, not a re-render.
 	await expect(composer).toHaveValue('half a thought, not yet saved');

@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.162.7 — 2026-09-13
+
+- **The habit grid uses the whole width.** Ninety days is thirteen columns, and
+  at a fixed cell size that was a third of a phone screen with two thirds of
+  nothing beside it. The weeks share the width now, the days are square rather
+  than the pills the touch-target rule was stretching them into, and a year
+  still fits a desktop card.
+
 ## 0.162.6 — 2026-09-13
 
 - **A location's name is readable however long it is.** "asf 1213 21321 a…"

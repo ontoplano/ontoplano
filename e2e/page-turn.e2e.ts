@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import { PAGE_TURN_DEFAULTS as PAGE_TURN } from '../src/lib/page-turn';
 import { register } from './helpers/account';
 import { visit } from './helpers/visit';
 
@@ -8,9 +7,16 @@ import { visit } from './helpers/visit';
  *
  * Screenshots cannot test this — the dots are drawn by an SVG filter and a
  * headless capture of a mid-turn frame tells you nothing — so what is checked
- * is the machinery: that the page is filtered the moment a navigation starts,
- * that the threshold inside the filter actually moves, and that nothing is
- * left behind.
+ * here is the wiring: that the page is filtered the moment a navigation
+ * starts, and that nothing is left behind when it lands.
+ *
+ * Whether the threshold inside the filter actually slides is asked in
+ * `tests/page-turn-ramp.test.ts`, with the clock and the frame loop stood in
+ * for. It cannot honestly be asked here: a headless browser hands out
+ * animation frames when it feels like compositing, and against a dev server on
+ * the same machine a whole navigation can land inside one frame — so the turn
+ * correctly does nothing, and a test that insisted it had moved would be
+ * measuring the machine.
  *
  * That last one is why this file exists. The turn used to be a View
  * Transition, and `onNavigate` held the navigation until it resolved: a burst
@@ -20,17 +26,13 @@ import { visit } from './helpers/visit';
  */
 test.use({ viewport: { width: 1280, height: 820 } });
 
-/** Where the threshold sits, and whether the page is being filtered at all. */
+/** Whether the page is being filtered at all. */
 async function turning(page: import('@playwright/test').Page) {
-	return page.evaluate(
-		(out) => ({
-			intercept: document.getElementById(`${out}-ramp`)?.getAttribute('intercept') ?? null,
-			filtered: /url\(/.test(
-				(document.querySelector('.page-turning') as HTMLElement | null)?.style.filter ?? ''
-			)
-		}),
-		PAGE_TURN.outFilter
-	);
+	return page.evaluate(() => ({
+		filtered: /url\(/.test(
+			(document.querySelector('.page-turning') as HTMLElement | null)?.style.filter ?? ''
+		)
+	}));
 }
 
 test('a link to another screen turns the page, then gets out of the way', async ({ page }) => {
@@ -43,36 +45,10 @@ test('a link to another screen turns the page, then gets out of the way', async 
 	expect(before.filtered).toBe(false);
 
 	/*
-	 * Every value the threshold takes, recorded as it takes them.
-	 *
-	 * Sampling it once mid-navigation cannot work: the first frame writes the
-	 * value it started from, and on a machine with nothing else to do the whole
-	 * turn can be over before the sample is read — both of which read as "it
-	 * never moved". The filter lives in the root layout, so the observer
-	 * survives the navigation.
-	 */
-	await page.evaluate((out) => {
-		const seen: string[] = [];
-		(window as unknown as { __ramp: string[] }).__ramp = seen;
-		new MutationObserver((records) => {
-			for (const record of records)
-				if ((record.target as Element).id === `${out}-ramp`)
-					seen.push(
-						`${Math.round(performance.now())}:${(record.target as Element).getAttribute('intercept')}`
-					);
-		}).observe(document.documentElement, {
-			attributes: true,
-			subtree: true,
-			attributeFilter: ['intercept']
-		});
-	}, PAGE_TURN.outFilter);
-
-	/*
 	 * A navigation with a wait in it, because that is the only kind worth
 	 * covering. Against a dev server on the same machine the data arrives
-	 * inside one frame, the turn starts and finishes at "whole", and the
-	 * dissolve correctly never happens — nothing was hidden because nothing
-	 * took any time. Half a second is a phone on a train.
+	 * inside one frame and there is nothing to hide. Half a second is a phone
+	 * on a train.
 	 */
 	await page.route('**/goals/__data.json*', async (route) => {
 		await new Promise((then) => setTimeout(then, 500));
@@ -98,11 +74,6 @@ test('a link to another screen turns the page, then gets out of the way', async 
 	);
 
 	await expect(page.locator('h1')).toContainText('Goals');
-
-	// And the threshold was slid: a filter that does not move is a page that
-	// simply vanishes.
-	const seen = await page.evaluate(() => (window as unknown as { __ramp: string[] }).__ramp ?? []);
-	expect(new Set(seen).size, JSON.stringify(seen).slice(0, 400)).toBeGreaterThan(1);
 
 	// Nothing left over. A page left filtered is a page nobody can press —
 	// the stylesheet takes its pointer events away while it turns.

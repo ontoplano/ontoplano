@@ -7,8 +7,7 @@ fix and pull request genuinely helps it.
 
 - **Report a bug** — with the steps that reproduce it.
 - **Fix a bug** — link the issue it closes.
-- **Suggest a feature** — open an issue first so we agree on the shape before
-- **Build a feature** — open an issue first so we agree on the shape before
+- **Build a feature** — open an issue first so we agree on the shape before.
   you write much. `ROADMAP.md` lists what is already intended.
 - **Improve the docs** — the handwritten half lives in `docs/prose/`; the
   rest is generated from the code.

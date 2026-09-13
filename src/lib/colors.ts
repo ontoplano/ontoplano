@@ -107,6 +107,16 @@ export const HEATMAP_YEAR = 365;
 export const HEATMAP_SEASON = 90;
 export const HEATMAP_FULL_YEAR_FROM = '640px';
 
+/**
+ * How big one day is allowed to get.
+ *
+ * The grid takes the width it is given and divides it between the weeks, which
+ * is the only way ninety days fills a phone instead of huddling in the left
+ * third of it. A ceiling is still needed at the other end: thirteen columns
+ * across a desktop card would otherwise be squares the size of a thumbnail.
+ */
+export const HEATMAP_MAX_DAY_REM = 1.75;
+
 export const HEATMAP_BAD = ['bg-slate-100', 'bg-red-300', 'bg-red-500', 'bg-red-700'] as const;
 export const HEATMAP_GOOD = ['bg-slate-100', 'bg-blue-300', 'bg-blue-500', 'bg-blue-700'] as const;
 export const HEATMAP_NEUTRAL = [

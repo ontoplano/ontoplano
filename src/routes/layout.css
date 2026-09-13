@@ -2321,6 +2321,32 @@ html .ec {
 	.chip {
 		min-height: 2rem;
 	}
+
+	/*
+	 * And a day in the habit grid, for the same reason as a tick box.
+	 *
+	 * Seven of them stack in a column: at 44px each that column is taller than
+	 * the phone, and the blanket rule was stretching every square into a pill.
+	 * The grid gives them their size, which on a phone is already a comfortable
+	 * target because the weeks share the whole width.
+	 */
+	.heat-day {
+		min-height: 0;
+	}
+}
+
+/*
+ * One day in the habit grid.
+ *
+ * Square, and as wide as its column: the grid divides the width between the
+ * weeks, so ninety days fills a phone and a year still fits a desktop card.
+ * `min-width: 0` because a grid item's default is its content, which for a
+ * button is not nothing.
+ */
+.heat-day {
+	aspect-ratio: 1;
+	min-width: 0;
+	width: 100%;
 }
 
 /*
