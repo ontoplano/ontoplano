@@ -3,8 +3,9 @@
 	import { page } from '$app/state';
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { scrollHints } from '$lib/actions/scroll-hints';
-	import { swipeTabs } from '$lib/actions/swipe-tabs';
-	import { TAB_SLIDE_EASING, TAB_SLIDE_MS, TAB_SLIDE_TRAVEL } from '$lib/tab-slide';
+	import { onSwipe } from '$lib/swipe';
+	import { swipeSurface } from '$lib/swipe-surface';
+	import { slideAway, slideOn, slidesHere } from '$lib/slide';
 
 	/**
 	 * A room with tabs: the strip, and the movement between them.
@@ -13,7 +14,7 @@
 	 * describe their tabs and this draws them — which is also what lets a swipe
 	 * and a slide exist at all, since neither is worth writing five times.
 	 *
-	 * The movement is the only transition in the app. See `$lib/tab-slide`.
+	 * The movement is in `$lib/slide`, shared with the movement between rooms.
 	 */
 	let {
 		title,
@@ -62,18 +63,11 @@
 	const here = (index: number) => index === at;
 
 	let pane = $state<HTMLElement>();
-	let frame = $state<HTMLElement>();
 	/** Where the copy of the outgoing screen is put. Svelte never fills it. */
 	let stage = $state<HTMLElement>();
 
 	/** Which way the last tab change went: 1 rightwards, -1 leftwards, 0 not one. */
 	let went = 0;
-
-	/** Neither the strip nor the movement belongs on a screen with a mouse. */
-	const onAPhone = () =>
-		typeof window !== 'undefined' &&
-		window.matchMedia('(pointer: coarse)').matches &&
-		!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 	function step(by: number) {
 		const to = tabs[at + by];
@@ -85,13 +79,21 @@
 	}
 
 	/*
-	 * The screen that is leaving, kept for as long as it takes to leave.
+	 * The swipe is listened for on the whole screen, not on this box.
 	 *
-	 * SvelteKit swaps the content the moment the new page is ready, so by the
-	 * time anything could animate the old screen it is already gone. A copy of
-	 * it is laid over the frame instead and slid out from there, which is what
-	 * makes this two panes passing rather than one pane arriving.
-	 *
+	 * A room's content is as tall as its content; below it is page, and a
+	 * swipe there is still a swipe. Listening on the shell's scroller is what
+	 * makes "anywhere, at any height" true — which is what a phone app does
+	 * and what listening on the content only ever half did.
+	 */
+	const surface = swipeSurface();
+	$effect(() => {
+		const on = surface?.();
+		if (!on) return;
+		return onSwipe(on, { next: () => step(1), back: () => step(-1) });
+	});
+
+	/*
 	 * Nothing is returned from `onNavigate`: SvelteKit holds a navigation until
 	 * whatever it gets back settles, and holding one on a decoration is how a
 	 * burst of them — six presses of Next in the onboarding wizard — left the
@@ -101,39 +103,11 @@
 		const from = tabFor(navigation.from?.url.pathname ?? '');
 		const to = tabFor(navigation.to?.url.pathname ?? '');
 		went = from < 0 || to < 0 || from === to ? 0 : Math.sign(to - from);
-		if (!went || !pane || !stage || !onAPhone()) return;
-
-		const leaving = pane.cloneNode(true) as HTMLElement;
-		leaving.setAttribute('aria-hidden', 'true');
-		leaving.style.cssText = `position:absolute;inset:0;pointer-events:none;width:${pane.offsetWidth}px`;
-		/*
-		 * Into a container Svelte renders and never puts anything in, rather
-		 * than beside the pane: the runtime places its own nodes by their
-		 * neighbours, and an element it did not create sitting among them is
-		 * how that goes wrong. Here there are no neighbours to confuse.
-		 */
-		// eslint-disable-next-line svelte/no-dom-manipulating
-		stage.append(leaving);
-		leaving
-			.animate(
-				[
-					{ transform: 'translateX(0)', opacity: 1 },
-					{ transform: `translateX(${-went * TAB_SLIDE_TRAVEL * 100}%)`, opacity: 0 }
-				],
-				{ duration: TAB_SLIDE_MS, easing: TAB_SLIDE_EASING, fill: 'forwards' }
-			)
-			.addEventListener('finish', () => leaving.remove());
+		if (went && pane && stage && slidesHere()) slideAway(stage, pane, went);
 	});
 
 	afterNavigate(() => {
-		if (!went || !pane || !onAPhone()) return;
-		pane.animate(
-			[
-				{ transform: `translateX(${went * TAB_SLIDE_TRAVEL * 100}%)`, opacity: 0 },
-				{ transform: 'translateX(0)', opacity: 1 }
-			],
-			{ duration: TAB_SLIDE_MS, easing: TAB_SLIDE_EASING }
-		);
+		if (went && pane && slidesHere()) slideOn(pane, went);
 		went = 0;
 	});
 </script>
@@ -166,14 +140,10 @@
 		</nav>
 	</RoomBar>
 
-	<!-- `.tab-frame` is where the slide is clipped, and why it gives the page
-	     gutter back first. -->
-	<div
-		bind:this={frame}
-		class="tab-frame"
-		use:swipeTabs={{ next: () => step(1), back: () => step(-1) }}
-	>
+	<!-- `.slide-frame` is where the movement is clipped, and why it gives the
+	     page gutter back first. -->
+	<div class="slide-frame">
 		<div bind:this={pane}>{@render children()}</div>
-		<div bind:this={stage} aria-hidden="true"></div>
+		<div bind:this={stage} class="slide-stage" aria-hidden="true"></div>
 	</div>
 </div>

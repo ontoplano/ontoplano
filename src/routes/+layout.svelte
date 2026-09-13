@@ -5,12 +5,14 @@
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
 	import { live } from '$lib/live';
-	import { afterNavigate, goto } from '$app/navigation';
+	import { afterNavigate, goto, onNavigate } from '$app/navigation';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { NAV_PLACES } from '$lib/sections-nav';
 	import { accentsWith, placesFor } from '$lib/nav-order';
+	import { provideSwipeSurface } from '$lib/swipe-surface';
+	import { slideAway, slideOn, slidesHere } from '$lib/slide';
 	import { MARK_CLIP_PATH } from '$lib/logo/mark-shape';
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
 	import { THEMES } from '$lib/theme.js';
@@ -225,6 +227,63 @@
 	 * left.
 	 */
 	let scroller: HTMLElement | undefined = $state();
+
+	/*
+	 * The surface a swipe is listened for on.
+	 *
+	 * Offered rather than used here: the shell has no idea what a swipe means
+	 * on any given screen. `TabbedRoom` does, and it listens on this — which is
+	 * how a swipe works over the empty half of a short page as well as over its
+	 * content.
+	 */
+	provideSwipeSurface(() => scroller);
+
+	/**
+	 * Which room a path is in, by the order they sit in this account's menu.
+	 *
+	 * The rooms are a row, the same as a room's tabs are, and moving along it
+	 * should look like moving along it. Which way depends on where you were and
+	 * where you went — Tasks to Health is one way, Health to Tasks the other.
+	 *
+	 * Against the row rather than along it: see `changedRoom`.
+	 */
+	function roomAt(pathname: string): number {
+		return allNav.findIndex((place) => {
+			const root = place.href.split('/')[1];
+			return root ? pathname === `/${root}` || pathname.startsWith(`/${root}/`) : false;
+		});
+	}
+
+	let page$ = $state<HTMLElement>();
+	/** Where the copy of the outgoing room is put. Svelte never fills it. */
+	let roomStage = $state<HTMLElement>();
+	let changedRoom = 0;
+
+	onNavigate((navigation) => {
+		const from = roomAt(navigation.from?.url.pathname ?? '');
+		const to = roomAt(navigation.to?.url.pathname ?? '');
+		/*
+		 * Only between rooms: a change of tab is the room's own business, and
+		 * sliding both would be two movements over one navigation.
+		 *
+		 * Negated, deliberately. Going *down* the menu brings the new room in
+		 * from the left, which is the opposite of what a tab does — and it is
+		 * what was asked for. A tab change has a finger behind it and the screen
+		 * follows the finger; picking a room off the menu has none, and the row
+		 * being walked is vertical, so borrowing the tabs' handedness only made
+		 * it look like a tab change that had gone the wrong way.
+		 */
+		changedRoom = from < 0 || to < 0 || from === to ? 0 : -Math.sign(to - from);
+		// `arc`: a room change is a turn of the menu, so it travels round the
+		// wheel rather than straight across. See `$lib/slide`.
+		if (changedRoom && page$ && roomStage && slidesHere())
+			slideAway(roomStage, page$, changedRoom, true);
+	});
+
+	afterNavigate(() => {
+		if (changedRoom && page$ && slidesHere()) slideOn(page$, changedRoom, true);
+		changedRoom = 0;
+	});
 
 	afterNavigate(() => scroller?.scrollTo({ top: 0 }));
 
@@ -831,7 +890,13 @@
 			bind:this={scroller}
 			class="page-gutter relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto overscroll-y-contain pt-[calc(var(--safe-top)+1rem)] pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+var(--help-dock-height)+0.75rem)] lg:overflow-visible lg:pt-6 lg:pb-[calc(var(--help-dock-height)+1.5rem)]"
 		>
-			{@render children()}
+			<!-- `.slide-frame` clips the movement between rooms, and gives the page
+			     gutter back first so a card that bleeds to the screen edge still
+			     reaches it. -->
+			<div class="slide-frame">
+				<div bind:this={page$}>{@render children()}</div>
+				<div bind:this={roomStage} class="slide-stage" aria-hidden="true"></div>
+			</div>
 		</main>
 
 		<!--

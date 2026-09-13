@@ -18,6 +18,21 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.165.0 — 2026-09-13
+
+- **A swipe works anywhere on the screen.** It was listened for over the room's
+  own content, which on a short page is a fraction of what you see — so most of
+  the screen did nothing. It is the whole scrolling surface now. And it listens
+  for touches rather than pointers: a real browser cancels a pointer the moment
+  it decides your finger is scrolling, which is why this worked in every test
+  and not on a phone.
+- **Changing room moves too**, in the order the rooms sit in your menu, and
+  round the wheel rather than across it: the screen leaving sinks and tilts as
+  it goes, the one arriving rises into place. Four degrees, fixed, so it looks
+  the same on a phone and on a laptop.
+- **The movement goes the whole way.** A quarter of the width with a fade read
+  as a wobble — the screen never left, so nothing was replaced.
+
 ## 0.164.0 — 2026-09-13
 
 - **The dissolve is gone, and tabs move instead.** A whole-screen effect on

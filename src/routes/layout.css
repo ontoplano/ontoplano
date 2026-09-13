@@ -510,7 +510,7 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 }
 
 /*
- * The box a tab change happens inside.
+ * The box a change of screen happens inside.
  *
  * The pane on its way out is translated sideways, which would otherwise give
  * the page a sideways scroll for the length of the slide — so it is clipped.
@@ -523,7 +523,21 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
  * by the gutter and in by the gutter leaves the clip exactly on the screen
  * edge, where it belongs.
  */
-.tab-frame {
+/*
+ * Where a copy of the outgoing screen is laid while it leaves.
+ *
+ * The container itself is the size of the frame, so a copy pinned to `inset: 0`
+ * lands exactly over the screen it is a copy of. Left to collapse it had no
+ * height at all, and the copy overflowed out of a zero-high box — which looked
+ * near enough and measured as nothing.
+ */
+.slide-stage {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.slide-frame {
 	position: relative;
 	margin-inline: calc(-1 * var(--page-gutter, 0px));
 	padding-inline: var(--page-gutter, 0px);
