@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { clientAddress } from './helpers/account';
+import { PASSWORD, clientAddress } from './helpers/account';
 
 /**
  * Billing, on an instance that sells nothing.
@@ -33,7 +33,7 @@ test('a self-hosted instance has no billing page at all', async ({ playwright })
 
 	const signUp = await request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': clientAddress() },
-		data: { email, password: 'hunter2hunter2', name: 'Bill' }
+		data: { email, password: PASSWORD, name: 'Bill' }
 	});
 	expect(signUp.ok(), await signUp.text()).toBeTruthy();
 

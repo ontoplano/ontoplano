@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type PlaywrightWorkerArgs } from '@playwright/test';
-import { clientAddress } from './helpers/account';
+import { PASSWORD, clientAddress } from './helpers/account';
 
 /**
  * Nothing unbounded reaches the database.
@@ -69,7 +69,7 @@ async function signedIn(playwright: PlaywrightWorkerArgs['playwright']): Promise
 
 	const signUp = await request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': clientAddress() },
-		data: { email, password: 'hunter2hunter2', name: 'Caps' }
+		data: { email, password: PASSWORD, name: 'Caps' }
 	});
 	expect(signUp.ok(), await signUp.text()).toBeTruthy();
 

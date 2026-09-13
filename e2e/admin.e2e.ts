@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { clientAddress } from './helpers/account';
+import { PASSWORD, clientAddress } from './helpers/account';
 import Database from 'better-sqlite3';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -33,16 +33,14 @@ async function signInAsOwner(page: import('@playwright/test').Page): Promise<voi
 	expect(first, 'no accounts in the test database').toBeTruthy();
 
 	// A fresh address per attempt: credential submission is rate limited per
-	// client, and two tests each trying two passwords from one address is enough
-	// to spend that budget and fail on the limiter rather than on the bug.
-	for (const password of ['smoke-test-password', 'hunter2hunter2']) {
-		attempt += 1;
-		const res = await page.request.post('/api/auth/sign-in/email', {
-			headers: { Origin: ORIGIN, 'x-forwarded-for': `10.31.0.${attempt}` },
-			data: { email: first!.email, password }
-		});
-		if (res.ok()) return;
-	}
+	// client, and one address spends that budget quickly enough to fail on the
+	// limiter rather than on the bug.
+	attempt += 1;
+	const res = await page.request.post('/api/auth/sign-in/email', {
+		headers: { Origin: ORIGIN, 'x-forwarded-for': `10.31.0.${attempt}` },
+		data: { email: first!.email, password: PASSWORD }
+	});
+	if (res.ok()) return;
 	throw new Error(`could not sign in as ${first!.email}`);
 }
 
@@ -169,7 +167,7 @@ test('an administrator cannot become somebody else', async ({ page }) => {
 	]) {
 		const res = await page.request.post(path, {
 			headers: { Origin: ORIGIN },
-			data: { userId: 'anybody', newPassword: 'hunter2hunter2' }
+			data: { userId: 'anybody', newPassword: PASSWORD }
 		});
 		expect(res.status(), `${path} is not a door`).toBe(404);
 	}
@@ -198,7 +196,7 @@ test('admin actions refuse a non-admin, page load or no page load', async ({ pag
 	const email = `not-an-admin-${Date.now()}@ontoplano.test`;
 	const res = await page.request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': address },
-		data: { email, password: 'hunter2hunter2', name: 'Nobody' }
+		data: { email, password: PASSWORD, name: 'Nobody' }
 	});
 	expect(res.ok(), `registering ${email}: ${res.status()}`).toBeTruthy();
 	const cookie = (

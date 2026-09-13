@@ -12,6 +12,14 @@
  *
  * Safe to run twice: everything it does is idempotent.
  */
+/*
+ * First, and for its side effect: opening the server database is what binds
+ * one for the services to read. A job that reaches a service without this
+ * dies on its first query with "No database is bound to this runtime" —
+ * silently, at one minute past whatever, in a timer nobody is watching.
+ * `scripts/check-job-deps.mjs` fails the lint on a job that leaves it out.
+ */
+import '../src/lib/server/db/index.js';
 import { loadProvider } from '../src/lib/server/billing/load.js';
 
 // Before the first question about billing: this runs under plain `tsx`, so the

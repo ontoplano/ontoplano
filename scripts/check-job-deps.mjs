@@ -153,13 +153,41 @@ function walk(file, from) {
 
 for (const job of JOBS) walk(job, 'the unit');
 
+/*
+ * And does the job open a database before it asks one anything?
+ *
+ * The services read a binding rather than a connection — the same code has to
+ * run against the server's SQLite and against the copy in a browser — and
+ * `$lib/server/db` is what binds the server's. A job that imports a service
+ * without it dies on its first query with "No database is bound to this
+ * runtime", at one minute past whatever, in a timer nobody is watching.
+ * Reminders and the weekly review mail both did, and the way it was found was
+ * a shell test in another repository rather than anything here.
+ *
+ * A direct import in every job, rather than trusting that some service in the
+ * graph happens to pull it in: `reconcile-billing.ts` worked purely because
+ * the billing loader did, which is not a property anybody was maintaining.
+ */
+const BINDS_A_DATABASE = 'src/lib/server/db/index.js';
+for (const job of JOBS) {
+	const source = readFileSync(job, 'utf8');
+	if (!source.includes(BINDS_A_DATABASE))
+		problems.push(
+			`${job} — imports no database. Add \`import '../${BINDS_A_DATABASE}';\` first, ` +
+				`for its side effect: opening the server database is what binds one.`
+		);
+}
+
 if (problems.length === 0) {
-	console.log(`jobs: ${JOBS.length} scheduled scripts, every import a real dependency`);
+	console.log(
+		`jobs: ${JOBS.length} scheduled scripts, every import a real dependency, each with a database`
+	);
 	process.exit(0);
 }
 
-console.error('These jobs import development-only packages, and will fail on the box:\n');
+console.error('These jobs will fail on the box:\n');
 for (const problem of [...new Set(problems)]) console.error(`  ${problem}`);
-console.error('\nMove what the job needs out of the module that reaches for it, or make the');
-console.error('package a real dependency. `yarn install --production` is what runs there.');
+console.error('\nFor a package: move what the job needs out of the module that reaches for it,');
+console.error('or make the package a real dependency — `yarn install --production` is what');
+console.error('runs there. For a database: import it first, before any service.');
 process.exit(1);

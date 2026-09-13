@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type PlaywrightWorkerArgs } from '@playwright/test';
-import { clientAddress } from './helpers/account';
+import { PASSWORD, clientAddress } from './helpers/account';
 
 /**
  * The widget's endpoint, and the scope that guards it.
@@ -18,7 +18,7 @@ async function account(playwright: PlaywrightWorkerArgs['playwright']) {
 
 	const signUp = await request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': clientAddress() },
-		data: { email, password: 'hunter2hunter2', name: 'Widget' }
+		data: { email, password: PASSWORD, name: 'Widget' }
 	});
 	expect(signUp.ok(), await signUp.text()).toBeTruthy();
 

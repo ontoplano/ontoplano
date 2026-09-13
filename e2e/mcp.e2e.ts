@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type PlaywrightWorkerArgs } from '@playwright/test';
-import { clientAddress, register } from './helpers/account';
+import { PASSWORD, clientAddress, register } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -19,7 +19,7 @@ async function account(playwright: PlaywrightWorkerArgs['playwright']) {
 
 	const signUp = await request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': clientAddress() },
-		data: { email, password: 'hunter2hunter2', name: 'Assistant' }
+		data: { email, password: PASSWORD, name: 'Assistant' }
 	});
 	expect(signUp.ok(), await signUp.text()).toBeTruthy();
 

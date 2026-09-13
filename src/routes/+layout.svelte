@@ -5,7 +5,7 @@
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
 	import { live } from '$lib/live';
-	import { afterNavigate, goto, onNavigate } from '$app/navigation';
+	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
@@ -15,10 +15,12 @@
 	import {
 		holdHeight,
 		releaseHeight,
+		SLIDE_MS,
 		slideAway,
 		slideOn,
 		slidesHere,
-		stopHiding
+		stopHiding,
+		WAIT_MARK_AT
 	} from '$lib/slide';
 	import { MARK_CLIP_PATH } from '$lib/logo/mark-shape';
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
@@ -291,7 +293,13 @@
 	let roomStage = $state<HTMLElement>();
 	let changedRoom = 0;
 
-	onNavigate((navigation) => {
+	/*
+	 * `beforeNavigate`, and it has to be: `onNavigate` runs *after* the load.
+	 * SvelteKit's `navigate()` awaits `load_route(intent)` and only then calls
+	 * the `onNavigate` callbacks, so a movement started there begins once the
+	 * data has already arrived. See the same note in `TabbedRoom.svelte`.
+	 */
+	beforeNavigate((navigation) => {
 		const from = placeAt(navigation.from?.url.pathname ?? '');
 		const to = placeAt(navigation.to?.url.pathname ?? '');
 		/*
@@ -314,10 +322,14 @@
 		 */
 		const offTheWheel = from < 0 || to < 0 || from >= allNav.length || to >= allNav.length;
 		changedRoom = from === to ? 0 : (offTheWheel ? 1 : -1) * Math.sign(to - from);
+		// A navigation that leaves the app takes the page away itself; hiding
+		// the room for it only means staring at nothing while it goes.
+		if (!navigation.to || navigation.willUnload) changedRoom = 0;
 		if (!changedRoom || !page$ || !pageBody || !roomStage || !slidesHere()) return;
 
 		/*
-		 * Both halves now, rather than one now and one when the data lands.
+		 * Both halves at the press, rather than one at the press and one when
+		 * the data lands.
 		 *
 		 * The movement used to be: take the old room off, wait for the next one
 		 * to load, bring it on — so the arrival *was* the load, and on a slow
@@ -976,12 +988,18 @@
 
 					The movement happens the moment you ask for it, so between the old
 					screen going and the new one arriving there is nothing to look at.
-					The mark turns there. It waits a moment before appearing, because
-					most navigations are over before anybody could read it and a
-					spinner that flashes is worse than none.
+					The mark turns there, underneath the screen on its way out, so it is
+					already turning by the time that screen has cleared. Its delay comes
+					off `SLIDE_MS` rather than being a number here as well.
 				-->
 				{#if navigating.to && !givenUp}
-					<div class="nav-waiting" aria-hidden="true"><Logo size={40} /></div>
+					<div
+						class="nav-waiting"
+						aria-hidden="true"
+						style="--nav-waiting-delay: {Math.round(SLIDE_MS * WAIT_MARK_AT)}ms"
+					>
+						<Logo size={40} />
+					</div>
 				{/if}
 			</div>
 		</main>

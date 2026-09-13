@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { TEST_CONFIG_DIR } from '../playwright.config';
+import { PASSWORD } from './helpers/account';
 
 /**
  * Who may create an account here.
@@ -42,7 +43,7 @@ function signUp(request: APIRequestContext, invite?: string) {
 	client += 1;
 	return request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': `10.9.0.${client}` },
-		data: { email, password: 'hunter2hunter2', name: 'Reg', ...(invite ? { invite } : {}) }
+		data: { email, password: PASSWORD, name: 'Reg', ...(invite ? { invite } : {}) }
 	});
 }
 
@@ -51,7 +52,13 @@ function signUp(request: APIRequestContext, invite?: string) {
  *
  * The owner is the first account, and by the time this project runs that is
  * whichever account another test file made first — so it is looked up rather
- * than assumed. Every account the suite creates uses the same password.
+ * than assumed.
+ *
+ * Which means the password cannot be assumed either, and for a while it was:
+ * this file signed in with one of its own while the account it had found was
+ * made by `helpers/account.ts` with a different one. It passed for as long as
+ * the oldest row happened to be one of this file's, and failed the day it was
+ * not. One constant, in the helper every other file already uses.
  */
 let ownerSignIns = 0;
 
@@ -73,7 +80,7 @@ async function signInAsOwner(request: APIRequestContext): Promise<string> {
 		// rate-limited per address, and one fixed address spends the budget by
 		// the fourth sign-in in this file.
 		headers: { Origin: ORIGIN, 'x-forwarded-for': `10.9.9.${++ownerSignIns}` },
-		data: { email: first!.email, password: 'hunter2hunter2' }
+		data: { email: first!.email, password: PASSWORD }
 	});
 	expect(res.ok(), await res.text()).toBeTruthy();
 
@@ -150,7 +157,7 @@ test('there is no second door onto a closed instance', async ({ playwright }) =>
 	setMode('closed');
 
 	const email = `side-${Date.now()}@example.test`;
-	const password = 'hunter2hunter2';
+	const password = PASSWORD;
 
 	for (const path of ['/demo/better-auth/login?/signUpEmail', '/demo/better-auth/login']) {
 		await request.post(path, {

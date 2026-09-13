@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { clientAddress } from './helpers/account';
+import { PASSWORD, clientAddress } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -25,8 +25,8 @@ async function fresh(page: import('@playwright/test').Page) {
 	for (const [name, value] of [
 		['name', 'Welcome Test'],
 		['email', email],
-		['password', 'hunter2hunter2'],
-		['confirm', 'hunter2hunter2']
+		['password', PASSWORD],
+		['confirm', PASSWORD]
 	] as const) {
 		const field = page.locator(`input[name="${name}"]`);
 		if (await field.count()) await field.first().fill(value);

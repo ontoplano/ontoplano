@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { afterNavigate, goto, onNavigate } from '$app/navigation';
+	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { navigating, page } from '$app/state';
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { scrollHints } from '$lib/actions/scroll-hints';
@@ -105,19 +105,34 @@
 	});
 
 	/*
-	 * Nothing is returned from `onNavigate`: SvelteKit holds a navigation until
+	 * `beforeNavigate`, and it has to be: `onNavigate` runs *after* the load.
+	 *
+	 * Read SvelteKit's `navigate()` and the order is plain — it awaits
+	 * `load_route(intent)` and only then calls the `onNavigate` callbacks. So
+	 * a movement started there begins the instant the data lands, which is the
+	 * exact thing this is supposed to fix: press a tab on a slow connection,
+	 * watch the bar fill, and the screen moves once it is already over.
+	 * `beforeNavigate` runs when the press happens, before anything is asked
+	 * for.
+	 *
+	 * Nothing is returned from either hook: SvelteKit holds a navigation until
 	 * whatever it gets back settles, and holding one on a decoration is how a
 	 * burst of them — six presses of Next in the onboarding wizard — left the
 	 * app unable to move at all. Twice.
 	 */
-	onNavigate((navigation) => {
+	beforeNavigate((navigation) => {
 		const from = tabFor(navigation.from?.url.pathname ?? '');
 		const to = tabFor(navigation.to?.url.pathname ?? '');
 		went = from < 0 || to < 0 || from === to ? 0 : Math.sign(to - from);
+		// `willUnload` is a navigation that leaves the app: the browser takes
+		// the page away itself, and hiding the screen for it only means staring
+		// at nothing while it goes.
+		if (!navigation.to || navigation.willUnload) went = 0;
 		if (!went || !pane || !body || !stage || !slidesHere()) return;
 
 		/*
-		 * Both halves now, rather than one now and one when the data lands.
+		 * Both halves at the press, rather than one at the press and one when
+		 * the data lands.
 		 *
 		 * The movement used to be: take the old screen off, wait for the next
 		 * one to load, bring it on. So the arrival was the load — press a tab on

@@ -113,29 +113,46 @@ describe('a round trip loses nothing', () => {
  * that is not the pictures still travels, and the file imports cleanly: no
  * dangling gallery rows, no recipe images pointing at nothing.
  */
+/** The tables that hold picture bytes, and the only ones this export drops. */
+const PICTURE_TABLES = ['media', 'albumMedia', 'mediaTags', 'recipeImages'];
+
 describe('an export without pictures', () => {
 	test('is the same account minus exactly the picture tables', () => {
 		const slim = account.exportAccount(OWNER, new Date('2026-09-01T09:00:02Z'), {
 			withoutPictures: true
 		});
 
-		for (const name of ['media', 'albumMedia', 'mediaTags', 'recipeImages'])
-			expect(slim.data[name], name).toEqual([]);
+		for (const name of PICTURE_TABLES) expect(slim.data[name], name).toEqual([]);
 
 		// Everything else is untouched, row for row. The non-portable tables are
 		// left out of the comparison: the audit log grows by one line per export,
 		// which is the log doing its job.
 		for (const [name, rows] of Object.entries(counts(slim.data))) {
-			if (['media', 'albumMedia', 'mediaTags', 'recipeImages'].includes(name)) continue;
+			if (PICTURE_TABLES.includes(name)) continue;
 			if (name in accountImport.NOT_PORTABLE) continue;
 			expect(rows, name).toBe(before[name] ?? 0);
 		}
 
-		// And it is a fraction of the weight, which is its whole reason to exist.
-		const whole = JSON.stringify(
-			account.exportAccount(OWNER, new Date('2026-09-01T09:00:03Z')).data
-		).length;
-		expect(JSON.stringify(slim.data).length).toBeLessThan(whole / 2);
+		/*
+		 * And the weight it sheds is the pictures, which is its whole reason to
+		 * exist.
+		 *
+		 * Measured against what those four tables actually weigh, rather than
+		 * against a fraction of the file. "Less than half" was the first way of
+		 * saying this and it is really a claim about the seed: every feature
+		 * that seeds something which is not a picture moves the ratio, and the
+		 * day workouts arrived it crossed a half and failed a test that has
+		 * nothing to do with workouts.
+		 */
+		const wholeData = account.exportAccount(OWNER, new Date('2026-09-01T09:00:03Z')).data;
+		const pictureBytes = PICTURE_TABLES.reduce(
+			(bytes, name) => bytes + JSON.stringify(wholeData[name] ?? []).length,
+			0
+		);
+		const shed = JSON.stringify(wholeData).length - JSON.stringify(slim.data).length;
+		// Within a hair of the picture bytes: the two exports are a second apart
+		// and the audit log gains a line between them.
+		expect(shed).toBeGreaterThan(pictureBytes * 0.9);
 
 		// The round trip: it restores without a word of complaint.
 		const result = accountImport.importAccount(STRANGER, slim);

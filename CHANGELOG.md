@@ -18,6 +18,27 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.168.2 — 2026-09-13
+
+- **Screens now move when you press, not when the data arrives.** The change
+  that was supposed to do this in 0.168.0 was hung on SvelteKit's
+  `onNavigate`, which runs _after_ the load — so the movement still began the
+  moment the wait ended, which is the thing it was written to remove. It runs
+  at the press now.
+- **The mark that turns while you wait shows up in time to be seen.** It sat
+  in front of the screen on its way out, so it could not start until the
+  movement was over — and it waited another beat past that, by which point
+  most navigations had finished. It is behind the departing screen now and
+  starts while that screen is still travelling, so it is already turning when
+  the ground appears.
+- **Reminders and the weekly review mail run again.** Both jobs reached a
+  service without opening a database first and died on their first query —
+  every minute, in a timer nobody reads. `make lint` now fails on a scheduled
+  job that imports no database.
+- **An export without pictures is measured against what the pictures weigh**
+  rather than against half the file, so a feature that seeds something which
+  is not a picture no longer fails a test about pictures.
+
 ## 0.168.1 — 2026-09-13
 
 - **`make db-strangers` says when the clone is behind.** It can only name a

@@ -3,7 +3,7 @@ import Database from 'better-sqlite3';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { clientAddress } from './helpers/account';
+import { PASSWORD, clientAddress } from './helpers/account';
 
 /**
  * The family plan, from the payer's chair and from the seat's.
@@ -30,7 +30,7 @@ async function account(playwright: PlaywrightWorkerArgs['playwright'], tag: stri
 
 	const signUp = await request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': clientAddress() },
-		data: { email, password: 'hunter2hunter2', name: 'Family Test' }
+		data: { email, password: PASSWORD, name: 'Family Test' }
 	});
 	expect(signUp.ok(), await signUp.text()).toBeTruthy();
 

@@ -14,6 +14,14 @@
  * notifications on is a job you cannot tell apart from a broken one, and this
  * one spent an evening being exactly that.
  */
+/*
+ * First, and for its side effect: opening the server database is what binds
+ * one for the services to read. A job that reaches a service without this
+ * dies on its first query with "No database is bound to this runtime" —
+ * silently, at one minute past whatever, in a timer nobody is watching.
+ * `scripts/check-job-deps.mjs` fails the lint on a job that leaves it out.
+ */
+import '../src/lib/server/db/index.js';
 import { deliverDueReminders } from '../src/lib/server/services/reminder-delivery.js';
 
 const { pushed, due, devices, accounts, birthdays, configured } = await deliverDueReminders();
