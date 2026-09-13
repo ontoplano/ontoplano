@@ -1,5 +1,4 @@
 import { DEFAULT_PICTURE_KILOBYTES, DEFAULT_UNDO_SECONDS } from '$lib/instance-defaults.js';
-import { PAGE_TURN_DEFAULTS, PAGE_TURN_RANGES, type PageTurnTuning } from '$lib/page-turn.js';
 import { DEFAULT_PRICING } from '$lib/plans.js';
 import { readFileSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -110,12 +109,6 @@ feedback_email = ""
 
 [ui]
 undo_seconds = "5"
-# How changing screen looks. Speed in milliseconds, grain from fine to coarse,
-# hardness from a soft fade to an on-or-off snap. Tune them on the Instance
-# page rather than here — it shows the turn as you move them.
-page_turn_ms = "400"
-page_turn_grain = "0.4"
-page_turn_hardness = "30"
 
 [newsletter]
 enabled = "false"
@@ -125,9 +118,7 @@ origin = ""
 tagline = "Managing life, one week at a time"
 
 # The workbenches under /dev — not screens of the app, and off unless the
-# person running this wants them. There are none at the moment: the screen
-# transition's numbers are edited in src/lib/page-turn.ts, which is where three
-# numbers belong.
+# person running this wants them. There are none at the moment.
 dev_tools = "false"
 
 # Your own copy, rather than one somebody sells. Off means hosted, which is
@@ -251,18 +242,6 @@ export interface OntoplanoConfig {
 	ui: {
 		/** Seconds a delete waits, undoably, before it happens. Zero turns it off. */
 		undoSeconds: number;
-		/*
-		 * How changing screen looks: how long the dissolve takes, how fine its
-		 * dots are, how hard the threshold snaps. An instance's, not an
-		 * account's — the feel of the app rather than somebody's setting.
-		 *
-		 * Three keys rather than one nested object because one field here is one
-		 * line in the file, which is what `tests/config-shape.test.ts` holds the
-		 * whole of this interface to. `pageTurn()` puts them back together.
-		 */
-		pageTurnMs: number;
-		pageTurnGrain: number;
-		pageTurnHardness: number;
 	};
 	/**
 	 * Who runs this instance, for the pages that have to say so.
@@ -366,10 +345,7 @@ export interface OntoplanoConfig {
 		 *
 		 * Off everywhere unless somebody turns it on. They are not screens of
 		 * the app, and an instance somebody else runs has no reason to carry
-		 * them or to know they exist. There are none at the moment — the screen
-		 * transition had one, with its numbers on sliders, and the numbers turned
-		 * out to be better off in `src/lib/page-turn.ts` where they can simply be
-		 * edited.
+		 * them or to know they exist. There are none at the moment.
 		 *
 		 * Here rather than in an environment variable because this is a thing
 		 * the instance allows, and everything an instance allows is in this
@@ -458,9 +434,6 @@ feedback_email = ${q(config.reports.feedbackEmail)}
 
 [ui]
 undo_seconds = ${q(config.ui.undoSeconds)}
-page_turn_ms = ${q(config.ui.pageTurnMs)}
-page_turn_grain = ${q(config.ui.pageTurnGrain)}
-page_turn_hardness = ${q(config.ui.pageTurnHardness)}
 
 [newsletter]
 enabled = ${q(config.newsletter.enabled)}
@@ -503,29 +476,6 @@ album_images = ${q(config.media.albumImages)}
 account_megabytes = ${q(config.media.accountMegabytes)}
 import_files = ${q(config.media.importFiles)}
 `;
-}
-
-/**
- * One page-turn number, held to what a slider could have asked for.
- *
- * The same bounds the controls use, applied again on the way in: a file edited
- * by hand is as much a source of a two-second dissolve as a slider would be if
- * it had no ends.
- */
-function withinRange(raw: string | undefined, which: keyof PageTurnTuning): number {
-	const { min, max } = PAGE_TURN_RANGES[which];
-	const value = Number(raw);
-	if (!Number.isFinite(value)) return PAGE_TURN_DEFAULTS[which];
-	return Math.min(max, Math.max(min, value));
-}
-
-/** The three `[ui]` numbers as the shape everything that draws the turn wants. */
-export function pageTurn(config: OntoplanoConfig): PageTurnTuning {
-	return {
-		durationMs: config.ui.pageTurnMs,
-		grain: config.ui.pageTurnGrain,
-		hardness: config.ui.pageTurnHardness
-	};
 }
 
 export function saveConfig(config: OntoplanoConfig): void {
@@ -681,10 +631,7 @@ export function loadConfig(): OntoplanoConfig {
 			undoSeconds: Math.min(
 				Math.max(parseInt(ui.undo_seconds || String(DEFAULT_UNDO_SECONDS), 10) || 0, 0),
 				60
-			),
-			pageTurnMs: withinRange(ui.page_turn_ms, 'durationMs'),
-			pageTurnGrain: withinRange(ui.page_turn_grain, 'grain'),
-			pageTurnHardness: withinRange(ui.page_turn_hardness, 'hardness')
+			)
 		},
 		newsletter: {
 			// Silence is no, as everywhere else in this file.

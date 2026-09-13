@@ -1,15 +1,12 @@
 <script lang="ts">
 	import './layout.css';
 	// Generated beside the masks it names: scripts/build-eink-masks.mjs.
-	import './page-turn.css';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
 	import { live } from '$lib/live';
-	import { afterNavigate, goto, onNavigate } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
-	import { PAGE_TURN, tune, turnIn, turnOut } from '$lib/page-turn.svelte';
-	import { PAGE_TURN_DEFAULTS } from '$lib/page-turn';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { NAV_PLACES } from '$lib/sections-nav';
@@ -39,56 +36,6 @@
 
 	let { children, data }: { children: Snippet; data: LayoutServerData } = $props();
 
-	/**
-	 * Changing screen looks like an e-reader changing page.
-	 *
-	 * The browser will hold the old screen and the new one on top of each other
-	 * for the length of one transition if asked; the dissolve itself is in
-	 * `layout.css`, over masks built by `scripts/build-eink-masks.mjs`. All this
-	 * does is ask, and decide when not to.
-	 *
-	 * **Only a link or the back button.** A page turn is something a person did.
-	 * The other kinds of navigation are the app moving itself — the redirect
-	 * after signing up, a form action's answer — and those are also the ones
-	 * that chain: the first leg's `complete` never settles, which used to leave
-	 * the transition running for ever with a picture of the old page nailed over
-	 * the live one. Everything still worked underneath and nothing could be
-	 * clicked, which is the worst way for this to fail.
-	 *
-	 * Two more refusals. Without the API there is nothing to ask. With reduced
-	 * motion the browser's own cross-fade would run in place of ours — the
-	 * stylesheet only replaces it where motion is welcome — so it has to be
-	 * declined here rather than styled away.
-	 *
-	 * And a navigation that stays on the same route is paging the week or
-	 * changing a filter, which is not a page turn: half a second of dots between
-	 * one Tuesday and the next would be something to turn off rather than
-	 * something to like.
-	 */
-	/*
-	 * The turn's length, from the one file that holds it.
-	 *
-	 * The stylesheet carries the same number as a fallback so a page renders
-	 * correctly before any of this runs. Stamped in an effect because the
-	 * number lives in `page-turn.ts` and the stylesheet carries the same value
-	 * as a fallback, so a page renders correctly before any of this runs.
-	 */
-	$effect(() => {
-		document.documentElement.style.setProperty('--page-turn', `${PAGE_TURN.durationMs}ms`);
-	});
-
-	/*
-	 * The instance's own numbers, if it has set any.
-	 *
-	 * In an effect rather than at the top: the Instance page turns these under
-	 * the reader's hand while they judge them, and this must not put the saved
-	 * ones back on the next navigation — so it tracks the loaded value and
-	 * nothing else.
-	 */
-	$effect(() => {
-		if (data.pageTurn) tune(data.pageTurn);
-	});
-
 	/*
 	 * First launch on a phone asks where your ontoplano lives.
 	 *
@@ -106,39 +53,6 @@
 		if (!onDevice || !inPhoneApp() || storedChoice()) return;
 		if (page.url.pathname.startsWith(CHOOSE_PATH)) return;
 		goto(resolve(CHOOSE_PATH as '/instance'));
-	});
-
-	/** The page itself, which is what the turn is applied to. */
-	let turning = $state<HTMLDivElement>();
-
-	/*
-	 * The page turns as the navigation happens, not after it.
-	 *
-	 * Nothing is returned from `onNavigate`: SvelteKit holds the navigation
-	 * until whatever it gets back resolves, and holding it on a decoration is
-	 * how a burst of them — onboarding's six Next presses — left the app unable
-	 * to move at all. The turn is two independent halves that simply run.
-	 */
-	let turnedOut = false;
-
-	onNavigate((navigation) => {
-		if (navigation.to?.route.id === navigation.from?.route.id) return;
-		turnedOut = true;
-		turnOut(turning);
-	});
-
-	/*
-	 * And in again — but only if it went out.
-	 *
-	 * `afterNavigate` runs for the first page of a session too, and there is
-	 * nothing to arrive from on a page that was loaded rather than navigated
-	 * to: turning in there is half a dissolve over a screen that was simply
-	 * there.
-	 */
-	afterNavigate(() => {
-		if (!turnedOut) return;
-		turnedOut = false;
-		turnIn(turning);
 	});
 
 	// Autofill is opt-in: see $lib/autofill. Once, for every form the app ever mounts.
@@ -511,50 +425,6 @@
 </script>
 
 <svelte:window onkeydown={handleGlobalKeydown} onclick={handleClickOutside} />
-
-<!--
-	The page turn's two filters, which have to live in the document the
-	transition happens in.
-
-	`feTurbulence` draws a field of noise; `feColorMatrix` moves its red channel
-	into alpha; `feComponentTransfer` multiplies that alpha by a large slope and
-	slides it with an intercept, which clamps almost every pixel to fully on or
-	fully off. Sliding the intercept is the dissolve, and `turnOut`/`turnIn` are what
-	slides it. One filter, not two: the page goes out under it and the next page
-	comes in under the same one with the ramp run backwards, so the pixels one
-	gives up are exactly the pixels the other takes — the handover an e-reader
-	makes when it flips a dot.
--->
-<svg width="0" height="0" aria-hidden="true" class="absolute" focusable="false">
-	<defs>
-		<filter
-			id={PAGE_TURN_DEFAULTS.outFilter}
-			x="0"
-			y="0"
-			width="100%"
-			height="100%"
-			color-interpolation-filters="sRGB"
-		>
-			<feTurbulence
-				type="fractalNoise"
-				baseFrequency={PAGE_TURN.grain}
-				numOctaves="1"
-				seed={PAGE_TURN_DEFAULTS.seed}
-				result="noise"
-			/>
-			<feColorMatrix
-				in="noise"
-				type="matrix"
-				values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 0"
-				result="field"
-			/>
-			<feComponentTransfer in="field" result="threshold">
-				<feFuncA id="{PAGE_TURN_DEFAULTS.outFilter}-ramp" type="linear" slope="1" intercept="1" />
-			</feComponentTransfer>
-			<feComposite in="SourceGraphic" in2="threshold" operator="in" />
-		</filter>
-	</defs>
-</svg>
 
 {#if data.user && !bareScreen}
 	<!--
@@ -961,11 +831,7 @@
 			bind:this={scroller}
 			class="page-gutter relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto overscroll-y-contain pt-[calc(var(--safe-top)+1rem)] pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+var(--help-dock-height)+0.75rem)] lg:overflow-visible lg:pt-6 lg:pb-[calc(var(--help-dock-height)+1.5rem)]"
 		>
-			<!-- What the page turn is applied to: the page, not the chrome. A
-			     filter makes a containing block, so the bars must stay outside
-			     it — and the bars staying put while the page turns is the
-			     better effect anyway. -->
-			<div bind:this={turning} class="page-turning">{@render children()}</div>
+			{@render children()}
 		</main>
 
 		<!--

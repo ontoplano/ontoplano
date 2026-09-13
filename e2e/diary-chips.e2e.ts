@@ -63,6 +63,10 @@ test('a note written in a notebook takes tags and people too', async ({ page }) 
 		.click();
 	await expect(page.getByText('Renovation').first()).toBeVisible();
 
+	// The composer stands behind a button now, on every screen: a form open
+	// above the notes took the top of the notebook whether or not anybody was
+	// writing.
+	await page.getByRole('button', { name: 'New note', exact: true }).first().click();
 	await page.locator('textarea[name="content"]').first().fill('Tiles arrive Tuesday.');
 	// Folded away by default: the common act is typing a line and pressing add.
 	await page.getByText('Tags, people').first().click();

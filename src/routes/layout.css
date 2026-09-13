@@ -354,15 +354,10 @@ html[data-style='playful'] .bg-chrome {
  */
 .page-surface {
 	background-color: color-mix(in srgb, var(--section-accent) 4%, var(--color-gray-100));
-	/* What a fade painted over this page has to fade into. `.scroll-hints` reads
-	   it; declared here because this is where the ground is decided, and a fade
-	   that names its own grey is a fade that matches one room. */
-	--fade-ground: color-mix(in srgb, var(--section-accent) 4%, var(--color-gray-100));
 }
 
 html[data-style='playful'] .page-surface {
 	background-color: color-mix(in srgb, var(--section-accent) 9%, var(--color-gray-100));
-	--fade-ground: color-mix(in srgb, var(--section-accent) 9%, var(--color-gray-100));
 }
 
 /*
@@ -512,6 +507,27 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 	.page-gutter {
 		--page-gutter: 1.5rem;
 	}
+}
+
+/*
+ * The box a tab change happens inside.
+ *
+ * The pane on its way out is translated sideways, which would otherwise give
+ * the page a sideways scroll for the length of the slide — so it is clipped.
+ * `clip` rather than `hidden` because `hidden` makes a scroll container, which
+ * takes `position: sticky` away from everything inside it.
+ *
+ * The gutter is given back before it is taken: on a phone a card pulls itself
+ * out to the screen edge by exactly `--page-gutter` (see below), and clipping
+ * at the padding edge would shave that much off both sides of every card. Out
+ * by the gutter and in by the gutter leaves the clip exactly on the screen
+ * edge, where it belongs.
+ */
+.tab-frame {
+	position: relative;
+	margin-inline: calc(-1 * var(--page-gutter, 0px));
+	padding-inline: var(--page-gutter, 0px);
+	overflow-x: clip;
 }
 
 /*
@@ -2409,64 +2425,41 @@ html button.tab-link {
 	display: none;
 }
 
-.scroll-hints::before,
-.scroll-hints::after {
-	content: '';
-	position: sticky;
-	top: 0;
-	z-index: 1;
-	display: none;
-	align-self: stretch;
-	width: 2rem;
-	flex: none;
-	pointer-events: none;
-	background-repeat: no-repeat;
-	/*
-	 * Two layers: the arrow, and a fade of the page's own ground under it.
-	 *
-	 * Not a mask — a mask clips everything the element paints, the fade
-	 * included, so the arrow floated over readable text with nothing behind it.
-	 * The arrow's grey is fixed rather than a token because it is inside a data
-	 * URI; #94a3b8 is the one step of the ramp that reads on both grounds.
-	 *
-	 * The fade takes `--fade-ground`, which the page sets to whatever it is
-	 * actually painted in. It used to name `--color-gray-100` outright, which is
-	 * the Settings page's ground and nobody else's — under the room tabs, where
-	 * each room washes the page with its own hue, the fade drew a grey rectangle
-	 * over the tint instead of disappearing into it.
-	 */
-	background-size:
-		0.5rem 0.8rem,
-		100% 100%;
+/*
+ * The row fades out where it continues — the letters themselves.
+ *
+ * Two earlier answers were wrong in the same way. A chevron at the edge is a
+ * button that is not one, in a strip whose whole point is that you drag it.
+ * And a rectangle of the page's ground painted over the end is a rectangle:
+ * it has to guess the colour underneath, it never quite matched, and a tab
+ * half under it looked broken rather than continued.
+ *
+ * A mask instead. The strip's own pixels go transparent towards whichever edge
+ * has more beyond it, so "Weekly notes" ends with its last letters dissolving
+ * — which is a row that continues, drawn in nothing but the row. It costs no
+ * colour, so there is nothing to match, and it takes no pointer events, so the
+ * tab underneath is still a tab you can press.
+ */
+.scroll-hints {
+	--fade-edge: 2.5rem;
 }
 
-.scroll-hints::before {
-	left: 0;
-	margin-right: -2rem;
-	background-image:
-		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 12'%3E%3Cpath d='M6.5 1 1.5 6l5 5' fill='none' stroke='%2394a3b8' stroke-width='2'/%3E%3C/svg%3E"),
-		linear-gradient(to right, var(--fade-ground, var(--color-gray-100)) 55%, transparent);
-	background-position:
-		left 0.35rem center,
-		center;
+.scroll-hints[data-more='right'] {
+	mask-image: linear-gradient(to right, black calc(100% - var(--fade-edge)), transparent);
 }
 
-.scroll-hints::after {
-	right: 0;
-	margin-left: -2rem;
-	background-image:
-		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 12'%3E%3Cpath d='M1.5 1l5 5-5 5' fill='none' stroke='%2394a3b8' stroke-width='2'/%3E%3C/svg%3E"),
-		linear-gradient(to left, var(--fade-ground, var(--color-gray-100)) 55%, transparent);
-	background-position:
-		right 0.35rem center,
-		center;
+.scroll-hints[data-more='left'] {
+	mask-image: linear-gradient(to right, transparent, black var(--fade-edge));
 }
 
-.scroll-hints[data-more='left']::before,
-.scroll-hints[data-more='both']::before,
-.scroll-hints[data-more='right']::after,
-.scroll-hints[data-more='both']::after {
-	display: block;
+.scroll-hints[data-more='both'] {
+	mask-image: linear-gradient(
+		to right,
+		transparent,
+		black var(--fade-edge),
+		black calc(100% - var(--fade-edge)),
+		transparent
+	);
 }
 
 /*

@@ -18,6 +18,32 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.164.0 — 2026-09-13
+
+- **The dissolve is gone, and tabs move instead.** A whole-screen effect on
+  every navigation is something to be sure about, and it was never right. What
+  replaces it is the one movement that says something true: on a phone the
+  outgoing tab flies the way you went and the new one comes from the other
+  side. The Instance page's sliders and the three settings behind them are gone
+  with it.
+- **A sideways swipe changes tab**, in every room that has tabs — Tasks,
+  Health, Finance, Notebooks, Integrations. Clicking the strip was the only way
+  before, which on a phone means reaching for the top of the screen. The page's
+  own scroll still wins unless the gesture is clearly across it, and a swipe
+  that starts on something which scrolls sideways belongs to that thing until
+  it runs out of room.
+- **Ideas has one header again**, not two: the page was drawing a second room
+  bar inside the room's own.
+- **The tab strip fades its own letters** where the row continues, instead of
+  drawing a chevron over a rectangle of colour that had to guess the page's
+  ground and never matched. The chevron was a button in a strip whose point is
+  that you drag it.
+- **Exactly one tab is lit.** In Notebooks, whose first tab is the room's own
+  root, both it and the tab you were on were underlined.
+- **A notebook's note composer is behind a button.** It stood open above the
+  notes on every screen — a title box, a text box, a picture button and a fold
+  of tags — whether or not anybody was writing.
+
 ## 0.163.3 — 2026-09-13
 
 - **Changing screen actually turns the page.** The second half of the dissolve

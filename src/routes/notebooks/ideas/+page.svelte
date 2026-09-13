@@ -1,6 +1,5 @@
 <script lang="ts">
 	/* biome-ignore-all assist/source/organizeImports lint/correctness/noUnusedImports lint/correctness/noUnusedVariables lint/style/useConst: Svelte template and rune usage in this file triggers false positives in current Biome diagnostics. */
-	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { enhance } from '$app/forms';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -164,23 +163,25 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<RoomBar title="Ideas">
-		{#snippet actions()}
-			<button
-				onclick={() => {
-					if (showForm) {
-						closeForms();
-					} else {
-						openIdeaForm();
-					}
-				}}
-				class="btn btn-sm"
-				data-tour="idea-new"
-			>
-				{showForm ? 'Cancel' : 'New idea'}
-			</button>
-		{/snippet}
-	</RoomBar>
+	<!-- The heading is the layout's — Notebooks, with the Ideas tab lit. This
+	     row only holds the page's own button, pushed to the end, exactly as the
+	     Diary beside it does. A second `RoomBar` here drew a whole second
+	     header inside the first one. -->
+	<div class="flex flex-wrap items-center justify-end gap-3">
+		<button
+			onclick={() => {
+				if (showForm) {
+					closeForms();
+				} else {
+					openIdeaForm();
+				}
+			}}
+			class="btn btn-sm"
+			data-tour="idea-new"
+		>
+			{showForm ? 'Cancel' : 'New idea'}
+		</button>
+	</div>
 
 	<!--
 		The tags fold away, and start folded.

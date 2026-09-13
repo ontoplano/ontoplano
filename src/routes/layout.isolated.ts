@@ -9,7 +9,6 @@
  * build saying so.
  */
 import type { LayoutServerData } from './$types';
-import { PAGE_TURN_DEFAULTS } from '$lib/page-turn';
 import { redirect } from '@sveltejs/kit';
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { profileOf } from '$lib/services/account-profile';
@@ -54,8 +53,6 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 		pushKey: null,
 		config: { week: getWeekSettings(user.id) },
 		undoSeconds: DEFAULT_UNDO_SECONDS,
-		// A phone-only instance has no config file to hold a different feel.
-		pageTurn: { ...PAGE_TURN_DEFAULTS },
 		maxPictureKilobytes: DEFAULT_PICTURE_KILOBYTES,
 		// An isolated instance has nowhere to send an error report.
 		clientErrorReports: 'off'

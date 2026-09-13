@@ -1,7 +1,6 @@
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { loadConfig, saveConfig, isRegistrationMode } from '$lib/server/config';
-import { PAGE_TURN_DEFAULTS, PAGE_TURN_RANGES, type PageTurnTuning } from '$lib/page-turn';
 import { instanceSells } from '$lib/server/services/billing';
 import { companions } from '$lib/server/services/companions';
 import { isDemo, isStaging } from '$lib/server/settings';
@@ -137,41 +136,6 @@ export const actions: Actions = {
 		});
 
 		return { success: true, action: 'setEmailChange' };
-	},
-
-	/**
-	 * How changing screen looks, as three numbers.
-	 *
-	 * Held to the same bounds the sliders have, on the way in as well: a form
-	 * is a thing anybody can post, and a two-second dissolve on every
-	 * navigation is not a setting, it is a broken app. Out of range is clamped
-	 * rather than refused — the reader asked for "as slow as it goes", and
-	 * that is a sentence this can answer.
-	 */
-	setPageTurn: async ({ request, locals }) => {
-		owner(locals.user!.id);
-
-		const formData = await request.formData();
-		const current = loadConfig();
-
-		const held = (which: keyof PageTurnTuning) => {
-			const { min, max } = PAGE_TURN_RANGES[which];
-			const asked = Number(formData.get(which));
-			if (!Number.isFinite(asked)) return PAGE_TURN_DEFAULTS[which];
-			return Math.min(max, Math.max(min, asked));
-		};
-
-		saveConfig({
-			...current,
-			ui: {
-				...current.ui,
-				pageTurnMs: held('durationMs'),
-				pageTurnGrain: held('grain'),
-				pageTurnHardness: held('hardness')
-			}
-		});
-
-		return { success: true, action: 'setPageTurn' };
 	},
 
 	setClientErrors: async ({ request, locals }) => {

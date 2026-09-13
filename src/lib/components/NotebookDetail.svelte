@@ -102,6 +102,14 @@
 	 * where they were.
 	 */
 	let maximized = $state(false);
+
+	/**
+	 * Whether the note composer is open. Closed to begin with, on every screen.
+	 *
+	 * It used to stand open above the notes, which is a form taking the top of
+	 * the page whether or not anybody is writing.
+	 */
+	let composing = $state(false);
 	let surface = $state<HTMLDialogElement>();
 
 	/**
@@ -291,6 +299,15 @@
 						</button>
 					{/each}
 				</div>
+				{#if tab === 'notes'}
+					<button
+						type="button"
+						onclick={() => (composing = !composing)}
+						class="btn btn-sm mr-2 shrink-0"
+					>
+						{composing ? 'Cancel' : 'New note'}
+					</button>
+				{/if}
 				<button
 					type="button"
 					onclick={() => (maximized ? leaveMaximized() : enterMaximized())}
@@ -307,43 +324,52 @@
 			Writing about the kitchen renovation used to mean going to the Diary and
 			remembering to pick the notebook from a dropdown.
 
+			Behind a button, on every screen. Standing open it took the top of the
+			notebook whether or not anybody was writing — a title box, a text box,
+			a picture button and a fold of tags, above the notes somebody came to
+			read. The button is where the form was, so opening it costs one press
+			and closing it gives the space back.
+
 			It is tinted and it ends in a rule: the notes below are separated from
 			each other by exactly that line, so a composer with no edge of its own
 			read as the first note in the list. A different surface says "this is
 			where you write" without another heading to say it.
 		-->
-				<form
-					method="post"
-					action="?/addEntry"
-					use:enhance={() =>
-						async ({ update, result }) => {
-							await update({ reset: result.type === 'success' });
-						}}
-					class="border-b border-gray-200 bg-gray-50 px-4 pt-3 pb-4"
-				>
-					<input type="hidden" name="notebookId" value={notebook.id} />
-					<!--
+				{#if composing}
+					<form
+						method="post"
+						action="?/addEntry"
+						use:enhance={() =>
+							async ({ update, result }) => {
+								await update({ reset: result.type === 'success' });
+								// Written and gone: the space belongs to the notes again.
+								if (result.type === 'success') composing = false;
+							}}
+						class="border-b border-gray-200 bg-gray-50 px-4 pt-3 pb-4"
+					>
+						<input type="hidden" name="notebookId" value={notebook.id} />
+						<!--
 						A name first, because the list is names.
 
 						Not required: a note jotted in a hurry should not be held up by a
 						form asking what to call it, and one without a name is listed by
 						its first line.
 					-->
-					<OneLine name="heading" placeholder="Title" class="input mb-2 w-full font-medium" />
-					<textarea
-						bind:this={addBox}
-						name="content"
-						rows="2"
-						required
-						use:autogrow
-						placeholder="Write a note about {notebook.title}"
-						class="textarea"
-					></textarea>
-					<!-- A note written here takes a picture the same way a note written in
+						<OneLine name="heading" placeholder="Title" class="input mb-2 w-full font-medium" />
+						<textarea
+							bind:this={addBox}
+							name="content"
+							rows="2"
+							required
+							use:autogrow
+							placeholder="Write a note about {notebook.title}"
+							class="textarea"
+						></textarea>
+						<!-- A note written here takes a picture the same way a note written in
 			     the diary does. It was missing here, which made pictures look like
 			     a feature of one screen rather than of notes. -->
-					<PictureAttach target={addBox} />
-					<!--
+						<PictureAttach target={addBox} />
+						<!--
 				Tags and people, the same as a note written in the diary.
 
 				Folded away because the common act here is typing a line and
@@ -355,15 +381,16 @@
 				the picture button's icon starts: two controls stacked under a text
 				box, reading as one column rather than as two half-aligned rows.
 			-->
-					<div class="mt-1 pl-2.5">
-						<MoreOptions label="Tags, people" count={0} divided={false}>
-							{@render tagsAndPeople('', '')}
-						</MoreOptions>
-					</div>
-					<div class="mt-2 flex justify-end">
-						<button class="btn btn-primary btn-sm"><Icon name="plus" /> Add note</button>
-					</div>
-				</form>
+						<div class="mt-1 pl-2.5">
+							<MoreOptions label="Tags, people" count={0} divided={false}>
+								{@render tagsAndPeople('', '')}
+							</MoreOptions>
+						</div>
+						<div class="mt-2 flex justify-end">
+							<button class="btn btn-primary btn-sm"><Icon name="plus" /> Add note</button>
+						</div>
+					</form>
+				{/if}
 
 				{@render noteList(contents.entries, notebook.id)}
 			{:else if tab === 'tasks'}

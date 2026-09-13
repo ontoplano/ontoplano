@@ -176,6 +176,10 @@ test('a note written in a notebook takes one too', async ({ page }) => {
 		.click();
 	await page.locator('[name="heading"]').first().fill('Kitchen');
 	await page.locator('button[type="submit"]').first().click();
+	// The composer stands behind a button now, on every screen: a form open
+	// above the notes took the top of the notebook whether or not anybody was
+	// writing.
+	await page.getByRole('button', { name: 'New note', exact: true }).first().click();
 	await expect(page.getByPlaceholder('Write a note about Kitchen')).toBeVisible();
 
 	const box = page.getByPlaceholder('Write a note about Kitchen');

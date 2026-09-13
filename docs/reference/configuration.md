@@ -85,12 +85,9 @@ actually listening names an address here.
 
 ### `[ui]`
 
-| Key                | Type     | Means                                                                   |
-| ------------------ | -------- | ----------------------------------------------------------------------- |
-| `undoSeconds`      | `number` | Seconds a delete waits, undoably, before it happens. Zero turns it off. |
-| `pageTurnMs`       | `number` | —                                                                       |
-| `pageTurnGrain`    | `number` | —                                                                       |
-| `pageTurnHardness` | `number` | —                                                                       |
+| Key           | Type     | Means                                                                   |
+| ------------- | -------- | ----------------------------------------------------------------------- |
+| `undoSeconds` | `number` | Seconds a delete waits, undoably, before it happens. Zero turns it off. |
 
 ### `[legal]`
 
@@ -197,10 +194,7 @@ Whether this instance carries the workbenches under `/dev`.
 
 Off everywhere unless somebody turns it on. They are not screens of
 the app, and an instance somebody else runs has no reason to carry
-them or to know they exist. There are none at the moment — the screen
-transition had one, with its numbers on sliders, and the numbers turned
-out to be better off in `src/lib/page-turn.ts` where they can simply be
-edited.
+them or to know they exist. There are none at the moment.
 
 Here rather than in an environment variable because this is a thing
 the instance allows, and everything an instance allows is in this

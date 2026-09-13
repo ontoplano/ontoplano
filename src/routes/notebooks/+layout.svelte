@@ -1,8 +1,6 @@
 <script lang="ts">
-	import RoomBar from '$lib/components/RoomBar.svelte';
-	import { page } from '$app/state';
+	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
 	import { resolve } from '$app/paths';
-	import { scrollHints } from '$lib/actions/scroll-hints';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types';
 
@@ -34,59 +32,8 @@
 		{ href: resolve('/notebooks/weekly'), label: 'Weekly notes' },
 		{ href: resolve('/notebooks/people'), label: 'People' }
 	]);
-
-	/** People is one of these tabs now, so the strip shows on every page here. */
-	const showTabs = true;
-
-	function active(href: string): boolean {
-		if (href === '/notebooks') {
-			return (
-				page.url.pathname === '/notebooks' ||
-				(page.url.pathname.startsWith('/notebooks/') &&
-					!page.url.pathname.startsWith('/notebooks/diary') &&
-					!page.url.pathname.startsWith('/notebooks/weekly'))
-			);
-		}
-		return page.url.pathname.startsWith(href);
-	}
 </script>
 
-<!--
-	The bar and the page it heads share one box.
-
-	A sticky element sticks inside its own parent and nowhere else, so a bar
-	wrapped in a div as tall as itself scrolls away with that div — which is
-	exactly what it did here while the other three rooms, whose bar is a
-	direct child of the container the page sits in, stayed put.
--->
-<div class="space-y-4">
-	{#if showTabs}
-		<RoomBar title="Notebooks">
-			<nav
-				use:scrollHints
-				class="scroll-hints flex gap-0 border-b border-gray-200 md:gap-1"
-				aria-label="Notebooks sections"
-			>
-				{#each tabs as tab (tab.href)}
-					<!-- Already a resolve() result; the rule cannot see through the array,
-					     and -next-line cannot reach an attribute two lines down. -->
-					<!-- eslint-disable svelte/no-navigation-without-resolve -->
-					<a
-						href={tab.href}
-						aria-current={active(tab.href) ? 'page' : undefined}
-						class="tab-link border-b-2 px-2 py-2 text-sm whitespace-nowrap transition-colors sm:px-3 {active(
-							tab.href
-						)
-							? 'border-gray-900 font-semibold text-gray-900'
-							: 'border-transparent text-gray-500 hover:text-gray-900'}"
-					>
-						{tab.label}
-					</a>
-					<!-- eslint-enable svelte/no-navigation-without-resolve -->
-				{/each}
-			</nav>
-		</RoomBar>
-	{/if}
-
+<TabbedRoom title="Notebooks" {tabs} label="Notebooks sections">
 	{@render children()}
-</div>
+</TabbedRoom>

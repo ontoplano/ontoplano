@@ -9,7 +9,9 @@
  *
  * So the scrollbar is hidden and the fact is stated instead. This sets
  * `data-more="left" | "right" | "both" | "none"` on the element, and the CSS
- * for `.scroll-hints` draws a fade and a chevron on whichever side has more.
+ * for `.scroll-hints` fades out whichever side has more. A fade and no more
+ * than that: the chevron it used to draw looked like a button in a strip whose
+ * whole point is that you drag it.
  *
  * Watched rather than measured once: the row's width changes with the window,
  * and its contents change when a tab appears — Administration only exists for

@@ -45,6 +45,10 @@ async function makeNotebook(page: import('@playwright/test').Page, title: string
 	await expect(page.locator('dialog[open]')).toHaveCount(0);
 	// Picking it fills the detail column beside the list.
 	await page.getByRole('link', { name: new RegExp(title) }).click();
+	// The composer stands behind a button now, on every screen: a form open
+	// above the notes took the top of the notebook whether or not anybody was
+	// writing.
+	await page.getByRole('button', { name: 'New note', exact: true }).first().click();
 	await expect(page.getByPlaceholder(`Write a note about ${title}`)).toBeVisible();
 }
 
@@ -110,6 +114,8 @@ test('the type control scales in steps, and the device remembers the choice', as
 	// …and the choice survives a fresh load of the app.
 	await visit(page, '/notebooks');
 	await page.getByRole('link', { name: /Reading list/ }).click();
+	// A fresh visit: the composer is closed again, as it is on every screen.
+	await page.getByRole('button', { name: 'New note', exact: true }).first().click();
 	await expect(composer).toBeVisible();
 	await page.getByRole('button', { name: 'Maximize' }).click();
 	await expect(page.locator('dialog.nb-surface[open]')).toBeVisible();

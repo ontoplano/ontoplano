@@ -17,7 +17,7 @@ import { clientErrorState } from '$lib/server/services/client-errors';
 import { needsFirstRun } from '$lib/services/onboarding';
 import { listCategories } from '$lib/services/activities';
 import { buildCtx } from '$lib/services/ctx';
-import { loadConfig, pageTurn } from '$lib/server/config';
+import { loadConfig } from '$lib/server/config';
 import { mediaLimits } from '$lib/services/media';
 import { publicKey } from '$lib/server/services/push';
 import { invitationFor } from '$lib/server/services/subscriptions';
@@ -172,8 +172,6 @@ export const load: LayoutServerLoad = async (event) => {
 		config: { week },
 		// How long a delete waits before it happens. The instance's call.
 		undoSeconds: loadConfig().ui.undoSeconds,
-		// And how changing screen looks, which is the same kind of call.
-		pageTurn: pageTurn(loadConfig()),
 		/*
 		 * The biggest picture this instance takes, so the browser can refuse one
 		 * before sending it.
