@@ -58,7 +58,7 @@ function oo1(db: Database.Database): Oo1Db {
 			else db.prepare(sql.sql).run(...((sql.bind ?? []) as never[]));
 		},
 		selectValue: (sql: string) => Object.values(db.prepare(sql).get() as object)[0],
-		changes: () => db.prepare('select changes() as n').get<{ n: number }>()!.n
+		changes: () => (db.prepare('select changes() as n').get() as { n: number }).n
 	};
 }
 

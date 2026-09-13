@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**56 pages, 216 actions.**
+**56 pages, 217 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -35,7 +35,7 @@ write surface for everything else; both end up calling the same
 | `/health/recipes/[id]`               | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/health/workouts`                   | `create`, `update`, `done`, `schedule`, `archive`, `delete`, `createCategory`, `renameCategory`, `deleteCategory`                                                                                                                                                                                                                                                                   |
 | `/instance`                          | —                                                                                                                                                                                                                                                                                                                                                                                   |
-| `/inventory`                         | `setCategoryFood`, `setCategoryShared`, `renameCategory`, `deleteCategory`, `saveCategories`, `createCategory`, `create`, `update`, `setQty`, `toggleBought`, `paid`, `delete`, `restock`, `toggleSnoozed`, `createLocation`, `updateLocation`, `deleteLocation`, `putItem`, `setFields`                                                                                            |
+| `/inventory`                         | `setCategoryFood`, `setCategoryShared`, `renameCategory`, `deleteCategory`, `saveCategories`, `createCategory`, `create`, `update`, `setQty`, `toggleBought`, `paid`, `delete`, `restock`, `toggleSnoozed`, `createLocation`, `updateLocation`, `deleteLocation`, `setLocationPanelWidth`, `putItem`, `setFields`                                                                   |
 | `/legal/privacy`                     | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/legal/refunds`                     | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/legal/terms`                       | —                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -204,6 +204,10 @@ cupboard with one thumb, and `update` re-parses the whole row.
 **`paid`**
 
 What you actually paid. Never part of the tick, which has to stay one press.
+
+**`setLocationPanelWidth`**
+
+Where the reader dragged the divider. Posted once, when they let go.
 
 **`putItem`**
 

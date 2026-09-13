@@ -10,7 +10,7 @@ import {
 	locationTree,
 	updateLocation
 } from '$lib/services/locations';
-import { getCurrency } from '$lib/services/settings';
+import { getCurrency, getLocationPanelWidth, setLocationPanelWidth } from '$lib/services/settings';
 import {
 	createCategory,
 	deleteCategory,
@@ -42,6 +42,8 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		usedIn: recipesByItem(ctx),
 		shoppingCategories: listCategories(ctx),
 		currency: getCurrency(ctx.userId),
+		// Where the handle between the panel and the list was left.
+		locationPanelRem: getLocationPanelWidth(ctx.userId),
 		// Whether the share-with-family switch has anybody to share with.
 		onFamilyPlan: host.familyUserIds(ctx.userId).length > 1
 	};
@@ -308,6 +310,17 @@ export const actions = {
 		try {
 			deleteLocation(buildCtx(locals.user!.id), Number(formData.get('id')));
 			return { success: true, action: 'deleteLocation' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** Where the reader dragged the divider. Posted once, when they let go. */
+	setLocationPanelWidth: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			setLocationPanelWidth(locals.user!.id, Number(formData.get('rem')));
+			return { success: true, action: 'setLocationPanelWidth' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

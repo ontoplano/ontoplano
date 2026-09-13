@@ -23,8 +23,45 @@
 	import { onMount, untrack } from 'svelte';
 	import { browser } from '$app/environment';
 	import { SvelteSet } from 'svelte/reactivity';
+	import { LOCATION_PANEL_WIDTH } from '$lib/services/settings';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+
+	/*
+	 * How wide the house is, and the handle that says so.
+	 *
+	 * A location's name is as long as the reader made it, and a fixed column
+	 * turns half of them into an ellipsis. The width is theirs to set, comes
+	 * off the list beside it, and is written down once — when they let go —
+	 * rather than on every pixel of the drag.
+	 */
+	let panelRem = $state(data.locationPanelRem);
+	let draggingPanel = $state(false);
+	let panelForm = $state<HTMLFormElement>();
+
+	function widenPanel(event: PointerEvent) {
+		const section = (event.currentTarget as HTMLElement).previousElementSibling;
+		if (!section) return;
+		const left = section.getBoundingClientRect().left;
+		const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+
+		draggingPanel = true;
+		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+
+		const move = (e: PointerEvent) =>
+			(panelRem = Math.min(
+				LOCATION_PANEL_WIDTH.max,
+				Math.max(LOCATION_PANEL_WIDTH.min, (e.clientX - left) / rem)
+			));
+		const done = () => {
+			draggingPanel = false;
+			window.removeEventListener('pointermove', move);
+			window.removeEventListener('pointerup', done);
+			panelForm?.requestSubmit();
+		};
+		window.addEventListener('pointermove', move);
+		window.addEventListener('pointerup', done);
+	}
 
 	let showForm = $state(false);
 	let selectedIndex = $state(-1);
@@ -698,7 +735,9 @@
 			     location gaining children never shifts any name sideways, and the
 			     rows that can never fold still line up with the ones that can. -->
 			<span class="invisible size-4 shrink-0"><Icon name="chevron-down" /></span>
-			<span class="truncate">{label}</span>
+			<!-- Its own name as the tooltip: the column is as wide as the reader
+			     left it and a name can always be longer than that. -->
+			<span class="truncate" title={label}>{label}</span>
 			<span class="tabular ml-auto shrink-0 text-xs text-gray-500">{count}</span>
 		</button>
 	</li>
@@ -756,7 +795,7 @@
 					? 'font-medium text-gray-900'
 					: 'text-gray-700'} {dragOver === node.id ? 'ring-2 ring-gray-900 ring-inset' : ''}"
 			>
-				<span class="truncate">{node.name}</span>
+				<span class="truncate" title={node.name}>{node.name}</span>
 				<span
 					class="tabular ml-auto shrink-0 text-xs text-gray-500"
 					title={countTitle(node.name, countsByLocation.get(node.id) ?? { here: 0, total: 0 })}
@@ -1057,8 +1096,20 @@
 		"what is in the kitchen" and "what do I need to buy" are one screen
 		rather than two.
 	-->
-	<div class="grid gap-4 lg:grid-cols-[minmax(13rem,17rem)_1fr]">
-		<section class="self-start border border-gray-200 bg-white shadow-card">
+	<!--
+		One surface under both halves.
+
+		The panel and the list used to be two cards on the page's own
+		background, which reads as two things that happen to be near each other
+		rather than as two views of the same rows. The divider between them is
+		also the handle: the house is as wide as its names need, and the space
+		comes off the list, which is the only place it can come from.
+	-->
+	<div
+		class="grid overflow-hidden border border-gray-200 bg-white shadow-card lg:grid-cols-[var(--house)_auto_1fr]"
+		style="--house: {panelRem}rem"
+	>
+		<section class="self-start">
 			<header
 				class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-2"
 			>
@@ -1091,7 +1142,32 @@
 			</p>
 		</section>
 
-		<div class="min-w-0 space-y-4">
+		<!--
+			Desktop only, and not a scrollbar's worth of hit area: on a phone the
+			panel sits above the list, where there is no width to take, and a
+			finger landing on a two-pixel target belongs to the page's scroll.
+		-->
+		<div
+			role="separator"
+			aria-orientation="vertical"
+			aria-label="Widen or narrow the locations panel"
+			class="mouse-only hidden w-2 cursor-col-resize touch-none border-x border-gray-200 transition-colors lg:block {draggingPanel
+				? 'bg-gray-300'
+				: 'bg-gray-100 hover:bg-gray-200'}"
+			onpointerdown={widenPanel}
+		></div>
+
+		<form
+			method="POST"
+			action="?/setLocationPanelWidth"
+			class="hidden"
+			bind:this={panelForm}
+			use:enhance={() => async () => {}}
+		>
+			<input type="hidden" name="rem" value={panelRem} />
+		</form>
+
+		<div class="min-w-0 space-y-4 p-4">
 			{#if replenishItems.length > 0}
 				<div data-tour="shopping-list">
 					<!-- "Inventory" was this heading's name before the room took it. These

@@ -63,7 +63,9 @@ test('a thing is dragged into a drawer, and the page narrows to it', async ({ pa
 	// arithmetic on the way down a branch is otherwise somebody's to do.
 	const kitchen = page.getByRole('button', { name: /^Kitchen/ }).first();
 	await expect(kitchen).toContainText('1');
-	await expect(kitchen.locator('[title]')).toHaveAttribute(
+	// The count, not the name beside it — the name carries a title of its own
+	// now, because the column is narrower than some of them.
+	await expect(kitchen.locator('.tabular[title]')).toHaveAttribute(
 		'title',
 		/1 thing in Kitchen: 0 here and 1 in what is inside it/
 	);

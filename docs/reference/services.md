@@ -3800,6 +3800,10 @@ checked at both ends rather than trusted at either.
 
 #### `markOnboarded(userId)`
 
+#### `getLocationPanelWidth(userId)`
+
+#### `setLocationPanelWidth(userId, rem)`
+
 ### Types
 
 - `WeekSettings`

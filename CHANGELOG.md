@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.162.6 — 2026-09-13
+
+- **A location's name is readable however long it is.** "asf 1213 21321 a…"
+  was the whole of what the panel would tell you. The name is its own tooltip
+  now, and the divider between the house and the list is a handle: drag it and
+  the panel takes the width it needs off the list, where it stays. Both halves
+  sit on one surface rather than floating as two cards.
+
 ## 0.162.5 — 2026-09-13
 
 - **A phone-only instance stops breaking its own database.** 0.162.4 taught the

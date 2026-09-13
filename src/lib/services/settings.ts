@@ -352,3 +352,31 @@ export function isOnboarded(userId: string): boolean {
 export function markOnboarded(userId: string): void {
 	setUserSetting(userId, ONBOARDED_KEY, 'true');
 }
+
+// --- The locations panel's width ------------------------------------------------
+
+/**
+ * How wide the "Where things live" panel is, in rem.
+ *
+ * A house's names are as long as somebody's names are — "asf 1213 21321 a…"
+ * is what a fixed column does to one of them — and no default fits everybody,
+ * so the panel takes its width from a handle and remembers where it was left.
+ * The space comes off the list beside it, which is the only place it can come
+ * from; the bounds keep the panel from swallowing the room or vanishing.
+ */
+export const LOCATION_PANEL_WIDTH_KEY = 'inventory.location_panel_rem';
+export const LOCATION_PANEL_WIDTH = { min: 13, max: 34, fallback: 17 } as const;
+
+export function getLocationPanelWidth(userId: string): number {
+	const raw = getUserSetting(userId, LOCATION_PANEL_WIDTH_KEY);
+	if (raw === null || raw.trim() === '') return LOCATION_PANEL_WIDTH.fallback;
+	const rem = Number(raw);
+	return Number.isFinite(rem) && rem >= LOCATION_PANEL_WIDTH.min && rem <= LOCATION_PANEL_WIDTH.max
+		? rem
+		: LOCATION_PANEL_WIDTH.fallback;
+}
+
+export function setLocationPanelWidth(userId: string, rem: number): void {
+	const held = Math.min(LOCATION_PANEL_WIDTH.max, Math.max(LOCATION_PANEL_WIDTH.min, rem));
+	setUserSetting(userId, LOCATION_PANEL_WIDTH_KEY, String(Math.round(held * 10) / 10));
+}

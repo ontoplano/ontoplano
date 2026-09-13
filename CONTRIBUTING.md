@@ -5,13 +5,13 @@ fix and pull request genuinely helps it.
 
 ## Ways to contribute
 
-- **Report a bug** — with the steps that reproduce it. Only report what you
-  hit yourself.
+- **Report a bug** — with the steps that reproduce it.
 - **Fix a bug** — link the issue it closes.
+- **Suggest a feature** — open an issue first so we agree on the shape before
 - **Build a feature** — open an issue first so we agree on the shape before
   you write much. `ROADMAP.md` lists what is already intended.
 - **Improve the docs** — the handwritten half lives in `docs/prose/`; the
-  rest is generated and edited through the code.
+  rest is generated from the code.
 - **Package it** — there is no Windows installer yet.
 
 No CLA. You keep the copyright to what you write; it goes in under AGPL-3.0.
@@ -60,12 +60,10 @@ make test           # the Playwright e2e suite
 - **MCP tools**, in `src/lib/server/mcp/tools.ts`, with a scope in
   `src/lib/server/services/tokens.ts` — whatever the app lets a person do, an
   assistant can do too. Every verb ships with its way back (`archive` is its
-  own inverse; `pay`/`unpay`); deletion has its own machinery, below. The
-  assistant preset picks new scopes up on its own.
-- **A dashboard card**, off by default when the feature is an opinionated one.
-- **Unit tests, and an e2e** that drives the whole thing in a browser at phone
-  width and at desktop. Look at both — text wrapping into six-character lines
-  is not production.
+  own inverse; `pay`/`unpay`); deletion has its own machinery, below.
+- **A dashboard card**, basically showcasing it
+- **Unit and e2e tests** considering the whole thing in a browser at phone
+  width and at desktop.
 - **Dev seed data**, so the dev account has a little of everything.
 - **A line in `src/lib/server/services/account.ts`** for any new
   account-scoped table, or export and account deletion silently miss it — a
@@ -121,18 +119,17 @@ reviewer or a lint rule will stop you on:
   testable. Instants are UTC ISO-8601 with a `Z`, written by `stamps(ctx)`
   from `services/time.ts`; wall-clock values ("gym at 18:00") stay naive.
 - **Strings are bounded at the service.**
-- **Migrations are read before they run, and never edited after.**
-  `yarn db:generate`, then read the SQL — Drizzle has produced wrong
-  migrations here before. Whatever it missed goes in its own migration: an
-  applied migration is identified by its file hash, so editing one strands
-  every database that already ran it. A test fails on any edit.
+- **A migration is never edited after it is generated.** `yarn db:generate`,
+  then read the SQL — Drizzle has produced wrong migrations here before —
+  and whatever it missed goes in a migration of its own. An applied migration
+  is identified by its file hash, so editing one strands every database that
+  already ran it. A test fails on any edit.
 - **A route runs on both instances.** The isolated build compiles
   `+page.server.ts` into a worker, so it may not import `$lib/server/*` or
   anything from Node — what only a served instance has goes through the host
   seam, `$lib/services/host.ts`.
-- **Blue is yes, red is no.** I am red/green colorblind; success is blue
-  here, never green.
-- **A feature works everywhere its thing lives.** Renaming shopping sections
-  belongs on the page, in the API and as an MCP tool — not on the page alone.
+- **Blue is yes, red is no.** I am red/green colorblind.
+- **Propagate feature changes throughout all interfaces** E.g. a behavior change
+  on a route should work well on mobile, desktop, API, MCP server, docs, tutorial...
 - **No hardcoded strings or numbers.** Anything someone could want to change
   gets a named constant, at the narrowest scope that covers its readers.
