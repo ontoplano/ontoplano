@@ -18,6 +18,12 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.163.1 — 2026-09-13
+
+- **The raised button in the phone bar is the shape of the mark again.** The
+  outline committed with it had collapsed to a triangle, so the button was
+  drawn as one.
+
 ## 0.163.0 — 2026-09-13
 
 - **How the page turns is yours to set, on the Instance page.** Three sliders —
