@@ -51,13 +51,26 @@ export const ICON_SCALE = 1;
  * shrinks into the middle and the ring around it is ground the launcher is
  * welcome to eat.
  *
+ * How much ring, in one number — raise it and the mark grows, lower it and the
+ * ring does. What the numbers mean:
+ *
  * The safe zone is the middle 80% of the width, as a circle. A mark with
  * corners has to fit inside that circle, not inside the square around it: the
- * octagon's own corners sit at 1/cos(22.5°) — about 1.082 — of half its width
- * from the centre, so 0.74 puts them at 0.40 of the width, which is the edge of
- * the circle exactly.
+ * octagon's corners sit at 1/cos(22.5°) — about 1.082 — of half its width from
+ * the centre. So **0.74** is the largest scale whose corners are still inside
+ * the circle, landing them on it exactly, and any launcher shape at all leaves
+ * the mark whole.
+ *
+ * **0.80** is what is here, and it is past that on purpose: the ring at 0.74
+ * was wider than it needed to look like, and a fully circular mask now takes
+ * the last 8% of each of the eight corner tips. Every launcher shape short of
+ * a circle — the squircle Android actually draws, the rounded square, the
+ * square — leaves it alone.
+ *
+ * Above about 0.84 the corners start reaching the edge of the square and the
+ * ring stops reading as deliberate.
  */
-export const MASKABLE_SCALE = 0.74;
+export const MASKABLE_SCALE = 0.9;
 
 /**
  * iOS ignores the manifest and the safe zone both: it takes the apple-touch
