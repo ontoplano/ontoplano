@@ -18,6 +18,20 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.166.1 — 2026-09-13
+
+- **An instance never writes another instance's database path into its config.**
+  The demo shares a config directory with the instance beside it unless told
+  otherwise, and the app tops that file up with the settings in force whenever
+  it finds a key missing — so the demo wrote its own database path into
+  production's `config.toml`. Production restarted, opened the demo's database,
+  and refused every sign-in and every API token while the real data sat
+  untouched beside it. What the file said about where the database lives is now
+  what it goes on saying; a path from the environment belongs to the process
+  that was given it.
+- **The demo gets a config directory of its own**, the way staging already did
+  — including on boxes already set up.
+
 ## 0.166.0 — 2026-09-13
 
 - **Restoring shows a preview before it does anything.** A restore empties the

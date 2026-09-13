@@ -409,13 +409,38 @@ function q(value: unknown): string {
 	return `"${text}"`;
 }
 
-function toToml(config: OntoplanoConfig): string {
+/**
+ * The database path this file should carry, which is the one it already had.
+ *
+ * `DATABASE_URL` belongs to a process, not to an instance — and two instances
+ * on one box can share a config directory. The demo did exactly that: its unit
+ * set `DATABASE_URL` to the demo database and no `ONTOPLANO_CONFIG_DIR`, so it
+ * read and wrote the same `config.toml` as production. Writing the path in
+ * force into that shared file put `path = …/ontoplano-demo/demo.db` into
+ * production's config; production restarted, opened the demo's database, and
+ * refused every sign-in and every API token while the real data sat untouched
+ * and unreachable beside it.
+ *
+ * So what goes back is what was there. A path somebody typed into the file is
+ * the instance saying where its database lives and is kept exactly; a path
+ * that came from the environment is this process's business and is never
+ * written down. Reading it back out of the file rather than deciding from the
+ * config in hand is the whole point: by then the two have already been merged,
+ * and the merged answer is the process's.
+ */
+function pathAlreadyInTheFile(content: string | undefined): string | null {
+	if (content === undefined) return null;
+	const found = /^path\s*=\s*"([^"]*)"/m.exec(content);
+	return found ? found[1] : null;
+}
+
+function toToml(config: OntoplanoConfig, keepPath: string | null = null): string {
 	return `[server]
 host = ${q(config.server.host)}
 port = ${q(config.server.port)}
 
 [database]
-${config.database.path !== dbPath() ? `path = ${q(config.database.path)}` : ''}
+${keepPath !== null ? `path = ${q(keepPath)}` : config.database.path !== dbPath() && config.database.path !== process.env.DATABASE_URL ? `path = ${q(config.database.path)}` : ''}
 
 [week]
 first_day = ${q(config.week.firstDay)}
@@ -480,7 +505,12 @@ import_files = ${q(config.media.importFiles)}
 
 export function saveConfig(config: OntoplanoConfig): void {
 	ensureDirectories();
-	writeFileSync(configFile(), toToml(config), 'utf-8');
+	// Whatever the file said about where the database is, it still says. See
+	// `pathAlreadyInTheFile`: that line is not this process's to rewrite.
+	const had = existsSync(configFile())
+		? pathAlreadyInTheFile(readFileSync(configFile(), 'utf-8'))
+		: null;
+	writeFileSync(configFile(), toToml(config, had), 'utf-8');
 }
 
 /**
@@ -517,7 +547,8 @@ function shadowed(variable: string): void {
 }
 
 function grow(config: OntoplanoConfig, content: string): void {
-	const missing = toToml(config)
+	const had = pathAlreadyInTheFile(content);
+	const missing = toToml(config, had)
 		.split('\n')
 		.filter((line) => /^\w+ = /.test(line))
 		.map((line) => line.slice(0, line.indexOf(' =')))
@@ -525,7 +556,7 @@ function grow(config: OntoplanoConfig, content: string): void {
 	if (missing.length === 0) return;
 
 	try {
-		writeFileSync(configFile(), toToml(config), 'utf-8');
+		writeFileSync(configFile(), toToml(config, had), 'utf-8');
 		// stderr, not stdout: scripts read this process's output, and a
 		// diagnostic that lands in the middle of it is a broken script.
 		console.warn(
